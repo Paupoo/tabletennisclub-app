@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Domains\Shared\Enums\Permission;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,7 +20,7 @@ class CommitteeMemberMiddelware
     {
         $user = $request->user();
 
-        if (! $user || (! $user->is_admin && ! $user->is_committee_member)) {
+        if (! $user || ! $user->can(Permission::UsersView->value)) {
             abort(403);
         }
 

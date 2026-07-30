@@ -136,9 +136,39 @@ class TrainingPack extends Model
         'is_open_enrollment',
     ];
 
+    /**
+     * ISO weekday number => translated day name.
+     *
+     * @return array<int, string>
+     */
+    public static function dayNames(): array
+    {
+        return [
+            1 => __('Monday'),
+            2 => __('Tuesday'),
+            3 => __('Wednesday'),
+            4 => __('Thursday'),
+            5 => __('Friday'),
+            6 => __('Saturday'),
+            7 => __('Sunday'),
+        ];
+    }
+
+    /**
+     * Places engagées dans le pack.
+     *
+     * Le statut du pivot ne suffit pas : une inscription club annulée gardait
+     * sa place et pouvait faire afficher « complet » à un pack qui ne l'était
+     * pas, bloquant de vrais membres (issue #29).
+     *
+     * On filtre sur affiliated() et non active() : un membre en attente de
+     * validation qui a réservé une place la conserve, sinon la place serait
+     * attribuée deux fois. Seuls les états terminaux libèrent la place.
+     */
     public function committedCount(): int
     {
         return $this->subscriptions()
+            ->affiliated()
             ->wherePivotIn('status', ['enrolled', 'pending'])
             ->count();
     }
@@ -151,6 +181,7 @@ class TrainingPack extends Model
     public function enrolledCount(): int
     {
         return $this->subscriptions()
+            ->affiliated()
             ->wherePivot('status', 'enrolled')
             ->count();
     }
@@ -251,13 +282,60 @@ class TrainingPack extends Model
     {
         return Attribute::make(
             get: fn (int $value): float => round($value / 100, 2),
-            set: fn (float|int $value): int => (int) $value * 100,
+            set: fn (float|int $value): int => (int) round($value * 100),
         );
     }
 
     public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class);
+    }
+
+    /**
+     * Human-readable schedule for display, e.g. "Mardi · 20h30 – 22h00" or
+     * "Du lundi au vendredi · 9h00 – 16h00 · du 05/07 au 16/07".
+     *
+     * Adapts to the pack recurrence: single weekly day, multiple days
+     * (contiguous ranges are collapsed), optional time range derived from
+     * start_time + duration_minutes, and optional custom date bounds.
+     * Returns null when the pack has no day nor time information.
+     */
+    public function scheduleLabel(): ?string
+    {
+        $days = $this->days_of_week
+            ?? ($this->day_of_week !== null ? [$this->day_of_week] : []);
+        $days = array_values(array_unique(array_map(intval(...), $days)));
+        sort($days);
+
+        if ($this->start_time === null && $days === []) {
+            return null;
+        }
+
+        $parts = [];
+
+        if (($daysLabel = $this->daysLabel($days)) !== null) {
+            $parts[] = $daysLabel;
+        }
+
+        if ($this->start_time !== null) {
+            $start = Carbon::parse($this->start_time);
+            $time = $start->format('G\hi');
+
+            if ($this->duration_minutes !== null) {
+                $time .= ' – ' . $start->addMinutes($this->duration_minutes)->format('G\hi');
+            }
+
+            $parts[] = $time;
+        }
+
+        if ($this->pack_start_date !== null && $this->pack_end_date !== null) {
+            $parts[] = __('from :start to :end', [
+                'start' => $this->pack_start_date->format('d/m'),
+                'end' => $this->pack_end_date->format('d/m'),
+            ]);
+        }
+
+        return implode(' · ', $parts);
     }
 
     public function season(): BelongsTo
@@ -278,7 +356,7 @@ class TrainingPack extends Model
     public function trainees(): Builder
     {
         return User::query()->whereHas('subscriptions', function (Builder $q): void {
-            $q->whereHas('trainingPacks', fn (Builder $q2) => $q2
+            $q->affiliated()->whereHas('trainingPacks', fn (Builder $q2) => $q2
                 ->where('training_packs.id', $this->id)
                 ->where('subscription_training_pack.status', 'enrolled')
             );
@@ -298,7 +376,45 @@ class TrainingPack extends Model
     public function waitlistCount(): int
     {
         return $this->subscriptions()
+            ->affiliated()
             ->wherePivot('status', 'waiting')
             ->count();
+    }
+
+    /**
+     * Label for a sorted list of ISO weekday numbers: "Mardi",
+     * "Lundi & mercredi", or "Du lundi au vendredi" for contiguous ranges.
+     *
+     * @param  int[]  $days
+     */
+    private function daysLabel(array $days): ?string
+    {
+        if ($days === []) {
+            return null;
+        }
+
+        $names = self::dayNames();
+
+        if (count($days) === 1) {
+            return $names[$days[0]] ?? null;
+        }
+
+        $first = $days[0];
+        $last = $days[count($days) - 1];
+
+        if (count($days) > 2 && $days === range($first, $last)) {
+            return __('From :first to :last', [
+                'first' => mb_strtolower($names[$first]),
+                'last' => mb_strtolower($names[$last]),
+            ]);
+        }
+
+        $labels = array_map(fn (int $day): string => $names[$day] ?? (string) $day, $days);
+
+        return implode(' & ', array_map(
+            fn (string $label, int $index): string => $index === 0 ? $label : mb_strtolower($label),
+            $labels,
+            array_keys($labels),
+        ));
     }
 }

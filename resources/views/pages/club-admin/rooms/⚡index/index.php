@@ -3,9 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
-use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Competitions\Tournament\Models\Tournament;
-use App\Domains\Competitions\Tournament\Services\TournamentService;
+use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
@@ -22,21 +20,6 @@ new class extends Component
     public bool $deleteRoomModal = false;
 
     public ?int $deletingRoomId = null;
-
-    public function cancelRegistration(int $tournamentId): void
-    {
-        /** @var User $user */
-        $user = auth()->user();
-        $tournament = Tournament::findOrFail($tournamentId);
-
-        try {
-            app(TournamentService::class)->cancelRegistration($tournament, $user);
-            unset($this->rooms);
-            $this->warning(__('Registration cancelled.'));
-        } catch (LogicException $e) {
-            $this->error($e->getMessage());
-        }
-    }
 
     // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -76,21 +59,6 @@ new class extends Component
         $this->deletingRoomId = null;
     }
 
-    public function register(int $tournamentId): void
-    {
-        /** @var User $user */
-        $user = auth()->user();
-        $tournament = Tournament::findOrFail($tournamentId);
-
-        try {
-            app(TournamentService::class)->registerUser($tournament, $user);
-            unset($this->rooms);
-            $this->success(__('Registration confirmed!'));
-        } catch (LogicException $e) {
-            $this->error($e->getMessage());
-        }
-    }
-
     public function render(): View
     {
         return $this->view();
@@ -105,31 +73,36 @@ new class extends Component
         $start = now();
         $end = (clone $start)->addWeeks(2);
 
-        /** @var User $user */
-        $user = auth()->user();
+        return Room::withCount('tables')
+            ->withCount([
+                'trainings' => fn ($query) => $query->whereBetween('start', [$start, $end]),
+                'interclubs' => fn ($query) => $query->whereBetween('start_date_time', [$start, $end]),
+                'tournaments' => fn ($query) => $query
+                    ->where('status', TournamentStatusEnum::PUBLISHED)
+                    ->whereBetween('start_date', [$start, $end]),
+            ])
+            ->orderBy('name')
+            ->get();
+    }
 
-        return Room::with([
-            'trainings' => fn ($query) => $query
-                ->with('trainer')
-                ->whereBetween('start', [$start, $end]),
-
-            'interclubs' => fn ($query) => $query
-                ->whereBetween('start_date_time', [$start, $end]),
-
-            'tournaments' => fn ($query) => $query
-                ->where('status', TournamentStatusEnum::PUBLISHED)
-                ->whereBetween('start_date', [$start, $end])
-                ->withCount([
-                    'users AS active_registrations_count' => fn ($q) => $q->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered']),
-                ])
-                ->with(['users' => fn ($q) => $q->where('tournament_user.user_id', $user->id)]),
-        ])->get();
+    /**
+     * Tables with no room. There are none today, but `room_id` is nullable, so
+     * without this they would be reachable from nowhere once the tables list
+     * is gone.
+     *
+     * @return Collection<int, Table>
+     */
+    #[Computed]
+    public function unassignedTables(): Collection
+    {
+        return Table::whereNull('room_id')->orderBy('name')->get();
     }
 
     public function with(): array
     {
         return [
             'rooms' => $this->rooms,
+            'unassignedTables' => $this->unassignedTables,
             'breadcrumbs' => $this->getBreadcrumbs(),
         ];
     }

@@ -7,8 +7,11 @@
     <x-header progress-indicator separator :subtitle="__('Past, current and upcoming seasons')"
         :title="__('Seasons')">
         <x-slot:actions>
-            <x-button class="btn-ghost btn-sm" icon="o-sparkles" :label="__('Auto-provision')"
-                :tooltip="__('Ensure the next 2 seasons exist')" wire:click="openProvision" />
+            @can('create', \App\Models\ClubEvents\Interclub\Season::class)
+            <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
+                <x-menu-item icon="o-sparkles" :title="__('Auto-provision')" wire:click="openProvision" />
+            </x-dropdown>
+            @endcan
             @can('create', \App\Models\ClubEvents\Interclub\Season::class)
                 <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New season')"
                     wire:click="openCreate" />
@@ -68,11 +71,13 @@
                 {{-- Right: actions --}}
                 <div class="flex items-center gap-2">
                     @if (! $isCurrent)
+                        @can('update', $season)
                         <x-button class="btn-ghost btn-sm"
                             icon="{{ $isPast ? 'o-arrow-uturn-left' : 'o-bolt' }}"
                             :label="__('Set active')"
                             tooltip="{{ $isPast ? __('Re-activate this past season') : __('Activate this upcoming season') }}"
                             wire:click="openActivate({{ $season->id }})" />
+                        @endcan
                     @endif
 
                     @can('update', $season)
@@ -134,7 +139,7 @@
                 {{ __('the active season.') }}
             </p>
             <x-alert class="alert-warning" icon="o-exclamation-triangle"
-                :title="__('The current active season will be deactivated. This affects all season-scoped data (registrations, training packs, etc.).')" />
+                :title="__('The current active season will be deactivated. This affects all season-scoped data (affiliations, training packs, etc.).')" />
         </div>
 
         <x-slot:actions>

@@ -122,7 +122,7 @@ describe('GeneratePayment', function (): void {
     })->group('payments', 'generate');
 
     test('non-admin cannot generate payment (Gate denies)', function (): void {
-        $user = User::factory()->create(['is_admin' => false]);
+        $user = User::factory()->create();
         $this->actingAs($user);
 
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 125]);
@@ -388,7 +388,7 @@ describe('PaymentInvitationEmail content', function (): void {
 
         $mailable = new PaymentInvitationEmail($payment->load('payable.season'));
 
-        $mailable->assertSeeInHtml('Cotisation');
+        $mailable->assertSeeInHtml('Affiliation');
         $mailable->assertSeeInHtml($subscription->season->name);
     })->group('payments', 'mail-content');
 
@@ -446,6 +446,21 @@ describe('PaymentInvitationEmail content', function (): void {
         );
 
         $mailable->assertSeeInHtml('dès que possible');
+    })->group('payments', 'mail-content');
+
+    test('shows the club IBAN grouped by 4 for readability', function (): void {
+        $user = User::factory()->create();
+        $subscription = Subscription::factory()->create(['user_id' => $user->id, 'status' => 'confirmed']);
+        $payment = $subscription->payments()->create([
+            'reference' => 'INV/2026/00501',
+            'amount_due' => 125,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        $mailable = new PaymentInvitationEmail($payment->load('payable.season'));
+
+        $mailable->assertSeeInHtml('BE23 7323 3320 8791');
     })->group('payments', 'mail-content');
 
 })->group('payments');

@@ -118,6 +118,19 @@ Authentification, autorisation, validation:
 
 ---
 
+### 10. **[DEPLOYMENT.md](./DEPLOYMENT.md)** — Mise en production
+Déployer sur le serveur (SSH + `git pull`):
+- Prérequis serveur et services permanents (worker, cron, serveur web)
+- Procédure pas-à-pas (`down` → pull → composer/npm → migrate → **RoleSeeder** → caches → `up`)
+- Tâches planifiées (6 commandes, une entrée crontab)
+- Worker de queue (systemd, `queue:restart`)
+- Disques de stockage (`public` vs `local` pour les documents membres)
+- Vérifications après déploiement, retour arrière, variables `.env`
+
+**Lire quand**: Vous mettez en production, vous configurez un nouveau serveur, un déploiement s'est mal passé.
+
+---
+
 ## 🚀 Pour commencer rapidement
 
 ### Je veux...
@@ -276,6 +289,7 @@ Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`
 - **Local setup**: [DEVELOPMENT_SETUP.md](./DEVELOPMENT_SETUP.md)
 - **Debugging**: [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 - **Security & roles**: [SECURITY.md](./SECURITY.md)
+- **Deploying**: [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ---
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Trainings\Policies;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Trainings\Models\Training;
 
 class TrainingPolicy
@@ -14,7 +15,7 @@ class TrainingPolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::TrainingsManage->value);
     }
 
     /**
@@ -22,7 +23,7 @@ class TrainingPolicy
      */
     public function delete(User $user, Training $training): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::TrainingsManage->value);
     }
 
     /**
@@ -30,7 +31,7 @@ class TrainingPolicy
      */
     public function forceDelete(User $user, Training $training): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::TrainingsManage->value);
     }
 
     /**
@@ -38,7 +39,7 @@ class TrainingPolicy
      */
     public function restore(User $user, Training $training): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::TrainingsManage->value);
     }
 
     /**
@@ -46,7 +47,7 @@ class TrainingPolicy
      */
     public function update(User $user, Training $training): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::TrainingsManage->value);
     }
 
     /**

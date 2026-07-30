@@ -13,10 +13,11 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Component;
 use Mary\Traits\Toast;
@@ -95,7 +96,7 @@ new class extends Component
 
     public function mount(): void
     {
-        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+        Gate::authorize(Permission::TeamsManage->value);
 
         $this->seasonId = Season::current()?->id;
     }
@@ -218,8 +219,8 @@ new class extends Component
 
     public function with(): array
     {
-        $allCompetitors = User::competitor()
-            ->orderBy('force_list')
+        $allCompetitors = User::interclubEligible()
+            ->orderBy(User::forceListColumn($this->teamCategory))
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get()
@@ -236,7 +237,7 @@ new class extends Component
             'competitors' => $allCompetitors,
             'eligibleCount' => $this->buildEligibleQuery()->count(),
             'missingBirthdateCount' => $this->teamCategory === 'VETERANS'
-                ? User::competitor()->whereNull('birthdate')->count()
+                ? User::interclubEligible()->whereNull('birthdate')->count()
                 : 0,
             'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c) => ['id' => $c->name, 'name' => $c->value]),
             'levelOptions' => collect(LeagueLevel::cases())->map(fn ($l) => ['id' => $l->name, 'name' => $l->value]),
@@ -254,10 +255,13 @@ new class extends Component
 
     private function buildEligibleQuery(): Builder
     {
-        $query = User::competitor()
-            // force_list (admin override) en premier quand défini, sinon tri par classement
-            ->orderByRaw('CASE WHEN force_list IS NULL THEN 1 ELSE 0 END')
-            ->orderBy('force_list')
+        // Tri par la liste de force de la catégorie (générale / dames / vétérans),
+        // les positions définies en premier, sinon repli sur le classement.
+        $forceColumn = User::forceListColumn($this->teamCategory);
+
+        $query = User::interclubEligible()
+            ->orderByRaw("CASE WHEN {$forceColumn} IS NULL THEN 1 ELSE 0 END")
+            ->orderBy($forceColumn)
             ->orderBy('ranking')
             ->orderBy('last_name')
             ->orderBy('first_name');
@@ -266,13 +270,7 @@ new class extends Component
             $query->where('gender', Gender::WOMEN->value);
         } elseif ($this->teamCategory === 'VETERANS') {
             $season = $this->seasonId ? Season::find($this->seasonId) : Season::current();
-
-            if ($season) {
-                $cutoff = $season->end_at->copy()->subYears(40);
-                $query->whereNotNull('birthdate')->where('birthdate', '<=', $cutoff->toDateString());
-            } else {
-                $query->whereRaw('1 = 0'); // aucune saison = aucun résultat
-            }
+            $query->veteran($season);
         }
 
         return $query;

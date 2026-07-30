@@ -8,13 +8,17 @@ use App\Actions\User\SendInvitationAction;
 use App\Actions\User\UpdateUserAction;
 use App\Data\User\CreateUserData;
 use App\Data\User\UpdateUserData;
-use App\Domains\ClubAdmin\Users\Models\Guardian;
+use App\Domains\ClubAdmin\Users\Models\FamilyGroup;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\Ranking;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Rules\ValidIban;
+use App\Domains\Shared\Rules\ValidPhone;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasPhotoUpload;
+use App\Livewire\Concerns\ManagesGuardians;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -35,7 +39,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasBreadcrumbs, HasPhotoUpload, Toast, WithFileUploads;
+    use HasBreadcrumbs, HasPhotoUpload, ManagesGuardians, Toast, WithFileUploads;
 
     public string $anonymizeConfirmText = '';
 
@@ -52,8 +56,30 @@ new class extends Component
 
     public ?string $committee_role = null;
 
-    #[Rule('required|email')]
+    /**
+     * Délégations held, as Role values. Duties, not a statutory title: they may be
+     * handed to anyone, committee member or not, and they stack.
+     *
+     * The rule keeps the payload well-formed; SyncUserRolesAction is what refuses
+     * a base role slipped in here, since that is a rule about the domain rather
+     * than about this form.
+     *
+     * @var array<int, string>
+     */
+    #[Rule(['array'])]
+    public array $delegations = [];
+
+    #[Validate()]
     public string $email = '';
+
+    public ?int $existingFamilyGroupId = null;
+
+    /** @var array<int> Linked family member ids (source of truth, synced on save). */
+    public array $familyMemberIds = [];
+
+    // Family
+
+    public string $familySearch = '';
 
     // Personal Info
 
@@ -62,23 +88,6 @@ new class extends Component
 
     #[Rule('required')]
     public ?Gender $gender = Gender::MEN;
-
-    public ?string $guardianEmail = null;
-
-    public string $guardianFirstName = '';
-
-    public ?string $guardianIban = null;
-
-    // Guardian (legal representatives for minors)
-
-    /** @var array<int> Linked guardian ids (source of truth, synced on save). */
-    public array $guardianIds = [];
-
-    public string $guardianLastName = '';
-
-    public string $guardianPhone = '';
-
-    public string $guardianSearch = '';
 
     // Club equipment
 
@@ -93,15 +102,9 @@ new class extends Component
     // Permissions
 
     #[Rule('required|boolean')]
-    public bool $is_coach = false;
-
-    #[Rule('required|boolean')]
     public bool $is_committee_member = false;
 
     // Registration
-
-    #[Rule('required|boolean')]
-    public bool $is_competitor = false;
 
     #[Rule('required|string')]
     public string $last_name = '';
@@ -109,64 +112,43 @@ new class extends Component
     #[Validate()]
     public ?string $licence = null;
 
-    #[Rule('nullable|string')]
-    public ?string $licence_type = null;
-
     // Security
     #[Validate()]
     public string $password = '';
 
     public string $password_confirmation = '';
 
-    #[Rule('required|string')]
+    #[Rule(['required', 'string', 'max:20', new ValidPhone])]
     public string $phone_number = '';
 
     public ?string $ranking = null;
-
-    public bool $showGuardianForm = false;
 
     #[Rule('required|string')]
     public string $street = '';
 
     public ?User $user = null;
 
-    public function attachGuardian(int $guardianId): void
+    public function attachFamilyMember(int $userId): void
     {
-        if (! in_array($guardianId, $this->guardianIds, true)) {
-            $this->guardianIds[] = $guardianId;
+        $candidate = User::findOrFail($userId);
+
+        if (FamilyGroup::conflictsWith($candidate, $this->allowedFamilyGroupId())) {
+            $this->error(__(':name is already part of another family. Remove them from their current family first.', ['name' => $candidate->first_name . ' ' . $candidate->last_name]));
+
+            return;
         }
 
-        $this->guardianSearch = '';
-        unset($this->linkedGuardians, $this->guardianSearchResults, $this->memberSearchResults);
-    }
+        // Joining someone who already has a family links the whole family.
+        $idsToLink = [$userId, ...$candidate->familyMembers()->pluck('id')->all()];
 
-    /**
-     * Link an existing club member as a guardian: reuse or create a Guardian
-     * record pre-filled from the member's data, keyed by user_id.
-     */
-    public function attachMemberAsGuardian(int $userId): void
-    {
-        Gate::authorize('create', Guardian::class);
-
-        $member = User::findOrFail($userId);
-
-        $guardian = Guardian::firstOrCreate(
-            ['user_id' => $member->id],
-            [
-                'first_name' => $member->first_name,
-                'last_name' => $member->last_name,
-                'phone' => $member->phone_number,
-                'email' => $member->email,
-                'iban' => $member->iban,
-            ],
-        );
-
-        if (! in_array($guardian->id, $this->guardianIds, true)) {
-            $this->guardianIds[] = $guardian->id;
+        foreach ($idsToLink as $idToLink) {
+            if ($idToLink !== $this->user?->id && ! in_array($idToLink, $this->familyMemberIds, true)) {
+                $this->familyMemberIds[] = $idToLink;
+            }
         }
 
-        $this->guardianSearch = '';
-        unset($this->linkedGuardians, $this->guardianSearchResults, $this->memberSearchResults);
+        $this->familySearch = '';
+        unset($this->familyMembers, $this->familySearchResults);
     }
 
     #[Computed()]
@@ -177,7 +159,7 @@ new class extends Component
 
     public function confirmAnonymize(): void
     {
-        abort_unless(Auth::user()->is_admin && Auth::user()->isNot($this->user), 403);
+        Gate::authorize('anonymize', $this->user);
 
         if (strtoupper($this->anonymizeConfirmText) !== 'ANONYMIZE') {
             $this->error(__('Type ANONYMIZE to confirm.'));
@@ -193,67 +175,61 @@ new class extends Component
         $this->success(__('User anonymized. All personal data has been erased.'), redirectTo: route('admin.users.index'));
     }
 
-    public function createGuardian(): void
+    /**
+     * @return array<int, array{value: string, label: string, description: string}>
+     */
+    #[Computed()]
+    public function delegationOptions(): array
     {
-        Gate::authorize('create', Guardian::class);
-
-        $validated = $this->validate([
-            'guardianFirstName' => ['required', 'string', 'max:255'],
-            'guardianLastName' => ['required', 'string', 'max:255'],
-            'guardianPhone' => ['required', 'string', 'max:30'],
-            'guardianEmail' => ['nullable', 'email', 'max:255'],
-            'guardianIban' => ['nullable', new ValidIban],
-        ]);
-
-        $guardian = Guardian::create([
-            'first_name' => $validated['guardianFirstName'],
-            'last_name' => $validated['guardianLastName'],
-            'phone' => $validated['guardianPhone'],
-            'email' => $validated['guardianEmail'] ?? null,
-            'iban' => $validated['guardianIban'] ?? null,
-        ]);
-
-        $this->guardianIds[] = $guardian->id;
-
-        $this->reset([
-            'guardianFirstName',
-            'guardianLastName',
-            'guardianPhone',
-            'guardianEmail',
-            'guardianIban',
-            'showGuardianForm',
-        ]);
-
-        unset($this->linkedGuardians, $this->guardianSearchResults, $this->memberSearchResults);
-
-        $this->success(__('Guardian added and linked.'));
+        return array_map(static fn (Role $role): array => [
+            'value' => $role->value,
+            'label' => $role->label(),
+            'description' => $role->description(),
+        ], Role::delegations());
     }
 
-    public function detachGuardian(int $guardianId): void
+    public function detachFamilyMember(int $userId): void
     {
-        $this->guardianIds = array_values(
-            array_filter($this->guardianIds, fn (int $id): bool => $id !== $guardianId)
+        $this->familyMemberIds = array_values(
+            array_filter($this->familyMemberIds, fn (int $id): bool => $id !== $userId)
         );
 
-        unset($this->linkedGuardians, $this->guardianSearchResults, $this->memberSearchResults);
+        unset($this->familyMembers, $this->familySearchResults);
     }
 
     /**
-     * Existing guardians matching the search box, excluding already-linked ones.
+     * Family members currently linked to the user (from in-memory selection).
      *
-     * @return Collection<int, Guardian>
+     * @return Collection<int, User>
      */
     #[Computed()]
-    public function guardianSearchResults(): Collection
+    public function familyMembers(): Collection
     {
-        $term = trim($this->guardianSearch);
+        if ($this->familyMemberIds === []) {
+            return collect();
+        }
+
+        return User::whereIn('id', $this->familyMemberIds)->get();
+    }
+
+    /**
+     * Club members matching the family search box, excluding the member being
+     * edited and already-linked family members. Any age is eligible.
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed()]
+    public function familySearchResults(): Collection
+    {
+        $term = trim($this->familySearch);
 
         if (mb_strlen($term) < 2) {
             return collect();
         }
 
-        return Guardian::query()
-            ->whereNotIn('id', $this->guardianIds)
+        return User::query()
+            ->when($this->user?->exists, fn ($query) => $query->whereKeyNot($this->user->id))
+            ->whereNotIn('id', $this->familyMemberIds)
             ->where(function ($query) use ($term): void {
                 $query->where('first_name', 'like', "%{$term}%")
                     ->orWhere('last_name', 'like', "%{$term}%")
@@ -275,55 +251,12 @@ new class extends Component
             && Carbon::parse($this->birthdate)->age < 18;
     }
 
-    /**
-     * Guardians currently linked to the member (from in-memory selection).
-     *
-     * @return Collection<int, Guardian>
-     */
-    #[Computed()]
-    public function linkedGuardians(): Collection
-    {
-        if ($this->guardianIds === []) {
-            return collect();
-        }
-
-        return Guardian::whereIn('id', $this->guardianIds)->get();
-    }
-
-    /**
-     * Adult club members matching the search box, who can be linked as a guardian.
-     * Excludes the member being edited, minors, and members already a guardian.
-     *
-     * @return Collection<int, User>
-     */
-    #[Computed()]
-    public function memberSearchResults(): Collection
-    {
-        $term = trim($this->guardianSearch);
-
-        if (mb_strlen($term) < 2) {
-            return collect();
-        }
-
-        return User::query()
-            ->when($this->user?->exists, fn ($query) => $query->whereKeyNot($this->user->id))
-            ->whereNotIn('id', Guardian::whereNotNull('user_id')->pluck('user_id'))
-            ->where(function ($query): void {
-                $query->whereNull('birthdate')
-                    ->orWhereDate('birthdate', '<=', now()->subYears(18));
-            })
-            ->where(function ($query) use ($term): void {
-                $query->where('first_name', 'like', "%{$term}%")
-                    ->orWhere('last_name', 'like', "%{$term}%")
-                    ->orWhere('email', 'like', "%{$term}%");
-            })
-            ->orderBy('last_name')
-            ->limit(8)
-            ->get();
-    }
-
     public function mount(?User $user): void
     {
+        // Defense in depth: the route already gates this behind the committee
+        // middleware, but guard the component itself in case it is mounted elsewhere.
+        Gate::authorize($user?->exists ? 'update' : 'create', $user ?? User::class);
+
         if ($user && $user->exists) {
             $this->first_name = $user->first_name ?? '';
             $this->last_name = $user->last_name ?? '';
@@ -336,16 +269,20 @@ new class extends Component
             $this->birthdate = $user->birthdate?->format('Y-m-d');
             $this->iban = $user->iban;
             $this->guardianIds = $user->guardians()->pluck('guardians.id')->all();
+            $this->existingFamilyGroupId = $user->familyGroups()->first()?->id;
+            $this->familyMemberIds = $user->familyMembers()->pluck('id')->all();
             $this->currentPhoto = $user->photo;
-            $this->licence_type = $user->is_competitor ? 'competitive' : 'recreative';
             $this->licence = $user->licence;
-            $this->ranking = $user->ranking ?? 'NA';
-            $this->is_competitor = $user->is_competitor;
-            $this->is_committee_member = $user->is_committee_member;
-            $this->is_coach = $user->is_coach;
-            $this->is_admin = $user->is_admin;
+            $this->ranking = $user->ranking ?? Ranking::NA->value;
+            $this->is_committee_member = $user->hasRole(Role::COMMITTEE->value);
+            $this->is_admin = $user->hasRole(Role::ADMINISTRATOR->value);
             $this->has_key = (bool) ($user->has_key ?? false);
             $this->committee_role = $user->committee_role?->value;
+            $this->delegations = $user->roles
+                ->pluck('name')
+                ->filter(static fn (string $name): bool => Role::tryFrom($name)?->isDelegation() ?? false)
+                ->values()
+                ->all();
         }
     }
 
@@ -360,9 +297,14 @@ new class extends Component
     public function resendInvitation(): void
     {
         abort_unless($this->user !== null, 404);
-        Gate::authorize('update', $this->user);
+        // Inviting is its own right, not a side effect of being allowed to edit.
+        Gate::authorize('sendEmail', User::class);
 
-        SendInvitationAction::handle($this->user);
+        if (! SendInvitationAction::handle($this->user)) {
+            $this->error(__('This member has no address of their own yet, so they cannot be invited.'));
+
+            return;
+        }
 
         $this->success(__('Invitation re-sent to :email.', ['email' => $this->user->email]));
     }
@@ -386,12 +328,15 @@ new class extends Component
                 'nullable',
                 ValidationRule::when($this->is_committee_member, ['required', new Enum(CommitteeRolesEnum::class)]),
             ],
+            'email' => [
+                'required',
+                'email',
+                ValidationRule::unique('users', 'email')->ignore($this->user?->id),
+            ],
             'licence' => [
                 'nullable',
-                ValidationRule::when(
-                    $this->licence_type === 'competitive',
-                    ['required', 'digits:6', ValidationRule::unique('users', 'licence')->ignore($this->user?->id)]
-                ),
+                'digits:6',
+                ValidationRule::unique('users', 'licence')->ignore($this->user?->id),
             ],
             'password' => [
                 // Si l'utilisateur existe, on autorise 'nullable', sinon 'required'
@@ -399,7 +344,7 @@ new class extends Component
                     ? 'nullable'
                     : 'required',
                 'confirmed',
-                Password::min(8)->letters()->numbers()->symbols()->uncompromised(),
+                Password::defaults(),
             ],
             'password_confirmation' => [
                 $this->user?->exists
@@ -411,16 +356,16 @@ new class extends Component
                 'boolean',
                 function ($attribute, $value, $fail): void {
                     $actor = Auth::user();
-                    $targetIsAdmin = $this->user?->is_admin ?? false;
+                    $targetIsAdmin = $this->user?->hasRole(Role::ADMINISTRATOR->value) ?? false;
 
-                    if ((bool) $value !== $targetIsAdmin && ! $actor?->is_admin) {
+                    if ((bool) $value !== $targetIsAdmin && ! $actor?->hasRole(Role::ADMINISTRATOR->value)) {
                         $fail(__('Only an administrator can change the administrator status.'));
 
                         return;
                     }
 
-                    if ($this->user?->is_admin && ! $value) {
-                        $remainingAdmins = User::where('is_admin', true)->whereKeyNot($this->user->id)->count();
+                    if ($targetIsAdmin && ! $value) {
+                        $remainingAdmins = User::role(Role::ADMINISTRATOR->value)->whereKeyNot($this->user->id)->count();
 
                         if ($remainingAdmins === 0) {
                             $fail(__('Cannot remove the last administrator. Promote another user first.'));
@@ -436,26 +381,15 @@ new class extends Component
             ],
             'ranking' => [
                 'nullable',
-                'string',
-                function ($attribute, $value, $fail): void {
-                    $isCompetitive = $this->licence_type === 'competitive' || $this->is_competitor;
-
-                    if ($isCompetitive && empty($value)) {
-                        $fail('Ranking is required for competitive players.');
-
-                        return;
-                    }
-
-                    if ($isCompetitive && $value === 'NA') {
-                        $fail('Ranking N/A is not allowed for competitors.');
-                    }
-                },
+                ValidationRule::in(array_column(Ranking::cases(), 'value')),
             ],
         ];
     }
 
     public function save(): void
     {
+        Gate::authorize($this->user?->exists ? 'update' : 'create', $this->user ?? User::class);
+
         try {
             $validated = $this->validate();
         } catch (ValidationException $e) {
@@ -472,11 +406,23 @@ new class extends Component
             );
         }
 
+        $allowedFamilyGroupId = $this->allowedFamilyGroupId();
+
+        foreach ($this->familyMemberIds as $familyMemberId) {
+            $candidate = User::find($familyMemberId);
+
+            if ($candidate && FamilyGroup::conflictsWith($candidate, $allowedFamilyGroupId)) {
+                $this->error(__(':name is already part of another family. Remove them from their current family first.', ['name' => $candidate->first_name . ' ' . $candidate->last_name]));
+
+                return;
+            }
+        }
+
         $minorWithoutGuardian = $this->isMinor && $this->guardianIds === [];
 
         $actor = Auth::user();
-        $licence = $this->licence_type === 'recreative' ? null : $this->licence;
-        $ranking = $this->licence_type === 'recreative' ? 'NA' : $this->ranking;
+        $licence = $this->licence;
+        $ranking = $this->ranking;
         $committeeRole = ($this->is_committee_member && $this->committee_role !== null && $this->committee_role !== '')
             ? CommitteeRolesEnum::from($this->committee_role)
             : null;
@@ -498,16 +444,16 @@ new class extends Component
                     birthdate: $this->birthdate,
                     guardian_phone_number: $this->user->guardian_phone_number,
                     iban: $this->iban,
-                    is_competitor: $this->is_competitor,
                     is_committee_member: $this->is_committee_member,
                     is_admin: $this->is_admin,
-                    is_coach: $this->is_coach,
                     has_key: $this->has_key,
                     licence: $licence,
                     ranking: $ranking,
                     committee_role: $committeeRole,
                     password: $this->password !== '' ? $this->password : null,
                     guardianIds: $this->guardianIds,
+                    familyMemberIds: $this->familyMemberIds,
+                    delegations: $this->delegations,
                 ),
                 $actor,
             );
@@ -533,13 +479,14 @@ new class extends Component
                     birthdate: $this->birthdate,
                     is_committee_member: $this->is_committee_member,
                     is_admin: $this->is_admin,
-                    is_coach: $this->is_coach,
                     has_key: $this->has_key,
                     licence: $licence,
                     ranking: $ranking,
                     committee_role: $committeeRole,
                     password: $this->password !== '' ? $this->password : null,
                     guardianIds: $this->guardianIds,
+                    familyMemberIds: $this->familyMemberIds,
+                    delegations: $this->delegations,
                 ),
                 $actor,
             );
@@ -569,20 +516,38 @@ new class extends Component
         $this->success(__('Password reset link sent to :email.', ['email' => $this->user->email]));
     }
 
-    public function updatedLicenceType(string $value): void
+    /**
+     * Pre-checks the duties usually handed over with a statutory title.
+     *
+     * A suggestion, never an automatism: the admin can uncheck any of them, and a
+     * treasurer who does not handle the cash box is a legitimate situation. Only
+     * adds — unchecking something then picking another title must not bring it back.
+     */
+    public function updatedCommitteeRole(): void
     {
-        $this->is_competitor = $value === 'competitive';
+        if ($this->committee_role === null || $this->committee_role === '') {
+            return;
+        }
 
-        // On nettoie uniquement les erreurs, pas les valeurs
-        $this->resetErrorBag(['licence', 'ranking']);
+        $title = CommitteeRolesEnum::tryFrom($this->committee_role);
+
+        if (! $title instanceof CommitteeRolesEnum) {
+            return;
+        }
+
+        $suggested = array_map(
+            static fn (Role $role): string => $role->value,
+            Role::suggestedFor($title),
+        );
+
+        $this->delegations = array_values(array_unique([...$this->delegations, ...$suggested]));
     }
 
     public function with(): array
     {
         return [
-            'licence_types' => collect([['id' => 'recreative', 'name' => __('Recreative')], ['id' => 'competitive', 'name' => __('Competitive')]]),
             'genders' => Gender::options(),
-            'rankings' => [['id' => 'NA', 'name' => 'N/A'], ['id' => 'B0', 'name' => 'B0'], ['id' => 'B2', 'name' => 'B2'], ['id' => 'B4', 'name' => 'B4'], ['id' => 'B6', 'name' => 'B6'], ['id' => 'C0', 'name' => 'C0'], ['id' => 'C2', 'name' => 'C2'], ['id' => 'C4', 'name' => 'C4'], ['id' => 'C6', 'name' => 'C6'], ['id' => 'D0', 'name' => 'D0'], ['id' => 'D2', 'name' => 'D2'], ['id' => 'D4', 'name' => 'D4'], ['id' => 'D6', 'name' => 'D6'], ['id' => 'E0', 'name' => 'E0'], ['id' => 'E2', 'name' => 'E2'], ['id' => 'E4', 'name' => 'E4'], ['id' => 'E6', 'name' => 'E6'], ['id' => 'NC', 'name' => 'NC']],
+            'rankings' => Ranking::options(),
             'quotes' => [
                 [
                     'text' => "A stranger is just a friend you haven't met yet.",
@@ -655,5 +620,25 @@ new class extends Component
             ->home()
             ->users()
             ->current($this->user?->exists ? __('Edit') : __('Create'));
+    }
+
+    /**
+     * The family group the edited user is (or will be) part of: their own group,
+     * or the group of an already-linked member when they are joining an existing
+     * family. Null while no family is established on either side.
+     */
+    private function allowedFamilyGroupId(): ?int
+    {
+        if ($this->existingFamilyGroupId !== null) {
+            return $this->existingFamilyGroupId;
+        }
+
+        if ($this->familyMemberIds === []) {
+            return null;
+        }
+
+        return FamilyGroup::query()
+            ->whereHas('users', fn ($query) => $query->whereIn('users.id', $this->familyMemberIds))
+            ->value('id');
     }
 };

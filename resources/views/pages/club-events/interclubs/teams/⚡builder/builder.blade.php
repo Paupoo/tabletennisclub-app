@@ -166,10 +166,10 @@
                                                 {{ $player->ranking }}
                                             </span>
                                         @endif
-                                        @if ($player->force_list !== null)
+                                        @if ($player->forceListFor($teamCategory) !== null)
                                             <span class="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-400"
                                                 title="Liste de force">
-                                                #{{ $player->force_list }}
+                                                #{{ $player->forceListFor($teamCategory) }}
                                             </span>
                                         @endif
 
@@ -251,10 +251,10 @@
                                                 {{ $player->ranking }}
                                             </span>
                                         @endif
-                                        @if ($player->force_list !== null)
+                                        @if ($player->forceListFor($teamCategory) !== null)
                                             <span class="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-400"
                                                 title="Liste de force">
-                                                #{{ $player->force_list }}
+                                                #{{ $player->forceListFor($teamCategory) }}
                                             </span>
                                         @endif
                                     </div>

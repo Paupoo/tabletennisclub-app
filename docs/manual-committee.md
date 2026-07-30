@@ -118,8 +118,7 @@ Go to **Website → Contacts**. Contacts submitted via the public club website f
 
 ### Contact statuses
 
-- **New** — just arrived, not yet processed
-- **Pending** — being handled (follow-up in progress)
+- **New** — just arrived or still being handled (follow-up in progress)
 - **Processed** — dealt with
 - **Rejected** — declined
 

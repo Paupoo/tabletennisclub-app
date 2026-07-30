@@ -518,7 +518,6 @@ class NewsPostSeeder extends Seeder
                     'category' => $articleData['category'],
                     'image' => $this->downloadPicsumImage($index + 1),
                     'status' => NewsPostStatusEnum::PUBLISHED,
-                    'is_public' => true,
                     'user_id' => $user->id,
                     'created_at' => $createdAt,
                     'updated_at' => $createdAt->copy()->addMinutes(rand(0, 30)),
@@ -559,7 +558,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::NEWS,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
             ],
             [
                 'title' => 'Compte-rendu de l\'assemblée générale de début de saison',
@@ -593,7 +591,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::NEWS,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => false,
             ],
             [
                 'title' => 'Nouveau partenariat avec l\'Optique Lemmens d\'Ottignies',
@@ -620,7 +617,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::PARTNERSHIP,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
             ],
             [
                 'title' => 'Portrait : Thomas Willems, la belle progression',
@@ -655,7 +651,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::PORTRAIT,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
             ],
             [
                 'title' => 'Stage de la Toussaint : 30 jeunes au programme',
@@ -688,7 +683,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::TRAINING,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
             ],
             [
                 'title' => 'Solide entrée en matière pour nos équipes interclubs',
@@ -725,7 +719,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::COMPETITION,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
             ],
             [
                 'title' => 'Journées portes ouvertes : le club fait salle comble',
@@ -754,7 +747,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::EVENT,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
             ],
             [
                 'title' => 'Défaite courageuse face au CTT Limal-Wavre (8-16)',
@@ -788,7 +780,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::COMPETITION,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
             ],
             [
                 'title' => 'Tournoi de Noël 2026 : une édition mémorable',
@@ -821,7 +812,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::EVENT,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
             ],
             [
                 'title' => 'Bilan financier du premier trimestre — réservé aux membres',
@@ -860,7 +850,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::NEWS,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => false,
             ],
             [
                 'title' => 'Présentation du nouveau bureau et des ambitions 2027',
@@ -892,7 +881,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::NEWS,
                 'status' => NewsPostStatusEnum::DRAFT,
-                'is_public' => false,
             ],
             [
                 'title' => 'Un nouveau créneau d\'entraînement le vendredi soir',
@@ -924,7 +912,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::TRAINING,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
             ],
             [
                 'title' => 'Emma Delforge : cinq ans de dévouement au CTT',
@@ -959,7 +946,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::PORTRAIT,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
             ],
             [
                 'title' => 'Soirée quiz inter-générations : un vrai succès !',
@@ -994,7 +980,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::EVENT,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
             ],
             [
                 'title' => 'Victoire nette face au TT Perwez (16-6)',
@@ -1030,7 +1015,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::COMPETITION,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
             ],
             [
                 'title' => 'Stage de Pâques avec Julien Sauvé, entraîneur national',
@@ -1062,7 +1046,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::TRAINING,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
             ],
             [
                 'title' => 'Le CTT rejoint le réseau Sport & Santé Brabant wallon',
@@ -1089,7 +1072,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::PARTNERSHIP,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
             ],
             [
                 'title' => 'Montée historique : le CTT accède à la provinciale 2 !',
@@ -1122,7 +1104,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::COMPETITION,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
             ],
             [
                 'title' => 'Projet de partenariat avec Decathlon Louvain-la-Neuve',
@@ -1145,7 +1126,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::PARTNERSHIP,
                 'status' => NewsPostStatusEnum::DRAFT,
-                'is_public' => false,
             ],
             [
                 'title' => 'Convocation à l\'assemblée générale de fin de saison',
@@ -1177,7 +1157,6 @@ class NewsPostSeeder extends Seeder
                     MD,
                 'category' => NewsPostCategoryEnum::NEWS,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => false,
             ],
         ];
 
@@ -1194,7 +1173,6 @@ class NewsPostSeeder extends Seeder
                     'category' => $articleData['category'],
                     'image' => $this->downloadPicsumImage($index + 21),
                     'status' => $articleData['status'],
-                    'is_public' => $articleData['is_public'],
                     'user_id' => $user->id,
                     'created_at' => $createdAt,
                     'updated_at' => $createdAt->copy()->addMinutes(rand(0, 30)),

@@ -9,6 +9,7 @@ use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -60,7 +61,7 @@ class EventList extends Component
             ->when($this->seasonId > 0, function (Builder $q) {
                 $season = $this->seasons->firstWhere('id', $this->seasonId);
                 if ($season) {
-                    $q->whereBetween('event_date', [$season->start_at->startOfDay(), $season->end_at->endOfDay()]);
+                    $q->whereBetween('event_date', $this->seasonDateRange($season));
                 }
             });
 
@@ -90,6 +91,31 @@ class EventList extends Component
             ->values();
     }
 
+    public function getNextSeasonProperty(): ?Season
+    {
+        $season = $this->seasons->firstWhere('id', $this->seasonId);
+
+        if (! $season) {
+            return null;
+        }
+
+        return Season::where('start_at', '>', $season->start_at)->orderBy('start_at')->first();
+    }
+
+    public function getPreviousSeasonProperty(): ?Season
+    {
+        $season = $this->seasons->firstWhere('id', $this->seasonId);
+
+        if (! $season) {
+            return null;
+        }
+
+        return $this->seasons
+            ->filter(fn (Season $s) => $s->start_at->lt($season->start_at))
+            ->sortByDesc('start_at')
+            ->first();
+    }
+
     public function mount(): void
     {
         $this->seasons = $this->loadSeasons();
@@ -106,7 +132,14 @@ class EventList extends Component
             'events' => $this->events,
             'activeFiltersCount' => $this->activeFiltersCount,
             'eventTypes' => $this->availableTypes(),
+            'previousSeason' => $this->previousSeason,
+            'nextSeason' => $this->nextSeason,
         ]);
+    }
+
+    public function viewSeason(int $seasonId): void
+    {
+        $this->seasonId = $seasonId;
     }
 
     private function availableTypes(): array
@@ -131,6 +164,23 @@ class EventList extends Component
             ->limit(5)
             ->get()
             ->when($currentSeason, fn (Collection $coll) => $coll->prepend($currentSeason));
+    }
+
+    /** @return array{0: Carbon, 1: Carbon} */
+    private function seasonDateRange(Season $season): array
+    {
+        $previousSeasonEnd = Season::where('start_at', '<', $season->start_at)->max('end_at');
+        $nextSeasonStart = Season::where('start_at', '>', $season->start_at)->min('start_at');
+
+        $start = $previousSeasonEnd
+            ? Carbon::parse($previousSeasonEnd)->addDay()->startOfDay()
+            : $season->start_at->copy()->startOfDay();
+
+        $end = $nextSeasonStart
+            ? Carbon::parse($nextSeasonStart)->subDay()->endOfDay()
+            : $season->end_at->copy()->endOfDay();
+
+        return [$start, $end];
     }
 
     /** @return int[] */

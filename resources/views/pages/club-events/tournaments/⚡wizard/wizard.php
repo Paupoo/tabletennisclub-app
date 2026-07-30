@@ -876,7 +876,7 @@ new class extends Component
                         'players' => $pool->pairs->map(fn ($pair) => [
                             'id' => $pair->id,
                             'name' => $pair->displayName(),
-                            'rank' => $pair->averageRanking(),
+                            'rank' => $pair->rankingLabel(),
                             'pts' => 0,
                         ])->toArray(),
                     ],

@@ -25,7 +25,6 @@ use Illuminate\Support\Carbon;
  * @property string|null $image
  * @property int $user_id
  * @property NewsPostStatusEnum $status
- * @property bool $is_public
  * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -43,7 +42,6 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereImage($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereIsPublic($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereSlug($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereTitle($value)
@@ -67,7 +65,6 @@ class NewsPost extends Model
         'category' => NewsPostCategoryEnum::class,
         'image' => 'string',
         'status' => NewsPostStatusEnum::class,
-        'is_public' => 'boolean',
         'user_id' => 'integer',
     ];
 
@@ -79,13 +76,23 @@ class NewsPost extends Model
         'category',
         'image',
         'status',
-        'is_public',
         'user_id',
     ];
 
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /**
+     * The posts the public site may serve. Keep the rule here, in one place:
+     * it used to be spelled out in the public list and forgotten entirely in
+     * the article page and the home page, which served drafts and archived
+     * posts to anonymous visitors.
+     */
+    public function scopePublished(Builder $query): void
+    {
+        $query->where('status', NewsPostStatusEnum::PUBLISHED);
     }
 
     public function scopeSearch(Builder $query, string $value): void

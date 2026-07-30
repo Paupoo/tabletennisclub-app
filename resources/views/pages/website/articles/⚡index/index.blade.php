@@ -13,31 +13,11 @@
         </x-slot:middle>
         <x-slot:actions>
             {{-- Mobile: 🔍 · filter · ☰ --}}
-            <div class="flex items-center gap-1 lg:hidden">
-                <button class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true">
-                    <x-icon name="o-magnifying-glass" class="h-5 w-5" />
-                </button>
-                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                    wire:click="$set('filterDrawer', true)">
-                    <x-icon name="o-funnel" class="h-5 w-5" />
-                    @if (count($filterChips) > 0)
-                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
-                    @endif
-                </button>
-                <button class="btn btn-primary btn-circle btn-sm" @click="mobileActionsOpen = true">
-                    <x-icon name="o-bars-3" class="h-5 w-5" />
-                </button>
-            </div>
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" />
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
-                <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                    icon="o-funnel" :label="__('Filters')"
-                    wire:click="$set('filterDrawer', true)">
-                    @if (count($filterChips) > 0)
-                        <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
-                    @endif
-                </x-button>
-                <x-button class="btn-primary" icon="o-plus" :label="__('New article')"
+                <x-admin.shared.filters-button :count="count($filterChips)" />
+                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New article')"
                     link="{{ route('admin.website.articles.create') }}" />
             </div>
         </x-slot:actions>
@@ -92,10 +72,10 @@
         <x-card class="shadow-sm">
             <div class="flex items-center gap-3">
                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/10">
-                    <x-icon name="o-pencil-square" class="h-5 w-5 text-warning" />
+                    <x-icon name="o-pencil-square" class="h-5 w-5 text-warning-content" />
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-warning">{{ $stats->draft ?? 0 }}</p>
+                    <p class="text-2xl font-bold text-warning-content">{{ $stats->draft ?? 0 }}</p>
                     <p class="text-xs text-base-content/40">{{ __('Drafts') }}</p>
                 </div>
             </div>
@@ -186,12 +166,7 @@
                 <x-table :headers="$headers" :rows="$articles" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
                     @scope('cell_title', $article)
-                        <div class="flex items-center gap-2">
-                            @if (!$article->is_public)
-                                <x-icon name="o-lock-closed" class="h-3.5 w-3.5 shrink-0 text-base-content/40" />
-                            @endif
-                            <span class="font-medium">{{ $article->title }}</span>
-                        </div>
+                        <span class="font-medium">{{ $article->title }}</span>
                     @endscope
                     @scope('cell_category_label', $article)
                         @if ($article->category)
@@ -256,7 +231,7 @@
             <x-button class="btn-ghost btn-sm" icon="o-check-circle" :label="__('Publish')"
                 wire:click="bulkPublish" spinner="bulkPublish" />
             <span class="text-base-content/20">|</span>
-            <x-button class="btn-ghost btn-sm text-warning" icon="o-archive-box" :label="__('Archive')"
+            <x-button class="btn-ghost btn-sm text-warning-content" icon="o-archive-box" :label="__('Archive')"
                 wire:click="confirmBulkArchive" />
         </x-slot:actions>
     </x-admin.shared.selection-pill>

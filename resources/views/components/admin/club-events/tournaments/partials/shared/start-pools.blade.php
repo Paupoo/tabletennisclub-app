@@ -4,9 +4,9 @@
 {{-- Stale config warning --}}
 @if ($this->poolsStale)
     <div class="mt-6 flex items-start gap-3 p-4 rounded-xl bg-warning/10 border border-warning/30">
-        <x-icon name="o-exclamation-triangle" class="w-5 h-5 text-warning shrink-0 mt-0.5" />
+        <x-icon name="o-exclamation-triangle" class="w-5 h-5 text-warning-content shrink-0 mt-0.5" />
         <div>
-            <p class="font-semibold text-sm text-warning">{{ __('Configuration changed') }}</p>
+            <p class="font-semibold text-sm text-warning-content">{{ __('Configuration changed') }}</p>
             <p class="text-xs text-base-content/60 mt-0.5">{{ __('Pool or match settings have been modified. Regenerate pools and matches before launching.') }}</p>
         </div>
     </div>

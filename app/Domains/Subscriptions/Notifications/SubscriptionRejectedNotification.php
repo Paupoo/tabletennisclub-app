@@ -23,8 +23,8 @@ class SubscriptionRejectedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Affiliation refusée'),
-            'body' => __('Votre demande d\'affiliation a été refusée'),
+            'title' => __('Affiliation rejected'),
+            'body' => __('Your affiliation request has been rejected'),
             'url' => '#',
             'category' => 'subscription',
             'icon' => 'o-identification',
@@ -36,25 +36,25 @@ class SubscriptionRejectedNotification extends Notification
         $season = $this->subscription->season;
 
         $mail = (new MailMessage)
-            ->subject(__('Affiliation :season — demande refusée', ['season' => $season->name]))
-            ->greeting(__('Bonjour :name,', ['name' => $notifiable->first_name]))
-            ->line(__('Votre demande d\'affiliation pour la saison **:season** a malheureusement été refusée.', ['season' => $season->name]));
+            ->subject(__('Affiliation :season — request rejected', ['season' => $season->name]))
+            ->greeting(__('Hello :name,', ['name' => $notifiable->first_name]))
+            ->line(__('Your affiliation request for season **:season** has unfortunately been rejected.', ['season' => $season->name]));
 
         if ($this->template === 'level') {
-            $mail->line(__('**Raison :** le niveau demandé ne correspond pas aux prérequis du groupe (trop fort ou trop faible).'));
+            $mail->line(__('**Reason:** the requested level does not match the prerequisites of the group (too strong or too weak).'));
         } elseif ($this->template === 'full_teams') {
-            $mail->line(__('**Raison :** les équipes de compétition sont complètes pour cette saison.'));
+            $mail->line(__('**Reason:** the competition teams are full for this season.'));
         }
 
         if (! empty($this->message)) {
             $mail->line('---')
-                ->line(__('**Message du secrétariat :**'))
+                ->line(__('**Message from the secretariat:**'))
                 ->line($this->message);
         }
 
         return $mail
             ->line('---')
-            ->line(__('N\'hésitez pas à contacter le secrétariat pour toute question ou pour soumettre une nouvelle demande.'));
+            ->line(__('Feel free to contact the secretariat with any question, or to submit a new request.'));
     }
 
     /** @return array<int, string> */

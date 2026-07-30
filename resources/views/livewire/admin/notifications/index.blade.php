@@ -7,7 +7,7 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">{{ __('Notifications') }}</h1>
-            <p class="text-gray-600 mt-1">{{ __('Gérez vos notifications') }}</p>
+            <p class="text-gray-600 mt-1">{{ __('Manage your notifications') }}</p>
         </div>
 
         @if ($unreadCount > 0)
@@ -15,7 +15,7 @@
                 wire:click="markAllAsRead"
                 class="btn btn-primary btn-sm"
             >
-                {{ __('Tout marquer comme lu') }}
+                {{ __('Mark all as read') }}
             </button>
         @endif
     </div>
@@ -26,13 +26,13 @@
             wire:click="$set('filter', 'all')"
             class="btn btn-sm @if ($filter === 'all') btn-active @else btn-ghost @endif"
         >
-            {{ __('Toutes') }}
+            {{ __('All notifications') }}
         </button>
         <button
             wire:click="$set('filter', 'unread')"
             class="btn btn-sm @if ($filter === 'unread') btn-active @else btn-ghost @endif"
         >
-            {{ __('Non lues') }} @if ($unreadCount > 0)<span class="badge badge-error">{{ $unreadCount }}</span>@endif
+            {{ __('Unread') }} @if ($unreadCount > 0)<span class="badge badge-error">{{ $unreadCount }}</span>@endif
         </button>
     </div>
 
@@ -76,7 +76,7 @@
         @empty
             <div class="text-center py-12">
                 <x-icon name="o-bell" class="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p class="text-gray-500">{{ __('Aucune notification') }}</p>
+                <p class="text-gray-500">{{ __('No notification') }}</p>
             </div>
         @endforelse
     </div>

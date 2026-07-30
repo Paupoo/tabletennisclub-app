@@ -99,11 +99,8 @@
             <x-input :label="__('Model')" wire:model.live.debounce="newTableModel"
                 placeholder="Ex: 2000 S Pro" />
 
-            <x-select :label="__('State')" wire:model.live.debounce="newTableState" :options="[
-                ['id' => 'new', 'name' => 'New'],
-                ['id' => 'used', 'name' => 'Used'],
-                ['id' => 'damaged', 'name' => 'Damaged'],
-            ]" required />
+            <x-select :label="__('State')" wire:model.live.debounce="newTableState"
+                :options="\App\Domains\ClubAdmin\Club\Models\Table::getStates()" required />
 
             <x-datepicker :label="__('Purchased on')" wire:model.live.debounce="newTablePurchasedOn" />
         </div>

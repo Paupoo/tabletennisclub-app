@@ -6,6 +6,7 @@ namespace App\Policies;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Permission;
 
 class RoomPolicy
 {
@@ -14,7 +15,7 @@ class RoomPolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::RoomsManage->value);
     }
 
     /**
@@ -22,7 +23,7 @@ class RoomPolicy
      */
     public function delete(User $user, Room $room): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::RoomsManage->value);
     }
 
     /**
@@ -30,7 +31,7 @@ class RoomPolicy
      */
     public function forceDelete(User $user, Room $room): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::RoomsManage->value);
     }
 
     /**
@@ -38,7 +39,7 @@ class RoomPolicy
      */
     public function restore(User $user, Room $room): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::RoomsManage->value);
     }
 
     /**
@@ -46,7 +47,7 @@ class RoomPolicy
      */
     public function update(User $user, Room $room): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::RoomsManage->value);
     }
 
     /**

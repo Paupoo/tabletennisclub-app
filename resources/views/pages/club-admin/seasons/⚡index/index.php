@@ -92,7 +92,7 @@ new class extends Component
                 'start_at' => Carbon::parse($this->createStartAt)->startOfDay(),
                 'end_at' => Carbon::parse($this->createEndAt)->endOfDay(),
                 'is_active' => false,
-                'registrations_open' => false,
+                'affiliations_open' => false,
             ]);
         } catch (DomainException $e) {
             $this->addError('createStartAt', __('These dates overlap with an existing season.'));

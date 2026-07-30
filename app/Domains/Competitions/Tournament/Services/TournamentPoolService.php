@@ -17,7 +17,7 @@ class TournamentPoolService
         $pairs = TournamentPair::where('tournament_id', $tournament->id)
             ->with(['player1', 'player2'])
             ->get()
-            ->sortBy(fn (TournamentPair $p) => $p->averageRanking())
+            ->sortBy(fn (TournamentPair $pair): int => $pair->seedIndex())
             ->values();
 
         if ($pairs->isEmpty()) {

@@ -7,9 +7,11 @@ namespace Resources\views\Pages\Website\Articles\Edit;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -31,8 +33,6 @@ new class extends Component
 
     public mixed $image = null;
 
-    public bool $isPublic = true;
-
     #[Locked]
     public ?int $newsPostId = null;
 
@@ -44,6 +44,8 @@ new class extends Component
 
     public function mount(?NewsPost $newsPost = null): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         if ($newsPost && $newsPost->exists) {
             $this->newsPostId = $newsPost->id;
             $this->title = $newsPost->title;
@@ -51,7 +53,6 @@ new class extends Component
             $this->content = $newsPost->content ?? '';
             $this->category = $newsPost->category?->value ?? '';
             $this->status = $newsPost->status?->value ?? 'draft';
-            $this->isPublic = (bool) $newsPost->is_public;
             $this->existingImage = $newsPost->image;
         }
     }
@@ -71,6 +72,8 @@ new class extends Component
 
     public function save(): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         $this->validate([
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', Rule::unique('news_posts', 'slug')->ignore($this->newsPostId)],
@@ -95,7 +98,6 @@ new class extends Component
             'content' => $this->content,
             'category' => $this->category,
             'status' => NewsPostStatusEnum::from($this->status),
-            'is_public' => $this->isPublic,
             'image' => $imagePath,
             'user_id' => Auth::id(),
         ];

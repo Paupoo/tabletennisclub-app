@@ -17,12 +17,18 @@ class SendPayementInvite
         $QRGenerator = new GeneratePaymentQR($payment);
         $payment = $payment->load('payable.user');
 
-        // Send an email with payment instructions
-        Mail::to($payment->payable->user)
-            ->send(
-                new PaymentInvitationEmail($payment
-                    ->load('payable.user', 'payable.season'))
-            );
+        // Send an email with payment instructions. A minor's invitation has to
+        // reach whoever actually pays it, hence the contact address and not the
+        // login one.
+        $recipient = $payment->payable->user->contactEmail();
+
+        if ($recipient !== null) {
+            Mail::to($recipient)
+                ->send(
+                    new PaymentInvitationEmail($payment
+                        ->load('payable.user', 'payable.season'))
+                );
+        }
 
         // Increment invitation counter
         $payment->invitation_counter++;

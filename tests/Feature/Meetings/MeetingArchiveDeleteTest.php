@@ -16,12 +16,12 @@ uses(RefreshDatabase::class);
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function archiveAdmin(): User
 {
-    return User::factory()->create(['is_admin' => true, 'is_committee_member' => true]);
+    return User::factory()->isAdmin()->isCommitteeMember()->create();
 }
 
 function archiveMember(): User
 {
-    return User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+    return User::factory()->create();
 }
 
 /** A meeting with at least one sent invitation. */

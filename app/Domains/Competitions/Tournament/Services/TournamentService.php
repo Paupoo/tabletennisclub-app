@@ -13,12 +13,14 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Competitions\Tournament\Notifications\TournamentConfirmationExpiredNotification;
+use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentExpiredNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentReminderNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentRequestNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationCancelledNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConfirmedNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistSpotOpenedNotification;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Jobs\SendDebtReminderNotification;
 use Illuminate\Support\Facades\DB;
@@ -132,8 +134,11 @@ class TournamentService
     }
 
     /**
-     * Expire unpaid registrations (72h window passed) and trigger waitlist.
-     * Called by the daily scheduler.
+     * Expire unpaid registrations whose payment deadline has passed and trigger
+     * the waitlist. The deadline is not a fixed window: it is set at registration
+     * time (see registerUser) to the registration-close date, or now + 3 days for
+     * a late sign-up, and no deadline at all for a same-day entry.
+     * Called by the hourly scheduler.
      */
     public function expirePaymentDeadlines(): void
     {
@@ -148,9 +153,14 @@ class TournamentService
                 ->where('id', $registration->id)
                 ->update(['registration_status' => 'cancelled']);
 
+            $user = User::find($registration->user_id);
             $tournament = Tournament::find($registration->tournament_id);
 
-            if ($tournament) {
+            if ($user && $tournament) {
+                // Tell the member their spot is gone — they got payment reminders
+                // before, so silence here reads as an oversight (I5). Mirrors
+                // expireConfirmationDeadlines().
+                $user->notify(new TournamentPaymentExpiredNotification($tournament));
                 $this->countRegisteredUsers($tournament);
                 $this->openSpot($tournament);
             }
@@ -419,7 +429,7 @@ class TournamentService
         User $user,
         Tournament $tournament,
     ): void {
-        User::where('is_committee_member', true)
+        User::role(Role::COMMITTEE->value)
             ->whereIn('committee_role', [
                 CommitteeRolesEnum::TREASURER->value,
                 CommitteeRolesEnum::SECRETARY->value,

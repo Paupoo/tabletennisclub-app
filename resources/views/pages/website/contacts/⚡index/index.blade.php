@@ -64,11 +64,10 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
-    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
         @php
             $statCards = [
                 ['label' => __('New'),       'key' => 'totalNew',       'bg' => 'bg-info/10',    'color' => 'text-info'],
-                ['label' => __('Pending'),   'key' => 'totalPending',   'bg' => 'bg-warning/10', 'color' => 'text-warning'],
                 ['label' => __('Processed'), 'key' => 'totalProcessed', 'bg' => 'bg-success/10', 'color' => 'text-success'],
                 ['label' => __('Rejected'),  'key' => 'totalRejected',  'bg' => 'bg-error/10',   'color' => 'text-error'],
             ];
@@ -94,14 +93,12 @@
             @php
                 $badgeClass = match ($contact->status) {
                     'new'       => 'badge-info badge-soft',
-                    'pending'   => 'badge-warning badge-soft',
                     'processed' => 'badge-success badge-soft',
                     'rejected'  => 'badge-error badge-soft',
                     default     => 'badge-ghost',
                 };
                 $statusLabel = match ($contact->status) {
                     'new'       => __('New'),
-                    'pending'   => __('Pending'),
                     'processed' => __('Processed'),
                     'rejected'  => __('Rejected'),
                     default     => $contact->status,
@@ -125,6 +122,9 @@
                     <div class="mt-0.5 flex items-center gap-2">
                         <x-badge :value="$statusLabel" class="{{ $badgeClass }} badge-sm" />
                         <span class="text-xs text-base-content/40">{{ $contact->email }}</span>
+                        @if ($this->matchedUserFor($contact))
+                            <x-badge :value="__('Already a member')" class="badge-success badge-soft badge-sm" />
+                        @endif
                     </div>
                 </x-slot:sub-value>
                 <x-slot:actions>
@@ -161,6 +161,9 @@
                     @endscope
                     @scope('cell_email', $contact)
                         <span class="text-sm text-base-content/60">{{ $contact->email }}</span>
+                        @if ($this->matchedUserFor($contact))
+                            <x-badge :value="__('Already a member')" class="badge-success badge-soft badge-sm ml-1" />
+                        @endif
                     @endscope
                     @scope('cell_interest', $contact)
                         @if ($contact->interest)
@@ -171,20 +174,18 @@
                         @php
                             $badgeClass = match ($contact->status) {
                                 'new'       => 'badge-info badge-soft',
-                                'pending'   => 'badge-warning badge-soft',
                                 'processed' => 'badge-success badge-soft',
                                 'rejected'  => 'badge-error badge-soft',
                                 default     => 'badge-ghost',
                             };
                             $statusLabel = match ($contact->status) {
                                 'new'       => __('New'),
-                                'pending'   => __('Pending'),
                                 'processed' => __('Processed'),
                                 'rejected'  => __('Rejected'),
                                 default     => $contact->status,
                             };
                         @endphp
-                        <x-badge :value="$statusLabel" class="{{ $badgeClass }}" />
+                        <x-badge :value="$statusLabel" class="{{ $badgeClass }} badge-sm" />
                     @endscope
                     @scope('cell_created_at', $contact)
                         <span class="text-xs text-base-content/40">
@@ -306,7 +307,7 @@
                         {{ __('Status') }}
                     </p>
                     <div class="flex flex-wrap gap-2">
-                        @foreach ([['new', __('New'), 'btn-info'], ['pending', __('Pending'), 'btn-warning'], ['processed', __('Processed'), 'btn-success'], ['rejected', __('Rejected'), 'btn-error']] as [$val, $label, $cls])
+                        @foreach ([['new', __('New'), 'btn-info'], ['processed', __('Processed'), 'btn-success'], ['rejected', __('Rejected'), 'btn-error']] as [$val, $label, $cls])
                             <x-button class="btn-sm btn-soft {{ $cls }} {{ $selectedContact->status === $val ? 'opacity-100' : 'opacity-40' }}"
                                 :label="$label" :disabled="! $canManage"
                                 wire:click="updateStatus({{ $selectedContact->id }}, '{{ $val }}')" />
@@ -350,10 +351,16 @@
 
                     @if (in_array($selectedContact->interest?->value, ['JOIN_US', 'TRIAL']) && $selectedContact->status !== 'processed')
                         <div class="border-base-200 border-t pt-3">
-                            <x-button class="btn-primary btn-sm w-full" icon="o-user-plus"
-                                :label="__('Onboard as member')"
-                                wire:click="onboardContact({{ $selectedContact->id }})"
-                                spinner />
+                            @if ($this->trashedMatchFor($selectedContact))
+                                <p class="text-warning text-xs">
+                                    {{ __('This email belongs to a former member account. Resolve this manually before onboarding.') }}
+                                </p>
+                            @else
+                                <x-button class="btn-primary btn-sm w-full" icon="o-user-plus"
+                                    :label="$this->matchedUserFor($selectedContact) ? __('Link to existing account') : __('Onboard as member')"
+                                    wire:click="onboardContact({{ $selectedContact->id }})"
+                                    spinner />
+                            @endif
                         </div>
                     @endif
 
@@ -388,6 +395,20 @@
     <x-confirm-modal model="deleteModal" :title="__('Delete this contact?')"
         :confirmLabel="__('Delete')" confirmAction="delete">
         <p>{{ __('This action is irreversible.') }}</p>
+    </x-confirm-modal>
+
+    {{-- ── Modal confirmation de lien vers un compte existant ──────────── --}}
+    <x-confirm-modal model="confirmLinkModal" :title="__('Link to existing account?')"
+        :confirmLabel="__('Link to existing account')" confirmClass="btn-primary" confirmAction="linkToExistingUser"
+        cancelAction="cancelLink">
+        @if ($linkTargetUser ?? null)
+            <p>
+                {{ __('This email matches an existing member: :name.', ['name' => $linkTargetUser->first_name . ' ' . $linkTargetUser->last_name]) }}
+            </p>
+            <p class="mt-2 text-xs opacity-60">
+                {{ __('A member account can only have one email address. Make sure this is the same person before linking.') }}
+            </p>
+        @endif
     </x-confirm-modal>
 
     {{-- ── Modal suppression bulk ───────────────────────────────────── --}}

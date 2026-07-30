@@ -101,6 +101,9 @@ class Meeting extends Model
     use HasAuditLog;
     use HasFactory;
 
+    /** Minutes lock older than this many minutes of inactivity is considered released. */
+    public const MINUTES_LOCK_MINUTES = 10;
+
     protected $casts = [
         'type' => MeetingTypeEnum::class,
         'status' => MeetingStatusEnum::class,
@@ -111,6 +114,8 @@ class Meeting extends Model
         'has_meal' => 'boolean',
         'postponed_to' => 'datetime',
         'archived_at' => 'datetime',
+        'minutes_editor_at' => 'datetime',
+        'poll_sent_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -133,7 +138,27 @@ class Meeting extends Model
         'postponed_to',
         'archived_at',
         'created_by',
+        'minutes_editor_id',
+        'minutes_editor_at',
+        'poll_sent_at',
     ];
+
+    /**
+     * Take (or refresh) the note-taking lock. Fails when someone else holds a fresh lock,
+     * unless $force is set (explicit takeover).
+     */
+    public function acquireMinutesLock(User $user, bool $force = false): bool
+    {
+        $holder = $this->minutesLockHolder();
+
+        if ($holder && $holder->id !== $user->id && ! $force) {
+            return false;
+        }
+
+        $this->update(['minutes_editor_id' => $user->id, 'minutes_editor_at' => now()]);
+
+        return true;
+    }
 
     public function actionItems(): HasMany
     {
@@ -270,6 +295,26 @@ class Meeting extends Model
     public function minutes(): HasOne
     {
         return $this->hasOne(MeetingMinutes::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function minutesEditor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'minutes_editor_id');
+    }
+
+    /** Who currently holds the note-taking lock, if it has not gone stale. */
+    public function minutesLockHolder(): ?User
+    {
+        if ($this->minutes_editor_id === null || $this->minutes_editor_at === null) {
+            return null;
+        }
+
+        if ($this->minutes_editor_at->lt(now()->subMinutes(self::MINUTES_LOCK_MINUTES))) {
+            return null;
+        }
+
+        return $this->minutesEditor;
     }
 
     public function quorumPercentage(): float

@@ -26,7 +26,7 @@ class TournamentWaitlistSpotOpenedNotification extends Notification
     {
         return [
             'title' => __('Place disponible : :name', ['name' => $this->tournament->name]),
-            'body' => __('Consultez les détails du tournoi'),
+            'body' => __('See the tournament details'),
             'url' => route('admin.tournaments.index'),
             'category' => 'tournament',
             'icon' => 'o-trophy',

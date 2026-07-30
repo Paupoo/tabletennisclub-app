@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Validation\Rules\Enum;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
@@ -68,10 +69,8 @@ new class extends Component
         $validated = $this->validate();
 
         $user = User::findOrFail($validated['selectedMemberId']);
-        $user->update([
-            'is_committee_member' => true,
-            'committee_role' => $validated['selectedRoleId']
-        ]);
+        $user->assignRole(Role::COMMITTEE->value);
+        $user->update(['committee_role' => $validated['selectedRoleId']]);
 
         $this->reset();
         $this->dispatch('member-added'); // 👈 Notifie le parent

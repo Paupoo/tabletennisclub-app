@@ -20,7 +20,10 @@
     @endif
 </head>
 
-<body class="bg-base-200 min-h-screen font-sans antialiased" x-data="{
+{{-- overflow-x-hidden: any page content wider than the screen must clip, not create
+horizontal scroll — otherwise Firefox mobile widens the layout viewport and every
+position:fixed overlay (notification sheet, drawers) gets cropped on the right. --}}
+<body class="bg-base-200 min-h-screen overflow-x-hidden font-sans antialiased" x-data="{
     dbTheme: '{{ $user->theme ?? 'auto' }}',
     init() {
         let currentTheme = localStorage.getItem('theme') || this.dbTheme;
@@ -82,6 +85,21 @@
 
     {{-- TOAST area --}}
     <x-toast position="toast-bottom toast-start" />
+
+    {{-- Session flash → Mary toast bridge: controllers redirecting with
+         ->with('success'|'error', …) surface as the same toasts Livewire uses. --}}
+    @if (session('success') || session('error'))
+        @php
+            $flashToast = Illuminate\Support\Js::from(['toast' => [
+                'title' => session('success') ?? session('error'),
+                'css' => session()->has('success') ? 'alert-success' : 'alert-error',
+                'icon' => svg(session()->has('success') ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle', 'w-7 h-7')->toHtml(),
+                'timeout' => 3000,
+                'position' => 'toast-bottom toast-start',
+            ]]);
+        @endphp
+        <div x-data x-init="toast({{ $flashToast }})"></div>
+    @endif
     @livewireScripts
 </body>
 

@@ -84,6 +84,7 @@ class InterclubSeeder extends Seeder
         $this->seedMen();
         $this->seedVeterans();
         $this->seedWomen();
+        $this->seedAlertMatches();
     }
 
     private function assignPlayers(Team $team, int $count): void
@@ -209,6 +210,33 @@ class InterclubSeeder extends Seeder
         return Team::firstOrCreate(
             ['name' => $teamLetter, 'season_id' => $this->season->id, 'league_id' => $league->id, 'club_id' => $opponentClub->id],
         );
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Always seed 2 upcoming matches (in 5 and 10 days) with too few available
+    // players, so the alert banner is always visible for testing/demo purposes.
+    // ─────────────────────────────────────────────────────────────────────────
+    private function seedAlertMatches(): void
+    {
+        $teams = Team::whereHas('club', fn ($q) => $q->where('is_own_club', true))
+            ->where('season_id', $this->season->id)
+            ->with(['league', 'users'])
+            ->take(2)
+            ->get();
+
+        foreach ($teams as $index => $team) {
+            $dateTime = now()->addDays($index === 0 ? 5 : 10)->setTime(20, 0)->format('Y-m-d H:i');
+            $opponent = $this->opponentTeam('TT Demo', chr(90 - $index), $team->league);
+            $interclub = $this->createInterclub($team, $opponent, $dateTime, true);
+
+            $players = $team->users()->get();
+            foreach ($players->take(1) as $player) {
+                $interclub->markAvailability($player, InterclubAvailability::AVAILABLE);
+            }
+            foreach ($players->skip(1) as $player) {
+                $interclub->markAvailability($player, InterclubAvailability::UNAVAILABLE);
+            }
+        }
     }
 
     private function seedAvailabilityAndSelections(Team $team, array $interclubs): void

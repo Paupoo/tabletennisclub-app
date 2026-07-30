@@ -110,8 +110,8 @@
         {{-- Notification fields --}}
         <div class="flex items-center gap-1.5 text-[11px]">
             @if ($hasPlayers)
-                <x-icon name="o-bell-alert" class="w-3.5 h-3.5 text-warning/80 shrink-0" />
-                <span class="text-warning/90 font-medium">{{ __('Date, time & rooms') }}</span>
+                <x-icon name="o-bell-alert" class="w-3.5 h-3.5 text-warning-content/80 shrink-0" />
+                <span class="text-warning-content/90 font-medium">{{ __('Date, time & rooms') }}</span>
                 <span class="text-base-content/40">—</span>
                 <span class="text-base-content/50">{{ __('registered players will be notified') }}</span>
             @else

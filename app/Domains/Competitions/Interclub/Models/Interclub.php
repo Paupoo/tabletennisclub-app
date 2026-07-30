@@ -124,6 +124,24 @@ class Interclub extends Model
         return $this->hasOne(InterclubResult::class);
     }
 
+    /**
+     * Whether this fixture is played by a team the given member captains.
+     *
+     * The relational half of "may compose this lineup": the permission says the
+     * member may select at all, this says which fixtures they may select for.
+     * Either side of the fixture counts — our team can be the visiting one.
+     */
+    public function isCaptainedBy(User $user): bool
+    {
+        $this->loadMissing(['visitedTeam', 'visitingTeam']);
+
+        return in_array(
+            $user->id,
+            array_filter([$this->visitedTeam?->captain_id, $this->visitingTeam?->captain_id]),
+            true,
+        );
+    }
+
     public function isHome(): bool
     {
         $this->loadMissing('visitedTeam.club');

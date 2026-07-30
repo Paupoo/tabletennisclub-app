@@ -17,6 +17,21 @@ use InvalidArgumentException;
 
 class TournamentMatchService
 {
+    /**
+     * AFTT handicap table: `[receiver ranking][opponent ranking] => points given`.
+     *
+     * Transcribed from the federal document and left as literal data on
+     * purpose. The rungs are not evenly spaced — B0 against C0 is worth 3
+     * points where B4 against C4 is worth 2 — so no formula over
+     * {@see Ranking} positions reproduces it, and any attempt to derive it
+     * would silently change what players receive on the table. Only its
+     * completeness is enforced, by the test that checks every ranking appears
+     * in both dimensions.
+     *
+     * @see https://bbw.aftt.be/wp-content/uploads/2014/02/handicaps-M-D.pdf
+     *
+     * @var array<string, array<string, int>>
+     */
     private array $handicapPoints = [
         'B0' => [
             'B0' => 0,
@@ -474,10 +489,10 @@ class TournamentMatchService
             return ['pair1_handicap' => 0, 'pair2_handicap' => 0];
         }
 
-        $valid = $this->isValidRanking($p1a->ranking ?? 'NC')
-            && $this->isValidRanking($p1b->ranking ?? 'NC')
-            && $this->isValidRanking($p2a->ranking ?? 'NC')
-            && $this->isValidRanking($p2b->ranking ?? 'NC');
+        $valid = $this->isValidRanking($p1a->ranking ?? Ranking::NC->value)
+            && $this->isValidRanking($p1b->ranking ?? Ranking::NC->value)
+            && $this->isValidRanking($p2a->ranking ?? Ranking::NC->value)
+            && $this->isValidRanking($p2b->ranking ?? Ranking::NC->value);
 
         if (! $valid) {
             return ['pair1_handicap' => 0, 'pair2_handicap' => 0];
@@ -923,12 +938,6 @@ class TournamentMatchService
      */
     private function isValidRanking(string $value): bool
     {
-        foreach (Ranking::cases() as $case) {
-            if ($case->name === $value) {
-                return true;
-            }
-        }
-
-        return false;
+        return Ranking::tryFrom($value) !== null;
     }
 }

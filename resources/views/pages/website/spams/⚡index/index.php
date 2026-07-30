@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Resources\views\Pages\Website\Spams\Index;
 
 use App\Domains\ClubAdmin\Contact\Models\Spam;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -46,11 +48,15 @@ new class extends Component
 
     public function bulkDelete(): void
     {
+        Gate::authorize(Permission::SpamsManage->value);
+
         if (empty($this->selected)) {
             return;
         }
 
-        $count = Spam::whereIn('id', $this->selected)->delete();
+        $spams = Spam::whereIn('id', $this->selected)->get();
+        $count = $spams->count();
+        $spams->each(fn (Spam $spam) => $spam->delete());
         $this->bulkDeleteModal = false;
         $this->clearSelection();
         $this->error(trans_choice('selectedCount', $count, ['count' => $count]) . ' ' . __('deleted.'));
@@ -78,6 +84,8 @@ new class extends Component
 
     public function delete(): void
     {
+        Gate::authorize(Permission::SpamsManage->value);
+
         Spam::findOrFail($this->deletingId)->delete();
         $this->deleteModal = false;
         $this->deletingId = null;

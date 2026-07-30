@@ -21,8 +21,8 @@ class TournamentWaitlistRemovedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __("Retiré de la liste d'attente : :name", ['name' => $this->tournament->name]),
-            'body' => __('Consultez les détails du tournoi'),
+            'title' => __('Removed from the waiting list: :name', ['name' => $this->tournament->name]),
+            'body' => __('See the tournament details'),
             'url' => route('admin.tournaments.index'),
             'category' => 'tournament',
             'icon' => 'o-trophy',

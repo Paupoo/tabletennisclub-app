@@ -25,8 +25,8 @@ class RefundRequestedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Remboursement demandé'),
-            'body' => __('Consultez vos paiements en attente'),
+            'title' => __('Refund requested'),
+            'body' => __('See your pending payments'),
             'url' => '#',
             'category' => 'payment',
             'icon' => 'o-credit-card',
@@ -36,7 +36,7 @@ class RefundRequestedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $amount = number_format((float) $this->payment->amount_due, 2);
-        $adminUrl = route('users.show', $this->member->id);
+        $adminUrl = route('admin.users.edit', $this->member->id);
 
         $mail = (new MailMessage)
             ->subject(__('Refund to process — :name', ['name' => $this->member->full_name]))
@@ -48,7 +48,7 @@ class RefundRequestedNotification extends Notification
             ->line(__('**Amount to refund: :amount €**', ['amount' => $amount]));
 
         if ($this->member->iban) {
-            $mail->line(__('**IBAN:** :iban', ['iban' => $this->member->iban]));
+            $mail->line(__('**IBAN:** :iban', ['iban' => $this->member->iban_formatted]));
         } else {
             $mail->line(__('No IBAN on file — please contact the member to obtain their bank details.'));
         }

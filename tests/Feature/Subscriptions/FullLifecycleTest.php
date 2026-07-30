@@ -21,7 +21,7 @@ describe('Flux A — new affiliation with training packs, one payment', function
 
     test('user submits affiliation + 2 packs → all pending, price not yet calculated', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
         $subscription = Subscription::factory()->create([
             'user_id' => $user->id,
@@ -380,7 +380,7 @@ describe('re-affiliation after admin rejection', function (): void {
         Notification::fake();
 
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
         $first = Subscription::factory()->create([
             'user_id' => $user->id,

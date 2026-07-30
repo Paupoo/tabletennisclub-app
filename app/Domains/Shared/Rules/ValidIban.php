@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Shared\Rules;
 
+use App\Domains\Shared\Support\IbanNormalizer;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Translation\PotentiallyTranslatedString;
@@ -21,7 +22,7 @@ class ValidIban implements ValidationRule
      */
     public static function check(string $iban): bool
     {
-        $iban = strtoupper(str_replace([' ', '-'], '', $iban));
+        $iban = IbanNormalizer::normalize($iban) ?? '';
 
         if (strlen($iban) < 15 || strlen($iban) > 34) {
             return false;

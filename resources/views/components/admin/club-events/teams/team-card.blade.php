@@ -72,12 +72,12 @@
         <div class="flex gap-0.5">
             <x-button class="btn-ghost btn-xs text-base-content/50 hover:text-base-content" icon="o-eye" :label="__('Details')"
                 link="{{ $showRoute }}" />
-            @if (auth()->user()->is_admin || auth()->user()->is_committee_member)
+            @if (auth()->user()->can('teams.manage'))
                 <x-button class="btn-ghost btn-xs text-base-content/50 hover:text-base-content" icon="o-pencil" label="Modifier"
                     link="{{ $editRoute }}" />
             @endif
         </div>
-        @if (auth()->user()->is_admin || auth()->user()->is_committee_member)
+        @if (auth()->user()->can('teams.manage'))
             <x-button class="btn-ghost btn-xs text-error hover:opacity-80" icon="o-trash"
                 wire:click="confirmDelete({{ $team->id }})" />
         @endif

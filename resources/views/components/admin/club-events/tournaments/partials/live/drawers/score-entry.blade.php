@@ -79,20 +79,20 @@
         {{-- Handicap info bar --}}
         @if ($tournament->has_handicap_points && ($hp1 > 0 || $hp2 > 0))
             <div class="rounded-xl border border-warning/40 bg-warning/10 p-3 mb-4">
-                <p class="text-[10px] font-bold uppercase tracking-widest text-warning text-center mb-2">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-warning-content text-center mb-2">
                     {{ __('Handicap per set — starting scores') }}
                 </p>
                 <div class="flex justify-between items-center">
                     <div class="flex-1 text-center">
                         <div class="text-[10px] font-bold opacity-60 truncate">{{ $side1Name }}</div>
-                        <div @class(['text-2xl font-extrabold leading-none', 'text-warning' => $hp1 > 0, 'text-base-content/30' => $hp1 === 0])>
+                        <div @class(['text-2xl font-extrabold leading-none', 'text-warning-content' => $hp1 > 0, 'text-base-content/30' => $hp1 === 0])>
                             +{{ $hp1 }}
                         </div>
                     </div>
                     <div class="text-[10px] font-bold opacity-40 uppercase">pts</div>
                     <div class="flex-1 text-center">
                         <div class="text-[10px] font-bold opacity-60 truncate">{{ $side2Name }}</div>
-                        <div @class(['text-2xl font-extrabold leading-none', 'text-warning' => $hp2 > 0, 'text-base-content/30' => $hp2 === 0])>
+                        <div @class(['text-2xl font-extrabold leading-none', 'text-warning-content' => $hp2 > 0, 'text-base-content/30' => $hp2 === 0])>
                             +{{ $hp2 }}
                         </div>
                     </div>

@@ -8,11 +8,12 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\AgeCategoryEnum;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\PlayerExperienceEnum;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 
 beforeEach(function (): void {
-    $this->admin = User::factory()->create(['is_admin' => true]);
+    $this->admin = User::factory()->isAdmin()->create();
 });
 
 describe('contact profile capture (drawer)', function (): void {
@@ -249,9 +250,7 @@ describe('inbox filters', function (): void {
 
 describe('authorization', function (): void {
     it('lets a secretary manage the contact profile', function (): void {
-        $secretary = User::factory()->create([
-            'is_admin' => false,
-            'is_committee_member' => true,
+        $secretary = User::factory()->isCommitteeMember()->withRole(Role::CONTACTS)->create([
             'committee_role' => CommitteeRolesEnum::SECRETARY,
         ]);
         $contact = Contact::factory()->create();
@@ -267,7 +266,6 @@ describe('authorization', function (): void {
 
     it('forbids a non-manager committee member from editing the profile', function (): void {
         $treasurer = User::factory()->create([
-            'is_admin' => false,
             'committee_role' => CommitteeRolesEnum::TREASURER,
         ]);
         $contact = Contact::factory()->create(['age_category' => AgeCategoryEnum::CHILD]);
@@ -285,7 +283,6 @@ describe('authorization', function (): void {
     it('forbids a non-manager committee member from sending email', function (): void {
         Mail::fake();
         $treasurer = User::factory()->create([
-            'is_admin' => false,
             'committee_role' => CommitteeRolesEnum::TREASURER,
         ]);
         $contact = Contact::factory()->create(['status' => 'new']);

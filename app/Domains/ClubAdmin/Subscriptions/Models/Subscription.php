@@ -159,6 +159,19 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     public function cancel(): void
     {
         $this->getCurrentState()->cancel($this);
+
+        // A cancelled affiliation voids its training-pack enrolments too: without
+        // this they stay stuck on "pending" and the registration history keeps
+        // showing a training that no longer stands.
+        //
+        // `left` is spared: the member did attend those months, and the line is
+        // already terminal. Overwriting it would erase the very history the
+        // status was introduced to keep.
+        $this->trainingPacks()
+            ->wherePivotNotIn('status', ['cancelled', 'left'])
+            ->get()
+            ->each(fn (TrainingPack $pack) => $this->trainingPacks()
+                ->updateExistingPivot($pack->id, ['status' => 'cancelled']));
     }
 
     public function canGeneratePayment(): bool
@@ -236,8 +249,39 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
         $this->getCurrentState()->markAsPaid($this);
     }
 
+    // ==================== Others ====================
+
+    /**
+     * Ce que le membre a réellement versé, net des remboursements déjà engagés.
+     *
+     * {@see totalPaid()} compte les paiements de remboursement comme de
+     * l'argent entrant : un `to_refund` annulé repasse en `paid`, et un
+     * remboursement exécuté finit lui aussi en `paid`/`refunded`. S'en servir
+     * pour décider d'un nouveau remboursement rembourserait deux fois.
+     *
+     * Le sens de l'argent est porté par `payment_method`, pas par le statut.
+     */
+    public function netAmountPaid(): float
+    {
+        $received = (float) $this->payments()
+            ->where(fn ($q) => $q->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
+            ->whereIn('status', ['paid', 'refunded'])
+            ->sum('amount_paid');
+
+        // Un `to_refund` compte déjà comme sorti : la demande est dans le
+        // circuit trésorerie, la rejouer créerait un doublon.
+        $refunded = (float) $this->payments()
+            ->where('payment_method', 'refund')
+            ->whereIn('status', ['to_refund', 'paid', 'refunded'])
+            ->sum('amount_paid');
+
+        return round(($received - $refunded) / 100, 2);
+    }
+
     /**
      * Tous les paiements associés à cette subscription
+     *
+     * @return MorphMany<Payment, $this>
      */
     public function payments(): MorphMany
     {
@@ -250,14 +294,33 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     }
 
     /**
-     * Scope pour récupérer les subscriptions actives (payées)
+     * Scope pour récupérer les subscriptions des membres actifs du club.
+     *
+     * Un membre est actif dès que son inscription est confirmée : les statuts
+     * pending, cancelled et refunded ne comptent pas dans les effectifs.
+     * Aligné sur User::scopeActive().
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('status', 'paid');
+        // Colonne qualifiée : le pivot subscription_training_pack porte lui aussi
+        // une colonne status, et un whereIn nu serait ambigu dans la jointure.
+        return $query->whereIn($query->qualifyColumn('status'), ['confirmed', 'paid']);
     }
 
     // ==================== Scopes ====================
+
+    /**
+     * Scope pour récupérer les inscriptions encore en cours.
+     *
+     * Une inscription affiliée empêche d'en créer une nouvelle pour la même
+     * saison. Les états terminaux (cancelled, refunded) en sont exclus : ils
+     * n'engagent plus le membre et le laissent libre de se réinscrire.
+     * Aligné sur User::scopeAffiliatedForCurrentSeason().
+     */
+    public function scopeAffiliated(Builder $query): Builder
+    {
+        return $query->whereIn($query->qualifyColumn('status'), ['pending', 'confirmed', 'paid']);
+    }
 
     /**
      * Scope pour récupérer les inscriptions dont le membre se porte volontaire comme capitaine d'équipe.
@@ -322,22 +385,32 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
         );
     }
 
-    // ==================== Others ====================
-
     /**
-     * Calcule le total payé via tous les payments
+     * Calcule le total payé (en euros) via tous les payments.
+     * La colonne amount_paid est stockée en centimes.
      */
     public function totalPaid(): float
     {
-        return (float) $this->payments()
+        return round(((float) $this->payments()
             ->whereIn('status', ['paid', 'refunded'])
-            ->sum('amount_paid');
+            ->sum('amount_paid')) / 100, 2);
     }
 
+    /**
+     * @return BelongsToMany<TrainingPack, $this>
+     */
     public function trainingPacks(): BelongsToMany
     {
         return $this->belongsToMany(TrainingPack::class)
-            ->withPivot(['status', 'waitlist_position', 'confirmation_deadline', 'discount'])
+            ->withPivot([
+                'status',
+                'waitlist_position',
+                'confirmation_deadline',
+                'starts_on',
+                'ends_on',
+                'override_amount',
+                'override_reason',
+            ])
             ->withTimestamps();
     }
 
@@ -346,17 +419,27 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
         $this->getCurrentState()->unconfirm($this);
     }
 
+    /**
+     * Une cotisation est un historique financier : le membre doit rester
+     * résolvable même après un soft delete de son compte.
+     */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     // ==================== Accessors/Mutators ====================
+
+    /**
+     * Les montants au pro rata tombent rarement sur un compte rond, et
+     * `(int) ($value * 100)` tronque : 71.43 € se stocke 7142 centimes parce
+     * que le flottant vaut 7142.999…. On arrondit, comme {@see Payment}.
+     */
     protected function amountDue(): Attribute
     {
         return Attribute::make(
             get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
-            set: fn (int|float $value): int => (int) ($value * 100),
+            set: fn (int|float $value): int => (int) round($value * 100),
         );
     }
 
@@ -364,7 +447,7 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     {
         return Attribute::make(
             get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
-            set: fn (int|float $value): int => (int) ($value * 100),
+            set: fn (int|float $value): int => (int) round($value * 100),
         );
     }
 
@@ -372,7 +455,7 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     {
         return Attribute::make(
             get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
-            set: fn (float|int $value): int => (int) ($value * 100),
+            set: fn (float|int $value): int => (int) round($value * 100),
         );
     }
 

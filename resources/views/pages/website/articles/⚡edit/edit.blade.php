@@ -26,10 +26,6 @@
                         wire:model="category" placeholder="Choisir…" />
                     <x-select label="Statut" :options="$statusOptions"
                         wire:model="status" />
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-gray-700">Visible publiquement</span>
-                        <x-toggle wire:model="isPublic" />
-                    </div>
                 </div>
             </x-card>
 

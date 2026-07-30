@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Interclub\Notifications;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -22,8 +23,8 @@ class InterclubSelectionNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Vous êtes sélectionné'),
-            'body' => __('Consultez les détails du match'),
+            'title' => __('You are selected'),
+            'body' => __('See the match details'),
             'url' => route('admin.interclubs.my-matches'),
             'category' => 'interclub',
             'icon' => 'o-user-group',
@@ -37,6 +38,7 @@ class InterclubSelectionNotification extends Notification
 
         $ourTeam = $interclub->ourTeam();
         $ourTeamName = $ourTeam?->fullName() ?? '—';
+        $category = $ourTeam?->league?->category;
         $opponent = $interclub->opponentTeam()?->fullName() ?? '—';
         $venue = $interclub->isHome() ? __('Home') : __('Away');
         $dateStr = $interclub->start_date_time->format('d/m/Y') . ' ' . __('at') . ' ' . $interclub->start_date_time->format('H:i');
@@ -58,6 +60,7 @@ class InterclubSelectionNotification extends Notification
                 'address' => $address,
                 'venue' => $venue,
                 'selectedPlayers' => $selectedPlayers,
+                'category' => $category,
                 'captainMessage' => $this->captainMessage,
             ])
             ->attachData($ics, 'interclub.ics', ['mime' => 'text/calendar']);
@@ -66,6 +69,11 @@ class InterclubSelectionNotification extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
+        // Optional notification: honour the member's opt-out preference.
+        if ($notifiable instanceof User && ! $notifiable->wantsNotification('interclub_selections')) {
+            return [];
+        }
+
         return ['mail', 'database'];
     }
 

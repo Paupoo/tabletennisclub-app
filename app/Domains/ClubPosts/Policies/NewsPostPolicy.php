@@ -6,6 +6,7 @@ namespace App\Domains\ClubPosts\Policies;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\NewsPost;
+use App\Domains\Shared\Enums\Permission;
 
 class NewsPostPolicy
 {
@@ -14,7 +15,7 @@ class NewsPostPolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::NewsPostsManage->value);
     }
 
     /**
@@ -22,7 +23,7 @@ class NewsPostPolicy
      */
     public function delete(User $user, NewsPost $newsPost): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::NewsPostsManage->value);
     }
 
     /**
@@ -46,14 +47,18 @@ class NewsPostPolicy
      */
     public function update(User $user, NewsPost $article): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::NewsPostsManage->value);
     }
 
     /**
      * Determine whether the user can permanently delete the model.
      */
+    /**
+     * Back-office reading of an article, drafts included — the public site does
+     * not go through the policy. Was a `return false` stub with no call site.
+     */
     public function view(User $user, NewsPost $article): bool
     {
-        return false;
+        return $user->can(Permission::NewsPostsView->value);
     }
 }

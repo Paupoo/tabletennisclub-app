@@ -15,6 +15,7 @@ use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
 use App\Domains\Competitions\Tournament\Services\TournamentTableService;
 use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Mail\TournamentResultsMail;
@@ -132,7 +133,7 @@ new class extends Component
     {
         $user = auth()->user();
 
-        return $user instanceof User && ($user->is_admin || $user->is_committee_member);
+        return $user instanceof User && $user->can(Permission::TournamentsLiveManage->value);
     }
 
     public function closeTournament(): void
@@ -181,7 +182,6 @@ new class extends Component
                 'content' => $this->newsPostContent,
                 'category' => NewsPostCategoryEnum::COMPETITION,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => false,
                 'image' => $imagePath,
                 'user_id' => auth()->id(),
             ]);

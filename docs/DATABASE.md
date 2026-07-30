@@ -220,7 +220,7 @@ erDiagram
 
 #### `news_posts`
 - `id`, `title`, `slug`, `content`, `category`, `image`
-- `user_id`, `status` (draft/published), `is_public`
+- `user_id`, `status` (draft/published/archived)
 - `deleted_at`
 
 #### `event_posts` (Posts polymorphes)

@@ -8,6 +8,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\InterclubAvailability;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -95,6 +96,18 @@ it('captain can access the captain selection page', function (): void {
         ->assertOk();
 });
 
+/**
+ * Régression #31 : la liste des rencontres est en overflow-hidden, une bulle
+ * positionnée au-dessus du bouton y était rognée et illisible.
+ */
+it('anchors the availability request tooltip to the left so the list does not clip it', function (): void {
+    $this->actingAs($this->captain)
+        ->get(route('admin.interclubs.captain-selection'))
+        ->assertOk()
+        ->assertSee('lg:tooltip-left', escape: false)
+        ->assertDontSee('lg:tooltip-top', escape: false);
+});
+
 it('non-captain user cannot access the captain selection page', function (): void {
     $nonCaptain = User::factory()->isCompetitor()->create();
 
@@ -129,7 +142,7 @@ it('openSelection silently ignores past interclubs', function (): void {
 });
 
 it('is_selector user can access the captain selection page and sees all teams', function (): void {
-    $selector = User::factory()->create(['is_selector' => true]);
+    $selector = User::factory()->isSelector()->create();
 
     $this->actingAs($selector)
         ->get(route('admin.interclubs.captain-selection'))
@@ -167,6 +180,110 @@ it('matchDayMap scopes week numbers to own club teams only', function (): void {
 
     expect($map)->toHaveKey(10)
         ->and($map)->not->toHaveKey(20);
+});
+
+it('shows team players contact details to the captain even when unshared', function (): void {
+    // player1 shares nothing (opt-in default) — the captain still needs their
+    // contact to organise the selection.
+    $this->player1->update([
+        'phone_number' => '0470999888',
+        'email' => 'captain.player1@club.be',
+        'contact_visibility' => null,
+    ]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->assertSee('0470999888')
+        ->assertSee('captain.player1@club.be');
+});
+
+// ── substitute search: explain why the list is empty (I2) ─────────────────────
+
+describe('substitute search — explains the silent filtering (I2)', function (): void {
+    // The substitute search is a selector/committee feature (a plain captain has
+    // no access to it), so these tests act as a selector.
+    beforeEach(function (): void {
+        $this->selector = User::factory()->isSelector()->create();
+    });
+
+    function openSelectorSearch(User $selector, int $interclubId, int $teamId, string $search)
+    {
+        return Livewire::actingAs($selector)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->set('selectedTeamId', $teamId)
+            ->call('openSelection', $interclubId)
+            ->set('search', $search);
+    }
+
+    it('tells the selector the team category is hiding matching players', function (): void {
+        // beforeEach sets the team up in a MEN league. A female competitor whose
+        // name matches the search is silently filtered out by category.
+        User::factory()->isCompetitor()->create([
+            'gender' => Gender::WOMEN,
+            'last_name' => 'Zoravitch',
+        ]);
+
+        $component = openSelectorSearch($this->selector, $this->interclub->id, $this->team->id, 'Zoravitch');
+
+        expect($component->viewData('searchResults'))->toBeEmpty()
+            ->and($component->viewData('searchNote'))->not->toBeNull();
+
+        $component->assertSee(__('this team only lines up men'));
+    });
+
+    it('tells the selector a matching player is already lined up elsewhere', function (): void {
+        // A male competitor of the right category, but already selected in another
+        // team the same week -> blocked and silently removed from the results.
+        $blocked = User::factory()->isCompetitor()->create([
+            'gender' => Gender::MEN,
+            'last_name' => 'Blockman',
+        ]);
+
+        $otherTeam = Team::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $this->league->id,
+            'club_id' => $this->ownClub->id,
+        ]);
+
+        $otherMatch = Interclub::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $this->league->id,
+            'visited_team_id' => $otherTeam->id,
+            'week_number' => $this->interclub->week_number,
+            'total_players' => 4,
+            'start_date_time' => now()->addDays(7),
+        ]);
+        $otherMatch->users()->attach($blocked->id, ['is_selected' => true]);
+
+        $component = openSelectorSearch($this->selector, $this->interclub->id, $this->team->id, 'Blockman');
+
+        expect($component->viewData('searchResults'))->toBeEmpty()
+            ->and($component->viewData('searchNote'))->not->toBeNull();
+
+        $component->assertSee(__('some are already selected here or lined up in another team this week'));
+    });
+
+    it('stays silent when no competitor matches the search at all', function (): void {
+        $component = openSelectorSearch($this->selector, $this->interclub->id, $this->team->id, 'Nobodyhere');
+
+        expect($component->viewData('searchResults'))->toBeEmpty()
+            ->and($component->viewData('searchNote'))->toBeNull();
+
+        $component->assertSee(__('No player found.'));
+    });
+
+    it('still returns an eligible substitute of the right category', function (): void {
+        $man = User::factory()->isCompetitor()->create([
+            'gender' => Gender::MEN,
+            'last_name' => 'Eligibleman',
+        ]);
+
+        $component = openSelectorSearch($this->selector, $this->interclub->id, $this->team->id, 'Eligibleman');
+
+        expect(collect($component->viewData('searchResults'))->pluck('id'))->toContain($man->id)
+            ->and($component->viewData('searchNote'))->toBeNull();
+    });
 });
 
 // ── Status logic tests ──────────────────────────────────────────────────────
@@ -278,4 +395,71 @@ it('has_played flag counts as a played match in matchesPlayedCount', function ()
         'user_id' => $this->player1->id,
         'has_played' => false,
     ]);
+});
+
+// ── saveSelection: completeness + update-mode detection ─────────────────────
+
+it('does not open the notify modal when saving an incomplete selection', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('saveSelection')
+        ->assertSet('modalMessage', false)
+        ->assertSet('isUpdateMode', false);
+
+    $this->assertDatabaseHas('interclub_user', [
+        'interclub_id' => $this->interclub->id,
+        'user_id' => $this->player1->id,
+        'is_selected' => true,
+    ]);
+});
+
+it('opens the notify modal when saving a complete first-time selection', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->assertSet('modalMessage', true)
+        ->assertSet('isUpdateMode', false);
+});
+
+it('detects added and removed players when editing an already confirmed selection', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+    $this->interclub->select($this->player1);
+    $this->interclub->select($this->player2);
+    $this->interclub->users()->updateExistingPivot($this->player1->id, ['selection_confirmed_at' => now()]);
+    $this->interclub->users()->updateExistingPivot($this->player2->id, ['selection_confirmed_at' => now()]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->outsider->id)
+        ->call('saveSelection')
+        ->assertSet('isUpdateMode', true)
+        ->assertSet('pendingAddedIds', [$this->outsider->id])
+        ->assertSet('pendingRemovedIds', [$this->player1->id])
+        ->assertSet('modalMessage', true);
+});
+
+it('does not reopen the modal when re-saving an unchanged confirmed selection', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+    $this->interclub->select($this->player1);
+    $this->interclub->select($this->player2);
+    $this->interclub->users()->updateExistingPivot($this->player1->id, ['selection_confirmed_at' => now()]);
+    $this->interclub->users()->updateExistingPivot($this->player2->id, ['selection_confirmed_at' => now()]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('saveSelection')
+        ->assertSet('modalMessage', false)
+        ->assertSet('isUpdateMode', false);
 });

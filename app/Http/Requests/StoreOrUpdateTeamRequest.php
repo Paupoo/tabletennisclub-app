@@ -7,6 +7,7 @@ namespace App\Http\Requests;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\TeamName;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -20,7 +21,7 @@ class StoreOrUpdateTeamRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->is_admin || $this->user()->is_committee_member;
+        return $this->user()->can(Permission::TeamsManage->value);
     }
 
     /**

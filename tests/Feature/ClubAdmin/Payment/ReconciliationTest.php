@@ -335,7 +335,7 @@ describe('Batch Auto-Reconciliation', function () use ($normalize): void {
     })->group('payments', 'batch');
 
     test('batch apply reconciles all matched payments and marks subscriptions as paid', function () use ($normalize): void {
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
         $subs = collect(User::factory()->count(2)->create())->map(fn ($user) => Subscription::factory()->create([
             'user_id' => $user->id,

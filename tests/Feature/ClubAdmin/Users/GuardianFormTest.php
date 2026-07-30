@@ -16,13 +16,13 @@ pest()->group('club-admin', 'users', 'guardian');
 const GUARDIAN_FORM_COMPONENT = 'pages::club-admin.users.form';
 
 beforeEach(function () {
-    $this->admin = User::factory()->create(['is_admin' => true, 'is_coach' => false]);
+    $this->admin = User::factory()->isAdmin()->create();
     actingAs($this->admin);
 });
 
 describe('minor detection in the admin form', function () {
     it('shows a minor alert once the birthdate is under 18 and no guardian is linked', function () {
-        $user = User::factory()->create(['birthdate' => now()->subYears(25), 'is_coach' => false]);
+        $user = User::factory()->create(['birthdate' => now()->subYears(25)]);
 
         Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
             ->assertDontSee(__('This member is a minor'))
@@ -31,7 +31,7 @@ describe('minor detection in the admin form', function () {
     });
 
     it('hides the minor alert once a guardian is linked', function () {
-        $user = User::factory()->create(['birthdate' => now()->subYears(15), 'is_coach' => false]);
+        $user = User::factory()->create(['birthdate' => now()->subYears(15)]);
         $guardian = Guardian::factory()->create();
 
         Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
@@ -45,11 +45,9 @@ describe('warn on save', function () {
     it('still saves a minor without guardian (warn, not block)', function () {
         $user = User::factory()->create([
             'birthdate' => now()->subYears(15),
-            'is_coach' => false,
         ]);
 
         Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
-            ->set('licence_type', 'recreative')
             ->set('password', '')
             ->call('save')
             ->assertHasNoErrors();
@@ -60,7 +58,7 @@ describe('warn on save', function () {
 
 describe('guardian management from the form', function () {
     it('creates and links a guardian inline', function () {
-        $user = User::factory()->create(['birthdate' => now()->subYears(15), 'is_coach' => false]);
+        $user = User::factory()->create(['birthdate' => now()->subYears(15)]);
 
         Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
             ->set('guardianFirstName', 'Marie')
@@ -69,7 +67,6 @@ describe('guardian management from the form', function () {
             ->set('guardianEmail', 'marie.dupont@example.com')
             ->call('createGuardian')
             ->assertHasNoErrors()
-            ->set('licence_type', 'recreative')
             ->set('password', '')
             ->call('save');
 
@@ -78,17 +75,64 @@ describe('guardian management from the form', function () {
             ->and($user->guardians->first()->first_name)->toBe('Marie');
     });
 
+    it('creates a guardian without an email address, as the secretary often must', function () {
+        $user = User::factory()->create(['birthdate' => now()->subYears(15)]);
+
+        Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
+            ->set('guardianFirstName', 'Marie')
+            ->set('guardianLastName', 'Dupont')
+            ->set('guardianPhone', '0479 12 34 56')
+            ->call('createGuardian')
+            ->assertHasNoErrors();
+
+        expect(Guardian::where('last_name', 'Dupont')->first()->email)->toBeNull();
+    });
+
+    it('refuses a phone number that is not one', function () {
+        $user = User::factory()->create(['birthdate' => now()->subYears(15)]);
+
+        Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
+            ->set('guardianFirstName', 'Marie')
+            ->set('guardianLastName', 'Dupont')
+            ->set('guardianPhone', 'azerty')
+            ->call('createGuardian')
+            ->assertHasErrors(['guardianPhone']);
+
+        expect(Guardian::count())->toBe(0);
+    });
+
+    it('offers to link an existing guardian rather than duplicating them', function () {
+        $user = User::factory()->create(['birthdate' => now()->subYears(15)]);
+        $existing = Guardian::factory()->create([
+            'first_name' => 'Marie',
+            'last_name' => 'Dupont',
+            'email' => 'marie.dupont@example.com',
+            'phone' => '0479123456',
+        ]);
+
+        Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
+            ->set('showGuardianForm', true)
+            ->set('guardianFirstName', 'Marie')
+            ->set('guardianLastName', 'Dupont')
+            ->set('guardianPhone', '0479 12 34 56')
+            ->call('createGuardian')
+            ->assertSet('duplicateGuardianId', $existing->id)
+            ->assertSee(__('Link this guardian'))
+            ->call('linkDuplicateGuardian')
+            ->assertSet('guardianIds', [$existing->id]);
+
+        expect(Guardian::count())->toBe(1);
+    });
+
     it('detaches a linked guardian', function () {
         $user = User::factory()->create([
             'birthdate' => now()->subYears(15),
-            'is_coach' => false,
         ]);
         $guardian = Guardian::factory()->create();
         $user->guardians()->attach($guardian);
 
         Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
             ->call('detachGuardian', $guardian->id)
-            ->set('licence_type', 'recreative')
             ->set('password', '')
             ->call('save');
 
@@ -96,7 +140,7 @@ describe('guardian management from the form', function () {
     });
 
     it('loads existing guardian links on mount', function () {
-        $user = User::factory()->create(['birthdate' => now()->subYears(15), 'is_coach' => false]);
+        $user = User::factory()->create(['birthdate' => now()->subYears(15)]);
         $guardian = Guardian::factory()->create();
         $user->guardians()->attach($guardian);
 
@@ -108,7 +152,7 @@ describe('guardian management from the form', function () {
 
 describe('linking an existing member as guardian', function () {
     it('finds an adult club member by name in the search', function () {
-        $minor = User::factory()->create(['birthdate' => now()->subYears(15), 'is_coach' => false]);
+        $minor = User::factory()->create(['birthdate' => now()->subYears(15)]);
         $adult = User::factory()->create([
             'first_name' => 'Catherine',
             'last_name' => 'Lemaire',
@@ -122,7 +166,7 @@ describe('linking an existing member as guardian', function () {
     });
 
     it('creates a guardian linked to the member and links it to the minor', function () {
-        $minor = User::factory()->create(['birthdate' => now()->subYears(15), 'is_coach' => false]);
+        $minor = User::factory()->create(['birthdate' => now()->subYears(15)]);
         $adult = User::factory()->create([
             'first_name' => 'Paul',
             'last_name' => 'Durand',
@@ -132,7 +176,6 @@ describe('linking an existing member as guardian', function () {
 
         Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $minor])
             ->call('attachMemberAsGuardian', $adult->id)
-            ->set('licence_type', 'recreative')
             ->set('password', '')
             ->call('save');
 
@@ -145,8 +188,8 @@ describe('linking an existing member as guardian', function () {
     });
 
     it('reuses the same guardian record when the member is linked again', function () {
-        $minor1 = User::factory()->create(['birthdate' => now()->subYears(15), 'is_coach' => false]);
-        $minor2 = User::factory()->create(['birthdate' => now()->subYears(12), 'is_coach' => false]);
+        $minor1 = User::factory()->create(['birthdate' => now()->subYears(15)]);
+        $minor2 = User::factory()->create(['birthdate' => now()->subYears(12)]);
         $adult = User::factory()->create(['birthdate' => now()->subYears(45)]);
 
         Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $minor1])
@@ -162,7 +205,6 @@ describe('linking an existing member as guardian', function () {
             'first_name' => 'Zoe',
             'last_name' => 'Selfsearch',
             'birthdate' => now()->subYears(15),
-            'is_coach' => false,
         ]);
 
         Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $minor])
@@ -171,7 +213,7 @@ describe('linking an existing member as guardian', function () {
     });
 
     it('excludes minors from the member results', function () {
-        $minor = User::factory()->create(['birthdate' => now()->subYears(15), 'is_coach' => false]);
+        $minor = User::factory()->create(['birthdate' => now()->subYears(15)]);
         $otherMinor = User::factory()->create([
             'first_name' => 'Tom',
             'last_name' => 'Youngster',

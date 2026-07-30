@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 
 describe('DashboardController', function (): void {
 
@@ -42,8 +44,9 @@ describe('DashboardController', function (): void {
         $response->assertDontSee(__('Treasurer'));
     });
 
-    it('shows only treasurer group to a treasurer user', function (): void {
-        $treasurer = User::factory()->isCommitteeMember()->create([
+    it('shows only treasurer group to whoever holds the treasury duty', function (): void {
+        // The title alone no longer opens the section — the délégation does.
+        $treasurer = User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create([
             'committee_role' => CommitteeRolesEnum::TREASURER,
         ]);
 
@@ -92,7 +95,40 @@ describe('DashboardController', function (): void {
             ->assertSee('profil');
     });
 
-    it('shows personal incomplete profile alert when own profile is missing fields', function (): void {
+    it('shows a new messages alert for the contacts sitting in the inbox', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        Contact::factory()->count(2)->create(['status' => 'new']);
+        Contact::factory()->create(['status' => 'processed']);
+        Contact::factory()->create(['status' => 'rejected']);
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('2 nouveaux messages');
+    });
+
+    it('singularises the new messages alert for a lone contact', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        Contact::factory()->create(['status' => 'new']);
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('1 nouveau message');
+    });
+
+    it('hides the new messages alert when every contact has been handled', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        Contact::factory()->create(['status' => 'processed']);
+        Contact::factory()->create(['status' => 'rejected']);
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('nouveau message');
+    });
+
+    it('redirects a member with an incomplete profile to the onboarding wizard', function (): void {
         $user = User::factory()->create([
             'phone_number' => null,
             'street' => null,
@@ -100,8 +136,7 @@ describe('DashboardController', function (): void {
 
         $this->actingAs($user)
             ->get(route('dashboard'))
-            ->assertOk()
-            ->assertSee('incomplet');
+            ->assertRedirect(route('admin.user.onboarding'));
     });
 
     it('shows personal affiliation alert when user has no subscription for current season', function (): void {

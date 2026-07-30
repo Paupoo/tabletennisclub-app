@@ -44,7 +44,7 @@ class ProvisionNextSeasonCommand extends Command
                     'start_at' => Carbon::create($nextStartYear, 9, 1)->startOfDay(),
                     'end_at' => Carbon::create($nextStartYear + 1, 6, 30)->endOfDay(),
                     'is_active' => false,
-                    'registrations_open' => false,
+                    'affiliations_open' => false,
                 ]);
 
                 $this->info("Created season: {$name}");

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -11,7 +12,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->create();
-    $this->member = User::factory()->isCommitteeMember()->create();
+    $this->member = User::factory()->isCommitteeMember()->withRole(Role::TOURNAMENTS)->create();
     $this->regular = User::factory()->create();
 });
 

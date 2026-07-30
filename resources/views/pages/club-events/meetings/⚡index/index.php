@@ -7,6 +7,7 @@ use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
@@ -106,7 +107,7 @@ new class extends Component
     {
         $user = Auth::user();
 
-        return $user instanceof User && ($user->is_admin || $user->is_committee_member);
+        return $user instanceof User && $user->can(Permission::MeetingsManage->value);
     }
 
     public function clearFilters(): void
@@ -172,10 +173,9 @@ new class extends Component
     #[Computed]
     public function meetings(): LengthAwarePaginator
     {
-        return Meeting::with('eventPost')
-            ->withCount([
-                'users AS confirmed_count' => fn ($q) => $q->whereIn('meeting_user.status', ['confirmed', 'attended']),
-            ])
+        return Meeting::withCount([
+            'users AS confirmed_count' => fn ($q) => $q->whereIn('meeting_user.status', ['confirmed', 'attended']),
+        ])
             ->when($this->search, fn ($q) => $q->where('title', 'like', "%{$this->search}%"))
             ->when($this->type, fn ($q) => $q->where('type', $this->type))
             ->when($this->status, fn ($q) => $q->where('status', $this->status))
@@ -187,11 +187,6 @@ new class extends Component
             )
             ->orderBy($this->sortBy['column'] ?? 'scheduled_at', $this->sortBy['direction'] ?? 'desc')
             ->paginate(20);
-    }
-
-    public function refreshMeetings(): void
-    {
-        unset($this->meetings);
     }
 
     public function render(): View
@@ -230,18 +225,9 @@ new class extends Component
     /** @return array<string, mixed> */
     public function with(): array
     {
-        $stats = [
-            'total' => Meeting::count(),
-            'upcoming' => Meeting::where('status', MeetingStatusEnum::CONFIRMED->value)
-                ->where('scheduled_at', '>', now())->count(),
-            'planning' => Meeting::where('status', MeetingStatusEnum::PLANNING->value)->count(),
-            'completed' => Meeting::where('status', MeetingStatusEnum::COMPLETED->value)->count(),
-        ];
-
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
             'meetings' => $this->meetings,
-            'stats' => $stats,
             'typeOptions' => MeetingTypeEnum::getOptions(),
             'statusOptions' => MeetingStatusEnum::getOptions(),
             'formatOptions' => MeetingFormatEnum::getOptions(),
@@ -252,7 +238,6 @@ new class extends Component
                 ['key' => 'format',       'label' => __('Format'),  'class' => 'hidden md:table-cell', 'sortable' => false],
                 ['key' => 'participants', 'label' => __('RSVPs'),   'class' => 'hidden lg:table-cell', 'sortable' => false],
                 ['key' => 'status',       'label' => __('Status'),  'sortable' => false],
-                ['key' => 'event',        'label' => __('Web'),     'sortable' => false, 'class' => 'w-8'],
             ],
             'filterChips' => $this->filterChips,
         ];

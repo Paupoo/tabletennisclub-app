@@ -1,9 +1,17 @@
 <x-mail::message>
+@if ($isUpdate ?? false)
+# {{ __('Lineup updated — :team', ['team' => $ourTeamName]) }}
+
+{{ __('Hello :name!', ['name' => $notifiable->first_name]) }}
+
+{{ __('The lineup for the **:team** match has been updated.', ['team' => $ourTeamName]) }}
+@else
 # {{ __('Lineup confirmed — :team', ['team' => $ourTeamName]) }}
 
 {{ __('Hello :name!', ['name' => $notifiable->first_name]) }}
 
 {{ __('The lineup for the **:team** match has been confirmed.', ['team' => $ourTeamName]) }}
+@endif
 
 <x-mail::panel>
 
@@ -21,9 +29,7 @@
 
 **{{ __('Selected players') }}**
 
-@foreach($selectedPlayers as $player)
-- {{ $player->full_name }}
-@endforeach
+<x-mail.lineup :players="$selectedPlayers" :category="$category ?? null" />
 
 @if($captainMessage)
 <div style="border-left: 4px solid #fbbf24; background-color: #fffbeb; border-radius: 0 6px 6px 0; margin: 24px 0; overflow: hidden;">

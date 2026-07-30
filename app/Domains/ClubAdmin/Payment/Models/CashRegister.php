@@ -55,7 +55,7 @@ class CashRegister extends Model
 
     public function currentBalance(): int
     {
-        return $this->entries()->sum('amount');
+        return (int) $this->entries()->sum('amount');
     }
 
     public function entries(): HasMany

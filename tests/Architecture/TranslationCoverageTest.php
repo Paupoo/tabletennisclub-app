@@ -27,8 +27,9 @@ function extractTranslationKeysFromCodebase(): array
                 continue;
             }
 
+            // Match __('key') and __('key', [...]) — with or without replacement parameters.
             preg_match_all(
-                "/__\('([^']*)'\)|__\(\"([^\"]*)\"\)/",
+                "/__\(\s*'([^']*)'\s*[,)]|__\(\s*\"([^\"]*)\"\s*[,)]/",
                 file_get_contents($file->getPathname()),
                 $matches,
             );

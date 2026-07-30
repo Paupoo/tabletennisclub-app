@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Payment\Models\BankImport;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
@@ -12,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -19,6 +21,7 @@ use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Reader\Csv;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 new class extends Component
@@ -49,13 +52,15 @@ new class extends Component
 
     public function bulkDelete(): void
     {
+        Gate::authorize(Permission::TransactionsDelete->value);
+
         $ids = array_map('intval', $this->selected);
 
         if ($this->selectingAllResults) {
             $ids = $this->allMatchingTransactionIds();
         }
 
-        Transaction::whereIn('id', $ids)->delete();
+        Transaction::whereIn('id', $ids)->get()->each(fn (Transaction $transaction) => $transaction->delete());
 
         $this->confirmDeleteModal = false;
         $this->reconciledInSelection = 0;
@@ -126,12 +131,18 @@ new class extends Component
 
     public function processImport(): void
     {
+        Gate::authorize(Permission::TransactionsImport->value);
+
         $this->validate(['importFile' => 'required|file|mimes:ods,xlsx,xls,csv,txt']);
 
         $path = $this->importFile->getRealPath();
 
         try {
-            $spreadsheet = IOFactory::load($path);
+            $reader = IOFactory::createReaderForFile($path);
+            if ($reader instanceof Csv) {
+                $reader->setInputEncoding(Csv::GUESS_ENCODING);
+            }
+            $spreadsheet = $reader->load($path);
             $sheet = $spreadsheet->getActiveSheet();
             $rows = $sheet->toArray(null, true, true, true);
 
@@ -287,7 +298,7 @@ new class extends Component
             ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))
             ->when($this->dateTo, fn ($q) => $q->whereDate('date', '<=', $this->dateTo))
             ->when($this->reconciledFilter === 'reconciled', fn ($q) => $q->has('payment'))
-            ->when($this->reconciledFilter === 'unreconciled', fn ($q) => $q->doesntHave('payment'))
+            ->when($this->reconciledFilter === 'unreconciled', fn ($q) => $q->doesntHave('payment')->where('amount', '>', 0))
             ->when($this->amountDirection === 'credit', fn ($q) => $q->where('amount', '>', 0))
             ->when($this->amountDirection === 'debit', fn ($q) => $q->where('amount', '<', 0))
             ->orderBy($col, $dir)
@@ -349,7 +360,7 @@ new class extends Component
             ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))
             ->when($this->dateTo, fn ($q) => $q->whereDate('date', '<=', $this->dateTo))
             ->when($this->reconciledFilter === 'reconciled', fn ($q) => $q->has('payment'))
-            ->when($this->reconciledFilter === 'unreconciled', fn ($q) => $q->doesntHave('payment'))
+            ->when($this->reconciledFilter === 'unreconciled', fn ($q) => $q->doesntHave('payment')->where('amount', '>', 0))
             ->when($this->amountDirection === 'credit', fn ($q) => $q->where('amount', '>', 0))
             ->when($this->amountDirection === 'debit', fn ($q) => $q->where('amount', '<', 0))
             ->pluck('id')

@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
+use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use Illuminate\Support\Facades\Event;
@@ -27,6 +28,15 @@ function poolTournament(array $overrides = []): Tournament
     Event::fake();
 
     return $tournament;
+}
+
+function pairInTournament(Tournament $tournament, string $ranking1, string $ranking2): TournamentPair
+{
+    return TournamentPair::factory()->create([
+        'tournament_id' => $tournament->id,
+        'player1_id' => User::factory()->create(['ranking' => $ranking1]),
+        'player2_id' => User::factory()->create(['ranking' => $ranking2]),
+    ]);
 }
 
 // ── distributePlayersInPools ──────────────────────────────────────────────────
@@ -208,5 +218,33 @@ describe('isPoolFinished', function (): void {
         $pool->save();
 
         expect((new TournamentPoolService)->isPoolFinished($pool))->toBeTrue();
+    });
+});
+
+// ── distributePairsInPools ────────────────────────────────────────────────────
+
+describe('distributePairsInPools', function (): void {
+    /**
+     * Seeding is what keeps the two strongest pairs out of the same pool. The
+     * registration order below is deliberately not the strength order: a
+     * distribution that ignored seeding would deal the two B pairs into the
+     * same pool, since pairs are dealt round-robin in the order they arrive.
+     */
+    it('spreads the strongest pairs across pools whatever the registration order', function (): void {
+        $tournament = poolTournament(['match_type' => 'double']);
+
+        $strongest = pairInTournament($tournament, 'B0', 'B0');
+        $weak = pairInTournament($tournament, 'D0', 'D0');
+        $second = pairInTournament($tournament, 'B2', 'B2');
+        $weakest = pairInTournament($tournament, 'E0', 'E0');
+
+        (new TournamentPoolService)->distributePlayersInPools($tournament, 2);
+
+        $poolOf = fn (int $pairId): int => Pool::where('tournament_id', $tournament->id)
+            ->whereHas('pairs', fn ($q) => $q->where('tournament_pairs.id', $pairId))
+            ->value('id');
+
+        expect($poolOf($strongest->id))->not->toBe($poolOf($second->id))
+            ->and($poolOf($weak->id))->not->toBe($poolOf($weakest->id));
     });
 });

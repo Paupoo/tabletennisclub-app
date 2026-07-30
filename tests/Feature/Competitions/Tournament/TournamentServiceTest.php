@@ -3,15 +3,18 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Payment\Notifications\RefundRequestedNotification;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Competitions\Tournament\Notifications\TournamentConfirmationExpiredNotification;
+use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentExpiredNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationCancelledNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConfirmedNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistSpotOpenedNotification;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 
@@ -94,6 +97,51 @@ describe('registerUser', function (): void {
 
         expect(Payment::count())->toBe(1);
         expect(Payment::first()->status)->toBe('pending');
+    });
+
+    // The payment deadline is NOT a fixed 72h window (I6): these lock the real rule.
+    it('sets the payment deadline to the registration-close date for a normal sign-up', function (): void {
+        Notification::fake();
+        Event::fake();
+        $tournament = paymentTournament([
+            'price' => 10,
+            'registration_deadline' => Carbon::create(2026, 9, 15, 12),
+            'start_date' => Carbon::create(2026, 9, 20, 10),
+        ]);
+
+        (new TournamentService)->registerUser($tournament, User::factory()->create());
+
+        expect(TournamentRegistration::first()->payment_deadline->format('Y-m-d H:i:s'))
+            ->toBe('2026-09-15 23:59:59');
+    });
+
+    it('gives a late sign-up 3 days to pay, not the past registration date', function (): void {
+        Notification::fake();
+        Event::fake();
+        $tournament = paymentTournament([
+            'price' => 10,
+            'registration_deadline' => now()->subDays(2),
+            'start_date' => now()->addDays(5),
+        ]);
+
+        (new TournamentService)->registerUser($tournament, User::factory()->create());
+
+        expect(TournamentRegistration::first()->payment_deadline->toDateString())
+            ->toBe(now()->addDays(3)->toDateString());
+    });
+
+    it('sets no payment deadline for a same-day entry', function (): void {
+        Notification::fake();
+        Event::fake();
+        $tournament = paymentTournament([
+            'price' => 10,
+            'registration_deadline' => now()->subDay(),
+            'start_date' => now(),
+        ]);
+
+        (new TournamentService)->registerUser($tournament, User::factory()->create());
+
+        expect(TournamentRegistration::first()->payment_deadline)->toBeNull();
     });
 
     it('throws LogicException when user is already registered', function (): void {
@@ -216,6 +264,29 @@ describe('cancelRegistration', function (): void {
         (new TournamentService)->cancelRegistration($tournament, $user);
 
         expect($payment->fresh()->status)->toBe('to_refund');
+    });
+
+    it('renders the treasurer refund email with a link to the member profile', function (): void {
+        $tournament = paymentTournament(['price' => 10, 'max_users' => 10]);
+        $member = User::factory()->create();
+        $treasurer = User::factory()->isCommitteeMember()->create();
+        $tournament->users()->attach($member->id, ['registration_status' => 'registered']);
+
+        $registration = TournamentRegistration::where('tournament_id', $tournament->id)
+            ->where('user_id', $member->id)
+            ->firstOrFail();
+
+        $payment = $registration->payment()->create([
+            'reference' => 'TEST/003',
+            'amount_due' => 1000,
+            'amount_paid' => 1000,
+            'status' => 'to_refund',
+        ]);
+
+        $mail = (new RefundRequestedNotification($payment, $member, $tournament))->toMail($treasurer);
+        $html = $mail->render()->__toString();
+
+        expect($html)->toContain(route('admin.users.edit', $member->id));
     });
 });
 
@@ -345,6 +416,50 @@ describe('expirePaymentDeadlines', function (): void {
                 ->where('user_id', $user->id)
                 ->value('registration_status')
         )->toBe('cancelled');
+    });
+
+    it('notifies the member when their unpaid registration is cancelled (I5)', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 10]);
+        $user = User::factory()->create();
+        $tournament->users()->attach($user->id, [
+            'registration_status' => 'registered',
+            'has_paid' => false,
+            'payment_deadline' => now()->subHour(),
+        ]);
+
+        Event::fake();
+        (new TournamentService)->expirePaymentDeadlines();
+
+        Notification::assertSentTo($user, TournamentPaymentExpiredNotification::class);
+    });
+
+    it('renders the payment-expired email fully in the member locale', function (): void {
+        app()->setLocale('fr_BE');
+        $tournament = paymentTournament(['price' => 10]);
+        $user = User::factory()->create();
+
+        $rendered = (string) (new TournamentPaymentExpiredNotification($tournament))->toMail($user)->render();
+
+        expect($rendered)->toContain('paiement')
+            ->and($rendered)->not->toContain('has been cancelled because we did not receive')
+            ->and($rendered)->not->toContain('Your registration has expired');
+    });
+
+    it('does not notify when nothing expires', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 10]);
+        $user = User::factory()->create();
+        $tournament->users()->attach($user->id, [
+            'registration_status' => 'registered',
+            'has_paid' => false,
+            'payment_deadline' => now()->addDay(),
+        ]);
+
+        Event::fake();
+        (new TournamentService)->expirePaymentDeadlines();
+
+        Notification::assertNotSentTo($user, TournamentPaymentExpiredNotification::class);
     });
 
     it('does not cancel registrations with future payment deadlines', function (): void {

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Providers\RouteServiceProvider;
 
 pest()->group('auth');
 
@@ -21,7 +20,7 @@ test('users can authenticate using the login screen', function (): void {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(RouteServiceProvider::HOME);
+    $response->assertRedirect(route('dashboard'));
 });
 test('users can logout', function (): void {
     $user = User::factory()->create();

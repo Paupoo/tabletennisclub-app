@@ -1,5 +1,5 @@
 <x-slot:breadcrumbs>
-    <x-breadcrumbs :items="[['label' => __('Admin')], ['label' => __('Club Settings')]]" separator="o-slash" />
+    <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
 </x-slot:breadcrumbs>
 
 <div>
@@ -19,7 +19,7 @@
 
             </div>
         </x-admin.shared.form-section>
-        
+
         {{-- Location --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Information to help members and visitors to find our club.')" :title="__('Location Details')">
             <x-input icon="o-map-pin" :label="__('Street')" wire:model="street" required/>
@@ -28,9 +28,9 @@
             <x-input icon="o-building-office" :label="__('Building Name (Optional)')" wire:model="building_name"/>
             <x-input icon="o-map-pin" :label="__('Latitude (Optional)')" wire:model="latitude" numeric/>
             <x-input icon="o-map-pin" :label="__('Longitude (Optional)')" wire:model="longitude" numeric/>
-            
+
         </x-admin.shared.form-section>
-        
+
         {{-- Contact --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Information to facilitate people to contact us.')" :title="__('Contact Details')">
                     <x-input icon="o-phone" :label="__('Phone Contact (Optional)')" wire:model="phone_contact" />
@@ -44,7 +44,7 @@
             <x-input icon="o-currency-euro" :label="__('Bank Account (IBAN)')" wire:model="bank_account" required/>
             <x-input icon="o-identification" :label="__('Enterprise Number (Optional)')" wire:model="enterprise_number" />
         </x-admin.shared.form-section>
-                
+
         {{-- Committee --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Manage board members and their roles')" :title="__('Committee')">
             <div class="col-span-6 md:col-span-4">
@@ -68,7 +68,7 @@
                                         <div class="text-sm font-bold">{{ $member->first_name }} {{ $member->last_name }}</div>
                                             <div class="badge badge-outline text-[10px] opacity-70">
                                                 {{ __($member->committee_role
-                                                    ? $member->committee_role->label() 
+                                                    ? $member->committee_role->label()
                                                     : 'Unknown role') }}
                                             </div>
                                     </div>
@@ -112,7 +112,7 @@
                     ['id' => 'Dimanche',  'name' => __('Sunday')],
                 ]"
             />
-            <div class="col-span-6 grid grid-cols-1 gap-4 md:col-span-4 md:grid-cols-2">
+            <div class="lg:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <x-input icon="o-clock" :label="__('Start time (HH:MM)')" wire:model="interclubTimeStart" placeholder="19:00" />
                 <x-input icon="o-clock" :label="__('End time (HH:MM)')" wire:model="interclubTimeEnd" placeholder="23:30" />
             </div>

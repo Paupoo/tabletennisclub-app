@@ -12,10 +12,13 @@ use App\Actions\User\UpdateUserAction;
 use App\Data\User\CreateUserData;
 use App\Data\User\UpdateUserData;
 use App\Domains\ClubAdmin\Contact\Models\Contact;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Trainings\Models\TrainingPlan;
+use App\Domains\Trainings\Models\TrainingPlanAssignment;
 use App\Mail\InviteNewUserMail;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Hash;
@@ -81,6 +84,25 @@ describe('CreateUserAction', function (): void {
         $user = CreateUserAction::handle($data, $actor);
 
         expect($user->last_invited_at)->not->toBeNull();
+    });
+
+    it('syncs the linked family members', function (): void {
+        $actor = $this->createFakeAdmin();
+        $sibling = User::factory()->create();
+
+        Mail::fake();
+
+        $data = new CreateUserData(
+            first_name: 'Alice',
+            last_name: 'Dubois',
+            email: 'alice.dubois@example.com',
+            gender: Gender::WOMEN,
+            familyMemberIds: [$sibling->id],
+        );
+
+        $user = CreateUserAction::handle($data, $actor);
+
+        expect($user->familyMembers()->pluck('id')->all())->toBe([$sibling->id]);
     });
 });
 
@@ -168,6 +190,26 @@ describe('UpdateUserAction', function (): void {
             ->and($user->fresh()->guardians->first()->id)->toBe($guardian->id);
     });
 
+    it('syncs the linked family members', function (): void {
+        $actor = $this->createFakeAdmin();
+        $user = User::factory()->create();
+        $sibling = User::factory()->create();
+
+        UpdateUserAction::handle(
+            $user,
+            new UpdateUserData(
+                first_name: $user->first_name,
+                last_name: $user->last_name,
+                email: $user->email,
+                gender: Gender::MEN,
+                familyMemberIds: [$sibling->id],
+            ),
+            $actor,
+        );
+
+        expect($user->fresh()->familyMembers()->pluck('id')->all())->toBe([$sibling->id]);
+    });
+
     it('requires re-verification and notifies when the email changes', function (): void {
         Notification::fake();
 
@@ -221,6 +263,44 @@ describe('SoftDeleteUserAction', function (): void {
 
         expect(User::find($user->id))->toBeNull()
             ->and(User::withTrashed()->find($user->id)->deleted_at)->not->toBeNull();
+    });
+
+    it('removes the user training plan assignments so they no longer occupy a slot', function (): void {
+        $user = User::factory()->create();
+        $plan = TrainingPlan::factory()->create();
+        $assignment = TrainingPlanAssignment::factory()->for($plan, 'plan')->inPool()->create([
+            'user_id' => $user->id,
+        ]);
+
+        SoftDeleteUserAction::handle($user);
+
+        expect(TrainingPlanAssignment::query()->whereKey($assignment->id)->exists())->toBeFalse();
+    });
+
+    it('refuses to archive a user with an unresolved subscription for the active season', function (): void {
+        $season = makeActiveSeason();
+        $user = User::factory()->create();
+        Subscription::factory()->create([
+            'user_id' => $user->id,
+            'season_id' => $season->id,
+            'status' => 'paid',
+        ]);
+
+        SoftDeleteUserAction::handle($user);
+    })->throws(DomainException::class);
+
+    it('archives a user whose subscription for the active season was already cancelled', function (): void {
+        $season = makeActiveSeason();
+        $user = User::factory()->create();
+        Subscription::factory()->create([
+            'user_id' => $user->id,
+            'season_id' => $season->id,
+            'status' => 'cancelled',
+        ]);
+
+        SoftDeleteUserAction::handle($user);
+
+        expect(User::find($user->id))->toBeNull();
     });
 });
 

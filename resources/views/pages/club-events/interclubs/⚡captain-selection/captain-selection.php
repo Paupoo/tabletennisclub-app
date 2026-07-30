@@ -11,11 +11,14 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Services\InterclubAvailabilityService;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\InterclubAvailability;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
@@ -33,10 +36,19 @@ new class extends Component
 
     public bool $drawerSelection = false;
 
+    public bool $isUpdateMode = false;
+
     public bool $modalMessage = false;
+
+    /** @var array<int, int> */
+    public array $pendingAddedIds = [];
+
+    /** @var array<int, int> */
+    public array $pendingRemovedIds = [];
 
     public string $search = '';
 
+    #[Locked]
     public ?int $selectedInterclubId = null;
 
     /** @var array<int, int> */
@@ -56,35 +68,36 @@ new class extends Component
 
     public function clearFilters(): void
     {
+        $this->selectedSeasonId = Season::current()?->id;
+
         $user = Auth::user();
-        $season = $this->selectedSeasonId ? Season::find($this->selectedSeasonId) : Season::current();
-        $this->selectedTeamId = $this->loadAccessibleTeams($user, $season)->first()?->id;
+        $this->selectedTeamId = $this->loadAccessibleTeams($user, Season::current())->first()?->id;
     }
 
     /** @return array<int, array{key: string, label: string}> */
     public function getFilterChips(): array
     {
+        $chips = [];
+
+        if ($this->selectedSeasonId !== Season::current()?->id) {
+            $seasonName = Season::find($this->selectedSeasonId)?->name ?? __('All seasons');
+            $chips[] = ['key' => 'selectedSeasonId', 'label' => __('Season') . ': ' . $seasonName];
+        }
+
         $user = Auth::user();
         $season = $this->selectedSeasonId ? Season::find($this->selectedSeasonId) : Season::current();
         $teams = $this->loadAccessibleTeams($user, $season);
 
-        if ($teams->count() <= 1 || ! $this->selectedTeamId) {
-            return [];
+        if ($teams->count() > 1 && $this->selectedTeamId && $this->selectedTeamId !== $teams->first()?->id) {
+            $team = $teams->firstWhere('id', $this->selectedTeamId);
+
+            if ($team) {
+                $label = $team->name . ($team->league?->category ? ' · ' . $this->categoryLabel($team->league->category) : '');
+                $chips[] = ['key' => 'selectedTeamId', 'label' => $label];
+            }
         }
 
-        if ($this->selectedTeamId === $teams->first()?->id) {
-            return [];
-        }
-
-        $team = $teams->firstWhere('id', $this->selectedTeamId);
-
-        if (! $team) {
-            return [];
-        }
-
-        $label = $team->name . ($team->league?->category ? ' · ' . $this->categoryLabel($team->league->category) : '');
-
-        return [['key' => 'selectedTeamId', 'label' => $label]];
+        return $chips;
     }
 
     public function mount(): void
@@ -92,10 +105,9 @@ new class extends Component
         $this->selectedSeasonId = Season::current()?->id;
 
         $user = Auth::user();
-        if (! $user->is_admin && ! $user->is_committee_member && ! $user->is_selector) {
-            $isCaptain = Team::where('captain_id', $user->id)->exists();
-            abort_unless($isCaptain, 403);
-        }
+
+        // Selections delegate, or captain of at least one team.
+        Gate::authorize('access-selections');
 
         $this->selectedTeamId = $this->loadAccessibleTeams($user, Season::current())->first()?->id;
     }
@@ -103,6 +115,7 @@ new class extends Component
     public function openSelection(int $interclubId): void
     {
         $interclub = Interclub::findOrFail($interclubId);
+        $this->authorizeInterclub($interclub);
 
         if ($interclub->start_date_time < now()) {
             return;
@@ -118,9 +131,15 @@ new class extends Component
         $this->drawerSelection = true;
     }
 
-    public function removeFilter(string $_key): void
+    public function removeFilter(string $key): void
     {
-        $this->clearFilters();
+        if ($key === 'selectedSeasonId') {
+            $this->selectedSeasonId = Season::current()?->id;
+        }
+
+        $user = Auth::user();
+        $season = $this->selectedSeasonId ? Season::find($this->selectedSeasonId) : Season::current();
+        $this->selectedTeamId = $this->loadAccessibleTeams($user, $season)->first()?->id;
     }
 
     public function render(): View
@@ -131,6 +150,8 @@ new class extends Component
     public function requestAvailability(int $interclubId, InterclubAvailabilityService $service): void
     {
         $interclub = Interclub::findOrFail($interclubId);
+        $this->authorizeInterclub($interclub);
+
         $service->requestAvailability($interclub);
 
         $this->success(
@@ -176,20 +197,52 @@ new class extends Component
             return;
         }
 
-        foreach ($this->selectedPlayerIds as $userId) {
-            if (in_array($userId, $existingIds)) {
-                $interclub->users()->updateExistingPivot($userId, ['is_selected' => true]);
-            } else {
-                $interclub->users()->attach($userId, ['is_selected' => true]);
-            }
-        }
+        $previouslyConfirmedIds = $interclub->users()
+            ->wherePivot('is_selected', true)
+            ->wherePivotNotNull('selection_confirmed_at')
+            ->pluck('users.id')
+            ->toArray();
 
-        $toDeselect = array_diff($existingIds, $this->selectedPlayerIds);
-        foreach ($toDeselect as $userId) {
-            $interclub->users()->updateExistingPivot($userId, ['is_selected' => false]);
-        }
+        DB::transaction(function () use ($interclub, $existingIds): void {
+            foreach ($this->selectedPlayerIds as $userId) {
+                if (in_array($userId, $existingIds, true)) {
+                    $interclub->users()->updateExistingPivot($userId, ['is_selected' => true]);
+                } else {
+                    $interclub->users()->attach($userId, ['is_selected' => true]);
+                }
+            }
+
+            $toDeselect = array_diff($existingIds, $this->selectedPlayerIds);
+            foreach ($toDeselect as $userId) {
+                $interclub->users()->updateExistingPivot($userId, ['is_selected' => false]);
+            }
+        });
 
         $this->drawerSelection = false;
+
+        if ($previouslyConfirmedIds === []) {
+            if ($interclub->isSelectionComplete()) {
+                $this->isUpdateMode = false;
+                $this->modalMessage = true;
+            } else {
+                $this->success(__('Selection saved.'), position: 'toast-bottom toast-end');
+            }
+
+            return;
+        }
+
+        $added = array_values(array_diff($this->selectedPlayerIds, $previouslyConfirmedIds));
+        $removed = array_values(array_diff($previouslyConfirmedIds, $this->selectedPlayerIds));
+
+        if ($added === [] && $removed === []) {
+            $this->success(__('Selection saved.'), position: 'toast-bottom toast-end');
+
+            return;
+        }
+
+        $this->pendingAddedIds = $added;
+        $this->pendingRemovedIds = $removed;
+        $this->isUpdateMode = true;
         $this->modalMessage = true;
     }
 
@@ -201,10 +254,13 @@ new class extends Component
             return;
         }
 
-        $service->confirmSelection($interclub, $this->captainMeetupInfo);
+        if ($this->isUpdateMode) {
+            $service->notifySelectionChange($interclub, $this->pendingAddedIds, $this->pendingRemovedIds, $this->captainMeetupInfo);
+        } else {
+            $service->confirmSelection($interclub, $this->captainMeetupInfo);
+        }
 
-        $this->modalMessage = false;
-        $this->captainMeetupInfo = '';
+        $this->resetSendModal();
 
         $this->success(
             __('Lineup sent to the whole team!'),
@@ -215,8 +271,7 @@ new class extends Component
 
     public function skipSending(): void
     {
-        $this->modalMessage = false;
-        $this->captainMeetupInfo = '';
+        $this->resetSendModal();
         $this->success(__('Selection saved.'), position: 'toast-bottom toast-end');
     }
 
@@ -274,8 +329,8 @@ new class extends Component
     public function with(): array
     {
         $user = Auth::user();
-        $isAdminOrCommittee = $user->is_admin || $user->is_committee_member;
-        $canSearchSubstitute = $user->is_admin || $user->is_committee_member || $user->is_selector;
+        $isAdminOrCommittee = $user->can(Permission::InterclubsManage->value);
+        $canSearchSubstitute = $user->can(Permission::SelectionsManage->value);
 
         $seasons = Season::orderBy('start_at')->get();
         $season = $this->selectedSeasonId
@@ -355,26 +410,71 @@ new class extends Component
             }
         }
 
+        // Modal data: pending change summary for the "Notify the team" modal
+        $pendingAddedNames = [];
+        $pendingRemovedNames = [];
+        $modalIsComplete = true;
+
+        if ($this->modalMessage && $this->selectedInterclubId) {
+            $modalInterclub = $drawerInterclub ?? Interclub::find($this->selectedInterclubId);
+
+            if ($modalInterclub) {
+                $maxPlayers = $modalInterclub->total_players;
+                $modalIsComplete = $modalInterclub->isSelectionComplete();
+            }
+
+            if ($this->isUpdateMode) {
+                $pendingAddedNames = User::whereIn('id', $this->pendingAddedIds)
+                    ->get()
+                    ->map(fn (User $u) => $u->last_name . ' ' . $u->first_name)
+                    ->values()
+                    ->all();
+                $pendingRemovedNames = User::whereIn('id', $this->pendingRemovedIds)
+                    ->get()
+                    ->map(fn (User $u) => $u->last_name . ' ' . $u->first_name)
+                    ->values()
+                    ->all();
+            }
+        }
+
         $searchResults = collect();
+        $searchNote = null;
         if ($canSearchSubstitute && strlen($this->search) >= 2) {
             $selectedTeam = $teams->firstWhere('id', $this->selectedTeamId);
             $teamCategory = $selectedTeam?->league?->category;
+            $veteranCutoff = $season ? $season->end_at->copy()->subYears(40) : null;
+            $excludedIds = array_merge($this->selectedPlayerIds, $blockedPlayerIds);
 
-            $searchResults = User::competitor()
+            // Interclub-eligible members matching the name, before the category /
+            // alignment filters — so we can explain what got silently removed (I2).
+            // NA and non-competitive members are out of scope and never surface.
+            $nameMatches = User::interclubEligible()
                 ->where(fn ($q) => $q
                     ->where('first_name', 'like', '%' . $this->search . '%')
                     ->orWhere('last_name', 'like', '%' . $this->search . '%'))
-                ->whereNotIn('id', array_merge($this->selectedPlayerIds, $blockedPlayerIds))
-                ->when($teamCategory === 'MEN', fn ($q) => $q->where('gender', Gender::MEN))
-                ->when($teamCategory === 'WOMEN', fn ($q) => $q->where('gender', Gender::WOMEN))
-                ->when($teamCategory === 'VETERANS' && $season, fn ($q) => $q->whereDate('birthdate', '<=', $season->end_at->copy()->subYears(40)))
-                ->limit(8)
-                ->get()
-                ->map(fn (User $u) => [
-                    'id' => $u->id,
-                    'name' => $u->last_name . ' ' . $u->first_name,
-                    'rank' => $u->ranking ?? '—',
-                ]);
+                ->get();
+
+            $matchesCategory = fn (User $u): bool => match ($teamCategory) {
+                'MEN' => $u->gender === Gender::MEN,
+                'WOMEN' => $u->gender === Gender::WOMEN,
+                'VETERANS' => $veteranCutoff !== null && $u->birthdate !== null
+                    && $u->birthdate->toDateString() <= $veteranCutoff->toDateString(),
+                default => true,
+            };
+
+            $eligible = $nameMatches
+                ->reject(fn (User $u) => in_array($u->id, $excludedIds, true))
+                ->filter($matchesCategory);
+
+            $searchResults = $eligible->take(8)->map(fn (User $u) => [
+                'id' => $u->id,
+                'name' => $u->last_name . ' ' . $u->first_name,
+                'rank' => $u->ranking ?? '—',
+            ])->values();
+
+            if ($searchResults->isEmpty()) {
+                $searchNote = $this->buildSearchNote($nameMatches, $excludedIds, $matchesCategory, $teamCategory);
+            }
         }
 
         $allTeamsForSummary = $isAdminOrCommittee
@@ -400,6 +500,7 @@ new class extends Component
             'roster' => $roster,
             'maxPlayers' => $maxPlayers,
             'searchResults' => $searchResults,
+            'searchNote' => $searchNote,
             'drawerInterclub' => $drawerInterclub,
             'isAdminOrCommittee' => $isAdminOrCommittee,
             'canSearchSubstitute' => $canSearchSubstitute,
@@ -407,6 +508,9 @@ new class extends Component
             'matchDayMap' => $matchDayMap,
             'zoomedTeamId' => $this->zoomedTeamId,
             'filterChips' => $this->getFilterChips(),
+            'pendingAddedNames' => $pendingAddedNames,
+            'pendingRemovedNames' => $pendingRemovedNames,
+            'modalIsComplete' => $modalIsComplete,
         ];
     }
 
@@ -415,6 +519,20 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Captain Selection'));
+    }
+
+    /**
+     * Mirrors the scoping of loadAccessibleTeams(): admins, committee members and
+     * selectors reach every team, a captain only the teams they lead.
+     */
+    /**
+     * Delegates to InterclubPolicy::selectLineup, so the rule lives in one place
+     * rather than being restated here — this component and the policy answered
+     * the same question in two different ways before.
+     */
+    private function authorizeInterclub(Interclub $interclub): void
+    {
+        Gate::authorize('selectLineup', $interclub);
     }
 
     /**
@@ -442,6 +560,11 @@ new class extends Component
             'name' => $player->last_name . ' ' . $player->first_name,
             'last_name' => $player->last_name ?? '',
             'first_name' => $player->first_name ?? '',
+            // Captain override (decision T8): a captain always sees their own
+            // players' contact details on the selection screen, regardless of
+            // the members' opt-in contact-visibility preferences.
+            'phone_number' => $player->phone_number,
+            'email' => $player->email,
             'rank' => $player->ranking ?? '—',
             'rank_sort' => $player->ranking ?? 'ZZZ',
             'availability' => $avail,
@@ -451,6 +574,51 @@ new class extends Component
             'is_blocked' => isset($blockedPlayerData[$player->id]),
             'blocked_team' => $blockedPlayerData[$player->id] ?? null,
         ];
+    }
+
+    /**
+     * Explain why a substitute search returned nothing: matching competitors do
+     * exist, but the category rule and/or the same-week alignment hid them (I2).
+     *
+     * @param  Collection<int, User>  $nameMatches
+     * @param  array<int, int>  $excludedIds
+     * @param  callable(User): bool  $matchesCategory
+     */
+    private function buildSearchNote(Collection $nameMatches, array $excludedIds, callable $matchesCategory, ?string $teamCategory): ?string
+    {
+        if ($nameMatches->isEmpty()) {
+            return null;
+        }
+
+        $hiddenByAlignment = $nameMatches->contains(fn (User $u) => in_array($u->id, $excludedIds, true));
+        $hiddenByCategory = $nameMatches
+            ->reject(fn (User $u) => in_array($u->id, $excludedIds, true))
+            ->contains(fn (User $u) => ! $matchesCategory($u));
+
+        $reasons = [];
+
+        if ($hiddenByCategory) {
+            $reasons[] = match ($teamCategory) {
+                'MEN' => __('this team only lines up men'),
+                'WOMEN' => __('this team only lines up women'),
+                'VETERANS' => __('this team only lines up veterans (40 and over)'),
+                default => null,
+            };
+        }
+
+        if ($hiddenByAlignment) {
+            $reasons[] = __('some are already selected here or lined up in another team this week');
+        }
+
+        $reasons = array_filter($reasons);
+
+        if ($reasons === []) {
+            return null;
+        }
+
+        return __('Some players match your search but are hidden: :reasons.', [
+            'reasons' => implode(' ; ', $reasons),
+        ]);
     }
 
     /** @return array<string, mixed> */
@@ -595,7 +763,8 @@ new class extends Component
             $query->where('season_id', $season->id);
         }
 
-        if (! $user->is_admin && ! $user->is_committee_member && ! $user->is_selector) {
+        // A club-wide selector sees every team; a captain, only theirs.
+        if (! $user->can(Permission::SelectionsManage->value)) {
             $query->where('captain_id', $user->id);
         }
 
@@ -627,13 +796,28 @@ new class extends Component
             ->count();
     }
 
+    private function resetSendModal(): void
+    {
+        $this->modalMessage = false;
+        $this->captainMeetupInfo = '';
+        $this->isUpdateMode = false;
+        $this->pendingAddedIds = [];
+        $this->pendingRemovedIds = [];
+    }
+
     private function selectedInterclub(): ?Interclub
     {
         if (! $this->selectedInterclubId) {
             return null;
         }
 
-        return Interclub::find($this->selectedInterclubId);
+        $interclub = Interclub::find($this->selectedInterclubId);
+
+        if ($interclub) {
+            $this->authorizeInterclub($interclub);
+        }
+
+        return $interclub;
     }
 
     /**

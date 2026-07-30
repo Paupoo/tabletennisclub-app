@@ -44,7 +44,7 @@ class Breadcrumb
 
     public function home(?string $url = null): Breadcrumb
     {
-        return $this->add(__('Admin Pannel'), $url ?: route('dashboard'), 's-home');
+        return $this->add(__('Admin Panel'), $url ?: route('dashboard'), 's-home');
     }
 
     public function matches(?string $url = null): Breadcrumb
@@ -75,11 +75,6 @@ class Breadcrumb
     public function seasons(?string $url = null): Breadcrumb
     {
         return $this->add(__('Seasons'), $url ?: route('admin.seasons.index'), 'o-calendar');
-    }
-
-    public function tables(?string $url = null): Breadcrumb
-    {
-        return $this->add('Tables', $url ?: route('admin.tables.index'));
     }
 
     public function teams(?string $url = null): Breadcrumb

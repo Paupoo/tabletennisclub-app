@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use Livewire\Livewire;
 
@@ -59,7 +60,7 @@ describe('canManageTournament', function (): void {
     });
 
     it('is true for committee members', function (): void {
-        $committee = User::factory()->isCommitteeMember()->create();
+        $committee = User::factory()->isCommitteeMember()->withRole(Role::TOURNAMENTS)->create();
         $tournament = authTournament();
 
         liveCenterAs($committee, $tournament)
@@ -67,7 +68,7 @@ describe('canManageTournament', function (): void {
     });
 
     it('is false for regular members', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
 
         liveCenterAs($member, $tournament)
@@ -81,7 +82,7 @@ describe('canManageTournament', function (): void {
 describe('openScoreEntry authorization', function (): void {
 
     it('allows committee members to open the score drawer', function (): void {
-        $committee = User::factory()->isCommitteeMember()->create();
+        $committee = User::factory()->isCommitteeMember()->withRole(Role::TOURNAMENTS)->create();
         $tournament = authTournament();
         $match = authMatch($tournament);
 
@@ -91,7 +92,7 @@ describe('openScoreEntry authorization', function (): void {
     });
 
     it('forbids regular members from opening the score drawer', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
         $match = authMatch($tournament);
 
@@ -116,7 +117,7 @@ describe('openLaunchDrawer authorization', function (): void {
     });
 
     it('forbids regular members from opening the launch drawer', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
 
         liveCenterAs($member, $tournament)
@@ -131,7 +132,7 @@ describe('openLaunchDrawer authorization', function (): void {
 describe('submitScore authorization', function (): void {
 
     it('forbids regular members from submitting a score', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
 
         liveCenterAs($member, $tournament)
@@ -146,7 +147,7 @@ describe('submitScore authorization', function (): void {
 describe('saveDraft authorization', function (): void {
 
     it('forbids regular members from saving a draft', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
 
         liveCenterAs($member, $tournament)
@@ -161,7 +162,7 @@ describe('saveDraft authorization', function (): void {
 describe('startMatch authorization', function (): void {
 
     it('forbids regular members from starting a match', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
         $match = authMatch($tournament);
 
@@ -177,7 +178,7 @@ describe('startMatch authorization', function (): void {
 describe('generateBracket authorization', function (): void {
 
     it('forbids regular members from generating the bracket', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
 
         liveCenterAs($member, $tournament)
@@ -192,7 +193,7 @@ describe('generateBracket authorization', function (): void {
 describe('closeTournament authorization', function (): void {
 
     it('forbids regular members from closing the tournament', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
 
         liveCenterAs($member, $tournament)

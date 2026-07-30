@@ -14,10 +14,14 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Feature;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
+use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\Training;
 use App\Http\Controllers\Controller;
+use App\Support\QueueHealth;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 
@@ -28,7 +32,7 @@ class DashboardController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $role = $user->committee_role;
-        $isAdmin = $user->is_admin;
+        $isAdmin = $user->hasRole(Role::ADMINISTRATOR->value);
         $isCaptain = Team::where('captain_id', $user->id)->exists();
 
         $showSecretary = $isAdmin || in_array($role, [
@@ -36,7 +40,19 @@ class DashboardController extends Controller
             CommitteeRolesEnum::PRESIDENT,
             CommitteeRolesEnum::VICE_PRESIDENT,
         ]);
-        $showTreasurer = $isAdmin || $role === CommitteeRolesEnum::TREASURER;
+        // Was a third, narrower definition of "treasurer" — the dashboard hid the
+        // treasury card from the president while the fines screen let them act.
+        // The délégation is now the single answer.
+        // Managing permissions, not viewing ones: payments.view belongs to the
+        // committee baseline, so keying on it would have shown the treasury
+        // section to every committee member — widening what this refactor is
+        // meant to tighten.
+        $showTreasurer = $user->canAny([
+            Permission::PaymentsReconcile->value,
+            Permission::TransactionsView->value,
+            Permission::CashRegisterView->value,
+            Permission::FinesIssue->value,
+        ]);
         $showCaptain = $isAdmin || $isCaptain;
         $showCommittee = $isAdmin || in_array($role, [
             CommitteeRolesEnum::PRESIDENT,
@@ -137,15 +153,9 @@ class DashboardController extends Controller
             ];
         }
 
-        // Personal alert: incomplete own profile (all users)
-        if (! $user->phone_number || ! $user->street || ! $user->city_code || ! $user->city_name || ! $user->birthdate) {
-            $alerts[] = [
-                'type' => 'warning',
-                'icon' => 'o-user-circle',
-                'label' => 'Votre profil est incomplet — merci de le compléter',
-                'route' => route('admin.user.profile', $user),
-            ];
-        }
+        // No personal "incomplete profile" alert here: the profile.complete
+        // middleware sends those members to the onboarding wizard before they
+        // can ever reach the dashboard.
 
         // Personal alert: not affiliated for current season (all users)
         if ($currentSeason) {
@@ -202,12 +212,12 @@ class DashboardController extends Controller
                 }
             }
 
-            $pendingContacts = Contact::byStatus('pending')->count();
-            if ($pendingContacts > 0) {
+            $newContacts = Contact::byStatus('new')->count();
+            if ($newContacts > 0) {
                 $alerts[] = [
                     'type' => 'info',
                     'icon' => 'o-envelope',
-                    'label' => $pendingContacts === 1 ? '1 message en attente' : "{$pendingContacts} messages en attente",
+                    'label' => $newContacts === 1 ? '1 nouveau message' : "{$newContacts} nouveaux messages",
                     'route' => route('admin.website.contacts.index'),
                 ];
             }
@@ -239,6 +249,29 @@ class DashboardController extends Controller
             }
         }
 
+        // Queue health (admins + committee): a dead worker silently blocks
+        // every outgoing email, surface it prominently.
+        if ($user->can(Permission::QueueView->value)) {
+            if (QueueHealth::isStalled()) {
+                $alerts[] = [
+                    'type' => 'error',
+                    'icon' => 'o-queue-list',
+                    'label' => "File d'attente bloquée — aucun email ne part, worker probablement arrêté",
+                    'route' => route('admin.queue.index'),
+                ];
+            }
+
+            $failedJobs = QueueHealth::failedCount();
+            if ($failedJobs > 0) {
+                $alerts[] = [
+                    'type' => 'warning',
+                    'icon' => 'o-queue-list',
+                    'label' => $failedJobs === 1 ? '1 tâche en échec dans la file d\'attente' : "{$failedJobs} tâches en échec dans la file d'attente",
+                    'route' => route('admin.queue.index'),
+                ];
+            }
+        }
+
         return $alerts;
     }
 
@@ -252,9 +285,10 @@ class DashboardController extends Controller
             ['icon' => 'o-clipboard-document-list',  'label' => 'Cotisations',    'sub' => 'Gérer ma cotisation et mes entraînements', 'href' => route('admin.user.registration-management', $user), 'color' => 'emerald'],
             ['icon' => 'o-banknotes',                'label' => 'Mes paiements',  'sub' => 'Suivi & historique',                      'href' => route('admin.user.registration-management', $user), 'color' => 'teal'],
             ['icon' => 'o-calendar',                 'label' => 'Événements',     'sub' => 'Agenda du club',                          'href' => route('admin.user.calendar', $user),                'color' => 'amber'],
+            ['icon' => 'o-bell',                     'label' => 'Notifications',  'sub' => 'Infos & tâches',                          'href' => route('notifications.index'),                       'color' => 'rose'],
         ];
 
-        if ($user->is_competitor) {
+        if ($user->is_competitor && Feature::Interclubs->enabled()) {
             $tiles[] = ['icon' => 'o-calendar-days', 'label' => 'Disponibilités', 'sub' => 'Interclubs', 'href' => route('admin.user.calendar', $user),  'color' => 'indigo'];
             $tiles[] = ['icon' => 'o-globe-alt',     'label' => 'Mes matchs',     'sub' => 'Interclubs', 'href' => route('admin.interclubs.my-matches'), 'color' => 'rose'];
         }

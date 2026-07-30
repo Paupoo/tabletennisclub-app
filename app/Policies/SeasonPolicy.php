@@ -6,6 +6,7 @@ namespace App\Policies;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\Permission;
 
 class SeasonPolicy
 {
@@ -14,7 +15,7 @@ class SeasonPolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::SeasonsManage->value);
     }
 
     /**
@@ -35,7 +36,7 @@ class SeasonPolicy
 
     public function manageSubscription(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::SeasonsManage->value);
     }
 
     /**
@@ -48,7 +49,7 @@ class SeasonPolicy
 
     public function subscribe(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::SeasonsManage->value);
     }
 
     /**
@@ -56,7 +57,7 @@ class SeasonPolicy
      */
     public function update(User $user, Season $season): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::SeasonsManage->value);
     }
 
     /**
@@ -72,6 +73,6 @@ class SeasonPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::SeasonsView->value);
     }
 }

@@ -5,29 +5,10 @@
 <div>
     <x-header separator :subtitle="__('Manage team selections')" :title="__('Selections')">
         <x-slot:actions>
-            <x-select
-                class="select-sm border-none bg-base-200/50 font-bold"
-                :options="$seasons_list"
-                wire:model.live="selectedSeasonId" />
-            @if ($teamsData->count() > 1)
-                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }} lg:hidden"
-                    wire:click="$set('filterDrawer', true)">
-                    <x-icon name="o-funnel" class="h-5 w-5" />
-                    @if (count($filterChips) > 0)
-                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
-                    @endif
-                </button>
-                <x-button
-                    class="btn-ghost hidden {{ count($filterChips) > 0 ? 'btn-active' : '' }} lg:flex"
-                    icon="o-funnel"
-                    :label="__('Filters')"
-                    wire:click="$set('filterDrawer', true)">
-                    @if (count($filterChips) > 0)
-                        <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
-                    @endif
-                </x-button>
-            @endif
-            
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-search="false" :show-more="false" />
+            <div class="hidden lg:block">
+                <x-admin.shared.filters-button :count="count($filterChips)" />
+            </div>
         </x-slot:actions>
     </x-header>
 
@@ -39,8 +20,8 @@
     ])
 
     @if ($teamsData->isEmpty())
-        <x-empty-state icon="o-user-group" :title="__('No team assigned')"
-            :description="__('You are not captain of any team this season.')" />
+        <x-empty-state icon="o-user-group" :heading="__('No team assigned')"
+            :message="__('You are not captain of any team this season.')" />
     @else
 
         {{-- ── ALERT BANNER ───────────────────────────────────────────── --}}
@@ -90,7 +71,7 @@
 
                 {{-- Match list --}}
                 @if (empty($td['matches']))
-                    <x-empty-state icon="o-calendar" :title="__('No matches scheduled.')" />
+                    <x-empty-state icon="o-calendar" :heading="__('No matches scheduled.')" />
                 @else
                     <div class="divide-y divide-base-200 overflow-hidden rounded-xl border border-base-200">
                         @foreach ($td['matches'] as $ic)
@@ -162,10 +143,12 @@
                                                 icon="o-pencil-square"
                                                 :label="__('Select')"
                                                 wire:click="openSelection({{ $ic['id'] }})" />
+                                            {{-- Infobulle à gauche : le conteneur de la liste est en
+                                                 overflow-hidden, une bulle au-dessus y serait rognée. --}}
                                             <x-button
                                                 class="btn-ghost btn-xs text-base-content/40"
                                                 icon="o-envelope"
-                                                :tooltip="__('Request availability')"
+                                                :tooltip-left="__('Request availability')"
                                                 wire:click="requestAvailability({{ $ic['id'] }})" />
                                         </div>
                                     @endif
@@ -181,8 +164,14 @@
 
     {{-- ── FILTER DRAWER ÉQUIPES ──────────────────────────────────────── --}}
     {{-- Never wrap x-drawer in @if — x-teleport moves DOM to body, @if breaks Livewire morph --}}
-    <x-admin.shared.filter-drawer :title="__('Teams')">
+    <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Season') }}
+                </p>
+                <x-select :options="$seasons_list" wire:model.live="selectedSeasonId" class="w-full" />
+            </div>
             @if (! empty($teams_for_filter))
                 <div>
                     <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
@@ -208,7 +197,7 @@
                     <span @class([
                         'font-black',
                         'text-success' => count($selectedPlayerIds) == $maxPlayers,
-                        'text-warning' => count($selectedPlayerIds) > 0 && count($selectedPlayerIds) < $maxPlayers,
+                        'text-warning-content' => count($selectedPlayerIds) > 0 && count($selectedPlayerIds) < $maxPlayers,
                         'text-base-content/40' => count($selectedPlayerIds) === 0,
                     ])>{{ count($selectedPlayerIds) }} / {{ $maxPlayers }}</span>
                 </div>
@@ -271,6 +260,23 @@
                                 </div>
                                 @if (! empty($player['availability_note']))
                                     <div class="mt-0.5 text-[9px] italic opacity-40">"{{ $player['availability_note'] }}"</div>
+                                @endif
+                                {{-- Captain override: contact details of own players (T8) --}}
+                                @if (! empty($player['phone_number']) || ! empty($player['email']))
+                                    <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                        @if (! empty($player['phone_number']))
+                                            <a href="tel:{{ $player['phone_number'] }}" @click.stop
+                                                class="inline-flex items-center gap-1 text-[9px] font-semibold text-base-content/50 hover:text-primary">
+                                                <x-icon name="o-phone" class="h-2.5 w-2.5" />{{ $player['phone_number'] }}
+                                            </a>
+                                        @endif
+                                        @if (! empty($player['email']))
+                                            <a href="mailto:{{ $player['email'] }}" @click.stop
+                                                class="inline-flex items-center gap-1 truncate text-[9px] font-semibold text-base-content/50 hover:text-primary">
+                                                <x-icon name="o-envelope" class="h-2.5 w-2.5 shrink-0" />{{ $player['email'] }}
+                                            </a>
+                                        @endif
+                                    </div>
                                 @endif
                             </div>
 
@@ -335,7 +341,14 @@
                                     @endif
                                 </div>
                             @empty
-                                <div class="p-4 text-center text-xs opacity-40">{{ __('No player found.') }}</div>
+                                @if ($searchNote)
+                                    <div class="flex items-start gap-2 rounded-lg bg-warning/10 p-3 text-xs text-warning-content">
+                                        <x-icon name="o-information-circle" class="mt-0.5 h-4 w-4 shrink-0" />
+                                        <span>{{ $searchNote }}</span>
+                                    </div>
+                                @else
+                                    <div class="p-4 text-center text-xs opacity-40">{{ __('No player found.') }}</div>
+                                @endif
                             @endforelse
                         </div>
                     @endif
@@ -355,43 +368,83 @@
     </x-drawer>
 
     {{-- ── MODAL LINEUP / MESSAGE ─────────────────────────────────────── --}}
-    <x-modal separator :title="__('Notify the team')" wire:model="modalMessage">
+    <x-modal separator :title="$isUpdateMode ? __('Update the team') : __('Notify the team')" wire:model="modalMessage">
         <div class="space-y-4">
+            @if ($isUpdateMode)
+                {{-- Diff summary: only added/removed players are notified --}}
+                @if (! empty($pendingRemovedNames))
+                    <div class="bg-error/5 border border-error/20 rounded-xl p-3">
+                        <div class="mb-2 text-[10px] font-black uppercase tracking-widest text-error/70">
+                            {{ __('Removed — will always be notified') }}
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            @foreach ($pendingRemovedNames as $name)
+                                <x-badge class="badge-error badge-soft badge-sm font-bold" :value="$name" />
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
-            {{-- Selected lineup summary --}}
-            @php
-                $drawerIc = $drawerInterclub;
-                $currentIcId = $selectedInterclubId;
-                $currentTd = $teamsData->firstWhere('id', $selectedTeamId);
-                $currentMatch = $currentTd ? collect($currentTd['matches'])->firstWhere('id', $currentIcId) : null;
-                $selCount = count($selectedPlayerIds);
-                $maxP = $maxPlayers;
-            @endphp
+                @if (! empty($pendingAddedNames))
+                    <div class="bg-base-200/50 rounded-xl p-3">
+                        <div class="mb-2 text-[10px] font-black uppercase tracking-widest opacity-40">
+                            {{ __('Added') }}
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            @foreach ($pendingAddedNames as $name)
+                                <x-badge class="badge-primary badge-soft badge-sm font-bold" :value="$name" />
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
-            <div class="bg-base-200/50 rounded-xl p-3">
-                <div class="mb-2 text-[10px] font-black uppercase tracking-widest opacity-40">
-                    {{ __('Selected lineup (:n/:max)', ['n' => $selCount, 'max' => $maxP]) }}
+                @if (! $modalIsComplete)
+                    <div class="rounded-xl border border-warning/30 bg-warning/5 p-3 text-xs text-warning-content">
+                        <div class="flex items-center gap-1.5 font-semibold">
+                            <x-icon name="o-exclamation-triangle" class="h-3.5 w-3.5" />
+                            {{ __('Selection incomplete: only the removed players will be notified for now.') }}
+                        </div>
+                    </div>
+                @endif
+
+                <x-textarea
+                    class="border-none bg-base-200/50 focus:ring-primary"
+                    :label="__('Meetup info (optional)')"
+                    :placeholder="__('E.g. Meet at 18:45 at the club entrance, bring your club shirt...')"
+                    rows="4"
+                    wire:model="captainMeetupInfo" />
+            @else
+                {{-- Selected lineup summary --}}
+                @php
+                    $selCount = count($selectedPlayerIds);
+                    $maxP = $maxPlayers;
+                @endphp
+
+                <div class="bg-base-200/50 rounded-xl p-3">
+                    <div class="mb-2 text-[10px] font-black uppercase tracking-widest opacity-40">
+                        {{ __('Selected lineup (:n/:max)', ['n' => $selCount, 'max' => $maxP]) }}
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        @foreach ($roster->filter(fn ($p) => in_array($p['id'], $selectedPlayerIds)) as $p)
+                            <x-badge class="badge-primary badge-soft badge-sm font-bold" :value="$p['name']" />
+                        @endforeach
+                    </div>
                 </div>
-                <div class="flex flex-wrap gap-1.5">
-                    @foreach ($roster->filter(fn ($p) => in_array($p['id'], $selectedPlayerIds)) as $p)
-                        <x-badge class="badge-primary badge-soft badge-sm font-bold" :value="$p['name']" />
-                    @endforeach
-                </div>
-            </div>
 
-            <x-textarea
-                class="border-none bg-base-200/50 focus:ring-primary"
-                :label="__('Meetup info (optional)')"
-                :placeholder="__('E.g. Meet at 18:45 at the club entrance, bring your club shirt...')"
-                rows="4"
-                wire:model="captainMeetupInfo" />
+                <x-textarea
+                    class="border-none bg-base-200/50 focus:ring-primary"
+                    :label="__('Meetup info (optional)')"
+                    :placeholder="__('E.g. Meet at 18:45 at the club entrance, bring your club shirt...')"
+                    rows="4"
+                    wire:model="captainMeetupInfo" />
 
-            <div class="rounded-xl border border-info/20 bg-info/5 p-3 text-xs text-info">
-                <div class="flex items-center gap-1.5 font-semibold">
-                    <x-icon name="o-information-circle" class="h-3.5 w-3.5" />
-                    {{ __('All team members will be notified. Selected players receive a calendar invite (ICS).') }}
+                <div class="rounded-xl border border-info/20 bg-info/5 p-3 text-xs text-info">
+                    <div class="flex items-center gap-1.5 font-semibold">
+                        <x-icon name="o-information-circle" class="h-3.5 w-3.5" />
+                        {{ __('All team members will be notified. Selected players receive a calendar invite (ICS).') }}
+                    </div>
                 </div>
-            </div>
+            @endif
         </div>
 
         <x-slot:actions>

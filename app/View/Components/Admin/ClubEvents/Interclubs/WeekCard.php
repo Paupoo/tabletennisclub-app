@@ -30,7 +30,7 @@ class WeekCard extends Component
         return match ($this->status) {
             'win' => 'bg-success',
             'loss' => 'bg-error',
-            'draw' => 'bg-base-400',
+            'draw' => 'bg-base-300',
             'pending' => 'bg-warning',
             'ready' => 'bg-success',
             default => 'bg-base-300',
@@ -51,7 +51,7 @@ class WeekCard extends Component
         return match ($this->status) {
             'win' => 'bg-success',
             'loss' => 'bg-error',
-            'draw' => 'bg-base-400',
+            'draw' => 'bg-base-300',
             'pending' => 'border-2 border-warning',
             'ready' => 'bg-success opacity-40',
             default => 'border border-base-300',

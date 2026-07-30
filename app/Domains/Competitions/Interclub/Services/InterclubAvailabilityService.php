@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Notifications\InterclubAvailabilityRequestNotification;
 use App\Domains\Competitions\Interclub\Notifications\InterclubLineupBroadcastNotification;
+use App\Domains\Competitions\Interclub\Notifications\InterclubPlayerRemovedNotification;
 use App\Domains\Competitions\Interclub\Notifications\InterclubSelectionNotification;
 use Illuminate\Support\Facades\Notification;
 
@@ -44,6 +45,57 @@ class InterclubAvailabilityService
                     'selection_confirmed_at' => now(),
                 ]);
             });
+    }
+
+    /**
+     * Notify players added/removed since the last confirmation. Removed players are
+     * always informed, even if the resulting selection is incomplete. Added players
+     * and the team broadcast are only notified once the selection is complete again.
+     *
+     * @param  array<int, int>  $addedUserIds
+     * @param  array<int, int>  $removedUserIds
+     */
+    public function notifySelectionChange(Interclub $interclub, array $addedUserIds, array $removedUserIds, string $captainMessage = ''): void
+    {
+        $interclub->loadMissing(['visitedTeam', 'visitingTeam', 'visitedTeam.club', 'visitingTeam.club']);
+
+        if ($removedUserIds !== []) {
+            $removedPlayers = User::whereIn('id', $removedUserIds)->get();
+
+            foreach ($removedPlayers as $player) {
+                $player->notify(new InterclubPlayerRemovedNotification($interclub));
+            }
+
+            foreach ($removedUserIds as $userId) {
+                $interclub->users()->updateExistingPivot($userId, ['selection_confirmed_at' => null]);
+            }
+        }
+
+        if (! $interclub->isSelectionComplete()) {
+            return;
+        }
+
+        $ourTeam = $interclub->visitedTeam?->club?->is_own_club
+            ? $interclub->visitedTeam
+            : $interclub->visitingTeam;
+
+        $selectedPlayers = $interclub->getSelectedPlayers();
+        $selectedIds = $selectedPlayers->pluck('id');
+
+        if ($addedUserIds !== []) {
+            foreach ($selectedPlayers->whereIn('id', $addedUserIds) as $player) {
+                $player->notify(new InterclubSelectionNotification($interclub, $captainMessage));
+            }
+
+            foreach ($addedUserIds as $userId) {
+                $interclub->users()->updateExistingPivot($userId, ['selection_confirmed_at' => now()]);
+            }
+        }
+
+        $nonSelected = $ourTeam?->users()->whereNotIn('users.id', $selectedIds)->get() ?? collect();
+        foreach ($nonSelected as $player) {
+            $player->notify(new InterclubLineupBroadcastNotification($interclub, $selectedPlayers, $captainMessage, isUpdate: true));
+        }
     }
 
     /**

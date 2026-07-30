@@ -8,10 +8,10 @@
         <x-slot:actions>
             <x-button class="btn-ghost" link="{{ route('admin.interclubs.teams') }}" icon="o-arrow-left"
                 :label="__('All teams')" />
-            @if (auth()->user()->is_admin || auth()->user()->is_committee_member)
+            @can('update', $team)
                 <x-button class="btn-primary" link="{{ route('admin.interclubs.teams.edit', $team->id) }}"
                     icon="o-pencil" label="Modifier" />
-            @endif
+            @endcan
         </x-slot:actions>
     </x-header>
 
@@ -64,7 +64,7 @@
                 <p class="py-6 text-center text-sm text-gray-400 italic">Aucun joueur dans le noyau.</p>
             @else
                 <div class="divide-y divide-gray-100">
-                    @foreach ($team->users->sortBy('force_list') as $user)
+                    @foreach ($team->users->sortBy(fn ($user) => sprintf('%03d|%s|%s', $user->forceListFor($team->league?->category) ?? 999, $user->last_name, $user->first_name)) as $user)
                         <div class="flex items-center justify-between py-3" wire:key="member-{{ $user->id }}">
                             <div class="flex items-center gap-3">
                                 <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600">

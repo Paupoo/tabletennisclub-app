@@ -19,8 +19,14 @@ class SendWelcomeEmail
             return;
         }
 
+        $recipient = $user->contactEmail();
+
+        if ($recipient === null) {
+            return;
+        }
+
         $dashboardUrl = route('dashboard');
 
-        Mail::to($user->email)->queue(new MemberWelcomeMail($user, $dashboardUrl));
+        Mail::to($recipient)->queue(new MemberWelcomeMail($user, $dashboardUrl));
     }
 }

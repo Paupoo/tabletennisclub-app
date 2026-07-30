@@ -91,6 +91,7 @@ class SeedTrainingPlanService
 
         $subscriptions = Subscription::query()
             ->where('season_id', $season->id)
+            ->affiliated()
             ->with(['trainingPacks' => function ($query): void {
                 $query->wherePivot('status', 'enrolled');
             }])
@@ -138,6 +139,7 @@ class SeedTrainingPlanService
     {
         $poolUserIds = Subscription::query()
             ->where('season_id', $season->id)
+            ->affiliated()
             ->wantsDirectedTraining()
             ->whereNotIn('user_id', array_values($assignedUserIds))
             ->distinct()

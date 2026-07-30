@@ -20,7 +20,7 @@ Pour finaliser votre inscription, veuillez effectuer le virement de **{{ number_
 
 <img src="{{ $qrCode }}" alt="QR code de paiement" style="max-width: 160px; display: block;" />
 
-*Sans paiement dans les 72h, votre inscription sera annulée et la place proposée au suivant sur la liste d'attente.*
+*Sans paiement au terme de ce délai, votre inscription sera annulée et la place proposée au suivant sur la liste d'attente.*
 
 *{{ __('If you have already paid by the time you receive this message, please ignore this reminder.') }}*
 

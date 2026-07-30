@@ -2,54 +2,33 @@
      <x-slot:breadcrumbs>
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
-    <x-header :title="__('Registrations')" :subtitle="__('All affiliations by season')" separator progress-indicator>
+    <x-header :title="__('Affiliations')" :subtitle="__('All affiliations by season')" separator progress-indicator>
         <x-slot:middle>
-            <x-select
-                wire:model.live="selectedSeasonId"
-                :options="$this->seasonOptions"
-                :placeholder="__('All seasons')"
-                icon="o-calendar"
-                class="w-full" />
+            <div class="hidden w-full lg:block">
+                <x-input class="w-full" clearable icon="o-magnifying-glass"
+                    :placeholder="__('Search a member...')"
+                    wire:model.live.debounce.300ms="search" />
+            </div>
         </x-slot:middle>
         <x-slot:actions>
             {{-- Mobile: 🔍 · filter · ☰ --}}
-            <div class="flex items-center gap-1 lg:hidden">
-                <button class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true">
-                    <x-icon name="o-magnifying-glass" class="h-5 w-5" />
-                </button>
-                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                    wire:click="$set('filterDrawer', true)">
-                    <x-icon name="o-funnel" class="h-5 w-5" />
-                    @if (count($filterChips) > 0)
-                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
-                    @endif
-                </button>
-                <button class="btn btn-primary btn-circle btn-sm" @click="mobileActionsOpen = true">
-                    <x-icon name="o-bars-3" class="h-5 w-5" />
-                </button>
-            </div>
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" />
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
-                <x-input class="input-sm w-48" clearable icon="o-magnifying-glass"
-                    :placeholder="__('Search a member...')"
-                    wire:model.live.debounce.300ms="search" />
-                <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                    icon="o-funnel" :label="__('Filters')"
-                    wire:click="$set('filterDrawer', true)">
-                    @if (count($filterChips) > 0)
-                        <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
+                <x-admin.shared.filters-button :count="count($filterChips)" />
+                @can('subscriptions.manage')
+                    <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
+                        <x-menu-item
+                            :icon="$this->affiliationsClosed ? 'o-lock-open' : 'o-lock-closed'"
+                            :title="$this->affiliationsClosed ? __('Open affiliations') : __('Close affiliations')"
+                            wire:click="toggleAffiliations" />
+                    </x-dropdown>
+                    @if (! $this->affiliationsClosed)
+                        <x-button :label="__('Register a member')" icon="o-user-plus"
+                            class="btn-primary btn-sm"
+                            @click="$wire.memberDrawer = true" />
                     @endif
-                </x-button>
-                @if (! $this->registrationClosed)
-                    <x-button :label="__('Register a member')" icon="o-user-plus"
-                        class="btn-primary btn-sm"
-                        @click="$wire.memberDrawer = true" />
-                @endif
-                <x-button
-                    :label="$this->registrationClosed ? __('Open Registrations') : __('Close Registrations')"
-                    :icon="$this->registrationClosed ? 'o-lock-open' : 'o-lock-closed'"
-                    class="btn-outline btn-sm"
-                    wire:click="toggleRegistrations" />
+                @endcan
             </div>
         </x-slot:actions>
     </x-header>
@@ -77,13 +56,14 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
-    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
         @php
             $statCards = [
-                ['label' => __('Total'),     'key' => 'total',     'icon' => 'o-users',       'bg' => 'bg-base-200',    'color' => 'text-base-content/60'],
-                ['label' => __('Pending'),   'key' => 'pending',   'icon' => 'o-clock',       'bg' => 'bg-warning/10',  'color' => 'text-warning'],
-                ['label' => __('Confirmed'), 'key' => 'confirmed', 'icon' => 'o-check-circle','bg' => 'bg-info/10',     'color' => 'text-info'],
-                ['label' => __('Paid'),      'key' => 'paid',      'icon' => 'o-banknotes',   'bg' => 'bg-success/10',  'color' => 'text-success'],
+                ['label' => __('Total'),     'key' => 'total',     'icon' => 'o-users',            'bg' => 'bg-base-200',    'color' => 'text-base-content/60'],
+                ['label' => __('Pending'),   'key' => 'pending',   'icon' => 'o-clock',            'bg' => 'bg-warning/10',  'color' => 'text-warning-content'],
+                ['label' => __('Confirmed'), 'key' => 'confirmed', 'icon' => 'o-check-circle',     'bg' => 'bg-info/10',     'color' => 'text-info'],
+                ['label' => __('Paid'),      'key' => 'paid',      'icon' => 'o-banknotes',        'bg' => 'bg-success/10',  'color' => 'text-success'],
+                ['label' => __('Refunded'),  'key' => 'refunded',  'icon' => 'o-arrow-uturn-left', 'bg' => 'bg-error/10',    'color' => 'text-error'],
             ];
         @endphp
         @foreach ($statCards as $card)
@@ -107,8 +87,8 @@
     @if ($totalPending > 0)
         <div class="mb-6">
             <div class="mb-3 flex items-center gap-2">
-                <x-icon name="o-clock" class="h-4 w-4 text-warning" />
-                <span class="text-sm font-bold uppercase tracking-widest text-warning">{{ __('Pending Requests') }}</span>
+                <x-icon name="o-clock" class="h-4 w-4 text-warning-content" />
+                <span class="text-sm font-bold uppercase tracking-widest text-warning-content">{{ __('Pending Requests') }}</span>
                 <x-badge value="{{ $totalPending }}" class="badge-warning badge-sm" />
                 <div class="flex-1 border-t border-warning/30"></div>
             </div>
@@ -153,6 +133,7 @@
                     'pending'   => ['class' => 'badge-warning badge-soft', 'label' => __('To process')],
                     'confirmed' => ['class' => 'badge-info badge-soft',    'label' => __('Confirmed')],
                     'paid'      => ['class' => 'badge-success badge-soft', 'label' => __('Paid')],
+                    'refunded'  => ['class' => 'badge-error badge-soft',   'label' => __('Refunded')],
                     'cancelled' => ['class' => 'badge-ghost',              'label' => __('Cancelled')],
                     default     => ['class' => 'badge-ghost',              'label' => $req->status],
                 };
@@ -173,14 +154,24 @@
                     </div>
                 </x-slot:sub-value>
                 <x-slot:actions>
-                    <x-button :label="__('Details')" wire:click.stop="review({{ $req->id }})"
-                        class="btn-xs btn-ghost" />
+                    <div class="flex items-center gap-1">
+                        @if (in_array($req->status, ['confirmed', 'paid']))
+                            @can('subscriptions.manage')
+                                <x-button icon="o-x-circle"
+                                    :tooltip="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
+                                    class="btn-xs btn-ghost text-error"
+                                    wire:click.stop="openCancelModal({{ $req->id }})" spinner />
+                            @endcan
+                        @endif
+                        <x-button :label="__('Details')" wire:click.stop="review({{ $req->id }})"
+                            class="btn-xs btn-ghost" />
+                    </div>
                 </x-slot:actions>
             </x-list-item>
         @empty
             <x-empty-state
                 icon="o-users"
-                :heading="__('No registrations found')"
+                :heading="__('No affiliations found')"
                 :message="__('Try adjusting your search or filters.')" />
         @endforelse
     </div>
@@ -191,7 +182,7 @@
             @if ($registrations->isEmpty())
                 <x-empty-state
                     icon="o-users"
-                    :heading="__('No registrations found')"
+                    :heading="__('No affiliations found')"
                     :message="__('Try adjusting your search or filters.')" />
             @else
                 <x-table :headers="$headers" :rows="$registrations" hover>
@@ -219,7 +210,7 @@
                             <div>
                                 <span class="text-sm font-bold">{{ number_format($req->amount_due, 2) }} €</span>
                                 @if ($req->payment_status === 'pending')
-                                    <div class="text-xs text-warning opacity-70">{{ __('Awaiting payment') }}</div>
+                                    <div class="text-xs text-warning-content opacity-70">{{ __('Awaiting payment') }}</div>
                                 @elseif ($req->payment_status === 'paid')
                                     <div class="text-xs text-success opacity-70">{{ __('Paid') }}</div>
                                 @endif
@@ -235,6 +226,7 @@
                                 'pending'   => ['class' => 'badge-warning badge-soft', 'label' => __('To process')],
                                 'confirmed' => ['class' => 'badge-info badge-soft',    'label' => __('Confirmed')],
                                 'paid'      => ['class' => 'badge-success badge-soft', 'label' => __('Paid')],
+                                'refunded'  => ['class' => 'badge-error badge-soft',   'label' => __('Refunded')],
                                 'cancelled' => ['class' => 'badge-ghost',              'label' => __('Cancelled')],
                                 default     => ['class' => 'badge-ghost',              'label' => $req->status],
                             };
@@ -243,8 +235,18 @@
                     @endscope
 
                     @scope('actions', $req)
-                        <x-button :label="__('Details')" wire:click="review({{ $req->id }})"
-                            class="btn-xs btn-ghost" />
+                        <div class="flex items-center gap-1">
+                            @if (in_array($req->status, ['confirmed', 'paid']))
+                                @can('subscriptions.manage')
+                                    <x-button icon="o-x-circle"
+                                        :tooltip="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
+                                        class="btn-xs btn-ghost text-error"
+                                        wire:click="openCancelModal({{ $req->id }})" spinner />
+                                @endcan
+                            @endif
+                            <x-button :label="__('Details')" wire:click="review({{ $req->id }})"
+                                class="btn-xs btn-ghost" />
+                        </div>
                     @endscope
                 </x-table>
             @endif
@@ -263,41 +265,94 @@
                 <div>
                     <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Affiliation') }}</h3>
                     <div class="flex items-center gap-3 rounded-xl border border-base-300 bg-base-200/60 p-3 text-sm">
-                        <x-icon name="{{ $currentRequest->type === __('Compétition') ? 'o-trophy' : 'o-heart' }}" class="h-4 w-4 shrink-0 opacity-50" />
+                        <x-icon name="{{ $currentRequest->type === __('Competition') ? 'o-trophy' : 'o-heart' }}" class="h-4 w-4 shrink-0 opacity-50" />
                         <span class="flex-1">{{ $currentRequest->type }}</span>
                         @if ($currentRequest->status === 'paid')
                             <x-badge value="{{ __('Paid') }}" class="badge-success badge-sm" />
                         @elseif ($currentRequest->status === 'confirmed')
                             <x-badge value="{{ __('Confirmed') }}" class="badge-info badge-sm" />
+                        @elseif ($currentRequest->status === 'refunded')
+                            <x-badge value="{{ __('Refunded') }}" class="badge-error badge-soft badge-sm" />
                         @elseif ($currentRequest->status === 'cancelled')
                             <x-badge value="{{ __('Cancelled') }}" class="badge-ghost badge-sm" />
                         @endif
                     </div>
                 </div>
 
-                @if ($currentRequest->enrolled_packs->count() > 0 || $currentRequest->pending_packs->count() > 0)
+                @if ($currentRequest->enrolled_packs->count() > 0 || $currentRequest->pending_packs->count() > 0 || $currentRequest->cancelled_packs->count() > 0 || $currentRequest->left_packs->count() > 0)
+                    @php
+                        $packLines = $this->reviewPackLines;
+                    @endphp
                     <div>
                         <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Training Packs') }}</h3>
                         <div class="space-y-2">
                             @foreach ($currentRequest->enrolled_packs as $pack)
+                                @php
+                                    $line = $packLines[$pack->id] ?? null;
+                                @endphp
                                 <div class="flex items-center gap-3 rounded-lg border border-base-200 p-2.5 text-sm">
                                     <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 text-primary opacity-60" />
-                                    <span class="flex-1">{{ $pack->name }}</span>
+                                    <span class="flex-1">
+                                        {{ $pack->name }}
+                                        @if ($line && $line['overridden'])
+                                            <x-badge value="{{ __('Forced amount') }}" class="badge-warning badge-xs ml-1" />
+                                        @elseif ($line && $line['ratio'] < 1)
+                                            <x-badge value="{{ __('Pro rata') }}" class="badge-info badge-xs ml-1" />
+                                        @endif
+                                    </span>
                                     <x-badge value="{{ __('Enrolled') }}" class="badge-primary badge-xs" />
-                                    <span class="text-xs font-semibold opacity-50">{{ number_format((float) $pack->price, 2) }} €</span>
+                                    <span class="text-xs font-semibold opacity-50">{{ number_format($line['amount'] ?? (float) $pack->price, 2) }} €</span>
                                     @if (in_array($currentRequest->status, ['confirmed', 'paid']))
-                                        <x-button icon="o-arrow-uturn-left" :tooltip="__('Remove & refund')"
-                                            class="btn-ghost btn-xs text-error"
-                                            wire:click="openRefundModal({{ $currentRequest->id }}, {{ $pack->id }})"
-                                            spinner />
+                                        @can('subscriptions.manage')
+                                            <x-button icon="o-adjustments-horizontal" :tooltip="__('Adjust period or amount')"
+                                                class="btn-ghost btn-xs"
+                                                wire:click="openReconcileModal({{ $currentRequest->id }}, {{ $pack->id }})"
+                                                spinner />
+                                            <x-button icon="o-arrow-uturn-left" :tooltip="__('Remove & refund')"
+                                                class="btn-ghost btn-xs text-error"
+                                                wire:click="openRefundModal({{ $currentRequest->id }}, {{ $pack->id }})"
+                                                spinner />
+                                        @endcan
                                     @endif
+                                </div>
+                            @endforeach
+                            @foreach ($currentRequest->left_packs as $pack)
+                                @php
+                                    $line = $packLines[$pack->id] ?? null;
+                                @endphp
+                                <div class="flex items-center gap-3 rounded-lg border border-base-200 bg-base-200/40 p-2.5 text-sm">
+                                    <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 opacity-40" />
+                                    <span class="flex-1">
+                                        {{ $pack->name }}
+                                        @if ($pack->pivot->ends_on)
+                                            <span class="text-xs opacity-50">
+                                                — {{ __('until :date', ['date' => \Illuminate\Support\Carbon::parse($pack->pivot->ends_on)->format('d/m/Y')]) }}
+                                            </span>
+                                        @endif
+                                    </span>
+                                    <x-badge value="{{ __('Left') }}" class="badge-ghost badge-xs" />
+                                    <span class="text-xs font-semibold opacity-50">{{ number_format($line['amount'] ?? 0.0, 2) }} €</span>
+                                    @can('subscriptions.manage')
+                                        <x-button icon="o-adjustments-horizontal" :tooltip="__('Adjust period or amount')"
+                                            class="btn-ghost btn-xs"
+                                            wire:click="openReconcileModal({{ $currentRequest->id }}, {{ $pack->id }})"
+                                            spinner />
+                                    @endcan
                                 </div>
                             @endforeach
                             @foreach ($currentRequest->pending_packs as $pack)
                                 <div class="flex items-center gap-3 rounded-lg border border-warning/20 bg-warning/5 p-2.5 text-sm">
-                                    <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 text-warning opacity-60" />
+                                    <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 text-warning-content opacity-60" />
                                     <span class="flex-1">{{ $pack->name }}</span>
                                     <x-badge value="{{ __('Awaiting validation') }}" class="badge-warning badge-xs" />
+                                    <span class="text-xs font-semibold opacity-50">{{ number_format((float) $pack->price, 2) }} €</span>
+                                </div>
+                            @endforeach
+                            @foreach ($currentRequest->cancelled_packs as $pack)
+                                <div class="flex items-center gap-3 rounded-lg border border-base-200 p-2.5 text-sm opacity-70">
+                                    <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 opacity-40" />
+                                    <span class="flex-1 line-through">{{ $pack->name }}</span>
+                                    <x-badge value="{{ __('Cancelled') }}" class="badge-ghost badge-xs" />
                                     <span class="text-xs font-semibold opacity-50">{{ number_format((float) $pack->price, 2) }} €</span>
                                 </div>
                             @endforeach
@@ -316,6 +371,12 @@
                                     <span class="text-sm font-bold">{{ number_format($payment['amount_due'], 2) }} €</span>
                                     @if ($payment['status'] === 'paid')
                                         <x-badge value="{{ __('Paid') }}" class="badge-success badge-xs" />
+                                    @elseif ($payment['status'] === 'to_refund')
+                                        <x-badge value="{{ __('To refund') }}" class="badge-error badge-soft badge-xs" />
+                                    @elseif ($payment['status'] === 'refunded')
+                                        <x-badge value="{{ __('Refunded') }}" class="badge-error badge-soft badge-xs" />
+                                    @elseif ($payment['status'] === 'cancelled')
+                                        <x-badge value="{{ __('Cancelled') }}" class="badge-ghost badge-xs" />
                                     @else
                                         <x-badge value="{{ __('Pending') }}" class="badge-warning badge-xs" />
                                     @endif
@@ -347,6 +408,41 @@
                     </div>
                 </div>
 
+                {{--
+                    Accepter une affiliation, c'est l'enregistrer auprès de la fédération :
+                    c'est donc ici, et nulle part ailleurs, que le matricule se vérifie et
+                    s'encode. Les champs sont pré-remplis depuis la fiche membre.
+                --}}
+                <div>
+                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Federation details') }}</h3>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <x-input :label="__('Licence number')" mandatory numeric wire:model.live.debounce="reviewLicence"
+                            :hint="__('6 digits')" />
+                        <x-select :options="$rankings" icon="o-scale" :label="__('Ranking')" mandatory
+                            wire:model.live="reviewRanking" />
+                    </div>
+                    @if (blank($reviewLicence) || blank($reviewRanking) || $reviewRanking === 'NA')
+                        <x-alert icon="o-information-circle" class="alert-info mt-3">
+                            <span class="text-sm">
+                                {{ __('A licence number and a ranking are required to accept an affiliation. An unranked player is NC, not N/A.') }}
+                            </span>
+                        </x-alert>
+                    @endif
+
+                    {{--
+                        Le membre et la fédération ne disent pas la même chose. Ce n'est
+                        pas une erreur — on prend la compétition, on l'arrête — mais ça se
+                        décide, et ça ne se décide qu'ici. Signalé, jamais bloquant.
+                    --}}
+                    @if ($this->federationFormulaGap)
+                        <x-alert icon="o-exclamation-triangle" class="alert-warning alert-soft mt-3">
+                            <span class="text-sm">
+                                {{ $this->federationFormulaGap }}
+                            </span>
+                        </x-alert>
+                    @endif
+                </div>
+
                 @if ($currentRequest->pending_packs->count() > 0)
                     <div>
                         <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Training Packs Requested') }}</h3>
@@ -369,7 +465,7 @@
                 <div class="overflow-hidden rounded-xl border border-base-200 text-sm">
                     <div class="flex items-center justify-between px-4 py-3">
                         <div class="flex items-center gap-2 opacity-60">
-                            <x-icon name="{{ $currentRequest->type === __('Compétition') ? 'o-trophy' : 'o-heart' }}" class="h-3.5 w-3.5 shrink-0" />
+                            <x-icon name="{{ $currentRequest->type === __('Competition') ? 'o-trophy' : 'o-heart' }}" class="h-3.5 w-3.5 shrink-0" />
                             <span>{{ __('Affiliation') }} · {{ $currentRequest->type }}</span>
                         </div>
                         <span class="font-semibold">{{ number_format($currentRequest->subscription_price, 2) }} €</span>
@@ -422,7 +518,7 @@
                     </div>
                 </div>
                 <div class="flex gap-2 rounded-lg border border-warning/20 bg-warning/10 p-3 text-xs">
-                    <x-icon name="o-exclamation-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                    <x-icon name="o-exclamation-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-warning-content" />
                     <span class="opacity-80">{{ __('Always include the structured reference when making your transfer so your payment is automatically matched.') }}</span>
                 </div>
                 <div class="flex items-center gap-3 rounded-xl border border-base-300 bg-base-200/50 p-3 text-sm">
@@ -468,14 +564,44 @@
             </div>
         @endif
 
+        {{--
+            Changer de formule après facturation n'est jamais gratuit : la modale
+            annonce à l'admin ce que ça déclenche — l'argent qui bouge et le mail
+            qui part — avant qu'il ne confirme.
+        --}}
+        @if (! $paymentGenerated && $currentRequest && in_array($currentRequest->status, ['confirmed', 'paid']) && Auth::user()->can('subscriptions.manage'))
+            <div class="mt-4 rounded-xl border border-base-200 p-4">
+                <div class="mb-2 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Change of formula') }}</div>
+                <p class="text-sm opacity-70">
+                    {{ $currentRequest->type === __('Competition')
+                        ? __('Switching to recreative reprices the affiliation at 60 € and takes the member out of the force lists. Any overpayment is reported to you for refund, capped at what they actually paid.')
+                        : __('Switching to competition reprices the affiliation at 125 € and invoices the difference as a new payment with its own structured reference.') }}
+                </p>
+                <p class="mt-2 text-xs italic opacity-50">{{ __('The member will be notified by email.') }}</p>
+                <x-button :label="__('Change formula')" icon="o-arrows-right-left" class="btn-soft btn-sm mt-3"
+                    wire:click="changeFormula"
+                    wire:confirm="{{ __('Change the formula of this affiliation? The member will be notified.') }}"
+                    spinner />
+            </div>
+        @endif
+
         <x-slot:actions>
-            @if (! $paymentGenerated && $currentRequest && $currentRequest->status === 'pending')
+            @if (! $paymentGenerated && $currentRequest && $currentRequest->status === 'pending' && Auth::user()->can('subscriptions.manage'))
+                <x-button :label="__('Change formula')" icon="o-arrows-right-left" class="btn-ghost btn-sm"
+                    wire:click="changeFormula" spinner />
                 <x-button :label="__('Reject')" wire:click="reject" class="btn-ghost text-error" spinner />
                 <x-button :label="__('Approve and Invoice')" wire:click="approve" class="btn-primary shadow-lg" spinner />
-            @elseif ($paymentGenerated)
+            @elseif ($paymentGenerated && Auth::user()->can('subscriptions.manage'))
                 <x-button :label="__('Close')" @click="$wire.reviewModal = false" class="btn-ghost" />
                 <x-button :label="__('Send by email')" icon="o-paper-airplane" class="btn-primary" wire:click="sendPaymentEmail" spinner />
             @else
+                @if ($currentRequest && in_array($currentRequest->status, ['confirmed', 'paid']) && Auth::user()->can('subscriptions.manage'))
+                    <x-button
+                        :label="$currentRequest->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
+                        icon="o-x-circle"
+                        class="btn-ghost text-error"
+                        wire:click="openCancelModal({{ $currentRequest->id }})" spinner />
+                @endif
                 <x-button :label="__('Close')" @click="$wire.reviewModal = false" class="btn-ghost" />
             @endif
         </x-slot:actions>
@@ -548,7 +674,7 @@
 
                     <div class="mt-3 flex justify-between border-t border-base-200 pt-3 text-sm">
                         <span class="opacity-50">{{ __('Expected additional payment') }}</span>
-                        <span class="font-bold text-warning">{{ number_format($this->trainingRequestEstimatedDelta, 2) }} €</span>
+                        <span class="font-bold text-warning-content">{{ number_format($this->trainingRequestEstimatedDelta, 2) }} €</span>
                     </div>
                 </div>
             </div>
@@ -611,17 +737,22 @@
         <x-slot:actions>
             @if (! $paymentGenerated)
                 <x-button :label="__('Cancel')" @click="$wire.trainingRequestModal = false" class="btn-ghost" />
-                <x-button :label="__('Reject all')" wire:click="rejectTrainingRequest" class="btn-ghost text-error" spinner />
-                <x-button :label="__('Approve')" icon="o-check" wire:click="approveTrainingRequest" class="btn-warning shadow-lg" spinner />
+                @can('subscriptions.manage')
+                    <x-button :label="__('Reject all')" wire:click="rejectTrainingRequest" class="btn-ghost text-error" spinner />
+                    <x-button :label="__('Approve')" icon="o-check" wire:click="approveTrainingRequest" class="btn-warning shadow-lg" spinner />
+                @endcan
             @else
                 <x-button :label="__('Close')" @click="$wire.trainingRequestModal = false; $wire.paymentGenerated = false" class="btn-ghost" />
-                <x-button :label="__('Send by email')" icon="o-paper-airplane" class="btn-primary" wire:click="sendPaymentEmail" spinner />
+                @can('subscriptions.manage')
+                    <x-button :label="__('Send by email')" icon="o-paper-airplane" class="btn-primary" wire:click="sendPaymentEmail" spinner />
+                @endcan
             @endif
         </x-slot:actions>
     </x-modal>
 
     {{-- ── Drawer inscription/renouvellement ───────────────────────────── --}}
-    <x-drawer wire:model="memberDrawer" :title="__('Family Registration')" right separator with-close-button class="w-11/12 md:w-5/12">
+    @can('subscriptions.manage')
+    <x-drawer wire:model="memberDrawer" :title="__('Family affiliation')" right separator with-close-button class="w-11/12 md:w-5/12">
         <div class="space-y-6">
             <div class="rounded-xl bg-base-200 p-4">
                 <x-input :placeholder="__('Search for a member to add to the group...')"
@@ -675,16 +806,28 @@
         <x-slot:actions>
             <x-button :label="__('Cancel')" @click="$wire.memberDrawer = false" />
             @if (count($familyBasket) > 0)
-                <x-button :label="__('Validate group registration') . ' (' . count($familyBasket) . ')'"
+                <x-button :label="__('Validate group affiliation') . ' (' . count($familyBasket) . ')'"
                     icon="o-check" class="btn-primary"
                     wire:click="saveFamilyRegistration" />
             @endif
         </x-slot:actions>
     </x-drawer>
+    @endcan
 
     {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Season') }}
+                </p>
+                <x-select
+                    wire:model.live="selectedSeasonId"
+                    :options="$this->seasonOptions"
+                    :placeholder="__('All seasons')"
+                    icon="o-calendar"
+                    class="w-full" />
+            </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
                     {{ __('Status') }}
@@ -700,6 +843,7 @@
         $refundSub  = $refundSubscriptionId ? $this->registrations()->firstWhere('id', $refundSubscriptionId) : null;
         $refundPack = $refundPackId ? $refundSub?->enrolled_packs->firstWhere('id', $refundPackId) : null;
     @endphp
+    @can('subscriptions.manage')
     <x-modal wire:model="refundModal" :title="__('Remove & Refund')" separator class="backdrop-blur-sm">
         @if ($refundPack)
             <div class="space-y-4">
@@ -721,7 +865,7 @@
                     </div>
                 @else
                     <div class="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 p-3 text-sm">
-                        <x-icon name="o-exclamation-triangle" class="h-4 w-4 shrink-0 text-warning" />
+                        <x-icon name="o-exclamation-triangle" class="h-4 w-4 shrink-0 text-warning-content" />
                         <span>{{ __('No IBAN on file — you will need to handle the refund manually.') }}</span>
                     </div>
                 @endif
@@ -732,21 +876,144 @@
             <x-button :label="__('Confirm refund')" icon="o-arrow-uturn-left" class="btn-error" wire:click="confirmRefund" spinner />
         </x-slot:actions>
     </x-modal>
+    @endcan
+
+    {{-- ── Modal de réconciliation d'une ligne d'entraînement ─────────── --}}
+    @can('subscriptions.manage')
+    <x-modal wire:model="reconcileModal" :title="__('Adjust training pack')" separator class="backdrop-blur-sm">
+        @php
+            $reconcile = $this->reconcilePreview;
+        @endphp
+        @if ($reconcile)
+            <div class="space-y-4">
+                <div class="rounded-xl border border-base-300 bg-base-200/60 p-3 text-sm">
+                    <div class="flex items-center gap-3">
+                        <x-icon name="o-academic-cap" class="h-4 w-4 shrink-0 text-primary opacity-60" />
+                        <span class="flex-1 font-semibold">{{ $reconcile['pack']->name }}</span>
+                        <span class="text-xs opacity-60">{{ $reconcile['member'] }}</span>
+                    </div>
+                    @if ($reconcile['prorata_available'])
+                        <p class="mt-2 text-xs opacity-50">
+                            {{ __('Pack runs from :start to :end', [
+                                'start' => $reconcile['pack']->pack_start_date->format('d/m/Y'),
+                                'end'   => $reconcile['pack']->pack_end_date->format('d/m/Y'),
+                            ]) }}
+                        </p>
+                    @else
+                        <p class="mt-2 text-xs opacity-50">{{ __('This pack has no start and end date: it cannot be pro-rated. Force the amount instead.') }}</p>
+                    @endif
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <x-input :label="__('Joined on')" type="date" wire:model.live="reconcileStartsOn"
+                        :hint="__('Empty = from the start of the pack')" />
+                    <x-input :label="__('Left on')" type="date" wire:model.live="reconcileEndsOn"
+                        :hint="__('Empty = until the end of the pack')" />
+                </div>
+
+                <div class="flex items-center gap-3 rounded-lg border border-info/20 bg-info/10 p-3 text-sm">
+                    <x-icon name="o-calculator" class="h-4 w-4 shrink-0 text-info" />
+                    <span class="flex-1">
+                        {{ __('Calculated amount') }}
+                        <span class="text-xs opacity-60">
+                            ({{ __(':percent% of :price €', [
+                                'percent' => number_format($reconcile['ratio'] * 100, 0),
+                                'price'   => number_format($reconcile['net_price'], 2),
+                            ]) }})
+                        </span>
+                    </span>
+                    <span class="font-bold">{{ number_format($reconcile['amount'], 2) }} €</span>
+                </div>
+
+                <div class="space-y-3 rounded-xl border border-warning/20 bg-warning/5 p-3">
+                    <p class="text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Force the amount') }}</p>
+                    <x-input :label="__('Forced amount (€)')" type="number" step="0.01" min="0"
+                        wire:model.live.blur="reconcileOverrideAmount"
+                        :hint="__('Empty = keep the calculated amount')" />
+                    <x-input :label="__('Reason')" wire:model.live.blur="reconcileOverrideReason"
+                        :placeholder="__('Why is this line priced manually?')"
+                        :hint="__('Mandatory as soon as an amount is forced. Recorded in the audit log.')" />
+                </div>
+            </div>
+        @endif
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" @click="$wire.reconcileModal = false" class="btn-ghost" />
+            <x-button :label="__('Save adjustment')" icon="o-check" class="btn-primary" wire:click="saveReconciliation" spinner />
+        </x-slot:actions>
+    </x-modal>
+    @endcan
+
+    {{-- ── Modal d'annulation de cotisation (avec remboursement éventuel) ── --}}
+    @can('subscriptions.manage')
+    <x-modal wire:model="cancelModal" :title="$this->subscriptionToCancel?->totalPaid() > 0 ? __('Cancel & refund') : __('Cancel subscription')" separator class="backdrop-blur-sm">
+        @if ($this->subscriptionToCancel)
+            @php
+                $cancelUser = $this->subscriptionToCancel->user;
+                $cancelTotalPaid = $this->subscriptionToCancel->totalPaid();
+            @endphp
+            <div class="space-y-4">
+                <p class="text-sm">
+                    {{ __('You are about to cancel the :season subscription of :member.', [
+                        'season' => $this->subscriptionToCancel->season?->name ?? '',
+                        'member' => $cancelUser->first_name . ' ' . $cancelUser->last_name,
+                    ]) }}
+                    {{ __('Training packs will be removed and freed spots offered to the waitlist.') }}
+                </p>
+
+                @if ($cancelTotalPaid > 0)
+                    <x-input :label="__('Amount to refund (€)')" wire:model="cancelRefundAmount"
+                        type="number" step="0.01" min="0.01" max="{{ $cancelTotalPaid }}"
+                        :hint="__('Already paid: :amount €', ['amount' => number_format($cancelTotalPaid, 2)])" />
+                    <p class="-mt-2 text-xs italic opacity-40">{{ __('Suggested amount excludes the training months already attended, which the club keeps.') }}</p>
+
+                    @if ($cancelUser->iban)
+                        <div class="flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 p-3 text-sm">
+                            <x-icon name="o-building-library" class="h-4 w-4 shrink-0 text-success" />
+                            <span>{{ __('Refund IBAN:') }} <span class="font-mono font-bold">{{ $cancelUser->iban }}</span></span>
+                        </div>
+                    @else
+                        <div class="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 p-3 text-sm">
+                            <x-icon name="o-exclamation-triangle" class="h-4 w-4 shrink-0 text-warning-content" />
+                            <span>{{ __('No IBAN on file — you will need to handle the refund manually.') }}</span>
+                        </div>
+                    @endif
+                @endif
+
+                <div>
+                    <label class="mb-1 block text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Message to the member (optional)') }}</label>
+                    <textarea wire:model="cancelMessage"
+                        placeholder="{{ __('Optional personal note to the member...') }}"
+                        class="textarea textarea-bordered textarea-sm w-full text-sm" rows="2"></textarea>
+                    <p class="mt-1 text-xs italic opacity-40">{{ __('Included in the cancellation email sent to the member.') }}</p>
+                </div>
+            </div>
+        @endif
+        <x-slot:actions>
+            <x-button :label="__('Back')" @click="$wire.cancelModal = false" class="btn-ghost" />
+            <x-button
+                :label="$this->subscriptionToCancel?->totalPaid() > 0 ? __('Confirm cancellation & refund') : __('Confirm cancellation')"
+                icon="o-x-circle" class="btn-error"
+                wire:click="confirmCancelSubscription" spinner />
+        </x-slot:actions>
+    </x-modal>
+    @endcan
 
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
     <x-admin.shared.mobile-actions>
-        @if (! $this->registrationClosed)
+        @can('subscriptions.manage')
+            @if (! $this->affiliationsClosed)
+                <x-admin.shared.mobile-action-item
+                    icon="o-user-plus" color="primary"
+                    :label="__('Register a member')"
+                    :description="__('Add a member to the current season')"
+                    @click="mobileActionsOpen = false; $wire.set('memberDrawer', true)" />
+            @endif
             <x-admin.shared.mobile-action-item
-                icon="o-user-plus" color="primary"
-                :label="__('Register a member')"
-                :description="__('Add a member to the current season')"
-                @click="mobileActionsOpen = false; $wire.set('memberDrawer', true)" />
-        @endif
-        <x-admin.shared.mobile-action-item
-            :icon="$this->registrationClosed ? 'o-lock-open' : 'o-lock-closed'"
-            color="base"
-            :label="$this->registrationClosed ? __('Open Registrations') : __('Close Registrations')"
-            wire:click="toggleRegistrations"
-            @click="mobileActionsOpen = false" />
+                :icon="$this->affiliationsClosed ? 'o-lock-open' : 'o-lock-closed'"
+                color="base"
+                :label="$this->affiliationsClosed ? __('Open affiliations') : __('Close affiliations')"
+                wire:click="toggleAffiliations"
+                @click="mobileActionsOpen = false" />
+        @endcan
     </x-admin.shared.mobile-actions>
 </div>

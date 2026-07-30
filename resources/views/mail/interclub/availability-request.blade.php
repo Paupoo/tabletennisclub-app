@@ -1,5 +1,5 @@
 <x-mail::message>
-# {{ __('Interclub — votre disponibilité') }}
+# {{ __('Interclub — your availability') }}
 
 {{ __('Hello :name!', ['name' => $notifiable->first_name]) }}
 

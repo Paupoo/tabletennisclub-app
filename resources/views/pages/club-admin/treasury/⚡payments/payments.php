@@ -9,31 +9,29 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\MeetingUser;
+use App\Domains\Shared\Enums\Permission;
 use App\Jobs\SendPaymentReminderJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Mail\PaymentInvitationEmail;
 use App\Support\Breadcrumb;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 new class extends Component
 {
-    use HasBreadcrumbs, Toast, WithFileUploads, WithPagination;
+    use HasBreadcrumbs, Toast, WithPagination;
     use HasBulkActions, HasFilterDrawer;
 
     public array $batchMatches = [];
@@ -51,10 +49,6 @@ new class extends Component
     public string $eventName = '';
 
     public string $eventType = '';
-
-    public $importFile;
-
-    public bool $importModal = false;
 
     // Drawer filters
     public string $paymentMethod = '';
@@ -87,6 +81,8 @@ new class extends Component
 
     public function bulkCancelRefund(): void
     {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
         $ids = $this->selectingAllResults
             ? $this->allMatchingPaymentIds()
             : array_map('intval', $this->selected);
@@ -117,6 +113,8 @@ new class extends Component
 
     public function bulkSendReminder(): void
     {
+        Gate::authorize(Permission::PaymentsRemind->value);
+
         $ids = $this->selectingAllResults
             ? $this->allMatchingPaymentIds()
             : array_map('intval', $this->selected);
@@ -138,6 +136,8 @@ new class extends Component
 
     public function confirmBatchReconcile(): void
     {
+        Gate::authorize(Permission::PaymentsReconcile->value);
+
         $count = 0;
 
         foreach ($this->batchMatches as $match) {
@@ -170,6 +170,8 @@ new class extends Component
 
     public function confirmBatchRefundReconcile(): void
     {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
         $count = 0;
 
         foreach ($this->refundBatchMatches as $match) {
@@ -197,6 +199,8 @@ new class extends Component
 
     public function confirmReconcile(): void
     {
+        Gate::authorize(Permission::PaymentsReconcile->value);
+
         if (! $this->reconcilePaymentId || ! $this->selectedTransactionId) {
             $this->error(__('Please select a transaction.'));
 
@@ -226,6 +230,8 @@ new class extends Component
 
     public function confirmRefundReconcile(): void
     {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
         if (! $this->refundPaymentId || ! $this->selectedRefundTransactionId) {
             $this->error(__('Please select a transaction.'));
 
@@ -305,6 +311,8 @@ new class extends Component
 
     public function openBulkCancelRefundModal(): void
     {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
         $this->bulkCancelRefundModal = true;
     }
 
@@ -312,11 +320,15 @@ new class extends Component
 
     public function openBulkReminderModal(): void
     {
+        Gate::authorize(Permission::PaymentsRemind->value);
+
         $this->bulkReminderModal = true;
     }
 
     public function openReconcile(int $paymentId): void
     {
+        Gate::authorize(Permission::PaymentsReconcile->value);
+
         $this->reconcilePaymentId = $paymentId;
         $this->selectedTransactionId = null;
         $this->reconcileModal = true;
@@ -326,6 +338,8 @@ new class extends Component
 
     public function openRefundReconcile(int $paymentId): void
     {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
         $this->refundPaymentId = $paymentId;
         $this->selectedRefundTransactionId = null;
         $this->refundModal = true;
@@ -428,6 +442,8 @@ new class extends Component
 
     public function previewBatchMatch(): void
     {
+        Gate::authorize(Permission::PaymentsReconcile->value);
+
         $pendingPayments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
             ->where('status', 'pending')
             ->whereNull('transaction_id')
@@ -477,6 +493,8 @@ new class extends Component
 
     public function previewBatchRefundMatch(): void
     {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
         $toRefundPayments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
             ->where('status', 'to_refund')
             ->whereNull('refund_transaction_id')
@@ -528,61 +546,6 @@ new class extends Component
         }
 
         $this->refundBatchModal = true;
-    }
-
-    public function processImport(): void
-    {
-        $this->validate(['importFile' => 'required|file|mimes:ods,xlsx,xls,csv,txt']);
-
-        $path = $this->importFile->getRealPath();
-
-        try {
-            $spreadsheet = IOFactory::load($path);
-            $sheet = $spreadsheet->getActiveSheet();
-            $rows = $sheet->toArray(null, true, true, true);
-
-            if (empty($rows)) {
-                $this->error(__('Empty or invalid file.'));
-
-                return;
-            }
-
-            $headerRow = array_shift($rows);
-            $header = array_map(fn ($h) => $this->normalizeHeader($h ?? ''), $headerRow);
-
-            $importedCount = 0;
-
-            foreach ($rows as $row) {
-                $row = array_map(fn ($v) => ($v === null || trim((string) $v) === '') ? null : trim((string) $v), $row);
-                $row = array_pad(array_slice($row, 0, count($header)), count($header), null);
-                $rowAssoc = array_combine($header, $row);
-
-                if ($rowAssoc === false) {
-                    continue;
-                }
-
-                try {
-                    Transaction::create([
-                        'date' => $this->parseDate($rowAssoc['date'] ?? null),
-                        'description' => $rowAssoc['description'] ?? null,
-                        'amount' => $this->parseAmount($rowAssoc['montant'] ?? $rowAssoc['amount'] ?? null),
-                        'counterparty_name' => $rowAssoc['nom contrepartie'] ?? null,
-                        'counterparty_bank_account' => $rowAssoc['numero de compte contrepartie'] ?? null,
-                        'structured_reference' => $rowAssoc['communication structuree'] ?? null,
-                        'free_reference' => $rowAssoc['communication libre'] ?? null,
-                    ]);
-                    $importedCount++;
-                } catch (Exception) {
-                    continue;
-                }
-            }
-
-            $this->importModal = false;
-            $this->importFile = null;
-            $this->success(__(':count transactions imported successfully.', ['count' => $importedCount]));
-        } catch (Exception $e) {
-            $this->error(__('Error reading file: :message', ['message' => $e->getMessage()]));
-        }
     }
 
     #[Computed]
@@ -686,6 +649,8 @@ new class extends Component
 
     public function sendReminder(int $paymentId): void
     {
+        Gate::authorize(Permission::PaymentsRemind->value);
+
         $payment = Payment::with(['payable.user'])->find($paymentId);
 
         if (! $payment?->payable?->user) {
@@ -828,14 +793,6 @@ new class extends Component
         };
     }
 
-    private function normalizeHeader(string $h): string
-    {
-        $h = strtolower(trim($h));
-        $accents = ['é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'à' => 'a', 'â' => 'a', 'ä' => 'a', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ô' => 'o', 'ö' => 'o', 'î' => 'i', 'ï' => 'i', 'ç' => 'c'];
-
-        return str_replace(array_keys($accents), array_values($accents), $h);
-    }
-
     private function normalizeIban(string $iban): string
     {
         return strtoupper(str_replace([' ', '-'], '', $iban));
@@ -844,47 +801,6 @@ new class extends Component
     private function normalizeReference(string $ref): string
     {
         return preg_replace('/[^0-9]/', '', $ref) ?? '';
-    }
-
-    private function parseAmount(mixed $v): float
-    {
-        if (empty($v)) {
-            return 0;
-        }
-
-        if (is_numeric($v)) {
-            return (float) $v;
-        }
-
-        return (float) str_replace([' ', ','], ['', '.'], (string) $v);
-    }
-
-    private function parseDate(mixed $v): ?string
-    {
-        if (empty($v)) {
-            return null;
-        }
-
-        if (is_numeric($v)) {
-            try {
-                return ExcelDate::excelToDateTimeObject($v)->format('Y-m-d');
-            } catch (Exception) {
-                return null;
-            }
-        }
-
-        foreach (['d/m/Y', 'Y-m-d', 'd-m-Y', 'd.m.Y'] as $fmt) {
-            try {
-                $d = Carbon::createFromFormat($fmt, (string) $v);
-                if ($d) {
-                    return $d->format('Y-m-d');
-                }
-            } catch (Exception) {
-                continue;
-            }
-        }
-
-        return null;
     }
 
     /**

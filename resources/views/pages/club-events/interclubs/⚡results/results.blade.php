@@ -4,15 +4,34 @@
     </x-slot:breadcrumbs>
 
     <x-header progress-indicator separator :title="__('Results')">
-        <x-slot:middle class="justify-end!">
-            <x-select
-                :options="$seasons"
-                option-label="name"
-                option-value="id"
-                wire:model.live="seasonId"
-                :placeholder="__('Select a season')" />
-        </x-slot:middle>
+        <x-slot:actions>
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-search="false" :show-more="false" />
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-admin.shared.filters-button :count="count($filterChips)" />
+            </div>
+        </x-slot:actions>
     </x-header>
+
+    {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
+
+    {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Season') }}
+                </p>
+                <x-select
+                    :options="$seasons"
+                    option-label="name"
+                    option-value="id"
+                    wire:model.live="seasonId"
+                    :placeholder="__('Select a season')"
+                    class="w-full" />
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
 
     @if (! $seasonId)
         <x-card class="mt-4">
@@ -90,7 +109,7 @@
                                                     class="btn-sm btn-warning"
                                                     icon="o-exclamation-triangle"
                                                     :label="__('Forfait')"
-                                                    :tooltip="__('Déclarer le forfait général')"
+                                                    :tooltip="__('Declare a general forfeit')"
                                                     wire:click="openTeamForfeitModal({{ $team->id }})" />
                                             </div>
                                         </x-slot:actions>
@@ -163,9 +182,9 @@
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::FORFEIT_LOSS)
                                                                             <span class="rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">{{ __('Forfait') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::WITHDRAWAL_OPPONENT)
-                                                                            <span class="rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-500">{{ __('F. Gén. Adv.') }}</span>
+                                                                            <span class="rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-500">{{ __('Opp. gen. forfeit') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::WITHDRAWAL)
-                                                                            <span class="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600">{{ __('F. Général') }}</span>
+                                                                            <span class="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600">{{ __('Gen. forfeit') }}</span>
                                                                         @endif
                                                                     </td>
                                                                     <td class="py-2 text-right">
@@ -242,7 +261,7 @@
                             max="{{ $maxPts }}"
                             wire:model="scoreThem" />
                     </div>
-                    <p class="text-xs text-base-content/40">{{ __('Total : :max points par match', ['max' => $maxPts]) }}</p>
+                    <p class="text-xs text-base-content/40">{{ __('Total: :max points per match', ['max' => $maxPts]) }}</p>
                 </div>
             @endif
         </div>

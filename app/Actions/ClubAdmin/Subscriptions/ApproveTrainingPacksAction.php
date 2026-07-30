@@ -5,27 +5,44 @@ declare(strict_types=1);
 namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Services\TrainingPackProrata;
 use Illuminate\Support\Facades\DB;
 
 class ApproveTrainingPacksAction
 {
+    public function __construct(private readonly TrainingPackProrata $prorata = new TrainingPackProrata) {}
+
+    /**
+     * @param  int[]  $approvedPackIds
+     */
     public function __invoke(Subscription $subscription, array $approvedPackIds, int $familyMembersCount = 1): void
     {
-        $pendingPackIds = DB::table('subscription_training_pack')
+        $pendingRows = DB::table('subscription_training_pack')
             ->where('subscription_id', $subscription->id)
             ->where('status', 'pending')
-            ->pluck('training_pack_id')
-            ->toArray();
+            ->get();
 
-        foreach ($pendingPackIds as $packId) {
-            if (in_array($packId, $approvedPackIds, true)) {
-                DB::table('subscription_training_pack')
-                    ->where('subscription_id', $subscription->id)
-                    ->where('training_pack_id', $packId)
-                    ->update(['status' => 'enrolled']);
-            } else {
-                $subscription->trainingPacks()->detach($packId);
+        $packs = TrainingPack::whereIn('id', $pendingRows->pluck('training_pack_id'))->get()->keyBy('id');
+
+        foreach ($pendingRows as $row) {
+            if (! in_array($row->training_pack_id, $approvedPackIds, true)) {
+                $subscription->trainingPacks()->detach($row->training_pack_id);
+
+                continue;
             }
+
+            $pack = $packs->get($row->training_pack_id);
+
+            DB::table('subscription_training_pack')
+                ->where('id', $row->id)
+                ->update([
+                    'status' => 'enrolled',
+                    // La ligne devient facturable maintenant. On respecte la
+                    // date de la demande quand elle existe : le membre ne doit
+                    // pas gagner un mois parce que la validation a traîné.
+                    'starts_on' => $row->starts_on ?? ($pack ? $this->prorata->enrolmentStart($pack) : null),
+                ]);
         }
 
         (new CalculatePriceAction)($subscription, $familyMembersCount);

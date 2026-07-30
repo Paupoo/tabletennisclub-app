@@ -14,6 +14,7 @@ use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Ranking;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\TrainingPack;
@@ -66,7 +67,6 @@ class TrainingPackSeeder extends Seeder
                 'first_name' => 'Éric',
                 'last_name' => 'Filée',
                 'password' => $password,
-                'is_coach' => true,
                 'gender' => Gender::MEN->name,
                 'ranking' => Ranking::C6->name,
                 'phone_number' => '047' . fake()->randomNumber(7, true),
@@ -76,6 +76,8 @@ class TrainingPackSeeder extends Seeder
                 'city_name' => fake()->city(),
             ]
         );
+
+        $eric->assignRole(Role::COACH->value);
         if ($ourClub && ! $eric->club_id) {
             $eric->club()->associate($ourClub)->save();
         }
@@ -258,7 +260,12 @@ class TrainingPackSeeder extends Seeder
         ];
 
         foreach ($packs as $data) {
-            $pack = TrainingPack::create(array_merge($data, [
+            // Season-long packs cover the season; only the summer camp, which
+            // runs after the season has closed, carries dates of its own.
+            $pack = TrainingPack::create(array_merge([
+                'pack_start_date' => $season->start_at->toDateString(),
+                'pack_end_date' => $season->end_at->toDateString(),
+            ], $data, [
                 'season_id' => $season->id,
                 'is_active' => true,
             ]));

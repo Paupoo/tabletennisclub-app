@@ -25,8 +25,8 @@ class TournamentPaymentRequestNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Demande de paiement : :name', ['name' => $this->tournament->name]),
-            'body' => __('Consultez les détails du tournoi'),
+            'title' => __('Payment request: :name', ['name' => $this->tournament->name]),
+            'body' => __('See the tournament details'),
             'url' => route('admin.tournaments.index'),
             'category' => 'tournament',
             'icon' => 'o-trophy',

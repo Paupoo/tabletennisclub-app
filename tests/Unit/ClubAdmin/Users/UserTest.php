@@ -59,3 +59,30 @@ test('method set last name attribute', function (): void {
 
     expect($user->first_name)->toEqual('Paulus');
 });
+
+test('normalizes the street on assignment, whatever wrote it', function (): void {
+    $user = new User;
+    $user->street = 'AVENUE DE L\'EXEMPLE 12A';
+
+    expect($user->street)->toBe('Avenue de l\'Exemple 12A');
+});
+
+test('normalizes the city name on assignment', function (): void {
+    $user = new User;
+    $user->city_name = 'LOUVAIN-LA-NEUVE';
+
+    expect($user->city_name)->toBe('Louvain-la-Neuve');
+});
+
+/*
+ * Both columns are nullable, unlike the names: a member the club reaches through
+ * a guardian has no address of their own.
+ */
+test('accepts a null address without normalizing anything', function (): void {
+    $user = new User;
+    $user->street = null;
+    $user->city_name = null;
+
+    expect($user->street)->toBeNull()
+        ->and($user->city_name)->toBeNull();
+});

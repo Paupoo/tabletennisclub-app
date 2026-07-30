@@ -219,7 +219,7 @@
 
             @if ($reported->isNotEmpty())
                 <x-card :title="__('Reported differences')"
-                    :subtitle="__('What the federation says and the club does not. Nothing was applied.')" separator>
+                    :subtitle="__('What the federation says and the club did not. The licence number and the postal address were taken from the listing; the birthdate and the email address were left untouched.')" separator>
                     <ul class="space-y-2 text-sm">
                         @foreach ($reported as $line => $row)
                             <li wire:key="difference-{{ $line }}">

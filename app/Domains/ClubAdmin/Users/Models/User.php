@@ -22,6 +22,7 @@ use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Support\AddressNormalizer;
 use App\Domains\Shared\Support\IbanNormalizer;
 use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Models\Training;
@@ -892,6 +893,15 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * The federation exports localities in capitals, and a locality is written
+     * once and read for years. See {@see AddressNormalizer}.
+     */
+    public function setCityNameAttribute(?string $value): ?string
+    {
+        return $this->attributes['city_name'] = AddressNormalizer::titleCase($value);
+    }
+
+    /**
      * Capitalize 1 first letter of each words
      */
     public function setFirstNameAttribute(string $value): string
@@ -909,6 +919,15 @@ class User extends Authenticatable implements MustVerifyEmail
         $cleaned_name = mb_convert_case($value, MB_CASE_TITLE);
 
         return $this->attributes['last_name'] = $cleaned_name;
+    }
+
+    /**
+     * Same rule as the locality: a street is built out of locality names as
+     * often as not. See {@see AddressNormalizer}.
+     */
+    public function setStreetAttribute(?string $value): ?string
+    {
+        return $this->attributes['street'] = AddressNormalizer::titleCase($value);
     }
 
     /**

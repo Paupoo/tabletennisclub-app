@@ -117,9 +117,11 @@ function federationRow(array $overrides = []): FederationRow
         federationLicenceType: $overrides['federationLicenceType'] ?? 'JO',
         email: array_key_exists('email', $overrides) ? $overrides['email'] : 'marc@example.com',
         phone: $overrides['phone'] ?? '0475123456',
-        street: $overrides['street'] ?? 'RUE DU TEST 13',
-        cityCode: $overrides['cityCode'] ?? '1348',
-        cityName: $overrides['cityName'] ?? 'LOUVAIN-LA-NEUVE',
+        // `array_key_exists` rather than `??`: a test saying the export left the
+        // column empty passes null, and must not be handed the default back.
+        street: array_key_exists('street', $overrides) ? $overrides['street'] : 'RUE DU TEST 13',
+        cityCode: array_key_exists('cityCode', $overrides) ? $overrides['cityCode'] : '1348',
+        cityName: array_key_exists('cityName', $overrides) ? $overrides['cityName'] : 'LOUVAIN-LA-NEUVE',
     );
 }
 

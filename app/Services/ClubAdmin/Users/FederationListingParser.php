@@ -7,6 +7,7 @@ namespace App\Services\ClubAdmin\Users;
 use App\Data\User\FederationRow;
 use App\Data\User\ParsedFederationListing;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Support\AddressNormalizer;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 
@@ -212,12 +213,17 @@ class FederationListingParser
             ranking: $cells['mens_ranking'] ?? 'NA',
             gender: ($cells['ladies_ranking'] ?? '*') === '*' ? Gender::MEN : Gender::WOMEN,
             federationLicenceType: $cells['licence_type'] ?? null,
-            email: $cells['email'] ?? null,
+            // An address is a login and gets compared as a string all the way
+            // through the import — by the shared-address resolver, and by the
+            // check that no other member already holds it. MySQL would forgive
+            // the casing, SQLite would not, so the file is settled here rather
+            // than trusted to whichever database is answering.
+            email: isset($cells['email']) ? Str::lower($cells['email']) : null,
             // A shared landline reaches the household; a mobile reaches the person.
             phone: $cells['mobile'] ?? $cells['landline'] ?? null,
-            street: $this->street($cells),
+            street: AddressNormalizer::titleCase($this->street($cells)),
             cityCode: $cells['city_code'] ?? null,
-            cityName: $cells['city_name'] ?? null,
+            cityName: AddressNormalizer::titleCase($cells['city_name'] ?? null),
             needsNameReview: $needsNameReview,
             needsAddressReview: $this->looksShifted($cells),
         );

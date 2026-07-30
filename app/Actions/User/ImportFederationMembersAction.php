@@ -10,6 +10,7 @@ use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\MemberImport;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\ImportLineAction;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -97,9 +98,7 @@ class ImportFederationMembersAction
         return User::create([
             'first_name' => $row->firstName,
             'last_name' => $row->lastName,
-            // Only one affiliate on a shared address keeps it: an address
-            // identifies a login, and the others are reached through a guardian.
-            'email' => $line->keepsEmail ? $row->email : null,
+            'email' => self::loginAddress($line),
             'gender' => $row->gender,
             'birthdate' => $row->birthdate,
             // The federation lists one number per affiliate, and for a child it is
@@ -164,6 +163,24 @@ class ImportFederationMembersAction
     }
 
     /**
+     * The address this affiliate may keep as a login, if any.
+     *
+     * Two things take it away. The review screen settles which of several
+     * affiliates listed under one address keeps it, the others being reached
+     * through a guardian. And then the roster has the last word: the listing
+     * carries a parent's mailbox against every child of the household, and that
+     * parent may be on file already — under this listing or from years before
+     * it. An address identifies one login and one only.
+     *
+     * Losing it costs the member nothing they had: they held no address of their
+     * own, and the club can hand them a login the day they have one.
+     */
+    private static function loginAddress(ImportLine $line, ?User $member = null): ?string
+    {
+        return self::unlessTaken('email', $line->keepsEmail ? $line->row->email : null, $member);
+    }
+
+    /**
      * The guardian is an affiliated adult sharing the address: their identity is
      * already known, so it is taken from their own record.
      *
@@ -216,19 +233,65 @@ class ImportFederationMembersAction
     }
 
     /**
-     * The federation overwrites what it alone knows; the club keeps everything a
-     * human may have touched.
+     * Take the federation's value over whatever the club holds.
+     *
+     * An empty cell is never written back: the file having nothing to say about
+     * a field is not the federation saying the club should forget it.
+     */
+    private static function overwrite(User $member, string $attribute, mixed $value): void
+    {
+        if ($value !== null) {
+            $member->setAttribute($attribute, $value);
+        }
+    }
+
+    /**
+     * The value, unless some other member already holds it on a column the
+     * database keeps unique.
+     *
+     * A whole import runs in one transaction, so a single collision would throw
+     * away every line that came before it. What the club holds stays where it
+     * is, the import goes through, and the difference the matcher reported is
+     * there to be read afterwards. Archived members count: their file holds the
+     * value just as much, which is exactly how a returning member is found.
+     */
+    private static function unlessTaken(string $column, ?string $value, ?User $member = null): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $taken = User::withTrashed()
+            ->where($column, $value)
+            ->when($member !== null, fn (Builder $query): Builder => $query->whereKeyNot($member->getKey()))
+            ->exists();
+
+        return $taken ? null : $value;
+    }
+
+    /**
+     * The federation overwrites what it owns; the club keeps everything a human
+     * may have touched.
+     *
+     * The licence number and the postal address are the federation's: it issues
+     * one and takes the affiliation out on the other, so whatever the club typed
+     * in gives way. That is the point of importing the listing rather than
+     * reading it — a club-side number that contradicts the file is a club-side
+     * mistake, and the reviewer already saw the difference reported before
+     * choosing to update.
      *
      * Names and gender are never rewritten: the reviewer corrected them by hand,
-     * and next year's file holds the same raw string. An address, a phone number
-     * or a postal address are only filled when the club has none — the listing
-     * still shows a parent's address against a child years after the club gave
-     * that child one of their own, and overwriting would merge back the two
-     * accounts that were just separated.
+     * and next year's file holds the same raw string. The email address and the
+     * phone number are only filled when the club has none — an address is a
+     * login, the listing still shows a parent's against a child years after the
+     * club gave that child one of their own, and overwriting would merge back
+     * the two accounts that were just separated. The address goes through
+     * {@see loginAddress()} exactly as it does on creation: an update is not a
+     * way around the one-address-one-login rule.
      *
-     * Contradictions on the licence or the birthdate are not settled here at all:
-     * the matcher reports them, a human decides, because either of them can just
-     * as well mean this line was matched to the wrong person.
+     * A contradicting birthdate is not settled here at all: the matcher reports
+     * it, a human decides, because it can just as well mean this line was
+     * matched to the wrong person.
      */
     private static function update(ImportLine $line): ?User
     {
@@ -247,12 +310,13 @@ class ImportFederationMembersAction
             'federation_synced_at' => now(),
         ]);
 
-        self::fillIfMissing($member, 'email', $row->email);
-        self::fillIfMissing($member, 'licence', $row->licence === '' ? null : $row->licence);
+        self::overwrite($member, 'licence', self::unlessTaken('licence', $row->licence === '' ? null : $row->licence, $member));
+        self::overwrite($member, 'street', $row->street);
+        self::overwrite($member, 'city_code', $row->cityCode);
+        self::overwrite($member, 'city_name', $row->cityName);
+
+        self::fillIfMissing($member, 'email', self::loginAddress($line, $member));
         self::fillIfMissing($member, 'birthdate', $row->birthdate);
-        self::fillIfMissing($member, 'street', $row->street);
-        self::fillIfMissing($member, 'city_code', $row->cityCode);
-        self::fillIfMissing($member, 'city_name', $row->cityName);
         self::fillIfMissing($member, $minor ? 'guardian_phone_number' : 'phone_number', $row->phone);
 
         $member->save();

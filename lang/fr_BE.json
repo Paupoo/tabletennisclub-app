@@ -418,7 +418,7 @@
     "Update the existing member": "Mettre à jour le membre existant",
     "Updated": "Mis à jour",
     "Upload the affiliate listing exported from the federation. Nothing is written yet: the file is read, confronted with the roster, and handed to you line by line.": "Déposez la liste des affiliés exportée depuis la fédération. Rien n'est encore écrit : le fichier est lu, confronté à la base membres, et vous est rendu ligne par ligne.",
-    "What the federation says and the club does not. Nothing was applied.": "Ce que dit la fédération et que le club ne dit pas. Rien n'a été appliqué.",
+    "What the federation says and the club did not. The licence number and the postal address were taken from the listing; the birthdate and the email address were left untouched.": "Ce que dit la fédération et que le club ne disait pas. Le numéro de licence et l'adresse postale ont été repris du listing ; la date de naissance et l'adresse e-mail n'ont pas été touchées.",
     "Your affiliation formula has changed": "Formule d'affiliation modifiée",
     "Hello,": "Bonjour,",
     "Included in the cancellation email sent to the member.": "Inclus dans l'email d'annulation envoyé au membre.",

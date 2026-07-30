@@ -47,11 +47,41 @@ describe('parsing a federation listing', function (): void {
             ->and($row->federationLicenceType)->toBe('JO')
             ->and($row->email)->toBe('marc@example.com')
             ->and($row->phone)->toBe('0475123456')
-            ->and($row->street)->toBe('RUE DU TEST 13')
+            ->and($row->street)->toBe('Rue du Test 13')
             ->and($row->cityCode)->toBe('1348')
-            ->and($row->cityName)->toBe('LOUVAIN-LA-NEUVE');
+            ->and($row->cityName)->toBe('Louvain-la-Neuve');
 
         expect($result->failures)->toBeEmpty();
+    });
+
+    /*
+     * The listing is exported in capitals, and the review screen has to show what
+     * will be recorded — not what the export happened to send.
+     */
+    it('reads an address out of the capitals the export writes it in', function (): void {
+        $listing = federationListing([
+            '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;CHAUSSEE DE BRUXELLES;12A;1348;OTTIGNIES-LOUVAIN-LA-NEUVE',
+        ]);
+
+        $result = (new FederationListingParser)->parse($listing);
+
+        expect($result->rows[0]->street)->toBe('Chaussee de Bruxelles 12A')
+            ->and($result->rows[0]->cityName)->toBe('Ottignies-Louvain-la-Neuve');
+    });
+
+    /*
+     * An address identifies a login and is compared as a string throughout the
+     * import. A member typed into the federation's system in capitals must not
+     * become a second account beside the one the club already holds.
+     */
+    it('settles the casing of an email address', function (): void {
+        $listing = federationListing([
+            '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;Marc.DUPONT@Example.COM;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
+        ]);
+
+        $result = (new FederationListingParser)->parse($listing);
+
+        expect($result->rows[0]->email)->toBe('marc.dupont@example.com');
     });
 
     it('restores accents the export encoded in Windows-1252', function (): void {
@@ -75,7 +105,7 @@ describe('parsing a federation listing', function (): void {
 
         $result = (new FederationListingParser)->parse($listing);
 
-        expect($result->rows[0]->street)->toBe("AVENUE DE L'EXEMPLE 13");
+        expect($result->rows[0]->street)->toBe("Avenue de l'Exemple 13");
     });
 
     it('flags a name it could not split with confidence', function (): void {

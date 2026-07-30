@@ -287,9 +287,10 @@ describe('importing a family under one address', function (): void {
 
 /*
  * The rule for a member the club already holds: the federation overwrites what it
- * alone knows, and the club keeps everything a human may have touched. A listing
- * is a year old the day after it is exported — it must not be allowed to undo a
- * correction somebody made in the meantime.
+ * owns — the licence number it issues, the address it affiliates people on — and
+ * the club keeps everything a human may have touched. A listing is a year old the
+ * day after it is exported, so it must not be allowed to undo a correction
+ * somebody made to a name, a login or a phone number in the meantime.
  */
 describe('re-importing a member the club already holds', function (): void {
 
@@ -341,11 +342,82 @@ describe('re-importing a member the club already holds', function (): void {
     });
 
     /*
-     * The listing keeps showing a parent's address against a child for years after
-     * the club gave that child one of their own. Overwriting would merge back the
-     * two accounts that were just separated.
+     * The licence number is issued by the federation. A club file carrying another
+     * one is a club-side mistake, whatever it was typed from, and the reviewer saw
+     * the difference reported before choosing to update.
      */
-    it('never overwrites an address the club already holds', function (): void {
+    it('takes the licence number from the federation over the one on file', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+        $member = User::factory()->create(['licence' => '111111']);
+
+        ImportFederationMembersAction::handle([
+            new ImportLine(row: federationRow(['licence' => '166036']), action: ImportLineAction::UPDATE, existingUserId: $member->id),
+        ], $secretary);
+
+        expect($member->fresh()->licence)->toBe('166036');
+    });
+
+    it('takes the postal address from the federation over the one on file', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+        $member = User::factory()->create([
+            'licence' => '166036',
+            'street' => 'Rue Ancienne 1',
+            'city_code' => '1000',
+            'city_name' => 'Bruxelles',
+        ]);
+
+        ImportFederationMembersAction::handle([
+            new ImportLine(row: federationRow(), action: ImportLineAction::UPDATE, existingUserId: $member->id),
+        ], $secretary);
+
+        $updated = $member->fresh();
+
+        // Stored in the casing a human writes, not the capitals the export uses:
+        // the address crosses AddressNormalizer on its way in. See {@see User::setStreetAttribute()}.
+        expect($updated->street)->toBe('Rue du Test 13')
+            ->and($updated->city_code)->toBe('1348')
+            ->and($updated->city_name)->toBe('Louvain-la-Neuve');
+    });
+
+    /*
+     * A column the export left empty says the file has nothing on it, not that the
+     * club should forget what it knows.
+     */
+    it('keeps what the club holds where the listing says nothing', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+        $member = User::factory()->create([
+            'licence' => '166036',
+            'street' => 'Rue Ancienne 1',
+            'city_code' => '1000',
+            'city_name' => 'Bruxelles',
+        ]);
+
+        ImportFederationMembersAction::handle([
+            new ImportLine(
+                row: federationRow(['licence' => '', 'street' => null, 'cityCode' => null, 'cityName' => null]),
+                action: ImportLineAction::UPDATE,
+                existingUserId: $member->id,
+            ),
+        ], $secretary);
+
+        $updated = $member->fresh();
+
+        expect($updated->licence)->toBe('166036')
+            ->and($updated->street)->toBe('Rue Ancienne 1')
+            ->and($updated->city_code)->toBe('1000')
+            ->and($updated->city_name)->toBe('Bruxelles');
+    });
+
+    /*
+     * The email address is a login, not a fact the federation owns. The listing
+     * keeps showing a parent's against a child for years after the club gave that
+     * child one of their own, and overwriting would merge back the two accounts
+     * that were just separated.
+     */
+    it('never overwrites an email address the club already holds', function (): void {
         Mail::fake();
         $secretary = User::factory()->create();
         $member = User::factory()->create(['licence' => '166036', 'email' => 'own.address@example.com']);
@@ -357,7 +429,7 @@ describe('re-importing a member the club already holds', function (): void {
         expect($member->fresh()->email)->toBe('own.address@example.com');
     });
 
-    it('fills an address the club never had', function (): void {
+    it('fills an email address the club never had', function (): void {
         Mail::fake();
         $secretary = User::factory()->create();
         $member = User::factory()->create(['licence' => '166036', 'email' => null]);
@@ -367,6 +439,76 @@ describe('re-importing a member the club already holds', function (): void {
         ], $secretary);
 
         expect($member->fresh()->email)->toBe('from.federation@example.com');
+    });
+
+    /*
+     * An update is not a way around the one-address-one-login rule: a child on
+     * the parent's mailbox is reached through a guardian whether the club is
+     * meeting them for the first time or has held their file for years.
+     */
+    it('leaves an updated member without a login when the address is not theirs to keep', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+        $child = User::factory()->create(['licence' => '166037', 'email' => null]);
+
+        ImportFederationMembersAction::handle([
+            new ImportLine(
+                row: federationRow(['lineNumber' => 2, 'licence' => '166036', 'firstName' => 'Cristina', 'email' => 'parent@example.com', 'birthdate' => CarbonImmutable::parse('1984-03-19')]),
+                action: ImportLineAction::CREATE,
+            ),
+            new ImportLine(
+                row: federationRow(['lineNumber' => 3, 'licence' => '166037', 'firstName' => 'Luke', 'email' => 'parent@example.com', 'birthdate' => CarbonImmutable::parse('2017-09-19')]),
+                action: ImportLineAction::UPDATE,
+                existingUserId: $child->id,
+                keepsEmail: false,
+                guardianLineNumber: 2,
+            ),
+        ], $secretary);
+
+        expect($child->fresh()->email)->toBeNull()
+            ->and(User::query()->where('licence', '166036')->first()->email)->toBe('parent@example.com');
+    });
+
+    /*
+     * The parent kept the family mailbox years ago and is not in this listing —
+     * nothing in the file says so. Writing it onto the child would break the
+     * unique index and take the whole import down with it.
+     */
+    it('never hands a member an address another member already holds', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+        User::factory()->create(['email' => 'parent@example.com']);
+        $child = User::factory()->create(['licence' => '166037', 'email' => null]);
+
+        $import = ImportFederationMembersAction::handle([
+            new ImportLine(
+                row: federationRow(['licence' => '166037', 'email' => 'parent@example.com']),
+                action: ImportLineAction::UPDATE,
+                existingUserId: $child->id,
+            ),
+        ], $secretary);
+
+        expect($child->fresh()->email)->toBeNull()
+            ->and($import->updated_count)->toBe(1);
+    });
+
+    /*
+     * Unreachable through the review screen, which matches on the licence before
+     * anything else — but a listing carrying the same number twice must not take
+     * the transaction down with it either.
+     */
+    it('never hands a member a licence number another member already holds', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+        User::factory()->create(['licence' => '166036']);
+        $member = User::factory()->create(['licence' => '111111']);
+
+        $import = ImportFederationMembersAction::handle([
+            new ImportLine(row: federationRow(['licence' => '166036']), action: ImportLineAction::UPDATE, existingUserId: $member->id),
+        ], $secretary);
+
+        expect($member->fresh()->licence)->toBe('111111')
+            ->and($import->updated_count)->toBe(1);
     });
 
     /*

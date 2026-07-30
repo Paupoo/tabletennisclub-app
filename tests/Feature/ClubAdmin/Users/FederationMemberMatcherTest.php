@@ -147,15 +147,18 @@ describe('reporting what the federation disagrees with', function (): void {
         expect($match->discrepancies)->toContain('address');
     });
 
+    // Seeded in its stored casing, so the assertion repeats the seed word for
+    // word: any difference here is the matcher writing, not AddressNormalizer
+    // casting the value on the way in.
     it('reports an address the federation holds differently, without touching it', function (): void {
         $existing = User::factory()->create([
             'licence' => '166036',
-            'street' => 'ANCIENNE ADRESSE 1',
+            'street' => 'Ancienne Adresse 1',
         ]);
 
         (new FederationMemberMatcher)->match(federationRow());
 
-        expect($existing->fresh()->street)->toBe('ANCIENNE ADRESSE 1');
+        expect($existing->fresh()->street)->toBe('Ancienne Adresse 1');
     });
 
     it('reports a birthdate that contradicts the one on file', function (): void {

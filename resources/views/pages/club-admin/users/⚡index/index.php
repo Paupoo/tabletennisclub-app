@@ -66,6 +66,10 @@ new class extends Component
     #[Url]
     public bool $incompleteProfile = false;
 
+    /** The grown members the club still cannot hand a login to. */
+    #[Url]
+    public bool $adultWithoutAddress = false;
+
     /**
      * Where a member stands with their account, mirroring
      * {@see User::invitationStatus()}. This is how the secretary finds the
@@ -207,6 +211,7 @@ new class extends Component
         $this->categories = [];
         $this->invitationState = '';
         $this->incompleteProfile = false;
+        $this->adultWithoutAddress = false;
         $this->unpaidSubscription = false;
         $this->hasKey = false;
         $this->hasCashRegister = false;
@@ -331,6 +336,10 @@ new class extends Component
                     default => __('Account created'),
                 },
             ];
+        }
+
+        if ($this->adultWithoutAddress) {
+            $chips[] = ['key' => 'adultWithoutAddress', 'label' => __('Adult without an address')];
         }
 
         if ($this->incompleteProfile) {
@@ -639,6 +648,7 @@ new class extends Component
             )
             ->when($this->invitationState !== '', fn ($q) => $q->withInvitationState($this->invitationState))
             ->when($this->incompleteProfile, fn ($q) => $q->withIncompleteProfile())
+            ->when($this->adultWithoutAddress, fn ($q) => $q->adultWithoutOwnAddress())
             ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
             ->when($this->hasKey, fn ($q) => $q->where('has_key', true))
             ->when($this->hasCashRegister, fn ($q) => $q->whereHas('heldCashRegisters'))

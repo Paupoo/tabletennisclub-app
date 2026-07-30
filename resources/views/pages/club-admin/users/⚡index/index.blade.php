@@ -139,9 +139,17 @@
                             @endcan
                             @if ($invStatus !== 'active')
                                 @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
-                                    <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
-                                        :tooltip="__('Resend invitation')"
-                                        wire:click="sendInvitation({{ $user->id }})" spinner />
+                                    {{-- An invitation hands over a login, so it only goes to the
+                                         member's own address: sent to a guardian, it would set a
+                                         password on somebody else's account. --}}
+                                    @if ($user->email === null)
+                                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope" disabled
+                                            :tooltip="__('This member has no address of their own yet, so they cannot be invited.')" />
+                                    @else
+                                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
+                                            :tooltip="__('Resend invitation')"
+                                            wire:click="sendInvitation({{ $user->id }})" spinner />
+                                    @endif
                                 @endcan
                             @endif
                             @can('delete', $user)
@@ -216,9 +224,15 @@
                                 @endcan
                                 @if ($invStatus !== 'active')
                                     @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
-                                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
-                                            :tooltip="__('Resend invitation')"
-                                            wire:click="sendInvitation({{ $user->id }})" spinner />
+                                        {{-- Same rule as the mobile list: no address, no login to hand over. --}}
+                                        @if ($user->email === null)
+                                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope" disabled
+                                                :tooltip="__('This member has no address of their own yet, so they cannot be invited.')" />
+                                        @else
+                                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
+                                                :tooltip="__('Resend invitation')"
+                                                wire:click="sendInvitation({{ $user->id }})" spinner />
+                                        @endif
                                     @endcan
                                 @endif
                                 @can('delete', $user)
@@ -302,6 +316,9 @@
                     {{ __('Profile') }}
                 </p>
                 <x-toggle :label="__('Incomplete profile')" wire:model.live="incompleteProfile" />
+                <x-toggle class="mt-2" :label="__('Adult without an address')"
+                    :hint="__('Grown members who cannot be invited yet — ask them for an address of their own.')"
+                    wire:model.live="adultWithoutAddress" />
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">

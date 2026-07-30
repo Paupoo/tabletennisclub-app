@@ -672,6 +672,30 @@ class User extends Authenticatable implements MustVerifyEmail
         );
     }
 
+    /**
+     * Grown members the club cannot hand a login to.
+     *
+     * A child reached through a parent is the arrangement working as intended;
+     * an adult in the same position is a loose end. Nobody chose it for them —
+     * the federation listed them under a family address, or they were recorded
+     * by hand — and nothing happens on their eighteenth birthday. Closing it
+     * means asking them for an address, which only a human can do, so this is
+     * what makes them findable.
+     *
+     * A member of unknown age counts as an adult: several are on the roster
+     * without a birthdate, and treating them as children would hide the very
+     * accounts nobody is looking after.
+     */
+    public function scopeAdultWithoutOwnAddress(Builder $query): Builder
+    {
+        return $query
+            ->whereNull('email')
+            ->where(fn (Builder $unknownOrGrown): Builder => $unknownOrGrown
+                ->whereNull('birthdate')
+                ->orWhereDate('birthdate', '<=', now()->subYears(18))
+            );
+    }
+
     public function scopeAffiliatedForCurrentSeason(EloquentBuilder $query): EloquentBuilder
     {
         $seasonId = Season::current()?->id;

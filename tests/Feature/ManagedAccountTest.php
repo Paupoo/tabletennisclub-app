@@ -5,8 +5,10 @@ declare(strict_types=1);
 use App\Actions\User\SendInvitationAction;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Role;
 use App\Mail\InviteNewUserMail;
 use Illuminate\Support\Facades\Mail;
+use Livewire\Livewire;
 
 /*
  * Managed accounts: members the club records but who cannot log in on their own —
@@ -111,6 +113,90 @@ describe('filtering members by where they stand with their account', function ()
             expect($member->invitationStatus())->toBe($state)
                 ->and(User::withInvitationState($state)->pluck('id')->all())->toContain($member->id);
         }
+    });
+});
+
+/*
+ * A child reached through a parent is the arrangement working as intended. An
+ * adult in the same position is a loose end: nobody chose it for them, and only
+ * the secretary can close it, by asking them for an address. Nothing happens on
+ * their eighteenth birthday — this is what makes them findable.
+ */
+describe('finding the adults who still have no address of their own', function (): void {
+
+    it('lists an adult member with no address', function (): void {
+        $adult = User::factory()->create(['email' => null, 'birthdate' => now()->subYears(30)]);
+
+        expect(User::adultWithoutOwnAddress()->pluck('id')->all())->toBe([$adult->id]);
+    });
+
+    it('leaves out the children, who are meant to be reached through a guardian', function (): void {
+        User::factory()->create(['email' => null, 'birthdate' => now()->subYears(12)]);
+
+        expect(User::adultWithoutOwnAddress()->count())->toBe(0);
+    });
+
+    it('leaves out the adults who have one', function (): void {
+        User::factory()->create(['email' => 'grown.up@example.com', 'birthdate' => now()->subYears(30)]);
+
+        expect(User::adultWithoutOwnAddress()->count())->toBe(0);
+    });
+
+    /*
+     * A member recorded without a birthdate is not a child until proven so: the
+     * roster holds several, and hiding them here would hide the very accounts
+     * nobody is looking after.
+     */
+    it('counts a member of unknown age as an adult', function (): void {
+        $unknown = User::factory()->create(['email' => null, 'birthdate' => null]);
+
+        expect(User::adultWithoutOwnAddress()->pluck('id')->all())->toBe([$unknown->id]);
+    });
+
+    it('is how the members list narrows down to them', function (): void {
+        $adult = User::factory()->create([
+            'email' => null,
+            'birthdate' => now()->subYears(30),
+            'last_name' => 'Sansadresse',
+        ]);
+
+        User::factory()->create([
+            'email' => 'reachable@example.com',
+            'birthdate' => now()->subYears(30),
+            'last_name' => 'Joignable',
+        ]);
+
+        Livewire::actingAs(User::factory()->withRole(Role::MEMBERS)->create())
+            ->test('pages::club-admin.users.index')
+            ->set('adultWithoutAddress', true)
+            ->assertSee($adult->last_name)
+            ->assertDontSee('Joignable');
+    });
+});
+
+/*
+ * An invitation hands over a login. It goes to the member's own address and
+ * never to a guardian's, which would set a password on somebody else's account
+ * — so a member without one cannot be offered it, and the screen has to say why
+ * rather than let the click fail.
+ */
+describe('offering to invite a member', function (): void {
+
+    it('does not offer it to a member with no address of their own', function (): void {
+        $managed = User::factory()->unverified()->create(['email' => null, 'birthdate' => now()->subYears(12)]);
+
+        Livewire::actingAs(User::factory()->withRole(Role::MEMBERS)->create())
+            ->test('pages::club-admin.users.index')
+            ->assertDontSee("sendInvitation({$managed->id})", escape: false)
+            ->assertSee(__('This member has no address of their own yet, so they cannot be invited.'));
+    });
+
+    it('offers it to a member who has one', function (): void {
+        $member = User::factory()->unverified()->create(['email' => 'member@example.com']);
+
+        Livewire::actingAs(User::factory()->withRole(Role::MEMBERS)->create())
+            ->test('pages::club-admin.users.index')
+            ->assertSee("sendInvitation({$member->id})", escape: false);
     });
 });
 

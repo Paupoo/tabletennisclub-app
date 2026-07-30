@@ -363,6 +363,29 @@ class User extends Authenticatable implements MustVerifyEmail
             || $this->sharesContact($field);
     }
 
+    /**
+     * Whether the club's answer to "does this member play competition" and the
+     * federation's disagree.
+     *
+     * They are allowed to: a member takes up competition, or stops, and the club
+     * knows before the listing does. What must not happen is the difference
+     * passing unseen by whoever accepts an affiliation — accepting it is what
+     * registers the member with the federation for the season.
+     *
+     * Silent when the federation has said nothing about this member, and when it
+     * said it without a date: an undated claim cannot be weighed against the
+     * club's own, and a listing two days old is not the argument a listing ten
+     * months old is.
+     */
+    public function contradictsFederationLicenceType(bool $isCompetitive): bool
+    {
+        if ($this->federation_licence_type === null || $this->federation_synced_at === null) {
+            return false;
+        }
+
+        return $isCompetitive !== ($this->federation_licence_type === 'JO');
+    }
+
     public function familyGroups(): BelongsToMany
     {
         return $this->belongsToMany(FamilyGroup::class, 'family_group_user');

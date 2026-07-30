@@ -105,9 +105,14 @@ new class extends Component
         // Otherwise neutral defaults (recreative / false).
         $seed = $existing ? [] : ($user->originatingContact()?->subscriptionSeed() ?? []);
 
+        // Failing both, what the member was affiliated as last time the federation
+        // said: `JO` is a competitor, `LR` a recreational player. A suggestion on
+        // a form the member is about to fill in themselves — they are the one who
+        // says what they intend to play this season, and they may well be taking
+        // up competition or stopping.
         $formula = $existing?->is_competitive
             ? 'competitive'
-            : (($seed['is_competitive'] ?? false) ? 'competitive' : 'recreative');
+            : (($seed['is_competitive'] ?? $user->federation_licence_type === 'JO') ? 'competitive' : 'recreative');
 
         $this->registrations[$user->id] = [
             'user_id' => $user->id,

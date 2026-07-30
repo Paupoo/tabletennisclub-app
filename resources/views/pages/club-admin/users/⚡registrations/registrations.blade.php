@@ -428,6 +428,19 @@
                             </span>
                         </x-alert>
                     @endif
+
+                    {{--
+                        Le membre et la fédération ne disent pas la même chose. Ce n'est
+                        pas une erreur — on prend la compétition, on l'arrête — mais ça se
+                        décide, et ça ne se décide qu'ici. Signalé, jamais bloquant.
+                    --}}
+                    @if ($this->federationFormulaGap)
+                        <x-alert icon="o-exclamation-triangle" class="alert-warning alert-soft mt-3">
+                            <span class="text-sm">
+                                {{ $this->federationFormulaGap }}
+                            </span>
+                        </x-alert>
+                    @endif
                 </div>
 
                 @if ($currentRequest->pending_packs->count() > 0)

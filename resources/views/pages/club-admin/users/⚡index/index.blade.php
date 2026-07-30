@@ -260,6 +260,10 @@
                 <x-button class="btn-ghost btn-sm" icon="o-calendar" :label="__('Subscribe')"
                     wire:click="$set('subscribeModal', true)" />
             @endcan
+            @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
+                <x-button class="btn-ghost btn-sm" icon="o-envelope" :label="__('Invite')"
+                    wire:click="bulkInvite" spinner="bulkInvite" />
+            @endcan
             <span class="text-base-content/20">|</span>
             @can('users.delete')
                 <x-button class="btn-ghost btn-sm text-error" icon="o-archive-box" :label="__('Archive')"
@@ -337,6 +341,15 @@
         <x-confirm-modal model="confirmArchiveModal" :title="__('Archive selected members?')"
             :confirmLabel="__('Archive')" confirmAction="bulkArchive">
             <p>{{ __('Selected members will be archived. Your own account is automatically excluded. Members can be restored later.') }}</p>
+        </x-confirm-modal>
+    @endcan
+
+    {{-- Sending again invalidates the link the member may be about to click --}}
+    @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
+        <x-confirm-modal model="confirmReinviteModal" :title="__('Send a second invitation?')"
+            :confirmLabel="__('Send again')" confirmAction="confirmBulkInvite">
+            <p>{{ __(':count selected member(s) were already invited and have not accepted yet.', ['count' => $waitingOnInvitation]) }}</p>
+            <p class="mt-2 opacity-70">{{ __('A new invitation invalidates the link they were sent. The others in the selection are invited either way.') }}</p>
         </x-confirm-modal>
     @endcan
 

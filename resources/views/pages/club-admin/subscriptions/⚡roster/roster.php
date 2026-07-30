@@ -301,7 +301,7 @@ new class extends Component
      *   id: int, name: string, ranking: ?string, age_category: ?string,
      *   age_label: ?string, is_competitive: bool, can_drive: bool,
      *   seats_available: ?int, wants_to_be_captain: bool, volunteer_help: bool,
-     *   wants_directed_training: bool
+     *   wants_directed_training: bool, federation_gap: ?string
      * }
      */
     protected function toRow(Subscription $sub): object
@@ -321,6 +321,15 @@ new class extends Component
             'wants_to_be_captain' => $sub->wants_to_be_captain,
             'volunteer_help' => $sub->volunteer_help,
             'wants_directed_training' => $sub->wants_directed_training,
+            // The federation's answer to the same question, when it differs.
+            // Shown, never applied: the club decides, and the toggle beside it is
+            // how it does so.
+            'federation_gap' => $sub->user->contradictsFederationLicenceType($sub->is_competitive)
+                ? __('Federation: :type on :date', [
+                    'type' => $sub->user->federation_licence_type,
+                    'date' => $sub->user->federation_synced_at->format('d/m/Y'),
+                ])
+                : null,
         ];
     }
 

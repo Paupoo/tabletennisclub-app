@@ -7,6 +7,7 @@ use App\Actions\User\CreateUserAction;
 use App\Actions\User\RecalculateForceListAction;
 use App\Actions\User\RestoreUserAction;
 use App\Actions\User\SendInvitationAction;
+use App\Jobs\SendMemberInvitationJob;
 use App\Actions\User\SoftDeleteUserAction;
 use App\Data\User\CreateUserData;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -21,6 +22,7 @@ use App\Support\Breadcrumb;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule as ValidationRule;
 use Livewire\Attributes\Computed;
@@ -48,6 +50,9 @@ new class extends Component
     public array $categories = [];
 
     public bool $confirmArchiveModal = false;
+
+    /** Guards against silently invalidating an invitation somebody is holding. */
+    public bool $confirmReinviteModal = false;
 
     // ── Modals ───────────────────────────────────────────────────────────────
     public bool $deleteModal = false;
@@ -107,6 +112,9 @@ new class extends Component
 
     public ?int $userToDelete = null;
 
+    /** How many of the selected members are still holding a live invitation. */
+    public int $waitingOnInvitation = 0;
+
     /**
      * Whitelist of sortable columns. Maps the header key (which may be a virtual
      * attribute such as `name`) to the real database columns to order by. Any key
@@ -164,6 +172,20 @@ new class extends Component
         }
     }
 
+    /**
+     * Hand a whole selection of members their login.
+     *
+     * The gesture the import deliberately does not make. It comes after it, by
+     * a human, on a selection they filtered themselves — usually the members a
+     * listing brought in, sitting under "not invited".
+     */
+    public function bulkInvite(): void
+    {
+        Gate::authorize('sendEmail', User::class);
+
+        $this->dispatchInvitations(includeWaiting: false);
+    }
+
     public function bulkSubscribe(): void
     {
         Gate::authorize(Permission::SubscriptionsManage->value);
@@ -218,6 +240,16 @@ new class extends Component
         Gate::authorize(Permission::UsersDelete->value);
 
         $this->confirmArchiveModal = true;
+    }
+
+    /**
+     * Send again to the members who were already waiting on a first invitation.
+     */
+    public function confirmBulkInvite(): void
+    {
+        Gate::authorize('sendEmail', User::class);
+
+        $this->dispatchInvitations(includeWaiting: true);
     }
 
     /**
@@ -616,6 +648,63 @@ new class extends Component
                 }
             })
             ->paginate(15);
+    }
+
+    /**
+     * Queue the invitations the selection actually calls for, and say out loud
+     * who was left out.
+     *
+     * Three kinds of member are not invited by a bulk send. One who already has
+     * an account has nothing to accept. One with no address of their own has
+     * nowhere to receive a login — the link would land in a guardian's mailbox
+     * and set a password on somebody else's account. And one still holding a
+     * valid invitation is only sent a second one on purpose: the new link
+     * invalidates the one they may be about to click.
+     */
+    private function dispatchInvitations(bool $includeWaiting): void
+    {
+        $members = User::query()->whereIn('id', $this->selected)->get();
+
+        $registered = $members->filter(fn (User $member): bool => $member->invitationStatus() === 'active');
+        $unreachable = $members->filter(fn (User $member): bool => $member->invitationStatus() !== 'active' && $member->email === null);
+        $waiting = $members->filter(fn (User $member): bool => $member->invitationStatus() === 'pending' && $member->email !== null);
+
+        if (! $includeWaiting && $waiting->isNotEmpty()) {
+            $this->waitingOnInvitation = $waiting->count();
+            $this->confirmReinviteModal = true;
+
+            return;
+        }
+
+        $targets = $members
+            ->diff($registered)
+            ->diff($unreachable)
+            ->when(! $includeWaiting, fn (Collection $ready): Collection => $ready->diff($waiting));
+
+        $this->confirmReinviteModal = false;
+        $this->clearSelection();
+
+        if ($targets->isEmpty()) {
+            $this->warning(__('Nobody in this selection can be invited.'));
+
+            return;
+        }
+
+        Bus::batch(
+            $targets->map(fn (User $member): SendMemberInvitationJob => new SendMemberInvitationJob($member->id))->all()
+        )->name('invitations')->dispatch();
+
+        $message = __(':count invitation(s) on their way.', ['count' => $targets->count()]);
+
+        if ($unreachable->isNotEmpty()) {
+            $message .= ' ' . __(':count member(s) have no address of their own and were not invited.', ['count' => $unreachable->count()]);
+        }
+
+        if ($registered->isNotEmpty()) {
+            $message .= ' ' . __(':count already have an account.', ['count' => $registered->count()]);
+        }
+
+        $this->success($message);
     }
 
     protected function breadcrumbChain(): Breadcrumb

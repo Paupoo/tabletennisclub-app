@@ -9,12 +9,14 @@ use App\Domains\Shared\Enums\Feature;
 use App\Domains\Trainings\Services\TrainingBuilder;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -38,6 +40,16 @@ class AppServiceProvider extends ServiceProvider
             : Password::min(8)->letters()->numbers());
 
         Paginator::defaultView('custom-paginate');
+
+        /*
+         * Invitations leave through Gmail, which tolerates the volume and not the
+         * burst: a season's worth of members invited in one click is fifty near
+         * identical messages in a few seconds, which is what spam filters are
+         * built to catch. Fifteen a minute turns that into three quarters of an
+         * hour, which nobody is waiting on — the members were not expecting the
+         * mail in the first place.
+         */
+        RateLimiter::for('invitations', fn (): Limit => Limit::perMinute(15));
 
         /*
          * The role → permission matrix lives in the Role enum, and the database

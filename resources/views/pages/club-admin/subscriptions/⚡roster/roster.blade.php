@@ -63,11 +63,21 @@
                 @endscope
 
                 @scope('cell_is_competitive', $row)
-                    @if ($row->is_competitive)
-                        <x-badge :value="__('Yes')" class="badge-success badge-soft badge-sm" />
-                    @else
-                        <span class="text-base-content/30">—</span>
-                    @endif
+                    <div class="flex items-center gap-1">
+                        @if ($row->is_competitive)
+                            <x-badge :value="__('Yes')" class="badge-success badge-soft badge-sm" />
+                        @else
+                            <span class="text-base-content/30">—</span>
+                        @endif
+                        {{--
+                            La fédération dit autre chose. Ni bloquant ni corrigé
+                            automatiquement : le club décide, mais il doit le voir.
+                        --}}
+                        @if ($row->federation_gap)
+                            <x-icon name="o-exclamation-triangle" class="h-4 w-4 text-warning"
+                                :title="$row->federation_gap" />
+                        @endif
+                    </div>
                 @endscope
 
                 @scope('cell_can_drive', $row, $canManage)

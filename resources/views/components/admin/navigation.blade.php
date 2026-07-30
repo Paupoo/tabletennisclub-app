@@ -44,11 +44,15 @@
     badge-classes="badge-error"
     />
 
+    {{-- Mirrors the gate in the directory component: affiliated members, plus
+         the committee members who do not play. --}}
+    @if($user->is_active || auth()->user()->can('users.view'))
     <x-menu-item
         icon="o-users"
         link="{{ route('admin.user.directory', auth()->user()) }}"
         :title="__('Member directory')"
     />
+    @endif
 
     <x-menu-item
         icon="o-book-open"

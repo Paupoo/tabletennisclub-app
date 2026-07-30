@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Team;
@@ -25,6 +26,35 @@ it('lists active members of the current season', function (): void {
         ->assertSee('Camille')
         ->assertSee('Dupont')
         ->assertDontSee('Ghost');
+});
+
+it('refuses the directory to a member who is not affiliated this season', function (): void {
+    $newcomer = User::factory()->create();
+
+    $this->actingAs($newcomer)
+        ->get(route('admin.user.directory', $newcomer))
+        ->assertForbidden();
+});
+
+it('refuses the directory while the affiliation is still awaiting approval', function (): void {
+    $applicant = User::factory()->create();
+    Subscription::factory()->for($applicant)->create([
+        'season_id' => $this->season->id,
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($applicant)
+        ->get(route('admin.user.directory', $applicant))
+        ->assertForbidden();
+});
+
+it('allows the directory to a committee member who holds no subscription', function (): void {
+    $committee = User::factory()->create();
+    $committee->assignRole(Role::COMMITTEE->value);
+
+    $this->actingAs($committee)
+        ->get(route('admin.user.directory', $committee))
+        ->assertSuccessful();
 });
 
 it('shows a members ranking', function (): void {

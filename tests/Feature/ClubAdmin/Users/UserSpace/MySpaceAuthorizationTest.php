@@ -33,8 +33,10 @@ $mySpaceRoutes = [
     'admin.user.payments',
 ];
 
+// An affiliated member: the directory is the one my-space page that also
+// demands membership, not merely a login (see DirectoryTest).
 test('a member can access their own my-space pages', function (string $routeName): void {
-    $user = User::factory()->create();
+    $user = activeMember(makeActiveSeason());
 
     $this->actingAs($user)
         ->get(route($routeName, $user))

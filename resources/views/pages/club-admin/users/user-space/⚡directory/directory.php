@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
@@ -90,6 +91,7 @@ new class extends Component
     public function mount(User $user): void
     {
         abort_unless(Auth::user()->is($user), 403);
+        abort_unless($this->mayConsultDirectory($user), 403);
 
         $this->user = $user;
         // Default the team-season filter to the current season.
@@ -189,5 +191,21 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Member directory'));
+    }
+
+    /**
+     * The directory is a benefit of belonging, not of holding a login. Every
+     * other my-space page shows the member their own data; this one hands them
+     * the rest of the club — names, rankings, teams, and the contact details of
+     * whoever opted in. An account whose affiliation is still awaiting approval,
+     * or was not renewed this season, must not read it.
+     *
+     * Committee members pass on `users.view` rather than on membership: several
+     * of them do not play, hold no subscription, and already see every contact
+     * detail through {@see User::contactVisibleTo()}.
+     */
+    private function mayConsultDirectory(User $user): bool
+    {
+        return $user->is_active || $user->can(Permission::UsersView->value);
     }
 };

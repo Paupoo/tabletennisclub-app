@@ -7,7 +7,6 @@ use App\Actions\User\CreateUserAction;
 use App\Actions\User\RecalculateForceListAction;
 use App\Actions\User\RestoreUserAction;
 use App\Actions\User\SendInvitationAction;
-use App\Jobs\SendMemberInvitationJob;
 use App\Actions\User\SoftDeleteUserAction;
 use App\Data\User\CreateUserData;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -15,6 +14,7 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Permission;
+use App\Jobs\SendMemberInvitationJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
@@ -37,6 +37,10 @@ new class extends Component
     use HasBulkActions, HasFilterDrawer;
 
     public bool $addToTeamModal = false;
+
+    /** The grown members the club still cannot hand a login to. */
+    #[Url]
+    public bool $adultWithoutAddress = false;
 
     public string $anonymizeConfirmText = '';
 
@@ -65,10 +69,6 @@ new class extends Component
 
     #[Url]
     public bool $incompleteProfile = false;
-
-    /** The grown members the club still cannot hand a login to. */
-    #[Url]
-    public bool $adultWithoutAddress = false;
 
     /**
      * Where a member stands with their account, mirroring
@@ -390,17 +390,6 @@ new class extends Component
         ];
     }
 
-    /** @return array<int, array{id: string, name: string}> */
-    #[Computed]
-    public function licenceTypes(): array
-    {
-        return [
-            ['id' => 'both',        'name' => __('Both')],
-            ['id' => 'competitive', 'name' => __('Competitive')],
-            ['id' => 'recreative',  'name' => __('Recreative')],
-        ];
-    }
-
     /**
      * Where a member stands with their account, in the order they travel through
      * it. "Not invited" is the one that matters after an import: those are the
@@ -417,6 +406,17 @@ new class extends Component
             ['id' => 'pending',     'name' => __('Pending')],
             ['id' => 'expired',     'name' => __('Expired')],
             ['id' => 'active',      'name' => __('Account created')],
+        ];
+    }
+
+    /** @return array<int, array{id: string, name: string}> */
+    #[Computed]
+    public function licenceTypes(): array
+    {
+        return [
+            ['id' => 'both',        'name' => __('Both')],
+            ['id' => 'competitive', 'name' => __('Competitive')],
+            ['id' => 'recreative',  'name' => __('Recreative')],
         ];
     }
 
@@ -660,6 +660,25 @@ new class extends Component
             ->paginate(15);
     }
 
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->users()
+            ->current(__('List'));
+    }
+
+    // ── HasBulkActions ────────────────────────────────────────────────────────
+
+    /** @return array<int, string> */
+    protected function getPageIds(): array
+    {
+        return $this->users
+            ->pluck('id')
+            ->map(fn (int $id) => (string) $id)
+            ->toArray();
+    }
+
     /**
      * Queue the invitations the selection actually calls for, and say out loud
      * who was left out.
@@ -715,24 +734,5 @@ new class extends Component
         }
 
         $this->success($message);
-    }
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->users()
-            ->current(__('List'));
-    }
-
-    // ── HasBulkActions ────────────────────────────────────────────────────────
-
-    /** @return array<int, string> */
-    protected function getPageIds(): array
-    {
-        return $this->users
-            ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
-            ->toArray();
     }
 };

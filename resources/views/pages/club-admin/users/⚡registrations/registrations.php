@@ -125,6 +125,12 @@ new class extends Component
         $this->searchMember = '';
     }
 
+    #[Computed]
+    public function affiliationsClosed(): bool
+    {
+        return ! (Season::current()?->affiliations_open ?? false);
+    }
+
     public function approve(): void
     {
         Gate::authorize(Permission::SubscriptionsManage->value);
@@ -484,6 +490,38 @@ new class extends Component
         }
     }
 
+    /**
+     * What the federation says about the open request, when it says otherwise.
+     *
+     * The club and the federation each hold their own answer to "does this member
+     * play competition", and they are allowed to differ — a member takes it up,
+     * or stops. What must not happen is the difference passing unseen by whoever
+     * accepts the affiliation, since accepting it is what registers the member
+     * with the federation for the season.
+     *
+     * The date matters as much as the answer: a listing two days old and one ten
+     * months old are not the same argument.
+     */
+    #[Computed]
+    public function federationFormulaGap(): ?string
+    {
+        $subscription = $this->currentRequestId === null
+            ? null
+            : Subscription::with('user')->find($this->currentRequestId);
+
+        $member = $subscription?->user;
+
+        if ($member === null || ! $member->contradictsFederationLicenceType($subscription->is_competitive)) {
+            return null;
+        }
+
+        return __('The member asked for :formula. Federation: :type on :date', [
+            'formula' => $subscription->is_competitive ? __('Competitive') : __('Recreational'),
+            'type' => $member->federation_licence_type,
+            'date' => $member->federation_synced_at->format('d/m/Y'),
+        ]);
+    }
+
     /** @return array<int, array{key: string, label: string}> */
     #[Computed]
     public function filterChips(): array
@@ -686,12 +724,6 @@ new class extends Component
         ];
     }
 
-    #[Computed]
-    public function affiliationsClosed(): bool
-    {
-        return ! (Season::current()?->affiliations_open ?? false);
-    }
-
     public function registrations(): Collection
     {
         $statusOrder = ['pending' => 1, 'confirmed' => 2, 'paid' => 3, 'refunded' => 4, 'cancelled' => 5];
@@ -850,38 +882,6 @@ new class extends Component
                 ['id' => 'refunded',  'name' => __('Refunded')],
                 ['id' => 'cancelled', 'name' => __('Cancelled')],
             ],
-        ]);
-    }
-
-    /**
-     * What the federation says about the open request, when it says otherwise.
-     *
-     * The club and the federation each hold their own answer to "does this member
-     * play competition", and they are allowed to differ — a member takes it up,
-     * or stops. What must not happen is the difference passing unseen by whoever
-     * accepts the affiliation, since accepting it is what registers the member
-     * with the federation for the season.
-     *
-     * The date matters as much as the answer: a listing two days old and one ten
-     * months old are not the same argument.
-     */
-    #[Computed]
-    public function federationFormulaGap(): ?string
-    {
-        $subscription = $this->currentRequestId === null
-            ? null
-            : Subscription::with('user')->find($this->currentRequestId);
-
-        $member = $subscription?->user;
-
-        if ($member === null || ! $member->contradictsFederationLicenceType($subscription->is_competitive)) {
-            return null;
-        }
-
-        return __('The member asked for :formula. Federation: :type on :date', [
-            'formula' => $subscription->is_competitive ? __('Competitive') : __('Recreational'),
-            'type' => $member->federation_licence_type,
-            'date' => $member->federation_synced_at->format('d/m/Y'),
         ]);
     }
 

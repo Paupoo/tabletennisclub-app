@@ -7,18 +7,18 @@ use App\Data\User\FederationRow;
 use App\Data\User\ImportLine;
 use App\Data\User\MemberMatch;
 use App\Data\User\SharedAddressDecision;
-use App\Domains\Shared\Enums\Gender;
-use App\Domains\Shared\Enums\ImportLineAction;
-use App\Domains\Shared\Enums\MemberMatchOutcome;
 use App\Domains\ClubAdmin\Users\Models\MemberImport;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\ImportLineAction;
+use App\Domains\Shared\Enums\MemberMatchOutcome;
 use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
-use App\Support\Breadcrumb;
 use App\Services\ClubAdmin\Users\FederationListingParser;
 use App\Services\ClubAdmin\Users\FederationMemberMatcher;
 use App\Services\ClubAdmin\Users\SharedAddressResolver;
+use App\Support\Breadcrumb;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -43,7 +43,17 @@ new class extends Component
 {
     use HasBreadcrumbs, Toast, WithFileUploads;
 
+    /**
+     * Lines the parser could not read, carried to the import history as a line
+     * number and a reason — never as what the line held.
+     *
+     * @var array<int, array{line: int, reason: string}>
+     */
+    public array $failures = [];
+
     public mixed $importFile = null;
+
+    public ?int $importId = null;
 
     /**
      * The listing, as the reviewer is leaving it. Keyed by the line the affiliate
@@ -56,14 +66,56 @@ new class extends Component
     public int $step = 1;
 
     /**
-     * Lines the parser could not read, carried to the import history as a line
-     * number and a reason — never as what the line held.
+     * Members the club holds and the listing did not carry.
      *
-     * @var array<int, array{line: int, reason: string}>
+     * Shown, and nothing else. Absence from the export proves nothing on its own:
+     * a committee member who plays no interclub has never been in it. Restricted
+     * to licensed members affiliated this season or the one before, because the
+     * roster holds years of former members and a list of two hundred names is a
+     * list nobody reads.
+     *
+     * @return Collection<int, User>
      */
-    public array $failures = [];
+    #[Computed]
+    public function absentees(): Collection
+    {
+        $listed = array_filter(array_column($this->rows, 'licence'));
+        $seasons = Season::query()->orderByDesc('start_at')->limit(2)->pluck('id');
 
-    public ?int $importId = null;
+        return User::query()
+            ->whereNotNull('licence')
+            ->when($listed !== [], fn (Builder $query): Builder => $query->whereNotIn('licence', $listed))
+            ->whereHas('subscriptions', fn (Builder $query): Builder => $query->whereIn('season_id', $seasons))
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
+    }
+
+    /**
+     * What may be done with a line, given what the roster answered.
+     *
+     * A member who is only archived still holds the licence, which is unique:
+     * creating a second file for them would fail on the constraint, so the choice
+     * is between taking their file back and leaving them be.
+     *
+     * @return array<int, array{id: string, name: string}>
+     */
+    public function actionOptions(string $outcome): array
+    {
+        $create = ['id' => ImportLineAction::CREATE->value, 'name' => __('Create')];
+        $update = ['id' => ImportLineAction::UPDATE->value, 'name' => __('Update the existing member')];
+        $skip = ['id' => ImportLineAction::SKIP->value, 'name' => __('Ignore')];
+
+        return match (MemberMatchOutcome::from($outcome)) {
+            MemberMatchOutcome::NEW => [$create, $skip],
+            MemberMatchOutcome::MATCHED => [$update, $skip],
+            MemberMatchOutcome::ARCHIVED => [
+                ['id' => ImportLineAction::UPDATE->value, 'name' => __('Restore the archived member')],
+                $skip,
+            ],
+            MemberMatchOutcome::SUSPECT => [$create, $update, $skip],
+        };
+    }
 
     /**
      * Write the reviewed listing into the roster.
@@ -96,6 +148,15 @@ new class extends Component
         // that read it — the roster keeps the members, nothing keeps the file.
         $this->importFile?->delete();
         $this->importFile = null;
+    }
+
+    /**
+     * The run, as the history recorded it.
+     */
+    #[Computed]
+    public function importRun(): ?MemberImport
+    {
+        return $this->importId === null ? null : MemberImport::find($this->importId);
     }
 
     public function parse(): void
@@ -134,41 +195,6 @@ new class extends Component
     }
 
     /**
-     * Members the club holds and the listing did not carry.
-     *
-     * Shown, and nothing else. Absence from the export proves nothing on its own:
-     * a committee member who plays no interclub has never been in it. Restricted
-     * to licensed members affiliated this season or the one before, because the
-     * roster holds years of former members and a list of two hundred names is a
-     * list nobody reads.
-     *
-     * @return Collection<int, User>
-     */
-    #[Computed]
-    public function absentees(): Collection
-    {
-        $listed = array_filter(array_column($this->rows, 'licence'));
-        $seasons = Season::query()->orderByDesc('start_at')->limit(2)->pluck('id');
-
-        return User::query()
-            ->whereNotNull('licence')
-            ->when($listed !== [], fn (Builder $query): Builder => $query->whereNotIn('licence', $listed))
-            ->whereHas('subscriptions', fn (Builder $query): Builder => $query->whereIn('season_id', $seasons))
-            ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->get();
-    }
-
-    /**
-     * The run, as the history recorded it.
-     */
-    #[Computed]
-    public function importRun(): ?MemberImport
-    {
-        return $this->importId === null ? null : MemberImport::find($this->importId);
-    }
-
-    /**
      * How many lines are heading each way, the undecided ones included.
      *
      * @return array<string, int>
@@ -184,32 +210,6 @@ new class extends Component
             'skip' => count(array_keys($actions, ImportLineAction::SKIP->value, true)),
             'undecided' => $this->undecidedCount(),
         ];
-    }
-
-    /**
-     * What may be done with a line, given what the roster answered.
-     *
-     * A member who is only archived still holds the licence, which is unique:
-     * creating a second file for them would fail on the constraint, so the choice
-     * is between taking their file back and leaving them be.
-     *
-     * @return array<int, array{id: string, name: string}>
-     */
-    public function actionOptions(string $outcome): array
-    {
-        $create = ['id' => ImportLineAction::CREATE->value, 'name' => __('Create')];
-        $update = ['id' => ImportLineAction::UPDATE->value, 'name' => __('Update the existing member')];
-        $skip = ['id' => ImportLineAction::SKIP->value, 'name' => __('Ignore')];
-
-        return match (MemberMatchOutcome::from($outcome)) {
-            MemberMatchOutcome::NEW => [$create, $skip],
-            MemberMatchOutcome::MATCHED => [$update, $skip],
-            MemberMatchOutcome::ARCHIVED => [
-                ['id' => ImportLineAction::UPDATE->value, 'name' => __('Restore the archived member')],
-                $skip,
-            ],
-            MemberMatchOutcome::SUSPECT => [$create, $update, $skip],
-        };
     }
 
     /**
@@ -229,6 +229,30 @@ new class extends Component
             ->home()
             ->users()
             ->current(__('Federation import'));
+    }
+
+    /**
+     * Who the address might belong to, read off the address itself.
+     *
+     * `firstname.lastname@…` is the common shape and gives both names; anything
+     * else gives none, and the family name of the child is the better guess.
+     * This is a suggestion on a form, never something written unconfirmed.
+     *
+     * @return array{firstName: ?string, lastName: string}
+     */
+    private function guardianNameFrom(?string $email, string $childLastName): array
+    {
+        $local = Str::before((string) $email, '@');
+        $parts = array_values(array_filter(preg_split('/[._-]+/', $local) ?: []));
+
+        if (count($parts) !== 2) {
+            return ['firstName' => null, 'lastName' => $childLastName];
+        }
+
+        return [
+            'firstName' => mb_convert_case($parts[0], MB_CASE_TITLE),
+            'lastName' => mb_convert_case($parts[1], MB_CASE_TITLE),
+        ];
     }
 
     /**
@@ -335,30 +359,6 @@ new class extends Component
             'guardianLineNumber' => $decision?->guardianLineNumber,
             'guardianFirstName' => $guardianName['firstName'],
             'guardianLastName' => $guardianName['lastName'],
-        ];
-    }
-
-    /**
-     * Who the address might belong to, read off the address itself.
-     *
-     * `firstname.lastname@…` is the common shape and gives both names; anything
-     * else gives none, and the family name of the child is the better guess.
-     * This is a suggestion on a form, never something written unconfirmed.
-     *
-     * @return array{firstName: ?string, lastName: string}
-     */
-    private function guardianNameFrom(?string $email, string $childLastName): array
-    {
-        $local = Str::before((string) $email, '@');
-        $parts = array_values(array_filter(preg_split('/[._-]+/', $local) ?: []));
-
-        if (count($parts) !== 2) {
-            return ['firstName' => null, 'lastName' => $childLastName];
-        }
-
-        return [
-            'firstName' => mb_convert_case($parts[0], MB_CASE_TITLE),
-            'lastName' => mb_convert_case($parts[1], MB_CASE_TITLE),
         ];
     }
 };

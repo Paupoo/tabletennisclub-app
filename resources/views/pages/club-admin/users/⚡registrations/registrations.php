@@ -9,6 +9,7 @@ use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\CancelSubscriptionWithRefundAction;
 use App\Actions\ClubAdmin\Subscriptions\ChangeSubscriptionFormulaAction;
 use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
+use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\ReconcileTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
@@ -961,32 +962,74 @@ new class extends Component
         $createAction = new CreateSubscriptionAction;
         $calculateAction = new CalculatePriceAction;
 
-        foreach ($this->familyBasket as $userId => $config) {
-            $user = User::find((int) $userId);
-            $subscription = $createAction->execute($user, $season, [
-                'is_competitive' => $config['licence_type'] === 'competitive',
-                'trainings_count' => count($config['trainings']),
-            ]);
+        // Une famille s'inscrit d'un bloc : laisser deux affiliations derrière
+        // soi parce que la troisième a échoué obligerait l'admin à réparer à la
+        // main ce qu'il croyait avoir annulé.
+        try {
+            DB::transaction(function () use ($season, $createAction, $calculateAction): void {
+                foreach ($this->familyBasket as $userId => $config) {
+                    $user = User::find((int) $userId);
 
-            if (! empty($config['trainings'])) {
-                $prorata = new TrainingPackProrata;
-                $packs = TrainingPack::whereIn('id', $config['trainings'])->get()->keyBy('id');
+                    // Le membre est peut-être passé par le formulaire public entre
+                    // deux ouvertures du drawer : sans ce garde-fou,
+                    // CreateSubscriptionAction lève une DomainException nue.
+                    $alreadyAffiliated = Subscription::where('user_id', $user->id)
+                        ->where('season_id', $season->id)
+                        ->affiliated()
+                        ->exists();
 
-                $syncData = [];
-                foreach ($config['trainings'] as $packId) {
-                    $pack = $packs->get((int) $packId);
+                    if ($alreadyAffiliated) {
+                        throw new DomainException(__(':name is already affiliated for this season.', [
+                            'name' => $user->first_name . ' ' . $user->last_name,
+                        ]));
+                    }
 
-                    // Inscription au guichet : si le pack tourne déjà, le membre
-                    // ne paie que les mois restants.
-                    $syncData[(int) $packId] = [
-                        'starts_on' => $pack ? $prorata->enrolmentStart($pack) : null,
-                    ];
+                    $subscription = $createAction->execute($user, $season, [
+                        'is_competitive' => $config['licence_type'] === 'competitive',
+                        'trainings_count' => count($config['trainings']),
+                    ]);
+
+                    // Le guichet ne crée pas de place : un pack complet met le
+                    // membre en liste d'attente, comme partout ailleurs. Seules
+                    // les lignes réellement obtenues (`pending`) sont validables.
+                    $claimedPackIds = [];
+
+                    if (! empty($config['trainings'])) {
+                        $packs = TrainingPack::whereIn('id', $config['trainings'])->get();
+
+                        foreach ($packs as $pack) {
+                            if ((new EnrollInTrainingPackAction)($subscription, $pack) === 'pending') {
+                                $claimedPackIds[] = $pack->id;
+                            }
+                        }
+                    }
+
+                    $calculateAction($subscription);
+
+                    // C'est un admin qui inscrit au guichet : sa décision vaut
+                    // validation, pour peu que la fédération puisse identifier
+                    // le membre. Sinon la demande attend, sans bloquer l'admin.
+                    if ($this->canBeConfirmedDirectly($user)) {
+                        $subscription->confirm();
+
+                        // Pose `starts_on` au pro rata et remet le prix à jour.
+                        if (! empty($claimedPackIds)) {
+                            (new ApproveTrainingPacksAction)($subscription, $claimedPackIds);
+                        }
+
+                        $subscription->payments()->create([
+                            'reference' => (new GeneratePaymentReference)(),
+                            'amount_due' => $subscription->getAmountDue(),
+                            'amount_paid' => 0,
+                            'status' => 'pending',
+                        ]);
+                    }
                 }
+            });
+        } catch (DomainException $exception) {
+            $this->error($exception->getMessage());
 
-                $subscription->trainingPacks()->sync($syncData);
-            }
-
-            $calculateAction($subscription);
+            return;
         }
 
         $this->success(__('Group affiliation successful!'));
@@ -1247,13 +1290,15 @@ new class extends Component
                 ? Subscription::with(['user', 'trainingPacks' => fn ($q) => $q->wherePivot('status', 'pending')])
                     ->find($this->currentTrainingRequestId)
                 : null,
+            // Proposer un membre déjà affilié n'aboutirait qu'à un refus au
+            // moment d'enregistrer : autant ne pas le proposer.
             'membersFound' => strlen($this->searchMember) > 2
-                ? User::where(function ($q): void {
-                    $q->where('first_name', 'like', "%{$this->searchMember}%")
-                        ->orWhere('last_name', 'like', "%{$this->searchMember}%")
-                        ->orWhere('email', 'like', "%{$this->searchMember}%");
-                })->limit(5)->get()
-                : [],
+                ? User::query()
+                    ->whereNotIn('id', User::affiliatedForCurrentSeason()->select('users.id'))
+                    ->searchName($this->searchMember)
+                    ->limit(5)
+                    ->get()
+                : collect(),
         ];
     }
 
@@ -1262,5 +1307,26 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Affiliations'));
+    }
+
+    /**
+     * Mêmes exigences que approve() : une affiliation ne peut être validée que
+     * si la fédération peut identifier le membre — licence à 6 chiffres, unique,
+     * et un vrai classement. NA veut dire « pas de classement au dossier », pas
+     * « non classé » (ça, c'est NC, que la fédération reconnaît).
+     *
+     * Le guichet ne s'arrête pas pour autant : sans ça, l'inscription reste en
+     * attente et le secrétariat la reprendra depuis la modale de validation.
+     */
+    private function canBeConfirmedDirectly(User $user): bool
+    {
+        if (blank($user->licence) || blank($user->ranking) || $user->ranking === Ranking::NA->name) {
+            return false;
+        }
+
+        return ! Validator::make(
+            ['licence' => trim($user->licence)],
+            ['licence' => ['digits:6', ValidationRule::unique('users', 'licence')->ignore($user->id)]],
+        )->fails();
     }
 };

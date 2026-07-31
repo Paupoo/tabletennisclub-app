@@ -339,7 +339,20 @@ new class extends Component
 
         $teams = $this->loadAccessibleTeams($user, $season);
 
-        $teamsData = $teams->map(fn (Team $team) => $this->buildTeamData($team, $season));
+        $allTeamsForSummary = $isAdminOrCommittee
+            ? Team::with(['league'])->inClub()->when($season, fn ($q) => $q->where('season_id', $season->id))->get()
+            : Team::newModelInstance()->newCollection();
+
+        // Single pass: every fixture this render needs, loaded once with the
+        // pivot rows the status rule depends on. The team cards and the
+        // preparation matrix both read from here — they used to each query per
+        // team, and the matrix additionally queried per cell, which is what put
+        // a nine-team season past a thousand queries per render.
+        $fixtures = $this->loadFixtures(
+            $teams->pluck('id')->merge($allTeamsForSummary->pluck('id'))->unique()->values()->all()
+        );
+
+        $teamsData = $teams->map(fn (Team $team) => $this->buildTeamData($team, $fixtures));
 
         if ($this->selectedTeamId && ! $teamsData->firstWhere('id', $this->selectedTeamId)) {
             $this->selectedTeamId = $teamsData->first()['id'] ?? null;
@@ -357,23 +370,30 @@ new class extends Component
         $blockedPlayerIds = [];
 
         if ($this->selectedInterclubId && $this->drawerSelection) {
-            $drawerInterclub = Interclub::find($this->selectedInterclubId);
+            $drawerInterclub = $fixtures->firstWhere('id', $this->selectedInterclubId)
+                ?? Interclub::find($this->selectedInterclubId);
 
             if ($drawerInterclub) {
                 $selectedTeam = $teams->firstWhere('id', $this->selectedTeamId);
                 $maxPlayers = $drawerInterclub->total_players;
 
-                $pivotMap = $drawerInterclub->users()
-                    ->get()
+                $pivotMap = $drawerInterclub->users
                     ->keyBy('id')
                     ->map(fn ($u) => $u->registration);
 
-                // Players selected in another team same week -> blocked
+                // Players selected in another team same week -> blocked. This
+                // deliberately keeps its own query: a plain captain only has
+                // their own teams in $fixtures, and the whole point is to catch
+                // a player lined up by someone else.
                 $blockedPlayerData = [];
                 $sameWeekMatches = Interclub::where('season_id', $drawerInterclub->season_id)
                     ->where('week_number', $drawerInterclub->week_number)
                     ->where('id', '!=', $drawerInterclub->id)
-                    ->with(['visitedTeam.club', 'visitingTeam.club'])
+                    ->with([
+                        'visitedTeam.club',
+                        'visitingTeam.club',
+                        'users' => fn ($q) => $q->wherePivot('is_selected', true),
+                    ])
                     ->get();
 
                 foreach ($sameWeekMatches as $swMatch) {
@@ -381,8 +401,8 @@ new class extends Component
                         ? $swMatch->visitedTeam
                         : $swMatch->visitingTeam;
 
-                    foreach ($swMatch->users()->wherePivot('is_selected', true)->pluck('users.id') as $uid) {
-                        $blockedPlayerData[$uid] = $swTeam?->name ?? '?';
+                    foreach ($swMatch->users as $swUser) {
+                        $blockedPlayerData[$swUser->id] = $swTeam?->name ?? '?';
                     }
                 }
 
@@ -390,7 +410,7 @@ new class extends Component
 
                 // Roster from team members
                 $roster = ($selectedTeam?->users ?? collect())->map(
-                    fn (User $player) => $this->buildPlayerData($player, $pivotMap, $selectedTeam, $season, $blockedPlayerData)
+                    fn (User $player) => $this->buildPlayerData($player, $pivotMap, $selectedTeam, $season, $fixtures, $blockedPlayerData)
                 )->sortBy([
                     ['rank_sort', 'asc'],
                     ['last_name', 'asc'],
@@ -403,7 +423,7 @@ new class extends Component
 
                 if (! empty($substituteIds)) {
                     $substitutes = User::whereIn('id', $substituteIds)->get()->map(
-                        fn (User $player) => $this->buildPlayerData($player, $pivotMap, $selectedTeam, $season, $blockedPlayerData)
+                        fn (User $player) => $this->buildPlayerData($player, $pivotMap, $selectedTeam, $season, $fixtures, $blockedPlayerData)
                     )->values();
                     $roster = $roster->concat($substitutes)->values();
                 }
@@ -477,10 +497,6 @@ new class extends Component
             }
         }
 
-        $allTeamsForSummary = $isAdminOrCommittee
-            ? Team::with(['league'])->inClub()->when($season, fn ($q) => $q->where('season_id', $season->id))->get()
-            : collect();
-
         $matchDayMap = $season ? Interclub::matchDayMap($season->id, $teams->pluck('id')->toArray()) : [];
 
         return [
@@ -504,7 +520,7 @@ new class extends Component
             'drawerInterclub' => $drawerInterclub,
             'isAdminOrCommittee' => $isAdminOrCommittee,
             'canSearchSubstitute' => $canSearchSubstitute,
-            'weekSummary' => $isAdminOrCommittee ? $this->buildWeekSummary($allTeamsForSummary, $this->zoomedTeamId) : null,
+            'weekSummary' => $isAdminOrCommittee ? $this->buildWeekSummary($allTeamsForSummary, $fixtures, $this->zoomedTeamId) : null,
             'matchDayMap' => $matchDayMap,
             'zoomedTeamId' => $this->zoomedTeamId,
             'filterChips' => $this->getFilterChips(),
@@ -537,10 +553,11 @@ new class extends Component
 
     /**
      * @param  Collection<int, mixed>  $pivotMap
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
      * @param  array<int, string>  $blockedPlayerData  user_id => team_name already selected this week
      * @return array<string, mixed>
      */
-    private function buildPlayerData(User $player, Collection $pivotMap, ?Team $team, ?Season $season, array $blockedPlayerData = []): array
+    private function buildPlayerData(User $player, Collection $pivotMap, ?Team $team, ?Season $season, \Illuminate\Database\Eloquent\Collection $fixtures, array $blockedPlayerData = []): array
     {
         $pivot = $pivotMap->get($player->id);
         $avail = $pivot?->availability
@@ -548,11 +565,11 @@ new class extends Component
             : null;
 
         $matchesPlayed = $season && $team
-            ? $this->matchesPlayedCount($player->id, $team->id, $season)
+            ? $this->matchesPlayedCount($player->id, $team->id, $season, $fixtures)
             : 0;
 
         $matchesSelected = $season && $team
-            ? $this->matchesSelectedCount($player->id, $team->id, $season)
+            ? $this->matchesSelectedCount($player->id, $team->id, $season, $fixtures)
             : 0;
 
         return [
@@ -621,22 +638,16 @@ new class extends Component
         ]);
     }
 
-    /** @return array<string, mixed> */
-    private function buildTeamData(Team $team, ?Season $season): array
+    /**
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
+     * @return array<string, mixed>
+     */
+    private function buildTeamData(Team $team, \Illuminate\Database\Eloquent\Collection $fixtures): array
     {
         $teamUserIds = $team->users->pluck('id');
         $teamMemberCount = $teamUserIds->count();
 
-        $interclubs = Interclub::with([
-            'visitedTeam.club',
-            'visitingTeam.club',
-            'users',
-        ])
-            ->where(fn ($q) => $q
-                ->where('visited_team_id', $team->id)
-                ->orWhere('visiting_team_id', $team->id))
-            ->orderBy('start_date_time')
-            ->get();
+        $interclubs = $this->fixturesForTeam($fixtures, $team->id);
 
         $matches = $interclubs->map(function (Interclub $ic) use ($teamMemberCount) {
             $ourTeam = $ic->visitedTeam?->club?->is_own_club
@@ -656,19 +667,11 @@ new class extends Component
             $pendingCount = max(0, $teamMemberCount - $respondedCount);
 
             $selectedCount = $icUsers->filter(fn ($u) => $u->registration?->is_selected)->count();
-            $confirmedAtCount = $icUsers->filter(fn ($u) => $u->registration?->is_selected && $u->registration?->selection_confirmed_at)->count();
 
             $isPast = $ic->start_date_time < now();
             $daysUntil = (int) now()->diffInDays($ic->start_date_time, false);
 
-            $status = match (true) {
-                $isPast => 'past',
-                $confirmedAtCount > 0 => 'confirmed',
-                $selectedCount >= $ic->total_players => 'actionable',
-                $availableCount >= $ic->total_players => 'actionable',
-                $daysUntil <= 14 => 'urgent',
-                default => 'future',
-            };
+            $status = $this->fixtureStatus($ic);
 
             $selectedPlayerNames = $isPast
                 ? $icUsers->filter(fn ($u) => $u->registration?->is_selected)
@@ -707,18 +710,21 @@ new class extends Component
         ];
     }
 
-    /** @param \Illuminate\Database\Eloquent\Collection<int, Team> $teams */
-    private function buildWeekSummary(\Illuminate\Database\Eloquent\Collection $teams, ?int $zoomedTeamId = null): array
+    /**
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Team>  $teams
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
+     */
+    private function buildWeekSummary(\Illuminate\Database\Eloquent\Collection $teams, \Illuminate\Database\Eloquent\Collection $fixtures, ?int $zoomedTeamId = null): array
     {
         if ($zoomedTeamId) {
             $teams = $teams->filter(fn (Team $t) => $t->id === $zoomedTeamId)->values();
         }
 
-        $weekNumbers = $this->weekNumbers($teams);
+        $weekNumbers = $this->weekNumbers($teams, $fixtures);
 
         $weeks = $weekNumbers->map(fn (int $wk) => [
             'wk' => $wk,
-            'status' => $this->weekStatus($wk, $teams),
+            'status' => $this->weekStatus($wk, $teams, $fixtures),
         ])->values()->all();
 
         $total = $weekNumbers->count();
@@ -729,7 +735,7 @@ new class extends Component
             'preparation_score' => $total > 0 ? (int) round($ok / $total * 100) : 0,
             'total' => $total,
             'ok' => $ok,
-            'matrix' => $this->teamWeekMatrix($teams, $weekNumbers),
+            'matrix' => $this->teamWeekMatrix($teams, $weekNumbers, $fixtures),
             'teams' => $teams->map(fn (Team $t) => ['id' => $t->id, 'name' => $t->name])->values()->all(),
         ];
     }
@@ -744,6 +750,44 @@ new class extends Component
         };
     }
 
+    /**
+     * The status rule, in one place. Both the team cards and the preparation
+     * matrix read it — they used to restate it separately and were free to
+     * drift apart.
+     */
+    private function fixtureStatus(Interclub $interclub): string
+    {
+        if ($interclub->start_date_time < now()) {
+            return 'past';
+        }
+
+        $users = $interclub->users;
+        $maxPlayers = $interclub->total_players;
+
+        $confirmedAtCount = $users->filter(fn ($u) => $u->registration?->is_selected && $u->registration?->selection_confirmed_at)->count();
+        $selectedCount = $users->filter(fn ($u) => $u->registration?->is_selected)->count();
+        $availableCount = $users->filter(fn ($u) => $u->registration?->availability === 'available')->count();
+        $daysUntil = (int) now()->diffInDays($interclub->start_date_time, false);
+
+        return match (true) {
+            $confirmedAtCount > 0 => 'confirmed',
+            $selectedCount >= $maxPlayers => 'actionable',
+            $availableCount >= $maxPlayers => 'actionable',
+            $daysUntil <= 14 => 'urgent',
+            default => 'future',
+        };
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
+     * @return \Illuminate\Database\Eloquent\Collection<int, Interclub>
+     */
+    private function fixturesForTeam(\Illuminate\Database\Eloquent\Collection $fixtures, int $teamId): \Illuminate\Database\Eloquent\Collection
+    {
+        return $fixtures->filter(fn (Interclub $ic) => $ic->visited_team_id === $teamId
+            || $ic->visiting_team_id === $teamId)->values();
+    }
+
     private function isPlayerDoubleBooked(int $userId, Interclub $interclub): bool
     {
         return Interclub::where('season_id', $interclub->season_id)
@@ -755,8 +799,45 @@ new class extends Component
             ->exists();
     }
 
+    /**
+     * Every fixture the render needs, in one query. Both the team cards and the
+     * preparation matrix filter this collection in memory instead of querying
+     * per team and per cell.
+     *
+     * @param  array<int, int>  $teamIds
+     * @return \Illuminate\Database\Eloquent\Collection<int, Interclub>
+     */
+    private function loadFixtures(array $teamIds): \Illuminate\Database\Eloquent\Collection
+    {
+        if ($teamIds === []) {
+            return Interclub::newModelInstance()->newCollection();
+        }
+
+        return Interclub::with(['visitedTeam.club', 'visitingTeam.club', 'users'])
+            ->where(fn ($q) => $q
+                ->whereIn('visited_team_id', $teamIds)
+                ->orWhereIn('visiting_team_id', $teamIds))
+            ->orderBy('start_date_time')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * Memoised for the render: `with()` and `getFilterChips()` both need the
+     * accessible teams and used to load them twice.
+     *
+     * @var array<string, \Illuminate\Database\Eloquent\Collection<int, Team>>
+     */
+    private array $accessibleTeamsCache = [];
+
     private function loadAccessibleTeams(User $user, ?Season $season): \Illuminate\Database\Eloquent\Collection
     {
+        $cacheKey = (string) ($season?->id ?? 'none');
+
+        if (isset($this->accessibleTeamsCache[$cacheKey])) {
+            return $this->accessibleTeamsCache[$cacheKey];
+        }
+
         $query = Team::with(['league', 'club', 'captain', 'users'])->inClub();
 
         if ($season) {
@@ -768,31 +849,25 @@ new class extends Component
             $query->where('captain_id', $user->id);
         }
 
-        return $query->orderBy('name')->get();
+        return $this->accessibleTeamsCache[$cacheKey] = $query->orderBy('name')->get();
     }
 
-    private function matchesPlayedCount(int $userId, int $teamId, Season $season): int
+    /** @param \Illuminate\Database\Eloquent\Collection<int, Interclub> $fixtures */
+    private function matchesPlayedCount(int $userId, int $teamId, Season $season, \Illuminate\Database\Eloquent\Collection $fixtures): int
     {
-        return Interclub::where('season_id', $season->id)
-            ->where('start_date_time', '<', now())
-            ->where(fn ($q) => $q
-                ->where('visited_team_id', $teamId)
-                ->orWhere('visiting_team_id', $teamId))
-            ->whereHas('users', fn ($q) => $q
-                ->where('users.id', $userId)
-                ->where('interclub_user.has_played', 1))
+        return $this->fixturesForTeam($fixtures, $teamId)
+            ->filter(fn (Interclub $ic) => $ic->season_id === $season->id
+                && $ic->start_date_time < now()
+                && $ic->users->contains(fn (User $u) => $u->id === $userId && (bool) $u->registration?->has_played))
             ->count();
     }
 
-    private function matchesSelectedCount(int $userId, int $teamId, Season $season): int
+    /** @param \Illuminate\Database\Eloquent\Collection<int, Interclub> $fixtures */
+    private function matchesSelectedCount(int $userId, int $teamId, Season $season, \Illuminate\Database\Eloquent\Collection $fixtures): int
     {
-        return Interclub::where('season_id', $season->id)
-            ->where(fn ($q) => $q
-                ->where('visited_team_id', $teamId)
-                ->orWhere('visiting_team_id', $teamId))
-            ->whereHas('users', fn ($q) => $q
-                ->where('users.id', $userId)
-                ->where('interclub_user.is_selected', 1))
+        return $this->fixturesForTeam($fixtures, $teamId)
+            ->filter(fn (Interclub $ic) => $ic->season_id === $season->id
+                && $ic->users->contains(fn (User $u) => $u->id === $userId && (bool) $u->registration?->is_selected))
             ->count();
     }
 
@@ -822,77 +897,74 @@ new class extends Component
 
     /**
      * @param  \Illuminate\Database\Eloquent\Collection<int, Team>  $teams
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
      * @return array<int, array<int, string|null>>
      */
-    private function teamWeekMatrix(\Illuminate\Database\Eloquent\Collection $teams, Collection $weekNumbers): array
+    private function teamWeekMatrix(\Illuminate\Database\Eloquent\Collection $teams, Collection $weekNumbers, \Illuminate\Database\Eloquent\Collection $fixtures): array
     {
         $matrix = [];
+
         foreach ($teams as $team) {
+            $teamFixtures = $this->fixturesForTeam($fixtures, $team->id);
             $matrix[$team->id] = [];
+
             foreach ($weekNumbers as $wk) {
-                $interclub = Interclub::where('week_number', $wk)
-                    ->where(fn ($q) => $q
-                        ->where('visited_team_id', $team->id)
-                        ->orWhere('visiting_team_id', $team->id))
-                    ->first();
-                $matrix[$team->id][$wk] = $interclub ? $this->weekStatus($wk, Team::newModelInstance()->newCollection([$team])) : null;
+                $matrix[$team->id][$wk] = $teamFixtures->firstWhere('week_number', $wk)
+                    ? $this->weekStatus($wk, Team::newModelInstance()->newCollection([$team]), $fixtures)
+                    : null;
             }
         }
 
         return $matrix;
     }
 
-    /** @param \Illuminate\Database\Eloquent\Collection<int, Team> $teams */
-    private function weekNumbers(\Illuminate\Database\Eloquent\Collection $teams): Collection
+    /**
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Team>  $teams
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
+     */
+    private function weekNumbers(\Illuminate\Database\Eloquent\Collection $teams, \Illuminate\Database\Eloquent\Collection $fixtures): Collection
     {
-        $teamIds = $teams->pluck('id');
+        $teamIds = $teams->pluck('id')->all();
 
-        return Interclub::whereIn('visited_team_id', $teamIds)
-            ->orWhereIn('visiting_team_id', $teamIds)
-            ->whereNotNull('week_number')
-            ->orderBy('start_date_time')
+        return $fixtures
+            ->filter(fn (Interclub $ic) => in_array($ic->visited_team_id, $teamIds, true)
+                || in_array($ic->visiting_team_id, $teamIds, true))
+            ->reject(fn (Interclub $ic) => $ic->week_number === null)
             ->pluck('week_number')
             ->unique()
             ->values();
     }
 
-    /** @param \Illuminate\Database\Eloquent\Collection<int, Team> $teams */
-    private function weekStatus(int $weekNumber, \Illuminate\Database\Eloquent\Collection $teams): string
+    /**
+     * Worst status across the teams playing that week. A fixture already played
+     * is skipped rather than rated, so a week entirely behind us keeps the
+     * initial 'confirmed' and counts as ready in the preparation score.
+     *
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Team>  $teams
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
+     */
+    private function weekStatus(int $weekNumber, \Illuminate\Database\Eloquent\Collection $teams, \Illuminate\Database\Eloquent\Collection $fixtures): string
     {
         $worstStatus = 'confirmed';
 
         foreach ($teams as $team) {
-            $interclub = Interclub::with('users')->where('week_number', $weekNumber)
-                ->where(fn ($q) => $q
-                    ->where('visited_team_id', $team->id)
-                    ->orWhere('visiting_team_id', $team->id))
-                ->first();
+            // Fixtures are ordered by kick-off, so a team playing twice in one
+            // week is rated on its earliest fixture. The query this replaced
+            // had no ORDER BY and picked whichever row the engine returned.
+            $interclub = $this->fixturesForTeam($fixtures, $team->id)
+                ->firstWhere('week_number', $weekNumber);
 
             if (! $interclub) {
                 continue;
             }
 
-            if ($interclub->start_date_time < now()) {
+            $status = $this->fixtureStatus($interclub);
+
+            if ($status === 'past') {
                 continue;
             }
 
-            $users = $interclub->users;
-            $maxPlayers = $interclub->total_players;
-            $daysUntil = (int) now()->diffInDays($interclub->start_date_time, false);
-
-            $confirmedAtCount = $users->filter(fn ($u) => $u->registration?->is_selected && $u->registration?->selection_confirmed_at)->count();
-            $selectedCount = $users->filter(fn ($u) => $u->registration?->is_selected)->count();
-            $availableCount = $users->filter(fn ($u) => $u->registration?->availability === 'available')->count();
-
-            $matchStatus = match (true) {
-                $confirmedAtCount > 0 => 'confirmed',
-                $selectedCount >= $maxPlayers => 'actionable',
-                $availableCount >= $maxPlayers => 'actionable',
-                $daysUntil <= 14 => 'urgent',
-                default => 'future',
-            };
-
-            $worstStatus = $this->worstOf($worstStatus, $matchStatus);
+            $worstStatus = $this->worstOf($worstStatus, $status);
         }
 
         return $worstStatus;

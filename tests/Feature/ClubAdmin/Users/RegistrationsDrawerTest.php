@@ -679,6 +679,101 @@ it('bills the group exactly what it quoted to the admin', function (): void {
             + (float) $childSubscription->payments()->sole()->amount_due)->toBe($quote['total']);
 });
 
+it('records the carpooling seats the member offered at the desk', function (): void {
+    $member = User::factory()->create(['licence' => '123456', 'ranking' => 'C4']);
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [$member->id => [
+            ...basketLine($member, 'competitive'),
+            'can_drive' => true,
+            'seats_available' => 4,
+        ]])
+        ->call('saveFamilyRegistration');
+
+    $subscription = Subscription::where('user_id', $member->id)->sole();
+
+    // Les déplacements interclubs se répartissent sur ces réponses : perdues au
+    // guichet, elles ne sont jamais redemandées au membre.
+    expect($subscription->can_drive)->toBeTrue()
+        ->and($subscription->seats_available)->toBe(4);
+});
+
+it('keeps no seat count for a member who ends up not driving', function (): void {
+    $member = User::factory()->create(['licence' => '123456', 'ranking' => 'C4']);
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [$member->id => [
+            ...basketLine($member),
+            // L'admin a coché, saisi, puis décoché : le chiffre reste à l'écran.
+            'can_drive' => false,
+            'seats_available' => 4,
+        ]])
+        ->call('saveFamilyRegistration');
+
+    $subscription = Subscription::where('user_id', $member->id)->sole();
+
+    // Le tableau des covoiturages compterait quatre places offertes par
+    // quelqu'un qui a dit ne pas conduire.
+    expect($subscription->can_drive)->toBeFalse()
+        ->and($subscription->seats_available)->toBeNull();
+});
+
+it('carries the captaincy, volunteering and directed training answers onto each affiliation', function (): void {
+    $captain = User::factory()->create(['licence' => '123456', 'ranking' => 'C4']);
+    $helper = User::factory()->create(['licence' => '654321', 'ranking' => 'C4']);
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [
+            $captain->id => [
+                ...basketLine($captain, 'competitive'),
+                'wants_to_be_captain' => true,
+            ],
+            $helper->id => [
+                ...basketLine($helper),
+                'volunteer_help' => true,
+                'wants_directed_training' => true,
+            ],
+        ])
+        ->call('attachMemberAsGuardian', $captain->id)
+        ->call('saveFamilyRegistration');
+
+    $captainSubscription = Subscription::where('user_id', $captain->id)->sole();
+    $helperSubscription = Subscription::where('user_id', $helper->id)->sole();
+
+    // Chaque membre du groupe répond pour lui : le capitaine pressenti n'est
+    // pas le bénévole, et l'un ne doit pas hériter des cases de l'autre.
+    expect($captainSubscription->wants_to_be_captain)->toBeTrue()
+        ->and($captainSubscription->volunteer_help)->toBeFalse()
+        ->and($captainSubscription->wants_directed_training)->toBeFalse()
+        ->and($helperSubscription->wants_to_be_captain)->toBeFalse()
+        ->and($helperSubscription->volunteer_help)->toBeTrue()
+        ->and($helperSubscription->wants_directed_training)->toBeTrue();
+});
+
+it('starts every basket line with the involvement questions unanswered', function (): void {
+    $member = User::factory()->create();
+
+    $line = Livewire::test('pages::club-admin.users.registrations')
+        ->call('addToBasket', $member->id)
+        ->instance()
+        ->familyBasket[$member->id];
+
+    // Le drawer pose ces questions par membre : la ligne doit les porter dès
+    // l'ajout, sinon les bascules du drawer n'ont rien à quoi s'accrocher.
+    expect($line)->toHaveKeys([
+        'can_drive',
+        'seats_available',
+        'wants_to_be_captain',
+        'volunteer_help',
+        'wants_directed_training',
+    ])
+        ->and($line['can_drive'])->toBeFalse()
+        ->and($line['seats_available'])->toBeNull()
+        ->and($line['wants_to_be_captain'])->toBeFalse()
+        ->and($line['volunteer_help'])->toBeFalse()
+        ->and($line['wants_directed_training'])->toBeFalse();
+});
+
 it('quotes nothing for a pack the member will only be waitlisted for', function (): void {
     Notification::fake();
 

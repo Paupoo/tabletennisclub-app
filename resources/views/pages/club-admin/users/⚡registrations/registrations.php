@@ -140,10 +140,17 @@ new class extends Component
 
         $user = User::find($userId);
 
+        // Les questions d'engagement suivent l'affiliation, membre par membre :
+        // la ligne les porte dès l'ajout pour que le drawer ait où les écrire.
         $this->familyBasket[$userId] = [
             'name' => $user->first_name . ' ' . $user->last_name,
             'licence_type' => 'recreative',
             'trainings' => [],
+            'can_drive' => false,
+            'seats_available' => null,
+            'wants_to_be_captain' => false,
+            'volunteer_help' => false,
+            'wants_directed_training' => false,
         ];
 
         $this->searchMember = '';
@@ -1269,9 +1276,21 @@ new class extends Component
                         ]));
                     }
 
+                    // Un nombre de places n'a de sens que derrière un « oui, je
+                    // conduis » : décocher doit effacer le chiffre resté à
+                    // l'écran, comme le fait l'espace membre.
+                    $canDrive = (bool) ($config['can_drive'] ?? false);
+
                     $subscription = $createAction->execute($user, $season, [
                         'is_competitive' => $config['licence_type'] === 'competitive',
                         'trainings_count' => count($config['trainings']),
+                        'can_drive' => $canDrive,
+                        'seats_available' => $canDrive && filled($config['seats_available'] ?? null)
+                            ? (int) $config['seats_available']
+                            : null,
+                        'wants_to_be_captain' => (bool) ($config['wants_to_be_captain'] ?? false),
+                        'volunteer_help' => (bool) ($config['volunteer_help'] ?? false),
+                        'wants_directed_training' => (bool) ($config['wants_directed_training'] ?? false),
                     ]);
 
                     // Le lien familial est ce que le guichet est le mieux placé

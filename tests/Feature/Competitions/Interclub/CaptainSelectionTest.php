@@ -10,6 +10,7 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\InterclubAvailability;
+use App\Domains\Shared\Enums\Ranking;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -219,9 +220,13 @@ describe('substitute search — explains the silent filtering (I2)', function ()
     it('tells the selector the team category is hiding matching players', function (): void {
         // beforeEach sets the team up in a MEN league. A female competitor whose
         // name matches the search is silently filtered out by category.
+        // Ranking is pinned: isCompetitor() draws it at random and User::interclubEligible()
+        // drops NA, so an unpinned ranking silently empties the candidate pool ~1 time in 18
+        // and leaves searchNote null.
         User::factory()->isCompetitor()->create([
             'gender' => Gender::WOMEN,
             'last_name' => 'Zoravitch',
+            'ranking' => Ranking::C0->value,
         ]);
 
         $component = openSelectorSearch($this->selector, $this->interclub->id, $this->team->id, 'Zoravitch');
@@ -238,6 +243,7 @@ describe('substitute search — explains the silent filtering (I2)', function ()
         $blocked = User::factory()->isCompetitor()->create([
             'gender' => Gender::MEN,
             'last_name' => 'Blockman',
+            'ranking' => Ranking::C0->value,
         ]);
 
         $otherTeam = Team::factory()->create([
@@ -277,6 +283,7 @@ describe('substitute search — explains the silent filtering (I2)', function ()
         $man = User::factory()->isCompetitor()->create([
             'gender' => Gender::MEN,
             'last_name' => 'Eligibleman',
+            'ranking' => Ranking::C0->value,
         ]);
 
         $component = openSelectorSearch($this->selector, $this->interclub->id, $this->team->id, 'Eligibleman');

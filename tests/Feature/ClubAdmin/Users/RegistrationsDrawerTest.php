@@ -7,7 +7,9 @@ use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Mail\PaymentInvitationEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
@@ -803,4 +805,121 @@ it('quotes nothing for a pack the member will only be waitlisted for', function 
     expect($quote['members'][$member->id]['waitlisted'])->toBe([$pack->name])
         ->and($quote['total'])->toBe(60.0)
         ->and((float) Subscription::where('user_id', $member->id)->sole()->amount_due)->toBe(60.0);
+});
+
+it('writes the confirmation and the payment invitation to the member it just registered', function (): void {
+    Notification::fake();
+    Mail::fake();
+
+    $member = User::factory()->create([
+        'email' => 'lise.martin@example.com',
+        'licence' => '123456',
+        'ranking' => 'C4',
+    ]);
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [$member->id => basketLine($member)])
+        ->call('saveFamilyRegistration');
+
+    $payment = Subscription::where('user_id', $member->id)->sole()->payments()->sole();
+
+    // Une inscription au guichet doit laisser au membre la même trace écrite
+    // qu'une inscription faite en ligne : sinon il repart sans rien.
+    Notification::assertSentTo($member, SubscriptionCreatedNotification::class);
+    Mail::assertSent(
+        PaymentInvitationEmail::class,
+        fn (PaymentInvitationEmail $mail): bool => $mail->hasTo('lise.martin@example.com')
+            && $mail->payment->is($payment),
+    );
+
+    expect($payment->invitation_counter)->toBe(1);
+});
+
+it('reaches a member who has no address of their own through their guardian', function (): void {
+    Notification::fake();
+    Mail::fake();
+
+    $guardian = Guardian::factory()->create(['email' => 'marie.dupont@example.com']);
+
+    $child = User::factory()->create([
+        'email' => null,
+        'licence' => '123456',
+        'ranking' => 'C4',
+    ]);
+    $child->guardians()->attach($guardian->id);
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [$child->id => basketLine($child)])
+        ->call('saveFamilyRegistration');
+
+    // C'est la population même du drawer : lire `email` en direct reviendrait à
+    // n'écrire à personne, sans que rien ne le signale.
+    Notification::assertSentTo(
+        $child,
+        SubscriptionCreatedNotification::class,
+        fn (object $notification, array $channels, User $notifiable): bool => $notifiable->routeNotificationFor('mail') === 'marie.dupont@example.com',
+    );
+    Mail::assertSent(
+        PaymentInvitationEmail::class,
+        fn (PaymentInvitationEmail $mail): bool => $mail->hasTo('marie.dupont@example.com'),
+    );
+});
+
+it('names the member it had no way to write to, and affiliates them all the same', function (): void {
+    Notification::fake();
+    Mail::fake();
+
+    $member = User::factory()->create([
+        'first_name' => 'Louis',
+        'last_name' => 'Vandenbossche',
+        'email' => null,
+        'licence' => '123456',
+        'ranking' => 'C4',
+    ]);
+
+    $component = Livewire::test('pages::club-admin.users.registrations')
+        ->set('memberDrawer', true)
+        ->set('familyBasket', [$member->id => basketLine($member)])
+        ->call('saveFamilyRegistration')
+        ->assertSet('memberDrawer', false);
+
+    Notification::assertNothingSent();
+    Mail::assertNothingSent();
+
+    $subscription = Subscription::where('user_id', $member->id)->sole();
+
+    // L'admin est le seul canal qui reste : s'il ne l'apprend pas maintenant, le
+    // membre repart du guichet sans référence de paiement et personne ne le sait.
+    expect($subscription->status)->toBe('confirmed')
+        ->and($subscription->payments()->sole()->invitation_counter)->toBe(0)
+        ->and(toastTitles($component))->toContain(
+            __('No email address for :names — hand them their affiliation and payment details on paper.', [
+                'names' => 'Louis Vandenbossche',
+            ])
+        );
+});
+
+it('asks no money from a member whose affiliation had to stay pending', function (): void {
+    Notification::fake();
+    Mail::fake();
+
+    // Sans numéro de licence, la fédération ne peut pas l'identifier : la
+    // demande est enregistrée mais le secrétariat doit encore la reprendre.
+    $member = User::factory()->create([
+        'email' => 'lise.martin@example.com',
+        'licence' => null,
+        'ranking' => 'C4',
+    ]);
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [$member->id => basketLine($member)])
+        ->call('saveFamilyRegistration');
+
+    // La confirmation de dépôt part quand même, sinon le membre ne sait pas que
+    // son dossier existe. Mais réclamer un paiement sur une affiliation non
+    // validée donnerait une référence qui ne sera jamais rapprochée.
+    Notification::assertSentTo($member, SubscriptionCreatedNotification::class);
+    Mail::assertNothingSent();
+
+    expect(Subscription::where('user_id', $member->id)->sole()->status)->toBe('pending');
 });

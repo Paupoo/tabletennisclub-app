@@ -25,6 +25,7 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Ranking;
+use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;
 use App\Domains\Subscriptions\Notifications\SubscriptionFormulaChangedNotification;
 use App\Domains\Subscriptions\Notifications\SubscriptionRejectedNotification;
 use App\Domains\Subscriptions\Notifications\TrainingPackRejectedNotification;
@@ -1254,11 +1255,20 @@ new class extends Component
         $calculateAction = new CalculatePriceAction;
         $familyDiscount = new FamilyDiscount;
 
+        /**
+         * Ce qui a réellement été enregistré, à prévenir une fois la
+         * transaction validée : un email parti sur un rollback ne se rattrape
+         * pas.
+         *
+         * @var list<array{user: User, subscription: Subscription, payment: ?Payment}>
+         */
+        $registered = [];
+
         // Une famille s'inscrit d'un bloc : laisser deux affiliations derrière
         // soi parce que la troisième a échoué obligerait l'admin à réparer à la
         // main ce qu'il croyait avoir annulé.
         try {
-            DB::transaction(function () use ($season, $createAction, $calculateAction, $familyDiscount): void {
+            DB::transaction(function () use ($season, $createAction, $calculateAction, $familyDiscount, &$registered): void {
                 foreach ($this->familyBasket as $userId => $config) {
                     $user = User::find((int) $userId);
 
@@ -1351,6 +1361,8 @@ new class extends Component
                     // C'est un admin qui inscrit au guichet : sa décision vaut
                     // validation, pour peu que la fédération puisse identifier
                     // le membre. Sinon la demande attend, sans bloquer l'admin.
+                    $payment = null;
+
                     if ($this->canBeConfirmedDirectly($user)) {
                         $subscription->confirm();
 
@@ -1359,13 +1371,19 @@ new class extends Component
                             (new ApproveTrainingPacksAction)($subscription, $claimedPackIds, $familyMembersCount);
                         }
 
-                        $subscription->payments()->create([
+                        $payment = $subscription->payments()->create([
                             'reference' => (new GeneratePaymentReference)(),
                             'amount_due' => $subscription->getAmountDue(),
                             'amount_paid' => 0,
                             'status' => 'pending',
                         ]);
                     }
+
+                    $registered[] = [
+                        'user' => $user,
+                        'subscription' => $subscription,
+                        'payment' => $payment,
+                    ];
                 }
             });
         } catch (DomainException $exception) {
@@ -1373,6 +1391,8 @@ new class extends Component
 
             return;
         }
+
+        $this->informRegisteredMembers($registered);
 
         $this->success(__('Group affiliation successful!'));
         $this->memberDrawer = false;
@@ -1448,12 +1468,25 @@ new class extends Component
             return;
         }
 
-        Mail::to($payment->payable->user)->send(new PaymentInvitationEmail($payment));
+        // Un mailable ne passe pas par `routeNotificationForMail()` : sans
+        // `contactEmail()`, l'invitation part vers `email`, null pour un compte
+        // géré, et le bouton annonce quand même un envoi.
+        $recipient = $payment->payable->user->contactEmail();
+
+        if ($recipient === null) {
+            $this->error(__('No email address on file for :name — hand them the payment details.', [
+                'name' => $payment->payable->user->first_name . ' ' . $payment->payable->user->last_name,
+            ]));
+
+            return;
+        }
+
+        Mail::to($recipient)->send(new PaymentInvitationEmail($payment));
 
         $payment->increment('invitation_counter');
         $this->paymentData['invitation_counter'] = $payment->invitation_counter;
 
-        $this->success(__('Payment invitation sent to :email.', ['email' => $payment->payable->user->email]));
+        $this->success(__('Payment invitation sent to :email.', ['email' => $recipient]));
     }
 
     #[Computed]
@@ -1699,5 +1732,49 @@ new class extends Component
             ['licence' => trim($user->licence)],
             ['licence' => ['digits:6', ValidationRule::unique('users', 'licence')->ignore($user->id)]],
         )->fails();
+    }
+
+    /**
+     * Écrit à chaque membre que le guichet vient d'inscrire.
+     *
+     * L'admin valide pour le membre : sans cet envoi, celui-ci repart sans
+     * confirmation ni référence de paiement, et personne ne le réclamera jamais.
+     *
+     * @param  list<array{user: User, subscription: Subscription, payment: ?Payment}>  $registered
+     */
+    private function informRegisteredMembers(array $registered): void
+    {
+        $unreachable = [];
+
+        foreach ($registered as $entry) {
+            // Un mailable ne passe pas par `routeNotificationForMail()` : sans
+            // `contactEmail()`, l'invitation part vers `email`, null pour le
+            // compte géré qui fait justement l'ordinaire de ce drawer.
+            $recipient = $entry['user']->contactEmail();
+
+            if ($recipient === null) {
+                $unreachable[] = $entry['user']->first_name . ' ' . $entry['user']->last_name;
+
+                continue;
+            }
+
+            $entry['user']->notify(new SubscriptionCreatedNotification($entry['subscription']));
+
+            // Une demande retombée en attente n'a pas de paiement : réclamer de
+            // l'argent pour une affiliation non validée serait faux.
+            if ($entry['payment'] !== null) {
+                Mail::to($recipient)->send(new PaymentInvitationEmail($entry['payment']));
+                $entry['payment']->increment('invitation_counter');
+            }
+        }
+
+        if ($unreachable !== []) {
+            // L'inscription est faite : c'est un avertissement, pas un refus.
+            // L'admin a le membre en face de lui, c'est le seul moment où les
+            // informations peuvent encore lui être remises sur papier.
+            $this->warning(__('No email address for :names — hand them their affiliation and payment details on paper.', [
+                'names' => implode(', ', $unreachable),
+            ]));
+        }
     }
 };

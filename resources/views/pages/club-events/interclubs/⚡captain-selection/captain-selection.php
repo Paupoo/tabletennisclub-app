@@ -57,6 +57,14 @@ new class extends Component
 
     public ?int $selectedTeamId = null;
 
+    /**
+     * Memoised for the render: `with()` and `getFilterChips()` both need the
+     * accessible teams and used to load them twice.
+     *
+     * @var array<string, \Illuminate\Database\Eloquent\Collection<int, Team>>
+     */
+    private array $accessibleTeamsCache = [];
+
     public function boot(): void
     {
         $this->currentUserId = Auth::id();
@@ -752,6 +760,16 @@ new class extends Component
     }
 
     /**
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
+     * @return \Illuminate\Database\Eloquent\Collection<int, Interclub>
+     */
+    private function fixturesForTeam(\Illuminate\Database\Eloquent\Collection $fixtures, int $teamId): \Illuminate\Database\Eloquent\Collection
+    {
+        return $fixtures->filter(fn (Interclub $ic) => $ic->visited_team_id === $teamId
+            || $ic->visiting_team_id === $teamId)->values();
+    }
+
+    /**
      * The status rule, in one place. Both the team cards and the preparation
      * matrix read it — they used to restate it separately and were free to
      * drift apart.
@@ -779,16 +797,6 @@ new class extends Component
         };
     }
 
-    /**
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
-     * @return \Illuminate\Database\Eloquent\Collection<int, Interclub>
-     */
-    private function fixturesForTeam(\Illuminate\Database\Eloquent\Collection $fixtures, int $teamId): \Illuminate\Database\Eloquent\Collection
-    {
-        return $fixtures->filter(fn (Interclub $ic) => $ic->visited_team_id === $teamId
-            || $ic->visiting_team_id === $teamId)->values();
-    }
-
     private function isPlayerDoubleBooked(int $userId, Interclub $interclub): bool
     {
         return Interclub::where('season_id', $interclub->season_id)
@@ -798,6 +806,28 @@ new class extends Component
                 ->where('users.id', $userId)
                 ->where('interclub_user.is_selected', 1))
             ->exists();
+    }
+
+    private function loadAccessibleTeams(User $user, ?Season $season): \Illuminate\Database\Eloquent\Collection
+    {
+        $cacheKey = (string) ($season?->id ?? 'none');
+
+        if (isset($this->accessibleTeamsCache[$cacheKey])) {
+            return $this->accessibleTeamsCache[$cacheKey];
+        }
+
+        $query = Team::with(['league', 'club', 'captain', 'users'])->inClub();
+
+        if ($season) {
+            $query->where('season_id', $season->id);
+        }
+
+        // A club-wide selector sees every team; a captain, only theirs.
+        if (! $user->can(Permission::SelectionsManage->value)) {
+            $query->where('captain_id', $user->id);
+        }
+
+        return $this->accessibleTeamsCache[$cacheKey] = $query->orderBy('name')->get();
     }
 
     /**
@@ -821,36 +851,6 @@ new class extends Component
             ->orderBy('start_date_time')
             ->orderBy('id')
             ->get();
-    }
-
-    /**
-     * Memoised for the render: `with()` and `getFilterChips()` both need the
-     * accessible teams and used to load them twice.
-     *
-     * @var array<string, \Illuminate\Database\Eloquent\Collection<int, Team>>
-     */
-    private array $accessibleTeamsCache = [];
-
-    private function loadAccessibleTeams(User $user, ?Season $season): \Illuminate\Database\Eloquent\Collection
-    {
-        $cacheKey = (string) ($season?->id ?? 'none');
-
-        if (isset($this->accessibleTeamsCache[$cacheKey])) {
-            return $this->accessibleTeamsCache[$cacheKey];
-        }
-
-        $query = Team::with(['league', 'club', 'captain', 'users'])->inClub();
-
-        if ($season) {
-            $query->where('season_id', $season->id);
-        }
-
-        // A club-wide selector sees every team; a captain, only theirs.
-        if (! $user->can(Permission::SelectionsManage->value)) {
-            $query->where('captain_id', $user->id);
-        }
-
-        return $this->accessibleTeamsCache[$cacheKey] = $query->orderBy('name')->get();
     }
 
     /** @param \Illuminate\Database\Eloquent\Collection<int, Interclub> $fixtures */

@@ -16,16 +16,16 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 /**
- * Characterisation test for the captain-selection preparation widget.
+ * The captain-selection preparation widget, week by week.
  *
- * The scenario below is built so every branch of the status rule is exercised
- * at least once, and so the two aggregation quirks are pinned down explicitly:
- * a fully played week scores as ready (week 1), and `future` outranks
- * `actionable` when both appear in the same week (week 3).
+ * The scenario exercises every branch of the status rule at least once and
+ * covers the three cases the aggregation used to get wrong: a fully played
+ * week (1) must leave the score rather than inflate it, a composable team
+ * (3) must outrank a team whose match is far off, and a week is only ever
+ * rated on the fixtures still to play.
  *
- * The whole point is to make "same output, fewer queries" verifiable rather
- * than asserted, so these expectations must survive the single-pass rewrite
- * untouched. They only change in the commit that deliberately changes them.
+ * These expectations doubled as the safety net for the single-pass rewrite:
+ * they were written against the old code and had to survive it untouched.
  */
 beforeEach(function (): void {
     $this->freezeTime(fn () => null);
@@ -137,18 +137,20 @@ it('scores the preparation widget week by week', function (): void {
     $summary = summaryFor($this->admin);
 
     expect(collect($summary['weeks'])->pluck('status', 'wk')->all())->toBe([
-        // Every match is played, so nothing is left to flag: the week reads as ready.
-        1 => 'confirmed',
+        // Every match is played: nothing left to prepare, so the week is out
+        // of the score rather than counted as ready.
+        1 => 'past',
         // Team B has done nothing three days out.
         2 => 'urgent',
-        // Team A is composable now, but team B's distant match outranks it.
-        3 => 'future',
+        // Team A is composable now, and that outranks team B's distant match.
+        3 => 'actionable',
         4 => 'future',
     ]);
 
-    expect($summary['total'])->toBe(4)
-        ->and($summary['ok'])->toBe(1)
-        ->and($summary['preparation_score'])->toBe(25);
+    // Week 1 leaves the denominator: three weeks are still to prepare, none done.
+    expect($summary['total'])->toBe(3)
+        ->and($summary['ok'])->toBe(0)
+        ->and($summary['preparation_score'])->toBe(0);
 });
 
 it('colours each cell of the team by week matrix', function (): void {
@@ -158,26 +160,61 @@ it('colours each cell of the team by week matrix', function (): void {
     $id = fn (string $name): int => $this->teams[$name]->id;
 
     expect($summary['matrix'][$id('A')])->toBe([
-        1 => 'confirmed',
+        1 => 'past',
         2 => 'confirmed',
         3 => 'actionable',
         4 => 'future',
     ]);
 
     expect($summary['matrix'][$id('B')])->toBe([
-        1 => 'confirmed',
+        1 => 'past',
         2 => 'urgent',
         3 => 'future',
         4 => 'future',
     ]);
 
     expect($summary['matrix'][$id('C')])->toBe([
-        1 => 'confirmed',
+        1 => 'past',
         2 => 'actionable',
         // No fixture that week — the cell stays empty.
         3 => null,
         4 => 'future',
     ]);
+});
+
+it('rates a mixed week on the fixtures still to play', function (): void {
+    [$a, $b] = [$this->teams['A'], $this->teams['B']];
+
+    // Team A has played its week 7 fixture, team B still has to prepare one.
+    scheduleMatch($a, 7, '2026-01-08 19:45:00');
+    scheduleMatch($b, 7, '2026-01-18 19:45:00');
+
+    $summary = summaryFor($this->admin);
+
+    expect(collect($summary['weeks'])->firstWhere('wk', 7)['status'])->toBe('urgent')
+        ->and($summary['total'])->toBe(1)
+        ->and($summary['matrix'][$a->id][7])->toBe('past')
+        ->and($summary['matrix'][$b->id][7])->toBe('urgent');
+});
+
+it('keeps the grid but drops the score once the season is over', function (): void {
+    foreach ($this->teams as $team) {
+        scheduleMatch($team, 9, '2025-11-05 19:45:00');
+    }
+
+    $summary = summaryFor($this->admin);
+
+    expect($summary['weeks'])->not->toBeEmpty()
+        ->and(collect($summary['weeks'])->firstWhere('wk', 9)['status'])->toBe('past')
+        // Nothing left to prepare: the score has no denominator to speak of.
+        ->and($summary['total'])->toBe(0)
+        ->and($summary['ok'])->toBe(0)
+        ->and($summary['preparation_score'])->toBe(0);
+
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->assertSee(__('Season over'))
+        ->assertDontSee(__('weeks ready'));
 });
 
 it('lists every own-club team in the summary', function (): void {

@@ -1,11 +1,18 @@
-@if ($isAdminOrCommittee && $weekSummary && $weekSummary['total'] > 0)
+{{-- Guarded on the weeks, not on the score: once every match has been played
+     the score has nothing left to measure, but the season grid is still worth
+     reading. --}}
+@if ($isAdminOrCommittee && $weekSummary && $weekSummary['weeks'] !== [])
     <div class="mb-6 space-y-3 rounded-xl border border-base-200 bg-base-50 px-4 py-4 sm:px-5">
 
         {{-- Header: score global --}}
         <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2">
                 <span class="text-[10px] font-black uppercase tracking-widest opacity-40">{{ __('Preparation') }}</span>
-                <span class="text-sm font-bold">{{ $weekSummary['ok'] }}/{{ $weekSummary['total'] }} {{ __('weeks ready') }}</span>
+                @if ($weekSummary['total'] > 0)
+                    <span class="text-sm font-bold">{{ $weekSummary['ok'] }}/{{ $weekSummary['total'] }} {{ __('weeks ready') }}</span>
+                @else
+                    <span class="text-sm font-bold opacity-50">{{ __('Season over') }}</span>
+                @endif
             </div>
             {{-- Légende compacte --}}
             <div class="hidden items-center gap-3 text-[9px] font-bold opacity-50 sm:flex">
@@ -13,6 +20,7 @@
                 <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-warning"></span>{{ __('Actionable') }}</span>
                 <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-error"></span>{{ __('Urgent') }}</span>
                 <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-base-300"></span>{{ __('Upcoming') }}</span>
+                <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm border border-base-300"></span>{{ __('Played') }}</span>
             </div>
         </div>
 
@@ -71,6 +79,10 @@
                                         <span class="inline-block h-2.5 w-2.5 rounded-sm bg-warning"></span>
                                     @elseif ($cellStatus === 'urgent')
                                         <span class="inline-block h-2.5 w-2.5 animate-pulse rounded-sm bg-error"></span>
+                                    @elseif ($cellStatus === 'past')
+                                        {{-- Hollow rather than a second shade of grey: two greys are
+                                             indistinguishable at this size, an empty square is not. --}}
+                                        <span class="inline-block h-2.5 w-2.5 rounded-sm border border-base-300"></span>
                                     @else
                                         <span class="inline-block h-2.5 w-2.5 rounded-sm bg-base-300"></span>
                                     @endif
@@ -88,6 +100,7 @@
             <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-warning"></span>{{ __('Actionable') }}</span>
             <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-error"></span>{{ __('Urgent') }}</span>
             <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-base-300"></span>{{ __('Upcoming') }}</span>
+            <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm border border-base-300"></span>{{ __('Played') }}</span>
         </div>
 
     </div>

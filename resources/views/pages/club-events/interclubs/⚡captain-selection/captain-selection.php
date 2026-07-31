@@ -727,8 +727,14 @@ new class extends Component
             'status' => $this->weekStatus($wk, $teams, $fixtures),
         ])->values()->all();
 
-        $total = $weekNumbers->count();
-        $ok = collect($weeks)->where('status', 'confirmed')->count();
+        // A week everyone has already played is behind us, not prepared: it
+        // leaves the score entirely rather than counting as ready. The score
+        // therefore reads "ready out of what is left", and its denominator
+        // shrinks as the season goes.
+        $scored = collect($weeks)->reject(fn (array $w) => $w['status'] === 'past');
+
+        $total = $scored->count();
+        $ok = $scored->where('status', 'confirmed')->count();
 
         return [
             'weeks' => $weeks,
@@ -936,16 +942,17 @@ new class extends Component
     }
 
     /**
-     * Worst status across the teams playing that week. A fixture already played
-     * is skipped rather than rated, so a week entirely behind us keeps the
-     * initial 'confirmed' and counts as ready in the preparation score.
+     * Worst status across the teams playing that week. A week where every
+     * fixture has been played reports 'past' so it can leave the preparation
+     * score rather than inflate it.
      *
      * @param  \Illuminate\Database\Eloquent\Collection<int, Team>  $teams
      * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
      */
     private function weekStatus(int $weekNumber, \Illuminate\Database\Eloquent\Collection $teams, \Illuminate\Database\Eloquent\Collection $fixtures): string
     {
-        $worstStatus = 'confirmed';
+        $liveStatus = null;
+        $sawPlayedFixture = false;
 
         foreach ($teams as $team) {
             // Fixtures are ordered by kick-off, so a team playing twice in one
@@ -961,18 +968,32 @@ new class extends Component
             $status = $this->fixtureStatus($interclub);
 
             if ($status === 'past') {
+                $sawPlayedFixture = true;
+
                 continue;
             }
 
-            $worstStatus = $this->worstOf($worstStatus, $status);
+            $liveStatus = $this->worstOf($liveStatus ?? 'confirmed', $status);
         }
 
-        return $worstStatus;
+        // A single fixture still to play decides the week; 'past' is reserved
+        // for weeks where there is nothing left to prepare.
+        if ($liveStatus !== null) {
+            return $liveStatus;
+        }
+
+        return $sawPlayedFixture ? 'past' : 'confirmed';
     }
 
+    /**
+     * Ordered by how much attention the week needs. A distant fixture with
+     * nothing done asks less of a selector than one that could be composed
+     * right now, so 'actionable' outranks 'future' — it used to be the other
+     * way round, and a week with real work to do showed up as quiet.
+     */
     private function worstOf(string $a, string $b): string
     {
-        $rank = ['confirmed' => 0, 'actionable' => 1, 'future' => 2, 'urgent' => 3];
+        $rank = ['confirmed' => 0, 'future' => 1, 'actionable' => 2, 'urgent' => 3];
 
         return ($rank[$b] ?? 0) > ($rank[$a] ?? 0) ? $b : $a;
     }

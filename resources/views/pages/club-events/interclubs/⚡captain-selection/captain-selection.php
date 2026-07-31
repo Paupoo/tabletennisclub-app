@@ -21,7 +21,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
-use Livewire\Attributes\Url;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
@@ -57,9 +56,6 @@ new class extends Component
     public ?int $selectedSeasonId = null;
 
     public ?int $selectedTeamId = null;
-
-    #[Url]
-    public ?int $zoomedTeamId = null;
 
     public function boot(): void
     {
@@ -520,9 +516,8 @@ new class extends Component
             'drawerInterclub' => $drawerInterclub,
             'isAdminOrCommittee' => $isAdminOrCommittee,
             'canSearchSubstitute' => $canSearchSubstitute,
-            'weekSummary' => $isAdminOrCommittee ? $this->buildWeekSummary($allTeamsForSummary, $fixtures, $this->zoomedTeamId) : null,
+            'weekSummary' => $isAdminOrCommittee ? $this->buildWeekSummary($allTeamsForSummary, $fixtures) : null,
             'matchDayMap' => $matchDayMap,
-            'zoomedTeamId' => $this->zoomedTeamId,
             'filterChips' => $this->getFilterChips(),
             'pendingAddedNames' => $pendingAddedNames,
             'pendingRemovedNames' => $pendingRemovedNames,
@@ -711,15 +706,15 @@ new class extends Component
     }
 
     /**
+     * The team zoom is not applied here: it only dims the other rows, which
+     * Alpine does client-side. Filtering server-side also emptied the team
+     * chips, leaving no way back to another team without clearing the zoom.
+     *
      * @param  \Illuminate\Database\Eloquent\Collection<int, Team>  $teams
      * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
      */
-    private function buildWeekSummary(\Illuminate\Database\Eloquent\Collection $teams, \Illuminate\Database\Eloquent\Collection $fixtures, ?int $zoomedTeamId = null): array
+    private function buildWeekSummary(\Illuminate\Database\Eloquent\Collection $teams, \Illuminate\Database\Eloquent\Collection $fixtures): array
     {
-        if ($zoomedTeamId) {
-            $teams = $teams->filter(fn (Team $t) => $t->id === $zoomedTeamId)->values();
-        }
-
         $weekNumbers = $this->weekNumbers($teams, $fixtures);
 
         $weeks = $weekNumbers->map(fn (int $wk) => [

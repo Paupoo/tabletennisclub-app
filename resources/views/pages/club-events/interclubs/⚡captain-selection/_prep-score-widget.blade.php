@@ -2,7 +2,24 @@
      the score has nothing left to measure, but the season grid is still worth
      reading. --}}
 @if ($isAdminOrCommittee && $weekSummary && $weekSummary['weeks'] !== [])
-    <div class="mb-6 space-y-3 rounded-xl border border-base-200 bg-base-50 px-4 py-4 sm:px-5">
+    {{-- The team zoom only dims rows, so it stays client-side: routing it
+         through Livewire made every chip click re-render the whole page. The
+         query string is kept by hand so the view still survives a reload. --}}
+    <div
+        x-data="{
+            zoomed: new URLSearchParams(window.location.search).get('zoomedTeamId'),
+            select(id) {
+                const next = id === null ? null : String(id);
+                this.zoomed = this.zoomed === next ? null : next;
+                const url = new URL(window.location);
+                this.zoomed === null
+                    ? url.searchParams.delete('zoomedTeamId')
+                    : url.searchParams.set('zoomedTeamId', this.zoomed);
+                window.history.replaceState({}, '', url);
+            },
+            isDimmed(id) { return this.zoomed !== null && this.zoomed !== String(id); },
+        }"
+        class="mb-6 space-y-3 rounded-xl border border-base-200 bg-base-50 px-4 py-4 sm:px-5">
 
         {{-- Header: score global --}}
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -27,20 +44,22 @@
         {{-- Zoom par équipe --}}
         <div class="flex flex-wrap gap-1.5">
             <button
-                wire:click="$set('zoomedTeamId', null)"
-                @class([
-                    'rounded-full border px-2.5 py-0.5 text-[10px] font-bold transition-colors',
-                    'border-primary bg-primary/10 text-primary' => $zoomedTeamId === null,
-                    'border-base-200 text-base-content/40 hover:border-base-300' => $zoomedTeamId !== null,
-                ])>{{ __('All') }}</button>
+                type="button"
+                x-on:click="select(null)"
+                class="rounded-full border px-2.5 py-0.5 text-[10px] font-bold transition-colors"
+                x-bind:class="zoomed === null
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-base-200 text-base-content/40 hover:border-base-300'"
+            >{{ __('All') }}</button>
             @foreach ($weekSummary['teams'] as $t)
                 <button
-                    wire:click="$set('zoomedTeamId', {{ $t['id'] }})"
-                    @class([
-                        'rounded-full border px-2.5 py-0.5 text-[10px] font-bold transition-colors',
-                        'border-primary bg-primary/10 text-primary' => $zoomedTeamId === $t['id'],
-                        'border-base-200 text-base-content/40 hover:border-base-300' => $zoomedTeamId !== $t['id'],
-                    ])>{{ $t['name'] }}</button>
+                    type="button"
+                    x-on:click="select({{ $t['id'] }})"
+                    class="rounded-full border px-2.5 py-0.5 text-[10px] font-bold transition-colors"
+                    x-bind:class="zoomed === '{{ $t['id'] }}'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-base-200 text-base-content/40 hover:border-base-300'"
+                >{{ $t['name'] }}</button>
             @endforeach
         </div>
 
@@ -62,8 +81,8 @@
                 </thead>
                 <tbody>
                     @foreach ($weekSummary['teams'] as $t)
-                        @php $isZoomed = $zoomedTeamId && $zoomedTeamId !== $t['id']; @endphp
-                        <tr @class(['transition-opacity duration-150', 'opacity-20' => $isZoomed])>
+                        <tr class="transition-opacity duration-150"
+                            x-bind:class="isDimmed({{ $t['id'] }}) && 'opacity-20'">
                             {{-- Nom équipe sticky --}}
                             <td class="sticky left-0 z-10 bg-base-50 py-1 pr-3 font-bold whitespace-nowrap text-base-content/60">
                                 {{ $t['name'] }}

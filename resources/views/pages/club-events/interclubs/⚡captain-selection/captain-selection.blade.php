@@ -15,7 +15,6 @@
     @include('pages::club-events.interclubs.⚡captain-selection._prep-score-widget', [
         'weekSummary' => $weekSummary,
         'matchDayMap' => $matchDayMap,
-        'zoomedTeamId' => $zoomedTeamId,
         'isAdminOrCommittee' => $isAdminOrCommittee,
     ])
 

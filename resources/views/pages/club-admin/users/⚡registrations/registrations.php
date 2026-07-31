@@ -15,6 +15,7 @@ use App\Actions\ClubAdmin\Subscriptions\ReconcileTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -27,6 +28,7 @@ use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Services\TrainingPackProrata;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
+use App\Livewire\Concerns\ManagesGuardians;
 use App\Mail\PaymentInvitationEmail;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Carbon;
@@ -43,7 +45,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasBreadcrumbs, HasFilterDrawer, Toast;
+    use HasBreadcrumbs, HasFilterDrawer, ManagesGuardians, Toast;
 
     /** @var int[] Pack IDs that admin wants to approve (pre-checked = all pending) */
     public array $approvedPackIds = [];
@@ -948,6 +950,17 @@ new class extends Component
             ->toArray() ?? [];
     }
 
+    /**
+     * Whether the basket describes a family, and therefore needs the guardian
+     * that ties its members together.
+     *
+     * A single member affiliates for himself: nothing to tie, nothing to ask.
+     */
+    public function requiresFamilyGuardian(): bool
+    {
+        return count($this->familyBasket) > 1;
+    }
+
     public function saveFamilyRegistration(): void
     {
         Gate::authorize(Permission::SubscriptionsManage->value);
@@ -955,6 +968,12 @@ new class extends Component
         $season = Season::current();
         if (! $season) {
             $this->error(__('No active season found.'));
+
+            return;
+        }
+
+        if ($this->requiresFamilyGuardian() && $this->guardianIds === []) {
+            $this->error(__('Add the guardian who links these members before validating the group.'));
 
             return;
         }
@@ -988,6 +1007,21 @@ new class extends Component
                         'is_competitive' => $config['licence_type'] === 'competitive',
                         'trainings_count' => count($config['trainings']),
                     ]);
+
+                    // Le lien familial est ce que le guichet est le mieux placé
+                    // pour établir : la famille est là, devant l'admin. C'est
+                    // lui qui ouvre droit à la remise famille.
+                    //
+                    // La mère inscrite avec ses enfants est souvent la tutrice
+                    // désignée : elle ne devient pas sa propre tutrice.
+                    $guardianIdsForMember = $this->linkedGuardians
+                        ->reject(fn (Guardian $guardian): bool => $guardian->user_id === $user->id)
+                        ->pluck('id')
+                        ->all();
+
+                    if ($guardianIdsForMember !== []) {
+                        $user->guardians()->syncWithoutDetaching($guardianIdsForMember);
+                    }
 
                     // Le guichet ne crée pas de place : un pack complet met le
                     // membre en liste d'attente, comme partout ailleurs. Seules
@@ -1035,6 +1069,8 @@ new class extends Component
         $this->success(__('Group affiliation successful!'));
         $this->memberDrawer = false;
         $this->familyBasket = [];
+        $this->guardianIds = [];
+        $this->resetGuardianForm();
     }
 
     public function saveReconciliation(): void

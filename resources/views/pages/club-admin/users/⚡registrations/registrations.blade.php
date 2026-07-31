@@ -801,6 +801,131 @@
                     </div>
                 @endforelse
             </div>
+
+            {{-- ── Tuteur du groupe ─────────────────────────────────────────
+                 Le lien familial n'existe nulle part ailleurs : c'est ici, la
+                 famille au guichet, qu'il se saisit. Il conditionne la remise.
+            --}}
+            @if ($this->requiresFamilyGuardian())
+                <div class="space-y-4 rounded-2xl border-2 border-base-300 bg-base-100 p-4 shadow-sm">
+                    <h3 class="flex items-center gap-2 text-xs font-black uppercase text-primary">
+                        <x-icon name="o-shield-check" class="h-4 w-4" />
+                        {{ __('Guardian of the group') }}
+                    </h3>
+
+                    @if ($this->linkedGuardians->isEmpty())
+                        <x-alert icon="o-exclamation-triangle" class="alert-warning">
+                            <span class="text-sm">
+                                {{ __('Several members at once: name the guardian who links them, so the family is known to the club.') }}
+                            </span>
+                        </x-alert>
+                    @else
+                        <div class="space-y-2">
+                            @foreach ($this->linkedGuardians as $guardian)
+                                <div wire:key="basket-guardian-{{ $guardian->id }}"
+                                    class="flex items-center gap-3 rounded-lg border border-base-200 bg-base-100 p-3">
+                                    <x-icon name="o-user" class="h-5 w-5 shrink-0 text-primary" />
+                                    <div class="min-w-0 flex-1">
+                                        <div class="truncate text-sm font-semibold">
+                                            {{ $guardian->first_name }} {{ $guardian->last_name }}
+                                        </div>
+                                        <div class="truncate text-xs text-base-content/60">
+                                            {{ $guardian->phone }}{{ $guardian->email ? ' · ' . $guardian->email : '' }}
+                                        </div>
+                                    </div>
+                                    <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-x-mark"
+                                        :tooltip="__('Unlink')" wire:click="detachGuardian({{ $guardian->id }})" />
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    {{-- Le tuteur est souvent déjà connu : on cherche avant de créer. --}}
+                    <div>
+                        <x-input :label="__('Find an existing guardian or member')" icon="o-magnifying-glass"
+                            :placeholder="__('Search by name or email…')"
+                            wire:model.live.debounce.300ms="guardianSearch" />
+
+                        @php
+                            $guardianResults = $this->guardianSearchResults;
+                            $memberResults = $this->memberSearchResults;
+                            $hasResults = $guardianResults->isNotEmpty() || $memberResults->isNotEmpty();
+                        @endphp
+
+                        @if ($hasResults)
+                            <div class="mt-2 space-y-1 rounded-lg border border-base-200 p-1">
+                                @if ($guardianResults->isNotEmpty())
+                                    <div class="px-3 pt-1 text-[10px] font-black uppercase tracking-wider text-base-content/40">
+                                        {{ __('Existing guardians') }}
+                                    </div>
+                                    @foreach ($guardianResults as $result)
+                                        <button type="button" wire:key="basket-guardian-result-{{ $result->id }}"
+                                            wire:click="attachGuardian({{ $result->id }})"
+                                            class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-base-200">
+                                            <x-icon name="o-plus-circle" class="h-4 w-4 shrink-0 text-success" />
+                                            <span class="flex-1 truncate">
+                                                {{ $result->first_name }} {{ $result->last_name }}
+                                                <span class="text-base-content/50">· {{ $result->phone }}</span>
+                                            </span>
+                                        </button>
+                                    @endforeach
+                                @endif
+
+                                @if ($memberResults->isNotEmpty())
+                                    <div class="px-3 pt-1 text-[10px] font-black uppercase tracking-wider text-base-content/40">
+                                        {{ __('Club members') }}
+                                    </div>
+                                    @foreach ($memberResults as $member)
+                                        <button type="button" wire:key="basket-member-result-{{ $member->id }}"
+                                            wire:click="attachMemberAsGuardian({{ $member->id }})"
+                                            class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-base-200">
+                                            <x-icon name="o-user-plus" class="h-4 w-4 shrink-0 text-primary" />
+                                            <span class="flex-1 truncate">
+                                                {{ $member->first_name }} {{ $member->last_name }}
+                                                <span class="text-base-content/50">· {{ __('member') }}</span>
+                                            </span>
+                                        </button>
+                                    @endforeach
+                                @endif
+                            </div>
+                        @elseif (strlen(trim($guardianSearch)) >= 2)
+                            <p class="mt-2 text-xs text-base-content/50">
+                                {{ __('No guardian or member found. Create a new guardian below.') }}
+                            </p>
+                        @endif
+                    </div>
+
+                    @if (! $showGuardianForm)
+                        <x-button class="btn-soft btn-sm" icon="o-plus" :label="__('Create a new guardian')"
+                            wire:click="$set('showGuardianForm', true)" />
+                    @else
+                        <div class="space-y-3 rounded-lg border border-base-200 p-4">
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <x-input :label="__('First name')" wire:model.live.blur="guardianFirstName" required />
+                                <x-input :label="__('Last name')" wire:model.live.blur="guardianLastName" required />
+                                <x-input :label="__('Phone')" wire:model.live.blur="guardianPhone"
+                                    placeholder="0470 00 00 00" required />
+                                <x-input :label="__('Email')" type="email" wire:model.live.blur="guardianEmail" />
+                                <x-input :label="__('IBAN')" wire:model.live.blur="guardianIban"
+                                    placeholder="BE00 0000 0000 0000"
+                                    :hint="__('Optional — used for refunds.')" class="sm:col-span-2" />
+                            </div>
+
+                            @if ($this->duplicateGuardian)
+                                <x-admin.users.guardian-duplicate-notice :guardian="$this->duplicateGuardian"
+                                    :already-linked="$this->duplicateGuardianAlreadyLinked" />
+                            @endif
+
+                            <div class="flex gap-2">
+                                <x-button class="btn-primary btn-sm" icon="o-check" :label="__('Add guardian')"
+                                    wire:click="createGuardian" spinner="createGuardian" />
+                                <x-button class="btn-ghost btn-sm" :label="__('Cancel')"
+                                    wire:click="$set('showGuardianForm', false)" />
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            @endif
         </div>
 
         <x-slot:actions>

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -186,6 +187,117 @@ it('enrols and bills the training packs it just validated', function (): void {
     expect($pivot->status)->toBe('enrolled')
         ->and((float) $subscription->amount_due)->toBe(150.0)
         ->and((float) $subscription->payments()->sole()->amount_due)->toBe(150.0);
+});
+
+it('links every member of the group to the guardian entered in the drawer', function (): void {
+    $mother = User::factory()->create();
+    $child = User::factory()->create();
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [
+            $mother->id => basketLine($mother),
+            $child->id => basketLine($child),
+        ])
+        ->set('guardianFirstName', 'Marie')
+        ->set('guardianLastName', 'Dupont')
+        ->set('guardianPhone', '0479123456')
+        ->call('createGuardian')
+        ->call('saveFamilyRegistration');
+
+    $guardian = Guardian::sole();
+
+    expect($mother->guardians()->pluck('guardians.id')->all())->toBe([$guardian->id])
+        ->and($child->guardians()->pluck('guardians.id')->all())->toBe([$guardian->id]);
+});
+
+it('refuses to affiliate a group of several members without naming their guardian', function (): void {
+    $mother = User::factory()->create();
+    $child = User::factory()->create();
+
+    $component = Livewire::test('pages::club-admin.users.registrations')
+        ->set('memberDrawer', true)
+        ->set('familyBasket', [
+            $mother->id => basketLine($mother),
+            $child->id => basketLine($child),
+        ])
+        ->call('saveFamilyRegistration');
+
+    // Sans ce lien, la famille n'existe pas en base et la remise ne s'appliquera
+    // jamais : le drawer est le seul endroit où l'admin peut encore le saisir.
+    $component->assertSet('memberDrawer', true);
+
+    expect(Subscription::count())->toBe(0)
+        ->and(toastTitles($component))->toContain(
+            __('Add the guardian who links these members before validating the group.')
+        );
+});
+
+it('reuses the guardian already on file instead of creating a second one', function (): void {
+    $existing = Guardian::factory()->create([
+        'first_name' => 'Marie',
+        'last_name' => 'Dupont',
+        'phone' => '0479123456',
+        'email' => 'marie.dupont@example.com',
+    ]);
+
+    $sibling = User::factory()->create();
+    $sibling->guardians()->attach($existing->id);
+
+    $newcomer = User::factory()->create();
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [
+            $sibling->id => basketLine($sibling),
+            $newcomer->id => basketLine($newcomer),
+        ])
+        ->set('showGuardianForm', true)
+        ->set('guardianFirstName', 'Marie')
+        ->set('guardianLastName', 'Dupont')
+        ->set('guardianPhone', '0479 12 34 56')
+        ->call('createGuardian')
+        ->assertSet('duplicateGuardianId', $existing->id)
+        ->call('linkDuplicateGuardian')
+        ->call('saveFamilyRegistration');
+
+    expect(Guardian::count())->toBe(1)
+        ->and($newcomer->guardians()->pluck('guardians.id')->all())->toBe([$existing->id])
+        // Le frère était déjà rattaché : le guichet ne doit pas doubler la ligne.
+        ->and($sibling->guardians()->count())->toBe(1);
+});
+
+it('never makes a basket member their own guardian', function (): void {
+    // Cas du guichet : la mère s'affilie avec ses enfants et c'est elle, membre
+    // du club, que l'admin désigne comme tutrice du groupe.
+    $mother = User::factory()->create(['first_name' => 'Marie', 'last_name' => 'Dupont']);
+    $child = User::factory()->create();
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [
+            $mother->id => basketLine($mother),
+            $child->id => basketLine($child),
+        ])
+        ->call('attachMemberAsGuardian', $mother->id)
+        ->call('saveFamilyRegistration');
+
+    $guardian = Guardian::sole();
+
+    expect($guardian->user_id)->toBe($mother->id)
+        ->and($child->guardians()->pluck('guardians.id')->all())->toBe([$guardian->id])
+        ->and($mother->guardians()->count())->toBe(0);
+});
+
+it('asks for no guardian, and creates none, when a single member walks in', function (): void {
+    $member = User::factory()->create(['licence' => '123456', 'ranking' => 'C4']);
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('memberDrawer', true)
+        ->set('familyBasket', [$member->id => basketLine($member)])
+        ->call('saveFamilyRegistration')
+        ->assertSet('memberDrawer', false);
+
+    expect(Subscription::where('user_id', $member->id)->sole()->status)->toBe('confirmed')
+        ->and(Guardian::count())->toBe(0)
+        ->and($member->guardians()->count())->toBe(0);
 });
 
 it('keeps members already affiliated out of the drawer search results', function (): void {

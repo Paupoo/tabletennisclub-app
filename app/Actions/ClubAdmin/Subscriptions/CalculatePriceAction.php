@@ -30,8 +30,14 @@ final class CalculatePriceAction
             ? 0.0
             : round($quote['enrolled_total'] / $quote['enrolled_count'], 2);
 
-        // amount_due accessor expects euros, stores as cents internally
-        $subscription->amount_due = $quote['total'];
+        // amount_due accessor expects euros, stores as cents internally.
+        //
+        // Le crédit famille est retranché ici, à chaque recalcul : c'est la
+        // remise que les affiliations précédentes de la famille n'ont jamais
+        // reçue et que celle-ci absorbe. Le retrancher une seule fois, au
+        // moment de l'affiliation, l'aurait fait disparaître au premier départ
+        // de pack ou à la première réconciliation.
+        $subscription->amount_due = max(0.0, round($quote['total'] - $subscription->family_credit, 2));
 
         $subscription->save();
 

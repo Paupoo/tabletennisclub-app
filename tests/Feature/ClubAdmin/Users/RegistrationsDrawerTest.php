@@ -300,6 +300,221 @@ it('asks for no guardian, and creates none, when a single member walks in', func
         ->and($member->guardians()->count())->toBe(0);
 });
 
+it('discounts the packs of a member whose relative is already affiliated', function (): void {
+    Notification::fake();
+
+    $guardian = Guardian::factory()->create();
+
+    // Le grand frère tient déjà deux packs : la remise multi-packs joue pour lui
+    // depuis le premier jour, il n'y a rien à lui rattraper.
+    $sibling = User::factory()->create();
+    $sibling->guardians()->attach($guardian->id);
+
+    $siblingSubscription = Subscription::factory()->create([
+        'user_id' => $sibling->id,
+        'season_id' => $this->season->id,
+        'status' => 'confirmed',
+        'is_competitive' => false,
+        // 60 + (90 − 10) + (90 − 10) = 220
+        'amount_due' => 220,
+    ]);
+
+    foreach (TrainingPack::factory()->count(2)->create(['season_id' => $this->season->id, 'price' => 90]) as $held) {
+        $siblingSubscription->trainingPacks()->attach($held->id, ['status' => 'enrolled']);
+    }
+
+    $pack = TrainingPack::factory()->create(['season_id' => $this->season->id, 'price' => 90]);
+
+    $newcomer = User::factory()->create(['licence' => '123456', 'ranking' => 'C4']);
+    $newcomer->guardians()->attach($guardian->id);
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [$newcomer->id => basketLine($newcomer, 'recreative', [$pack->id])])
+        ->call('saveFamilyRegistration');
+
+    $subscription = Subscription::where('user_id', $newcomer->id)->sole();
+
+    // 60 + (90 − 10) = 140
+    expect((float) $subscription->amount_due)->toBe(140.0)
+        ->and((float) $siblingSubscription->fresh()->amount_due)->toBe(220.0);
+});
+
+it('makes the last affiliation absorb the discount the family never got', function (): void {
+    Notification::fake();
+
+    $guardian = Guardian::factory()->create();
+
+    // Le grand frère s'est affilié seul avec un seul pack : personne ne lui a
+    // jamais accordé de remise, et sa facture ne sera pas rouverte.
+    $sibling = User::factory()->create();
+    $sibling->guardians()->attach($guardian->id);
+
+    $siblingSubscription = Subscription::factory()->create([
+        'user_id' => $sibling->id,
+        'season_id' => $this->season->id,
+        'status' => 'confirmed',
+        'is_competitive' => false,
+        // 60 + 90 = 150
+        'amount_due' => 150,
+    ]);
+
+    $siblingPack = TrainingPack::factory()->create(['season_id' => $this->season->id, 'price' => 90]);
+    $siblingSubscription->trainingPacks()->attach($siblingPack->id, ['status' => 'enrolled']);
+
+    $pack = TrainingPack::factory()->create(['season_id' => $this->season->id, 'price' => 90]);
+
+    $newcomer = User::factory()->create(['licence' => '123456', 'ranking' => 'C4']);
+    $newcomer->guardians()->attach($guardian->id);
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [$newcomer->id => basketLine($newcomer, 'recreative', [$pack->id])])
+        ->call('saveFamilyRegistration');
+
+    $subscription = Subscription::where('user_id', $newcomer->id)->sole();
+
+    // Crédit = 150 − (60 + 90 − 10) = 10, à déduire de 60 + (90 − 10) = 140.
+    expect((float) $subscription->family_credit)->toBe(10.0)
+        ->and((float) $subscription->amount_due)->toBe(130.0)
+        ->and((float) $subscription->payments()->sole()->amount_due)->toBe(130.0)
+        // Le drapeau suit l'affiliation qui a réellement touché la remise :
+        // c'est lui que relisent les recalculs d'annulation et de départ.
+        ->and($subscription->has_other_family_members)->toBeTrue()
+        ->and((float) $siblingSubscription->fresh()->amount_due)->toBe(150.0)
+        ->and($siblingSubscription->fresh()->has_other_family_members)->toBeFalse();
+});
+
+it('never turns the catch-up into money owed back to the family', function (): void {
+    Notification::fake();
+
+    $guardian = Guardian::factory()->create();
+
+    // Sept frères et sœurs affiliés un par un, chacun avec un seul pack : sept
+    // fois dix euros de remise que personne n'a jamais reçus.
+    foreach (range(1, 7) as $ignored) {
+        $sibling = User::factory()->create();
+        $sibling->guardians()->attach($guardian->id);
+
+        $subscription = Subscription::factory()->create([
+            'user_id' => $sibling->id,
+            'season_id' => $this->season->id,
+            'status' => 'confirmed',
+            'is_competitive' => false,
+            // 60 + 90 = 150
+            'amount_due' => 150,
+        ]);
+
+        $subscription->trainingPacks()->attach(
+            TrainingPack::factory()->create(['season_id' => $this->season->id, 'price' => 90])->id,
+            ['status' => 'enrolled'],
+        );
+    }
+
+    $newcomer = User::factory()->create(['licence' => '123456', 'ranking' => 'C4']);
+    $newcomer->guardians()->attach($guardian->id);
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [$newcomer->id => basketLine($newcomer)])
+        ->call('saveFamilyRegistration');
+
+    $subscription = Subscription::where('user_id', $newcomer->id)->sole();
+
+    // Crédit = 7 × (150 − 140) = 70, pour une cotisation loisir nue de 60 €.
+    expect((float) $subscription->family_credit)->toBe(70.0)
+        ->and((float) $subscription->amount_due)->toBe(0.0);
+});
+
+it('leaves the membership fee and the summer camp out of the family discount', function (): void {
+    Notification::fake();
+
+    $guardian = Guardian::factory()->create();
+
+    $sibling = User::factory()->create();
+    $sibling->guardians()->attach($guardian->id);
+
+    $siblingSubscription = Subscription::factory()->create([
+        'user_id' => $sibling->id,
+        'season_id' => $this->season->id,
+        'status' => 'confirmed',
+        'is_competitive' => false,
+        // 60 + 90 = 150
+        'amount_due' => 150,
+    ]);
+
+    $siblingSubscription->trainingPacks()->attach(
+        TrainingPack::factory()->create(['season_id' => $this->season->id, 'price' => 90])->id,
+        ['status' => 'enrolled'],
+    );
+
+    $summerCamp = TrainingPack::factory()->create([
+        'season_id' => $this->season->id,
+        'name' => "Stage d'été",
+        'price' => 350,
+        'allow_discount' => false,
+    ]);
+    $pack = TrainingPack::factory()->create(['season_id' => $this->season->id, 'price' => 90]);
+
+    $newcomer = User::factory()->create(['licence' => '123456', 'ranking' => 'C4']);
+    $newcomer->guardians()->attach($guardian->id);
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [
+            $newcomer->id => basketLine($newcomer, 'recreative', [$summerCamp->id, $pack->id]),
+        ])
+        ->call('saveFamilyRegistration');
+
+    $subscription = Subscription::where('user_id', $newcomer->id)->sole();
+
+    // Seul le pack remisable perd 10 € : 60 + 350 + (90 − 10) = 490, moins le
+    // rattrapage du frère (150 − 140 = 10).
+    expect((float) $subscription->amount_due)->toBe(480.0);
+});
+
+it('stops crediting a family once its discount has been caught up', function (): void {
+    Notification::fake();
+
+    $guardian = Guardian::factory()->create();
+
+    // L'aîné s'est affilié avant tout le monde, plein tarif.
+    $eldest = User::factory()->create();
+    $eldest->guardians()->attach($guardian->id);
+
+    $eldestSubscription = Subscription::factory()->create([
+        'user_id' => $eldest->id,
+        'season_id' => $this->season->id,
+        'status' => 'confirmed',
+        'is_competitive' => false,
+        // 60 + 90 = 150
+        'amount_due' => 150,
+    ]);
+    $eldestSubscription->trainingPacks()->attach(
+        TrainingPack::factory()->create(['season_id' => $this->season->id, 'price' => 90])->id,
+        ['status' => 'enrolled'],
+    );
+
+    $second = User::factory()->create(['licence' => '123456', 'ranking' => 'C4']);
+    $second->guardians()->attach($guardian->id);
+    $secondPack = TrainingPack::factory()->create(['season_id' => $this->season->id, 'price' => 90]);
+
+    $third = User::factory()->create(['licence' => '654321', 'ranking' => 'C4']);
+    $third->guardians()->attach($guardian->id);
+    $thirdPack = TrainingPack::factory()->create(['season_id' => $this->season->id, 'price' => 90]);
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [$second->id => basketLine($second, 'recreative', [$secondPack->id])])
+        ->call('saveFamilyRegistration');
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [$third->id => basketLine($third, 'recreative', [$thirdPack->id])])
+        ->call('saveFamilyRegistration');
+
+    // Le deuxième a déjà absorbé les 10 € de l'aîné et paie 140 − 10 = 130.
+    // Pour le troisième, l'écart de l'aîné (150 − 140 = 10) et celui du
+    // deuxième (130 − 140 = −10) s'annulent : plus rien à rattraper.
+    expect((float) Subscription::where('user_id', $second->id)->sole()->amount_due)->toBe(130.0)
+        ->and((float) Subscription::where('user_id', $third->id)->sole()->family_credit)->toBe(0.0)
+        ->and((float) Subscription::where('user_id', $third->id)->sole()->amount_due)->toBe(140.0);
+});
+
 it('keeps members already affiliated out of the drawer search results', function (): void {
     $affiliated = User::factory()->create(['last_name' => 'Vandenbossche']);
     Subscription::factory()->create([

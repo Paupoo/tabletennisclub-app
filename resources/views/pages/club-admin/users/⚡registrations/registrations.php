@@ -15,6 +15,7 @@ use App\Actions\ClubAdmin\Subscriptions\ReconcileTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Services\FamilyDiscount;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
@@ -138,7 +139,7 @@ new class extends Component
     {
         Gate::authorize(Permission::SubscriptionsManage->value);
 
-        $subscription = Subscription::with(['user', 'trainingPacks'])->find($this->currentRequestId);
+        $subscription = Subscription::with(['user', 'season', 'trainingPacks'])->find($this->currentRequestId);
 
         $licence = filled($this->reviewLicence) ? trim($this->reviewLicence) : $subscription->user->licence;
         $ranking = filled($this->reviewRanking) ? $this->reviewRanking : $subscription->user->ranking;
@@ -173,12 +174,19 @@ new class extends Component
 
         $subscription->user->update(['licence' => $licence, 'ranking' => $ranking]);
 
-        (new CalculatePriceAction)($subscription);
+        // La remise famille se lit sur le lien tuteur, pas sur le drapeau
+        // `has_other_family_members` que rien n'a jamais renseigné. Sans ce
+        // comptage, une affiliation acceptée ici facturait le plein tarif à un
+        // membre dont un frère était déjà affilié.
+        $familyMembersCount = (new FamilyDiscount)->membersCount($subscription->user, $subscription->season);
+        $subscription->has_other_family_members = $familyMembersCount > 1;
+
+        (new CalculatePriceAction)($subscription, $familyMembersCount);
         $subscription->confirm();
 
         // Approve selected training packs (pending → enrolled)
         if (! empty($this->approvedPackIds)) {
-            (new ApproveTrainingPacksAction)($subscription, $this->approvedPackIds);
+            (new ApproveTrainingPacksAction)($subscription, $this->approvedPackIds, $familyMembersCount);
         }
 
         // Génère le Payment si aucun n'existe déjà pour cette subscription
@@ -980,12 +988,13 @@ new class extends Component
 
         $createAction = new CreateSubscriptionAction;
         $calculateAction = new CalculatePriceAction;
+        $familyDiscount = new FamilyDiscount;
 
         // Une famille s'inscrit d'un bloc : laisser deux affiliations derrière
         // soi parce que la troisième a échoué obligerait l'admin à réparer à la
         // main ce qu'il croyait avoir annulé.
         try {
-            DB::transaction(function () use ($season, $createAction, $calculateAction): void {
+            DB::transaction(function () use ($season, $createAction, $calculateAction, $familyDiscount): void {
                 foreach ($this->familyBasket as $userId => $config) {
                     $user = User::find((int) $userId);
 
@@ -1029,7 +1038,10 @@ new class extends Component
                     $claimedPackIds = [];
 
                     if (! empty($config['trainings'])) {
-                        $packs = TrainingPack::whereIn('id', $config['trainings'])->get();
+                        // `room` est chargée d'office : la capacité d'un pack sans
+                        // `max_participants` est celle de sa salle, et deux packs
+                        // au panier suffisent à faire lever la protection N+1.
+                        $packs = TrainingPack::with('room')->whereIn('id', $config['trainings'])->get();
 
                         foreach ($packs as $pack) {
                             if ((new EnrollInTrainingPackAction)($subscription, $pack) === 'pending') {
@@ -1038,7 +1050,27 @@ new class extends Component
                         }
                     }
 
-                    $calculateAction($subscription);
+                    // La famille se lit sur le lien tuteur qu'on vient d'établir,
+                    // jamais sur le contenu du panier : le frère inscrit le mois
+                    // dernier ouvre le même droit que celui inscrit à l'instant.
+                    $familyMembersCount = $familyDiscount->membersCount($user, $season);
+
+                    // Dénormalisation assumée : tous les recalculs ultérieurs
+                    // (annulation, départ de pack, réconciliation) lisent ce
+                    // drapeau. Il ne bascule que sur l'affiliation qui a
+                    // réellement bénéficié de la remise — les précédentes
+                    // gardent la facture qu'on ne rouvre pas.
+                    $subscription->has_other_family_members = $familyMembersCount > 1;
+
+                    // Le rattrapage tombe sur la dernière affiliation : on ne
+                    // rouvre jamais une facture déjà remise au membre.
+                    $subscription->family_credit = $familyDiscount->catchUpCredit(
+                        $user,
+                        $season,
+                        $familyMembersCount,
+                    );
+
+                    $calculateAction($subscription, $familyMembersCount);
 
                     // C'est un admin qui inscrit au guichet : sa décision vaut
                     // validation, pour peu que la fédération puisse identifier
@@ -1048,7 +1080,7 @@ new class extends Component
 
                         // Pose `starts_on` au pro rata et remet le prix à jour.
                         if (! empty($claimedPackIds)) {
-                            (new ApproveTrainingPacksAction)($subscription, $claimedPackIds);
+                            (new ApproveTrainingPacksAction)($subscription, $claimedPackIds, $familyMembersCount);
                         }
 
                         $subscription->payments()->create([

@@ -761,14 +761,76 @@
                     :hint="__('Add all family members here')" />
 
                 @if (strlen($searchMember) > 2)
+                    {{-- Deux homonymes se distinguent à la date de naissance et
+                         au classement : « prénom nom » seul ne suffit pas. --}}
                     <div class="mt-2 rounded-lg border border-base-300 bg-base-100 shadow-lg">
                         @foreach ($membersFound as $m)
-                            <div class="flex cursor-pointer items-center justify-between border-b p-3 last:border-none hover:bg-base-200"
+                            <div wire:key="member-found-{{ $m->id }}"
+                                class="flex cursor-pointer items-center justify-between gap-3 border-b p-3 last:border-none hover:bg-base-200"
                                 wire:click="addToBasket({{ $m->id }})">
-                                <span class="text-sm font-bold">{{ $m->first_name }} {{ $m->last_name }}</span>
-                                <x-icon name="o-plus-circle" class="h-5 w-5 text-primary" />
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="text-sm font-bold">{{ $m->first_name }} {{ $m->last_name }}</span>
+                                        @if ($m->email === null)
+                                            <x-badge class="badge-soft badge-info badge-xs"
+                                                :value="__('Managed account')" />
+                                        @endif
+                                    </div>
+                                    <div class="truncate text-xs text-base-content/60">
+                                        {{ $m->birthdate?->format('d/m/Y') ?? __('Birth date unknown') }}
+                                        ·
+                                        {{ $m->ranking && $m->ranking !== 'NA' ? $m->ranking : __('No ranking') }}
+                                        @if ($m->email === null && $m->guardians->isNotEmpty())
+                                            · {{ __('via :guardian', [
+                                                'guardian' => $m->guardians->first()->first_name . ' ' . $m->guardians->first()->last_name,
+                                            ]) }}
+                                        @endif
+                                    </div>
+                                </div>
+                                <x-icon name="o-plus-circle" class="h-5 w-5 shrink-0 text-primary" />
                             </div>
                         @endforeach
+
+                        @if ($membersFoundOverflow > 0)
+                            <div class="border-t border-base-300 p-2 text-center text-xs italic text-base-content/60">
+                                {{ trans_choice(':count more match — refine your search|:count more matches — refine your search', $membersFoundOverflow, ['count' => $membersFoundOverflow]) }}
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                {{-- ── Encodage express ─────────────────────────────────────
+                     Le petit dernier n'est pas toujours encodé. Sortir du
+                     drawer pour le créer ferait perdre le panier en cours.
+                --}}
+                @if (! $showNewMemberForm)
+                    <div class="mt-3">
+                        <x-button class="btn-soft btn-sm" icon="o-user-plus" :label="__('New member')"
+                            wire:click="$set('showNewMemberForm', true)" />
+                    </div>
+                @else
+                    <div class="mt-3 space-y-3 rounded-lg border border-base-300 bg-base-100 p-4">
+                        <h4 class="flex items-center gap-2 text-xs font-black uppercase text-primary">
+                            <x-icon name="o-user-plus" class="h-4 w-4" />
+                            {{ __('New member') }}
+                        </h4>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <x-input :label="__('First name')" wire:model.live.blur="newMemberFirstName" required />
+                            <x-input :label="__('Last name')" wire:model.live.blur="newMemberLastName" required />
+                            <x-input :label="__('Birth date')" type="date"
+                                wire:model.live.blur="newMemberBirthdate" required />
+                            <x-group :label="__('Gender')" :options="$genders" class="btn-soft" inline
+                                wire:model.live="newMemberGender" />
+                            <x-input :label="__('Email')" type="email" wire:model.live.blur="newMemberEmail"
+                                :hint="__('Optional — a member without an email is reached through their guardian.')"
+                                class="sm:col-span-2" />
+                        </div>
+                        <div class="flex gap-2">
+                            <x-button class="btn-primary btn-sm" icon="o-check" :label="__('Create and add')"
+                                wire:click="createMember" spinner="createMember" />
+                            <x-button class="btn-ghost btn-sm" :label="__('Cancel')"
+                                wire:click="$set('showNewMemberForm', false)" />
+                        </div>
                     </div>
                 @endif
             </div>
@@ -785,12 +847,13 @@
                             {{ $config['name'] }}
                         </h3>
                         <div class="grid grid-cols-1 gap-4">
+                            {{-- `.live` : le récapitulatif chiffré plus bas doit suivre chaque clic. --}}
                             <x-radio :label="__('Licence type')"
-                                wire:model="familyBasket.{{ $userId }}.licence_type"
+                                wire:model.live="familyBasket.{{ $userId }}.licence_type"
                                 :options="[['id' => 'competitive', 'name' => __('Competitive')], ['id' => 'recreative', 'name' => __('Recreational')]]"
                                 class="radio-sm" />
                             <x-choices :label="__('Trainings')"
-                                wire:model="familyBasket.{{ $userId }}.trainings"
+                                wire:model.live="familyBasket.{{ $userId }}.trainings"
                                 :options="$this->trainingOptions()"
                                 compact allow-all />
                         </div>
@@ -924,6 +987,72 @@
                             </div>
                         </div>
                     @endif
+                </div>
+            @endif
+
+            {{-- ── Récapitulatif chiffré ────────────────────────────────────
+                 L'admin annonce un prix au membre qui lui fait face : il doit
+                 l'avoir sous les yeux, à jour, avant de valider.
+            --}}
+            @if (count($familyBasket) > 0)
+                @php
+                    $quote = $this->basketQuote;
+                @endphp
+                <div class="space-y-4 rounded-2xl border-2 border-primary/30 bg-base-100 p-4 shadow-sm">
+                    <h3 class="flex items-center gap-2 text-xs font-black uppercase text-primary">
+                        <x-icon name="o-calculator" class="h-4 w-4" />
+                        {{ __('Price summary') }}
+                    </h3>
+
+                    @foreach ($quote['members'] as $memberId => $member)
+                        <div wire:key="basket-quote-{{ $memberId }}" class="space-y-1">
+                            <div class="text-xs font-bold uppercase tracking-wider text-base-content/60">
+                                {{ $member['name'] }}
+                            </div>
+                            @foreach ($member['lines'] as $line)
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="truncate pr-2 opacity-70">{{ $line['label'] }}</span>
+                                    <span class="shrink-0 font-semibold">{{ number_format($line['amount'], 2) }} €</span>
+                                </div>
+                            @endforeach
+                            @foreach ($member['waitlisted'] as $waitlistedPack)
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="truncate pr-2 opacity-70">{{ $waitlistedPack }}</span>
+                                    <x-badge class="badge-soft badge-warning badge-sm" :value="__('Waiting list — not billed')" />
+                                </div>
+                            @endforeach
+                            @if (count($quote['members']) > 1)
+                                {{-- Au guichet, l'admin annonce un montant par personne. --}}
+                                <div class="flex items-center justify-between border-t border-dashed border-base-300 pt-1 text-sm">
+                                    <span class="font-semibold">{{ __('Due by :name', ['name' => $member['name']]) }}</span>
+                                    <span class="font-bold">{{ number_format($member['total'], 2) }} €</span>
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+
+                    <div class="space-y-1 border-t border-base-300 pt-3">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="opacity-70">{{ __('Subtotal') }}</span>
+                            <span class="font-semibold">{{ number_format($quote['subtotal'], 2) }} €</span>
+                        </div>
+                        @if ($quote['discount'] > 0)
+                            <div class="flex items-center justify-between text-sm text-success">
+                                <span>{{ __('Family discount') }}</span>
+                                <span class="font-semibold">−{{ number_format($quote['discount'], 2) }} €</span>
+                            </div>
+                        @endif
+                        @if ($quote['credit'] > 0)
+                            <div class="flex items-center justify-between text-sm text-success">
+                                <span>{{ __('Family discount not received earlier') }}</span>
+                                <span class="font-semibold">−{{ number_format($quote['credit'], 2) }} €</span>
+                            </div>
+                        @endif
+                        <div class="flex items-center justify-between pt-1 text-base">
+                            <span class="font-black uppercase">{{ __('Group total') }}</span>
+                            <span class="font-black text-primary">{{ number_format($quote['total'], 2) }} €</span>
+                        </div>
+                    </div>
                 </div>
             @endif
         </div>

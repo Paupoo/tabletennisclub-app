@@ -9,6 +9,7 @@ use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -532,4 +533,179 @@ it('keeps members already affiliated out of the drawer search results', function
     expect($found->pluck('id')->all())
         ->toContain($stillFree->id)
         ->not->toContain($affiliated->id);
+});
+
+it('creates a member from the drawer without losing the basket', function (): void {
+    Mail::fake();
+
+    $sibling = User::factory()->create();
+
+    $component = Livewire::test('pages::club-admin.users.registrations')
+        ->set('memberDrawer', true)
+        ->set('familyBasket', [$sibling->id => basketLine($sibling)])
+        ->set('showNewMemberForm', true)
+        ->set('newMemberFirstName', 'Louis')
+        ->set('newMemberLastName', 'Vandenbossche')
+        ->set('newMemberBirthdate', '2014-03-09')
+        ->set('newMemberGender', 'MEN')
+        ->call('createMember');
+
+    $created = User::where('last_name', 'Vandenbossche')->sole();
+
+    // Le petit dernier n'était pas encodé : le créer ne doit pas coûter à
+    // l'admin la sortie du drawer, ni le panier déjà constitué.
+    $component->assertSet('memberDrawer', true)
+        ->assertSet('showNewMemberForm', false)
+        ->assertSet('familyBasket.' . $sibling->id . '.licence_type', 'recreative')
+        ->assertSet('familyBasket.' . $created->id . '.name', 'Louis Vandenbossche')
+        ->assertSet('familyBasket.' . $created->id . '.licence_type', 'recreative');
+
+    // Un membre sans email est le cas normal au guichet, pas une erreur.
+    expect($created->email)->toBeNull()
+        ->and($created->birthdate->format('Y-m-d'))->toBe('2014-03-09');
+});
+
+it('says how many matching members the drawer is not showing', function (): void {
+    User::factory()->count(7)->create(['last_name' => 'Vandenbossche']);
+
+    $component = Livewire::test('pages::club-admin.users.registrations')
+        ->set('searchMember', 'Vandenbossche');
+
+    // Sans ce compte, l'admin croit avoir vu toute la famille et affine à l'aveugle.
+    expect($component->viewData('membersFound'))->toHaveCount(5)
+        ->and($component->viewData('membersFoundOverflow'))->toBe(2);
+});
+
+it('hands the drawer search what it takes to tell two homonyms apart', function (): void {
+    $guardian = Guardian::factory()->create(['first_name' => 'Marie', 'last_name' => 'Dupont']);
+
+    // Le petit dernier : pas d'email à lui, on le joint via sa mère.
+    $managed = User::factory()->create([
+        'first_name' => 'Louis',
+        'last_name' => 'Vandenbossche',
+        'email' => null,
+        'birthdate' => '2014-03-09',
+        'ranking' => 'NC',
+    ]);
+    $managed->guardians()->attach($guardian->id);
+
+    $found = Livewire::test('pages::club-admin.users.registrations')
+        ->set('searchMember', 'Vandenbossche')
+        ->viewData('membersFound')
+        ->sole();
+
+    expect($found->birthdate->format('Y-m-d'))->toBe('2014-03-09')
+        ->and($found->ranking)->toBe('NC')
+        ->and($found->email)->toBeNull()
+        // Le badge « compte géré » nomme le tuteur qui reçoit le courrier :
+        // sans la relation chargée, chaque résultat rouvrirait la base.
+        ->and($found->relationLoaded('guardians'))->toBeTrue()
+        ->and($found->guardians->pluck('id')->all())->toBe([$guardian->id]);
+});
+
+it('prices every line of the basket before anything is saved', function (): void {
+    $pack = TrainingPack::factory()->create(['season_id' => $this->season->id, 'price' => 90]);
+    $member = User::factory()->create(['first_name' => 'Lise', 'last_name' => 'Martin']);
+
+    $quote = Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [$member->id => basketLine($member, 'competitive', [$pack->id])])
+        ->instance()
+        ->basketQuote;
+
+    // 125 + 90 = 215
+    expect(array_column($quote['members'][$member->id]['lines'], 'amount'))->toBe([125.0, 90.0])
+        ->and($quote['members'][$member->id]['total'])->toBe(215.0)
+        ->and($quote['subtotal'])->toBe(215.0)
+        ->and($quote['discount'])->toBe(0.0)
+        ->and($quote['credit'])->toBe(0.0)
+        ->and($quote['total'])->toBe(215.0);
+});
+
+it('bills the group exactly what it quoted to the admin', function (): void {
+    Notification::fake();
+
+    $guardian = Guardian::factory()->create();
+
+    // Le grand frère s'est affilié seul, plein tarif : 60 + 90 = 150.
+    $sibling = User::factory()->create();
+    $sibling->guardians()->attach($guardian->id);
+
+    $siblingSubscription = Subscription::factory()->create([
+        'user_id' => $sibling->id,
+        'season_id' => $this->season->id,
+        'status' => 'confirmed',
+        'is_competitive' => false,
+        'amount_due' => 150,
+    ]);
+    $siblingSubscription->trainingPacks()->attach(
+        TrainingPack::factory()->create(['season_id' => $this->season->id, 'price' => 90])->id,
+        ['status' => 'enrolled'],
+    );
+
+    $mother = User::factory()->create(['licence' => '123456', 'ranking' => 'C4']);
+    $child = User::factory()->create(['licence' => '654321', 'ranking' => 'C4']);
+
+    $motherPack = TrainingPack::factory()->create(['season_id' => $this->season->id, 'price' => 90]);
+    $childPack = TrainingPack::factory()->create(['season_id' => $this->season->id, 'price' => 90]);
+
+    $component = Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [
+            $mother->id => basketLine($mother, 'competitive', [$motherPack->id]),
+            $child->id => basketLine($child, 'recreative', [$childPack->id]),
+        ])
+        ->call('attachGuardian', $guardian->id);
+
+    $quote = $component->instance()->basketQuote;
+
+    $component->call('saveFamilyRegistration');
+
+    $motherSubscription = Subscription::where('user_id', $mother->id)->sole();
+    $childSubscription = Subscription::where('user_id', $child->id)->sole();
+
+    // La mère passe la première : 125 + (90 − 10) = 205, moins le rattrapage du
+    // frère (150 − 140 = 10) → 195. L'enfant vient ensuite, à trois dans la
+    // famille : 60 + (90 − 10) = 140, et le trop-perçu de la mère (195 − 205)
+    // annule ce qu'il restait à rattraper au frère.
+    expect($quote['members'][$mother->id]['total'])->toBe(195.0)
+        ->and($quote['members'][$child->id]['total'])->toBe(140.0)
+        ->and($quote['subtotal'])->toBe(365.0)
+        ->and($quote['discount'])->toBe(20.0)
+        ->and($quote['credit'])->toBe(10.0)
+        ->and($quote['total'])->toBe(335.0)
+        // Le devis annoncé au guichet est la facture, au centime près.
+        ->and((float) $motherSubscription->amount_due)->toBe(195.0)
+        ->and((float) $childSubscription->amount_due)->toBe(140.0)
+        ->and((float) $motherSubscription->payments()->sole()->amount_due
+            + (float) $childSubscription->payments()->sole()->amount_due)->toBe($quote['total']);
+});
+
+it('quotes nothing for a pack the member will only be waitlisted for', function (): void {
+    Notification::fake();
+
+    $pack = TrainingPack::factory()->create([
+        'season_id' => $this->season->id,
+        'max_participants' => 1,
+        'price' => 90,
+    ]);
+
+    $occupant = Subscription::factory()->create([
+        'season_id' => $this->season->id,
+        'status' => 'confirmed',
+    ]);
+    $occupant->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+
+    $member = User::factory()->create(['licence' => '123456', 'ranking' => 'C4']);
+
+    $component = Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [$member->id => basketLine($member, 'recreative', [$pack->id])]);
+
+    $quote = $component->instance()->basketQuote;
+
+    $component->call('saveFamilyRegistration');
+
+    // Annoncer 150 € pour une place que le membre n'aura pas serait un mensonge
+    // au guichet : seule la cotisation loisir est chiffrée, comme facturée.
+    expect($quote['members'][$member->id]['waitlisted'])->toBe([$pack->name])
+        ->and($quote['total'])->toBe(60.0)
+        ->and((float) Subscription::where('user_id', $member->id)->sole()->amount_due)->toBe(60.0);
 });

@@ -26,11 +26,16 @@ final class FamilyDiscount
     /**
      * Affiliations de la saison des *autres* membres de la famille.
      *
+     * `$pendingGuardianIds` couvre les tuteurs que l'appelant s'apprête à
+     * rattacher sans les avoir encore écrits : le guichet chiffre la famille
+     * avant de l'enregistrer, et il doit lire la famille qu'il va créer.
+     *
+     * @param  array<int, int>  $pendingGuardianIds
      * @return Collection<int, Subscription>
      */
-    public function affiliatedRelatives(User $member, Season $season): Collection
+    public function affiliatedRelatives(User $member, Season $season, array $pendingGuardianIds = []): Collection
     {
-        $relativeIds = $this->relativeIds($member);
+        $relativeIds = $this->relativeIds($member, $pendingGuardianIds);
 
         if ($relativeIds === []) {
             return collect();
@@ -59,11 +64,8 @@ final class FamilyDiscount
      */
     public function catchUpCredit(User $member, Season $season, int $familyMembersCount): float
     {
-        $calculatePrice = new CalculatePriceAction;
-
         $credit = $this->affiliatedRelatives($member, $season)->sum(
-            fn (Subscription $subscription): float => (float) $subscription->amount_due
-                - $calculatePrice->quote($subscription, $familyMembersCount)['total']
+            fn (Subscription $subscription): float => $this->shortfall($subscription, $familyMembersCount)
         );
 
         return round(max(0.0, (float) $credit), 2);
@@ -81,16 +83,30 @@ final class FamilyDiscount
     }
 
     /**
+     * Remise que cette affiliation-là n'a pas reçue, prise isolément.
+     *
+     * Négative pour un membre déjà remisé au-delà de ce que la famille vaut
+     * aujourd'hui : c'est voulu, les termes se compensent avant le plancher.
+     */
+    public function shortfall(Subscription $subscription, int $familyMembersCount): float
+    {
+        return (float) $subscription->amount_due
+            - (new CalculatePriceAction)->quote($subscription, $familyMembersCount)['total'];
+    }
+
+    /**
      * Identifiants des autres membres de la famille, dans les deux sens du lien.
      *
+     * @param  array<int, int>  $pendingGuardianIds
      * @return array<int, int>
      */
-    private function relativeIds(User $member): array
+    private function relativeIds(User $member, array $pendingGuardianIds = []): array
     {
         $guardianIds = DB::table('guardian_user')
             ->where('user_id', $member->id)
             ->pluck('guardian_id')
             ->merge(Guardian::where('user_id', $member->id)->pluck('id'))
+            ->merge($pendingGuardianIds)
             ->unique();
 
         if ($guardianIds->isEmpty()) {

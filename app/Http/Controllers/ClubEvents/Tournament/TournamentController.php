@@ -983,11 +983,28 @@ class TournamentController extends Controller
         $pool->tournamentmatches()->delete();
     }
 
+    /**
+     * Escape a text value for RFC 5545 §3.3.11.
+     *
+     * The backslash goes first on purpose: str_replace applies each pair to the
+     * result of the previous one, so escaping it last would double every
+     * backslash the comma, semicolon and newline rules had just introduced. A
+     * name holding a comma came out as `\\,` — an escaped backslash followed by
+     * a bare comma, which calendars read as a value separator.
+     */
     private function icalEscape(string $value): string
     {
-        return str_replace(["\r\n", "\n", "\r", ',', ';', '\\'], ['\\n', '\\n', '\\n', '\\,', '\\;', '\\\\'], $value);
+        return str_replace(['\\', "\r\n", "\n", "\r", ',', ';'], ['\\\\', '\\n', '\\n', '\\n', '\\,', '\\;'], $value);
     }
 
+    /**
+     * Fold a content line to 75 octets, per RFC 5545 §3.1.
+     *
+     * The limit is expressed in octets, not characters, so the cut uses byte
+     * functions throughout — measuring with strlen() while slicing with
+     * mb_substr() let any accented name overflow the limit. A multi-byte
+     * character must not be split across the fold, hence the backtrack.
+     */
     private function icalFold(string $line): string
     {
         if (strlen($line) <= 75) {
@@ -995,9 +1012,18 @@ class TournamentController extends Controller
         }
 
         $folded = '';
+
         while (strlen($line) > 75) {
-            $folded .= mb_substr($line, 0, 75) . "\r\n ";
-            $line = mb_substr($line, 75);
+            $take = 75;
+
+            // Never cut inside a UTF-8 sequence: 0b10xxxxxx marks a continuation
+            // byte, so step back until the next byte starts a character.
+            while ($take > 0 && (ord($line[$take]) & 0xC0) === 0x80) {
+                $take--;
+            }
+
+            $folded .= substr($line, 0, $take) . "\r\n ";
+            $line = substr($line, $take);
         }
 
         return $folded . $line;

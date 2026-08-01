@@ -262,4 +262,40 @@ describe('downloadIcal', function (): void {
 
         expect($body)->toContain("\r\n ");
     });
+
+    it('keeps every line within 75 octets even with accented names', function (): void {
+        $tournament = publishedTournament([
+            'name' => str_repeat('Tournoi de Noël à Ottignies ', 5),
+        ]);
+
+        $body = $this->get(route('tournament.calendar.ical', $tournament))->getContent();
+
+        foreach (explode("\r\n", $body) as $line) {
+            expect(strlen($line))->toBeLessThanOrEqual(76); // 75 octets + the folding space
+        }
+    });
+
+    it('never splits a multi-byte character across a fold', function (): void {
+        $tournament = publishedTournament([
+            'name' => str_repeat('éàçüö', 40),
+        ]);
+
+        $body = $this->get(route('tournament.calendar.ical', $tournament))->getContent();
+
+        expect(mb_check_encoding($body, 'UTF-8'))->toBeTrue();
+    });
+
+    /*
+     * RFC 5545 §3.3.11: a comma is escaped as \, and a backslash as \\. Escaping
+     * the backslash last used to double the ones the other rules had just added,
+     * turning a comma into `\\,` — which a calendar reads as an escaped
+     * backslash followed by a value separator, truncating the summary.
+     */
+    it('escapes commas, semicolons and backslashes exactly once', function (): void {
+        $tournament = publishedTournament(['name' => 'Tournoi, niveau B; salle A\\B']);
+
+        $body = $this->get(route('tournament.calendar.ical', $tournament))->getContent();
+
+        expect($body)->toContain('SUMMARY:Tournoi\\, niveau B\\; salle A\\\\B');
+    });
 })->group('tournament');

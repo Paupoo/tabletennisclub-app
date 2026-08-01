@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentRequestNotification;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 
 /*
@@ -138,6 +140,32 @@ describe('registerViaEmail', function (): void {
         ]))->assertForbidden();
 
         expect($tournament->users()->where('users.id', $user->id)->exists())->toBeFalse();
+    });
+
+    /*
+     * registerUser() runs outside a transaction, so the row is committed before
+     * the payment request goes out. That notification reads
+     * Club::ourClub()->first()->bic: with no club row it threw, the controller
+     * caught it, and the visitor was told the registration had failed — then hit
+     * "already registered" on the retry.
+     */
+    it('confirms the registration even when the payment notification fails', function (): void {
+        Club::query()->delete();
+
+        Log::shouldReceive('error')->once()->withArgs(
+            fn (string $message, array $context): bool => str_contains($message, 'notification failed')
+                && $context['notification'] === TournamentPaymentRequestNotification::class
+        );
+
+        $tournament = publishedTournament(['price' => 12.5]);
+        $user = User::factory()->create();
+
+        $this->get(registerLink($tournament, $user))
+            ->assertRedirect(route('tournament.registration.confirmed', $tournament))
+            ->assertSessionHas('registration_status', 'registered')
+            ->assertSessionMissing('error');
+
+        expect($tournament->users()->where('users.id', $user->id)->exists())->toBeTrue();
     });
 })->group('tournament');
 

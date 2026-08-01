@@ -23,7 +23,10 @@ use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Jobs\SendDebtReminderNotification;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class TournamentService
 {
@@ -314,7 +317,7 @@ class TournamentService
         }
 
         // Always send confirmation first.
-        $user->notify(new TournamentRegistrationConfirmedNotification($tournament));
+        $this->notifyAfterRegistration($user, new TournamentRegistrationConfirmedNotification($tournament));
 
         if ($tournament->isPaid()) {
             $isOnTournamentDay = $tournament->start_date
@@ -341,7 +344,7 @@ class TournamentService
                         'payment_deadline' => $deadline,
                     ]);
 
-                $user->notify(new TournamentPaymentRequestNotification(
+                $this->notifyAfterRegistration($user, new TournamentPaymentRequestNotification(
                     tournament: $tournament,
                     payment: $payment,
                     deadline: $deadline,
@@ -414,11 +417,39 @@ class TournamentService
             ]);
         }
 
-        $user->notify(new TournamentRegistrationConfirmedNotification(
+        $this->notifyAfterRegistration($user, new TournamentRegistrationConfirmedNotification(
             tournament: $tournament,
             isWaitlisted: true,
             waitlistPosition: $position,
         ));
+    }
+
+    /**
+     * Deliver a notification that follows a registration already written to the
+     * database.
+     *
+     * registerUser() runs outside a transaction, so by the time these are sent
+     * the row is committed and the seat is taken. Letting the notification throw
+     * made the caller report a failure for a registration that had in fact
+     * succeeded — a visitor clicking the link in an invitation was told to try
+     * again, and trying again hit "already registered". The delivery is a side
+     * effect of the registration, not a condition of it.
+     *
+     * A payment request reads Club::ourClub()->first()->bic, which is the way
+     * this actually happened: no club row, a null property read, and a confusing
+     * answer to the visitor.
+     */
+    private function notifyAfterRegistration(User $user, Notification $notification): void
+    {
+        try {
+            $user->notify($notification);
+        } catch (Throwable $e) {
+            Log::error('Tournament registration succeeded but its notification failed', [
+                'user_id' => $user->id,
+                'notification' => $notification::class,
+                'exception' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

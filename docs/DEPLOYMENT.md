@@ -216,11 +216,14 @@ Réglages spécifiques à la production :
 
 ```dotenv
 APP_ENV=production
-APP_DEBUG=false          # jamais true en production
-APP_URL=https://<domaine>
-QUEUE_CONNECTION=database
-MAIL_MAILER=smtp         # un vrai relais, pas mailpit
+APP_DEBUG=false             # jamais true : les pages d'erreur affichent identifiants et trace
+APP_URL=https://<domaine>   # TrustHosts rejette toute requête si cette valeur est fausse
+QUEUE_CONNECTION=database   # jamais sync : les e-mails partiraient dans la requête
+SESSION_SECURE_COOKIE=true  # HTTPS uniquement — le cookie de session ne sort plus en clair
+MAIL_MAILER=smtp            # un vrai relais, pas mailpit
 ```
+
+`SESSION_SECURE_COOKIE` est commenté dans `.env.example` : il **doit** être activé en production, et **doit** rester désactivé en développement HTTP, où il déconnecte à chaque requête.
 
 Les *feature flags* (bloc en fin de `.env.example`) permettent d'éteindre un domaine jugé immature dans cet environnement. Tout est activé par défaut : ne renseignez une clé que pour **désactiver** un domaine.
 

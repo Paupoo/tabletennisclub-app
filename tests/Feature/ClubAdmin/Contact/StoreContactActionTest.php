@@ -31,7 +31,7 @@ it('creates a contact record in the database', function (): void {
     expect(Contact::where('email', 'alice@test.com')->exists())->toBeTrue();
 });
 
-it('sends a confirmation email to the contact', function (): void {
+it('queues a confirmation email to the contact', function (): void {
     Mail::fake();
 
     (new StoreContactAction)->execute([
@@ -42,10 +42,10 @@ it('sends a confirmation email to the contact', function (): void {
         'message' => 'Bonjour',
     ]);
 
-    Mail::assertSent(ContactFormConfirmationEmail::class, fn ($mail): bool => $mail->hasTo('alice@test.com'));
+    Mail::assertQueued(ContactFormConfirmationEmail::class, fn ($mail): bool => $mail->hasTo('alice@test.com'));
 });
 
-it('sends a notification email to the club admin', function (): void {
+it('queues a notification email to the club admin', function (): void {
     Mail::fake();
 
     (new StoreContactAction)->execute([

@@ -8,6 +8,7 @@ use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\Competitions\Interclub\Models\Club;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Attachment;
@@ -15,7 +16,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class PaymentInvitationEmail extends Mailable
+class PaymentInvitationEmail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 

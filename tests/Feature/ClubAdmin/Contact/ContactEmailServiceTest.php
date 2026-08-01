@@ -58,16 +58,16 @@ describe('sendCustom()', function (): void {
 
         $this->service->sendCustom($this->contact, $this->mailData, $this->user, false);
 
-        Mail::assertSentCount(1);
-        Mail::assertSent(CustomEmail::class, fn ($mail) => $mail->hasTo($this->contact->email));
+        Mail::assertQueuedCount(1);
+        Mail::assertQueued(CustomEmail::class, fn ($mail) => $mail->hasTo($this->contact->email));
     });
 
     it('Sends custom e-mail to contact and to user when send_copy is true', function (): void {
         $this->service->sendCustom($this->contact, $this->mailData, $this->user, true);
 
-        Mail::assertSent(CustomEmail::class, fn ($mail) => $mail->hasTo($this->contact->email));
-        Mail::assertSent(CustomEmail::class, fn ($mail) => $mail->hasTo($this->user->email));
-        Mail::assertSentCount(2);
+        Mail::assertQueued(CustomEmail::class, fn ($mail) => $mail->hasTo($this->contact->email));
+        Mail::assertQueued(CustomEmail::class, fn ($mail) => $mail->hasTo($this->user->email));
+        Mail::assertQueuedCount(2);
 
     });
 
@@ -114,7 +114,7 @@ describe('sendTemplate()', function (): void {
 
         $this->service->sendTemplate($contact, 'welcome');
 
-        Mail::assertSent(CustomEmail::class, function (CustomEmail $mail) use ($contact): bool {
+        Mail::assertQueued(CustomEmail::class, function (CustomEmail $mail) use ($contact): bool {
             return $mail->hasTo($contact->email)
                 && $mail->emailData['subject'] === 'Bienvenue Alice'
                 && str_contains($mail->emailData['message'], 'bienvenue chez Mon Club TT')
@@ -217,7 +217,7 @@ describe('CustomEmail rendering', function (): void {
 
         $this->service->sendCustom($contact, ['subject' => 'Bonjour', 'body' => 'Salut Zoé !'], $user);
 
-        Mail::assertSent(CustomEmail::class, function (CustomEmail $mail) {
+        Mail::assertQueued(CustomEmail::class, function (CustomEmail $mail) {
             expect($mail->render())->toContain('Salut Zoé !');
 
             return true;
@@ -230,7 +230,7 @@ describe('CustomEmail rendering', function (): void {
 
         $this->service->sendCustom($contact, ['subject' => 'Sujet', 'body' => 'Corps du message'], $user, sendCopy: true);
 
-        Mail::assertSent(CustomEmail::class, fn (CustomEmail $mail) => is_string($mail->render()));
+        Mail::assertQueued(CustomEmail::class, fn (CustomEmail $mail) => is_string($mail->render()));
     });
 
     it('renders a database template email', function (): void {
@@ -243,7 +243,7 @@ describe('CustomEmail rendering', function (): void {
 
         $this->service->sendTemplate($contact, 'welcome');
 
-        Mail::assertSent(CustomEmail::class, function (CustomEmail $mail) {
+        Mail::assertQueued(CustomEmail::class, function (CustomEmail $mail) {
             expect($mail->render())->toContain('Bonjour Lou');
 
             return true;

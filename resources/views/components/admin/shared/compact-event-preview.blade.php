@@ -45,7 +45,7 @@
         </div>
 
         <div class="min-w-0">
-            <p class="text-sm font-semibold leading-tight">{!! $name !!}</p>
+            <p class="text-sm font-semibold leading-tight">{{ $name }}</p>
             <p class="flex flex-wrap items-center gap-1 text-xs opacity-60">
                 {{-- On affiche toujours l'heure --}}
                 <x-icon class="h-3 w-3" name="o-clock" />

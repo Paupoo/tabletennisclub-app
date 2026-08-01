@@ -77,7 +77,7 @@
                         :location="null"
                         :remainingSlots="$remaining"
                         :startDateTime="$tournament->start_date->format('Y-m-d H:i:s')"
-                        name="{{ $tournament->name }}"
+                        :name="$tournament->name"
                         type="tournament"
                     >
                         <x-slot:actions>
@@ -194,7 +194,7 @@
                         <x-admin.shared.compact-event-preview
                             :location="$meeting->format === \App\Domains\Shared\Enums\MeetingFormatEnum::PHYSICAL ? $meeting->location : null"
                             :startDateTime="$meeting->scheduled_at->format('Y-m-d H:i:s')"
-                                name="{{ $meeting->title }}"
+                            :name="$meeting->title"
                             type="meeting"
                         >
                             <x-slot:actions>

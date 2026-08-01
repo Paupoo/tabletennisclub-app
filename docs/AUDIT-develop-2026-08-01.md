@@ -95,7 +95,11 @@ Les 4 méthodes conservées sont les points d'entrée de liens signés envoyés 
 - `icalEscape()` échappait l'antislash **en dernier**. `str_replace` appliquant chaque paire au résultat de la précédente, cette passe redoublait les antislashs que les règles virgule, point-virgule et saut de ligne venaient d'introduire : un nom contenant une virgule sortait en `\\,`, qu'un agenda lit comme un antislash échappé suivi d'un séparateur de valeurs — le titre était tronqué. La plupart des noms de tournois d'ici contiennent une virgule.
 - `icalFold()` mesurait en octets (`strlen`) mais découpait en caractères (`mb_substr`). Une ligne de 75 caractères accentués atteignait 79 octets, au-delà de la limite de la RFC.
 
-Un troisième point, relevé sans être corrigé : un tournoi payant déclenche une demande de paiement qui lit `Club::ourClub()->first()->bic`. Si la ligne du club manque, la notification lève, le contrôleur rattrape, et **le visiteur est informé que son inscription a échoué alors qu'elle a réussi**. En production la ligne existe toujours ; le cas reste documenté dans le `beforeEach` du fichier de tests.
+Un troisième point, corrigé ensuite dans `c6319745` : un tournoi payant déclenche une demande de paiement qui lit `Club::ourClub()->first()->bic`. Si la ligne du club manque, la notification levait, le contrôleur rattrapait, et **le visiteur était informé que son inscription avait échoué alors qu'elle avait réussi** — puis se voyait répondre « déjà inscrit » en réessayant.
+
+La cause n'est pas le club manquant mais le couplage : `registerUser()` ne tourne pas dans une transaction, donc la ligne d'inscription est validée avant que les notifications partent. Leur échec ne peut plus faire échouer l'inscription — les trois notifications qui suivent l'écriture sont journalisées au lieu d'être propagées. Les garde-fous qui s'exécutent *avant* toute écriture continuent de lever : l'appelant doit toujours entendre parler d'un tournoi fermé ou d'une inscription en double.
+
+> Reste ouvert, non planifié : `Club::ourClub()->first()` est déréférencé sans garde dans une douzaine d'endroits (`GeneratePaymentQR`, `PaymentInvitationEmail`, `TournamentPaymentRequestMail`, plusieurs composants Livewire). Le correctif ci-dessus empêche que cela trompe un visiteur sur le seul chemin d'inscription ; il ne rend pas les autres appels sûrs.
 
 ---
 

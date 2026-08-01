@@ -94,12 +94,24 @@ describe('ConfirmSubscriptionAction', function (): void {
             ->and($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('bug: does not recalculate price because CalculatePriceAction is instantiated but not invoked')
-        ->skip(
-            'ConfirmSubscriptionAction calls `new CalculatePriceAction($subscription)` instead of ' .
-            '`(new CalculatePriceAction)($subscription)` — price is never recalculated on confirm.'
-        )
-        ->group('subscriptions', 'actions');
+    // This used to be a skipped placeholder describing a bug: the action wrote
+    // `new CalculatePriceAction($subscription)`, constructing the action and
+    // never invoking it, so a subscription confirmed at a stale price kept it.
+    // The action invokes it properly now, and this pins that down.
+    test('recalculates the price on confirm rather than trusting the stored amount', function (): void {
+        $this->actingAs(User::factory()->create());
+
+        $subscription = Subscription::factory()->create([
+            'status' => 'pending',
+            'is_competitive' => true,
+            'amount_due' => 1,          // stale: nothing costs one euro
+        ]);
+
+        (new ConfirmSubscriptionAction)($subscription);
+
+        // 125 € is the competitive licence with no training pack attached.
+        expect($subscription->fresh()->amount_due)->toBe(125.0);
+    })->group('subscriptions', 'actions');
 
 })->group('subscriptions');
 

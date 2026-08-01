@@ -667,12 +667,6 @@ parameters:
 			path: app/Livewire/Tournament/PlayerRegistration.php
 
 		-
-			message: '#^Static method Illuminate\\Support\\Facades\\Route\:\:middleware\(\) invoked with 4 parameters, 1 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: app/Providers/RouteServiceProvider.php
-
-		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr
 			count: 1

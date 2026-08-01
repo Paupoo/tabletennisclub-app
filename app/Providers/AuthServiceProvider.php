@@ -35,8 +35,8 @@ use App\Policies\TablePolicy;
 use App\Policies\TeamPolicy;
 use App\Policies\TournamentPolicy;
 use App\Policies\UserPolicy;
-use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -51,7 +51,7 @@ class AuthServiceProvider extends ServiceProvider
      *
      * @var array<class-string, class-string>
      */
-    protected $policies = [
+    private const POLICIES = [
         Club::class => ClubPolicy::class,
         Contact::class => ContactPolicy::class,
         EventPost::class => EventPostPolicy::class,
@@ -74,7 +74,9 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->registerPolicies();
+        foreach (self::POLICIES as $model => $policy) {
+            Gate::policy($model, $policy);
+        }
 
         // No Gate::before() admin bypass on purpose: some policies deliberately deny
         // everyone (GuardianPolicy::forceDelete) or guard against the actor themself

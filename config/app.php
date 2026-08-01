@@ -2,12 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Providers\AppServiceProvider;
-use App\Providers\AuthServiceProvider;
-use App\Providers\EventServiceProvider;
-use App\Providers\RouteServiceProvider;
 use Illuminate\Support\Facades\Facade;
-use Illuminate\Support\ServiceProvider;
 
 return [
 
@@ -157,26 +152,11 @@ return [
     | Autoloaded Service Providers
     |--------------------------------------------------------------------------
     |
-    | The service providers listed here will be automatically loaded on the
-    | request to your application. Feel free to add your own services to
-    | this array to grant expanded functionality to your applications.
+    | Les providers de l'application vivent désormais dans
+    | bootstrap/providers.php, que le framework fusionne avec les siens. Cette
+    | clé n'est plus lue.
     |
     */
-
-    'providers' => ServiceProvider::defaultProviders()->merge([
-        /*
-         * Package Service Providers...
-         */
-
-        /*
-         * Application Service Providers...
-         */
-        AppServiceProvider::class,
-        AuthServiceProvider::class,
-        // App\Providers\BroadcastServiceProvider::class,
-        EventServiceProvider::class,
-        RouteServiceProvider::class,
-    ])->toArray(),
 
     /*
     |--------------------------------------------------------------------------

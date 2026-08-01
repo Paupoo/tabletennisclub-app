@@ -58,6 +58,23 @@
         <!-- Array cache is per-process and reset with the app each test: no file-cache
              directory races under parallel testing, and no cross-test cache leakage. -->
         <env name="CACHE_DRIVER" value="array" />
+        <!-- Everything below used to live only in .env.testing, which is not
+             tracked. The suite was therefore green on a machine that happened to
+             have that file and red on a fresh clone: the first CI run lost 22
+             tests to TransportException, because .env.example asks for SMTP and
+             no mail server answers on a runner. Forced here so the suite carries
+             its own environment and CI cannot drift from a laptop again.
+
+             Keep .env.testing in step with this block if you edit it; these values
+             mirror it exactly. -->
+        <env name="MAIL_MAILER" value="array" force="true" />
+        <!-- sync runs queued work inline, so a test asserting on the effect of a
+             job does not have to drain a queue table. -->
+        <env name="QUEUE_CONNECTION" value="sync" force="true" />
+        <env name="SESSION_DRIVER" value="array" force="true" />
+        <!-- The default 12 rounds are deliberately slow; every factory that makes
+             a user pays for them. -->
+        <env name="BCRYPT_ROUNDS" value="4" force="true" />
     </php>
 
     <coverage>

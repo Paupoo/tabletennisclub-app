@@ -10,6 +10,9 @@ use App\Domains\Shared\Enums\Gender;
 readonly class CreateUserData
 {
     /**
+     * @param  string|null  $email  Identifies a login, so it is null for every member the club
+     *                              cannot hand one to — a child, a member reached through their
+     *                              guardian. That is a normal account, not an incomplete one.
      * @param  string|null  $password  Plain password set by an admin; when null/empty the
      *                                 user is created password-less and an invitation is sent.
      * @param  array<int>  $guardianIds  Guardian ids to link to the new user.
@@ -18,7 +21,7 @@ readonly class CreateUserData
     public function __construct(
         public string $first_name,
         public string $last_name,
-        public string $email,
+        public ?string $email,
         public Gender $gender,
         public ?string $phone_number = null,
         public ?string $street = null,

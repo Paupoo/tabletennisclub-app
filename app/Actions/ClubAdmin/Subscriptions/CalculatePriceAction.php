@@ -30,8 +30,14 @@ final class CalculatePriceAction
             ? 0.0
             : round($quote['enrolled_total'] / $quote['enrolled_count'], 2);
 
-        // amount_due accessor expects euros, stores as cents internally
-        $subscription->amount_due = $quote['total'];
+        // amount_due accessor expects euros, stores as cents internally.
+        //
+        // Le crédit famille est retranché ici, à chaque recalcul : c'est la
+        // remise que les affiliations précédentes de la famille n'ont jamais
+        // reçue et que celle-ci absorbe. Le retrancher une seule fois, au
+        // moment de l'affiliation, l'aurait fait disparaître au premier départ
+        // de pack ou à la première réconciliation.
+        $subscription->amount_due = max(0.0, round($quote['total'] - $subscription->family_credit, 2));
 
         $subscription->save();
 
@@ -99,16 +105,39 @@ final class CalculatePriceAction
      */
     public function quote(Subscription $subscription, int $familyMembersCount = 1): array
     {
-        $subscriptionPrice = $subscription->is_competitive
-            ? self::COMPETITIVE_PRICE
-            : self::RECREATIVE_PRICE;
-
         /** @var Collection<int, TrainingPack> $billablePacks */
         $billablePacks = $subscription->trainingPacks()
             ->wherePivotIn('status', ['enrolled', 'left'])
             ->get();
 
-        $enrolledPacks = $billablePacks->filter(fn (TrainingPack $p): bool => $p->pivot->status === 'enrolled');
+        return $this->quoteFor((bool) $subscription->is_competitive, $billablePacks, $familyMembersCount);
+    }
+
+    /**
+     * Même devis, pour une affiliation qui n'existe pas encore.
+     *
+     * Le guichet doit annoncer un prix avant d'enregistrer quoi que ce soit, et
+     * ce prix ne peut pas être recalculé ailleurs sous peine de diverger de la
+     * facture. Un pack sans ligne de pivot est une ligne encore à créer : elle
+     * vaudra ce que l'inscription y posera {@see self::line()}.
+     *
+     * @param  Collection<int, TrainingPack>  $billablePacks
+     * @return array{
+     *   subscription_price: float,
+     *   lines: array<int, array{name: string, status: string, amount: float, overridden: bool, ratio: float}>,
+     *   enrolled_total: float,
+     *   enrolled_count: int,
+     *   training_total: float,
+     *   total: float,
+     * }
+     */
+    public function quoteFor(bool $isCompetitive, Collection $billablePacks, int $familyMembersCount = 1): array
+    {
+        $subscriptionPrice = $isCompetitive
+            ? self::COMPETITIVE_PRICE
+            : self::RECREATIVE_PRICE;
+
+        $enrolledPacks = $billablePacks->filter(fn (TrainingPack $p): bool => $this->status($p) === 'enrolled');
 
         $applyDiscount = $enrolledPacks->filter(fn (TrainingPack $p): bool => $p->allow_discount)->count() > 1
             || $familyMembersCount > 1;
@@ -146,14 +175,18 @@ final class CalculatePriceAction
     private function line(TrainingPack $pack, bool $applyDiscount): array
     {
         $pivot = $pack->pivot;
-        $ratio = $this->prorata->ratio($pack, $pivot->starts_on, $pivot->ends_on);
+
+        // Sans pivot, la ligne reste à créer : elle démarrera là où
+        // EnrollInTrainingPackAction la posera, et rien ne l'a encore forcée.
+        $startsOn = $pivot !== null ? $pivot->starts_on : $this->prorata->enrolmentStart($pack);
+        $ratio = $this->prorata->ratio($pack, $startsOn, $pivot?->ends_on);
 
         // Un montant forcé court-circuite tout : c'est le dernier mot du
         // trésorier sur une ligne que le calcul n'arrive pas à décrire.
-        if ($pivot->override_amount !== null) {
+        if ($pivot?->override_amount !== null) {
             return [
                 'name' => $pack->name,
-                'status' => (string) $pivot->status,
+                'status' => $this->status($pack),
                 'amount' => round(((int) $pivot->override_amount) / 100, 2),
                 'overridden' => true,
                 'ratio' => $ratio,
@@ -169,10 +202,18 @@ final class CalculatePriceAction
 
         return [
             'name' => $pack->name,
-            'status' => (string) $pivot->status,
+            'status' => $this->status($pack),
             'amount' => round($netPrice * $ratio, 2),
             'overridden' => false,
             'ratio' => $ratio,
         ];
+    }
+
+    /**
+     * État de la ligne de pivot, `enrolled` pour celle qui reste à créer.
+     */
+    private function status(TrainingPack $pack): string
+    {
+        return (string) ($pack->pivot?->status ?? 'enrolled');
     }
 }

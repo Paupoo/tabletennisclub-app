@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -43,4 +44,31 @@ it('shows an invitation counter of 1 after sending the first payment email', fun
     Mail::assertQueued(PaymentInvitationEmail::class);
 
     expect($component->get('paymentData')['invitation_counter'])->toBe(1);
+});
+
+it('sends the payment invitation of a managed member to their guardian', function (): void {
+    Mail::fake();
+
+    $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
+
+    $guardian = Guardian::factory()->create(['email' => 'marie.dupont@example.com']);
+    $member = User::factory()->create(['email' => null, 'licence' => '123456', 'ranking' => 'D6']);
+    $member->guardians()->attach($guardian->id);
+
+    $subscription = Subscription::factory()->for($member)->create([
+        'season_id' => $season->id,
+        'status' => 'pending',
+    ]);
+
+    Livewire::test(REGISTRATIONS_COMPONENT)
+        ->call('review', $subscription->id)
+        ->call('approve')
+        ->call('sendPaymentEmail');
+
+    // Le bouton annonce « invitation envoyée » ; lue sur `email`, l'adresse est
+    // nulle et la lettre part vers personne sans la moindre erreur.
+    Mail::assertSent(
+        PaymentInvitationEmail::class,
+        fn (PaymentInvitationEmail $mail): bool => $mail->hasTo('marie.dupont@example.com'),
+    );
 });

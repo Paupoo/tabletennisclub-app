@@ -9,16 +9,23 @@ use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\CancelSubscriptionWithRefundAction;
 use App\Actions\ClubAdmin\Subscriptions\ChangeSubscriptionFormulaAction;
 use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
+use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\ReconcileTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
+use App\Actions\User\CreateUserAction;
+use App\Data\User\CreateUserData;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Services\FamilyDiscount;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Ranking;
+use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;
 use App\Domains\Subscriptions\Notifications\SubscriptionFormulaChangedNotification;
 use App\Domains\Subscriptions\Notifications\SubscriptionRejectedNotification;
 use App\Domains\Subscriptions\Notifications\TrainingPackRejectedNotification;
@@ -26,10 +33,12 @@ use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Services\TrainingPackProrata;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
+use App\Livewire\Concerns\ManagesGuardians;
 use App\Mail\PaymentInvitationEmail;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
@@ -42,7 +51,10 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasBreadcrumbs, HasFilterDrawer, Toast;
+    use HasBreadcrumbs, HasFilterDrawer, ManagesGuardians, Toast;
+
+    /** Résultats de recherche affichés dans le drawer ; au-delà, on annonce le reste. */
+    private const int SEARCH_RESULTS_SHOWN = 5;
 
     /** @var int[] Pack IDs that admin wants to approve (pre-checked = all pending) */
     public array $approvedPackIds = [];
@@ -62,6 +74,17 @@ new class extends Component
     public array $familyBasket = [];
 
     public bool $memberDrawer = false;
+
+    // ── Encodage express d'un membre, sans quitter le drawer ──────────────────
+    public ?string $newMemberBirthdate = null;
+
+    public ?string $newMemberEmail = null;
+
+    public string $newMemberFirstName = '';
+
+    public string $newMemberGender = '';
+
+    public string $newMemberLastName = '';
 
     public array $paymentData = [];
 
@@ -106,6 +129,8 @@ new class extends Component
 
     public ?int $selectedSeasonId = null;
 
+    public bool $showNewMemberForm = false;
+
     public string $statusFilter = '';
 
     public bool $trainingRequestModal = false;
@@ -116,10 +141,17 @@ new class extends Component
 
         $user = User::find($userId);
 
+        // Les questions d'engagement suivent l'affiliation, membre par membre :
+        // la ligne les porte dès l'ajout pour que le drawer ait où les écrire.
         $this->familyBasket[$userId] = [
             'name' => $user->first_name . ' ' . $user->last_name,
             'licence_type' => 'recreative',
             'trainings' => [],
+            'can_drive' => false,
+            'seats_available' => null,
+            'wants_to_be_captain' => false,
+            'volunteer_help' => false,
+            'wants_directed_training' => false,
         ];
 
         $this->searchMember = '';
@@ -135,7 +167,7 @@ new class extends Component
     {
         Gate::authorize(Permission::SubscriptionsManage->value);
 
-        $subscription = Subscription::with(['user', 'trainingPacks'])->find($this->currentRequestId);
+        $subscription = Subscription::with(['user', 'season', 'trainingPacks'])->find($this->currentRequestId);
 
         $licence = filled($this->reviewLicence) ? trim($this->reviewLicence) : $subscription->user->licence;
         $ranking = filled($this->reviewRanking) ? $this->reviewRanking : $subscription->user->ranking;
@@ -170,12 +202,19 @@ new class extends Component
 
         $subscription->user->update(['licence' => $licence, 'ranking' => $ranking]);
 
-        (new CalculatePriceAction)($subscription);
+        // La remise famille se lit sur le lien tuteur, pas sur le drapeau
+        // `has_other_family_members` que rien n'a jamais renseigné. Sans ce
+        // comptage, une affiliation acceptée ici facturait le plein tarif à un
+        // membre dont un frère était déjà affilié.
+        $familyMembersCount = (new FamilyDiscount)->membersCount($subscription->user, $subscription->season);
+        $subscription->has_other_family_members = $familyMembersCount > 1;
+
+        (new CalculatePriceAction)($subscription, $familyMembersCount);
         $subscription->confirm();
 
         // Approve selected training packs (pending → enrolled)
         if (! empty($this->approvedPackIds)) {
-            (new ApproveTrainingPacksAction)($subscription, $this->approvedPackIds);
+            (new ApproveTrainingPacksAction)($subscription, $this->approvedPackIds, $familyMembersCount);
         }
 
         // Génère le Payment si aucun n'existe déjà pour cette subscription
@@ -274,6 +313,175 @@ new class extends Component
         $this->rejectionMessage = '';
         $this->rejectionTemplate = '';
         $this->success(__('Training requests approved.'));
+    }
+
+    /**
+     * Ce que le groupe va payer, ligne par ligne, avant d'enregistrer quoi que ce soit.
+     *
+     * L'admin doit pouvoir annoncer un prix au membre qui lui fait face. Le
+     * devis rejoue donc l'ordre exact de {@see self::saveFamilyRegistration()} :
+     * la remise famille ne tombe qu'à partir du deuxième membre enregistré, et
+     * c'est le dernier qui absorbe le rattrapage des affiliations passées. Tout
+     * écart entre ce tableau et la facture serait un bug, d'où le passage
+     * obligé par CalculatePriceAction, qui n'écrit rien tant qu'on l'interroge.
+     *
+     * @return array{
+     *   members: array<int, array{
+     *     name: string,
+     *     lines: array<int, array{label: string, amount: float}>,
+     *     waitlisted: array<int, string>,
+     *     subtotal: float,
+     *     discount: float,
+     *     credit: float,
+     *     total: float,
+     *   }>,
+     *   subtotal: float,
+     *   discount: float,
+     *   credit: float,
+     *   total: float,
+     * }
+     */
+    #[Computed]
+    public function basketQuote(): array
+    {
+        $quote = ['members' => [], 'subtotal' => 0.0, 'discount' => 0.0, 'credit' => 0.0, 'total' => 0.0];
+
+        $season = Season::current();
+
+        if ($season === null || $this->familyBasket === []) {
+            return $quote;
+        }
+
+        $calculate = new CalculatePriceAction;
+        $familyDiscount = new FamilyDiscount;
+
+        // `room` porte la capacité des packs qui n'ont pas de plafond propre.
+        $packs = TrainingPack::with('room')
+            ->whereIn('id', collect($this->familyBasket)
+                ->flatMap(fn (array $config): array => $config['trainings'] ?? [])
+                ->unique()
+                ->all())
+            ->get()
+            ->keyBy('id');
+
+        /** @var array<int, int|null> Places restantes, décomptées au fil du panier. */
+        $spotsLeft = [];
+
+        /** @var array<int, array{competitive: bool, packs: Collection<int, TrainingPack>, total: float}> */
+        $alreadyQuoted = [];
+
+        // Le tuteur saisi est ce qui fait du panier une famille : sans lui, les
+        // membres restent étrangers les uns aux autres et le groupe ne passera
+        // de toute façon pas la validation.
+        $tiedTogether = $this->linkedGuardians->isNotEmpty();
+
+        foreach ($this->familyBasket as $userId => $config) {
+            $user = User::find((int) $userId);
+
+            if ($user === null) {
+                continue;
+            }
+
+            $isCompetitive = ($config['licence_type'] ?? 'recreative') === 'competitive';
+
+            /** @var Collection<int, TrainingPack> $billablePacks */
+            $billablePacks = collect();
+            $waitlisted = [];
+
+            foreach ($config['trainings'] ?? [] as $packId) {
+                $pack = $packs->get((int) $packId);
+
+                if ($pack === null) {
+                    continue;
+                }
+
+                if (! array_key_exists($pack->id, $spotsLeft)) {
+                    $max = $pack->effectiveMaxParticipants();
+
+                    $spotsLeft[$pack->id] = ($pack->is_open_enrollment || $max === 0)
+                        ? null
+                        : max(0, $max - $pack->committedCount());
+                }
+
+                // Une place en attente ne se facture pas, et deux membres du
+                // même panier ne peuvent pas prendre la dernière place.
+                if ($spotsLeft[$pack->id] === 0) {
+                    $waitlisted[] = $pack->name;
+
+                    continue;
+                }
+
+                if ($spotsLeft[$pack->id] !== null) {
+                    $spotsLeft[$pack->id]--;
+                }
+
+                $billablePacks->push($pack);
+            }
+
+            // Les tuteurs saisis ne sont pas encore en base : le devis doit lire
+            // la famille que la validation s'apprête à créer, pas celle d'avant.
+            $relatives = $familyDiscount->affiliatedRelatives($user, $season, $this->guardianIds);
+            $familyMembersCount = $relatives->count()
+                + ($tiedTogether ? count($alreadyQuoted) : 0)
+                + 1;
+
+            $alone = $calculate->quoteFor($isCompetitive, $billablePacks, 1);
+            $withFamily = $calculate->quoteFor($isCompetitive, $billablePacks, $familyMembersCount);
+
+            $credit = $relatives->sum(
+                fn (Subscription $subscription): float => $familyDiscount->shortfall($subscription, $familyMembersCount)
+            );
+
+            if ($tiedTogether) {
+                foreach ($alreadyQuoted as $previous) {
+                    $credit += $previous['total']
+                        - $calculate->quoteFor($previous['competitive'], $previous['packs'], $familyMembersCount)['total'];
+                }
+            }
+
+            // Le rattrapage ne rend jamais d'argent : on n'en déduit que ce que
+            // cette affiliation-ci peut absorber.
+            $appliedCredit = min(round(max(0.0, (float) $credit), 2), $withFamily['total']);
+            $memberTotal = round($withFamily['total'] - $appliedCredit, 2);
+            $familyRebate = round($alone['total'] - $withFamily['total'], 2);
+
+            $lines = [[
+                'label' => $isCompetitive ? __('Competitive membership') : __('Recreational membership'),
+                'amount' => $withFamily['subscription_price'],
+            ]];
+
+            foreach ($withFamily['lines'] as $line) {
+                $lines[] = ['label' => $line['name'], 'amount' => $line['amount']];
+            }
+
+            $quote['members'][(int) $userId] = [
+                'name' => $config['name'] ?? $user->first_name . ' ' . $user->last_name,
+                'lines' => $lines,
+                'waitlisted' => $waitlisted,
+                'subtotal' => $alone['total'],
+                'discount' => $familyRebate,
+                'credit' => $appliedCredit,
+                'total' => $memberTotal,
+            ];
+
+            $quote['subtotal'] += $alone['total'];
+            $quote['discount'] += $familyRebate;
+            $quote['credit'] += $appliedCredit;
+            $quote['total'] += $memberTotal;
+
+            $alreadyQuoted[] = [
+                'competitive' => $isCompetitive,
+                'packs' => $billablePacks,
+                'total' => $memberTotal,
+            ];
+        }
+
+        $quote['subtotal'] = round($quote['subtotal'], 2);
+        $quote['discount'] = round($quote['discount'], 2);
+        $quote['credit'] = round($quote['credit'], 2);
+        $quote['total'] = round($quote['total'], 2);
+
+        return $quote;
     }
 
     /**
@@ -488,6 +696,74 @@ new class extends Component
                 'amount' => number_format($refundable, 2),
             ]));
         }
+    }
+
+    /**
+     * Encode un membre sans quitter le drawer et le pose dans le panier.
+     *
+     * Au guichet, la famille est là, devant l'admin : découvrir que le petit
+     * dernier n'est pas encodé ne doit pas coûter un aller-retour vers l'écran
+     * Membres — et la perte du panier en cours. On ne demande donc que de quoi
+     * identifier la personne ; sa fiche se complétera plus tard.
+     */
+    public function createMember(): void
+    {
+        Gate::authorize('create', User::class);
+
+        $email = filled($this->newMemberEmail) ? trim($this->newMemberEmail) : null;
+
+        $validator = Validator::make(
+            [
+                'first_name' => trim($this->newMemberFirstName),
+                'last_name' => trim($this->newMemberLastName),
+                'birthdate' => $this->newMemberBirthdate,
+                'email' => $email,
+                'gender' => $this->newMemberGender,
+            ],
+            [
+                'first_name' => ['required', 'string', 'max:255'],
+                'last_name' => ['required', 'string', 'max:255'],
+                'birthdate' => ['required', 'date', 'before:today'],
+                // Un membre sans email est un compte géré, joignable par son
+                // tuteur : c'est le cas nominal au guichet, pas une omission.
+                'email' => ['nullable', 'email', ValidationRule::unique('users', 'email')],
+                'gender' => ['required', ValidationRule::in(array_column(Gender::cases(), 'value'))],
+            ],
+            [],
+            [
+                'first_name' => __('First name'),
+                'last_name' => __('Last name'),
+                'birthdate' => __('Birth date'),
+                'email' => __('Email'),
+                'gender' => __('Gender'),
+            ],
+        );
+
+        if ($validator->fails()) {
+            $this->error($validator->errors()->first());
+
+            return;
+        }
+
+        $validated = $validator->validated();
+
+        $member = CreateUserAction::handle(
+            new CreateUserData(
+                first_name: $validated['first_name'],
+                last_name: $validated['last_name'],
+                email: $email,
+                gender: Gender::from($this->newMemberGender),
+                birthdate: $validated['birthdate'],
+            ),
+            Auth::user(),
+        );
+
+        $this->addToBasket($member->id);
+        $this->resetNewMemberForm();
+
+        $this->success(__(':name has been created and added to the group.', [
+            'name' => $member->first_name . ' ' . $member->last_name,
+        ]));
     }
 
     /**
@@ -947,6 +1223,17 @@ new class extends Component
             ->toArray() ?? [];
     }
 
+    /**
+     * Whether the basket describes a family, and therefore needs the guardian
+     * that ties its members together.
+     *
+     * A single member affiliates for himself: nothing to tie, nothing to ask.
+     */
+    public function requiresFamilyGuardian(): bool
+    {
+        return count($this->familyBasket) > 1;
+    }
+
     public function saveFamilyRegistration(): void
     {
         Gate::authorize(Permission::SubscriptionsManage->value);
@@ -958,40 +1245,160 @@ new class extends Component
             return;
         }
 
+        if ($this->requiresFamilyGuardian() && $this->guardianIds === []) {
+            $this->error(__('Add the guardian who links these members before validating the group.'));
+
+            return;
+        }
+
         $createAction = new CreateSubscriptionAction;
         $calculateAction = new CalculatePriceAction;
+        $familyDiscount = new FamilyDiscount;
 
-        foreach ($this->familyBasket as $userId => $config) {
-            $user = User::find((int) $userId);
-            $subscription = $createAction->execute($user, $season, [
-                'is_competitive' => $config['licence_type'] === 'competitive',
-                'trainings_count' => count($config['trainings']),
-            ]);
+        /**
+         * Ce qui a réellement été enregistré, à prévenir une fois la
+         * transaction validée : un email parti sur un rollback ne se rattrape
+         * pas.
+         *
+         * @var list<array{user: User, subscription: Subscription, payment: ?Payment}>
+         */
+        $registered = [];
 
-            if (! empty($config['trainings'])) {
-                $prorata = new TrainingPackProrata;
-                $packs = TrainingPack::whereIn('id', $config['trainings'])->get()->keyBy('id');
+        // Une famille s'inscrit d'un bloc : laisser deux affiliations derrière
+        // soi parce que la troisième a échoué obligerait l'admin à réparer à la
+        // main ce qu'il croyait avoir annulé.
+        try {
+            DB::transaction(function () use ($season, $createAction, $calculateAction, $familyDiscount, &$registered): void {
+                foreach ($this->familyBasket as $userId => $config) {
+                    $user = User::find((int) $userId);
 
-                $syncData = [];
-                foreach ($config['trainings'] as $packId) {
-                    $pack = $packs->get((int) $packId);
+                    // Le membre est peut-être passé par le formulaire public entre
+                    // deux ouvertures du drawer : sans ce garde-fou,
+                    // CreateSubscriptionAction lève une DomainException nue.
+                    $alreadyAffiliated = Subscription::where('user_id', $user->id)
+                        ->where('season_id', $season->id)
+                        ->affiliated()
+                        ->exists();
 
-                    // Inscription au guichet : si le pack tourne déjà, le membre
-                    // ne paie que les mois restants.
-                    $syncData[(int) $packId] = [
-                        'starts_on' => $pack ? $prorata->enrolmentStart($pack) : null,
+                    if ($alreadyAffiliated) {
+                        throw new DomainException(__(':name is already affiliated for this season.', [
+                            'name' => $user->first_name . ' ' . $user->last_name,
+                        ]));
+                    }
+
+                    // Un nombre de places n'a de sens que derrière un « oui, je
+                    // conduis » : décocher doit effacer le chiffre resté à
+                    // l'écran, comme le fait l'espace membre.
+                    $canDrive = (bool) ($config['can_drive'] ?? false);
+
+                    $subscription = $createAction->execute($user, $season, [
+                        'is_competitive' => $config['licence_type'] === 'competitive',
+                        'trainings_count' => count($config['trainings']),
+                        'can_drive' => $canDrive,
+                        'seats_available' => $canDrive && filled($config['seats_available'] ?? null)
+                            ? (int) $config['seats_available']
+                            : null,
+                        'wants_to_be_captain' => (bool) ($config['wants_to_be_captain'] ?? false),
+                        'volunteer_help' => (bool) ($config['volunteer_help'] ?? false),
+                        'wants_directed_training' => (bool) ($config['wants_directed_training'] ?? false),
+                    ]);
+
+                    // Le lien familial est ce que le guichet est le mieux placé
+                    // pour établir : la famille est là, devant l'admin. C'est
+                    // lui qui ouvre droit à la remise famille.
+                    //
+                    // La mère inscrite avec ses enfants est souvent la tutrice
+                    // désignée : elle ne devient pas sa propre tutrice.
+                    $guardianIdsForMember = $this->linkedGuardians
+                        ->reject(fn (Guardian $guardian): bool => $guardian->user_id === $user->id)
+                        ->pluck('id')
+                        ->all();
+
+                    if ($guardianIdsForMember !== []) {
+                        $user->guardians()->syncWithoutDetaching($guardianIdsForMember);
+                    }
+
+                    // Le guichet ne crée pas de place : un pack complet met le
+                    // membre en liste d'attente, comme partout ailleurs. Seules
+                    // les lignes réellement obtenues (`pending`) sont validables.
+                    $claimedPackIds = [];
+
+                    if (! empty($config['trainings'])) {
+                        // `room` est chargée d'office : la capacité d'un pack sans
+                        // `max_participants` est celle de sa salle, et deux packs
+                        // au panier suffisent à faire lever la protection N+1.
+                        $packs = TrainingPack::with('room')->whereIn('id', $config['trainings'])->get();
+
+                        foreach ($packs as $pack) {
+                            if ((new EnrollInTrainingPackAction)($subscription, $pack) === 'pending') {
+                                $claimedPackIds[] = $pack->id;
+                            }
+                        }
+                    }
+
+                    // La famille se lit sur le lien tuteur qu'on vient d'établir,
+                    // jamais sur le contenu du panier : le frère inscrit le mois
+                    // dernier ouvre le même droit que celui inscrit à l'instant.
+                    $familyMembersCount = $familyDiscount->membersCount($user, $season);
+
+                    // Dénormalisation assumée : tous les recalculs ultérieurs
+                    // (annulation, départ de pack, réconciliation) lisent ce
+                    // drapeau. Il ne bascule que sur l'affiliation qui a
+                    // réellement bénéficié de la remise — les précédentes
+                    // gardent la facture qu'on ne rouvre pas.
+                    $subscription->has_other_family_members = $familyMembersCount > 1;
+
+                    // Le rattrapage tombe sur la dernière affiliation : on ne
+                    // rouvre jamais une facture déjà remise au membre.
+                    $subscription->family_credit = $familyDiscount->catchUpCredit(
+                        $user,
+                        $season,
+                        $familyMembersCount,
+                    );
+
+                    $calculateAction($subscription, $familyMembersCount);
+
+                    // C'est un admin qui inscrit au guichet : sa décision vaut
+                    // validation, pour peu que la fédération puisse identifier
+                    // le membre. Sinon la demande attend, sans bloquer l'admin.
+                    $payment = null;
+
+                    if ($this->canBeConfirmedDirectly($user)) {
+                        $subscription->confirm();
+
+                        // Pose `starts_on` au pro rata et remet le prix à jour.
+                        if (! empty($claimedPackIds)) {
+                            (new ApproveTrainingPacksAction)($subscription, $claimedPackIds, $familyMembersCount);
+                        }
+
+                        $payment = $subscription->payments()->create([
+                            'reference' => (new GeneratePaymentReference)(),
+                            'amount_due' => $subscription->getAmountDue(),
+                            'amount_paid' => 0,
+                            'status' => 'pending',
+                        ]);
+                    }
+
+                    $registered[] = [
+                        'user' => $user,
+                        'subscription' => $subscription,
+                        'payment' => $payment,
                     ];
                 }
+            });
+        } catch (DomainException $exception) {
+            $this->error($exception->getMessage());
 
-                $subscription->trainingPacks()->sync($syncData);
-            }
-
-            $calculateAction($subscription);
+            return;
         }
+
+        $this->informRegisteredMembers($registered);
 
         $this->success(__('Group affiliation successful!'));
         $this->memberDrawer = false;
         $this->familyBasket = [];
+        $this->guardianIds = [];
+        $this->resetGuardianForm();
     }
 
     public function saveReconciliation(): void
@@ -1061,12 +1468,25 @@ new class extends Component
             return;
         }
 
-        Mail::to($payment->payable->user)->send(new PaymentInvitationEmail($payment));
+        // Un mailable ne passe pas par `routeNotificationForMail()` : sans
+        // `contactEmail()`, l'invitation part vers `email`, null pour un compte
+        // géré, et le bouton annonce quand même un envoi.
+        $recipient = $payment->payable->user->contactEmail();
+
+        if ($recipient === null) {
+            $this->error(__('No email address on file for :name — hand them the payment details.', [
+                'name' => $payment->payable->user->first_name . ' ' . $payment->payable->user->last_name,
+            ]));
+
+            return;
+        }
+
+        Mail::to($recipient)->send(new PaymentInvitationEmail($payment));
 
         $payment->increment('invitation_counter');
         $this->paymentData['invitation_counter'] = $payment->invitation_counter;
 
-        $this->success(__('Payment invitation sent to :email.', ['email' => $payment->payable->user->email]));
+        $this->success(__('Payment invitation sent to :email.', ['email' => $recipient]));
     }
 
     #[Computed]
@@ -1237,6 +1657,24 @@ new class extends Component
 
     public function with(): array
     {
+        // Proposer un membre déjà affilié n'aboutirait qu'à un refus au moment
+        // d'enregistrer : autant ne pas le proposer.
+        $memberMatches = strlen($this->searchMember) > 2
+            ? User::query()
+                ->whereNotIn('id', User::affiliatedForCurrentSeason()->select('users.id'))
+                ->searchName($this->searchMember)
+            : null;
+
+        $membersFound = $memberMatches === null
+            ? collect()
+            : $memberMatches->clone()
+                // Le badge « compte géré » nomme le tuteur joignable à sa place.
+                ->with('guardians')
+                ->orderBy('last_name')
+                ->orderBy('first_name')
+                ->limit(self::SEARCH_RESULTS_SHOWN)
+                ->get();
+
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
             'filterChips' => $this->filterChips,
@@ -1247,13 +1685,14 @@ new class extends Component
                 ? Subscription::with(['user', 'trainingPacks' => fn ($q) => $q->wherePivot('status', 'pending')])
                     ->find($this->currentTrainingRequestId)
                 : null,
-            'membersFound' => strlen($this->searchMember) > 2
-                ? User::where(function ($q): void {
-                    $q->where('first_name', 'like', "%{$this->searchMember}%")
-                        ->orWhere('last_name', 'like', "%{$this->searchMember}%")
-                        ->orWhere('email', 'like', "%{$this->searchMember}%");
-                })->limit(5)->get()
-                : [],
+            'genders' => Gender::options(),
+            'membersFound' => $membersFound,
+            // Deux homonymes ne se distinguent pas d'un coup d'œil, et une
+            // famille en aligne plusieurs : dire combien de résultats restent
+            // cachés évite à l'admin d'affiner sa recherche à l'aveugle.
+            'membersFoundOverflow' => $memberMatches === null
+                ? 0
+                : max(0, $memberMatches->clone()->count() - $membersFound->count()),
         ];
     }
 
@@ -1262,5 +1701,80 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Affiliations'));
+    }
+
+    /**
+     * Mêmes exigences que approve() : une affiliation ne peut être validée que
+     * si la fédération peut identifier le membre — licence à 6 chiffres, unique,
+     * et un vrai classement. NA veut dire « pas de classement au dossier », pas
+     * « non classé » (ça, c'est NC, que la fédération reconnaît).
+     *
+     * Le guichet ne s'arrête pas pour autant : sans ça, l'inscription reste en
+     * attente et le secrétariat la reprendra depuis la modale de validation.
+     */
+    private function resetNewMemberForm(): void
+    {
+        $this->newMemberFirstName = '';
+        $this->newMemberLastName = '';
+        $this->newMemberBirthdate = null;
+        $this->newMemberEmail = null;
+        $this->newMemberGender = '';
+        $this->showNewMemberForm = false;
+    }
+
+    private function canBeConfirmedDirectly(User $user): bool
+    {
+        if (blank($user->licence) || blank($user->ranking) || $user->ranking === Ranking::NA->name) {
+            return false;
+        }
+
+        return ! Validator::make(
+            ['licence' => trim($user->licence)],
+            ['licence' => ['digits:6', ValidationRule::unique('users', 'licence')->ignore($user->id)]],
+        )->fails();
+    }
+
+    /**
+     * Écrit à chaque membre que le guichet vient d'inscrire.
+     *
+     * L'admin valide pour le membre : sans cet envoi, celui-ci repart sans
+     * confirmation ni référence de paiement, et personne ne le réclamera jamais.
+     *
+     * @param  list<array{user: User, subscription: Subscription, payment: ?Payment}>  $registered
+     */
+    private function informRegisteredMembers(array $registered): void
+    {
+        $unreachable = [];
+
+        foreach ($registered as $entry) {
+            // Un mailable ne passe pas par `routeNotificationForMail()` : sans
+            // `contactEmail()`, l'invitation part vers `email`, null pour le
+            // compte géré qui fait justement l'ordinaire de ce drawer.
+            $recipient = $entry['user']->contactEmail();
+
+            if ($recipient === null) {
+                $unreachable[] = $entry['user']->first_name . ' ' . $entry['user']->last_name;
+
+                continue;
+            }
+
+            $entry['user']->notify(new SubscriptionCreatedNotification($entry['subscription']));
+
+            // Une demande retombée en attente n'a pas de paiement : réclamer de
+            // l'argent pour une affiliation non validée serait faux.
+            if ($entry['payment'] !== null) {
+                Mail::to($recipient)->send(new PaymentInvitationEmail($entry['payment']));
+                $entry['payment']->increment('invitation_counter');
+            }
+        }
+
+        if ($unreachable !== []) {
+            // L'inscription est faite : c'est un avertissement, pas un refus.
+            // L'admin a le membre en face de lui, c'est le seul moment où les
+            // informations peuvent encore lui être remises sur papier.
+            $this->warning(__('No email address for :names — hand them their affiliation and payment details on paper.', [
+                'names' => implode(', ', $unreachable),
+            ]));
+        }
     }
 };

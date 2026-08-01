@@ -56,7 +56,7 @@ trait ManagesGuardians
      */
     public function attachMemberAsGuardian(int $userId): void
     {
-        Gate::authorize('create', [Guardian::class, $this->user]);
+        Gate::authorize('create', [Guardian::class, $this->guardianSubject()]);
 
         $member = User::findOrFail($userId);
 
@@ -81,7 +81,7 @@ trait ManagesGuardians
 
     public function createGuardian(): void
     {
-        Gate::authorize('create', [Guardian::class, $this->user]);
+        Gate::authorize('create', [Guardian::class, $this->guardianSubject()]);
 
         $validated = $this->validate($this->guardianRules());
 
@@ -213,8 +213,10 @@ trait ManagesGuardians
             return collect();
         }
 
+        $subject = $this->guardianSubject();
+
         return User::query()
-            ->when($this->user?->exists, fn ($query) => $query->whereKeyNot($this->user->id))
+            ->when($subject?->exists, fn ($query) => $query->whereKeyNot($subject->id))
             ->whereNotIn('id', Guardian::whereNotNull('user_id')->pluck('user_id'))
             ->where(function ($query): void {
                 $query->whereNull('birthdate')
@@ -277,6 +279,16 @@ trait ManagesGuardians
             'guardianEmail' => $this->guardianEmailRules(),
             'guardianIban' => ['nullable', new ValidIban],
         ];
+    }
+
+    /**
+     * The member the guardian is being encoded for, when the component edits
+     * exactly one. Components that handle a whole group in one go — the
+     * walk-in affiliation drawer — have no single subject and leave it null.
+     */
+    protected function guardianSubject(): ?User
+    {
+        return $this->user ?? null;
     }
 
     /**

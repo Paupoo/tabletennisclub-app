@@ -48,6 +48,7 @@ use Illuminate\Support\Carbon;
  * @property float $training_unit_price
  * @property float $amount_due
  * @property float $amount_paid
+ * @property float $family_credit
  * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -125,6 +126,7 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
         'wants_directed_training',
         'amount_due',
         'amount_paid',
+        'family_credit',
         'subscription_price',
         'training_unit_price',
         'status',
@@ -444,6 +446,21 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     }
 
     protected function amountPaid(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
+            set: fn (int|float $value): int => (int) round($value * 100),
+        );
+    }
+
+    /**
+     * Remise famille que cette affiliation absorbe pour toute la famille.
+     *
+     * Les factures déjà émises ne sont jamais rouvertes : c'est la dernière
+     * affiliation qui porte le manque à gagner des précédentes. Le montant doit
+     * donc survivre à tout recalcul, d'où la colonne plutôt qu'un calcul refait.
+     */
+    protected function familyCredit(): Attribute
     {
         return Attribute::make(
             get: fn (?int $value): float => round(($value ?? 0) / 100, 2),

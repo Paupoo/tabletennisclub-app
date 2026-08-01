@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Subscriptions\Notifications\SubscriptionFormulaChangedNotification;
+use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
@@ -240,4 +242,47 @@ it('refuses to approve an affiliation when the member has no ranking', function 
 
     expect($subscription->fresh()->status)->toBe('pending')
         ->and($subscription->payments()->count())->toBe(0);
+});
+
+it('applies the family discount when approving an affiliation and its training packs', function (): void {
+    $guardian = Guardian::factory()->create();
+
+    // La sœur est déjà affiliée : la famille compte deux membres cette saison,
+    // et c'est ce lien-là — pas le contenu d'un panier — qui ouvre la remise.
+    $sibling = User::factory()->create();
+    $sibling->guardians()->attach($guardian->id);
+
+    $siblingSubscription = Subscription::factory()->create([
+        'user_id' => $sibling->id,
+        'season_id' => $this->season->id,
+        'status' => 'confirmed',
+        'is_competitive' => false,
+        'amount_due' => 150,
+    ]);
+    $siblingSubscription->trainingPacks()->attach(
+        TrainingPack::factory()->create(['season_id' => $this->season->id, 'price' => 90])->id,
+        ['status' => 'enrolled'],
+    );
+
+    $member = User::factory()->create(['licence' => '123456', 'ranking' => 'C4']);
+    $member->guardians()->attach($guardian->id);
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => $member->id,
+        'season_id' => $this->season->id,
+        'status' => 'pending',
+        'is_competitive' => false,
+    ]);
+    $subscription->trainingPacks()->attach(
+        TrainingPack::factory()->create(['season_id' => $this->season->id, 'price' => 90])->id,
+        ['status' => 'pending'],
+    );
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->call('review', $subscription->id)
+        ->call('approve');
+
+    // 60 + (90 − 10) = 140
+    expect((float) $subscription->fresh()->amount_due)->toBe(140.0)
+        ->and((float) $subscription->payments()->sole()->amount_due)->toBe(140.0);
 });

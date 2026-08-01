@@ -752,7 +752,7 @@
 
     {{-- ── Drawer inscription/renouvellement ───────────────────────────── --}}
     @can('subscriptions.manage')
-    <x-drawer wire:model="memberDrawer" :title="__('Family affiliation')" right separator with-close-button class="w-11/12 md:w-5/12">
+    <x-drawer wire:model="memberDrawer" :title="__('Family affiliation')" right separator with-close-button class="w-11/12 md:w-7/12">
         <div class="space-y-6">
             <div class="rounded-xl bg-base-200 p-4">
                 <x-input :placeholder="__('Search for a member to add to the group...')"
@@ -761,55 +761,392 @@
                     :hint="__('Add all family members here')" />
 
                 @if (strlen($searchMember) > 2)
-                    <div class="mt-2 rounded-lg border border-base-300 bg-base-100 shadow-lg">
+                    {{-- Deux homonymes se distinguent à la date de naissance et
+                         au classement : « prénom nom » seul ne suffit pas. --}}
+                    <div class="mt-2 rounded-xl border border-base-200 bg-base-100">
                         @foreach ($membersFound as $m)
-                            <div class="flex cursor-pointer items-center justify-between border-b p-3 last:border-none hover:bg-base-200"
+                            <div wire:key="member-found-{{ $m->id }}"
+                                class="flex cursor-pointer items-center justify-between gap-3 border-b p-3 last:border-none hover:bg-base-200"
                                 wire:click="addToBasket({{ $m->id }})">
-                                <span class="text-sm font-bold">{{ $m->first_name }} {{ $m->last_name }}</span>
-                                <x-icon name="o-plus-circle" class="h-5 w-5 text-primary" />
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="text-sm font-bold">{{ $m->first_name }} {{ $m->last_name }}</span>
+                                        @if ($m->email === null)
+                                            <x-badge class="badge-soft badge-info badge-xs"
+                                                :value="__('Managed account')" />
+                                        @endif
+                                    </div>
+                                    <div class="truncate text-xs text-base-content/60">
+                                        {{ $m->birthdate?->format('d/m/Y') ?? __('Birth date unknown') }}
+                                        ·
+                                        {{ $m->ranking && $m->ranking !== 'NA' ? $m->ranking : __('No ranking') }}
+                                        @if ($m->email === null && $m->guardians->isNotEmpty())
+                                            · {{ __('via :guardian', [
+                                                'guardian' => $m->guardians->first()->first_name . ' ' . $m->guardians->first()->last_name,
+                                            ]) }}
+                                        @endif
+                                    </div>
+                                </div>
+                                <x-icon name="o-plus-circle" class="h-5 w-5 shrink-0 text-primary" />
                             </div>
                         @endforeach
+
+                        @if ($membersFoundOverflow > 0)
+                            <div class="border-t border-base-300 p-2 text-center text-xs italic text-base-content/60">
+                                {{ trans_choice(':count more match — refine your search|:count more matches — refine your search', $membersFoundOverflow, ['count' => $membersFoundOverflow]) }}
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                {{-- ── Encodage express ─────────────────────────────────────
+                     Le petit dernier n'est pas toujours encodé. Sortir du
+                     drawer pour le créer ferait perdre le panier en cours.
+                --}}
+                @if (! $showNewMemberForm)
+                    <div class="mt-3">
+                        <x-button class="btn-soft btn-sm" icon="o-user-plus" :label="__('New member')"
+                            wire:click="$set('showNewMemberForm', true)" />
+                    </div>
+                @else
+                    <div class="mt-3 space-y-3 rounded-xl border border-base-200 bg-base-100 p-4">
+                        <h4 class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-base-content/60">
+                            <x-icon name="o-user-plus" class="h-4 w-4" />
+                            {{ __('New member') }}
+                        </h4>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <x-input :label="__('First name')" wire:model.live.blur="newMemberFirstName" required />
+                            <x-input :label="__('Last name')" wire:model.live.blur="newMemberLastName" required />
+                            <x-input :label="__('Birth date')" type="date"
+                                wire:model.live.blur="newMemberBirthdate" required />
+                            <x-group :label="__('Gender')" :options="$genders" class="btn-soft" inline
+                                wire:model.live="newMemberGender" />
+                            <x-input :label="__('Email')" type="email" wire:model.live.blur="newMemberEmail"
+                                :hint="__('Optional — a member without an email is reached through their guardian.')"
+                                class="sm:col-span-2" />
+                        </div>
+                        <div class="flex gap-2">
+                            <x-button class="btn-primary btn-sm" icon="o-check" :label="__('Create and add')"
+                                wire:click="createMember" spinner="createMember" />
+                            <x-button class="btn-ghost btn-sm" :label="__('Cancel')"
+                                wire:click="$set('showNewMemberForm', false)" />
+                        </div>
                     </div>
                 @endif
             </div>
 
             <div class="space-y-4">
                 @forelse ($familyBasket as $userId => $config)
-                    <div class="relative rounded-2xl border-2 border-base-300 bg-base-100 p-4 shadow-sm">
-                        <button wire:click="removeFromBasket({{ $userId }})"
-                            class="absolute right-2 top-2 text-error transition-transform hover:scale-110">
-                            <x-icon name="o-trash" class="h-4 w-4" />
-                        </button>
-                        <h3 class="mb-4 flex items-center gap-2 text-xs font-black uppercase text-primary">
-                            <x-icon name="o-user" class="h-4 w-4" />
-                            {{ $config['name'] }}
-                        </h3>
+                    <div wire:key="basket-member-{{ $userId }}"
+                        class="rounded-xl border border-base-200 bg-base-100 p-4">
+                        <div class="mb-4 flex items-start justify-between gap-3">
+                            <h3 class="flex items-center gap-2 text-base font-semibold">
+                                <x-icon name="o-user" class="h-4 w-4 shrink-0 text-base-content/40" />
+                                {{ $config['name'] }}
+                            </h3>
+                            {{-- `id` unique : le wire:key de maryUI se déduit des
+                                 props, identiques d'une carte à l'autre. --}}
+                            <x-button id="basket-remove-{{ $userId }}" icon="o-trash"
+                                class="btn-ghost btn-sm btn-circle shrink-0 text-error"
+                                :tooltip-left="__('Remove from the group')"
+                                wire:click="removeFromBasket({{ $userId }})" />
+                        </div>
                         <div class="grid grid-cols-1 gap-4">
+                            {{-- `.live` : le récapitulatif chiffré plus bas doit suivre chaque clic. --}}
                             <x-radio :label="__('Licence type')"
-                                wire:model="familyBasket.{{ $userId }}.licence_type"
+                                wire:model.live="familyBasket.{{ $userId }}.licence_type"
                                 :options="[['id' => 'competitive', 'name' => __('Competitive')], ['id' => 'recreative', 'name' => __('Recreational')]]"
                                 class="radio-sm" />
                             <x-choices :label="__('Trainings')"
-                                wire:model="familyBasket.{{ $userId }}.trainings"
+                                wire:model.live="familyBasket.{{ $userId }}.trainings"
                                 :options="$this->trainingOptions()"
                                 compact allow-all />
                         </div>
+
+                        {{-- ── Engagement du membre ─────────────────────────────
+                             Covoiturage, capitanat, bénévolat : la saison
+                             s'organise avec ces réponses, mais au guichet on ne
+                             remplit d'abord que le haut de la carte. Replié.
+                        --}}
+                        {{-- `id` unique : le uuid de maryUI vient des props, et
+                             deux cartes identiques partageraient wire:key. --}}
+                        <x-collapse id="basket-involvement-{{ $userId }}"
+                            class="mt-4 border border-base-200 bg-base-100">
+                            <x-slot:heading>
+                                <div class="flex items-center gap-2 text-sm font-semibold">
+                                    <x-icon name="o-hand-raised" class="h-4 w-4 text-base-content/40" />
+                                    {{ __('Getting involved this season') }}
+                                </div>
+                            </x-slot:heading>
+                            <x-slot:content>
+                                {{-- Le nombre de places apparaît côté client :
+                                     un aller-retour serveur par bascule ferait
+                                     se replier la carte sous les doigts. --}}
+                                <div class="space-y-4"
+                                    x-data="{ drives: @js((bool) ($config['can_drive'] ?? false)) }">
+                                    <p class="text-xs text-base-content/60">
+                                        {{ __('Optional — these answers can still be changed on the roster.') }}
+                                    </p>
+
+                                    <x-toggle id="can-drive-{{ $userId }}"
+                                        wire:model="familyBasket.{{ $userId }}.can_drive"
+                                        x-on:change="drives = $event.target.checked"
+                                        :label="__('Can drive to away matches')"
+                                        :hint="__('Carpooling helps the whole club.')" />
+
+                                    <div x-show="drives" x-collapse>
+                                        <x-input type="number" min="1" max="8"
+                                            wire:model="familyBasket.{{ $userId }}.seats_available"
+                                            :label="__('Seats available (incl. driver)')"
+                                            icon="o-user-group" />
+                                    </div>
+
+                                    <x-toggle id="wants-captain-{{ $userId }}"
+                                        wire:model="familyBasket.{{ $userId }}.wants_to_be_captain"
+                                        :label="__('Would like to be a team captain')" />
+
+                                    <x-toggle id="volunteer-{{ $userId }}"
+                                        wire:model="familyBasket.{{ $userId }}.volunteer_help"
+                                        :label="__('Willing to help as a volunteer')" />
+
+                                    <x-toggle id="directed-training-{{ $userId }}"
+                                        wire:model="familyBasket.{{ $userId }}.wants_directed_training"
+                                        :label="__('Interested in directed training')"
+                                        :hint="__('The club will get in touch when building the training schedule.')" />
+                                </div>
+                            </x-slot:content>
+                        </x-collapse>
                     </div>
                 @empty
-                    <div class="rounded-2xl border-2 border-dashed py-10 text-center italic opacity-40">
-                        {{ __('No member selected. Use the search above.') }}
-                    </div>
+                    <x-admin.shared.empty icon="o-user-group"
+                        :title="__('No member in the group yet')"
+                        :subtitle="__('No member selected. Use the search above.')"
+                        class="rounded-xl border border-dashed border-base-300" />
                 @endforelse
             </div>
+
+            {{-- ── Tuteur du groupe ─────────────────────────────────────────
+                 Le lien familial n'existe nulle part ailleurs : c'est ici, la
+                 famille au guichet, qu'il se saisit. Il conditionne la remise.
+            --}}
+            @if ($this->requiresFamilyGuardian())
+                <div class="space-y-4 rounded-xl border border-base-200 bg-base-100 p-4">
+                    <h3 class="flex items-center gap-2 text-base font-semibold">
+                        <x-icon name="o-shield-check" class="h-4 w-4 shrink-0 text-base-content/40" />
+                        {{ __('Guardian of the group') }}
+                    </h3>
+
+                    @if ($this->linkedGuardians->isEmpty())
+                        <x-alert icon="o-exclamation-triangle" class="alert-warning">
+                            <span class="text-sm">
+                                {{ __('Several members at once: name the guardian who links them, so the family is known to the club.') }}
+                            </span>
+                        </x-alert>
+                    @else
+                        <div class="space-y-2">
+                            @foreach ($this->linkedGuardians as $guardian)
+                                <div wire:key="basket-guardian-{{ $guardian->id }}"
+                                    class="flex items-center gap-3 rounded-lg border border-base-200 bg-base-100 p-3">
+                                    <x-icon name="o-user" class="h-5 w-5 shrink-0 text-primary" />
+                                    <div class="min-w-0 flex-1">
+                                        <div class="truncate text-sm font-semibold">
+                                            {{ $guardian->first_name }} {{ $guardian->last_name }}
+                                        </div>
+                                        <div class="truncate text-xs text-base-content/60">
+                                            {{ $guardian->phone }}{{ $guardian->email ? ' · ' . $guardian->email : '' }}
+                                        </div>
+                                    </div>
+                                    <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-x-mark"
+                                        :tooltip="__('Unlink')" wire:click="detachGuardian({{ $guardian->id }})" />
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    {{-- Le tuteur est souvent déjà connu : on cherche avant de créer. --}}
+                    <div>
+                        <x-input :label="__('Find an existing guardian or member')" icon="o-magnifying-glass"
+                            :placeholder="__('Search by name or email…')"
+                            wire:model.live.debounce.300ms="guardianSearch" />
+
+                        @php
+                            $guardianResults = $this->guardianSearchResults;
+                            $memberResults = $this->memberSearchResults;
+                            $hasResults = $guardianResults->isNotEmpty() || $memberResults->isNotEmpty();
+                        @endphp
+
+                        @if ($hasResults)
+                            <div class="mt-2 space-y-1 rounded-lg border border-base-200 p-1">
+                                @if ($guardianResults->isNotEmpty())
+                                    <div class="px-3 pt-1 text-[10px] font-bold uppercase tracking-widest text-base-content/40">
+                                        {{ __('Existing guardians') }}
+                                    </div>
+                                    @foreach ($guardianResults as $result)
+                                        <button type="button" wire:key="basket-guardian-result-{{ $result->id }}"
+                                            wire:click="attachGuardian({{ $result->id }})"
+                                            class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-base-200">
+                                            <x-icon name="o-plus-circle" class="h-4 w-4 shrink-0 text-success" />
+                                            <span class="flex-1 truncate">
+                                                {{ $result->first_name }} {{ $result->last_name }}
+                                                <span class="text-base-content/50">· {{ $result->phone }}</span>
+                                            </span>
+                                        </button>
+                                    @endforeach
+                                @endif
+
+                                @if ($memberResults->isNotEmpty())
+                                    <div class="px-3 pt-1 text-[10px] font-bold uppercase tracking-widest text-base-content/40">
+                                        {{ __('Club members') }}
+                                    </div>
+                                    @foreach ($memberResults as $member)
+                                        <button type="button" wire:key="basket-member-result-{{ $member->id }}"
+                                            wire:click="attachMemberAsGuardian({{ $member->id }})"
+                                            class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-base-200">
+                                            <x-icon name="o-user-plus" class="h-4 w-4 shrink-0 text-primary" />
+                                            <span class="flex-1 truncate">
+                                                {{ $member->first_name }} {{ $member->last_name }}
+                                                <span class="text-base-content/50">· {{ __('member') }}</span>
+                                            </span>
+                                        </button>
+                                    @endforeach
+                                @endif
+                            </div>
+                        @elseif (strlen(trim($guardianSearch)) >= 2)
+                            <p class="mt-2 text-xs text-base-content/50">
+                                {{ __('No guardian or member found. Create a new guardian below.') }}
+                            </p>
+                        @endif
+                    </div>
+
+                    @if (! $showGuardianForm)
+                        <x-button class="btn-soft btn-sm" icon="o-plus" :label="__('Create a new guardian')"
+                            wire:click="$set('showGuardianForm', true)" />
+                    @else
+                        <div class="space-y-3 rounded-lg border border-base-200 p-4">
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <x-input :label="__('First name')" wire:model.live.blur="guardianFirstName" required />
+                                <x-input :label="__('Last name')" wire:model.live.blur="guardianLastName" required />
+                                <x-input :label="__('Phone')" wire:model.live.blur="guardianPhone"
+                                    placeholder="0470 00 00 00" required />
+                                <x-input :label="__('Email')" type="email" wire:model.live.blur="guardianEmail" />
+                                <x-input :label="__('IBAN')" wire:model.live.blur="guardianIban"
+                                    placeholder="BE00 0000 0000 0000"
+                                    :hint="__('Optional — used for refunds.')" class="sm:col-span-2" />
+                            </div>
+
+                            @if ($this->duplicateGuardian)
+                                <x-admin.users.guardian-duplicate-notice :guardian="$this->duplicateGuardian"
+                                    :already-linked="$this->duplicateGuardianAlreadyLinked" />
+                            @endif
+
+                            <div class="flex gap-2">
+                                <x-button class="btn-primary btn-sm" icon="o-check" :label="__('Add guardian')"
+                                    wire:click="createGuardian" spinner="createGuardian" />
+                                <x-button class="btn-ghost btn-sm" :label="__('Cancel')"
+                                    wire:click="$set('showGuardianForm', false)" />
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            @endif
+
+            {{-- ── Récapitulatif chiffré ────────────────────────────────────
+                 L'admin annonce un prix au membre qui lui fait face : il doit
+                 l'avoir sous les yeux, à jour, avant de valider.
+            --}}
+            @if (count($familyBasket) > 0)
+                @php
+                    $quote = $this->basketQuote;
+                    /** Montants au format belge : 1 234,50 €. */
+                    $money = fn (float $amount): string => number_format($amount, 2, ',', ' ') . ' €';
+                @endphp
+                {{-- Sur mobile, le détail ligne à ligne mangeait tout l'écran :
+                     seul le total reste visible, le reste se déplie. Le desktop
+                     l'ouvre d'office, l'admin y lit le devis pendant qu'il parle. --}}
+                <div x-data="{ detailOpen: window.matchMedia('(min-width: 768px)').matches }"
+                    class="rounded-xl border border-base-200 bg-base-100">
+                    <button type="button" @click="detailOpen = ! detailOpen"
+                        x-bind:aria-expanded="detailOpen ? 'true' : 'false'"
+                        class="flex w-full items-center justify-between gap-3 p-4 text-left">
+                        <span class="flex items-center gap-2 text-base font-semibold">
+                            <x-icon name="o-calculator" class="h-4 w-4 shrink-0 text-base-content/40" />
+                            {{ __('Price summary') }}
+                        </span>
+                        <span class="flex items-center gap-2">
+                            <span class="text-base font-semibold text-primary">{{ $money($quote['total']) }}</span>
+                            <span class="transition-transform" x-bind:class="detailOpen && 'rotate-180'">
+                                <x-icon name="o-chevron-down" class="h-4 w-4 text-base-content/40" />
+                            </span>
+                        </span>
+                    </button>
+
+                    <div x-show="detailOpen" x-collapse>
+                        <div class="space-y-4 border-t border-base-200 p-4">
+                            @foreach ($quote['members'] as $memberId => $member)
+                                <div wire:key="basket-quote-{{ $memberId }}" class="space-y-1">
+                                    <div class="text-xs font-bold uppercase tracking-widest text-base-content/60">
+                                        {{ $member['name'] }}
+                                    </div>
+                                    @foreach ($member['lines'] as $line)
+                                        <div class="flex items-center justify-between text-sm">
+                                            <span class="truncate pr-2 text-base-content/70">{{ $line['label'] }}</span>
+                                            <span class="shrink-0 font-semibold tabular-nums">{{ $money($line['amount']) }}</span>
+                                        </div>
+                                    @endforeach
+                                    @foreach ($member['waitlisted'] as $waitlistedPack)
+                                        <div class="flex items-center justify-between text-sm">
+                                            <span class="truncate pr-2 text-base-content/70">{{ $waitlistedPack }}</span>
+                                            <x-badge class="badge-soft badge-warning badge-sm" :value="__('Waiting list — not billed')" />
+                                        </div>
+                                    @endforeach
+                                    @if (count($quote['members']) > 1)
+                                        {{-- Au guichet, l'admin annonce un montant par personne. --}}
+                                        <div class="flex items-center justify-between border-t border-dashed border-base-200 pt-1 text-sm">
+                                            <span class="font-semibold">{{ __('Due by :name', ['name' => $member['name']]) }}</span>
+                                            <span class="font-semibold tabular-nums">{{ $money($member['total']) }}</span>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+
+                            <div class="space-y-1 border-t border-base-200 pt-3">
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-base-content/70">{{ __('Subtotal') }}</span>
+                                    <span class="font-semibold tabular-nums">{{ $money($quote['subtotal']) }}</span>
+                                </div>
+                                @if ($quote['discount'] > 0)
+                                    <div class="flex items-center justify-between text-sm text-success">
+                                        <span>{{ __('Family discount') }}</span>
+                                        <span class="font-semibold tabular-nums">−{{ $money($quote['discount']) }}</span>
+                                    </div>
+                                @endif
+                                @if ($quote['credit'] > 0)
+                                    <div class="flex items-center justify-between text-sm text-success">
+                                        <span>{{ __('Family discount not received earlier') }}</span>
+                                        <span class="font-semibold tabular-nums">−{{ $money($quote['credit']) }}</span>
+                                    </div>
+                                @endif
+                                <div class="flex items-center justify-between border-t border-base-200 pt-2 text-base">
+                                    <span class="font-semibold">{{ __('Group total') }}</span>
+                                    <span class="font-semibold tabular-nums text-primary">{{ $money($quote['total']) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <x-slot:actions>
-            <x-button :label="__('Cancel')" @click="$wire.memberDrawer = false" />
-            @if (count($familyBasket) > 0)
-                <x-button :label="__('Validate group affiliation') . ' (' . count($familyBasket) . ')'"
-                    icon="o-check" class="btn-primary"
-                    wire:click="saveFamilyRegistration" />
-            @endif
+            <x-button :label="__('Cancel')" class="btn-ghost" @click="$wire.memberDrawer = false" />
+            {{-- Désactivé, jamais masqué : l'action principale du drawer ne doit
+                 pas apparaître et disparaître au fil du panier. --}}
+            <x-button :label="count($familyBasket) > 0
+                    ? __('Validate group affiliation') . ' (' . count($familyBasket) . ')'
+                    : __('Validate group affiliation')"
+                icon="o-check" class="btn-primary"
+                :disabled="count($familyBasket) === 0"
+                wire:click="saveFamilyRegistration" spinner="saveFamilyRegistration" />
         </x-slot:actions>
     </x-drawer>
     @endcan

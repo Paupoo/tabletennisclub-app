@@ -261,12 +261,20 @@
                 </div>
 
                 @if ($user)
+                    {{-- Le conteneur passe à la ligne, mais un `.btn` ne coupe jamais son
+                         libellé : « Envoyer le lien de réinitialisation du mot de passe »
+                         mesure à lui seul plus large qu'un téléphone de 375 px, et fait
+                         défiler la page entière horizontalement. `whitespace-normal`
+                         autorise le retour à la ligne, `h-auto min-h-8` laisse le bouton
+                         grandir au lieu d'écraser son texte. --}}
                     <div class="flex flex-wrap gap-2 border-t border-base-200 pt-4">
-                        <x-button class="btn-soft btn-sm" icon="o-key" :label="__('Send password reset link')"
-                            wire:click="sendPasswordResetLink" spinner="sendPasswordResetLink" />
+                        <x-button class="btn-soft btn-sm h-auto max-w-full min-h-8 whitespace-normal" icon="o-key"
+                            :label="__('Send password reset link')" wire:click="sendPasswordResetLink"
+                            spinner="sendPasswordResetLink" />
                         @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
-                            <x-button class="btn-soft btn-sm" icon="o-envelope" :label="__('Resend invitation')"
-                                wire:click="resendInvitation" spinner="resendInvitation" />
+                            <x-button class="btn-soft btn-sm h-auto max-w-full min-h-8 whitespace-normal"
+                                icon="o-envelope" :label="__('Resend invitation')" wire:click="resendInvitation"
+                                spinner="resendInvitation" />
                         @endcan
                     </div>
                 @endif

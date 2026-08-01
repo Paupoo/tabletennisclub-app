@@ -24,6 +24,19 @@ class TrustProxies extends Middleware
     /**
      * The trusted proxies for this application.
      *
+     * Deliberately empty. Apache serves PHP directly on the production VPS —
+     * no `proxy_pass`, no CDN in front of the domain — so `REMOTE_ADDR` is
+     * already the visitor and `$request->ip()` is correct. Trusting anything
+     * here (`'*'` above all) would let a visitor forge `X-Forwarded-For` and
+     * walk past every per-IP throttle, including the one on the public contact
+     * form.
+     *
+     * Put a reverse proxy, a load balancer or Cloudflare in front and this
+     * must be filled in with that proxy's addresses — otherwise every visitor
+     * shares the proxy's IP and the throttles become one global counter.
+     *
+     * Pinned by tests/Feature/Security/TrustedHostsAndProxiesTest.php.
+     *
      * @var array<int, string>|string|null
      */
     protected $proxies;

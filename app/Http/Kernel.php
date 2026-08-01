@@ -14,6 +14,7 @@ use App\Http\Middleware\EnsureSetupNotComplete;
 use App\Http\Middleware\PreventRequestsDuringMaintenance;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\TrimStrings;
+use App\Http\Middleware\TrustHosts;
 use App\Http\Middleware\TrustProxies;
 use App\Http\Middleware\ValidateSignature;
 use App\Http\Middleware\VerifyCsrfToken;
@@ -45,7 +46,9 @@ class Kernel extends HttpKernel
      * @var array<int, class-string|string>
      */
     protected $middleware = [
-        // \App\Http\Middleware\TrustHosts::class,
+        // Inert in `local` and under tests; only bites once APP_ENV leaves local,
+        // where an unset APP_URL would reject every request.
+        TrustHosts::class,
         TrustProxies::class,
         HandleCors::class,
         PreventRequestsDuringMaintenance::class,

@@ -166,6 +166,7 @@ Les documents des membres sont délibérément servis par une route contrôlée,
 php artisan about                    # versions, drivers, caches actifs
 php artisan migrate:status | tail    # les dernières migrations sont bien passées
 php artisan queue:monitor default    # profondeur de la file
+php artisan config:show app.url      # TrustHosts rejette tout si APP_URL est faux
 ```
 
 Puis, dans le navigateur :
@@ -222,6 +223,28 @@ MAIL_MAILER=smtp         # un vrai relais, pas mailpit
 ```
 
 Les *feature flags* (bloc en fin de `.env.example`) permettent d'éteindre un domaine jugé immature dans cet environnement. Tout est activé par défaut : ne renseignez une clé que pour **désactiver** un domaine.
+
+---
+
+## Hôtes et proxies de confiance
+
+Deux middlewares globaux dépendent de la topologie réseau du serveur. Ils sont réglés pour l'infrastructure actuelle : **un VPS où Apache sert PHP directement, sans reverse proxy et sans CDN devant le domaine.** Si cela change, les deux sont à revoir.
+
+### `TrustHosts` — actif
+
+Le middleware n'accepte que les requêtes dont l'en-tête `Host` correspond au domaine d'`APP_URL` et à ses sous-domaines. Il ferme l'empoisonnement de cache et des liens de réinitialisation de mot de passe.
+
+⚠️ **`APP_URL` doit être renseigné correctement en production.** S'il est vide ou faux, le middleware rejette *toutes* les requêtes. Il est volontairement inerte en `local` et sous les tests, donc l'erreur ne se voit qu'une fois déployé — c'est le premier point à vérifier après un changement de domaine.
+
+### `TrustProxies` — volontairement vide
+
+`protected $proxies;` reste à `null`. Apache passe le vrai `REMOTE_ADDR` à PHP : `$request->ip()` renvoie déjà l'IP du visiteur, et les limitations par IP (`throttle:10,1` sur le formulaire de contact) comptent bien par visiteur.
+
+**Ne pas y mettre `'*'`** tant que la topologie est celle-ci : ce serait une régression. N'importe qui pourrait envoyer un en-tête `X-Forwarded-For` forgé et contourner toutes les limitations par IP.
+
+À l'inverse, si un reverse proxy, un load balancer ou Cloudflare est un jour placé devant l'application, il **faut** renseigner ses adresses dans `app/Http/Middleware/TrustProxies.php` : sans cela tous les visiteurs partagent l'IP du proxy et un seul suffit à bloquer le formulaire de contact pour tout le club.
+
+Le comportement attendu dans les deux cas est verrouillé par `tests/Feature/Security/TrustedHostsAndProxiesTest.php`.
 
 ---
 

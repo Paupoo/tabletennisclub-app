@@ -233,6 +233,85 @@ describe('CustomEmail rendering', function (): void {
         Mail::assertQueued(CustomEmail::class, fn (CustomEmail $mail) => is_string($mail->render()));
     });
 
+    /*
+     * The rendered mail goes through CssToInlineStyles, which rewrites every tag
+     * it keeps into `<script style="...">`. Asserting on the literal payload
+     * would therefore pass even when the tag survives — these assert on the bare
+     * `<script` opening instead.
+     */
+    it('escapes HTML typed into the body instead of rendering it', function (): void {
+        $contact = Contact::factory()->create();
+        $user = User::factory()->create();
+
+        $this->service->sendCustom($contact, [
+            'subject' => 'Sujet',
+            'body' => 'Bonjour <script>alert(1)</script> et <b>gras</b>',
+        ], $user);
+
+        Mail::assertQueued(CustomEmail::class, function (CustomEmail $mail) {
+            expect($mail->render())
+                ->not->toContain('<script')
+                ->toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
+                ->toContain('&lt;b&gt;gras&lt;/b&gt;');
+
+            return true;
+        });
+    });
+
+    it('escapes HTML the copy sent to the club carries too', function (): void {
+        $contact = Contact::factory()->create();
+        $user = User::factory()->create();
+
+        $this->service->sendCustom($contact, [
+            'subject' => 'Sujet',
+            'body' => '<script>alert(1)</script>',
+        ], $user, sendCopy: true);
+
+        Mail::assertQueued(CustomEmail::class, function (CustomEmail $mail) {
+            expect($mail->render())
+                ->not->toContain('<script')
+                ->toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+
+            return true;
+        });
+    });
+
+    it('escapes contact details a visitor typed into the public form', function (): void {
+        $contact = Contact::factory()->create(['first_name' => '<script>alert(1)</script>']);
+        $user = User::factory()->create();
+
+        $this->service->sendCustom($contact, [
+            'subject' => 'Sujet',
+            'body' => 'Bonjour {{ $contact->first_name }}',
+        ], $user);
+
+        Mail::assertQueued(CustomEmail::class, function (CustomEmail $mail) {
+            expect($mail->render())
+                ->not->toContain('<script')
+                ->toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+
+            return true;
+        });
+    });
+
+    it('still turns line breaks into <br> and bare URLs into links', function (): void {
+        $contact = Contact::factory()->create();
+        $user = User::factory()->create();
+
+        $this->service->sendCustom($contact, [
+            'subject' => 'Sujet',
+            'body' => "Première ligne\nSeconde ligne https://ctt-ottignies.be/inscription",
+        ], $user);
+
+        Mail::assertQueued(CustomEmail::class, function (CustomEmail $mail) {
+            expect($mail->render())
+                ->toContain('<br')
+                ->toContain('href="https://ctt-ottignies.be/inscription"');
+
+            return true;
+        });
+    });
+
     it('renders a database template email', function (): void {
         EmailTemplate::factory()->create([
             'key' => 'welcome',

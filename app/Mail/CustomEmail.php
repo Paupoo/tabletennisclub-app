@@ -95,6 +95,16 @@ class CustomEmail extends Mailable implements ShouldQueue
         // Remplacements plus avancés
         $message = str_replace(array_keys($replacements), array_values($replacements), $message);
 
+        /*
+         * Le corps est rédigé par un administrateur, mais les variables ci-dessus
+         * y injectent des données saisies par un visiteur anonyme du formulaire de
+         * contact. Tout est échappé ici, avant que nl2br() et linkifyUrls()
+         * n'ajoutent le seul HTML légitime du message : les vues affichent ensuite
+         * ce résultat avec {!! !!}, et Illuminate\Mail\Markdown::parse() laisse
+         * passer le HTML brut (html_input reste sur « allow »).
+         */
+        $message = e($message);
+
         // Formatage basique : convertir les sauts de ligne en <br>
         $message = nl2br($message);
 

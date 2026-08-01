@@ -73,6 +73,9 @@ class TrainingPlan extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * @return HasMany<TrainingPlanPack, $this>
+     */
     public function packs(): HasMany
     {
         return $this->hasMany(TrainingPlanPack::class);

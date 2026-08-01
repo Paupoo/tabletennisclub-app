@@ -45,6 +45,10 @@ class Captcha
         $correctResult = match ($operation) {
             '+' => $a + $b,
             '*' => $a * $b,
+            // Unreachable: the in_array() guard above already rejected anything
+            // else. Spelled out so the match cannot throw \UnhandledMatchError
+            // if that guard is ever widened.
+            default => throw new \InvalidArgumentException('Invalid captcha operation'),
         };
 
         return $userResult === $correctResult;

@@ -186,13 +186,13 @@ Route::prefix('admin/club-admin/queue/')
     });
 
 Route::prefix('admin/club-admin/')
-    ->middleware(['auth', 'verified', 'can:update,App\Models\ClubEvents\Interclub\Club'])
+    ->middleware(['auth', 'verified', 'can:update,App\Domains\Competitions\Interclub\Models\Club'])
     ->group(function (): void {
         Route::livewire('club-info', 'pages::club-admin.club-info')->name('admin.club-info');
     });
 
 Route::prefix('admin/club-admin/seasons/')
-    ->middleware(['auth', 'verified', 'can:viewAny,App\Models\ClubEvents\Interclub\Season'])
+    ->middleware(['auth', 'verified', 'can:viewAny,App\Domains\Competitions\Interclub\Models\Season'])
     ->group(function (): void {
         Route::livewire('list', 'pages::club-admin.seasons.index')->name('admin.seasons.index');
     });

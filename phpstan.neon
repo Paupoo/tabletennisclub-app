@@ -1,6 +1,10 @@
 includes:
     - vendor/larastan/larastan/extension.neon
     - vendor/nesbot/carbon/extension.neon
+    # 142 pre-existing errors, frozen on 2026-08-01 so that CI can go red on new
+    # ones. Mostly larastan not resolving dynamic Eloquent properties. Shrink it
+    # by fixing entries, never by regenerating it to absorb a new error.
+    - phpstan-baseline.neon
 
 parameters:
 

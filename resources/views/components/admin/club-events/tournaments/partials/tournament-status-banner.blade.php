@@ -7,13 +7,13 @@
     $contractLocked   = $this->isContractLocked;
     $hasPlayers       = $this->hasRegisteredUsers;
     $currentStatus    = $this->tournamentId
-        ? \App\Models\ClubEvents\Tournament\Tournament::find($this->tournamentId)?->status
+        ? \App\Domains\Competitions\Tournament\Models\Tournament::find($this->tournamentId)?->status
         : null;
 
     // Milestones reached
     $invitationsSent = $this->tournamentId && \Illuminate\Support\Facades\DB::table('tournament_invitations')
         ->where('tournament_id', $this->tournamentId)->exists();
-    $articlePublished = $this->tournamentId && \App\Models\ClubEvents\Tournament\Tournament::find($this->tournamentId)?->news_post_id !== null;
+    $articlePublished = $this->tournamentId && \App\Domains\Competitions\Tournament\Models\Tournament::find($this->tournamentId)?->news_post_id !== null;
 
     // Step states: 'done' | 'active' | 'upcoming'
     $steps = [

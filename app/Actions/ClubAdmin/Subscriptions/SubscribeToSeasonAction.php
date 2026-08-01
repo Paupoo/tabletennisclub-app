@@ -11,6 +11,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class SubscribeToSeasonAction
 {
@@ -28,6 +29,11 @@ class SubscribeToSeasonAction
 
     /**
      * Handle the incoming request.
+     *
+     * The endpoint takes the subscribed member as a request parameter, so being
+     * signed in is not enough: the caller must either be that member, or hold
+     * the subscriptions délégation. `UserPolicy::manageSubscription()` encodes
+     * exactly that rule and is shared with the roster screens.
      */
     public function __invoke(Season $season, Request $request): RedirectResponse
     {
@@ -38,7 +44,9 @@ class SubscribeToSeasonAction
 
         // Set up parameters
         $this->season = $season;
-        $this->user = User::find($validated['user_id']);
+        $this->user = User::findOrFail($validated['user_id']);
+
+        Gate::authorize('manageSubscription', $this->user);
 
         // Make sure we don't subscribe twice for the same season
         if ($this->user->subscriptions()->where('season_id', $this->season->id)->affiliated()->exists()) {

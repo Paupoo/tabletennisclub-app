@@ -10,6 +10,7 @@ use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use App\Support\Markdown;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -142,7 +143,7 @@ new class extends Component
                 ->toArray(),
             'categoryOptions' => $categoryOptions,
             'statusOptions' => $statusOptions,
-            'markdownPreview' => Str::markdown($this->content ?: ''),
+            'markdownPreview' => Markdown::safe($this->content ?: ''),
         ];
     }
 

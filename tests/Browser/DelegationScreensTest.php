@@ -81,7 +81,37 @@ it('keeps the member form usable on a phone', function (): void {
 
     $page = visit(route('admin.users.edit', $member))->resize(375, 812);
 
-    $overflows = $page->script('document.documentElement.scrollWidth > document.documentElement.clientWidth + 1');
+    // « Failed asserting that true is false » n'apprend rien et oblige à rejouer
+    // la page à la main. Le coupable dépend du rendu — un runner CI n'a pas les
+    // polices d'un poste de dev et mesure le texte plus large — donc l'échec doit
+    // nommer les éléments qui dépassent, là où il se produit.
+    $report = $page->script(<<<'JS'
+        (() => {
+            const limit = document.documentElement.clientWidth;
+            const scroll = document.documentElement.scrollWidth;
 
-    expect($overflows)->toBeFalse();
+            if (scroll <= limit + 1) {
+                return '';
+            }
+
+            const guilty = [];
+            document.querySelectorAll('*').forEach((el) => {
+                const box = el.getBoundingClientRect();
+                if (box.right > limit + 1) {
+                    guilty.push(
+                        el.tagName.toLowerCase()
+                        + (el.id ? '#' + el.id : '')
+                        + ' [' + (el.className || '').toString().slice(0, 80) + ']'
+                        + ' width=' + Math.round(box.width)
+                        + ' right=' + Math.round(box.right)
+                    );
+                }
+            });
+
+            return 'scrollWidth=' + scroll + ' clientWidth=' + limit + "\n"
+                + guilty.slice(0, 15).join("\n");
+        })()
+    JS);
+
+    $this->assertSame('', $report, "Le formulaire membre déborde à 375 px :\n" . $report);
 });

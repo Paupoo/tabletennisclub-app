@@ -20,6 +20,7 @@ use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Mail\TournamentResultsMail;
 use App\Support\Breadcrumb;
+use App\Support\Markdown;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -275,7 +276,7 @@ new class extends Component
     #[Computed]
     public function newsPostMarkdownPreview(): string
     {
-        return Str::markdown($this->newsPostContent ?: '');
+        return Markdown::safe($this->newsPostContent ?: '');
     }
 
     // ── Actions: launch match

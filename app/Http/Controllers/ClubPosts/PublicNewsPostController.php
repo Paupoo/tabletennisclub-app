@@ -6,9 +6,9 @@ namespace App\Http\Controllers\ClubPosts;
 
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Http\Controllers\Controller;
+use App\Support\Markdown;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class PublicNewsPostController extends Controller
 {
@@ -33,7 +33,7 @@ class PublicNewsPostController extends Controller
 
         return view('public.articles.show', [
             'article' => $article,
-            'renderedContent' => Str::markdown($article->content ?? ''),
+            'renderedContent' => Markdown::safe($article->content ?? ''),
             'relatedArticles' => $relatedArticles,
         ]);
     }

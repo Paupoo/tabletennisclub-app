@@ -50,7 +50,41 @@ Deux précisions que l'audit n'avait pas relevées et qui comptent pour la suite
 |---|---|
 | 🟠 **Docker** | Toujours inexistant. Aucun Dockerfile ni compose dans le dépôt ; la configuration Synology reste hors versionnement. Estimation inchangée : ~4 h |
 | **Le merge lui-même** | `develop` est à **317 commits d'avance et 0 de retard** sur `main`. Toute la checklist « avant de merger » est satisfaite, la CI est verte |
-| 🟡 Fichiers > 900 lignes | **Aggravé** : `registrations.php` est passé de 1266 à 1780 lignes depuis l'audit, sa blade à 1356. À cadrer comme un chantier, pas comme un quick win |
+| 🟡 Fichiers > 900 lignes | **Classé sans suite** — décision du 1er août 2026, voir ci-dessous |
+
+### Décision : on ne découpe pas les fichiers > 900 lignes
+
+Le chantier a été instruit puis abandonné le 1er août 2026. La raison est simple et vaut d'être écrite plutôt que redécouverte dans six mois : **aucune douleur concrète ne lui est attribuée**. Pas d'incident, pas de régression dont la cause racine soit la taille d'un de ces fichiers, pas de lenteur de suite mesurée. L'audit l'avait d'ailleurs classé 🟡 et chiffré à « plusieurs jours ».
+
+Un refactor de plusieurs jours sans douleur qui le pilote n'a pas de critère d'arrêt et pas de moyen de prouver qu'il a réussi. Il échange un risque nul contre un risque réel, sur du code qui fonctionne et que 3013 tests couvrent.
+
+L'instruction a aussi montré que « les gros fichiers » n'est pas un chantier mais quatre problèmes distincts, ce qui aurait interdit de le mener d'un bloc :
+
+| Fichier | Forme réelle du problème |
+|---|---|
+| `TournamentController.php` (1005 l.) | Ni gros ni complexe : **mort à 90 %**. Voir le point dédié ci-dessous |
+| `registrations.php` (1780 l.), `wizard.php` (1532 l.) | Composants Livewire tentaculaires. Le motif de découpage existe déjà (`app/Livewire/Concerns/`, que `registrations.php` utilise déjà trois fois) |
+| `User.php` (985 l.) | 60 méthodes dont 14 scopes — un modèle trop peuplé, pas trop complexe |
+| `TournamentMatchService.php` (943 l.) | 12 méthodes pour 943 lignes, soit ~78 lignes par méthode. Problème inverse : des méthodes trop longues |
+
+À rouvrir si l'une de ces situations se présente : une régression dont la cause racine est l'état partagé d'un de ces fichiers, ou une fonctionnalité qu'on renonce à écrire parce qu'on n'ose plus toucher au fichier.
+
+### 🟠 `TournamentController` — 31 méthodes publiques sur 35 sont injoignables
+
+Trouvé en instruisant le point précédent, et **sans rapport avec sa taille** : c'est le même code mort que l'audit avait traité pour les quatre contrôleurs `// TODO`, mais ce cinquième cas a survécu parce qu'il n'était pas vide.
+
+Seules 4 méthodes sont routées (`routes/web.php:344-357`), toutes des points d'entrée depuis des liens d'e-mail signés :
+
+- `registerViaEmail` — `tournament.register.email`
+- `leaveWaitlistViaEmail` — `tournament.leave-waitlist.email`
+- `registrationConfirmed` — `tournament.registration.confirmed`
+- `downloadIcal` — `tournament.calendar.ical`
+
+Les 31 autres (`generatePools`, `updateMatch`, `showTables`, `startMatch`…) ont été supplantées par le wizard et le live-center Livewire, et ne sont atteignables par aucune route. **Aucun fichier de test ne mentionne la classe.**
+
+Contrairement au découpage, la suppression se justifie seule : elle retire du code injoignable au lieu de réorganiser du code vivant, et le risque se vérifie mécaniquement — les routes tiennent dans quatre noms. Le préalable est d'écrire les tests des 4 méthodes conservées, qui n'en ont aucun aujourd'hui.
+
+> Non planifié à ce jour.
 
 ---
 
@@ -530,7 +564,7 @@ Le commentaire d'en-tête de `BackofficeRouteAuthorizationTest` documente la fai
 
 ## Dette technique — synthèse
 
-> État au moment de l'audit. Tout est soldé sauf Docker et le découpage des fichiers > 900 lignes — voir le **Suivi** en tête de document.
+> État au moment de l'audit. Tout est soldé sauf Docker ; le découpage des fichiers > 900 lignes a été classé sans suite. Voir le **Suivi** en tête de document.
 
 | Priorité | Élément | Effort |
 |---|---|---|
@@ -592,8 +626,8 @@ Le commentaire d'en-tête de `BackofficeRouteAuthorizationTest` documente la fai
 ### Dans le trimestre
 
 - Dockerfile + compose versionnés (4 h)
-- Migration du squelette vers `Application::configure()` (3-4 h)
-- Découpage de `User.php` et des composants > 900 lignes
+- ~~Migration du squelette vers `Application::configure()` (3-4 h)~~ — fait (PR #72)
+- ~~Découpage de `User.php` et des composants > 900 lignes~~ — classé sans suite, voir le **Suivi**
 
 ---
 

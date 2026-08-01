@@ -9,12 +9,9 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
 use App\Http\Controllers\ClubAdmin\DashboardController;
-use App\Http\Controllers\ClubAdmin\Payment\PaymentController;
-use App\Http\Controllers\ClubAdmin\Subscription\RegistrationController;
 use App\Http\Controllers\ClubAdmin\Users\UserCalendarFeedController;
 use App\Http\Controllers\ClubAdmin\Users\UserDocumentController;
 use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
-use App\Http\Controllers\ClubEvents\Interclub\SeasonController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingRsvpController;
 use App\Http\Controllers\ClubEvents\Tournament\TableScoreController;
@@ -396,13 +393,21 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     // (eventPosts admin routes moved earlier to match newsPosts routing structure)
 });
 
-/**
- * => obsolete, to clean and remove related code
- */
+/*
+|--------------------------------------------------------------------------
+| Season subscription
+|--------------------------------------------------------------------------
+|
+| All that survives of the old "obsolete" block. The three resource routes it
+| carried (seasons, registrations, payments) exposed empty controllers whose
+| views were deleted during the domain refactor — except `seasons.store`,
+| which really created a season for any verified member. Season management now
+| lives entirely in `admin.seasons.index`, which is gated properly.
+|
+| The action authorizes the caller against the member being subscribed.
+|
+*/
 Route::middleware(['auth', 'verified'])->group(function (): void {
-    Route::resource('seasons', SeasonController::class)->names('clubEvents.interclubs.seasons');
-    Route::resource('registrations', RegistrationController::class)->names('clubAdmin.registrations');
-    Route::resource('payments', PaymentController::class)->names('admin.payments');
     Route::post('seasons/{season}/subscribe/', SubscribeToSeasonAction::class)->name('clubEvents.interclubs.seasons.subscribe');
 });
 

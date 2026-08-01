@@ -329,6 +329,10 @@ describe('SubscribeToSeasonAction', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
+        // The action authorizes the caller against the member being subscribed;
+        // here the member subscribes themselves.
+        $this->actingAs($user);
+
         $request = Request::create('/subscribe', 'POST', [
             'user_id' => (string) $user->id,
             'type' => 'competitive',
@@ -349,6 +353,10 @@ describe('SubscribeToSeasonAction', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
+        // The action authorizes the caller against the member being subscribed;
+        // here the member subscribes themselves.
+        $this->actingAs($user);
+
         $request = Request::create('/subscribe', 'POST', [
             'user_id' => (string) $user->id,
             'type' => 'casual',
@@ -366,6 +374,10 @@ describe('SubscribeToSeasonAction', function (): void {
     test('prevents duplicate subscription for the same season', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
+
+        // The action authorizes the caller against the member being subscribed;
+        // here the member subscribes themselves.
+        $this->actingAs($user);
 
         Subscription::factory()->create([
             'user_id' => $user->id,
@@ -390,6 +402,10 @@ describe('SubscribeToSeasonAction', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
+        // The action authorizes the caller against the member being subscribed;
+        // here the member subscribes themselves.
+        $this->actingAs($user);
+
         $request = Request::create('/subscribe', 'POST', [
             'user_id' => (string) $user->id,
             'type' => 'competitive',
@@ -404,6 +420,10 @@ describe('SubscribeToSeasonAction', function (): void {
     test('casual subscription is priced at 60', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
+
+        // The action authorizes the caller against the member being subscribed;
+        // here the member subscribes themselves.
+        $this->actingAs($user);
 
         $request = Request::create('/subscribe', 'POST', [
             'user_id' => (string) $user->id,

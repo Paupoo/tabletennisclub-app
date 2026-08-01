@@ -12,7 +12,7 @@ dataset('simple_methods', [
     ['events',        'Events',         'clubPosts.eventPosts.index',           '/custom-events',        's-home'],
     ['matches',       'Matches',        'admin.interclubs.interclubs',          '/custom-matches',       's-home'],
     ['rooms',         'Rooms',          'admin.rooms.index',                    '/custom-rooms',         null],
-    ['seasons',       'Seasons',        'clubEvents.interclubs.seasons.index',  '/custom-seasons',       'o-calendar'],
+    ['seasons',       'Seasons',        'admin.seasons.index',                  '/custom-seasons',       'o-calendar'],
     ['teams',         'Teams',          'teams.index',                          '/custom-teams',          null],
     ['trainingPacks', 'Training Packs', 'admin.trainings.index',                '/custom-trainings', null],
     ['trainings',     'Trainings',      'trainings.index',                      '/custom-trainings',      null],

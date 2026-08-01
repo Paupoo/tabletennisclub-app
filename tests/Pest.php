@@ -177,19 +177,6 @@ function smokeSkippedRouteNames(): array
 
         // Non-HTML downloads.
         'tournament.calendar.ical' => 'ICS file download, not an HTML page',
-
-        // TODO legacy: obsolete controller GET pages whose Blade views were
-        // removed during the domain refactor (superseded by Livewire pages).
-        // Their write/POST actions are still wired and tested, so the routes
-        // stay; these GET pages are known-broken (500) and excluded until the
-        // obsolete controllers are cleaned up. See routes/web.php "obsolete" block.
-        'clubEvents.interclubs.seasons.index' => 'TODO legacy: missing view, superseded by admin.seasons.index',
-        'clubEvents.interclubs.seasons.create' => 'TODO legacy: missing view',
-        'clubAdmin.registrations.index' => 'TODO legacy: missing view, superseded by admin.users.registrations',
-        'admin.payments.index' => 'TODO legacy: missing view, superseded by admin.treasury.payments',
-        'admin.transactions.add ' => 'TODO legacy: missing view (note: route name has a trailing space)',
-        'admin.transactions.index' => 'TODO legacy: missing view, superseded by admin.treasury.transactions',
-        'admin.transactions.reconcile' => 'TODO legacy: missing view',
     ];
 }
 

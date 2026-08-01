@@ -826,7 +826,7 @@ it('writes the confirmation and the payment invitation to the member it just reg
     // Une inscription au guichet doit laisser au membre la même trace écrite
     // qu'une inscription faite en ligne : sinon il repart sans rien.
     Notification::assertSentTo($member, SubscriptionCreatedNotification::class);
-    Mail::assertSent(
+    Mail::assertQueued(
         PaymentInvitationEmail::class,
         fn (PaymentInvitationEmail $mail): bool => $mail->hasTo('lise.martin@example.com')
             && $mail->payment->is($payment),
@@ -859,7 +859,7 @@ it('reaches a member who has no address of their own through their guardian', fu
         SubscriptionCreatedNotification::class,
         fn (object $notification, array $channels, User $notifiable): bool => $notifiable->routeNotificationFor('mail') === 'marie.dupont@example.com',
     );
-    Mail::assertSent(
+    Mail::assertQueued(
         PaymentInvitationEmail::class,
         fn (PaymentInvitationEmail $mail): bool => $mail->hasTo('marie.dupont@example.com'),
     );

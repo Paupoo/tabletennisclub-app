@@ -1161,6 +1161,17 @@ new class extends Component
         ]);
     }
 
+    /**
+     * Whether the basket describes a family, and therefore needs the guardian
+     * that ties its members together.
+     *
+     * A single member affiliates for himself: nothing to tie, nothing to ask.
+     */
+    public function requiresFamilyGuardian(): bool
+    {
+        return count($this->familyBasket) > 1;
+    }
+
     public function review(int $id): void
     {
         $this->currentRequestId = $id;
@@ -1221,17 +1232,6 @@ new class extends Component
             ->filter(fn ($p) => $p->pivot->status === 'pending')
             ->pluck('id')
             ->toArray() ?? [];
-    }
-
-    /**
-     * Whether the basket describes a family, and therefore needs the guardian
-     * that ties its members together.
-     *
-     * A single member affiliates for himself: nothing to tie, nothing to ask.
-     */
-    public function requiresFamilyGuardian(): bool
-    {
-        return count($this->familyBasket) > 1;
     }
 
     public function saveFamilyRegistration(): void
@@ -1712,16 +1712,6 @@ new class extends Component
      * Le guichet ne s'arrête pas pour autant : sans ça, l'inscription reste en
      * attente et le secrétariat la reprendra depuis la modale de validation.
      */
-    private function resetNewMemberForm(): void
-    {
-        $this->newMemberFirstName = '';
-        $this->newMemberLastName = '';
-        $this->newMemberBirthdate = null;
-        $this->newMemberEmail = null;
-        $this->newMemberGender = '';
-        $this->showNewMemberForm = false;
-    }
-
     private function canBeConfirmedDirectly(User $user): bool
     {
         if (blank($user->licence) || blank($user->ranking) || $user->ranking === Ranking::NA->name) {
@@ -1776,5 +1766,15 @@ new class extends Component
                 'names' => implode(', ', $unreachable),
             ]));
         }
+    }
+
+    private function resetNewMemberForm(): void
+    {
+        $this->newMemberFirstName = '';
+        $this->newMemberLastName = '';
+        $this->newMemberBirthdate = null;
+        $this->newMemberEmail = null;
+        $this->newMemberGender = '';
+        $this->showNewMemberForm = false;
     }
 };

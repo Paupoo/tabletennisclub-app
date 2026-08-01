@@ -67,7 +67,7 @@ it('sends the payment invitation of a managed member to their guardian', functio
 
     // Le bouton annonce « invitation envoyée » ; lue sur `email`, l'adresse est
     // nulle et la lettre part vers personne sans la moindre erreur.
-    Mail::assertSent(
+    Mail::assertQueued(
         PaymentInvitationEmail::class,
         fn (PaymentInvitationEmail $mail): bool => $mail->hasTo('marie.dupont@example.com'),
     );

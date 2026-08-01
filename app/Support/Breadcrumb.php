@@ -6,13 +6,14 @@ namespace App\Support;
 
 use App\Domains\Competitions\Tournament\Models\Tournament;
 
-class Breadcrumb
+final class Breadcrumb
 {
+    /** @var array<int, array{label: string, link: string|null, icon: string|null}> */
     protected array $items = [];
 
     public static function make(): Breadcrumb
     {
-        return new static;
+        return new self;
     }
 
     public function add(string $label, ?string $link = null, ?string $icon = null): Breadcrumb

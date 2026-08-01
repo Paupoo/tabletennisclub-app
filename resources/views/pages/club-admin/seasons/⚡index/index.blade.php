@@ -7,12 +7,12 @@
     <x-header progress-indicator separator :subtitle="__('Past, current and upcoming seasons')"
         :title="__('Seasons')">
         <x-slot:actions>
-            @can('create', \App\Models\ClubEvents\Interclub\Season::class)
+            @can('create', \App\Domains\Competitions\Interclub\Models\Season::class)
             <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
                 <x-menu-item icon="o-sparkles" :title="__('Auto-provision')" wire:click="openProvision" />
             </x-dropdown>
             @endcan
-            @can('create', \App\Models\ClubEvents\Interclub\Season::class)
+            @can('create', \App\Domains\Competitions\Interclub\Models\Season::class)
                 <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New season')"
                     wire:click="openCreate" />
             @endcan

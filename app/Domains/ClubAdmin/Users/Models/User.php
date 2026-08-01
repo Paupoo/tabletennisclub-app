@@ -55,7 +55,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int $id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property string $email
+ * @property string|null $email Null for a managed account: see make_users_email_nullable
  * @property string|null $email_verified_at
  * @property string $password
  * @property string|null $remember_token

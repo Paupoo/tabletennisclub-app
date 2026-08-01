@@ -3,7 +3,7 @@
     'league_categories' => [],
     'league_levels' => [],
     'users' => [],
-    'team' => new \App\Models\ClubEvents\Interclub\Team(),
+    'team' => new \App\Domains\Competitions\Interclub\Models\Team(),
     'team_names' => [],
     'attachedUsers' => [],
 ])

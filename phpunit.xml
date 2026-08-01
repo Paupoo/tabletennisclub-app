@@ -77,16 +77,16 @@
         <env name="BCRYPT_ROUNDS" value="4" force="true" />
     </php>
 
-    <coverage>
-        <report>
-            <!-- Rapport HTML détaillé avec couleurs gradient-->
-            <html outputDirectory="tests/Coverage/html" lowUpperBound="50" highLowerBound="80"/>
+    <!-- Il n'y a volontairement plus de bloc <coverage><report>. Déclarer un
+         rapport le rend obligatoire à chaque exécution : les workers parallèles
+         doivent alors produire un fichier de couverture, et sur une machine sans
+         driver — un runner CI en `coverage: none` — paratest s'arrête sur
+         MissingResultsException alors que les 3101 tests viennent de passer.
 
-            <!-- Rapport texte -->
-            <text outputFile="tests/Coverage/coverage.txt" showUncoveredFiles="false"/>
+         En local l'effet était l'inverse mais aussi coûteux : Xdebug étant
+         présent, chaque `composer test` réécrivait tests/Coverage/html.
 
-            <!-- Optionnel : pour les CI/CD -->
-            <!-- <clover outputFile="tests/Coverage/clover.xml"/> -->
-        </report>
-    </coverage>
+         La couverture reste disponible à la demande, via les options de ligne
+         de commande « coverage » et « coverage-html » de `php artisan test`.
+         Le bloc <source> ci-dessus continue de définir ce qui est mesuré. -->
 </phpunit>

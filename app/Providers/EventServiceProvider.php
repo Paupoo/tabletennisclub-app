@@ -7,10 +7,8 @@ namespace App\Providers;
 use App\Domains\Shared\Events\Interclub\TeamCreated;
 use App\Domains\Shared\Events\Meetings\MeetingCreated;
 use App\Domains\Shared\Events\Subscriptions\SubscriptionCreated;
-use App\Domains\Shared\Events\Subscriptions\SubscriptionPaid;
 use App\Domains\Shared\Events\Tournament\NewTournamentPublished;
 use App\Domains\Shared\Events\Tournament\UserUnregisteredFromTournament;
-use App\Domains\Shared\Events\Trainings\TrainingPackEnrolled;
 use App\Listeners\NotifyParticipantsOfMeeting;
 use App\Listeners\SendSubscriptionConfirmationEmail;
 use App\Listeners\SendTeamCreatedNotification;
@@ -19,17 +17,25 @@ use App\Listeners\Tournament\SendPublishedTournamentNotification;
 use App\Listeners\Tournament\UserUnregisteredToTournamentToTournament;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
-use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
 {
     /**
      * The event to listener mappings for the application.
      *
+     * Declared by hand rather than discovered. Discovery is switched off in
+     * bootstrap/app.php: it scans app/Listeners and would register a second
+     * copy of everything listed here, so a member would get two welcome mails.
+     *
+     * The events that had no listener — SubscriptionPaid, TrainingPackEnrolled —
+     * are gone from this map. An empty array registered nothing; it only made
+     * the list look like it covered more than it did.
+     *
      * @var array<class-string, array<int, class-string>>
      */
-    protected $listen = [
+    private const LISTEN = [
         Registered::class => [
             SendEmailVerificationNotification::class,
             SendWelcomeEmail::class,
@@ -43,17 +49,11 @@ class EventServiceProvider extends ServiceProvider
         SubscriptionCreated::class => [
             SendSubscriptionConfirmationEmail::class,
         ],
-        SubscriptionPaid::class => [
-            // Listener for subscription paid
-        ],
         MeetingCreated::class => [
             NotifyParticipantsOfMeeting::class,
         ],
         TeamCreated::class => [
             SendTeamCreatedNotification::class,
-        ],
-        TrainingPackEnrolled::class => [
-            // Listener for training pack enrollment
         ],
     ];
 
@@ -62,14 +62,10 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
-    }
-
-    /**
-     * Determine if events and listeners should be automatically discovered.
-     */
-    public function shouldDiscoverEvents(): bool
-    {
-        return false;
+        foreach (self::LISTEN as $event => $listeners) {
+            foreach ($listeners as $listener) {
+                Event::listen($event, $listener);
+            }
+        }
     }
 }

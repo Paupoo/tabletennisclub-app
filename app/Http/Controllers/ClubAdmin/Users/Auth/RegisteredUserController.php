@@ -7,7 +7,6 @@ namespace App\Http\Controllers\ClubAdmin\Users\Auth;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Http\Controllers\Controller;
-use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -61,6 +60,6 @@ class RegisteredUserController extends Controller
         // Ensure session is regenerated so authentication persists in tests
         session()->regenerate();
 
-        return redirect(RouteServiceProvider::HOME);
+        return redirect(route('home', absolute: false));
     }
 }

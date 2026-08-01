@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
@@ -27,7 +26,7 @@ test('email can be verified', function (): void {
 
     Event::assertDispatched(Verified::class);
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
-    $response->assertRedirect(RouteServiceProvider::HOME . '?verified=1');
+    $response->assertRedirect(route('home', absolute: false) . '?verified=1');
 });
 test('email is not verified with invalid hash', function (): void {
     $user = User::factory()->create([

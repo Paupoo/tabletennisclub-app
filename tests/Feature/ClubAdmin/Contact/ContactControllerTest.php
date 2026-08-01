@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Mail;
 
@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Mail;
 
 describe('Contact Form Submission', function (): void {
     beforeEach(function (): void {
-        $this->withoutMiddleware(VerifyCsrfToken::class);
+        $this->withoutMiddleware(PreventRequestForgery::class);
         $this->withoutMiddleware(ThrottleRequests::class);
         $this->withSession([
             'captcha' => ['a' => 3, 'b' => 2, 'operation' => '+'],

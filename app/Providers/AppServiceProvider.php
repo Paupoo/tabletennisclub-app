@@ -13,6 +13,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
@@ -50,6 +51,14 @@ class AppServiceProvider extends ServiceProvider
          * mail in the first place.
          */
         RateLimiter::for('invitations', fn (): Limit => Limit::perMinute(15));
+
+        /*
+         * Le limiteur que le groupe `api` référence par son nom (`throttle:api`).
+         * Il vivait dans RouteServiceProvider, que le squelette 13 remplace par
+         * withRouting() — et withRouting ne définit pas de limiteur.
+         */
+        RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(60)
+            ->by($request->user()?->id ?: $request->ip()));
 
         /*
          * The role → permission matrix lives in the Role enum, and the database

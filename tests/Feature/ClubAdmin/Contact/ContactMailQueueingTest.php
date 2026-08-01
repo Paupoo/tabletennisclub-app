@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\Competitions\Interclub\Models\Club;
-use App\Http\Middleware\VerifyCsrfToken;
 use App\Mail\ContactFormConfirmationEmail;
 use App\Mail\ContactFormNotificationEmail;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Mail;
 
@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\Mail;
 */
 
 beforeEach(function (): void {
-    $this->withoutMiddleware(VerifyCsrfToken::class);
+    $this->withoutMiddleware(PreventRequestForgery::class);
     $this->withoutMiddleware(ThrottleRequests::class);
     $this->withSession([
         'captcha' => ['a' => 3, 'b' => 2, 'operation' => '+'],

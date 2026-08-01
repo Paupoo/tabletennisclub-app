@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Http\Kernel;
-use App\Http\Middleware\TrustHosts;
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Http\Middleware\TrustHosts;
 use Illuminate\Http\Request;
 
 /*
@@ -20,7 +20,12 @@ use Illuminate\Http\Request;
 | with no reverse proxy and no CDN in front, so REMOTE_ADDR is already the
 | visitor. Trusting `*` there would let anyone forge X-Forwarded-For and walk
 | past every per-IP throttle. The second block is what would break if a proxy
-| were ever put in front without revisiting this file.
+| were ever put in front without revisiting bootstrap/app.php.
+|
+| Both middleware are now the framework's own, enabled through
+| `$middleware->trustHosts()`. The stack is read from the resolved kernel
+| rather than from a class property, so it keeps checking the thing that
+| actually runs.
 |
 */
 
@@ -31,8 +36,9 @@ afterEach(function (): void {
 describe('trusted hosts', function (): void {
 
     it('is registered in the global middleware stack', function (): void {
-        $middleware = (new ReflectionClass(Kernel::class))
-            ->getDefaultProperties()['middleware'];
+        $kernel = app(Kernel::class);
+
+        $middleware = (new ReflectionProperty($kernel, 'middleware'))->getValue($kernel);
 
         expect($middleware)->toContain(TrustHosts::class);
     });

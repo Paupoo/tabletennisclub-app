@@ -82,9 +82,20 @@ Seules 4 méthodes sont routées (`routes/web.php:344-357`), toutes des points d
 
 Les 31 autres (`generatePools`, `updateMatch`, `showTables`, `startMatch`…) ont été supplantées par le wizard et le live-center Livewire, et ne sont atteignables par aucune route. **Aucun fichier de test ne mentionne la classe.**
 
-Contrairement au découpage, la suppression se justifie seule : elle retire du code injoignable au lieu de réorganiser du code vivant, et le risque se vérifie mécaniquement — les routes tiennent dans quatre noms. Le préalable est d'écrire les tests des 4 méthodes conservées, qui n'en ont aucun aujourd'hui.
+Contrairement au découpage, la suppression se justifie seule : elle retire du code injoignable au lieu de réorganiser du code vivant, et le risque se vérifie mécaniquement — les routes tiennent dans quatre noms.
 
-> Non planifié à ce jour.
+> **Traité le 1er août 2026**, en trois temps : `2a035284` (18 tests sur les 4 méthodes conservées), `93d46d11` (deux défauts ICS trouvés en les écrivant), `6d20576e` (suppression). 1005 lignes → 214, et 4 des 5 services injectés disparaissent avec.
+
+Confirmation apportée par la suppression : trois des méthodes supprimées rendaient des vues — `clubEvents/tournaments/create`, `edit`, `edit-match` — qui **n'existent plus**. Les atteindre aurait levé une 500, comme les quatre contrôleurs `// TODO` de l'audit.
+
+### Deux défauts trouvés en écrivant le filet de tests
+
+Les 4 méthodes conservées sont les points d'entrée de liens signés envoyés par e-mail : elles répondent à des visiteurs non authentifiés. Les couvrir a mis au jour deux violations de la RFC 5545 dans le fichier `.ics` servi aux visiteurs, corrigées dans `93d46d11` :
+
+- `icalEscape()` échappait l'antislash **en dernier**. `str_replace` appliquant chaque paire au résultat de la précédente, cette passe redoublait les antislashs que les règles virgule, point-virgule et saut de ligne venaient d'introduire : un nom contenant une virgule sortait en `\\,`, qu'un agenda lit comme un antislash échappé suivi d'un séparateur de valeurs — le titre était tronqué. La plupart des noms de tournois d'ici contiennent une virgule.
+- `icalFold()` mesurait en octets (`strlen`) mais découpait en caractères (`mb_substr`). Une ligne de 75 caractères accentués atteignait 79 octets, au-delà de la limite de la RFC.
+
+Un troisième point, relevé sans être corrigé : un tournoi payant déclenche une demande de paiement qui lit `Club::ourClub()->first()->bic`. Si la ligne du club manque, la notification lève, le contrôleur rattrape, et **le visiteur est informé que son inscription a échoué alors qu'elle a réussi**. En production la ligne existe toujours ; le cas reste documenté dans le `beforeEach` du fichier de tests.
 
 ---
 

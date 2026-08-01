@@ -112,7 +112,16 @@ describe('search functionality', function (): void {
     });
 
     it('finds compound names with words spanning first and last name', function (): void {
-        $jp = User::factory()->create(['first_name' => 'Jean-Pierre', 'last_name' => 'Van Oudenhove']);
+        // L'adresse est figée : `fake()->city()` en fr_BE tire de vraies communes,
+        // dont Saint-Martin, et la ligne affichée est celle de ce membre-ci. Le
+        // « Martin » attendu absent serait alors venu du résultat cherché, pas de
+        // celui qu'on veut voir écarté — la CI l'a fait tomber une fois.
+        $jp = User::factory()->create([
+            'first_name' => 'Jean-Pierre',
+            'last_name' => 'Van Oudenhove',
+            'street' => 'Rue du Sport 1',
+            'city_name' => 'Ottignies',
+        ]);
         $other = User::factory()->create(['first_name' => 'Alice', 'last_name' => 'Martin']);
 
         Livewire::test(USER_INDEX_COMPONENT)

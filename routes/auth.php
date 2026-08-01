@@ -21,13 +21,18 @@ Route::middleware('guest')->group(function (): void {
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
 
+    // The broker already limits one address to one mail a minute, which does
+    // nothing against a caller walking a list of addresses: the reply differs
+    // for a known and an unknown one, and every hit mails a real member.
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
+        ->middleware('throttle:6,1')
         ->name('password.email');
 
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
         ->name('password.reset');
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
+        ->middleware('throttle:6,1')
         ->name('password.store');
 });
 

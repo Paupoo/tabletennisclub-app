@@ -21,7 +21,10 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    // The application's own origin, not '*'. Only one API route exists today
+    // and it sits behind auth:sanctum with credentials off, so this changes
+    // nothing now — it is the default the next route will inherit.
+    'allowed_origins' => [env('APP_URL', 'http://localhost')],
 
     'allowed_origins_patterns' => [],
 

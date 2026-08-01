@@ -13,6 +13,7 @@ use App\Http\Middleware\EnsureSetupComplete;
 use App\Http\Middleware\EnsureSetupNotComplete;
 use App\Http\Middleware\PreventRequestsDuringMaintenance;
 use App\Http\Middleware\RedirectIfAuthenticated;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\TrimStrings;
 use App\Http\Middleware\TrustHosts;
 use App\Http\Middleware\TrustProxies;
@@ -50,6 +51,7 @@ class Kernel extends HttpKernel
         // where an unset APP_URL would reject every request.
         TrustHosts::class,
         TrustProxies::class,
+        SecurityHeaders::class,
         HandleCors::class,
         PreventRequestsDuringMaintenance::class,
         ValidatePostSize::class,

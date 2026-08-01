@@ -158,7 +158,7 @@ describe('SendPayementInvite', function (): void {
 
         (new SendPayementInvite)($payment);
 
-        Mail::assertSent(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
+        Mail::assertQueued(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
     })->group('payments', 'invite');
 
     test('increments invitation_counter after sending', function (): void {
@@ -293,7 +293,7 @@ describe('SendPaymentReminderJob', function (): void {
 
         (new SendPaymentReminderJob($payment->id))->handle();
 
-        Mail::assertSent(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
+        Mail::assertQueued(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
         expect($payment->fresh()->invitation_counter)->toBe(1);
     })->group('payments', 'reminder');
 
@@ -318,7 +318,7 @@ describe('SendPaymentReminderJob', function (): void {
 
         (new SendPaymentReminderJob($payment->id))->handle();
 
-        Mail::assertSent(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
+        Mail::assertQueued(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
         expect($payment->fresh()->invitation_counter)->toBe(1);
     })->group('payments', 'reminder');
 
@@ -364,7 +364,7 @@ describe('SendPaymentReminderJob', function (): void {
 
         (new SendPaymentReminderJob($payment->id))->handle();
 
-        Mail::assertSent(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
+        Mail::assertQueued(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
         expect($payment->fresh()->invitation_counter)->toBe(1);
     })->group('payments', 'reminder');
 

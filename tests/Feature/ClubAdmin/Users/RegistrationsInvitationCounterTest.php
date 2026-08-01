@@ -40,7 +40,7 @@ it('shows an invitation counter of 1 after sending the first payment email', fun
         ->call('approve')
         ->call('sendPaymentEmail');
 
-    Mail::assertSent(PaymentInvitationEmail::class);
+    Mail::assertQueued(PaymentInvitationEmail::class);
 
     expect($component->get('paymentData')['invitation_counter'])->toBe(1);
 });

@@ -11,6 +11,7 @@ use App\Livewire\Concerns\HasPhotoUpload;
 use App\Livewire\Concerns\ManagesGuardians;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -93,13 +94,23 @@ new class extends Component
         $this->validate([
             'gender' => ['required'],
             'birthdate' => ['required', 'date', 'before:today', 'after:1900-01-01'],
-            'phone_number' => ['required', 'string', 'max:20', new ValidPhone],
+            // The admin form keys this off the guardian being linked; here the
+            // guardian step comes next and cannot be skipped, so the birthdate
+            // just entered is what says whether a guardian will hold the number.
+            // A child rarely has a phone of their own, and demanding one before
+            // the wizard has even asked for the guardian would strand them.
+            'phone_number' => [
+                $this->isMinor ? 'nullable' : 'required',
+                ValidationRule::when(filled($this->phone_number), ['string', 'max:20', new ValidPhone]),
+            ],
         ]);
 
         $this->user->update([
             'gender' => $this->gender,
             'birthdate' => $this->birthdate,
-            'phone_number' => $this->phone_number,
+            // An empty field is an absent number, not an empty one: the scope that
+            // lists incomplete profiles looks for NULL.
+            'phone_number' => filled($this->phone_number) ? $this->phone_number : null,
         ]);
 
         $next = $this->isMinor ? 2 : 3;
@@ -175,8 +186,11 @@ new class extends Component
         $this->showGuardianForm = $this->guardianIds === [];
 
         // Resume where the member left off: already-filled steps stay reachable.
+        // Mirrors the identity step's own rule, guardian exemption included —
+        // otherwise an imported minor, whose number the import filed under their
+        // guardian, would be sent back to step 1 every time they signed in.
         $identityComplete = $this->user->birthdate !== null
-            && filled($this->user->phone_number);
+            && ($this->user->hasGuardian() || filled($this->user->phone_number));
         $addressComplete = filled($this->user->street)
             && filled($this->user->city_code)
             && filled($this->user->city_name);

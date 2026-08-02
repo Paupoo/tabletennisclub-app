@@ -118,29 +118,6 @@ new class extends Component
     }
 
     /**
-     * The lines nobody has to look at: the roster and the listing agree, and the
-     * parser read them without guessing.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    #[Computed]
-    public function linesReadToImport(): array
-    {
-        return array_filter($this->rows, static fn (array $row): bool => ! $row['needsReview']);
-    }
-
-    /**
-     * The lines that ask the reviewer something.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    #[Computed]
-    public function linesToReview(): array
-    {
-        return array_filter($this->rows, static fn (array $row): bool => $row['needsReview']);
-    }
-
-    /**
      * Write the reviewed listing into the roster.
      *
      * Refuses while a line is still undecided rather than falling back on a
@@ -180,6 +157,29 @@ new class extends Component
     public function importRun(): ?MemberImport
     {
         return $this->importId === null ? null : MemberImport::find($this->importId);
+    }
+
+    /**
+     * The lines nobody has to look at: the roster and the listing agree, and the
+     * parser read them without guessing.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    #[Computed]
+    public function linesReadToImport(): array
+    {
+        return array_filter($this->rows, static fn (array $row): bool => ! $row['needsReview']);
+    }
+
+    /**
+     * The lines that ask the reviewer something.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    #[Computed]
+    public function linesToReview(): array
+    {
+        return array_filter($this->rows, static fn (array $row): bool => $row['needsReview']);
     }
 
     public function parse(): void

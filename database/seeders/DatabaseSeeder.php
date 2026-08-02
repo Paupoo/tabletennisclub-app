@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
+use App\Actions\User\RecalculateForceListAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
@@ -23,7 +24,6 @@ use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TableStateEnum;
 use App\Domains\Shared\Models\AppSetting;
-use App\Services\ForceList;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
@@ -33,7 +33,6 @@ use Illuminate\Support\Str;
 class DatabaseSeeder extends Seeder
 {
     public function __construct(
-        private ForceList $forceList,
         private TournamentTableService $tableService,
     ) {}
 
@@ -291,9 +290,6 @@ class DatabaseSeeder extends Seeder
             'ranking' => 'NC',
         ]);
 
-        // Set ForceIndexes
-        $this->forceList->setOrUpdateAll();
-
         Room::create([
             'name' => 'Demeester -1',
             'building_name' => 'Centre Sportif Jean Demeester',
@@ -377,5 +373,9 @@ class DatabaseSeeder extends Seeder
         $this->call(DirectedTrainingDemoSeeder::class);
 
         $this->call(SpamSeeder::class);
+
+        // En dernier : la force list se calcule sur la population définitive,
+        // et InterclubSeeder crée encore des compétiteurs.
+        RecalculateForceListAction::handle();
     }
 }

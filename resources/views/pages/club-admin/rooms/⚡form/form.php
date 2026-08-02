@@ -132,7 +132,7 @@ new class extends Component
                 $query->doesntHave('room')
                     ->orWhere('room_id', $room->id ?? null);
             })
-            ->get()->map(fn($table): array => [
+            ->get()->map(fn ($table): array => [
                 'id' => $table->id,
                 'name' => $table->name,
                 'purchased_on' => $table->purchased_on?->format('d M Y'),
@@ -227,7 +227,7 @@ new class extends Component
     {
         // On met à jour la variable de la vue
         $this->filteredTables = collect($this->allTables)
-            ->filter(fn(array $table): bool => str_contains(strtolower($table['name']), strtolower($value)))
+            ->filter(fn (array $table): bool => str_contains(strtolower($table['name']), strtolower($value)))
             ->take(10)
             ->values()
             ->toArray();

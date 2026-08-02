@@ -35,8 +35,25 @@ jobs:
       - name: Install PHP dependencies
         uses: ramsey/composer-install@v3
 
+      # --parallel --test, never --dirty: --dirty only looks at what changed
+      # since the last commit, so a violation becomes invisible the moment it is
+      # committed. That is exactly how `fn($table)` reached main.
       - name: Check code style
         run: vendor/bin/pint --parallel --test
+
+      # Fails when Rector would rewrite anything, so the tree stays at the level
+      # rector.php declares instead of drifting back one merge at a time.
+      #
+      # --clear-cache is not belt and braces. Rector caches per file and skips
+      # what it has already seen, even in --dry-run: a warm cache once reported
+      # 1 file where the truth was 182. A runner starts cold, so this changes
+      # nothing here and everything for whoever copies the line locally.
+      #
+      # When it goes red: run `composer refactor` and commit the result. Read
+      # the diff first — a rule that costs more than it gives belongs in the
+      # withSkip() list of rector.php, with the reason written next to it.
+      - name: Check refactoring
+        run: composer test:refactor
 
       # phpstan-baseline.neon freezes the 142 errors that predate this pipeline.
       # A new error fails here; shrink the baseline by fixing entries, never by

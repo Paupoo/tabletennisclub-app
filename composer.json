@@ -76,8 +76,14 @@
         "lint": [
             "pint --parallel"
         ],
+        "refactor": [
+            "rector process"
+        ],
         "test:lint": [
             "pint --parallel --test"
+        ],
+        "test:refactor": [
+            "rector process --dry-run --no-progress-bar --clear-cache"
         ],
         "test:types": [
             "phpstan analyse --memory-limit=2G"
@@ -97,6 +103,7 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@test:lint",
+            "@test:refactor",
             "@test:types",
             "@php artisan test --parallel --compact --testsuite=Unit,Feature,Architecture",
             "@php artisan test --compact --testsuite=Browser"

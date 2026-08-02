@@ -46,7 +46,7 @@ it('does not have legacy button component files on disk', function (): void {
         resource_path('views/components/important-button.blade.php'),
     ];
 
-    $existing = array_filter($legacyFiles, fn (string $path): bool => file_exists($path));
+    $existing = array_filter($legacyFiles, file_exists(...));
 
     expect($existing)->toBeEmpty(
         "Legacy button component files still exist:\n" . implode("\n", array_values($existing))

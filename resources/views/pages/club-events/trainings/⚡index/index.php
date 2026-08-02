@@ -436,7 +436,7 @@ new class extends Component
         }
 
         $daysToGenerate = $this->formRecurrenceType === 'specific_days'
-            ? array_map('intval', $this->formSpecificDays)
+            ? array_map(intval(...), $this->formSpecificDays)
             : ($this->formDayOfWeek ? [$this->formDayOfWeek] : []);
 
         if ($daysToGenerate === []) {
@@ -600,7 +600,7 @@ new class extends Component
 
         // Build recurrence data
         if ($this->formRecurrenceType === 'specific_days') {
-            $days = array_values(array_map('intval', $this->formSpecificDays));
+            $days = array_values(array_map(intval(...), $this->formSpecificDays));
             sort($days);
             $dayOfWeek = $days[0];
             $daysOfWeek = $days;
@@ -677,14 +677,14 @@ new class extends Component
         }
 
         $formDays = $this->formRecurrenceType === 'specific_days'
-            ? array_values(array_map('intval', $this->formSpecificDays))
+            ? array_values(array_map(intval(...), $this->formSpecificDays))
             : null;
 
         if ($formDays !== null) {
             sort($formDays);
         }
 
-        $packDays = $pack->days_of_week ? array_map('intval', $pack->days_of_week) : null;
+        $packDays = $pack->days_of_week ? array_map(intval(...), $pack->days_of_week) : null;
 
         if ($packDays !== null) {
             sort($packDays);

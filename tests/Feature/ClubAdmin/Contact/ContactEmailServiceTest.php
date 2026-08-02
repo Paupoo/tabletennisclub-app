@@ -73,11 +73,9 @@ describe('sendCustom()', function (): void {
 
     it('Writes a log after sending', function (): void {
         // Watch out: Log checks must be done before launching the function that initiate them
-        Log::shouldReceive('info')->once()->withArgs(function ($message, array $context): bool {
-            return $context['contact_id'] === $this->contact->id
-                && $context['subject'] === $this->mailData['subject']
-                && $context['admin_user'] === $this->user->id;
-        });
+        Log::shouldReceive('info')->once()->withArgs(fn ($message, array $context): bool => $context['contact_id'] === $this->contact->id
+            && $context['subject'] === $this->mailData['subject']
+            && $context['admin_user'] === $this->user->id);
         $this->service->sendCustom($this->contact, $this->mailData, $this->user, true);
 
     });
@@ -114,12 +112,10 @@ describe('sendTemplate()', function (): void {
 
         $this->service->sendTemplate($contact, 'welcome');
 
-        Mail::assertQueued(CustomEmail::class, function (CustomEmail $mail) use ($contact): bool {
-            return $mail->hasTo($contact->email)
-                && $mail->emailData['subject'] === 'Bienvenue Alice'
-                && str_contains($mail->emailData['message'], 'bienvenue chez Mon Club TT')
-                && str_contains($mail->emailData['message'], ContactReasonEnum::JOIN_US->getLabel());
-        });
+        Mail::assertQueued(CustomEmail::class, fn (CustomEmail $mail): bool => $mail->hasTo($contact->email)
+            && $mail->emailData['subject'] === 'Bienvenue Alice'
+            && str_contains($mail->emailData['message'], 'bienvenue chez Mon Club TT')
+            && str_contains($mail->emailData['message'], ContactReasonEnum::JOIN_US->getLabel()));
     });
 
     it('returns a success message string', function (): void {
@@ -188,9 +184,7 @@ describe('sendTemplate()', function (): void {
     });
 
     it('writes an info log after sending', function (): void {
-        Log::shouldReceive('info')->once()->withArgs(function ($message, array $context): bool {
-            return isset($context['contact_id']) && isset($context['template']);
-        });
+        Log::shouldReceive('info')->once()->withArgs(fn ($message, array $context): bool => isset($context['contact_id']) && isset($context['template']));
 
         EmailTemplate::factory()->create(['key' => 'welcome']);
         $contact = Contact::factory()->create();

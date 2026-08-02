@@ -11,9 +11,9 @@ class GeneratePaymentReference
 {
     public string $reference;
 
-    private string $date;
+    private readonly string $date;
 
-    private Carbon $now;
+    private readonly Carbon $now;
 
     private string $sequence;
 

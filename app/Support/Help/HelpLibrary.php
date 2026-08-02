@@ -17,7 +17,7 @@ final class HelpLibrary
      * That one is 'en', and the app has no English help — falling back to it
      * would resolve to a directory that does not exist.
      */
-    public const FALLBACK_LOCALE = 'fr';
+    public const string FALLBACK_LOCALE = 'fr';
 
     /**
      * @return HelpArticle[] Ordered by front-matter `order`, then title.

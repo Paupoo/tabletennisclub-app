@@ -550,9 +550,7 @@ class TournamentMatchService
             ->flip();
 
         $standings = $players->map(function (User $player) use ($matches, $noShowIds): array {
-            $playerMatches = $matches->filter(function (TournamentMatch $match) use ($player): bool {
-                return $match->player1_id === $player->id || $match->player2_id === $player->id;
-            });
+            $playerMatches = $matches->filter(fn (TournamentMatch $match): bool => $match->player1_id === $player->id || $match->player2_id === $player->id);
 
             $matchesWon = $playerMatches->where('winner_id', $player->id)->count();
 
@@ -597,9 +595,7 @@ class TournamentMatchService
         $matches = TournamentMatch::where('tournament_id', $tournament->id)->get();
 
         $standings = $players->map(function (User $player) use ($matches): array {
-            $playerMatches = $matches->filter(function (TournamentMatch $match) use ($player): bool {
-                return $match->player1_id === $player->id || $match->player2_id === $player->id;
-            });
+            $playerMatches = $matches->filter(fn (TournamentMatch $match): bool => $match->player1_id === $player->id || $match->player2_id === $player->id);
 
             $matchesWon = $playerMatches->where('winner_id', $player->id)->count();
 
@@ -837,9 +833,7 @@ class TournamentMatchService
             ];
         });
 
-        return $standings->sortByDesc(function (array $item): string {
-            return sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']);
-        })->values();
+        return $standings->sortByDesc(fn (array $item): string => sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']))->values();
     }
 
     /**

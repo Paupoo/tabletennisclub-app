@@ -79,6 +79,7 @@ class NewsPost extends Model
         'user_id',
     ];
 
+    #[\Override]
     public function getRouteKeyName(): string
     {
         return 'slug';
@@ -106,6 +107,7 @@ class NewsPost extends Model
         return $this->belongsTo(User::class);
     }
 
+    #[\Override]
     protected static function boot(): void
     {
         parent::boot();

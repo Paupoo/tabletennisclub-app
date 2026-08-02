@@ -15,12 +15,9 @@ use Illuminate\View\View;
 
 class BarOrderController extends Controller
 {
-    private StockService $stockService;
-
-    public function __construct(StockService $stockService)
+    public function __construct(private readonly StockService $stockService)
     {
         $this->middleware('auth');
-        $this->stockService = $stockService;
     }
 
     public function cancelEdit(): RedirectResponse

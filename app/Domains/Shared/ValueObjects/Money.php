@@ -6,7 +6,7 @@ namespace App\Domains\Shared\ValueObjects;
 
 use InvalidArgumentException;
 
-class Money
+class Money implements \Stringable
 {
     private function __construct(private readonly int $cents) {}
 

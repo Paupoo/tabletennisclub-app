@@ -345,6 +345,7 @@ class Meeting extends Model
             ->withTimestamps();
     }
 
+    #[\Override]
     protected static function booted(): void
     {
         // EventPost is polymorphic (no FK cascade) — drop it explicitly on delete.

@@ -32,7 +32,7 @@ it('public and protected methods declare a return type', function (): void {
         if (! class_exists($fqcn)) {
             try {
                 require_once $file->getPathname();
-            } catch (Throwable $e) {
+            } catch (Throwable) {
                 // skip files that cannot be loaded
                 continue;
             }
@@ -44,7 +44,7 @@ it('public and protected methods declare a return type', function (): void {
 
         try {
             $ref = new ReflectionClass($fqcn);
-        } catch (ReflectionException $e) {
+        } catch (ReflectionException) {
             continue;
         }
 

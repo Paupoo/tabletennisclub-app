@@ -366,13 +366,11 @@ class TournamentFinalPhaseService
             }
 
             // Sort by matches won, sets won, and points
-            $sortedCandidates = $repechageCandidates->sortByDesc(function (array $item): string {
-                return sprintf('%06d%06d%06d',
-                    $item['stats']['matches_won'],
-                    $item['stats']['sets_won'],
-                    $item['stats']['total_points']
-                );
-            })->values();
+            $sortedCandidates = $repechageCandidates->sortByDesc(fn (array $item): string => sprintf('%06d%06d%06d',
+                $item['stats']['matches_won'],
+                $item['stats']['sets_won'],
+                $item['stats']['total_points']
+            ))->values();
 
             // Add best remaining players to fill spots
             for ($i = 0; $i < $remainingSpots && $i < count($sortedCandidates); $i++) {
@@ -426,15 +424,11 @@ class TournamentFinalPhaseService
      */
     protected function getRoundPlayerCount(string $round): int
     {
-        switch ($round) {
-            case 'round_16':
-            default:
-                return 16;
-            case 'round_8':
-                return 8;
-            case 'round_4':
-                return 4;
-        }
+        return match ($round) {
+            'round_8' => 8,
+            'round_4' => 4,
+            default => 16,
+        };
     }
 
     /**

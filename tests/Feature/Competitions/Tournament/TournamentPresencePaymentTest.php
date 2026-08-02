@@ -32,7 +32,7 @@ function registeredUserWithPayment(Tournament $tournament): array
         ->first();
 
     $payment = $registration->payment()->create([
-        'reference' => '001/2026/' . rand(10000, 99999),
+        'reference' => '001/2026/' . random_int(10000, 99999),
         'amount_due' => 10,
         'amount_paid' => 0,
         'status' => 'pending',
@@ -139,7 +139,7 @@ describe('SendDebtReminderNotification job', function (): void {
         $tournament = paidTournament();
         [$user, $payment] = registeredUserWithPayment($tournament);
 
-        (new SendDebtReminderNotification($payment->id, $user->id, $tournament->id))->handle();
+        new SendDebtReminderNotification($payment->id, $user->id, $tournament->id)->handle();
 
         Notification::assertSentTo(
             $user,
@@ -154,7 +154,7 @@ describe('SendDebtReminderNotification job', function (): void {
         [$user, $payment] = registeredUserWithPayment($tournament);
         $payment->update(['status' => 'paid']);
 
-        (new SendDebtReminderNotification($payment->id, $user->id, $tournament->id))->handle();
+        new SendDebtReminderNotification($payment->id, $user->id, $tournament->id)->handle();
 
         Notification::assertNothingSent();
     });

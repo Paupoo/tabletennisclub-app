@@ -86,6 +86,6 @@ it('never mutes a selection for a member who kept the default preferences', func
     ]);
     $user = User::factory()->create();
 
-    expect((new InterclubSelectionNotification($interclub, ''))->via($user))
+    expect(new InterclubSelectionNotification($interclub, '')->via($user))
         ->toBe(['mail', 'database']);
 });

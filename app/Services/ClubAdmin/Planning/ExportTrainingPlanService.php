@@ -26,7 +26,7 @@ use PhpOffice\PhpSpreadsheet\Writer\IWriter;
 class ExportTrainingPlanService
 {
     /** Supported export formats mapped to their PhpSpreadsheet writer type. */
-    private const WRITERS = [
+    private const array WRITERS = [
         'csv' => 'Csv',
         'ods' => 'Ods',
         'xlsx' => 'Xlsx',

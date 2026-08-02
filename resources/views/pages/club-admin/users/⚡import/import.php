@@ -135,7 +135,7 @@ new class extends Component
         }
 
         $import = ImportFederationMembersAction::handle(
-            array_map(fn (array $row): ImportLine => $this->importLine($row), array_values($this->rows)),
+            array_map($this->importLine(...), array_values($this->rows)),
             Auth::user(),
             $this->failures,
         );

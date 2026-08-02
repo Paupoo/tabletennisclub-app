@@ -85,7 +85,7 @@ new class extends Component
 
         $ids = $this->selectingAllResults
             ? $this->allMatchingPaymentIds()
-            : array_map('intval', $this->selected);
+            : array_map(intval(...), $this->selected);
 
         $payments = Payment::whereIn('id', $ids)->where('status', 'to_refund')->get();
 
@@ -117,7 +117,7 @@ new class extends Component
 
         $ids = $this->selectingAllResults
             ? $this->allMatchingPaymentIds()
-            : array_map('intval', $this->selected);
+            : array_map(intval(...), $this->selected);
 
         foreach ($ids as $id) {
             SendPaymentReminderJob::dispatch($id);

@@ -39,7 +39,7 @@ function frenchStringsUsedIn(string $root, array $relativePaths): array
 
     $directories = array_values(array_filter(
         array_map(static fn (string $path): string => $root . '/' . $path, $relativePaths),
-        'is_dir',
+        is_dir(...),
     ));
 
     if ($directories === []) {

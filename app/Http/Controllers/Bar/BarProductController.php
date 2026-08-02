@@ -17,12 +17,9 @@ use Illuminate\View\View;
 
 class BarProductController extends Controller
 {
-    private StockService $stockService;
-
-    public function __construct(StockService $stockService)
+    public function __construct(private readonly StockService $stockService)
     {
         $this->middleware('auth');
-        $this->stockService = $stockService;
     }
 
     public function destroy(BarProduct $product): RedirectResponse

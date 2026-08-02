@@ -395,7 +395,7 @@ new class extends Component
                     continue;
                 }
 
-                if (! array_key_exists($pack->id, $spotsLeft)) {
+                if (! array_key_exists((string) $pack->id, $spotsLeft)) {
                     $max = $pack->effectiveMaxParticipants();
 
                     $spotsLeft[$pack->id] = ($pack->is_open_enrollment || $max === 0)

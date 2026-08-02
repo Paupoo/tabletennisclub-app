@@ -76,7 +76,7 @@ it('renders the pedagogical message, amount and reference in the email', functio
 
     $fine = (new IssueFine)($member, $issuer, FineReason::MISCONDUCT, 30, 'This is your educational note.');
 
-    $rendered = (string) (new FineIssuedNotification($fine))->toMail($member)->render();
+    $rendered = (string) new FineIssuedNotification($fine)->toMail($member)->render();
 
     expect($rendered)->toContain('This is your educational note.')
         ->and($rendered)->toContain($fine->payment->reference)

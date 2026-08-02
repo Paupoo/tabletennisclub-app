@@ -156,7 +156,7 @@ new class extends Component
     {
         Gate::authorize(Permission::UsersDelete->value);
 
-        $selfIncluded = in_array((string) Auth::id(), array_map('strval', $this->selected));
+        $selfIncluded = in_array((string) Auth::id(), array_map(strval(...), $this->selected));
 
         User::whereIn('id', $this->selected)
             ->where('id', '!=', Auth::id())

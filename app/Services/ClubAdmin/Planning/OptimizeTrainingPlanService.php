@@ -32,7 +32,7 @@ class OptimizeTrainingPlanService
     /**
      * Ranking series strength (higher = stronger). NC / NA / unknown is the floor.
      */
-    private const SERIES_STRENGTH = [
+    private const array SERIES_STRENGTH = [
         'A' => 5,
         'B' => 4,
         'C' => 3,

@@ -10,7 +10,7 @@ use Symfony\Component\Finder\Finder;
 class GenerateErdCommand extends Command
 {
     /** @var array<string, string> */
-    private const RELATION_ARROWS = [
+    private const array RELATION_ARROWS = [
         'HasMany' => '||--o{',
         'HasOne' => '||--o|',
         'BelongsToMany' => '}o--o{',

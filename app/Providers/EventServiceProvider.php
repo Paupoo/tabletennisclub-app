@@ -35,7 +35,7 @@ class EventServiceProvider extends ServiceProvider
      *
      * @var array<class-string, array<int, class-string>>
      */
-    private const LISTEN = [
+    private const array LISTEN = [
         Registered::class => [
             SendEmailVerificationNotification::class,
             SendWelcomeEmail::class,

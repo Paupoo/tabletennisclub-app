@@ -173,7 +173,7 @@ it('logs a deleted activity for each spam entry when bulk-deleted', function ():
 });
 
 it('never bulk-deletes an audited model via whereIn()->delete(), which bypasses the audit log', function (): void {
-    $shortNames = array_unique(array_map(fn (string $class): string => class_basename($class), auditedModels()));
+    $shortNames = array_unique(array_map(class_basename(...), auditedModels()));
     $violations = [];
 
     foreach ([app_path(), resource_path('views/pages')] as $directory) {
@@ -309,10 +309,8 @@ it('keeps the author filter binding when it is combined with the search', functi
         ->set('causerFilter', (string) $author->id)
         ->assertSee('Alpharoom')
         ->assertDontSee('Omegaroom')
-        ->assertViewHas('activities', function ($activities) use ($author): bool {
-            return $activities->total() > 0
-                && collect($activities->items())->every(fn (Activity $activity): bool => (int) $activity->causer_id === $author->id);
-        });
+        ->assertViewHas('activities', fn ($activities): bool => $activities->total() > 0
+            && collect($activities->items())->every(fn (Activity $activity): bool => (int) $activity->causer_id === $author->id));
 });
 
 it('renders the audit log when a logged activity has an array-cast attribute', function (): void {

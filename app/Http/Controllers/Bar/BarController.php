@@ -39,9 +39,7 @@ class BarController extends Controller
         $cartCount = array_sum($cart);
 
         $products = BarProduct::whereIn('id', array_keys($cart))->get();
-        $totalPrice = $products->sum(function (BarProduct $product) use ($cart): int {
-            return $product->sale_price * ($cart[$product->id] ?? 0);
-        });
+        $totalPrice = $products->sum(fn (BarProduct $product): int => $product->sale_price * ($cart[$product->id] ?? 0));
 
         // Favorites based on paid orders
         $favoriteProductIds = BarOrderItem::query()
@@ -58,12 +56,8 @@ class BarController extends Controller
         $favorites = BarProduct::with('stockMovements')
             ->whereIn('id', $favoriteProductIds)
             ->get()
-            ->filter(function (BarProduct $product): bool {
-                return (bool) $product->is_available && (int) $product->stock > 0;
-            })
-            ->sortBy(function (BarProduct $product) use ($favoriteProductIds): int {
-                return array_search($product->id, $favoriteProductIds);
-            })
+            ->filter(fn (BarProduct $product): bool => (bool) $product->is_available && (int) $product->stock > 0)
+            ->sortBy(fn (BarProduct $product): int => array_search($product->id, $favoriteProductIds))
             ->values();
 
         return view('bar.index', compact('categories', 'cart', 'cartCount', 'totalPrice', 'favorites'));

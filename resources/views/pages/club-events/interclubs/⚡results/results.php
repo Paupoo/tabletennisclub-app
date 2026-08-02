@@ -150,7 +150,7 @@ new class extends Component
         $this->scoreUs = null;
         $this->scoreThem = null;
         if ($mr->score && str_contains($mr->score, '-')) {
-            [$home, $away] = array_map('intval', explode('-', $mr->score, 2));
+            [$home, $away] = array_map(intval(...), explode('-', $mr->score, 2));
             $this->scoreUs = $this->isHome ? $home : $away;
             $this->scoreThem = $this->isHome ? $away : $home;
         }

@@ -9,6 +9,7 @@ use Rector\Config\RectorConfig;
 use Rector\DeadCode\Rector\ClassMethod\RemoveReturnTagIncompatibleWithNativeTypeRector;
 use Rector\DeadCode\Rector\MethodCall\RemoveNullArgOnNullDefaultParamRector;
 use Rector\DeadCode\Rector\MethodCall\RemoveNullNamedArgOnNullDefaultParamRector;
+use Rector\Php85\Rector\Property\AddOverrideAttributeToOverriddenPropertiesRector;
 use Rector\TypeDeclaration\Rector\ArrowFunction\AddArrowFunctionReturnTypeRector;
 use Rector\TypeDeclaration\Rector\ClassMethod\NarrowObjectReturnTypeRector;
 use Rector\TypeDeclaration\Rector\Closure\ClosureReturnTypeRector;
@@ -23,8 +24,12 @@ return RectorConfig::configure()
         __DIR__ . '/routes',
         __DIR__ . '/tests',
     ])
-    // uncomment to reach your current PHP version
-    // ->withPhpSets()
+    /*
+     * Sans argument, la cible est la contrainte de composer.json — PHP 8.5. Le
+     * code écrit avec la syntaxe de 8.5 ne s'exécute plus en 8.4 : c'est assumé,
+     * `"php": "^8.5"` interdit déjà à composer d'installer ailleurs.
+     */
+    ->withPhpSets()
     /*
      * Les règles qui ajoutent un type écrivent le nom complet en dur, y compris
      * quand la classe est déjà importée deux lignes plus haut. Sans ceci, gagner
@@ -103,6 +108,14 @@ return RectorConfig::configure()
          */
         AddArrowFunctionReturnTypeRector::class => [__DIR__ . '/tests'],
         ClosureReturnTypeRector::class => [__DIR__ . '/tests'],
+        /*
+         * `#[\Override]` reste sur les méthodes, où il attrape une méthode parente
+         * renommée ou disparue. Sur les propriétés il poserait l'attribut au-dessus
+         * de chaque $table, $fillable et $casts de nos 54 modèles : la protection
+         * est purement rétroactive — elle ne couvre que ce que Rector a déjà vu
+         * correct — pour un attribut sur trois lignes de chaque modèle.
+         */
+        AddOverrideAttributeToOverriddenPropertiesRector::class,
     ])
     ->withTypeCoverageLevel(73)
     ->withDeadCodeLevel(68)

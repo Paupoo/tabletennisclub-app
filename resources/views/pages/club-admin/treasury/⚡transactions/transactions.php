@@ -54,7 +54,7 @@ new class extends Component
     {
         Gate::authorize(Permission::TransactionsDelete->value);
 
-        $ids = array_map('intval', $this->selected);
+        $ids = array_map(intval(...), $this->selected);
 
         if ($this->selectingAllResults) {
             $ids = $this->allMatchingTransactionIds();
@@ -121,7 +121,7 @@ new class extends Component
 
     public function openConfirmDeleteModal(): void
     {
-        $ids = array_map('intval', $this->selected);
+        $ids = array_map(intval(...), $this->selected);
 
         $this->reconciledInSelection = Transaction::whereIn('id', $ids)->has('payment')->count();
         $this->confirmDeleteModal = true;

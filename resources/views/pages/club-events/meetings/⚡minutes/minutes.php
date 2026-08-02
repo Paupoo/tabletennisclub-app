@@ -307,8 +307,8 @@ new class extends Component
 
         $meeting = $this->meeting;
         $minutes = $meeting->minutes ?? new MeetingMinutes(['meeting_id' => $this->meetingId]);
-        $minutes->announcements = array_values(array_filter($this->announcements, fn ($v): bool => filled($v)));
-        $minutes->decisions = array_values(array_filter($this->decisions, fn ($v): bool => filled($v)));
+        $minutes->announcements = array_values(array_filter($this->announcements, filled(...)));
+        $minutes->decisions = array_values(array_filter($this->decisions, filled(...)));
         $minutes->notes = filled($this->notes) ? $this->notes : null;
         $minutes->save();
 

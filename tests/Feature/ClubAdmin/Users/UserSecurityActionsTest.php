@@ -98,7 +98,7 @@ describe('self-service erasure request', function (): void {
     it('renders the erasure mail with the member name', function (): void {
         $member = User::factory()->create(['first_name' => 'Jean', 'last_name' => 'Dupont']);
 
-        $mail = (new GdprErasureRequestedNotification($member))->toMail($this->admin);
+        $mail = new GdprErasureRequestedNotification($member)->toMail($this->admin);
 
         expect((string) $mail->render())->toContain('Jean Dupont');
     });
@@ -116,7 +116,7 @@ describe('self-service erasure request', function (): void {
         $member = User::factory()->create();
         Subscription::factory()->create(['user_id' => $member->id, 'status' => 'pending']);
 
-        $mail = (new GdprErasureRequestedNotification($member->fresh()))->toMail($this->admin);
+        $mail = new GdprErasureRequestedNotification($member->fresh())->toMail($this->admin);
 
         expect((string) $mail->render())->toContain('⚠️');
     });

@@ -27,7 +27,7 @@ class FederationListingParser
      *
      * @var array<string, string>
      */
-    private const COLUMNS = [
+    private const array COLUMNS = [
         'licence' => 'licence',
         'nom' => 'name',
         'date naissance' => 'birthdate',

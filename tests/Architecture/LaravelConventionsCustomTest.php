@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace tests\Architecture;
 
+use Illuminate\Console\Command;
+use Illuminate\Contracts\Container\ContextualAttribute;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Mail\Mailable;
+use Illuminate\Notifications\Notification;
+use Illuminate\Support\ServiceProvider;
 use Throwable;
 
 arch()
@@ -54,7 +61,7 @@ arch()
 
 arch()
     ->expect('App')
-    ->not->toExtend('Illuminate\Database\Eloquent\Model')
+    ->not->toExtend(Model::class)
     ->ignoring('App\Domains');
 
 arch()
@@ -64,7 +71,7 @@ arch()
 
 arch()
     ->expect('App\Http\Requests')
-    ->toExtend('Illuminate\Foundation\Http\FormRequest');
+    ->toExtend(FormRequest::class);
 
 arch()
     ->expect('App\Http\Requests')
@@ -72,7 +79,7 @@ arch()
 
 arch()
     ->expect('App')
-    ->not->toExtend('Illuminate\Foundation\Http\FormRequest')
+    ->not->toExtend(FormRequest::class)
     ->ignoring('App\Http\Requests');
 
 arch()
@@ -83,7 +90,7 @@ arch()
 arch()
     ->expect('App\Console\Commands')
     ->classes()
-    ->toExtend('Illuminate\Console\Command');
+    ->toExtend(Command::class);
 
 arch()
     ->expect('App\Console\Commands')
@@ -92,17 +99,17 @@ arch()
 
 arch()
     ->expect('App')
-    ->not->toExtend('Illuminate\Console\Command')
+    ->not->toExtend(Command::class)
     ->ignoring('App\Console\Commands');
 
 arch()
     ->expect('App\Mail')
     ->classes()
-    ->toExtend('Illuminate\Mail\Mailable');
+    ->toExtend(Mailable::class);
 
 arch()
     ->expect('App')
-    ->not->toExtend('Illuminate\Mail\Mailable')
+    ->not->toExtend(Mailable::class)
     ->ignoring('App\Mail');
 
 // TODO : Implement this contract in Mails
@@ -122,7 +129,7 @@ arch()
 
 arch()
     ->expect('App')
-    ->not->toExtend('Illuminate\Notifications\Notification')
+    ->not->toExtend(Notification::class)
     ->ignoring('App\Domains');
 
 arch()
@@ -131,11 +138,11 @@ arch()
 
 arch()
     ->expect('App\Providers')
-    ->toExtend('Illuminate\Support\ServiceProvider');
+    ->toExtend(ServiceProvider::class);
 
 arch()
     ->expect('App')
-    ->not->toExtend('Illuminate\Support\ServiceProvider')
+    ->not->toExtend(ServiceProvider::class)
     ->ignoring('App\Providers');
 
 arch()
@@ -176,6 +183,6 @@ arch()
 arch()
     ->expect('App\Attributes')
     ->classes()
-    ->toImplement('Illuminate\Contracts\Container\ContextualAttribute')
+    ->toImplement(ContextualAttribute::class)
     ->toHaveAttribute('Attribute')
     ->toHaveMethod('resolve');

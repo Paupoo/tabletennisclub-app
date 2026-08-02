@@ -417,7 +417,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function forceListFor(LeagueCategory|string|null $category): ?int
     {
-        return match ($this->resolveCategory($category)) {
+        return match (self::resolveCategory($category)) {
             LeagueCategory::WOMEN => $this->force_list_women,
             LeagueCategory::VETERANS => $this->force_list_veterans,
             default => $this->force_list,

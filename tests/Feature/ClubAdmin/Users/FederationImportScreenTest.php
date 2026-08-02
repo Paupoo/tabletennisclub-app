@@ -330,3 +330,81 @@ describe('the children listed under an adult address', function (): void {
             ->and($member->guardians()->count())->toBe(0);
     });
 });
+
+/*
+ * The federation lists one mailbox per household, so a child arrives carrying
+ * their parent's. When that parent is already on the roster — the ordinary case,
+ * since they play too — the address used to hand the child their parent's file:
+ * the parent was proposed for update, the child was never created, and the
+ * parent's licence was overwritten with their child's.
+ */
+describe('importing a child whose guardian is already a member', function (): void {
+
+    it('creates the child instead of proposing their parent for update', function (): void {
+        $marie = User::factory()->create([
+            'licence' => '111111',
+            'ranking' => 'D4',
+            'email' => 'famille.lambert@example.com',
+            'first_name' => 'Marie',
+            'last_name' => 'Lambert',
+            'birthdate' => '1982-09-14',
+        ]);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '111111;LAMBERT MARIE;1982-09-14;D4;D4;N;N;SE;LR;2021-09-01;famille.lambert@example.com;;0475987654;RUE DU TEST;15;1348;LOUVAIN-LA-NEUVE',
+                '166044;DUPONT LOUIS;2016-03-04;D6;;N;N;SE;JO;2024-09-01;famille.lambert@example.com;;0475987654;RUE DU TEST;15;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSet('rows.3.outcome', 'new')
+            ->assertSet('rows.3.action', 'create')
+            ->call('import');
+
+        $louis = User::query()->where('licence', '166044')->first();
+
+        expect($louis)->not->toBeNull()
+            ->and($louis->first_name)->toBe('Louis')
+            ->and($louis->last_name)->toBe('Dupont')
+            // The address is her login and stays hers; he is reached through her.
+            ->and($louis->email)->toBeNull()
+            ->and($louis->guardians()->first()?->user_id)->toBe($marie->id)
+            ->and($louis->contactEmail())->toBe('famille.lambert@example.com');
+
+        // The other half of the bug: his line used to be written onto her file.
+        expect($marie->fresh()->licence)->toBe('111111')
+            ->and($marie->fresh()->ranking)->toBe('D4')
+            ->and($marie->fresh()->first_name)->toBe('Marie');
+    });
+
+    /*
+     * The same address, on a parent who is not in this listing at all — they let
+     * their affiliation lapse, or never played. Nothing names them as a guardian
+     * here, so the child arrives without one and is linked by hand; what matters
+     * is that he arrives.
+     */
+    it('creates the child even when the parent is absent from the listing', function (): void {
+        $marie = User::factory()->create([
+            'licence' => '111111',
+            'email' => 'famille.lambert@example.com',
+            'first_name' => 'Marie',
+            'last_name' => 'Lambert',
+            'birthdate' => '1982-09-14',
+        ]);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166045;DUPONT LOUIS;2016-03-04;D6;;N;N;SE;JO;2024-09-01;famille.lambert@example.com;;0475987654;RUE DU TEST;15;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSet('rows.2.action', 'create')
+            ->call('import');
+
+        $louis = User::query()->where('licence', '166045')->first();
+
+        expect($louis)->not->toBeNull()
+            // `unlessTaken()` refuses him an address another member already holds.
+            ->and($louis->email)->toBeNull();
+
+        expect($marie->fresh()->licence)->toBe('111111');
+    });
+});

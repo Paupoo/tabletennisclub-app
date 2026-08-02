@@ -122,7 +122,7 @@ new class extends Component
 
     public string $password_confirmation = '';
 
-    #[Rule(['required', 'string', 'max:20', new ValidPhone])]
+    #[Validate()]
     public string $phone_number = '';
 
     public ?string $ranking = null;
@@ -265,6 +265,7 @@ new class extends Component
             // secretary encoding a child with no idea that linking a guardian is
             // what lifts the requirement.
             'email.required' => __('Enter an address, or link a guardian: a member without an address is reached through their guardian.'),
+            'phone_number.required' => __('Enter a number, or link a guardian: a member without a number is reached through their guardian.'),
         ];
     }
 
@@ -359,6 +360,19 @@ new class extends Component
                 'digits:6',
                 ValidationRule::unique('users', 'licence')->ignore($this->user?->id),
             ],
+            // Same reasoning as the email address, and the same trigger: the club
+            // reaches a member through their guardian or directly, never neither.
+            // The guardian form makes their phone number mandatory, so lifting the
+            // requirement here never leaves the member unreachable.
+            //
+            // Unlike the email address the property is a plain string, so a field
+            // left alone arrives as '' rather than null. `nullable` would let it
+            // through and ValidPhone would still reject it, so the format rules
+            // only apply once something has actually been typed.
+            'phone_number' => [
+                $this->guardianIds === [] ? 'required' : 'nullable',
+                ValidationRule::when(filled($this->phone_number), ['string', 'max:20', new ValidPhone]),
+            ],
             // Si l'utilisateur existe, on autorise 'nullable', sinon 'required'.
             // Un compte sans adresse n'a pas de login non plus : exiger un mot de
             // passe pour une fiche à laquelle personne ne se connectera bloquerait
@@ -449,6 +463,11 @@ new class extends Component
         $actor = Auth::user();
         $licence = $this->licence;
         $ranking = $this->ranking;
+        // A member reached through their guardian leaves the field alone, and the
+        // property is a plain string, so what arrives is ''. The scope listing
+        // incomplete profiles looks for NULL, and an empty string would hide them
+        // from the very list meant to surface them.
+        $phoneNumber = $this->phone_number !== '' ? $this->phone_number : null;
         $committeeRole = ($this->is_committee_member && $this->committee_role !== null && $this->committee_role !== '')
             ? CommitteeRolesEnum::from($this->committee_role)
             : null;
@@ -463,7 +482,7 @@ new class extends Component
                     last_name: $this->last_name,
                     email: $this->email,
                     gender: $this->gender,
-                    phone_number: $this->phone_number,
+                    phone_number: $phoneNumber,
                     street: $this->street,
                     city_code: $this->city_code,
                     city_name: $this->city_name,
@@ -498,7 +517,7 @@ new class extends Component
                     last_name: $this->last_name,
                     email: $this->email,
                     gender: $this->gender,
-                    phone_number: $this->phone_number,
+                    phone_number: $phoneNumber,
                     street: $this->street,
                     city_code: $this->city_code,
                     city_name: $this->city_name,

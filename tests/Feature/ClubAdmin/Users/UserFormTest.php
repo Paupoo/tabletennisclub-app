@@ -343,3 +343,65 @@ describe('email — a member reached through their guardian has none of their ow
         expect(DB::table('password_reset_tokens')->where('email', 'louis.dupont@example.com')->exists())->toBeTrue();
     });
 });
+
+describe('phone number — a member reached through their guardian has none of their own', function (): void {
+    /** Every field the form insists on, minus the phone number and the password. */
+    $identity = static fn (): array => [
+        'first_name' => 'Louis',
+        'last_name' => 'Dupont',
+        'gender' => 'MEN',
+        'email' => 'louis.dupont@example.com',
+        'street' => 'Du Bauloy',
+        'city_code' => '1348',
+        'city_name' => 'Ottignies',
+    ];
+
+    it('creates a minor without a phone number when a guardian is linked', function () use ($identity): void {
+        $guardian = Guardian::factory()->create();
+
+        Livewire::test(USER_FORM_COMPONENT)
+            ->set($identity())
+            ->set('birthdate', now()->subYears(10)->format('Y-m-d'))
+            ->set('phone_number', '')
+            ->set('guardianIds', [$guardian->id])
+            ->set('password', 'Str0ng-Passw0rd!')
+            ->set('password_confirmation', 'Str0ng-Passw0rd!')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect(User::where('last_name', 'Dupont')->sole()->phone_number)->toBeNull();
+    });
+
+    it('refuses a member with neither a phone number nor a guardian', function () use ($identity): void {
+        Livewire::test(USER_FORM_COMPONENT)
+            ->set($identity())
+            ->set('phone_number', '')
+            ->call('save')
+            ->assertHasErrors(['phone_number' => 'required']);
+
+        expect(User::where('last_name', 'Dupont')->exists())->toBeFalse();
+    });
+
+    it('still checks the format of a number typed for a member who has a guardian', function () use ($identity): void {
+        $guardian = Guardian::factory()->create();
+
+        Livewire::test(USER_FORM_COMPONENT)
+            ->set($identity())
+            ->set('phone_number', '04 70')
+            ->set('guardianIds', [$guardian->id])
+            ->call('save')
+            ->assertHasErrors('phone_number');
+    });
+
+    it('re-saves a member imported without a phone number, without inventing one', function (): void {
+        $imported = User::factory()->create(['phone_number' => null]);
+        $imported->guardians()->attach(Guardian::factory()->create());
+
+        Livewire::test(USER_FORM_COMPONENT, ['user' => $imported])
+            ->set('password', '')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect($imported->fresh()->phone_number)->toBeNull();
+    });
+});

@@ -36,7 +36,8 @@
                     <x-input autocomplete="city_code" inputmode="numeric" :label="__('Postal Code')" max="9999"
                         min="1000" pattern="[0-9]*" type="number" wire:model.live.debounce.500ms="city_code" />
                     <x-input :label="__('City')" wire:model="city_name" />
-                    <x-input :label="__('Phone Number')" wire:model="phone_number" />
+                    <x-input :hint="__('Leave empty if the member is reached through their guardian')"
+                        :label="__('Phone Number')" wire:model="phone_number" />
                     <x-input :label="__('Birthdate')" type="date" wire:model.live="birthdate" />
                     <x-input :label="__('IBAN')" wire:model="iban"
                         placeholder="BE00 0000 0000 0000"

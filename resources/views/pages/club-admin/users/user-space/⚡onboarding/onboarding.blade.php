@@ -53,8 +53,9 @@
                 <x-group :options="$genders" class="btn-soft" inline :label="__('Gender')"
                     wire:model="gender" />
                 <x-input :label="__('Birthdate')" type="date" wire:model.live="birthdate" required />
-                <x-input :label="__('Phone Number')" wire:model="phone_number"
-                    placeholder="0470 00 00 00" required />
+                <x-input :hint="$this->isMinor ? __('Optional — the next step asks for the guardian\'s number') : null"
+                    :label="__('Phone Number')" placeholder="0470 00 00 00"
+                    :required="! $this->isMinor" wire:model="phone_number" />
             </div>
 
             <div class="flex justify-end mt-6">

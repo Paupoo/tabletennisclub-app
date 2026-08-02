@@ -514,11 +514,16 @@ class User extends Authenticatable implements MustVerifyEmail
      * (invited users get a default the wizard asks them to confirm), so it
      * cannot signal incompleteness. Incomplete profiles are redirected to
      * the onboarding wizard by the profile.complete middleware.
+     *
+     * The phone number follows the email address: a member reached through a
+     * guardian holds neither, and the guardian carries both. Requiring it here
+     * would park every such member in the onboarding wizard for good, asking
+     * for a number that is on file — under the guardian.
      */
     public function hasCompleteProfile(): bool
     {
         return $this->birthdate !== null
-            && filled($this->phone_number)
+            && (filled($this->phone_number) || $this->hasGuardian())
             && filled($this->street)
             && filled($this->city_code)
             && filled($this->city_name)
@@ -833,10 +838,18 @@ class User extends Authenticatable implements MustVerifyEmail
         return $query->whereNotNull('birthdate')->where('birthdate', '<=', $cutoff->toDateString());
     }
 
-    public function scopeWithIncompleteProfile(Builder $query): Builder
+    /**
+     * SQL counterpart of {@see self::hasCompleteProfile()}, including the
+     * exemption a guardian grants on the phone number. The two are one rule
+     * expressed twice and are tested against each other.
+     */
+    public function scopeWithIncompleteProfile(EloquentBuilder $query): EloquentBuilder
     {
-        return $query->where(fn (Builder $q) => $q
-            ->whereNull('phone_number')
+        return $query->where(fn (EloquentBuilder $q) => $q
+            ->where(fn (EloquentBuilder $missingPhone) => $missingPhone
+                ->whereNull('phone_number')
+                ->whereDoesntHave('guardians')
+            )
             ->orWhereNull('street')
             ->orWhereNull('city_code')
             ->orWhereNull('city_name')

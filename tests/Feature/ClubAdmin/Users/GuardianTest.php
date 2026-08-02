@@ -126,3 +126,48 @@ test('a contact-complete minor with a guardian has a complete profile', function
 
     expect($minor->hasCompleteProfile())->toBeTrue();
 });
+
+test('a minor whose guardian holds the phone number has a complete profile', function (): void {
+    $minor = User::factory()->minor()->create([
+        'phone_number' => null,
+        'street' => 'Rue de la Paix 1',
+        'city_code' => '1340',
+        'city_name' => 'Ottignies',
+    ]);
+    $minor->guardians()->attach(Guardian::factory()->create());
+
+    expect($minor->hasCompleteProfile())->toBeTrue();
+});
+
+test('a member without a phone number and without a guardian has an incomplete profile', function (): void {
+    $adult = User::factory()->create([
+        'phone_number' => null,
+        'street' => 'Rue de la Paix 1',
+        'city_code' => '1340',
+        'city_name' => 'Ottignies',
+    ]);
+
+    expect($adult->hasCompleteProfile())->toBeFalse();
+});
+
+test('the incomplete profile scope agrees with hasCompleteProfile on the guardian exemption', function (): void {
+    $withGuardian = User::factory()->minor()->create([
+        'phone_number' => null,
+        'street' => 'Rue de la Paix 1',
+        'city_code' => '1340',
+        'city_name' => 'Ottignies',
+    ]);
+    $withGuardian->guardians()->attach(Guardian::factory()->create());
+
+    $withoutGuardian = User::factory()->create([
+        'phone_number' => null,
+        'street' => 'Rue de la Paix 1',
+        'city_code' => '1340',
+        'city_name' => 'Ottignies',
+    ]);
+
+    $flagged = User::withIncompleteProfile()->pluck('id');
+
+    expect($flagged)->not->toContain($withGuardian->id)
+        ->and($flagged)->toContain($withoutGuardian->id);
+});

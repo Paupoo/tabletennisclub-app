@@ -46,7 +46,7 @@ Concrètement : `email` devient `?string` dans le formulaire d'admin et dans `Up
 | Backend | 17/20 | Code très commenté, actions transactionnelles, pas de N+1 introduit |
 | Frontend | 14/20 | Surface minuscule mais bundle non découpé (814 Ko) |
 | Docker | 0/10 | Toujours inexistant |
-| CI/CD | 8/10 | 4 jobs, miroir de `composer test` ; ni Rector ni Peck, ni déploiement |
+| CI/CD | 8/10 | 4 jobs, miroir de `composer test` ; ni Rector ni Peck, ni déploiement *(Rector branché depuis, Peck désinstallé)* |
 | Tests | 17/20 | 3 255 verts, mais 4 skips masquent une garde d'escalade de privilèges |
 | Documentation | 10/10 | 30 documents, manuels par rôle, audit précédent tenu à jour |
 
@@ -278,7 +278,7 @@ Manques :
 
 | Gravité | Constat |
 |---|---|
-| 🟡 | **Rector et Peck sont installés et jamais exécutés** — ni dans `composer test`, ni en CI. Deux dépendances de développement qui ne rendent rien *(traité depuis, hors périmètre de cet audit — voir `52114b45..700fd1de`)* |
+| ✅ | **Rector et Peck sont installés et jamais exécutés** — ni dans `composer test`, ni en CI. Deux dépendances de développement qui ne rendent rien. *Traité depuis, hors périmètre de cet audit : Rector est passé aux niveaux maximum (`52114b45..700fd1de`) puis rendu bloquant en CI (`fcb267a6`) ; Peck a été désinstallé* |
 | 🟡 | **Aucun déploiement ni rollback automatisés.** SSH manuel. Comme le rollback de base est un dump manuel, une release ratée signifie une intervention à la main sous pression |
 | 🟢 | Pas de garde-fou de couverture — assumé, le bloc `<coverage>` a été retiré pour des raisons documentées dans `phpunit.xml` |
 
@@ -317,7 +317,7 @@ Inchangée depuis l'audit du 1er août, aucune ajoutée de façon notable :
 2. **S2** — inclure les noms dans les clés du `firstOrCreate` du tuteur externe · *15 min*
 3. **B3** — confirmation avant de vider l'adresse d'un membre qui en avait une · *20 min*
 4. **B4** — `max:2048` sur `importFile` · *2 min*
-5. Ajouter `rector --dry-run` et `peck` à `test:lint` · *10 min*
+5. ~~Ajouter `rector --dry-run` et `peck` à `test:lint`~~ · **fait** — Rector est bloquant en CI et dans `composer test` (`fcb267a6`) ; Peck a été désinstallé, il ne servait pas
 6. `cropperjs` 1.6.2 → 2.x et `guzzle` 7 → 8 sont disponibles ; **rien de vulnérable**, à faire hors merge
 
 ---

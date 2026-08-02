@@ -159,6 +159,29 @@ new class extends Component
         return $this->importId === null ? null : MemberImport::find($this->importId);
     }
 
+    /**
+     * The lines nobody has to look at: the roster and the listing agree, and the
+     * parser read them without guessing.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    #[Computed]
+    public function linesReadToImport(): array
+    {
+        return array_filter($this->rows, static fn (array $row): bool => ! $row['needsReview']);
+    }
+
+    /**
+     * The lines that ask the reviewer something.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    #[Computed]
+    public function linesToReview(): array
+    {
+        return array_filter($this->rows, static fn (array $row): bool => $row['needsReview']);
+    }
+
     public function parse(): void
     {
         Gate::authorize(Permission::UsersImport->value);
@@ -344,6 +367,13 @@ new class extends Component
             'cityName' => $row->cityName,
             'needsNameReview' => $row->needsNameReview,
             'needsAddressReview' => $row->needsAddressReview,
+            // Settled once, when the file is read, and never recomputed: a line that
+            // moved to the other section the moment it was answered would shift the
+            // grid under the pointer and hand the next click to the wrong affiliate.
+            'needsReview' => $this->proposedAction($match->outcome) === ''
+                || $row->needsNameReview
+                || $row->needsAddressReview
+                || $minor,
             'outcome' => $match->outcome->value,
             'existingUserId' => $match->existing?->id,
             'existingLabel' => $match->existing?->full_name,

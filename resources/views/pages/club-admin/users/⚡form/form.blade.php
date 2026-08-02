@@ -28,7 +28,8 @@
                 <div class="grid gap-6 lg:grid-cols-2">
                     <x-input :label="__('First Name')" wire:model="first_name" />
                     <x-input :label="__('Last Name')" wire:model="last_name" />
-                    <x-input :label="__('Email')" wire:model="email" />
+                    <x-input :hint="__('Leave empty if the member is reached through their guardian')"
+                        :label="__('Email')" wire:model="email" />
                     <x-group :options="$genders" class="btn-soft" inline :label="__('Gender')"
                         wire:model="gender" />
                     <x-input :label="__('Street')" wire:model="street" />

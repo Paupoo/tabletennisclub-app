@@ -98,6 +98,138 @@ describe('reviewing a federation listing before importing it', function (): void
     });
 
     /*
+     * A listing of two hundred lines where every one of them shouts as loudly as
+     * the next is a listing nobody reads. The handful that ask something are held
+     * apart from the ones that only have to be known about.
+     */
+    it('holds apart the affiliates that ask something from the ones that do not', function (): void {
+        User::factory()->create(['licence' => '166036', 'first_name' => 'Marc', 'last_name' => 'Dupont']);
+
+        $component = Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
+                '166037;DE CLERCQ ANNE;1985-03-02;D4;D4;N;N;SE;LR;2021-09-01;anne@example.com;;0475987654;RUE DU TEST;15;1348;LOUVAIN-LA-NEUVE',
+                '166038;PETIT LEA;2014-05-08;NC;;N;N;PU;JO;2023-09-01;papa@example.com;;0475111222;RUE DU TEST;17;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSee(__('Needs your attention'))
+            ->assertSee(__('Nothing to report'))
+            // The roster answered, the parser did not guess: nothing to look at.
+            ->assertSet('rows.2.needsReview', false)
+            // Past two words the split of the name is a guess.
+            ->assertSet('rows.3.needsReview', true)
+            // A child's address is usually a parent's, and the file rarely proves it.
+            ->assertSet('rows.4.needsReview', true);
+
+        expect(array_keys($component->instance()->linesToReview))->toBe([3, 4])
+            ->and(array_keys($component->instance()->linesReadToImport))->toBe([2]);
+    });
+
+    /*
+     * The two sections are settled when the file is read and never recomputed. A
+     * line that changed sides the moment it was answered would shift the grid
+     * under the pointer and hand the next click to the wrong affiliate.
+     */
+    it('leaves an answered line in the section it was filed under', function (): void {
+        User::factory()->create([
+            'first_name' => 'Marc',
+            'last_name' => 'Dupont',
+            'birthdate' => '1991-02-11',
+            'licence' => null,
+            'email' => 'other@example.com',
+        ]);
+
+        $component = Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSet('rows.2.needsReview', true)
+            ->set('rows.2.action', 'create')
+            ->assertSet('rows.2.needsReview', true);
+
+        expect(array_keys($component->instance()->linesToReview))->toBe([2])
+            ->and($component->instance()->linesReadToImport)->toBe([]);
+    });
+
+    /*
+     * An archived member is a question, so their line is held with the ones that
+     * ask something — never filed away as settled.
+     */
+    it('files an archived member among the lines that ask something', function (): void {
+        User::factory()->create([
+            'licence' => '166036',
+            'first_name' => 'Marc',
+            'last_name' => 'Dupont',
+            'birthdate' => '1990-06-05',
+        ])->delete();
+
+        $component = Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSet('rows.2.outcome', 'archived')
+            ->assertSet('rows.2.needsReview', true);
+
+        expect($component->instance()->linesReadToImport)->toBe([]);
+    });
+
+    /*
+     * Columns the federation shifted by one: the street landed where the postcode
+     * should be. The parser reads it, flags it, and the reviewer is the one who
+     * looks — so the line cannot sit in the folded section.
+     */
+    it('files a line whose columns look shifted among the ones that ask something', function (): void {
+        User::factory()->create(['licence' => '166036', 'first_name' => 'Marc', 'last_name' => 'Dupont']);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;LOUVAIN-LA-NEUVE;',
+            ]))
+            ->call('parse')
+            ->assertSet('rows.2.needsAddressReview', true)
+            ->assertSet('rows.2.needsReview', true);
+    });
+
+    /*
+     * The card was lifted out of the grid into a partial, and a partial that lost
+     * the line it was handed would bind every card to the same affiliate: the
+     * secretary would correct one name and overwrite another. The binding is what
+     * proves the extraction, because setting `rows.N` in a test never goes through
+     * the form at all.
+     */
+    it('binds each rendered card to its own line of the listing', function (): void {
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
+                '166037;DE CLERCQ ANNE;1985-03-02;D4;D4;N;N;SE;LR;2021-09-01;anne@example.com;;0475987654;RUE DU TEST;15;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSeeHtml('rows.2.lastName')
+            ->assertSeeHtml('rows.2.action')
+            ->assertSeeHtml('rows.3.lastName')
+            ->assertSeeHtml('rows.3.action')
+            ->assertDontSeeHtml('rows.0.lastName');
+    });
+
+    /*
+     * Nothing to fold away, so no fold: an empty section is a heading that promises
+     * something and delivers a blank.
+     */
+    it('drops a section when it holds nothing', function (): void {
+        User::factory()->create(['licence' => '166036', 'first_name' => 'Marc', 'last_name' => 'Dupont']);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSee(__('Nothing to report'))
+            ->assertDontSee(__('Needs your attention'));
+    });
+
+    /*
      * The two answers the matcher cannot commit to. Left to a default, either
      * would write the federation's data onto somebody else's file — so the import
      * simply refuses to run until a human has said which it is.
@@ -328,5 +460,83 @@ describe('the children listed under an adult address', function (): void {
         expect($member->email)->toBe('anne@example.com')
             ->and($member->phone_number)->toBe('0475987654')
             ->and($member->guardians()->count())->toBe(0);
+    });
+});
+
+/*
+ * The federation lists one mailbox per household, so a child arrives carrying
+ * their parent's. When that parent is already on the roster — the ordinary case,
+ * since they play too — the address used to hand the child their parent's file:
+ * the parent was proposed for update, the child was never created, and the
+ * parent's licence was overwritten with their child's.
+ */
+describe('importing a child whose guardian is already a member', function (): void {
+
+    it('creates the child instead of proposing their parent for update', function (): void {
+        $marie = User::factory()->create([
+            'licence' => '111111',
+            'ranking' => 'D4',
+            'email' => 'famille.lambert@example.com',
+            'first_name' => 'Marie',
+            'last_name' => 'Lambert',
+            'birthdate' => '1982-09-14',
+        ]);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '111111;LAMBERT MARIE;1982-09-14;D4;D4;N;N;SE;LR;2021-09-01;famille.lambert@example.com;;0475987654;RUE DU TEST;15;1348;LOUVAIN-LA-NEUVE',
+                '166044;DUPONT LOUIS;2016-03-04;D6;;N;N;SE;JO;2024-09-01;famille.lambert@example.com;;0475987654;RUE DU TEST;15;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSet('rows.3.outcome', 'new')
+            ->assertSet('rows.3.action', 'create')
+            ->call('import');
+
+        $louis = User::query()->where('licence', '166044')->first();
+
+        expect($louis)->not->toBeNull()
+            ->and($louis->first_name)->toBe('Louis')
+            ->and($louis->last_name)->toBe('Dupont')
+            // The address is her login and stays hers; he is reached through her.
+            ->and($louis->email)->toBeNull()
+            ->and($louis->guardians()->first()?->user_id)->toBe($marie->id)
+            ->and($louis->contactEmail())->toBe('famille.lambert@example.com');
+
+        // The other half of the bug: his line used to be written onto her file.
+        expect($marie->fresh()->licence)->toBe('111111')
+            ->and($marie->fresh()->ranking)->toBe('D4')
+            ->and($marie->fresh()->first_name)->toBe('Marie');
+    });
+
+    /*
+     * The same address, on a parent who is not in this listing at all — they let
+     * their affiliation lapse, or never played. Nothing names them as a guardian
+     * here, so the child arrives without one and is linked by hand; what matters
+     * is that he arrives.
+     */
+    it('creates the child even when the parent is absent from the listing', function (): void {
+        $marie = User::factory()->create([
+            'licence' => '111111',
+            'email' => 'famille.lambert@example.com',
+            'first_name' => 'Marie',
+            'last_name' => 'Lambert',
+            'birthdate' => '1982-09-14',
+        ]);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166045;DUPONT LOUIS;2016-03-04;D6;;N;N;SE;JO;2024-09-01;famille.lambert@example.com;;0475987654;RUE DU TEST;15;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSet('rows.2.action', 'create')
+            ->call('import');
+
+        $louis = User::query()->where('licence', '166045')->first();
+
+        expect($louis)->not->toBeNull()
+            // `unlessTaken()` refuses him an address another member already holds.
+            ->and($louis->email)->toBeNull();
+
+        expect($marie->fresh()->licence)->toBe('111111');
     });
 });

@@ -67,7 +67,20 @@ class FederationMemberMatcher
     }
 
     /**
-     * One address, one account: a hit is proof.
+     * An address the club already holds, on somebody the rest of the line agrees
+     * is the same person.
+     *
+     * One address is one login, but the federation lists one mailbox per
+     * household: a child too young to have one is carried under their parent's.
+     * Read as proof on its own, that address hands the child their parent's file
+     * — the parent is proposed for update, the child is never created at all,
+     * and the parent's licence is overwritten with their child's.
+     *
+     * So the address only names a candidate, and the identity has to hold up.
+     * The name is what tells a household apart, and it costs nothing to check
+     * where the club typed a member in itself. The birthdate covers what the
+     * name cannot see, a son carrying his father's exact name; a date missing on
+     * either side proves nothing and lets the address stand.
      */
     private function byEmail(FederationRow $row): ?User
     {
@@ -78,7 +91,10 @@ class FederationMemberMatcher
         $email = $this->normalize($row->email);
 
         return $this->roster()->first(
-            fn (User $user): bool => $user->email !== null && $this->normalize($user->email) === $email
+            fn (User $user): bool => $user->email !== null
+                && $this->normalize($user->email) === $email
+                && $this->sameName($user, $row)
+                && ! $this->contradictoryBirthdate($user, $row)
         );
     }
 
@@ -116,6 +132,20 @@ class FederationMemberMatcher
                 && $user->birthdate->isSameDay($row->birthdate)
                 && $this->sameName($user, $row)
         );
+    }
+
+    /**
+     * Two birthdates that are both known and disagree — so, two people.
+     *
+     * A date missing on either side is not a disagreement: half the roster was
+     * typed in without one, and treating that silence as a contradiction would
+     * cost those members every match they should have had.
+     */
+    private function contradictoryBirthdate(User $user, FederationRow $row): bool
+    {
+        return $row->birthdate !== null
+            && $user->birthdate !== null
+            && ! $user->birthdate->isSameDay($row->birthdate);
     }
 
     /**

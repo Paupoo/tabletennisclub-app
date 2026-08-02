@@ -42,7 +42,7 @@ class BarOrderController extends Controller
             return back()->with('error', 'Impossible de supprimer une commande payée.');
         }
 
-        DB::transaction(function () use ($order) {
+        DB::transaction(function () use ($order): void {
             $order->load('items');
             foreach ($order->items as $item) {
                 $this->stockService->restoreFromOrderItem(

@@ -42,9 +42,9 @@ new class extends Component
 
     public int $maxReachable = 1;
 
-    public $medicalCertificate = null;
+    public $medicalCertificate;
 
-    public $parentalConsent = null;
+    public $parentalConsent;
 
     public string $phone_number = '';
 

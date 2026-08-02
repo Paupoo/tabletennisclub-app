@@ -45,9 +45,9 @@ new class extends Component
 
     public int $leavePackUserId = 0;
 
-    public $medicalCertificate = null;
+    public $medicalCertificate;
 
-    public $parentalConsent = null;
+    public $parentalConsent;
 
     /** @var array<string, mixed> */
     public array $paymentDetails = [];

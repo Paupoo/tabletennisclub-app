@@ -33,7 +33,7 @@ function importListing(array $lines): UploadedFile
 
     return UploadedFile::fake()->createWithContent(
         'Liste-affilies.csv',
-        (string) mb_convert_encoding($utf8, 'Windows-1252', 'UTF-8'),
+        mb_convert_encoding($utf8, 'Windows-1252', 'UTF-8'),
     );
 }
 

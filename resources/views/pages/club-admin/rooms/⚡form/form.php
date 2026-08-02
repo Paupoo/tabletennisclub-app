@@ -163,7 +163,7 @@ new class extends Component
     public function save(): void
     {
         // 1. Validation des données du formulaire
-        $validated = $this->validate();
+        $this->validate();
 
         // 2. Sauvegarde de la Room (Création ou Mise à jour)
         $this->room->fill([

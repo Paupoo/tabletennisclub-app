@@ -182,7 +182,7 @@ class BarCartService
         return [
             'items' => $items,
             'totalPrice' => (int) $items->sum('total_price'),
-            'cartCount' => (int) array_sum($cart),
+            'cartCount' => array_sum($cart),
         ];
     }
 
@@ -194,7 +194,7 @@ class BarCartService
             return;
         }
 
-        $cart[$productId] = max(0, (int) $cart[$productId] - 1);
+        $cart[$productId] = max(0, $cart[$productId] - 1);
 
         if ($cart[$productId] <= 0) {
             unset($cart[$productId]);

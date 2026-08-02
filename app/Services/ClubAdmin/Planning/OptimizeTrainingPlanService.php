@@ -281,6 +281,6 @@ class OptimizeTrainingPlanService
 
         arsort($ageCounts);
 
-        return (string) array_key_first($ageCounts);
+        return array_key_first($ageCounts);
     }
 }

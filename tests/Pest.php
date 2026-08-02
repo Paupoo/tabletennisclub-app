@@ -39,7 +39,7 @@ pest()->browser()->timeout(15_000);
 
 uses(RefusesParallelExecution::class)->in('Browser');
 
-beforeEach(function () {
+beforeEach(function (): void {
     Club::forgetOwnClub();
 });
 

@@ -22,7 +22,7 @@ function federationListing(array $lines): string
 {
     $utf8 = implode("\r\n", [FEDERATION_HEADER, ...$lines]) . "\r\n";
 
-    return (string) mb_convert_encoding($utf8, 'Windows-1252', 'UTF-8');
+    return mb_convert_encoding($utf8, 'Windows-1252', 'UTF-8');
 }
 
 describe('parsing a federation listing', function (): void {

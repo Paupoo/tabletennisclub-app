@@ -384,8 +384,6 @@ class TournamentFinalPhaseService
 
     /**
      * Create matches for a specific round
-     *
-     * @param  mixed  $nextMatchIds
      */
     protected function createRoundMatches(Tournament $tournament, string $round, int $matchCount, ?array $nextMatchIds, ?int $bronzeMatchId = null): Collection
     {
@@ -429,13 +427,12 @@ class TournamentFinalPhaseService
     {
         switch ($round) {
             case 'round_16':
+            default:
                 return 16;
             case 'round_8':
                 return 8;
             case 'round_4':
                 return 4;
-            default:
-                return 16;
         }
     }
 

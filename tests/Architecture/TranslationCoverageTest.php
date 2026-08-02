@@ -41,7 +41,7 @@ function extractTranslationKeysFromCodebase(): array
     return array_values(array_unique($keys));
 }
 
-test('fr_BE and nl_BE have the same translation keys', function () use ($basePath) {
+test('fr_BE and nl_BE have the same translation keys', function () use ($basePath): void {
     $frKeys = array_keys(json_decode(file_get_contents($basePath . '/lang/fr_BE.json'), associative: true));
     $nlKeys = array_keys(json_decode(file_get_contents($basePath . '/lang/nl_BE.json'), associative: true));
 
@@ -57,7 +57,7 @@ test('fr_BE and nl_BE have the same translation keys', function () use ($basePat
     );
 });
 
-test('all __() strings in the codebase are translated in fr_BE.json', function () use ($basePath) {
+test('all __() strings in the codebase are translated in fr_BE.json', function () use ($basePath): void {
     $translated = json_decode(file_get_contents($basePath . '/lang/fr_BE.json'), associative: true);
 
     $missing = array_values(array_filter(
@@ -70,7 +70,7 @@ test('all __() strings in the codebase are translated in fr_BE.json', function (
     );
 });
 
-test('all __() strings in the codebase are translated in nl_BE.json', function () use ($basePath) {
+test('all __() strings in the codebase are translated in nl_BE.json', function () use ($basePath): void {
     $translated = json_decode(file_get_contents($basePath . '/lang/nl_BE.json'), associative: true);
 
     $missing = array_values(array_filter(

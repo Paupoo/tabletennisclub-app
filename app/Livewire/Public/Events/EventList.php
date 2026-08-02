@@ -58,7 +58,7 @@ class EventList extends Component
 
         $query = EventPost::published()
             ->when($this->type, fn (Builder $q) => $q->where('type', $this->type))
-            ->when($this->seasonId > 0, function (Builder $q) {
+            ->when($this->seasonId > 0, function (Builder $q): void {
                 $season = $this->seasons->firstWhere('id', $this->seasonId);
                 if ($season) {
                     $q->whereBetween('event_date', $this->seasonDateRange($season));

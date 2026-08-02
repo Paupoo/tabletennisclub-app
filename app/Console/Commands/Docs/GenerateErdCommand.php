@@ -230,7 +230,7 @@ class GenerateErdCommand extends Command
         foreach ($methodMatches as $methodMatch) {
             $methodName = $methodMatch[1][0];
             $relationType = $methodMatch[2][0];
-            $methodOffset = (int) $methodMatch[0][1];
+            $methodOffset = $methodMatch[0][1];
 
             $bodyStart = strpos($content, '{', $methodOffset);
             if ($bodyStart === false) {

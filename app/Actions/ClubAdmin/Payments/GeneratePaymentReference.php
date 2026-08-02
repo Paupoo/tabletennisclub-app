@@ -52,9 +52,8 @@ class GeneratePaymentReference
     public function addSeparators(string $string): string
     {
         $string = substr_replace($string, '/', 7, 0);
-        $string = substr_replace($string, '/', 3, 0);
 
-        return $string;
+        return substr_replace($string, '/', 3, 0);
     }
 
     /**
@@ -87,8 +86,6 @@ class GeneratePaymentReference
 
         $todayPaymentCount++;
 
-        $todayPaymentCount = str_pad((string) $todayPaymentCount, 3, '0', STR_PAD_LEFT);
-
-        return (string) $todayPaymentCount;
+        return str_pad((string) $todayPaymentCount, 3, '0', STR_PAD_LEFT);
     }
 }

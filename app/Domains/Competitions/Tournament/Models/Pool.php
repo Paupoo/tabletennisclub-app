@@ -71,7 +71,6 @@ class Pool extends Model
      * Utiliser les événements du modèle pour intercepter
      *  les attachements d'utilisateurs via la relation
      *
-     * @return void
      *
      * @throws Exception
      */

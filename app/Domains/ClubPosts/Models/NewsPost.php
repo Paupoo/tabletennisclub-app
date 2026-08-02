@@ -110,7 +110,7 @@ class NewsPost extends Model
     {
         parent::boot();
 
-        static::saving(function (NewsPost $post) {
+        static::saving(function (NewsPost $post): void {
             $words = str_word_count(strip_tags($post->content ?? ''));
             $post->reading_time = (int) ceil($words / 225);
         });

@@ -14,8 +14,6 @@ class ToggleHasPaidTournamentAction extends ToggleHasPaidAction
 {
     /**
      * Toggle "has_paid" column from tournament_user database.
-     *
-     * @param  Illuminate\Database\Eloquent\Model  $model
      */
     public function toggleHasPaid(Model $model): bool
     {

@@ -76,8 +76,6 @@ class TournamentPoolService
 
     public function isPoolFinished(Pool $pool): bool
     {
-        $result = true;
-
         $total_matches = $pool->tournamentmatches()->count();
         $totalMatchesCompleted = $pool->tournamentmatches()->where('status', 'completed')->count();
 
@@ -110,8 +108,6 @@ class TournamentPoolService
             } catch (Exception $e) {
                 // Log l'erreur si besoin
                 throw new Exception('Something went wrong while setting a player into ' . $currentPool->name);
-
-                continue;
             }
 
             // Reseter l'index si on a terminé de distribuer un joueur dans chaque poule

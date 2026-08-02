@@ -7,12 +7,6 @@ parameters:
 			path: app/Actions/ClubAdmin/Payments/SendPayementInvite.php
 
 		-
-			message: '#^Class App\\Actions\\ClubAdmin\\Payments\\GeneratePaymentQR constructor invoked with 1 parameter, 0 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: app/Actions/ClubAdmin/Payments/SendPayementInvite.php
-
-		-
 			message: '#^Access to an undefined property App\\Domains\\Trainings\\Models\\TrainingPack\:\:\$pivot\.$#'
 			identifier: property.notFound
 			count: 2
@@ -34,18 +28,6 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$has_paid\.$#'
 			identifier: property.notFound
 			count: 2
-			path: app/Actions/Tournament/ToggleHasPaidTournamentAction.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$model with type App\\Actions\\Tournament\\Illuminate\\Database\\Eloquent\\Model is not subtype of native type Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: parameter.phpDocType
-			count: 1
-			path: app/Actions/Tournament/ToggleHasPaidTournamentAction.php
-
-		-
-			message: '#^Parameter \$model of method App\\Actions\\Tournament\\ToggleHasPaidTournamentAction\:\:toggleHasPaid\(\) has invalid type App\\Actions\\Tournament\\Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: class.notFound
-			count: 1
 			path: app/Actions/Tournament/ToggleHasPaidTournamentAction.php
 
 		-
@@ -153,12 +135,6 @@ parameters:
 		-
 			message: '#^Match arm comparison between ''expired'' and ''expired'' is always true\.$#'
 			identifier: match.alwaysTrue
-			count: 1
-			path: app/Domains/ClubAdmin/Users/Models/User.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$query with type mixed is not subtype of native type Illuminate\\Contracts\\Database\\Query\\Builder\.$#'
-			identifier: parameter.phpDocType
 			count: 1
 			path: app/Domains/ClubAdmin/Users/Models/User.php
 
@@ -271,12 +247,6 @@ parameters:
 			path: app/Domains/Competitions/Tournament/Models/Pool.php
 
 		-
-			message: '#^PHPDoc tag @return with type void is incompatible with native type App\\Domains\\ClubAdmin\\Users\\Models\\User\.$#'
-			identifier: return.phpDocType
-			count: 1
-			path: app/Domains/Competitions/Tournament/Models/Pool.php
-
-		-
 			message: '#^PHPDoc tag @property has invalid value \(mixed \$0\)\: Unexpected token "\$0", expected variable at offset 2523 on line 58$#'
 			identifier: phpDoc.parseError
 			count: 1
@@ -295,12 +265,6 @@ parameters:
 			path: app/Domains/Competitions/Tournament/Models/TournamentPair.php
 
 		-
-			message: '#^PHPDoc tag @param for parameter \$nextMatchIds with type mixed is not subtype of native type array\|null\.$#'
-			identifier: parameter.phpDocType
-			count: 1
-			path: app/Domains/Competitions/Tournament/Services/TournamentFinalPhaseService.php
-
-		-
 			message: '#^Negated boolean expression is always false\.$#'
 			identifier: booleanNot.alwaysFalse
 			count: 4
@@ -311,12 +275,6 @@ parameters:
 			identifier: booleanOr.alwaysFalse
 			count: 3
 			path: app/Domains/Competitions/Tournament/Services/TournamentMatchService.php
-
-		-
-			message: '#^Unreachable statement \- code above always terminates\.$#'
-			identifier: deadCode.unreachable
-			count: 1
-			path: app/Domains/Competitions/Tournament/Services/TournamentPoolService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'

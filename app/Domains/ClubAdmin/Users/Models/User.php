@@ -787,8 +787,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * This scope allows searching for users by terms in their first or last name.
-     *
-     * @param  mixed  $query
      */
     public function scopeSearchTerms(Builder $query, string $search): void
     {

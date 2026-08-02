@@ -16,7 +16,7 @@ trait HasPhotoUpload
 
     public int $imageKey = 0;
 
-    public $photo = null;
+    public $photo;
 
     public function deletePhoto(): void
     {

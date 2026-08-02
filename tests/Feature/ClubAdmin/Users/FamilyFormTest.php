@@ -16,13 +16,13 @@ pest()->group('club-admin', 'users', 'family');
 
 const FAMILY_FORM_COMPONENT = 'pages::club-admin.users.form';
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->create();
     actingAs($this->admin);
 });
 
-describe('family management from the form', function () {
-    it('links an existing member to the family and persists it on save', function () {
+describe('family management from the form', function (): void {
+    it('links an existing member to the family and persists it on save', function (): void {
         $user = User::factory()->create();
         $sibling = User::factory()->create(['first_name' => 'Léo', 'last_name' => 'Martin']);
 
@@ -36,7 +36,7 @@ describe('family management from the form', function () {
         expect($user->fresh()->familyMembers()->pluck('id')->all())->toBe([$sibling->id]);
     });
 
-    it('detaches a linked family member', function () {
+    it('detaches a linked family member', function (): void {
         $user = User::factory()->create();
         $sibling = User::factory()->create();
         SyncFamilyGroupMembersAction::handle($user, [$sibling->id]);
@@ -49,7 +49,7 @@ describe('family management from the form', function () {
         expect($user->fresh()->familyMembers())->toBeEmpty();
     });
 
-    it('loads existing family links on mount', function () {
+    it('loads existing family links on mount', function (): void {
         $user = User::factory()->create();
         $sibling = User::factory()->create();
         SyncFamilyGroupMembersAction::handle($user, [$sibling->id]);
@@ -58,7 +58,7 @@ describe('family management from the form', function () {
             ->assertSet('familyMemberIds', [$sibling->id]);
     });
 
-    it('joins the existing family when linking a member who already has one', function () {
+    it('joins the existing family when linking a member who already has one', function (): void {
         $user = User::factory()->create();
         $parent = User::factory()->create();
         $child = User::factory()->create();
@@ -78,7 +78,7 @@ describe('family management from the form', function () {
             ->toBe(collect([$parent->id, $child->id])->sort()->values()->all());
     });
 
-    it('refuses to link a member from another family when the user already has one', function () {
+    it('refuses to link a member from another family when the user already has one', function (): void {
         $user = User::factory()->create();
         $sibling = User::factory()->create();
         SyncFamilyGroupMembersAction::handle($user, [$sibling->id]);
@@ -92,7 +92,7 @@ describe('family management from the form', function () {
             ->assertSet('familyMemberIds', [$sibling->id]);
     });
 
-    it('refuses to mix members from two different families on a user without one', function () {
+    it('refuses to mix members from two different families on a user without one', function (): void {
         $user = User::factory()->create();
 
         $parentA = User::factory()->create();
@@ -108,7 +108,7 @@ describe('family management from the form', function () {
         expect($component->get('familyMemberIds'))->not->toContain($parentB->id);
     });
 
-    it('finds a club member by name in the family search', function () {
+    it('finds a club member by name in the family search', function (): void {
         $user = User::factory()->create();
         User::factory()->create(['first_name' => 'Isabelle', 'last_name' => 'Renard']);
 
@@ -117,7 +117,7 @@ describe('family management from the form', function () {
             ->assertSee('Isabelle');
     });
 
-    it('does not exclude minors from the family search', function () {
+    it('does not exclude minors from the family search', function (): void {
         $user = User::factory()->create();
         User::factory()->create([
             'first_name' => 'Timéo',

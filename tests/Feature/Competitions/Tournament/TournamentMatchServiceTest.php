@@ -246,7 +246,7 @@ describe('AFTT handicap table', function (): void {
 
         expect(array_keys($table))->toEqualCanonicalizing($rankings);
 
-        foreach ($table as $receiver => $row) {
+        foreach ($table as $row) {
             expect(array_keys($row))->toEqualCanonicalizing($rankings)
                 ->and($row)->each->toBeInt();
         }

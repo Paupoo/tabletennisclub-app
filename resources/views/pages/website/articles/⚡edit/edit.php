@@ -129,10 +129,10 @@ new class extends Component
     public function with(): array
     {
         $categoryOptions = collect(NewsPostCategoryEnum::cases())
-            ->map(fn ($c) => ['id' => $c->value, 'name' => $c->getLabel()]);
+            ->map(fn ($c): array => ['id' => $c->value, 'name' => $c->getLabel()]);
 
         $statusOptions = collect(NewsPostStatusEnum::cases())
-            ->map(fn ($s) => ['id' => $s->value, 'name' => $s->getLabel()]);
+            ->map(fn ($s): array => ['id' => $s->value, 'name' => $s->getLabel()]);
 
         return [
             'breadcrumbs' => Breadcrumb::make()

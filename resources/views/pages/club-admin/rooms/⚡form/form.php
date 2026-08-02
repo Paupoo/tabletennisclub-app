@@ -103,7 +103,7 @@ new class extends Component
         $this->resetValidation();
     }
 
-    public function mount(?Room $room = null)
+    public function mount(?Room $room = null): void
     {
         // 1. On stocke le modèle (ou un nouveau modèle vide)
         $this->room = $room ?? new Room;
@@ -132,7 +132,7 @@ new class extends Component
                 $query->doesntHave('room')
                     ->orWhere('room_id', $room->id ?? null);
             })
-            ->get()->map(function ($table) {
+            ->get()->map(function ($table): array {
                 return [
                     'id' => $table->id,
                     'name' => $table->name,
@@ -225,11 +225,11 @@ new class extends Component
         // $this->redirect(route('rooms.index'));
     }
 
-    public function searchTables(string $value = '')
+    public function searchTables(string $value = ''): void
     {
         // On met à jour la variable de la vue
         $this->filteredTables = collect($this->allTables)
-            ->filter(function ($table) use ($value) {
+            ->filter(function (array $table) use ($value): bool {
                 return str_contains(strtolower($table['name']), strtolower($value));
             })
             ->take(10)

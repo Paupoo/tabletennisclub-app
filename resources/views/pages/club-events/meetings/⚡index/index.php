@@ -146,19 +146,19 @@ new class extends Component
 
         if (filled($this->type)) {
             $label = collect(MeetingTypeEnum::cases())
-                ->first(fn ($e) => $e->value === $this->type)?->getLabel() ?? $this->type;
+                ->first(fn ($e): bool => $e->value === $this->type)?->getLabel() ?? $this->type;
             $chips[] = ['key' => 'type', 'label' => __('Type') . ': ' . $label];
         }
 
         if (filled($this->status)) {
             $label = collect(MeetingStatusEnum::cases())
-                ->first(fn ($e) => $e->value === $this->status)?->getLabel() ?? $this->status;
+                ->first(fn ($e): bool => $e->value === $this->status)?->getLabel() ?? $this->status;
             $chips[] = ['key' => 'status', 'label' => __('Status') . ': ' . $label];
         }
 
         if (filled($this->format)) {
             $label = collect(MeetingFormatEnum::cases())
-                ->first(fn ($e) => $e->value === $this->format)?->getLabel() ?? $this->format;
+                ->first(fn ($e): bool => $e->value === $this->format)?->getLabel() ?? $this->format;
             $chips[] = ['key' => 'format', 'label' => __('Format') . ': ' . $label];
         }
 
@@ -257,7 +257,7 @@ new class extends Component
     {
         return $this->meetings
             ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
+            ->map(fn (int $id): string => (string) $id)
             ->toArray();
     }
 };

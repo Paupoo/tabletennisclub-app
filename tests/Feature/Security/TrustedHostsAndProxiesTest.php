@@ -47,7 +47,7 @@ describe('trusted hosts', function (): void {
         config()->set('app.url', 'https://cttob.example');
         app()->detectEnvironment(fn (): string => 'production');
 
-        (new TrustHosts(app()))->handle(Request::create('/'), fn (Request $r) => $r);
+        (new TrustHosts(app()))->handle(Request::create('/'), fn (Request $r): Request => $r);
 
         expect(Request::getTrustedHosts())->toHaveCount(1)
             ->and(Request::getTrustedHosts()[0])->toMatch('/cttob\\\\.example/');

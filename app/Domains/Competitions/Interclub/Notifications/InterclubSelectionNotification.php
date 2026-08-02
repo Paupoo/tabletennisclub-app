@@ -103,7 +103,7 @@ class InterclubSelectionNotification extends Notification
             'END:VCALENDAR',
         ];
 
-        $lines = array_map(fn (string $line) => $this->icalFold($line), $properties);
+        $lines = array_map(fn (string $line): string => $this->icalFold($line), $properties);
 
         return implode("\r\n", $lines) . "\r\n";
     }

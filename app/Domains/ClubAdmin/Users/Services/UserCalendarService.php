@@ -121,7 +121,7 @@ class UserCalendarService
             ->when($to, fn ($q) => $q->where('start_date_time', '<=', $to))
             ->orderBy('start_date_time')
             ->get()
-            ->map(fn ($ic) => $this->formatInterclub($ic, $ourTeamIds->toArray(), $userTeamIds));
+            ->map(fn (Interclub $ic): array => $this->formatInterclub($ic, $ourTeamIds->toArray(), $userTeamIds));
     }
 
     /**
@@ -141,7 +141,7 @@ class UserCalendarService
             ->with(['users' => fn ($q) => $q->where('users.id', $user->id)])
             ->orderBy('scheduled_at')
             ->get()
-            ->map(fn ($m) => [
+            ->map(fn ($m): array => [
                 'startDateTime' => $m->scheduled_at->format('Y-m-d H:i:s'),
                 'title' => $m->title,
                 'type' => 'meeting',
@@ -176,7 +176,7 @@ class UserCalendarService
             ->with(['users' => fn ($q) => $q->where('tournament_user.user_id', $user->id)])
             ->orderBy('start_date')
             ->get()
-            ->map(fn ($t) => [
+            ->map(fn ($t): array => [
                 'startDateTime' => $t->start_date->format('Y-m-d H:i:s'),
                 'endDate' => $t->end_date?->format('Y-m-d'),
                 'title' => $t->name,
@@ -207,7 +207,7 @@ class UserCalendarService
                 ->when($to, fn ($q) => $q->where('start', '<=', $to))
                 ->orderBy('start')
                 ->get()
-                ->map(fn ($s) => [
+                ->map(fn ($s): array => [
                     'startDateTime' => $s->start->format('Y-m-d H:i:s'),
                     'endTime' => $s->end?->format('H:i'),
                     'title' => $s->trainingPack?->name ?? __('Training'),
@@ -283,7 +283,7 @@ class UserCalendarService
             ->whereIn('id', $sessionIds->unique())
             ->orderBy('start')
             ->get()
-            ->map(fn ($s) => [
+            ->map(fn ($s): array => [
                 'startDateTime' => $s->start->format('Y-m-d H:i:s'),
                 'endTime' => $s->end?->format('H:i'),
                 'title' => $s->trainingPack?->name ?? __('Training'),

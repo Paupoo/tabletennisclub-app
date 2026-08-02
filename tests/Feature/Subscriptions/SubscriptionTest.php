@@ -19,7 +19,7 @@ describe('Subscription Business Rules', function (): void {
 
         $action = new CreateSubscriptionAction;
 
-        expect(fn () => $action->execute($user, $inactiveSeason))
+        expect(fn (): Subscription => $action->execute($user, $inactiveSeason))
             ->toThrow(DomainException::class, 'Cannot subscribe to an inactive season');
     })->group('subscriptions', 'business-rules');
 
@@ -43,7 +43,7 @@ describe('Subscription Business Rules', function (): void {
 
         $action = new CreateSubscriptionAction;
 
-        expect(fn () => $action->execute($user, $season))
+        expect(fn (): Subscription => $action->execute($user, $season))
             ->toThrow(DomainException::class, 'Affiliations are currently closed');
     })->group('subscriptions', 'business-rules');
 
@@ -67,7 +67,7 @@ describe('Subscription Business Rules', function (): void {
 
         $action = new CreateSubscriptionAction;
 
-        expect(fn () => $action->execute($user, $season->fresh()))
+        expect(fn (): Subscription => $action->execute($user, $season->fresh()))
             ->toThrow(DomainException::class, 'Affiliations are currently closed');
     })->group('subscriptions', 'business-rules');
 
@@ -83,7 +83,7 @@ describe('Subscription Business Rules', function (): void {
         $action->execute($user, $season);
 
         // Deuxième subscription KO
-        expect(fn () => $action->execute($user, $season))
+        expect(fn (): Subscription => $action->execute($user, $season))
             ->toThrow(DomainException::class, 'already has a subscription');
     })->group('subscriptions', 'business-rules');
 

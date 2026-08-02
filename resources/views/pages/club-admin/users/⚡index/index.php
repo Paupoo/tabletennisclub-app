@@ -476,7 +476,7 @@ new class extends Component
         if (str_starts_with($key, 'categories_')) {
             $value = substr($key, strlen('categories_'));
             $this->categories = array_values(
-                array_filter($this->categories, fn (string $v) => $v !== $value)
+                array_filter($this->categories, fn (string $v): bool => $v !== $value)
             );
         } else {
             $this->reset([$key]);
@@ -559,7 +559,7 @@ new class extends Component
         return Team::with('captain')
             ->orderBy('name')
             ->get()
-            ->map(fn (Team $team) => [
+            ->map(fn (Team $team): array => [
                 'id' => $team->id,
                 'name' => __('Team') . ' ' . $team->name,
                 'avatar' => $team->captain->photo ?? '/images/empty-user.jpg',
@@ -675,7 +675,7 @@ new class extends Component
     {
         return $this->users
             ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
+            ->map(fn (int $id): string => (string) $id)
             ->toArray();
     }
 

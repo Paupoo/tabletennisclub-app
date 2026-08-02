@@ -60,7 +60,7 @@ describe('pending contact status backfill', function (): void {
     });
 
     it('narrows the status column so pending can no longer be stored', function (): void {
-        $migration = withLegacyPendingContactStatus(fn () => null);
+        $migration = withLegacyPendingContactStatus(fn (): null => null);
         $migration->up();
 
         expect(fn () => Contact::factory()->create(['status' => 'pending']))

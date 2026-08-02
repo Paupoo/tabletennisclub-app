@@ -26,12 +26,12 @@ test('price converts euros correctly', function (): void {
 });
 
 test('price rejects negative amounts', function (): void {
-    expect(fn () => Price::fromCents(-100))
+    expect(fn (): Price => Price::fromCents(-100))
         ->toThrow(InvalidArgumentException::class);
 });
 
 test('price rejects negative euros', function (): void {
-    expect(fn () => Price::fromEuros(-10.00))
+    expect(fn (): Price => Price::fromEuros(-10.00))
         ->toThrow(InvalidArgumentException::class);
 });
 

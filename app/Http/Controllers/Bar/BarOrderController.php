@@ -163,7 +163,7 @@ class BarOrderController extends Controller
         $order->load('items');
 
         $cart = $order->items
-            ->mapWithKeys(fn (BarOrderItem $item) => [$item->product_id => (int) $item->quantity])
+            ->mapWithKeys(fn (BarOrderItem $item): array => [$item->product_id => (int) $item->quantity])
             ->toArray();
 
         session()->put('cart', $cart);

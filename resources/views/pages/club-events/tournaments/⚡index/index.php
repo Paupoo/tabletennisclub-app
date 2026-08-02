@@ -270,7 +270,7 @@ new class extends Component
     {
         return $this->tournaments
             ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
+            ->map(fn (int $id): string => (string) $id)
             ->toArray();
     }
 };

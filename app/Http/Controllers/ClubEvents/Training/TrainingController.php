@@ -7,7 +7,6 @@ namespace App\Http\Controllers\ClubEvents\Training;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
-use App\Domains\Shared\Enums\Recurrence;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\Training;

@@ -153,7 +153,7 @@ new class extends Component
             }
 
             $headerRow = array_shift($rows);
-            $header = array_map(fn ($h) => $this->normalizeHeader($h ?? ''), $headerRow);
+            $header = array_map(fn ($h): string => $this->normalizeHeader($h ?? ''), $headerRow);
 
             $newCount = 0;
             $duplicateCount = 0;
@@ -172,7 +172,7 @@ new class extends Component
                 foreach ($rows as $row) {
                     $lineNumber++;
 
-                    $row = array_map(fn ($v) => ($v === null || trim((string) $v) === '') ? null : trim((string) $v), $row);
+                    $row = array_map(fn ($v): ?string => ($v === null || trim((string) $v) === '') ? null : trim((string) $v), $row);
                     $row = array_pad(array_slice($row, 0, count($header)), count($header), null);
                     $rowAssoc = array_combine($header, $row);
 
@@ -346,7 +346,7 @@ new class extends Component
 
     protected function getPageIds(): array
     {
-        return $this->transactions()->pluck('id')->map(fn ($id) => (string) $id)->toArray();
+        return $this->transactions()->pluck('id')->map(fn ($id): string => (string) $id)->toArray();
     }
 
     private function allMatchingTransactionIds(): array

@@ -34,8 +34,8 @@ class RecalculateForceListAction
         $competitors = User::competitor()->get();
 
         $general = self::blockIndexByUser($competitors);
-        $women = self::blockIndexByUser($competitors->filter(fn (User $user) => $user->gender === Gender::WOMEN));
-        $veterans = self::blockIndexByUser($competitors->filter(fn (User $user) => $user->isVeteran($season)));
+        $women = self::blockIndexByUser($competitors->filter(fn (User $user): bool => $user->gender === Gender::WOMEN));
+        $veterans = self::blockIndexByUser($competitors->filter(fn (User $user): bool => $user->isVeteran($season)));
 
         foreach ($competitors as $competitor) {
             $competitor->updateQuietly([
@@ -58,7 +58,7 @@ class RecalculateForceListAction
     private static function blockIndexByUser(Collection $users): array
     {
         $groups = $users
-            ->reject(fn (User $user) => $user->ranking === 'NA')
+            ->reject(fn (User $user): bool => $user->ranking === 'NA')
             ->groupBy(fn (User $user) => in_array($user->ranking, ['E6', 'NC'], true) ? 'E6-NC' : $user->ranking)
             ->sortKeys();
 

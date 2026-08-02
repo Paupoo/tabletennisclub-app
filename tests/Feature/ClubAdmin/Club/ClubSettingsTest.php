@@ -60,7 +60,7 @@ describe('Test Club Settings', function (): void {
 
         it('shows empty state when no committee members exist', function (): void {
             User::role(Role::COMMITTEE->value)->each(
-                fn (User $member) => $member->removeRole(Role::COMMITTEE->value)
+                fn (User $member): User => $member->removeRole(Role::COMMITTEE->value)
             );
 
             Livewire::test(clubSettingsComponent())

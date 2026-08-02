@@ -191,7 +191,7 @@ new class extends Component
         abort_unless($this->canManage, 403);
 
         $this->agendaDraft = $this->meeting->agendaItems
-            ->map(fn ($item) => [
+            ->map(fn ($item): array => [
                 'id' => $item->id,
                 'title' => $item->title,
                 'description' => $item->description ?? '',
@@ -253,7 +253,7 @@ new class extends Component
     #[Computed]
     public function invitationsSent(): bool
     {
-        return $this->meeting->users->contains(fn (User $u) => $u->registration->invitation_sent_at !== null);
+        return $this->meeting->users->contains(fn (User $u): bool => $u->registration->invitation_sent_at !== null);
     }
 
     public function markAbsent(int $userId): void
@@ -450,7 +450,7 @@ new class extends Component
     public function pendingInviteesCount(): int
     {
         return $this->meeting->users
-            ->filter(fn (User $u) => $u->registration->status === MeetingUserStatusEnum::INVITED)
+            ->filter(fn (User $u): bool => $u->registration->status === MeetingUserStatusEnum::INVITED)
             ->count();
     }
 

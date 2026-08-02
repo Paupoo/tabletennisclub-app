@@ -28,7 +28,7 @@ uses(RefreshDatabase::class);
  * they were written against the old code and had to survive it untouched.
  */
 beforeEach(function (): void {
-    $this->freezeTime(fn () => null);
+    $this->freezeTime(fn (): null => null);
     $this->travelTo('2026-01-15 12:00:00');
 
     $this->season = Season::factory()->create([

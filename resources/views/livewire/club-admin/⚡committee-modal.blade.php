@@ -37,7 +37,7 @@ new class extends Component
             ->orWhere('licence', 'like', "%{$value}%")
             ->take(5)
             ->get(['id', 'first_name', 'last_name', 'licence'])
-            ->map(function (User $user) {
+            ->map(function (User $user): array {
                 return [
                 'id' => $user->id,
                 'name' => "{$user->first_name} {$user->last_name}",

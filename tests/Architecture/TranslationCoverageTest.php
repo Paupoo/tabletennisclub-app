@@ -62,7 +62,7 @@ test('all __() strings in the codebase are translated in fr_BE.json', function (
 
     $missing = array_values(array_filter(
         extractTranslationKeysFromCodebase(),
-        fn (string $key) => ! array_key_exists($key, $translated),
+        fn (string $key): bool => ! array_key_exists($key, $translated),
     ));
 
     expect($missing)->toBeEmpty(
@@ -75,7 +75,7 @@ test('all __() strings in the codebase are translated in nl_BE.json', function (
 
     $missing = array_values(array_filter(
         extractTranslationKeysFromCodebase(),
-        fn (string $key) => ! array_key_exists($key, $translated),
+        fn (string $key): bool => ! array_key_exists($key, $translated),
     ));
 
     expect($missing)->toBeEmpty(

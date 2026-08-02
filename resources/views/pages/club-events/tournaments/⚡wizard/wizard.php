@@ -212,7 +212,7 @@ new class extends Component
         return Room::select(['id', 'name', 'total_playable_tables'])
             ->orderBy('name')
             ->get()
-            ->map(fn ($room) => [
+            ->map(fn ($room): array => [
                 'id' => $room->id,
                 'name' => $room->name . ' (' . $room->total_playable_tables . ' tables)',
             ])
@@ -533,7 +533,7 @@ new class extends Component
             ->where('tournament_id', $this->tournamentId)
             ->orderByDesc('sent_at')
             ->get()
-            ->map(fn ($row) => [
+            ->map(fn ($row): array => [
                 'id' => $row->id,
                 'count' => $row->user_count,
                 'sent_at' => $row->sent_at,
@@ -661,9 +661,9 @@ new class extends Component
             ->orderBy('match_order')
             ->get()
             ->groupBy('pool_id')
-            ->map(fn ($matches, $poolId) => [
+            ->map(fn ($matches, $poolId): array => [
                 'name' => $matches->first()->pool?->name ?? "Pool {$poolId}",
-                'matches' => $matches->map(fn ($m) => [
+                'matches' => $matches->map(fn ($m): array => [
                     'order' => $m->match_order,
                     'p1' => $isDoubles ? ($m->pair1?->displayName() ?? '—') : ($m->player1?->full_name ?? '—'),
                     'p2' => $isDoubles ? ($m->pair2?->displayName() ?? '—') : ($m->player2?->full_name ?? '—'),
@@ -700,7 +700,7 @@ new class extends Component
         }
 
         return $query->get()
-            ->map(fn (User $u) => [
+            ->map(fn (User $u): array => [
                 'id' => $u->id,
                 'name' => $u->full_name,
                 'email' => $u->email,
@@ -843,7 +843,7 @@ new class extends Component
         return TournamentPair::where('tournament_id', $this->tournamentId)
             ->with(['player1', 'player2'])
             ->get()
-            ->map(fn (TournamentPair $p) => [
+            ->map(fn (TournamentPair $p): array => [
                 'id' => $p->id,
                 'name' => $p->displayName(),
                 'p1_id' => $p->player1_id,
@@ -870,10 +870,10 @@ new class extends Component
                 ->pools()
                 ->with(['pairs.player1', 'pairs.player2'])
                 ->get()
-                ->mapWithKeys(fn (Pool $pool) => [
+                ->mapWithKeys(fn (Pool $pool): array => [
                     $pool->id => [
                         'name' => $pool->name,
-                        'players' => $pool->pairs->map(fn ($pair) => [
+                        'players' => $pool->pairs->map(fn ($pair): array => [
                             'id' => $pair->id,
                             'name' => $pair->displayName(),
                             'rank' => $pair->rankingLabel(),
@@ -893,10 +893,10 @@ new class extends Component
                 ->orderBy('first_name'),
             ])
             ->get()
-            ->mapWithKeys(fn (Pool $pool) => [
+            ->mapWithKeys(fn (Pool $pool): array => [
                 $pool->id => [
                     'name' => $pool->name,
-                    'players' => $pool->users->map(fn (User $u) => [
+                    'players' => $pool->users->map(fn (User $u): array => [
                         'id' => $u->id,
                         'name' => $u->full_name,
                         'rank' => $u->ranking ?? 'NC',
@@ -943,7 +943,7 @@ new class extends Component
             ->pluck('id');
 
         $tournament->tables()->sync(
-            $tableIds->mapWithKeys(fn ($id) => [$id => ['is_table_free' => true]])->all()
+            $tableIds->mapWithKeys(fn ($id): array => [$id => ['is_table_free' => true]])->all()
         );
 
         return redirect()->route('admin.tournaments.live-center', $tournament->id);
@@ -996,7 +996,7 @@ new class extends Component
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get()
-            ->map(fn (User $u) => [
+            ->map(fn (User $u): array => [
                 'id' => $u->id,
                 'name' => $u->full_name . ' (' . ($u->ranking ?? 'NC') . ')',
             ])
@@ -1055,7 +1055,7 @@ new class extends Component
         $paymentIds = $users->map(fn (User $u) => $u->pivot->payment_id)->filter()->unique()->values();
         $paidPaymentIds = Payment::whereIn('id', $paymentIds)->where('status', 'paid')->pluck('id')->flip();
 
-        $rows = $users->map(fn (User $u) => [
+        $rows = $users->map(fn (User $u): array => [
             'id' => $u->id,
             'name' => $u->full_name,
             'ranking' => $u->ranking ?? 'NC',
@@ -1103,7 +1103,7 @@ new class extends Component
             ? $this->members
             : array_values(array_filter(
                 $this->members,
-                fn ($m) => str_contains(strtolower($m['name']), $search)
+                fn (array $m): bool => str_contains(strtolower($m['name']), $search)
                     || str_contains(strtolower($m['email'] ?? ''), $search)
             ));
 
@@ -1337,7 +1337,7 @@ new class extends Component
     {
         if (in_array($id, $this->selectedMembers)) {
             $this->selectedMembers = array_values(
-                array_filter($this->selectedMembers, fn ($m) => $m !== $id)
+                array_filter($this->selectedMembers, fn ($m): bool => $m !== $id)
             );
         } else {
             $this->selectedMembers[] = $id;
@@ -1353,7 +1353,7 @@ new class extends Component
 
         $pairedIds = TournamentPair::where('tournament_id', $this->tournamentId)
             ->get()
-            ->flatMap(fn ($p) => [$p->player1_id, $p->player2_id])
+            ->flatMap(fn ($p): array => [$p->player1_id, $p->player2_id])
             ->unique()
             ->toArray();
 
@@ -1362,7 +1362,7 @@ new class extends Component
             ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered'])
             ->whereNotIn('users.id', $pairedIds)
             ->get()
-            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
+            ->map(fn (User $u): array => ['id' => $u->id, 'name' => $u->full_name])
             ->toArray();
     }
 
@@ -1453,7 +1453,7 @@ new class extends Component
             ->wherePivot('registration_status', 'waiting')
             ->orderByPivot('waitlist_position')
             ->get()
-            ->map(fn (User $u) => [
+            ->map(fn (User $u): array => [
                 'id' => $u->id,
                 'name' => $u->full_name,
                 'ranking' => $u->ranking ?? 'NC',

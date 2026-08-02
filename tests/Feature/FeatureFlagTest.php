@@ -9,7 +9,9 @@ use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\Shared\Enums\Feature;
 use App\Http\Middleware\EnsureFeatureIsEnabled;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Blade;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -86,7 +88,7 @@ describe('surface 1 — routes', function (): void {
 
         $middleware->handle(
             request(),
-            fn () => response('ok'),
+            fn (): ResponseFactory|Response => response('ok'),
             'domaine-inexistant',
         );
     })->throws(HttpException::class);

@@ -139,7 +139,7 @@ it('logs a deleted activity for each transaction when bulk-deleted', function ()
 
     Livewire::actingAs($admin)
         ->test('pages::club-admin.treasury.transactions')
-        ->set('selected', $transactions->pluck('id')->map(fn ($id) => (string) $id)->all())
+        ->set('selected', $transactions->pluck('id')->map(fn ($id): string => (string) $id)->all())
         ->call('bulkDelete');
 
     expect(Activity::query()->where('subject_type', Transaction::class)->where('description', 'deleted')->count())
@@ -152,7 +152,7 @@ it('logs a deleted activity for each contact when bulk-deleted', function (): vo
 
     Livewire::actingAs($admin)
         ->test('pages::website.contacts.index')
-        ->set('selected', $contacts->pluck('id')->map(fn ($id) => (string) $id)->all())
+        ->set('selected', $contacts->pluck('id')->map(fn ($id): string => (string) $id)->all())
         ->call('bulkDelete');
 
     expect(Activity::query()->where('subject_type', Contact::class)->where('description', 'deleted')->count())
@@ -165,7 +165,7 @@ it('logs a deleted activity for each spam entry when bulk-deleted', function ():
 
     Livewire::actingAs($admin)
         ->test('pages::website.spams.index')
-        ->set('selected', $spams->pluck('id')->map(fn ($id) => (string) $id)->all())
+        ->set('selected', $spams->pluck('id')->map(fn ($id): string => (string) $id)->all())
         ->call('bulkDelete');
 
     expect(Activity::query()->where('subject_type', Spam::class)->where('description', 'deleted')->count())

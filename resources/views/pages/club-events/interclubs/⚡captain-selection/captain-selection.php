@@ -356,15 +356,15 @@ new class extends Component
             $teams->pluck('id')->merge($allTeamsForSummary->pluck('id'))->unique()->values()->all()
         );
 
-        $teamsData = $teams->map(fn (Team $team) => $this->buildTeamData($team, $fixtures));
+        $teamsData = $teams->map(fn (Team $team): array => $this->buildTeamData($team, $fixtures));
 
         if ($this->selectedTeamId && ! $teamsData->firstWhere('id', $this->selectedTeamId)) {
             $this->selectedTeamId = $teamsData->first()['id'] ?? null;
         }
 
         $alertMatches = $teamsData
-            ->flatMap(fn ($t) => collect($t['matches'])->map(fn ($m) => array_merge($m, ['team_name' => $t['name'], 'team_id' => $t['id']])))
-            ->filter(fn ($m) => $m['status'] === 'urgent')
+            ->flatMap(fn ($t) => collect($t['matches'])->map(fn ($m): array => array_merge($m, ['team_name' => $t['name'], 'team_id' => $t['id']])))
+            ->filter(fn ($m): bool => $m['status'] === 'urgent')
             ->values();
 
         // Drawer data: roster for the selected match
@@ -414,7 +414,7 @@ new class extends Component
 
                 // Roster from team members
                 $roster = ($selectedTeam?->users ?? collect())->map(
-                    fn (User $player) => $this->buildPlayerData($player, $pivotMap, $selectedTeam, $season, $fixtures, $blockedPlayerData)
+                    fn (User $player): array => $this->buildPlayerData($player, $pivotMap, $selectedTeam, $season, $fixtures, $blockedPlayerData)
                 )->sortBy([
                     ['rank_sort', 'asc'],
                     ['last_name', 'asc'],
@@ -427,7 +427,7 @@ new class extends Component
 
                 if ($substituteIds !== []) {
                     $substitutes = User::whereIn('id', $substituteIds)->get()->map(
-                        fn (User $player) => $this->buildPlayerData($player, $pivotMap, $selectedTeam, $season, $fixtures, $blockedPlayerData)
+                        fn (User $player): array => $this->buildPlayerData($player, $pivotMap, $selectedTeam, $season, $fixtures, $blockedPlayerData)
                     )->values();
                     $roster = $roster->concat($substitutes)->values();
                 }
@@ -450,12 +450,12 @@ new class extends Component
             if ($this->isUpdateMode) {
                 $pendingAddedNames = User::whereIn('id', $this->pendingAddedIds)
                     ->get()
-                    ->map(fn (User $u) => $u->last_name . ' ' . $u->first_name)
+                    ->map(fn (User $u): string => $u->last_name . ' ' . $u->first_name)
                     ->values()
                     ->all();
                 $pendingRemovedNames = User::whereIn('id', $this->pendingRemovedIds)
                     ->get()
-                    ->map(fn (User $u) => $u->last_name . ' ' . $u->first_name)
+                    ->map(fn (User $u): string => $u->last_name . ' ' . $u->first_name)
                     ->values()
                     ->all();
             }
@@ -487,10 +487,10 @@ new class extends Component
             };
 
             $eligible = $nameMatches
-                ->reject(fn (User $u) => in_array($u->id, $excludedIds, true))
+                ->reject(fn (User $u): bool => in_array($u->id, $excludedIds, true))
                 ->filter($matchesCategory);
 
-            $searchResults = $eligible->take(8)->map(fn (User $u) => [
+            $searchResults = $eligible->take(8)->map(fn (User $u): array => [
                 'id' => $u->id,
                 'name' => $u->last_name . ' ' . $u->first_name,
                 'rank' => $u->ranking ?? '—',
@@ -505,12 +505,12 @@ new class extends Component
 
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
-            'seasons_list' => $seasons->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
-            'teams_list' => $teams->map(fn ($t) => ['id' => $t->id, 'name' => ($t->club?->name ?? '?') . ' ' . $t->name]),
+            'seasons_list' => $seasons->map(fn ($s): array => ['id' => $s->id, 'name' => $s->name]),
+            'teams_list' => $teams->map(fn ($t): array => ['id' => $t->id, 'name' => ($t->club?->name ?? '?') . ' ' . $t->name]),
             'teams_for_filter' => $teams->count() > 1
                 ? $teams
-                    ->sortBy(fn (Team $t) => sprintf('%d_%s', ['MEN' => 0, 'WOMEN' => 1, 'VETERANS' => 2][$t->league?->category] ?? 99, $t->name))
-                    ->map(fn (Team $t) => [
+                    ->sortBy(fn (Team $t): string => sprintf('%d_%s', ['MEN' => 0, 'WOMEN' => 1, 'VETERANS' => 2][$t->league?->category] ?? 99, $t->name))
+                    ->map(fn (Team $t): array => [
                         'id' => $t->id,
                         'name' => $t->name . ($t->league?->category ? ' · ' . $this->categoryLabel($t->league->category) : ''),
                     ])->values()->all()
@@ -610,10 +610,10 @@ new class extends Component
             return null;
         }
 
-        $hiddenByAlignment = $nameMatches->contains(fn (User $u) => in_array($u->id, $excludedIds, true));
+        $hiddenByAlignment = $nameMatches->contains(fn (User $u): bool => in_array($u->id, $excludedIds, true));
         $hiddenByCategory = $nameMatches
-            ->reject(fn (User $u) => in_array($u->id, $excludedIds, true))
-            ->contains(fn (User $u) => ! $matchesCategory($u));
+            ->reject(fn (User $u): bool => in_array($u->id, $excludedIds, true))
+            ->contains(fn (User $u): bool => ! $matchesCategory($u));
 
         $reasons = [];
 
@@ -652,7 +652,7 @@ new class extends Component
 
         $interclubs = $this->fixturesForTeam($fixtures, $team->id);
 
-        $matches = $interclubs->map(function (Interclub $ic) use ($teamMemberCount) {
+        $matches = $interclubs->map(function (Interclub $ic) use ($teamMemberCount): array {
             $ourTeam = $ic->visitedTeam?->club?->is_own_club
                 ? $ic->visitedTeam
                 : $ic->visitingTeam;
@@ -663,9 +663,9 @@ new class extends Component
 
             $icUsers = $ic->users;
 
-            $availableCount = $icUsers->filter(fn ($u) => $u->registration?->availability === 'available')->count();
-            $maybeCount = $icUsers->filter(fn ($u) => $u->registration?->availability === 'maybe')->count();
-            $unavailCount = $icUsers->filter(fn ($u) => $u->registration?->availability === 'unavailable')->count();
+            $availableCount = $icUsers->filter(fn ($u): bool => $u->registration?->availability === 'available')->count();
+            $maybeCount = $icUsers->filter(fn ($u): bool => $u->registration?->availability === 'maybe')->count();
+            $unavailCount = $icUsers->filter(fn ($u): bool => $u->registration?->availability === 'unavailable')->count();
             $respondedCount = $availableCount + $maybeCount + $unavailCount;
             $pendingCount = max(0, $teamMemberCount - $respondedCount);
 
@@ -678,7 +678,7 @@ new class extends Component
 
             $selectedPlayerNames = $isPast
                 ? $icUsers->filter(fn ($u) => $u->registration?->is_selected)
-                    ->map(fn ($u) => $u->last_name . ' ' . $u->first_name)
+                    ->map(fn ($u): string => $u->last_name . ' ' . $u->first_name)
                     ->values()
                     ->toArray()
                 : [];
@@ -725,7 +725,7 @@ new class extends Component
     {
         $weekNumbers = $this->weekNumbers($teams, $fixtures);
 
-        $weeks = $weekNumbers->map(fn (int $wk) => [
+        $weeks = $weekNumbers->map(fn (int $wk): array => [
             'wk' => $wk,
             'status' => $this->weekStatus($wk, $teams, $fixtures),
         ])->values()->all();
@@ -734,7 +734,7 @@ new class extends Component
         // leaves the score entirely rather than counting as ready. The score
         // therefore reads "ready out of what is left", and its denominator
         // shrinks as the season goes.
-        $scored = collect($weeks)->reject(fn (array $w) => $w['status'] === 'past');
+        $scored = collect($weeks)->reject(fn (array $w): bool => $w['status'] === 'past');
 
         $total = $scored->count();
         $ok = $scored->where('status', 'confirmed')->count();
@@ -745,7 +745,7 @@ new class extends Component
             'total' => $total,
             'ok' => $ok,
             'matrix' => $this->teamWeekMatrix($teams, $weekNumbers, $fixtures),
-            'teams' => $teams->map(fn (Team $t) => ['id' => $t->id, 'name' => $t->name])->values()->all(),
+            'teams' => $teams->map(fn (Team $t): array => ['id' => $t->id, 'name' => $t->name])->values()->all(),
         ];
     }
 
@@ -765,7 +765,7 @@ new class extends Component
      */
     private function fixturesForTeam(\Illuminate\Database\Eloquent\Collection $fixtures, int $teamId): \Illuminate\Database\Eloquent\Collection
     {
-        return $fixtures->filter(fn (Interclub $ic) => $ic->visited_team_id === $teamId
+        return $fixtures->filter(fn (Interclub $ic): bool => $ic->visited_team_id === $teamId
             || $ic->visiting_team_id === $teamId)->values();
     }
 
@@ -783,9 +783,9 @@ new class extends Component
         $users = $interclub->users;
         $maxPlayers = $interclub->total_players;
 
-        $confirmedAtCount = $users->filter(fn ($u) => $u->registration?->is_selected && $u->registration?->selection_confirmed_at)->count();
+        $confirmedAtCount = $users->filter(fn ($u): bool => $u->registration?->is_selected && $u->registration?->selection_confirmed_at)->count();
         $selectedCount = $users->filter(fn ($u) => $u->registration?->is_selected)->count();
-        $availableCount = $users->filter(fn ($u) => $u->registration?->availability === 'available')->count();
+        $availableCount = $users->filter(fn ($u): bool => $u->registration?->availability === 'available')->count();
         $daysUntil = (int) now()->diffInDays($interclub->start_date_time, false);
 
         return match (true) {
@@ -857,9 +857,9 @@ new class extends Component
     private function matchesPlayedCount(int $userId, int $teamId, Season $season, \Illuminate\Database\Eloquent\Collection $fixtures): int
     {
         return $this->fixturesForTeam($fixtures, $teamId)
-            ->filter(fn (Interclub $ic) => $ic->season_id === $season->id
+            ->filter(fn (Interclub $ic): bool => $ic->season_id === $season->id
                 && $ic->start_date_time < now()
-                && $ic->users->contains(fn (User $u) => $u->id === $userId && (bool) $u->registration?->has_played))
+                && $ic->users->contains(fn (User $u): bool => $u->id === $userId && (bool) $u->registration?->has_played))
             ->count();
     }
 
@@ -867,8 +867,8 @@ new class extends Component
     private function matchesSelectedCount(int $userId, int $teamId, Season $season, \Illuminate\Database\Eloquent\Collection $fixtures): int
     {
         return $this->fixturesForTeam($fixtures, $teamId)
-            ->filter(fn (Interclub $ic) => $ic->season_id === $season->id
-                && $ic->users->contains(fn (User $u) => $u->id === $userId && (bool) $u->registration?->is_selected))
+            ->filter(fn (Interclub $ic): bool => $ic->season_id === $season->id
+                && $ic->users->contains(fn (User $u): bool => $u->id === $userId && (bool) $u->registration?->is_selected))
             ->count();
     }
 
@@ -928,9 +928,9 @@ new class extends Component
         $teamIds = $teams->pluck('id')->all();
 
         return $fixtures
-            ->filter(fn (Interclub $ic) => in_array($ic->visited_team_id, $teamIds, true)
+            ->filter(fn (Interclub $ic): bool => in_array($ic->visited_team_id, $teamIds, true)
                 || in_array($ic->visiting_team_id, $teamIds, true))
-            ->reject(fn (Interclub $ic) => $ic->week_number === null)
+            ->reject(fn (Interclub $ic): bool => $ic->week_number === null)
             ->pluck('week_number')
             ->unique()
             ->values();

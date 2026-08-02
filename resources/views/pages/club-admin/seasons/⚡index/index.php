@@ -195,7 +195,7 @@ new class extends Component
     public function with(): array
     {
         $all = $this->seasons;
-        $pastCount = $all->filter(fn (Season $s) => $s->isPast())->count();
+        $pastCount = $all->filter(fn (Season $s): bool => $s->isPast())->count();
         $hiddenPastCount = $this->showAllPastSeasons ? 0 : max(0, $pastCount - 1);
 
         return [

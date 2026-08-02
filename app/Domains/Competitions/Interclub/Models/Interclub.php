@@ -115,7 +115,7 @@ class Interclub extends Model
             ->unique()
             ->values()
             ->flip()
-            ->map(fn (int $i) => $i + 1)
+            ->map(fn (int $i): int => $i + 1)
             ->toArray();
     }
 

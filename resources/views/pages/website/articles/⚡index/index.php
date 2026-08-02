@@ -132,13 +132,13 @@ new class extends Component
 
         if (filled($this->status)) {
             $label = collect(NewsPostStatusEnum::cases())
-                ->first(fn ($s) => $s->value === $this->status)?->getLabel() ?? $this->status;
+                ->first(fn ($s): bool => $s->value === $this->status)?->getLabel() ?? $this->status;
             $chips[] = ['key' => 'status', 'label' => __('Status') . ': ' . $label];
         }
 
         if (filled($this->category)) {
             $label = collect(NewsPostCategoryEnum::cases())
-                ->first(fn ($c) => $c->value === $this->category)?->getLabel() ?? $this->category;
+                ->first(fn ($c): bool => $c->value === $this->category)?->getLabel() ?? $this->category;
             $chips[] = ['key' => 'category', 'label' => __('Category') . ': ' . $label];
         }
 
@@ -193,10 +193,10 @@ new class extends Component
         ")->first();
 
         $statusOptions = collect(NewsPostStatusEnum::cases())
-            ->map(fn ($s) => ['id' => $s->value, 'name' => $s->getLabel()]);
+            ->map(fn ($s): array => ['id' => $s->value, 'name' => $s->getLabel()]);
 
         $categoryOptions = collect(NewsPostCategoryEnum::cases())
-            ->map(fn ($c) => ['id' => $c->value, 'name' => $c->getLabel()]);
+            ->map(fn ($c): array => ['id' => $c->value, 'name' => $c->getLabel()]);
 
         $headers = [
             ['key' => 'title',        'label' => __('Title'),    'sortable' => false],
@@ -231,7 +231,7 @@ new class extends Component
     {
         return $this->articles
             ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
+            ->map(fn (int $id): string => (string) $id)
             ->toArray();
     }
 };

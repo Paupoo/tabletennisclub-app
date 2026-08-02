@@ -255,7 +255,7 @@ new class extends Component
         }
 
         $allPendingIds = $subscription->trainingPacks
-            ->filter(fn ($p) => $p->pivot->status === 'pending')
+            ->filter(fn ($p): bool => $p->pivot->status === 'pending')
             ->pluck('id')
             ->toArray();
 
@@ -929,7 +929,7 @@ new class extends Component
         $approvedPacks = TrainingPack::whereIn('id', $this->approvedPackIds)->get();
 
         $discountable = $approvedPacks->filter(fn (TrainingPack $p) => $p->allow_discount);
-        $fixed = $approvedPacks->filter(fn (TrainingPack $p) => ! $p->allow_discount);
+        $fixed = $approvedPacks->filter(fn (TrainingPack $p): bool => ! $p->allow_discount);
 
         $familyCount = $subscription->has_other_family_members ? 2 : 1;
         $applyDiscount = $discountable->count() > 1 || $familyCount > 1;
@@ -1021,14 +1021,14 @@ new class extends Component
                 ->orWhere('last_name', 'like', "%{$this->search}%")
             ))
             ->get()
-            ->sortBy(fn ($sub) => $statusOrder[$sub->status] ?? 5)
+            ->sortBy(fn ($sub): int => $statusOrder[$sub->status] ?? 5)
             ->map(function (Subscription $sub) {
-                $enrolledPacks = $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'enrolled');
-                $pendingPacks = $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'pending');
-                $cancelledPacks = $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'cancelled');
+                $enrolledPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'enrolled');
+                $pendingPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'pending');
+                $cancelledPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'cancelled');
                 // Packs quittés : encore facturés au pro rata des mois suivis,
                 // donc toujours visibles dans le détail de la cotisation.
-                $leftPacks = $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'left');
+                $leftPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'left');
 
                 // A voided affiliation drags its trainings down with it, so any
                 // pack still flagged pending/enrolled reads as cancelled here —
@@ -1060,7 +1060,7 @@ new class extends Component
                         'trainings' => $sub->trainingPacks->pluck('name')->toArray(),
                     ]],
                     'total_price' => $sub->amount_due,
-                    'payments' => $sub->payments->map(fn ($p) => [
+                    'payments' => $sub->payments->map(fn ($p): array => [
                         'reference' => $p->reference,
                         'amount_due' => $p->amount_due,
                         'status' => $p->status,
@@ -1097,7 +1097,7 @@ new class extends Component
             return;
         }
 
-        $pendingPacks = $subscription->trainingPacks->filter(fn ($p) => $p->pivot->status === 'pending');
+        $pendingPacks = $subscription->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'pending');
 
         foreach ($pendingPacks as $pack) {
             $subscription->user->notify(new TrainingPackRejectedNotification(
@@ -1182,7 +1182,7 @@ new class extends Component
         $subscription = Subscription::with(['user', 'trainingPacks'])->find($id);
         $this->approvedPackIds = $subscription
             ?->trainingPacks
-            ->filter(fn ($p) => $p->pivot->status === 'pending')
+            ->filter(fn ($p): bool => $p->pivot->status === 'pending')
             ->pluck('id')
             ->toArray() ?? [];
 
@@ -1229,7 +1229,7 @@ new class extends Component
         $subscription = Subscription::with(['trainingPacks'])->find($subscriptionId);
         $this->approvedPackIds = $subscription
             ?->trainingPacks
-            ->filter(fn ($p) => $p->pivot->status === 'pending')
+            ->filter(fn ($p): bool => $p->pivot->status === 'pending')
             ->pluck('id')
             ->toArray() ?? [];
     }
@@ -1444,7 +1444,7 @@ new class extends Component
     {
         return Season::orderBy('start_at')
             ->get()
-            ->map(fn ($s) => [
+            ->map(fn ($s): array => [
                 'id' => $s->id,
                 'name' => $s->name . ($s->is_active ? ' ✦' : ''),
             ])
@@ -1530,7 +1530,7 @@ new class extends Component
 
         return TrainingPack::where('season_id', $season->id)
             ->get()
-            ->map(fn ($pack) => ['id' => $pack->id, 'name' => $pack->name])
+            ->map(fn ($pack): array => ['id' => $pack->id, 'name' => $pack->name])
             ->toArray();
     }
 
@@ -1555,7 +1555,7 @@ new class extends Component
         $allAfter = $enrolledPacks->merge($approvedPacks);
 
         $discountable = $allAfter->filter(fn (TrainingPack $p) => $p->allow_discount);
-        $fixed = $allAfter->filter(fn (TrainingPack $p) => ! $p->allow_discount);
+        $fixed = $allAfter->filter(fn (TrainingPack $p): bool => ! $p->allow_discount);
 
         $familyCount = $subscription->has_other_family_members ? 2 : 1;
         $applyDiscount = $discountable->count() > 1 || $familyCount > 1;

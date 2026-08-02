@@ -28,7 +28,7 @@ class ToggleHasPaidTournamentAction extends ToggleHasPaidAction
             throw new Exception(__('Relation not found'));
         }
 
-        DB::transaction(fn () => $pivot->has_paid = ! $pivot->has_paid);
+        DB::transaction(fn (): bool => $pivot->has_paid = ! $pivot->has_paid);
 
         return $pivot->save();
     }

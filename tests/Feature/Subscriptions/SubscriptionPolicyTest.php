@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

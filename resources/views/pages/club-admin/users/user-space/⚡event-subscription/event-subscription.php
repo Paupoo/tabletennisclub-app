@@ -73,7 +73,7 @@ new class extends Component
 
         $pairedIds = TournamentPair::where('tournament_id', $this->partnerTournamentId)
             ->get()
-            ->flatMap(fn ($p) => [$p->player1_id, $p->player2_id])
+            ->flatMap(fn ($p): array => [$p->player1_id, $p->player2_id])
             ->unique()
             ->toArray();
 
@@ -83,7 +83,7 @@ new class extends Component
             ->whereNotIn('users.id', $pairedIds)
             ->where('users.id', '!=', $this->user->id)
             ->get()
-            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
+            ->map(fn (User $u): array => ['id' => $u->id, 'name' => $u->full_name])
             ->toArray();
     }
 
@@ -381,7 +381,7 @@ new class extends Component
             // Les packs quittés restent attachés pour la facturation au pro
             // rata ; ils ne donnent plus accès aux séances.
             ->flatMap(fn ($sub) => $sub->trainingPacks
-                ->reject(fn ($pack) => $pack->pivot->status === 'left')
+                ->reject(fn ($pack): bool => $pack->pivot->status === 'left')
                 ->pluck('id'));
 
         if ($packIds->isEmpty()) {

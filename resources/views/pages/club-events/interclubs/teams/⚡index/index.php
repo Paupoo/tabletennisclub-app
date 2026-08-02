@@ -247,7 +247,7 @@ new class extends Component
 
         return $teams
             ->map(function (Team $team) use ($nextMatches, $categoryLabels) {
-                $nextMatch = $nextMatches->first(fn (Interclub $ic) => $ic->visited_team_id === $team->id || $ic->visiting_team_id === $team->id
+                $nextMatch = $nextMatches->first(fn (Interclub $ic): bool => $ic->visited_team_id === $team->id || $ic->visiting_team_id === $team->id
                 );
 
                 $rawCategory = $team->league?->category ?? '';
@@ -272,7 +272,7 @@ new class extends Component
                 ];
             })
             ->when($this->search, fn (Collection $c) => $c->filter(
-                fn ($team) => str_contains(strtolower($team->name), strtolower($this->search))
+                fn ($team): bool => str_contains(strtolower($team->name), strtolower($this->search))
                     || str_contains(strtolower($team->captain_name), strtolower($this->search))
             ));
     }
@@ -296,9 +296,9 @@ new class extends Component
             'season' => $selectedSeason,
             'seasons' => Season::orderBy('start_at')->get(),
             'teamsCount' => $teams->count(),
-            'teamNameOptions' => collect(TeamName::cases())->map(fn ($t) => ['id' => $t->name, 'name' => $t->name]),
-            'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c) => ['id' => $c->name, 'name' => $c->value]),
-            'levelOptions' => collect(LeagueLevel::cases())->map(fn ($l) => ['id' => $l->name, 'name' => $l->value]),
+            'teamNameOptions' => collect(TeamName::cases())->map(fn ($t): array => ['id' => $t->name, 'name' => $t->name]),
+            'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c): array => ['id' => $c->name, 'name' => $c->value]),
+            'levelOptions' => collect(LeagueLevel::cases())->map(fn ($l): array => ['id' => $l->name, 'name' => $l->value]),
             'leagueOptions' => $this->leagueOptions(Season::current()),
             'isAdminOrCommittee' => Auth::user()->can(Permission::TeamsManage->value),
         ];

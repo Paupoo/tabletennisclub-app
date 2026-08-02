@@ -130,7 +130,7 @@ describe('Selection and pagination', function (): void {
         $component = Livewire::actingAs($this->adminUser)
             ->test('pages::website.spams.index');
 
-        $component->assertViewHas('spams', function ($spams) {
+        $component->assertViewHas('spams', function ($spams): bool {
             return $spams instanceof LengthAwarePaginator
                 && $spams->count() === 25
                 && $spams->total() === 30;

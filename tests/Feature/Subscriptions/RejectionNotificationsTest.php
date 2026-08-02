@@ -118,7 +118,7 @@ describe('SubscriptionRejectedNotification', function (): void {
         ));
         $subscription->cancel();
 
-        Notification::assertSentTo($user, SubscriptionRejectedNotification::class, function ($n) {
+        Notification::assertSentTo($user, SubscriptionRejectedNotification::class, function ($n): bool {
             return $n->template === 'full_teams' && $n->message === 'Pas de place.';
         });
         expect($subscription->fresh()->status)->toBe('cancelled');
@@ -235,8 +235,8 @@ describe('TrainingPackRejectedNotification', function (): void {
         }
         $subscription->trainingPacks()->wherePivot('status', 'pending')->detach();
 
-        Notification::assertSentTo($user, TrainingPackRejectedNotification::class, fn ($n) => $n->pack->name === 'Pack A');
-        Notification::assertSentTo($user, TrainingPackRejectedNotification::class, fn ($n) => $n->pack->name === 'Pack B');
+        Notification::assertSentTo($user, TrainingPackRejectedNotification::class, fn ($n): bool => $n->pack->name === 'Pack A');
+        Notification::assertSentTo($user, TrainingPackRejectedNotification::class, fn ($n): bool => $n->pack->name === 'Pack B');
         expect($subscription->trainingPacks()->count())->toBe(0);
     })->group('notifications', 'rejection');
 

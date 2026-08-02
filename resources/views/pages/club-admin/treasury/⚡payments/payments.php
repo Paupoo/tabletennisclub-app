@@ -89,8 +89,8 @@ new class extends Component
 
         $payments = Payment::whereIn('id', $ids)->where('status', 'to_refund')->get();
 
-        $blocked = $payments->filter(fn (Payment $p) => $p->refund_transaction_id !== null);
-        $toCancel = $payments->filter(fn (Payment $p) => $p->refund_transaction_id === null);
+        $blocked = $payments->filter(fn (Payment $p): bool => $p->refund_transaction_id !== null);
+        $toCancel = $payments->filter(fn (Payment $p): bool => $p->refund_transaction_id === null);
 
         foreach ($toCancel as $payment) {
             $payment->update(['status' => 'paid']);
@@ -368,7 +368,7 @@ new class extends Component
                 fn ($q) => $q->where('user_id', $this->userId)
             ))
             ->when($this->eventType, fn ($q) => $q->where('payable_type', $this->eventType))
-            ->when($this->eventName, fn ($q) => $this->applyEventNameFilter($q, $this->eventName))
+            ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName))
             ->get()
             ->map(function (Payment $p) {
                 $label = $p->payable instanceof DescribesPayment ? $p->payable->getPaymentLabel() : null;
@@ -411,7 +411,7 @@ new class extends Component
             ->where('amount', '>', 0)
             ->orderBy('date', 'desc')
             ->get()
-            ->map(function (Transaction $t) use ($payment, $normalizedPayRef) {
+            ->map(function (Transaction $t) use ($payment, $normalizedPayRef): Transaction {
                 if (! $payment) {
                     $t->match_score = 'none';
 
@@ -431,7 +431,7 @@ new class extends Component
 
                 return $t;
             })
-            ->sortByDesc(fn ($t) => match ($t->match_score) {
+            ->sortByDesc(fn ($t): int => match ($t->match_score) {
                 'perfect' => 3,
                 'reference' => 2,
                 'amount' => 1,
@@ -452,7 +452,7 @@ new class extends Component
         $unreconciledTransactions = Transaction::whereDoesntHave('payment')
             ->where('amount', '>', 0)
             ->get()
-            ->keyBy(fn ($t) => $this->normalizeReference($t->structured_reference ?? '___' . $t->id));
+            ->keyBy(fn ($t): string => $this->normalizeReference($t->structured_reference ?? '___' . $t->id));
 
         $this->batchMatches = [];
 
@@ -579,7 +579,7 @@ new class extends Component
 
                 return $t;
             })
-            ->sortByDesc(fn (Transaction $t) => match ($t->match_score) {
+            ->sortByDesc(fn (Transaction $t): int => match ($t->match_score) {
                 'perfect' => 3,
                 'iban' => 2,
                 'amount' => 1,
@@ -627,7 +627,7 @@ new class extends Component
             $this->usersSearchList = $this->userId
                 ? User::where('id', $this->userId)
                     ->get(['id', 'first_name', 'last_name'])
-                    ->map(fn ($u) => ['id' => $u->id, 'name' => $u->full_name])
+                    ->map(fn ($u): array => ['id' => $u->id, 'name' => $u->full_name])
                     ->toArray()
                 : [];
 
@@ -641,7 +641,7 @@ new class extends Component
             ->orderBy('last_name')
             ->limit(10)
             ->get(['id', 'first_name', 'last_name'])
-            ->map(fn ($u) => ['id' => $u->id, 'name' => $u->full_name])
+            ->map(fn ($u): array => ['id' => $u->id, 'name' => $u->full_name])
             ->toArray();
     }
 
@@ -740,7 +740,7 @@ new class extends Component
     {
         return collect($this->payments()->items())
             ->pluck('id')
-            ->map(fn ($id) => (string) $id)
+            ->map(fn ($id): string => (string) $id)
             ->toArray();
     }
 
@@ -763,7 +763,7 @@ new class extends Component
                 fn ($q) => $q->where('user_id', $this->userId)
             ))
             ->when($this->eventType, fn ($q) => $q->where('payable_type', $this->eventType))
-            ->when($this->eventName, fn ($q) => $this->applyEventNameFilter($q, $this->eventName))
+            ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName))
             ->pluck('id')
             ->toArray();
     }

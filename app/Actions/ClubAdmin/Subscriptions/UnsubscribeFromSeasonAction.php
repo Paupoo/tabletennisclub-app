@@ -7,7 +7,6 @@ namespace App\Actions\ClubAdmin\Subscriptions;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
-use Illuminate\Http\Request;
 
 class UnsubscribeFromSeasonAction
 {

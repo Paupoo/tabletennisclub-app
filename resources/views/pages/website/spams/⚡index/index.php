@@ -260,7 +260,7 @@ new class extends Component
     {
         return $this->spams
             ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
+            ->map(fn (int $id): string => (string) $id)
             ->toArray();
     }
 };

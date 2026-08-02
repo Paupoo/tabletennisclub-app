@@ -126,7 +126,7 @@ describe('TournamentResultsMail — queueing', function (): void {
             rankings: collect(),
         ));
 
-        Mail::assertQueued(TournamentResultsMail::class, function (TournamentResultsMail $m) use ($recipient) {
+        Mail::assertQueued(TournamentResultsMail::class, function (TournamentResultsMail $m) use ($recipient): bool {
             return $m->recipient->is($recipient)
                 && $m->emailSubject === 'Résultats — Open Printemps';
         });

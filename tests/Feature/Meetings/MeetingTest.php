@@ -225,7 +225,7 @@ describe('Meeting show page', function (): void {
             ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
             ->call('sendInvitations');
 
-        Bus::assertDispatched(SendMeetingInvitationsJob::class, fn ($job) => $job->meetingId === $meeting->id);
+        Bus::assertDispatched(SendMeetingInvitationsJob::class, fn ($job): bool => $job->meetingId === $meeting->id);
     });
 
     test('invitations cannot be dispatched if meeting is in planning status', function (): void {

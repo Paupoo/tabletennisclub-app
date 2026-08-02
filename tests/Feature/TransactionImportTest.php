@@ -13,7 +13,7 @@ use Livewire\Livewire;
 function makeCsvContent(array $rows): string
 {
     $header = 'Date;Montant;Description;Nom contrepartie;Numéro de compte contrepartie;Communication structurée;Communication libre';
-    $lines = array_map(fn ($r) => implode(';', $r), $rows);
+    $lines = array_map(fn ($r): string => implode(';', $r), $rows);
 
     return implode("\n", [$header, ...$lines]);
 }

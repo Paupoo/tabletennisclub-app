@@ -51,7 +51,7 @@ class GenerateErdCommand extends Command
 
         // Finder walks the tree in filesystem order, which varies between machines
         // and between runs. Sort so the generated files only change when a model does.
-        usort($models, fn (array $a, array $b) => [$a['domain'], $a['class']] <=> [$b['domain'], $b['class']]);
+        usort($models, fn (array $a, array $b): int => [$a['domain'], $a['class']] <=> [$b['domain'], $b['class']]);
 
         return $models;
     }

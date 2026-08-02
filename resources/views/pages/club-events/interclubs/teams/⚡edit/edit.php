@@ -161,7 +161,7 @@ new class extends Component
     public function toggleMember(int $userId): void
     {
         if (in_array($userId, $this->memberIds)) {
-            $this->memberIds = array_values(array_filter($this->memberIds, fn ($id) => $id !== $userId));
+            $this->memberIds = array_values(array_filter($this->memberIds, fn ($id): bool => $id !== $userId));
         } else {
             $this->memberIds[] = $userId;
         }
@@ -197,7 +197,7 @@ new class extends Component
             ->get();
 
         $teamNameOptions = collect(TeamName::cases())
-            ->map(fn ($n) => ['id' => $n->name, 'name' => $n->name]);
+            ->map(fn ($n): array => ['id' => $n->name, 'name' => $n->name]);
 
         // Divisions déjà déclarées pour la saison de l'équipe. On ne propose que
         // l'existant : créer une division reste une action délibérée, ailleurs.
@@ -231,8 +231,8 @@ new class extends Component
             'teamNameOptions' => $teamNameOptions,
             'leagueOptions' => $leagueOptions,
             'scheduledMatchCount' => $scheduledMatchCount,
-            'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c) => ['id' => $c->name, 'name' => $c->value]),
-            'levelOptions' => collect(LeagueLevel::cases())->map(fn ($l) => ['id' => $l->name, 'name' => $l->value]),
+            'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c): array => ['id' => $c->name, 'name' => $c->value]),
+            'levelOptions' => collect(LeagueLevel::cases())->map(fn ($l): array => ['id' => $l->name, 'name' => $l->value]),
         ];
     }
 

@@ -35,7 +35,7 @@ class SendMeetingInvitationsJob implements ShouldQueue
 
         // Bulk pivot upsert — single query for all users
         DB::table('meeting_user')->upsert(
-            $recipients->map(fn (User $u) => [
+            $recipients->map(fn (User $u): array => [
                 'meeting_id' => $meeting->id,
                 'user_id' => $u->id,
                 'status' => MeetingUserStatusEnum::INVITED->value,

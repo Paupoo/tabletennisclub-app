@@ -102,7 +102,7 @@ new class extends Component
         $weeks = $this->weekNumbersForSelectedSeason();
         $max = $weeks->last();
         if ($this->selectedWeek && $max && $this->selectedWeek < $max) {
-            $next = $weeks->first(fn ($w) => $w > $this->selectedWeek);
+            $next = $weeks->first(fn ($w): bool => $w > $this->selectedWeek);
             if ($next) {
                 $this->selectedWeek = $next;
             }
@@ -127,7 +127,7 @@ new class extends Component
         $weeks = $this->weekNumbersForSelectedSeason();
         $min = $weeks->first();
         if ($this->selectedWeek && $min && $this->selectedWeek > $min) {
-            $prev = $weeks->last(fn ($w) => $w < $this->selectedWeek);
+            $prev = $weeks->last(fn ($w): bool => $w < $this->selectedWeek);
             if ($prev) {
                 $this->selectedWeek = $prev;
             }
@@ -218,7 +218,7 @@ new class extends Component
 
         if ($this->selectedWeek === null && $weekNumbers->isNotEmpty()) {
             $this->selectedWeek = $weekNumbers
-                ->filter(fn ($w) => $w >= now()->isoWeek)
+                ->filter(fn ($w): bool => $w >= now()->isoWeek)
                 ->first() ?? $weekNumbers->first();
         }
 
@@ -272,8 +272,8 @@ new class extends Component
 
         $categories = $rawTeams
             ->when($this->selectedTeam, fn ($c) => $c->where('team_id', $this->selectedTeam))
-            ->filter(fn ($t) => ! $this->filterAlerts || $t['status'] === 'alert')
-            ->filter(fn ($t) => $t['status'] !== 'no_match')
+            ->filter(fn ($t): bool => ! $this->filterAlerts || $t['status'] === 'alert')
+            ->filter(fn ($t): bool => $t['status'] !== 'no_match')
             ->groupBy('category');
 
         $searchResults = [];
@@ -286,7 +286,7 @@ new class extends Component
                 ->whereNotIn('id', $this->selectedPlayerIds)
                 ->limit(8)
                 ->get()
-                ->map(fn (User $u) => [
+                ->map(fn (User $u): array => [
                     'id' => $u->id,
                     'name' => $u->last_name . ' ' . $u->first_name,
                     'rank' => $u->ranking ?? '—',
@@ -300,7 +300,7 @@ new class extends Component
                 : $drawerInterclub->visitingTeam)
             : null;
 
-        $drawerRoster = $drawerTeam ? $drawerTeam->users->map(fn (User $u) => [
+        $drawerRoster = $drawerTeam ? $drawerTeam->users->map(fn (User $u): array => [
             'id' => $u->id,
             'name' => $u->last_name . ' ' . $u->first_name,
             'rank' => $u->ranking ?? '—',
@@ -317,11 +317,11 @@ new class extends Component
             'filterChips' => $this->filterChips,
             'headers' => $headers,
             'categories' => $categories,
-            'seasons_list' => $seasons->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
+            'seasons_list' => $seasons->map(fn ($s): array => ['id' => $s->id, 'name' => $s->name]),
             'current_season' => $season,
-            'weeks_options' => $weekNumbers->map(fn ($w) => ['id' => $w, 'name' => 'S' . ($matchDayMap[$w] ?? $w)]),
+            'weeks_options' => $weekNumbers->map(fn ($w): array => ['id' => $w, 'name' => 'S' . ($matchDayMap[$w] ?? $w)]),
             'weeks_monitor' => $weeksMonitor,
-            'teams_list' => $allTeams->map(fn ($t) => ['id' => $t->id, 'name' => $t->name]),
+            'teams_list' => $allTeams->map(fn ($t): array => ['id' => $t->id, 'name' => $t->name]),
             'preparation_score' => $preparationScore,
             'total_weeks' => $totalWeeks,
             'drawerInterclub' => $drawerInterclub,

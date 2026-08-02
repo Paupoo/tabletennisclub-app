@@ -298,7 +298,7 @@ new class extends Component
     public function levelOptions(): array
     {
         return collect(TrainingLevel::cases())
-            ->map(fn ($e) => ['id' => $e->value, 'name' => $e->value])
+            ->map(fn ($e): array => ['id' => $e->value, 'name' => $e->value])
             ->toArray();
     }
 
@@ -549,7 +549,7 @@ new class extends Component
     {
         return Room::orderBy('name')
             ->get()
-            ->map(fn (Room $r) => ['id' => $r->id, 'name' => $r->name])
+            ->map(fn (Room $r): array => ['id' => $r->id, 'name' => $r->name])
             ->toArray();
     }
 
@@ -758,7 +758,7 @@ new class extends Component
         return User::role(Role::COACH->value)
             ->orderBy('first_name')
             ->get()
-            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
+            ->map(fn (User $u): array => ['id' => $u->id, 'name' => $u->full_name])
             ->toArray();
     }
 
@@ -766,7 +766,7 @@ new class extends Component
     public function typeOptions(): array
     {
         return collect(TrainingType::cases())
-            ->map(fn ($e) => ['id' => $e->value, 'name' => $e->value])
+            ->map(fn ($e): array => ['id' => $e->value, 'name' => $e->value])
             ->toArray();
     }
 

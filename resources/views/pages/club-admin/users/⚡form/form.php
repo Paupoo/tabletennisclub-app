@@ -69,8 +69,12 @@ new class extends Component
     #[Rule(['array'])]
     public array $delegations = [];
 
+    /**
+     * The member's own address, and therefore their login. Null is a normal
+     * state, not an incomplete one: a child is reached through their guardian.
+     */
     #[Validate()]
-    public string $email = '';
+    public ?string $email = null;
 
     public ?int $existingFamilyGroupId = null;
 
@@ -251,6 +255,19 @@ new class extends Component
             && Carbon::parse($this->birthdate)->age < 18;
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            // The default message names the field and stops there, which leaves the
+            // secretary encoding a child with no idea that linking a guardian is
+            // what lifts the requirement.
+            'email.required' => __('Enter an address, or link a guardian: a member without an address is reached through their guardian.'),
+        ];
+    }
+
     public function mount(?User $user): void
     {
         // Defense in depth: the route already gates this behind the committee
@@ -261,7 +278,7 @@ new class extends Component
             $this->first_name = $user->first_name ?? '';
             $this->last_name = $user->last_name ?? '';
             $this->gender = $user->gender ?? '';
-            $this->email = $user->email ?? '';
+            $this->email = $user->email;
             $this->street = $user->street ?? '';
             $this->city_code = $user->city_code ?? '';
             $this->city_name = $user->city_name ?? '';
@@ -328,8 +345,12 @@ new class extends Component
                 'nullable',
                 ValidationRule::when($this->is_committee_member, ['required', new Enum(CommitteeRolesEnum::class)]),
             ],
+            // An address identifies a login, and a member reached through their
+            // guardian has none — so it is the guardian, not the age, that lifts
+            // the requirement. Asking for a birthdate instead would leave a child
+            // encoded without one blocked for a reason nobody could act on.
             'email' => [
-                'required',
+                $this->guardianIds === [] ? 'required' : 'nullable',
                 'email',
                 ValidationRule::unique('users', 'email')->ignore($this->user?->id),
             ],
@@ -338,18 +359,17 @@ new class extends Component
                 'digits:6',
                 ValidationRule::unique('users', 'licence')->ignore($this->user?->id),
             ],
+            // Si l'utilisateur existe, on autorise 'nullable', sinon 'required'.
+            // Un compte sans adresse n'a pas de login non plus : exiger un mot de
+            // passe pour une fiche à laquelle personne ne se connectera bloquerait
+            // la création sans rien protéger.
             'password' => [
-                // Si l'utilisateur existe, on autorise 'nullable', sinon 'required'
-                $this->user?->exists
-                    ? 'nullable'
-                    : 'required',
+                $this->needsLogin() ? 'required' : 'nullable',
                 'confirmed',
                 Password::defaults(),
             ],
             'password_confirmation' => [
-                $this->user?->exists
-                    ? 'nullable'
-                    : 'required',
+                $this->needsLogin() ? 'required' : 'nullable',
             ],
             'is_admin' => [
                 'required',
@@ -389,6 +409,12 @@ new class extends Component
     public function save(): void
     {
         Gate::authorize($this->user?->exists ? 'update' : 'create', $this->user ?? User::class);
+
+        // An emptied input arrives as '', and `nullable` only ever short-circuits
+        // on null — Livewire does not go through the middleware that converts one
+        // into the other. Left as is, `email` would reject the empty string as a
+        // malformed address, which is the very refusal this form is meant to drop.
+        $this->email = blank($this->email) ? null : trim($this->email);
 
         try {
             $validated = $this->validate();
@@ -510,6 +536,15 @@ new class extends Component
     {
         abort_unless($this->user !== null, 404);
         Gate::authorize('updatePassword', $this->user);
+
+        // Not a courtesy check: the broker resolves a null address with
+        // `whereNull('email')`, so it hands back whichever managed account comes
+        // first and then breaks on a reset token that cannot hold a null address.
+        if ($this->user->email === null) {
+            $this->error(__('This member has no address of their own yet, so no link can be sent.'));
+
+            return;
+        }
 
         PasswordBroker::sendResetLink(['email' => $this->user->email]);
 
@@ -640,5 +675,17 @@ new class extends Component
         return FamilyGroup::query()
             ->whereHas('users', fn ($query) => $query->whereIn('users.id', $this->familyMemberIds))
             ->value('id');
+    }
+
+    /**
+     * Whether this save has to hand the member a way in.
+     *
+     * Only a member being created with an address of their own: an existing one
+     * already has whatever password they were given, and a member without an
+     * address has no login to protect in the first place.
+     */
+    private function needsLogin(): bool
+    {
+        return ! ($this->user?->exists ?? false) && filled($this->email);
     }
 };

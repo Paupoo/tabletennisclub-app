@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
@@ -231,5 +233,113 @@ describe('form actions', function (): void {
 
         Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
             ->assertDontSee(__('Reset'));
+    });
+});
+
+describe('email — a member reached through their guardian has none of their own', function (): void {
+    /** Every field the form insists on, minus the address and the password. */
+    $identity = static fn (): array => [
+        'first_name' => 'Louis',
+        'last_name' => 'Dupont',
+        'gender' => 'MEN',
+        'phone_number' => '0475123456',
+        'street' => 'Du Bauloy',
+        'city_code' => '1348',
+        'city_name' => 'Ottignies',
+    ];
+
+    it('creates a minor without an address when a guardian is linked', function () use ($identity): void {
+        $guardian = Guardian::factory()->create();
+
+        Livewire::test(USER_FORM_COMPONENT)
+            ->set($identity())
+            ->set('birthdate', now()->subYears(10)->format('Y-m-d'))
+            ->set('email', '')
+            ->set('guardianIds', [$guardian->id])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $louis = User::where('last_name', 'Dupont')->sole();
+
+        expect($louis->email)->toBeNull()
+            ->and($louis->guardians()->pluck('guardians.id')->all())->toBe([$guardian->id]);
+    });
+
+    it('refuses a member with neither an address nor a guardian', function () use ($identity): void {
+        Livewire::test(USER_FORM_COMPONENT)
+            ->set($identity())
+            ->set('email', '')
+            ->call('save')
+            ->assertHasErrors(['email' => 'required']);
+
+        expect(User::where('last_name', 'Dupont')->exists())->toBeFalse();
+    });
+
+    it('never demands a password for an account nobody will log into', function () use ($identity): void {
+        $guardian = Guardian::factory()->create();
+
+        Livewire::test(USER_FORM_COMPONENT)
+            ->set($identity())
+            ->set('email', '')
+            ->set('guardianIds', [$guardian->id])
+            ->set('password', '')
+            ->call('save')
+            ->assertHasNoErrors(['password', 'password_confirmation']);
+    });
+
+    it('re-saves a member imported without an address, without inventing one', function (): void {
+        $imported = User::factory()->create(['email' => null]);
+        $imported->guardians()->attach(Guardian::factory()->create());
+
+        Livewire::test(USER_FORM_COMPONENT, ['user' => $imported])
+            ->set('password', '')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect($imported->fresh()->email)->toBeNull();
+    });
+
+    it('lets an admin take back an address, turning the member into a managed account', function (): void {
+        $user = User::factory()->create(['email' => 'louis.dupont@example.com']);
+        $user->guardians()->attach(Guardian::factory()->create());
+
+        Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
+            ->set('email', '')
+            ->set('password', '')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect($user->fresh()->email)->toBeNull();
+    });
+
+    it('still requires an address from a member who has no guardian to be reached through', function (): void {
+        $user = User::factory()->create(['email' => 'louis.dupont@example.com']);
+
+        Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
+            ->set('email', '')
+            ->set('password', '')
+            ->call('save')
+            ->assertHasErrors(['email' => 'required']);
+
+        expect($user->fresh()->email)->toBe('louis.dupont@example.com');
+    });
+
+    it('refuses to send a reset link to a member who has no address, and still sends it to one who has', function (): void {
+        Notification::fake();
+
+        $managed = User::factory()->create(['email' => null]);
+        $reachable = User::factory()->create(['email' => 'louis.dupont@example.com']);
+
+        // The broker resolves a null address with `whereNull('email')`, picks up
+        // the managed account and breaks on a token that cannot hold a null address.
+        Livewire::test(USER_FORM_COMPONENT, ['user' => $managed])
+            ->call('sendPasswordResetLink');
+
+        expect(DB::table('password_reset_tokens')->count())->toBe(0);
+
+        Livewire::test(USER_FORM_COMPONENT, ['user' => $reachable])
+            ->call('sendPasswordResetLink');
+
+        expect(DB::table('password_reset_tokens')->where('email', 'louis.dupont@example.com')->exists())->toBeTrue();
     });
 });

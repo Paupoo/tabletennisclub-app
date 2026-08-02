@@ -48,9 +48,16 @@ class UpdateUserAction
         // Nulling the timestamp is the enforcement (the `verified` middleware blocks
         // access until re-verified); the courtesy email is best-effort and must never
         // break the update if mail delivery is unavailable.
+        //
+        // An address taken away is a change like any other for the timestamp, but
+        // there is nowhere left to write to: the member has become a managed account,
+        // reached through their guardian.
         if ($emailChanged) {
             $user->forceFill(['email_verified_at' => null])->save();
-            rescue(fn () => $user->sendEmailVerificationNotification(), report: false);
+
+            if ($data->email !== null) {
+                rescue(fn () => $user->sendEmailVerificationNotification(), report: false);
+            }
         }
 
         return $user;

@@ -389,7 +389,7 @@ new class extends Component
         $this->formDescription = $pack->description ?? '';
         $this->formDayOfWeek = $pack->day_of_week;
         $this->formSpecificDays = $pack->days_of_week ?? [];
-        $this->formRecurrenceType = ! empty($pack->days_of_week) ? 'specific_days' : 'weekly';
+        $this->formRecurrenceType = empty($pack->days_of_week) ? 'weekly' : 'specific_days';
         $this->formStartTime = $pack->start_time ?? '18:00';
         $this->formDurationMinutes = $pack->duration_minutes ?? 90;
         $this->formPackStartDate = $pack->pack_start_date?->toDateString() ?? '';
@@ -439,7 +439,7 @@ new class extends Component
             ? array_map('intval', $this->formSpecificDays)
             : ($this->formDayOfWeek ? [$this->formDayOfWeek] : []);
 
-        if (empty($daysToGenerate)) {
+        if ($daysToGenerate === []) {
             return [];
         }
 
@@ -623,7 +623,7 @@ new class extends Component
             'duration_minutes' => $this->formDurationMinutes,
             'pack_start_date' => $this->formPackStartDate ?: null,
             'pack_end_date' => $this->formPackEndDate ?: null,
-            'excluded_dates' => ! empty($this->formExcludedDates) ? array_values($this->formExcludedDates) : null,
+            'excluded_dates' => $this->formExcludedDates === [] ? null : array_values($this->formExcludedDates),
             'max_participants' => $isOpenEnrollment || $this->formMaxParticipants === ''
                 ? null
                 : (int) $this->formMaxParticipants,

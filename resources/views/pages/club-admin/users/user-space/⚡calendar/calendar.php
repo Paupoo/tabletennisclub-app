@@ -61,7 +61,7 @@ new class extends Component
             // Multi-day tournaments repeat on every covered day of the grid,
             // tagged with their position (day 2/3…) so continuation days
             // don't misleadingly show the day-1 start time.
-            $end = ! empty($event['endDate']) ? Carbon::parse($event['endDate'])->startOfDay() : $start;
+            $end = empty($event['endDate']) ? $start : Carbon::parse($event['endDate'])->startOfDay();
 
             $day = $start->greaterThan($gridStart) ? $start->copy() : $gridStart->copy()->startOfDay();
             $last = $end->lessThan($gridEnd) ? $end : $gridEnd;

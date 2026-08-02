@@ -209,12 +209,12 @@ new class extends Component
             ->update(['room_id' => null]);
 
         // B. Attacher les tables existantes sélectionnées à cette salle
-        if (! empty($existingTableIds)) {
+        if ($existingTableIds !== []) {
             Table::whereIn('id', $existingTableIds)->update(['room_id' => $this->room->id]);
         }
 
         // 5. Création en base des nouvelles tables ajoutées via le modal
-        if (! empty($newTablesToCreate)) {
+        if ($newTablesToCreate !== []) {
             $this->room->tables()->createMany($newTablesToCreate);
         }
 

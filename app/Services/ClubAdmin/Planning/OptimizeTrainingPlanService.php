@@ -244,9 +244,9 @@ class OptimizeTrainingPlanService
     {
         // 1. Level homogeneity: distance to the pack's current level average.
         $isEmpty = $state['level_count'] === 0;
-        $packLevel = ! $isEmpty
-            ? $state['level_sum'] / $state['level_count']
-            : ($state['declared_value'] ?? $candidateValue); // empty pack with no declared level = neutral
+        $packLevel = $isEmpty
+            ? ($state['declared_value'] ?? $candidateValue) // empty pack with no declared level = neutral
+            : $state['level_sum'] / $state['level_count'];
 
         $levelCost = self::W_LEVEL * abs($candidateValue - $packLevel);
 

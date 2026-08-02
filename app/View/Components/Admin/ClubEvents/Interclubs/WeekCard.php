@@ -61,7 +61,7 @@ class WeekCard extends Component
     public function isExpandable(): bool
     {
         return in_array($this->status, ['win', 'loss', 'draw'])
-            && ! empty($this->matches);
+            && ($this->matches !== null && $this->matches !== []);
     }
 
     public function render(): View

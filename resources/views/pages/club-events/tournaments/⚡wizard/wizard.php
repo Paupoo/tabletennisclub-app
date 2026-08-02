@@ -176,7 +176,7 @@ new class extends Component
 
     public function applyObjectiveSuggestion(): void
     {
-        if (empty($this->selectedObjective)) {
+        if ($this->selectedObjective === '' || $this->selectedObjective === '0') {
             $this->warning(__('Please select an objective first.'));
 
             return;
@@ -257,7 +257,7 @@ new class extends Component
 
     public function confirmBulkCancel(): void
     {
-        if (empty($this->selectedPeople) || ! $this->tournamentId) {
+        if ($this->selectedPeople === [] || ! $this->tournamentId) {
             return;
         }
 
@@ -277,7 +277,7 @@ new class extends Component
 
     public function confirmBulkNoShow(): void
     {
-        if (empty($this->selectedPeople) || ! $this->tournamentId) {
+        if ($this->selectedPeople === [] || ! $this->tournamentId) {
             return;
         }
 
@@ -292,7 +292,7 @@ new class extends Component
 
     public function confirmBulkPresence(): void
     {
-        if (empty($this->selectedPeople) || ! $this->tournamentId) {
+        if ($this->selectedPeople === [] || ! $this->tournamentId) {
             return;
         }
 
@@ -771,7 +771,7 @@ new class extends Component
     #[Computed]
     public function nbTables(): int
     {
-        if (empty($this->selectedRooms)) {
+        if ($this->selectedRooms === []) {
             return $this->nb_tables;
         }
 
@@ -1099,7 +1099,7 @@ new class extends Component
     public function render(): mixed
     {
         $search = strtolower($this->memberSearch);
-        $filteredMembers = empty($search)
+        $filteredMembers = $search === '' || $search === '0'
             ? $this->members
             : array_values(array_filter(
                 $this->members,
@@ -1183,7 +1183,7 @@ new class extends Component
         $this->tournamentId = $tournament->id;
 
         // Notify registered players when logistical details changed.
-        if (! empty($logisticsChanged) && $this->hasRegisteredUsers) {
+        if ($logisticsChanged !== [] && $this->hasRegisteredUsers) {
             unset($this->hasRegisteredUsers);
             $tournament->users()
                 ->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered'])
@@ -1218,11 +1218,11 @@ new class extends Component
 
     public function sendInvitations(): void
     {
-        if (empty($this->selectedMembers) || ! $this->tournamentId) {
+        if ($this->selectedMembers === [] || ! $this->tournamentId) {
             return;
         }
 
-        if (empty($this->registration_deadline)) {
+        if ($this->registration_deadline === '' || $this->registration_deadline === '0') {
             $this->error(__('A registration deadline is required before sending invitations.'));
 
             return;
@@ -1392,7 +1392,7 @@ new class extends Component
 
     public function updatedSelectedRooms(): void
     {
-        if (! empty($this->selectedRooms)) {
+        if ($this->selectedRooms !== []) {
             $total = Room::whereIn('id', $this->selectedRooms)->sum('total_playable_tables');
 
             if ($total > 0) {
@@ -1423,7 +1423,7 @@ new class extends Component
             return;
         }
 
-        if (empty($this->name) || empty($this->registration_deadline)) {
+        if ($this->name === '' || $this->name === '0' || ($this->registration_deadline === '' || $this->registration_deadline === '0')) {
             $this->error(__('Tournament name and registration deadline are required before locking.'));
 
             return;

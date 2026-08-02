@@ -358,7 +358,7 @@ new class extends Component
             $chips[] = ['key' => 'hasCashRegister', 'label' => __('Has a cash register')];
         }
 
-        if (! empty($this->team_ids)) {
+        if ($this->team_ids !== []) {
             $chips[] = [
                 'key' => 'team_ids',
                 'label' => trans_choice('{1} 1 team|[2,*] :count teams', count($this->team_ids), ['count' => count($this->team_ids)]),

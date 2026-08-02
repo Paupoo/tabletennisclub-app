@@ -146,7 +146,7 @@ new class extends Component
             $sheet = $spreadsheet->getActiveSheet();
             $rows = $sheet->toArray(null, true, true, true);
 
-            if (empty($rows)) {
+            if ($rows === []) {
                 $this->error(__('Empty or invalid file.'));
 
                 return;

@@ -107,7 +107,7 @@ class TournamentPoolService
                 $currentPool->attachUser($player);
             } catch (Exception $e) {
                 // Log l'erreur si besoin
-                throw new Exception('Something went wrong while setting a player into ' . $currentPool->name);
+                throw new Exception('Something went wrong while setting a player into ' . $currentPool->name, $e->getCode(), $e);
             }
 
             // Reseter l'index si on a terminé de distribuer un joueur dans chaque poule

@@ -425,7 +425,7 @@ new class extends Component
                 $teamUserIds = $selectedTeam?->users->pluck('id')->toArray() ?? [];
                 $substituteIds = array_diff($this->selectedPlayerIds, $teamUserIds);
 
-                if (! empty($substituteIds)) {
+                if ($substituteIds !== []) {
                     $substitutes = User::whereIn('id', $substituteIds)->get()->map(
                         fn (User $player) => $this->buildPlayerData($player, $pivotMap, $selectedTeam, $season, $fixtures, $blockedPlayerData)
                     )->values();

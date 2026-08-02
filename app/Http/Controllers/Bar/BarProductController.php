@@ -151,7 +151,7 @@ class BarProductController extends Controller
                 unset($validated['product_name']);
             }
 
-            if (! empty($validated)) {
+            if ($validated !== []) {
                 $product->update($validated);
             }
         });

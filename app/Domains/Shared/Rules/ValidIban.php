@@ -28,7 +28,7 @@ class ValidIban implements ValidationRule
             return false;
         }
 
-        if (! preg_match('/^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/', $iban)) {
+        if (! preg_match('/^[A-Z]{2}\d{2}[A-Z0-9]+$/', $iban)) {
             return false;
         }
 

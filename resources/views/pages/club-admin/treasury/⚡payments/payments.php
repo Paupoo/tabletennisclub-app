@@ -482,7 +482,7 @@ new class extends Component
             }
         }
 
-        if (empty($this->batchMatches)) {
+        if ($this->batchMatches === []) {
             $this->warning(__('No perfect matches found. Import a bank statement or reconcile manually.'));
 
             return;
@@ -539,7 +539,7 @@ new class extends Component
             }
         }
 
-        if (empty($this->refundBatchMatches)) {
+        if ($this->refundBatchMatches === []) {
             $this->warning(__('No refund matches found. Import a bank statement containing outgoing transfers or reconcile manually.'));
 
             return;

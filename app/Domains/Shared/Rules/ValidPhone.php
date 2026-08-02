@@ -34,7 +34,7 @@ class ValidPhone implements ValidationRule
             return false;
         }
 
-        if (! preg_match('/^\+?[0-9]+$/', $normalized)) {
+        if (! preg_match('/^\+?\d+$/', $normalized)) {
             return false;
         }
 

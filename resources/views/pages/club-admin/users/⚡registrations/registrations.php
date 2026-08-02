@@ -213,7 +213,7 @@ new class extends Component
         $subscription->confirm();
 
         // Approve selected training packs (pending → enrolled)
-        if (! empty($this->approvedPackIds)) {
+        if ($this->approvedPackIds !== []) {
             (new ApproveTrainingPacksAction)($subscription, $this->approvedPackIds, $familyMembersCount);
         }
 
@@ -297,7 +297,7 @@ new class extends Component
         }
 
         $rejectedIds = array_diff($allPendingIds, $this->approvedPackIds);
-        if (! empty($rejectedIds)) {
+        if ($rejectedIds !== []) {
             $rejectedPacks = TrainingPack::whereIn('id', $rejectedIds)->get();
             foreach ($rejectedPacks as $pack) {
                 $subscription->user->notify(new TrainingPackRejectedNotification(
@@ -1367,7 +1367,7 @@ new class extends Component
                         $subscription->confirm();
 
                         // Pose `starts_on` au pro rata et remet le prix à jour.
-                        if (! empty($claimedPackIds)) {
+                        if ($claimedPackIds !== []) {
                             (new ApproveTrainingPacksAction)($subscription, $claimedPackIds, $familyMembersCount);
                         }
 
@@ -1541,7 +1541,7 @@ new class extends Component
     #[Computed]
     public function trainingRequestEstimatedDelta(): float
     {
-        if (! $this->currentTrainingRequestId || empty($this->approvedPackIds)) {
+        if (! $this->currentTrainingRequestId || $this->approvedPackIds === []) {
             return 0.0;
         }
 
@@ -1598,7 +1598,7 @@ new class extends Component
         }
 
         $enrolledPacks = $subscription->trainingPacks()->wherePivot('status', 'enrolled')->get();
-        $newPacks = empty($this->approvedPackIds)
+        $newPacks = $this->approvedPackIds === []
             ? collect()
             : TrainingPack::whereIn('id', $this->approvedPackIds)->get();
 

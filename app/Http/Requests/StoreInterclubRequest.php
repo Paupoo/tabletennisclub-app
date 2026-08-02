@@ -49,12 +49,15 @@ class StoreInterclubRequest extends FormRequest
                 'regex:/^[a-zA-Z]{1}$/',
             ],
             'room_id' => [
+                // `Rule::when()` prend trois paramètres. Les règles `integer` et
+                // `exists` étaient passées en quatrième et cinquième position, où
+                // PHP les ignore sans rien dire : `room_id` n'a jamais été validé
+                // autrement que par sa présence. Elles rejoignent le tableau qui
+                // s'applique quand la condition est vraie.
                 Rule::when(
                     isset($this->input()['is_visited']),
-                    'required',
-                    'prohibited',
-                    'integer',
-                    'exists:rooms,id',
+                    ['required', 'integer', 'exists:rooms,id'],
+                    ['prohibited'],
                 ),
             ],
             'start_date_time' => [

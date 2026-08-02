@@ -69,7 +69,7 @@ class BarCartService
 
         $cart = $this->getSanitizedCart();
 
-        if (empty($cart)) {
+        if ($cart === []) {
             throw new \RuntimeException('Le panier est vide.');
         }
 

@@ -454,7 +454,7 @@ class TournamentMatchService
                 ARRAY_FILTER_USE_BOTH
             ));
 
-            if (empty($eligible)) {
+            if ($eligible === []) {
                 continue;
             }
 

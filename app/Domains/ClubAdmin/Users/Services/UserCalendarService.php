@@ -305,6 +305,6 @@ class UserCalendarService
      */
     private function wants(string $category, array $categories): bool
     {
-        return empty($categories) || in_array($category, $categories);
+        return $categories === [] || in_array($category, $categories);
     }
 }

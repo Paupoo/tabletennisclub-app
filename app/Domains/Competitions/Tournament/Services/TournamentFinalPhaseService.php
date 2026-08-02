@@ -359,7 +359,8 @@ class TournamentFinalPhaseService
 
             foreach ($pools as $pool) {
                 $standings = $this->tournamentMatchService->calculatePoolStandings($pool);
-                for ($i = $playersPerPool; $i < count($standings); $i++) {
+                $counter = count($standings);
+                for ($i = $playersPerPool; $i < $counter; $i++) {
                     $repechageCandidates->push($this->buildQualifiedEntry($standings[$i], $pool, $i + 1));
                 }
             }

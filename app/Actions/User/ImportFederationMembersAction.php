@@ -128,6 +128,23 @@ class ImportFederationMembersAction
         }
     }
 
+    /**
+     * The guardian record standing for a member of the club, reused across every
+     * child of theirs and across every run: one parent is one guardian.
+     */
+    private static function guardianFor(User $adult): Guardian
+    {
+        return Guardian::firstOrCreate(
+            ['user_id' => $adult->id],
+            [
+                'first_name' => $adult->first_name,
+                'last_name' => $adult->last_name,
+                'phone' => $adult->phone_number ?? $adult->guardian_phone_number ?? '',
+                'email' => $adult->email,
+            ],
+        );
+    }
+
     private static function isMinor(FederationRow $row): bool
     {
         return $row->birthdate !== null && $row->birthdate->age < 18;
@@ -152,7 +169,7 @@ class ImportFederationMembersAction
         }
 
         $guardian = $line->externalGuardian
-            ? self::outsideGuardian($line)
+            ? self::outsideGuardian($line, $member)
             : self::memberGuardian($line, $byLine);
 
         if ($guardian === null) {
@@ -194,27 +211,63 @@ class ImportFederationMembersAction
             return null;
         }
 
-        return Guardian::firstOrCreate(
-            ['user_id' => $adult->id],
-            [
-                'first_name' => $adult->first_name,
-                'last_name' => $adult->last_name,
-                'phone' => $adult->phone_number ?? $adult->guardian_phone_number ?? '',
-                'email' => $adult->email,
-            ],
-        );
+        return self::guardianFor($adult);
+    }
+
+    /**
+     * The adult member of the club who holds this address, if any.
+     *
+     * The listing only proves a household when it carries two affiliates under
+     * one address. It says nothing about a parent who is not on it — one who let
+     * their affiliation lapse, or a file listing only the newcomers — and the
+     * roster is where that parent is found instead.
+     *
+     * A birthdate the club never recorded counts as adult, as it does everywhere
+     * else: it is silence, not proof of childhood. A member who is genuinely a
+     * child is left out, because an elder brother who kept the household address
+     * as his login does not answer for his sister.
+     */
+    private static function memberHoldingAddress(?string $email, User $member): ?User
+    {
+        if ($email === null || trim($email) === '') {
+            return null;
+        }
+
+        return User::query()
+            ->whereKeyNot($member->getKey())
+            ->whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])
+            ->where(function (Builder $query): void {
+                $query->whereNull('birthdate')
+                    ->orWhereDate('birthdate', '<=', now()->subYears(18));
+            })
+            ->first();
     }
 
     /**
      * The guardian does not play, so the listing never names them — the reviewer
      * does, on the import screen.
      *
-     * Without a name there is no guardian: inventing an identity to hold an
-     * address is out of the question, and the member simply shows up as having
-     * none, which is visible and fixable where a made-up person would not be.
+     * Unless the club already knows them. An address the reviewer hands over as a
+     * parent's may well belong to a member on the roster, and recording that
+     * parent a second time leaves the child hanging off a guardian nothing
+     * connects to the member of the same name — a duplicate that looks like a
+     * guardianship and is not one. Their own record wins over what was typed on
+     * the screen: it holds the spelling the club settled on, not a name retyped
+     * in a hurry.
+     *
+     * Without a name and without a member there is no guardian: inventing an
+     * identity to hold an address is out of the question, and the member simply
+     * shows up as having none, which is visible and fixable where a made-up
+     * person would not be.
      */
-    private static function outsideGuardian(ImportLine $line): ?Guardian
+    private static function outsideGuardian(ImportLine $line, User $member): ?Guardian
     {
+        $holder = self::memberHoldingAddress($line->guardianEmail, $member);
+
+        if ($holder instanceof User) {
+            return self::guardianFor($holder);
+        }
+
         if ($line->guardianFirstName === null || $line->guardianLastName === null) {
             return null;
         }

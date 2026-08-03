@@ -7,7 +7,10 @@
 
 <head>
     <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" name="viewport">
+    {{-- No maximum-scale: pinch zoom is the only magnification a member has (WCAG 1.4.4).
+    The overflow-x-hidden on <body> below is what keeps Firefox mobile from widening the
+    layout viewport, so capping the scale was never what held that together. --}}
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
     <meta content="{{ csrf_token() }}" name="csrf-token">
     <title>{{ isset($title) ? config('app.name') . ' - ' . $title : config('app.name') }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-club.svg') }}">

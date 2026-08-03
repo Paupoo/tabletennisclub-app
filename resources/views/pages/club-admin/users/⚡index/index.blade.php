@@ -48,9 +48,9 @@
         style="display:none">
         <div class="flex items-center gap-2 px-4 py-2.5">
             <div class="flex flex-1 items-center gap-2 rounded-xl bg-base-200 px-3 py-2">
-                <x-icon name="o-magnifying-glass" class="h-4 w-4 shrink-0 text-base-content/40" />
+                <x-icon name="o-magnifying-glass" class="h-4 w-4 shrink-0 text-muted" />
                 <input wire:model.live.debounce.300ms="search"
-                    class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
+                    class="flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
                     placeholder="{{ __('Search...') }}" />
             </div>
             <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
@@ -80,7 +80,7 @@
                     </div>
                     <div>
                         <p class="text-2xl font-bold {{ $card['color'] }}">{{ $stats[$card['key']] ?? 0 }}</p>
-                        <p class="text-xs text-base-content/40">{{ $card['label'] }}</p>
+                        <p class="text-xs text-muted">{{ $card['label'] }}</p>
                     </div>
                 </div>
             </x-card>
@@ -127,7 +127,7 @@
                         @else
                             <x-badge :value="__('Unpaid')" class="badge-error badge-soft badge-xs" />
                         @endif
-                        <span class="text-xs text-base-content/40">{{ $user->email }}</span>
+                        <span class="text-xs text-muted">{{ $user->email }}</span>
                     </div>
                 </x-slot:sub-value>
                 <x-slot:actions>

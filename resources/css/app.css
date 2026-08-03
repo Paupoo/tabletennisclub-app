@@ -287,3 +287,40 @@ select:focus {
   outline: none;
   box-shadow: var(--shadow-focus);
 }
+/*
+  Secondary text used to be dimmed with alpha — text-base-content/40 and friends.
+  Alpha escapes any contrast budget: what reaches the eye depends on whatever the
+  text happens to sit on, and on this palette /40 composites to 2.56:1, well under
+  the 4.5:1 that WCAG 1.4.3 asks of body text.
+
+  These two steps are colours, not opacities, so they stay measurable. Use
+  .text-muted for supporting text that must be read (an e-mail, a card label) and
+  .text-subtle for text that only orients (a timestamp, a hint).
+*/
+@utility text-muted {
+  color: color-mix(in oklab, var(--color-base-content) 78%, var(--color-base-100));
+}
+
+@utility text-subtle {
+  color: color-mix(in oklab, var(--color-base-content) 64%, var(--color-base-100));
+}
+
+/*
+  daisyUI's soft badges pair a very light tint with a light foreground. At
+  badge-xs the text is 10px, where that pairing measured 1.87:1 — a status a
+  member cannot read is not a status.
+*/
+.badge-soft {
+  color: color-mix(in oklab, currentColor 100%, black 34%);
+  font-weight: 600;
+}
+
+/*
+  daisyUI's --color-error sits around 0.7 lightness, which reads well as a fill
+  but measures 2.68:1 as text on base-100 — the logout entry and every inline
+  error label failed on it. Darkening the text form keeps the semantic meaning
+  and leaves fills, borders and icons untouched.
+*/
+.text-error {
+  color: color-mix(in oklab, var(--color-error) 72%, black);
+}

@@ -324,3 +324,36 @@ select:focus {
 .text-error {
   color: color-mix(in oklab, var(--color-error) 72%, black);
 }
+
+/*
+  WCAG 2.5.8 puts the floor for a pointer target at 24x24 CSS pixels; the Apple
+  HIG asks 44x44 for anything used one-handed. Both are about the *hit area*, not
+  the drawing, so these grow the box with padding and leave the icon alone.
+*/
+@utility tap-min {
+  min-block-size: 24px;
+  min-inline-size: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@utility tap-comfort {
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/*
+  Breadcrumb entries are 19px tall at text-sm, which puts the trail back to the
+  dashboard under the thumb floor on every screen that has one. Mary renders the
+  trail as a bare <ul class="flex items-center">, so the layout supplies the hook.
+*/
+.breadcrumb-trail a,
+.breadcrumb-trail button {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 24px;
+}

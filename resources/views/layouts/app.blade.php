@@ -76,7 +76,10 @@ position:fixed overlay (notification sheet, drawers) gets cropped on the right. 
 
         {{-- The `$slot` goes here --}}
         <x-slot:content>
-            <div class="mb-10 mt-2 flex items-center justify-between">
+            {{-- breadcrumb-trail is the hook that lifts the trail's links to the 24px
+            tap floor: Mary renders the list as a bare <ul class="flex items-center">,
+            so there is no class of its own to target. --}}
+            <div class="breadcrumb-trail mb-10 mt-2 flex items-center justify-between">
                {{ $breadcrumbs ?? null }}
             </div>
 

@@ -123,9 +123,9 @@
                         @endif
                         <x-badge :value="$invBadge['label']" class="{{ $invBadge['class'] }}" />
                         @if ($user->has_paid)
-                            <x-badge :value="__('Paid')" class="badge-success badge-xs" />
+                            <x-badge :value="__('Paid')" class="badge-success badge-soft badge-xs" />
                         @else
-                            <x-badge value="Unpaid" class="badge-error badge-soft badge-xs" />
+                            <x-badge :value="__('Unpaid')" class="badge-error badge-soft badge-xs" />
                         @endif
                         <span class="text-xs text-base-content/40">{{ $user->email }}</span>
                     </div>

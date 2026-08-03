@@ -518,7 +518,7 @@
     @endif
 
     {{-- ── Modal anonymisation RGPD ─────────────────────────────────── --}}
-    <x-modal wire:model="anonymizeModal" :title="__('GDPR Anonymization — Irreversible')">
+    <x-app-modal wire:model="anonymizeModal" :title="__('GDPR Anonymization — Irreversible')">
         <div class="space-y-4">
             <x-alert icon="o-exclamation-triangle" class="alert-error">
                 <p class="text-sm font-semibold">{{ __('This action permanently erases all personal data and cannot be undone.') }}</p>
@@ -540,5 +540,5 @@
                 spinner="confirmAnonymize"
                 :disabled="strtoupper($anonymizeConfirmText) !== 'ANONYMIZE'" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

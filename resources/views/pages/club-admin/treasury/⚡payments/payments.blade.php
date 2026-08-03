@@ -308,7 +308,7 @@
     {{-- ========================================== --}}
     {{-- Modal : Réconciliation                     --}}
     {{-- ========================================== --}}
-    <x-modal wire:model="reconcileModal" :title="__('Reconcile Payment')" separator box-class="max-w-2xl">
+    <x-app-modal wire:model="reconcileModal" :title="__('Reconcile Payment')" separator box-class="max-w-2xl">
 
         @if($currentPayment)
 
@@ -403,13 +403,13 @@
                 :disabled="! $selectedTransactionId"
                 spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
 
     {{-- ========================================== --}}
     {{-- Modal : Batch Auto-Réconciliation          --}}
     {{-- ========================================== --}}
-    <x-modal wire:model="batchModal" :title="__('Auto-match — Confirm reconciliations')" separator box-class="max-w-2xl">
+    <x-app-modal wire:model="batchModal" :title="__('Auto-match — Confirm reconciliations')" separator box-class="max-w-2xl">
 
         <div class="space-y-4">
             <div class="flex items-start gap-3 p-3 rounded-xl bg-success/10 border border-success/20 text-sm">
@@ -453,13 +453,13 @@
                 wire:click="confirmBatchReconcile"
                 spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
 
     {{-- ========================================== --}}
     {{-- Modal : Réconciliation remboursement       --}}
     {{-- ========================================== --}}
-    <x-modal wire:model="refundModal" :title="__('Confirm Refund')" separator box-class="max-w-2xl">
+    <x-app-modal wire:model="refundModal" :title="__('Confirm Refund')" separator box-class="max-w-2xl">
 
         @if($currentRefundPayment)
 
@@ -554,13 +554,13 @@
                 :disabled="! $selectedRefundTransactionId"
                 spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
 
     {{-- ========================================== --}}
     {{-- Modal : Batch remboursements               --}}
     {{-- ========================================== --}}
-    <x-modal wire:model="refundBatchModal" :title="__('Auto-match refunds — Confirm')" separator box-class="max-w-2xl">
+    <x-app-modal wire:model="refundBatchModal" :title="__('Auto-match refunds — Confirm')" separator box-class="max-w-2xl">
 
         <div class="space-y-4">
             <div class="flex items-start gap-3 p-3 rounded-xl bg-error/10 border border-error/20 text-sm">
@@ -606,7 +606,7 @@
                 wire:click="confirmBatchRefundReconcile"
                 spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
 
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}

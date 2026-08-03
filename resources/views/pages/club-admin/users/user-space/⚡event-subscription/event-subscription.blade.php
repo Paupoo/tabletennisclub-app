@@ -302,7 +302,7 @@
     </x-admin.shared.filter-drawer>
 
     {{-- Modal détails paiement --}}
-    <x-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm">
+    <x-app-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm">
     @if ($paymentQr && $selectedPaymentId)
         @php
             $payment = \App\Domains\ClubAdmin\Payment\Models\Payment::find($selectedPaymentId);
@@ -345,10 +345,10 @@
     <x-slot:actions>
         <x-button :label="__('Close')" wire:click="$set('paymentModal', false)" />
     </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- Modal participation réunion --}}
-    <x-modal wire:model="meetingRsvpModal" :title="__('My participation')" box-class="max-w-sm">
+    <x-app-modal wire:model="meetingRsvpModal" :title="__('My participation')" box-class="max-w-sm">
         @php $rsvpMeeting = $this->rsvpMeetingId ? \App\Domains\Meetings\Models\Meeting::find($this->rsvpMeetingId) : null; @endphp
         @if ($rsvpMeeting)
             @php $rsvpReg = $this->meetingRegistrations[$rsvpMeeting->id] ?? null; @endphp
@@ -402,7 +402,7 @@
                     wire:click="saveMeetingRsvp" spinner="saveMeetingRsvp" />
             </x-slot:actions>
         @endif
-    </x-modal>
+    </x-app-modal>
 
     <x-confirm-modal model="cancelConfirmModal" :title="__('Cancel registration?')"
         :confirmLabel="__('Confirm')" confirmClass="btn-error" confirmAction="confirmCancel">

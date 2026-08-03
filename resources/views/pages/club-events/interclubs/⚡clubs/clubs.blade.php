@@ -87,7 +87,7 @@
     @endif
 
     {{-- Modal create / edit --}}
-    <x-modal wire:model="editModal" :title="$editingClubId ? __('Edit club') : __('New club')" separator>
+    <x-app-modal wire:model="editModal" :title="$editingClubId ? __('Edit club') : __('New club')" separator>
         <div class="space-y-4">
             <x-input
                 :label="__('Club name')"
@@ -123,7 +123,7 @@
             <x-button :label="__('Cancel')" wire:click="$set('editModal', false)" />
             <x-button class="btn-primary" :label="__('Save')" wire:click="save" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     <x-confirm-modal model="deleteModal" :title="__('Delete club?')" :subtitle="__('Warning!')"
         :confirmLabel="__('Delete')" confirmAction="delete">

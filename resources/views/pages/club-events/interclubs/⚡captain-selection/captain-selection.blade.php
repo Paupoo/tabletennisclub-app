@@ -367,7 +367,7 @@
     </x-drawer>
 
     {{-- ── MODAL LINEUP / MESSAGE ─────────────────────────────────────── --}}
-    <x-modal separator :title="$isUpdateMode ? __('Update the team') : __('Notify the team')" wire:model="modalMessage">
+    <x-app-modal separator :title="$isUpdateMode ? __('Update the team') : __('Notify the team')" wire:model="modalMessage">
         <div class="space-y-4">
             @if ($isUpdateMode)
                 {{-- Diff summary: only added/removed players are notified --}}
@@ -451,5 +451,5 @@
             <x-button class="btn-primary" icon="o-paper-airplane" :label="__('Send to team')"
                 wire:click="sendLineupToTeam" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

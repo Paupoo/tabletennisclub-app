@@ -68,7 +68,7 @@
     {{-- ================================================================
          CREATE / EDIT MODAL
     ================================================================ --}}
-    <x-modal wire:model="formModal" separator
+    <x-app-modal wire:model="formModal" separator
         :title="$editingId ? __('Edit template') : __('New template')">
         <div class="space-y-4">
             <x-input :label="__('Name')" wire:model="formName"
@@ -110,7 +110,7 @@
             <x-button class="btn-primary" icon="o-check" :label="__('Save')"
                 wire:click="saveTemplate" spinner="saveTemplate" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ================================================================
          DELETE MODAL

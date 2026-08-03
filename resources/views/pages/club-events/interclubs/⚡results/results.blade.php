@@ -212,7 +212,7 @@
     @endif
 
     {{-- ── Modal Edit result ──────────────────────────────────────────────── --}}
-    <x-modal wire:model="editModal" :title="__('Edit match')">
+    <x-app-modal wire:model="editModal" :title="__('Edit match')">
         <div class="space-y-5">
             {{-- Context (read-only) --}}
             <div class="flex flex-wrap items-center gap-3 rounded-lg bg-base-200 px-4 py-3 text-sm">
@@ -270,7 +270,7 @@
             <x-button :label="__('Cancel')" wire:click="$set('editModal', false)" />
             <x-button class="btn-primary" :label="__('Save')" wire:click="save" wire:loading.attr="disabled" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     <x-confirm-modal model="deleteModal" :title="__('Delete match?')" :subtitle="__('Warning!')"
         :confirmLabel="__('Delete')" confirmAction="delete">

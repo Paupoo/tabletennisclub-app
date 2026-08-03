@@ -375,7 +375,7 @@
     </x-drawer>
 
     {{-- ── Modal email personnalisé ──────────────────────────────────── --}}
-    <x-modal wire:model="emailModal" :title="__('Custom email')">
+    <x-app-modal wire:model="emailModal" :title="__('Custom email')">
         <div class="space-y-4">
             <x-input :label="__('Subject')" wire:model="emailSubject" />
             <x-textarea :label="__('Message')" wire:model="emailBody" rows="6" />
@@ -389,7 +389,7 @@
             <x-button class="btn-primary" icon="o-paper-airplane" :label="__('Send')"
                 wire:click="sendCustomEmail" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete this contact?')"

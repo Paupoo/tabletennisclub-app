@@ -372,7 +372,7 @@
 
     {{-- ── Modal add to team ────────────────────────────────────────── --}}
     @can('users.update')
-    <x-modal wire:model="addToTeamModal" :title="__('Add to a team')">
+    <x-app-modal wire:model="addToTeamModal" :title="__('Add to a team')">
         <div class="space-y-4">
             <p class="text-sm text-base-content/60">
                 {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
@@ -386,12 +386,12 @@
             <x-button class="btn-primary" :disabled="$team_id === null" :label="__('Add')"
                 wire:click="bulkAddToTeam" spinner="bulkAddToTeam" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
     @endcan
 
     {{-- ── Modal subscribe ──────────────────────────────────────────── --}}
     @can('subscriptions.manage')
-    <x-modal wire:model="subscribeModal" :title="__('Subscribe to an event')">
+    <x-app-modal wire:model="subscribeModal" :title="__('Subscribe to an event')">
         <div class="space-y-4">
             <p class="text-sm text-base-content/60">
                 {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
@@ -405,12 +405,12 @@
             <x-button class="btn-primary" :disabled="$subscription_id === null" :label="__('Subscribe')"
                 wire:click="bulkSubscribe" spinner="bulkSubscribe" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
     @endcan
 
     {{-- ── Modal anonymisation RGPD ─────────────────────────────────── --}}
     @can('users.anonymize')
-    <x-modal wire:model="anonymizeModal" :title="__('GDPR Anonymization — Irreversible')">
+    <x-app-modal wire:model="anonymizeModal" :title="__('GDPR Anonymization — Irreversible')">
         <div class="space-y-4">
             <x-alert icon="o-exclamation-triangle" class="alert-error">
                 <p class="text-sm font-semibold">{{ __('This action permanently erases all personal data and cannot be undone.') }}</p>
@@ -432,7 +432,7 @@
                 spinner="confirmAnonymize"
                 :disabled="strtoupper($anonymizeConfirmText) !== 'ANONYMIZE'" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
     @endcan
 
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}

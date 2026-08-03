@@ -1,4 +1,4 @@
-<x-modal wire:model="showInviteModal" title="Confirmer l'envoi" separator>
+<x-app-modal wire:model="showInviteModal" title="Confirmer l'envoi" separator>
     <div class="space-y-4">
         <p>{{ __('You are about to send an invitation to') }}<strong>{{ count($selectedMembers) }}</strong>
             membres.</p>
@@ -21,4 +21,4 @@
         <x-button label="Envoyer maintenant" icon="o-paper-airplane" class="btn-primary"
             wire:click="sendInvitations" spinner="sendInvitations" />
     </x-slot:actions>
-</x-modal>
+</x-app-modal>

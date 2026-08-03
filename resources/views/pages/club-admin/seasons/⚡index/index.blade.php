@@ -115,7 +115,7 @@
     {{-- ================================================================
          PROVISION MODAL
     ================================================================ --}}
-    <x-modal :title="__('Auto-provision seasons')" wire:model="provisionModal" separator>
+    <x-app-modal :title="__('Auto-provision seasons')" wire:model="provisionModal" separator>
         <div class="space-y-3 text-sm text-base-content/70">
             <p>{{ __('This will create the next two seasons after the current active season, if they do not already exist.') }}</p>
             <p>{{ __('Each season runs from September 1st to June 30th. Already-existing seasons and overlapping date ranges are automatically skipped.') }}</p>
@@ -126,12 +126,12 @@
             <x-button class="btn-primary" icon="o-sparkles" :label="__('Provision')"
                 wire:click="confirmProvision" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ================================================================
          ACTIVATE MODAL
     ================================================================ --}}
-    <x-modal :title="__('Activate season')" wire:model="activateModal" separator>
+    <x-app-modal :title="__('Activate season')" wire:model="activateModal" separator>
         <div class="space-y-4">
             <p class="text-base-content/70">
                 {{ __('You are about to make') }}
@@ -147,12 +147,12 @@
             <x-button class="btn-warning" icon="o-bolt" :label="__('Activate')"
                 wire:click="confirmActivate" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ================================================================
          EDIT MODAL
     ================================================================ --}}
-    <x-modal :title="__('Edit season')" wire:model="editModal" separator>
+    <x-app-modal :title="__('Edit season')" wire:model="editModal" separator>
         <div class="space-y-4">
             <x-input :label="__('Name')" :placeholder="__('E.g. 2026-2027')"
                 wire:model="editName" />
@@ -167,12 +167,12 @@
             <x-button class="btn-primary" icon="o-check" :label="__('Save')"
                 wire:click="updateSeason" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ================================================================
          CREATE MODAL
     ================================================================ --}}
-    <x-modal :title="__('New season')" wire:model="createModal" separator>
+    <x-app-modal :title="__('New season')" wire:model="createModal" separator>
         <div class="space-y-4">
             <x-input :label="__('Name')" :placeholder="__('E.g. 2026-2027')"
                 wire:model="createName" />
@@ -187,5 +187,5 @@
             <x-button class="btn-primary" icon="o-calendar" :label="__('Create')"
                 wire:click="createSeason" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

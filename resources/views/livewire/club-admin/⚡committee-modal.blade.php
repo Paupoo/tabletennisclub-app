@@ -94,7 +94,7 @@ new class extends Component
 ?>
 
 <div>
-    <x-modal wire:model="isOpen" :title="__('Add Committee Member')" separator>
+    <x-app-modal wire:model="isOpen" :title="__('Add Committee Member')" separator>
         <div class="grid gap-4">
             <x-choices
                 :label="__('Search Member')"
@@ -134,5 +134,5 @@ new class extends Component
                 spinner="addMember" 
             />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

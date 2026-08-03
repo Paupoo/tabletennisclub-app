@@ -1,4 +1,4 @@
-<x-modal wire:model="showPublishModal" :title="__('Save article')" separator>
+<x-app-modal wire:model="showPublishModal" :title="__('Save article')" separator>
     <div class="space-y-4">
         <div class="p-4 bg-info/10 border border-info/20 rounded-xl flex gap-4">
             <x-icon name="o-information-circle" class="w-6 h-6 text-info shrink-0" />
@@ -19,4 +19,4 @@
         <x-button :label="__('Publish now')" icon="o-globe-alt" class="btn-primary"
             wire:click="publishArticle('published')" spinner="publishArticle" />
     </x-slot:actions>
-</x-modal>
+</x-app-modal>

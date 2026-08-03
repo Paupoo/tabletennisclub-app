@@ -127,7 +127,7 @@
     @endif
 
     {{-- Modal create / edit --}}
-    <x-modal wire:model="editModal" :title="$editingInterclubId ? __('Edit match') : __('New match')" separator>
+    <x-app-modal wire:model="editModal" :title="$editingInterclubId ? __('Edit match') : __('New match')" separator>
         <div class="space-y-4">
             <x-select
                 :label="__('Our team')"
@@ -169,7 +169,7 @@
             <x-button :label="__('Cancel')" wire:click="$set('editModal', false)" />
             <x-button class="btn-primary" :label="__('Save')" wire:click="save" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     <x-confirm-modal model="deleteModal" :title="__('Delete match?')" :subtitle="__('Warning!')"
         :confirmLabel="__('Delete')" confirmAction="delete">

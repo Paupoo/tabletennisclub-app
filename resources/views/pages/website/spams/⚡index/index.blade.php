@@ -222,7 +222,7 @@
     </x-admin.shared.filter-drawer>
 
     {{-- ── Modal détail spam ─────────────────────────────────────────── --}}
-    <x-modal wire:model="detailModal" :title="__('Spam detail')">
+    <x-app-modal wire:model="detailModal" :title="__('Spam detail')">
         @if ($detailSpam)
             <div class="space-y-3">
                 <div class="grid grid-cols-2 gap-3 text-sm">
@@ -252,7 +252,7 @@
         <x-slot:actions>
             <x-button :label="__('Close')" wire:click="$set('detailModal', false)" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete this spam?')"

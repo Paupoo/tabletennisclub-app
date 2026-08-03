@@ -279,7 +279,7 @@
     @endif
 
     {{-- Modal calcul de distribution --}}
-    <x-modal wire:model="showComputingModal" :title="__('Building teams')" separator persistent>
+    <x-app-modal wire:model="showComputingModal" :title="__('Building teams')" separator persistent>
         <div class="py-10 text-center">
             <div class="mb-6 flex justify-center">
                 <span class="loading loading-dots loading-lg text-primary"></span>
@@ -291,5 +291,5 @@
                 {{ __('Recalculating the force list and distributing players across teams.') }}
             </p>
         </div>
-    </x-modal>
+    </x-app-modal>
 </div>

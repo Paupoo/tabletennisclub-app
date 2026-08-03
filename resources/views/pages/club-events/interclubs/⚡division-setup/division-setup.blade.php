@@ -191,7 +191,7 @@
     @endif
 
     {{-- Modal add participant --}}
-    <x-modal wire:model="addModal" :title="__('Add opponent')" separator>
+    <x-app-modal wire:model="addModal" :title="__('Add opponent')" separator>
         <div class="space-y-4">
             <x-input
                 :label="__('Club name')"
@@ -214,7 +214,7 @@
             <x-button :label="__('Cancel')" wire:click="$set('addModal', false)" />
             <x-button class="btn-primary" :label="__('Add')" wire:click="addParticipant" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- Modal delete --}}
     <x-confirm-modal model="deleteModal" :title="__('Remove participant')" :subtitle="__('Warning!')"

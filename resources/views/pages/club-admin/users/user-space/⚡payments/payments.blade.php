@@ -92,7 +92,7 @@
     </x-admin.shared.filter-drawer>
 
     {{-- QR payment modal --}}
-    <x-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm">
+    <x-app-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm">
         @if ($paymentQr && $selectedPaymentId)
             @php $payment = \App\Domains\ClubAdmin\Payment\Models\Payment::find($selectedPaymentId); @endphp
             @php $label = $payment?->payable instanceof \App\Contracts\DescribesPayment ? $payment->payable->getPaymentLabel() : null; @endphp
@@ -129,5 +129,5 @@
         <x-slot:actions>
             <x-button :label="__('Close')" wire:click="$set('paymentModal', false)" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

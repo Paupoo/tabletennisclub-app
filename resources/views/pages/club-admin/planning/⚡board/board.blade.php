@@ -212,7 +212,7 @@
         </div>
 
         {{-- Add / edit hypothetical pack modal --}}
-        <x-modal wire:model="showPackModal"
+        <x-app-modal wire:model="showPackModal"
             :title="$editingPackId ? __('Edit group') : __('Add a group')" separator>
             <div class="space-y-4">
                 <x-input :label="__('Group name')" wire:model="packName"
@@ -240,10 +240,10 @@
                 <x-button :label="$editingPackId ? __('Save') : __('Add')" class="btn-primary"
                     wire:click="{{ $editingPackId ? 'savePack' : 'addPack' }}" spinner />
             </x-slot:actions>
-        </x-modal>
+        </x-app-modal>
 
         {{-- Import CSV modal --}}
-        <x-modal wire:model="showImportModal" :title="__('Import CSV')" separator>
+        <x-app-modal wire:model="showImportModal" :title="__('Import CSV')" separator>
             <div class="space-y-4">
                 <p class="text-sm text-base-content/60">
                     {{ __('Upload a CSV exported from this board. Members are matched by licence, then by email.') }}
@@ -256,7 +256,7 @@
                 <x-button :label="__('Import')" class="btn-primary"
                     wire:click="import" spinner="import" />
             </x-slot:actions>
-        </x-modal>
+        </x-app-modal>
 
         {{-- Remove group confirm modal (project modal, no native JS confirm) --}}
         <x-confirm-modal model="confirmRemovePackModal" :title="__('Remove this group?')"

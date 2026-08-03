@@ -173,10 +173,18 @@
         </x-table>
 
         @if($payments->total() === 0)
-        <div class="flex flex-col items-center justify-center py-12 opacity-40">
-            <x-icon name="o-banknotes" class="w-12 h-12 mb-4" />
-            <p class="text-sm italic">{{ __('No payments to display.') }}</p>
-        </div>
+            {{-- A club opening its season lands here first. The shared component
+            carries the action that fills the screen; the hand-rolled block it
+            replaces stated the absence and stopped. --}}
+            {{-- The action is offered only to whoever may actually take it: the
+            read-only committee can read this screen but not the bank statements,
+            and pointing them at a 403 is worse than offering nothing. --}}
+            <x-empty-state
+                icon="o-banknotes"
+                :heading="__('No payments to display.')"
+                :message="__('Cotisations appear here once a bank statement is imported or a payment is matched.')"
+                :buttonText="Gate::allows('transactions.view') ? __('Import a bank statement') : null"
+                :href="Gate::allows('transactions.view') ? route('admin.treasury.transactions') : null" />
         @endif
 
         <div class="mt-4">

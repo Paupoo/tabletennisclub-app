@@ -811,6 +811,7 @@
     "Could not find user for this payment.": "Impossible de trouver l'utilisateur pour ce paiement.",
     "Could not load data.": "Could not load data.",
     "Counterparty": "Contrepartie",
+    "Cotisations appear here once a bank statement is imported or a payment is matched.": "Les cotisations apparaissent ici dès qu'un relevé bancaire est importé ou qu'un paiement est pointé.",
     "Create": "Créer",
     "Create Cash Register": "Créer une caisse",
     "Create Pack": "Create Pack",

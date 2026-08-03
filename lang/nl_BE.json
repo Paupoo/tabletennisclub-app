@@ -817,6 +817,7 @@
     "Could not find user for this payment.": "Gebruiker niet gevonden voor deze betaling.",
     "Could not load data.": "Gegevens konden niet worden geladen.",
     "Counterparty": "Tegenpartij",
+    "Cotisations appear here once a bank statement is imported or a payment is matched.": "Lidgelden verschijnen hier zodra een bankafschrift is geïmporteerd of een betaling is gekoppeld.",
     "Create": "Aanmaken",
     "Create Cash Register": "Kassa aanmaken",
     "Create Pack": "Pakket aanmaken",

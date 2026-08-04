@@ -413,3 +413,12 @@ select:focus {
 .text-gray-500 {
   color: color-mix(in oklab, var(--color-base-content) 78%, var(--color-base-100));
 }
+
+/*
+  x-cloak is only an attribute: without this rule Alpine hides nothing, and every
+  element marked with it flashes on screen before Alpine boots. Seven views rely
+  on it — including a full-screen avatar cropper.
+*/
+[x-cloak] {
+  display: none !important;
+}

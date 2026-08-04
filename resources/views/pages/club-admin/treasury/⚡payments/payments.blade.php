@@ -150,27 +150,22 @@
 
             @scope('actions', $payment)
             @if($this->statusFilter === 'pending')
-            <div class="flex items-center gap-2">
+            {{-- Reconcile is what the treasurer opens this tab to do, so it is the one
+            action in the row. Chasing is named in the menu, count included — it used
+            to live in a tooltip, which is nowhere at all under a thumb. --}}
+            <x-admin.shared.row-menu
+                :label="__('Reconcile')"
+                icon="o-link"
+                wire-click="openReconcile({{ $payment->id }})">
                 @can('payments.remind')
-                    {{-- The count was already computed, and lived only in the tooltip —
-                    so nowhere at all under a thumb. It is the label now. --}}
-                    <x-button
+                    <x-menu-item
                         icon="o-paper-airplane"
                         wire:click="sendReminder({{ $payment->id }})"
-                        class="btn-xs btn-outline"
-                        :label="$payment->invitation_counter > 0
+                        :title="$payment->invitation_counter > 0
                             ? __('Chase again (:n sent)', ['n' => $payment->invitation_counter])
-                            : __('Send invitation')"
-                        spinner />
+                            : __('Send invitation')" />
                 @endcan
-                @can('payments.reconcile')
-                    <x-button
-                        :label="__('Reconcile')"
-                        icon="o-link"
-                        wire:click="openReconcile({{ $payment->id }})"
-                        class="btn-xs btn-outline" />
-                @endcan
-            </div>
+            </x-admin.shared.row-menu>
             @elseif($this->statusFilter === 'to_refund')
             @can('payments.refund')
                 <x-button

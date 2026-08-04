@@ -382,6 +382,7 @@ new class extends Component
                     'status' => $p->status,
                     'created_at' => $p->created_at,
                     'invitation_counter' => $p->invitation_counter,
+                    'last_reminded_at' => $p->last_reminded_at,
                     'iban' => $p->payable?->user?->iban,
                     'event_name' => $label['name'] ?? null,
                     'event_type' => $label['type'] ?? null,
@@ -672,6 +673,7 @@ new class extends Component
             new PaymentInvitationEmail($payment, __('Please settle your payment as soon as possible.'))
         );
         $payment->increment('invitation_counter');
+        $payment->forceFill(['last_reminded_at' => now()])->save();
 
         $this->success(__('Reminder sent to :email.', ['email' => $payment->payable->user->email]));
     }

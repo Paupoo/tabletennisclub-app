@@ -124,7 +124,20 @@
             @endscope
 
             @scope('cell_created_at', $payment)
-            <span class="text-xs opacity-60">{{ \Carbon\Carbon::parse($payment->created_at)->format('d/m/Y') }}</span>
+            {{-- The Date column already tells when. The reminder's age belongs on the
+            same axis, and a payment never chased carries nothing: the absence is the
+            information. The count lives on the button, so it is not repeated here. --}}
+            <div class="text-xs">{{ \Carbon\Carbon::parse($payment->created_at)->format('d/m/Y') }}</div>
+            @if ($payment->last_reminded_at)
+                @php $chasedDaysAgo = \Carbon\Carbon::parse($payment->last_reminded_at)->diffInDays(now()); @endphp
+                <div @class([
+                    'text-[11px] mt-0.5',
+                    'text-warning font-semibold' => $chasedDaysAgo >= 15,
+                    'text-muted' => $chasedDaysAgo < 15,
+                ])>
+                    {{ __('Chased :ago', ['ago' => \Carbon\Carbon::parse($payment->last_reminded_at)->diffForHumans()]) }}
+                </div>
+            @endif
             @endscope
 
             @scope('cell_iban', $payment)
@@ -139,12 +152,16 @@
             @if($this->statusFilter === 'pending')
             <div class="flex items-center gap-2">
                 @can('payments.remind')
+                    {{-- The count was already computed, and lived only in the tooltip —
+                    so nowhere at all under a thumb. It is the label now. --}}
                     <x-button
                         icon="o-paper-airplane"
                         wire:click="sendReminder({{ $payment->id }})"
-                        class="btn-xs btn-ghost"
-                        tooltip="{{ $payment->invitation_counter > 0 ? __('Resend (:n sent)', ['n' => $payment->invitation_counter]) : __('Send invitation') }}"
-                        spinner aria-label="{{ $payment->invitation_counter > 0 ? __('Resend (:n sent)', ['n' => $payment->invitation_counter]) : __('Send invitation') }}" />
+                        class="btn-xs btn-outline"
+                        :label="$payment->invitation_counter > 0
+                            ? __('Chase again (:n sent)', ['n' => $payment->invitation_counter])
+                            : __('Send invitation')"
+                        spinner />
                 @endcan
                 @can('payments.reconcile')
                     <x-button
@@ -157,10 +174,10 @@
             @elseif($this->statusFilter === 'to_refund')
             @can('payments.refund')
                 <x-button
-                    :label="__('Confirm refund')"
-                    icon="o-arrow-uturn-left"
+                    :label="__('Reconcile')"
+                    icon="o-link"
                     wire:click="openRefundReconcile({{ $payment->id }})"
-                    class="btn-xs btn-error btn-outline" />
+                    class="btn-xs btn-outline" />
             @endcan
             @else
             <div class="flex items-center gap-1.5 text-success text-xs font-bold">

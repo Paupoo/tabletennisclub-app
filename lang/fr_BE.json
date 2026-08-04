@@ -208,6 +208,8 @@
     "No record matches the current filters.": "Aucun élément ne correspond aux filtres actifs.",
     "Nothing here yet.": "Rien pour l'instant.",
     "Collapse the team": "Replier l'équipe",
+    "Chase again (:n sent)": "Relancer (:n envoyés)",
+    "Chased :ago": "Relancé :ago",
     "Check the address": "Adresse à vérifier",
     "Check the name": "Nom à vérifier",
     "Choose another file": "Choisir un autre fichier",

@@ -39,5 +39,6 @@ class SendPaymentReminderJob implements ShouldQueue
             new PaymentInvitationEmail($payment, __('Please settle your payment as soon as possible.'))
         );
         $payment->increment('invitation_counter');
+        $payment->forceFill(['last_reminded_at' => now()])->save();
     }
 }

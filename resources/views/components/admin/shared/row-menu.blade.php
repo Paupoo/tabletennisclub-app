@@ -1,10 +1,12 @@
 @props([
-    'label',
+    'label' => null,
     'icon' => null,
     'link' => null,
     'wireClick' => null,
     'spinner' => false,
 ])
+
+{{-- @slot note — why an action the reader might look for is not in the list. --}}
 
 {{--
     One named primary action in the row, everything else behind a named menu.
@@ -24,13 +26,17 @@
     @keydown.escape.window="open = false"
     class="relative flex items-center justify-end gap-1.5"
 >
-    <x-button
-        :label="$label"
-        :icon="$icon"
-        :link="$link"
-        :wire:click="$wireClick"
-        :spinner="$spinner"
-        class="btn-xs btn-outline" />
+    {{-- No label means the reader may not take the primary action: the row then
+    carries only what they are allowed to do. --}}
+    @if (filled($label))
+        <x-button
+            :label="$label"
+            :icon="$icon"
+            :link="$link"
+            :wire:click="$wireClick"
+            :spinner="$spinner"
+            class="btn-xs btn-outline" />
+    @endif
 
     @if ($slot->isNotEmpty())
         <button
@@ -67,9 +73,20 @@
 
             {{-- 44px is the Apple HIG comfort target; daisyUI's menu rows come in at 38.
             The sheet is the one place a thumb operates, so it gets the taller rows. --}}
+            {{-- 44px is the Apple HIG comfort target; daisyUI's menu rows come in at 38.
+            The sheet is the one place a thumb operates, so it gets the taller rows. --}}
             <ul class="menu w-full [&_li>*]:min-h-11 lg:[&_li>*]:min-h-9">
                 {{ $slot }}
             </ul>
+
+            @isset($note)
+                {{-- An action that cannot be taken is removed and explained, never greyed
+                out in silence: the reason used to live in a tooltip, which is nowhere at
+                all under a thumb. --}}
+                <p class="border-t border-base-300 bg-warning/10 px-4 py-3 text-xs text-warning-content">
+                    {{ $note }}
+                </p>
+            @endisset
 
             <button
                 type="button"

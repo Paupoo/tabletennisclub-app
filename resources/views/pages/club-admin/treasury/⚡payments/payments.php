@@ -659,6 +659,15 @@ new class extends Component
             return;
         }
 
+        // Only the tab filter used to keep this button away from settled payments,
+        // which is a rendering detail: a stale Livewire request or a double click
+        // during a tab change was enough to dun a member who had already paid.
+        if ($payment->status !== 'pending') {
+            $this->error(__('This payment is settled: there is nothing to chase.'));
+
+            return;
+        }
+
         Mail::to($payment->payable->user)->send(
             new PaymentInvitationEmail($payment, __('Please settle your payment as soon as possible.'))
         );

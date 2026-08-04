@@ -96,7 +96,84 @@
         <x-admin.shared.tab name="to_refund" :label="__('To refund')" icon="o-arrow-uturn-left" />
     </x-admin.shared.tabs>
 
-    <x-card class="bg-base-100 border-none shadow-sm rounded-t-none">
+    {{-- ── Vue mobile ─────────────────────────────────────────────────
+    The table is 724px wide and only scrolls sideways, which puts the row actions
+    688px off the right edge of a phone — reachable only by a drag nobody guesses.
+    Below lg the same rows are cards, as the members list already does. --}}
+    <div class="grid grid-cols-1 gap-3 lg:hidden" data-mobile-list>
+        @forelse ($payments as $payment)
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3" wire:key="mobile-payment-{{ $payment->id }}">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="truncate font-medium">{{ $payment->member }}</div>
+                        @if ($payment->event_name)
+                            <div class="truncate text-xs text-muted">
+                                <span class="font-medium">{{ $payment->event_type }}</span> · {{ $payment->event_name }}
+                            </div>
+                        @endif
+                    </div>
+                    <div class="shrink-0 text-right font-bold tabular-nums">
+                        @if ($this->statusFilter === 'paid')
+                            {{ number_format($payment->amount_paid, 2, ',', ' ') }} €
+                        @else
+                            {{ number_format($payment->amount_due, 2, ',', ' ') }} €
+                        @endif
+                    </div>
+                </div>
+
+                <div class="mt-1 flex flex-wrap items-baseline gap-x-2 text-xs text-muted">
+                    <span class="font-mono">{{ $payment->reference }}</span>
+                    <span>·</span>
+                    <span>{{ \Carbon\Carbon::parse($payment->created_at)->format('d/m/Y') }}</span>
+                    @if ($payment->last_reminded_at)
+                        @php $chasedDaysAgo = \Carbon\Carbon::parse($payment->last_reminded_at)->diffInDays(now()); @endphp
+                        <span @class(['text-warning font-semibold' => $chasedDaysAgo >= 15])>
+                            · {{ __('Chased :ago', ['ago' => \Carbon\Carbon::parse($payment->last_reminded_at)->diffForHumans()]) }}
+                        </span>
+                    @endif
+                </div>
+
+                <div class="mt-3">
+                    @if ($this->statusFilter === 'pending')
+                        @can('payments.reconcile')
+                            <x-admin.shared.row-menu
+                                :label="__('Reconcile')"
+                                icon="o-link"
+                                wire-click="openReconcile({{ $payment->id }})">
+                                @can('payments.remind')
+                                    <x-menu-item
+                                        icon="o-paper-airplane"
+                                        wire:click="sendReminder({{ $payment->id }})"
+                                        :title="$payment->invitation_counter > 0
+                                            ? __('Chase again (:n sent)', ['n' => $payment->invitation_counter])
+                                            : __('Send invitation')" />
+                                @endcan
+                            </x-admin.shared.row-menu>
+                        @endcan
+                    @elseif ($this->statusFilter === 'to_refund')
+                        @can('payments.refund')
+                            <x-admin.shared.row-menu
+                                :label="__('Reconcile')"
+                                icon="o-link"
+                                wire-click="openRefundReconcile({{ $payment->id }})" />
+                        @endcan
+                    @endif
+                </div>
+            </div>
+        @empty
+            <x-admin.shared.list-empty-state
+                icon="o-banknotes"
+                :filtered="filled($search) || count($filterChips) > 0"
+                :heading="__('No payments to display.')"
+                :create-label="Gate::allows('transactions.view') ? __('Import a bank statement') : null"
+                :create-href="Gate::allows('transactions.view') ? route('admin.treasury.transactions') : null" />
+        @endforelse
+
+        <div>{{ $payments->links() }}</div>
+    </div>
+
+    {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
+    <x-card class="hidden bg-base-100 border-none shadow-sm rounded-t-none lg:block">
         <x-table :headers="$headers" :rows="$payments" :sort-by="$sortBy" wire:model.live="selected" selectable hover>
 
             @scope('cell_reference', $payment)

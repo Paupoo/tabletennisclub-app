@@ -220,7 +220,7 @@ new class extends Component
             $query->where(fn ($q) => $q->where('visited_team_id', $this->selectedTeamId)->orWhere('visiting_team_id', $this->selectedTeamId));
         }
 
-        $interclubs = $query->get()->map(fn (Interclub $ic) => $this->formatInterclub($ic, $ourTeamIds));
+        $interclubs = $query->get()->map(fn (Interclub $ic): array => $this->formatInterclub($ic, $ourTeamIds));
 
         $grouped = $interclubs
             ->sortBy([['category_sort', 'asc'], ['our_team_name', 'asc'], ['date_sort', 'asc']])
@@ -237,7 +237,7 @@ new class extends Component
             ->when($selectedLeagueId, fn ($q) => $q->where('league_id', $selectedLeagueId))
             ->orderBy('name')
             ->get()
-            ->map(fn (Team $t) => [
+            ->map(fn (Team $t): array => [
                 'id' => $t->id,
                 'name' => trim(($t->club?->name ?? '') . ' ' . $t->name),
             ]);
@@ -249,7 +249,7 @@ new class extends Component
             'filterChips' => $this->filterChips,
             'seasons' => Season::orderBy('start_at')->get(),
             'ourTeams' => $ourTeams,
-            'ourTeamOptions' => $ourTeams->map(fn (Team $t) => [
+            'ourTeamOptions' => $ourTeams->map(fn (Team $t): array => [
                 'id' => $t->id,
                 'name' => trim(($t->club?->name ?? '') . ' ' . $t->name),
             ])->values()->toArray(),

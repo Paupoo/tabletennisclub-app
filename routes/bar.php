@@ -71,7 +71,7 @@ Route::delete('/orders/{order}', [BarOrderController::class, 'destroy'])
 | Categories
 |--------------------------------------------------------------------------
 */
-Route::prefix('categories')->middleware('can:bar.products.manage')->name('categories.')->group(function () {
+Route::prefix('categories')->middleware('can:bar.products.manage')->name('categories.')->group(function (): void {
     Route::get('/', [BarCategoryController::class, 'index'])
         ->name('index');
     Route::post('/', [BarCategoryController::class, 'store'])
@@ -87,7 +87,7 @@ Route::prefix('categories')->middleware('can:bar.products.manage')->name('catego
 | Products
 |--------------------------------------------------------------------------
 */
-Route::prefix('products')->middleware('can:bar.products.manage')->name('products.')->group(function () {
+Route::prefix('products')->middleware('can:bar.products.manage')->name('products.')->group(function (): void {
     Route::get('/', [BarProductController::class, 'index'])
         ->name('index');
     Route::post('/', [BarProductController::class, 'store'])
@@ -105,7 +105,7 @@ Route::prefix('products')->middleware('can:bar.products.manage')->name('products
 | Cash sheet
 |--------------------------------------------------------------------------
 */
-Route::prefix('cashsheet')->middleware('can:bar.cash_sheet.send')->name('cashSheet.')->group(function () {
+Route::prefix('cashsheet')->middleware('can:bar.cash_sheet.send')->name('cashSheet.')->group(function (): void {
     Route::get('/', [BarCashSheetController::class, 'index'])
         ->name('index');
     Route::post('/bar/cashSheet/send', [BarCashSheetController::class, 'send'])

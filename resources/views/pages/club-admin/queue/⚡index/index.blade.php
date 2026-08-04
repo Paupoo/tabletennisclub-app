@@ -147,15 +147,13 @@
                         class="btn-ghost btn-sm"
                         :tooltip="__('Retry')"
                         wire:click="retry('{{ $job['uuid'] }}')"
-                        spinner
-                    />
+                        spinner :aria-label="__('Retry')" />
                     <x-button
                         icon="o-trash"
                         class="btn-ghost btn-sm text-error"
                         :tooltip="__('Delete')"
                         wire:click="forget('{{ $job['uuid'] }}')"
-                        spinner
-                    />
+                        spinner :aria-label="__('Delete')" />
                 </div>
                 @endscope
             </x-table>

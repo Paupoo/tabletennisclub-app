@@ -229,7 +229,7 @@ describe('Meeting RSVP — confirmation email', function (): void {
         $this->post(rsvpUrl($meeting, $user), ['attendance' => 'confirmed', 'meal' => 'reserve']);
 
         Notification::assertSentTo($user, MeetingRsvpConfirmationNotification::class,
-            fn (MeetingRsvpConfirmationNotification $n) => $n->payment !== null);
+            fn (MeetingRsvpConfirmationNotification $n): bool => $n->payment !== null);
     });
 });
 

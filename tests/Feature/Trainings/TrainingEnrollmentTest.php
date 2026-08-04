@@ -53,7 +53,7 @@ describe('Training Enrollment', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'cancelled']);
         $pack = TrainingPack::factory()->create();
 
-        expect(fn () => (new EnrollInTrainingPackAction)($subscription, $pack))
+        expect(fn (): string => (new EnrollInTrainingPackAction)($subscription, $pack))
             ->toThrow(DomainException::class);
     })->group('training', 'enrollment');
 
@@ -63,7 +63,7 @@ describe('Training Enrollment', function (): void {
 
         (new EnrollInTrainingPackAction)($subscription, $pack);
 
-        expect(fn () => (new EnrollInTrainingPackAction)($subscription, $pack))
+        expect(fn (): string => (new EnrollInTrainingPackAction)($subscription, $pack))
             ->toThrow(DomainException::class);
     })->group('training', 'enrollment');
 

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Subscriptions;
 
-use App\Actions\ClubAdmin\Payments\GeneratePayment;
-use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -53,10 +51,10 @@ class SubscribeToSeasonAction
             return back()->withErrors(__('The user has already subscribed to this season'));
         }
 
-        $this->is_competitor = $validated['type'] === 'competitive' ? true : false;
+        $this->is_competitor = $validated['type'] === 'competitive';
 
         // Create the subscription
-        $subscription = $this->subscribe();
+        $this->subscribe();
 
         // Removed... we need to let the user or the admin choose the options first
         // Generate the pending payment

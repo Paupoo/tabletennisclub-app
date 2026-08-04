@@ -243,7 +243,7 @@ describe('Batch Auto-Reconciliation', function () use ($normalize): void {
         $unreconciledTransactions = Transaction::whereDoesntHave('payment')
             ->where('amount', '>', 0)
             ->get()
-            ->keyBy(fn ($t) => $normalize($t->structured_reference ?? '___' . $t->id));
+            ->keyBy(fn ($t): string => $normalize($t->structured_reference ?? '___' . $t->id));
 
         $matches = [];
         foreach ($pendingPayments as $p) {
@@ -312,7 +312,7 @@ describe('Batch Auto-Reconciliation', function () use ($normalize): void {
         $unreconciledTransactions = Transaction::whereDoesntHave('payment')
             ->where('amount', '>', 0)
             ->get()
-            ->keyBy(fn ($t) => $normalize($t->structured_reference ?? '___' . $t->id));
+            ->keyBy(fn ($t): string => $normalize($t->structured_reference ?? '___' . $t->id));
 
         $pendingPayments = Payment::where('status', 'pending')->whereNull('transaction_id')->get();
 
@@ -365,7 +365,7 @@ describe('Batch Auto-Reconciliation', function () use ($normalize): void {
         $unreconciledTransactions = Transaction::whereDoesntHave('payment')
             ->where('amount', '>', 0)
             ->get()
-            ->keyBy(fn ($t) => $normalize($t->structured_reference ?? '___' . $t->id));
+            ->keyBy(fn ($t): string => $normalize($t->structured_reference ?? '___' . $t->id));
 
         $batchMatches = [];
         foreach ($payments as $p) {

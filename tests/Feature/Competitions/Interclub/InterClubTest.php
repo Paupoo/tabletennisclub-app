@@ -84,7 +84,7 @@ describe('control-center filter drawer', function (): void {
             ->assertSet('selectedSeasonId', $activeSeason->id)
             ->assertViewHas('filterChips', [])
             ->set('selectedSeasonId', $otherSeason->id)
-            ->assertViewHas('filterChips', fn ($chips) => count($chips) === 1 && $chips[0]['key'] === 'selectedSeasonId');
+            ->assertViewHas('filterChips', fn ($chips): bool => count($chips) === 1 && $chips[0]['key'] === 'selectedSeasonId');
     });
 
     test('removing the season chip resets to the active season', function (): void {
@@ -105,7 +105,7 @@ describe('control-center filter drawer', function (): void {
         Livewire::actingAs($admin)
             ->test('pages::club-events.interclubs.control-center')
             ->set('filterAlerts', true)
-            ->assertViewHas('filterChips', fn ($chips) => count($chips) === 1 && $chips[0]['key'] === 'filterAlerts')
+            ->assertViewHas('filterChips', fn ($chips): bool => count($chips) === 1 && $chips[0]['key'] === 'filterAlerts')
             ->call('clearFilters')
             ->assertSet('filterAlerts', false);
     });

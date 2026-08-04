@@ -206,7 +206,6 @@ it('tests that applyFilters modifies the query as expected', function (): void {
 
     $reflection = new ReflectionClass($component);
     $method = $reflection->getMethod('applyFilters');
-    $method->setAccessible(true);
 
     $method->invoke($component, $query);
 

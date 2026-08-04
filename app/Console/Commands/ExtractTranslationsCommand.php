@@ -47,7 +47,7 @@ class ExtractTranslationsCommand extends Command
             $strings = array_merge($matches1[1], $matches2[1]);
 
             foreach ($strings as $str) {
-                $translations[$str] = $translations[$str] ?? '';
+                $translations[$str] ??= '';
             }
         }
 

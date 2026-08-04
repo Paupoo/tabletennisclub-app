@@ -25,7 +25,7 @@ describe('ContactReasonEnum', function (): void {
     // Is this test useful?
     it('values() returns the array of values', function (): void {
         $this->assertEquals(
-            array_map(fn ($case) => $case->value, ContactReasonEnum::cases()),
+            array_map(fn (ContactReasonEnum $case) => $case->value, ContactReasonEnum::cases()),
             ContactReasonEnum::values()
         );
     });

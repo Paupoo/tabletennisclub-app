@@ -91,7 +91,7 @@
                                     </div>
                                 </div>
                                 <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-x-mark"
-                                    :tooltip="__('Unlink')" wire:click="detachGuardian({{ $guardian->id }})" />
+                                    :tooltip="__('Unlink')" wire:click="detachGuardian({{ $guardian->id }})" :aria-label="__('Unlink')" />
                             </div>
                         @endforeach
                     </div>
@@ -207,7 +207,7 @@
                                     </div>
                                 </div>
                                 <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-x-mark"
-                                    :tooltip="__('Unlink')" wire:click="detachFamilyMember({{ $member->id }})" />
+                                    :tooltip="__('Unlink')" wire:click="detachFamilyMember({{ $member->id }})" :aria-label="__('Unlink')" />
                             </div>
                         @endforeach
                     </div>
@@ -518,7 +518,7 @@
     @endif
 
     {{-- ── Modal anonymisation RGPD ─────────────────────────────────── --}}
-    <x-modal wire:model="anonymizeModal" :title="__('GDPR Anonymization — Irreversible')">
+    <x-app-modal wire:model="anonymizeModal" :title="__('GDPR Anonymization — Irreversible')">
         <div class="space-y-4">
             <x-alert icon="o-exclamation-triangle" class="alert-error">
                 <p class="text-sm font-semibold">{{ __('This action permanently erases all personal data and cannot be undone.') }}</p>
@@ -540,5 +540,5 @@
                 spinner="confirmAnonymize"
                 :disabled="strtoupper($anonymizeConfirmText) !== 'ANONYMIZE'" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

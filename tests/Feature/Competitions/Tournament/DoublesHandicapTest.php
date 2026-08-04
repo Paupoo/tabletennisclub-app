@@ -131,8 +131,8 @@ describe('generateMatches for doubles pool', function (): void {
 
         $matches = TournamentMatch::where('pool_id', $pool->id)->get();
         expect($matches)->toHaveCount(3); // 3 pairs → 3 matches (n*(n-1)/2)
-        expect($matches->every(fn ($m) => $m->pair1_id !== null && $m->pair2_id !== null))->toBeTrue();
-        expect($matches->every(fn ($m) => $m->player1_id !== null && $m->player2_id !== null))->toBeTrue();
+        expect($matches->every(fn ($m): bool => $m->pair1_id !== null && $m->pair2_id !== null))->toBeTrue();
+        expect($matches->every(fn ($m): bool => $m->player1_id !== null && $m->player2_id !== null))->toBeTrue();
     });
 
     it('sets proxy player ids matching pair player1s', function (): void {

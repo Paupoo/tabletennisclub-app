@@ -88,11 +88,12 @@
                 </x-slot:sub-value>
                 <x-slot:actions>
                     @if (! $selectionModeActive)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
-                                :tooltip="__('View')"
-                                link="{{ route('admin.meetings.show', $meeting) }}" />
-                        </x-admin.shared.row-actions>
+                        <x-admin.shared.row-menu
+                            :label="__('View')"
+                            icon="o-eye"
+                            link="{{ route('admin.meetings.show', $meeting) }}">
+
+                        </x-admin.shared.row-menu>
                     @endif
                 </x-slot:actions>
             </x-list-item>
@@ -160,11 +161,12 @@
                     @endscope
 
                     @scope('actions', $meeting)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
-                                :tooltip="__('View')"
-                                link="{{ route('admin.meetings.show', $meeting) }}" />
-                        </x-admin.shared.row-actions>
+                        <x-admin.shared.row-menu
+                            :label="__('View')"
+                            icon="o-eye"
+                            link="{{ route('admin.meetings.show', $meeting) }}">
+
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">{{ $meetings->links() }}</div>

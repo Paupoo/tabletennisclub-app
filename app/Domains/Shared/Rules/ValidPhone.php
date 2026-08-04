@@ -16,7 +16,7 @@ class ValidPhone implements ValidationRule
      *
      * @var list<string>
      */
-    private const SEPARATORS = [' ', "\u{00A0}", "\u{202F}", '.', '-', '–', '/', '(', ')'];
+    private const array SEPARATORS = [' ', "\u{00A0}", "\u{202F}", '.', '-', '–', '/', '(', ')'];
 
     /**
      * Validate a phone number the way a Belgian club actually receives them.
@@ -34,7 +34,7 @@ class ValidPhone implements ValidationRule
             return false;
         }
 
-        if (! preg_match('/^\+?[0-9]+$/', $normalized)) {
+        if (! preg_match('/^\+?\d+$/', $normalized)) {
             return false;
         }
 

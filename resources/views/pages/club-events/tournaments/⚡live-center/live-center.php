@@ -112,7 +112,7 @@ new class extends Component
             )
             ->with(['pair1', 'pair2'])
             ->get()
-            ->flatMap(fn (TournamentMatch $m) => [
+            ->flatMap(fn (TournamentMatch $m): array => [
                 $m->player1_id,
                 $m->player2_id,
                 $m->pair1?->player1_id,
@@ -206,7 +206,7 @@ new class extends Component
             return;
         }
 
-        $podiumLines = $top3->map(fn ($e) => $e['rank'] . '. ' . $e['user']->full_name . ' (' . $e['result'] . ')')->implode("\n");
+        $podiumLines = $top3->map(fn ($e): string => $e['rank'] . '. ' . $e['user']->full_name . ' (' . $e['result'] . ')')->implode("\n");
 
         $this->thankYouBody = __('Dear participants,') . "\n\n"
             . __('Thank you for joining us for :name! It was a great day of table tennis.', ['name' => $this->tournament->name]) . "\n\n"
@@ -215,7 +215,7 @@ new class extends Component
 
         $this->newsPostContent = '## ' . $this->tournament->name . "\n\n"
             . '**' . __('Podium') . " :**\n\n"
-            . $top3->map(fn ($e) => '- **' . $e['rank'] . '. ' . $e['user']->full_name . '** — ' . $e['result'])->implode("\n")
+            . $top3->map(fn ($e): string => '- **' . $e['rank'] . '. ' . $e['user']->full_name . '** — ' . $e['result'])->implode("\n")
             . "\n\n" . __('Congratulations to all participants!');
     }
 
@@ -327,7 +327,7 @@ new class extends Component
     {
         $matchService = app(TournamentMatchService::class);
 
-        return $this->tournament->pools->map(fn (Pool $pool) => [
+        return $this->tournament->pools->map(fn (Pool $pool): array => [
             'id' => $pool->id,
             'name' => $pool->name,
             'finished' => app(TournamentPoolService::class)->isPoolFinished($pool),
@@ -400,7 +400,7 @@ new class extends Component
         }
 
         $matchService = app(TournamentMatchService::class);
-        $nextRank = empty($ranked) ? 1 : collect($ranked)->max('rank') + 1;
+        $nextRank = $ranked === [] ? 1 : collect($ranked)->max('rank') + 1;
 
         foreach ($this->tournament->pools as $pool) {
             foreach ($matchService->calculatePoolStandings($pool) as $standing) {
@@ -450,7 +450,7 @@ new class extends Component
 
         ['results' => $setResults] = $this->parseSetResults();
 
-        if (empty($setResults)) {
+        if ($setResults === []) {
             $this->error(__('No set scores to save.'));
 
             return;
@@ -531,7 +531,7 @@ new class extends Component
 
         ['results' => $setResults, 'p1Sets' => $p1Sets, 'p2Sets' => $p2Sets] = $this->parseSetResults();
 
-        if (empty($setResults)) {
+        if ($setResults === []) {
             $this->error(__('Please enter at least one set score.'));
 
             return;
@@ -578,7 +578,7 @@ new class extends Component
         return $this->tournament->tables()
             ->with('room')
             ->get()
-            ->map(function (Table $table) {
+            ->map(function (Table $table): array {
                 $pivot = $table->pivot;
                 $match = null;
 
@@ -621,8 +621,8 @@ new class extends Component
         $paidIds = Payment::whereIn('id', $paymentIds)->where('status', 'paid')->pluck('id')->flip();
 
         return $users
-            ->filter(fn ($u) => ! isset($paidIds[$u->pivot->payment_id]))
-            ->map(fn ($u) => [
+            ->filter(fn ($u): bool => ! isset($paidIds[$u->pivot->payment_id]))
+            ->map(fn ($u): array => [
                 'user' => $u,
                 'qr_confirmed' => (bool) $u->pivot->qr_confirmed,
             ])

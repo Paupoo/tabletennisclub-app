@@ -69,7 +69,7 @@ class TournamentController extends Controller
         ];
 
         // RFC 5545 §3.1: fold lines longer than 75 octets with CRLF + SPACE.
-        $lines = array_map(fn (string $line) => $this->icalFold($line), $properties);
+        $lines = array_map($this->icalFold(...), $properties);
 
         $slug = Str::slug($tournament->name);
 

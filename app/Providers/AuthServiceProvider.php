@@ -51,7 +51,7 @@ class AuthServiceProvider extends ServiceProvider
      *
      * @var array<class-string, class-string>
      */
-    private const POLICIES = [
+    private const array POLICIES = [
         Club::class => ClubPolicy::class,
         Contact::class => ContactPolicy::class,
         EventPost::class => EventPostPolicy::class,

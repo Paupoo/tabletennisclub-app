@@ -121,7 +121,7 @@ new class extends Component
     {
         ['results' => $setResults] = $this->parseSetResults();
 
-        if (empty($setResults)) {
+        if ($setResults === []) {
             $this->error(__('No set scores to save.'));
 
             return;
@@ -135,7 +135,7 @@ new class extends Component
     {
         ['results' => $setResults, 'p1Sets' => $p1Sets, 'p2Sets' => $p2Sets] = $this->parseSetResults();
 
-        if (empty($setResults)) {
+        if ($setResults === []) {
             $this->error(__('Please enter at least one set score.'));
 
             return;

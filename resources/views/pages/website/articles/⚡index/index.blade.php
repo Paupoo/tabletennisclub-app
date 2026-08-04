@@ -125,32 +125,28 @@
                 </x-slot:sub-value>
                 <x-slot:actions>
                     @if (! $selectionModeActive)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                :tooltip="__('Edit')"
-                                link="{{ route('admin.website.articles.edit', $article->slug) }}" />
+                        <x-admin.shared.row-menu
+                            :label="__('Edit')"
+                            icon="o-pencil"
+                            link="{{ route('admin.website.articles.edit', $article->slug) }}">
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
-                                    :tooltip="__('Publish')"
-                                    wire:click="publish({{ $article->id }})" />
+                                <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $article->id }})" :title="__('Publish')" />
                             @endif
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
-                                    :tooltip="__('Archive')"
-                                    wire:click="archive({{ $article->id }})" />
+                                <x-menu-item icon="o-archive-box" wire:click="archive({{ $article->id }})" :title="__('Archive')" />
                             @endif
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $article->id }})" />
-                        </x-admin.shared.row-actions>
+                            <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $article->id }})" :title="__('Delete')" />
+                        </x-admin.shared.row-menu>
                     @endif
                 </x-slot:actions>
             </x-list-item>
         @empty
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-document-text"
+                :filtered="filled($search) || count($filterChips) > 0"
                 :heading="__('No articles found')"
-                :message="__('Try adjusting your search or filters.')" />
+                :create-label="__('Write an article')"
+                :create-href="auth()->user()->can('news_posts.manage') ? route('admin.website.articles.create') : null" />
         @endforelse
     </div>
 
@@ -158,10 +154,12 @@
     <div class="hidden lg:block">
         <x-card>
             @if ($articles->isEmpty())
-                <x-empty-state
+                <x-admin.shared.list-empty-state
                     icon="o-document-text"
+                    :filtered="filled($search) || count($filterChips) > 0"
                     :heading="__('No articles found')"
-                    :message="__('Try adjusting your search or filters.')" />
+                    :create-label="__('Write an article')"
+                    :create-href="auth()->user()->can('news_posts.manage') ? route('admin.website.articles.create') : null" />
             @else
                 <x-table :headers="$headers" :rows="$articles" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
@@ -194,24 +192,18 @@
                         </span>
                     @endscope
                     @scope('actions', $article)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                :tooltip="__('Edit')"
-                                link="{{ route('admin.website.articles.edit', $article->slug) }}" />
+                        <x-admin.shared.row-menu
+                            :label="__('Edit')"
+                            icon="o-pencil"
+                            link="{{ route('admin.website.articles.edit', $article->slug) }}">
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
-                                    :tooltip="__('Publish')"
-                                    wire:click="publish({{ $article->id }})" />
+                                <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $article->id }})" :title="__('Publish')" />
                             @endif
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
-                                    :tooltip="__('Archive')"
-                                    wire:click="archive({{ $article->id }})" />
+                                <x-menu-item icon="o-archive-box" wire:click="archive({{ $article->id }})" :title="__('Archive')" />
                             @endif
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $article->id }})" />
-                        </x-admin.shared.row-actions>
+                            <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $article->id }})" :title="__('Delete')" />
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">

@@ -6,7 +6,7 @@ namespace App\Domains\Shared\ValueObjects;
 
 use InvalidArgumentException;
 
-class Score
+class Score implements \Stringable
 {
     private function __construct(
         private readonly int $player1,

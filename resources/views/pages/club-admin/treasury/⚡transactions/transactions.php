@@ -54,7 +54,7 @@ new class extends Component
     {
         Gate::authorize(Permission::TransactionsDelete->value);
 
-        $ids = array_map('intval', $this->selected);
+        $ids = array_map(intval(...), $this->selected);
 
         if ($this->selectingAllResults) {
             $ids = $this->allMatchingTransactionIds();
@@ -121,7 +121,7 @@ new class extends Component
 
     public function openConfirmDeleteModal(): void
     {
-        $ids = array_map('intval', $this->selected);
+        $ids = array_map(intval(...), $this->selected);
 
         $this->reconciledInSelection = Transaction::whereIn('id', $ids)->has('payment')->count();
         $this->confirmDeleteModal = true;
@@ -146,14 +146,14 @@ new class extends Component
             $sheet = $spreadsheet->getActiveSheet();
             $rows = $sheet->toArray(null, true, true, true);
 
-            if (empty($rows)) {
+            if ($rows === []) {
                 $this->error(__('Empty or invalid file.'));
 
                 return;
             }
 
             $headerRow = array_shift($rows);
-            $header = array_map(fn ($h) => $this->normalizeHeader($h ?? ''), $headerRow);
+            $header = array_map(fn ($h): string => $this->normalizeHeader($h ?? ''), $headerRow);
 
             $newCount = 0;
             $duplicateCount = 0;
@@ -172,7 +172,7 @@ new class extends Component
                 foreach ($rows as $row) {
                     $lineNumber++;
 
-                    $row = array_map(fn ($v) => ($v === null || trim((string) $v) === '') ? null : trim((string) $v), $row);
+                    $row = array_map(fn ($v): ?string => ($v === null || trim((string) $v) === '') ? null : trim((string) $v), $row);
                     $row = array_pad(array_slice($row, 0, count($header)), count($header), null);
                     $rowAssoc = array_combine($header, $row);
 
@@ -346,7 +346,7 @@ new class extends Component
 
     protected function getPageIds(): array
     {
-        return $this->transactions()->pluck('id')->map(fn ($id) => (string) $id)->toArray();
+        return $this->transactions()->pluck('id')->map(fn ($id): string => (string) $id)->toArray();
     }
 
     private function allMatchingTransactionIds(): array

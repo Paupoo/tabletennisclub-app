@@ -96,7 +96,7 @@
                             </div>
                             @can('update', $table)
                                 <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                    :tooltip="__('Edit')" link="{{ route('admin.tables.edit', $table) }}" />
+                                    :tooltip="__('Edit')" link="{{ route('admin.tables.edit', $table) }}" :aria-label="__('Edit')" />
                             @endcan
                         </div>
                     @endforeach

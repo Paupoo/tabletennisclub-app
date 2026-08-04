@@ -93,7 +93,7 @@
     @endif
 
     {{-- Modal création libre --}}
-    <x-modal :title="__('New team')" wire:model="createModal">
+    <x-app-modal :title="__('New team')" wire:model="createModal">
         <div class="space-y-4">
             <x-select label="Lettre" :options="$teamNameOptions" wire:model="newTeamName"
                 placeholder="Choisir A – Z" />
@@ -119,7 +119,7 @@
             <x-button label="Annuler" wire:click="$set('createModal', false)" />
             <x-button class="btn-primary" :label="__('Create')" wire:click="createTeam" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     <x-confirm-modal model="deleteModal" :title="__('Delete this team?')" :subtitle="__('Warning!')"
         :confirmLabel="__('Delete')" confirmAction="delete">

@@ -143,7 +143,7 @@
     @endif
 
     {{-- Modal: Create register --}}
-    <x-modal wire:model="createRegisterModal" :title="__('Create Cash Register')" separator>
+    <x-app-modal wire:model="createRegisterModal" :title="__('Create Cash Register')" separator>
         <div class="space-y-4">
             <x-input :label="__('Register name')" wire:model="newRegisterName" autofocus />
             <x-select
@@ -158,10 +158,10 @@
             <x-button :label="__('Cancel')" @click="$wire.createRegisterModal = false" class="btn-ghost" />
             <x-button :label="__('Create')" icon="o-check" class="btn-primary" wire:click="createRegister" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- Modal: Change holder --}}
-    <x-modal wire:model="changeHolderModal" :title="__('Change holder')" separator>
+    <x-app-modal wire:model="changeHolderModal" :title="__('Change holder')" separator>
         <x-select
             :label="__('Holder')"
             :options="$users"
@@ -173,10 +173,10 @@
             <x-button :label="__('Cancel')" @click="$wire.changeHolderModal = false" class="btn-ghost" />
             <x-button :label="__('Save')" icon="o-check" class="btn-primary" wire:click="confirmChangeHolder" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- Modal: Manual entry --}}
-    <x-modal wire:model="manualEntryModal" :title="__('Add Entry')" separator>
+    <x-app-modal wire:model="manualEntryModal" :title="__('Add Entry')" separator>
         <div class="space-y-4">
             <p class="text-sm opacity-60">
                 {{ __('Use a positive amount for cash in, negative for cash out.') }}
@@ -201,5 +201,5 @@
             <x-button :label="__('Cancel')" @click="$wire.manualEntryModal = false" class="btn-ghost" />
             <x-button :label="__('Save')" icon="o-check" class="btn-primary" wire:click="saveManualEntry" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

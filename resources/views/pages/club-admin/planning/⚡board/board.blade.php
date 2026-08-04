@@ -58,12 +58,12 @@
                                     @if ($canManage && $p->status->value !== 'archived')
                                         <x-button class="btn-sm btn-ghost" icon="o-archive-box"
                                             :tooltip="__('Archive')"
-                                            wire:click="confirmArchivePlan({{ $p->id }})" />
+                                            wire:click="confirmArchivePlan({{ $p->id }})" :aria-label="__('Archive')" />
                                     @endif
                                     @if ($canManage)
                                         <x-button class="btn-sm btn-ghost text-error" icon="o-trash"
                                             :tooltip="__('Delete')"
-                                            wire:click="confirmDeletePlan({{ $p->id }})" />
+                                            wire:click="confirmDeletePlan({{ $p->id }})" :aria-label="__('Delete')" />
                                     @endif
                                 </div>
                             </div>
@@ -141,10 +141,10 @@
                             @if ($canManage && ! $column['is_pool'])
                                 <x-button class="btn-ghost btn-xs btn-circle" icon="o-pencil-square"
                                     :tooltip="__('Edit group')"
-                                    wire:click="editPack({{ $column['pack_id'] }})" />
+                                    wire:click="editPack({{ $column['pack_id'] }})" :aria-label="__('Edit group')" />
                                 <x-button class="btn-ghost btn-xs btn-circle text-error" icon="o-trash"
                                     :tooltip="__('Remove group')"
-                                    wire:click="confirmRemovePack({{ $column['pack_id'] }})" />
+                                    wire:click="confirmRemovePack({{ $column['pack_id'] }})" :aria-label="__('Remove group')" />
                             @endif
                         </div>
                     </div>
@@ -212,7 +212,7 @@
         </div>
 
         {{-- Add / edit hypothetical pack modal --}}
-        <x-modal wire:model="showPackModal"
+        <x-app-modal wire:model="showPackModal"
             :title="$editingPackId ? __('Edit group') : __('Add a group')" separator>
             <div class="space-y-4">
                 <x-input :label="__('Group name')" wire:model="packName"
@@ -240,10 +240,10 @@
                 <x-button :label="$editingPackId ? __('Save') : __('Add')" class="btn-primary"
                     wire:click="{{ $editingPackId ? 'savePack' : 'addPack' }}" spinner />
             </x-slot:actions>
-        </x-modal>
+        </x-app-modal>
 
         {{-- Import CSV modal --}}
-        <x-modal wire:model="showImportModal" :title="__('Import CSV')" separator>
+        <x-app-modal wire:model="showImportModal" :title="__('Import CSV')" separator>
             <div class="space-y-4">
                 <p class="text-sm text-base-content/60">
                     {{ __('Upload a CSV exported from this board. Members are matched by licence, then by email.') }}
@@ -256,7 +256,7 @@
                 <x-button :label="__('Import')" class="btn-primary"
                     wire:click="import" spinner="import" />
             </x-slot:actions>
-        </x-modal>
+        </x-app-modal>
 
         {{-- Remove group confirm modal (project modal, no native JS confirm) --}}
         <x-confirm-modal model="confirmRemovePackModal" :title="__('Remove this group?')"

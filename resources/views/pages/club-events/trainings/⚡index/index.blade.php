@@ -282,7 +282,7 @@
     {{-- ================================================================
          WIZARD MODAL (3 steps)
     ================================================================ --}}
-    <x-modal :title="$packId ? __('Edit pack') : __('New training pack')" wire:model="wizardOpen" separator>
+    <x-app-modal :title="$packId ? __('Edit pack') : __('New training pack')" wire:model="wizardOpen" separator>
         {{-- Step indicators --}}
         <div class="mb-6 flex items-center justify-center gap-2 text-xs">
             @foreach ([1 => __('Pack'), 2 => __('Planning'), 3 => __('Price')] as $n => $label)
@@ -553,12 +553,12 @@
                     label="{{ $packId ? __('Update') : __('Create pack') }}" wire:click="save" />
             @endif
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ================================================================
          CANCELLATION MODAL
     ================================================================ --}}
-    <x-modal :title="__('Cancel this session')" wire:model="cancelModal" separator>
+    <x-app-modal :title="__('Cancel this session')" wire:model="cancelModal" separator>
         <div class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div @class([
@@ -590,7 +590,7 @@
             <x-button class="btn-error" icon="o-x-circle" :label="__('Confirm cancellation')"
                 wire:click="confirmCancel" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     <x-confirm-modal model="withdrawPackModal" :title="__('Withdraw this pack from the offer?')"
         :confirmLabel="__('Withdraw')" confirmClass="btn-warning" confirmAction="confirmWithdrawPack">
@@ -603,7 +603,7 @@
         </p>
     </x-confirm-modal>
 
-    <x-modal wire:model="regenerateModal" :title="__('Rebuild the sessions?')" separator>
+    <x-app-modal wire:model="regenerateModal" :title="__('Rebuild the sessions?')" separator>
         <p>{{ __('You changed when or where this pack takes place. Its existing sessions do not move on their own.') }}</p>
 
         <div class="p-3 mt-3 text-sm rounded-lg bg-warning/10">
@@ -628,9 +628,9 @@
             <x-button :label="__('Cancel')" wire:click="$set('regenerateModal', false)" />
             <x-button :label="__('Rebuild the sessions')" class="btn-warning" wire:click="confirmRegeneration" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
-    <x-modal wire:model="discontinuePackModal" :title="__('Stop this pack?')" separator>
+    <x-app-modal wire:model="discontinuePackModal" :title="__('Stop this pack?')" separator>
         <p>{{ __('The remaining sessions are cancelled and the members are told the training will not happen.') }}</p>
 
         <div class="p-3 mt-3 text-sm rounded-lg bg-error/10">
@@ -652,5 +652,5 @@
             <x-button :label="__('Cancel')" wire:click="$set('discontinuePackModal', false)" />
             <x-button :label="__('Stop the pack')" class="btn-error" wire:click="confirmDiscontinuePack" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

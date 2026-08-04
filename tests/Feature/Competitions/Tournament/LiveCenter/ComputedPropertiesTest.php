@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
@@ -159,7 +160,7 @@ describe('poolsPhaseComplete', function (): void {
 
         $poolService = app(TournamentPoolService::class);
         $allDone = $tournament->fresh()->pools->every(
-            fn ($pool) => $poolService->isPoolFinished($pool)
+            fn (Pool $pool) => $poolService->isPoolFinished($pool)
         );
 
         expect($allDone)->toBeTrue();
@@ -183,7 +184,7 @@ describe('poolsPhaseComplete', function (): void {
 
         $poolService = app(TournamentPoolService::class);
         $allDone = $tournament->fresh()->pools->every(
-            fn ($pool) => $poolService->isPoolFinished($pool)
+            fn (Pool $pool) => $poolService->isPoolFinished($pool)
         );
 
         expect($allDone)->toBeFalse();

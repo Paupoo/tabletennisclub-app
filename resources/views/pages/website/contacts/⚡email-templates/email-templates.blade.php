@@ -46,11 +46,11 @@
                     <x-button class="btn-ghost btn-sm"
                         :icon="$template->is_active ? 'o-eye' : 'o-eye-slash'"
                         :tooltip="$template->is_active ? __('Deactivate') : __('Activate')"
-                        wire:click="toggleActive({{ $template->id }})" />
+                        wire:click="toggleActive({{ $template->id }})" :aria-label="$template->is_active ? __('Deactivate') : __('Activate')" />
                     <x-button class="btn-ghost btn-sm" icon="o-pencil"
-                        :tooltip="__('Edit')" wire:click="openEdit({{ $template->id }})" />
+                        :tooltip="__('Edit')" wire:click="openEdit({{ $template->id }})" :aria-label="__('Edit')" />
                     <x-button class="btn-ghost btn-sm text-error" icon="o-trash"
-                        :tooltip="__('Delete')" wire:click="confirmDelete({{ $template->id }})" />
+                        :tooltip="__('Delete')" wire:click="confirmDelete({{ $template->id }})" :aria-label="__('Delete')" />
                 </div>
             @endscope
 
@@ -68,7 +68,7 @@
     {{-- ================================================================
          CREATE / EDIT MODAL
     ================================================================ --}}
-    <x-modal wire:model="formModal" separator
+    <x-app-modal wire:model="formModal" separator
         :title="$editingId ? __('Edit template') : __('New template')">
         <div class="space-y-4">
             <x-input :label="__('Name')" wire:model="formName"
@@ -110,7 +110,7 @@
             <x-button class="btn-primary" icon="o-check" :label="__('Save')"
                 wire:click="saveTemplate" spinner="saveTemplate" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ================================================================
          DELETE MODAL

@@ -33,9 +33,8 @@ new class extends Component
      * Mise à jour du thème
      *
      * @param [type] $value
-     * @return void
      */
-    public function updatedThemeChoice($value)
+    public function updatedThemeChoice($value): void
     {
         // 1. On sauvegarde en DB pour que ce soit permanent
         $this->user->update(['theme' => $value]);

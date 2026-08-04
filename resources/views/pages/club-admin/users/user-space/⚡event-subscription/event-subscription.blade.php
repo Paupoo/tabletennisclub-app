@@ -94,7 +94,7 @@
                                             value="{{ $myPair->player1_id === $this->user->id ? $myPair->player2?->full_name : $myPair->player1?->full_name }}" />
                                         <x-button class="btn-ghost btn-xs text-error" icon="o-x-mark"
                                             :tooltip="__('Remove pair')"
-                                            wire:click="removeFromPair({{ $tournament->id }})" />
+                                            wire:click="removeFromPair({{ $tournament->id }})" :aria-label="__('Remove pair')" />
                                     @elseif ($partnerTournamentId === $tournament->id)
                                         <x-select wire:model.live="selectedPartnerId"
                                             :options="$this->availablePartners"
@@ -118,8 +118,7 @@
                                     icon="o-x-mark"
                                     :tooltip="__('Cancel registration')"
                                     spinner="cancelRegistration"
-                                    wire:click="openCancelConfirm({{ $tournament->id }})"
-                                />
+                                    wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Cancel registration')" />
                             @elseif ($isSpotOffered)
                                 @if ($reg->confirmation_deadline)
                                     <span class="hidden text-xs text-base-content/50 sm:inline">
@@ -142,8 +141,7 @@
                                     icon="o-x-mark"
                                     :tooltip="__('Decline this spot')"
                                     spinner="cancelRegistration"
-                                    wire:click="openCancelConfirm({{ $tournament->id }})"
-                                />
+                                    wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Decline this spot')" />
                             @elseif ($isWaiting)
                                 <x-admin.shared.status-badge status="waiting" :detail="$reg->waitlist_position" />
                                 <x-button
@@ -151,8 +149,7 @@
                                     icon="o-x-mark"
                                     :tooltip="__('Leave waitlist')"
                                     spinner="cancelRegistration"
-                                    wire:click="openCancelConfirm({{ $tournament->id }})"
-                                />
+                                    wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Leave waitlist')" />
                             @elseif ($isFull)
                                 <x-admin.shared.status-badge status="full" />
                                 <x-button
@@ -302,7 +299,7 @@
     </x-admin.shared.filter-drawer>
 
     {{-- Modal détails paiement --}}
-    <x-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm">
+    <x-app-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm">
     @if ($paymentQr && $selectedPaymentId)
         @php
             $payment = \App\Domains\ClubAdmin\Payment\Models\Payment::find($selectedPaymentId);
@@ -345,10 +342,10 @@
     <x-slot:actions>
         <x-button :label="__('Close')" wire:click="$set('paymentModal', false)" />
     </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- Modal participation réunion --}}
-    <x-modal wire:model="meetingRsvpModal" :title="__('My participation')" box-class="max-w-sm">
+    <x-app-modal wire:model="meetingRsvpModal" :title="__('My participation')" box-class="max-w-sm">
         @php $rsvpMeeting = $this->rsvpMeetingId ? \App\Domains\Meetings\Models\Meeting::find($this->rsvpMeetingId) : null; @endphp
         @if ($rsvpMeeting)
             @php $rsvpReg = $this->meetingRegistrations[$rsvpMeeting->id] ?? null; @endphp
@@ -402,7 +399,7 @@
                     wire:click="saveMeetingRsvp" spinner="saveMeetingRsvp" />
             </x-slot:actions>
         @endif
-    </x-modal>
+    </x-app-modal>
 
     <x-confirm-modal model="cancelConfirmModal" :title="__('Cancel registration?')"
         :confirmLabel="__('Confirm')" confirmClass="btn-error" confirmAction="confirmCancel">

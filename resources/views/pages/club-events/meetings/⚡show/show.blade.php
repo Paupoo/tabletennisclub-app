@@ -99,7 +99,7 @@
                     <x-slot:menu>
                         @if ($editing !== 'details')
                             <x-button icon="o-pencil-square" class="btn-ghost btn-xs btn-circle"
-                                :tooltip="__('Edit')" wire:click="editDetails" />
+                                :tooltip="__('Edit')" wire:click="editDetails" :aria-label="__('Edit')" />
                         @endif
                     </x-slot:menu>
                 @endif
@@ -195,7 +195,7 @@
                         <x-slot:menu>
                             @if ($editing !== 'agenda')
                                 <x-button icon="o-pencil-square" class="btn-ghost btn-xs btn-circle"
-                                    :tooltip="__('Edit')" wire:click="editAgenda" />
+                                    :tooltip="__('Edit')" wire:click="editAgenda" :aria-label="__('Edit')" />
                             @endif
                         </x-slot:menu>
                     @endif
@@ -410,12 +410,12 @@
                                         @if ($reg->status !== \App\Domains\Shared\Enums\MeetingUserStatusEnum::ATTENDED)
                                             <x-button icon="o-check" class="btn-ghost btn-xs btn-circle"
                                                 :tooltip="__('Mark attended')"
-                                                wire:click="markAttended({{ $user->id }})" />
+                                                wire:click="markAttended({{ $user->id }})" :aria-label="__('Mark attended')" />
                                         @endif
                                         @if ($reg->status !== \App\Domains\Shared\Enums\MeetingUserStatusEnum::ABSENT)
                                             <x-button icon="o-x-mark" class="btn-ghost btn-xs btn-circle"
                                                 :tooltip="__('Mark absent')"
-                                                wire:click="markAbsent({{ $user->id }})" />
+                                                wire:click="markAbsent({{ $user->id }})" :aria-label="__('Mark absent')" />
                                         @endif
                                     @endif
                                 </div>
@@ -504,7 +504,7 @@
                         @endif
                         @if ($this->canManage && $editing !== 'quorum')
                             <x-button icon="o-pencil-square" class="btn-ghost btn-xs btn-circle"
-                                :tooltip="__('Edit')" wire:click="editQuorum" />
+                                :tooltip="__('Edit')" wire:click="editQuorum" :aria-label="__('Edit')" />
                         @endif
                     </x-slot:menu>
 
@@ -554,7 +554,7 @@
                     <x-slot:menu>
                         @if ($editing !== 'meal')
                             <x-button icon="o-pencil-square" class="btn-ghost btn-xs btn-circle"
-                                :tooltip="__('Edit')" wire:click="editMeal" />
+                                :tooltip="__('Edit')" wire:click="editMeal" :aria-label="__('Edit')" />
                         @endif
                     </x-slot:menu>
 
@@ -645,7 +645,7 @@
     </div>
 
     {{-- ── Cancel modal ──────────────────────────────────────────────── --}}
-    <x-modal wire:model="showCancelModal" :title="__('Cancel meeting')" class="backdrop-blur">
+    <x-app-modal wire:model="showCancelModal" :title="__('Cancel meeting')" class="backdrop-blur">
         <div class="space-y-4">
             <x-alert icon="o-exclamation-triangle" class="alert-error alert-soft"
                 :title="__('All invited members will be notified.')" />
@@ -657,10 +657,10 @@
             <x-button :label="__('Yes, cancel')" icon="o-x-circle"
                 class="btn-error" wire:click="cancelMeeting" spinner="cancelMeeting" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Postpone modal ────────────────────────────────────────────── --}}
-    <x-modal wire:model="showPostponeModal" :title="__('Postpone meeting')" class="backdrop-blur">
+    <x-app-modal wire:model="showPostponeModal" :title="__('Postpone meeting')" class="backdrop-blur">
         <div class="space-y-4">
             <x-datetime type="datetime-local" :label="__('New proposed date (optional)')" wire:model="postponedTo" />
             <x-textarea :label="__('Reason / message (optional)')"
@@ -671,10 +671,10 @@
             <x-button :label="__('Postpone')" icon="o-arrow-path"
                 class="btn-warning" wire:click="postponeMeeting" spinner="postponeMeeting" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Rename modal ──────────────────────────────────────────────── --}}
-    <x-modal wire:model="showTitleModal" :title="__('Rename')" class="backdrop-blur">
+    <x-app-modal wire:model="showTitleModal" :title="__('Rename')" class="backdrop-blur">
         <div class="space-y-4">
             <x-input :label="__('Title')" wire:model="titleDraft" required />
             @if (! $this->invitationsSent)
@@ -691,7 +691,7 @@
             <x-button :label="__('Save')" icon="o-check"
                 class="btn-primary" wire:click="saveTitle" spinner="saveTitle" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Delete modal ──────────────────────────────────────────────── --}}
     <x-confirm-modal model="showDeleteModal" :title="__('Delete meeting')"

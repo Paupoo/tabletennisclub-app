@@ -121,7 +121,7 @@
     </x-drawer>
 
     {{-- Cancel confirmation --}}
-    <x-modal wire:model="cancelModal" :title="__('Cancel this fine?')" separator>
+    <x-app-modal wire:model="cancelModal" :title="__('Cancel this fine?')" separator>
         <div class="space-y-3">
             <p class="text-sm text-base-content/80">
                 {{ __('The fine will be removed and its pending payment cancelled. The member will be notified that they no longer owe anything.') }}
@@ -142,5 +142,5 @@
             <x-button class="btn-error" icon="o-x-circle" :label="__('Cancel the fine')"
                 wire:click="cancelFine" spinner="cancelFine" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

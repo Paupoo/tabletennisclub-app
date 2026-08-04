@@ -7,24 +7,8 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 
 ## Foundational Context
 
-This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
-
-- php - 8.5
-- laravel/framework (LARAVEL) - v13
-- laravel/prompts (PROMPTS) - v0
-- laravel/sanctum (SANCTUM) - v4
-- livewire/livewire (LIVEWIRE) - v4
-- larastan/larastan (LARASTAN) - v3
-- laravel/boost (BOOST) - v2
-- laravel/breeze (BREEZE) - v2
-- laravel/mcp (MCP) - v0
-- laravel/pail (PAIL) - v1
-- laravel/pint (PINT) - v1
-- pestphp/pest (PEST) - v4
-- phpunit/phpunit (PHPUNIT) - v12
-- rector/rector (RECTOR) - v2
-- alpinejs (ALPINEJS) - v3
-- tailwindcss (TAILWINDCSS) - v4
+This is a Laravel application. Its exact framework and package versions live in `composer.json`
+and `package.json` — read them rather than assuming.
 
 ## Skills Activation
 
@@ -100,18 +84,10 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # PHP
 
-- Always use curly braces for control structures, even for single-line bodies.
-- Use PHP 8 constructor property promotion: `public function __construct(public GitHub $github) { }`. Do not leave empty zero-parameter `__construct()` methods unless the constructor is private.
 - Use explicit return type declarations and type hints for all method parameters: `function isAccessible(User $user, ?string $path = null): bool`
 - Follow existing application Enum naming conventions.
 - Prefer PHPDoc blocks over inline comments. Only add inline comments for exceptionally complex logic.
 - Use array shape type definitions in PHPDoc blocks.
-
-=== deployments rules ===
-
-# Deployment
-
-- Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
 
 === tests rules ===
 
@@ -145,10 +121,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - When creating models for tests, use the factories for the models. Check if the factory has custom states that can be used before manually setting up the model.
 - Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
 - When creating tests, make use of `php artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
-
-## Vite Error
-
-- If you receive an "Illuminate\Foundation\ViteException: Unable to locate file in Vite manifest" error, you can run `npm run build` or ask the user to run `npm run dev` or `composer run dev`.
 
 === livewire/core rules ===
 

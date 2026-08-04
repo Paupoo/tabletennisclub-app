@@ -9,7 +9,7 @@
     <x-form wire:submit="save">
         {{-- Name & ID --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Official name and federal affiliation')" :title="__('Club Identity')">
-            <div class="col-span-6 grid gap-4 md:col-span-4">
+            <div class="grid gap-4">
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <x-input icon="o-trophy" :label="__('Club Name')" placeholder="E.g. CTT Ottignies"
                         wire:model="name" required />
@@ -47,7 +47,7 @@
 
         {{-- Committee --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Manage board members and their roles')" :title="__('Committee')">
-            <div class="col-span-6 md:col-span-4">
+            <div>
                 <div class="bg-base-200/50 border-base-300 mb-4 rounded-xl border p-4">
                     <div class="mb-4 flex items-center justify-between">
                         <span
@@ -121,7 +121,7 @@
         </x-admin.shared.form-section>
 
         <x-admin.shared.form-section :separator="true" :subtitle="__('Members who hold club equipment')" :title="__('Equipment holders')">
-            <div class="col-span-6 md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {{-- Key holders --}}
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-widest opacity-50 mb-3">
@@ -160,7 +160,7 @@
             </div>
         </x-admin.shared.form-section>
 
-        <div class="col-span-6 mt-6 flex justify-end gap-3">
+        <div class="mt-6 flex justify-end gap-3">
             <x-button :label="__('Cancel')" />
             <x-button class="btn-primary" :label="__('Save Changes')" spinner="save" type="submit" />
         </div>

@@ -28,7 +28,7 @@ class ValidIban implements ValidationRule
             return false;
         }
 
-        if (! preg_match('/^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/', $iban)) {
+        if (! preg_match('/^[A-Z]{2}\d{2}[A-Z0-9]+$/', $iban)) {
             return false;
         }
 
@@ -38,7 +38,7 @@ class ValidIban implements ValidationRule
         $numeric = '';
         for ($i = 0, $len = strlen($rearranged); $i < $len; $i++) {
             $char = $rearranged[$i];
-            $numeric .= ctype_alpha($char) ? (string) (ord($char) - 55) : $char;
+            $numeric .= ctype_alpha($char) ? (string) (ord($char[0]) - 55) : $char;
         }
 
         // Chunked modulo to avoid integer overflow on large strings.

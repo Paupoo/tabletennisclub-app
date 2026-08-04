@@ -49,12 +49,12 @@ test('score difference works with reversed scores', function (): void {
 });
 
 test('score rejects negative player scores', function (): void {
-    expect(fn () => Score::make(-1, 10))
+    expect(fn (): Score => Score::make(-1, 10))
         ->toThrow(InvalidArgumentException::class);
 });
 
 test('score rejects negative second player score', function (): void {
-    expect(fn () => Score::make(10, -1))
+    expect(fn (): Score => Score::make(10, -1))
         ->toThrow(InvalidArgumentException::class);
 });
 

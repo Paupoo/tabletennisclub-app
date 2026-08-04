@@ -54,13 +54,13 @@
                     <div class="flex flex-row">
                         <x-button icon="o-check" class="btn-ghost btn-sm text-success"
                             tooltip-left="{{ __('Confirm presence') }}"
-                            wire:click="confirmPresence({{ $row['id'] }})" wire:loading.attr="disabled" />
+                            wire:click="confirmPresence({{ $row['id'] }})" wire:loading.attr="disabled" aria-label="{{ __('Confirm presence') }}" />
                         <x-button icon="o-no-symbol" class="btn-ghost btn-sm text-warning-content"
                             tooltip-left="{{ __('No show') }}"
-                            wire:click="markNoShow({{ $row['id'] }})" />
+                            wire:click="markNoShow({{ $row['id'] }})" aria-label="{{ __('No show') }}" />
                         <x-button icon="o-trash" class="btn-ghost btn-sm text-error"
                             tooltip-left="{{ __('Cancel registration') }}"
-                            wire:click="cancelUserRegistration({{ $row['id'] }})" />
+                            wire:click="cancelUserRegistration({{ $row['id'] }})" aria-label="{{ __('Cancel registration') }}" />
                     </div>
                 @endscope
             </x-table>
@@ -108,10 +108,10 @@
                                 <x-button icon="o-arrow-up-circle" class="btn-ghost btn-xs text-success"
                                     :tooltip="__('Promote to registered')"
                                     wire:click="promoteFromWaitlist({{ $entry['id'] }})"
-                                    :disabled="$maxUsers > 0 && $this->registrations->count() >= $maxUsers" />
+                                    :disabled="$maxUsers > 0 && $this->registrations->count() >= $maxUsers" :aria-label="__('Promote to registered')" />
                                 <x-button icon="o-x-mark" class="btn-ghost btn-xs text-error"
                                     :tooltip="__('Remove from waitlist')"
-                                    wire:click="removeFromWaitlist({{ $entry['id'] }})" />
+                                    wire:click="removeFromWaitlist({{ $entry['id'] }})" :aria-label="__('Remove from waitlist')" />
                             </div>
                         </div>
                     @endforeach
@@ -121,7 +121,7 @@
     </div>
 
     {{-- ── Close registrations modal ─────────────────────────────── --}}
-    <x-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur">
+    <x-app-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur">
         <div class="space-y-4">
             <div class="flex items-start gap-3 p-4 bg-error/10 border border-error/20 rounded-xl text-sm text-error">
                 <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5" />
@@ -146,10 +146,10 @@
             <x-button :label="__('Close registrations')" icon="o-lock-closed" class="btn-error"
                 wire:click="confirmCloseRegistrations" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Open registrations modal ──────────────────────────────── --}}
-    <x-modal wire:model="showOpenRegistrationsModal" :title="__('Reopen registrations?')" class="backdrop-blur">
+    <x-app-modal wire:model="showOpenRegistrationsModal" :title="__('Reopen registrations?')" class="backdrop-blur">
         <div class="p-4 bg-warning/10 border border-warning/20 rounded-xl flex items-start gap-3 text-sm">
             <x-icon name="o-information-circle" class="w-5 h-5 shrink-0 mt-0.5 text-warning-content" />
             <p>{{ __('Reopening registrations will set the tournament back to "published" status. The tournament cannot be started until registrations are closed again.') }}</p>
@@ -160,5 +160,5 @@
             <x-button :label="__('Reopen registrations')" icon="o-lock-open" class="btn-warning"
                 wire:click="confirmOpenRegistrations" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </x-tab>

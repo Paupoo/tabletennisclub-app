@@ -10,7 +10,7 @@ use Symfony\Component\Finder\Finder;
 class GenerateErdCommand extends Command
 {
     /** @var array<string, string> */
-    private const RELATION_ARROWS = [
+    private const array RELATION_ARROWS = [
         'HasMany' => '||--o{',
         'HasOne' => '||--o|',
         'BelongsToMany' => '}o--o{',
@@ -51,7 +51,7 @@ class GenerateErdCommand extends Command
 
         // Finder walks the tree in filesystem order, which varies between machines
         // and between runs. Sort so the generated files only change when a model does.
-        usort($models, fn (array $a, array $b) => [$a['domain'], $a['class']] <=> [$b['domain'], $b['class']]);
+        usort($models, fn (array $a, array $b): int => [$a['domain'], $a['class']] <=> [$b['domain'], $b['class']]);
 
         return $models;
     }
@@ -230,7 +230,7 @@ class GenerateErdCommand extends Command
         foreach ($methodMatches as $methodMatch) {
             $methodName = $methodMatch[1][0];
             $relationType = $methodMatch[2][0];
-            $methodOffset = (int) $methodMatch[0][1];
+            $methodOffset = $methodMatch[0][1];
 
             $bodyStart = strpos($content, '{', $methodOffset);
             if ($bodyStart === false) {

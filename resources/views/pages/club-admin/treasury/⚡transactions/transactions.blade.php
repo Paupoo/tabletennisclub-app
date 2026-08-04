@@ -280,7 +280,7 @@
     {{-- ========================================== --}}
     {{-- Modal : Import                             --}}
     {{-- ========================================== --}}
-    <x-modal wire:model="importModal" :title="__('Import Bank Statement')" separator>
+    <x-app-modal wire:model="importModal" :title="__('Import Bank Statement')" separator>
         <div class="space-y-4">
             <p class="text-sm opacity-70">
                 {{ __('Upload your bank export (ODS, XLSX, CSV). Transactions will be imported and available for reconciliation.') }}
@@ -305,7 +305,7 @@
                 :disabled="! $importFile"
                 spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
     <x-admin.shared.mobile-actions>

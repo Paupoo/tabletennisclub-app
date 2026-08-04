@@ -57,12 +57,12 @@
                             class="btn-ghost btn-xs text-success"
                             :tooltip="__('Confirm')"
                             wire:click="confirmPresence({{ $row['id'] }})"
-                            wire:loading.attr="disabled" />
+                            wire:loading.attr="disabled" :aria-label="__('Confirm')" />
                         <x-button
                             icon="o-no-symbol"
                             class="btn-ghost btn-xs text-warning-content"
                             :tooltip="__('No show')"
-                            wire:click="markNoShow({{ $row['id'] }})" />
+                            wire:click="markNoShow({{ $row['id'] }})" :aria-label="__('No show')" />
                     </div>
                 @else
                     <x-badge :value="$row['status']"
@@ -95,12 +95,12 @@
                                 icon="o-qr-code"
                                 class="btn-ghost btn-xs"
                                 :tooltip="__('QR / bank transfer')"
-                                wire:click="openQrModal({{ $row['id'] }})" />
+                                wire:click="openQrModal({{ $row['id'] }})" :aria-label="__('QR / bank transfer')" />
                             <x-button
                                 icon="o-currency-euro"
                                 class="btn-ghost btn-xs text-success"
                                 :tooltip="__('Cash')"
-                                wire:click="openCashConfirmModal({{ $row['id'] }})" />
+                                wire:click="openCashConfirmModal({{ $row['id'] }})" :aria-label="__('Cash')" />
                         </div>
                     @else
                         <x-badge value="{{ __('Pending') }}" class="badge-warning badge-sm" icon="o-clock" />
@@ -112,7 +112,7 @@
                 @if (! $this->isLaunched)
                     <x-button icon="o-trash" class="btn-ghost btn-sm text-error"
                         tooltip-left="{{ __('Cancel registration') }}"
-                        wire:click="cancelUserRegistration({{ $row['id'] }})" />
+                        wire:click="cancelUserRegistration({{ $row['id'] }})" aria-label="{{ __('Cancel registration') }}" />
                 @endif
             @endscope
         </x-table>
@@ -169,10 +169,10 @@
                                 <x-button icon="o-arrow-up-circle" class="btn-ghost btn-xs text-success"
                                     :tooltip="__('Promote to registered')"
                                     wire:click="promoteFromWaitlist({{ $entry['id'] }})"
-                                    :disabled="$maxUsers > 0 && $this->registrations->count() >= $maxUsers" />
+                                    :disabled="$maxUsers > 0 && $this->registrations->count() >= $maxUsers" :aria-label="__('Promote to registered')" />
                                 <x-button icon="o-x-mark" class="btn-ghost btn-xs text-error"
                                     :tooltip="__('Remove from waitlist')"
-                                    wire:click="removeFromWaitlist({{ $entry['id'] }})" />
+                                    wire:click="removeFromWaitlist({{ $entry['id'] }})" :aria-label="__('Remove from waitlist')" />
                             </div>
                         @endif
                     </div>
@@ -206,7 +206,7 @@
                         @if (! $this->isLaunched)
                             <x-button icon="o-x-mark" class="btn-ghost btn-xs text-error"
                                 :tooltip="__('Delete pair')"
-                                wire:click="deletePair({{ $pair['id'] }})" />
+                                wire:click="deletePair({{ $pair['id'] }})" :aria-label="__('Delete pair')" />
                         @endif
                     </div>
                 @endforeach
@@ -235,7 +235,7 @@
 @endif
 
 {{-- Manual register modal --}}
-<x-modal wire:model="showRegisterModal" :title="__('Register a member')" class="backdrop-blur">
+<x-app-modal wire:model="showRegisterModal" :title="__('Register a member')" class="backdrop-blur">
     <div class="space-y-4">
         <x-select
             :label="__('Select member')"
@@ -258,10 +258,10 @@
             wire:click="registerMember" spinner="registerMember"
             :disabled="!$memberToRegister" />
     </x-slot:actions>
-</x-modal>
+</x-app-modal>
 
 {{-- ── Close registrations modal ─────────────────────────────── --}}
-<x-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur">
+<x-app-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur">
     <div class="space-y-4">
         <div class="flex items-start gap-3 p-4 bg-error/10 border border-error/20 rounded-xl text-sm text-error">
             <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5" />
@@ -286,10 +286,10 @@
         <x-button :label="__('Close registrations')" icon="o-lock-closed" class="btn-error"
             wire:click="confirmCloseRegistrations" />
     </x-slot:actions>
-</x-modal>
+</x-app-modal>
 
 {{-- ── Open registrations modal ──────────────────────────────── --}}
-<x-modal wire:model="showOpenRegistrationsModal" :title="__('Reopen registrations?')" class="backdrop-blur">
+<x-app-modal wire:model="showOpenRegistrationsModal" :title="__('Reopen registrations?')" class="backdrop-blur">
     <div class="p-4 bg-warning/10 border border-warning/20 rounded-xl flex items-start gap-3 text-sm">
         <x-icon name="o-information-circle" class="w-5 h-5 shrink-0 mt-0.5 text-warning-content" />
         <p>{{ __('Reopening registrations will set the tournament back to "published" status. The tournament cannot be started until registrations are closed again.') }}</p>
@@ -300,10 +300,10 @@
         <x-button :label="__('Reopen registrations')" icon="o-lock-open" class="btn-warning"
             wire:click="confirmOpenRegistrations" />
     </x-slot:actions>
-</x-modal>
+</x-app-modal>
 
 {{-- ── QR / bank transfer modal ──────────────────────────── --}}
-<x-modal wire:model="showQrModal" :title="__('Payment by QR / Bank Transfer')" separator box-class="max-w-lg">
+<x-app-modal wire:model="showQrModal" :title="__('Payment by QR / Bank Transfer')" separator box-class="max-w-lg">
     @if($qrCodeData)
     <div class="flex flex-col items-center gap-4">
         <img src="{{ $qrCodeData }}" alt="SEPA QR" class="w-48 h-48 rounded-xl border border-base-200" />
@@ -344,10 +344,10 @@
                 spinner="markQrConfirmed" />
         @endif
     </x-slot:actions>
-</x-modal>
+</x-app-modal>
 
 {{-- ── Cash payment confirm modal ────────────────────────── --}}
-<x-modal wire:model="showCashConfirmModal" :title="__('Confirm cash payment')" separator>
+<x-app-modal wire:model="showCashConfirmModal" :title="__('Confirm cash payment')" separator>
     <div class="flex items-start gap-3 p-4 bg-success/10 border border-success/20 rounded-xl text-sm">
         <x-icon name="o-currency-euro" class="w-5 h-5 shrink-0 mt-0.5 text-success" />
         <div>
@@ -360,5 +360,5 @@
         <x-button :label="__('Confirm cash payment')" icon="o-currency-euro" class="btn-success"
             wire:click="confirmCashPayment" spinner />
     </x-slot:actions>
-</x-modal>
+</x-app-modal>
 

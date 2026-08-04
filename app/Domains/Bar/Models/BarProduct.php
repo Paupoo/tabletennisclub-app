@@ -94,6 +94,7 @@ class BarProduct extends Model
         return $this->hasMany(BarStockMovement::class, 'product_id');
     }
 
+    #[\Override]
     protected static function booted(): void
     {
         static::creating(function (self $model): void {

@@ -25,7 +25,7 @@ new class extends Component
      *
      * @var list<string>
      */
-    private const SYSTEM_KEYS = [
+    private const array SYSTEM_KEYS = [
         'welcome',
         'membership_info',
         'request_info',

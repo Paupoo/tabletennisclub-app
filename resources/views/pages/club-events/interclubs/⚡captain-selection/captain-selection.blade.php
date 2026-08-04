@@ -148,7 +148,7 @@
                                                 class="btn-ghost btn-xs text-base-content/40"
                                                 icon="o-envelope"
                                                 :tooltip-left="__('Request availability')"
-                                                wire:click="requestAvailability({{ $ic['id'] }})" />
+                                                wire:click="requestAvailability({{ $ic['id'] }})" :aria-label="__('Request availability')" />
                                         </div>
                                     @endif
                                 </div>
@@ -367,7 +367,7 @@
     </x-drawer>
 
     {{-- ── MODAL LINEUP / MESSAGE ─────────────────────────────────────── --}}
-    <x-modal separator :title="$isUpdateMode ? __('Update the team') : __('Notify the team')" wire:model="modalMessage">
+    <x-app-modal separator :title="$isUpdateMode ? __('Update the team') : __('Notify the team')" wire:model="modalMessage">
         <div class="space-y-4">
             @if ($isUpdateMode)
                 {{-- Diff summary: only added/removed players are notified --}}
@@ -451,5 +451,5 @@
             <x-button class="btn-primary" icon="o-paper-airplane" :label="__('Send to team')"
                 wire:click="sendLineupToTeam" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

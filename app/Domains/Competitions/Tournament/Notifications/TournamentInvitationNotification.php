@@ -77,7 +77,7 @@ class TournamentInvitationNotification extends Notification implements ShouldQue
             ]));
         }
 
-        if (! empty($this->customMessage)) {
+        if ($this->customMessage !== '' && $this->customMessage !== '0') {
             $mail->line('---')->line($this->customMessage);
         }
 

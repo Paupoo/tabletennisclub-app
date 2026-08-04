@@ -99,7 +99,7 @@
     @include('admin.club-events.tournaments.partials.modals.launch')
 
     {{-- Cancel confirmation modal --}}
-    <x-modal wire:model="showCancelModal" :title="__('Cancel tournament')" class="backdrop-blur">
+    <x-app-modal wire:model="showCancelModal" :title="__('Cancel tournament')" class="backdrop-blur">
         <div class="space-y-4">
             <x-alert
                 :title="__('This action cannot be undone')"
@@ -115,6 +115,6 @@
             <x-button :label="__('Yes, cancel it')" icon="o-x-circle" class="btn-error"
                 wire:click="cancelTournament" spinner="cancelTournament" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
 </div>

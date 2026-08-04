@@ -68,7 +68,7 @@ it('never drops a leading zero on a single-digit checksum', function (): void {
 });
 
 it('uses 97 as the check digits when the base is an exact multiple of 97', function (): void {
-    $method = (new ReflectionClass(GeneratePaymentReference::class))->getMethod('formatCheckDigits');
+    $method = new ReflectionClass(GeneratePaymentReference::class)->getMethod('formatCheckDigits');
     $action = new GeneratePaymentReference;
 
     expect($method->invoke($action, 0))->toBe('97')

@@ -74,18 +74,17 @@
                             @endscope
 
                             @scope('actions', $table)
-                                <x-admin.shared.row-actions>
+                                <x-admin.shared.row-menu
+                                    :label="__('Edit')"
+                                    icon="o-pencil"
+                                    link="{{ route('admin.tables.edit', $table) }}">
                                     @can('update', $table)
-                                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                            :tooltip="__('Edit')" link="{{ route('admin.tables.edit', $table) }}" />
-                                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-lock-open"
-                                            :tooltip="__('Unlink')" wire:click="confirmUnlink({{ $table->id }})" spinner />
+                                        <x-menu-item icon="o-lock-open" wire:click="confirmUnlink({{ $table->id }})" spinner :title="__('Unlink')" />
                                     @endcan
                                     @can('delete', $table)
-                                        <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                            :tooltip="__('Delete')" wire:click="confirmDelete({{ $table->id }})" />
+                                        <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $table->id }})" :title="__('Delete')" />
                                     @endcan
-                                </x-admin.shared.row-actions>
+                                </x-admin.shared.row-menu>
                             @endscope
                         </x-table>
                     </div>
@@ -109,16 +108,16 @@
                                     </div>
                                 </x-slot:sub-value>
                                 <x-slot:actions>
-                                    <x-admin.shared.row-actions>
+                                    <x-admin.shared.row-menu
+                                        :label="__('Edit')"
+                                        icon="o-pencil"
+                                        link="{{ route('admin.tables.edit', $table) }}">
                                         @can('update', $table)
-                                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                                :tooltip="__('Edit')" link="{{ route('admin.tables.edit', $table) }}" />
                                         @endcan
                                         @can('delete', $table)
-                                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                                :tooltip="__('Delete')" wire:click="confirmDelete({{ $table->id }})" />
+                                            <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $table->id }})" :title="__('Delete')" />
                                         @endcan
-                                    </x-admin.shared.row-actions>
+                                    </x-admin.shared.row-menu>
                                 </x-slot:actions>
                             </x-list-item>
                         @endforeach

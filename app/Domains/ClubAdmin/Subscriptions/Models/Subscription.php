@@ -137,6 +137,7 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     private SubscriptionState $state;
 
     // ==================== Observers ====================
+    #[\Override]
     public static function booted(): void
     {
         static::deleting(function (self $subscription): void {

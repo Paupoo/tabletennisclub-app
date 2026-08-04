@@ -175,12 +175,12 @@ new class extends Component
 
         if (filled($this->status)) {
             $label = collect(EventPostStatusEnum::cases())
-                ->first(fn ($s) => $s->value === $this->status)?->getLabel() ?? $this->status;
+                ->first(fn ($s): bool => $s->value === $this->status)?->getLabel() ?? $this->status;
             $chips[] = ['key' => 'status', 'label' => __('Status') . ': ' . $label];
         }
 
         if (filled($this->type)) {
-            $enum = collect(ClubEventTypeEnum::cases())->first(fn ($e) => $e->value === $this->type);
+            $enum = collect(ClubEventTypeEnum::cases())->first(fn ($e): bool => $e->value === $this->type);
             $label = $enum ? $enum->getIcon() . ' ' . $enum->getLabel() : $this->type;
             $chips[] = ['key' => 'type', 'label' => __('Type') . ': ' . $label];
         }
@@ -298,11 +298,11 @@ new class extends Component
         ];
 
         $statusOptions = collect(EventPostStatusEnum::cases())
-            ->map(fn ($e) => ['id' => $e->value, 'name' => $e->getLabel()])
+            ->map(fn ($e): array => ['id' => $e->value, 'name' => $e->getLabel()])
             ->all();
 
         $typeOptions = collect(ClubEventTypeEnum::cases())
-            ->map(fn ($e) => ['id' => $e->value, 'name' => $e->getIcon() . ' ' . $e->getLabel()])
+            ->map(fn ($e): array => ['id' => $e->value, 'name' => $e->getIcon() . ' ' . $e->getLabel()])
             ->all();
 
         $selectedEvent = $this->selectedEventId
@@ -344,7 +344,7 @@ new class extends Component
     {
         return $this->events
             ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
+            ->map(fn (int $id): string => (string) $id)
             ->toArray();
     }
 };

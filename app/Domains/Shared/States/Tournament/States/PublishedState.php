@@ -12,7 +12,7 @@ use InvalidArgumentException;
 
 final class PublishedState extends AbstractTournamentState
 {
-    private TournamentService $tournamentService;
+    private readonly TournamentService $tournamentService;
 
     public function __construct()
     {
@@ -37,26 +37,31 @@ final class PublishedState extends AbstractTournamentState
         $tournament->save();
     }
 
+    #[\Override]
     public function canCreatePools(): bool
     {
         return false;
     }
 
+    #[\Override]
     public function canGenerateMatches(): bool
     {
         return false;
     }
 
+    #[\Override]
     public function canModifyPools(): bool
     {
         return false;
     }
 
+    #[\Override]
     public function canRegisterUsers(): bool
     {
         return true;
     }
 
+    #[\Override]
     public function canStartMatches(): bool
     {
         return false;

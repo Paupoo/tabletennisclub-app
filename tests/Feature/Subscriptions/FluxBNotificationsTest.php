@@ -32,7 +32,7 @@ describe('TrainingPackRequestedNotification', function (): void {
         $pack = TrainingPack::factory()->create(['name' => 'Pack Mardi']);
         $subscription->load(['user', 'season']);
 
-        $mail = (new TrainingPackRequestedNotification($pack, $subscription))->toMail($subscription->user);
+        $mail = new TrainingPackRequestedNotification($pack, $subscription)->toMail($subscription->user);
 
         expect($mail->subject)->toContain('Pack Mardi');
     })->group('notifications', 'flux-b');
@@ -42,7 +42,7 @@ describe('TrainingPackRequestedNotification', function (): void {
         $pack = TrainingPack::factory()->create(['name' => 'Pack Vendredi']);
         $subscription->load(['user', 'season']);
 
-        $mail = (new TrainingPackRequestedNotification($pack, $subscription))->toMail($subscription->user);
+        $mail = new TrainingPackRequestedNotification($pack, $subscription)->toMail($subscription->user);
 
         $lines = implode(' ', $mail->introLines);
         expect($lines)->toContain('Pack Vendredi')
@@ -123,7 +123,7 @@ describe('TrainingPackCancelledNotification', function (): void {
         $pack = TrainingPack::factory()->create(['name' => 'Pack Jeudi']);
         $subscription->load(['user', 'season']);
 
-        $mail = (new TrainingPackCancelledNotification($pack, $subscription))->toMail($subscription->user);
+        $mail = new TrainingPackCancelledNotification($pack, $subscription)->toMail($subscription->user);
 
         expect($mail->subject)->toContain('Pack Jeudi');
     })->group('notifications', 'flux-b');
@@ -133,7 +133,7 @@ describe('TrainingPackCancelledNotification', function (): void {
         $pack = TrainingPack::factory()->create(['name' => 'Pack Samedi']);
         $subscription->load(['user', 'season']);
 
-        $mail = (new TrainingPackCancelledNotification($pack, $subscription))->toMail($subscription->user);
+        $mail = new TrainingPackCancelledNotification($pack, $subscription)->toMail($subscription->user);
 
         $lines = implode(' ', $mail->introLines);
         expect($lines)->toContain('Pack Samedi')

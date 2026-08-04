@@ -34,7 +34,6 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -418,7 +417,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function forceListFor(LeagueCategory|string|null $category): ?int
     {
-        return match ($this->resolveCategory($category)) {
+        return match (self::resolveCategory($category)) {
             LeagueCategory::WOMEN => $this->force_list_women,
             LeagueCategory::VETERANS => $this->force_list_veterans,
             default => $this->force_list,
@@ -787,8 +786,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * This scope allows searching for users by terms in their first or last name.
-     *
-     * @param  mixed  $query
      */
     public function scopeSearchTerms(Builder $query, string $search): void
     {

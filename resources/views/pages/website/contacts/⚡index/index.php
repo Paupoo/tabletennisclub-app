@@ -227,7 +227,7 @@ new class extends Component
 
         if (filled($this->interest)) {
             $label = collect(ContactReasonEnum::cases())
-                ->first(fn ($r) => $r->value === $this->interest)?->getLabel() ?? $this->interest;
+                ->first(fn ($r): bool => $r->value === $this->interest)?->getLabel() ?? $this->interest;
 
             $chips[] = ['key' => 'interest', 'label' => __('Interest') . ': ' . $label];
         }
@@ -480,21 +480,21 @@ new class extends Component
         );
 
         $interestOptions = collect(ContactReasonEnum::cases())
-            ->map(fn ($r) => ['id' => $r->value, 'name' => $r->getLabel()]);
+            ->map(fn ($r): array => ['id' => $r->value, 'name' => $r->getLabel()]);
 
         // Explicit child → teen → adult order (Pint sorts enum cases alphabetically).
         $ageCategoryOptions = collect([
             AgeCategoryEnum::CHILD,
             AgeCategoryEnum::TEEN,
             AgeCategoryEnum::ADULT,
-        ])->map(fn (AgeCategoryEnum $c) => ['id' => $c->value, 'name' => $c->getLabel()]);
+        ])->map(fn (AgeCategoryEnum $c): array => ['id' => $c->value, 'name' => $c->getLabel()]);
 
         $experienceOptions = collect([
             PlayerExperienceEnum::NONE,
             PlayerExperienceEnum::FEW_MONTHS,
             PlayerExperienceEnum::FEW_YEARS,
             PlayerExperienceEnum::RANKED,
-        ])->map(fn (PlayerExperienceEnum $e) => ['id' => $e->value, 'name' => $e->getLabel()]);
+        ])->map(fn (PlayerExperienceEnum $e): array => ['id' => $e->value, 'name' => $e->getLabel()]);
 
         $triStateOptions = [
             ['id' => '1', 'name' => __('Yes')],
@@ -515,7 +515,7 @@ new class extends Component
             ->active()
             ->orderBy('name')
             ->get(['key', 'name'])
-            ->map(fn (EmailTemplate $t) => ['id' => $t->key, 'name' => $t->name]);
+            ->map(fn (EmailTemplate $t): array => ['id' => $t->key, 'name' => $t->name]);
 
         $canManage = Gate::allows('manage-contacts');
 
@@ -572,7 +572,7 @@ new class extends Component
     {
         return $this->contacts
             ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
+            ->map(fn (int $id): string => (string) $id)
             ->toArray();
     }
 

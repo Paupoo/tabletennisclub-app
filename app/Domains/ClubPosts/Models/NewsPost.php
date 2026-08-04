@@ -79,6 +79,7 @@ class NewsPost extends Model
         'user_id',
     ];
 
+    #[\Override]
     public function getRouteKeyName(): string
     {
         return 'slug';
@@ -106,11 +107,12 @@ class NewsPost extends Model
         return $this->belongsTo(User::class);
     }
 
+    #[\Override]
     protected static function boot(): void
     {
         parent::boot();
 
-        static::saving(function (NewsPost $post) {
+        static::saving(function (NewsPost $post): void {
             $words = str_word_count(strip_tags($post->content ?? ''));
             $post->reading_time = (int) ceil($words / 225);
         });

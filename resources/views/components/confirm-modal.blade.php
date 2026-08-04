@@ -10,10 +10,10 @@
 
 @php $cancelClick = $cancelAction ?? '$set(\'' . $model . '\', false)'; @endphp
 
-<x-modal :wire:model="$model" :title="$title" :subtitle="$subtitle" class="backdrop-blur">
+<x-app-modal :wire:model="$model" :title="$title" :subtitle="$subtitle" class="backdrop-blur">
     {{ $slot }}
     <x-slot:actions>
         <x-button :label="__('Cancel')" wire:click="{{ $cancelClick }}" />
         <x-button :label="__($confirmLabel)" :class="$confirmClass" spinner wire:click="{{ $confirmAction }}" />
     </x-slot:actions>
-</x-modal>
+</x-app-modal>

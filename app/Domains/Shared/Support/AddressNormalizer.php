@@ -37,14 +37,14 @@ class AddressNormalizer
      *
      * @var array<int, string>
      */
-    private const ELISIONS = ['d', 'l', 'n', 'qu', 's', 't'];
+    private const array ELISIONS = ['d', 'l', 'n', 'qu', 's', 't'];
 
     /**
      * Words that stay lowercase inside a name.
      *
      * @var array<int, string>
      */
-    private const PARTICLES = [
+    private const array PARTICLES = [
         'à', 'au', 'aux', 'chez', 'de', 'den', 'der', 'des', 'du', 'en', 'et',
         'la', 'le', 'les', 'lez', 'op', 'sous', 'sur', 'ten', 'ter', 'tot',
         'van', 'von',

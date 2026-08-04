@@ -239,21 +239,21 @@ describe('AFTT handicap table', function (): void {
      * key" in the middle of a draw.
      */
     it('covers every ranking in both dimensions', function (): void {
-        $table = (new ReflectionProperty(TournamentMatchService::class, 'handicapPoints'))
+        $table = new ReflectionProperty(TournamentMatchService::class, 'handicapPoints')
             ->getValue(new TournamentMatchService);
 
         $rankings = array_column(Ranking::cases(), 'value');
 
         expect(array_keys($table))->toEqualCanonicalizing($rankings);
 
-        foreach ($table as $receiver => $row) {
+        foreach ($table as $row) {
             expect(array_keys($row))->toEqualCanonicalizing($rankings)
                 ->and($row)->each->toBeInt();
         }
     });
 
     it('gives no points when both players hold the same ranking', function (string $ranking): void {
-        $table = (new ReflectionProperty(TournamentMatchService::class, 'handicapPoints'))
+        $table = new ReflectionProperty(TournamentMatchService::class, 'handicapPoints')
             ->getValue(new TournamentMatchService);
 
         expect($table[$ranking][$ranking])->toBe(0);

@@ -90,12 +90,12 @@
                                 @if ($reg->status !== \App\Domains\Shared\Enums\MeetingUserStatusEnum::ATTENDED)
                                     <x-button icon="o-check" class="btn-ghost btn-xs btn-circle"
                                         :tooltip="__('Mark attended')"
-                                        wire:click="markAttended({{ $user->id }})" />
+                                        wire:click="markAttended({{ $user->id }})" :aria-label="__('Mark attended')" />
                                 @endif
                                 @if ($reg->status !== \App\Domains\Shared\Enums\MeetingUserStatusEnum::ABSENT)
                                     <x-button icon="o-x-mark" class="btn-ghost btn-xs btn-circle"
                                         :tooltip="__('Mark absent')"
-                                        wire:click="markAbsent({{ $user->id }})" />
+                                        wire:click="markAbsent({{ $user->id }})" :aria-label="__('Mark absent')" />
                                 @endif
                             </div>
                         </div>

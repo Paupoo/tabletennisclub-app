@@ -65,7 +65,7 @@
                                             class="btn-ghost btn-sm btn-circle"
                                             icon="o-plus"
                                             :tooltip="__('Add match for this team')"
-                                            wire:click.stop="openCreateModal({{ $matches->first()['our_team_id'] }})" />
+                                            wire:click.stop="openCreateModal({{ $matches->first()['our_team_id'] }})" :aria-label="__('Add match for this team')" />
                                         <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
                                     </div>
 
@@ -108,10 +108,10 @@
                                                         <div class="flex shrink-0 gap-1">
                                                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
                                                                 :tooltip="__('Edit')"
-                                                                wire:click="openEditModal({{ $match['id'] }})" />
+                                                                wire:click="openEditModal({{ $match['id'] }})" :aria-label="__('Edit')" />
                                                             <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
                                                                 :tooltip="__('Delete')"
-                                                                wire:click="confirmDelete({{ $match['id'] }})" />
+                                                                wire:click="confirmDelete({{ $match['id'] }})" :aria-label="__('Delete')" />
                                                         </div>
                                                     </div>
                                                 @endforeach
@@ -127,7 +127,7 @@
     @endif
 
     {{-- Modal create / edit --}}
-    <x-modal wire:model="editModal" :title="$editingInterclubId ? __('Edit match') : __('New match')" separator>
+    <x-app-modal wire:model="editModal" :title="$editingInterclubId ? __('Edit match') : __('New match')" separator>
         <div class="space-y-4">
             <x-select
                 :label="__('Our team')"
@@ -169,7 +169,7 @@
             <x-button :label="__('Cancel')" wire:click="$set('editModal', false)" />
             <x-button class="btn-primary" :label="__('Save')" wire:click="save" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     <x-confirm-modal model="deleteModal" :title="__('Delete match?')" :subtitle="__('Warning!')"
         :confirmLabel="__('Delete')" confirmAction="delete">

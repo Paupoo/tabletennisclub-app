@@ -241,7 +241,7 @@ new class extends Component
     {
         return User::role([Role::ADMINISTRATOR->value, Role::COMMITTEE->value])
             ->orderBy('last_name')->get()
-            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
+            ->map(fn (User $u): array => ['id' => $u->id, 'name' => $u->full_name])
             ->toArray();
     }
 
@@ -287,7 +287,7 @@ new class extends Component
         $this->notes = $minutes->notes ?? '';
 
         $this->actionItems = $meeting->actionItems
-            ->map(fn ($item) => [
+            ->map(fn ($item): array => [
                 'title' => $item->title,
                 'description' => $item->description ?? '',
                 'assigned_to_id' => (string) ($item->assigned_to_id ?? ''),
@@ -307,8 +307,8 @@ new class extends Component
 
         $meeting = $this->meeting;
         $minutes = $meeting->minutes ?? new MeetingMinutes(['meeting_id' => $this->meetingId]);
-        $minutes->announcements = array_values(array_filter($this->announcements, fn ($v) => filled($v)));
-        $minutes->decisions = array_values(array_filter($this->decisions, fn ($v) => filled($v)));
+        $minutes->announcements = array_values(array_filter($this->announcements, filled(...)));
+        $minutes->decisions = array_values(array_filter($this->decisions, filled(...)));
         $minutes->notes = filled($this->notes) ? $this->notes : null;
         $minutes->save();
 

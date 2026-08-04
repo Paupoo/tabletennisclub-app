@@ -60,9 +60,9 @@ new class extends Component
     public string $last_name = '';
 
     // Documents (uploaded by the member)
-    public $medicalCertificate = null;
+    public $medicalCertificate;
 
-    public $parentalConsent = null;
+    public $parentalConsent;
 
     #[Rule(['nullable', 'string', 'max:20', new ValidPhone])]
     public ?string $phone_number = null;

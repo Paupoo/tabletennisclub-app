@@ -159,6 +159,7 @@ class Club extends Model
      * holds the flag. Replaces the DB-level partial unique index, which is not
      * portable across SQLite (tests) and MySQL/MariaDB (production).
      */
+    #[\Override]
     protected static function booted(): void
     {
         static::saved(function (self $club): void {

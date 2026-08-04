@@ -25,11 +25,11 @@
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" :title="__('My Calendar')" />
         <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('My season')" />
         <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" :title="__('Settings')" />
-        <x-menu-separator />
+        <li><x-menu-separator /></li>
         <livewire:actions.logout />
     </x-menu-sub>
 
-    <x-menu-separator />
+    <li><x-menu-separator /></li>
 
     <x-menu-item
         icon="o-home"
@@ -69,7 +69,7 @@
     @endfeature
 
 
-    <x-menu-separator />
+    <li><x-menu-separator /></li>
 
     @canany(['club.update', 'seasons.view', 'rooms.manage'])
     <x-menu-sub icon="o-building-office" :title="__('Club Settings')">
@@ -130,7 +130,7 @@
     @endcanany
     @endfeature
 
-    <x-menu-separator />
+    <li><x-menu-separator /></li>
 
     @feature('trainings')
     @canany(['trainings.manage', 'coach_area.access'])
@@ -213,7 +213,7 @@
 
     @feature('supervision')
     @if($user->canViewAuditLog())
-    <x-menu-separator />
+    <li><x-menu-separator /></li>
     <x-menu-item
         icon="o-magnifying-glass"
         link="{{ route('admin.audit.index') }}"

@@ -58,7 +58,7 @@ class EventList extends Component
 
         $query = EventPost::published()
             ->when($this->type, fn (Builder $q) => $q->where('type', $this->type))
-            ->when($this->seasonId > 0, function (Builder $q) {
+            ->when($this->seasonId > 0, function (Builder $q): void {
                 $season = $this->seasons->firstWhere('id', $this->seasonId);
                 if ($season) {
                     $q->whereBetween('event_date', $this->seasonDateRange($season));
@@ -68,11 +68,11 @@ class EventList extends Component
         $userRegisteredIds = $this->userRegisteredEventIds();
 
         return $query->get()
-            ->sortBy(fn (EventPost $event) => [
+            ->sortBy(fn (EventPost $event): array => [
                 $event->event_date >= $today ? 0 : 1,
                 $event->event_date,
             ])
-            ->map(fn (EventPost $event) => [
+            ->map(fn (EventPost $event): array => [
                 'id' => $event->id,
                 'type' => $event->type->value,
                 'type_label' => $event->type->getLabel(),
@@ -192,7 +192,7 @@ class EventList extends Component
 
         return Registration::where('user_id', auth()->id())
             ->pluck('event_post_id')
-            ->map(fn ($id) => (int) $id)
+            ->map(fn ($id): int => (int) $id)
             ->toArray();
     }
 }

@@ -193,7 +193,7 @@
     {{-- ================================================================
          CANCELLATION MODAL
     ================================================================ --}}
-    <x-modal :title="__('Cancel this session')" wire:model="cancelModal" separator>
+    <x-app-modal :title="__('Cancel this session')" wire:model="cancelModal" separator>
         <div class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div @class([
@@ -225,5 +225,5 @@
             <x-button class="btn-error" icon="o-x-circle" :label="__('Confirm cancellation')"
                 wire:click="confirmCancel" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

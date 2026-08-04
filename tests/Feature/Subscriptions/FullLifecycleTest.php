@@ -39,7 +39,7 @@ describe('Flux A — new affiliation with training packs, one payment', function
 
         $pivots = $subscription->trainingPacks()->get();
         expect($pivots)->toHaveCount(2)
-            ->and($pivots->every(fn ($p) => $p->pivot->status === 'pending'))->toBeTrue();
+            ->and($pivots->every(fn ($p): bool => $p->pivot->status === 'pending'))->toBeTrue();
 
         // Before admin approval: CalculatePriceAction counts only enrolled → only base price
         (new CalculatePriceAction)($subscription);
@@ -73,7 +73,7 @@ describe('Flux A — new affiliation with training packs, one payment', function
             ->and($subscription->amount_due)->toBe(125.0 + 90.0 + 80.0);
 
         $pivots = $subscription->trainingPacks()->get();
-        expect($pivots->every(fn ($p) => $p->pivot->status === 'enrolled'))->toBeTrue();
+        expect($pivots->every(fn ($p): bool => $p->pivot->status === 'enrolled'))->toBeTrue();
     })->group('lifecycle', 'flux-a');
 
     test('admin approves only one pack → second detached, price reflects approved pack only', function (): void {
@@ -304,7 +304,7 @@ describe('Flux B — paid member requests additional training pack mid-season', 
             ->whereIn('training_pack_id', [$newPack->id])
             ->wherePivot('status', 'enrolled')
             ->get()
-            ->sum(fn ($p) => (float) $p->price);
+            ->sum(fn ($p): float => (float) $p->price);
 
         expect($newlyEnrolledCost)->toBe(80.0);
 
@@ -616,7 +616,7 @@ describe('complex — affiliate, add training mid-season, two successive import 
         $unreconciledTxs = Transaction::whereDoesntHave('payment')
             ->where('amount', '>', 0)
             ->get()
-            ->keyBy(fn ($t) => $normalize($t->structured_reference ?? '___' . $t->id));
+            ->keyBy(fn ($t): string => $normalize($t->structured_reference ?? '___' . $t->id));
 
         $pendingPayments = Payment::where('status', 'pending')->whereNull('transaction_id')->get();
 

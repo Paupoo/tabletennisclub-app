@@ -131,7 +131,7 @@
                     @if (! $selectionModeActive)
                         <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
                             :tooltip="__('Delete')"
-                            wire:click.stop="confirmDelete({{ $contact->id }})" />
+                            wire:click.stop="confirmDelete({{ $contact->id }})" :aria-label="__('Delete')" />
                     @endif
                 </x-slot:actions>
             </x-list-item>
@@ -193,14 +193,13 @@
                         </span>
                     @endscope
                     @scope('actions', $contact)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
-                                :tooltip="__('View detail')"
-                                wire:click="openDetail({{ $contact->id }})" />
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
+                        <x-admin.shared.row-menu
+                            :label="__('View detail')"
+                            icon="o-eye"
+                            wire-click="openDetail({{ $contact->id }})">
+                            <x-menu-item icon="o-trash" class="text-error" :title="__('Delete')"
                                 wire:click="confirmDelete({{ $contact->id }})" />
-                        </x-admin.shared.row-actions>
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">
@@ -375,7 +374,7 @@
     </x-drawer>
 
     {{-- ── Modal email personnalisé ──────────────────────────────────── --}}
-    <x-modal wire:model="emailModal" :title="__('Custom email')">
+    <x-app-modal wire:model="emailModal" :title="__('Custom email')">
         <div class="space-y-4">
             <x-input :label="__('Subject')" wire:model="emailSubject" />
             <x-textarea :label="__('Message')" wire:model="emailBody" rows="6" />
@@ -389,7 +388,7 @@
             <x-button class="btn-primary" icon="o-paper-airplane" :label="__('Send')"
                 wire:click="sendCustomEmail" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete this contact?')"

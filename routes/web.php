@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
-use App\Domains\ClubAdmin\Users\Models\User;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
 use App\Http\Controllers\ClubAdmin\DashboardController;

@@ -78,7 +78,7 @@ class SubscriptionCreatedNotification extends Notification
         $basePrice = $this->subscription->is_competitive ? 125.0 : 60.0;
         $prorata = new TrainingPackProrata;
 
-        $packTotal = $trainingPacks->sum(fn (TrainingPack $pack) => $prorata->billableAmount(
+        $packTotal = $trainingPacks->sum(fn (TrainingPack $pack): float => $prorata->billableAmount(
             $pack,
             (float) $pack->price,
             $pack->pivot->starts_on,

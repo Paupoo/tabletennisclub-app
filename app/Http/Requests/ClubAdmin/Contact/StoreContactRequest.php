@@ -12,7 +12,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreContactRequest extends FormRequest
 {
-    public function __construct(private Captcha $captchaService = new Captcha) {}
+    public function __construct(private readonly Captcha $captchaService = new Captcha) {}
 
     /**
      * Determine if the user is authorized to make this request.
@@ -24,6 +24,7 @@ class StoreContactRequest extends FormRequest
         return true;
     }
 
+    #[\Override]
     public function messages(): array
     {
         return [
@@ -92,6 +93,7 @@ class StoreContactRequest extends FormRequest
         });
     }
 
+    #[\Override]
     protected function getRedirectUrl(): string
     {
         return route('home') . '#contact';

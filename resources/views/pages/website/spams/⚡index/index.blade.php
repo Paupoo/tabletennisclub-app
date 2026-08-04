@@ -114,14 +114,13 @@
                 </x-slot:sub-value>
                 <x-slot:actions>
                     @if (! $selectionModeActive)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
-                                :tooltip="__('View')"
-                                wire:click="openDetail({{ $spam->id }})" />
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
+                        <x-admin.shared.row-menu
+                            :label="__('View')"
+                            icon="o-eye"
+                            wire-click="openDetail({{ $spam->id }})">
+                            <x-menu-item icon="o-trash" class="text-error" :title="__('Delete')"
                                 wire:click="confirmDelete({{ $spam->id }})" />
-                        </x-admin.shared.row-actions>
+                        </x-admin.shared.row-menu>
                     @endif
                 </x-slot:actions>
             </x-list-item>
@@ -172,14 +171,13 @@
                         </span>
                     @endscope
                     @scope('actions', $spam)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
-                                :tooltip="__('View')"
-                                wire:click="openDetail({{ $spam->id }})" />
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
+                        <x-admin.shared.row-menu
+                            :label="__('View')"
+                            icon="o-eye"
+                            wire-click="openDetail({{ $spam->id }})">
+                            <x-menu-item icon="o-trash" class="text-error" :title="__('Delete')"
                                 wire:click="confirmDelete({{ $spam->id }})" />
-                        </x-admin.shared.row-actions>
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">
@@ -222,7 +220,7 @@
     </x-admin.shared.filter-drawer>
 
     {{-- ── Modal détail spam ─────────────────────────────────────────── --}}
-    <x-modal wire:model="detailModal" :title="__('Spam detail')">
+    <x-app-modal wire:model="detailModal" :title="__('Spam detail')">
         @if ($detailSpam)
             <div class="space-y-3">
                 <div class="grid grid-cols-2 gap-3 text-sm">
@@ -252,7 +250,7 @@
         <x-slot:actions>
             <x-button :label="__('Close')" wire:click="$set('detailModal', false)" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete this spam?')"

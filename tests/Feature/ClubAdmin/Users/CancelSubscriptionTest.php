@@ -221,7 +221,7 @@ describe('CancelSubscriptionWithRefundAction', function (): void {
             'payment_method' => 'refund',
         ]);
 
-        $mail = (new SubscriptionRefundRequestedNotification($payment, $subscription))->toMail($treasurer);
+        $mail = new SubscriptionRefundRequestedNotification($payment, $subscription)->toMail($treasurer);
         $html = $mail->render()->__toString();
 
         expect($html)->toContain('125')

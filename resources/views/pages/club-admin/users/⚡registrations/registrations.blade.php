@@ -160,7 +160,7 @@
                                 <x-button icon="o-x-circle"
                                     :tooltip="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
                                     class="btn-xs btn-ghost text-error"
-                                    wire:click.stop="openCancelModal({{ $req->id }})" spinner />
+                                    wire:click.stop="openCancelModal({{ $req->id }})" spinner :aria-label="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')" />
                             @endcan
                         @endif
                         <x-button :label="__('Details')" wire:click.stop="review({{ $req->id }})"
@@ -241,7 +241,7 @@
                                     <x-button icon="o-x-circle"
                                         :tooltip="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
                                         class="btn-xs btn-ghost text-error"
-                                        wire:click="openCancelModal({{ $req->id }})" spinner />
+                                        wire:click="openCancelModal({{ $req->id }})" spinner :aria-label="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')" />
                                 @endcan
                             @endif
                             <x-button :label="__('Details')" wire:click="review({{ $req->id }})"
@@ -256,7 +256,11 @@
     {{-- ── Modales et drawers (inchangés) ─────────────────────────────── --}}
 
     {{-- ── Modal de review (tous statuts) ─────────────────────────────── --}}
-    <x-modal wire:model="reviewModal" title="{{ $currentRequest?->name ?? '' }}" separator class="backdrop-blur-sm">
+    {{-- The member's name is the useful heading, but it is only known once a request
+    is picked. Falling back to an empty string left the dialog nameless on first
+    render, which is what a screen reader announces. --}}
+    <x-app-modal wire:model="reviewModal" :title="$currentRequest?->name ?? __('Affiliation request')" separator
+        class="backdrop-blur-sm">
 
         {{-- Vue lecture seule pour confirmed/paid/cancelled --}}
         @if ($currentRequest && $currentRequest->status !== 'pending' && ! $paymentGenerated)
@@ -307,11 +311,11 @@
                                             <x-button icon="o-adjustments-horizontal" :tooltip="__('Adjust period or amount')"
                                                 class="btn-ghost btn-xs"
                                                 wire:click="openReconcileModal({{ $currentRequest->id }}, {{ $pack->id }})"
-                                                spinner />
+                                                spinner :aria-label="__('Adjust period or amount')" />
                                             <x-button icon="o-arrow-uturn-left" :tooltip="__('Remove & refund')"
                                                 class="btn-ghost btn-xs text-error"
                                                 wire:click="openRefundModal({{ $currentRequest->id }}, {{ $pack->id }})"
-                                                spinner />
+                                                spinner :aria-label="__('Remove & refund')" />
                                         @endcan
                                     @endif
                                 </div>
@@ -336,7 +340,7 @@
                                         <x-button icon="o-adjustments-horizontal" :tooltip="__('Adjust period or amount')"
                                             class="btn-ghost btn-xs"
                                             wire:click="openReconcileModal({{ $currentRequest->id }}, {{ $pack->id }})"
-                                            spinner />
+                                            spinner :aria-label="__('Adjust period or amount')" />
                                     @endcan
                                 </div>
                             @endforeach
@@ -605,10 +609,10 @@
                 <x-button :label="__('Close')" @click="$wire.reviewModal = false" class="btn-ghost" />
             @endif
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Modal demande d'entraînement (Flux B) ───────────────────────── --}}
-    <x-modal wire:model="trainingRequestModal" :title="__('Training Request')" separator class="backdrop-blur-sm">
+    <x-app-modal wire:model="trainingRequestModal" :title="__('Training Request')" separator class="backdrop-blur-sm">
 
         @if (! $paymentGenerated && $currentTrainingRequest)
             <div class="space-y-6">
@@ -748,7 +752,7 @@
                 @endcan
             @endif
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Drawer inscription/renouvellement ───────────────────────────── --}}
     @can('subscriptions.manage')
@@ -849,7 +853,7 @@
                             <x-button id="basket-remove-{{ $userId }}" icon="o-trash"
                                 class="btn-ghost btn-sm btn-circle shrink-0 text-error"
                                 :tooltip-left="__('Remove from the group')"
-                                wire:click="removeFromBasket({{ $userId }})" />
+                                wire:click="removeFromBasket({{ $userId }})" :aria-label="__('Remove from the group')" />
                         </div>
                         <div class="grid grid-cols-1 gap-4">
                             {{-- `.live` : le récapitulatif chiffré plus bas doit suivre chaque clic. --}}
@@ -957,7 +961,7 @@
                                         </div>
                                     </div>
                                     <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-x-mark"
-                                        :tooltip="__('Unlink')" wire:click="detachGuardian({{ $guardian->id }})" />
+                                        :tooltip="__('Unlink')" wire:click="detachGuardian({{ $guardian->id }})" :aria-label="__('Unlink')" />
                                 </div>
                             @endforeach
                         </div>
@@ -1181,7 +1185,7 @@
         $refundPack = $refundPackId ? $refundSub?->enrolled_packs->firstWhere('id', $refundPackId) : null;
     @endphp
     @can('subscriptions.manage')
-    <x-modal wire:model="refundModal" :title="__('Remove & Refund')" separator class="backdrop-blur-sm">
+    <x-app-modal wire:model="refundModal" :title="__('Remove & Refund')" separator class="backdrop-blur-sm">
         @if ($refundPack)
             <div class="space-y-4">
                 <p class="text-sm">
@@ -1212,12 +1216,12 @@
             <x-button :label="__('Cancel')" @click="$wire.refundModal = false" class="btn-ghost" />
             <x-button :label="__('Confirm refund')" icon="o-arrow-uturn-left" class="btn-error" wire:click="confirmRefund" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
     @endcan
 
     {{-- ── Modal de réconciliation d'une ligne d'entraînement ─────────── --}}
     @can('subscriptions.manage')
-    <x-modal wire:model="reconcileModal" :title="__('Adjust training pack')" separator class="backdrop-blur-sm">
+    <x-app-modal wire:model="reconcileModal" :title="__('Adjust training pack')" separator class="backdrop-blur-sm">
         @php
             $reconcile = $this->reconcilePreview;
         @endphp
@@ -1277,12 +1281,12 @@
             <x-button :label="__('Cancel')" @click="$wire.reconcileModal = false" class="btn-ghost" />
             <x-button :label="__('Save adjustment')" icon="o-check" class="btn-primary" wire:click="saveReconciliation" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
     @endcan
 
     {{-- ── Modal d'annulation de cotisation (avec remboursement éventuel) ── --}}
     @can('subscriptions.manage')
-    <x-modal wire:model="cancelModal" :title="$this->subscriptionToCancel?->totalPaid() > 0 ? __('Cancel & refund') : __('Cancel subscription')" separator class="backdrop-blur-sm">
+    <x-app-modal wire:model="cancelModal" :title="$this->subscriptionToCancel?->totalPaid() > 0 ? __('Cancel & refund') : __('Cancel subscription')" separator class="backdrop-blur-sm">
         @if ($this->subscriptionToCancel)
             @php
                 $cancelUser = $this->subscriptionToCancel->user;
@@ -1332,7 +1336,7 @@
                 icon="o-x-circle" class="btn-error"
                 wire:click="confirmCancelSubscription" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
     @endcan
 
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}

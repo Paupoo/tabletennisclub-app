@@ -397,3 +397,19 @@ select:focus {
 .tabs .tab:not(.tab-active) {
   color: color-mix(in oklab, var(--color-base-content) 78%, var(--color-base-100));
 }
+
+/*
+  The light steps of Tailwind's neutral scale are not text colours here:
+  text-gray-500 composites to 2.60:1 on base-100, against the 4.5:1 WCAG 1.4.3
+  asks of body text. They carry the table headers of the interclubs results —
+  weeks, scores, opponents — read quickly and often in a badly lit sports hall.
+
+  They are also theme-blind: a fixed grey cannot be right on both grounds. The
+  clamp routes them to the same token as .text-muted, which follows the theme.
+  The dark: variants compile to their own selectors and are untouched.
+*/
+.text-gray-300,
+.text-gray-400,
+.text-gray-500 {
+  color: color-mix(in oklab, var(--color-base-content) 78%, var(--color-base-100));
+}

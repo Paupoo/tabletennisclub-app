@@ -80,7 +80,7 @@
 
                                                     {{-- Stats badges --}}
                                                     @if ($teamStats['played'] > 0)
-                                                        <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">{{ $teamStats['wins'] }}V</span>
+                                                        <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">{{ $teamStats['wins'] }}V</span>
                                                         <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">{{ $teamStats['losses'] }}D</span>
                                                         @if ($teamStats['draws'] > 0)
                                                             <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">{{ $teamStats['draws'] }}N</span>
@@ -174,19 +174,19 @@
                                                                         @elseif ($mr->result === null)
                                                                             <span class="text-xs italic text-gray-300">{{ __('Pending') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::WIN)
-                                                                            <span class="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">{{ __('Win') }}</span>
+                                                                            <span class="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-800">{{ __('Win') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::LOSS)
                                                                             <span class="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">{{ __('Loss') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::DRAW)
                                                                             <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-600">{{ __('Draw') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::FORFEIT_WIN)
-                                                                            <span class="rounded bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-600">{{ __('Forfait adv.') }}</span>
+                                                                            <span class="rounded bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-800">{{ __('Forfait adv.') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::FORFEIT_LOSS)
                                                                             <span class="rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">{{ __('Forfait') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::WITHDRAWAL_OPPONENT)
-                                                                            <span class="rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-500">{{ __('Opp. gen. forfeit') }}</span>
+                                                                            <span class="rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700">{{ __('Opp. gen. forfeit') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::WITHDRAWAL)
-                                                                            <span class="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600">{{ __('Gen. forfeit') }}</span>
+                                                                            <span class="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700">{{ __('Gen. forfeit') }}</span>
                                                                         @endif
                                                                     </td>
                                                                     <td class="py-2 text-right">

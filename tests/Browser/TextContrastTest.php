@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
+use Database\Seeders\InterclubResultsSeeder;
+use Database\Seeders\InterclubScheduleSeeder;
 
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->isCommitteeMember()->create([
@@ -135,4 +138,34 @@ it('keeps body text above the AA threshold on the dense back-office screens', fu
     ['admin.treasury.transactions', Role::TREASURY],
     ['admin.users.delegations', Role::MEMBERS],
     ['admin.website.articles.index', Role::WEBSITE],
+]);
+
+/*
+ * The interclubs domain carries the densest tables in the application, and its
+ * figures — weeks, team counts, scores — are read quickly, often in a badly lit
+ * sports hall. Fixtures are seeded first: an empty page has no figures to dim.
+ */
+it('keeps body text above the AA threshold on the interclubs screens', function (string $route) use ($contrastProbe): void {
+    Club::firstOrCreate(
+        ['licence' => 'BBW214'],
+        ['name' => 'C.T.T Ottignies-Blocry', 'is_own_club' => true, 'city_code' => '1340', 'city_name' => 'Ottignies'],
+    );
+    $this->seed(InterclubScheduleSeeder::class);
+    $this->seed(InterclubResultsSeeder::class);
+
+    $this->actingAs(User::factory()->withRole(Role::INTERCLUBS)->create());
+
+    $page = visit(route($route));
+
+    $result = $page->script($contrastProbe);
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold on %s:\n%s",
+        $route,
+        implode("\n", $failures),
+    ));
+})->with([
+    'admin.interclubs.results',
+    'admin.interclubs.clubs',
 ]);

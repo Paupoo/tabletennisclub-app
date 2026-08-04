@@ -193,14 +193,13 @@
                         </span>
                     @endscope
                     @scope('actions', $contact)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
-                                :tooltip="__('View detail')"
-                                wire:click="openDetail({{ $contact->id }})" :aria-label="__('View detail')" />
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $contact->id }})" :aria-label="__('Delete')" />
-                        </x-admin.shared.row-actions>
+                        <x-admin.shared.row-menu
+                            :label="__('View detail')"
+                            icon="o-eye"
+                            wire-click="openDetail({{ $contact->id }})">
+                            <x-menu-item icon="o-trash" class="text-error" :title="__('Delete')"
+                                wire:click="confirmDelete({{ $contact->id }})" />
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">

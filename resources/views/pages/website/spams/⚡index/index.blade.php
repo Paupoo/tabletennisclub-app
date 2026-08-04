@@ -114,14 +114,13 @@
                 </x-slot:sub-value>
                 <x-slot:actions>
                     @if (! $selectionModeActive)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
-                                :tooltip="__('View')"
-                                wire:click="openDetail({{ $spam->id }})" :aria-label="__('View')" />
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $spam->id }})" :aria-label="__('Delete')" />
-                        </x-admin.shared.row-actions>
+                        <x-admin.shared.row-menu
+                            :label="__('View')"
+                            icon="o-eye"
+                            wire-click="openDetail({{ $spam->id }})">
+                            <x-menu-item icon="o-trash" class="text-error" :title="__('Delete')"
+                                wire:click="confirmDelete({{ $spam->id }})" />
+                        </x-admin.shared.row-menu>
                     @endif
                 </x-slot:actions>
             </x-list-item>
@@ -172,14 +171,13 @@
                         </span>
                     @endscope
                     @scope('actions', $spam)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
-                                :tooltip="__('View')"
-                                wire:click="openDetail({{ $spam->id }})" :aria-label="__('View')" />
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $spam->id }})" :aria-label="__('Delete')" />
-                        </x-admin.shared.row-actions>
+                        <x-admin.shared.row-menu
+                            :label="__('View')"
+                            icon="o-eye"
+                            wire-click="openDetail({{ $spam->id }})">
+                            <x-menu-item icon="o-trash" class="text-error" :title="__('Delete')"
+                                wire:click="confirmDelete({{ $spam->id }})" />
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">

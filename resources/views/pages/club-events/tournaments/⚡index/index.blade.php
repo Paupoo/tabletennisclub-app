@@ -112,16 +112,14 @@
                 </x-slot:sub-value>
                 <x-slot:actions>
                     @if (! $selectionModeActive)
-                        <x-admin.shared.row-actions>
+                        <x-admin.shared.row-menu
+                            :label="__('Settings')"
+                            icon="o-cog-6-tooth"
+                            link="{{ route('admin.tournaments.wizard.edit', $tournament) }}">
                             @if ($this->canManage)
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-cog-6-tooth"
-                                    :tooltip="__('Settings')"
-                                    link="{{ route('admin.tournaments.wizard.edit', $tournament) }}" :aria-label="__('Settings')" />
                             @endif
                             @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-rocket-launch"
-                                    :tooltip="__('Live Center')"
-                                    link="{{ route('admin.tournaments.live-center', $tournament->id) }}" :aria-label="__('Live Center')" />
+                                <x-menu-item icon="o-rocket-launch" link="{{ route('admin.tournaments.live-center', $tournament->id) }}" :title="__('Live Center')" />
                             @endif
                             @if ($this->canManage)
                                 <livewire:admin.shared.event-post-button
@@ -139,7 +137,7 @@
                                     wire:key="ep-mob-tournament-{{ $tournament->id }}"
                                     @event-post-saved.window="$wire.refreshTournaments()" />
                             @endif
-                        </x-admin.shared.row-actions>
+                        </x-admin.shared.row-menu>
                     @endif
                 </x-slot:actions>
             </x-list-item>
@@ -242,18 +240,16 @@
                     @endscope
 
                     @scope('actions', $tournament)
-                        <x-admin.shared.row-actions>
+                        <x-admin.shared.row-menu
+                            :label="__('Settings')"
+                            icon="o-cog-6-tooth"
+                            link="{{ route('admin.tournaments.wizard.edit', $tournament) }}">
                             @if ($this->canManage)
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-cog-6-tooth"
-                                    :tooltip="__('Settings')"
-                                    link="{{ route('admin.tournaments.wizard.edit', $tournament) }}" :aria-label="__('Settings')" />
                             @endif
                             @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-rocket-launch"
-                                    :tooltip="__('Live Center')"
-                                    link="{{ route('admin.tournaments.live-center', $tournament->id) }}" :aria-label="__('Live Center')" />
+                                <x-menu-item icon="o-rocket-launch" link="{{ route('admin.tournaments.live-center', $tournament->id) }}" :title="__('Live Center')" />
                             @endif
-                        </x-admin.shared.row-actions>
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">

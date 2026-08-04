@@ -125,24 +125,18 @@
                 </x-slot:sub-value>
                 <x-slot:actions>
                     @if (! $selectionModeActive)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                :tooltip="__('Edit')"
-                                link="{{ route('admin.website.articles.edit', $article->slug) }}" :aria-label="__('Edit')" />
+                        <x-admin.shared.row-menu
+                            :label="__('Edit')"
+                            icon="o-pencil"
+                            link="{{ route('admin.website.articles.edit', $article->slug) }}">
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
-                                    :tooltip="__('Publish')"
-                                    wire:click="publish({{ $article->id }})" :aria-label="__('Publish')" />
+                                <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $article->id }})" :title="__('Publish')" />
                             @endif
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
-                                    :tooltip="__('Archive')"
-                                    wire:click="archive({{ $article->id }})" :aria-label="__('Archive')" />
+                                <x-menu-item icon="o-archive-box" wire:click="archive({{ $article->id }})" :title="__('Archive')" />
                             @endif
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $article->id }})" :aria-label="__('Delete')" />
-                        </x-admin.shared.row-actions>
+                            <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $article->id }})" :title="__('Delete')" />
+                        </x-admin.shared.row-menu>
                     @endif
                 </x-slot:actions>
             </x-list-item>
@@ -198,24 +192,18 @@
                         </span>
                     @endscope
                     @scope('actions', $article)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                :tooltip="__('Edit')"
-                                link="{{ route('admin.website.articles.edit', $article->slug) }}" :aria-label="__('Edit')" />
+                        <x-admin.shared.row-menu
+                            :label="__('Edit')"
+                            icon="o-pencil"
+                            link="{{ route('admin.website.articles.edit', $article->slug) }}">
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
-                                    :tooltip="__('Publish')"
-                                    wire:click="publish({{ $article->id }})" :aria-label="__('Publish')" />
+                                <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $article->id }})" :title="__('Publish')" />
                             @endif
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
-                                    :tooltip="__('Archive')"
-                                    wire:click="archive({{ $article->id }})" :aria-label="__('Archive')" />
+                                <x-menu-item icon="o-archive-box" wire:click="archive({{ $article->id }})" :title="__('Archive')" />
                             @endif
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $article->id }})" :aria-label="__('Delete')" />
-                        </x-admin.shared.row-actions>
+                            <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $article->id }})" :title="__('Delete')" />
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">

@@ -104,25 +104,19 @@
                 </x-slot:sub-value>
                 <x-slot:actions>
                     @if (! $selectionModeActive)
-                        <x-admin.shared.row-actions>
+                        <x-admin.shared.row-menu
+                            :label="__('Edit')"
+                            icon="o-pencil"
+                            wire-click="openEdit({{ $event->id }})">
                             @if ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT)
-                                <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
-                                    :tooltip="__('Publish')"
-                                    wire:click="publish({{ $event->id }})" spinner :aria-label="__('Publish')" />
+                                <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $event->id }})" spinner :title="__('Publish')" />
                             @elseif ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
-                                    :tooltip="__('Archive')"
-                                    wire:click="archive({{ $event->id }})" spinner :aria-label="__('Archive')" />
+                                <x-menu-item icon="o-archive-box" wire:click="archive({{ $event->id }})" spinner :title="__('Archive')" />
                             @endif
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                :tooltip="__('Edit')"
-                                wire:click="openEdit({{ $event->id }})" :aria-label="__('Edit')" />
                             @if ($event->canBeDeleted())
-                                <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                    :tooltip="__('Delete')"
-                                    wire:click="confirmDelete({{ $event->id }})" :aria-label="__('Delete')" />
+                                <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $event->id }})" :title="__('Delete')" />
                             @endif
-                        </x-admin.shared.row-actions>
+                        </x-admin.shared.row-menu>
                     @endif
                 </x-slot:actions>
             </x-list-item>
@@ -203,25 +197,19 @@
                     @endscope
 
                     @scope('actions', $event)
-                        <x-admin.shared.row-actions>
+                        <x-admin.shared.row-menu
+                            :label="__('Edit')"
+                            icon="o-pencil"
+                            wire-click="openEdit({{ $event->id }})">
                             @if ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT)
-                                <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
-                                    :tooltip="__('Publish')"
-                                    wire:click="publish({{ $event->id }})" spinner :aria-label="__('Publish')" />
+                                <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $event->id }})" spinner :title="__('Publish')" />
                             @elseif ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
-                                    :tooltip="__('Archive')"
-                                    wire:click="archive({{ $event->id }})" spinner :aria-label="__('Archive')" />
+                                <x-menu-item icon="o-archive-box" wire:click="archive({{ $event->id }})" spinner :title="__('Archive')" />
                             @endif
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                :tooltip="__('Edit')"
-                                wire:click="openEdit({{ $event->id }})" :aria-label="__('Edit')" />
                             @if ($event->canBeDeleted())
-                                <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                    :tooltip="__('Delete')"
-                                    wire:click="confirmDelete({{ $event->id }})" :aria-label="__('Delete')" />
+                                <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $event->id }})" :title="__('Delete')" />
                             @endif
-                        </x-admin.shared.row-actions>
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 
 /*
  * WCAG 2.5.8 sets 24x24 CSS pixels as the floor for a pointer target, and the
@@ -57,3 +58,26 @@ it('keeps every tap target reachable with a thumb on the members list', function
         implode("\n", $small),
     ));
 });
+
+/*
+ * The treasury screens carry the densest rows in the back office, and they are
+ * worked from a phone as often as from a desk.
+ */
+it('keeps every tap target reachable on the treasury screens', function (string $route, Role $role) use ($tapProbe): void {
+    $this->actingAs(User::factory()->withRole($role)->create());
+
+    $page = visit(route($route))->resize(375, 812);
+
+    $result = $page->script($tapProbe);
+    $small = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($small)->toBe([], sprintf(
+        "Targets under the 24x24 floor of WCAG 2.5.8 on %s:\n%s",
+        $route,
+        implode("\n", $small),
+    ));
+})->with([
+    ['admin.treasury.payments', Role::TREASURY],
+    ['admin.treasury.transactions', Role::TREASURY],
+    ['admin.treasury.fines', Role::FINES],
+]);

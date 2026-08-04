@@ -357,3 +357,13 @@ select:focus {
   align-items: center;
   min-block-size: 24px;
 }
+
+/*
+  daisyUI's checkbox-sm draws a 20px box, under the 24px floor of WCAG 2.5.8.
+  Row-selection checkboxes are the densest targets in the back office and the
+  ones most often missed with a thumb, so the floor applies to all of them.
+*/
+.checkbox {
+  min-block-size: 24px;
+  min-inline-size: 24px;
+}

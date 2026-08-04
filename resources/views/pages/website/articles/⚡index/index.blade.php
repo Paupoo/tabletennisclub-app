@@ -147,10 +147,12 @@
                 </x-slot:actions>
             </x-list-item>
         @empty
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-document-text"
+                :filtered="filled($search) || count($filterChips) > 0"
                 :heading="__('No articles found')"
-                :message="__('Try adjusting your search or filters.')" />
+                :create-label="__('Write an article')"
+                :create-href="auth()->user()->can('news_posts.manage') ? route('admin.website.articles.create') : null" />
         @endforelse
     </div>
 
@@ -158,10 +160,12 @@
     <div class="hidden lg:block">
         <x-card>
             @if ($articles->isEmpty())
-                <x-empty-state
+                <x-admin.shared.list-empty-state
                     icon="o-document-text"
+                    :filtered="filled($search) || count($filterChips) > 0"
                     :heading="__('No articles found')"
-                    :message="__('Try adjusting your search or filters.')" />
+                    :create-label="__('Write an article')"
+                    :create-href="auth()->user()->can('news_posts.manage') ? route('admin.website.articles.create') : null" />
             @else
                 <x-table :headers="$headers" :rows="$articles" :sort-by="$sortBy"
                     selectable wire:model.live="selected">

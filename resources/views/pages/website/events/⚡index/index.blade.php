@@ -127,10 +127,10 @@
                 </x-slot:actions>
             </x-list-item>
         @empty
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-calendar-days"
-                :heading="__('No events found')"
-                :message="__('Try adjusting your search or filters.')" />
+                :filtered="filled($search) || count($filterChips) > 0"
+                :heading="__('No events found')" />
         @endforelse
     </div>
 
@@ -138,10 +138,10 @@
     <div class="hidden lg:block">
         <x-card>
             @if ($events->isEmpty())
-                <x-empty-state
+                <x-admin.shared.list-empty-state
                     icon="o-calendar-days"
-                    :heading="__('No events found')"
-                    :message="__('Try adjusting your search or filters.')" />
+                    :filtered="filled($search) || count($filterChips) > 0"
+                    :heading="__('No events found')" />
             @else
                 <x-table :headers="$headers" :rows="$events" :sort-by="$sortBy"
                     selectable wire:model.live="selected">

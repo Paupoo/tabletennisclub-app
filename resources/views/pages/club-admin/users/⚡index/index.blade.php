@@ -161,10 +161,12 @@
                 </x-slot:actions>
             </x-list-item>
         @empty
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-users"
+                :filtered="filled($search) || count($filterChips) > 0"
                 :heading="$showArchived ? __('No archived members') : __('No users found')"
-                :message="__('Try adjusting your search or filters.')" />
+                :create-label="__('Create a member')"
+                :create-href="auth()->user()->can('create', \App\Domains\ClubAdmin\Users\Models\User::class) ? route('admin.users.create') : null" />
         @endforelse
     </div>
 
@@ -172,10 +174,12 @@
     <div class="hidden lg:block">
         <x-card>
             @if ($users->isEmpty())
-                <x-empty-state
+                <x-admin.shared.list-empty-state
                     icon="o-users"
+                    :filtered="filled($search) || count($filterChips) > 0"
                     :heading="$showArchived ? __('No archived members') : __('No users found')"
-                    :message="__('Try adjusting your search or filters.')" />
+                    :create-label="__('Create a member')"
+                    :create-href="auth()->user()->can('create', \App\Domains\ClubAdmin\Users\Models\User::class) ? route('admin.users.create') : null" />
             @else
                 <x-table :headers="$headers" :rows="$users" :sort-by="$sortBy" selectable wire:model.live="selected">
                     @scope('cell_photo', $user)

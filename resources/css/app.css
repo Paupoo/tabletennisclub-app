@@ -95,7 +95,7 @@
   --color-primary: #1e40af;
   --color-primary-content: oklch(98% 0.003 247.858);
   --color-secondary: #fbbf24;
-  --color-secondary-content: oklch(98% 0.003 247.858);
+  --color-secondary-content: #1e40af; /* club blue: white on club yellow measured 1.58:1 */
   --color-accent: oklch(0% 0 0);
   --color-accent-content: oklch(100% 0 0);
   --color-neutral: oklch(43% 0 0);
@@ -125,7 +125,7 @@
   --color-primary: #fbbf24;
   --color-primary-content: #241f31;
   --color-secondary: #fbbf24;
-  --color-secondary-content: oklch(98% 0.003 247.858);
+  --color-secondary-content: #1e40af; /* club blue: white on club yellow measured 1.58:1 */
   --color-info: #3b82f6;
   --color-info-content: oklch(28% 0.091 267.935);
   --color-base-100: oklch(25% 0 0);
@@ -366,4 +366,34 @@ select:focus {
 .checkbox {
   min-block-size: 24px;
   min-inline-size: 24px;
+}
+
+/*
+  The palette's low alpha steps are not text colours: composited on base-100 they
+  measure 2.56:1 at /40 and 3.38:1 at /50, where WCAG 1.4.3 asks 4.5:1. There are
+  ~590 of them across 119 files, and hunting each call site would take weeks and
+  miss the next one written.
+
+  Clamping the steps themselves fixes every occurrence at once and keeps the
+  authored intent readable in the markup. Icons and borders inherit more contrast
+  than they need, which costs nothing. Use .text-muted / .text-subtle in new code.
+*/
+.text-base-content\/20,
+.text-base-content\/25,
+.text-base-content\/30,
+.text-base-content\/35,
+.text-base-content\/40,
+.text-base-content\/45,
+.text-base-content\/50,
+.text-base-content\/60 {
+  color: color-mix(in oklab, var(--color-base-content) 78%, var(--color-base-100));
+}
+
+/*
+  daisyUI dims an inactive tab with its own alpha, outside the clamp above, which
+  left tab labels at 3.38:1. Tabs are navigation: an unreadable one hides a
+  section rather than merely looking faint.
+*/
+.tabs .tab:not(.tab-active) {
+  color: color-mix(in oklab, var(--color-base-content) 78%, var(--color-base-100));
 }

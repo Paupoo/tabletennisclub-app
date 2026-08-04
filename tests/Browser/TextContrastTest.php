@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->isCommitteeMember()->create([
@@ -111,3 +112,27 @@ it('keeps body text above the AA contrast threshold on the members list', functi
         implode("\n", $failures),
     ));
 });
+
+/*
+ * The members list was the first slice. These are the next densest screens, and
+ * the ones where a treasurer or a secretary reads small figures for a long time.
+ */
+it('keeps body text above the AA threshold on the dense back-office screens', function (string $route, Role $role) use ($contrastProbe): void {
+    $this->actingAs(User::factory()->withRole($role)->create());
+
+    $page = visit(route($route));
+
+    $result = $page->script($contrastProbe);
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold on %s:\n%s",
+        $route,
+        implode("\n", $failures),
+    ));
+})->with([
+    ['admin.treasury.payments', Role::TREASURY],
+    ['admin.treasury.transactions', Role::TREASURY],
+    ['admin.users.delegations', Role::MEMBERS],
+    ['admin.website.articles.index', Role::WEBSITE],
+]);

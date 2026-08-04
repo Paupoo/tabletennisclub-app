@@ -179,7 +179,7 @@
                                             class="btn-ghost btn-sm btn-circle text-error"
                                             icon="o-trash"
                                             :tooltip="__('Remove')"
-                                            wire:click="confirmDelete({{ $team->id }})" />
+                                            wire:click="confirmDelete({{ $team->id }})" :aria-label="__('Remove')" />
                                     </div>
                                 @endforeach
                             </div>

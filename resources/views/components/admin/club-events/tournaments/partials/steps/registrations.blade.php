@@ -57,12 +57,12 @@
                             class="btn-ghost btn-xs text-success"
                             :tooltip="__('Confirm')"
                             wire:click="confirmPresence({{ $row['id'] }})"
-                            wire:loading.attr="disabled" />
+                            wire:loading.attr="disabled" :aria-label="__('Confirm')" />
                         <x-button
                             icon="o-no-symbol"
                             class="btn-ghost btn-xs text-warning-content"
                             :tooltip="__('No show')"
-                            wire:click="markNoShow({{ $row['id'] }})" />
+                            wire:click="markNoShow({{ $row['id'] }})" :aria-label="__('No show')" />
                     </div>
                 @else
                     <x-badge :value="$row['status']"
@@ -95,12 +95,12 @@
                                 icon="o-qr-code"
                                 class="btn-ghost btn-xs"
                                 :tooltip="__('QR / bank transfer')"
-                                wire:click="openQrModal({{ $row['id'] }})" />
+                                wire:click="openQrModal({{ $row['id'] }})" :aria-label="__('QR / bank transfer')" />
                             <x-button
                                 icon="o-currency-euro"
                                 class="btn-ghost btn-xs text-success"
                                 :tooltip="__('Cash')"
-                                wire:click="openCashConfirmModal({{ $row['id'] }})" />
+                                wire:click="openCashConfirmModal({{ $row['id'] }})" :aria-label="__('Cash')" />
                         </div>
                     @else
                         <x-badge value="{{ __('Pending') }}" class="badge-warning badge-sm" icon="o-clock" />
@@ -112,7 +112,7 @@
                 @if (! $this->isLaunched)
                     <x-button icon="o-trash" class="btn-ghost btn-sm text-error"
                         tooltip-left="{{ __('Cancel registration') }}"
-                        wire:click="cancelUserRegistration({{ $row['id'] }})" />
+                        wire:click="cancelUserRegistration({{ $row['id'] }})" aria-label="{{ __('Cancel registration') }}" />
                 @endif
             @endscope
         </x-table>
@@ -169,10 +169,10 @@
                                 <x-button icon="o-arrow-up-circle" class="btn-ghost btn-xs text-success"
                                     :tooltip="__('Promote to registered')"
                                     wire:click="promoteFromWaitlist({{ $entry['id'] }})"
-                                    :disabled="$maxUsers > 0 && $this->registrations->count() >= $maxUsers" />
+                                    :disabled="$maxUsers > 0 && $this->registrations->count() >= $maxUsers" :aria-label="__('Promote to registered')" />
                                 <x-button icon="o-x-mark" class="btn-ghost btn-xs text-error"
                                     :tooltip="__('Remove from waitlist')"
-                                    wire:click="removeFromWaitlist({{ $entry['id'] }})" />
+                                    wire:click="removeFromWaitlist({{ $entry['id'] }})" :aria-label="__('Remove from waitlist')" />
                             </div>
                         @endif
                     </div>
@@ -206,7 +206,7 @@
                         @if (! $this->isLaunched)
                             <x-button icon="o-x-mark" class="btn-ghost btn-xs text-error"
                                 :tooltip="__('Delete pair')"
-                                wire:click="deletePair({{ $pair['id'] }})" />
+                                wire:click="deletePair({{ $pair['id'] }})" :aria-label="__('Delete pair')" />
                         @endif
                     </div>
                 @endforeach

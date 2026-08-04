@@ -11,6 +11,6 @@
         {{ $actions }}
 
         <x-button class="btn-ghost btn-sm btn-square ml-auto" icon="o-x-mark" :tooltip="__('Clear selection')"
-            wire:click="$set('selected', [])" />
+            wire:click="$set('selected', [])" :aria-label="__('Clear selection')" />
     </div>
 @endif

@@ -77,13 +77,13 @@
                                 <x-admin.shared.row-actions>
                                     @can('update', $table)
                                         <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                            :tooltip="__('Edit')" link="{{ route('admin.tables.edit', $table) }}" />
+                                            :tooltip="__('Edit')" link="{{ route('admin.tables.edit', $table) }}" :aria-label="__('Edit')" />
                                         <x-button class="btn-ghost btn-sm btn-circle" icon="o-lock-open"
-                                            :tooltip="__('Unlink')" wire:click="confirmUnlink({{ $table->id }})" spinner />
+                                            :tooltip="__('Unlink')" wire:click="confirmUnlink({{ $table->id }})" spinner :aria-label="__('Unlink')" />
                                     @endcan
                                     @can('delete', $table)
                                         <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                            :tooltip="__('Delete')" wire:click="confirmDelete({{ $table->id }})" />
+                                            :tooltip="__('Delete')" wire:click="confirmDelete({{ $table->id }})" :aria-label="__('Delete')" />
                                     @endcan
                                 </x-admin.shared.row-actions>
                             @endscope
@@ -112,11 +112,11 @@
                                     <x-admin.shared.row-actions>
                                         @can('update', $table)
                                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                                :tooltip="__('Edit')" link="{{ route('admin.tables.edit', $table) }}" />
+                                                :tooltip="__('Edit')" link="{{ route('admin.tables.edit', $table) }}" :aria-label="__('Edit')" />
                                         @endcan
                                         @can('delete', $table)
                                             <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                                :tooltip="__('Delete')" wire:click="confirmDelete({{ $table->id }})" />
+                                                :tooltip="__('Delete')" wire:click="confirmDelete({{ $table->id }})" :aria-label="__('Delete')" />
                                         @endcan
                                     </x-admin.shared.row-actions>
                                 </x-slot:actions>

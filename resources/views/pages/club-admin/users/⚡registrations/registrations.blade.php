@@ -160,7 +160,7 @@
                                 <x-button icon="o-x-circle"
                                     :tooltip="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
                                     class="btn-xs btn-ghost text-error"
-                                    wire:click.stop="openCancelModal({{ $req->id }})" spinner />
+                                    wire:click.stop="openCancelModal({{ $req->id }})" spinner :aria-label="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')" />
                             @endcan
                         @endif
                         <x-button :label="__('Details')" wire:click.stop="review({{ $req->id }})"
@@ -241,7 +241,7 @@
                                     <x-button icon="o-x-circle"
                                         :tooltip="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
                                         class="btn-xs btn-ghost text-error"
-                                        wire:click="openCancelModal({{ $req->id }})" spinner />
+                                        wire:click="openCancelModal({{ $req->id }})" spinner :aria-label="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')" />
                                 @endcan
                             @endif
                             <x-button :label="__('Details')" wire:click="review({{ $req->id }})"
@@ -311,11 +311,11 @@
                                             <x-button icon="o-adjustments-horizontal" :tooltip="__('Adjust period or amount')"
                                                 class="btn-ghost btn-xs"
                                                 wire:click="openReconcileModal({{ $currentRequest->id }}, {{ $pack->id }})"
-                                                spinner />
+                                                spinner :aria-label="__('Adjust period or amount')" />
                                             <x-button icon="o-arrow-uturn-left" :tooltip="__('Remove & refund')"
                                                 class="btn-ghost btn-xs text-error"
                                                 wire:click="openRefundModal({{ $currentRequest->id }}, {{ $pack->id }})"
-                                                spinner />
+                                                spinner :aria-label="__('Remove & refund')" />
                                         @endcan
                                     @endif
                                 </div>
@@ -340,7 +340,7 @@
                                         <x-button icon="o-adjustments-horizontal" :tooltip="__('Adjust period or amount')"
                                             class="btn-ghost btn-xs"
                                             wire:click="openReconcileModal({{ $currentRequest->id }}, {{ $pack->id }})"
-                                            spinner />
+                                            spinner :aria-label="__('Adjust period or amount')" />
                                     @endcan
                                 </div>
                             @endforeach
@@ -853,7 +853,7 @@
                             <x-button id="basket-remove-{{ $userId }}" icon="o-trash"
                                 class="btn-ghost btn-sm btn-circle shrink-0 text-error"
                                 :tooltip-left="__('Remove from the group')"
-                                wire:click="removeFromBasket({{ $userId }})" />
+                                wire:click="removeFromBasket({{ $userId }})" :aria-label="__('Remove from the group')" />
                         </div>
                         <div class="grid grid-cols-1 gap-4">
                             {{-- `.live` : le récapitulatif chiffré plus bas doit suivre chaque clic. --}}
@@ -961,7 +961,7 @@
                                         </div>
                                     </div>
                                     <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-x-mark"
-                                        :tooltip="__('Unlink')" wire:click="detachGuardian({{ $guardian->id }})" />
+                                        :tooltip="__('Unlink')" wire:click="detachGuardian({{ $guardian->id }})" :aria-label="__('Unlink')" />
                                 </div>
                             @endforeach
                         </div>

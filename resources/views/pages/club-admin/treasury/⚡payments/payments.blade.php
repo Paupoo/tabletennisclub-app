@@ -144,7 +144,7 @@
                         wire:click="sendReminder({{ $payment->id }})"
                         class="btn-xs btn-ghost"
                         tooltip="{{ $payment->invitation_counter > 0 ? __('Resend (:n sent)', ['n' => $payment->invitation_counter]) : __('Send invitation') }}"
-                        spinner />
+                        spinner aria-label="{{ $payment->invitation_counter > 0 ? __('Resend (:n sent)', ['n' => $payment->invitation_counter]) : __('Send invitation') }}" />
                 @endcan
                 @can('payments.reconcile')
                     <x-button

@@ -46,11 +46,11 @@
                     <x-button class="btn-ghost btn-sm"
                         :icon="$template->is_active ? 'o-eye' : 'o-eye-slash'"
                         :tooltip="$template->is_active ? __('Deactivate') : __('Activate')"
-                        wire:click="toggleActive({{ $template->id }})" />
+                        wire:click="toggleActive({{ $template->id }})" :aria-label="$template->is_active ? __('Deactivate') : __('Activate')" />
                     <x-button class="btn-ghost btn-sm" icon="o-pencil"
-                        :tooltip="__('Edit')" wire:click="openEdit({{ $template->id }})" />
+                        :tooltip="__('Edit')" wire:click="openEdit({{ $template->id }})" :aria-label="__('Edit')" />
                     <x-button class="btn-ghost btn-sm text-error" icon="o-trash"
-                        :tooltip="__('Delete')" wire:click="confirmDelete({{ $template->id }})" />
+                        :tooltip="__('Delete')" wire:click="confirmDelete({{ $template->id }})" :aria-label="__('Delete')" />
                 </div>
             @endscope
 

@@ -100,7 +100,7 @@
                                 </div>
                             </div>
                             <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-x-mark"
-                                :tooltip="__('Unlink')" wire:click="detachGuardian({{ $guardian->id }})" />
+                                :tooltip="__('Unlink')" wire:click="detachGuardian({{ $guardian->id }})" :aria-label="__('Unlink')" />
                         </div>
                     @endforeach
                 </div>

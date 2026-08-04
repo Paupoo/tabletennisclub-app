@@ -131,7 +131,7 @@
                     @if (! $selectionModeActive)
                         <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
                             :tooltip="__('Delete')"
-                            wire:click.stop="confirmDelete({{ $contact->id }})" />
+                            wire:click.stop="confirmDelete({{ $contact->id }})" :aria-label="__('Delete')" />
                     @endif
                 </x-slot:actions>
             </x-list-item>
@@ -196,10 +196,10 @@
                         <x-admin.shared.row-actions>
                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
                                 :tooltip="__('View detail')"
-                                wire:click="openDetail({{ $contact->id }})" />
+                                wire:click="openDetail({{ $contact->id }})" :aria-label="__('View detail')" />
                             <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
                                 :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $contact->id }})" />
+                                wire:click="confirmDelete({{ $contact->id }})" :aria-label="__('Delete')" />
                         </x-admin.shared.row-actions>
                     @endscope
                 </x-table>

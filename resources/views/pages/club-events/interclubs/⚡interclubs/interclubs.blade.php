@@ -65,7 +65,7 @@
                                             class="btn-ghost btn-sm btn-circle"
                                             icon="o-plus"
                                             :tooltip="__('Add match for this team')"
-                                            wire:click.stop="openCreateModal({{ $matches->first()['our_team_id'] }})" />
+                                            wire:click.stop="openCreateModal({{ $matches->first()['our_team_id'] }})" :aria-label="__('Add match for this team')" />
                                         <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
                                     </div>
 
@@ -108,10 +108,10 @@
                                                         <div class="flex shrink-0 gap-1">
                                                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
                                                                 :tooltip="__('Edit')"
-                                                                wire:click="openEditModal({{ $match['id'] }})" />
+                                                                wire:click="openEditModal({{ $match['id'] }})" :aria-label="__('Edit')" />
                                                             <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
                                                                 :tooltip="__('Delete')"
-                                                                wire:click="confirmDelete({{ $match['id'] }})" />
+                                                                wire:click="confirmDelete({{ $match['id'] }})" :aria-label="__('Delete')" />
                                                         </div>
                                                     </div>
                                                 @endforeach

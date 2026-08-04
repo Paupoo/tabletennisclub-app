@@ -58,12 +58,12 @@
                                     @if ($canManage && $p->status->value !== 'archived')
                                         <x-button class="btn-sm btn-ghost" icon="o-archive-box"
                                             :tooltip="__('Archive')"
-                                            wire:click="confirmArchivePlan({{ $p->id }})" />
+                                            wire:click="confirmArchivePlan({{ $p->id }})" :aria-label="__('Archive')" />
                                     @endif
                                     @if ($canManage)
                                         <x-button class="btn-sm btn-ghost text-error" icon="o-trash"
                                             :tooltip="__('Delete')"
-                                            wire:click="confirmDeletePlan({{ $p->id }})" />
+                                            wire:click="confirmDeletePlan({{ $p->id }})" :aria-label="__('Delete')" />
                                     @endif
                                 </div>
                             </div>
@@ -141,10 +141,10 @@
                             @if ($canManage && ! $column['is_pool'])
                                 <x-button class="btn-ghost btn-xs btn-circle" icon="o-pencil-square"
                                     :tooltip="__('Edit group')"
-                                    wire:click="editPack({{ $column['pack_id'] }})" />
+                                    wire:click="editPack({{ $column['pack_id'] }})" :aria-label="__('Edit group')" />
                                 <x-button class="btn-ghost btn-xs btn-circle text-error" icon="o-trash"
                                     :tooltip="__('Remove group')"
-                                    wire:click="confirmRemovePack({{ $column['pack_id'] }})" />
+                                    wire:click="confirmRemovePack({{ $column['pack_id'] }})" :aria-label="__('Remove group')" />
                             @endif
                         </div>
                     </div>

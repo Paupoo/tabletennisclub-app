@@ -128,20 +128,20 @@
                         <x-admin.shared.row-actions>
                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
                                 :tooltip="__('Edit')"
-                                link="{{ route('admin.website.articles.edit', $article->slug) }}" />
+                                link="{{ route('admin.website.articles.edit', $article->slug) }}" :aria-label="__('Edit')" />
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
                                 <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
                                     :tooltip="__('Publish')"
-                                    wire:click="publish({{ $article->id }})" />
+                                    wire:click="publish({{ $article->id }})" :aria-label="__('Publish')" />
                             @endif
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
                                 <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
                                     :tooltip="__('Archive')"
-                                    wire:click="archive({{ $article->id }})" />
+                                    wire:click="archive({{ $article->id }})" :aria-label="__('Archive')" />
                             @endif
                             <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
                                 :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $article->id }})" />
+                                wire:click="confirmDelete({{ $article->id }})" :aria-label="__('Delete')" />
                         </x-admin.shared.row-actions>
                     @endif
                 </x-slot:actions>
@@ -201,20 +201,20 @@
                         <x-admin.shared.row-actions>
                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
                                 :tooltip="__('Edit')"
-                                link="{{ route('admin.website.articles.edit', $article->slug) }}" />
+                                link="{{ route('admin.website.articles.edit', $article->slug) }}" :aria-label="__('Edit')" />
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
                                 <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
                                     :tooltip="__('Publish')"
-                                    wire:click="publish({{ $article->id }})" />
+                                    wire:click="publish({{ $article->id }})" :aria-label="__('Publish')" />
                             @endif
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
                                 <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
                                     :tooltip="__('Archive')"
-                                    wire:click="archive({{ $article->id }})" />
+                                    wire:click="archive({{ $article->id }})" :aria-label="__('Archive')" />
                             @endif
                             <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
                                 :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $article->id }})" />
+                                wire:click="confirmDelete({{ $article->id }})" :aria-label="__('Delete')" />
                         </x-admin.shared.row-actions>
                     @endscope
                 </x-table>

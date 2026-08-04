@@ -148,7 +148,7 @@
                                                 class="btn-ghost btn-xs text-base-content/40"
                                                 icon="o-envelope"
                                                 :tooltip-left="__('Request availability')"
-                                                wire:click="requestAvailability({{ $ic['id'] }})" />
+                                                wire:click="requestAvailability({{ $ic['id'] }})" :aria-label="__('Request availability')" />
                                         </div>
                                     @endif
                                 </div>

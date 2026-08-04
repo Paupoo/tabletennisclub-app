@@ -117,10 +117,10 @@
                         <x-admin.shared.row-actions>
                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
                                 :tooltip="__('View')"
-                                wire:click="openDetail({{ $spam->id }})" />
+                                wire:click="openDetail({{ $spam->id }})" :aria-label="__('View')" />
                             <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
                                 :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $spam->id }})" />
+                                wire:click="confirmDelete({{ $spam->id }})" :aria-label="__('Delete')" />
                         </x-admin.shared.row-actions>
                     @endif
                 </x-slot:actions>
@@ -175,10 +175,10 @@
                         <x-admin.shared.row-actions>
                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
                                 :tooltip="__('View')"
-                                wire:click="openDetail({{ $spam->id }})" />
+                                wire:click="openDetail({{ $spam->id }})" :aria-label="__('View')" />
                             <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
                                 :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $spam->id }})" />
+                                wire:click="confirmDelete({{ $spam->id }})" :aria-label="__('Delete')" />
                         </x-admin.shared.row-actions>
                     @endscope
                 </x-table>

@@ -99,7 +99,7 @@
                     <x-slot:menu>
                         @if ($editing !== 'details')
                             <x-button icon="o-pencil-square" class="btn-ghost btn-xs btn-circle"
-                                :tooltip="__('Edit')" wire:click="editDetails" />
+                                :tooltip="__('Edit')" wire:click="editDetails" :aria-label="__('Edit')" />
                         @endif
                     </x-slot:menu>
                 @endif
@@ -195,7 +195,7 @@
                         <x-slot:menu>
                             @if ($editing !== 'agenda')
                                 <x-button icon="o-pencil-square" class="btn-ghost btn-xs btn-circle"
-                                    :tooltip="__('Edit')" wire:click="editAgenda" />
+                                    :tooltip="__('Edit')" wire:click="editAgenda" :aria-label="__('Edit')" />
                             @endif
                         </x-slot:menu>
                     @endif
@@ -410,12 +410,12 @@
                                         @if ($reg->status !== \App\Domains\Shared\Enums\MeetingUserStatusEnum::ATTENDED)
                                             <x-button icon="o-check" class="btn-ghost btn-xs btn-circle"
                                                 :tooltip="__('Mark attended')"
-                                                wire:click="markAttended({{ $user->id }})" />
+                                                wire:click="markAttended({{ $user->id }})" :aria-label="__('Mark attended')" />
                                         @endif
                                         @if ($reg->status !== \App\Domains\Shared\Enums\MeetingUserStatusEnum::ABSENT)
                                             <x-button icon="o-x-mark" class="btn-ghost btn-xs btn-circle"
                                                 :tooltip="__('Mark absent')"
-                                                wire:click="markAbsent({{ $user->id }})" />
+                                                wire:click="markAbsent({{ $user->id }})" :aria-label="__('Mark absent')" />
                                         @endif
                                     @endif
                                 </div>
@@ -504,7 +504,7 @@
                         @endif
                         @if ($this->canManage && $editing !== 'quorum')
                             <x-button icon="o-pencil-square" class="btn-ghost btn-xs btn-circle"
-                                :tooltip="__('Edit')" wire:click="editQuorum" />
+                                :tooltip="__('Edit')" wire:click="editQuorum" :aria-label="__('Edit')" />
                         @endif
                     </x-slot:menu>
 
@@ -554,7 +554,7 @@
                     <x-slot:menu>
                         @if ($editing !== 'meal')
                             <x-button icon="o-pencil-square" class="btn-ghost btn-xs btn-circle"
-                                :tooltip="__('Edit')" wire:click="editMeal" />
+                                :tooltip="__('Edit')" wire:click="editMeal" :aria-label="__('Edit')" />
                         @endif
                     </x-slot:menu>
 

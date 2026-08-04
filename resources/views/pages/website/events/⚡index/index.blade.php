@@ -108,19 +108,19 @@
                             @if ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT)
                                 <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
                                     :tooltip="__('Publish')"
-                                    wire:click="publish({{ $event->id }})" spinner />
+                                    wire:click="publish({{ $event->id }})" spinner :aria-label="__('Publish')" />
                             @elseif ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
                                 <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
                                     :tooltip="__('Archive')"
-                                    wire:click="archive({{ $event->id }})" spinner />
+                                    wire:click="archive({{ $event->id }})" spinner :aria-label="__('Archive')" />
                             @endif
                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
                                 :tooltip="__('Edit')"
-                                wire:click="openEdit({{ $event->id }})" />
+                                wire:click="openEdit({{ $event->id }})" :aria-label="__('Edit')" />
                             @if ($event->canBeDeleted())
                                 <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
                                     :tooltip="__('Delete')"
-                                    wire:click="confirmDelete({{ $event->id }})" />
+                                    wire:click="confirmDelete({{ $event->id }})" :aria-label="__('Delete')" />
                             @endif
                         </x-admin.shared.row-actions>
                     @endif
@@ -207,19 +207,19 @@
                             @if ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT)
                                 <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
                                     :tooltip="__('Publish')"
-                                    wire:click="publish({{ $event->id }})" spinner />
+                                    wire:click="publish({{ $event->id }})" spinner :aria-label="__('Publish')" />
                             @elseif ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
                                 <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
                                     :tooltip="__('Archive')"
-                                    wire:click="archive({{ $event->id }})" spinner />
+                                    wire:click="archive({{ $event->id }})" spinner :aria-label="__('Archive')" />
                             @endif
                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
                                 :tooltip="__('Edit')"
-                                wire:click="openEdit({{ $event->id }})" />
+                                wire:click="openEdit({{ $event->id }})" :aria-label="__('Edit')" />
                             @if ($event->canBeDeleted())
                                 <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
                                     :tooltip="__('Delete')"
-                                    wire:click="confirmDelete({{ $event->id }})" />
+                                    wire:click="confirmDelete({{ $event->id }})" :aria-label="__('Delete')" />
                             @endif
                         </x-admin.shared.row-actions>
                     @endscope

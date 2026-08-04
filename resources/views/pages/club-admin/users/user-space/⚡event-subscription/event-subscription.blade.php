@@ -94,7 +94,7 @@
                                             value="{{ $myPair->player1_id === $this->user->id ? $myPair->player2?->full_name : $myPair->player1?->full_name }}" />
                                         <x-button class="btn-ghost btn-xs text-error" icon="o-x-mark"
                                             :tooltip="__('Remove pair')"
-                                            wire:click="removeFromPair({{ $tournament->id }})" />
+                                            wire:click="removeFromPair({{ $tournament->id }})" :aria-label="__('Remove pair')" />
                                     @elseif ($partnerTournamentId === $tournament->id)
                                         <x-select wire:model.live="selectedPartnerId"
                                             :options="$this->availablePartners"
@@ -118,8 +118,7 @@
                                     icon="o-x-mark"
                                     :tooltip="__('Cancel registration')"
                                     spinner="cancelRegistration"
-                                    wire:click="openCancelConfirm({{ $tournament->id }})"
-                                />
+                                    wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Cancel registration')" />
                             @elseif ($isSpotOffered)
                                 @if ($reg->confirmation_deadline)
                                     <span class="hidden text-xs text-base-content/50 sm:inline">
@@ -142,8 +141,7 @@
                                     icon="o-x-mark"
                                     :tooltip="__('Decline this spot')"
                                     spinner="cancelRegistration"
-                                    wire:click="openCancelConfirm({{ $tournament->id }})"
-                                />
+                                    wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Decline this spot')" />
                             @elseif ($isWaiting)
                                 <x-admin.shared.status-badge status="waiting" :detail="$reg->waitlist_position" />
                                 <x-button
@@ -151,8 +149,7 @@
                                     icon="o-x-mark"
                                     :tooltip="__('Leave waitlist')"
                                     spinner="cancelRegistration"
-                                    wire:click="openCancelConfirm({{ $tournament->id }})"
-                                />
+                                    wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Leave waitlist')" />
                             @elseif ($isFull)
                                 <x-admin.shared.status-badge status="full" />
                                 <x-button

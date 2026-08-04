@@ -116,12 +116,12 @@
                             @if ($this->canManage)
                                 <x-button class="btn-ghost btn-sm btn-circle" icon="o-cog-6-tooth"
                                     :tooltip="__('Settings')"
-                                    link="{{ route('admin.tournaments.wizard.edit', $tournament) }}" />
+                                    link="{{ route('admin.tournaments.wizard.edit', $tournament) }}" :aria-label="__('Settings')" />
                             @endif
                             @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
                                 <x-button class="btn-ghost btn-sm btn-circle" icon="o-rocket-launch"
                                     :tooltip="__('Live Center')"
-                                    link="{{ route('admin.tournaments.live-center', $tournament->id) }}" />
+                                    link="{{ route('admin.tournaments.live-center', $tournament->id) }}" :aria-label="__('Live Center')" />
                             @endif
                             @if ($this->canManage)
                                 <livewire:admin.shared.event-post-button
@@ -246,12 +246,12 @@
                             @if ($this->canManage)
                                 <x-button class="btn-ghost btn-sm btn-circle" icon="o-cog-6-tooth"
                                     :tooltip="__('Settings')"
-                                    link="{{ route('admin.tournaments.wizard.edit', $tournament) }}" />
+                                    link="{{ route('admin.tournaments.wizard.edit', $tournament) }}" :aria-label="__('Settings')" />
                             @endif
                             @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
                                 <x-button class="btn-ghost btn-sm btn-circle" icon="o-rocket-launch"
                                     :tooltip="__('Live Center')"
-                                    link="{{ route('admin.tournaments.live-center', $tournament->id) }}" />
+                                    link="{{ route('admin.tournaments.live-center', $tournament->id) }}" :aria-label="__('Live Center')" />
                             @endif
                         </x-admin.shared.row-actions>
                     @endscope

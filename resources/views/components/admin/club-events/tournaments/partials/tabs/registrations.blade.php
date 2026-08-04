@@ -54,13 +54,13 @@
                     <div class="flex flex-row">
                         <x-button icon="o-check" class="btn-ghost btn-sm text-success"
                             tooltip-left="{{ __('Confirm presence') }}"
-                            wire:click="confirmPresence({{ $row['id'] }})" wire:loading.attr="disabled" />
+                            wire:click="confirmPresence({{ $row['id'] }})" wire:loading.attr="disabled" aria-label="{{ __('Confirm presence') }}" />
                         <x-button icon="o-no-symbol" class="btn-ghost btn-sm text-warning-content"
                             tooltip-left="{{ __('No show') }}"
-                            wire:click="markNoShow({{ $row['id'] }})" />
+                            wire:click="markNoShow({{ $row['id'] }})" aria-label="{{ __('No show') }}" />
                         <x-button icon="o-trash" class="btn-ghost btn-sm text-error"
                             tooltip-left="{{ __('Cancel registration') }}"
-                            wire:click="cancelUserRegistration({{ $row['id'] }})" />
+                            wire:click="cancelUserRegistration({{ $row['id'] }})" aria-label="{{ __('Cancel registration') }}" />
                     </div>
                 @endscope
             </x-table>
@@ -108,10 +108,10 @@
                                 <x-button icon="o-arrow-up-circle" class="btn-ghost btn-xs text-success"
                                     :tooltip="__('Promote to registered')"
                                     wire:click="promoteFromWaitlist({{ $entry['id'] }})"
-                                    :disabled="$maxUsers > 0 && $this->registrations->count() >= $maxUsers" />
+                                    :disabled="$maxUsers > 0 && $this->registrations->count() >= $maxUsers" :aria-label="__('Promote to registered')" />
                                 <x-button icon="o-x-mark" class="btn-ghost btn-xs text-error"
                                     :tooltip="__('Remove from waitlist')"
-                                    wire:click="removeFromWaitlist({{ $entry['id'] }})" />
+                                    wire:click="removeFromWaitlist({{ $entry['id'] }})" :aria-label="__('Remove from waitlist')" />
                             </div>
                         </div>
                     @endforeach

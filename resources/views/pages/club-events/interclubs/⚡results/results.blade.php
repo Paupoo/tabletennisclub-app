@@ -88,7 +88,9 @@
                                                         <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">{{ $teamStats['win_rate'] }}%</span>
                                                     @endif
                                                 </div>
-                                                <button type="button" @click="open = !open" class="rounded p-1 hover:bg-base-200 transition-colors">
+                                                <button type="button" @click="open = !open" class="rounded p-1 hover:bg-base-200 transition-colors"
+                                                    :aria-expanded="open ? 'true' : 'false'"
+                                                    aria-label="{{ __('Show or hide the team') }}">
                                                     <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
                                                 </button>
                                             </div>
@@ -190,8 +192,10 @@
                                                                     <td class="py-2 text-right">
                                                                         <div class="flex justify-end gap-1">
                                                                             <x-button class="btn-ghost btn-xs" icon="o-pencil"
+                                                                                :aria-label="__('Edit the result')"
                                                                                 wire:click="openEditModal({{ $mr->id }})" />
                                                                             <x-button class="btn-ghost btn-xs text-error" icon="o-trash"
+                                                                                :aria-label="__('Delete the result')"
                                                                                 wire:click="confirmDelete({{ $mr->id }})" />
                                                                         </div>
                                                                     </td>

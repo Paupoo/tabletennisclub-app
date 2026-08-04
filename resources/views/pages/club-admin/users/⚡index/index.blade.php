@@ -135,7 +135,7 @@
                         <x-admin.shared.row-actions>
                             @can('update', $user)
                                 <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                    :tooltip="__('Edit')" link="{{ route('admin.users.edit', $user) }}" />
+                                    :tooltip="__('Edit')" link="{{ route('admin.users.edit', $user) }}" :aria-label="__('Edit')" />
                             @endcan
                             @if ($invStatus !== 'active')
                                 @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
@@ -144,17 +144,17 @@
                                          password on somebody else's account. --}}
                                     @if ($user->email === null)
                                         <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope" disabled
-                                            :tooltip="__('This member has no address of their own yet, so they cannot be invited.')" />
+                                            :tooltip="__('This member has no address of their own yet, so they cannot be invited.')" :aria-label="__('This member has no address of their own yet, so they cannot be invited.')" />
                                     @else
                                         <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
                                             :tooltip="__('Resend invitation')"
-                                            wire:click="sendInvitation({{ $user->id }})" spinner />
+                                            wire:click="sendInvitation({{ $user->id }})" spinner :aria-label="__('Resend invitation')" />
                                     @endif
                                 @endcan
                             @endif
                             @can('delete', $user)
                                 <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-archive-box"
-                                    :tooltip="__('Archive')" wire:click="confirmDelete({{ $user->id }})" />
+                                    :tooltip="__('Archive')" wire:click="confirmDelete({{ $user->id }})" :aria-label="__('Archive')" />
                             @endcan
                         </x-admin.shared.row-actions>
                     @endif
@@ -224,18 +224,18 @@
                             <x-admin.shared.row-actions>
                                 @can('update', $user)
                                     <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                        :tooltip="__('Edit')" link="{{ route('admin.users.edit', $user->id) }}" />
+                                        :tooltip="__('Edit')" link="{{ route('admin.users.edit', $user->id) }}" :aria-label="__('Edit')" />
                                 @endcan
                                 @if ($invStatus !== 'active')
                                     @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
                                         {{-- Same rule as the mobile list: no address, no login to hand over. --}}
                                         @if ($user->email === null)
                                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope" disabled
-                                                :tooltip="__('This member has no address of their own yet, so they cannot be invited.')" />
+                                                :tooltip="__('This member has no address of their own yet, so they cannot be invited.')" :aria-label="__('This member has no address of their own yet, so they cannot be invited.')" />
                                         @else
                                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
                                                 :tooltip="__('Resend invitation')"
-                                                wire:click="sendInvitation({{ $user->id }})" spinner />
+                                                wire:click="sendInvitation({{ $user->id }})" spinner :aria-label="__('Resend invitation')" />
                                         @endif
                                     @endcan
                                 @endif
@@ -243,13 +243,13 @@
                                     @if ($user->trashed())
                                         <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-arrow-path"
                                             :tooltip="__('Restore')"
-                                            wire:click="restoreUser({{ $user->id }})" spinner />
+                                            wire:click="restoreUser({{ $user->id }})" spinner :aria-label="__('Restore')" />
                                     @else
                                         <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-archive-box"
-                                            :tooltip="__('Archive')" wire:click="confirmDelete({{ $user->id }})" />
+                                            :tooltip="__('Archive')" wire:click="confirmDelete({{ $user->id }})" :aria-label="__('Archive')" />
                                         <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-no-symbol"
                                             :tooltip="__('Anonymize (GDPR)')"
-                                            wire:click="openAnonymizeModal({{ $user->id }})" />
+                                            wire:click="openAnonymizeModal({{ $user->id }})" :aria-label="__('Anonymize (GDPR)')" />
                                     @endif
                                 @endcan
                             </x-admin.shared.row-actions>

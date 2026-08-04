@@ -73,12 +73,12 @@
                                 class="btn-ghost btn-sm btn-circle"
                                 icon="o-pencil"
                                 :tooltip="__('Edit')"
-                                wire:click="openEditModal({{ $club->id }})" />
+                                wire:click="openEditModal({{ $club->id }})" :aria-label="__('Edit')" />
                             <x-button
                                 class="btn-ghost btn-sm btn-circle text-error"
                                 icon="o-trash"
                                 :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $club->id }})" />
+                                wire:click="confirmDelete({{ $club->id }})" :aria-label="__('Delete')" />
                         </div>
                     </div>
                 @endforeach

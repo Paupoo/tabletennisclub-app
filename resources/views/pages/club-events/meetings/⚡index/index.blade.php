@@ -91,7 +91,7 @@
                         <x-admin.shared.row-actions>
                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
                                 :tooltip="__('View')"
-                                link="{{ route('admin.meetings.show', $meeting) }}" />
+                                link="{{ route('admin.meetings.show', $meeting) }}" :aria-label="__('View')" />
                         </x-admin.shared.row-actions>
                     @endif
                 </x-slot:actions>
@@ -163,7 +163,7 @@
                         <x-admin.shared.row-actions>
                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
                                 :tooltip="__('View')"
-                                link="{{ route('admin.meetings.show', $meeting) }}" />
+                                link="{{ route('admin.meetings.show', $meeting) }}" :aria-label="__('View')" />
                         </x-admin.shared.row-actions>
                     @endscope
                 </x-table>

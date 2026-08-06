@@ -59,8 +59,11 @@
                         </div>
                     @endif
 
+                    {{-- Mary pose son label dans un <legend> : cela nomme le groupe,
+                    pas le curseur. L'aria-label nomme le curseur lui-même. --}}
                     <x-range
                         :label="__('Core size (players per team)')"
+                        :aria-label="__('Core size (players per team)')"
                         wire:model.live="nucleusSize"
                         min="5"
                         max="20"

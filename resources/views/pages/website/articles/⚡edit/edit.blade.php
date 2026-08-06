@@ -41,7 +41,9 @@
                             wire:click="removeImage" />
                     </div>
                 @endif
-                <x-file wire:model="image" label="{{ $existingImage ? 'Remplacer' : 'Choisir une image' }}"
+                <x-file wire:model="image"
+                    :label="$existingImage ? __('Replace the image') : __('Choose an image')"
+                    :aria-label="$existingImage ? __('Replace the image') : __('Choose an image')"
                     accept="image/*" hint="JPG, PNG, WebP — max 4 Mo" />
                 @error('image')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>

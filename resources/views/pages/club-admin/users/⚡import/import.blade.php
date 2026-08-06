@@ -25,7 +25,8 @@
                         {{ __('No email is sent by an import, ever. Members are invited later, from the members list, when the committee decides to.') }}
                     </x-alert>
 
-                    <x-file wire:model="importFile" :label="__('Affiliate listing')" accept=".csv,.txt"
+                    <x-file wire:model="importFile" :label="__('Affiliate listing')"
+                        :aria-label="__('Affiliate listing')" accept=".csv,.txt"
                         hint="CSV · {{ __('semicolon separated, as exported') }}" />
 
                     <p class="text-xs opacity-50">

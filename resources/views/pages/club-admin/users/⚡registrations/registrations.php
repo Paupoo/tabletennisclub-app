@@ -36,6 +36,7 @@ use App\Livewire\Concerns\HasFilterDrawer;
 use App\Livewire\Concerns\ManagesGuardians;
 use App\Mail\PaymentInvitationEmail;
 use App\Support\Breadcrumb;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -47,11 +48,12 @@ use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasBreadcrumbs, HasFilterDrawer, ManagesGuardians, Toast;
+    use HasBreadcrumbs, HasFilterDrawer, ManagesGuardians, Toast, WithPagination;
 
     /** Résultats de recherche affichés dans le drawer ; au-delà, on annonce le reste. */
     private const int SEARCH_RESULTS_SHOWN = 5;
@@ -1000,10 +1002,15 @@ new class extends Component
         ];
     }
 
-    public function registrations(): Collection
+    /**
+     * La liste affichée, paginée.
+     *
+     * Elle rendait toute la saison d'un coup — 144 lignes sur la base de dev, et
+     * l'écran n'en montre qu'une dizaine. Le tri par statut passe en SQL pour que
+     * la pagination porte sur l'ordre réel et non sur un tri fait après coup.
+     */
+    public function registrations(): LengthAwarePaginator
     {
-        $statusOrder = ['pending' => 1, 'confirmed' => 2, 'paid' => 3, 'refunded' => 4, 'cancelled' => 5];
-
         return Subscription::with(['user', 'trainingPacks', 'payments'])
             ->when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId))
             ->when($this->statusFilter, fn ($q) => $this->statusFilter === 'pending'
@@ -1020,9 +1027,32 @@ new class extends Component
                 ->where('first_name', 'like', "%{$this->search}%")
                 ->orWhere('last_name', 'like', "%{$this->search}%")
             ))
-            ->get()
-            ->sortBy(fn ($sub): int => $statusOrder[$sub->status] ?? 5)
-            ->map(function (Subscription $sub) {
+            ->orderByRaw("CASE status WHEN 'pending' THEN 1 WHEN 'confirmed' THEN 2 WHEN 'paid' THEN 3 WHEN 'refunded' THEN 4 ELSE 5 END")
+            ->paginate(20)
+            ->through(fn (Subscription $sub) => $this->toRow($sub));
+    }
+
+    /**
+     * Une ligne isolée, retrouvée par son identifiant.
+     *
+     * Les modales cherchaient leur ligne dans la liste affichée ; depuis qu'elle
+     * est paginée, la ligne visée peut vivre sur une autre page.
+     */
+    public function registrationRow(?int $id): ?object
+    {
+        if ($id === null) {
+            return null;
+        }
+
+        $subscription = Subscription::with(['user', 'trainingPacks', 'payments'])->find($id);
+
+        return $subscription === null ? null : $this->toRow($subscription);
+    }
+
+    /** @return object la forme qu'attendent la liste et les modales */
+    private function toRow(Subscription $sub): object
+    {
+        return (function (Subscription $sub) {
                 $enrolledPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'enrolled');
                 $pendingPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'pending');
                 $cancelledPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'cancelled');
@@ -1067,7 +1097,7 @@ new class extends Component
                     ])->values()->toArray(),
                     'payment_status' => $sub->payments->sortByDesc('created_at')->first()?->status,
                 ];
-            });
+        })($sub);
     }
 
     public function reject(): void
@@ -1678,9 +1708,7 @@ new class extends Component
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
             'filterChips' => $this->filterChips,
-            'currentRequest' => $this->currentRequestId
-                ? $this->registrations()->firstWhere('id', $this->currentRequestId)
-                : null,
+            'currentRequest' => $this->registrationRow($this->currentRequestId),
             'currentTrainingRequest' => $this->currentTrainingRequestId
                 ? Subscription::with(['user', 'trainingPacks' => fn ($q) => $q->wherePivot('status', 'pending')])
                     ->find($this->currentTrainingRequestId)

@@ -1257,6 +1257,7 @@
     "to": "tot",
     "via :guardian": "via :guardian",
     "you": "jij",
+    "{1} :count field changed|[2,*] :count fields changed": "{1} :count veld gewijzigd|[2,*] :count velden gewijzigd",
     "⚠️ This member still has a subscription awaiting payment — reconcile the finances before anonymizing.": "⚠️ Dit lid heeft nog een aansluiting in afwachting van betaling — verzoen de financiën vóór anonimisering.",
     "Gender": "Geslacht",
     "General Assembly": "Algemene vergadering",

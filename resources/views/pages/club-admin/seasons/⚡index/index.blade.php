@@ -103,14 +103,9 @@
     </div>
 
     {{-- ── Auto-provision info ─────────────────────────────────────────────── --}}
-    <div class="mt-6 rounded-xl border border-base-200 bg-base-100 p-4 text-sm text-base-content/60">
-        <div class="flex items-start gap-3">
-            <x-icon class="mt-0.5 h-4 w-4 shrink-0 text-info" name="o-information-circle" />
-            <p>
-                {{ __('Every year on July 1st, the application automatically provisions the next two upcoming seasons (September → June). Use "Auto-provision" to trigger this manually, or "New season" to create a custom one.') }}
-            </p>
-        </div>
-    </div>
+    <x-admin.shared.info-alert class="mt-6">
+        {{ __('Every year on July 1st, the application automatically provisions the next two upcoming seasons (September → June). Use "Auto-provision" to trigger this manually, or "New season" to create a custom one.') }}
+    </x-admin.shared.info-alert>
 
     {{-- ================================================================
          PROVISION MODAL

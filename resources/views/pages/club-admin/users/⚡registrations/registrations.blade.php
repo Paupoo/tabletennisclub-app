@@ -175,6 +175,12 @@
                 :heading="__('No affiliations yet')"
                 :filtered="count($filterChips) > 0 || filled($search)" />
         @endforelse
+
+        @if ($registrations->hasPages())
+            <div class="mt-2">
+                {{ $registrations->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop (table) ────────────────────────────────────────── --}}
@@ -250,6 +256,10 @@
                         </div>
                     @endscope
                 </x-table>
+
+                <div class="mt-4">
+                    {{ $registrations->links() }}
+                </div>
             @endif
         </x-card>
     </div>
@@ -1182,7 +1192,8 @@
 
     {{-- ── Modal remboursement ───────────────────────────────────────── --}}
     @php
-        $refundSub  = $refundSubscriptionId ? $this->registrations()->firstWhere('id', $refundSubscriptionId) : null;
+        // La liste est paginée : la ligne visée peut vivre sur une autre page.
+        $refundSub  = $this->registrationRow($refundSubscriptionId);
         $refundPack = $refundPackId ? $refundSub?->enrolled_packs->firstWhere('id', $refundPackId) : null;
     @endphp
     @can('subscriptions.manage')

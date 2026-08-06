@@ -182,18 +182,33 @@
                     </div>
                 </div>
                 @else
-                {{-- Modification / suppression : diff inline --}}
-                <div class="space-y-0.5">
-                    @foreach ($changes['attributes'] as $field => $newValue)
-                    <div class="text-xs">
-                        <span class="font-semibold opacity-70">{{ $field }}:</span>
-                        @if (isset($changes['old'][$field]) && $changes['old'][$field] !== null && $changes['old'][$field] !== '')
-                        <span class="text-error/70 line-through">{{ $formatValue($changes['old'][$field]) }}</span>
-                        <span class="opacity-40">→</span>
-                        @endif
-                        <span class="text-success/80">{{ $formatValue($newValue) ?: '—' }}</span>
+                {{-- Modification / suppression : le diff est inline tant qu'il se lit
+                d'un coup d'œil. Au-delà de trois champs il se replie, comme la
+                création juste au-dessus : une modification de masse déversait
+                jusqu'à 649 caractères dans une cellule, qui étirait la ligne et
+                repoussait le reste du tableau hors de l'écran. --}}
+                @php $isLongDiff = count($changes['attributes']) > 3; @endphp
+                <div @if ($isLongDiff) x-data="{ open: false }" @endif class="space-y-0.5">
+                    @if ($isLongDiff)
+                    <button type="button" @click="open = !open"
+                        class="inline-flex items-center gap-1 py-1 text-xs text-primary hover:underline">
+                        <x-icon name="o-eye" class="h-3.5 w-3.5" />
+                        <span x-show="!open">{{ trans_choice('{1} :count field changed|[2,*] :count fields changed', count($changes['attributes']), ['count' => count($changes['attributes'])]) }}</span>
+                        <span x-show="open" style="display:none">{{ __('Hide details') }}</span>
+                    </button>
+                    @endif
+                    <div @if ($isLongDiff) x-show="open" x-transition style="display:none" @endif class="space-y-0.5">
+                        @foreach ($changes['attributes'] as $field => $newValue)
+                        <div class="text-xs">
+                            <span class="font-semibold opacity-70">{{ $field }}:</span>
+                            @if (isset($changes['old'][$field]) && $changes['old'][$field] !== null && $changes['old'][$field] !== '')
+                            <span class="text-error/70 line-through">{{ $formatValue($changes['old'][$field]) }}</span>
+                            <span class="opacity-40">→</span>
+                            @endif
+                            <span class="text-success/80">{{ $formatValue($newValue) ?: '—' }}</span>
+                        </div>
+                        @endforeach
                     </div>
-                    @endforeach
                 </div>
                 @endif
             @else

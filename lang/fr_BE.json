@@ -1251,6 +1251,7 @@
     "to": "à",
     "via :guardian": "via :guardian",
     "you": "vous",
+    "{1} :count field changed|[2,*] :count fields changed": "{1} :count champ modifié|[2,*] :count champs modifiés",
     "⚠️ This member still has a subscription awaiting payment — reconcile the finances before anonymizing.": "⚠️ Ce membre a encore une affiliation en attente de paiement — réconciliez les finances avant d'anonymiser.",
     "Gender": "Genre",
     "General Assembly": "Assemblée générale",

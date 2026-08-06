@@ -100,38 +100,43 @@
                     default      => ['label' => __('Not invited'),'class' => 'badge-ghost badge-xs'],
                 };
             @endphp
-            <x-list-item :item="$user" class="bg-base-100 rounded-lg border"
+            {{-- <x-list-item> pose l'identité et les actions sur une même ligne. Depuis
+            que chaque ligne porte une action nommée, « Modifier » et « Plus » prennent
+            156 px des 335 de la carte : il en restait 81 pour le nom, et « Gilles Bernard »
+            y était déjà coupé. Sur un téléphone, l'identité prend la largeur et les
+            actions passent dessous — le gabarit que la trésorerie utilise déjà. --}}
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3"
                 wire:key="mobile-user-{{ $user->id }}">
-                <x-slot:avatar>
+                <div class="flex items-start gap-3">
                     @if ($selectionModeActive)
                         <input type="checkbox"
-                            class="checkbox checkbox-primary checkbox-sm"
+                            class="checkbox checkbox-primary checkbox-sm mt-1 shrink-0"
                             value="{{ $user->id }}"
                             wire:model.live="selected" />
                     @else
-                        <x-avatar :image="$user->photo ?? '/images/empty-user.jpg'" class="w-10!" />
+                        <x-avatar :image="$user->photo ?? '/images/empty-user.jpg'" class="w-10! shrink-0" />
                     @endif
-                </x-slot:avatar>
-                <x-slot:value>
-                    <span class="font-medium">{{ $user->first_name }} {{ $user->last_name }}</span>
-                </x-slot:value>
-                <x-slot:sub-value>
-                    <div class="mt-0.5 flex flex-wrap items-center gap-1.5">
-                        @if ($user->is_competitor)
-                            <x-badge :value="__('Competitive')" class="badge-primary badge-soft badge-sm" />
-                        @else
-                            <x-badge :value="__('Recreational')" class="badge-ghost badge-sm" />
-                        @endif
-                        <x-badge :value="$invBadge['label']" class="{{ $invBadge['class'] }}" />
-                        @if ($user->has_paid)
-                            <x-badge :value="__('Paid')" class="badge-success badge-soft badge-xs" />
-                        @else
-                            <x-badge :value="__('Unpaid')" class="badge-error badge-soft badge-xs" />
-                        @endif
-                        <span class="text-xs text-muted">{{ $user->email }}</span>
+
+                    <div class="min-w-0 flex-1">
+                        <div class="font-medium">{{ $user->first_name }} {{ $user->last_name }}</div>
+                        <div class="truncate text-xs text-muted">{{ $user->email }}</div>
+                        <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                            @if ($user->is_competitor)
+                                <x-badge :value="__('Competitive')" class="badge-primary badge-soft badge-sm" />
+                            @else
+                                <x-badge :value="__('Recreational')" class="badge-ghost badge-sm" />
+                            @endif
+                            <x-badge :value="$invBadge['label']" class="{{ $invBadge['class'] }}" />
+                            @if ($user->has_paid)
+                                <x-badge :value="__('Paid')" class="badge-success badge-soft badge-xs" />
+                            @else
+                                <x-badge :value="__('Unpaid')" class="badge-error badge-soft badge-xs" />
+                            @endif
+                        </div>
                     </div>
-                </x-slot:sub-value>
-                <x-slot:actions>
+                </div>
+
+                <div class="mt-3">
                     @if (! $selectionModeActive)
                         <x-admin.shared.row-menu
                             :label="auth()->user()->can('update', $user) ? __('Edit') : null"
@@ -167,8 +172,8 @@
                             @endif
                         </x-admin.shared.row-menu>
                     @endif
-                </x-slot:actions>
-            </x-list-item>
+                </div>
+            </div>
         @empty
             <x-admin.shared.list-empty-state
                 icon="o-users"

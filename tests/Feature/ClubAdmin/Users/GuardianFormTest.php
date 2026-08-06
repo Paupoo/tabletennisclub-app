@@ -13,6 +13,10 @@ uses(RefreshDatabase::class);
 
 pest()->group('club-admin', 'users', 'guardian');
 
+// La phrase entière : le test lisait un préfixe anglais, disparu quand la
+// chaîne est passée en français.
+const MINOR_ALERT_KEY = 'This member is a minor without a legal guardian. Add one below — it is required before they can be set as an active (affiliated) member.';
+
 const GUARDIAN_FORM_COMPONENT = 'pages::club-admin.users.form';
 
 beforeEach(function (): void {
@@ -25,9 +29,9 @@ describe('minor detection in the admin form', function (): void {
         $user = User::factory()->create(['birthdate' => now()->subYears(25)]);
 
         Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
-            ->assertDontSee(__('This member is a minor'))
+            ->assertDontSee(__(MINOR_ALERT_KEY))
             ->set('birthdate', now()->subYears(15)->format('Y-m-d'))
-            ->assertSee(__('This member is a minor'));
+            ->assertSee(__(MINOR_ALERT_KEY));
     });
 
     it('hides the minor alert once a guardian is linked', function (): void {
@@ -35,9 +39,9 @@ describe('minor detection in the admin form', function (): void {
         $guardian = Guardian::factory()->create();
 
         Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
-            ->assertSee(__('This member is a minor'))
+            ->assertSee(__(MINOR_ALERT_KEY))
             ->call('attachGuardian', $guardian->id)
-            ->assertDontSee(__('This member is a minor'));
+            ->assertDontSee(__(MINOR_ALERT_KEY));
     });
 });
 
@@ -146,7 +150,7 @@ describe('guardian management from the form', function (): void {
 
         Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
             ->assertSet('guardianIds', [$guardian->id])
-            ->assertDontSee(__('This member is a minor'));
+            ->assertDontSee(__(MINOR_ALERT_KEY));
     });
 });
 

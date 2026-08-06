@@ -25,12 +25,12 @@ final class Breadcrumb
 
     public function articles(?string $url = null): Breadcrumb
     {
-        return $this->add('Articles', $url ?: route('admin.website.articles.index'), 's-home');
+        return $this->add(__('Articles'), $url ?: route('admin.website.articles.index'), 's-home');
     }
 
     public function contacts(?string $url = null): Breadcrumb
     {
-        return $this->add('Contacts', $url ?: route('admin.website.contacts.index'));
+        return $this->add(__('Contacts'), $url ?: route('admin.website.contacts.index'));
     }
 
     public function current(string $title): Breadcrumb
@@ -40,7 +40,7 @@ final class Breadcrumb
 
     public function events(?string $url = null): Breadcrumb
     {
-        return $this->add('Events', $url ?: route('eventPosts'), 's-home');
+        return $this->add(__('Events'), $url ?: route('eventPosts'), 's-home');
     }
 
     public function home(?string $url = null): Breadcrumb
@@ -50,7 +50,7 @@ final class Breadcrumb
 
     public function matches(?string $url = null): Breadcrumb
     {
-        return $this->add('Matches', $url ?: route('admin.interclubs.interclubs'), 's-home');
+        return $this->add(__('Matches'), $url ?: route('admin.interclubs.interclubs'), 's-home');
     }
 
     public function meetings(?string $url = null): Breadcrumb
@@ -60,7 +60,7 @@ final class Breadcrumb
 
     public function profile(?string $url = null): Breadcrumb
     {
-        return $this->add('Profile', $url ?: route('profile.edit'));
+        return $this->add(__('Profile'), $url ?: route('profile.edit'));
     }
 
     public function results(?string $url = null): Breadcrumb
@@ -70,7 +70,7 @@ final class Breadcrumb
 
     public function rooms(?string $url = null): Breadcrumb
     {
-        return $this->add('Rooms', $url ?: route('admin.rooms.index'));
+        return $this->add(__('Rooms'), $url ?: route('admin.rooms.index'));
     }
 
     public function seasons(?string $url = null): Breadcrumb
@@ -80,7 +80,7 @@ final class Breadcrumb
 
     public function teams(?string $url = null): Breadcrumb
     {
-        return $this->add('Teams', $url ?: route('admin.interclubs.teams'));
+        return $this->add(__('Teams'), $url ?: route('admin.interclubs.teams'));
     }
 
     public function toArray(): array
@@ -95,22 +95,22 @@ final class Breadcrumb
 
     public function tournaments(?string $url = null): Breadcrumb
     {
-        return $this->add('Tournaments', $url ?: route('admin.tournaments.index'));
+        return $this->add(__('Tournaments'), $url ?: route('admin.tournaments.index'));
     }
 
     public function trainingPacks(?string $url = null): Breadcrumb
     {
-        return $this->add('Training Packs', $url ?: route('admin.trainings.index'));
+        return $this->add(__('Training Packs'), $url ?: route('admin.trainings.index'));
     }
 
     public function trainings(?string $url = null): Breadcrumb
     {
-        return $this->add('Trainings', $url ?: route('admin.trainings.index'));
+        return $this->add(__('Trainings'), $url ?: route('admin.trainings.index'));
     }
 
     public function users(?string $url = null): Breadcrumb
     {
-        return $this->add('Users', $url ?: route('admin.users.index'));
+        return $this->add(__('Users'), $url ?: route('admin.users.index'));
     }
 
     public function websiteArticles(?string $url = null): Breadcrumb

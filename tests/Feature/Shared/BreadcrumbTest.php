@@ -112,7 +112,7 @@ describe('Breadcrumb', function (): void {
             expect($items)->toHaveCount(4)
                 ->and($items[0]['label'])->toBe(__('Admin Panel'))
                 ->and($items[0]['icon'])->toBe('s-home')
-                ->and($items[1]['label'])->toBe('Tournaments')
+                ->and($items[1]['label'])->toBe(__('Tournaments'))
                 ->and($items[2]['label'])->toBe('World Cup 2024')
                 ->and($items[2]['link'])->toContain((string) $tournament->id)
                 ->and($items[3]['label'])->toBe('Edit')
@@ -132,7 +132,7 @@ describe('Breadcrumb', function (): void {
 
             expect($items)->toHaveCount(3)
                 ->and($items[0]['label'])->toBe(__('Admin Panel'))
-                ->and($items[1]['label'])->toBe('Users')
+                ->and($items[1]['label'])->toBe(__('Users'))
                 ->and($items[2]['label'])->toBe('Create User')
                 ->and($items[2]['link'])->toBe(null);
         });

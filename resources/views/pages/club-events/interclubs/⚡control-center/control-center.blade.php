@@ -278,7 +278,7 @@
     </x-drawer>
 
     {{-- MODAL MESSAGE --}}
-    <x-app-modal wire:model="modalMessage" :title="__('Last step')" separator>
+    <x-app-modal wire:model="modalMessage" :title="__('Last step')" separator :open="$modalMessage">
         <div class="space-y-4">
             <div class="flex items-center gap-3 rounded-xl border border-primary/10 bg-primary/5 p-3">
                 <x-icon name="o-information-circle" class="h-5 w-5 text-primary" />

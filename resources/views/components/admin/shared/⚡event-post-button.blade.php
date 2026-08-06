@@ -121,7 +121,7 @@ new class extends Component
     />
 
     {{-- ── Modal ───────────────────────────────────────────────────────── --}}
-    <x-app-modal :title="__('Publish on website')" wire:model="showModal" separator>
+    <x-app-modal :title="__('Publish on website')" wire:model="showModal" separator :open="$showModal">
 
         <x-admin.shared.event-post-form
             :event-post-id="$eventPostId"

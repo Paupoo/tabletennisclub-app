@@ -94,7 +94,7 @@ new class extends Component
 ?>
 
 <div>
-    <x-app-modal wire:model="isOpen" :title="__('Add Committee Member')" separator>
+    <x-app-modal wire:model="isOpen" :title="__('Add Committee Member')" separator :open="$isOpen">
         <div class="grid gap-4">
             <x-choices
                 :label="__('Search Member')"

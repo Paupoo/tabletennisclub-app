@@ -186,12 +186,12 @@
     </div>
 
     <x-confirm-modal model="unlinkModal" :title="__('Confirm unlink')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Unlink')" confirmAction="unlink">
+        :confirmLabel="__('Unlink')" confirmAction="unlink" :open="$unlinkModal">
         <p>{{ __('Are you sure you want to unlink the table from its room?') }}</p>
     </x-confirm-modal>
 
     <x-confirm-modal model="deleteModal" :title="__('Confirm deletion')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('Are you sure you want to delete this table? This action is irreversible.') }}</p>
     </x-confirm-modal>
 </div>

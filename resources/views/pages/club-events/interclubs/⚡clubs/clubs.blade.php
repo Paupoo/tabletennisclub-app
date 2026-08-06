@@ -87,7 +87,7 @@
     @endif
 
     {{-- Modal create / edit --}}
-    <x-app-modal wire:model="editModal" :title="$editingClubId ? __('Edit club') : __('New club')" separator>
+    <x-app-modal wire:model="editModal" :title="$editingClubId ? __('Edit club') : __('New club')" separator :open="$editModal">
         <div class="space-y-4">
             <x-input
                 :label="__('Club name')"
@@ -126,7 +126,7 @@
     </x-app-modal>
 
     <x-confirm-modal model="deleteModal" :title="__('Delete club?')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('Are you sure you want to delete this club? This action cannot be undone.') }}</p>
     </x-confirm-modal>
 </div>

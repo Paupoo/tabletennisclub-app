@@ -260,7 +260,7 @@
     is picked. Falling back to an empty string left the dialog nameless on first
     render, which is what a screen reader announces. --}}
     <x-app-modal wire:model="reviewModal" :title="$currentRequest?->name ?? __('Affiliation request')" separator
-        class="backdrop-blur-sm">
+        class="backdrop-blur-sm" :open="$reviewModal">
 
         {{-- Vue lecture seule pour confirmed/paid/cancelled --}}
         @if ($currentRequest && $currentRequest->status !== 'pending' && ! $paymentGenerated)
@@ -612,7 +612,7 @@
     </x-app-modal>
 
     {{-- ── Modal demande d'entraînement (Flux B) ───────────────────────── --}}
-    <x-app-modal wire:model="trainingRequestModal" :title="__('Training Request')" separator class="backdrop-blur-sm">
+    <x-app-modal wire:model="trainingRequestModal" :title="__('Training Request')" separator class="backdrop-blur-sm" :open="$trainingRequestModal">
 
         @if (! $paymentGenerated && $currentTrainingRequest)
             <div class="space-y-6">
@@ -1185,7 +1185,7 @@
         $refundPack = $refundPackId ? $refundSub?->enrolled_packs->firstWhere('id', $refundPackId) : null;
     @endphp
     @can('subscriptions.manage')
-    <x-app-modal wire:model="refundModal" :title="__('Remove & Refund')" separator class="backdrop-blur-sm">
+    <x-app-modal wire:model="refundModal" :title="__('Remove & Refund')" separator class="backdrop-blur-sm" :open="$refundModal">
         @if ($refundPack)
             <div class="space-y-4">
                 <p class="text-sm">
@@ -1221,7 +1221,7 @@
 
     {{-- ── Modal de réconciliation d'une ligne d'entraînement ─────────── --}}
     @can('subscriptions.manage')
-    <x-app-modal wire:model="reconcileModal" :title="__('Adjust training pack')" separator class="backdrop-blur-sm">
+    <x-app-modal wire:model="reconcileModal" :title="__('Adjust training pack')" separator class="backdrop-blur-sm" :open="$reconcileModal">
         @php
             $reconcile = $this->reconcilePreview;
         @endphp
@@ -1286,7 +1286,7 @@
 
     {{-- ── Modal d'annulation de cotisation (avec remboursement éventuel) ── --}}
     @can('subscriptions.manage')
-    <x-app-modal wire:model="cancelModal" :title="$this->subscriptionToCancel?->totalPaid() > 0 ? __('Cancel & refund') : __('Cancel subscription')" separator class="backdrop-blur-sm">
+    <x-app-modal wire:model="cancelModal" :title="$this->subscriptionToCancel?->totalPaid() > 0 ? __('Cancel & refund') : __('Cancel subscription')" separator class="backdrop-blur-sm" :open="$cancelModal">
         @if ($this->subscriptionToCancel)
             @php
                 $cancelUser = $this->subscriptionToCancel->user;

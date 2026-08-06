@@ -69,7 +69,7 @@
          CREATE / EDIT MODAL
     ================================================================ --}}
     <x-app-modal wire:model="formModal" separator
-        :title="$editingId ? __('Edit template') : __('New template')">
+        :title="$editingId ? __('Edit template') : __('New template')" :open="$formModal">
         <div class="space-y-4">
             <x-input :label="__('Name')" wire:model="formName"
                 :placeholder="__('E.g. Welcome message')" />
@@ -116,7 +116,7 @@
          DELETE MODAL
     ================================================================ --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete this template?')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Delete')" confirmAction="deleteTemplate">
+        :confirmLabel="__('Delete')" confirmAction="deleteTemplate" :open="$deleteModal">
         <p>{{ __('Are you sure you want to delete this template? This action is irreversible.') }}</p>
     </x-confirm-modal>
 </div>

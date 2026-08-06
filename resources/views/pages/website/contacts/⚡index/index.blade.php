@@ -380,7 +380,7 @@
     </x-drawer>
 
     {{-- ── Modal email personnalisé ──────────────────────────────────── --}}
-    <x-app-modal wire:model="emailModal" :title="__('Custom email')">
+    <x-app-modal wire:model="emailModal" :title="__('Custom email')" :open="$emailModal">
         <div class="space-y-4">
             <x-input :label="__('Subject')" wire:model="emailSubject" />
             <x-textarea :label="__('Message')" wire:model="emailBody" rows="6" />
@@ -398,14 +398,14 @@
 
     {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete this contact?')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('This action is irreversible.') }}</p>
     </x-confirm-modal>
 
     {{-- ── Modal confirmation de lien vers un compte existant ──────────── --}}
     <x-confirm-modal model="confirmLinkModal" :title="__('Link to existing account?')"
         :confirmLabel="__('Link to existing account')" confirmClass="btn-primary" confirmAction="linkToExistingUser"
-        cancelAction="cancelLink">
+        cancelAction="cancelLink" :open="$confirmLinkModal">
         @if ($linkTargetUser ?? null)
             <p>
                 {{ __('This email matches an existing member: :name.', ['name' => $linkTargetUser->first_name . ' ' . $linkTargetUser->last_name]) }}
@@ -418,7 +418,7 @@
 
     {{-- ── Modal suppression bulk ───────────────────────────────────── --}}
     <x-confirm-modal model="confirmBulkDeleteModal" :title="__('Delete selected contacts?')"
-        :confirmLabel="__('Delete')" confirmAction="bulkDelete">
+        :confirmLabel="__('Delete')" confirmAction="bulkDelete" :open="$confirmBulkDeleteModal">
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be permanently deleted.') }}

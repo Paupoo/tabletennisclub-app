@@ -121,7 +121,7 @@
     </div>
 
     {{-- ── Close registrations modal ─────────────────────────────── --}}
-    <x-app-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur">
+    <x-app-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur" :open="$showCloseRegistrationsModal">
         <div class="space-y-4">
             <div class="flex items-start gap-3 p-4 bg-error/10 border border-error/20 rounded-xl text-sm text-error">
                 <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5" />
@@ -149,7 +149,7 @@
     </x-app-modal>
 
     {{-- ── Open registrations modal ──────────────────────────────── --}}
-    <x-app-modal wire:model="showOpenRegistrationsModal" :title="__('Reopen registrations?')" class="backdrop-blur">
+    <x-app-modal wire:model="showOpenRegistrationsModal" :title="__('Reopen registrations?')" class="backdrop-blur" :open="$showOpenRegistrationsModal">
         <div class="p-4 bg-warning/10 border border-warning/20 rounded-xl flex items-start gap-3 text-sm">
             <x-icon name="o-information-circle" class="w-5 h-5 shrink-0 mt-0.5 text-warning-content" />
             <p>{{ __('Reopening registrations will set the tournament back to "published" status. The tournament cannot be started until registrations are closed again.') }}</p>

@@ -321,7 +321,7 @@
         :subtitle="__('Queue a payment reminder for each selected member.')"
         :confirm-label="__('Send')"
         confirmClass="btn-primary"
-        confirmAction="bulkSendReminder">
+        confirmAction="bulkSendReminder" :open="$bulkReminderModal">
         <p class="text-sm">
             {{ trans_choice('{1} Send :count reminder?|[2,*] Send :count reminders?', count($selected), ['count' => $selectingAllResults ? $this->getTotalMatchingCount() : count($selected)]) }}
         </p>
@@ -337,7 +337,7 @@
         :subtitle="__('Selected payments will be moved back to paid status. Payments already linked to a bank transaction will be skipped.')"
         :confirm-label="__('Confirm')"
         confirmClass="btn-warning"
-        confirmAction="bulkCancelRefund">
+        confirmAction="bulkCancelRefund" :open="$bulkCancelRefundModal">
         <p class="text-sm">
             {{ trans_choice('{1} Cancel :count refund?|[2,*] Cancel :count refunds?', count($selected), ['count' => $selectingAllResults ? $this->getTotalMatchingCount() : count($selected)]) }}
         </p>
@@ -405,7 +405,7 @@
     {{-- ========================================== --}}
     {{-- Modal : Réconciliation                     --}}
     {{-- ========================================== --}}
-    <x-app-modal wire:model="reconcileModal" :title="__('Reconcile Payment')" separator box-class="max-w-2xl">
+    <x-app-modal wire:model="reconcileModal" :title="__('Reconcile Payment')" separator box-class="max-w-2xl" :open="$reconcileModal">
 
         @if($currentPayment)
 
@@ -506,7 +506,7 @@
     {{-- ========================================== --}}
     {{-- Modal : Batch Auto-Réconciliation          --}}
     {{-- ========================================== --}}
-    <x-app-modal wire:model="batchModal" :title="__('Auto-match — Confirm reconciliations')" separator box-class="max-w-2xl">
+    <x-app-modal wire:model="batchModal" :title="__('Auto-match — Confirm reconciliations')" separator box-class="max-w-2xl" :open="$batchModal">
 
         <div class="space-y-4">
             <div class="flex items-start gap-3 p-3 rounded-xl bg-success/10 border border-success/20 text-sm">
@@ -556,7 +556,7 @@
     {{-- ========================================== --}}
     {{-- Modal : Réconciliation remboursement       --}}
     {{-- ========================================== --}}
-    <x-app-modal wire:model="refundModal" :title="__('Confirm Refund')" separator box-class="max-w-2xl">
+    <x-app-modal wire:model="refundModal" :title="__('Confirm Refund')" separator box-class="max-w-2xl" :open="$refundModal">
 
         @if($currentRefundPayment)
 
@@ -657,7 +657,7 @@
     {{-- ========================================== --}}
     {{-- Modal : Batch remboursements               --}}
     {{-- ========================================== --}}
-    <x-app-modal wire:model="refundBatchModal" :title="__('Auto-match refunds — Confirm')" separator box-class="max-w-2xl">
+    <x-app-modal wire:model="refundBatchModal" :title="__('Auto-match refunds — Confirm')" separator box-class="max-w-2xl" :open="$refundBatchModal">
 
         <div class="space-y-4">
             <div class="flex items-start gap-3 p-3 rounded-xl bg-error/10 border border-error/20 text-sm">

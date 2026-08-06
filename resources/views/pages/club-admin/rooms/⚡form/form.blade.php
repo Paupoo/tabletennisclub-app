@@ -90,7 +90,7 @@
     </x-form>
 
     {{-- Le Modal de création de table --}}
-    <x-app-modal wire:model="showTableModal" :title="__('Create a new table')" separator>
+    <x-app-modal wire:model="showTableModal" :title="__('Create a new table')" separator :open="$showTableModal">
         <div class="space-y-4">
             <x-input :label="__('Table Name')" wire:model.live.debounce="newTableName"
                 placeholder="Ex: Table 16" required />

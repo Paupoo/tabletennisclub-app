@@ -75,12 +75,12 @@
 
         {{-- Confirm modals (project modals, no native JS confirm) --}}
         <x-confirm-modal model="confirmArchiveModal" :title="__('Archive this plan?')"
-            :confirmLabel="__('Archive')" confirmClass="btn-warning" confirmAction="archivePlan">
+            :confirmLabel="__('Archive')" confirmClass="btn-warning" confirmAction="archivePlan" :open="$confirmArchiveModal">
             <p>{{ __('The plan is hidden from the active list. You can still delete it later.') }}</p>
         </x-confirm-modal>
 
         <x-confirm-modal model="confirmDeleteModal" :title="__('Delete this plan permanently?')"
-            :subtitle="__('Warning!')" :confirmLabel="__('Delete')" confirmAction="deletePlan">
+            :subtitle="__('Warning!')" :confirmLabel="__('Delete')" confirmAction="deletePlan" :open="$confirmDeleteModal">
             <p>{{ __('This permanently deletes the plan and its layout. This action is irreversible.') }}</p>
         </x-confirm-modal>
     @else
@@ -213,7 +213,7 @@
 
         {{-- Add / edit hypothetical pack modal --}}
         <x-app-modal wire:model="showPackModal"
-            :title="$editingPackId ? __('Edit group') : __('Add a group')" separator>
+            :title="$editingPackId ? __('Edit group') : __('Add a group')" separator :open="$showPackModal">
             <div class="space-y-4">
                 <x-input :label="__('Group name')" wire:model="packName"
                     :placeholder="__('e.g. Tuesday Advanced')" />
@@ -243,7 +243,7 @@
         </x-app-modal>
 
         {{-- Import CSV modal --}}
-        <x-app-modal wire:model="showImportModal" :title="__('Import CSV')" separator>
+        <x-app-modal wire:model="showImportModal" :title="__('Import CSV')" separator :open="$showImportModal">
             <div class="space-y-4">
                 <p class="text-sm text-base-content/60">
                     {{ __('Upload a CSV exported from this board. Members are matched by licence, then by email.') }}
@@ -260,7 +260,7 @@
 
         {{-- Remove group confirm modal (project modal, no native JS confirm) --}}
         <x-confirm-modal model="confirmRemovePackModal" :title="__('Remove this group?')"
-            :confirmLabel="__('Remove')" confirmAction="removePack">
+            :confirmLabel="__('Remove')" confirmAction="removePack" :open="$confirmRemovePackModal">
             <p>{{ __('Its members will return to the pool.') }}</p>
         </x-confirm-modal>
     @endif

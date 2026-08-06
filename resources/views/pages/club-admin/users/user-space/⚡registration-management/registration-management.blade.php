@@ -718,7 +718,7 @@
     @endif
 
     {{-- Modal: Payment details --}}
-    <x-app-modal wire:model="paymentModal" :title="__('Payment Details')" box-class="max-w-md">
+    <x-app-modal wire:model="paymentModal" :title="__('Payment Details')" box-class="max-w-md" :open="$paymentModal">
         @if(!empty($paymentDetails))
         <div class="space-y-6">
             <div class="flex flex-col items-center gap-3">
@@ -764,12 +764,12 @@
     </x-app-modal>
 
     <x-confirm-modal model="cancelAffiliationModal" :title="__('Cancel affiliation?')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Yes, cancel it')" confirmAction="cancelAffiliation">
+        :confirmLabel="__('Yes, cancel it')" confirmAction="cancelAffiliation" :open="$cancelAffiliationModal">
         <p>{{ __('Are you sure you want to cancel your affiliation request? This action cannot be undone.') }}</p>
     </x-confirm-modal>
 
     {{-- Confirmation : quitter / annuler / refuser un pack entraînement --}}
-    <x-app-modal :subtitle="__('Warning!')" :title="__('Confirm action')" wire:model="leavePackModal">
+    <x-app-modal :subtitle="__('Warning!')" :title="__('Confirm action')" wire:model="leavePackModal" :open="$leavePackModal">
         @if($leavePackContext === 'leave')
             <p>{{ __('Are you sure you want to leave this training pack? Your spot will be offered to the next person on the waitlist.') }}</p>
         @elseif($leavePackContext === 'cancel')

@@ -256,13 +256,13 @@
 
     {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete article?')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('This action is irreversible.') }}</p>
     </x-confirm-modal>
 
     {{-- ── Modal archivage bulk ──────────────────────────────────────── --}}
     <x-confirm-modal model="confirmBulkArchiveModal" :title="__('Archive selected articles?')"
-        :confirmLabel="__('Archive')" confirmAction="bulkArchive">
+        :confirmLabel="__('Archive')" confirmAction="bulkArchive" :open="$confirmBulkArchiveModal">
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be archived.') }}

@@ -315,7 +315,7 @@
 
     {{-- ── Modal annulation bulk ──────────────────────────────────────── --}}
     <x-confirm-modal model="confirmBulkCancelModal" :title="__('Cancel selected tournaments?')"
-        :confirmLabel="__('Confirm cancellation')" confirmAction="bulkCancel">
+        :confirmLabel="__('Confirm cancellation')" confirmAction="bulkCancel" :open="$confirmBulkCancelModal">
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be marked as cancelled.') }}

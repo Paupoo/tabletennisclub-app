@@ -229,7 +229,7 @@
 
     {{-- ── Modal annulation bulk ──────────────────────────────────────── --}}
     <x-confirm-modal model="confirmBulkCancelModal" :title="__('Cancel selected meetings?')"
-        :confirmLabel="__('Confirm cancellation')" confirmAction="bulkCancel">
+        :confirmLabel="__('Confirm cancellation')" confirmAction="bulkCancel" :open="$confirmBulkCancelModal">
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be marked as cancelled.') }}
@@ -238,7 +238,7 @@
 
     {{-- ── Modal suppression bulk ─────────────────────────────────────── --}}
     <x-confirm-modal model="confirmBulkDeleteModal" :title="__('Delete selected meetings?')"
-        :confirmLabel="__('Confirm deletion')" confirmAction="bulkDelete">
+        :confirmLabel="__('Confirm deletion')" confirmAction="bulkDelete" :open="$confirmBulkDeleteModal">
         <p>
             {{ __('Only meetings that have not taken place and have no invitations sent will be deleted. This action is irreversible.') }}
         </p>

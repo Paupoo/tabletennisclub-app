@@ -216,7 +216,7 @@
     @endif
 
     {{-- ── Modal Edit result ──────────────────────────────────────────────── --}}
-    <x-app-modal wire:model="editModal" :title="__('Edit match')">
+    <x-app-modal wire:model="editModal" :title="__('Edit match')" :open="$editModal">
         <div class="space-y-5">
             {{-- Context (read-only) --}}
             <div class="flex flex-wrap items-center gap-3 rounded-lg bg-base-200 px-4 py-3 text-sm">
@@ -277,12 +277,12 @@
     </x-app-modal>
 
     <x-confirm-modal model="deleteModal" :title="__('Delete match?')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('Are you sure you want to delete this match? This action cannot be undone.') }}</p>
     </x-confirm-modal>
 
     <x-confirm-modal model="teamForfeitModal" :title="__('Declare general forfeit?')"
-        :confirmLabel="__('Confirm')" confirmClass="btn-warning" confirmAction="declareTeamForfeit">
+        :confirmLabel="__('Confirm')" confirmClass="btn-warning" confirmAction="declareTeamForfeit" :open="$teamForfeitModal">
         <p>{{ __('All unplayed matches for this team will be marked as general forfeit (Withdrawal). This action cannot be easily undone.') }}</p>
     </x-confirm-modal>
 </div>

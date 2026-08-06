@@ -645,7 +645,7 @@
     </div>
 
     {{-- ── Cancel modal ──────────────────────────────────────────────── --}}
-    <x-app-modal wire:model="showCancelModal" :title="__('Cancel meeting')" class="backdrop-blur">
+    <x-app-modal wire:model="showCancelModal" :title="__('Cancel meeting')" class="backdrop-blur" :open="$showCancelModal">
         <div class="space-y-4">
             <x-alert icon="o-exclamation-triangle" class="alert-error alert-soft"
                 :title="__('All invited members will be notified.')" />
@@ -660,7 +660,7 @@
     </x-app-modal>
 
     {{-- ── Postpone modal ────────────────────────────────────────────── --}}
-    <x-app-modal wire:model="showPostponeModal" :title="__('Postpone meeting')" class="backdrop-blur">
+    <x-app-modal wire:model="showPostponeModal" :title="__('Postpone meeting')" class="backdrop-blur" :open="$showPostponeModal">
         <div class="space-y-4">
             <x-datetime type="datetime-local" :label="__('New proposed date (optional)')" wire:model="postponedTo" />
             <x-textarea :label="__('Reason / message (optional)')"
@@ -674,7 +674,7 @@
     </x-app-modal>
 
     {{-- ── Rename modal ──────────────────────────────────────────────── --}}
-    <x-app-modal wire:model="showTitleModal" :title="__('Rename')" class="backdrop-blur">
+    <x-app-modal wire:model="showTitleModal" :title="__('Rename')" class="backdrop-blur" :open="$showTitleModal">
         <div class="space-y-4">
             <x-input :label="__('Title')" wire:model="titleDraft" required />
             @if (! $this->invitationsSent)
@@ -695,7 +695,7 @@
 
     {{-- ── Delete modal ──────────────────────────────────────────────── --}}
     <x-confirm-modal model="showDeleteModal" :title="__('Delete meeting')"
-        :confirmLabel="__('Confirm deletion')" confirmAction="deleteMeeting">
+        :confirmLabel="__('Confirm deletion')" confirmAction="deleteMeeting" :open="$showDeleteModal">
         <p>{{ __('This meeting will be permanently deleted. This action is irreversible.') }}</p>
     </x-confirm-modal>
 </div>

@@ -93,7 +93,7 @@
     @endif
 
     {{-- Modal création libre --}}
-    <x-app-modal :title="__('New team')" wire:model="createModal">
+    <x-app-modal :title="__('New team')" wire:model="createModal" :open="$createModal">
         <div class="space-y-4">
             <x-select label="Lettre" :options="$teamNameOptions" wire:model="newTeamName"
                 placeholder="Choisir A – Z" />
@@ -122,12 +122,12 @@
     </x-app-modal>
 
     <x-confirm-modal model="deleteModal" :title="__('Delete this team?')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('Are you sure you want to delete this team? This action is irreversible.') }}</p>
     </x-confirm-modal>
 
     <x-confirm-modal model="deleteAllModal" :title="__('Delete all teams?')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Delete all')" confirmAction="deleteAll">
+        :confirmLabel="__('Delete all')" confirmAction="deleteAll" :open="$deleteAllModal">
         <p>
             {{ __('Are you sure you want to delete') }} <strong>{{ __('all teams') }}</strong>
             {{ __('for the current season? This action is irreversible and will also remove all players from their teams.') }}

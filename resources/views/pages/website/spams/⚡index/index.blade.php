@@ -226,7 +226,7 @@
     </x-admin.shared.filter-drawer>
 
     {{-- ── Modal détail spam ─────────────────────────────────────────── --}}
-    <x-app-modal wire:model="detailModal" :title="__('Spam detail')">
+    <x-app-modal wire:model="detailModal" :title="__('Spam detail')" :open="$detailModal">
         @if ($detailSpam)
             <div class="space-y-3">
                 <div class="grid grid-cols-2 gap-3 text-sm">
@@ -260,13 +260,13 @@
 
     {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete this spam?')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('This action is irreversible.') }}</p>
     </x-confirm-modal>
 
     {{-- ── Modal suppression bulk ───────────────────────────────────── --}}
     <x-confirm-modal model="bulkDeleteModal" :title="__('Delete selection?')"
-        :confirmLabel="__('Delete')" confirmAction="bulkDelete">
+        :confirmLabel="__('Delete')" confirmAction="bulkDelete" :open="$bulkDeleteModal">
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be permanently deleted.') }}

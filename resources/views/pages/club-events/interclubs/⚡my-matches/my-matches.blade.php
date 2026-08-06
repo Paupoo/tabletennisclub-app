@@ -198,7 +198,7 @@
     @endif
 
     <x-confirm-modal model="bulkUnavailableModal" :title="__('Mark all as unavailable?')"
-        :confirmLabel="__('Confirm')" confirmClass="btn-error" confirmAction="bulkMarkUnavailable">
+        :confirmLabel="__('Confirm')" confirmClass="btn-error" confirmAction="bulkMarkUnavailable" :open="$bulkUnavailableModal">
         <p>{{ __('This will mark all your upcoming matches as unavailable. This action can be undone match by match.') }}</p>
     </x-confirm-modal>
 </div>

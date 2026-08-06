@@ -36,7 +36,7 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- Modal abonnement ICS --}}
-    <x-app-modal wire:model="icsModal" :title="__('Subscribe to my calendar')" box-class="max-w-lg">
+    <x-app-modal wire:model="icsModal" :title="__('Subscribe to my calendar')" box-class="max-w-lg" :open="$icsModal">
         <div class="space-y-4">
             <p class="text-sm text-base-content/70">
                 {{ __('Add this personal link to Google Calendar or Apple Calendar to see all your club activities (matches, trainings, tournaments, meetings) update automatically.') }}

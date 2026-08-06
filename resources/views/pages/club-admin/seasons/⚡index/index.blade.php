@@ -115,7 +115,7 @@
     {{-- ================================================================
          PROVISION MODAL
     ================================================================ --}}
-    <x-app-modal :title="__('Auto-provision seasons')" wire:model="provisionModal" separator>
+    <x-app-modal :title="__('Auto-provision seasons')" wire:model="provisionModal" separator :open="$provisionModal">
         <div class="space-y-3 text-sm text-base-content/70">
             <p>{{ __('This will create the next two seasons after the current active season, if they do not already exist.') }}</p>
             <p>{{ __('Each season runs from September 1st to June 30th. Already-existing seasons and overlapping date ranges are automatically skipped.') }}</p>
@@ -131,7 +131,7 @@
     {{-- ================================================================
          ACTIVATE MODAL
     ================================================================ --}}
-    <x-app-modal :title="__('Activate season')" wire:model="activateModal" separator>
+    <x-app-modal :title="__('Activate season')" wire:model="activateModal" separator :open="$activateModal">
         <div class="space-y-4">
             <p class="text-base-content/70">
                 {{ __('You are about to make') }}
@@ -152,7 +152,7 @@
     {{-- ================================================================
          EDIT MODAL
     ================================================================ --}}
-    <x-app-modal :title="__('Edit season')" wire:model="editModal" separator>
+    <x-app-modal :title="__('Edit season')" wire:model="editModal" separator :open="$editModal">
         <div class="space-y-4">
             <x-input :label="__('Name')" :placeholder="__('E.g. 2026-2027')"
                 wire:model="editName" />
@@ -172,7 +172,7 @@
     {{-- ================================================================
          CREATE MODAL
     ================================================================ --}}
-    <x-app-modal :title="__('New season')" wire:model="createModal" separator>
+    <x-app-modal :title="__('New season')" wire:model="createModal" separator :open="$createModal">
         <div class="space-y-4">
             <x-input :label="__('Name')" :placeholder="__('E.g. 2026-2027')"
                 wire:model="createName" />

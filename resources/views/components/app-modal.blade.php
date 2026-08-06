@@ -1,6 +1,7 @@
 @props([
     'title',
     'subtitle' => null,
+    'open' => null,
 ])
 
 {{--
@@ -12,6 +13,12 @@
     The title is required: a modal takes the whole screen away from whoever opens
     it, and an anonymous one leaves them with no way to tell what they are about
     to confirm.
+
+    `:open` takes the same property as wire:model and holds back the body while
+    the modal is shut. A closed modal used to ship its whole content on every
+    render — 27 kB of member list in one <select> nobody had asked to see. The
+    dialog shell stays, so Alpine keeps the open/close mechanics it entangles
+    with; only the contents wait. Omitting `:open` renders as before.
 --}}
 @php
     if (blank($title)) {
@@ -27,9 +34,11 @@
     :aria-label="$title"
     {{ $attributes }}
 >
-    {{ $slot }}
+    @if ($open === null || $open)
+        {{ $slot }}
 
-    @isset($actions)
-        <x-slot:actions>{{ $actions }}</x-slot:actions>
-    @endisset
+        @isset($actions)
+            <x-slot:actions>{{ $actions }}</x-slot:actions>
+        @endisset
+    @endif
 </x-modal>

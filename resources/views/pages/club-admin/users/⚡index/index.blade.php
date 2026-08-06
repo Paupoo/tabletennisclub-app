@@ -370,12 +370,12 @@
     {{-- ── Modales archivage (simple et en masse) ────────────────────── --}}
     @can('users.delete')
         <x-confirm-modal model="deleteModal" :title="__('Archive this member?')"
-            :confirmLabel="__('Archive')" confirmAction="delete">
+            :confirmLabel="__('Archive')" confirmAction="delete" :open="$deleteModal">
             <p>{{ __('The member will be archived and can be restored later. No data is permanently deleted.') }}</p>
         </x-confirm-modal>
 
         <x-confirm-modal model="confirmArchiveModal" :title="__('Archive selected members?')"
-            :confirmLabel="__('Archive')" confirmAction="bulkArchive">
+            :confirmLabel="__('Archive')" confirmAction="bulkArchive" :open="$confirmArchiveModal">
             <p>{{ __('Selected members will be archived. Your own account is automatically excluded. Members can be restored later.') }}</p>
         </x-confirm-modal>
     @endcan
@@ -383,7 +383,7 @@
     {{-- Sending again invalidates the link the member may be about to click --}}
     @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
         <x-confirm-modal model="confirmReinviteModal" :title="__('Send a second invitation?')"
-            :confirmLabel="__('Send again')" confirmAction="confirmBulkInvite">
+            :confirmLabel="__('Send again')" confirmAction="confirmBulkInvite" :open="$confirmReinviteModal">
             <p>{{ __(':count selected member(s) were already invited and have not accepted yet.', ['count' => $waitingOnInvitation]) }}</p>
             <p class="mt-2 opacity-70">{{ __('A new invitation invalidates the link they were sent. The others in the selection are invited either way.') }}</p>
         </x-confirm-modal>
@@ -391,7 +391,7 @@
 
     {{-- ── Modal add to team ────────────────────────────────────────── --}}
     @can('users.update')
-    <x-app-modal wire:model="addToTeamModal" :title="__('Add to a team')">
+    <x-app-modal wire:model="addToTeamModal" :title="__('Add to a team')" :open="$addToTeamModal">
         <div class="space-y-4">
             <p class="text-sm text-base-content/60">
                 {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
@@ -410,7 +410,7 @@
 
     {{-- ── Modal subscribe ──────────────────────────────────────────── --}}
     @can('subscriptions.manage')
-    <x-app-modal wire:model="subscribeModal" :title="__('Subscribe to an event')">
+    <x-app-modal wire:model="subscribeModal" :title="__('Subscribe to an event')" :open="$subscribeModal">
         <div class="space-y-4">
             <p class="text-sm text-base-content/60">
                 {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
@@ -429,7 +429,7 @@
 
     {{-- ── Modal anonymisation RGPD ─────────────────────────────────── --}}
     @can('users.anonymize')
-    <x-app-modal wire:model="anonymizeModal" :title="__('GDPR Anonymization — Irreversible')">
+    <x-app-modal wire:model="anonymizeModal" :title="__('GDPR Anonymization — Irreversible')" :open="$anonymizeModal">
         <div class="space-y-4">
             <x-alert icon="o-exclamation-triangle" class="alert-error">
                 <p class="text-sm font-semibold">{{ __('This action permanently erases all personal data and cannot be undone.') }}</p>

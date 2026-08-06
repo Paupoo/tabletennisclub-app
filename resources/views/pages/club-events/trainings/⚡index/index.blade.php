@@ -282,7 +282,7 @@
     {{-- ================================================================
          WIZARD MODAL (3 steps)
     ================================================================ --}}
-    <x-app-modal :title="$packId ? __('Edit pack') : __('New training pack')" wire:model="wizardOpen" separator>
+    <x-app-modal :title="$packId ? __('Edit pack') : __('New training pack')" wire:model="wizardOpen" separator :open="$wizardOpen">
         {{-- Step indicators --}}
         <div class="mb-6 flex items-center justify-center gap-2 text-xs">
             @foreach ([1 => __('Pack'), 2 => __('Planning'), 3 => __('Price')] as $n => $label)
@@ -558,7 +558,7 @@
     {{-- ================================================================
          CANCELLATION MODAL
     ================================================================ --}}
-    <x-app-modal :title="__('Cancel this session')" wire:model="cancelModal" separator>
+    <x-app-modal :title="__('Cancel this session')" wire:model="cancelModal" separator :open="$cancelModal">
         <div class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div @class([
@@ -593,7 +593,7 @@
     </x-app-modal>
 
     <x-confirm-modal model="withdrawPackModal" :title="__('Withdraw this pack from the offer?')"
-        :confirmLabel="__('Withdraw')" confirmClass="btn-warning" confirmAction="confirmWithdrawPack">
+        :confirmLabel="__('Withdraw')" confirmClass="btn-warning" confirmAction="confirmWithdrawPack" :open="$withdrawPackModal">
         <p>{{ __('Members will no longer be able to enrol in this pack.') }}</p>
         <p class="mt-2 text-sm opacity-70">
             {{ __('The sessions still take place and the members already enrolled keep their spot — they are not notified. Use « Stop the pack » if the training will not happen at all.') }}
@@ -603,7 +603,7 @@
         </p>
     </x-confirm-modal>
 
-    <x-app-modal wire:model="regenerateModal" :title="__('Rebuild the sessions?')" separator>
+    <x-app-modal wire:model="regenerateModal" :title="__('Rebuild the sessions?')" separator :open="$regenerateModal">
         <p>{{ __('You changed when or where this pack takes place. Its existing sessions do not move on their own.') }}</p>
 
         <div class="p-3 mt-3 text-sm rounded-lg bg-warning/10">
@@ -630,7 +630,7 @@
         </x-slot:actions>
     </x-app-modal>
 
-    <x-app-modal wire:model="discontinuePackModal" :title="__('Stop this pack?')" separator>
+    <x-app-modal wire:model="discontinuePackModal" :title="__('Stop this pack?')" separator :open="$discontinuePackModal">
         <p>{{ __('The remaining sessions are cancelled and the members are told the training will not happen.') }}</p>
 
         <div class="p-3 mt-3 text-sm rounded-lg bg-error/10">

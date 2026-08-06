@@ -344,7 +344,7 @@
          MODAL — Delete photo
     ════════════════════════════════ --}}
     <x-confirm-modal model="deleteModal" :title="__('Confirmation of deletion')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Delete')" confirmAction="deletePhoto">
+        :confirmLabel="__('Delete')" confirmAction="deletePhoto" :open="$deleteModal">
         {{ __('Are you sure you want to delete this picture? This action is irreversible.') }}
     </x-confirm-modal>
 

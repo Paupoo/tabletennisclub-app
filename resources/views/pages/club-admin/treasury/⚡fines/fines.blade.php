@@ -121,7 +121,7 @@
     </x-drawer>
 
     {{-- Cancel confirmation --}}
-    <x-app-modal wire:model="cancelModal" :title="__('Cancel this fine?')" separator>
+    <x-app-modal wire:model="cancelModal" :title="__('Cancel this fine?')" separator :open="$cancelModal">
         <div class="space-y-3">
             <p class="text-sm text-base-content/80">
                 {{ __('The fine will be removed and its pending payment cancelled. The member will be notified that they no longer owe anything.') }}

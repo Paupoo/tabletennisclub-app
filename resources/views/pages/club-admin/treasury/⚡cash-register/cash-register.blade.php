@@ -143,7 +143,7 @@
     @endif
 
     {{-- Modal: Create register --}}
-    <x-app-modal wire:model="createRegisterModal" :title="__('Create Cash Register')" separator>
+    <x-app-modal wire:model="createRegisterModal" :title="__('Create Cash Register')" separator :open="$createRegisterModal">
         <div class="space-y-4">
             <x-input :label="__('Register name')" wire:model="newRegisterName" autofocus />
             <x-select
@@ -161,7 +161,7 @@
     </x-app-modal>
 
     {{-- Modal: Change holder --}}
-    <x-app-modal wire:model="changeHolderModal" :title="__('Change holder')" separator>
+    <x-app-modal wire:model="changeHolderModal" :title="__('Change holder')" separator :open="$changeHolderModal">
         <x-select
             :label="__('Holder')"
             :options="$users"
@@ -176,7 +176,7 @@
     </x-app-modal>
 
     {{-- Modal: Manual entry --}}
-    <x-app-modal wire:model="manualEntryModal" :title="__('Add Entry')" separator>
+    <x-app-modal wire:model="manualEntryModal" :title="__('Add Entry')" separator :open="$manualEntryModal">
         <div class="space-y-4">
             <p class="text-sm opacity-60">
                 {{ __('Use a positive amount for cash in, negative for cash out.') }}

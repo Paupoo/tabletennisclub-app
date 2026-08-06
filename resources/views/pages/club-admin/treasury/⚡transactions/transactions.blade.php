@@ -216,7 +216,7 @@
         :title="__('Delete transactions')"
         :confirm-label="__('Delete')"
         confirmClass="btn-error"
-        confirmAction="bulkDelete">
+        confirmAction="bulkDelete" :open="$confirmDeleteModal">
         <div class="space-y-3">
             <p class="text-sm">
                 {{ trans_choice(
@@ -280,7 +280,7 @@
     {{-- ========================================== --}}
     {{-- Modal : Import                             --}}
     {{-- ========================================== --}}
-    <x-app-modal wire:model="importModal" :title="__('Import Bank Statement')" separator>
+    <x-app-modal wire:model="importModal" :title="__('Import Bank Statement')" separator :open="$importModal">
         <div class="space-y-4">
             <p class="text-sm opacity-70">
                 {{ __('Upload your bank export (ODS, XLSX, CSV). Transactions will be imported and available for reconciliation.') }}

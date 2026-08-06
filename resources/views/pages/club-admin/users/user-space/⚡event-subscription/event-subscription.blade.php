@@ -299,7 +299,7 @@
     </x-admin.shared.filter-drawer>
 
     {{-- Modal détails paiement --}}
-    <x-app-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm">
+    <x-app-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm" :open="$paymentModal">
     @if ($paymentQr && $selectedPaymentId)
         @php
             $payment = \App\Domains\ClubAdmin\Payment\Models\Payment::find($selectedPaymentId);
@@ -345,7 +345,7 @@
     </x-app-modal>
 
     {{-- Modal participation réunion --}}
-    <x-app-modal wire:model="meetingRsvpModal" :title="__('My participation')" box-class="max-w-sm">
+    <x-app-modal wire:model="meetingRsvpModal" :title="__('My participation')" box-class="max-w-sm" :open="$meetingRsvpModal">
         @php $rsvpMeeting = $this->rsvpMeetingId ? \App\Domains\Meetings\Models\Meeting::find($this->rsvpMeetingId) : null; @endphp
         @if ($rsvpMeeting)
             @php $rsvpReg = $this->meetingRegistrations[$rsvpMeeting->id] ?? null; @endphp
@@ -402,7 +402,7 @@
     </x-app-modal>
 
     <x-confirm-modal model="cancelConfirmModal" :title="__('Cancel registration?')"
-        :confirmLabel="__('Confirm')" confirmClass="btn-error" confirmAction="confirmCancel">
+        :confirmLabel="__('Confirm')" confirmClass="btn-error" confirmAction="confirmCancel" :open="$cancelConfirmModal">
         <p>{{ __('This will remove you from the tournament. This action is irreversible.') }}</p>
     </x-confirm-modal>
 </div>

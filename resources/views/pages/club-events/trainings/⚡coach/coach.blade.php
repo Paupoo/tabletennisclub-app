@@ -193,7 +193,7 @@
     {{-- ================================================================
          CANCELLATION MODAL
     ================================================================ --}}
-    <x-app-modal :title="__('Cancel this session')" wire:model="cancelModal" separator>
+    <x-app-modal :title="__('Cancel this session')" wire:model="cancelModal" separator :open="$cancelModal">
         <div class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div @class([

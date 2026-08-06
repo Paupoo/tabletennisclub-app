@@ -107,7 +107,7 @@
 
     @can('create', \App\Domains\ClubAdmin\Club\Models\Room::class)
         <x-confirm-modal model="deleteRoomModal" :title="__('Delete this room?')" :subtitle="__('Warning!')"
-            :confirmLabel="__('Delete')" confirmAction="deleteRoom">
+            :confirmLabel="__('Delete')" confirmAction="deleteRoom" :open="$deleteRoomModal">
             <p>{{ __('Are you sure you want to delete this room? This action is irreversible.') }}</p>
         </x-confirm-modal>
     @endcan

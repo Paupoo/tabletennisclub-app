@@ -29,7 +29,7 @@
 </div>
 
 {{-- Require close registrations modal --}}
-<x-app-modal wire:model="showRequireCloseRegistrationsModal" :title="__('Registrations are still open')" class="backdrop-blur">
+<x-app-modal wire:model="showRequireCloseRegistrationsModal" :title="__('Registrations are still open')" class="backdrop-blur" :open="$showRequireCloseRegistrationsModal">
     <div class="space-y-4">
         <div class="flex items-start gap-3 p-4 bg-warning/10 border border-warning/20 rounded-xl text-sm">
             <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5 text-warning-content" />

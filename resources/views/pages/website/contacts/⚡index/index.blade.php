@@ -141,6 +141,12 @@
                 :heading="__('No contacts found')"
                 :message="__('Try adjusting your search or filters.')" />
         @endforelse
+
+        @if ($contacts->hasPages())
+            <div class="mt-2">
+                {{ $contacts->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop ────────────────────────────────────────────────── --}}

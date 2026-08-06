@@ -126,6 +126,12 @@
                 :filtered="filled($search) || count($filterChips) > 0"
                 :heading="__('No events found')" />
         @endforelse
+
+        @if ($events->hasPages())
+            <div class="mt-2">
+                {{ $events->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop (table) ────────────────────────────────────────── --}}

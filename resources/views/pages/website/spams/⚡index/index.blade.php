@@ -130,6 +130,12 @@
                 :heading="__('No spam recorded')"
                 :message="__('Try adjusting your search or filters.')" />
         @endforelse
+
+        @if ($spams->hasPages())
+            <div class="mt-2">
+                {{ $spams->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop ────────────────────────────────────────────────── --}}

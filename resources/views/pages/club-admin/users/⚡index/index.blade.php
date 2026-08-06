@@ -176,6 +176,12 @@
                 :create-label="__('Create a member')"
                 :create-href="auth()->user()->can('create', \App\Domains\ClubAdmin\Users\Models\User::class) ? route('admin.users.create') : null" />
         @endforelse
+
+        @if ($users->hasPages())
+            <div class="mt-2">
+                {{ $users->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop ────────────────────────────────────────────────── --}}

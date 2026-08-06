@@ -148,6 +148,12 @@
                 :create-label="__('Write an article')"
                 :create-href="auth()->user()->can('news_posts.manage') ? route('admin.website.articles.create') : null" />
         @endforelse
+
+        @if ($articles->hasPages())
+            <div class="mt-2">
+                {{ $articles->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop ────────────────────────────────────────────────── --}}

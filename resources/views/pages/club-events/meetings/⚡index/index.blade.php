@@ -102,6 +102,12 @@
                 :heading="$emptyHeading"
                 :message="$emptyMessage" />
         @endforelse
+
+        @if ($meetings->hasPages())
+            <div class="mt-2">
+                {{ $meetings->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Desktop table ─────────────────────────────────────────────── --}}

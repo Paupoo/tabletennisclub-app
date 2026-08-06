@@ -152,6 +152,12 @@
             @endphp
             <x-empty-state icon="o-trophy" :heading="$emptyHeading" :message="$emptyMessage" />
         @endforelse
+
+        @if ($tournaments->hasPages())
+            <div class="mt-2">
+                {{ $tournaments->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop (table) ────────────────────────────────────────── --}}

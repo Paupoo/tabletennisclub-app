@@ -59,8 +59,9 @@
 
             {{-- Guide syntaxe --}}
             <div x-data="{ open: false }" class="mb-3">
+                {{-- py-1 : même plancher de 24px que partout ailleurs. --}}
                 <button type="button"
-                    class="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800"
+                    class="flex items-center gap-1.5 py-1 text-xs text-blue-600 hover:text-blue-800"
                     @click="open = !open">
                     <x-heroicon-o-question-mark-circle class="h-3.5 w-3.5" />
                     <span x-text="open ? 'Masquer l\'aide Markdown' : 'Aide Markdown'"></span>

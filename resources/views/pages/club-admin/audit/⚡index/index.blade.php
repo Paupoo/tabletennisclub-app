@@ -82,8 +82,10 @@
 
                 @if ($changes && isset($changes['attributes']))
                     <div x-data="{ open: {{ $event === 'created' ? 'false' : 'true' }} }" class="mt-3 border-t border-base-200 pt-2">
+                        {{-- py-1.5 : le bouton ne faisait que la hauteur de son texte,
+                        sous le plancher de 24px du WCAG 2.2. --}}
                         <button type="button" @click="open = !open"
-                            class="flex w-full items-center justify-between text-xs font-semibold text-base-content/60">
+                            class="flex w-full items-center justify-between py-1.5 text-xs font-semibold text-base-content/60">
                             <span class="flex items-center gap-1.5">
                                 <x-icon name="o-pencil-square" class="h-3.5 w-3.5 opacity-60" />
                                 {{ __('Details') }}

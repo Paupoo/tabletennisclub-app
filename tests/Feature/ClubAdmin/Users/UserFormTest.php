@@ -237,10 +237,17 @@ describe('form actions', function (): void {
 });
 
 describe('email — a member reached through their guardian has none of their own', function (): void {
-    /** Every field the form insists on, minus the address and the password. */
+    /**
+     * Every field the form insists on, minus the address and the password.
+     *
+     * Le nom est composé à dessein : les assertions ci-dessous comptent les membres
+     * qui le portent, et `fake()->lastName()` en fr_BE tire « Dupont » une fois sur
+     * deux cents — l'administrateur du `beforeEach` suffisait alors à faire tomber
+     * le `sole()`. Aucun nom composé ne figure dans la liste du locale.
+     */
     $identity = static fn (): array => [
         'first_name' => 'Louis',
-        'last_name' => 'Dupont',
+        'last_name' => 'Dupont-Latour',
         'gender' => 'MEN',
         'phone_number' => '0475123456',
         'street' => 'Du Bauloy',
@@ -259,7 +266,7 @@ describe('email — a member reached through their guardian has none of their ow
             ->call('save')
             ->assertHasNoErrors();
 
-        $louis = User::where('last_name', 'Dupont')->sole();
+        $louis = User::where('last_name', 'Dupont-Latour')->sole();
 
         expect($louis->email)->toBeNull()
             ->and($louis->guardians()->pluck('guardians.id')->all())->toBe([$guardian->id]);
@@ -272,7 +279,7 @@ describe('email — a member reached through their guardian has none of their ow
             ->call('save')
             ->assertHasErrors(['email' => 'required']);
 
-        expect(User::where('last_name', 'Dupont')->exists())->toBeFalse();
+        expect(User::where('last_name', 'Dupont-Latour')->exists())->toBeFalse();
     });
 
     it('never demands a password for an account nobody will log into', function () use ($identity): void {
@@ -345,10 +352,14 @@ describe('email — a member reached through their guardian has none of their ow
 });
 
 describe('phone number — a member reached through their guardian has none of their own', function (): void {
-    /** Every field the form insists on, minus the phone number and the password. */
+    /**
+     * Every field the form insists on, minus the phone number and the password.
+     *
+     * Nom composé pour la même raison qu'au bloc précédent.
+     */
     $identity = static fn (): array => [
         'first_name' => 'Louis',
-        'last_name' => 'Dupont',
+        'last_name' => 'Dupont-Latour',
         'gender' => 'MEN',
         'email' => 'louis.dupont@example.com',
         'street' => 'Du Bauloy',
@@ -369,7 +380,7 @@ describe('phone number — a member reached through their guardian has none of t
             ->call('save')
             ->assertHasNoErrors();
 
-        expect(User::where('last_name', 'Dupont')->sole()->phone_number)->toBeNull();
+        expect(User::where('last_name', 'Dupont-Latour')->sole()->phone_number)->toBeNull();
     });
 
     it('refuses a member with neither a phone number nor a guardian', function () use ($identity): void {
@@ -379,7 +390,7 @@ describe('phone number — a member reached through their guardian has none of t
             ->call('save')
             ->assertHasErrors(['phone_number' => 'required']);
 
-        expect(User::where('last_name', 'Dupont')->exists())->toBeFalse();
+        expect(User::where('last_name', 'Dupont-Latour')->exists())->toBeFalse();
     });
 
     it('still checks the format of a number typed for a member who has a guardian', function () use ($identity): void {

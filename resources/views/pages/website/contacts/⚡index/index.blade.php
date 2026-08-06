@@ -74,6 +74,8 @@
         @endforeach
     </div>
 
+    @php $hasActiveFilters = count($filterChips) > 0 || filled($search); @endphp
+
     {{-- ── Vue mobile ───────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($contacts as $contact)
@@ -123,10 +125,10 @@
                 </x-slot:actions>
             </x-list-item>
         @empty
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-envelope"
-                :heading="__('No contacts found')"
-                :message="__('Try adjusting your search or filters.')" />
+                :heading="__('No contacts yet')"
+                :filtered="$hasActiveFilters" />
         @endforelse
 
         @if ($contacts->hasPages())
@@ -140,10 +142,10 @@
     <div class="hidden lg:block">
         <x-card>
             @if ($contacts->isEmpty())
-                <x-empty-state
+                <x-admin.shared.list-empty-state
                     icon="o-envelope"
-                    :heading="__('No contacts found')"
-                    :message="__('Try adjusting your search or filters.')" />
+                    :heading="__('No contacts yet')"
+                    :filtered="$hasActiveFilters" />
             @else
                 <x-table :headers="$headers" :rows="$contacts" :sort-by="$sortBy"
                     selectable wire:model.live="selected">

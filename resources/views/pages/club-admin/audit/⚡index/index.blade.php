@@ -109,7 +109,10 @@
                 @endif
             </x-card>
         @empty
-            <x-empty-state icon="o-document-magnifying-glass" :message="__('No activity recorded yet.')" />
+            <x-admin.shared.list-empty-state
+                icon="o-document-magnifying-glass"
+                :heading="__('No activity recorded yet.')"
+                :filtered="count($filterChips) > 0 || filled($search)" />
         @endforelse
 
         @if ($activities->hasPages())

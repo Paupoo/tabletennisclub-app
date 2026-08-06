@@ -26,8 +26,10 @@
     @php $viewer = auth()->user(); @endphp
 
     @if ($this->members->isEmpty())
-        <x-empty-state icon="o-users" :heading="__('No members found')"
-            :message="__('Try adjusting your search or filters.')" />
+        <x-admin.shared.list-empty-state
+            icon="o-users"
+            :heading="__('No members in the directory')"
+            :filtered="count($filterChips) > 0 || filled($search)" />
     @else
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             @foreach ($this->members as $member)

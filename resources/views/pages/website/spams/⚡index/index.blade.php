@@ -81,6 +81,8 @@
         </x-card>
     </div>
 
+    @php $hasActiveFilters = count($filterChips) > 0 || filled($search); @endphp
+
     {{-- ── Vue mobile ───────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($spams as $spam)
@@ -126,10 +128,10 @@
                 </x-slot:actions>
             </x-list-item>
         @empty
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-shield-check"
                 :heading="__('No spam recorded')"
-                :message="__('Try adjusting your search or filters.')" />
+                :filtered="$hasActiveFilters" />
         @endforelse
 
         @if ($spams->hasPages())
@@ -143,10 +145,10 @@
     <div class="hidden lg:block">
         <x-card>
             @if ($spams->isEmpty())
-                <x-empty-state
+                <x-admin.shared.list-empty-state
                     icon="o-shield-check"
                     :heading="__('No spam recorded')"
-                    :message="__('Try adjusting your search or filters.')" />
+                    :filtered="$hasActiveFilters" />
             @else
                 <x-table :headers="$headers" :rows="$spams" :sort-by="$sortBy"
                     selectable wire:model.live="selected">

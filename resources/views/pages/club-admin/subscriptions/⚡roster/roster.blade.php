@@ -41,10 +41,10 @@
 
     <x-card>
         @if ($rows->isEmpty())
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-users"
-                :heading="__('No members found')"
-                :message="__('Try adjusting your search or filters.')" />
+                :heading="__('No members in this season roster')"
+                :filtered="count($filterChips) > 0 || filled($search)" />
         @else
             <x-table :headers="$headers" :rows="$rows" :sort-by="$sortBy">
                 @scope('cell_name', $row)

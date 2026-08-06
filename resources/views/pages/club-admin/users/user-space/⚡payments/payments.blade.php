@@ -17,8 +17,12 @@
     @php $multiPerson = count($this->payableUsers) > 1; @endphp
 
     @if ($this->payments->isEmpty())
-        <x-empty-state icon="o-credit-card" :heading="__('No payments')"
-            :message="__('Your payments will appear here.')" />
+        <x-admin.shared.list-empty-state
+            icon="o-credit-card"
+            :heading="__('No payments')"
+            :filtered="count($filterChips) > 0">
+            {{ __('Your payments will appear here.') }}
+        </x-admin.shared.list-empty-state>
     @else
         <x-card class="!p-0">
             <div class="divide-y divide-base-200">

@@ -14,8 +14,12 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     @if ($this->fines->isEmpty())
-        <x-empty-state icon="o-scale" :heading="__('No fines')"
-            :message="__('Fines passed on to members will appear here.')" />
+        <x-admin.shared.list-empty-state
+            icon="o-scale"
+            :heading="__('No fines')"
+            :filtered="count($filterChips) > 0">
+            {{ __('Fines passed on to members will appear here.') }}
+        </x-admin.shared.list-empty-state>
     @else
         <x-card class="!p-0">
             <div class="divide-y divide-base-200">

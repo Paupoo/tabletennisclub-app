@@ -97,8 +97,8 @@
 
                 @if ($categories->isEmpty())
                     <x-empty-state icon="o-calendar"
-                        :title="__('No matches this week')"
-                        :description="__('No interclub scheduled for day :n.', ['n' => $selectedWeek ? ('S' . ($matchDayMap[$selectedWeek] ?? $selectedWeek)) : '—'])" />
+                        :heading="__('No matches this week')"
+                        :message="__('No interclub scheduled for day :n.', ['n' => $selectedWeek ? ('S' . ($matchDayMap[$selectedWeek] ?? $selectedWeek)) : '—'])" />
                 @else
                     @foreach ($categories as $name => $teams)
                         <div

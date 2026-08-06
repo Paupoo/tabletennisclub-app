@@ -144,14 +144,17 @@
             </x-list-item>
         @empty
             @php
+                $hasActiveFilters = count($filterChips) > 0 || filled($search);
                 $emptyHeading = $search
                     ? __('No tournament matches ":search"', ['search' => $search])
-                    : __('No tournaments yet');
-                $emptyMessage = ! $search && $this->canManage
-                    ? ''
-                    : __('Try adjusting your search or filters.');
+                    : ($hasActiveFilters ? __('No tournaments match your filters') : __('No tournaments yet'));
             @endphp
-            <x-empty-state icon="o-trophy" :heading="$emptyHeading" :message="$emptyMessage" />
+            <x-admin.shared.list-empty-state
+                icon="o-trophy"
+                :heading="$emptyHeading"
+                :filtered="$hasActiveFilters"
+                :create-label="__('Create a tournament')"
+                :create-href="$this->canManage ? route('admin.tournaments.wizard') : null" />
         @endforelse
 
         @if ($tournaments->hasPages())
@@ -166,14 +169,17 @@
         <x-card>
             @if ($tournaments->isEmpty())
                 @php
+                    $hasActiveFilters = count($filterChips) > 0 || filled($search);
                     $emptyHeading = $search
                         ? __('No tournament matches ":search"', ['search' => $search])
-                        : __('No tournaments yet');
-                    $emptyMessage = ! $search && $this->canManage
-                        ? ''
-                        : __('Try adjusting your search or filters.');
+                        : ($hasActiveFilters ? __('No tournaments match your filters') : __('No tournaments yet'));
                 @endphp
-                <x-empty-state icon="o-trophy" :heading="$emptyHeading" :message="$emptyMessage" />
+                <x-admin.shared.list-empty-state
+                    icon="o-trophy"
+                    :heading="$emptyHeading"
+                    :filtered="$hasActiveFilters"
+                    :create-label="__('Create a tournament')"
+                    :create-href="$this->canManage ? route('admin.tournaments.wizard') : null" />
             @else
                 <x-table :headers="$headers" :rows="$tournaments" :sort-by="$sortBy"
                     selectable wire:model.live="selected">

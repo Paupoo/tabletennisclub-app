@@ -170,10 +170,10 @@
                 </x-slot:actions>
             </x-list-item>
         @empty
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-users"
-                :heading="__('No affiliations found')"
-                :message="__('Try adjusting your search or filters.')" />
+                :heading="__('No affiliations yet')"
+                :filtered="count($filterChips) > 0 || filled($search)" />
         @endforelse
     </div>
 
@@ -181,10 +181,10 @@
     <div class="hidden lg:block">
         <x-card class="mb-8 shadow-sm">
             @if ($registrations->isEmpty())
-                <x-empty-state
+                <x-admin.shared.list-empty-state
                     icon="o-users"
-                    :heading="__('No affiliations found')"
-                    :message="__('Try adjusting your search or filters.')" />
+                    :heading="__('No affiliations yet')"
+                    :filtered="count($filterChips) > 0 || filled($search)" />
             @else
                 <x-table :headers="$headers" :rows="$registrations" hover>
                     @scope('cell_name', $req)

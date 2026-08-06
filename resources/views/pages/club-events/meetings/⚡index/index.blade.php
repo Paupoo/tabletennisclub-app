@@ -54,9 +54,7 @@
         $emptyHeading = $search
             ? __('No meeting matches ":search"', ['search' => $search])
             : ($hasActiveFilters ? __('No meetings match your filters') : __('No meetings yet'));
-        $emptyMessage = $hasActiveFilters
-            ? __('Try adjusting your search or filters.')
-            : ($this->canManage ? '' : __('No meetings have been created yet.'));
+        $emptyFiltered = $hasActiveFilters;
     @endphp
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($meetings as $meeting)
@@ -99,9 +97,12 @@
                 </x-slot:actions>
             </x-list-item>
         @empty
-            <x-empty-state icon="o-calendar-days"
+            <x-admin.shared.list-empty-state
+                icon="o-calendar-days"
                 :heading="$emptyHeading"
-                :message="$emptyMessage" />
+                :filtered="$emptyFiltered"
+                :create-label="__('New meeting')"
+                :create-href="$this->canManage ? route('admin.meetings.create') : null" />
         @endforelse
 
         @if ($meetings->hasPages())
@@ -115,9 +116,12 @@
     <div class="hidden lg:block">
         <x-card>
             @if ($meetings->isEmpty())
-                <x-empty-state icon="o-calendar-days"
+                <x-admin.shared.list-empty-state
+                    icon="o-calendar-days"
                     :heading="$emptyHeading"
-                    :message="$emptyMessage" />
+                    :filtered="$emptyFiltered"
+                    :create-label="__('New meeting')"
+                    :create-href="$this->canManage ? route('admin.meetings.create') : null" />
             @else
                 <x-table :headers="$headers" :rows="$meetings" :sort-by="$sortBy"
                     selectable wire:model.live="selected">

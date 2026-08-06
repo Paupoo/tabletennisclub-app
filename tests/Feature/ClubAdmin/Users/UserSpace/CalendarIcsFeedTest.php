@@ -64,6 +64,10 @@ it('shows the subscribe modal with the personal signed link on the calendar page
 
     Livewire::actingAs($user)
         ->test('pages::club-admin.users.user-space.calendar', ['user' => $user])
+        // Le lien signé vit dans la modale d'abonnement : depuis 87ddb05a une
+        // modale fermée ne rend plus son corps, il faut l'ouvrir comme le ferait
+        // le bouton « S'abonner à mon calendrier ».
+        ->set('icsModal', true)
         ->assertSee(__('Subscribe (Google/Apple)'))
         ->assertSee('signature=');
 });

@@ -87,31 +87,34 @@
                     default     => ['class' => 'badge-outline',             'label' => __('Draft')],
                 };
             @endphp
-            <x-list-item :item="$tournament" class="bg-base-100 rounded-lg border"
+            {{-- L'identité prend la largeur, les actions passent dessous : sur une
+            carte de 335 px, une action nommée et son menu en prenaient 156 et le
+            titre était tranché. --}}
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3"
                 wire:key="mobile-tournament-{{ $tournament->id }}">
-                <x-slot:avatar>
+                <div class="flex items-start gap-3">
                     @if ($selectionModeActive && $this->canManage)
                         <input type="checkbox"
                             class="checkbox checkbox-primary checkbox-sm"
                             value="{{ $tournament->id }}"
                             wire:model.live="selected" />
                     @endif
-                </x-slot:avatar>
-                <x-slot:value>
-                    <span class="font-medium">{{ $tournament->name }}</span>
-                </x-slot:value>
-                <x-slot:sub-value>
-                    <div class="mt-0.5 flex flex-wrap items-center gap-2">
-                        <x-badge :value="$statusBadge['label']" class="{{ $statusBadge['class'] }} badge-sm" />
-                        <span class="text-xs text-base-content/40">
-                            {{ $tournament->start_date->translatedFormat('d M Y') }}
-                        </span>
-                        <span class="text-xs text-base-content/40">
-                            {{ $tournament->match_type === 'double' ? __('Doubles') : __('Singles') }}
-                        </span>
+
+                    <div class="min-w-0 flex-1">
+                        <div class="font-medium">{{ $tournament->name }}</div>
+                        <div class="mt-0.5 flex flex-wrap items-center gap-2">
+                            <x-badge :value="$statusBadge['label']" class="{{ $statusBadge['class'] }} badge-sm" />
+                            <span class="text-xs text-base-content/40">
+                                {{ $tournament->start_date->translatedFormat('d M Y') }}
+                            </span>
+                            <span class="text-xs text-base-content/40">
+                                {{ $tournament->match_type === 'double' ? __('Doubles') : __('Singles') }}
+                            </span>
+                        </div>
                     </div>
-                </x-slot:sub-value>
-                <x-slot:actions>
+                </div>
+
+                <div class="mt-3">
                     @if (! $selectionModeActive)
                         <x-admin.shared.row-menu
                             :label="__('Settings')"
@@ -140,8 +143,8 @@
                             @endif
                         </x-admin.shared.row-menu>
                     @endif
-                </x-slot:actions>
-            </x-list-item>
+                </div>
+            </div>
         @empty
             @php
                 $hasActiveFilters = count($filterChips) > 0 || filled($search);

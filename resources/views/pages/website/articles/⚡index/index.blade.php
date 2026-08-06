@@ -97,34 +97,38 @@
     {{-- ── Vue mobile ───────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($articles as $article)
-            <x-list-item :item="$article" class="bg-base-100 rounded-lg border" wire:key="mobile-article-{{ $article->id }}">
-                <x-slot:avatar>
+            {{-- L'identité prend la largeur, les actions passent dessous : sur une
+            carte de 335 px, une action nommée et son menu en prenaient 156 et le
+            titre était tranché. --}}
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3"
+                wire:key="mobile-article-{{ $article->id }}">
+                <div class="flex items-start gap-3">
                     @if ($selectionModeActive)
                         <input type="checkbox"
                             class="checkbox checkbox-primary checkbox-sm"
                             value="{{ $article->id }}"
                             wire:model.live="selected" />
                     @endif
-                </x-slot:avatar>
-                <x-slot:value>
-                    <span class="font-medium">{{ $article->title }}</span>
-                </x-slot:value>
-                <x-slot:sub-value>
-                    <div class="flex items-center gap-2 mt-0.5">
-                        @php
-                            $badgeClass = match ($article->status) {
-                                \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED => 'badge-success badge-soft',
-                                \App\Domains\Shared\Enums\NewsPostStatusEnum::DRAFT     => 'badge-warning badge-soft',
-                                \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED  => 'badge-ghost',
-                            };
-                        @endphp
-                        <x-badge :value="$article->status->getLabel()" class="{{ $badgeClass }} badge-sm" />
-                        <span class="text-xs text-base-content/40">
-                            {{ $article->created_at->translatedFormat('d M Y') }}
-                        </span>
+
+                    <div class="min-w-0 flex-1">
+                        <div class="font-medium">{{ $article->title }}</div>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            @php
+                                $badgeClass = match ($article->status) {
+                                    \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED => 'badge-success badge-soft',
+                                    \App\Domains\Shared\Enums\NewsPostStatusEnum::DRAFT     => 'badge-warning badge-soft',
+                                    \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED  => 'badge-ghost',
+                                };
+                            @endphp
+                            <x-badge :value="$article->status->getLabel()" class="{{ $badgeClass }} badge-sm" />
+                            <span class="text-xs text-base-content/40">
+                                {{ $article->created_at->translatedFormat('d M Y') }}
+                            </span>
+                        </div>
                     </div>
-                </x-slot:sub-value>
-                <x-slot:actions>
+                </div>
+
+                <div class="mt-3">
                     @if (! $selectionModeActive)
                         <x-admin.shared.row-menu
                             :label="__('Edit')"
@@ -139,8 +143,8 @@
                             <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $article->id }})" :title="__('Delete')" />
                         </x-admin.shared.row-menu>
                     @endif
-                </x-slot:actions>
-            </x-list-item>
+                </div>
+            </div>
         @empty
             <x-admin.shared.list-empty-state
                 icon="o-document-text"

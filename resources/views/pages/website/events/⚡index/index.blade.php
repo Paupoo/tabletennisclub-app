@@ -79,31 +79,34 @@
                     \App\Domains\Shared\Enums\EventPostStatusEnum::ARCHIVED  => ['class' => 'badge-ghost',              'label' => __('Archived')],
                 };
             @endphp
-            <x-list-item :item="$event" class="bg-base-100 rounded-lg border"
+            {{-- L'identité prend la largeur, les actions passent dessous : sur une
+            carte de 335 px, une action nommée et son menu en prenaient 156 et le
+            titre était tranché. --}}
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3"
                 wire:key="mobile-event-{{ $event->id }}">
-                <x-slot:avatar>
+                <div class="flex items-start gap-3">
                     @if ($selectionModeActive)
                         <input type="checkbox"
                             class="checkbox checkbox-primary checkbox-sm"
                             value="{{ $event->id }}"
                             wire:model.live="selected" />
                     @endif
-                </x-slot:avatar>
-                <x-slot:value>
-                    <span class="font-medium">{{ $event->title }}</span>
-                </x-slot:value>
-                <x-slot:sub-value>
-                    <div class="mt-0.5 flex flex-wrap items-center gap-2">
-                        <x-badge :value="$statusBadge['label']" class="{{ $statusBadge['class'] }} badge-sm" />
-                        <span class="text-xs text-base-content/40">
-                            {{ $event->type->getIcon() }} {{ $event->type->getLabel() }}
-                        </span>
-                        <span class="text-xs text-base-content/40">
-                            {{ $event->event_date->translatedFormat('d M Y') }}
-                        </span>
+
+                    <div class="min-w-0 flex-1">
+                        <div class="font-medium">{{ $event->title }}</div>
+                        <div class="mt-0.5 flex flex-wrap items-center gap-2">
+                            <x-badge :value="$statusBadge['label']" class="{{ $statusBadge['class'] }} badge-sm" />
+                            <span class="text-xs text-base-content/40">
+                                {{ $event->type->getIcon() }} {{ $event->type->getLabel() }}
+                            </span>
+                            <span class="text-xs text-base-content/40">
+                                {{ $event->event_date->translatedFormat('d M Y') }}
+                            </span>
+                        </div>
                     </div>
-                </x-slot:sub-value>
-                <x-slot:actions>
+                </div>
+
+                <div class="mt-3">
                     @if (! $selectionModeActive)
                         <x-admin.shared.row-menu
                             :label="__('Edit')"
@@ -119,8 +122,8 @@
                             @endif
                         </x-admin.shared.row-menu>
                     @endif
-                </x-slot:actions>
-            </x-list-item>
+                </div>
+            </div>
         @empty
             <x-admin.shared.list-empty-state
                 icon="o-calendar-days"

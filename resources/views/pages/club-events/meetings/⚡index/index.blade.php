@@ -58,44 +58,46 @@
     @endphp
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($meetings as $meeting)
-            <x-list-item :item="$meeting" class="bg-base-100 rounded-lg border"
+            {{-- L'identité prend la largeur, les actions passent dessous : sur une
+            carte de 335 px, une action nommée et son menu en prenaient 156 et le
+            titre était tranché. --}}
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3"
                 wire:key="mob-meeting-{{ $meeting->id }}">
-                <x-slot:avatar>
+                <div class="flex items-start gap-3">
                     @if ($selectionModeActive && $this->canManage)
                         <input type="checkbox"
                             class="checkbox checkbox-primary checkbox-sm"
                             value="{{ $meeting->id }}"
                             wire:model.live="selected" />
                     @endif
-                </x-slot:avatar>
-                <x-slot:value>
-                    <span class="font-medium">{{ $meeting->title }}</span>
-                </x-slot:value>
-                <x-slot:sub-value>
-                    <div class="mt-0.5 flex flex-wrap items-center gap-2">
-                        <x-badge :value="$meeting->status->getLabel()"
-                            class="{{ $meeting->status->getBadgeClass() }} badge-sm" />
-                        <span class="text-xs text-base-content/50">{{ $meeting->type->getLabel() }}</span>
-                        @if ($meeting->scheduled_at)
-                            <span class="text-xs text-base-content/40">
-                                {{ $meeting->scheduled_at->translatedFormat('d M Y · H\hi') }}
-                            </span>
-                        @else
-                            <span class="text-xs text-base-content/30">{{ __('Date TBD') }}</span>
-                        @endif
+
+                    <div class="min-w-0 flex-1">
+                        <div class="font-medium">{{ $meeting->title }}</div>
+                        <div class="mt-0.5 flex flex-wrap items-center gap-2">
+                            <x-badge :value="$meeting->status->getLabel()"
+                                class="{{ $meeting->status->getBadgeClass() }} badge-sm" />
+                            <span class="text-xs text-base-content/50">{{ $meeting->type->getLabel() }}</span>
+                            @if ($meeting->scheduled_at)
+                                <span class="text-xs text-base-content/40">
+                                    {{ $meeting->scheduled_at->translatedFormat('d M Y · H\hi') }}
+                                </span>
+                            @else
+                                <span class="text-xs text-base-content/30">{{ __('Date TBD') }}</span>
+                            @endif
+                        </div>
                     </div>
-                </x-slot:sub-value>
-                <x-slot:actions>
+                </div>
+
+                <div class="mt-3">
                     @if (! $selectionModeActive)
                         <x-admin.shared.row-menu
                             :label="__('View')"
                             icon="o-eye"
                             link="{{ route('admin.meetings.show', $meeting) }}">
-
                         </x-admin.shared.row-menu>
                     @endif
-                </x-slot:actions>
-            </x-list-item>
+                </div>
+            </div>
         @empty
             <x-admin.shared.list-empty-state
                 icon="o-calendar-days"

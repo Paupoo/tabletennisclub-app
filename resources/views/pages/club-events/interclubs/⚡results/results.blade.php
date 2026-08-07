@@ -65,7 +65,10 @@
                                     $division  = $team->league?->division;
                                 @endphp
 
-                                <div x-data="{ open: true }">
+                                {{-- Replié comme l'écran frère : le bilan (V/D/N, ratio, position
+                                     finale) vit dans l'en-tête de la carte, pas ici — replier ne
+                                     cache donc que le détail des rencontres. --}}
+                                <div x-data="{ open: false }">
                                     <x-card>
                                         {{-- En-tête équipe --}}
                                         <x-slot:title>

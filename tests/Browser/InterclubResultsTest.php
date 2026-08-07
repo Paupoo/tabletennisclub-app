@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\League;
+use App\Domains\Competitions\Interclub\Models\Team;
 
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->isCommitteeMember()->create();
@@ -37,3 +40,53 @@ it('control center page loads without JS errors', function (): void {
     visit(route('admin.interclubs.control-center'))
         ->assertNoJavaScriptErrors();
 });
+
+/*
+ * Fiche IC-5 de l'audit UX. Sur la base peuplée, les neuf équipes s'ouvraient
+ * d'emblée : 164 lignes, 8 811 px, 9,8 hauteurs d'écran, contre 1,6 à 2,2
+ * partout ailleurs. Comparer l'équipe A à l'équipe D demandait de mémoriser un
+ * bilan sur sept écrans de défilement — Nielsen nº 6.
+ *
+ * L'écran frère, la liste des rencontres, part replié depuis toujours : deux
+ * écrans jumeaux, deux comportements opposés (Nielsen nº 4).
+ *
+ * Le bilan (victoires, défaites, ratio, position finale) vit dans l'en-tête de
+ * la carte, pas dans la zone repliable : replier ne cache donc rien de ce qu'on
+ * vient comparer.
+ */
+it('opens the results screen with every team folded', function (): void {
+    $this->actingAs($this->admin);
+
+    $club = Club::factory()->create(['is_own_club' => true]);
+    $league = League::factory()->create(['season_id' => $this->season->id, 'category' => 'MEN']);
+
+    foreach (['A', 'B'] as $name) {
+        Team::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $league->id,
+            'club_id' => $club->id,
+            'captain_id' => $this->admin->id,
+            'name' => $name,
+        ]);
+    }
+
+    $page = visit(route('admin.interclubs.results'));
+
+    $result = $page->script(<<<'JS'
+    (() => {
+      const toggles = [...document.querySelectorAll('[aria-expanded]')]
+        .filter((el) => (el.getAttribute('aria-label') || '').length > 0);
+
+      return {
+        toggles: toggles.length,
+        expanded: toggles.filter((el) => el.getAttribute('aria-expanded') === 'true').length,
+      };
+    })()
+    JS);
+
+    $state = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($state['toggles'])->toBeGreaterThan(0, 'La sonde doit voir les dépliants d\'équipe.');
+    expect($state['expanded'])->toBe(0, 'Chaque équipe doit arriver repliée : le bilan reste dans l\'en-tête.');
+});
+

@@ -90,3 +90,43 @@ it('opens the results screen with every team folded', function (): void {
     expect($state['expanded'])->toBe(0, 'Chaque équipe doit arriver repliée : le bilan reste dans l\'en-tête.');
 });
 
+/*
+ * Fiche KB-2. <x-section-accordion> faisait bien l'essentiel — un vrai <button>,
+ * atteignable au clavier — mais n'exposait pas son état : un lecteur d'écran
+ * annonçait « Hommes, 2 équipes, bouton » sans jamais dire si la section était
+ * ouverte. Le chevron qui pivote ne dit rien à qui ne le voit pas.
+ *
+ * WCAG 2.2 nº 4.1.2 « Nom, rôle, valeur », niveau A. Le composant est partagé :
+ * le corriger une fois corrige tous les écrans qui l'emploient.
+ */
+it('tells assistive tech whether a category section is open', function (): void {
+    $this->actingAs($this->admin);
+
+    $club = Club::factory()->create(['is_own_club' => true]);
+    $league = League::factory()->create(['season_id' => $this->season->id, 'category' => 'MEN']);
+    Team::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $league->id,
+        'club_id' => $club->id,
+        'captain_id' => $this->admin->id,
+        'name' => 'A',
+    ]);
+
+    $page = visit(route('admin.interclubs.results'));
+
+    $result = $page->script(<<<'JS'
+    (() => {
+      const sections = [...document.querySelectorAll('section > button')];
+
+      return {
+        sections: sections.length,
+        stated: sections.filter((el) => el.hasAttribute('aria-expanded')).length,
+      };
+    })()
+    JS);
+
+    $state = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($state['sections'])->toBeGreaterThan(0, "La sonde doit voir l'accordéon de catégorie.");
+    expect($state['stated'])->toBe($state['sections'], "Chaque accordéon doit annoncer s'il est ouvert.");
+});

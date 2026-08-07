@@ -24,6 +24,7 @@
 
     <button type="button"
         class="mb-3 flex w-full items-center gap-3 text-left"
+        :aria-expanded="open ? 'true' : 'false'"
         @click="open = !open">
 
         <span class="inline-flex shrink-0 items-center gap-2 rounded-full {{ $c['pill_bg'] }} {{ $c['pill_border'] }} border px-4 py-1.5">

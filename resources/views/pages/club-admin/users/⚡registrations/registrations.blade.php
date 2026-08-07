@@ -780,8 +780,8 @@
                          au classement : « prénom nom » seul ne suffit pas. --}}
                     <div class="mt-2 rounded-xl border border-base-200 bg-base-100">
                         @foreach ($membersFound as $m)
-                            <div wire:key="member-found-{{ $m->id }}"
-                                class="flex cursor-pointer items-center justify-between gap-3 border-b p-3 last:border-none hover:bg-base-200"
+                            <button type="button" wire:key="member-found-{{ $m->id }}"
+                                class="flex w-full cursor-pointer items-center justify-between gap-3 border-b p-3 text-left last:border-none hover:bg-base-200"
                                 wire:click="addToBasket({{ $m->id }})">
                                 <div class="min-w-0 flex-1">
                                     <div class="flex flex-wrap items-center gap-2">
@@ -803,7 +803,7 @@
                                     </div>
                                 </div>
                                 <x-icon name="o-plus-circle" class="h-5 w-5 shrink-0 text-primary" />
-                            </div>
+                            </button>
                         @endforeach
 
                         @if ($membersFoundOverflow > 0)

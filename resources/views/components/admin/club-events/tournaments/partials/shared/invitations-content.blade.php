@@ -21,8 +21,9 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         @foreach ($filteredMembers as $member)
-            <div wire:key="member-{{ $member['id'] }}" wire:click="toggleMember({{ $member['id'] }})"
-                class="flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all {{ in_array($member['id'], $selectedMembers) ? 'border-primary bg-primary/5' : 'border-base-200 hover:border-primary/30' }}">
+            <button type="button" wire:key="member-{{ $member['id'] }}" wire:click="toggleMember({{ $member['id'] }})"
+                aria-pressed="{{ in_array($member['id'], $selectedMembers) ? 'true' : 'false' }}"
+                class="w-full text-left flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all {{ in_array($member['id'], $selectedMembers) ? 'border-primary bg-primary/5' : 'border-base-200 hover:border-primary/30' }}">
                 <x-avatar :placeholder="strtoupper(substr($member['name'], 0, 2))" class="w-10! h-10! rounded-lg" />
                 <div class="flex-1 min-w-0">
                     <p class="font-bold truncate text-sm">{{ $member['name'] }}</p>
@@ -33,7 +34,7 @@
                 @else
                     <x-icon name="o-plus" class="w-5 h-5 opacity-20" />
                 @endif
-            </div>
+            </button>
         @endforeach
     </div>
 </x-card>

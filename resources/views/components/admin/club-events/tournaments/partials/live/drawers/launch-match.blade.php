@@ -45,9 +45,9 @@
                             </div>
                         @endif
 
-                        <div wire:click="startMatch({{ $match->id }})"
+                        <button type="button" wire:click="startMatch({{ $match->id }})"
                             @class([
-                                'p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between',
+                                'w-full text-left p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between',
                                 'border-warning/60 bg-warning/5 opacity-60' => $hasConflict,
                                 'border-primary bg-primary/5 ring-1 ring-primary/20' => $isFirst && ! $hasConflict,
                                 'border-base-200 hover:border-primary/40 bg-base-100' => ! $isFirst && ! $hasConflict,
@@ -75,12 +75,15 @@
                                 @if ($hasConflict)
                                     <x-icon name="o-exclamation-triangle" class="w-5 h-5 text-warning-content" />
                                 @else
-                                    <x-button icon="o-play"
-                                        class="btn-circle {{ $isFirst ? 'btn-primary' : 'btn-ghost' }} btn-sm"
-                                        wire:loading.attr="disabled" />
+                                    {{-- Décor : c'est la carte entière qui lance le match, et un
+                                         bouton ne peut pas en contenir un autre. --}}
+                                    <span aria-hidden="true"
+                                        class="btn btn-circle {{ $isFirst ? 'btn-primary' : 'btn-ghost' }} btn-sm pointer-events-none">
+                                        <x-icon name="o-play" class="h-4 w-4" />
+                                    </span>
                                 @endif
                             </div>
-                        </div>
+                        </button>
                     </div>
                 @endforeach
             </div>

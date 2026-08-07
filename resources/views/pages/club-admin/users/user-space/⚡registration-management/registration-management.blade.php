@@ -254,12 +254,21 @@
                                         </div>
 
                                         {{-- Formula selection --}}
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div wire:click="$set('registrations.{{ $userId }}.formula', 'competitive')"
-                                                @class(['relative border-2 rounded-xl p-4 transition-all duration-200 cursor-pointer',
-                                                    'border-primary bg-primary/5 shadow-md' => $formula === 'competitive',
-                                                    'border-base-200 hover:border-primary/50' => $formula !== 'competitive',
-                                                ])>
+                                        {{-- Un choix exclusif et obligatoire : un groupe de boutons radio.
+                                             Les cartes sont les libellés, la case elle-même reste lisible par
+                                             un lecteur d'écran et atteignable au clavier sans être visible. --}}
+                                        <fieldset class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <legend class="sr-only">{{ __('Your licence') }}</legend>
+
+                                            <label @class(['relative block border-2 rounded-xl p-4 transition-all duration-200 cursor-pointer',
+                                                'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary has-[:focus-visible]:ring-offset-2',
+                                                'border-primary bg-primary/5 shadow-md' => $formula === 'competitive',
+                                                'border-base-200 hover:border-primary/50' => $formula !== 'competitive',
+                                            ])>
+                                                <input type="radio" class="sr-only"
+                                                    name="licence-formula-{{ $userId }}"
+                                                    value="competitive"
+                                                    wire:model.live="registrations.{{ $userId }}.formula" />
                                                 <div class="flex justify-between items-start">
                                                     <x-icon name="o-trophy" @class(['w-10 h-10',
                                                         'text-primary' => $formula === 'competitive',
@@ -272,13 +281,17 @@
                                                 <div class="mt-4 font-bold text-lg">{{ __('Competition') }}</div>
                                                 <div class="text-sm opacity-70">{{ __('Official interclub matches and AFTT ranking.') }}</div>
                                                 <div class="mt-4 text-xl font-bold">125&nbsp;€ <span class="text-xs font-normal">/ season</span></div>
-                                            </div>
+                                            </label>
 
-                                            <div wire:click="$set('registrations.{{ $userId }}.formula', 'recreative')"
-                                                @class(['relative border-2 rounded-xl p-4 transition-all duration-200 cursor-pointer',
-                                                    'border-secondary bg-secondary/5 shadow-md' => $formula === 'recreative',
-                                                    'border-base-200 hover:border-secondary/50' => $formula !== 'recreative',
-                                                ])>
+                                            <label @class(['relative block border-2 rounded-xl p-4 transition-all duration-200 cursor-pointer',
+                                                'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-secondary has-[:focus-visible]:ring-offset-2',
+                                                'border-secondary bg-secondary/5 shadow-md' => $formula === 'recreative',
+                                                'border-base-200 hover:border-secondary/50' => $formula !== 'recreative',
+                                            ])>
+                                                <input type="radio" class="sr-only"
+                                                    name="licence-formula-{{ $userId }}"
+                                                    value="recreative"
+                                                    wire:model.live="registrations.{{ $userId }}.formula" />
                                                 <div class="flex justify-between items-start">
                                                     <x-icon name="o-heart" @class(['w-10 h-10',
                                                         'text-secondary' => $formula === 'recreative',
@@ -291,8 +304,8 @@
                                                 <div class="mt-4 font-bold text-lg">{{ __('Recreational') }}</div>
                                                 <div class="text-sm opacity-70">{{ __('Free play and social events. No official matches.') }}</div>
                                                 <div class="mt-4 text-xl font-bold">60&nbsp;€ <span class="text-xs font-normal">/ season</span></div>
-                                            </div>
-                                        </div>
+                                            </label>
+                                        </fieldset>
 
 
                                     </div>

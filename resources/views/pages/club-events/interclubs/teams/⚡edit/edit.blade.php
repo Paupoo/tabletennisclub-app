@@ -128,9 +128,10 @@
             <div class="divide-y divide-gray-100">
                 @forelse ($competitors as $user)
                     @php $selected = in_array($user->id, $memberIds); @endphp
-                    <div
+                    <button type="button"
                         wire:key="competitor-{{ $user->id }}"
-                        class="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2.5 transition
+                        aria-pressed="{{ $selected ? 'true' : 'false' }}"
+                        class="flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-2.5 text-left transition
                             {{ $selected ? 'bg-blue-50' : 'hover:bg-gray-50' }}"
                         wire:click="toggleMember({{ $user->id }})">
 
@@ -157,7 +158,7 @@
                                 </span>
                             @endif
                         </div>
-                    </div>
+                    </button>
                 @empty
                     <p class="py-6 text-center text-sm text-gray-400 italic">{{ __('No results.') }}</p>
                 @endforelse

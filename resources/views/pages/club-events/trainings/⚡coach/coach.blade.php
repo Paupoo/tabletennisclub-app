@@ -158,8 +158,8 @@
         <x-header separator :subtitle="__('Your upcoming sessions')" :title="__('My sessions')" />
 
         @forelse ($upcomingSessions as $session)
-            <div wire:click="viewSession({{ $session->id }})"
-                class="mb-3 flex cursor-pointer items-center justify-between rounded-xl border border-base-200 bg-base-100 px-4 py-3 transition hover:border-primary/30 hover:bg-primary/5">
+            <button type="button" wire:click="viewSession({{ $session->id }})"
+                class="mb-3 flex w-full cursor-pointer items-center justify-between rounded-xl border border-base-200 bg-base-100 px-4 py-3 text-left transition hover:border-primary/30 hover:bg-primary/5">
                 <div class="flex items-center gap-4">
                     <div class="text-center">
                         <div class="text-xs font-bold uppercase text-base-content/50">
@@ -181,7 +181,7 @@
                     </div>
                 </div>
                 <x-icon class="h-5 w-5 text-base-content/30" name="o-chevron-right" />
-            </div>
+            </button>
         @empty
             <div class="rounded-xl border border-dashed border-base-300 py-16 text-center text-base-content/40">
                 <x-icon class="mx-auto mb-2 h-10 w-10" name="o-calendar" />

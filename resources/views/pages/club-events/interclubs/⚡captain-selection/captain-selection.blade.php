@@ -220,8 +220,10 @@
                             $isBlocked   = $player['is_blocked'] ?? false;
                             $blockedTeam = $player['blocked_team'] ?? null;
                         @endphp
+                        {{-- La ligne porte les numéros de téléphone et l'e-mail du joueur :
+                             un <button> ne peut pas envelopper des liens. C'est donc la case
+                             à cocher qui commande, comme pour toute liste à choix multiple. --}}
                         <div
-                            @if (! $isBlocked) wire:click="togglePlayer({{ $player['id'] }})" @endif
                             @class([
                                 'flex items-center gap-3 rounded-xl border p-3 transition-all',
                                 'cursor-pointer' => ! $isBlocked,
@@ -296,15 +298,11 @@
                             @if ($isBlocked)
                                 <x-icon name="o-lock-closed" class="h-4 w-4 shrink-0 text-error/50" />
                             @else
-                                <div @class([
-                                    'flex h-5 w-5 shrink-0 items-center justify-center rounded border',
-                                    'bg-primary border-primary text-primary-content' => $isSelected,
-                                    'border-base-300 bg-white' => ! $isSelected,
-                                ])>
-                                    @if ($isSelected)
-                                        <x-icon class="h-3 w-3" name="o-check" />
-                                    @endif
-                                </div>
+                                <input type="checkbox"
+                                    class="checkbox checkbox-primary checkbox-sm h-6 w-6 shrink-0"
+                                    aria-label="{{ __('Select :player', ['player' => $player['name']]) }}"
+                                    @checked($isSelected)
+                                    wire:click="togglePlayer({{ $player['id'] }})" />
                             @endif
                         </div>
                     @endforeach

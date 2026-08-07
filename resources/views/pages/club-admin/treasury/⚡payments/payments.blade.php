@@ -438,10 +438,11 @@
                 $score = $transaction->match_score ?? 'none';
                 $isPerfect = $score === 'perfect';
             @endphp
-            <div
+            <button type="button"
                 wire:click="$set('selectedTransactionId', {{ $transaction->id }})"
+                aria-pressed="{{ $selectedTransactionId === $transaction->id ? 'true' : 'false' }}"
                 @class([
-                    'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all duration-150',
+                    'w-full text-left flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all duration-150',
                     'border-primary bg-primary/5 shadow-sm'   => $selectedTransactionId === $transaction->id,
                     'border-success/60 bg-success/5'          => $selectedTransactionId !== $transaction->id && $isPerfect,
                     'border-base-200 hover:border-base-300 bg-base-100' => $selectedTransactionId !== $transaction->id && !$isPerfect,
@@ -479,7 +480,7 @@
                     <div class="font-bold tabular-nums">{{ number_format($transaction->amount, 2, ',', ' ') }} €</div>
                     <div class="text-xs opacity-50">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</div>
                 </div>
-            </div>
+            </button>
 
             @empty
             <div class="flex flex-col items-center justify-center py-10 opacity-40">
@@ -589,10 +590,11 @@
 
             @forelse($refundTransactions as $transaction)
             @php $score = $transaction->match_score ?? 'none'; @endphp
-            <div
+            <button type="button"
                 wire:click="$set('selectedRefundTransactionId', {{ $transaction->id }})"
+                aria-pressed="{{ $selectedRefundTransactionId === $transaction->id ? 'true' : 'false' }}"
                 @class([
-                    'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all duration-150',
+                    'w-full text-left flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all duration-150',
                     'border-primary bg-primary/5 shadow-sm'                            => $selectedRefundTransactionId === $transaction->id,
                     'border-success/60 bg-success/5'                                   => $selectedRefundTransactionId !== $transaction->id && $score === 'perfect',
                     'border-info/40 bg-info/5'                                         => $selectedRefundTransactionId !== $transaction->id && $score === 'iban',
@@ -630,7 +632,7 @@
                     <div class="font-bold tabular-nums text-error">{{ number_format($transaction->amount, 2, ',', ' ') }} €</div>
                     <div class="text-xs opacity-50">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</div>
                 </div>
-            </div>
+            </button>
 
             @empty
             <div class="flex flex-col items-center justify-center py-10 opacity-40">

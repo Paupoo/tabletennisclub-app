@@ -21,11 +21,16 @@
     };
 @endphp
 
-<div @if ($isExpandable()) x-data="{ open: false }"
-        @click="open = !open" @endif
+<{{ $isExpandable() ? 'button' : 'div' }}
+    @if ($isExpandable())
+        type="button"
+        x-data="{ open: false }"
+        @click="open = !open"
+        :aria-expanded="open ? 'true' : 'false'"
+    @endif
     @class([
         'flex items-center justify-between px-4 py-3 gap-3 bg-base-100 transition-colors',
-        'cursor-pointer hover:bg-base-200/40' => $isExpandable(),
+        'w-full text-left cursor-pointer hover:bg-base-200/40' => $isExpandable(),
         'opacity-40' => $status === 'future',
     ])>
     <div class="flex min-w-0 flex-1 items-center gap-3">
@@ -104,7 +109,7 @@
                 x-bind:class="open ? 'rotate-180' : ''" />
         @endif
     </div>
-</div>
+</{{ $isExpandable() ? 'button' : 'div' }}>
 
 {{-- Zone expandable — matchs individuels --}}
 @if ($isExpandable())

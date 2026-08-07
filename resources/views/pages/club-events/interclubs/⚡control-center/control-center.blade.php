@@ -207,8 +207,9 @@
                 <div class="space-y-2">
                     @foreach ($drawerRoster as $player)
                         @php $isSelected = in_array($player['id'], $selectedPlayerIds); @endphp
-                        <div wire:click="togglePlayer({{ $player['id'] }})" @class([
-                            'p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between group',
+                        <button type="button" wire:click="togglePlayer({{ $player['id'] }})"
+                            aria-pressed="{{ $isSelected ? 'true' : 'false' }}" @class([
+                            'w-full text-left p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between group',
                             'border-primary bg-primary/5 ring-1 ring-primary' => $isSelected,
                             'border-base-200 hover:border-primary/50 bg-base-100' => !$isSelected,
                         ])>
@@ -231,7 +232,7 @@
                                     <x-icon name="o-check" class="h-3 w-3" />
                                 @endif
                             </div>
-                        </div>
+                        </button>
                     @endforeach
                 </div>
             </div>
@@ -247,8 +248,9 @@
                     <div class="mt-4 animate-in fade-in slide-in-from-top-2 space-y-2">
                         @forelse($searchResults as $res)
                             @php $isSelected = in_array($res['id'], $selectedPlayerIds); @endphp
-                            <div wire:click="togglePlayer({{ $res['id'] }})" @class([
-                                'p-2 rounded-lg border border-dashed flex items-center justify-between cursor-pointer transition-all',
+                            <button type="button" wire:click="togglePlayer({{ $res['id'] }})"
+                                aria-pressed="{{ $isSelected ? 'true' : 'false' }}" @class([
+                                'w-full text-left p-2 rounded-lg border border-dashed flex items-center justify-between cursor-pointer transition-all',
                                 'border-primary bg-primary/5' => $isSelected,
                                 'border-base-300 hover:border-primary' => !$isSelected,
                             ])>
@@ -262,7 +264,7 @@
                                 @if ($isSelected)
                                     <x-icon name="o-check-circle" class="h-5 w-5 text-primary" />
                                 @endif
-                            </div>
+                            </button>
                         @empty
                             <div class="p-4 text-center text-xs opacity-40">{{ __('No player found.') }}</div>
                         @endforelse

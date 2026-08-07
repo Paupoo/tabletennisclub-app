@@ -54,19 +54,26 @@
                     <div class="space-y-6">
                             @foreach ($teams->sortKeys() as $teamName => $matches)
                                 <section x-data="{ open: false }">
-                                    <div
-                                        class="mb-3 flex w-full cursor-pointer items-center gap-3"
-                                        @click="open = !open"
-                                    >
-                                        <span class="bg-base-200 rounded-lg px-3 py-1.5 text-sm font-bold">{{ $teamName }}</span>
-                                        <span class="text-base-content/40 text-xs">{{ $matches->count() }} match{{ $matches->count() > 1 ? 's' : '' }}</span>
-                                        <div class="border-base-200 flex-1 border-t"></div>
+                                    {{-- Le dépliant est un bouton — il ne pouvait pas en contenir un
+                                         second, « Ajouter un match » est donc passé à côté. Ce bouton
+                                         nommé remplace l'infobulle du « + » : celle-ci mesurait 145 px
+                                         sur un bouton de 30, et débordait la page de 46 px (fiche IC-4). --}}
+                                    <div class="mb-3 flex w-full items-center gap-3">
+                                        <button type="button"
+                                            class="flex flex-1 cursor-pointer items-center gap-3 text-left"
+                                            @click="open = !open"
+                                            :aria-expanded="open ? 'true' : 'false'"
+                                        >
+                                            <span class="bg-base-200 rounded-lg px-3 py-1.5 text-sm font-bold">{{ $teamName }}</span>
+                                            <span class="text-base-content/40 text-xs">{{ $matches->count() }} match{{ $matches->count() > 1 ? 's' : '' }}</span>
+                                            <div class="border-base-200 flex-1 border-t"></div>
+                                            <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
+                                        </button>
                                         <x-button
-                                            class="btn-ghost btn-sm btn-circle"
+                                            class="btn-ghost btn-sm shrink-0"
                                             icon="o-plus"
-                                            :tooltip="__('Add match for this team')"
-                                            wire:click.stop="openCreateModal({{ $matches->first()['our_team_id'] }})" :aria-label="__('Add match for this team')" />
-                                        <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
+                                            :label="__('Add a match')"
+                                            wire:click.stop="openCreateModal({{ $matches->first()['our_team_id'] }})" />
                                     </div>
 
                                     <div x-show="open" x-collapse>

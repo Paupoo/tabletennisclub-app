@@ -105,7 +105,13 @@
                     @endif
                 </x-slot:avatar>
                 <x-slot:value>
-                    <span class="font-medium">{{ $contact->first_name }} {{ $contact->last_name }}</span>
+                    {{-- Le nom EST la commande : au clavier, la carte n'offrait que
+                         « Supprimer ». Un bouton nommé de plus écraserait l'identité
+                         (voir MobileMemberCardTest) ; le nom, lui, ne coûte rien. --}}
+                    <button type="button" class="w-full text-left font-medium"
+                        wire:click.stop="openDetail({{ $contact->id }})">
+                        {{ $contact->first_name }} {{ $contact->last_name }}
+                    </button>
                 </x-slot:value>
                 <x-slot:sub-value>
                     <div class="mt-0.5 flex items-center gap-2">

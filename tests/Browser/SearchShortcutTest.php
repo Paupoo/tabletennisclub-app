@@ -111,3 +111,86 @@ it('opens the phone search panel before aiming at it', function (): void {
     expect($state['bound'])->toBe('search');
     expect($state['visible'])->toBeTrue('Le champ doit être réellement visible, pas seulement focalisé.');
 });
+
+/*
+ * Un raccourci que rien n'annonce ne sert qu'à ceux qui le devinent. Le badge
+ * est posé par le composant partagé, à l'endroit exact où Mary rend un
+ * `suffix` — dernier enfant du <label class="input"> — donc il suit la mise en
+ * page du champ sans que dix-neuf écrans aient à le déclarer.
+ *
+ * Le libellé suit le clavier : ⌘K sur un Mac, Ctrl K ailleurs. C'est ce qu'une
+ * chaîne PHP ne peut pas faire, le serveur ne sachant rien de la machine.
+ */
+it('shows the shortcut on the search field', function (): void {
+    $this->actingAs($this->admin);
+
+    $page = visit(route('admin.users.index'));
+
+    $result = $page->script(<<<'JS'
+    (() => {
+      const hint = document.querySelector('[data-search-hint]');
+      if (! hint) return { found: false };
+
+      const field = hint.closest('label.input')?.querySelector('input');
+      const bound = [...field?.attributes || []].find((a) => a.name.startsWith('wire:model'));
+
+      return {
+        found: true,
+        label: hint.textContent.replace(/\s+/g, ' ').trim(),
+        visible: hint.getClientRects().length > 0,
+        besideSearch: bound ? bound.value : null,
+      };
+    })()
+    JS);
+
+    $hint = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($hint['found'])->toBeTrue('Le champ de recherche doit annoncer son raccourci.');
+    expect($hint['besideSearch'])->toBe('search', 'Le badge doit être posé sur le champ de recherche.');
+    expect($hint['visible'])->toBeTrue();
+    expect($hint['label'])->toBe('Ctrl K', 'Sur un clavier non-Mac, le badge annonce Ctrl.');
+});
+
+/*
+ * Échap vide la recherche. Le champ garde le focus : on efface pour retaper,
+ * pas pour partir.
+ *
+ * Le geste s'arrête là — sans quoi il fermerait aussi le tiroir qui contient la
+ * recherche, et on perdrait le contexte en voulant corriger un mot. Sur un
+ * champ déjà vide il n'y a rien à effacer : la touche repart, et c'est le
+ * tiroir qui se ferme. Un Échap efface, le second referme.
+ */
+it('clears the search on Escape and keeps the cursor there', function (): void {
+    $this->actingAs($this->admin);
+
+    $page = visit(route('admin.users.index'));
+
+    $result = $page->script(<<<'JS'
+    (() => {
+      const field = [...document.querySelectorAll('input')].find((input) =>
+        [...input.attributes].some((a) => a.name.startsWith('wire:model') && a.value === 'search')
+        && input.getClientRects().length > 0);
+
+      field.focus();
+      field.value = 'Dupont';
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+
+      const filled = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+      field.dispatchEvent(filled);
+
+      const afterFilled = { value: field.value, focused: document.activeElement === field, stopped: filled.defaultPrevented };
+
+      const empty = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+      field.dispatchEvent(empty);
+
+      return { afterFilled, emptyStopped: empty.defaultPrevented };
+    })()
+    JS);
+
+    $state = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($state['afterFilled']['value'])->toBe('', 'Échap doit vider le champ.');
+    expect($state['afterFilled']['focused'])->toBeTrue('Le curseur doit rester dans le champ pour retaper.');
+    expect($state['afterFilled']['stopped'])->toBeTrue('Le geste s\'arrête au champ : il ne doit pas fermer le tiroir par-dessus.');
+    expect($state['emptyStopped'])->toBeFalse('Sur un champ vide, Échap repart — c\'est lui qui referme le tiroir.');
+});

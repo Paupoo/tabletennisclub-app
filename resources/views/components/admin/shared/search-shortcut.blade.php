@@ -1,5 +1,6 @@
 {{--
     Ctrl+K — ⌘K sur Mac — amène le curseur dans la recherche de la page.
+    Échap l'efface.
 
     Dix-neuf écrans du back-office portent une recherche, toujours dans
     l'en-tête. Le raccourci évite l'aller-retour à la souris depuis la liste
@@ -8,6 +9,10 @@
 
     Posé une seule fois dans le gabarit : aucun écran n'a à le déclarer, et un
     écran sans recherche rend la touche au navigateur au lieu de l'avaler.
+
+    L'écoute est en phase de capture, donc avant les `@keydown.escape.window`
+    des tiroirs et des menus : c'est ce qui permet à Échap d'effacer la
+    recherche sans refermer le panneau qui la contient.
 --}}
 <div
     x-data="{
@@ -21,18 +26,55 @@
             }) ?? null;
         },
 
-        /**
-         * Nomme le raccourci sur le champ lui-même : c'est là qu'un lecteur
-         * d'écran va le chercher, et l'attribut ARIA prévu pour ça.
-         */
-        announce() {
-            const field = this.field()
-                ?? document.querySelector('[data-search-field]');
+        /** ⌘ sur un clavier Apple, Ctrl partout ailleurs. */
+        isApple() {
+            const platform = navigator.userAgentData?.platform ?? navigator.platform ?? '';
 
-            field?.setAttribute('aria-keyshortcuts', 'Control+K');
+            return /mac|iphone|ipad|ipod/i.test(platform);
+        },
+
+        /**
+         * Nomme le raccourci sur le champ — `aria-keyshortcuts` est l'attribut
+         * prévu pour ça — puis pose le badge qui le rend visible.
+         *
+         * Rejoué après chaque navigation et chaque morph Livewire : sans ça
+         * l'attribut disparaît au premier rafraîchissement de la liste.
+         */
+        decorate() {
+            const field = this.field();
+
+            if (! field) {
+                return;
+            }
+
+            field.setAttribute('aria-keyshortcuts', 'Control+K');
+
+            {{-- Mary rend le `suffix` en dernier enfant du <label class='input'>.
+                 Hors de ce gabarit — le champ brut du panneau téléphone — il n'y
+                 a pas de place pour un badge, et aucun clavier pour le lire. --}}
+            const shell = field.closest('label.input');
+
+            if (! shell || shell.querySelector('[data-search-hint]')) {
+                return;
+            }
+
+            {{-- Le champ ne grandit pas (`flex: 0 1 auto`) : il occupe 202 px
+                 d'une coque de 341, badge ou pas. Celui-ci se pose donc dans un
+                 vide qui existait déjà, sans rien coûter à la saisie. --}}
+            const hint = document.createElement('kbd');
+            hint.setAttribute('data-search-hint', '');
+            hint.setAttribute('aria-hidden', 'true');
+            hint.className = 'kbd kbd-sm pointer-events-none opacity-60';
+            hint.textContent = this.isApple() ? '⌘ K' : 'Ctrl K';
+
+            shell.append(hint);
         },
 
         press(event) {
+            if (event.key === 'Escape') {
+                return this.clear(event);
+            }
+
             if (event.key?.toLowerCase() !== 'k' || ! (event.ctrlKey || event.metaKey) || event.altKey) {
                 return;
             }
@@ -51,9 +93,8 @@
                 toggle.click();
 
                 this.$nextTick(() => {
-                    const opened = this.field();
-                    opened?.setAttribute('aria-keyshortcuts', 'Control+K');
-                    opened?.focus();
+                    this.decorate();
+                    this.field()?.focus();
                 });
 
                 return;
@@ -62,15 +103,37 @@
             {{-- Le navigateur réserve Ctrl+K à sa barre d'adresse. --}}
             event.preventDefault();
 
-            field.setAttribute('aria-keyshortcuts', 'Control+K');
+            this.decorate();
             field.focus();
             field.select?.();
         },
+
+        /**
+         * Échap efface la recherche et laisse le curseur en place : on efface
+         * pour retaper, pas pour partir.
+         *
+         * Sur un champ déjà vide il n'y a rien à effacer — la touche repart, et
+         * c'est le tiroir ou le menu qui se referme. Un Échap efface, le second
+         * referme.
+         */
+        clear(event) {
+            const field = event.target;
+
+            if (field !== this.field() || field.value === '') {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            field.value = '';
+            field.dispatchEvent(new Event('input', { bubbles: true }));
+        },
     }"
     x-init="
-        announce();
-        document.addEventListener('livewire:navigated', () => announce());
-        document.addEventListener('livewire:init', () => Livewire.hook('morph.updated', () => announce()));
+        decorate();
+        document.addEventListener('livewire:navigated', () => decorate());
+        document.addEventListener('livewire:init', () => Livewire.hook('morph.updated', () => decorate()));
     "
-    @keydown.window="press($event)"
+    @keydown.window.capture="press($event)"
 ></div>

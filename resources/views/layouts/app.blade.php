@@ -106,6 +106,9 @@ position:fixed overlay (notification sheet, drawers) gets cropped on the right. 
         @endphp
         <div x-data x-init="toast({{ $flashToast }})"></div>
     @endif
+    {{-- Ctrl+K → la recherche de la page, sur les 19 écrans qui en ont une. --}}
+    <x-admin.shared.search-shortcut />
+
     @livewireScripts
 </body>
 

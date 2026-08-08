@@ -85,6 +85,23 @@
         },
 
         /**
+         * Repose le badge après chaque morph : Livewire remplace le DOM à
+         * chaque frappe, et ce qu'on y a ajouté en JS part avec.
+         *
+         * `livewire:init` est déjà passé quand le `x-init` d'Alpine tourne —
+         * s'y abonner d'ici n'attrape jamais rien. On accroche donc le hook
+         * tout de suite si Livewire est là, et on attend l'événement seulement
+         * dans le cas contraire.
+         */
+        watchMorphs() {
+            const attach = () => window.Livewire?.hook('morphed', () => this.decorate());
+
+            window.Livewire
+                ? attach()
+                : document.addEventListener('livewire:init', attach, { once: true });
+        },
+
+        /**
          * Le curseur est-il déjà en train d'écrire quelque part ?
          *
          * C'est la question qui rend « / » utilisable : sans elle, la barre
@@ -172,7 +189,7 @@
     x-init="
         decorate();
         document.addEventListener('livewire:navigated', () => decorate());
-        document.addEventListener('livewire:init', () => Livewire.hook('morph.updated', () => decorate()));
+        watchMorphs();
     "
     @keydown.window.capture="press($event)"
 ></div>

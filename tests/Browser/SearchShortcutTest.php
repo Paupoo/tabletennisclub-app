@@ -299,3 +299,42 @@ it('does not aim behind an open modal', function (): void {
     expect($state['focused'])->not->toBe('search', 'Le curseur ne doit pas partir derrière la modale.');
     expect($state['prevented'])->toBeFalse('Sans cible atteignable, la touche repart.');
 });
+
+/*
+ * Livewire remplace le DOM à chaque frappe. Le badge et l'attribut ARIA sont
+ * posés en JS : sans être reposés après le morph, ils disparaissent dès la
+ * première recherche — c'est-à-dire au moment précis où l'on s'en sert.
+ *
+ * Le piège tient au timing : `livewire:init` part avant que le `x-init`
+ * d'Alpine ne tourne, donc s'abonner à cet événement depuis Alpine arrive
+ * toujours trop tard et le hook n'est jamais posé.
+ */
+it('keeps the badge after Livewire replaces the list', function (): void {
+    $this->actingAs($this->admin);
+
+    User::factory()->count(3)->create();
+
+    $page = visit(route('admin.users.index'));
+
+    $result = $page->script(<<<'JS'
+    (() => {
+      const find = () => [...document.querySelectorAll('input')].find((i) =>
+        [...i.attributes].some((a) => a.name.startsWith('wire:model') && a.value === 'search')
+        && i.getClientRects().length > 0);
+
+      const field = find();
+      field.value = 'Dup';
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+
+      return new Promise((resolve) => setTimeout(() => resolve({
+        badges: document.querySelectorAll('[data-search-hint]').length,
+        aria: find()?.getAttribute('aria-keyshortcuts') ?? null,
+      }), 1500));
+    })()
+    JS);
+
+    $state = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($state['badges'])->toBe(1, 'Le badge doit survivre au morph — et ne pas s\'y dupliquer.');
+    expect($state['aria'])->toBe('Control+K Slash', 'Le raccourci doit rester annoncé après un rafraîchissement.');
+});

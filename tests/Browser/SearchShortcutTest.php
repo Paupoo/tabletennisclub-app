@@ -59,7 +59,7 @@ it('puts the cursor in the search box on Ctrl+K', function (): void {
     expect($state['tag'])->toBe('input', 'Ctrl+K doit donner le focus au champ de recherche.');
     expect($state['bound'])->toBe('search', 'Le champ focalisé doit être celui qui pilote la recherche.');
     expect($state['prevented'])->toBeTrue('Sans preventDefault, Ctrl+K part dans la barre d\'adresse du navigateur.');
-    expect($state['announced'])->toBe('Control+K', 'Le raccourci doit être annoncé aux technologies d\'assistance.');
+    expect($state['announced'])->toBe('Control+K Slash', 'Les deux raccourcis doivent être annoncés aux technologies d\'assistance.');
 });
 
 it('leaves a screen without a search box alone', function (): void {
@@ -193,4 +193,109 @@ it('clears the search on Escape and keeps the cursor there', function (): void {
     expect($state['afterFilled']['focused'])->toBeTrue('Le curseur doit rester dans le champ pour retaper.');
     expect($state['afterFilled']['stopped'])->toBeTrue('Le geste s\'arrête au champ : il ne doit pas fermer le tiroir par-dessus.');
     expect($state['emptyStopped'])->toBeFalse('Sur un champ vide, Échap repart — c\'est lui qui referme le tiroir.');
+});
+
+/*
+ * « / » amène aussi le curseur dans la recherche — une frappe au lieu de deux.
+ * L'habitude vient de Vim, où « / » ouvre la recherche ; GitHub, Gmail et
+ * Wikipédia l'ont reprise.
+ *
+ * Le piège est que « / » est un caractère qu'on tape. Sans garde, il
+ * disparaîtrait au milieu d'une adresse ou d'un IBAN en emportant le curseur
+ * ailleurs — un bug qu'on ne reproduit jamais quand on le cherche. La touche
+ * n'est donc interceptée que hors d'un champ de saisie.
+ */
+it('reaches the search with a single slash', function (): void {
+    $this->actingAs($this->admin);
+
+    $page = visit(route('admin.users.index'));
+
+    $result = $page->script(<<<'JS'
+    (() => {
+      document.body.focus();
+
+      const fromPage = new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true });
+      document.body.dispatchEvent(fromPage);
+
+      const active = document.activeElement;
+      const bound = [...active.attributes || []].find((a) => a.name.startsWith('wire:model'));
+
+      return { focused: bound ? bound.value : null, prevented: fromPage.defaultPrevented };
+    })()
+    JS);
+
+    $state = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($state['focused'])->toBe('search', '« / » doit amener le curseur dans la recherche.');
+    expect($state['prevented'])->toBeTrue('Sans preventDefault, une barre oblique s\'écrirait dans le champ.');
+});
+
+/*
+ * Le garde : dans un champ de saisie, « / » reste une barre oblique.
+ */
+it('leaves the slash alone while you are typing', function (): void {
+    $this->actingAs($this->admin);
+
+    $page = visit(route('admin.users.index'));
+
+    $result = $page->script(<<<'JS'
+    (() => {
+      const field = [...document.querySelectorAll('input')].find((input) =>
+        [...input.attributes].some((a) => a.name.startsWith('wire:model') && a.value === 'search')
+        && input.getClientRects().length > 0);
+
+      field.focus();
+
+      const typed = new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true });
+      field.dispatchEvent(typed);
+
+      return { prevented: typed.defaultPrevented };
+    })()
+    JS);
+
+    $state = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($state['prevented'])->toBeFalse(
+        'Dans un champ de saisie, « / » doit rester un caractère — sinon il disparaît au milieu d\'un mot.',
+    );
+});
+
+/*
+ * Une modale prend tout l'écran à qui l'ouvre. La recherche reste pourtant
+ * derrière, et « géométriquement visible » : sans garde, « / » irait y placer
+ * le curseur sous le voile, là où l'utilisateur ne peut ni le voir ni le sortir.
+ *
+ * Mary marque la modale ouverte d'un `.modal-open` — le raccourci ne vise donc
+ * un champ que s'il n'est pas derrière elle.
+ */
+it('does not aim behind an open modal', function (): void {
+    $this->actingAs($this->admin);
+
+    $page = visit(route('admin.users.index'));
+
+    $result = $page->script(<<<'JS'
+    (() => {
+      const dialog = document.querySelector('dialog.modal');
+      if (! dialog) return { skipped: 'aucune modale sur cet écran' };
+
+      dialog.classList.add('modal-open');
+      document.body.focus();
+
+      const slash = new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true });
+      document.body.dispatchEvent(slash);
+
+      const active = document.activeElement;
+      const bound = [...active.attributes || []].find((a) => a.name.startsWith('wire:model'));
+
+      dialog.classList.remove('modal-open');
+
+      return { focused: bound ? bound.value : null, prevented: slash.defaultPrevented };
+    })()
+    JS);
+
+    $state = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($state['skipped'] ?? null)->toBeNull('Cet écran doit porter au moins une modale pour que le test ait un sens.');
+    expect($state['focused'])->not->toBe('search', 'Le curseur ne doit pas partir derrière la modale.');
+    expect($state['prevented'])->toBeFalse('Sans cible atteignable, la touche repart.');
 });

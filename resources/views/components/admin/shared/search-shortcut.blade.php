@@ -16,13 +16,27 @@
 --}}
 <div
     x-data="{
-        /** Le champ qui pilote la recherche, s'il est visible en ce moment. */
+        /**
+         * Le champ qui pilote la recherche, s'il est atteignable en ce moment.
+         *
+         * « Atteignable » n'est pas « visible » : une modale prend tout l'écran
+         * à qui l'ouvre, mais la recherche reste derrière elle et garde une
+         * géométrie. Y placer le curseur le mettrait sous le voile, là où on ne
+         * peut ni le voir ni l'en sortir. Mary marque la modale ouverte d'un
+         * `.modal-open`.
+         */
         field() {
+            const modal = document.querySelector('.modal-open');
+
             return [...document.querySelectorAll('input')].find((input) => {
                 const bound = [...input.attributes]
                     .some((attribute) => attribute.name.startsWith('wire:model') && attribute.value === 'search');
 
-                return bound && input.getClientRects().length > 0;
+                if (! bound || input.getClientRects().length === 0) {
+                    return false;
+                }
+
+                return ! modal || modal.contains(input);
             }) ?? null;
         },
 
@@ -47,7 +61,7 @@
                 return;
             }
 
-            field.setAttribute('aria-keyshortcuts', 'Control+K');
+            field.setAttribute('aria-keyshortcuts', 'Control+K Slash');
 
             {{-- Mary rend le `suffix` en dernier enfant du <label class='input'>.
                  Hors de ce gabarit — le champ brut du panneau téléphone — il n'y
@@ -70,16 +84,39 @@
             shell.append(hint);
         },
 
+        /**
+         * Le curseur est-il déjà en train d'écrire quelque part ?
+         *
+         * C'est la question qui rend « / » utilisable : sans elle, la barre
+         * oblique disparaîtrait au milieu d'une adresse ou d'un IBAN en
+         * emportant le curseur ailleurs.
+         */
+        isTyping(target) {
+            return target instanceof HTMLElement
+                && (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable);
+        },
+
         press(event) {
             if (event.key === 'Escape') {
                 return this.clear(event);
+            }
+
+            const plainKey = ! event.ctrlKey && ! event.metaKey && ! event.altKey;
+
+            {{-- « / » seul, à la façon de Vim, mais jamais pendant qu'on tape. --}}
+            if (event.key === '/' && plainKey && ! this.isTyping(event.target)) {
+                return this.focusField(event);
             }
 
             if (event.key?.toLowerCase() !== 'k' || ! (event.ctrlKey || event.metaKey) || event.altKey) {
                 return;
             }
 
-            let field = this.field();
+            this.focusField(event);
+        },
+
+        focusField(event) {
+            const field = this.field();
 
             {{-- Sur téléphone la recherche vit derrière une loupe : l'ouvrir d'abord. --}}
             if (! field) {
@@ -100,7 +137,9 @@
                 return;
             }
 
-            {{-- Le navigateur réserve Ctrl+K à sa barre d'adresse. --}}
+            {{-- Ctrl+K est le raccourci de la barre d'adresse, « / » un caractère :
+                 dans les deux cas la touche doit être retenue une fois la cible
+                 trouvée, jamais avant. --}}
             event.preventDefault();
 
             this.decorate();

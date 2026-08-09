@@ -283,6 +283,13 @@ Route::prefix('admin/club-events/interclubs/')
         // Personal matches — self-scoped, left broad for any player for now.
         Route::livewire('my-matches', 'pages::club-events.interclubs.my-matches')->name('admin.interclubs.my-matches');
 
+        // Le centre de contrôle a fusionné avec l'écran des sélections : il en
+        // était la transposée (une journée, toutes les équipes) et dupliquait
+        // tiroir, recherche, statuts et score. L'ancienne URL redirige pour ne
+        // pas casser un signet.
+        Route::redirect('control-center', '/admin/club-events/interclubs/captain-selection')
+            ->name('admin.interclubs.control-center');
+
         // Selections & results: the permission gates the route, and each
         // component narrows it down to the teams the caller actually captains.
         Route::livewire('captain-selection', 'pages::club-events.interclubs.captain-selection')
@@ -294,7 +301,6 @@ Route::prefix('admin/club-events/interclubs/')
 
         // Interclub configuration & control — the interclubs délégation.
         Route::middleware('can:interclubs.manage')->group(function (): void {
-            Route::livewire('control-center', 'pages::club-events.interclubs.control-center')->name('admin.interclubs.control-center');
             Route::livewire('teams', 'pages::club-events.interclubs.teams.index')->name('admin.interclubs.teams');
             Route::livewire('teams/builder', 'pages::club-events.interclubs.teams.builder')->name('admin.interclubs.teams.builder');
             Route::livewire('teams/{team}', 'pages::club-events.interclubs.teams.show')->name('admin.interclubs.teams.show');

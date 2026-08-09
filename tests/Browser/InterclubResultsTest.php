@@ -34,13 +34,6 @@ it('captain selection page loads without JS errors', function (): void {
         ->assertSee('Sélections');
 });
 
-it('control center page loads without JS errors', function (): void {
-    $this->actingAs($this->admin);
-
-    visit(route('admin.interclubs.control-center'))
-        ->assertNoJavaScriptErrors();
-});
-
 /*
  * Fiche IC-5 de l'audit UX. Sur la base peuplée, les neuf équipes s'ouvraient
  * d'emblée : 164 lignes, 8 811 px, 9,8 hauteurs d'écran, contre 1,6 à 2,2

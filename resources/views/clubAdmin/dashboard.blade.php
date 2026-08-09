@@ -105,7 +105,6 @@
                         ['icon' => 'o-globe-alt',                'label' => 'Interclubs',     'sub' => 'Calendrier & matchs',   'href' => route('admin.interclubs.interclubs'),        'color' => 'blue', 'feature' => 'interclubs'],
                         ['icon' => 'o-clipboard-document-check', 'label' => 'Sélections',     'sub' => "Compositions d'équipe", 'href' => route('admin.interclubs.captain-selection'), 'color' => 'indigo', 'feature' => 'interclubs'],
                         ['icon' => 'o-chart-bar',                'label' => 'Résultats',      'sub' => 'Scores & classements',  'href' => route('admin.interclubs.results'),           'color' => 'amber', 'feature' => 'interclubs'],
-                        ['icon' => 'o-adjustments-horizontal',   'label' => 'Control center', 'sub' => 'Suivi en temps réel',   'href' => route('admin.interclubs.control-center'),    'color' => 'teal', 'feature' => 'interclubs'],
                     ];
                     $captainTiles = array_filter($captainTiles, fn (array $t): bool => ! isset($t['feature']) || \App\Domains\Shared\Enums\Feature::from($t['feature'])->enabled());
                 @endphp

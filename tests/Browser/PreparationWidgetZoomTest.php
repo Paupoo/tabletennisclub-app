@@ -13,6 +13,18 @@ use App\Domains\Competitions\Interclub\Models\Team;
  * The team zoom of the preparation widget runs entirely in Alpine — it dims
  * rows and keeps the query string in step without a server round trip. None of
  * that is observable from a Livewire test, so it is covered here.
+ *
+ * The widget is the season matrix the two reading directions of the selections
+ * screen each read a slice of. It sits above them, collapsed by default.
+ *
+ * Two things make the chips hard to reach, and both used to hang the whole
+ * browser suite rather than fail it:
+ *
+ *   - collapsed means display:none, and clicking a hidden element waits for a
+ *     click that can never land, so the widget has to be opened first;
+ *   - a team name appears twice on this screen — once on a zoom chip, once on
+ *     the team switcher — so matching on the name alone is ambiguous. The chips
+ *     carry data-zoom-chip for that reason.
  */
 beforeEach(function (): void {
     $this->season = Season::factory()->create([
@@ -51,18 +63,28 @@ beforeEach(function (): void {
     });
 });
 
+/** The zoom chip of one team, told apart from that team's switcher entry. */
+function zoomChip(Team|string $team): string
+{
+    return sprintf('[data-zoom-chip="%s"]', $team instanceof Team ? $team->id : $team);
+}
+
 it('keeps every team chip reachable while a team is zoomed', function (): void {
     $this->actingAs($this->admin);
 
+    $zulu = $this->teams->firstWhere('name', 'Zulu');
+    $yankee = $this->teams->firstWhere('name', 'Yankee');
+
     visit(route('admin.interclubs.captain-selection'))
-        ->assertSee('Zulu')
-        ->assertSee('Yankee')
-        ->click('Zulu')
+        ->click(__('Season overview'))
+        ->assertVisible(zoomChip($zulu))
+        ->assertVisible(zoomChip($yankee))
+        ->click(zoomChip($zulu))
         // The other chip used to disappear, stranding the user until they
-        // cleared the zoom through "Tous".
-        ->assertSee('Yankee')
-        ->click('Yankee')
-        ->assertSee('Zulu');
+        // cleared the zoom through "All".
+        ->assertVisible(zoomChip($yankee))
+        ->click(zoomChip($yankee))
+        ->assertVisible(zoomChip($zulu));
 });
 
 it('records the zoomed team in the query string', function (): void {
@@ -71,10 +93,11 @@ it('records the zoomed team in the query string', function (): void {
     $zulu = $this->teams->firstWhere('name', 'Zulu');
 
     visit(route('admin.interclubs.captain-selection'))
+        ->click(__('Season overview'))
         ->assertQueryStringMissing('zoomedTeamId')
-        ->click('Zulu')
+        ->click(zoomChip($zulu))
         ->assertQueryStringHas('zoomedTeamId', (string) $zulu->id)
-        ->click('Tous')
+        ->click(zoomChip('all'))
         ->assertQueryStringMissing('zoomedTeamId');
 });
 

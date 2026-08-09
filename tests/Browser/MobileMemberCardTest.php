@@ -19,7 +19,7 @@ use App\Domains\Meetings\Models\Meeting;
  * être tranchés.
  */
 
-const CARD_IDENTITY = <<<'JS'
+const CARD_IDENTITY = <<<'JS_WRAP'
 (() => {
   // Les préfixes divergent d'un écran à l'autre : « mobile- » partout sauf les
   // réunions, en « mob- ».
@@ -41,7 +41,7 @@ const CARD_IDENTITY = <<<'JS'
 
   return JSON.stringify({ cartes: cards.length, coupes: cut.slice(0, 5) });
 })()
-JS;
+JS_WRAP;
 
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->isCommitteeMember()->create();

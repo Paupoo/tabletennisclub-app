@@ -35,7 +35,7 @@ it('holds back the body of every modal until it is open', function (): void {
             $starts = array_filter([
                 strpos($source, '<x-app-modal', $cursor),
                 strpos($source, '<x-confirm-modal', $cursor),
-            ], fn ($position) => $position !== false);
+            ], fn (int|false $position) => $position !== false);
 
             if ($starts === []) {
                 break;

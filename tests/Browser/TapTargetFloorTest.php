@@ -15,7 +15,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
  * are left alone on purpose.
  */
 
-const SMALL_TARGETS = <<<'JS'
+const SMALL_TARGETS = <<<'JS_WRAP'
 (() => {
   const small = [...document.querySelectorAll('a[href], button, summary, input, select, textarea')]
     .filter(el => el.closest('.drawer-side, dialog') === null)
@@ -32,7 +32,7 @@ const SMALL_TARGETS = <<<'JS'
 
   return JSON.stringify(small);
 })()
-JS;
+JS_WRAP;
 
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->isCommitteeMember()->create();

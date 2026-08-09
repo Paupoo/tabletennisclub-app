@@ -17,7 +17,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
  * display:none et ne coûte rien à la hauteur d'une ligne.
  */
 
-const DESKTOP_READING = <<<'JS'
+const DESKTOP_READING = <<<'JS_WRAP'
 (() => {
   const main = document.querySelector('main') || document.body;
   const off = el => el.closest('.drawer-side, dialog') !== null;
@@ -44,7 +44,7 @@ const DESKTOP_READING = <<<'JS'
     prose_max: prose.length ? Math.round(Math.max(...prose)) : 0,
   });
 })()
-JS;
+JS_WRAP;
 
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->isCommitteeMember()->create();

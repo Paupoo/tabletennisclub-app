@@ -146,12 +146,16 @@
     @endfeature
 
     @feature('interclubs')
-    @canany(['selections.manage', 'results.manage', 'interclubs.manage'])
+    {{-- A captain is a relation (teams.captain_id), never a délégation: the
+         access-selections / access-results Gates say so, and the menu has to
+         ask the same question, or a captain reaches their own screens by URL
+         only. The season configuration below stays permission-gated. --}}
+    @if (Gate::any(['access-selections', 'access-results']) || $user->can('interclubs.manage'))
     <x-menu-sub icon="o-calendar-days" link="#" :title="__('Interclubs')">
-        @can('selections.manage')
+        @can('access-selections')
         <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" :title="__('Selections')" />
         @endcan
-        @can('results.manage')
+        @can('access-results')
         <x-menu-item icon="o-squares-2x2" link="{{ route('admin.interclubs.results') }}" :title="__('Results')" />
         @endcan
         @can('interclubs.manage')
@@ -163,7 +167,7 @@
         </x-menu-sub>
         @endcan
     </x-menu-sub>
-    @endcanany
+    @endif
     @endfeature
 
     @feature('meetings', 'tournaments')

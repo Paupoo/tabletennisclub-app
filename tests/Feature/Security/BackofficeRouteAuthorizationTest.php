@@ -38,7 +38,6 @@ it('forbids a plain member on committee-only pages', function (string $routeName
     'admin.tournaments.index',
     'admin.trainings.index',
     'admin.rooms.index',
-    'admin.interclubs.control-center',
     'admin.interclubs.teams',
     'admin.interclubs.clubs',
     'admin.interclubs.division-setup',
@@ -71,7 +70,9 @@ it('treats a team captain as a non-committee member on committee-only pages', fu
     Team::factory()->create(['captain_id' => $captain->id, 'season_id' => $this->season->id]);
 
     // A captain is not a committee member: committee-only pages stay forbidden.
-    $this->actingAs($captain)->get(route('admin.interclubs.control-center'))->assertForbidden();
+    // (The selections screen itself is open to them — that is the whole point of
+    // the access-selections Gate; the season configuration is not.)
+    $this->actingAs($captain)->get(route('admin.interclubs.teams'))->assertForbidden();
 });
 
 it('forbids a plain member from the coach area but grants coaches and admins', function (): void {

@@ -24,7 +24,7 @@ class MeetingInvitationNotification extends Notification implements ShouldQueue
     {
         return [
             'title' => __('Invitation: :title', ['title' => $this->meeting->title]),
-            'body' => __('Vous êtes invité à la réunion du :date', ['date' => $this->meeting->scheduled_at?->translatedFormat('d M Y') ?? __('TBD')]),
+            'body' => __('You are invited to the :date meeting', ['date' => $this->meeting->scheduled_at?->translatedFormat('d M Y') ?? __('TBD')]),
             'url' => route('admin.meetings.show', $this->meeting),
             'category' => 'meeting',
             'icon' => 'o-calendar-days',

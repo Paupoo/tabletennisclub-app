@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use Livewire\Livewire;
 
@@ -20,7 +21,7 @@ function indexAs(User $user)
 describe('draft tournament visibility', function (): void {
 
     it('hides draft tournaments from regular members', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
         $published = Tournament::factory()->create(['status' => TournamentStatusEnum::PUBLISHED]);
 
@@ -37,7 +38,7 @@ describe('draft tournament visibility', function (): void {
     });
 
     it('shows draft tournaments to committee members', function (): void {
-        $committee = User::factory()->isCommitteeMember()->create();
+        $committee = User::factory()->isCommitteeMember()->withRole(Role::TOURNAMENTS)->create();
         $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
 
         indexAs($committee)->assertSee($draft->name);
@@ -50,7 +51,7 @@ describe('draft tournament visibility', function (): void {
 describe('draft status filter isolation', function (): void {
 
     it('hides draft tournaments from regular members even when filtering by draft status', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
 
         indexAs($member)
@@ -74,7 +75,7 @@ describe('draft status filter isolation', function (): void {
 describe('canManage computed', function (): void {
 
     it('is false for regular members', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
 
         indexAs($member)->assertSet('canManage', false);
     });
@@ -86,7 +87,7 @@ describe('canManage computed', function (): void {
     });
 
     it('is true for committee members', function (): void {
-        $committee = User::factory()->isCommitteeMember()->create();
+        $committee = User::factory()->isCommitteeMember()->withRole(Role::TOURNAMENTS)->create();
 
         indexAs($committee)->assertSet('canManage', true);
     });

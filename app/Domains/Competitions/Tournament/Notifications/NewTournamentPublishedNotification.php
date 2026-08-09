@@ -32,7 +32,7 @@ class NewTournamentPublishedNotification extends Notification
     {
         return [
             'title' => __('Nouveau tournoi : :name', ['name' => $this->tournament->name]),
-            'body' => __('Un nouveau tournoi a été publié'),
+            'body' => __('A new tournament has been published'),
             'url' => route('admin.tournaments.index'),
             'category' => 'tournament',
             'icon' => 'o-trophy',
@@ -64,6 +64,11 @@ class NewTournamentPublishedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
+        // Optional notification: honour the member's opt-out preference.
+        if ($notifiable instanceof User && ! $notifiable->wantsNotification('new_tournaments')) {
+            return [];
+        }
+
         return ['mail', 'database'];
     }
 }

@@ -2,7 +2,7 @@
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('invitation.store', ['user' => $user->id]) }}">
+    <form method="POST" action="{{ url()->full() }}">
         @csrf
 
         <!-- Email Address (readonly) -->
@@ -13,7 +13,7 @@
 
         <!-- Password -->
         <div class="mt-4">
-            <x-form.field name="password" :label="__('Mot de passe')">
+            <x-form.field name="password" :label="__('Password')">
                 <x-text-input id="password" class="block mt-1 w-full"
                     type="password" name="password" required autocomplete="new-password" />
             </x-form.field>
@@ -21,14 +21,14 @@
 
         <!-- Confirm Password -->
         <div class="mt-4">
-            <x-form.field name="password_confirmation" :label="__('Confirmer le mot de passe')">
+            <x-form.field name="password_confirmation" :label="__('Confirm password')">
                 <x-text-input id="password_confirmation" class="block mt-1 w-full"
                     type="password" name="password_confirmation" required autocomplete="new-password" />
             </x-form.field>
         </div>
 
         <div class="flex items-center justify-end mt-4">
-            <x-button type="submit" :label="__('Finaliser mon inscription')" class="btn-primary ms-3" />
+            <x-button type="submit" :label="__('Finalise my registration')" class="btn-primary ms-3" />
         </div>
     </form>
 </x-login-layout>

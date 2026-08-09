@@ -25,10 +25,34 @@
                         wire:model="name"
                         placeholder="A – Z" />
 
-                    @if ($team->league)
+                    @if ($scheduledMatchCount === 0)
+                        @if ($newDivisionMode)
+                            <x-select :label="__('Category')" :options="$categoryOptions" wire:model="newCategory"
+                                placeholder="Sélectionner..." />
+                            <x-select label="Niveau" :options="$levelOptions" wire:model="newLevel"
+                                placeholder="Sélectionner..." />
+                            <x-input :label="__('Division')" wire:model="newDivision" placeholder="ex: 3B" />
+                            <x-button class="btn-ghost btn-xs" icon="o-arrow-uturn-left"
+                                :label="__('Choose an existing division')"
+                                wire:click="$set('newDivisionMode', false)" />
+                        @else
+                            <x-select
+                                :label="__('Division')"
+                                :options="$leagueOptions"
+                                wire:model="leagueId"
+                                :placeholder="__('Select a division')" />
+                            <x-button class="btn-ghost btn-xs" icon="o-plus"
+                                :label="__('Create a new division')"
+                                wire:click="$set('newDivisionMode', true)" />
+                        @endif
+                    @else
                         <div class="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
-                            <p class="font-medium text-gray-800">Ligue</p>
+                            <p class="font-medium text-gray-800">{{ __('Division') }}</p>
                             <p class="mt-1">{{ $division }}</p>
+                            <p class="mt-2 flex items-start gap-1.5 text-xs text-gray-500">
+                                <x-icon name="o-lock-closed" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span>{{ trans_choice('Locked: :count match is already scheduled for this team. Change the schedule first.|Locked: :count matches are already scheduled for this team. Change the schedule first.', $scheduledMatchCount, ['count' => $scheduledMatchCount]) }}</span>
+                            </p>
                         </div>
                     @endif
 

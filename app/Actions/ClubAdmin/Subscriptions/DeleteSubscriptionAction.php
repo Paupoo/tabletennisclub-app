@@ -7,7 +7,6 @@ namespace App\Actions\ClubAdmin\Subscriptions;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class DeleteSubscriptionAction extends Controller
 {

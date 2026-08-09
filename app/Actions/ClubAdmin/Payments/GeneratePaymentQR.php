@@ -15,11 +15,6 @@ use Endroid\QrCode\Writer\PngWriter;
 class GeneratePaymentQR
 {
     /**
-     * Create a new class instance.
-     */
-    public function __construct() {}
-
-    /**
      * @throws ValidationException
      */
     public function __invoke(Payment $payment): string

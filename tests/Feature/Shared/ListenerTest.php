@@ -47,8 +47,8 @@ test('meeting created event notifies all members for general assembly', function
 test('meeting created event notifies committee only for committee meeting', function (): void {
     Notification::fake();
 
-    $member = User::factory()->create(['is_committee_member' => true]);
-    $regular = User::factory()->create(['is_committee_member' => false]);
+    $member = User::factory()->isCommitteeMember()->create();
+    $regular = User::factory()->create();
 
     $meeting = Meeting::factory()->create(['type' => MeetingTypeEnum::COMMITTEE]);
 
@@ -62,8 +62,8 @@ test('team created event notifies admins', function (): void {
     Notification::fake();
 
     $season = Season::factory()->create();
-    $admin = User::factory()->create(['is_admin' => true]);
-    $regular = User::factory()->create(['is_admin' => false]);
+    $admin = User::factory()->isAdmin()->create();
+    $regular = User::factory()->create();
 
     $team = Team::factory()->for($season)->create();
 

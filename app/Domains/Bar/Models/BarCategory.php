@@ -60,6 +60,7 @@ class BarCategory extends Model
         return $this->hasMany(BarProduct::class, 'category_id');
     }
 
+    #[\Override]
     protected static function booted(): void
     {
         static::creating(function (self $model): void {

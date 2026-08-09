@@ -7,6 +7,7 @@ use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Models\AppSetting;
 use App\Domains\Shared\Rules\ValidIban;
 use Illuminate\Support\Facades\Auth;
@@ -88,8 +89,6 @@ new class extends Component
 
     public string $roomStreet = '';
 
-    public int $roomTotalTables = 4;
-
     public string $seasonEndAt = '';
 
     // ── Step 4 — Season ──────────────────────────────────────────────────────
@@ -131,7 +130,6 @@ new class extends Component
             'roomBuildingName' => 'nullable|string|max:100',
             'roomCapacityTraining' => 'required|integer|min:0|max:99',
             'roomCapacityInterclub' => 'required|integer|min:0|max:99',
-            'roomTotalTables' => 'required|integer|min:0|max:99',
         ]);
 
         $this->rooms[] = [
@@ -142,14 +140,12 @@ new class extends Component
             'building_name' => $this->roomBuildingName ?: null,
             'capacity_for_trainings' => $this->roomCapacityTraining,
             'capacity_for_interclubs' => $this->roomCapacityInterclub,
-            'total_tables' => $this->roomTotalTables,
         ];
 
         $this->reset(['roomName', 'roomStreet', 'roomCityCode', 'roomCityName', 'roomBuildingName', 'showRoomForm']);
         $this->roomCapacityTraining = 6;
         $this->roomCapacityInterclub = 4;
-        $this->roomTotalTables = 4;
-        $this->resetValidation(['roomName', 'roomStreet', 'roomCityCode', 'roomCityName', 'roomBuildingName', 'roomCapacityTraining', 'roomCapacityInterclub', 'roomTotalTables']);
+        $this->resetValidation(['roomName', 'roomStreet', 'roomCityCode', 'roomCityName', 'roomBuildingName', 'roomCapacityTraining', 'roomCapacityInterclub']);
     }
 
     public function addTable(): void
@@ -192,25 +188,21 @@ new class extends Component
 
         $user = User::first();
 
+        $attributes = [
+            'first_name' => $this->firstName,
+            'last_name' => $this->lastName,
+            'email' => $this->email,
+            'password' => Hash::make($this->password),
+            'is_active' => true,
+        ];
+
         if ($user) {
-            $user->update([
-                'first_name' => $this->firstName,
-                'last_name' => $this->lastName,
-                'email' => $this->email,
-                'password' => Hash::make($this->password),
-                'is_admin' => true,
-                'is_active' => true,
-            ]);
+            $user->update($attributes);
         } else {
-            $user = User::create([
-                'first_name' => $this->firstName,
-                'last_name' => $this->lastName,
-                'email' => $this->email,
-                'password' => Hash::make($this->password),
-                'is_admin' => true,
-                'is_active' => true,
-            ]);
+            $user = User::create($attributes);
         }
+
+        $user->assignRole(Role::ADMINISTRATOR->value);
 
         Auth::login($user);
 
@@ -302,7 +294,7 @@ new class extends Component
                 'start_at' => $this->seasonStartAt,
                 'end_at' => $this->seasonEndAt,
                 'is_active' => true,
-                'registrations_open' => false,
+                'affiliations_open' => false,
             ]);
         }
 

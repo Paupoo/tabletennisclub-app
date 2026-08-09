@@ -159,7 +159,7 @@ describe('closeTournament — thank-you email', function (): void {
             ->set('createNewsPost', false)
             ->call('closeTournament');
 
-        Mail::assertQueued(TournamentResultsMail::class, fn ($m) => $m->emailSubject === 'Mon sujet personnalisé'
+        Mail::assertQueued(TournamentResultsMail::class, fn ($m): bool => $m->emailSubject === 'Mon sujet personnalisé'
         );
     })->group('closure', 'email');
 

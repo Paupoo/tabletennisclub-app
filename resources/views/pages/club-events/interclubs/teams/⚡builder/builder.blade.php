@@ -59,8 +59,11 @@
                         </div>
                     @endif
 
+                    {{-- Mary pose son label dans un <legend> : cela nomme le groupe,
+                    pas le curseur. L'aria-label nomme le curseur lui-même. --}}
                     <x-range
                         :label="__('Core size (players per team)')"
+                        :aria-label="__('Core size (players per team)')"
                         wire:model.live="nucleusSize"
                         min="5"
                         max="20"
@@ -166,10 +169,10 @@
                                                 {{ $player->ranking }}
                                             </span>
                                         @endif
-                                        @if ($player->force_list !== null)
+                                        @if ($player->forceListFor($teamCategory) !== null)
                                             <span class="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-400"
                                                 title="Liste de force">
-                                                #{{ $player->force_list }}
+                                                #{{ $player->forceListFor($teamCategory) }}
                                             </span>
                                         @endif
 
@@ -251,10 +254,10 @@
                                                 {{ $player->ranking }}
                                             </span>
                                         @endif
-                                        @if ($player->force_list !== null)
+                                        @if ($player->forceListFor($teamCategory) !== null)
                                             <span class="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-400"
                                                 title="Liste de force">
-                                                #{{ $player->force_list }}
+                                                #{{ $player->forceListFor($teamCategory) }}
                                             </span>
                                         @endif
                                     </div>
@@ -279,7 +282,7 @@
     @endif
 
     {{-- Modal calcul de distribution --}}
-    <x-modal wire:model="showComputingModal" :title="__('Building teams')" separator persistent>
+    <x-app-modal wire:model="showComputingModal" :title="__('Building teams')" separator persistent :open="$showComputingModal">
         <div class="py-10 text-center">
             <div class="mb-6 flex justify-center">
                 <span class="loading loading-dots loading-lg text-primary"></span>
@@ -291,5 +294,5 @@
                 {{ __('Recalculating the force list and distributing players across teams.') }}
             </p>
         </div>
-    </x-modal>
+    </x-app-modal>
 </div>

@@ -8,6 +8,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubAvailability;
+use App\Domains\Shared\Enums\LeagueCategory;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
@@ -99,7 +100,7 @@ new class extends Component
             ->where('start_date_time', '>=', now())
             ->orderBy('start_date_time')
             ->get()
-            ->map(function (Interclub $interclub) use ($user) {
+            ->map(function (Interclub $interclub) use ($user): array {
                 $pivot = $interclub->users()
                     ->where('users.id', $user->id)
                     ->first()?->registration;
@@ -115,19 +116,13 @@ new class extends Component
                 $division = $interclub->league?->division ?? '';
                 $teamLabel = ($ourTeam?->name ?? '—') . ($division ? ' — ' . $division : '');
 
-                $categoryRaw = $ourTeam?->league?->category;
-                $categoryName = is_string($categoryRaw) ? $categoryRaw : ($categoryRaw?->value ?? 'MEN');
-                [$categoryLabel, $categorySort] = match ($categoryName) {
-                    'MEN' => ['Hommes', 1],
-                    'VETERANS' => ['Vétérans', 2],
-                    'WOMEN' => ['Dames', 3],
-                    default => ['—', 99],
-                };
+                $category = LeagueCategory::fromName($ourTeam?->league?->category);
 
                 return [
                     'id' => $interclub->id,
-                    'category_label' => $categoryLabel,
-                    'category_sort' => $categorySort,
+                    'category' => $category,
+                    'category_label' => $category?->label() ?? '—',
+                    'category_sort' => $category?->sortOrder() ?? 99,
                     'team_name' => $teamLabel,
                     'opponent' => $opponent,
                     'is_home' => $isHome,

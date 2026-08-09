@@ -19,27 +19,32 @@ final class SetUpState extends AbstractTournamentState
         $tournament->save();
     }
 
+    #[\Override]
     public function canCreatePools(): bool
     {
         return true;
     }
 
+    #[\Override]
     public function canGenerateMatches(): bool
     {
         return true;
     }
 
+    #[\Override]
     public function canModifyPools(): bool
     {
         return true;
     }
 
     // Actions spécifiques selon l'état
+    #[\Override]
     public function canRegisterUsers(): bool
     {
         return false;
     }
 
+    #[\Override]
     public function canStartMatches(): bool
     {
         return false;

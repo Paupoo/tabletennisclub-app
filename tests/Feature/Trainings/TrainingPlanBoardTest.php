@@ -7,6 +7,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\AgeCategoryEnum;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TrainingPlanStatusEnum;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Models\TrainingPlan;
@@ -20,13 +21,11 @@ const BOARD = 'pages::club-admin.planning.board';
 beforeEach(function (): void {
     $this->season = makeActiveSeason();
 
-    $this->manager = User::factory()->create([
-        'is_committee_member' => true,
+    $this->manager = User::factory()->isCommitteeMember()->withRole(Role::TRAININGS)->create([
         'committee_role' => CommitteeRolesEnum::SECRETARY,
     ]);
 
-    $this->viewer = User::factory()->create([
-        'is_committee_member' => true,
+    $this->viewer = User::factory()->isCommitteeMember()->create([
         'committee_role' => CommitteeRolesEnum::TREASURER,
     ]);
 });
@@ -178,6 +177,37 @@ describe('board rendering', function (): void {
             ->assertSee('Assigned Member')
             ->assertSee('Pooled Person')
             ->assertSee('B0');
+    });
+
+    it('renders without crashing when an assigned member has been archived', function (): void {
+        $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
+        $pack = TrainingPlanPack::factory()->for($plan, 'plan')->create(['name' => 'Tuesday Advanced']);
+
+        $archived = User::factory()->create(['first_name' => 'Gone', 'last_name' => 'Member']);
+        TrainingPlanAssignment::factory()->for($plan, 'plan')->for($pack, 'pack')->create([
+            'user_id' => $archived->id,
+        ]);
+        $archived->delete();
+
+        $stillHere = User::factory()->create(['first_name' => 'Still', 'last_name' => 'Here']);
+        Subscription::factory()->create([
+            'user_id' => $stillHere->id,
+            'season_id' => $this->season->id,
+            'status' => 'paid',
+        ]);
+        TrainingPlanAssignment::factory()->for($plan, 'plan')->inPool()->create([
+            'user_id' => $stillHere->id,
+        ]);
+
+        $component = Livewire::actingAs($this->manager)
+            ->test(BOARD, ['selectedPlanId' => $plan->id])
+            ->assertOk()
+            ->assertDontSee('Gone Member')
+            ->assertSee('Still Here');
+
+        $packColumn = collect($component->viewData('columns'))->firstWhere('id', 'pack-' . $pack->id);
+        expect($packColumn['cards'])->toHaveCount(0)
+            ->and($packColumn['current_count'])->toBe(0);
     });
 });
 

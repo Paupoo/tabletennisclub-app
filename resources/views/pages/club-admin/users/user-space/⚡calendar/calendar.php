@@ -3,247 +3,272 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Competitions\Interclub\Models\Interclub;
-use App\Domains\Competitions\Interclub\Models\Season;
-use App\Domains\Competitions\Interclub\Models\Team;
-use App\Domains\Competitions\Tournament\Models\Tournament;
-use App\Domains\Meetings\Models\Meeting;
-use App\Domains\Shared\Enums\InterclubAvailability;
-use App\Domains\Shared\Enums\MeetingStatusEnum;
-use App\Domains\Shared\Enums\TournamentStatusEnum;
-use App\Domains\Trainings\Models\Training;
+use App\Domains\ClubAdmin\Users\Services\UserCalendarService;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 new class extends Component
 {
-    use HasBreadcrumbs;
+    use HasBreadcrumbs, HasFilterDrawer;
+
+    public bool $icsModal = false;
+
+    /** Displayed month, "Y-m" format. */
+    #[Url]
+    public string $month = '';
 
     /** @var string[] */
     public array $selectedCategories = [];
+
+    /** Selected day, "Y-m-d" format. Entangled client-side for instant selection. */
+    #[Url]
+    public string $selectedDay = '';
 
     public bool $showAllEvents = false;
 
     public User $user;
 
-    #[Computed]
-    public function calendarData(): array
+    public function clearFilters(): void
     {
-        $events = collect();
+        $this->reset(['selectedCategories']);
+    }
 
-        // Tournaments
-        if (empty($this->selectedCategories) || in_array('tournament', $this->selectedCategories)) {
-            $tournamentsQuery = Tournament::where('status', TournamentStatusEnum::PUBLISHED)
-                ->where('start_date', '>=', now());
+    /**
+     * The displayed grid spans full weeks (Monday–Sunday), so leading and
+     * trailing days of adjacent months carry their events too.
+     *
+     * @return array<string, array<int, array<string, mixed>>> events keyed by "Y-m-d"
+     */
+    #[Computed]
+    public function eventsByDay(): array
+    {
+        $gridStart = $this->monthStart()->startOfWeek(Carbon::MONDAY);
+        $gridEnd = $this->monthStart()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
 
-            if (! $this->showAllEvents) {
-                $tournamentsQuery->whereHas('users', fn ($q) => $q
-                    ->where('tournament_user.user_id', $this->user->id)
-                    ->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered', 'waiting'])
-                );
-            }
+        $events = app(UserCalendarService::class)
+            ->eventsFor($this->user, $this->showAllEvents, $this->selectedCategories, $gridStart, $gridEnd);
 
-            $tournaments = $tournamentsQuery
-                ->with(['users' => fn ($q) => $q->where('tournament_user.user_id', $this->user->id)])
-                ->orderBy('start_date')
-                ->get()
-                ->map(fn ($t) => [
-                    'startDateTime' => $t->start_date->format('Y-m-d H:i:s'),
-                    'title' => $t->name,
-                    'type' => 'tournament',
-                    'tournamentId' => $t->id,
-                    'registrationStatus' => $t->users->first()?->pivot->registration_status,
-                    'waitlistPosition' => $t->users->first()?->pivot->waitlist_position,
-                    'confirmDeadline' => $t->users->first()?->pivot->confirmation_deadline?->format('Y-m-d H:i:s'),
-                    'monthKey' => $t->start_date->translatedFormat('F Y'),
-                ]);
+        $byDay = [];
 
-            $events = $events->merge($tournaments);
-        }
+        foreach ($events as $event) {
+            $start = Carbon::parse($event['startDateTime'])->startOfDay();
+            // Multi-day tournaments repeat on every covered day of the grid,
+            // tagged with their position (day 2/3…) so continuation days
+            // don't misleadingly show the day-1 start time.
+            $end = empty($event['endDate']) ? $start : Carbon::parse($event['endDate'])->startOfDay();
 
-        // Training sessions
-        if (empty($this->selectedCategories) || in_array('training', $this->selectedCategories)) {
-            $season = Season::where('is_active', true)->first();
+            $day = $start->greaterThan($gridStart) ? $start->copy() : $gridStart->copy()->startOfDay();
+            $last = $end->lessThan($gridEnd) ? $end : $gridEnd;
+            $dayCount = (int) $start->diffInDays($end) + 1;
 
-            if ($season) {
-                if ($this->showAllEvents) {
-                    $sessions = Training::with(['trainingPack', 'room', 'trainer'])
-                        ->where('status', 'scheduled')
-                        ->where('start', '>=', Carbon::now())
-                        ->orderBy('start')
-                        ->get()
-                        ->map(fn ($s) => [
-                            'startDateTime' => $s->start->format('Y-m-d H:i:s'),
-                            'endTime' => $s->end?->format('H:i'),
-                            'title' => $s->trainingPack?->name ?? __('Training'),
-                            'type' => 'training',
-                            'room' => $s->room?->name,
-                            'level' => $s->trainingPack?->level?->value,
-                            'coach' => $s->trainer ? trim($s->trainer->first_name . ' ' . $s->trainer->last_name) : null,
-                            'registrationStatus' => null,
-                            'monthKey' => $s->start->translatedFormat('F Y'),
-                        ]);
+            while ($day->lessThanOrEqualTo($last)) {
+                $entry = $event;
+                $entry['dayIndex'] = (int) $start->diffInDays($day) + 1;
+                $entry['dayCount'] = $dayCount;
 
-                    $events = $events->merge($sessions);
-                } else {
-                    // Sessions the user is personally involved in
-                    // Build a pack → pivot status map so we can show the right badge
-                    $subs = $this->user->subscriptions()
-                        ->where('season_id', $season->id)
-                        ->whereNotIn('status', ['cancelled'])
-                        ->with('trainingPacks')
-                        ->get();
-
-                    $packStatusMap = [];
-                    foreach ($subs as $sub) {
-                        foreach ($sub->trainingPacks as $pack) {
-                            $packStatusMap[$pack->id] = [
-                                'status' => $pack->pivot->status,
-                                'deadline' => $pack->pivot->confirmation_deadline,
-                                'waitlist_position' => $pack->pivot->waitlist_position,
-                            ];
-                        }
-                    }
-
-                    $enrolledPackIds = collect($packStatusMap)->keys();
-
-                    $sessionIds = collect();
-
-                    if ($enrolledPackIds->isNotEmpty()) {
-                        $sessionIds = $sessionIds->merge(
-                            Training::whereIn('training_pack_id', $enrolledPackIds)
-                                ->where('status', 'scheduled')
-                                ->where('start', '>=', Carbon::now())
-                                ->pluck('id')
-                        );
-                    }
-
-                    $sessionIds = $sessionIds->merge(
-                        Training::where('trainer_id', $this->user->id)
-                            ->where('status', 'scheduled')
-                            ->where('start', '>=', Carbon::now())
-                            ->pluck('id')
-                    );
-
-                    $sessionIds = $sessionIds->merge(
-                        $this->user->trainings()
-                            ->where('trainings.status', 'scheduled')
-                            ->where('trainings.start', '>=', Carbon::now())
-                            ->pluck('trainings.id')
-                    );
-
-                    if ($sessionIds->isNotEmpty()) {
-                        $sessions = Training::with(['trainingPack', 'room', 'trainer'])
-                            ->whereIn('id', $sessionIds->unique())
-                            ->orderBy('start')
-                            ->get()
-                            ->map(fn ($s) => [
-                                'startDateTime' => $s->start->format('Y-m-d H:i:s'),
-                                'endTime' => $s->end?->format('H:i'),
-                                'title' => $s->trainingPack?->name ?? __('Training'),
-                                'type' => 'training',
-                                'room' => $s->room?->name,
-                                'level' => $s->trainingPack?->level?->value,
-                                'coach' => $s->trainer ? trim($s->trainer->first_name . ' ' . $s->trainer->last_name) : null,
-                                'registrationStatus' => null,
-                                'packId' => $s->training_pack_id,
-                                'packStatus' => $packStatusMap[$s->training_pack_id]['status'] ?? 'enrolled',
-                                'confirmDeadline' => $packStatusMap[$s->training_pack_id]['deadline'] ?? null,
-                                'packWaitlistPosition' => $packStatusMap[$s->training_pack_id]['waitlist_position'] ?? null,
-                                'monthKey' => $s->start->translatedFormat('F Y'),
-                            ]);
-
-                        $events = $events->merge($sessions);
-                    }
-                }
+                $byDay[$day->format('Y-m-d')][] = $entry;
+                $day->addDay();
             }
         }
 
-        // Meetings (committee + GA)
-        if (empty($this->selectedCategories) || in_array('meeting', $this->selectedCategories)) {
-            $meetingsQuery = Meeting::whereIn('status', [MeetingStatusEnum::CONFIRMED->value])
-                ->where('scheduled_at', '>=', now());
+        return $byDay;
+    }
 
-            if (! $this->showAllEvents) {
-                $meetingsQuery->whereHas('users', fn ($q) => $q->where('meeting_user.user_id', $this->user->id));
-            }
+    /**
+     * @return array<int, array{key: string, label: string}>
+     */
+    public function getFilterChips(): array
+    {
+        $labels = collect($this->categoryOptions())->pluck('name', 'id');
 
-            $meetings = $meetingsQuery
-                ->with(['users' => fn ($q) => $q->where('users.id', $this->user->id)])
-                ->orderBy('scheduled_at')
-                ->get()
-                ->map(fn ($m) => [
-                    'startDateTime' => $m->scheduled_at->format('Y-m-d H:i:s'),
-                    'title' => $m->title,
-                    'type' => 'meeting',
-                    'meetingId' => $m->id,
-                    'format' => $m->format->value,
-                    'location' => $m->location,
-                    'meetingLink' => $m->meeting_link,
-                    'registrationStatus' => $m->users->first()?->registration?->status?->value,
-                    'monthKey' => $m->scheduled_at->translatedFormat('F Y'),
-                ]);
-
-            $events = $events->merge($meetings);
-        }
-
-        // Interclub matches
-        if (empty($this->selectedCategories) || in_array('interclub', $this->selectedCategories)) {
-            $season = Season::where('is_active', true)->first();
-
-            if ($season) {
-                $ourTeamIds = Team::inClub()->where('season_id', $season->id)->pluck('id');
-
-                if ($ourTeamIds->isNotEmpty()) {
-                    $userTeamIds = $this->user->teams()->pluck('teams.id')->toArray();
-
-                    // In "My events" mode, only show matches for the user's own teams
-                    $filterTeamIds = $this->showAllEvents
-                        ? $ourTeamIds->toArray()
-                        : $userTeamIds;
-
-                    if (! empty($filterTeamIds)) {
-                        $interclubs = Interclub::with([
-                            'visitedTeam.club',
-                            'visitingTeam.club',
-                            'league',
-                            'users' => fn ($q) => $q->where('users.id', $this->user->id),
-                        ])
-                            ->where('season_id', $season->id)
-                            ->where(fn ($q) => $q->whereIn('visited_team_id', $filterTeamIds)->orWhereIn('visiting_team_id', $filterTeamIds))
-                            ->where('start_date_time', '>=', Carbon::now())
-                            ->orderBy('start_date_time')
-                            ->get()
-                            ->map(fn ($ic) => $this->formatInterclub($ic, $ourTeamIds->toArray(), $userTeamIds));
-
-                        $events = $events->merge($interclubs);
-                    }
-                }
-            }
-        }
-
-        return $events
-            ->sortBy('startDateTime')
-            ->groupBy('monthKey')
-            ->map(fn ($group) => $group->values()->all())
+        return collect($this->selectedCategories)
+            ->map(fn (string $category): array => [
+                'key' => 'category:' . $category,
+                'label' => $labels[$category] ?? $category,
+            ])
+            ->values()
             ->all();
+    }
+
+    public function goToToday(): void
+    {
+        $this->navigateToMonth(now()->startOfMonth());
+    }
+
+    /**
+     * Permanent signed URL of the member's personal ICS feed — the signature
+     * is the secret, so the feed works without a session (calendar providers
+     * poll it server-side).
+     */
+    #[Computed]
+    public function icsUrl(): string
+    {
+        return Illuminate\Support\Facades\URL::signedRoute('admin.user.calendar.ics', ['user' => $this->user]);
+    }
+
+    public function mount(User $user): void
+    {
+        abort_unless(Auth::user()->is($user), 403);
+
+        $this->user = $user;
+
+        // #[Url] values are applied before mount(): only fill the defaults
+        // when the query string didn't provide them.
+        if ($this->month === '') {
+            $this->month = now()->format('Y-m');
+        }
+
+        if ($this->selectedDay === '') {
+            $this->selectedDay = now()->format('Y-m-d');
+        }
+    }
+
+    public function nextMonth(): void
+    {
+        $this->navigateToMonth($this->monthStart()->addMonthNoOverflow());
+    }
+
+    public function previousMonth(): void
+    {
+        $this->navigateToMonth($this->monthStart()->subMonthNoOverflow());
+    }
+
+    /**
+     * No pagination on this page, and categories are an array filter:
+     * remove one category at a time from its chip.
+     */
+    public function removeFilter(string $key): void
+    {
+        if (str_starts_with($key, 'category:')) {
+            $category = substr($key, strlen('category:'));
+            $this->selectedCategories = array_values(
+                array_filter($this->selectedCategories, fn (string $c): bool => $c !== $category)
+            );
+
+            return;
+        }
+
+        $this->reset([$key]);
+    }
+
+    public function selectDay(string $day): void
+    {
+        if (! Carbon::hasFormat($day, 'Y-m-d')) {
+            return;
+        }
+
+        $this->selectedDay = $day;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    #[Computed]
+    public function selectedDayEvents(): array
+    {
+        return $this->eventsByDay[$this->selectedDay] ?? [];
+    }
+
+    /** Jump straight to any month from the month/year picker. */
+    public function setMonth(string $month): void
+    {
+        if (! Carbon::hasFormat($month, 'Y-m')) {
+            return;
+        }
+
+        $this->navigateToMonth(Carbon::createFromFormat('Y-m-d', $month . '-01')->startOfDay());
+    }
+
+    /** The color legend doubles as a quick category filter. */
+    public function toggleCategory(string $category): void
+    {
+        $validIds = array_column($this->categoryOptions(), 'id');
+
+        if (! in_array($category, $validIds)) {
+            return;
+        }
+
+        $this->selectedCategories = in_array($category, $this->selectedCategories)
+            ? array_values(array_filter($this->selectedCategories, fn (string $c): bool => $c !== $category))
+            : [...$this->selectedCategories, $category];
+    }
+
+    /**
+     * @return array<int, array<int, array{date: string, day: int, inMonth: bool, isToday: bool, isPast: bool, events: array<int, array<string, mixed>>, ariaLabel: string, panelLabel: string}>>
+     */
+    #[Computed]
+    public function weeks(): array
+    {
+        $eventsByDay = $this->eventsByDay;
+        $monthStart = $this->monthStart();
+        $cursor = $monthStart->copy()->startOfWeek(Carbon::MONDAY);
+        $gridEnd = $monthStart->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
+        $today = now()->format('Y-m-d');
+        $tomorrow = now()->addDay()->format('Y-m-d');
+
+        $weeks = [];
+        $week = [];
+
+        while ($cursor->lessThanOrEqualTo($gridEnd)) {
+            $date = $cursor->format('Y-m-d');
+            $dayEvents = $eventsByDay[$date] ?? [];
+            $count = count($dayEvents);
+
+            $week[] = [
+                'date' => $date,
+                'day' => $cursor->day,
+                'inMonth' => $cursor->month === $monthStart->month,
+                'isToday' => $date === $today,
+                'isPast' => $date < $today,
+                'events' => $dayEvents,
+                'ariaLabel' => ucfirst($cursor->translatedFormat('l j F')) . ' — '
+                    . trans_choice(':count event|:count events', $count, ['count' => $count]),
+                'panelLabel' => match ($date) {
+                    $today => __('Today'),
+                    $tomorrow => __('Tomorrow'),
+                    default => ucfirst($cursor->translatedFormat('l j F Y')),
+                },
+            ];
+
+            if (count($week) === 7) {
+                $weeks[] = $week;
+                $week = [];
+            }
+
+            $cursor->addDay();
+        }
+
+        return $weeks;
     }
 
     public function with(): array
     {
+        // selectedDay is entangled client-side and URL-backed: normalize
+        // anything invalid back to today before rendering.
+        if (! Carbon::hasFormat($this->selectedDay, 'Y-m-d')) {
+            $this->selectedDay = now()->format('Y-m-d');
+        }
+
+        $monthStart = $this->monthStart();
+
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
-            'calendar' => $this->calendarData,
-            'categories' => [
-                ['id' => 'tournament', 'name' => __('Tournament')],
-                ['id' => 'training',   'name' => __('Training')],
-                ['id' => 'interclub',  'name' => __('Interclub')],
-                ['id' => 'meeting',    'name' => __('Meeting')],
-            ],
-            'selectedCategories' => $this->selectedCategories,
+            'weeks' => $this->weeks,
+            'monthLabel' => ucfirst($monthStart->translatedFormat('F Y')),
+            'isCurrentMonth' => $this->month === now()->format('Y-m'),
+            'monthHasEvents' => $this->eventsByDay !== [],
+            'pickerYear' => $monthStart->year,
+            'monthShortNames' => collect(range(1, 12))
+                ->map(fn (int $m): string => ucfirst($monthStart->copy()->month($m)->translatedFormat('M')))
+                ->all(),
+            'categories' => $this->categoryOptions(),
+            'filterChips' => $this->getFilterChips(),
         ];
     }
 
@@ -254,30 +279,38 @@ new class extends Component
             ->current(__('Calendar'));
     }
 
-    private function formatInterclub(Interclub $ic, array $ourTeamIds, array $userTeamIds): array
+    /**
+     * @return array<int, array{id: string, name: string}>
+     */
+    private function categoryOptions(): array
     {
-        $isHome = in_array($ic->visited_team_id, $ourTeamIds);
-        $ourTeam = $isHome ? $ic->visitedTeam : $ic->visitingTeam;
-        $opponentTeam = $isHome ? $ic->visitingTeam : $ic->visitedTeam;
-        $opponent = trim(($opponentTeam?->club?->name ?? '') . ' ' . ($opponentTeam?->name ?? '')) ?: '—';
-
-        $pivot = $ic->users->first()?->registration;
-        $availability = $pivot?->availability ? InterclubAvailability::from($pivot->availability) : null;
-
         return [
-            'startDateTime' => $ic->start_date_time->format('Y-m-d H:i:s'),
-            'title' => ($ourTeam?->name ?? '') . ' vs ' . $opponent,
-            'type' => 'interclub',
-            'isHome' => $isHome,
-            'opponent' => $opponent,
-            'teamName' => $ourTeam?->name ?? '—',
-            'division' => $ic->league?->division ?? '',
-            'address' => $ic->address ?? '—',
-            'isUserInTeam' => in_array($ourTeam?->id, $userTeamIds),
-            'availability' => $availability,
-            'isSelected' => (bool) $pivot?->is_selected,
-            'registrationStatus' => null,
-            'monthKey' => $ic->start_date_time->translatedFormat('F Y'),
+            ['id' => 'tournament', 'name' => __('Tournament')],
+            ['id' => 'training',   'name' => __('Training')],
+            ['id' => 'interclub',  'name' => __('Interclub')],
+            ['id' => 'meeting',    'name' => __('Meeting')],
         ];
+    }
+
+    private function monthStart(): Carbon
+    {
+        if (! Carbon::hasFormat($this->month, 'Y-m')) {
+            $this->month = now()->format('Y-m');
+        }
+
+        return Carbon::createFromFormat('Y-m-d', $this->month . '-01')->startOfDay();
+    }
+
+    /**
+     * Moving to another month re-anchors the selection: today when landing on
+     * the current month, the 1st otherwise.
+     */
+    private function navigateToMonth(Carbon $monthStart): void
+    {
+        $this->month = $monthStart->format('Y-m');
+
+        $this->selectedDay = $this->month === now()->format('Y-m')
+            ? now()->format('Y-m-d')
+            : $monthStart->format('Y-m-d');
     }
 };

@@ -53,9 +53,16 @@ trait HasEventPostForm
 
     /**
      * Populate form fields from an existing EventPost, or set sensible defaults.
+     * When creating fresh, $defaultLocation/$defaultDescription seed the form from
+     * the source model (e.g. a meeting's own location/description) so the organizer
+     * doesn't have to retype what was already filled in elsewhere.
      */
-    public function initEventPost(?EventPost $ep, string $defaultTitle = ''): void
-    {
+    public function initEventPost(
+        ?EventPost $ep,
+        string $defaultTitle = '',
+        ?string $defaultLocation = null,
+        ?string $defaultDescription = null,
+    ): void {
         if ($ep) {
             $this->eventPostId = $ep->id;
             $this->eventTitle = $ep->title;
@@ -67,8 +74,8 @@ trait HasEventPostForm
         } else {
             $this->eventPostId = null;
             $this->eventTitle = $defaultTitle;
-            $this->eventDescription = '';
-            $this->eventLocation = '';
+            $this->eventDescription = $defaultDescription ?? '';
+            $this->eventLocation = $defaultLocation ?? '';
             $this->eventFeatured = false;
             $this->eventFeaturedUntil = '';
             $this->eventStatus = 'DRAFT';

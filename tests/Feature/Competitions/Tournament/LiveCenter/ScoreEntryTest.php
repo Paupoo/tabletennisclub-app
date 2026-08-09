@@ -9,6 +9,7 @@ use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use App\Domains\Competitions\Tournament\Services\TournamentTableService;
+use App\Domains\Shared\Enums\TableStateEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -219,7 +220,7 @@ describe('TournamentTableService::freeUsedTable', function (): void {
         $room = Room::factory()->create();
         $table = Table::create([
             'name' => 'Table 1',
-            'state' => 'used',
+            'state' => TableStateEnum::GOOD,
             'purchased_on' => now()->subYears(2)->toDateString(),
             'room_id' => $room->id,
         ]);
@@ -270,7 +271,7 @@ describe('TableScoreEntry Livewire component', function (): void {
 
         $room = Room::factory()->create();
         $table = Table::create([
-            'name' => 'T1', 'state' => 'used',
+            'name' => 'T1', 'state' => TableStateEnum::GOOD,
             'purchased_on' => now()->subYears(1)->toDateString(),
             'room_id' => $room->id,
         ]);
@@ -302,7 +303,7 @@ describe('TableScoreEntry Livewire component', function (): void {
 
         $room = Room::factory()->create();
         $table = Table::create([
-            'name' => 'T2', 'state' => 'used',
+            'name' => 'T2', 'state' => TableStateEnum::GOOD,
             'purchased_on' => now()->subYears(1)->toDateString(),
             'room_id' => $room->id,
         ]);
@@ -325,7 +326,7 @@ describe('TableScoreEntry Livewire component', function (): void {
 
         $room = Room::factory()->create();
         $table = Table::create([
-            'name' => 'T3', 'state' => 'used',
+            'name' => 'T3', 'state' => TableStateEnum::GOOD,
             'purchased_on' => now()->subYears(1)->toDateString(),
             'room_id' => $room->id,
         ]);
@@ -351,7 +352,7 @@ describe('TableScoreEntry Livewire component', function (): void {
 
         $room = Room::factory()->create();
         $table = Table::create([
-            'name' => 'T4', 'state' => 'used',
+            'name' => 'T4', 'state' => TableStateEnum::GOOD,
             'purchased_on' => now()->subYears(1)->toDateString(),
             'room_id' => $room->id,
         ]);
@@ -378,7 +379,7 @@ describe('TableScoreEntry Livewire component', function (): void {
 
         $room = Room::factory()->create();
         $table = Table::create([
-            'name' => 'T5', 'state' => 'used',
+            'name' => 'T5', 'state' => TableStateEnum::GOOD,
             'purchased_on' => now()->subYears(1)->toDateString(),
             'room_id' => $room->id,
         ]);
@@ -412,7 +413,7 @@ describe('TableScoreEntry Livewire component', function (): void {
 
         $room = Room::factory()->create();
         $table = Table::create([
-            'name' => 'T6', 'state' => 'used',
+            'name' => 'T6', 'state' => TableStateEnum::GOOD,
             'purchased_on' => now()->subYears(1)->toDateString(),
             'room_id' => $room->id,
         ]);
@@ -442,7 +443,7 @@ describe('TableScoreEntry Livewire component', function (): void {
 
         $room = Room::factory()->create();
         $table = Table::create([
-            'name' => 'T7', 'state' => 'used',
+            'name' => 'T7', 'state' => TableStateEnum::GOOD,
             'purchased_on' => now()->subYears(1)->toDateString(),
             'room_id' => $room->id,
         ]);
@@ -476,7 +477,7 @@ describe('TableScoreEntry Livewire component', function (): void {
 
         $room = Room::factory()->create();
         $table = Table::create([
-            'name' => 'T_invalid_low', 'state' => 'used',
+            'name' => 'T_invalid_low', 'state' => TableStateEnum::GOOD,
             'purchased_on' => now()->subYears(1)->toDateString(),
             'room_id' => $room->id,
         ]);
@@ -504,7 +505,7 @@ describe('TableScoreEntry Livewire component', function (): void {
 
         $room = Room::factory()->create();
         $table = Table::create([
-            'name' => 'T_invalid_deuce', 'state' => 'used',
+            'name' => 'T_invalid_deuce', 'state' => TableStateEnum::GOOD,
             'purchased_on' => now()->subYears(1)->toDateString(),
             'room_id' => $room->id,
         ]);
@@ -532,7 +533,7 @@ describe('TableScoreEntry Livewire component', function (): void {
 
         $room = Room::factory()->create();
         $table = Table::create([
-            'name' => 'T_recount', 'state' => 'used',
+            'name' => 'T_recount', 'state' => TableStateEnum::GOOD,
             'purchased_on' => now()->subYears(1)->toDateString(),
             'room_id' => $room->id,
         ]);
@@ -559,7 +560,7 @@ describe('TableScoreEntry Livewire component', function (): void {
 
         $room = Room::factory()->create();
         $table = Table::create([
-            'name' => 'T_valid_3', 'state' => 'used',
+            'name' => 'T_valid_3', 'state' => TableStateEnum::GOOD,
             'purchased_on' => now()->subYears(1)->toDateString(),
             'room_id' => $room->id,
         ]);

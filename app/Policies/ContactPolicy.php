@@ -6,6 +6,7 @@ namespace App\Policies;
 
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Permission;
 
 class ContactPolicy
 {
@@ -14,7 +15,7 @@ class ContactPolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::ContactsManage->value);
     }
 
     /**
@@ -22,7 +23,7 @@ class ContactPolicy
      */
     public function delete(User $user, Contact $contact): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::ContactsManage->value);
     }
 
     /**
@@ -30,7 +31,7 @@ class ContactPolicy
      */
     public function forceDelete(User $user, Contact $contact): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::ContactsManage->value);
     }
 
     /**
@@ -38,7 +39,7 @@ class ContactPolicy
      */
     public function restore(User $user, Contact $contact): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::ContactsManage->value);
     }
 
     /**
@@ -46,7 +47,7 @@ class ContactPolicy
      */
     public function sendEmail(User $user, Contact $contact): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::ContactsManage->value);
     }
 
     /**
@@ -54,7 +55,7 @@ class ContactPolicy
      */
     public function update(User $user, Contact $contact): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::ContactsManage->value);
     }
 
     /**
@@ -62,7 +63,7 @@ class ContactPolicy
      */
     public function view(User $user, Contact $contact): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::ContactsView->value);
     }
 
     /**
@@ -70,6 +71,6 @@ class ContactPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::ContactsView->value);
     }
 }

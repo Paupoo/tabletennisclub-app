@@ -60,7 +60,7 @@ class InviteNewUserMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Bienvenue au ' . config('app.name') . ' – Finalisez votre inscription',
+            subject: __('Welcome to :app – Finalize your registration', ['app' => config('app.name')]),
             from: new Address(
                 address: config('mail.from.address'),
                 name: config('app.name') ?? config('mail.from.name')

@@ -9,6 +9,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Ranking;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -32,10 +33,6 @@ class UserFactory extends Factory
         $uniqueEmail = $this->uniqueEmail();
 
         return [
-            'is_admin' => false,
-            'is_committee_member' => false,
-            'is_coach' => false,
-            'is_selector' => false,
             'has_key' => false,
             'email' => $uniqueEmail,
             'email_verified_at' => now(),
@@ -45,7 +42,7 @@ class UserFactory extends Factory
             'last_name' => fake()->lastName(),
             'gender' => fake()->randomElement(array_column(Gender::cases(), 'name')),
             'phone_number' => fake()->numberBetween(460000000, 499000000),
-            'birthdate' => fake()->dateTimeBetween('-75 years', '- 8 years'),
+            'birthdate' => fake()->dateTimeBetween('-75 years', '-18 years'),
             'street' => fake()->streetAddress(),
             'city_code' => (string) fake()->numberBetween(1000, 9999),
             'city_name' => fake()->city(),
@@ -56,16 +53,17 @@ class UserFactory extends Factory
 
     public function isAdmin(): static
     {
-        return $this->state(fn (array $attributes): array => [
-            'is_admin' => true,
-        ]);
+        return $this->withRole(Role::ADMINISTRATOR);
+    }
+
+    public function isCoach(): static
+    {
+        return $this->withRole(Role::COACH);
     }
 
     public function isCommitteeMember(): static
     {
-        return $this->state(fn (array $attributes): array => [
-            'is_committee_member' => true,
-        ]);
+        return $this->withRole(Role::COMMITTEE);
     }
 
     public function isCompetitor(): static
@@ -85,9 +83,11 @@ class UserFactory extends Factory
             $season = Season::current() ?? Season::inRandomOrder()->first();
 
             if ($season !== null) {
+                // Statut confirmé : un compétiteur est d'abord un membre actif
+                // du club (voir User::scopeCompetitor).
                 Subscription::firstOrCreate(
                     ['user_id' => $user->id, 'season_id' => $season->id],
-                    ['is_competitive' => true, 'amount_due' => 125, 'amount_paid' => 0],
+                    ['is_competitive' => true, 'amount_due' => 125, 'amount_paid' => 0, 'status' => 'confirmed'],
                 );
             }
         });
@@ -100,10 +100,22 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function isSelector(): static
+    {
+        return $this->withRole(Role::SELECTIONS);
+    }
+
+    public function minor(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'birthdate' => fake()->dateTimeBetween('-17 years', '-8 years'),
+        ]);
+    }
+
     public function setRanking(Ranking $ranking): static
     {
         return $this->state(fn (array $attributes): array => [
-            'ranking' => $ranking,
+            'ranking' => $ranking->value,
         ]);
     }
 
@@ -115,6 +127,20 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    /**
+     * Grants a role once the user exists — roles live in a pivot table, so unlike
+     * the boolean columns they replace, they cannot be part of the insert.
+     */
+    public function withRole(Role ...$roles): static
+    {
+        return $this->afterCreating(function (User $user) use ($roles): void {
+            $user->assignRole(...array_map(
+                static fn (Role $role): string => $role->value,
+                $roles,
+            ));
+        });
     }
 
     private function uniqueEmail(): string

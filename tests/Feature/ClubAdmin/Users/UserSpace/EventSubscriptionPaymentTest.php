@@ -38,7 +38,7 @@ function mountEventSubscription(User $user)
 
 function futureMealMeeting(): Meeting
 {
-    $admin = User::factory()->create(['is_admin' => true]);
+    $admin = User::factory()->isAdmin()->create();
 
     return Meeting::factory()->confirmed()->withMeal('Pizzas', 1200)->create([
         'created_by' => $admin->id,

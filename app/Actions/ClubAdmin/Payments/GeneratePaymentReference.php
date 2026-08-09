@@ -11,13 +11,13 @@ class GeneratePaymentReference
 {
     public string $reference;
 
-    private string $date;
+    private readonly string $date;
 
-    private Carbon $now;
+    private readonly Carbon $now;
 
     private string $sequence;
 
-    private int $verification;
+    private string $verification;
 
     /**
      * Create a new class instance.
@@ -52,17 +52,26 @@ class GeneratePaymentReference
     public function addSeparators(string $string): string
     {
         $string = substr_replace($string, '/', 7, 0);
-        $string = substr_replace($string, '/', 3, 0);
 
-        return $string;
+        return substr_replace($string, '/', 3, 0);
     }
 
     /**
-     * Returns the validation number
+     * Format a modulo-97 remainder as the 2-digit check number per the Belgian
+     * structured communication standard: always zero-padded, and 0 becomes 97
+     * ("00" is not a valid check number).
      */
-    private function getCheckSum(): int
+    private function formatCheckDigits(int $remainder): string
     {
-        return (int) $this->reference % 97;
+        return str_pad((string) ($remainder === 0 ? 97 : $remainder), 2, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Returns the 2-digit Belgian OGM/VCS check number for the current reference base.
+     */
+    private function getCheckSum(): string
+    {
+        return $this->formatCheckDigits((int) $this->reference % 97);
     }
 
     /**
@@ -77,8 +86,6 @@ class GeneratePaymentReference
 
         $todayPaymentCount++;
 
-        $todayPaymentCount = str_pad((string) $todayPaymentCount, 3, '0', STR_PAD_LEFT);
-
-        return (string) $todayPaymentCount;
+        return str_pad((string) $todayPaymentCount, 3, '0', STR_PAD_LEFT);
     }
 }

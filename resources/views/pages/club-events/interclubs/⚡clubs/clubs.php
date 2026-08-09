@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Resources\views\Pages\ClubEvents\Interclubs\Clubs;
 
 use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -69,7 +70,7 @@ new class extends Component
 
     public function mount(): void
     {
-        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+        Gate::authorize(Permission::ClubsManage->value);
     }
 
     public function openCreateModal(): void

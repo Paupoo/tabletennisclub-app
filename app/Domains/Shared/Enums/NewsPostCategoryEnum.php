@@ -27,7 +27,7 @@ enum NewsPostCategoryEnum: string
     public function getLabel(): string
     {
         return match ($this) {
-            self::COMPETITION => __('Compétition'),
+            self::COMPETITION => __('Competition'),
             self::PARTNERSHIP => __('Partnership'),
             self::PORTRAIT => __('Portrait'),
             self::EVENT => __('Events'),

@@ -13,21 +13,7 @@
         </x-slot:middle>
         <x-slot:actions>
             {{-- Mobile: 🔍 · filter · ☰ --}}
-            <div class="flex items-center gap-1 lg:hidden">
-                <button class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true">
-                    <x-icon name="o-magnifying-glass" class="h-5 w-5" />
-                </button>
-                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                    wire:click="$set('filterDrawer', true)">
-                    <x-icon name="o-funnel" class="h-5 w-5" />
-                    @if (count($filterChips) > 0)
-                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
-                    @endif
-                </button>
-                <button class="btn btn-primary btn-circle btn-sm" @click="mobileActionsOpen = true">
-                    <x-icon name="o-bars-3" class="h-5 w-5" />
-                </button>
-            </div>
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" />
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
                 <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
@@ -54,7 +40,8 @@
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
                     placeholder="{{ __('Search by name, email…') }}" />
             </div>
-            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+            <button type="button" @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm"
+                aria-label="{{ __('Close the search') }}">
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
@@ -64,11 +51,10 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
-    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
         @php
             $statCards = [
                 ['label' => __('New'),       'key' => 'totalNew',       'bg' => 'bg-info/10',    'color' => 'text-info'],
-                ['label' => __('Pending'),   'key' => 'totalPending',   'bg' => 'bg-warning/10', 'color' => 'text-warning'],
                 ['label' => __('Processed'), 'key' => 'totalProcessed', 'bg' => 'bg-success/10', 'color' => 'text-success'],
                 ['label' => __('Rejected'),  'key' => 'totalRejected',  'bg' => 'bg-error/10',   'color' => 'text-error'],
             ];
@@ -88,20 +74,20 @@
         @endforeach
     </div>
 
+    @php $hasActiveFilters = count($filterChips) > 0 || filled($search); @endphp
+
     {{-- ── Vue mobile ───────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($contacts as $contact)
             @php
                 $badgeClass = match ($contact->status) {
                     'new'       => 'badge-info badge-soft',
-                    'pending'   => 'badge-warning badge-soft',
                     'processed' => 'badge-success badge-soft',
                     'rejected'  => 'badge-error badge-soft',
                     default     => 'badge-ghost',
                 };
                 $statusLabel = match ($contact->status) {
                     'new'       => __('New'),
-                    'pending'   => __('Pending'),
                     'processed' => __('Processed'),
                     'rejected'  => __('Rejected'),
                     default     => $contact->status,
@@ -125,32 +111,41 @@
                     <div class="mt-0.5 flex items-center gap-2">
                         <x-badge :value="$statusLabel" class="{{ $badgeClass }} badge-sm" />
                         <span class="text-xs text-base-content/40">{{ $contact->email }}</span>
+                        @if ($this->matchedUserFor($contact))
+                            <x-badge :value="__('Already a member')" class="badge-success badge-soft badge-sm" />
+                        @endif
                     </div>
                 </x-slot:sub-value>
                 <x-slot:actions>
                     @if (! $selectionModeActive)
                         <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
                             :tooltip="__('Delete')"
-                            wire:click.stop="confirmDelete({{ $contact->id }})" />
+                            wire:click.stop="confirmDelete({{ $contact->id }})" :aria-label="__('Delete')" />
                     @endif
                 </x-slot:actions>
             </x-list-item>
         @empty
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-envelope"
-                :heading="__('No contacts found')"
-                :message="__('Try adjusting your search or filters.')" />
+                :heading="__('No contacts yet')"
+                :filtered="$hasActiveFilters" />
         @endforelse
+
+        @if ($contacts->hasPages())
+            <div class="mt-2">
+                {{ $contacts->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
     <div class="hidden lg:block">
         <x-card>
             @if ($contacts->isEmpty())
-                <x-empty-state
+                <x-admin.shared.list-empty-state
                     icon="o-envelope"
-                    :heading="__('No contacts found')"
-                    :message="__('Try adjusting your search or filters.')" />
+                    :heading="__('No contacts yet')"
+                    :filtered="$hasActiveFilters" />
             @else
                 <x-table :headers="$headers" :rows="$contacts" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
@@ -161,6 +156,9 @@
                     @endscope
                     @scope('cell_email', $contact)
                         <span class="text-sm text-base-content/60">{{ $contact->email }}</span>
+                        @if ($this->matchedUserFor($contact))
+                            <x-badge :value="__('Already a member')" class="badge-success badge-soft badge-sm ml-1" />
+                        @endif
                     @endscope
                     @scope('cell_interest', $contact)
                         @if ($contact->interest)
@@ -171,20 +169,18 @@
                         @php
                             $badgeClass = match ($contact->status) {
                                 'new'       => 'badge-info badge-soft',
-                                'pending'   => 'badge-warning badge-soft',
                                 'processed' => 'badge-success badge-soft',
                                 'rejected'  => 'badge-error badge-soft',
                                 default     => 'badge-ghost',
                             };
                             $statusLabel = match ($contact->status) {
                                 'new'       => __('New'),
-                                'pending'   => __('Pending'),
                                 'processed' => __('Processed'),
                                 'rejected'  => __('Rejected'),
                                 default     => $contact->status,
                             };
                         @endphp
-                        <x-badge :value="$statusLabel" class="{{ $badgeClass }}" />
+                        <x-badge :value="$statusLabel" class="{{ $badgeClass }} badge-sm" />
                     @endscope
                     @scope('cell_created_at', $contact)
                         <span class="text-xs text-base-content/40">
@@ -192,14 +188,13 @@
                         </span>
                     @endscope
                     @scope('actions', $contact)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
-                                :tooltip="__('View detail')"
-                                wire:click="openDetail({{ $contact->id }})" />
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
+                        <x-admin.shared.row-menu
+                            :label="__('View detail')"
+                            icon="o-eye"
+                            wire-click="openDetail({{ $contact->id }})">
+                            <x-menu-item icon="o-trash" class="text-error" :title="__('Delete')"
                                 wire:click="confirmDelete({{ $contact->id }})" />
-                        </x-admin.shared.row-actions>
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">
@@ -306,7 +301,7 @@
                         {{ __('Status') }}
                     </p>
                     <div class="flex flex-wrap gap-2">
-                        @foreach ([['new', __('New'), 'btn-info'], ['pending', __('Pending'), 'btn-warning'], ['processed', __('Processed'), 'btn-success'], ['rejected', __('Rejected'), 'btn-error']] as [$val, $label, $cls])
+                        @foreach ([['new', __('New'), 'btn-info'], ['processed', __('Processed'), 'btn-success'], ['rejected', __('Rejected'), 'btn-error']] as [$val, $label, $cls])
                             <x-button class="btn-sm btn-soft {{ $cls }} {{ $selectedContact->status === $val ? 'opacity-100' : 'opacity-40' }}"
                                 :label="$label" :disabled="! $canManage"
                                 wire:click="updateStatus({{ $selectedContact->id }}, '{{ $val }}')" />
@@ -350,10 +345,16 @@
 
                     @if (in_array($selectedContact->interest?->value, ['JOIN_US', 'TRIAL']) && $selectedContact->status !== 'processed')
                         <div class="border-base-200 border-t pt-3">
-                            <x-button class="btn-primary btn-sm w-full" icon="o-user-plus"
-                                :label="__('Onboard as member')"
-                                wire:click="onboardContact({{ $selectedContact->id }})"
-                                spinner />
+                            @if ($this->trashedMatchFor($selectedContact))
+                                <p class="text-warning text-xs">
+                                    {{ __('This email belongs to a former member account. Resolve this manually before onboarding.') }}
+                                </p>
+                            @else
+                                <x-button class="btn-primary btn-sm w-full" icon="o-user-plus"
+                                    :label="$this->matchedUserFor($selectedContact) ? __('Link to existing account') : __('Onboard as member')"
+                                    wire:click="onboardContact({{ $selectedContact->id }})"
+                                    spinner />
+                            @endif
                         </div>
                     @endif
 
@@ -368,7 +369,7 @@
     </x-drawer>
 
     {{-- ── Modal email personnalisé ──────────────────────────────────── --}}
-    <x-modal wire:model="emailModal" :title="__('Custom email')">
+    <x-app-modal wire:model="emailModal" :title="__('Custom email')" :open="$emailModal">
         <div class="space-y-4">
             <x-input :label="__('Subject')" wire:model="emailSubject" />
             <x-textarea :label="__('Message')" wire:model="emailBody" rows="6" />
@@ -382,17 +383,31 @@
             <x-button class="btn-primary" icon="o-paper-airplane" :label="__('Send')"
                 wire:click="sendCustomEmail" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete this contact?')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('This action is irreversible.') }}</p>
+    </x-confirm-modal>
+
+    {{-- ── Modal confirmation de lien vers un compte existant ──────────── --}}
+    <x-confirm-modal model="confirmLinkModal" :title="__('Link to existing account?')"
+        :confirmLabel="__('Link to existing account')" confirmClass="btn-primary" confirmAction="linkToExistingUser"
+        cancelAction="cancelLink" :open="$confirmLinkModal">
+        @if ($linkTargetUser ?? null)
+            <p>
+                {{ __('This email matches an existing member: :name.', ['name' => $linkTargetUser->first_name . ' ' . $linkTargetUser->last_name]) }}
+            </p>
+            <p class="mt-2 text-xs opacity-60">
+                {{ __('A member account can only have one email address. Make sure this is the same person before linking.') }}
+            </p>
+        @endif
     </x-confirm-modal>
 
     {{-- ── Modal suppression bulk ───────────────────────────────────── --}}
     <x-confirm-modal model="confirmBulkDeleteModal" :title="__('Delete selected contacts?')"
-        :confirmLabel="__('Delete')" confirmAction="bulkDelete">
+        :confirmLabel="__('Delete')" confirmAction="bulkDelete" :open="$confirmBulkDeleteModal">
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be permanently deleted.') }}

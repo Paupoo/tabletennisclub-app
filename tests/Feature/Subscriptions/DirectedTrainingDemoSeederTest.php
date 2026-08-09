@@ -40,7 +40,7 @@ it('keeps the level modest — no ranking stronger than D4 (only NG/E/D)', funct
     // Allowed series only: unranked (NC), E, D — never C/B/A. And within D, max D4.
     $allowed = ['NC', 'E6', 'E4', 'E2', 'E0', 'D6', 'D4'];
 
-    expect($rankings->every(fn (string $r) => in_array($r, $allowed, true)))->toBeTrue();
+    expect($rankings->every(fn (string $r): bool => in_array($r, $allowed, true)))->toBeTrue();
 });
 
 it('is idempotent — does not duplicate the cohort on a second run', function (): void {

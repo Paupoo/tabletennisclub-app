@@ -80,14 +80,12 @@ class CashSheetService
             ->groupBy('product_id')
             ->orderByDesc('total_quantity')
             ->get()
-            ->map(function (BarOrderItem $item): array {
-                return [
-                    'product_id' => (int) $item->product_id,
-                    'product_name' => $item->product->name ?? 'Produit supprimé',
-                    'quantity' => (int) $item->total_quantity,
-                    'revenue_cents' => (int) $item->total_revenue,
-                ];
-            });
+            ->map(fn (BarOrderItem $item): array => [
+                'product_id' => (int) $item->product_id,
+                'product_name' => $item->product->name ?? 'Produit supprimé',
+                'quantity' => (int) $item->total_quantity,
+                'revenue_cents' => (int) $item->total_revenue,
+            ]);
 
         $summary = [
             'orders_total' => $ordersTotal,
@@ -189,14 +187,14 @@ class CashSheetService
             'Produit',
             'Quantité vendue',
             'Total (cents)',
-        ], ';');
+        ], ';', escape: '\\');
 
         foreach ($rows as $row) {
             fputcsv($handle, [
                 $row['product_name'],
                 $row['quantity'],
                 $row['revenue_cents'],
-            ], ';');
+            ], ';', escape: '\\');
         }
 
         rewind($handle);

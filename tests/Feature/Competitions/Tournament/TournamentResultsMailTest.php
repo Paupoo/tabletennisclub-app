@@ -126,10 +126,8 @@ describe('TournamentResultsMail — queueing', function (): void {
             rankings: collect(),
         ));
 
-        Mail::assertQueued(TournamentResultsMail::class, function (TournamentResultsMail $m) use ($recipient) {
-            return $m->recipient->is($recipient)
-                && $m->emailSubject === 'Résultats — Open Printemps';
-        });
+        Mail::assertQueued(TournamentResultsMail::class, fn (TournamentResultsMail $m): bool => $m->recipient->is($recipient)
+            && $m->emailSubject === 'Résultats — Open Printemps');
     })->group('mail', 'tournament', 'queue');
 
     it('queues one email per participant', function (): void {

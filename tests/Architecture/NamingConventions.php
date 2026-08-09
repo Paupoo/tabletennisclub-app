@@ -24,7 +24,7 @@ it('PHP classes are defined in files matching their class name', function (): vo
             continue;
         }
 
-        if (! preg_match('/class\s+([A-Za-z0-9_]+)/', $contents, $classMatch)) {
+        if (! preg_match('/class\s+(\w+)/', $contents, $classMatch)) {
             continue;
         }
 
@@ -49,7 +49,7 @@ it('PHP classes are defined in files matching their class name', function (): vo
         }
     }
 
-    if (! empty($errors)) {
+    if ($errors !== []) {
         throw new AssertionFailedError("Naming convention violations:\n" . implode("\n", $errors));
     }
 });

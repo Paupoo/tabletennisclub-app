@@ -27,7 +27,7 @@
                     <x-choices label="Room(s)(*)" wire:model.live="selectedRooms" :options="$this->availableRooms"
                         icon="o-map-pin" />
                     @if ($this->hasRegisteredUsers)
-                        <span class="absolute top-0 right-0 text-[10px] text-warning font-medium flex items-center gap-0.5">
+                        <span class="absolute top-0 right-0 text-[10px] text-warning-content font-medium flex items-center gap-0.5">
                             <x-icon name="o-bell-alert" class="w-3 h-3" /> {{ __('Will notify') }}
                         </span>
                     @endif
@@ -47,7 +47,7 @@
                     <x-datepicker label="Date(*)" icon="o-calendar"
                         wire:model="tournamentDate" type="date" />
                     @if ($this->hasRegisteredUsers)
-                        <span class="absolute top-0 right-0 text-[10px] text-warning font-medium flex items-center gap-0.5">
+                        <span class="absolute top-0 right-0 text-[10px] text-warning-content font-medium flex items-center gap-0.5">
                             <x-icon name="o-bell-alert" class="w-3 h-3" /> {{ __('Will notify') }}
                         </span>
                     @endif
@@ -57,7 +57,7 @@
                 <div class="relative">
                     <x-input label="Start time(*)" type="time" icon="o-clock" wire:model="startTime" />
                     @if ($this->hasRegisteredUsers)
-                        <span class="absolute top-0 right-0 text-[10px] text-warning font-medium flex items-center gap-0.5">
+                        <span class="absolute top-0 right-0 text-[10px] text-warning-content font-medium flex items-center gap-0.5">
                             <x-icon name="o-bell-alert" class="w-3 h-3" /> {{ __('Will notify') }}
                         </span>
                     @endif
@@ -152,7 +152,7 @@
                 @endif
             </p>
             @if (! $deuceEnabled)
-                <p class="text-[11px] text-warning/80 font-semibold mt-0.5">
+                <p class="text-[11px] text-warning-content/80 font-semibold mt-0.5">
                     ⚡ {{ __('Recommended for "Minimize duration" objective.') }}
                 </p>
             @endif
@@ -163,7 +163,7 @@
                 {{ __('Each set starts with a score advantage based on player rankings. Ideal for friendly or mixed-level tournaments.') }}
             </p>
             @if (! $hasHandicapPoints)
-                <p class="text-[11px] text-warning/80 font-semibold mt-0.5">
+                <p class="text-[11px] text-warning-content/80 font-semibold mt-0.5">
                     🏆 {{ __('Disabled for "Competitive format" objective.') }}
                 </p>
             @endif
@@ -367,7 +367,7 @@
 
                     @if ($this->nbTables > 0 && $eff['idle'] > 0)
                         <div class="p-3 rounded-xl border border-warning/40 bg-warning/5 space-y-1.5">
-                            <div class="flex items-center gap-2 text-xs font-semibold text-warning">
+                            <div class="flex items-center gap-2 text-xs font-semibold text-warning-content">
                                 <x-icon name="o-exclamation-triangle" class="w-3.5 h-3.5 shrink-0" />
                                 {{ __('~:n table(s) may sit idle — tournament will run longer than needed', ['n' => $eff['idle']]) }}
                             </div>

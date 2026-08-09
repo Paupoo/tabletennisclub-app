@@ -2,17 +2,23 @@
 
 declare(strict_types=1);
 
+use App\Actions\User\StoreUserDocumentAction;
 use App\Actions\User\UpdateUserAction;
 use App\Data\User\UpdateUserData;
+use App\Domains\ClubAdmin\Fines\Models\Fine;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Rules\ValidIban;
+use App\Domains\Shared\Rules\ValidPhone;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasPhotoUpload;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -25,8 +31,6 @@ use Mary\Traits\Toast;
 new class extends Component
 {
     use HasBreadcrumbs, HasPhotoUpload, Toast, WithFileUploads;
-
-    public string $activeTeamTab = '';
 
     #[Rule('nullable|date')]
     public ?string $birthdate = null;
@@ -56,17 +60,33 @@ new class extends Component
     public string $last_name = '';
 
     // Documents (uploaded by the member)
-    public $medicalCertificate = null;
+    public $medicalCertificate;
 
-    public $parentalConsent = null;
+    public $parentalConsent;
 
-    #[Rule('nullable|string|max:20')]
+    #[Rule(['nullable', 'string', 'max:20', new ValidPhone])]
     public ?string $phone_number = null;
 
     #[Rule('nullable|string|max:255')]
     public ?string $street = null;
 
     public User $user;
+
+    /**
+     * This member's own fines, newest first. Almost always empty — the section
+     * renders nothing at all in that case, so it costs no space.
+     *
+     * @return Collection<int, Fine>
+     */
+    #[Computed]
+    public function fines(): Collection
+    {
+        return Fine::query()
+            ->with('payment')
+            ->where('user_id', $this->user->id)
+            ->latest()
+            ->get();
+    }
 
     /**
      * Whether the member is a minor (< 18y) based on the entered birthdate.
@@ -82,6 +102,8 @@ new class extends Component
 
     public function mount(User $user): void
     {
+        abort_unless(Auth::user()->is($user), 403);
+
         $this->user = $user;
         $this->first_name = $user->first_name ?? '';
         $this->last_name = $user->last_name ?? '';
@@ -94,21 +116,11 @@ new class extends Component
         $this->city_name = $user->city_name;
         $this->iban = $user->iban;
         $this->currentPhoto = $user->photo;
-        $this->activeTeamTab = 'team-' . $this->user->teams->first()?->id;
     }
 
     public function render(): View
     {
         return $this->view();
-    }
-
-    public function requestErasure(): void
-    {
-        abort_unless(Auth::user()->is($this->user), 403);
-
-        $this->user->update(['gdpr_erasure_requested_at' => now()]);
-
-        $this->success(__('Erasure request sent. The admin will process it shortly.'));
     }
 
     public function rules(): array
@@ -144,11 +156,7 @@ new class extends Component
     {
         $actor = Auth::user();
 
-        if (! ($actor->is($this->user) || $actor->is_admin || $actor->is_committee_member)) {
-            $this->error(__('Unauthorized.'));
-
-            return;
-        }
+        abort_unless($actor->is($this->user), 403);
 
         try {
             $this->validate();
@@ -177,10 +185,8 @@ new class extends Component
                 guardian_phone_number: $this->user->guardian_phone_number,
                 iban: $this->iban,
                 // Admin-only fields are preserved from the current model (not self-editable).
-                is_competitor: $this->user->is_competitor,
-                is_committee_member: $this->user->is_committee_member,
-                is_admin: $this->user->is_admin,
-                is_coach: $this->user->is_coach,
+                is_committee_member: $this->user->hasRole(Role::COMMITTEE->value),
+                is_admin: $this->user->hasRole(Role::ADMINISTRATOR->value),
                 licence: $this->user->licence,
                 ranking: $this->user->ranking,
                 committee_role: $this->user->committee_role,
@@ -196,11 +202,24 @@ new class extends Component
 
     public function with(): array
     {
-        $this->user->loadMissing('teams.league', 'teams.users', 'teams.club', 'teams.season');
+        $this->user->loadMissing('teams.league', 'teams.users', 'teams.club', 'teams.season', 'subscriptions.season');
+
+        $activeSubscriptions = $this->user->subscriptions
+            ->whereIn('status', ['pending', 'confirmed', 'paid']);
+
+        $currentSeason = Season::current();
 
         return [
             'genders' => Gender::options(),
             'breadcrumbs' => $this->getBreadcrumbs(),
+            'memberSince' => $activeSubscriptions
+                ->map(fn (Subscription $subscription) => $subscription->season?->start_at)
+                ->filter()
+                ->min() ?? $this->user->created_at,
+            'currentSeason' => $currentSeason,
+            'currentSubscription' => $currentSeason
+                ? $activeSubscriptions->firstWhere('season_id', $currentSeason->id)
+                : null,
         ];
     }
 
@@ -217,26 +236,12 @@ new class extends Component
     protected function handleDocumentUploads(User $user): void
     {
         if ($this->medicalCertificate !== null) {
-            if ($user->medical_certificate_path) {
-                Storage::disk('public')->delete(str_replace('/storage/', '', $user->medical_certificate_path));
-            }
-
-            $extension = $this->medicalCertificate->getClientOriginalExtension();
-            $path = $this->medicalCertificate->storeAs("documents/{$user->id}", "medical.{$extension}", 'public');
-
-            $user->update(['medical_certificate_path' => "/storage/{$path}"]);
+            StoreUserDocumentAction::handle($user, $this->medicalCertificate, 'medical');
             $this->medicalCertificate = null;
         }
 
         if ($this->parentalConsent !== null) {
-            if ($user->parental_consent_path) {
-                Storage::disk('public')->delete(str_replace('/storage/', '', $user->parental_consent_path));
-            }
-
-            $extension = $this->parentalConsent->getClientOriginalExtension();
-            $path = $this->parentalConsent->storeAs("documents/{$user->id}", "parental_consent.{$extension}", 'public');
-
-            $user->update(['parental_consent_path' => "/storage/{$path}"]);
+            StoreUserDocumentAction::handle($user, $this->parentalConsent, 'parental_consent');
             $this->parentalConsent = null;
         }
     }

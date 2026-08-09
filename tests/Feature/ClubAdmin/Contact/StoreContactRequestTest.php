@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\Competitions\Interclub\Models\Club;
-use App\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Mail;
@@ -24,7 +24,7 @@ describe('Contact Form - Public Submission', function (): void {
     })->skip('postJson bypasses CSRF in test environment, unreliable to test');
 
     it('implements rate limiting - allows 3 requests per 60 seconds', function (): void {
-        $this->withoutMiddleware(VerifyCsrfToken::class);
+        $this->withoutMiddleware(PreventRequestForgery::class);
         $data = [
             'first_name' => 'Test',
             'last_name' => 'User',
@@ -48,7 +48,7 @@ describe('Contact Form - Public Submission', function (): void {
 
     it('preserves form data on validation error', function (): void {
         $this->withoutMiddleware(ThrottleRequests::class);
-        $this->withoutMiddleware(VerifyCsrfToken::class);
+        $this->withoutMiddleware(PreventRequestForgery::class);
 
         $data = [
             'first_name' => 'Jean',
@@ -75,7 +75,7 @@ describe('Contact Form validations', function (): void {
     beforeEach(function (): void {
         Club::factory()->create(['is_own_club' => true, 'email_contact' => 'club@test.com']);
         Mail::fake();
-        $this->withoutMiddleware(VerifyCsrfToken::class);
+        $this->withoutMiddleware(PreventRequestForgery::class);
         $this->withoutMiddleware(ThrottleRequests::class);
         $this->withSession([
             'captcha' => ['a' => 3, 'b' => 2, 'operation' => '+'],

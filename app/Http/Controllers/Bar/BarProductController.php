@@ -17,12 +17,9 @@ use Illuminate\View\View;
 
 class BarProductController extends Controller
 {
-    private StockService $stockService;
-
-    public function __construct(StockService $stockService)
+    public function __construct(private readonly StockService $stockService)
     {
         $this->middleware('auth');
-        $this->stockService = $stockService;
     }
 
     public function destroy(BarProduct $product): RedirectResponse
@@ -69,13 +66,13 @@ class BarProductController extends Controller
         $validated['name'] = $validated['product_name'];
         unset($validated['product_name']);
 
-        DB::transaction(function () use ($validated, $initialStock) {
+        DB::transaction(function () use ($validated, $initialStock): void {
             $product = BarProduct::create($validated);
 
             if ($initialStock > 0) {
                 $this->stockService->addIncomingStock(
                     (int) $product->id,
-                    (int) $initialStock,
+                    $initialStock,
                     'Initial stock',
                     auth()->id(),
                     auth()->id()
@@ -115,7 +112,7 @@ class BarProductController extends Controller
             'is_available' => ['sometimes', 'boolean'],
         ]);
 
-        DB::transaction(function () use ($validated, $product) {
+        DB::transaction(function () use ($validated, $product): void {
             if (array_key_exists('stock', $validated)) {
                 $newStock = (int) $validated['stock'];
                 unset($validated['stock']);
@@ -126,7 +123,7 @@ class BarProductController extends Controller
                 if ($delta > 0) {
                     $this->stockService->addIncomingStock(
                         (int) $product->id,
-                        (int) $delta,
+                        $delta,
                         'Stock adjustment',
                         auth()->id(),
                         auth()->id()
@@ -134,7 +131,7 @@ class BarProductController extends Controller
                 } elseif ($delta < 0) {
                     $this->stockService->consumeFIFO(
                         (int) $product->id,
-                        abs((int) $delta),
+                        abs($delta),
                         'Stock adjustment',
                         auth()->id(),
                         auth()->id()
@@ -151,7 +148,7 @@ class BarProductController extends Controller
                 unset($validated['product_name']);
             }
 
-            if (! empty($validated)) {
+            if ($validated !== []) {
                 $product->update($validated);
             }
         });

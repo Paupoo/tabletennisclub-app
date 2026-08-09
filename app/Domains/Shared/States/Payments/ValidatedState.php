@@ -48,8 +48,12 @@ class ValidatedState implements SubscriptionState
 
     public function refund(Subscription $subscription): void
     {
-        // On ne peut pas rembourser ce qui n'est pas encore payé
-        throw new \LogicException('Cannot refund a subscription that has not been paid.');
+        // Transition autorisée : confirmed → refunded, uniquement si un paiement (partiel) a été encaissé
+        if ($subscription->totalPaid() <= 0) {
+            throw new \LogicException('Cannot refund a subscription that has not been paid.');
+        }
+
+        $subscription->setState(new RefundedState);
     }
 
     public function unconfirm(Subscription $subscription): void

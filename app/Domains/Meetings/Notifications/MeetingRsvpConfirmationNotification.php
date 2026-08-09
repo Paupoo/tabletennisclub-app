@@ -28,8 +28,8 @@ class MeetingRsvpConfirmationNotification extends Notification implements Should
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Présence confirmée: :title', ['title' => $this->meeting->title]),
-            'body' => __('Votre présence à la réunion du :date est confirmée', ['date' => $this->meeting->scheduled_at?->translatedFormat('d M Y') ?? __('TBD')]),
+            'title' => __('Attendance confirmed: :title', ['title' => $this->meeting->title]),
+            'body' => __('Your attendance at the :date meeting is confirmed', ['date' => $this->meeting->scheduled_at?->translatedFormat('d M Y') ?? __('TBD')]),
             'url' => route('admin.meetings.show', $this->meeting),
             'category' => 'meeting',
             'icon' => 'o-calendar-days',

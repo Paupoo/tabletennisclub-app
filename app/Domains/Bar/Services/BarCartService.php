@@ -12,11 +12,11 @@ use Illuminate\Support\Facades\DB;
 
 class BarCartService
 {
-    private const ACTION_PAY_NOW = 'pay_now';
+    private const string ACTION_PAY_NOW = 'pay_now';
 
-    private const ACTION_VALIDATE = 'validate';
+    private const string ACTION_VALIDATE = 'validate';
 
-    private const MAX_QTY_PER_PRODUCT = 20;
+    private const int MAX_QTY_PER_PRODUCT = 20;
 
     public function __construct(private readonly StockService $stockService) {}
 
@@ -69,7 +69,7 @@ class BarCartService
 
         $cart = $this->getSanitizedCart();
 
-        if (empty($cart)) {
+        if ($cart === []) {
             throw new \RuntimeException('Le panier est vide.');
         }
 
@@ -182,7 +182,7 @@ class BarCartService
         return [
             'items' => $items,
             'totalPrice' => (int) $items->sum('total_price'),
-            'cartCount' => (int) array_sum($cart),
+            'cartCount' => array_sum($cart),
         ];
     }
 
@@ -194,7 +194,7 @@ class BarCartService
             return;
         }
 
-        $cart[$productId] = max(0, (int) $cart[$productId] - 1);
+        $cart[$productId] = max(0, $cart[$productId] - 1);
 
         if ($cart[$productId] <= 0) {
             unset($cart[$productId]);
@@ -209,9 +209,7 @@ class BarCartService
     private function getSanitizedCart(): array
     {
         return collect(session()->get('cart', []))
-            ->mapWithKeys(function ($qty, $id): array {
-                return [(int) $id => (int) $qty];
-            })
+            ->mapWithKeys(fn ($qty, $id): array => [(int) $id => (int) $qty])
             ->filter(fn (int $qty): bool => $qty > 0)
             ->toArray();
     }

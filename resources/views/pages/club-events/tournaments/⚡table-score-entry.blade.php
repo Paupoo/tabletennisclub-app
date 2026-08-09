@@ -121,7 +121,7 @@ new class extends Component
     {
         ['results' => $setResults] = $this->parseSetResults();
 
-        if (empty($setResults)) {
+        if ($setResults === []) {
             $this->error(__('No set scores to save.'));
 
             return;
@@ -135,7 +135,7 @@ new class extends Component
     {
         ['results' => $setResults, 'p1Sets' => $p1Sets, 'p2Sets' => $p2Sets] = $this->parseSetResults();
 
-        if (empty($setResults)) {
+        if ($setResults === []) {
             $this->error(__('Please enter at least one set score.'));
 
             return;
@@ -253,20 +253,20 @@ new class extends Component
         {{-- Handicap info bar --}}
         @if ($tournament->has_handicap_points && ($hp1 > 0 || $hp2 > 0))
             <div class="bg-base-100 rounded-2xl shadow px-5 py-4">
-                <p class="text-[10px] font-bold uppercase tracking-widest text-warning text-center mb-3">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-warning-content text-center mb-3">
                     ⚡ {{ __('Handicap per set — starting scores') }}
                 </p>
                 <div class="flex justify-between items-center gap-4">
                     <div class="flex-1 text-center">
                         <div class="text-[10px] font-bold opacity-60 truncate">{{ $match->player1?->full_name ?? '—' }}</div>
-                        <div @class(['text-3xl font-extrabold leading-none mt-1', 'text-warning' => $hp1 > 0, 'text-base-content/30' => $hp1 === 0])>
+                        <div @class(['text-3xl font-extrabold leading-none mt-1', 'text-warning-content' => $hp1 > 0, 'text-base-content/30' => $hp1 === 0])>
                             +{{ $hp1 }}
                         </div>
                     </div>
                     <div class="text-xs font-bold opacity-30">pts</div>
                     <div class="flex-1 text-center">
                         <div class="text-[10px] font-bold opacity-60 truncate">{{ $match->player2?->full_name ?? '—' }}</div>
-                        <div @class(['text-3xl font-extrabold leading-none mt-1', 'text-warning' => $hp2 > 0, 'text-base-content/30' => $hp2 === 0])>
+                        <div @class(['text-3xl font-extrabold leading-none mt-1', 'text-warning-content' => $hp2 > 0, 'text-base-content/30' => $hp2 === 0])>
                             +{{ $hp2 }}
                         </div>
                     </div>

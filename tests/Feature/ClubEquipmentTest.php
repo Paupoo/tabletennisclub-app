@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -60,7 +61,7 @@ describe('CashRegister heldBy', function (): void {
 
 describe('User form has_key toggle', function (): void {
     it('admin can enable has_key for a user', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $target = User::factory()->isNotCompetitor()->create(['has_key' => false]);
 
         Livewire::actingAs($admin)
@@ -73,7 +74,7 @@ describe('User form has_key toggle', function (): void {
     });
 
     it('admin can disable has_key for a user', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $target = User::factory()->isNotCompetitor()->create(['has_key' => true]);
 
         Livewire::actingAs($admin)
@@ -90,7 +91,7 @@ describe('User form has_key toggle', function (): void {
 
 describe('Cash register confirmChangeHolder', function (): void {
     it('admin can change holder', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $newHolder = makeHolder();
         $register = makeRegisterWithHolder();
 
@@ -105,7 +106,7 @@ describe('Cash register confirmChangeHolder', function (): void {
     });
 
     it('treasurer can change holder', function (): void {
-        $treasurer = User::factory()->isCommitteeMember()->create([
+        $treasurer = User::factory()->isCommitteeMember()->withRole(Role::CASH_REGISTER)->create([
             'committee_role' => CommitteeRolesEnum::TREASURER,
         ]);
         $newHolder = makeHolder();
@@ -121,7 +122,7 @@ describe('Cash register confirmChangeHolder', function (): void {
         expect($register->fresh()->held_by_user_id)->toBe($newHolder->id);
     });
 
-    it('committee member without treasurer role cannot change holder', function (): void {
+    it('committee member without the cash register delegation cannot change holder', function (): void {
         $secretary = User::factory()->isCommitteeMember()->create([
             'committee_role' => CommitteeRolesEnum::SECRETARY,
         ]);
@@ -158,7 +159,7 @@ describe('Cash register confirmChangeHolder', function (): void {
 
 describe('Cash register creation with holder', function (): void {
     it('admin can create register with holder', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $holder = makeHolder();
 
         Livewire::actingAs($admin)
@@ -188,7 +189,7 @@ describe('Cash register creation with holder', function (): void {
 
 describe('User list filters', function (): void {
     it('hasKey filter returns only key holders', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $keyHolder = User::factory()->create(['has_key' => true]);
         User::factory()->create(['has_key' => false]);
 
@@ -202,7 +203,7 @@ describe('User list filters', function (): void {
     });
 
     it('hasCashRegister filter returns only users holding a register', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $holder = User::factory()->create();
         $other = User::factory()->create();
         CashRegister::create(['name' => 'Test', 'held_by_user_id' => $holder->id]);

@@ -5,12 +5,16 @@
     'confirmLabel' => 'Confirm',
     'confirmClass' => 'btn-error',
     'confirmAction',
+    'cancelAction' => null,
+    'open' => null,
 ])
 
-<x-modal :wire:model="$model" :title="$title" :subtitle="$subtitle" class="backdrop-blur">
+@php $cancelClick = $cancelAction ?? '$set(\'' . $model . '\', false)'; @endphp
+
+<x-app-modal :wire:model="$model" :open="$open" :title="$title" :subtitle="$subtitle" class="backdrop-blur">
     {{ $slot }}
     <x-slot:actions>
-        <x-button :label="__('Cancel')" wire:click="$set('{{ $model }}', false)" />
+        <x-button :label="__('Cancel')" wire:click="{{ $cancelClick }}" />
         <x-button :label="__($confirmLabel)" :class="$confirmClass" spinner wire:click="{{ $confirmAction }}" />
     </x-slot:actions>
-</x-modal>
+</x-app-modal>

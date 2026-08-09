@@ -13,15 +13,20 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Competitions\Tournament\Notifications\TournamentConfirmationExpiredNotification;
+use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentExpiredNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentReminderNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentRequestNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationCancelledNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConfirmedNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistSpotOpenedNotification;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Jobs\SendDebtReminderNotification;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class TournamentService
 {
@@ -132,8 +137,11 @@ class TournamentService
     }
 
     /**
-     * Expire unpaid registrations (72h window passed) and trigger waitlist.
-     * Called by the daily scheduler.
+     * Expire unpaid registrations whose payment deadline has passed and trigger
+     * the waitlist. The deadline is not a fixed window: it is set at registration
+     * time (see registerUser) to the registration-close date, or now + 3 days for
+     * a late sign-up, and no deadline at all for a same-day entry.
+     * Called by the hourly scheduler.
      */
     public function expirePaymentDeadlines(): void
     {
@@ -148,9 +156,14 @@ class TournamentService
                 ->where('id', $registration->id)
                 ->update(['registration_status' => 'cancelled']);
 
+            $user = User::find($registration->user_id);
             $tournament = Tournament::find($registration->tournament_id);
 
-            if ($tournament) {
+            if ($user && $tournament) {
+                // Tell the member their spot is gone — they got payment reminders
+                // before, so silence here reads as an oversight (I5). Mirrors
+                // expireConfirmationDeadlines().
+                $user->notify(new TournamentPaymentExpiredNotification($tournament));
                 $this->countRegisteredUsers($tournament);
                 $this->openSpot($tournament);
             }
@@ -304,7 +317,7 @@ class TournamentService
         }
 
         // Always send confirmation first.
-        $user->notify(new TournamentRegistrationConfirmedNotification($tournament));
+        $this->notifyAfterRegistration($user, new TournamentRegistrationConfirmedNotification($tournament));
 
         if ($tournament->isPaid()) {
             $isOnTournamentDay = $tournament->start_date
@@ -331,7 +344,7 @@ class TournamentService
                         'payment_deadline' => $deadline,
                     ]);
 
-                $user->notify(new TournamentPaymentRequestNotification(
+                $this->notifyAfterRegistration($user, new TournamentPaymentRequestNotification(
                     tournament: $tournament,
                     payment: $payment,
                     deadline: $deadline,
@@ -404,11 +417,39 @@ class TournamentService
             ]);
         }
 
-        $user->notify(new TournamentRegistrationConfirmedNotification(
+        $this->notifyAfterRegistration($user, new TournamentRegistrationConfirmedNotification(
             tournament: $tournament,
             isWaitlisted: true,
             waitlistPosition: $position,
         ));
+    }
+
+    /**
+     * Deliver a notification that follows a registration already written to the
+     * database.
+     *
+     * registerUser() runs outside a transaction, so by the time these are sent
+     * the row is committed and the seat is taken. Letting the notification throw
+     * made the caller report a failure for a registration that had in fact
+     * succeeded — a visitor clicking the link in an invitation was told to try
+     * again, and trying again hit "already registered". The delivery is a side
+     * effect of the registration, not a condition of it.
+     *
+     * A payment request reads Club::ourClub()->first()->bic, which is the way
+     * this actually happened: no club row, a null property read, and a confusing
+     * answer to the visitor.
+     */
+    private function notifyAfterRegistration(User $user, Notification $notification): void
+    {
+        try {
+            $user->notify($notification);
+        } catch (Throwable $e) {
+            Log::error('Tournament registration succeeded but its notification failed', [
+                'user_id' => $user->id,
+                'notification' => $notification::class,
+                'exception' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -419,7 +460,7 @@ class TournamentService
         User $user,
         Tournament $tournament,
     ): void {
-        User::where('is_committee_member', true)
+        User::role(Role::COMMITTEE->value)
             ->whereIn('committee_role', [
                 CommitteeRolesEnum::TREASURER->value,
                 CommitteeRolesEnum::SECRETARY->value,

@@ -1,27 +1,27 @@
 <x-mail::message>
-Bonjour {{ $user->first_name . ' ' . $user->last_name }},
+{{ __('Hello :name,', ['name' => $user->first_name . ' ' . $user->last_name]) }}
 
-Nous sommes ravis de vous accueillir au **{{ config('app.name') }}** !
+{{ __('We are delighted to welcome you to **:app**!', ['app' => config('app.name')]) }}
 
-Votre login est {{ $user->email }}.
+{{ __('Your login is :email.', ['email' => $user->email]) }}
 
-Pour terminer la création de votre compte et renseigner vos informations personnelles, merci de cliquer sur le bouton ci-dessous :
+{{ __('To finish creating your account and fill in your personal information, please click the button below:') }}
 
 <x-mail::button :url="$link" :color="'primary'">
-Finaliser mon inscription
+{{ __('Finalise my registration') }}
 </x-mail::button>
 
-Une fois cette étape complétée, vous pourrez :
+{{ __('Once this step is completed, you will be able to:') }}
 
-- Finaliser votre adhésion au club
-- Choisir vos sessions d’entraînement
-- Participer aux événements organisés
-- Gérer facilement votre compte en ligne
+- {{ __('Finalize your club membership') }}
+- {{ __('Choose your training sessions') }}
+- {{ __('Take part in organized events') }}
+- {{ __('Easily manage your account online') }}
 
-À très bientôt à la salle !
+{{ __('See you soon at the club!') }}
 
-Sportivement,  
-**Le comité du {{ config('app.name') }}**
+{{ __('Sportingly,') }}
+**{{ __('The committee of :app', ['app' => config('app.name')]) }}**
 
 <small>{{ __('This email was sent automatically, please do not reply.') }}</small>
 </x-mail::message>

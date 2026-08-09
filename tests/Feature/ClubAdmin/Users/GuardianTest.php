@@ -26,6 +26,18 @@ test('guardian can store optional iban', function (): void {
     expect($guardian->iban)->toBe('BE68539007547034');
 });
 
+test('guardian normalizes iban on assignment, stripping spaces and uppercasing', function (): void {
+    $guardian = Guardian::factory()->create(['iban' => 'be68 5390 0754 7034']);
+
+    expect($guardian->fresh()->iban)->toBe('BE68539007547034');
+});
+
+test('guardian exposes iban_formatted grouped by 4 for display', function (): void {
+    $guardian = Guardian::factory()->create(['iban' => 'BE68539007547034']);
+
+    expect($guardian->iban_formatted)->toBe('BE68 5390 0754 7034');
+});
+
 test('user has guardians relationship pointing to Guardian model', function (): void {
     $user = User::factory()->create();
     $guardian = Guardian::factory()->create();
@@ -56,6 +68,18 @@ test('one guardian can cover multiple siblings', function (): void {
     expect($guardian->users()->count())->toBe(3);
 });
 
+test('the default factory user is an adult', function (): void {
+    $user = User::factory()->create();
+
+    expect($user->isMinor())->toBeFalse();
+});
+
+test('the minor factory state produces a user under 18', function (): void {
+    $user = User::factory()->minor()->create();
+
+    expect($user->isMinor())->toBeTrue();
+});
+
 test('user is considered minor when under 18', function (): void {
     $minor = User::factory()->create(['birthdate' => now()->subYears(15)]);
     $adult = User::factory()->create(['birthdate' => now()->subYears(20)]);
@@ -77,4 +101,73 @@ test('minor with guardian attached is not flagged', function (): void {
     $minor->guardians()->attach($guardian);
 
     expect($minor->hasGuardian())->toBeTrue();
+});
+
+test('a contact-complete minor without a guardian has an incomplete profile', function (): void {
+    $minor = User::factory()->minor()->create([
+        'phone_number' => '0479000000',
+        'street' => 'Rue de la Paix 1',
+        'city_code' => '1340',
+        'city_name' => 'Ottignies',
+    ]);
+
+    expect($minor->hasCompleteProfile())->toBeFalse();
+});
+
+test('a contact-complete minor with a guardian has a complete profile', function (): void {
+    $minor = User::factory()->minor()->create([
+        'phone_number' => '0479000000',
+        'street' => 'Rue de la Paix 1',
+        'city_code' => '1340',
+        'city_name' => 'Ottignies',
+    ]);
+    $guardian = Guardian::factory()->create();
+    $minor->guardians()->attach($guardian);
+
+    expect($minor->hasCompleteProfile())->toBeTrue();
+});
+
+test('a minor whose guardian holds the phone number has a complete profile', function (): void {
+    $minor = User::factory()->minor()->create([
+        'phone_number' => null,
+        'street' => 'Rue de la Paix 1',
+        'city_code' => '1340',
+        'city_name' => 'Ottignies',
+    ]);
+    $minor->guardians()->attach(Guardian::factory()->create());
+
+    expect($minor->hasCompleteProfile())->toBeTrue();
+});
+
+test('a member without a phone number and without a guardian has an incomplete profile', function (): void {
+    $adult = User::factory()->create([
+        'phone_number' => null,
+        'street' => 'Rue de la Paix 1',
+        'city_code' => '1340',
+        'city_name' => 'Ottignies',
+    ]);
+
+    expect($adult->hasCompleteProfile())->toBeFalse();
+});
+
+test('the incomplete profile scope agrees with hasCompleteProfile on the guardian exemption', function (): void {
+    $withGuardian = User::factory()->minor()->create([
+        'phone_number' => null,
+        'street' => 'Rue de la Paix 1',
+        'city_code' => '1340',
+        'city_name' => 'Ottignies',
+    ]);
+    $withGuardian->guardians()->attach(Guardian::factory()->create());
+
+    $withoutGuardian = User::factory()->create([
+        'phone_number' => null,
+        'street' => 'Rue de la Paix 1',
+        'city_code' => '1340',
+        'city_name' => 'Ottignies',
+    ]);
+
+    $flagged = User::withIncompleteProfile()->pluck('id');
+
+    expect($flagged)->not->toContain($withGuardian->id)
+        ->and($flagged)->toContain($withoutGuardian->id);
 });

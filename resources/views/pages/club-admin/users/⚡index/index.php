@@ -13,6 +13,8 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\Permission;
+use App\Jobs\SendMemberInvitationJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
@@ -20,6 +22,8 @@ use App\Support\Breadcrumb;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule as ValidationRule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -34,6 +38,10 @@ new class extends Component
 
     public bool $addToTeamModal = false;
 
+    /** The grown members the club still cannot hand a login to. */
+    #[Url]
+    public bool $adultWithoutAddress = false;
+
     public string $anonymizeConfirmText = '';
 
     // ── Anonymize modal ───────────────────────────────────────────────────────
@@ -47,6 +55,9 @@ new class extends Component
 
     public bool $confirmArchiveModal = false;
 
+    /** Guards against silently invalidating an invitation somebody is holding. */
+    public bool $confirmReinviteModal = false;
+
     // ── Modals ───────────────────────────────────────────────────────────────
     public bool $deleteModal = false;
 
@@ -58,6 +69,14 @@ new class extends Component
 
     #[Url]
     public bool $incompleteProfile = false;
+
+    /**
+     * Where a member stands with their account, mirroring
+     * {@see User::invitationStatus()}. This is how the secretary finds the
+     * members an import brought in and has not written to yet.
+     */
+    #[Url]
+    public string $invitationState = '';
 
     public string $inviteEmail = '';
 
@@ -97,10 +116,31 @@ new class extends Component
 
     public ?int $userToDelete = null;
 
+    /** How many of the selected members are still holding a live invitation. */
+    public int $waitingOnInvitation = 0;
+
+    /**
+     * Whitelist of sortable columns. Maps the header key (which may be a virtual
+     * attribute such as `name`) to the real database columns to order by. Any key
+     * not listed here — including a tampered `sortBy` URL value — falls back to a
+     * safe default instead of reaching `orderBy()` with a raw, unknown column.
+     *
+     * @var array<string, array<int, string>>
+     */
+    protected array $sortableColumns = [
+        'name' => ['first_name', 'last_name'],
+        'last_name' => ['last_name', 'first_name'],
+        'email' => ['email'],
+        'is_competitive' => ['is_competitive'],
+        'ranking' => ['ranking'],
+    ];
+
     // ── Bulk actions ──────────────────────────────────────────────────────────
 
     public function bulkAddToTeam(): void
     {
+        Gate::authorize(Permission::UsersUpdate->value);
+
         if (! $this->team_id) {
             return;
         }
@@ -114,12 +154,16 @@ new class extends Component
 
     public function bulkArchive(): void
     {
-        abort_unless(Auth::user()->is_admin, 403);
+        Gate::authorize(Permission::UsersDelete->value);
 
-        $selfIncluded = in_array((string) Auth::id(), array_map('strval', $this->selected));
+        $selfIncluded = in_array((string) Auth::id(), array_map(strval(...), $this->selected));
 
         User::whereIn('id', $this->selected)
             ->where('id', '!=', Auth::id())
+            ->get()
+            // Members with an unresolved subscription for the active season are
+            // skipped: archiving them would silently orphan a live subscription.
+            ->filter(fn (User $user): bool => ! $user->isAffiliatedForCurrentSeason())
             ->each(fn (User $user) => SoftDeleteUserAction::handle($user));
 
         $this->confirmArchiveModal = false;
@@ -132,8 +176,24 @@ new class extends Component
         }
     }
 
+    /**
+     * Hand a whole selection of members their login.
+     *
+     * The gesture the import deliberately does not make. It comes after it, by
+     * a human, on a selection they filtered themselves — usually the members a
+     * listing brought in, sitting under "not invited".
+     */
+    public function bulkInvite(): void
+    {
+        Gate::authorize('sendEmail', User::class);
+
+        $this->dispatchInvitations(includeWaiting: false);
+    }
+
     public function bulkSubscribe(): void
     {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
         if (! $this->subscription_id) {
             return;
         }
@@ -149,11 +209,14 @@ new class extends Component
     {
         $this->selectedLicenceType = 'both';
         $this->categories = [];
+        $this->invitationState = '';
         $this->incompleteProfile = false;
+        $this->adultWithoutAddress = false;
         $this->unpaidSubscription = false;
         $this->hasKey = false;
         $this->hasCashRegister = false;
         $this->team_ids = [];
+        $this->showArchived = false;
         $this->resetPage();
     }
 
@@ -179,11 +242,30 @@ new class extends Component
 
     public function confirmBulkArchive(): void
     {
+        Gate::authorize(Permission::UsersDelete->value);
+
         $this->confirmArchiveModal = true;
     }
 
+    /**
+     * Send again to the members who were already waiting on a first invitation.
+     */
+    public function confirmBulkInvite(): void
+    {
+        Gate::authorize('sendEmail', User::class);
+
+        $this->dispatchInvitations(includeWaiting: true);
+    }
+
+    /**
+     * Only opens the confirmation modal — deliberately not authorized on the
+     * instance, so that archiving one's own account still reaches the friendly
+     * message in {@see self::delete()} rather than a 403.
+     */
     public function confirmDelete(int $userId): void
     {
+        Gate::authorize(Permission::UsersDelete->value);
+
         $this->userToDelete = $userId;
         $this->deleteModal = true;
     }
@@ -203,7 +285,13 @@ new class extends Component
 
         $this->authorize('delete', $user);
 
-        SoftDeleteUserAction::handle($user);
+        try {
+            SoftDeleteUserAction::handle($user);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
 
         $this->success(__('User archived.'));
     }
@@ -238,6 +326,22 @@ new class extends Component
             }
         }
 
+        if ($this->invitationState !== '') {
+            $chips[] = [
+                'key' => 'invitationState',
+                'label' => match ($this->invitationState) {
+                    'not_invited' => __('Not invited'),
+                    'pending' => __('Pending'),
+                    'expired' => __('Expired'),
+                    default => __('Account created'),
+                },
+            ];
+        }
+
+        if ($this->adultWithoutAddress) {
+            $chips[] = ['key' => 'adultWithoutAddress', 'label' => __('Adult without an address')];
+        }
+
         if ($this->incompleteProfile) {
             $chips[] = ['key' => 'incompleteProfile', 'label' => __('Incomplete profile')];
         }
@@ -254,11 +358,15 @@ new class extends Component
             $chips[] = ['key' => 'hasCashRegister', 'label' => __('Has a cash register')];
         }
 
-        if (! empty($this->team_ids)) {
+        if ($this->team_ids !== []) {
             $chips[] = [
                 'key' => 'team_ids',
                 'label' => trans_choice('{1} 1 team|[2,*] :count teams', count($this->team_ids), ['count' => count($this->team_ids)]),
             ];
+        }
+
+        if ($this->showArchived) {
+            $chips[] = ['key' => 'showArchived', 'label' => __('Archived')];
         }
 
         return $chips;
@@ -279,6 +387,25 @@ new class extends Component
             ['key' => 'email',          'label' => __('Email'),   'sortable' => true],
             ['key' => 'is_competitive', 'label' => __('Licence'), 'sortable' => true],
             ['key' => 'ranking',        'label' => __('Ranking'), 'sortable' => true],
+        ];
+    }
+
+    /**
+     * Where a member stands with their account, in the order they travel through
+     * it. "Not invited" is the one that matters after an import: those are the
+     * members the club recorded and has not written to yet.
+     *
+     * @return array<int, array{id: string, name: string}>
+     */
+    #[Computed]
+    public function invitationStates(): array
+    {
+        return [
+            ['id' => '',            'name' => __('All')],
+            ['id' => 'not_invited', 'name' => __('Not invited')],
+            ['id' => 'pending',     'name' => __('Pending')],
+            ['id' => 'expired',     'name' => __('Expired')],
+            ['id' => 'active',      'name' => __('Account created')],
         ];
     }
 
@@ -305,6 +432,10 @@ new class extends Component
 
     public function quickInvite(): void
     {
+        // Creating the member and inviting them are one gesture here, so the
+        // stricter of the two rights is the one asked for.
+        Gate::authorize('create', User::class);
+
         $this->validate([
             'inviteFirstName' => ['required', 'string', 'max:255'],
             'inviteLastName' => ['required', 'string', 'max:255'],
@@ -333,7 +464,7 @@ new class extends Component
 
     public function recalculateForceList(): void
     {
-        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+        Gate::authorize('setOrUpdateForceList', User::class);
 
         RecalculateForceListAction::handle();
 
@@ -345,7 +476,7 @@ new class extends Component
         if (str_starts_with($key, 'categories_')) {
             $value = substr($key, strlen('categories_'));
             $this->categories = array_values(
-                array_filter($this->categories, fn (string $v) => $v !== $value)
+                array_filter($this->categories, fn (string $v): bool => $v !== $value)
             );
         } else {
             $this->reset([$key]);
@@ -364,6 +495,7 @@ new class extends Component
             'breadcrumbs' => $this->getBreadcrumbs(),
             'filterChips' => $this->filterChips,
             'licenceTypes' => $this->licenceTypes,
+            'invitationStates' => $this->invitationStates,
             'stats' => $this->stats,
         ]);
     }
@@ -380,9 +512,15 @@ new class extends Component
 
     public function sendInvitation(int $userId): void
     {
+        Gate::authorize('sendEmail', User::class);
+
         $user = User::findOrFail($userId);
 
-        SendInvitationAction::handle($user);
+        if (! SendInvitationAction::handle($user)) {
+            $this->error(__('This member has no address of their own yet, so they cannot be invited.'));
+
+            return;
+        }
 
         $this->success(__('Invitation sent to :email.', ['email' => $user->email]));
     }
@@ -421,7 +559,7 @@ new class extends Component
         return Team::with('captain')
             ->orderBy('name')
             ->get()
-            ->map(fn (Team $team) => [
+            ->map(fn (Team $team): array => [
                 'id' => $team->id,
                 'name' => __('Team') . ' ' . $team->name,
                 'avatar' => $team->captain->photo ?? '/images/empty-user.jpg',
@@ -477,20 +615,23 @@ new class extends Component
             ? User::onlyTrashed()
             : User::query();
 
+        $sortColumns = $this->sortableColumns[$this->sortBy['column']] ?? ['first_name', 'last_name'];
+
         return $query
-            ->when($this->search, fn ($q) => $q->where(
-                fn ($q) => $q->where('first_name', 'like', "%{$this->search}%")
-                    ->orWhere('last_name', 'like', "%{$this->search}%")
-                    ->orWhere('email', 'like', "%{$this->search}%")
-            ))
+            ->when($this->search, fn ($q) => $q->searchName($this->search))
             ->when(
                 ! $this->showArchived && $this->selectedLicenceType === 'competitive',
                 fn ($q) => $q->competitor()
             )
             ->when(
+                // Complément exact de competitor() : une inscription compétitive
+                // annulée ne fait plus classer le membre en compétiteur.
+                // Volontairement sans filtre d'appartenance : la liste inclut
+                // aussi les utilisateurs sans inscription, comme avant.
                 ! $this->showArchived && $this->selectedLicenceType === 'recreative',
                 fn ($q) => $q->whereDoesntHave('subscriptions', fn ($s) => $s
                     ->where('season_id', Season::current()?->id)
+                    ->active()
                     ->where('is_competitive', true)
                 )
             )
@@ -505,11 +646,17 @@ new class extends Component
                     fn ($teamQuery) => $teamQuery->whereIn('teams.id', $this->team_ids)
                 )
             )
+            ->when($this->invitationState !== '', fn ($q) => $q->withInvitationState($this->invitationState))
             ->when($this->incompleteProfile, fn ($q) => $q->withIncompleteProfile())
+            ->when($this->adultWithoutAddress, fn ($q) => $q->adultWithoutOwnAddress())
             ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
             ->when($this->hasKey, fn ($q) => $q->where('has_key', true))
             ->when($this->hasCashRegister, fn ($q) => $q->whereHas('heldCashRegisters'))
-            ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
+            ->tap(function ($query) use ($sortColumns): void {
+                foreach ($sortColumns as $column) {
+                    $query->orderBy($column, $this->sortBy['direction']);
+                }
+            })
             ->paginate(15);
     }
 
@@ -528,7 +675,64 @@ new class extends Component
     {
         return $this->users
             ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
+            ->map(fn (int $id): string => (string) $id)
             ->toArray();
+    }
+
+    /**
+     * Queue the invitations the selection actually calls for, and say out loud
+     * who was left out.
+     *
+     * Three kinds of member are not invited by a bulk send. One who already has
+     * an account has nothing to accept. One with no address of their own has
+     * nowhere to receive a login — the link would land in a guardian's mailbox
+     * and set a password on somebody else's account. And one still holding a
+     * valid invitation is only sent a second one on purpose: the new link
+     * invalidates the one they may be about to click.
+     */
+    private function dispatchInvitations(bool $includeWaiting): void
+    {
+        $members = User::query()->whereIn('id', $this->selected)->get();
+
+        $registered = $members->filter(fn (User $member): bool => $member->invitationStatus() === 'active');
+        $unreachable = $members->filter(fn (User $member): bool => $member->invitationStatus() !== 'active' && $member->email === null);
+        $waiting = $members->filter(fn (User $member): bool => $member->invitationStatus() === 'pending' && $member->email !== null);
+
+        if (! $includeWaiting && $waiting->isNotEmpty()) {
+            $this->waitingOnInvitation = $waiting->count();
+            $this->confirmReinviteModal = true;
+
+            return;
+        }
+
+        $targets = $members
+            ->diff($registered)
+            ->diff($unreachable)
+            ->when(! $includeWaiting, fn (Collection $ready): Collection => $ready->diff($waiting));
+
+        $this->confirmReinviteModal = false;
+        $this->clearSelection();
+
+        if ($targets->isEmpty()) {
+            $this->warning(__('Nobody in this selection can be invited.'));
+
+            return;
+        }
+
+        Bus::batch(
+            $targets->map(fn (User $member): SendMemberInvitationJob => new SendMemberInvitationJob($member->id))->all()
+        )->name('invitations')->dispatch();
+
+        $message = __(':count invitation(s) on their way.', ['count' => $targets->count()]);
+
+        if ($unreachable->isNotEmpty()) {
+            $message .= ' ' . __(':count member(s) have no address of their own and were not invited.', ['count' => $unreachable->count()]);
+        }
+
+        if ($registered->isNotEmpty()) {
+            $message .= ' ' . __(':count already have an account.', ['count' => $registered->count()]);
+        }
+
+        $this->success($message);
     }
 };

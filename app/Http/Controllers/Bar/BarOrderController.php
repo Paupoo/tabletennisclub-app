@@ -15,12 +15,9 @@ use Illuminate\View\View;
 
 class BarOrderController extends Controller
 {
-    private StockService $stockService;
-
-    public function __construct(StockService $stockService)
+    public function __construct(private readonly StockService $stockService)
     {
         $this->middleware('auth');
-        $this->stockService = $stockService;
     }
 
     public function cancelEdit(): RedirectResponse
@@ -42,7 +39,7 @@ class BarOrderController extends Controller
             return back()->with('error', 'Impossible de supprimer une commande payée.');
         }
 
-        DB::transaction(function () use ($order) {
+        DB::transaction(function () use ($order): void {
             $order->load('items');
             foreach ($order->items as $item) {
                 $this->stockService->restoreFromOrderItem(
@@ -163,7 +160,7 @@ class BarOrderController extends Controller
         $order->load('items');
 
         $cart = $order->items
-            ->mapWithKeys(fn (BarOrderItem $item) => [$item->product_id => (int) $item->quantity])
+            ->mapWithKeys(fn (BarOrderItem $item): array => [$item->product_id => (int) $item->quantity])
             ->toArray();
 
         session()->put('cart', $cart);

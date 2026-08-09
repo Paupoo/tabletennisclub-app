@@ -27,4 +27,25 @@ class OnboardFromContactAction
 
         return $user;
     }
+
+    public static function linkToExisting(Contact $contact, User $existingUser): User
+    {
+        $contact->update(['status' => 'processed', 'user_id' => $existingUser->id]);
+
+        return $existingUser;
+    }
+
+    public static function matchExistingUser(string $email): ?User
+    {
+        return User::query()
+            ->whereRaw('LOWER(email) = ?', [mb_strtolower($email)])
+            ->first();
+    }
+
+    public static function matchTrashedUser(string $email): ?User
+    {
+        return User::onlyTrashed()
+            ->whereRaw('LOWER(email) = ?', [mb_strtolower($email)])
+            ->first();
+    }
 }

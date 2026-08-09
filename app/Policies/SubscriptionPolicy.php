@@ -6,6 +6,8 @@ namespace App\Policies;
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\Role;
 
 class SubscriptionPolicy
 {
@@ -20,9 +22,14 @@ class SubscriptionPolicy
     /**
      * Determine whether the user can delete the model.
      */
+    /**
+     * Destroying an affiliation outright — as opposed to cancelling it, which is
+     * the normal path and belongs to the members duty — stays with administrators.
+     * It takes a paid membership and its payment history out of the books.
+     */
     public function delete(User $user, Subscription $subscription): bool
     {
-        return $user->is_admin;
+        return $user->hasRole(Role::ADMINISTRATOR->value);
     }
 
     /**
@@ -30,12 +37,12 @@ class SubscriptionPolicy
      */
     public function forceDelete(User $user, Subscription $subscription): bool
     {
-        return $user->is_admin;
+        return $user->hasRole(Role::ADMINISTRATOR->value);
     }
 
     public function generatePayment(User $user, Subscription $subscription): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::SubscriptionsManage->value);
     }
 
     /**

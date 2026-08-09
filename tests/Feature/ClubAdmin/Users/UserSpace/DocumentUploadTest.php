@@ -9,7 +9,7 @@ use Livewire\Livewire;
 
 describe('Document upload — registration management', function (): void {
     it('saves medical certificate path to user after upload', function (): void {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $user = User::factory()->create(['birthdate' => now()->subYears(25)]);
 
@@ -21,11 +21,11 @@ describe('Document upload — registration management', function (): void {
         $user->refresh();
 
         expect($user->medical_certificate_path)->not->toBeNull();
-        Storage::disk('public')->assertExists(str_replace('/storage/', '', $user->medical_certificate_path));
+        Storage::disk('local')->assertExists($user->medical_certificate_path);
     });
 
     it('saves parental consent path to user after upload', function (): void {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $user = User::factory()->create(['birthdate' => now()->subYears(15)]);
 
@@ -37,10 +37,11 @@ describe('Document upload — registration management', function (): void {
         $user->refresh();
 
         expect($user->parental_consent_path)->not->toBeNull();
-        Storage::disk('public')->assertExists(str_replace('/storage/', '', $user->parental_consent_path));
+        Storage::disk('local')->assertExists($user->parental_consent_path);
     });
 
     it('replaces existing medical certificate when a new one is uploaded', function (): void {
+        Storage::fake('local');
         Storage::fake('public');
 
         $user = User::factory()->create([
@@ -56,11 +57,11 @@ describe('Document upload — registration management', function (): void {
         $user->refresh();
 
         expect($user->medical_certificate_path)->toContain('medical.');
-        Storage::disk('public')->assertExists(str_replace('/storage/', '', $user->medical_certificate_path));
+        Storage::disk('local')->assertExists($user->medical_certificate_path);
     });
 
     it('validates that only allowed file types are accepted for medical certificate', function (): void {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $user = User::factory()->create(['birthdate' => now()->subYears(25)]);
 

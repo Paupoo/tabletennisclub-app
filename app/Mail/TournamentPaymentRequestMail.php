@@ -10,13 +10,14 @@ use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class TournamentPaymentRequestMail extends Mailable
+class TournamentPaymentRequestMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -35,7 +36,7 @@ class TournamentPaymentRequestMail extends Mailable
     ) {
         $this->qrCode = (new GeneratePaymentQR)($payment);
         $this->BIC = Club::ourClub()->first()->bic;
-        $this->IBAN = Club::ourClub()->first()->bank_account;
+        $this->IBAN = Club::ourClub()->first()->bank_account_formatted;
     }
 
     public function content(): Content

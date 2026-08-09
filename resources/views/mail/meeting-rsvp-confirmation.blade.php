@@ -28,7 +28,7 @@
 
 <x-mail::panel>
 - {{ __('Beneficiary') }}: {{ $club->name }}
-- IBAN: {{ $club->bank_account }}
+- IBAN: {{ $club->bank_account_formatted }}
 - BIC: {{ $club->bic }}
 - {{ __('Reference') }}: **{{ $payment->reference }}**
 </x-mail::panel>

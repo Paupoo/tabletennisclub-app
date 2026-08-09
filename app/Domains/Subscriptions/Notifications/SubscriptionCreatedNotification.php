@@ -6,6 +6,7 @@ namespace App\Domains\Subscriptions\Notifications;
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Services\TrainingPackProrata;
 use Illuminate\Bus\Queueable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -23,8 +24,8 @@ class SubscriptionCreatedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Affiliation enregistrée'),
-            'body' => __('Votre demande d\'affiliation a bien été reçue'),
+            'title' => __('Affiliation registered'),
+            'body' => __('Your affiliation request has been received'),
             'url' => '#',
             'category' => 'subscription',
             'icon' => 'o-identification',
@@ -41,24 +42,24 @@ class SubscriptionCreatedNotification extends Notification
         $trainingPacks = $this->subscription->trainingPacks;
 
         $message = (new MailMessage)
-            ->subject(__('Affiliation :season — demande enregistrée', ['season' => $season->name]))
-            ->greeting(__('Bonjour :name,', ['name' => $notifiable->first_name]))
-            ->line(__('Votre demande d\'affiliation pour la saison **:season** a bien été enregistrée.', ['season' => $season->name]))
-            ->line(__('Le secrétaire du club va la traiter prochainement. Vous recevrez un email dès que votre dossier sera confirmé avec les informations de paiement.'))
+            ->subject(__('Affiliation :season — request registered', ['season' => $season->name]))
+            ->greeting(__('Hello :name,', ['name' => $notifiable->first_name]))
+            ->line(__('Your affiliation request for season **:season** has been registered.', ['season' => $season->name]))
+            ->line(__('The club secretary will process it shortly. You will receive an email as soon as your file is confirmed, with the payment details.'))
             ->line('---')
-            ->line(__('**Récapitulatif de votre demande :**'))
+            ->line(__('**Summary of your request:**'))
             ->line(__('Formule : :formula', ['formula' => $formula]));
 
         if ($trainingPacks->isNotEmpty()) {
             $packNames = $trainingPacks->pluck('name')->join(', ');
-            $message->line(__('Entraînements : :packs', ['packs' => $packNames]));
+            $message->line(__('Trainings: :packs', ['packs' => $packNames]));
         }
 
         $estimatedTotal = $this->computeEstimate($trainingPacks);
 
         return $message
-            ->line(__('Montant estimé : :amount € *(avant remise éventuelle, calculé à la validation)*', ['amount' => number_format($estimatedTotal, 2, ',', ' ')]))
-            ->line(__('En cas de question, n\'hésitez pas à contacter le secrétariat du club.'));
+            ->line(__('Estimated amount: :amount € *(before any discount, computed on validation)*', ['amount' => number_format($estimatedTotal, 2, ',', ' ')]))
+            ->line(__('If you have any question, feel free to contact the club secretariat.'));
     }
 
     /** @return array<int, string> */
@@ -67,12 +68,23 @@ class SubscriptionCreatedNotification extends Notification
         return ['mail', 'database'];
     }
 
+    /**
+     * Estimation volontairement grossière — la remise est annoncée « à la
+     * validation » — mais le pro rata, lui, est déjà connu : annoncer le plein
+     * tarif à quelqu'un qui rejoint un pack à mi-parcours serait faux.
+     */
     private function computeEstimate(Collection $trainingPacks): float
     {
         $basePrice = $this->subscription->is_competitive ? 125.0 : 60.0;
+        $prorata = new TrainingPackProrata;
 
-        $packTotal = $trainingPacks->sum(fn (TrainingPack $pack) => (float) $pack->price);
+        $packTotal = $trainingPacks->sum(fn (TrainingPack $pack): float => $prorata->billableAmount(
+            $pack,
+            (float) $pack->price,
+            $pack->pivot->starts_on,
+            $pack->pivot->ends_on,
+        ));
 
-        return $basePrice + $packTotal;
+        return round($basePrice + $packTotal, 2);
     }
 }

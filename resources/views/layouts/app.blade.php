@@ -7,7 +7,10 @@
 
 <head>
     <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" name="viewport">
+    {{-- No maximum-scale: pinch zoom is the only magnification a member has (WCAG 1.4.4).
+    The overflow-x-hidden on <body> below is what keeps Firefox mobile from widening the
+    layout viewport, so capping the scale was never what held that together. --}}
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
     <meta content="{{ csrf_token() }}" name="csrf-token">
     <title>{{ isset($title) ? config('app.name') . ' - ' . $title : config('app.name') }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-club.svg') }}">
@@ -20,7 +23,10 @@
     @endif
 </head>
 
-<body class="bg-base-200 min-h-screen font-sans antialiased" x-data="{
+{{-- overflow-x-hidden: any page content wider than the screen must clip, not create
+horizontal scroll — otherwise Firefox mobile widens the layout viewport and every
+position:fixed overlay (notification sheet, drawers) gets cropped on the right. --}}
+<body class="bg-base-200 min-h-screen overflow-x-hidden font-sans antialiased" x-data="{
     dbTheme: '{{ $user->theme ?? 'auto' }}',
     init() {
         let currentTheme = localStorage.getItem('theme') || this.dbTheme;
@@ -70,7 +76,10 @@
 
         {{-- The `$slot` goes here --}}
         <x-slot:content>
-            <div class="mb-10 mt-2 flex items-center justify-between">
+            {{-- breadcrumb-trail is the hook that lifts the trail's links to the 24px
+            tap floor: Mary renders the list as a bare <ul class="flex items-center">,
+            so there is no class of its own to target. --}}
+            <div class="breadcrumb-trail mb-10 mt-2 flex items-center justify-between">
                {{ $breadcrumbs ?? null }}
             </div>
 
@@ -82,6 +91,21 @@
 
     {{-- TOAST area --}}
     <x-toast position="toast-bottom toast-start" />
+
+    {{-- Session flash → Mary toast bridge: controllers redirecting with
+         ->with('success'|'error', …) surface as the same toasts Livewire uses. --}}
+    @if (session('success') || session('error'))
+        @php
+            $flashToast = Illuminate\Support\Js::from(['toast' => [
+                'title' => session('success') ?? session('error'),
+                'css' => session()->has('success') ? 'alert-success' : 'alert-error',
+                'icon' => svg(session()->has('success') ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle', 'w-7 h-7')->toHtml(),
+                'timeout' => 3000,
+                'position' => 'toast-bottom toast-start',
+            ]]);
+        @endphp
+        <div x-data x-init="toast({{ $flashToast }})"></div>
+    @endif
     @livewireScripts
 </body>
 

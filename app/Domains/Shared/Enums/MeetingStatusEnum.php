@@ -15,7 +15,7 @@ enum MeetingStatusEnum: string
     public static function getOptions(): array
     {
         return array_map(
-            fn (self $case) => ['id' => $case->value, 'name' => $case->getLabel()],
+            fn (self $case): array => ['id' => $case->value, 'name' => $case->getLabel()],
             self::cases()
         );
     }

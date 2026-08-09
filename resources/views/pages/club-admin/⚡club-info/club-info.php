@@ -7,7 +7,9 @@ namespace Resources\views\Pages\ClubEvents\Interclubs\Teams;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Models\AppSetting;
+use App\Domains\Shared\Rules\ValidIban;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Validation\Rule as ValidationRule;
@@ -24,7 +26,7 @@ new class extends Component
 
     public bool $addCommitteeMemberModal = false;
 
-    #[Validate('string|max:50')]
+    #[Validate(['required', 'string', 'max:50', new ValidIban])]
     public ?string $bank_account;
 
     #[Validate('string|max:20')]
@@ -121,10 +123,8 @@ new class extends Component
     public function removeMember(int $id): void
     {
         $user = User::findOrFail($id);
-        $user->update([
-            'is_committee_member' => false,
-            'committee_role' => null,
-        ]);
+        $user->removeRole(Role::COMMITTEE->value);
+        $user->update(['committee_role' => null]);
 
         $this->success(__('Member removed from committee list'));
     }
@@ -183,7 +183,7 @@ new class extends Component
     {
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
-            'committeeMembers' => User::where('is_committee_member', true)
+            'committeeMembers' => User::role(Role::COMMITTEE->value)
                 ->orderByRaw("
                     CASE
                         WHEN committee_role = 'PRESIDENT' THEN 1

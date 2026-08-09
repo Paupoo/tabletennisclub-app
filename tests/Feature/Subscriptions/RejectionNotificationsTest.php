@@ -31,7 +31,7 @@ describe('SubscriptionRejectedNotification', function (): void {
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
         $subscription->load('season');
 
-        $mail = (new SubscriptionRejectedNotification($subscription))->toMail($user);
+        $mail = new SubscriptionRejectedNotification($subscription)->toMail($user);
 
         expect($mail->subject)->toContain('2025-2026');
     })->group('notifications', 'rejection');
@@ -42,7 +42,7 @@ describe('SubscriptionRejectedNotification', function (): void {
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
         $subscription->load('season');
 
-        $mail = (new SubscriptionRejectedNotification($subscription))->toMail($user);
+        $mail = new SubscriptionRejectedNotification($subscription)->toMail($user);
 
         $lines = implode(' ', $mail->introLines);
         expect($mail->greeting)->toContain('Marie')
@@ -55,7 +55,7 @@ describe('SubscriptionRejectedNotification', function (): void {
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
         $subscription->load('season');
 
-        $mail = (new SubscriptionRejectedNotification($subscription, template: 'level'))->toMail($user);
+        $mail = new SubscriptionRejectedNotification($subscription, template: 'level')->toMail($user);
 
         $lines = implode(' ', $mail->introLines);
         expect($lines)->toContain('niveau');
@@ -67,7 +67,7 @@ describe('SubscriptionRejectedNotification', function (): void {
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
         $subscription->load('season');
 
-        $mail = (new SubscriptionRejectedNotification($subscription, template: 'full_teams'))->toMail($user);
+        $mail = new SubscriptionRejectedNotification($subscription, template: 'full_teams')->toMail($user);
 
         $lines = implode(' ', $mail->introLines);
         expect($lines)->toContain('complètes');
@@ -80,7 +80,7 @@ describe('SubscriptionRejectedNotification', function (): void {
         $subscription->load('season');
 
         $customMsg = 'Veuillez réessayer en janvier.';
-        $mail = (new SubscriptionRejectedNotification($subscription, message: $customMsg))->toMail($user);
+        $mail = new SubscriptionRejectedNotification($subscription, message: $customMsg)->toMail($user);
 
         $lines = implode(' ', $mail->introLines);
         expect($lines)->toContain($customMsg);
@@ -92,7 +92,7 @@ describe('SubscriptionRejectedNotification', function (): void {
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
         $subscription->load('season');
 
-        $mail = (new SubscriptionRejectedNotification($subscription))->toMail($user);
+        $mail = new SubscriptionRejectedNotification($subscription)->toMail($user);
 
         $lines = implode(' ', $mail->introLines);
         expect($lines)->not->toContain('niveau')
@@ -118,9 +118,7 @@ describe('SubscriptionRejectedNotification', function (): void {
         ));
         $subscription->cancel();
 
-        Notification::assertSentTo($user, SubscriptionRejectedNotification::class, function ($n) {
-            return $n->template === 'full_teams' && $n->message === 'Pas de place.';
-        });
+        Notification::assertSentTo($user, SubscriptionRejectedNotification::class, fn ($n): bool => $n->template === 'full_teams' && $n->message === 'Pas de place.');
         expect($subscription->fresh()->status)->toBe('cancelled');
     })->group('notifications', 'rejection');
 
@@ -149,7 +147,7 @@ describe('TrainingPackRejectedNotification', function (): void {
         $pack = TrainingPack::factory()->create(['name' => 'Pack Mercredi']);
         $subscription->load('season');
 
-        $mail = (new TrainingPackRejectedNotification($subscription, $pack))->toMail($user);
+        $mail = new TrainingPackRejectedNotification($subscription, $pack)->toMail($user);
 
         expect($mail->subject)->toContain('2025-2026');
     })->group('notifications', 'rejection');
@@ -161,7 +159,7 @@ describe('TrainingPackRejectedNotification', function (): void {
         $pack = TrainingPack::factory()->create(['name' => 'Pack Vendredi']);
         $subscription->load('season');
 
-        $mail = (new TrainingPackRejectedNotification($subscription, $pack))->toMail($user);
+        $mail = new TrainingPackRejectedNotification($subscription, $pack)->toMail($user);
 
         $lines = implode(' ', $mail->introLines);
         expect($lines)->toContain('Pack Vendredi')
@@ -175,7 +173,7 @@ describe('TrainingPackRejectedNotification', function (): void {
         $pack = TrainingPack::factory()->create();
         $subscription->load('season');
 
-        $mail = (new TrainingPackRejectedNotification($subscription, $pack, template: 'level'))->toMail($user);
+        $mail = new TrainingPackRejectedNotification($subscription, $pack, template: 'level')->toMail($user);
 
         $lines = implode(' ', $mail->introLines);
         expect($lines)->toContain('niveau');
@@ -188,7 +186,7 @@ describe('TrainingPackRejectedNotification', function (): void {
         $pack = TrainingPack::factory()->create();
         $subscription->load('season');
 
-        $mail = (new TrainingPackRejectedNotification($subscription, $pack, template: 'full_teams'))->toMail($user);
+        $mail = new TrainingPackRejectedNotification($subscription, $pack, template: 'full_teams')->toMail($user);
 
         $lines = implode(' ', $mail->introLines);
         expect($lines)->toContain('complètes');
@@ -201,11 +199,11 @@ describe('TrainingPackRejectedNotification', function (): void {
         $pack = TrainingPack::factory()->create();
         $subscription->load('season');
 
-        $mail = (new TrainingPackRejectedNotification(
+        $mail = new TrainingPackRejectedNotification(
             $subscription,
             $pack,
             message: 'Essayez le pack du jeudi.',
-        ))->toMail($user);
+        )->toMail($user);
 
         $lines = implode(' ', $mail->introLines);
         expect($lines)->toContain('Essayez le pack du jeudi.');
@@ -235,8 +233,8 @@ describe('TrainingPackRejectedNotification', function (): void {
         }
         $subscription->trainingPacks()->wherePivot('status', 'pending')->detach();
 
-        Notification::assertSentTo($user, TrainingPackRejectedNotification::class, fn ($n) => $n->pack->name === 'Pack A');
-        Notification::assertSentTo($user, TrainingPackRejectedNotification::class, fn ($n) => $n->pack->name === 'Pack B');
+        Notification::assertSentTo($user, TrainingPackRejectedNotification::class, fn ($n): bool => $n->pack->name === 'Pack A');
+        Notification::assertSentTo($user, TrainingPackRejectedNotification::class, fn ($n): bool => $n->pack->name === 'Pack B');
         expect($subscription->trainingPacks()->count())->toBe(0);
     })->group('notifications', 'rejection');
 

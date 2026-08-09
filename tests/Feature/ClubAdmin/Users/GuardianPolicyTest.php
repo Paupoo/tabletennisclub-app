@@ -30,6 +30,12 @@ describe('create', function (): void {
     it('allows admin', fn () => expect($this->admin->can('create', Guardian::class))->toBeTrue());
     it('allows committee member', fn () => expect($this->committeeMember->can('create', Guardian::class))->toBeTrue());
     it('denies regular member', fn () => expect($this->member->can('create', Guardian::class))->toBeFalse());
+    it('allows a member to create/attach a guardian for themselves', fn () => expect($this->member->can('create', [Guardian::class, $this->member]))->toBeTrue());
+    it('denies a member creating a guardian for another user', function (): void {
+        $otherMember = $this->createFakeUser();
+
+        expect($this->member->can('create', [Guardian::class, $otherMember]))->toBeFalse();
+    });
 });
 
 describe('update', function (): void {

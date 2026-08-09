@@ -5,63 +5,57 @@ declare(strict_types=1);
 namespace App\Domains\Trainings\Policies;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Trainings\Models\TrainingPack;
 
+/**
+ * Every method used to `return false` — a stub that was never wired to anything,
+ * so the training packs screen carried its own rules inline. Filled in here so
+ * the ability has one home; no behaviour changes, since nothing called it.
+ */
 class TrainingPackPolicy
 {
-    /**
-     * Determine whether the user can create models.
-     */
     public function create(User $user): bool
     {
-        return false;
+        return $user->can(Permission::TrainingsManage->value);
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
     public function delete(User $user, TrainingPack $trainingPack): bool
     {
-        return false;
+        return $user->can(Permission::TrainingsManage->value);
     }
 
     /**
-     * Determine whether the user can permanently delete the model.
+     * A pack carries enrolments and payments; it is discontinued, never erased.
      */
     public function forceDelete(User $user, TrainingPack $trainingPack): bool
     {
-        return false;
+        return $user->hasRole(Role::ADMINISTRATOR->value);
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
     public function restore(User $user, TrainingPack $trainingPack): bool
     {
-        return false;
+        return $user->can(Permission::TrainingsManage->value);
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
     public function update(User $user, TrainingPack $trainingPack): bool
     {
-        return false;
+        return $user->can(Permission::TrainingsManage->value);
     }
 
     /**
-     * Determine whether the user can view the model.
+     * The trainer running the pack reads it too, without holding the duty of
+     * building the season's offer.
      */
     public function view(User $user, TrainingPack $trainingPack): bool
     {
-        return false;
+        return $user->can(Permission::TrainingsView->value)
+            || $trainingPack->trainer_id === $user->id;
     }
 
-    /**
-     * Determine whether the user can view any models.
-     */
     public function viewAny(User $user): bool
     {
-        return false;
+        return $user->can(Permission::TrainingsView->value);
     }
 }

@@ -86,8 +86,8 @@
                 @else
                     <div class="rounded-xl border border-warning/30 bg-warning/5 overflow-hidden">
                         <div class="flex items-center gap-2 px-3 py-2 bg-warning/10 border-b border-warning/20">
-                            <x-icon name="o-exclamation-circle" class="w-4 h-4 text-warning shrink-0" />
-                            <span class="text-xs font-bold text-warning">
+                            <x-icon name="o-exclamation-circle" class="w-4 h-4 text-warning-content shrink-0" />
+                            <span class="text-xs font-bold text-warning-content">
                                 {{ trans_choice(':n participant not paid|:n participants not paid', $this->unpaidParticipants->count(), ['n' => $this->unpaidParticipants->count()]) }}
                             </span>
                         </div>

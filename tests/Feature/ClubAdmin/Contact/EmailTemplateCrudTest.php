@@ -5,10 +5,11 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Contact\Models\EmailTemplate;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
 
 beforeEach(function (): void {
-    $this->admin = User::factory()->create(['is_admin' => true]);
+    $this->admin = User::factory()->isAdmin()->create();
 });
 
 describe('listing', function (): void {
@@ -107,6 +108,27 @@ describe('create', function (): void {
             ->call('saveTemplate')
             ->assertHasErrors(['formApplyStatus']);
     });
+
+    it('no longer accepts the retired pending apply status', function (): void {
+        Livewire::actingAs($this->admin)
+            ->test('pages::website.contacts.email-templates')
+            ->call('openCreate')
+            ->set('formName', 'Legacy')
+            ->set('formKey', 'legacy_pending')
+            ->set('formSubject', 'S')
+            ->set('formBody', 'B')
+            ->set('formApplyStatus', 'pending')
+            ->call('saveTemplate')
+            ->assertHasErrors(['formApplyStatus']);
+    });
+
+    it('only offers new, processed and rejected as applicable statuses', function (): void {
+        $options = Livewire::actingAs($this->admin)
+            ->test('pages::website.contacts.email-templates')
+            ->viewData('statusOptions');
+
+        expect(array_column($options, 'id'))->toBe(['', 'new', 'processed', 'rejected']);
+    });
 });
 
 describe('update', function (): void {
@@ -194,9 +216,7 @@ describe('toggle active', function (): void {
 
 describe('authorization', function (): void {
     it('lets a secretary access and create templates', function (): void {
-        $secretary = User::factory()->create([
-            'is_admin' => false,
-            'is_committee_member' => true,
+        $secretary = User::factory()->isCommitteeMember()->withRole(Role::CONTACTS)->create([
             'committee_role' => CommitteeRolesEnum::SECRETARY,
         ]);
 
@@ -215,7 +235,6 @@ describe('authorization', function (): void {
 
     it('forbids a non-manager committee member from mounting the screen', function (): void {
         $treasurer = User::factory()->create([
-            'is_admin' => false,
             'committee_role' => CommitteeRolesEnum::TREASURER,
         ]);
 
@@ -225,9 +244,7 @@ describe('authorization', function (): void {
     });
 
     it('forbids a non-manager committee member at the route level', function (): void {
-        $treasurer = User::factory()->create([
-            'is_admin' => false,
-            'is_committee_member' => true,
+        $treasurer = User::factory()->isCommitteeMember()->create([
             'committee_role' => CommitteeRolesEnum::TREASURER,
         ]);
 

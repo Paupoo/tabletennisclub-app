@@ -22,8 +22,8 @@ class MeetingDatePollNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Sondage de dates: :title', ['title' => $this->meeting->title]),
-            'body' => __('Merci de voter pour votre disponibilité'),
+            'title' => __('Date poll: :title', ['title' => $this->meeting->title]),
+            'body' => __('Please vote for your availability'),
             'url' => route('admin.meetings.show', $this->meeting),
             'category' => 'meeting',
             'icon' => 'o-calendar-days',

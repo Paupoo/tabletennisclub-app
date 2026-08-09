@@ -351,6 +351,8 @@ describe('registerableMembersOptions', function (): void {
         Livewire::actingAs($admin)
             ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
             ->set('step', '5')
+            // La liste des membres inscriptibles vit dans la modale d'inscription.
+            ->set('showRegisterModal', true)
             ->assertSee('Olga Activsky')
             ->assertDontSee('Igor Inactif');
 

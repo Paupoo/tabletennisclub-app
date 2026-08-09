@@ -6,6 +6,7 @@ namespace App\Policies;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Shared\Enums\Permission;
 
 class ClubPolicy
 {
@@ -46,7 +47,7 @@ class ClubPolicy
      */
     public function update(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::ClubUpdate->value);
     }
 
     /**

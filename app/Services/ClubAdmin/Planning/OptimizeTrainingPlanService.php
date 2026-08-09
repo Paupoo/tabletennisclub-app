@@ -32,7 +32,7 @@ class OptimizeTrainingPlanService
     /**
      * Ranking series strength (higher = stronger). NC / NA / unknown is the floor.
      */
-    private const SERIES_STRENGTH = [
+    private const array SERIES_STRENGTH = [
         'A' => 5,
         'B' => 4,
         'C' => 3,
@@ -244,9 +244,9 @@ class OptimizeTrainingPlanService
     {
         // 1. Level homogeneity: distance to the pack's current level average.
         $isEmpty = $state['level_count'] === 0;
-        $packLevel = ! $isEmpty
-            ? $state['level_sum'] / $state['level_count']
-            : ($state['declared_value'] ?? $candidateValue); // empty pack with no declared level = neutral
+        $packLevel = $isEmpty
+            ? ($state['declared_value'] ?? $candidateValue) // empty pack with no declared level = neutral
+            : $state['level_sum'] / $state['level_count'];
 
         $levelCost = self::W_LEVEL * abs($candidateValue - $packLevel);
 
@@ -281,6 +281,6 @@ class OptimizeTrainingPlanService
 
         arsort($ageCounts);
 
-        return (string) array_key_first($ageCounts);
+        return array_key_first($ageCounts);
     }
 }

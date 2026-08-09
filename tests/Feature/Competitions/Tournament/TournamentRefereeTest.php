@@ -364,7 +364,7 @@ describe('assignInitialBracketReferees', function (): void {
             ->whereNotNull('round')
             ->whereNotNull('player1_id')
             ->get()
-            ->flatMap(fn ($m) => [$m->player1_id, $m->player2_id])
+            ->flatMap(fn ($m): array => [$m->player1_id, $m->player2_id])
             ->filter()->unique()->values()->all();
 
         $bracketMatches = TournamentMatch::where('tournament_id', $tournament->id)

@@ -32,7 +32,7 @@ function registeredUserWithPayment(Tournament $tournament): array
         ->first();
 
     $payment = $registration->payment()->create([
-        'reference' => '001/2026/' . rand(10000, 99999),
+        'reference' => '001/2026/' . random_int(10000, 99999),
         'amount_due' => 10,
         'amount_paid' => 0,
         'status' => 'pending',
@@ -49,7 +49,7 @@ function registeredUserWithPayment(Tournament $tournament): array
 
 describe('recordCashPayment', function (): void {
     it('marks payment as paid with cash method', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $this->actingAs($admin);
         $service = new TournamentService;
         $register = CashRegister::create(['name' => 'Test']);
@@ -64,7 +64,7 @@ describe('recordCashPayment', function (): void {
     });
 
     it('sets has_paid to true on the pivot', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $this->actingAs($admin);
         $service = new TournamentService;
         $register = CashRegister::create(['name' => 'Test']);
@@ -86,7 +86,7 @@ describe('recordCashPayment', function (): void {
         $register = CashRegister::create(['name' => 'Test']);
         $tournament = paidTournament();
         [$user] = registeredUserWithPayment($tournament);
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
 
         $this->actingAs($admin);
         $service->recordCashPayment($tournament, $user, $register);
@@ -139,7 +139,7 @@ describe('SendDebtReminderNotification job', function (): void {
         $tournament = paidTournament();
         [$user, $payment] = registeredUserWithPayment($tournament);
 
-        (new SendDebtReminderNotification($payment->id, $user->id, $tournament->id))->handle();
+        new SendDebtReminderNotification($payment->id, $user->id, $tournament->id)->handle();
 
         Notification::assertSentTo(
             $user,
@@ -154,7 +154,7 @@ describe('SendDebtReminderNotification job', function (): void {
         [$user, $payment] = registeredUserWithPayment($tournament);
         $payment->update(['status' => 'paid']);
 
-        (new SendDebtReminderNotification($payment->id, $user->id, $tournament->id))->handle();
+        new SendDebtReminderNotification($payment->id, $user->id, $tournament->id)->handle();
 
         Notification::assertNothingSent();
     });

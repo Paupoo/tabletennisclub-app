@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\TrainingLevel;
+use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use Livewire\Livewire;
@@ -201,8 +204,8 @@ describe('model bug fixes', function (): void {
 describe('trainer update', function (): void {
     it('propagates trainer change to all linked sessions', function (): void {
         $admin = User::factory()->isAdmin()->create();
-        $coachA = User::factory()->create(['is_coach' => true]);
-        $coachB = User::factory()->create(['is_coach' => true]);
+        $coachA = User::factory()->isCoach()->create();
+        $coachB = User::factory()->isCoach()->create();
 
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season, ['trainer_id' => $coachA->id]);
@@ -230,15 +233,13 @@ describe('trainerOptions', function (): void {
         $season = makeActiveSeason();
 
         // Coach without any subscription — must still be selectable as a trainer.
-        User::factory()->create([
-            'is_coach' => true,
+        User::factory()->isCoach()->create([
             'first_name' => 'Zelda',
             'last_name' => 'Coachowski',
         ]);
 
         // Active member (confirmed subscription) but not a coach — must not appear.
         activeMember($season, [
-            'is_coach' => false,
             'first_name' => 'Nestor',
             'last_name' => 'Nocoach',
         ]);
@@ -248,5 +249,184 @@ describe('trainerOptions', function (): void {
             ->call('openCreate')
             ->assertSee('Zelda Coachowski')
             ->assertDontSee('Nestor Nocoach');
+    });
+});
+
+// ── price ─────────────────────────────────────────────────────────────────────
+
+describe('price', function (): void {
+    it('keeps the cents of a price entered with decimals', function (): void {
+        $season = makeActiveSeason();
+        $pack = makeTrainingPack($season, ['price' => 87.50]);
+
+        expect($pack->fresh()->price)->toBe(87.50);
+    });
+
+    it('stores the price as cents', function (): void {
+        $season = makeActiveSeason();
+        $pack = makeTrainingPack($season, ['price' => 87.50]);
+
+        expect((int) $pack->getRawOriginal('price'))->toBe(8750);
+    });
+
+    it('rounds a price with sub-cent precision to the nearest cent', function (): void {
+        $season = makeActiveSeason();
+        $pack = makeTrainingPack($season, ['price' => 12.345]);
+
+        expect($pack->fresh()->price)->toBe(12.35);
+    });
+
+    it('round-trips a whole-euro price unchanged', function (): void {
+        $season = makeActiveSeason();
+        $pack = makeTrainingPack($season, ['price' => 90]);
+
+        expect($pack->fresh()->price)->toBe(90.0);
+    });
+});
+
+// ── capacity ──────────────────────────────────────────────────────────────────
+
+describe('capacity', function (): void {
+    it('saves an explicit maximum from the wizard', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        $season = makeActiveSeason();
+        $room = Room::factory()->create(['capacity_for_trainings' => 16]);
+        $coach = User::factory()->isCoach()->create();
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('openCreate')
+            ->set('formSeasonId', $season->id)
+            ->set('formName', 'Jeunes mardi')
+            ->set('formLevel', TrainingLevel::KIDS->value)
+            ->set('formType', TrainingType::DIRECTED->value)
+            ->set('formRoomId', $room->id)
+            ->set('formTrainerId', $coach->id)
+            ->set('formDayOfWeek', 2)
+            ->set('formMaxParticipants', '12')
+            ->call('save');
+
+        expect(TrainingPack::where('name', 'Jeunes mardi')->sole()->max_participants)->toBe(12);
+    });
+
+    it('falls back to the room capacity when the maximum is left empty', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        $season = makeActiveSeason();
+        $room = Room::factory()->create(['capacity_for_trainings' => 16]);
+        $coach = User::factory()->isCoach()->create();
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('openCreate')
+            ->set('formSeasonId', $season->id)
+            ->set('formName', 'Sans plafond explicite')
+            ->set('formLevel', TrainingLevel::KIDS->value)
+            ->set('formType', TrainingType::DIRECTED->value)
+            ->set('formRoomId', $room->id)
+            ->set('formTrainerId', $coach->id)
+            ->set('formDayOfWeek', 2)
+            ->call('save');
+
+        $pack = TrainingPack::where('name', 'Sans plafond explicite')->sole();
+
+        expect($pack->max_participants)->toBeNull()
+            ->and($pack->effectiveMaxParticipants())->toBe(16);
+    });
+
+    it('refuses unlimited enrolment on a directed pack', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        $season = makeActiveSeason();
+        $room = Room::factory()->create(['capacity_for_trainings' => 16]);
+        $coach = User::factory()->isCoach()->create();
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('openCreate')
+            ->set('formSeasonId', $season->id)
+            ->set('formName', 'Dirige sans limite')
+            ->set('formLevel', TrainingLevel::KIDS->value)
+            ->set('formType', TrainingType::DIRECTED->value)
+            ->set('formRoomId', $room->id)
+            ->set('formTrainerId', $coach->id)
+            ->set('formDayOfWeek', 2)
+            ->set('formIsOpenEnrollment', true)
+            ->call('save');
+
+        $pack = TrainingPack::where('name', 'Dirige sans limite')->sole();
+
+        expect($pack->is_open_enrollment)->toBeFalse()
+            ->and($pack->hasAvailableSpot())->toBeTrue();
+    });
+
+    it('allows unlimited enrolment on a free-practice pack', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        $season = makeActiveSeason();
+        $room = Room::factory()->create(['capacity_for_trainings' => 4]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('openCreate')
+            ->set('formSeasonId', $season->id)
+            ->set('formName', 'Libre du vendredi')
+            ->set('formLevel', TrainingLevel::OPEN->value)
+            ->set('formType', TrainingType::FREE->value)
+            ->set('formRoomId', $room->id)
+            ->set('formDayOfWeek', 5)
+            ->set('formIsOpenEnrollment', true)
+            ->call('save');
+
+        expect(TrainingPack::where('name', 'Libre du vendredi')->sole()->is_open_enrollment)->toBeTrue();
+    });
+});
+
+// ── Capacité et statut de l'inscription club ─────────────────────────────────
+
+/**
+ * Régression #29 : les comptages filtraient le statut du pivot mais jamais
+ * celui de l'inscription club. Une inscription annulée gardait sa place et
+ * pouvait faire afficher « complet » à un pack qui ne l'était pas.
+ */
+describe('capacity ignores terminated subscriptions', function (): void {
+    beforeEach(function (): void {
+        $this->season = makeActiveSeason();
+        $this->pack = makeTrainingPack($this->season, ['max_participants' => 2]);
+    });
+
+    it('frees the slot of a subscription in a terminal state', function (string $status): void {
+        $gone = Subscription::factory()->create([
+            'season_id' => $this->season->id,
+            'status' => $status,
+        ]);
+        $gone->trainingPacks()->attach($this->pack->id, ['status' => 'enrolled']);
+
+        expect($this->pack->committedCount())->toBe(0);
+        expect($this->pack->enrolledCount())->toBe(0);
+    })->with(['cancelled', 'refunded']);
+
+    it('keeps the slot of a member still awaiting validation', function (): void {
+        $pendingMember = Subscription::factory()->pending()->create([
+            'season_id' => $this->season->id,
+        ]);
+        $pendingMember->trainingPacks()->attach($this->pack->id, ['status' => 'enrolled']);
+
+        expect($this->pack->committedCount())->toBe(1);
+    });
+
+    it('counts a confirmed member', function (): void {
+        $member = Subscription::factory()->create([
+            'season_id' => $this->season->id,
+            'status' => 'confirmed',
+        ]);
+        $member->trainingPacks()->attach($this->pack->id, ['status' => 'enrolled']);
+
+        expect($this->pack->committedCount())->toBe(1);
+        expect($this->pack->enrolledCount())->toBe(1);
+    });
+
+    it('excludes cancelled members from the waitlist count', function (): void {
+        $gone = Subscription::factory()->cancelled()->create(['season_id' => $this->season->id]);
+        $gone->trainingPacks()->attach($this->pack->id, ['status' => 'waiting']);
+
+        expect($this->pack->waitlistCount())->toBe(0);
     });
 });

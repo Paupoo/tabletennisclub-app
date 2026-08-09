@@ -397,11 +397,6 @@
                             type="number"
                             :hint="__('Number of tables for matches')"
                         />
-                        <x-input
-                            :label="__('Total number of tables')"
-                            wire:model="roomTotalTables"
-                            type="number"
-                        />
                     </div>
                     <div class="flex justify-end gap-2 mt-4">
                         <x-button

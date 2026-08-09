@@ -53,7 +53,7 @@ it('creates an article and redirects to list', function (): void {
 });
 
 it('public articles page shows published articles', function (): void {
-    NewsPost::factory()->create(['title' => 'Article public de test', 'status' => 'published', 'is_public' => true]);
+    NewsPost::factory()->create(['title' => 'Article public de test', 'status' => 'published']);
 
     visit(route('public.clubPosts.index'))
         ->assertNoJavaScriptErrors()

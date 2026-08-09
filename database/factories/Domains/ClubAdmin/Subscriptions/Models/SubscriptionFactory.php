@@ -17,6 +17,14 @@ class SubscriptionFactory extends Factory
     protected $model = Subscription::class;
 
     /**
+     * Inscription annulée : état terminal, ne compte plus comme membre actif.
+     */
+    public function cancelled(): static
+    {
+        return $this->state(fn (array $attributes): array => ['status' => 'cancelled']);
+    }
+
+    /**
      * Define the model's default state.
      *
      * @return array<string, mixed>
@@ -45,6 +53,10 @@ class SubscriptionFactory extends Factory
             'wants_directed_training' => false,
             'amount_due' => $amountDue,
             'amount_paid' => 0,
+            // Confirmée par défaut : une inscription de test représente presque
+            // toujours un membre du club, et seul confirmed|paid compte comme
+            // actif. Utiliser l'état pending() pour une demande en attente.
+            'status' => 'confirmed',
             'created_at' => $this->faker->dateTimeBetween('-30 days', 'now'),
             'updated_at' => now(),
         ];
@@ -59,6 +71,14 @@ class SubscriptionFactory extends Factory
             'can_drive' => true,
             'seats_available' => $seats,
         ]);
+    }
+
+    /**
+     * Demande d'inscription en attente de validation par le comité.
+     */
+    public function pending(): static
+    {
+        return $this->state(fn (array $attributes): array => ['status' => 'pending']);
     }
 
     /**

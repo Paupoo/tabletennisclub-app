@@ -4,23 +4,24 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeAdmin(): User
 {
-    return User::factory()->create(['is_admin' => true]);
+    return User::factory()->isAdmin()->create();
 }
 
 function makeCommitteeMember(): User
 {
-    return User::factory()->create(['is_committee_member' => true]);
+    return User::factory()->isCommitteeMember()->create();
 }
 
 function makeRegularUser(): User
 {
-    return User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+    return User::factory()->create();
 }
 
 // ── Access control ────────────────────────────────────────────────────────────
@@ -42,6 +43,28 @@ describe('season management access', function (): void {
         $this->actingAs(makeRegularUser())
             ->get(route('admin.seasons.index'))
             ->assertForbidden();
+    });
+
+    // The committee reads the seasons; only the SEASONS délégation provisions and
+    // activates. The action triggers are unique markers used to assert visibility.
+    it('hides the provisioning and activation controls from the read-only committee', function (): void {
+        makeActiveSeason();
+        Season::factory()->create(['is_active' => false, 'start_at' => now()->addYear()->startOfYear(), 'end_at' => now()->addYear()->endOfYear()]);
+
+        Livewire::actingAs(makeCommitteeMember())
+            ->test('pages::club-admin.seasons.index')
+            ->assertDontSee('openProvision')
+            ->assertDontSee('openActivate');
+    });
+
+    it('shows the provisioning and activation controls to the seasons delegate', function (): void {
+        makeActiveSeason();
+        Season::factory()->create(['is_active' => false, 'start_at' => now()->addYear()->startOfYear(), 'end_at' => now()->addYear()->endOfYear()]);
+
+        Livewire::actingAs(User::factory()->withRole(Role::SEASONS)->create())
+            ->test('pages::club-admin.seasons.index')
+            ->assertSee('openProvision')
+            ->assertSee('openActivate');
     });
 });
 

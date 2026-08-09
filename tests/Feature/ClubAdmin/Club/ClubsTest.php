@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -13,7 +14,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->create();
-    $this->committee = User::factory()->isCommitteeMember()->create();
+    $this->committee = User::factory()->isCommitteeMember()->withRole(Role::INTERCLUBS)->create();
     $this->user = User::factory()->create();
 });
 

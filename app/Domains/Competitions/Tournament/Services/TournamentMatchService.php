@@ -17,6 +17,21 @@ use InvalidArgumentException;
 
 class TournamentMatchService
 {
+    /**
+     * AFTT handicap table: `[receiver ranking][opponent ranking] => points given`.
+     *
+     * Transcribed from the federal document and left as literal data on
+     * purpose. The rungs are not evenly spaced — B0 against C0 is worth 3
+     * points where B4 against C4 is worth 2 — so no formula over
+     * {@see Ranking} positions reproduces it, and any attempt to derive it
+     * would silently change what players receive on the table. Only its
+     * completeness is enforced, by the test that checks every ranking appears
+     * in both dimensions.
+     *
+     * @see https://bbw.aftt.be/wp-content/uploads/2014/02/handicaps-M-D.pdf
+     *
+     * @var array<string, array<string, int>>
+     */
     private array $handicapPoints = [
         'B0' => [
             'B0' => 0,
@@ -405,7 +420,7 @@ class TournamentMatchService
         if ($isDoubles) {
             // Build candidate list from all individual players in the pool's pairs
             $allPlayerIds = $pool->pairs->flatMap(
-                fn (TournamentPair $pair) => array_filter([$pair->player1_id, $pair->player2_id])
+                fn (TournamentPair $pair): array => array_filter([$pair->player1_id, $pair->player2_id])
             )->unique()->values()->toArray();
         } else {
             $allPlayerIds = $pool->users->pluck('id')->toArray();
@@ -435,17 +450,17 @@ class TournamentMatchService
 
             $eligible = array_keys(array_filter(
                 $refereeCount,
-                fn (int $count, int $id) => ! in_array($id, $playing, true),
+                fn (int $count, int $id): bool => ! in_array($id, $playing, true),
                 ARRAY_FILTER_USE_BOTH
             ));
 
-            if (empty($eligible)) {
+            if ($eligible === []) {
                 continue;
             }
 
-            $minCount = min(array_map(fn (int $id) => $refereeCount[$id], $eligible));
-            $candidates = array_values(array_filter($eligible, fn (int $id) => $refereeCount[$id] === $minCount));
-            $refereeId = (int) $candidates[random_int(0, count($candidates) - 1)];
+            $minCount = min(array_map(fn (int $id): int => $refereeCount[$id], $eligible));
+            $candidates = array_values(array_filter($eligible, fn (int $id): bool => $refereeCount[$id] === $minCount));
+            $refereeId = $candidates[random_int(0, count($candidates) - 1)];
 
             $match->update(['referee_id' => $refereeId]);
             $refereeCount[$refereeId]++;
@@ -474,10 +489,10 @@ class TournamentMatchService
             return ['pair1_handicap' => 0, 'pair2_handicap' => 0];
         }
 
-        $valid = $this->isValidRanking($p1a->ranking ?? 'NC')
-            && $this->isValidRanking($p1b->ranking ?? 'NC')
-            && $this->isValidRanking($p2a->ranking ?? 'NC')
-            && $this->isValidRanking($p2b->ranking ?? 'NC');
+        $valid = $this->isValidRanking($p1a->ranking ?? Ranking::NC->value)
+            && $this->isValidRanking($p1b->ranking ?? Ranking::NC->value)
+            && $this->isValidRanking($p2a->ranking ?? Ranking::NC->value)
+            && $this->isValidRanking($p2b->ranking ?? Ranking::NC->value);
 
         if (! $valid) {
             return ['pair1_handicap' => 0, 'pair2_handicap' => 0];
@@ -534,10 +549,8 @@ class TournamentMatchService
             ->pluck('user_id')
             ->flip();
 
-        $standings = $players->map(function (User $player) use ($matches, $noShowIds) {
-            $playerMatches = $matches->filter(function (TournamentMatch $match) use ($player) {
-                return $match->player1_id === $player->id || $match->player2_id === $player->id;
-            });
+        $standings = $players->map(function (User $player) use ($matches, $noShowIds): array {
+            $playerMatches = $matches->filter(fn (TournamentMatch $match): bool => $match->player1_id === $player->id || $match->player2_id === $player->id);
 
             $matchesWon = $playerMatches->where('winner_id', $player->id)->count();
 
@@ -562,7 +575,7 @@ class TournamentMatchService
         });
 
         // Sort standings: no-show players always last, then by wins/sets/points
-        return $standings->sortByDesc(function (array $item) {
+        return $standings->sortByDesc(function (array $item): int {
             $noShowPenalty = $item['no_show'] ? -1000000 : 0;
 
             return $noShowPenalty + (int) sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']);
@@ -581,10 +594,8 @@ class TournamentMatchService
         $players = $tournament->users;
         $matches = TournamentMatch::where('tournament_id', $tournament->id)->get();
 
-        $standings = $players->map(function (User $player) use ($matches) {
-            $playerMatches = $matches->filter(function (TournamentMatch $match) use ($player) {
-                return $match->player1_id === $player->id || $match->player2_id === $player->id;
-            });
+        $standings = $players->map(function (User $player) use ($matches): array {
+            $playerMatches = $matches->filter(fn (TournamentMatch $match): bool => $match->player1_id === $player->id || $match->player2_id === $player->id);
 
             $matchesWon = $playerMatches->where('winner_id', $player->id)->count();
 
@@ -795,10 +806,10 @@ class TournamentMatchService
         $pairs = $pool->pairs;
         $matches = TournamentMatch::where('pool_id', $pool->id)->with('sets')->get();
 
-        $standings = $pairs->map(function (TournamentPair $pair) use ($matches) {
+        $standings = $pairs->map(function (TournamentPair $pair) use ($matches): array {
             $proxyId = $pair->player1_id;
             $pairMatches = $matches->filter(
-                fn (TournamentMatch $m) => $m->pair1_id === $pair->id || $m->pair2_id === $pair->id
+                fn (TournamentMatch $m): bool => $m->pair1_id === $pair->id || $m->pair2_id === $pair->id
             );
 
             $matchesWon = $pairMatches->where('winner_id', $proxyId)->count();
@@ -822,9 +833,7 @@ class TournamentMatchService
             ];
         });
 
-        return $standings->sortByDesc(function (array $item) {
-            return sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']);
-        })->values();
+        return $standings->sortByDesc(fn (array $item): string => sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']))->values();
     }
 
     /**
@@ -923,12 +932,6 @@ class TournamentMatchService
      */
     private function isValidRanking(string $value): bool
     {
-        foreach (Ranking::cases() as $case) {
-            if ($case->name === $value) {
-                return true;
-            }
-        }
-
-        return false;
+        return Ranking::tryFrom($value) !== null;
     }
 }

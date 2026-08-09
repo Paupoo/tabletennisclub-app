@@ -41,7 +41,7 @@ it('empty state message shown when search matches nothing', function (): void {
 
     visit(route('admin.meetings.index'))
         ->type('input[id$="search"]', 'xqzxqzxqznoMatchExpected999')
-        ->waitForText('No meeting matches');
+        ->waitForText('Aucune réunion ne correspond');
 });
 
 it('users index search updates list reactively', function (): void {

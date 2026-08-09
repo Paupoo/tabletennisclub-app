@@ -25,7 +25,7 @@ new class extends Component
      *
      * @var list<string>
      */
-    private const SYSTEM_KEYS = [
+    private const array SYSTEM_KEYS = [
         'welcome',
         'membership_info',
         'request_info',
@@ -150,7 +150,7 @@ new class extends Component
             'formKey' => ['required', 'string', 'max:255', 'regex:/^[a-z0-9_]+$/', $keyRule],
             'formSubject' => ['required', 'string', 'max:255'],
             'formBody' => ['required', 'string'],
-            'formApplyStatus' => ['nullable', 'in:new,pending,processed,rejected'],
+            'formApplyStatus' => ['nullable', 'in:new,processed,rejected'],
         ]);
 
         $attributes = [
@@ -201,7 +201,6 @@ new class extends Component
         $statusOptions = [
             ['id' => '', 'name' => __('No status applied')],
             ['id' => 'new', 'name' => __('New')],
-            ['id' => 'pending', 'name' => __('Pending')],
             ['id' => 'processed', 'name' => __('Processed')],
             ['id' => 'rejected', 'name' => __('Rejected')],
         ];

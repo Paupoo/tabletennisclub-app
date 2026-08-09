@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Interclub\Notifications;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -21,8 +22,8 @@ class InterclubAvailabilityRequestNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Demande de disponibilité'),
-            'body' => __('Consultez les détails du match'),
+            'title' => __('Availability request'),
+            'body' => __('See the match details'),
             'url' => route('admin.interclubs.my-matches'),
             'category' => 'interclub',
             'icon' => 'o-user-group',
@@ -62,6 +63,11 @@ class InterclubAvailabilityRequestNotification extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
+        // Optional notification: honour the member's opt-out preference.
+        if ($notifiable instanceof User && ! $notifiable->wantsNotification('availability_requests')) {
+            return [];
+        }
+
         return ['mail', 'database'];
     }
 }

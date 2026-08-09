@@ -5,11 +5,13 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
 use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
+use App\Domains\Shared\Enums\TableStateEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use Livewire\Livewire;
 
@@ -32,7 +34,7 @@ function occupyTable(TournamentMatch $match): void
 {
     $table = Table::create([
         'name' => 'Table ' . $match->id,
-        'state' => 'used',
+        'state' => TableStateEnum::GOOD,
         'purchased_on' => now()->subYears(2)->toDateString(),
         'room_id' => Room::factory()->create()->id,
     ]);
@@ -158,7 +160,7 @@ describe('poolsPhaseComplete', function (): void {
 
         $poolService = app(TournamentPoolService::class);
         $allDone = $tournament->fresh()->pools->every(
-            fn ($pool) => $poolService->isPoolFinished($pool)
+            fn (Pool $pool) => $poolService->isPoolFinished($pool)
         );
 
         expect($allDone)->toBeTrue();
@@ -182,7 +184,7 @@ describe('poolsPhaseComplete', function (): void {
 
         $poolService = app(TournamentPoolService::class);
         $allDone = $tournament->fresh()->pools->every(
-            fn ($pool) => $poolService->isPoolFinished($pool)
+            fn (Pool $pool) => $poolService->isPoolFinished($pool)
         );
 
         expect($allDone)->toBeFalse();

@@ -1,0 +1,187 @@
+name: CI
+
+# 291 commits reached develop without a machine ever checking them, and the
+# four blocking findings of the 2026-08-01 audit all slipped through manual
+# discipline. Everything below mirrors `composer test` so a green pipeline and
+# a green laptop mean the same thing.
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PHP_VERSION: '8.5'
+  NODE_VERSION: '22'
+
+jobs:
+  quality:
+    name: Style & static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: pdo_mysql, mbstring, gd, zip, intl
+          coverage: none
+
+      - name: Install PHP dependencies
+        uses: ramsey/composer-install@v3
+
+      # --parallel --test, never --dirty: --dirty only looks at what changed
+      # since the last commit, so a violation becomes invisible the moment it is
+      # committed. That is exactly how `fn($table)` reached main.
+      - name: Check code style
+        run: vendor/bin/pint --parallel --test
+
+      # Fails when Rector would rewrite anything, so the tree stays at the level
+      # rector.php declares instead of drifting back one merge at a time.
+      #
+      # --clear-cache is not belt and braces. Rector caches per file and skips
+      # what it has already seen, even in --dry-run: a warm cache once reported
+      # 1 file where the truth was 182. A runner starts cold, so this changes
+      # nothing here and everything for whoever copies the line locally.
+      #
+      # When it goes red: run `composer refactor` and commit the result. Read
+      # the diff first — a rule that costs more than it gives belongs in the
+      # withSkip() list of rector.php, with the reason written next to it.
+      - name: Check refactoring
+        run: composer test:refactor
+
+      # phpstan-baseline.neon freezes the 142 errors that predate this pipeline.
+      # A new error fails here; shrink the baseline by fixing entries, never by
+      # regenerating it.
+      - name: Analyse types
+        run: vendor/bin/phpstan analyse --memory-limit=2G --no-progress
+
+  test:
+    name: Unit, Feature & Architecture
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: pdo_mysql, mbstring, gd, zip, intl, sqlite3, pdo_sqlite
+          coverage: none
+
+      - name: Install PHP dependencies
+        uses: ramsey/composer-install@v3
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      # Not optional: nothing calls withoutVite(), public/build is gitignored,
+      # and every page-rendering test throws ViteException without a manifest.
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # phpunit.xml forces sqlite :memory:, so no database service is needed.
+      - name: Run tests
+        run: php artisan test --parallel --compact --testsuite=Unit,Feature,Architecture
+
+  browser:
+    name: Browser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: pdo_mysql, mbstring, gd, zip, intl, sqlite3, pdo_sqlite
+          coverage: none
+
+      - name: Install PHP dependencies
+        uses: ramsey/composer-install@v3
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Build assets
+        run: npm run build
+
+      # A stale public/hot makes every page ask a dev server that is not there,
+      # and Alpine fails to load — surfacing as a cascade of unrelated
+      # ReferenceErrors. npm run build does not remove it.
+      - name: Drop any dev-server marker
+        run: rm -f public/hot
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # The Browser suite refuses --parallel (see tests/Trait/RefusesParallelExecution).
+      - name: Run browser tests
+        run: php artisan test --compact --testsuite=Browser
+
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-failures
+          path: tests/Browser/Screenshots
+          if-no-files-found: ignore
+          retention-days: 7
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    # Advisory only: a new CVE in a transitive dependency should tell us, not
+    # block a release that has nothing to do with it.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: pdo_mysql, mbstring, gd, zip, intl
+          coverage: none
+
+      - name: Install PHP dependencies
+        uses: ramsey/composer-install@v3
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Audit PHP dependencies
+        run: composer audit
+
+      - name: Audit JS dependencies
+        run: npm audit --omit=dev

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories\Domains\ClubAdmin\Club\Models;
 
 use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\Shared\Enums\TableStateEnum;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -24,7 +25,7 @@ class TableFactory extends Factory
         return [
             'name' => fake()->unique()->numberBetween(1, 20),
             'purchased_on' => fake()->dateTimeBetween('-10 years', '-1 year'),
-            'state' => 'used',
+            'state' => TableStateEnum::GOOD,
             'room_id' => null,
         ];
     }

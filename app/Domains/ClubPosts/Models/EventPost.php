@@ -6,6 +6,7 @@ namespace App\Domains\ClubPosts\Models;
 
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
+use App\Domains\Shared\Enums\Feature;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -275,9 +276,28 @@ class EventPost extends Model
         return $query->where('event_date', '<', now()->startOfDay());
     }
 
+    /**
+     * The public-facing scope: what the club actually shows on its website.
+     *
+     * It also drops the entries belonging to a switched-off domain. Placed here
+     * rather than in each controller because this is the single gate every public
+     * consumer already goes through — the home page and the events calendar today,
+     * whatever comes next tomorrow. Announcing an event whose page answers 404
+     * would be worse than not having the feature at all.
+     */
     public function scopePublished(Builder $query): Builder
     {
-        return $query->where('status', EventPostStatusEnum::PUBLISHED);
+        $query->where('status', EventPostStatusEnum::PUBLISHED);
+
+        $hidden = Feature::eventableTypesToHide();
+
+        if ($hidden !== []) {
+            $query->where(fn (Builder $q) => $q
+                ->whereNull('eventable_type')
+                ->orWhereNotIn('eventable_type', $hidden));
+        }
+
+        return $query;
     }
 
     public function scopeUpcoming(Builder $query): Builder

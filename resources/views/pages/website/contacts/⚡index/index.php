@@ -7,6 +7,7 @@ namespace Resources\views\Pages\Website\Contacts\Index;
 use App\Actions\User\OnboardFromContactAction;
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Contact\Models\EmailTemplate;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\AgeCategoryEnum;
 use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Domains\Shared\Enums\PlayerExperienceEnum;
@@ -19,6 +20,8 @@ use App\Support\Breadcrumb;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -35,6 +38,8 @@ new class extends Component
     public string $ageCategory = '';
 
     public bool $confirmBulkDeleteModal = false;
+
+    public bool $confirmLinkModal = false;
 
     public bool $deleteModal = false;
 
@@ -57,6 +62,8 @@ new class extends Component
 
     #[Url]
     public string $interest = '';
+
+    public ?int $linkTargetContactId = null;
 
     public ?string $pendingApplyStatus = null;
 
@@ -120,11 +127,19 @@ new class extends Component
 
     public function bulkDelete(): void
     {
-        $count = count($this->selected);
-        Contact::whereIn('id', $this->selected)->delete();
+        $contacts = Contact::whereIn('id', $this->selected)->get();
+        $count = $contacts->count();
+        $contacts->each(fn (Contact $contact) => $contact->delete());
         $this->confirmBulkDeleteModal = false;
         $this->clearSelection();
         $this->error(trans_choice('selectedCount', $count, ['count' => $count]) . ' ' . __('deleted.'));
+    }
+
+    public function cancelLink(): void
+    {
+        $this->confirmLinkModal = false;
+        $this->linkTargetContactId = null;
+        $this->warning(__('Contact left unprocessed. A member account can only have one email address — fix the contact\'s email or resolve the match manually before onboarding.'));
     }
 
     public function clearFilters(): void
@@ -203,7 +218,6 @@ new class extends Component
                 'key' => 'status',
                 'label' => match ($this->status) {
                     'new' => __('Status') . ': ' . __('New'),
-                    'pending' => __('Status') . ': ' . __('Pending'),
                     'processed' => __('Status') . ': ' . __('Processed'),
                     'rejected' => __('Status') . ': ' . __('Rejected'),
                     default => __('Status') . ': ' . $this->status,
@@ -213,7 +227,7 @@ new class extends Component
 
         if (filled($this->interest)) {
             $label = collect(ContactReasonEnum::cases())
-                ->first(fn ($r) => $r->value === $this->interest)?->getLabel() ?? $this->interest;
+                ->first(fn ($r): bool => $r->value === $this->interest)?->getLabel() ?? $this->interest;
 
             $chips[] = ['key' => 'interest', 'label' => __('Interest') . ': ' . $label];
         }
@@ -245,11 +259,54 @@ new class extends Component
         return $this->contacts->total();
     }
 
+    public function linkToExistingUser(): void
+    {
+        $this->authorizeManagement();
+
+        $contact = Contact::findOrFail($this->linkTargetContactId);
+        $existingUser = OnboardFromContactAction::matchExistingUser($contact->email);
+
+        $this->confirmLinkModal = false;
+        $this->linkTargetContactId = null;
+
+        if ($existingUser === null) {
+            return;
+        }
+
+        OnboardFromContactAction::linkToExisting($contact, $existingUser);
+
+        $this->success(__('Contact linked to existing account for :email.', ['email' => $contact->email]));
+    }
+
+    public function matchedUserFor(Contact $contact): ?User
+    {
+        if ($contact->status === 'processed') {
+            return null;
+        }
+
+        return OnboardFromContactAction::matchExistingUser($contact->email);
+    }
+
     public function onboardContact(int $id): void
     {
         $this->authorizeManagement();
 
         $contact = Contact::findOrFail($id);
+
+        if (OnboardFromContactAction::matchTrashedUser($contact->email) !== null) {
+            $this->error(__('This email belongs to a former member account. Resolve this manually before onboarding.'));
+
+            return;
+        }
+
+        $existingUser = OnboardFromContactAction::matchExistingUser($contact->email);
+
+        if ($existingUser !== null) {
+            $this->linkTargetContactId = $id;
+            $this->confirmLinkModal = true;
+
+            return;
+        }
 
         OnboardFromContactAction::handle($contact, Auth::user());
 
@@ -300,7 +357,7 @@ new class extends Component
             $this->emailCopy,
         );
 
-        $allowed = ['new', 'pending', 'processed', 'rejected'];
+        $allowed = ['new', 'processed', 'rejected'];
         if ($this->pendingApplyStatus !== null && in_array($this->pendingApplyStatus, $allowed, true)) {
             $contact->update(['status' => $this->pendingApplyStatus]);
         }
@@ -313,6 +370,15 @@ new class extends Component
         $this->pendingApplyStatus = null;
 
         $this->success(__('Email sent.'));
+    }
+
+    public function trashedMatchFor(Contact $contact): ?User
+    {
+        if ($contact->status === 'processed') {
+            return null;
+        }
+
+        return OnboardFromContactAction::matchTrashedUser($contact->email);
     }
 
     public function updateContactProfile(): void
@@ -375,11 +441,25 @@ new class extends Component
         $this->resetPage();
     }
 
+    /**
+     * Move a contact to another status.
+     *
+     * `$status` reaches this method straight from the browser, so it is
+     * validated rather than trusted: without this, the `contacts.status` enum
+     * column is the only thing between a forged Livewire call and the
+     * database, and it answers with a driver exception instead of an error the
+     * admin can read.
+     */
     public function updateStatus(int $id, string $status): void
     {
         $this->authorizeManagement();
 
-        Contact::findOrFail($id)->update(['status' => $status]);
+        $validated = Validator::make(
+            ['status' => $status],
+            ['status' => ['required', Rule::in(Contact::STATUSES)]],
+        )->validate();
+
+        Contact::findOrFail($id)->update($validated);
         $this->success(__('Status updated.'));
     }
 
@@ -388,29 +468,33 @@ new class extends Component
     {
         $stats = Contact::getStatusStats();
 
-        $statusOptions = [
-            ['id' => 'new',       'name' => __('New')],
-            ['id' => 'pending',   'name' => __('Pending')],
-            ['id' => 'processed', 'name' => __('Processed')],
-            ['id' => 'rejected',  'name' => __('Rejected')],
+        $statusLabels = [
+            'new' => __('New'),
+            'processed' => __('Processed'),
+            'rejected' => __('Rejected'),
         ];
 
+        $statusOptions = array_map(
+            fn (string $status): array => ['id' => $status, 'name' => $statusLabels[$status]],
+            Contact::STATUSES,
+        );
+
         $interestOptions = collect(ContactReasonEnum::cases())
-            ->map(fn ($r) => ['id' => $r->value, 'name' => $r->getLabel()]);
+            ->map(fn ($r): array => ['id' => $r->value, 'name' => $r->getLabel()]);
 
         // Explicit child → teen → adult order (Pint sorts enum cases alphabetically).
         $ageCategoryOptions = collect([
             AgeCategoryEnum::CHILD,
             AgeCategoryEnum::TEEN,
             AgeCategoryEnum::ADULT,
-        ])->map(fn (AgeCategoryEnum $c) => ['id' => $c->value, 'name' => $c->getLabel()]);
+        ])->map(fn (AgeCategoryEnum $c): array => ['id' => $c->value, 'name' => $c->getLabel()]);
 
         $experienceOptions = collect([
             PlayerExperienceEnum::NONE,
             PlayerExperienceEnum::FEW_MONTHS,
             PlayerExperienceEnum::FEW_YEARS,
             PlayerExperienceEnum::RANKED,
-        ])->map(fn (PlayerExperienceEnum $e) => ['id' => $e->value, 'name' => $e->getLabel()]);
+        ])->map(fn (PlayerExperienceEnum $e): array => ['id' => $e->value, 'name' => $e->getLabel()]);
 
         $triStateOptions = [
             ['id' => '1', 'name' => __('Yes')],
@@ -431,12 +515,20 @@ new class extends Component
             ->active()
             ->orderBy('name')
             ->get(['key', 'name'])
-            ->map(fn (EmailTemplate $t) => ['id' => $t->key, 'name' => $t->name]);
+            ->map(fn (EmailTemplate $t): array => ['id' => $t->key, 'name' => $t->name]);
 
         $canManage = Gate::allows('manage-contacts');
 
         $selectedContact = $this->selectedContactId
             ? Contact::find($this->selectedContactId)
+            : null;
+
+        $linkTargetContact = $this->linkTargetContactId
+            ? Contact::find($this->linkTargetContactId)
+            : null;
+
+        $linkTargetUser = $linkTargetContact
+            ? OnboardFromContactAction::matchExistingUser($linkTargetContact->email)
             : null;
 
         $headers = [
@@ -460,6 +552,7 @@ new class extends Component
             'templateOptions' => $templateOptions,
             'canManage' => $canManage,
             'selectedContact' => $selectedContact,
+            'linkTargetUser' => $linkTargetUser,
             'headers' => $headers,
             'filterChips' => $this->filterChips,
         ];
@@ -479,7 +572,7 @@ new class extends Component
     {
         return $this->contacts
             ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
+            ->map(fn (int $id): string => (string) $id)
             ->toArray();
     }
 

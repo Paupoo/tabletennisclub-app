@@ -7,6 +7,7 @@ namespace Resources\views\Pages\ClubAdmin\Subscriptions\Roster;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\AgeCategoryEnum;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
@@ -224,7 +225,7 @@ new class extends Component
             'headers' => $headers,
             'triStateOptions' => $triStateOptions,
             'ageCategoryOptions' => $ageCategoryOptions,
-            'canManage' => Gate::allows('manage-season'),
+            'canManage' => Gate::allows(Permission::SubscriptionsManage->value),
             'filterChips' => $this->filterChips,
         ];
     }
@@ -255,6 +256,7 @@ new class extends Component
         $query = Subscription::query()
             ->with('user')
             ->forSeason($season)
+            ->active()
             ->whereHas('user')
             ->when($this->search !== '', fn ($q) => $q->whereHas('user', fn ($u) => $u
                 ->where('first_name', 'like', "%{$this->search}%")
@@ -299,7 +301,7 @@ new class extends Component
      *   id: int, name: string, ranking: ?string, age_category: ?string,
      *   age_label: ?string, is_competitive: bool, can_drive: bool,
      *   seats_available: ?int, wants_to_be_captain: bool, volunteer_help: bool,
-     *   wants_directed_training: bool
+     *   wants_directed_training: bool, federation_gap: ?string
      * }
      */
     protected function toRow(Subscription $sub): object
@@ -319,16 +321,25 @@ new class extends Component
             'wants_to_be_captain' => $sub->wants_to_be_captain,
             'volunteer_help' => $sub->volunteer_help,
             'wants_directed_training' => $sub->wants_directed_training,
+            // The federation's answer to the same question, when it differs.
+            // Shown, never applied: the club decides, and the toggle beside it is
+            // how it does so.
+            'federation_gap' => $sub->user->contradictsFederationLicenceType($sub->is_competitive)
+                ? __('Federation: :type on :date', [
+                    'type' => $sub->user->federation_licence_type,
+                    'date' => $sub->user->federation_synced_at->format('d/m/Y'),
+                ])
+                : null,
         ];
     }
 
     /**
-     * Ensure the current user belongs to the management group before mutating
-     * season attributes (decision #18). Non-managers may view but not edit.
+     * The roster is readable at the committee baseline; changing what it records
+     * about a member is the `membres` duty.
      */
     private function authorizeManagement(): void
     {
-        Gate::authorize('manage-season');
+        Gate::authorize(Permission::SubscriptionsManage->value);
     }
 
     /**
@@ -341,6 +352,7 @@ new class extends Component
 
         return Subscription::query()
             ->forSeason($season)
+            ->active()
             ->findOrFail($subscriptionId);
     }
 };

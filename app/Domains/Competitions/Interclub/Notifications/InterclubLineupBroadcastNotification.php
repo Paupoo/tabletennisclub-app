@@ -20,14 +20,15 @@ class InterclubLineupBroadcastNotification extends Notification
         public readonly Interclub $interclub,
         public readonly Collection $selectedPlayers,
         public readonly string $captainMessage = '',
+        public readonly bool $isUpdate = false,
     ) {}
 
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Équipe publiée'),
-            'body' => __('Consultez les détails du match'),
+            'title' => __('Line-up published'),
+            'body' => __('See the match details'),
             'url' => route('admin.interclubs.my-matches'),
             'category' => 'interclub',
             'icon' => 'o-user-group',
@@ -41,17 +42,26 @@ class InterclubLineupBroadcastNotification extends Notification
 
         $ourTeam = $interclub->ourTeam();
         $ourTeamName = $ourTeam?->fullName() ?? '—';
+        $category = $ourTeam?->league?->category;
         $opponent = $interclub->opponentTeam()?->fullName() ?? '—';
         $venue = $interclub->isHome() ? __('Home') : __('Away');
         $dateStr = $interclub->start_date_time->format('d/m/Y') . ' ' . __('at') . ' ' . $interclub->start_date_time->format('H:i');
         $address = $interclub->room?->address ?? $interclub->address ?? '—';
 
-        return (new MailMessage)
-            ->subject(__('Lineup confirmed — :team vs :opponent on :date', [
+        $subject = $this->isUpdate
+            ? __('Lineup updated — :team vs :opponent on :date', [
                 'team' => $ourTeamName,
                 'opponent' => $opponent,
                 'date' => $interclub->start_date_time->format('d/m/Y'),
-            ]))
+            ])
+            : __('Lineup confirmed — :team vs :opponent on :date', [
+                'team' => $ourTeamName,
+                'opponent' => $opponent,
+                'date' => $interclub->start_date_time->format('d/m/Y'),
+            ]);
+
+        return (new MailMessage)
+            ->subject($subject)
             ->markdown('mail.interclub.lineup', [
                 'notifiable' => $notifiable,
                 'ourTeamName' => $ourTeamName,
@@ -60,13 +70,20 @@ class InterclubLineupBroadcastNotification extends Notification
                 'address' => $address,
                 'venue' => $venue,
                 'selectedPlayers' => $this->selectedPlayers,
+                'category' => $category,
                 'captainMessage' => $this->captainMessage,
+                'isUpdate' => $this->isUpdate,
             ]);
     }
 
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
+        // Optional notification: honour the member's opt-out preference.
+        if ($notifiable instanceof User && ! $notifiable->wantsNotification('interclub_selections')) {
+            return [];
+        }
+
         return ['mail', 'database'];
     }
 }

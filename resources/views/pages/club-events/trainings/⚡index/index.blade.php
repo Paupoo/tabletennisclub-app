@@ -18,11 +18,39 @@
         <x-header separator :subtitle="$viewSeason?->name ?? __('Select a season')"
             :title="__('Trainings')">
             <x-slot:actions>
-                <x-select class="select-sm w-44" :options="$seasonOptions" wire:model.live="viewSeasonId"
-                    :placeholder="__('Season…')" />
-                <x-button class="btn-primary" icon="o-plus" :label="__('New pack')" wire:click="openCreate" />
+                <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-search="false" :show-more="false" />
+                <div class="hidden items-center gap-2 lg:flex">
+                    <x-admin.shared.filters-button :count="count($filterChips)" />
+                </div>
+                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New pack')" wire:click="openCreate" />
             </x-slot:actions>
         </x-header>
+
+        {{-- ── Active filter chips ──────────────────────────────────────────── --}}
+        <x-admin.shared.filter-chips :chips="$filterChips" />
+
+        {{-- ── Filter drawer ──────────────────────────────────────────────────── --}}
+        <x-admin.shared.filter-drawer :title="__('Filters')">
+            <x-slot:filters>
+                <div>
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                        {{ __('Season') }}
+                    </p>
+                    <x-select :options="$seasonOptions" wire:model.live="viewSeasonId"
+                        :placeholder="__('Season…')" class="w-full" />
+                </div>
+
+                <div>
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                        {{ __('Availability') }}
+                    </p>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <x-checkbox wire:model.live="showInactive" />
+                        <span class="text-sm">{{ __('Show withdrawn packs') }}</span>
+                    </label>
+                </div>
+            </x-slot:filters>
+        </x-admin.shared.filter-drawer>
     @endif
 
     {{-- ── Season guard ────────────────────────────────────────────────────── --}}
@@ -122,10 +150,12 @@
                                     $max = $pack->effectiveMaxParticipants();
                                     $full = $max > 0 && $enrolled >= $max;
                                 @endphp
+                                {{-- No overflow-hidden: it would clip the actions dropdown at the
+                                     bottom of the card. The header rounds its own corners instead. --}}
                                 <div
-                                    class="group flex flex-col overflow-hidden rounded-xl border border-base-200 bg-base-100">
+                                    class="group flex flex-col rounded-xl border border-base-200 bg-base-100">
                                     {{-- Card header --}}
-                                    <div class="bg-primary/5 px-4 py-3">
+                                    <div class="rounded-t-xl bg-primary/5 px-4 py-3">
                                         <div class="flex items-start justify-between gap-2">
                                             <div>
                                                 <p class="font-semibold leading-tight text-primary">
@@ -140,6 +170,10 @@
                                                 </p>
                                             </div>
                                             <div class="flex shrink-0 flex-col items-end gap-1">
+                                                @unless ($pack->is_active)
+                                                    <x-badge value="{{ __('Withdrawn') }}"
+                                                        class="badge-warning badge-soft badge-xs" icon="o-eye-slash" />
+                                                @endunless
                                                 <x-badge value="{{ number_format($pack->price, 0) }}€"
                                                     class="badge-primary badge-soft" />
                                                 @if ($pack->eventPost?->status->value === 'PUBLISHED')
@@ -182,11 +216,12 @@
                                         </div>
 
                                         {{-- Actions --}}
-                                        <div class="mt-auto flex gap-2 border-t border-base-200 pt-2">
-                                            <x-button class="btn-ghost btn-sm flex-1 text-xs"
+                                        <div class="mt-auto flex flex-nowrap items-center gap-1 border-t border-base-200 pt-2">
+                                            <x-button class="btn-ghost btn-sm min-w-0 flex-1 text-xs"
                                                 icon="o-calendar-days" :label="__('Sessions')"
                                                 wire:click="viewSessions({{ $pack->id }})" />
-                                            <x-button class="btn-ghost btn-sm text-xs" icon="o-pencil"
+                                            <x-button class="btn-ghost btn-sm shrink-0 text-xs" icon="o-pencil"
+                                                :aria-label="__('Edit')"
                                                 wire:click="openEdit({{ $pack->id }})" />
                                             <livewire:admin.shared.event-post-button
                                                 :model-class="\App\Domains\Trainings\Models\TrainingPack::class"
@@ -202,8 +237,37 @@
                                                 :can-publish="true"
                                                 wire:key="ep-training-{{ $pack->id }}"
                                                 @event-post-saved.window="$wire.refreshPacks()" />
-                                            <x-button class="btn-ghost btn-sm text-error text-xs" icon="o-trash"
-                                                wire:click="openDeactivatePack({{ $pack->id }})" />
+                                            {{-- Icon-only trigger on purpose: four cards fit across an xl
+                                                 screen, and a labelled dropdown wraps its text and bursts out
+                                                 of the card. The labels live on the menu items instead, which
+                                                 also reads better for actions that cancel sessions and move
+                                                 money. --}}
+                                            {{-- The id is not decoration: mary derives the dropdown's
+                                                 wire:key from the serialized component, so identical
+                                                 triggers across cards would collide and confuse Livewire's
+                                                 DOM diffing. --}}
+                                            <x-dropdown class="shrink-0" :id="'pack-actions-' . $pack->id" right
+                                                no-x-anchor>
+                                                <x-slot:trigger>
+                                                    <x-button class="btn-ghost btn-sm shrink-0 text-xs"
+                                                        :id="'pack-actions-trigger-' . $pack->id"
+                                                        icon="o-ellipsis-vertical"
+                                                        :aria-label="__('More actions')" />
+                                                </x-slot:trigger>
+
+                                                @if ($pack->is_active)
+                                                    <x-menu-item icon="o-eye-slash"
+                                                        :title="__('Withdraw from the offer')"
+                                                        wire:click="openWithdrawPack({{ $pack->id }})" />
+                                                    <x-menu-item class="text-error" icon="o-x-circle" separator
+                                                        :title="__('Stop the pack (cancels and refunds)')"
+                                                        wire:click="openDiscontinuePack({{ $pack->id }})" />
+                                                @else
+                                                    <x-menu-item class="text-success" icon="o-arrow-uturn-left"
+                                                        :title="__('Put back in the offer')"
+                                                        wire:click="restorePack({{ $pack->id }})" />
+                                                @endif
+                                            </x-dropdown>
                                         </div>
                                     </div>
                                 </div>
@@ -218,7 +282,7 @@
     {{-- ================================================================
          WIZARD MODAL (3 steps)
     ================================================================ --}}
-    <x-modal :title="$packId ? __('Edit pack') : __('New training pack')" wire:model="wizardOpen" separator>
+    <x-app-modal :title="$packId ? __('Edit pack') : __('New training pack')" wire:model="wizardOpen" separator :open="$wizardOpen">
         {{-- Step indicators --}}
         <div class="mb-6 flex items-center justify-center gap-2 text-xs">
             @foreach ([1 => __('Pack'), 2 => __('Planning'), 3 => __('Price')] as $n => $label)
@@ -258,7 +322,7 @@
                     <x-select :options="$trainerOptions" :label="__('Coach')" wire:model="formTrainerId"
                         :placeholder="__('No coach')" />
                     @if ($formType && $formType !== \App\Domains\Shared\Enums\TrainingType::FREE->value && ! $formTrainerId)
-                        <p class="mt-1 text-xs text-warning">
+                        <p class="mt-1 text-xs text-warning-content">
                             <x-icon class="inline h-3 w-3" name="o-exclamation-triangle" />
                             {{ __('A coach is required for this training type.') }}
                         </p>
@@ -334,10 +398,30 @@
                         wire:model.live="formDurationMinutes" />
                 </div>
 
-                {{-- Custom date range --}}
+                {{-- Capacity --}}
+                <div>
+                    <x-input :label="__('Maximum participants')" type="number" min="1" max="999"
+                        wire:model.live="formMaxParticipants" :disabled="$formIsOpenEnrollment"
+                        :placeholder="$this->inheritedRoomCapacity
+                            ? __('Room capacity: :count', ['count' => $this->inheritedRoomCapacity])
+                            : __('Room capacity')" />
+
+                    <p class="mt-1 text-xs text-base-content/50">
+                        {{ __('Leave empty to use the training capacity of the selected room.') }}
+                    </p>
+
+                    @if ($formType === \App\Domains\Shared\Enums\TrainingType::FREE->value)
+                        <label class="flex items-center gap-2 mt-3 cursor-pointer">
+                            <x-checkbox wire:model.live="formIsOpenEnrollment" />
+                            <span class="text-sm">{{ __('Unlimited enrolment (no cap, no waiting list)') }}</span>
+                        </label>
+                    @endif
+                </div>
+
+                {{-- Pack period --}}
                 <div>
                     <p class="mb-1 text-xs text-base-content/50">
-                        {{ __('Custom date range (optional — overrides season dates)') }}
+                        {{ __('Period covered by the pack — prefilled with the season, change it for a camp') }}
                     </p>
                     <div class="grid grid-cols-2 gap-4">
                         <x-input :label="__('From')" type="date" wire:model.live="formPackStartDate" />
@@ -469,12 +553,12 @@
                     label="{{ $packId ? __('Update') : __('Create pack') }}" wire:click="save" />
             @endif
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ================================================================
          CANCELLATION MODAL
     ================================================================ --}}
-    <x-modal :title="__('Cancel this session')" wire:model="cancelModal" separator>
+    <x-app-modal :title="__('Cancel this session')" wire:model="cancelModal" separator :open="$cancelModal">
         <div class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div @class([
@@ -482,7 +566,7 @@
                     'border-warning bg-warning/10' => $cancelType === 'FREE',
                     'border-base-200' => $cancelType !== 'FREE',
                 ]) wire:click="$set('cancelType', 'FREE')">
-                    <x-icon class="mx-auto mb-1 h-6 w-6 text-warning" name="o-sun" />
+                    <x-icon class="mx-auto mb-1 h-6 w-6 text-warning-content" name="o-sun" />
                     <p class="text-sm font-semibold">{{ __('Free practice') }}</p>
                     <p class="text-xs text-base-content/60">{{ __('Room open, no coach') }}</p>
                 </div>
@@ -506,10 +590,67 @@
             <x-button class="btn-error" icon="o-x-circle" :label="__('Confirm cancellation')"
                 wire:click="confirmCancel" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
-    <x-confirm-modal model="deactivatePackModal" :title="__('Deactivate this pack?')"
-        :confirmLabel="__('Deactivate')" confirmClass="btn-error" confirmAction="confirmDeactivatePack">
-        <p>{{ __('Players will no longer be able to register to this training pack.') }}</p>
+    <x-confirm-modal model="withdrawPackModal" :title="__('Withdraw this pack from the offer?')"
+        :confirmLabel="__('Withdraw')" confirmClass="btn-warning" confirmAction="confirmWithdrawPack" :open="$withdrawPackModal">
+        <p>{{ __('Members will no longer be able to enrol in this pack.') }}</p>
+        <p class="mt-2 text-sm opacity-70">
+            {{ __('The sessions still take place and the members already enrolled keep their spot — they are not notified. Use « Stop the pack » if the training will not happen at all.') }}
+        </p>
+        <p class="mt-2 text-sm opacity-70">
+            {{ __('Reversible: tick « Show withdrawn packs » to find it and put it back.') }}
+        </p>
     </x-confirm-modal>
+
+    <x-app-modal wire:model="regenerateModal" :title="__('Rebuild the sessions?')" separator :open="$regenerateModal">
+        <p>{{ __('You changed when or where this pack takes place. Its existing sessions do not move on their own.') }}</p>
+
+        <div class="p-3 mt-3 text-sm rounded-lg bg-warning/10">
+            <p>{{ __(':count session(s) still to come will be deleted and generated again on the new slot.', ['count' => $regenerationImpact['deleting']]) }}</p>
+            <p>{{ __(':count past or already cancelled session(s) are left untouched.', ['count' => $regenerationImpact['keeping']]) }}</p>
+        </div>
+
+        <p class="mt-2 text-xs text-base-content/60">
+            {{ __('Past sessions carry the attendance you recorded, and a cancelled session was announced with its own wording — neither is rebuilt.') }}
+        </p>
+
+        @if ($regenerationImpact['members'] > 0)
+            <label class="flex items-center gap-2 mt-3 cursor-pointer">
+                <x-checkbox wire:model="notifyMembersOfChange" />
+                <span class="text-sm">
+                    {{ __('Email the :count enrolled member(s) about the new schedule', ['count' => $regenerationImpact['members']]) }}
+                </span>
+            </label>
+        @endif
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('regenerateModal', false)" />
+            <x-button :label="__('Rebuild the sessions')" class="btn-warning" wire:click="confirmRegeneration" spinner />
+        </x-slot:actions>
+    </x-app-modal>
+
+    <x-app-modal wire:model="discontinuePackModal" :title="__('Stop this pack?')" separator :open="$discontinuePackModal">
+        <p>{{ __('The remaining sessions are cancelled and the members are told the training will not happen.') }}</p>
+
+        <div class="p-3 mt-3 text-sm rounded-lg bg-error/10">
+            <p>{{ __(':count session(s) still to come will be cancelled.', ['count' => $discontinueImpact['sessions']]) }}</p>
+            <p>{{ __(':count member(s) enrolled will be notified and refunded what they overpaid.', ['count' => $discontinueImpact['members']]) }}</p>
+            @if ($discontinueImpact['waiting'] > 0)
+                <p>{{ __(':count member(s) on the waiting list will be told no spot will open.', ['count' => $discontinueImpact['waiting']]) }}</p>
+            @endif
+        </div>
+
+        <p class="mt-3 text-sm font-semibold text-error">
+            {{ __('This cannot be undone: the emails go out and the refunds enter the treasury workflow.') }}
+        </p>
+
+        <x-textarea :label="__('Reason (optional — included in the email)')" wire:model="discontinueReason"
+            rows="2" class="mt-3" />
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('discontinuePackModal', false)" />
+            <x-button :label="__('Stop the pack')" class="btn-error" wire:click="confirmDiscontinuePack" spinner />
+        </x-slot:actions>
+    </x-app-modal>
 </div>

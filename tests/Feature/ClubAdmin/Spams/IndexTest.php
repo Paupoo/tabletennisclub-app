@@ -11,7 +11,7 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->adminUser = User::factory()->create(['is_admin' => true]);
+    $this->adminUser = User::factory()->isAdmin()->create();
 });
 
 describe('Spams admin page', function (): void {
@@ -130,10 +130,8 @@ describe('Selection and pagination', function (): void {
         $component = Livewire::actingAs($this->adminUser)
             ->test('pages::website.spams.index');
 
-        $component->assertViewHas('spams', function ($spams) {
-            return $spams instanceof LengthAwarePaginator
-                && $spams->count() === 25
-                && $spams->total() === 30;
-        });
+        $component->assertViewHas('spams', fn ($spams): bool => $spams instanceof LengthAwarePaginator
+            && $spams->count() === 25
+            && $spams->total() === 30);
     });
 });

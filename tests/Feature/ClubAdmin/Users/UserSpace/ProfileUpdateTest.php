@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Gender;
 use Illuminate\Http\UploadedFile;
@@ -25,6 +26,26 @@ test('user can update their own contact fields', function (): void {
 
     expect($user->fresh()->email)->toBe('updated@example.com')
         ->and($user->fresh()->phone_number)->toBe('0479999999');
+});
+
+test('a member cannot save a phone number that could not be dialled', function (): void {
+    $user = User::factory()->create(['phone_number' => '0470000000']);
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+        ->set('phone_number', '04 70')
+        ->call('save')
+        ->assertHasErrors('phone_number');
+
+    expect($user->fresh()->phone_number)->toBe('0470000000');
+});
+
+test('profile displays the stored iban grouped by 4 for readability', function (): void {
+    $user = User::factory()->create(['iban' => 'BE12345678901234']);
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+        ->assertSee('BE12 3456 7890 1234');
 });
 
 test('user can update identity fields', function (): void {
@@ -57,7 +78,7 @@ test('user can update gender and birthdate', function (): void {
 });
 
 test('user can upload a medical certificate', function (): void {
-    Storage::fake('public');
+    Storage::fake('local');
     $user = User::factory()->create();
 
     Livewire::actingAs($user)
@@ -67,11 +88,11 @@ test('user can upload a medical certificate', function (): void {
 
     $path = $user->fresh()->medical_certificate_path;
     expect($path)->not->toBeNull();
-    Storage::disk('public')->assertExists(str_replace('/storage/', '', $path));
+    Storage::disk('local')->assertExists($path);
 });
 
 test('user can upload a parental consent', function (): void {
-    Storage::fake('public');
+    Storage::fake('local');
     $user = User::factory()->create();
 
     Livewire::actingAs($user)
@@ -81,7 +102,35 @@ test('user can upload a parental consent', function (): void {
 
     $path = $user->fresh()->parental_consent_path;
     expect($path)->not->toBeNull();
-    Storage::disk('public')->assertExists(str_replace('/storage/', '', $path));
+    Storage::disk('local')->assertExists($path);
+});
+
+test('user can upload a profile photo', function (): void {
+    Storage::fake('public');
+    $user = User::factory()->create();
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+        ->set('photo', UploadedFile::fake()->image('avatar.jpg', 512, 512))
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $photo = $user->fresh()->photo;
+    expect($photo)->not->toBeNull()->toStartWith('/storage/users/');
+    Storage::disk('public')->assertExists(str_replace('/storage/', '', $photo));
+});
+
+test('a non-image file is rejected for the profile photo', function (): void {
+    Storage::fake('public');
+    $user = User::factory()->create();
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+        ->set('photo', UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf'))
+        ->call('save')
+        ->assertHasErrors(['photo']);
+
+    expect($user->fresh()->photo)->toBeNull();
 });
 
 test('parental consent field is shown for minors', function (): void {
@@ -116,22 +165,21 @@ test('user cannot update another users profile', function (): void {
 
     Livewire::actingAs($user)
         ->test('pages::club-admin.users.user-space.profile', ['user' => $other])
-        ->set('email', 'hacked@example.com')
-        ->call('save');
+        ->assertForbidden();
 
     expect($other->fresh()->email)->toBe('other@example.com');
 });
 
-test('admin can update any users profile', function (): void {
+test('admin cannot update another users profile via my-space', function (): void {
+    // My-space is strictly self-only: admins manage members via admin.users.edit.
     $admin = $this->createFakeAdmin();
     $user = User::factory()->create(['phone_number' => '0470000000']);
 
     Livewire::actingAs($admin)
         ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
-        ->set('phone_number', '0479111111')
-        ->call('save');
+        ->assertForbidden();
 
-    expect($user->fresh()->phone_number)->toBe('0479111111');
+    expect($user->fresh()->phone_number)->toBe('0470000000');
 });
 
 test('email must be unique across users', function (): void {
@@ -145,12 +193,78 @@ test('email must be unique across users', function (): void {
         ->assertHasErrors(['email']);
 });
 
-test('user can request GDPR erasure', function (): void {
+test('user can request GDPR erasure from the settings page', function (): void {
+    $user = User::factory()->create(['gdpr_erasure_requested_at' => null]);
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.settings', ['user' => $user])
+        ->call('requestErasure');
+
+    expect($user->fresh()->gdpr_erasure_requested_at)->not->toBeNull();
+});
+
+test('the profile page no longer carries the danger zone', function (): void {
     $user = User::factory()->create();
 
     Livewire::actingAs($user)
         ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
-        ->call('requestErasure');
+        ->assertDontSee(__('Danger zone'));
+});
 
-    expect($user->fresh())->not->toBeNull();
+describe('profile shows real season data — no prototype leftovers', function (): void {
+    it('shows the affiliation status and membership start derived from subscriptions', function (): void {
+        $season = makeActiveSeason();
+        $user = User::factory()->create();
+        Subscription::factory()->for($user)->create([
+            'season_id' => $season->id,
+            'status' => 'paid',
+        ]);
+
+        Livewire::actingAs($user)
+            ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+            ->assertSee('Affilié · saison ' . $season->name)
+            ->assertSee('Membre depuis ' . $season->start_at->translatedFormat('F Y'));
+    });
+
+    it('shows a pending affiliation as awaiting validation', function (): void {
+        $season = makeActiveSeason();
+        $user = User::factory()->create();
+        Subscription::factory()->for($user)->create([
+            'season_id' => $season->id,
+            'status' => 'pending',
+        ]);
+
+        Livewire::actingAs($user)
+            ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+            ->assertSee('Affiliation en attente de validation');
+    });
+
+    it('tells a non-affiliated member so, and falls back to the account creation date', function (): void {
+        makeActiveSeason();
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+            ->assertSee('Non affilié cette saison')
+            ->assertSee('Membre depuis ' . $user->created_at->translatedFormat('F Y'));
+    });
+
+    it('no longer renders hardcoded prototype stats', function (): void {
+        makeActiveSeason();
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+            ->assertDontSee('65%')
+            ->assertDontSee('+142');
+    });
+
+    it('no longer offers a reset button that did nothing', function (): void {
+        makeActiveSeason();
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+            ->assertDontSee(__('Reset'));
+    });
 });

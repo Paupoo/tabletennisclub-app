@@ -272,7 +272,7 @@ class ImportTrainingPlanService
                     continue;
                 }
 
-                $rows[] = array_map(static fn ($cell): string => (string) ($cell ?? ''), $cells);
+                $rows[] = array_map(static fn ($cell): string => $cell ?? '', $cells);
             }
         } finally {
             fclose($stream);
@@ -290,6 +290,7 @@ class ImportTrainingPlanService
     {
         return Subscription::query()
             ->where('season_id', $plan->season_id)
+            ->affiliated()
             ->distinct()
             ->pluck('user_id');
     }

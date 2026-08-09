@@ -90,7 +90,7 @@
     </x-form>
 
     {{-- Le Modal de création de table --}}
-    <x-modal wire:model="showTableModal" :title="__('Create a new table')" separator>
+    <x-app-modal wire:model="showTableModal" :title="__('Create a new table')" separator :open="$showTableModal">
         <div class="space-y-4">
             <x-input :label="__('Table Name')" wire:model.live.debounce="newTableName"
                 placeholder="Ex: Table 16" required />
@@ -99,11 +99,8 @@
             <x-input :label="__('Model')" wire:model.live.debounce="newTableModel"
                 placeholder="Ex: 2000 S Pro" />
 
-            <x-select :label="__('State')" wire:model.live.debounce="newTableState" :options="[
-                ['id' => 'new', 'name' => 'New'],
-                ['id' => 'used', 'name' => 'Used'],
-                ['id' => 'damaged', 'name' => 'Damaged'],
-            ]" required />
+            <x-select :label="__('State')" wire:model.live.debounce="newTableState"
+                :options="\App\Domains\ClubAdmin\Club\Models\Table::getStates()" required />
 
             <x-datepicker :label="__('Purchased on')" wire:model.live.debounce="newTablePurchasedOn" />
         </div>
@@ -112,5 +109,5 @@
             <x-button :label="__('Cancel')" @click="$wire.showTableModal = false" />
             <x-button :label="__('Add to list')" class="btn-primary" wire:click="addTableToList" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

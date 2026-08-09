@@ -7,12 +7,11 @@ namespace App\Domains\Shared\Enums;
 enum Gender: string
 {
     case MEN = 'MEN';
-    case OTHER = 'OTHER';
     case WOMEN = 'WOMEN';
 
     public static function options(): array
     {
-        return array_map(fn (self $c) => [
+        return array_map(fn (self $c): array => [
             'id' => $c->value,
             'name' => $c->getLabel(),
         ], self::cases());
@@ -26,7 +25,6 @@ enum Gender: string
         return match ($this) {
             self::MEN => __('Men'),
             self::WOMEN => __('Women'),
-            self::OTHER => __('Other'),
         };
     }
 

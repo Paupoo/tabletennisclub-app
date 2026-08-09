@@ -40,6 +40,10 @@ new class extends Component
 
     public string $defaultTitle = '';
 
+    public ?string $defaultLocation = null;
+
+    public ?string $defaultDescription = null;
+
     // ── Gate ──────────────────────────────────────────────────────────────
     #[Locked]
     public bool $canPublish = true;
@@ -58,7 +62,7 @@ new class extends Component
         /** @var EventPost|null $ep */
         $ep = $model->eventPost;
 
-        $this->initEventPost($ep, $this->defaultTitle);
+        $this->initEventPost($ep, $this->defaultTitle, $this->defaultLocation, $this->defaultDescription);
     }
 
     public function open(): void
@@ -106,7 +110,7 @@ new class extends Component
         @class([
             'btn-ghost btn-sm btn-circle',
             'text-success'                  => $eventStatus === 'PUBLISHED',
-            'text-warning'                  => $eventPostId !== null && $eventStatus !== 'PUBLISHED',
+            'text-warning-content'                  => $eventPostId !== null && $eventStatus !== 'PUBLISHED',
             'opacity-30 cursor-not-allowed' => ! $canPublish,
         ])
         icon="o-globe-alt"
@@ -117,7 +121,7 @@ new class extends Component
     />
 
     {{-- ── Modal ───────────────────────────────────────────────────────── --}}
-    <x-modal :title="__('Publish on website')" wire:model="showModal" separator>
+    <x-app-modal :title="__('Publish on website')" wire:model="showModal" separator :open="$showModal">
 
         <x-admin.shared.event-post-form
             :event-post-id="$eventPostId"
@@ -142,5 +146,5 @@ new class extends Component
             />
         </x-slot:actions>
 
-    </x-modal>
+    </x-app-modal>
 </div>

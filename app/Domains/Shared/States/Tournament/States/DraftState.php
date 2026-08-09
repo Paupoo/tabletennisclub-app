@@ -11,26 +11,31 @@ use InvalidArgumentException;
 
 final class DraftState extends AbstractTournamentState
 {
+    #[\Override]
     public function canCreatePools(): bool
     {
         return false;
     }
 
+    #[\Override]
     public function canGenerateMatches(): bool
     {
         return false;
     }
 
+    #[\Override]
     public function canModifyPools(): bool
     {
         return false;
     }
 
+    #[\Override]
     public function canRegisterUsers(): bool
     {
         return false;
     }
 
+    #[\Override]
     public function canStartMatches(): bool
     {
         return false;

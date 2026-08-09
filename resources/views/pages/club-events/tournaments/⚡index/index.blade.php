@@ -13,32 +13,12 @@
         </x-slot:middle>
         <x-slot:actions>
             {{-- Mobile: 🔍 · filter · ☰ --}}
-            <div class="flex items-center gap-1 lg:hidden">
-                <button class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true">
-                    <x-icon name="o-magnifying-glass" class="h-5 w-5" />
-                </button>
-                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                    wire:click="$set('filterDrawer', true)">
-                    <x-icon name="o-funnel" class="h-5 w-5" />
-                    @if (count($filterChips) > 0)
-                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
-                    @endif
-                </button>
-                <button class="btn btn-primary btn-circle btn-sm" @click="mobileActionsOpen = true">
-                    <x-icon name="o-bars-3" class="h-5 w-5" />
-                </button>
-            </div>
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" />
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
-                <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                    icon="o-funnel" :label="__('Filters')"
-                    wire:click="$set('filterDrawer', true)">
-                    @if (count($filterChips) > 0)
-                        <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
-                    @endif
-                </x-button>
+                <x-admin.shared.filters-button :count="count($filterChips)" />
                 @if ($this->canManage)
-                    <x-button class="btn-primary" icon="o-plus" :label="__('Create')"
+                    <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Create')"
                         link="{{ route('admin.tournaments.wizard') }}" />
                 @endif
             </div>
@@ -58,7 +38,8 @@
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
                     placeholder="{{ __('Search…') }}" />
             </div>
-            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+            <button type="button" @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm"
+                aria-label="{{ __('Close the search') }}">
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
@@ -106,42 +87,43 @@
                     default     => ['class' => 'badge-outline',             'label' => __('Draft')],
                 };
             @endphp
-            <x-list-item :item="$tournament" class="bg-base-100 rounded-lg border"
+            {{-- L'identité prend la largeur, les actions passent dessous : sur une
+            carte de 335 px, une action nommée et son menu en prenaient 156 et le
+            titre était tranché. --}}
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3"
                 wire:key="mobile-tournament-{{ $tournament->id }}">
-                <x-slot:avatar>
+                <div class="flex items-start gap-3">
                     @if ($selectionModeActive && $this->canManage)
                         <input type="checkbox"
                             class="checkbox checkbox-primary checkbox-sm"
                             value="{{ $tournament->id }}"
                             wire:model.live="selected" />
                     @endif
-                </x-slot:avatar>
-                <x-slot:value>
-                    <span class="font-medium">{{ $tournament->name }}</span>
-                </x-slot:value>
-                <x-slot:sub-value>
-                    <div class="mt-0.5 flex flex-wrap items-center gap-2">
-                        <x-badge :value="$statusBadge['label']" class="{{ $statusBadge['class'] }} badge-sm" />
-                        <span class="text-xs text-base-content/40">
-                            {{ $tournament->start_date->translatedFormat('d M Y') }}
-                        </span>
-                        <span class="text-xs text-base-content/40">
-                            {{ $tournament->match_type === 'double' ? __('Doubles') : __('Singles') }}
-                        </span>
+
+                    <div class="min-w-0 flex-1">
+                        <div class="font-medium">{{ $tournament->name }}</div>
+                        <div class="mt-0.5 flex flex-wrap items-center gap-2">
+                            <x-badge :value="$statusBadge['label']" class="{{ $statusBadge['class'] }} badge-sm" />
+                            <span class="text-xs text-base-content/40">
+                                {{ $tournament->start_date->translatedFormat('d M Y') }}
+                            </span>
+                            <span class="text-xs text-base-content/40">
+                                {{ $tournament->match_type === 'double' ? __('Doubles') : __('Singles') }}
+                            </span>
+                        </div>
                     </div>
-                </x-slot:sub-value>
-                <x-slot:actions>
+                </div>
+
+                <div class="mt-3">
                     @if (! $selectionModeActive)
-                        <x-admin.shared.row-actions>
+                        <x-admin.shared.row-menu
+                            :label="__('Settings')"
+                            icon="o-cog-6-tooth"
+                            link="{{ route('admin.tournaments.wizard.edit', $tournament) }}">
                             @if ($this->canManage)
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-cog-6-tooth"
-                                    :tooltip="__('Settings')"
-                                    link="{{ route('admin.tournaments.wizard.edit', $tournament) }}" />
                             @endif
                             @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-rocket-launch"
-                                    :tooltip="__('Live Center')"
-                                    link="{{ route('admin.tournaments.live-center', $tournament->id) }}" />
+                                <x-menu-item icon="o-rocket-launch" link="{{ route('admin.tournaments.live-center', $tournament->id) }}" :title="__('Live Center')" />
                             @endif
                             @if ($this->canManage)
                                 <livewire:admin.shared.event-post-button
@@ -159,21 +141,30 @@
                                     wire:key="ep-mob-tournament-{{ $tournament->id }}"
                                     @event-post-saved.window="$wire.refreshTournaments()" />
                             @endif
-                        </x-admin.shared.row-actions>
+                        </x-admin.shared.row-menu>
                     @endif
-                </x-slot:actions>
-            </x-list-item>
+                </div>
+            </div>
         @empty
             @php
+                $hasActiveFilters = count($filterChips) > 0 || filled($search);
                 $emptyHeading = $search
                     ? __('No tournament matches ":search"', ['search' => $search])
-                    : __('No tournaments yet');
-                $emptyMessage = ! $search && $this->canManage
-                    ? ''
-                    : __('Try adjusting your search or filters.');
+                    : ($hasActiveFilters ? __('No tournaments match your filters') : __('No tournaments yet'));
             @endphp
-            <x-empty-state icon="o-trophy" :heading="$emptyHeading" :message="$emptyMessage" />
+            <x-admin.shared.list-empty-state
+                icon="o-trophy"
+                :heading="$emptyHeading"
+                :filtered="$hasActiveFilters"
+                :create-label="__('Create a tournament')"
+                :create-href="$this->canManage ? route('admin.tournaments.wizard') : null" />
         @endforelse
+
+        @if ($tournaments->hasPages())
+            <div class="mt-2">
+                {{ $tournaments->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop (table) ────────────────────────────────────────── --}}
@@ -181,14 +172,17 @@
         <x-card>
             @if ($tournaments->isEmpty())
                 @php
+                    $hasActiveFilters = count($filterChips) > 0 || filled($search);
                     $emptyHeading = $search
                         ? __('No tournament matches ":search"', ['search' => $search])
-                        : __('No tournaments yet');
-                    $emptyMessage = ! $search && $this->canManage
-                        ? ''
-                        : __('Try adjusting your search or filters.');
+                        : ($hasActiveFilters ? __('No tournaments match your filters') : __('No tournaments yet'));
                 @endphp
-                <x-empty-state icon="o-trophy" :heading="$emptyHeading" :message="$emptyMessage" />
+                <x-admin.shared.list-empty-state
+                    icon="o-trophy"
+                    :heading="$emptyHeading"
+                    :filtered="$hasActiveFilters"
+                    :create-label="__('Create a tournament')"
+                    :create-href="$this->canManage ? route('admin.tournaments.wizard') : null" />
             @else
                 <x-table :headers="$headers" :rows="$tournaments" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
@@ -219,7 +213,7 @@
                             {{ $active }}@if ($max > 0) / {{ $max }}@endif
                         </span>
                         @if ($waiting > 0)
-                            <span class="ml-1 text-xs text-warning">(+{{ $waiting }})</span>
+                            <span class="ml-1 text-xs text-warning-content">(+{{ $waiting }})</span>
                         @endif
                     @endscope
 
@@ -262,18 +256,16 @@
                     @endscope
 
                     @scope('actions', $tournament)
-                        <x-admin.shared.row-actions>
+                        <x-admin.shared.row-menu
+                            :label="__('Settings')"
+                            icon="o-cog-6-tooth"
+                            link="{{ route('admin.tournaments.wizard.edit', $tournament) }}">
                             @if ($this->canManage)
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-cog-6-tooth"
-                                    :tooltip="__('Settings')"
-                                    link="{{ route('admin.tournaments.wizard.edit', $tournament) }}" />
                             @endif
                             @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-rocket-launch"
-                                    :tooltip="__('Live Center')"
-                                    link="{{ route('admin.tournaments.live-center', $tournament->id) }}" />
+                                <x-menu-item icon="o-rocket-launch" link="{{ route('admin.tournaments.live-center', $tournament->id) }}" :title="__('Live Center')" />
                             @endif
-                        </x-admin.shared.row-actions>
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">
@@ -291,7 +283,7 @@
             :selecting-all-results="$selectingAllResults"
             :select-all="$selectAll">
             <x-slot:actions>
-                <x-button class="btn-ghost btn-sm text-warning" icon="o-x-circle" :label="__('Cancel')"
+                <x-button class="btn-ghost btn-sm text-warning-content" icon="o-x-circle" :label="__('Cancel')"
                     wire:click="confirmBulkCancel" />
             </x-slot:actions>
         </x-admin.shared.selection-pill>
@@ -333,7 +325,7 @@
 
     {{-- ── Modal annulation bulk ──────────────────────────────────────── --}}
     <x-confirm-modal model="confirmBulkCancelModal" :title="__('Cancel selected tournaments?')"
-        :confirmLabel="__('Confirm cancellation')" confirmAction="bulkCancel">
+        :confirmLabel="__('Confirm cancellation')" confirmAction="bulkCancel" :open="$confirmBulkCancelModal">
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be marked as cancelled.') }}

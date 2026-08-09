@@ -73,7 +73,7 @@ class ResultList extends Component
             ->unique()
             ->sort()
             ->values()
-            ->map(fn (string $dbValue) => [
+            ->map(fn (string $dbValue): array => [
                 'value' => $dbValue,
                 'label' => $this->categoryLabel($dbValue),
             ]);
@@ -83,7 +83,7 @@ class ResultList extends Component
     {
         return $this->allTeamsForSeason()
             ->when($this->category, fn (Collection $c) => $c->filter(
-                fn (Team $t) => $t->league?->category === $this->category
+                fn (Team $t): bool => $t->league?->category === $this->category
             ))
             ->pluck('league.division')
             ->filter()
@@ -96,12 +96,12 @@ class ResultList extends Component
     {
         return $this->allTeamsForSeason()
             ->when($this->category, fn (Collection $c) => $c->filter(
-                fn (Team $t) => $t->league?->category === $this->category
+                fn (Team $t): bool => $t->league?->category === $this->category
             ))
             ->when($this->division, fn (Collection $c) => $c->filter(
-                fn (Team $t) => $t->league?->division === $this->division
+                fn (Team $t): bool => $t->league?->division === $this->division
             ))
-            ->map(fn (Team $t) => ['id' => $t->id, 'name' => $t->name])
+            ->map(fn (Team $t): array => ['id' => $t->id, 'name' => $t->name])
             ->values();
     }
 
@@ -139,7 +139,7 @@ class ResultList extends Component
             ))
             ->when($this->teamId > 0, fn (Builder $q) => $q->where('id', $this->teamId))
             ->get()
-            ->sortBy(fn (Team $t) => $categoryOrder[$t->league?->category] ?? 99)
+            ->sortBy(fn (Team $t): int => $categoryOrder[$t->league?->category] ?? 99)
             ->groupBy(fn (Team $t) => $t->league?->category ?? LeagueCategory::MEN->name);
 
         $result = [];
@@ -147,11 +147,11 @@ class ResultList extends Component
             $result[] = [
                 'category' => $catName,
                 'label' => $categoryLabels[$catName] ?? $catName,
-                'teams' => $teams->map(fn (Team $team) => [
+                'teams' => $teams->map(fn (Team $team): array => [
                     'name' => 'Équipe ' . $team->name . ($team->league ? ' - Division ' . $team->league->division : ''),
                     'position' => $team->final_position ?? '—',
                     'position_class' => $this->positionClass($team->final_position),
-                    'matches' => $team->interclubResults->map(fn (InterclubResult $mr) => [
+                    'matches' => $team->interclubResults->map(fn (InterclubResult $mr): array => [
                         'date' => $mr->is_bye ? 'Bye' : $mr->match_date?->format('d M Y'),
                         'opponent' => $mr->opponent_name ?? 'Bye',
                         'venue' => $mr->is_home ? 'Domicile' : 'Extérieur',
@@ -222,10 +222,10 @@ class ResultList extends Component
     /** @return array{played: int, wins: int, losses: int, win_rate: int} */
     private function buildStats(Collection $interclubResults): array
     {
-        $real = $interclubResults->where('is_bye', false)->filter(fn (InterclubResult $mr) => $mr->result !== null);
+        $real = $interclubResults->where('is_bye', false)->filter(fn (InterclubResult $mr): bool => $mr->result !== null);
         $played = $real->count();
-        $wins = $real->filter(fn (InterclubResult $mr) => in_array($mr->result, [InterclubResultEnum::WIN, InterclubResultEnum::FORFEIT_WIN]))->count();
-        $losses = $real->filter(fn (InterclubResult $mr) => in_array($mr->result, [InterclubResultEnum::LOSS, InterclubResultEnum::FORFEIT_LOSS]))->count();
+        $wins = $real->filter(fn (InterclubResult $mr): bool => in_array($mr->result, [InterclubResultEnum::WIN, InterclubResultEnum::FORFEIT_WIN]))->count();
+        $losses = $real->filter(fn (InterclubResult $mr): bool => in_array($mr->result, [InterclubResultEnum::LOSS, InterclubResultEnum::FORFEIT_LOSS]))->count();
 
         return [
             'played' => $played,

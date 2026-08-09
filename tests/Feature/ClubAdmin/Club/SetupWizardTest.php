@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Models\AppSetting;
 use Livewire\Livewire;
 
@@ -44,7 +45,7 @@ it('creates an admin user and logs in on step 2', function (): void {
 
     $user = User::where('email', 'admin@test.be')->first();
     expect($user)->not->toBeNull();
-    expect($user->is_admin)->toBeTrue();
+    expect($user->hasRole(Role::ADMINISTRATOR->value))->toBeTrue();
 });
 
 it('fails step 2 when email is already taken', function (): void {

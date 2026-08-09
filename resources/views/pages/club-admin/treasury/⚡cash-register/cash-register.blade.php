@@ -5,6 +5,11 @@
 <div>
     <x-header :title="__('Cash Register')" :subtitle="__('In-person cash management')" separator progress-indicator>
         <x-slot:actions>
+            <x-button
+                :label="__('New register')"
+                icon="o-building-library"
+                class="btn-outline btn-sm"
+                wire:click="$set('createRegisterModal', true)" />
             @if($this->register)
             <x-button
                 :label="__('Add entry')"
@@ -12,11 +17,6 @@
                 class="btn-primary btn-sm"
                 wire:click="openManualEntry" />
             @endif
-            <x-button
-                :label="__('New register')"
-                icon="o-building-library"
-                class="btn-outline btn-sm"
-                wire:click="$set('createRegisterModal', true)" />
         </x-slot:actions>
     </x-header>
 
@@ -49,65 +49,43 @@
         @else
             <span class="text-sm italic text-base-content/40">{{ __('None') }}</span>
         @endif
-        @if(Auth::user()->is_admin || Auth::user()->committee_role === \App\Domains\Shared\Enums\CommitteeRolesEnum::TREASURER)
+        @can('cash_register.holder.change')
             <x-button
                 :label="__('Change')"
                 icon="o-pencil"
                 class="btn-ghost btn-xs ml-1"
                 wire:click="openChangeHolder" />
-        @endif
+        @endcan
     </div>
 
     {{-- Balance card --}}
-    <div class="grid grid-cols-3 gap-4 mb-6">
-        <x-card @class([
-            'col-span-1 border-2',
-            'border-success/40 bg-success/5' => $this->balance >= 0,
-            'border-error/40 bg-error/5'     => $this->balance < 0,
-        ]) shadow>
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('Current balance') }}</div>
-                    <div @class([
-                        'text-3xl font-black mt-1',
-                        'text-success' => $this->balance >= 0,
-                        'text-error'   => $this->balance < 0,
-                    ])>{{ number_format($this->balance / 100, 2, ',', ' ') }} €</div>
-                    <div class="text-xs opacity-60 mt-0.5">{{ $this->register->name }}</div>
-                </div>
-                <x-icon name="o-currency-euro" @class([
-                    'w-12 h-12 opacity-30',
-                    'text-success' => $this->balance >= 0,
-                    'text-error'   => $this->balance < 0,
-                ]) />
-            </div>
-        </x-card>
+    @php
+        $entriesIn = $this->register->entries->where('amount', '>', 0);
+        $entriesOut = $this->register->entries->where('amount', '<', 0);
+    @endphp
+    <div class="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-3">
+        <x-admin.shared.stat-card
+            :label="__('Current balance')"
+            :value="number_format($this->balance / 100, 2, ',', ' ') . ' €'"
+            :hint="$this->register->name"
+            icon="o-currency-euro"
+            :color="$this->balance >= 0 ? 'success' : 'error'"
+            emphasis
+            class="col-span-2 lg:col-span-1" />
 
-        <x-card class="col-span-1 border border-success/20 bg-success/5" shadow>
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('Total in') }}</div>
-                    <div class="text-2xl font-black mt-1 text-success">
-                        {{ number_format($this->register->entries->where('amount', '>', 0)->sum('amount') / 100, 2, ',', ' ') }} €
-                    </div>
-                    <div class="text-xs opacity-60 mt-0.5">{{ $this->register->entries->where('amount', '>', 0)->count() }} {{ __('entries') }}</div>
-                </div>
-                <x-icon name="o-arrow-down-tray" class="w-10 h-10 text-success opacity-40" />
-            </div>
-        </x-card>
+        <x-admin.shared.stat-card
+            :label="__('Total in')"
+            :value="number_format($entriesIn->sum('amount') / 100, 2, ',', ' ') . ' €'"
+            :hint="$entriesIn->count() . ' ' . __('entries')"
+            icon="o-arrow-down-tray"
+            color="success" />
 
-        <x-card class="col-span-1 border border-error/20 bg-error/5" shadow>
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('Total out') }}</div>
-                    <div class="text-2xl font-black mt-1 text-error">
-                        {{ number_format(abs($this->register->entries->where('amount', '<', 0)->sum('amount')) / 100, 2, ',', ' ') }} €
-                    </div>
-                    <div class="text-xs opacity-60 mt-0.5">{{ $this->register->entries->where('amount', '<', 0)->count() }} {{ __('entries') }}</div>
-                </div>
-                <x-icon name="o-arrow-up-tray" class="w-10 h-10 text-error opacity-40" />
-            </div>
-        </x-card>
+        <x-admin.shared.stat-card
+            :label="__('Total out')"
+            :value="number_format(abs($entriesOut->sum('amount')) / 100, 2, ',', ' ') . ' €'"
+            :hint="$entriesOut->count() . ' ' . __('entries')"
+            icon="o-arrow-up-tray"
+            color="error" />
     </div>
 
     {{-- Entries history --}}
@@ -165,7 +143,7 @@
     @endif
 
     {{-- Modal: Create register --}}
-    <x-modal wire:model="createRegisterModal" :title="__('Create Cash Register')" separator>
+    <x-app-modal wire:model="createRegisterModal" :title="__('Create Cash Register')" separator :open="$createRegisterModal">
         <div class="space-y-4">
             <x-input :label="__('Register name')" wire:model="newRegisterName" autofocus />
             <x-select
@@ -180,10 +158,10 @@
             <x-button :label="__('Cancel')" @click="$wire.createRegisterModal = false" class="btn-ghost" />
             <x-button :label="__('Create')" icon="o-check" class="btn-primary" wire:click="createRegister" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- Modal: Change holder --}}
-    <x-modal wire:model="changeHolderModal" :title="__('Change holder')" separator>
+    <x-app-modal wire:model="changeHolderModal" :title="__('Change holder')" separator :open="$changeHolderModal">
         <x-select
             :label="__('Holder')"
             :options="$users"
@@ -195,10 +173,10 @@
             <x-button :label="__('Cancel')" @click="$wire.changeHolderModal = false" class="btn-ghost" />
             <x-button :label="__('Save')" icon="o-check" class="btn-primary" wire:click="confirmChangeHolder" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- Modal: Manual entry --}}
-    <x-modal wire:model="manualEntryModal" :title="__('Add Entry')" separator>
+    <x-app-modal wire:model="manualEntryModal" :title="__('Add Entry')" separator :open="$manualEntryModal">
         <div class="space-y-4">
             <p class="text-sm opacity-60">
                 {{ __('Use a positive amount for cash in, negative for cash out.') }}
@@ -223,5 +201,5 @@
             <x-button :label="__('Cancel')" @click="$wire.manualEntryModal = false" class="btn-ghost" />
             <x-button :label="__('Save')" icon="o-check" class="btn-primary" wire:click="saveManualEntry" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

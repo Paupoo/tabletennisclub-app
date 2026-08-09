@@ -6,22 +6,20 @@ use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
+use App\Actions\User\StoreUserDocumentAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
-use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Services\TrainingPackProrata;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
-use Livewire\Attributes\Rule;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
@@ -29,9 +27,6 @@ use Mary\Traits\Toast;
 new class extends Component
 {
     use HasBreadcrumbs, Toast, WithFileUploads;
-
-    // --- Modal "Ajouter un membre" ---
-    public bool $addMemberModal = false;
 
     // --- Modal confirmation annulation affiliation ---
     public bool $cancelAffiliationModal = false;
@@ -50,31 +45,9 @@ new class extends Component
 
     public int $leavePackUserId = 0;
 
-    public $medicalCertificate = null;
+    public $medicalCertificate;
 
-    public string $memberModalMode = 'search';
-
-    public string $memberSearchQuery = '';
-
-    #[Rule('required|string')]
-    public string $new_birthdate = '';
-
-    #[Rule('required|string|email')]
-    public string $new_email = '';
-
-    #[Rule('required|string')]
-    public string $new_first_name = '';
-
-    #[Rule('required|string')]
-    public string $new_gender = '';
-
-    #[Rule('required|string')]
-    public string $new_last_name = '';
-
-    #[Rule('nullable|string')]
-    public string $new_phone_number = '';
-
-    public $parentalConsent = null;
+    public $parentalConsent;
 
     /** @var array<string, mixed> */
     public array $paymentDetails = [];
@@ -94,19 +67,6 @@ new class extends Component
     public string $selectedTab = '';
 
     public User $user;
-
-    public function addExistingMember(int $userId): void
-    {
-        $user = User::find($userId);
-        if (! $user) {
-            return;
-        }
-
-        $this->addRegistrationTab($user);
-        $this->reset(['addMemberModal', 'memberSearchQuery']);
-        $this->memberModalMode = 'search';
-        $this->success(__(':name added to the registration.', ['name' => $user->first_name]));
-    }
 
     // ──────────────────────────────────────────────────────────────────────────
     // Member management
@@ -145,9 +105,14 @@ new class extends Component
         // Otherwise neutral defaults (recreative / false).
         $seed = $existing ? [] : ($user->originatingContact()?->subscriptionSeed() ?? []);
 
+        // Failing both, what the member was affiliated as last time the federation
+        // said: `JO` is a competitor, `LR` a recreational player. A suggestion on
+        // a form the member is about to fill in themselves — they are the one who
+        // says what they intend to play this season, and they may well be taking
+        // up competition or stopping.
         $formula = $existing?->is_competitive
             ? 'competitive'
-            : (($seed['is_competitive'] ?? false) ? 'competitive' : 'recreative');
+            : (($seed['is_competitive'] ?? $user->federation_licence_type === 'JO') ? 'competitive' : 'recreative');
 
         $this->registrations[$user->id] = [
             'user_id' => $user->id,
@@ -189,7 +154,7 @@ new class extends Component
 
         unset($this->existingSubscriptions[$userId]);
         $this->cancelAffiliationModal = false;
-        $this->warning(__('Your registration request has been cancelled.'));
+        $this->warning(__('Your affiliation request has been cancelled.'));
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -199,8 +164,8 @@ new class extends Component
     public function confirmAffiliation(int $userId): void
     {
         $season = Season::current();
-        if (! $season || ! $season->registrations_open) {
-            $this->error(__('Registrations are currently closed.'));
+        if (! $season || ! $season->affiliations_open) {
+            $this->error(__('Affiliations are currently closed.'));
 
             return;
         }
@@ -229,10 +194,21 @@ new class extends Component
 
         $selectedPackIds = $this->pendingPackIds[$userId] ?? [];
         if (! empty($selectedPackIds)) {
-            $attachData = array_fill_keys(
-                $selectedPackIds,
-                ['status' => 'pending']
-            );
+            $prorata = new TrainingPackProrata;
+            $packs = TrainingPack::whereIn('id', $selectedPackIds)->get()->keyBy('id');
+
+            $attachData = [];
+            foreach ($selectedPackIds as $packId) {
+                $pack = $packs->get((int) $packId);
+
+                $attachData[$packId] = [
+                    'status' => 'pending',
+                    // Nulle tant que le pack n'a pas commencé : cas nominal de
+                    // début de saison, prix plein. Datée sinon → pro rata.
+                    'starts_on' => $pack ? $prorata->enrolmentStart($pack) : null,
+                ];
+            }
+
             $subscription->trainingPacks()->attach($attachData);
         }
 
@@ -248,7 +224,7 @@ new class extends Component
         ];
 
         $this->pendingPackIds[$userId] = [];
-        $this->success(__('Your registration has been submitted. The club will process it shortly.'));
+        $this->success(__('Your affiliation has been submitted. The club will process it shortly.'));
     }
 
     public function confirmCancelAffiliation(int $userId): void
@@ -281,39 +257,22 @@ new class extends Component
             return;
         }
 
+        $pack = TrainingPack::find($packId);
+        $pivot = DB::table('subscription_training_pack')
+            ->where('subscription_id', $subscription->id)
+            ->where('training_pack_id', $packId)
+            ->first();
+
         $subscription->trainingPacks()->updateExistingPivot($packId, [
             'status' => 'enrolled',
             'waitlist_position' => null,
             'confirmation_deadline' => null,
+            // La place n'est facturable qu'à partir d'ici : une attente de trois
+            // mois ne se paie pas.
+            'starts_on' => $pivot?->starts_on ?? ($pack ? (new TrainingPackProrata)->enrolmentStart($pack) : null),
         ]);
 
         $this->success(__('Spot confirmed!'));
-    }
-
-    public function createFamilyMember(): void
-    {
-        $this->validate();
-
-        $newMember = User::firstOrCreate(
-            ['email' => $this->new_email],
-            [
-                'first_name' => $this->new_first_name,
-                'last_name' => $this->new_last_name,
-                'email' => $this->new_email,
-                'birthdate' => $this->new_birthdate,
-                'gender' => $this->new_gender,
-                'phone_number' => $this->new_phone_number ?: null,
-                'street' => Auth::user()->street,
-                'city_code' => Auth::user()->city_code,
-                'city_name' => Auth::user()->city_name,
-                'password' => Hash::make(Str::random(16)),
-            ]
-        );
-
-        $this->addRegistrationTab($newMember);
-        $this->reset(['new_first_name', 'new_last_name', 'new_birthdate', 'new_gender', 'new_email', 'new_phone_number', 'addMemberModal', 'memberSearchQuery']);
-        $this->memberModalMode = 'search';
-        $this->success(__('Member added successfully!'));
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -404,10 +363,17 @@ new class extends Component
         $this->leavePackModal = false;
     }
 
-    public function mount(): void
+    public function mount(User $user): void
     {
-        $this->user = Auth::user();
+        abort_unless(Auth::user()->is($user), 403);
+
+        $this->user = $user;
         $this->addRegistrationTab($this->user);
+
+        foreach ($this->user->familyMembers() as $member) {
+            $this->addRegistrationTab($member);
+        }
+
         $this->selectedTab = 'tab-' . $this->user->id;
     }
 
@@ -439,6 +405,8 @@ new class extends Component
 
     public function uploadMedicalCertificate(int $userId): void
     {
+        abort_unless(array_key_exists($userId, $this->registrations), 403);
+
         $this->validate([
             'medicalCertificate' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ]);
@@ -448,21 +416,17 @@ new class extends Component
             return;
         }
 
-        if ($user->medical_certificate_path) {
-            Storage::disk('public')->delete(str_replace('/storage/', '', $user->medical_certificate_path));
-        }
+        $path = StoreUserDocumentAction::handle($user, $this->medicalCertificate, 'medical');
 
-        $extension = $this->medicalCertificate->getClientOriginalExtension();
-        $path = $this->medicalCertificate->storeAs("documents/{$userId}", "medical.{$extension}", 'public');
-
-        $user->update(['medical_certificate_path' => "/storage/{$path}"]);
-        $this->registrations[$userId]['medical_certificate_path'] = "/storage/{$path}";
+        $this->registrations[$userId]['medical_certificate_path'] = $path;
         $this->medicalCertificate = null;
         $this->success(__('Medical certificate uploaded successfully.'));
     }
 
     public function uploadParentalConsent(int $userId): void
     {
+        abort_unless(array_key_exists($userId, $this->registrations), 403);
+
         $this->validate([
             'parentalConsent' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ]);
@@ -472,15 +436,9 @@ new class extends Component
             return;
         }
 
-        if ($user->parental_consent_path) {
-            Storage::disk('public')->delete(str_replace('/storage/', '', $user->parental_consent_path));
-        }
+        $path = StoreUserDocumentAction::handle($user, $this->parentalConsent, 'parental_consent');
 
-        $extension = $this->parentalConsent->getClientOriginalExtension();
-        $path = $this->parentalConsent->storeAs("documents/{$userId}", "parental_consent.{$extension}", 'public');
-
-        $user->update(['parental_consent_path' => "/storage/{$path}"]);
-        $this->registrations[$userId]['parental_consent_path'] = "/storage/{$path}";
+        $this->registrations[$userId]['parental_consent_path'] = $path;
         $this->parentalConsent = null;
         $this->success(__('Parental consent uploaded successfully.'));
     }
@@ -493,7 +451,6 @@ new class extends Component
     {
         $season = Season::current();
         $userIds = array_keys($this->registrations);
-        $alreadyAddedIds = $userIds;
 
         // Current season subscriptions (keyed by user_id, excludes cancelled)
         $currentSubs = $season
@@ -525,7 +482,7 @@ new class extends Component
             $canReAffiliate = $hasCancelledCurrentSeason && ! $currentSub;
 
             return [$uid => [
-                'history' => $subs->map(fn ($sub) => [
+                'history' => $subs->map(fn ($sub): array => [
                     'season_name' => $sub->season?->name ?? '—',
                     'season_id' => $sub->season_id,
                     'status' => $sub->status,
@@ -533,14 +490,18 @@ new class extends Component
                     'amount_due' => $sub->amount_due,
                     'amount_paid' => $sub->amount_paid,
                     'enrolled_packs' => $sub->trainingPacks
-                        ->filter(fn ($p) => in_array($p->pivot->status, ['enrolled', 'pending'], true))
-                        ->map(fn ($p) => ['name' => $p->name, 'status' => $p->pivot->status])
+                        ->filter(fn ($p): bool => in_array($p->pivot->status, ['enrolled', 'pending'], true))
+                        ->map(fn ($p): array => [
+                            'name' => $p->name,
+                            'status' => $p->pivot->status,
+                            'schedule' => $p->scheduleLabel(),
+                        ])
                         ->values()
                         ->toArray(),
                     'is_current_season' => $season && $sub->season_id === $season->id,
                     'pending_payments' => $sub->payments
                         ->where('status', 'pending')
-                        ->map(fn ($p) => [
+                        ->map(fn ($p): array => [
                             'id' => $p->id,
                             'reference' => $p->reference,
                             'amount_due' => (float) $p->amount_due,
@@ -569,7 +530,10 @@ new class extends Component
                             continue;
                         }
                         $enrolled = $sub->trainingPacks->firstWhere('id', $pack->id);
-                        $enrollments[$uid] = $enrolled ? [
+
+                        // Une ligne quittée est de l'histoire : la carte doit
+                        // reproposer l'inscription, pas afficher un état mort.
+                        $enrollments[$uid] = ($enrolled && $enrolled->pivot->status !== 'left') ? [
                             'status' => $enrolled->pivot->status,
                             'position' => $enrolled->pivot->waitlist_position,
                             'deadline' => $enrolled->pivot->confirmation_deadline,
@@ -593,7 +557,9 @@ new class extends Component
                         },
                         'coach' => $pack->trainer
                             ? $pack->trainer->first_name . ' ' . $pack->trainer->last_name
-                            : '—',
+                            : null,
+                        'schedule' => $pack->scheduleLabel(),
+                        'room' => $pack->room?->name,
                         'is_open_enrollment' => $pack->is_open_enrollment,
                         'spots_remaining' => max(0, $pack->effectiveMaxParticipants() - $pack->enrolledCount()),
                         'waitlist_count' => $pack->waitlistCount(),
@@ -605,22 +571,11 @@ new class extends Component
         }
 
         return [
-            'registrationsOpen' => $season?->registrations_open ?? false,
+            'affiliationsOpen' => $season?->affiliations_open ?? false,
             'currentSeasonName' => $season?->name ?? '—',
             'subscriptionHistory' => $subscriptionHistory,
             'availablePacks' => $availablePacks,
-            'memberSearchResults' => strlen($this->memberSearchQuery) >= 2
-                ? User::where(function ($q): void {
-                    $q->where('first_name', 'like', "%{$this->memberSearchQuery}%")
-                        ->orWhere('last_name', 'like', "%{$this->memberSearchQuery}%")
-                        ->orWhere('email', 'like', "%{$this->memberSearchQuery}%");
-                })
-                    ->whereNotIn('id', $alreadyAddedIds)
-                    ->limit(6)
-                    ->get()
-                : collect(),
             'breadcrumbs' => $this->getBreadcrumbs(),
-            'genders' => Gender::options(),
         ];
     }
 
@@ -632,6 +587,6 @@ new class extends Component
     {
         return Breadcrumb::make()
             ->home()
-            ->current(__('Registration management'));
+            ->current(__('My season'));
     }
 };

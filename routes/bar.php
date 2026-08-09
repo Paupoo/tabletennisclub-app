@@ -64,13 +64,14 @@ Route::get('/orders/{order}/modify', [BarOrderController::class, 'modify'])
 Route::post('/orders/cancel-edit', [BarOrderController::class, 'cancelEdit'])
     ->name('orders.cancelEdit');
 Route::delete('/orders/{order}', [BarOrderController::class, 'destroy'])
+    ->middleware('can:bar.orders.manage')
     ->name('orders.destroy');
 /*
 |--------------------------------------------------------------------------
 | Categories
 |--------------------------------------------------------------------------
 */
-Route::prefix('categories')->name('categories.')->group(function () {
+Route::prefix('categories')->middleware('can:bar.products.manage')->name('categories.')->group(function (): void {
     Route::get('/', [BarCategoryController::class, 'index'])
         ->name('index');
     Route::post('/', [BarCategoryController::class, 'store'])
@@ -86,7 +87,7 @@ Route::prefix('categories')->name('categories.')->group(function () {
 | Products
 |--------------------------------------------------------------------------
 */
-Route::prefix('products')->name('products.')->group(function () {
+Route::prefix('products')->middleware('can:bar.products.manage')->name('products.')->group(function (): void {
     Route::get('/', [BarProductController::class, 'index'])
         ->name('index');
     Route::post('/', [BarProductController::class, 'store'])
@@ -104,7 +105,7 @@ Route::prefix('products')->name('products.')->group(function () {
 | Cash sheet
 |--------------------------------------------------------------------------
 */
-Route::prefix('cashsheet')->name('cashSheet.')->group(function () {
+Route::prefix('cashsheet')->middleware('can:bar.cash_sheet.send')->name('cashSheet.')->group(function (): void {
     Route::get('/', [BarCashSheetController::class, 'index'])
         ->name('index');
     Route::post('/bar/cashSheet/send', [BarCashSheetController::class, 'send'])

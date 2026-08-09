@@ -19,26 +19,31 @@ use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\Training;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasBreadcrumbs, Toast;
+    use HasBreadcrumbs, HasFilterDrawer, Toast;
 
     public ?int $cancelConfirmId = null;
 
     public bool $cancelConfirmModal = false;
 
+    // ── Filters (R-filtres: drawer + chips)
+    public string $eventType = '';
+
     // ── Meeting RSVP modal
     public bool $meetingRsvpModal = false;
 
-    public bool $onlyUpcoming = true;
+    public bool $onlyPayable = false;
 
     // ── Doubles self-pairing
     public int $partnerTournamentId = 0;
@@ -68,7 +73,7 @@ new class extends Component
 
         $pairedIds = TournamentPair::where('tournament_id', $this->partnerTournamentId)
             ->get()
-            ->flatMap(fn ($p) => [$p->player1_id, $p->player2_id])
+            ->flatMap(fn ($p): array => [$p->player1_id, $p->player2_id])
             ->unique()
             ->toArray();
 
@@ -78,7 +83,7 @@ new class extends Component
             ->whereNotIn('users.id', $pairedIds)
             ->where('users.id', '!=', $this->user->id)
             ->get()
-            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
+            ->map(fn (User $u): array => ['id' => $u->id, 'name' => $u->full_name])
             ->toArray();
     }
 
@@ -90,6 +95,11 @@ new class extends Component
         $this->cancelConfirmModal = false;
         $this->cancelConfirmId = null;
         $this->warning(__('Registration cancelled.'));
+    }
+
+    public function clearFilters(): void
+    {
+        $this->reset(['eventType', 'onlyPayable']);
     }
 
     public function confirmCancel(): void
@@ -114,6 +124,32 @@ new class extends Component
     }
 
     /**
+     * @return array<string, string>
+     */
+    public function eventTypeOptions(): array
+    {
+        return [
+            'tournament' => __('Tournaments'),
+            'meeting' => __('Meetings'),
+            'training' => __('Trainings'),
+        ];
+    }
+
+    /**
+     * @return array<int, array{key: string, label: string}>
+     */
+    public function getFilterChips(): array
+    {
+        return array_values(array_filter([
+            $this->eventType !== '' ? [
+                'key' => 'eventType',
+                'label' => $this->eventTypeOptions()[$this->eventType] ?? $this->eventType,
+            ] : null,
+            $this->onlyPayable ? ['key' => 'onlyPayable', 'label' => __('To pay only')] : null,
+        ]));
+    }
+
+    /**
      * This user's meeting registrations (with payment), keyed by meeting id —
      * powers the row status/meal badges and the RSVP modal prefill.
      *
@@ -122,7 +158,10 @@ new class extends Component
     #[Computed]
     public function meetingRegistrations(): Illuminate\Support\Collection
     {
-        $meetingIds = $this->upcomingMeetings->pluck('id');
+        // Use the unfiltered base list: depending on the filtered
+        // upcomingMeetings would create a circular computed dependency
+        // when the "to pay only" filter is active.
+        $meetingIds = $this->baseUpcomingMeetings()->pluck('id');
 
         if ($meetingIds->isEmpty()) {
             return collect();
@@ -133,6 +172,13 @@ new class extends Component
             ->whereIn('meeting_id', $meetingIds)
             ->get()
             ->keyBy('meeting_id');
+    }
+
+    public function mount(User $user): void
+    {
+        abort_unless(Auth::user()->is($user), 403);
+
+        $this->user = $user;
     }
 
     #[Computed]
@@ -236,6 +282,14 @@ new class extends Component
         $this->success(__('Pair registered!'), icon: 'o-user-group');
     }
 
+    /**
+     * No pagination on this page: plain property reset.
+     */
+    public function removeFilter(string $key): void
+    {
+        $this->reset([$key]);
+    }
+
     public function removeFromPair(int $tournamentId): void
     {
         TournamentPair::where('tournament_id', $tournamentId)
@@ -266,11 +320,14 @@ new class extends Component
     #[Computed]
     public function upcomingMeetings(): Collection
     {
-        return $this->user->meetings()
-            ->where('meetings.status', MeetingStatusEnum::CONFIRMED->value)
-            ->where('scheduled_at', '>=', now())
-            ->orderBy('scheduled_at')
-            ->get();
+        return $this->baseUpcomingMeetings()
+            ->when($this->onlyPayable, fn (Collection $meetings) => $meetings
+                ->filter(function ($meeting): bool {
+                    $payment = $this->meetingRegistrations->get($meeting->id)?->payment;
+
+                    return $payment && $payment->status === 'pending';
+                })
+                ->values());
     }
 
     #[Computed]
@@ -291,13 +348,25 @@ new class extends Component
                     ->with(['player1', 'player2']),
             ])
             ->orderBy('start_date')
-            ->get();
+            ->get()
+            ->when($this->onlyPayable, fn (Collection $tournaments) => $tournaments
+                ->filter(function (Tournament $tournament): bool {
+                    $pivot = $tournament->users->first()?->pivot;
+
+                    return $pivot?->payment_id && ! $pivot->has_paid;
+                })
+                ->values());
     }
 
     /** @return Collection<int, Training> */
     #[Computed]
     public function upcomingTrainingSessions(): Collection
     {
+        // Training sessions never carry a standalone payment.
+        if ($this->onlyPayable) {
+            return new Collection;
+        }
+
         $season = Season::where('is_active', true)->first();
         if (! $season) {
             return new Collection;
@@ -309,7 +378,11 @@ new class extends Component
             ->whereNotIn('status', ['cancelled'])
             ->with('trainingPacks')
             ->get()
-            ->flatMap(fn ($sub) => $sub->trainingPacks->pluck('id'));
+            // Les packs quittés restent attachés pour la facturation au pro
+            // rata ; ils ne donnent plus accès aux séances.
+            ->flatMap(fn ($sub) => $sub->trainingPacks
+                ->reject(fn ($pack): bool => $pack->pivot->status === 'left')
+                ->pluck('id'));
 
         if ($packIds->isEmpty()) {
             return new Collection;
@@ -336,5 +409,18 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Events & Activities'));
+    }
+
+    /**
+     * User's upcoming confirmed meetings, unfiltered — the base list shared by
+     * both {@see upcomingMeetings()} and {@see meetingRegistrations()}.
+     */
+    private function baseUpcomingMeetings(): Collection
+    {
+        return $this->user->meetings()
+            ->where('meetings.status', MeetingStatusEnum::CONFIRMED->value)
+            ->where('scheduled_at', '>=', now())
+            ->orderBy('scheduled_at')
+            ->get();
     }
 };

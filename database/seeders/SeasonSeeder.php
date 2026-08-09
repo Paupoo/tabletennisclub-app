@@ -34,7 +34,7 @@ class SeasonSeeder extends Seeder
                     'start_at' => Carbon::create($startYear, 9, 1)->startOfDay(),
                     'end_at' => Carbon::create($startYear + 1, 6, 30)->endOfDay(),
                     'is_active' => false,
-                    'registrations_open' => false,
+                    'affiliations_open' => false,
                 ]);
             }
 

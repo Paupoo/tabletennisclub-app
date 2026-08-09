@@ -7,6 +7,7 @@ use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
+use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use Illuminate\Support\Facades\Event;
 
@@ -225,4 +226,36 @@ describe('calculatePoolStandings', function (): void {
         expect($lastItem['no_show'])->toBeTrue();
         expect($lastItem['player']->id)->toBe($noShow->id);
     });
+});
+
+// ── Handicap table ────────────────────────────────────────────────────────────
+
+describe('AFTT handicap table', function (): void {
+    /**
+     * The table is transcribed federal data, not something derivable: the rungs
+     * are unevenly spaced, so no formula over Ranking positions reproduces it.
+     * What can be enforced is that it covers the enum exactly — a ranking added
+     * to Ranking without a row and a column here would throw "Undefined array
+     * key" in the middle of a draw.
+     */
+    it('covers every ranking in both dimensions', function (): void {
+        $table = new ReflectionProperty(TournamentMatchService::class, 'handicapPoints')
+            ->getValue(new TournamentMatchService);
+
+        $rankings = array_column(Ranking::cases(), 'value');
+
+        expect(array_keys($table))->toEqualCanonicalizing($rankings);
+
+        foreach ($table as $row) {
+            expect(array_keys($row))->toEqualCanonicalizing($rankings)
+                ->and($row)->each->toBeInt();
+        }
+    });
+
+    it('gives no points when both players hold the same ranking', function (string $ranking): void {
+        $table = new ReflectionProperty(TournamentMatchService::class, 'handicapPoints')
+            ->getValue(new TournamentMatchService);
+
+        expect($table[$ranking][$ranking])->toBe(0);
+    })->with(array_column(Ranking::cases(), 'value'));
 });

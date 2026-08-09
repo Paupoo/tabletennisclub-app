@@ -13,10 +13,11 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Component;
 use Mary\Traits\Toast;
@@ -75,7 +76,7 @@ new class extends Component
         $names = $this->teamNameSequence($totalTeams);
         $playerChunks = $competitors->chunk($this->nucleusSize);
 
-        $this->proposedTeams = collect($names)->values()->map(fn (string $name, int $i) => [
+        $this->proposedTeams = collect($names)->values()->map(fn (string $name, int $i): array => [
             'letter' => $name,
             'players' => $playerChunks->get($i)?->pluck('id')->toArray() ?? [],
             'captainId' => null,
@@ -84,7 +85,7 @@ new class extends Component
             'division' => '',
         ])->toArray();
 
-        $assignedIds = collect($this->proposedTeams)->flatMap(fn ($t) => $t['players'])->toArray();
+        $assignedIds = collect($this->proposedTeams)->flatMap(fn ($t): mixed => $t['players'])->toArray();
         $this->unassigned = $competitors->whereNotIn('id', $assignedIds)->pluck('id')->toArray();
 
         $this->sortAllTeams();
@@ -95,7 +96,7 @@ new class extends Component
 
     public function mount(): void
     {
-        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+        Gate::authorize(Permission::TeamsManage->value);
 
         $this->seasonId = Season::current()?->id;
     }
@@ -107,13 +108,13 @@ new class extends Component
         foreach ($this->proposedTeams as &$team) {
             $team['players'] = array_values(array_filter(
                 $team['players'],
-                fn (int $id) => $id !== $userId
+                fn (int $id): bool => $id !== $userId
             ));
         }
 
         $this->unassigned = array_values(array_filter(
             $this->unassigned,
-            fn (int $id) => $id !== $userId
+            fn (int $id): bool => $id !== $userId
         ));
 
         $this->proposedTeams[$teamIndex]['players'][] = $userId;
@@ -131,7 +132,7 @@ new class extends Component
 
             $team['players'] = array_values(array_filter(
                 $team['players'],
-                fn (int $id) => $id !== $userId
+                fn (int $id): bool => $id !== $userId
             ));
         }
 
@@ -218,8 +219,8 @@ new class extends Component
 
     public function with(): array
     {
-        $allCompetitors = User::competitor()
-            ->orderBy('force_list')
+        $allCompetitors = User::interclubEligible()
+            ->orderBy(User::forceListColumn($this->teamCategory))
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get()
@@ -236,10 +237,10 @@ new class extends Component
             'competitors' => $allCompetitors,
             'eligibleCount' => $this->buildEligibleQuery()->count(),
             'missingBirthdateCount' => $this->teamCategory === 'VETERANS'
-                ? User::competitor()->whereNull('birthdate')->count()
+                ? User::interclubEligible()->whereNull('birthdate')->count()
                 : 0,
-            'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c) => ['id' => $c->name, 'name' => $c->value]),
-            'levelOptions' => collect(LeagueLevel::cases())->map(fn ($l) => ['id' => $l->name, 'name' => $l->value]),
+            'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c): array => ['id' => $c->name, 'name' => $c->value]),
+            'levelOptions' => collect(LeagueLevel::cases())->map(fn ($l): array => ['id' => $l->name, 'name' => $l->value]),
         ];
     }
 
@@ -254,10 +255,13 @@ new class extends Component
 
     private function buildEligibleQuery(): Builder
     {
-        $query = User::competitor()
-            // force_list (admin override) en premier quand défini, sinon tri par classement
-            ->orderByRaw('CASE WHEN force_list IS NULL THEN 1 ELSE 0 END')
-            ->orderBy('force_list')
+        // Tri par la liste de force de la catégorie (générale / dames / vétérans),
+        // les positions définies en premier, sinon repli sur le classement.
+        $forceColumn = User::forceListColumn($this->teamCategory);
+
+        $query = User::interclubEligible()
+            ->orderByRaw("CASE WHEN {$forceColumn} IS NULL THEN 1 ELSE 0 END")
+            ->orderBy($forceColumn)
             ->orderBy('ranking')
             ->orderBy('last_name')
             ->orderBy('first_name');
@@ -266,13 +270,7 @@ new class extends Component
             $query->where('gender', Gender::WOMEN->value);
         } elseif ($this->teamCategory === 'VETERANS') {
             $season = $this->seasonId ? Season::find($this->seasonId) : Season::current();
-
-            if ($season) {
-                $cutoff = $season->end_at->copy()->subYears(40);
-                $query->whereNotNull('birthdate')->where('birthdate', '<=', $cutoff->toDateString());
-            } else {
-                $query->whereRaw('1 = 0'); // aucune saison = aucun résultat
-            }
+            $query->veteran($season);
         }
 
         return $query;
@@ -303,7 +301,7 @@ new class extends Component
 
         $rankings = User::whereIn('id', $playerIds)->pluck('ranking', 'id');
 
-        usort($playerIds, fn (int $a, int $b) => strcmp(
+        usort($playerIds, fn (int $a, int $b): int => strcmp(
             $rankings[$a] ?? 'ZZ',
             $rankings[$b] ?? 'ZZ'
         ));
@@ -320,8 +318,8 @@ new class extends Component
      */
     private function teamNameSequence(int $count): array
     {
-        $letters = array_map(fn (int $i) => chr(ord('A') + $i), range(0, 25));
-        $numbers = array_map(fn (int $i) => (string) $i, range(1, max(0, $count - 26)));
+        $letters = array_map(fn (int $i): string => chr(ord('A') + $i), range(0, 25));
+        $numbers = array_map(fn (int $i): string => (string) $i, range(1, max(0, $count - 26)));
 
         return array_slice(array_merge($letters, $numbers), 0, $count);
     }

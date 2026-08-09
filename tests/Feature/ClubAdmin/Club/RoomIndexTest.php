@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
 
 beforeEach(function (): void {
@@ -13,10 +14,28 @@ beforeEach(function (): void {
 });
 
 describe('Room index tests', function (): void {
-    // 1. Tester que la page est accessible
-    it('renders the rooms index page', function (): void {
+    // 1. Tester que la page est accessible au comité
+    it('renders the rooms index page for the committee', function (): void {
+        $committee = User::factory()->isCommitteeMember()->withRole(Role::FACILITIES)->create();
+
+        $this->actingAs($committee)
+            ->get(route('admin.rooms.index'))
+            ->assertStatus(200);
+    });
+
+    // 1b. Un membre lambda n'a pas accès à la page (réservée à la délégation Installations)
+    it('forbids a plain member from the rooms index page', function (): void {
         $this->actingAs($this->user)
-            ->get(route('admin.rooms.index')) // Ajuste le nom de la route si besoin
+            ->get(route('admin.rooms.index'))
+            ->assertForbidden();
+    });
+
+    // 1c. La délégation Installations suffit, sans siège au comité.
+    it('grants the rooms index page to a facilities delegate off the committee', function (): void {
+        $delegate = User::factory()->withRole(Role::FACILITIES)->create();
+
+        $this->actingAs($delegate)
+            ->get(route('admin.rooms.index'))
             ->assertStatus(200);
     });
 
@@ -32,7 +51,7 @@ describe('Room index tests', function (): void {
             ->assertDontSee(__('Delete'));
 
         // Cas 2 : On simule les permissions (via un Mock ou en donnant un rôle à l'user)
-        $admin = User::factory()->create(['is_admin' => true]); // Exemple
+        $admin = User::factory()->isAdmin()->create(); // Exemple
 
         Livewire::actingAs($admin)
             ->test('pages::club-admin.rooms.index')
@@ -40,7 +59,7 @@ describe('Room index tests', function (): void {
             ->assertSee(__('Modify'))
             ->assertSee(__('Delete'));
 
-        $committeeMember = User::factory()->create(['is_committee_member' => true]); // Exemple
+        $committeeMember = User::factory()->isCommitteeMember()->withRole(Role::FACILITIES)->create(); // Exemple
 
         Livewire::actingAs($committeeMember)
             ->test('pages::club-admin.rooms.index')
@@ -52,7 +71,7 @@ describe('Room index tests', function (): void {
     // 3. Tester l'action de suppression
     it('can delete a room', function (): void {
         $room = Room::factory()->create();
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
 
         Livewire::actingAs($admin)
             ->test('pages::club-admin.rooms.index')
@@ -64,7 +83,7 @@ describe('Room index tests', function (): void {
 
     // 4. Tester que la suppression est bloquée si la salle a des tables liées
     it('cannot delete a room that has linked tables', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $room = Room::factory()->create();
         Table::factory()->create(['room_id' => $room->id]);
 
@@ -86,5 +105,34 @@ describe('Room index tests', function (): void {
             ->assertStatus(403); // Ou assertForbidden()
 
         expect(Room::where('id', $room->id)->exists())->toBeTrue();
+    });
+
+    // 6. Les tables orphelines vivent hors de la grille des salles
+    it('hides the unassigned section when every table has a room', function (): void {
+        $committee = User::factory()->isCommitteeMember()->withRole(Role::FACILITIES)->create();
+        Table::factory()->for(Room::factory())->create();
+
+        $component = Livewire::actingAs($committee)
+            ->test('pages::club-admin.rooms.index');
+
+        expect($component->viewData('unassignedTables'))->toBeEmpty();
+        $component->assertDontSee(__('Tables not linked to any room'));
+    });
+
+    it('lists tables with no room in a section of their own', function (): void {
+        // `room_id` est nullable : sans cette section, une orpheline ne serait
+        // atteignable depuis nulle part.
+        $committee = User::factory()->isCommitteeMember()->withRole(Role::FACILITIES)->create();
+        Table::factory()->for(Room::factory())->create(['name' => 'Assignée']);
+        Table::factory()->create(['name' => 'Orpheline', 'room_id' => null]);
+
+        $component = Livewire::actingAs($committee)
+            ->test('pages::club-admin.rooms.index');
+
+        expect($component->viewData('unassignedTables')->pluck('name'))
+            ->toContain('Orpheline')
+            ->not->toContain('Assignée');
+
+        $component->assertSee(__('Unassigned'));
     });
 })->group('club-admin', 'room');

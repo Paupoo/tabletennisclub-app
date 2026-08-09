@@ -2,18 +2,22 @@
 
 declare(strict_types=1);
 
+use App\Data\User\FederationRow;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\TrainingPack;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
+use Tests\Trait\RefusesParallelExecution;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,7 +37,9 @@ uses(
 
 pest()->browser()->timeout(15_000);
 
-beforeEach(function () {
+uses(RefusesParallelExecution::class)->in('Browser');
+
+beforeEach(function (): void {
     Club::forgetOwnClub();
 });
 
@@ -48,9 +54,7 @@ beforeEach(function () {
 |
 */
 
-expect()->extend('toBeOne', function () {
-    return $this->toBe(1);
-});
+expect()->extend('toBeOne', fn () => $this->toBe(1));
 
 /*
 |--------------------------------------------------------------------------
@@ -88,6 +92,35 @@ function activeMember(Season $season, array $attributes = []): User
     ]);
 
     return $user;
+}
+
+/**
+ * A row of the federation affiliate listing as the parser hands it over, with
+ * only the fields a given test cares about set.
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function federationRow(array $overrides = []): FederationRow
+{
+    return new FederationRow(
+        lineNumber: $overrides['lineNumber'] ?? 2,
+        licence: $overrides['licence'] ?? '166036',
+        lastName: $overrides['lastName'] ?? 'Dupont',
+        firstName: $overrides['firstName'] ?? 'Marc',
+        birthdate: array_key_exists('birthdate', $overrides)
+            ? $overrides['birthdate']
+            : CarbonImmutable::parse('1990-06-05'),
+        ranking: $overrides['ranking'] ?? 'C2',
+        gender: $overrides['gender'] ?? Gender::MEN,
+        federationLicenceType: $overrides['federationLicenceType'] ?? 'JO',
+        email: array_key_exists('email', $overrides) ? $overrides['email'] : 'marc@example.com',
+        phone: $overrides['phone'] ?? '0475123456',
+        // `array_key_exists` rather than `??`: a test saying the export left the
+        // column empty passes null, and must not be handed the default back.
+        street: array_key_exists('street', $overrides) ? $overrides['street'] : 'RUE DU TEST 13',
+        cityCode: array_key_exists('cityCode', $overrides) ? $overrides['cityCode'] : '1348',
+        cityName: array_key_exists('cityName', $overrides) ? $overrides['cityName'] : 'LOUVAIN-LA-NEUVE',
+    );
 }
 
 function makeTrainingPack(Season $season, array $overrides = []): TrainingPack
@@ -142,19 +175,6 @@ function smokeSkippedRouteNames(): array
 
         // Non-HTML downloads.
         'tournament.calendar.ical' => 'ICS file download, not an HTML page',
-
-        // TODO legacy: obsolete controller GET pages whose Blade views were
-        // removed during the domain refactor (superseded by Livewire pages).
-        // Their write/POST actions are still wired and tested, so the routes
-        // stay; these GET pages are known-broken (500) and excluded until the
-        // obsolete controllers are cleaned up. See routes/web.php "obsolete" block.
-        'clubEvents.interclubs.seasons.index' => 'TODO legacy: missing view, superseded by admin.seasons.index',
-        'clubEvents.interclubs.seasons.create' => 'TODO legacy: missing view',
-        'clubAdmin.registrations.index' => 'TODO legacy: missing view, superseded by admin.users.registrations',
-        'admin.payments.index' => 'TODO legacy: missing view, superseded by admin.treasury.payments',
-        'admin.transactions.add ' => 'TODO legacy: missing view (note: route name has a trailing space)',
-        'admin.transactions.index' => 'TODO legacy: missing view, superseded by admin.treasury.transactions',
-        'admin.transactions.reconcile' => 'TODO legacy: missing view',
     ];
 }
 

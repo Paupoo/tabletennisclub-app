@@ -57,7 +57,7 @@
                 class="btn-ghost btn-sm btn-circle ml-auto shrink-0"
                 icon="o-x-mark"
                 :tooltip="__('Clear selection')"
-                wire:click="clearSelection" />
+                wire:click="clearSelection" :aria-label="__('Clear selection')" />
         </div>
     </div>
 

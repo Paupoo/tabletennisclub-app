@@ -8,6 +8,7 @@ use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\Competitions\Interclub\Models\Club;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Attachment;
@@ -15,7 +16,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class PaymentInvitationEmail extends Mailable
+class PaymentInvitationEmail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -32,9 +33,9 @@ class PaymentInvitationEmail extends Mailable
         public ?string $instructions = null,
     ) {
         $this->BIC = Club::ourClub()->first()->bic;
-        $this->IBAN = Club::ourClub()->first()->bank_account;
+        $this->IBAN = Club::ourClub()->first()->bank_account_formatted;
         $this->qrCode = (new GeneratePaymentQR)($payment);
-        $this->instructions ??= __('Veuillez effectuer le versement avant le ' . today()->addDays(30)->format('d/m/Y'));
+        $this->instructions ??= __('Please make the payment before ' . today()->addDays(30)->format('d/m/Y'));
     }
 
     /**

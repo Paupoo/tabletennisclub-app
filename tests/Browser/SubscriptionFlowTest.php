@@ -15,7 +15,7 @@ it('registrations page loads without JS errors', function (): void {
 
     visit(route('admin.users.registrations'))
         ->assertNoJavaScriptErrors()
-        ->assertSee('Inscriptions');
+        ->assertSee('Affiliations');
 });
 
 it('pending subscription appears in registrations list', function (): void {

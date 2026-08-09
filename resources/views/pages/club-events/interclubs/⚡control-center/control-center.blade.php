@@ -7,10 +7,17 @@
         subtitle="{{ __('Season') }} {{ $current_season?->name ?? '—' }}"
         separator>
         <x-slot:actions>
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-search="false" :show-more="false" />
+            <div class="hidden lg:block">
+                <x-admin.shared.filters-button :count="count($filterChips)" />
+            </div>
             <x-button :label="__('Captain Dashboard')" icon="o-user" class="btn-sm btn-ghost"
                 :link="route('admin.interclubs.captain-selection')" />
         </x-slot:actions>
     </x-header>
+
+    {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
 
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-4">
 
@@ -18,12 +25,6 @@
         <div class="space-y-4">
             <x-admin.shared.side-card :title="__('Navigation')" shadow class="mt-16">
                 <div class="space-y-4">
-                    <x-select
-                        :label="__('Season')"
-                        wire:model.live="selectedSeasonId"
-                        :options="$seasons_list"
-                        class="select-sm border-none bg-base-200/50 font-bold" />
-
                     <div>
                         <label
                             class="mb-4 block text-[10px] font-black italic uppercase tracking-widest opacity-40">{{ __('Competition week') }}</label>
@@ -39,10 +40,6 @@
 
                     <x-choices :label="__('Focus on a team')" wire:model.live="selectedTeam" :options="$teams_list"
                         single searchable class="choices-sm" />
-
-                    <div class="space-y-2 border-t border-base-100 pt-2">
-                        <x-checkbox :label="__('Show issues only')" wire:model.live="filterAlerts" tight />
-                    </div>
                 </div>
             </x-admin.shared.side-card>
 
@@ -100,8 +97,8 @@
 
                 @if ($categories->isEmpty())
                     <x-empty-state icon="o-calendar"
-                        :title="__('No matches this week')"
-                        :description="__('No interclub scheduled for day :n.', ['n' => $selectedWeek ? ('S' . ($matchDayMap[$selectedWeek] ?? $selectedWeek)) : '—'])" />
+                        :heading="__('No matches this week')"
+                        :message="__('No interclub scheduled for day :n.', ['n' => $selectedWeek ? ('S' . ($matchDayMap[$selectedWeek] ?? $selectedWeek)) : '—'])" />
                 @else
                     @foreach ($categories as $name => $teams)
                         <div
@@ -157,7 +154,7 @@
                                         <span class="text-[10px] font-black uppercase">{{ __('Complete') }}</span>
                                     </div>
                                 @elseif($team['status'] === 'pending')
-                                    <div class="flex items-center gap-1 text-warning">
+                                    <div class="flex items-center gap-1 text-warning-content">
                                         <x-icon name="o-clock" class="h-4 w-4" />
                                         <span class="text-[10px] font-black uppercase">{{ __('Incomplete') }}</span>
                                     </div>
@@ -281,7 +278,7 @@
     </x-drawer>
 
     {{-- MODAL MESSAGE --}}
-    <x-modal wire:model="modalMessage" :title="__('Last step')" separator>
+    <x-app-modal wire:model="modalMessage" :title="__('Last step')" separator :open="$modalMessage">
         <div class="space-y-4">
             <div class="flex items-center gap-3 rounded-xl border border-primary/10 bg-primary/5 p-3">
                 <x-icon name="o-information-circle" class="h-5 w-5 text-primary" />
@@ -299,5 +296,23 @@
             <x-button :label="__('Send')" wire:click="confirmAndSend" class="btn-primary"
                 icon="o-paper-airplane" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
+
+    {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Season') }}
+                </p>
+                <x-select
+                    wire:model.live="selectedSeasonId"
+                    :options="$seasons_list"
+                    class="w-full" />
+            </div>
+            <div>
+                <x-toggle :label="__('Show issues only')" wire:model.live="filterAlerts" />
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
 </div>

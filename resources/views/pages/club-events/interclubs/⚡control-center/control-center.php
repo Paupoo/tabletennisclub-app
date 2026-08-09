@@ -10,15 +10,17 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Services\InterclubAvailabilityService;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasBreadcrumbs, Toast;
+    use HasBreadcrumbs, HasFilterDrawer, Toast;
 
     public string $captainMessage = '';
 
@@ -41,6 +43,12 @@ new class extends Component
 
     public ?int $selectedWeek = null;
 
+    public function clearFilters(): void
+    {
+        $this->selectedSeasonId = Season::current()?->id;
+        $this->filterAlerts = false;
+    }
+
     public function confirmAndSend(InterclubAvailabilityService $service): void
     {
         if (! $this->drawerInterclubId) {
@@ -60,6 +68,30 @@ new class extends Component
         );
     }
 
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
+    {
+        return $this->getFilterChips();
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        if ($this->selectedSeasonId !== Season::current()?->id) {
+            $seasonName = Season::find($this->selectedSeasonId)?->name ?? __('All seasons');
+            $chips[] = ['key' => 'selectedSeasonId', 'label' => __('Season') . ': ' . $seasonName];
+        }
+
+        if ($this->filterAlerts) {
+            $chips[] = ['key' => 'filterAlerts', 'label' => __('Show issues only')];
+        }
+
+        return $chips;
+    }
+
     public function mount(): void
     {
         $this->selectedSeasonId = Season::current()?->id;
@@ -70,7 +102,7 @@ new class extends Component
         $weeks = $this->weekNumbersForSelectedSeason();
         $max = $weeks->last();
         if ($this->selectedWeek && $max && $this->selectedWeek < $max) {
-            $next = $weeks->first(fn ($w) => $w > $this->selectedWeek);
+            $next = $weeks->first(fn ($w): bool => $w > $this->selectedWeek);
             if ($next) {
                 $this->selectedWeek = $next;
             }
@@ -95,11 +127,22 @@ new class extends Component
         $weeks = $this->weekNumbersForSelectedSeason();
         $min = $weeks->first();
         if ($this->selectedWeek && $min && $this->selectedWeek > $min) {
-            $prev = $weeks->last(fn ($w) => $w < $this->selectedWeek);
+            $prev = $weeks->last(fn ($w): bool => $w < $this->selectedWeek);
             if ($prev) {
                 $this->selectedWeek = $prev;
             }
         }
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if ($key === 'selectedSeasonId') {
+            $this->selectedSeasonId = Season::current()?->id;
+
+            return;
+        }
+
+        $this->reset([$key]);
     }
 
     public function render(): View
@@ -175,7 +218,7 @@ new class extends Component
 
         if ($this->selectedWeek === null && $weekNumbers->isNotEmpty()) {
             $this->selectedWeek = $weekNumbers
-                ->filter(fn ($w) => $w >= now()->isoWeek)
+                ->filter(fn ($w): bool => $w >= now()->isoWeek)
                 ->first() ?? $weekNumbers->first();
         }
 
@@ -229,13 +272,13 @@ new class extends Component
 
         $categories = $rawTeams
             ->when($this->selectedTeam, fn ($c) => $c->where('team_id', $this->selectedTeam))
-            ->filter(fn ($t) => ! $this->filterAlerts || $t['status'] === 'alert')
-            ->filter(fn ($t) => $t['status'] !== 'no_match')
+            ->filter(fn ($t): bool => ! $this->filterAlerts || $t['status'] === 'alert')
+            ->filter(fn ($t): bool => $t['status'] !== 'no_match')
             ->groupBy('category');
 
         $searchResults = [];
         if (strlen($this->search) >= 2 && $this->drawerInterclubId) {
-            $searchResults = User::competitor()
+            $searchResults = User::interclubEligible()
                 ->where(function ($q): void {
                     $q->where('first_name', 'like', '%' . $this->search . '%')
                         ->orWhere('last_name', 'like', '%' . $this->search . '%');
@@ -243,7 +286,7 @@ new class extends Component
                 ->whereNotIn('id', $this->selectedPlayerIds)
                 ->limit(8)
                 ->get()
-                ->map(fn (User $u) => [
+                ->map(fn (User $u): array => [
                     'id' => $u->id,
                     'name' => $u->last_name . ' ' . $u->first_name,
                     'rank' => $u->ranking ?? '—',
@@ -257,7 +300,7 @@ new class extends Component
                 : $drawerInterclub->visitingTeam)
             : null;
 
-        $drawerRoster = $drawerTeam ? $drawerTeam->users->map(fn (User $u) => [
+        $drawerRoster = $drawerTeam ? $drawerTeam->users->map(fn (User $u): array => [
             'id' => $u->id,
             'name' => $u->last_name . ' ' . $u->first_name,
             'rank' => $u->ranking ?? '—',
@@ -271,13 +314,14 @@ new class extends Component
 
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
+            'filterChips' => $this->filterChips,
             'headers' => $headers,
             'categories' => $categories,
-            'seasons_list' => $seasons->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
+            'seasons_list' => $seasons->map(fn ($s): array => ['id' => $s->id, 'name' => $s->name]),
             'current_season' => $season,
-            'weeks_options' => $weekNumbers->map(fn ($w) => ['id' => $w, 'name' => 'S' . ($matchDayMap[$w] ?? $w)]),
+            'weeks_options' => $weekNumbers->map(fn ($w): array => ['id' => $w, 'name' => 'S' . ($matchDayMap[$w] ?? $w)]),
             'weeks_monitor' => $weeksMonitor,
-            'teams_list' => $allTeams->map(fn ($t) => ['id' => $t->id, 'name' => $t->name]),
+            'teams_list' => $allTeams->map(fn ($t): array => ['id' => $t->id, 'name' => $t->name]),
             'preparation_score' => $preparationScore,
             'total_weeks' => $totalWeeks,
             'drawerInterclub' => $drawerInterclub,

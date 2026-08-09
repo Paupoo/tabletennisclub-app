@@ -25,7 +25,7 @@ function eventPostPack(array $overrides = []): TrainingPack
     ], $overrides));
 }
 
-function mountEventPostButton(User $admin, TrainingPack $pack): Testable
+function mountEventPostButton(User $admin, TrainingPack $pack, array $propOverrides = []): Testable
 {
     $startTime = $pack->start_time ? Carbon::parse($pack->start_time)->format('H:i:s') : null;
     $endTime = ($startTime && $pack->duration_minutes)
@@ -33,7 +33,7 @@ function mountEventPostButton(User $admin, TrainingPack $pack): Testable
         : null;
 
     return Livewire::actingAs($admin)
-        ->test('admin.shared.event-post-button', [
+        ->test('admin.shared.event-post-button', array_merge([
             'modelClass' => TrainingPack::class,
             'modelId' => $pack->id,
             'eventType' => 'TRAINING',
@@ -45,7 +45,7 @@ function mountEventPostButton(User $admin, TrainingPack $pack): Testable
             'maxParticipants' => $pack->max_participants,
             'defaultTitle' => $pack->name,
             'canPublish' => true,
-        ]);
+        ], $propOverrides));
 }
 
 // ── mount — form initialisation ───────────────────────────────────────────────
@@ -95,7 +95,7 @@ describe('EventPostButton mount', function (): void {
 
     it('does not open the modal when canPublish is false', function (): void {
         $admin = User::factory()->create();
-        $pack = eventPostPack(['pack_start_date' => null]);
+        $pack = eventPostPack();
 
         Livewire::actingAs($admin)
             ->test('admin.shared.event-post-button', [
@@ -110,12 +110,13 @@ describe('EventPostButton mount', function (): void {
             ->assertSet('showModal', false);
     });
 
-    it('uses today as fallback event_date when pack has no start date', function (): void {
+    it('uses today as fallback event_date when the eventable carries no date', function (): void {
         $admin = User::factory()->create();
-        $pack = eventPostPack(['pack_start_date' => null]);
+        $pack = eventPostPack();
 
-        // Component prop eventDate = null, resolveEventPostData will fallback to today()
-        $component = mountEventPostButton($admin, $pack);
+        // A training pack always has a start date now, but the button is shared
+        // with eventables that may not: the fallback is driven by the prop.
+        $component = mountEventPostButton($admin, $pack, ['eventDate' => null]);
 
         $component->set('eventTitle', 'Stage sans date')
             ->call('saveEventPost', 'draft');

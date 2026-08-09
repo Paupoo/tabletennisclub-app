@@ -20,7 +20,7 @@ test('money converts euros correctly', function (): void {
 });
 
 test('money rejects negative amounts', function (): void {
-    expect(fn () => Money::fromCents(-100))
+    expect(fn (): Money => Money::fromCents(-100))
         ->toThrow(InvalidArgumentException::class);
 });
 

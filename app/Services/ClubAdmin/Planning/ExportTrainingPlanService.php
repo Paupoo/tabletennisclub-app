@@ -26,7 +26,7 @@ use PhpOffice\PhpSpreadsheet\Writer\IWriter;
 class ExportTrainingPlanService
 {
     /** Supported export formats mapped to their PhpSpreadsheet writer type. */
-    private const WRITERS = [
+    private const array WRITERS = [
         'csv' => 'Csv',
         'ods' => 'Ods',
         'xlsx' => 'Xlsx',
@@ -217,6 +217,7 @@ class ExportTrainingPlanService
     {
         return Subscription::query()
             ->where('season_id', $plan->season_id)
+            ->affiliated()
             ->get()
             ->keyBy('user_id');
     }

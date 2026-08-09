@@ -13,31 +13,11 @@
         </x-slot:middle>
         <x-slot:actions>
             {{-- Mobile: 🔍 · filter · ☰ --}}
-            <div class="flex items-center gap-1 lg:hidden">
-                <button class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true">
-                    <x-icon name="o-magnifying-glass" class="h-5 w-5" />
-                </button>
-                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                    wire:click="$set('filterDrawer', true)">
-                    <x-icon name="o-funnel" class="h-5 w-5" />
-                    @if (count($filterChips) > 0)
-                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
-                    @endif
-                </button>
-                <button class="btn btn-primary btn-circle btn-sm" @click="mobileActionsOpen = true">
-                    <x-icon name="o-bars-3" class="h-5 w-5" />
-                </button>
-            </div>
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" />
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
-                <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                    icon="o-funnel" :label="__('Filters')"
-                    wire:click="$set('filterDrawer', true)">
-                    @if (count($filterChips) > 0)
-                        <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
-                    @endif
-                </x-button>
-                <x-button class="btn-primary" icon="o-plus" :label="__('New article')"
+                <x-admin.shared.filters-button :count="count($filterChips)" />
+                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New article')"
                     link="{{ route('admin.website.articles.create') }}" />
             </div>
         </x-slot:actions>
@@ -56,7 +36,8 @@
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
                     placeholder="{{ __('Search...') }}" />
             </div>
-            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+            <button type="button" @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm"
+                aria-label="{{ __('Close the search') }}">
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
@@ -92,10 +73,10 @@
         <x-card class="shadow-sm">
             <div class="flex items-center gap-3">
                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/10">
-                    <x-icon name="o-pencil-square" class="h-5 w-5 text-warning" />
+                    <x-icon name="o-pencil-square" class="h-5 w-5 text-warning-content" />
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-warning">{{ $stats->draft ?? 0 }}</p>
+                    <p class="text-2xl font-bold text-warning-content">{{ $stats->draft ?? 0 }}</p>
                     <p class="text-xs text-base-content/40">{{ __('Drafts') }}</p>
                 </div>
             </div>
@@ -116,82 +97,85 @@
     {{-- ── Vue mobile ───────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($articles as $article)
-            <x-list-item :item="$article" class="bg-base-100 rounded-lg border" wire:key="mobile-article-{{ $article->id }}">
-                <x-slot:avatar>
+            {{-- L'identité prend la largeur, les actions passent dessous : sur une
+            carte de 335 px, une action nommée et son menu en prenaient 156 et le
+            titre était tranché. --}}
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3"
+                wire:key="mobile-article-{{ $article->id }}">
+                <div class="flex items-start gap-3">
                     @if ($selectionModeActive)
                         <input type="checkbox"
                             class="checkbox checkbox-primary checkbox-sm"
                             value="{{ $article->id }}"
                             wire:model.live="selected" />
                     @endif
-                </x-slot:avatar>
-                <x-slot:value>
-                    <span class="font-medium">{{ $article->title }}</span>
-                </x-slot:value>
-                <x-slot:sub-value>
-                    <div class="flex items-center gap-2 mt-0.5">
-                        @php
-                            $badgeClass = match ($article->status) {
-                                \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED => 'badge-success badge-soft',
-                                \App\Domains\Shared\Enums\NewsPostStatusEnum::DRAFT     => 'badge-warning badge-soft',
-                                \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED  => 'badge-ghost',
-                            };
-                        @endphp
-                        <x-badge :value="$article->status->getLabel()" class="{{ $badgeClass }} badge-sm" />
-                        <span class="text-xs text-base-content/40">
-                            {{ $article->created_at->translatedFormat('d M Y') }}
-                        </span>
+
+                    <div class="min-w-0 flex-1">
+                        <div class="font-medium">{{ $article->title }}</div>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            @php
+                                $badgeClass = match ($article->status) {
+                                    \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED => 'badge-success badge-soft',
+                                    \App\Domains\Shared\Enums\NewsPostStatusEnum::DRAFT     => 'badge-warning badge-soft',
+                                    \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED  => 'badge-ghost',
+                                };
+                            @endphp
+                            <x-badge :value="$article->status->getLabel()" class="{{ $badgeClass }} badge-sm" />
+                            <span class="text-xs text-base-content/40">
+                                {{ $article->created_at->translatedFormat('d M Y') }}
+                            </span>
+                        </div>
                     </div>
-                </x-slot:sub-value>
-                <x-slot:actions>
+                </div>
+
+                <div class="mt-3">
                     @if (! $selectionModeActive)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                :tooltip="__('Edit')"
-                                link="{{ route('admin.website.articles.edit', $article->slug) }}" />
+                        <x-admin.shared.row-menu
+                            :label="__('Edit')"
+                            icon="o-pencil"
+                            link="{{ route('admin.website.articles.edit', $article->slug) }}">
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
-                                    :tooltip="__('Publish')"
-                                    wire:click="publish({{ $article->id }})" />
+                                <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $article->id }})" :title="__('Publish')" />
                             @endif
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
-                                    :tooltip="__('Archive')"
-                                    wire:click="archive({{ $article->id }})" />
+                                <x-menu-item icon="o-archive-box" wire:click="archive({{ $article->id }})" :title="__('Archive')" />
                             @endif
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $article->id }})" />
-                        </x-admin.shared.row-actions>
+                            <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $article->id }})" :title="__('Delete')" />
+                        </x-admin.shared.row-menu>
                     @endif
-                </x-slot:actions>
-            </x-list-item>
+                </div>
+            </div>
         @empty
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-document-text"
+                :filtered="filled($search) || count($filterChips) > 0"
                 :heading="__('No articles found')"
-                :message="__('Try adjusting your search or filters.')" />
+                :create-label="__('Write an article')"
+                :create-href="auth()->user()->can('news_posts.manage') ? route('admin.website.articles.create') : null" />
         @endforelse
+
+        @if ($articles->hasPages())
+            <div class="mt-2">
+                {{ $articles->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
     <div class="hidden lg:block">
         <x-card>
             @if ($articles->isEmpty())
-                <x-empty-state
+                <x-admin.shared.list-empty-state
                     icon="o-document-text"
+                    :filtered="filled($search) || count($filterChips) > 0"
                     :heading="__('No articles found')"
-                    :message="__('Try adjusting your search or filters.')" />
+                    :create-label="__('Write an article')"
+                    :create-href="auth()->user()->can('news_posts.manage') ? route('admin.website.articles.create') : null" />
             @else
                 <x-table :headers="$headers" :rows="$articles" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
                     @scope('cell_title', $article)
-                        <div class="flex items-center gap-2">
-                            @if (!$article->is_public)
-                                <x-icon name="o-lock-closed" class="h-3.5 w-3.5 shrink-0 text-base-content/40" />
-                            @endif
-                            <span class="font-medium">{{ $article->title }}</span>
-                        </div>
+                        <span class="font-medium">{{ $article->title }}</span>
                     @endscope
                     @scope('cell_category_label', $article)
                         @if ($article->category)
@@ -219,24 +203,18 @@
                         </span>
                     @endscope
                     @scope('actions', $article)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                :tooltip="__('Edit')"
-                                link="{{ route('admin.website.articles.edit', $article->slug) }}" />
+                        <x-admin.shared.row-menu
+                            :label="__('Edit')"
+                            icon="o-pencil"
+                            link="{{ route('admin.website.articles.edit', $article->slug) }}">
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
-                                    :tooltip="__('Publish')"
-                                    wire:click="publish({{ $article->id }})" />
+                                <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $article->id }})" :title="__('Publish')" />
                             @endif
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
-                                    :tooltip="__('Archive')"
-                                    wire:click="archive({{ $article->id }})" />
+                                <x-menu-item icon="o-archive-box" wire:click="archive({{ $article->id }})" :title="__('Archive')" />
                             @endif
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $article->id }})" />
-                        </x-admin.shared.row-actions>
+                            <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $article->id }})" :title="__('Delete')" />
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">
@@ -256,7 +234,7 @@
             <x-button class="btn-ghost btn-sm" icon="o-check-circle" :label="__('Publish')"
                 wire:click="bulkPublish" spinner="bulkPublish" />
             <span class="text-base-content/20">|</span>
-            <x-button class="btn-ghost btn-sm text-warning" icon="o-archive-box" :label="__('Archive')"
+            <x-button class="btn-ghost btn-sm text-warning-content" icon="o-archive-box" :label="__('Archive')"
                 wire:click="confirmBulkArchive" />
         </x-slot:actions>
     </x-admin.shared.selection-pill>
@@ -283,13 +261,13 @@
 
     {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete article?')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('This action is irreversible.') }}</p>
     </x-confirm-modal>
 
     {{-- ── Modal archivage bulk ──────────────────────────────────────── --}}
     <x-confirm-modal model="confirmBulkArchiveModal" :title="__('Archive selected articles?')"
-        :confirmLabel="__('Archive')" confirmAction="bulkArchive">
+        :confirmLabel="__('Archive')" confirmAction="bulkArchive" :open="$confirmBulkArchiveModal">
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be archived.') }}

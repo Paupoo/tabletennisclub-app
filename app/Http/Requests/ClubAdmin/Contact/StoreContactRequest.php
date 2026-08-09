@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\ClubAdmin\Contact;
 
+use App\Domains\Shared\Rules\ValidPhone;
 use App\Support\Captcha;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
@@ -11,7 +12,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreContactRequest extends FormRequest
 {
-    public function __construct(private Captcha $captchaService = new Captcha) {}
+    public function __construct(private readonly Captcha $captchaService = new Captcha) {}
 
     /**
      * Determine if the user is authorized to make this request.
@@ -23,6 +24,7 @@ class StoreContactRequest extends FormRequest
         return true;
     }
 
+    #[\Override]
     public function messages(): array
     {
         return [
@@ -48,7 +50,7 @@ class StoreContactRequest extends FormRequest
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => ['nullable', 'string', 'max:20', new ValidPhone],
             'interest' => 'required|string',
             'message' => 'required|string|max:2000',
             'consent' => 'required|accepted',
@@ -91,6 +93,7 @@ class StoreContactRequest extends FormRequest
         });
     }
 
+    #[\Override]
     protected function getRedirectUrl(): string
     {
         return route('home') . '#contact';

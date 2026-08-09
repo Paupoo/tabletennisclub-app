@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\Shared\Enums\TableStateEnum;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -52,7 +54,7 @@ new class extends Component
 
     public string $newTablePurchasedOn = '';
 
-    public string $newTableState = 'new';
+    public string $newTableState = TableStateEnum::GOOD->value;
 
     public Room $room;
 
@@ -71,7 +73,7 @@ new class extends Component
             'newTableBrand' => 'nullable|string|max:100',
             'newTableModel' => 'nullable|string|max:100',
             'newTablePurchasedOn' => 'nullable|date',
-            'newTableState' => 'required|string|max:10',
+            'newTableState' => ['required', Rule::enum(TableStateEnum::class)],
         ]);
 
         $newTable = Table::create([
@@ -79,7 +81,6 @@ new class extends Component
             'brand' => $this->newTableBrand,
             'model' => $this->newTableModel,
             'state' => $this->newTableState,
-            'state_description' => $this->newTableState,
             'purchased_on' => $this->newTablePurchasedOn,
         ]);
 
@@ -102,7 +103,7 @@ new class extends Component
         $this->resetValidation();
     }
 
-    public function mount(?Room $room = null)
+    public function mount(?Room $room = null): void
     {
         // 1. On stocke le modèle (ou un nouveau modèle vide)
         $this->room = $room ?? new Room;
@@ -131,14 +132,12 @@ new class extends Component
                 $query->doesntHave('room')
                     ->orWhere('room_id', $room->id ?? null);
             })
-            ->get()->map(function ($table) {
-                return [
-                    'id' => $table->id,
-                    'name' => $table->name,
-                    'purchased_on' => $table->purchased_on?->format('d M Y'),
-                    'state' => $table->state,
-                ];
-            })->toArray();
+            ->get()->map(fn ($table): array => [
+                'id' => $table->id,
+                'name' => $table->name,
+                'purchased_on' => $table->purchased_on?->format('d M Y'),
+                'state' => $table->state,
+            ])->toArray();
 
         // $tables_already_in_room = Table::whereRoomId($room->id)->get()->map(function ($table) {
         //         return [
@@ -162,7 +161,7 @@ new class extends Component
     public function save(): void
     {
         // 1. Validation des données du formulaire
-        $validated = $this->validate();
+        $this->validate();
 
         // 2. Sauvegarde de la Room (Création ou Mise à jour)
         $this->room->fill([
@@ -208,12 +207,12 @@ new class extends Component
             ->update(['room_id' => null]);
 
         // B. Attacher les tables existantes sélectionnées à cette salle
-        if (! empty($existingTableIds)) {
+        if ($existingTableIds !== []) {
             Table::whereIn('id', $existingTableIds)->update(['room_id' => $this->room->id]);
         }
 
         // 5. Création en base des nouvelles tables ajoutées via le modal
-        if (! empty($newTablesToCreate)) {
+        if ($newTablesToCreate !== []) {
             $this->room->tables()->createMany($newTablesToCreate);
         }
 
@@ -224,13 +223,11 @@ new class extends Component
         // $this->redirect(route('rooms.index'));
     }
 
-    public function searchTables(string $value = '')
+    public function searchTables(string $value = ''): void
     {
         // On met à jour la variable de la vue
         $this->filteredTables = collect($this->allTables)
-            ->filter(function ($table) use ($value) {
-                return str_contains(strtolower($table['name']), strtolower($value));
-            })
+            ->filter(fn (array $table): bool => str_contains(strtolower($table['name']), strtolower($value)))
             ->take(10)
             ->values()
             ->toArray();

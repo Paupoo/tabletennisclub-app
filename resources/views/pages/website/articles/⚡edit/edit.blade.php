@@ -26,10 +26,6 @@
                         wire:model="category" placeholder="Choisir…" />
                     <x-select label="Statut" :options="$statusOptions"
                         wire:model="status" />
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-gray-700">Visible publiquement</span>
-                        <x-toggle wire:model="isPublic" />
-                    </div>
                 </div>
             </x-card>
 
@@ -45,7 +41,9 @@
                             wire:click="removeImage" />
                     </div>
                 @endif
-                <x-file wire:model="image" label="{{ $existingImage ? 'Remplacer' : 'Choisir une image' }}"
+                <x-file wire:model="image"
+                    :label="$existingImage ? __('Replace the image') : __('Choose an image')"
+                    :aria-label="$existingImage ? __('Replace the image') : __('Choose an image')"
                     accept="image/*" hint="JPG, PNG, WebP — max 4 Mo" />
                 @error('image')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -61,8 +59,9 @@
 
             {{-- Guide syntaxe --}}
             <div x-data="{ open: false }" class="mb-3">
+                {{-- py-1 : même plancher de 24px que partout ailleurs. --}}
                 <button type="button"
-                    class="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800"
+                    class="flex items-center gap-1.5 py-1 text-xs text-blue-600 hover:text-blue-800"
                     @click="open = !open">
                     <x-heroicon-o-question-mark-circle class="h-3.5 w-3.5" />
                     <span x-text="open ? 'Masquer l\'aide Markdown' : 'Aide Markdown'"></span>

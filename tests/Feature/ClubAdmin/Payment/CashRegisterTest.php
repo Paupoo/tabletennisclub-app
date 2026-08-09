@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
-use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -98,7 +97,7 @@ describe('Payment payment_method field', function (): void {
 
 describe('Treasury routes', function (): void {
     it('admin can access treasury payments view', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
 
         $this->actingAs($admin)
             ->get(route('admin.treasury.payments'))
@@ -106,7 +105,7 @@ describe('Treasury routes', function (): void {
     });
 
     it('admin can access cash register view', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
 
         $this->actingAs($admin)
             ->get(route('admin.treasury.cash'))
@@ -114,7 +113,7 @@ describe('Treasury routes', function (): void {
     });
 
     it('admin can access transactions view', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
 
         $this->actingAs($admin)
             ->get(route('admin.treasury.transactions'))
@@ -122,7 +121,7 @@ describe('Treasury routes', function (): void {
     });
 
     it('legacy payments route redirects to treasury', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
 
         $this->actingAs($admin)
             ->get(route('admin.users.payments'))
@@ -134,7 +133,7 @@ describe('Treasury routes', function (): void {
 
 describe('Cash register view', function (): void {
     it('creates a new cash register', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
 
         Livewire::actingAs($admin)
             ->test('pages::club-admin.treasury.cash-register')
@@ -147,20 +146,24 @@ describe('Cash register view', function (): void {
 
     // Regression: the is_active column was dropped — holder list must use active members.
     it('lists active members as holders and excludes users without an active subscription', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $season = makeActiveSeason();
 
         activeMember($season, ['first_name' => 'Olga', 'last_name' => 'Activsky']);
         User::factory()->create(['first_name' => 'Igor', 'last_name' => 'Inactif']);
 
+        // La liste des porteurs vit dans la modale de création : depuis 87ddb05a
+        // le corps d'une modale fermée n'est plus rendu, il faut donc l'ouvrir —
+        // ce que fait le bouton « Créer une caisse ».
         Livewire::actingAs($admin)
             ->test('pages::club-admin.treasury.cash-register')
+            ->set('createRegisterModal', true)
             ->assertSee('Olga Activsky')
             ->assertDontSee('Igor Inactif');
     });
 
     it('records a manual entry', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $register = createCashRegister();
 
         Livewire::actingAs($admin)

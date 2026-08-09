@@ -74,6 +74,7 @@ it('retourne les bonnes classes CSS selon le statut', function (string $status, 
 })->with([
     'status win' => ['win', 'bg-success', 'bg-success'],
     'status loss' => ['loss', 'bg-error', 'bg-error'],
+    'status draw' => ['draw', 'bg-base-300', 'bg-base-300'],
     'status pending' => ['pending', 'bg-warning', 'border-2 border-warning'],
     'status default' => ['unknown', 'bg-base-300', 'border border-base-300'],
 ]);

@@ -5,11 +5,13 @@ declare(strict_types=1);
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -76,12 +78,16 @@ new class extends Component
 
     public function archive(int $id): void
     {
+        Gate::authorize(Permission::EventPostsManage->value);
+
         EventPost::findOrFail($id)->update(['status' => EventPostStatusEnum::ARCHIVED]);
         $this->warning(__('Event archived.'));
     }
 
     public function bulkArchive(): void
     {
+        Gate::authorize(Permission::EventPostsManage->value);
+
         $count = count($this->selected);
         EventPost::whereIn('id', $this->selected)->update(['status' => EventPostStatusEnum::ARCHIVED]);
         $this->confirmBulkArchiveModal = false;
@@ -93,6 +99,8 @@ new class extends Component
 
     public function bulkPublish(): void
     {
+        Gate::authorize(Permission::EventPostsManage->value);
+
         $count = count($this->selected);
         EventPost::whereIn('id', $this->selected)->update(['status' => EventPostStatusEnum::PUBLISHED]);
         $this->clearSelection();
@@ -119,6 +127,8 @@ new class extends Component
 
     public function delete(): void
     {
+        Gate::authorize(Permission::EventPostsManage->value);
+
         $event = EventPost::findOrFail($this->deletingId);
 
         if (! $event->canBeDeleted()) {
@@ -165,12 +175,12 @@ new class extends Component
 
         if (filled($this->status)) {
             $label = collect(EventPostStatusEnum::cases())
-                ->first(fn ($s) => $s->value === $this->status)?->getLabel() ?? $this->status;
+                ->first(fn ($s): bool => $s->value === $this->status)?->getLabel() ?? $this->status;
             $chips[] = ['key' => 'status', 'label' => __('Status') . ': ' . $label];
         }
 
         if (filled($this->type)) {
-            $enum = collect(ClubEventTypeEnum::cases())->first(fn ($e) => $e->value === $this->type);
+            $enum = collect(ClubEventTypeEnum::cases())->first(fn ($e): bool => $e->value === $this->type);
             $label = $enum ? $enum->getIcon() . ' ' . $enum->getLabel() : $this->type;
             $chips[] = ['key' => 'type', 'label' => __('Type') . ': ' . $label];
         }
@@ -208,6 +218,8 @@ new class extends Component
 
     public function publish(int $id): void
     {
+        Gate::authorize(Permission::EventPostsManage->value);
+
         EventPost::findOrFail($id)->update(['status' => EventPostStatusEnum::PUBLISHED]);
         $this->success(__('Event published.'));
     }
@@ -219,6 +231,8 @@ new class extends Component
 
     public function saveEdit(): void
     {
+        Gate::authorize(Permission::EventPostsManage->value);
+
         $this->validate([
             'editTitle' => ['required', 'string', 'max:255'],
             'editDescription' => ['required', 'string'],
@@ -284,11 +298,11 @@ new class extends Component
         ];
 
         $statusOptions = collect(EventPostStatusEnum::cases())
-            ->map(fn ($e) => ['id' => $e->value, 'name' => $e->getLabel()])
+            ->map(fn ($e): array => ['id' => $e->value, 'name' => $e->getLabel()])
             ->all();
 
         $typeOptions = collect(ClubEventTypeEnum::cases())
-            ->map(fn ($e) => ['id' => $e->value, 'name' => $e->getIcon() . ' ' . $e->getLabel()])
+            ->map(fn ($e): array => ['id' => $e->value, 'name' => $e->getIcon() . ' ' . $e->getLabel()])
             ->all();
 
         $selectedEvent = $this->selectedEventId
@@ -330,7 +344,7 @@ new class extends Component
     {
         return $this->events
             ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
+            ->map(fn (int $id): string => (string) $id)
             ->toArray();
     }
 };

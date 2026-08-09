@@ -16,12 +16,17 @@ use RuntimeException;
 class StoreContactAction
 {
     /**
-     * Store a new contact and send notification emails.
+     * Store a new contact and queue its notification emails.
+     *
+     * The contact is what matters: it is the only thing an anonymous visitor
+     * can leave us, and it is already saved by the time the mails are handed
+     * over. Both go to the queue so a slow or unreachable relay cannot hold up
+     * the response, and a failure here is logged and swallowed rather than
+     * rethrown — the visitor would otherwise be told to send again a message
+     * we already have.
      *
      * @param  array  $validated  Validated contact data
      * @return Contact The created contact
-     *
-     * @throws Exception
      */
     public function execute(array $validated): Contact
     {
@@ -29,27 +34,23 @@ class StoreContactAction
         $contact = Contact::create($validated);
 
         try {
-            Mail::to($contact->email)->send(new ContactFormConfirmationEmail($contact));
+            Mail::to($contact->email)->queue(new ContactFormConfirmationEmail($contact));
 
             $clubEmail = Club::own()?->email_contact
                 ?? throw new RuntimeException('Club has no contact email configured.');
 
-            Mail::to($clubEmail)->send(new ContactFormNotificationEmail($contact));
+            Mail::to($clubEmail)->queue(new ContactFormNotificationEmail($contact));
 
-            Log::info('Contact created and emails sent', [
+            Log::info('Contact created and emails queued', [
                 'contact_id' => $contact->id,
                 'email' => $contact->email,
             ]);
 
         } catch (Exception $e) {
-            Log::error('Error sending contact notification emails', [
+            Log::error('Error queueing contact notification emails', [
                 'contact_id' => $contact->id,
                 'error' => $e->getMessage(),
             ]);
-
-            // Still return the contact - it was created successfully
-            // Email failure shouldn't prevent the contact from being stored
-            throw $e;
         }
 
         return $contact;

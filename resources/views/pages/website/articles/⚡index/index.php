@@ -7,11 +7,13 @@ namespace Resources\views\Pages\Website\Articles\Index;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -44,6 +46,8 @@ new class extends Component
 
     public function archive(int $id): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         NewsPost::findOrFail($id)->update(['status' => NewsPostStatusEnum::ARCHIVED]);
         $this->warning(__('Article archived.'));
     }
@@ -63,6 +67,8 @@ new class extends Component
 
     public function bulkArchive(): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         $count = count($this->selected);
         NewsPost::whereIn('id', $this->selected)->update(['status' => NewsPostStatusEnum::ARCHIVED]);
         $this->confirmBulkArchiveModal = false;
@@ -74,6 +80,8 @@ new class extends Component
 
     public function bulkPublish(): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         $count = count($this->selected);
         NewsPost::whereIn('id', $this->selected)->update(['status' => NewsPostStatusEnum::PUBLISHED]);
         $this->clearSelection();
@@ -100,6 +108,8 @@ new class extends Component
 
     public function delete(): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         NewsPost::findOrFail($this->deletingId)->delete();
         $this->deleteModal = false;
         $this->deletingId = null;
@@ -122,13 +132,13 @@ new class extends Component
 
         if (filled($this->status)) {
             $label = collect(NewsPostStatusEnum::cases())
-                ->first(fn ($s) => $s->value === $this->status)?->getLabel() ?? $this->status;
+                ->first(fn ($s): bool => $s->value === $this->status)?->getLabel() ?? $this->status;
             $chips[] = ['key' => 'status', 'label' => __('Status') . ': ' . $label];
         }
 
         if (filled($this->category)) {
             $label = collect(NewsPostCategoryEnum::cases())
-                ->first(fn ($c) => $c->value === $this->category)?->getLabel() ?? $this->category;
+                ->first(fn ($c): bool => $c->value === $this->category)?->getLabel() ?? $this->category;
             $chips[] = ['key' => 'category', 'label' => __('Category') . ': ' . $label];
         }
 
@@ -144,6 +154,8 @@ new class extends Component
 
     public function publish(int $id): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         NewsPost::findOrFail($id)->update(['status' => NewsPostStatusEnum::PUBLISHED]);
         $this->success(__('Article published.'));
     }
@@ -181,10 +193,10 @@ new class extends Component
         ")->first();
 
         $statusOptions = collect(NewsPostStatusEnum::cases())
-            ->map(fn ($s) => ['id' => $s->value, 'name' => $s->getLabel()]);
+            ->map(fn ($s): array => ['id' => $s->value, 'name' => $s->getLabel()]);
 
         $categoryOptions = collect(NewsPostCategoryEnum::cases())
-            ->map(fn ($c) => ['id' => $c->value, 'name' => $c->getLabel()]);
+            ->map(fn ($c): array => ['id' => $c->value, 'name' => $c->getLabel()]);
 
         $headers = [
             ['key' => 'title',        'label' => __('Title'),    'sortable' => false],
@@ -219,7 +231,7 @@ new class extends Component
     {
         return $this->articles
             ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
+            ->map(fn (int $id): string => (string) $id)
             ->toArray();
     }
 };

@@ -9,16 +9,19 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasBreadcrumbs, Toast;
+    use HasBreadcrumbs, HasFilterDrawer, Toast;
 
     public bool $addModal = false;
 
@@ -76,6 +79,11 @@ new class extends Component
         $this->success(__('Participant added.'));
     }
 
+    public function clearFilters(): void
+    {
+        $this->seasonId = Season::current()?->id;
+    }
+
     public function confirmDelete(int $teamId): void
     {
         $this->deletingTeamId = $teamId;
@@ -109,9 +117,29 @@ new class extends Component
         $this->success(__('Participant removed.'));
     }
 
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
+    {
+        return $this->getFilterChips();
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        if ($this->seasonId !== Season::current()?->id) {
+            $seasonName = Season::find($this->seasonId)?->name ?? __('All seasons');
+            $chips[] = ['key' => 'seasonId', 'label' => __('Season') . ': ' . $seasonName];
+        }
+
+        return $chips;
+    }
+
     public function mount(): void
     {
-        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+        Gate::authorize(Permission::LeaguesManage->value);
 
         $this->seasonId = Season::current()?->id;
     }
@@ -123,6 +151,17 @@ new class extends Component
         $this->formClubStreet = '';
         $this->formTeamLetter = '';
         $this->addModal = true;
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if ($key === 'seasonId') {
+            $this->seasonId = Season::current()?->id;
+
+            return;
+        }
+
+        $this->reset([$key]);
     }
 
     public function render(): View
@@ -165,6 +204,7 @@ new class extends Component
                 ->add(__('Interclubs'), '#')
                 ->current(__('Division Setup'))
                 ->toArray(),
+            'filterChips' => $this->filterChips,
             'seasons' => Season::orderBy('start_at')->get(),
             'leagues' => $leagues,
             'participants' => $participants,

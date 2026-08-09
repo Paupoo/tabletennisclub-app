@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\Shared\Enums\Role;
+use App\Domains\Shared\Enums\TableStateEnum;
+use Livewire\Livewire;
 use Tests\Trait\CreateUser;
 
 uses(CreateUser::class);
@@ -51,7 +55,7 @@ test('admin and committee member can see create or edit buttons', function (): v
         ->assertSee(__('Modify'))
         ->assertSee(__('Delete'));
 
-    $this->actingAs($this->createFakeCommitteeMember())
+    $this->actingAs(tap($this->createFakeCommitteeMember(), fn ($u) => $u->assignRole(Role::FACILITIES->value)))
         ->get(route('admin.rooms.index'))
         ->assertSee(__('Create'))
         ->assertSee(__('Modify'))
@@ -63,6 +67,40 @@ test('members cant see create nor edit buttons', function (): void {
         ->get(route('admin.rooms.index'))
         ->assertDontSee(__('Modify'))
         ->assertDontSee(__('Delete'));
+});
+
+test('admin can add a table from the room form modal with a valid enum state', function (): void {
+    Livewire::actingAs($this->createFakeAdmin())
+        ->test('pages::club-admin.rooms.form')
+        ->set('newTableName', 'Table 16')
+        ->set('newTableState', TableStateEnum::NEEDS_REPAIR->value)
+        ->call('addTableToList')
+        ->assertHasNoErrors();
+
+    $table = Table::whereName('Table 16')->first();
+    expect($table)->not->toBeNull()
+        ->and($table->state)->toBe(TableStateEnum::NEEDS_REPAIR);
+});
+
+test('room form default table state is a valid enum value', function (): void {
+    Livewire::actingAs($this->createFakeAdmin())
+        ->test('pages::club-admin.rooms.form')
+        ->set('newTableName', 'Table 17')
+        ->call('addTableToList')
+        ->assertHasNoErrors();
+
+    expect(Table::whereName('Table 17')->first()->state)->toBe(TableStateEnum::GOOD);
+});
+
+test('room form rejects a table state outside the enum', function (): void {
+    Livewire::actingAs($this->createFakeAdmin())
+        ->test('pages::club-admin.rooms.form')
+        ->set('newTableName', 'Table 18')
+        ->set('newTableState', 'new')
+        ->call('addTableToList')
+        ->assertHasErrors(['newTableState']);
+
+    expect(Table::whereName('Table 18')->exists())->toBeFalse();
 });
 
 test('unlogged users cant access room index', function (): void {

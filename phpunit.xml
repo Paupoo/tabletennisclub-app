@@ -32,13 +32,11 @@
             <directory suffix=".php">app/Exceptions</directory>
             <directory suffix=".php">app/Providers</directory>
 
-            <!-- Middleware standards Laravel -->
-            <file>app/Http/Middleware/Authenticate.php</file>
+            <!-- Les sous-classes de middleware du squelette Laravel 10 n'existent
+                 plus : elles ne surchargeaient rien et le framework fournit les
+                 siennes. Seul RedirectIfAuthenticated reste, avec sa redirection
+                 propre au projet. -->
             <file>app/Http/Middleware/RedirectIfAuthenticated.php</file>
-            <file>app/Http/Middleware/TrustProxies.php</file>
-            <file>app/Http/Middleware/EncryptCookies.php</file>
-            <file>app/Http/Middleware/ValidateSignature.php</file>
-            <file>app/Http/Middleware/VerifyCsrfToken.php</file>
 
             <!-- Si vous avez des helpers/config -->
             <!-- <directory>app/Helpers</directory> -->
@@ -58,18 +56,35 @@
         <!-- Array cache is per-process and reset with the app each test: no file-cache
              directory races under parallel testing, and no cross-test cache leakage. -->
         <env name="CACHE_DRIVER" value="array" />
+        <!-- Everything below used to live only in .env.testing, which is not
+             tracked. The suite was therefore green on a machine that happened to
+             have that file and red on a fresh clone: the first CI run lost 22
+             tests to TransportException, because .env.example asks for SMTP and
+             no mail server answers on a runner. Forced here so the suite carries
+             its own environment and CI cannot drift from a laptop again.
+
+             Keep .env.testing in step with this block if you edit it; these values
+             mirror it exactly. -->
+        <env name="MAIL_MAILER" value="array" force="true" />
+        <!-- sync runs queued work inline, so a test asserting on the effect of a
+             job does not have to drain a queue table. -->
+        <env name="QUEUE_CONNECTION" value="sync" force="true" />
+        <env name="SESSION_DRIVER" value="array" force="true" />
+        <!-- The default 12 rounds are deliberately slow; every factory that makes
+             a user pays for them. -->
+        <env name="BCRYPT_ROUNDS" value="4" force="true" />
     </php>
 
-    <coverage>
-        <report>
-            <!-- Rapport HTML détaillé avec couleurs gradient-->
-            <html outputDirectory="tests/Coverage/html" lowUpperBound="50" highLowerBound="80"/>
+    <!-- Il n'y a volontairement plus de bloc <coverage><report>. Déclarer un
+         rapport le rend obligatoire à chaque exécution : les workers parallèles
+         doivent alors produire un fichier de couverture, et sur une machine sans
+         driver — un runner CI en `coverage: none` — paratest s'arrête sur
+         MissingResultsException alors que les 3101 tests viennent de passer.
 
-            <!-- Rapport texte -->
-            <text outputFile="tests/Coverage/coverage.txt" showUncoveredFiles="false"/>
+         En local l'effet était l'inverse mais aussi coûteux : Xdebug étant
+         présent, chaque `composer test` réécrivait tests/Coverage/html.
 
-            <!-- Optionnel : pour les CI/CD -->
-            <!-- <clover outputFile="tests/Coverage/clover.xml"/> -->
-        </report>
-    </coverage>
+         La couverture reste disponible à la demande, via les options de ligne
+         de commande « coverage » et « coverage-html » de `php artisan test`.
+         Le bloc <source> ci-dessus continue de définir ce qui est mesuré. -->
 </phpunit>

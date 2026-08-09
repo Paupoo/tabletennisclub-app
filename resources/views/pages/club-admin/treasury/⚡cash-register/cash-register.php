@@ -5,11 +5,12 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Rule;
@@ -54,12 +55,7 @@ new class extends Component
 
     public function confirmChangeHolder(): void
     {
-        /** @var User $auth */
-        $auth = Auth::user();
-
-        if (! $auth->is_admin && $auth->committee_role !== CommitteeRolesEnum::TREASURER) {
-            abort(403);
-        }
+        Gate::authorize(Permission::CashRegisterHolderChange->value);
 
         $this->validateOnly('newHolderUserId');
 
@@ -76,12 +72,7 @@ new class extends Component
         $this->validateOnly('newRegisterName');
         $this->validateOnly('newRegisterHolderUserId');
 
-        /** @var User $auth */
-        $auth = Auth::user();
-
-        if (! $auth->is_admin && $auth->committee_role !== CommitteeRolesEnum::TREASURER) {
-            abort(403);
-        }
+        Gate::authorize(Permission::CashRegisterHolderChange->value);
 
         $register = CashRegister::create([
             'name' => $this->newRegisterName,
@@ -102,12 +93,7 @@ new class extends Component
 
     public function openChangeHolder(): void
     {
-        /** @var User $auth */
-        $auth = Auth::user();
-
-        if (! $auth->is_admin && $auth->committee_role !== CommitteeRolesEnum::TREASURER) {
-            abort(403);
-        }
+        Gate::authorize(Permission::CashRegisterHolderChange->value);
 
         $this->newHolderUserId = $this->register?->held_by_user_id;
         $this->changeHolderModal = true;
@@ -189,7 +175,7 @@ new class extends Component
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get(['id', 'first_name', 'last_name'])
-            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->first_name . ' ' . $u->last_name]);
+            ->map(fn (User $u): array => ['id' => $u->id, 'name' => $u->first_name . ' ' . $u->last_name]);
     }
 
     protected function breadcrumbChain(): Breadcrumb

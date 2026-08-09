@@ -4,42 +4,19 @@
 
 <div x-data="{ mobileSearchOpen: false, mobileActionsOpen: false }">
     <x-header :title="__('Bank Transactions')" :subtitle="__('Imported bank statements')" separator progress-indicator>
-        <x-slot:middle class="!justify-end">
-            <div class="hidden lg:block">
-                <x-input
+        <x-slot:middle>
+            <div class="hidden w-full lg:block">
+                <x-input class="w-full" clearable icon="o-magnifying-glass"
                     :placeholder="__('Search counterparty, reference...')"
-                    wire:model.live.debounce.300ms="search"
-                    icon="o-magnifying-glass"
-                    class="border-none bg-base-200 w-64" />
+                    wire:model.live.debounce.300ms="search" />
             </div>
         </x-slot:middle>
         <x-slot:actions>
             {{-- Mobile: 🔍 · filter · ☰ --}}
-            <div class="flex items-center gap-1 lg:hidden">
-                <button class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true">
-                    <x-icon name="o-magnifying-glass" class="h-5 w-5" />
-                </button>
-                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                    wire:click="$set('filterDrawer', true)">
-                    <x-icon name="o-funnel" class="h-5 w-5" />
-                    @if (count($filterChips) > 0)
-                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
-                    @endif
-                </button>
-                <button class="btn btn-primary btn-circle btn-sm" @click="mobileActionsOpen = true">
-                    <x-icon name="o-bars-3" class="h-5 w-5" />
-                </button>
-            </div>
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" />
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
-                <x-button
-                    icon="o-funnel"
-                    class="btn-outline btn-sm {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                    wire:click="$set('filterDrawer', true)">
-                    @if (count($filterChips) > 0)
-                        <x-badge value="{{ count($filterChips) }}" class="badge-primary badge-sm" />
-                    @endif
-                </x-button>
+                <x-admin.shared.filters-button :count="count($filterChips)" />
                 <x-button
                     :label="__('Import CSV')"
                     icon="o-arrow-up-tray"
@@ -62,7 +39,8 @@
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
                     placeholder="{{ __('Search counterparty, reference...') }}" />
             </div>
-            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+            <button type="button" @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm"
+                aria-label="{{ __('Close the search') }}">
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
@@ -72,39 +50,27 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- Stats --}}
-    <div class="grid grid-cols-3 gap-4 mb-6">
-        <x-card class="border border-base-200 bg-base-100" shadow>
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('Total') }}</div>
-                    <div class="text-2xl font-black mt-1">{{ $this->stats['total'] }}</div>
-                    <div class="text-xs opacity-60 mt-0.5">{{ __('transactions imported') }}</div>
-                </div>
-                <x-icon name="o-building-library" class="w-10 h-10 opacity-20" />
-            </div>
-        </x-card>
+    <div class="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-3">
+        <x-admin.shared.stat-card
+            :label="__('Total')"
+            :value="$this->stats['total']"
+            :hint="__('transactions imported')"
+            icon="o-building-library" />
 
-        <x-card class="border border-success/20 bg-success/5" shadow>
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('Reconciled') }}</div>
-                    <div class="text-2xl font-black mt-1">{{ $this->stats['reconciled'] }}</div>
-                    <div class="text-xs opacity-60 mt-0.5">{{ __('matched to a payment') }}</div>
-                </div>
-                <x-icon name="o-check-badge" class="w-10 h-10 text-success opacity-40" />
-            </div>
-        </x-card>
+        <x-admin.shared.stat-card
+            :label="__('Reconciled')"
+            :value="$this->stats['reconciled']"
+            :hint="__('matched to a payment')"
+            icon="o-check-badge"
+            color="success" />
 
-        <x-card class="border border-warning/20 bg-warning/5" shadow>
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('Unreconciled') }}</div>
-                    <div class="text-2xl font-black mt-1">{{ $this->stats['unreconciled'] }}</div>
-                    <div class="text-xs opacity-60 mt-0.5">{{ __('incoming, no match yet') }}</div>
-                </div>
-                <x-icon name="o-clock" class="w-10 h-10 text-warning opacity-40" />
-            </div>
-        </x-card>
+        <x-admin.shared.stat-card
+            :label="__('Unreconciled')"
+            :value="$this->stats['unreconciled']"
+            :hint="__('incoming, no match yet')"
+            icon="o-clock"
+            color="warning"
+            class="col-span-2 lg:col-span-1" />
     </div>
 
     <x-card class="bg-base-100 border-none shadow-sm">
@@ -251,7 +217,7 @@
         :title="__('Delete transactions')"
         :confirm-label="__('Delete')"
         confirmClass="btn-error"
-        confirmAction="bulkDelete">
+        confirmAction="bulkDelete" :open="$confirmDeleteModal">
         <div class="space-y-3">
             <p class="text-sm">
                 {{ trans_choice(
@@ -262,7 +228,7 @@
             </p>
             @if ($reconciledInSelection > 0)
             <div class="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
-                <x-icon name="o-exclamation-triangle" class="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                <x-icon name="o-exclamation-triangle" class="w-4 h-4 text-warning-content shrink-0 mt-0.5" />
                 <span>
                     {{ trans_choice(
                         '{1} :count of the selected transactions is already reconciled with a payment and will be unlinked.|[2,*] :count of the selected transactions are already reconciled with payments and will be unlinked.',
@@ -315,7 +281,7 @@
     {{-- ========================================== --}}
     {{-- Modal : Import                             --}}
     {{-- ========================================== --}}
-    <x-modal wire:model="importModal" :title="__('Import Bank Statement')" separator>
+    <x-app-modal wire:model="importModal" :title="__('Import Bank Statement')" separator :open="$importModal">
         <div class="space-y-4">
             <p class="text-sm opacity-70">
                 {{ __('Upload your bank export (ODS, XLSX, CSV). Transactions will be imported and available for reconciliation.') }}
@@ -326,6 +292,7 @@
             <x-file
                 wire:model="importFile"
                 :label="__('Bank file')"
+                :aria-label="__('Bank file')"
                 accept=".ods,.xlsx,.xls,.csv,.txt"
                 hint="ODS · XLSX · CSV" />
         </div>
@@ -340,7 +307,7 @@
                 :disabled="! $importFile"
                 spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
     <x-admin.shared.mobile-actions>

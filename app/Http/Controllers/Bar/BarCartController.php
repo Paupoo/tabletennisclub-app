@@ -12,9 +12,9 @@ use Illuminate\View\View;
 
 class BarCartController extends Controller
 {
-    private const ACTION_PAY_NOW = 'pay_now';
+    private const string ACTION_PAY_NOW = 'pay_now';
 
-    private const ACTION_VALIDATE = 'validate';
+    private const string ACTION_VALIDATE = 'validate';
 
     public function __construct(private readonly BarCartService $cartService)
     {

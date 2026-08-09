@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
 
 const ROSTER = 'pages::club-admin.subscriptions.roster';
@@ -13,13 +14,12 @@ const ROSTER = 'pages::club-admin.subscriptions.roster';
 beforeEach(function (): void {
     $this->season = makeActiveSeason();
 
-    $this->manager = User::factory()->create([
-        'is_committee_member' => true,
+    // Editing the roster is the `membres` duty; the title alone no longer grants it.
+    $this->manager = User::factory()->isCommitteeMember()->withRole(Role::MEMBERS)->create([
         'committee_role' => CommitteeRolesEnum::SECRETARY,
     ]);
 
-    $this->viewer = User::factory()->create([
-        'is_committee_member' => true,
+    $this->viewer = User::factory()->isCommitteeMember()->create([
         'committee_role' => CommitteeRolesEnum::TREASURER,
     ]);
 });
@@ -83,6 +83,49 @@ describe('listing', function (): void {
         Livewire::actingAs($this->manager)
             ->test(ROSTER)
             ->assertSee('B2');
+    });
+});
+
+describe('active members only', function (): void {
+    it('hides members whose subscription is not confirmed', function (string $status): void {
+        rosterMember($this->season, ['first_name' => 'Ghost', 'last_name' => 'Member'], ['status' => $status]);
+
+        Livewire::actingAs($this->manager)
+            ->test(ROSTER)
+            ->assertDontSee('Ghost');
+    })->with(['pending', 'cancelled', 'refunded']);
+
+    it('shows members whose subscription is confirmed or paid', function (string $status): void {
+        rosterMember($this->season, ['first_name' => 'Real', 'last_name' => 'Member'], ['status' => $status]);
+
+        Livewire::actingAs($this->manager)
+            ->test(ROSTER)
+            ->assertSee('Real');
+    })->with(['confirmed', 'paid']);
+
+    /**
+     * Régression #29 : une inscription rejetée puis resoumise créait une
+     * seconde ligne, et le membre apparaissait deux fois dans l'effectif.
+     */
+    it('lists a member once after a rejected registration was resubmitted', function (): void {
+        $member = User::factory()->create(['first_name' => 'Aurelien', 'last_name' => 'Resubmitted']);
+
+        Subscription::factory()->create([
+            'user_id' => $member->id,
+            'season_id' => $this->season->id,
+            'status' => 'cancelled',
+        ]);
+
+        Subscription::factory()->create([
+            'user_id' => $member->id,
+            'season_id' => $this->season->id,
+            'status' => 'confirmed',
+        ]);
+
+        Livewire::actingAs($this->manager)
+            ->test(ROSTER)
+            ->assertSee('Aurelien')
+            ->assertViewHas('rows', fn ($rows): bool => $rows->where('name', 'Aurelien Resubmitted')->count() === 1);
     });
 });
 

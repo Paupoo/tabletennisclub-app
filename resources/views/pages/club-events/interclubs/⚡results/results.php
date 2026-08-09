@@ -10,19 +10,23 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubResultEnum;
 use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasBreadcrumbs, Toast;
+    use HasBreadcrumbs, HasFilterDrawer, Toast;
 
     // Modal state
     public bool $deleteModal = false;
@@ -58,6 +62,11 @@ new class extends Component
 
     public bool $teamForfeitModal = false;
 
+    public function clearFilters(): void
+    {
+        $this->seasonId = Season::current()?->id;
+    }
+
     public function confirmDelete(int $matchResultId): void
     {
         $this->deletingInterclubResultId = $matchResultId;
@@ -92,6 +101,26 @@ new class extends Component
         $this->deletingInterclubResultId = null;
     }
 
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
+    {
+        return $this->getFilterChips();
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        if ($this->seasonId !== Season::current()?->id) {
+            $seasonName = Season::find($this->seasonId)?->name ?? __('All seasons');
+            $chips[] = ['key' => 'seasonId', 'label' => __('Season') . ': ' . $seasonName];
+        }
+
+        return $chips;
+    }
+
     public function maxPoints(): int
     {
         return $this->editingTeamCategory === LeagueCategory::MEN->name ? 16 : 10;
@@ -101,10 +130,9 @@ new class extends Component
     {
         $this->seasonId = Season::current()?->id;
 
-        $user = Auth::user();
-        if (! $user->is_admin && ! $user->is_committee_member) {
-            abort_unless(Team::where('captain_id', $user->id)->exists(), 403);
-        }
+        // Results delegate, or captain of at least one team; authorizeTeam()
+        // then narrows each mutation to the teams actually captained.
+        Gate::authorize('access-results');
     }
 
     public function openEditModal(int $matchResultId): void
@@ -122,7 +150,7 @@ new class extends Component
         $this->scoreUs = null;
         $this->scoreThem = null;
         if ($mr->score && str_contains($mr->score, '-')) {
-            [$home, $away] = array_map('intval', explode('-', $mr->score, 2));
+            [$home, $away] = array_map(intval(...), explode('-', $mr->score, 2));
             $this->scoreUs = $this->isHome ? $home : $away;
             $this->scoreThem = $this->isHome ? $away : $home;
         }
@@ -144,6 +172,17 @@ new class extends Component
         $this->teamForfeitModal = true;
     }
 
+    public function removeFilter(string $key): void
+    {
+        if ($key === 'seasonId') {
+            $this->seasonId = Season::current()?->id;
+
+            return;
+        }
+
+        $this->reset([$key]);
+    }
+
     public function render(): View
     {
         return $this->view()->title(__('Results'));
@@ -163,7 +202,7 @@ new class extends Component
                 function (string $attribute, mixed $value, \Closure $fail) use ($maxPoints): void {
                     if ($this->scoreUs !== null && $this->scoreThem !== null) {
                         if ($this->scoreUs + $this->scoreThem !== $maxPoints) {
-                            $fail(__('Le score total doit être égal à :max points.', ['max' => $maxPoints]));
+                            $fail(__('The total score must equal :max points.', ['max' => $maxPoints]));
                         }
                     }
                 },
@@ -253,14 +292,14 @@ new class extends Component
             ->inClub()
             ->where('season_id', $this->seasonId);
 
-        if (! $user->is_admin && ! $user->is_committee_member) {
+        if (! $user->can(Permission::ResultsManage->value)) {
             $teamsQuery->where('captain_id', $user->id);
         }
 
         $teams = $teamsQuery->get()
-            ->sortBy(fn (Team $t) => $categoryOrder[$t->league?->category] ?? 99);
+            ->sortBy(fn (Team $t): int => $categoryOrder[$t->league?->category] ?? 99);
 
-        $stats = $teams->mapWithKeys(fn (Team $team) => [
+        $stats = $teams->mapWithKeys(fn (Team $team): array => [
             $team->id => $this->computeStats($team->interclubResults),
         ]);
 
@@ -269,6 +308,7 @@ new class extends Component
         $matchDayMap = $this->seasonId ? Interclub::matchDayMap($this->seasonId) : [];
 
         return [
+            'filterChips' => $this->filterChips,
             'seasons' => Season::orderBy('start_at')->get(),
             'teamsByCategory' => $teamsByCategory,
             'stats' => $stats,
@@ -276,9 +316,9 @@ new class extends Component
             'matchTypeOptions' => [
                 ['value' => 'normal',                   'label' => __('Normal')],
                 ['value' => 'forfeit_opponent',         'label' => __('Forfait adverse')],
-                ['value' => 'forfeit_general_opponent', 'label' => __('Forfait général adverse')],
+                ['value' => 'forfeit_general_opponent', 'label' => __('Opponent general forfeit')],
                 ['value' => 'forfeit_us',               'label' => __('Notre forfait')],
-                ['value' => 'forfeit_general_us',       'label' => __('Notre forfait général')],
+                ['value' => 'forfeit_general_us',       'label' => __('Our general forfeit')],
                 ['value' => 'bye',                      'label' => __('Bye')],
             ],
             'breadcrumbs' => Breadcrumb::make()->home()->add('Interclubs', '#')->results()->toArray(),
@@ -292,22 +332,25 @@ new class extends Component
             ->current(__('Results'));
     }
 
+    /**
+     * A club-wide manager records any team's result; a captain only their own.
+     */
     private function authorizeTeam(int $teamId): void
     {
-        $user = Auth::user();
-        if ($user->is_admin || $user->is_committee_member) {
+        if (Auth::user()->can(Permission::ResultsManage->value)) {
             return;
         }
-        abort_unless(Team::where('id', $teamId)->where('captain_id', $user->id)->exists(), 403);
+
+        abort_unless(Team::where('id', $teamId)->where('captain_id', Auth::id())->exists(), 403);
     }
 
     private function computeStats(Collection $interclubResults): array
     {
-        $real = $interclubResults->where('is_bye', false)->filter(fn ($mr) => $mr->result !== null);
+        $real = $interclubResults->where('is_bye', false)->filter(fn ($mr): bool => $mr->result !== null);
         $played = $real->count();
-        $wins = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResultEnum::WIN, InterclubResultEnum::FORFEIT_WIN]))->count();
-        $losses = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResultEnum::LOSS, InterclubResultEnum::FORFEIT_LOSS]))->count();
-        $draws = $real->filter(fn ($mr) => $mr->result === InterclubResultEnum::DRAW)->count();
+        $wins = $real->filter(fn ($mr): bool => in_array($mr->result, [InterclubResultEnum::WIN, InterclubResultEnum::FORFEIT_WIN]))->count();
+        $losses = $real->filter(fn ($mr): bool => in_array($mr->result, [InterclubResultEnum::LOSS, InterclubResultEnum::FORFEIT_LOSS]))->count();
+        $draws = $real->filter(fn ($mr): bool => $mr->result === InterclubResultEnum::DRAW)->count();
 
         return [
             'played' => $played,

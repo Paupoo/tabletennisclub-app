@@ -1,0 +1,541 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Actions/ClubAdmin/Payments/SendPayementInvite.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Trainings\\Models\\TrainingPack\:\:\$pivot\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Actions/ClubAdmin/Subscriptions/CalculatePriceAction.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:affiliated\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Actions/ClubAdmin/Subscriptions/SubscribeToSeasonAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$registration\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Actions/Meetings/RespondToMeetingRsvp.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$has_paid\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Actions/Tournament/ToggleHasPaidTournamentAction.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:users\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Actions/User/SyncFamilyGroupMembersAction.php
+
+		-
+			message: '#^Parameter \#1 \$group of static method App\\Actions\\User\\SyncFamilyGroupMembersAction\:\:deleteIfTooSmall\(\) expects App\\Domains\\ClubAdmin\\Users\\Models\\FamilyGroup, Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Actions/User/SyncFamilyGroupMembersAction.php
+
+		-
+			message: '#^Property App\\Domains\\ClubAdmin\\Contact\\Models\\Spam\:\:\$created_at \(Illuminate\\Support\\Carbon\|null\) does not accept string\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Console/Commands/ParseSpamLogCommand.php
+
+		-
+			message: '#^Property App\\Domains\\ClubAdmin\\Contact\\Models\\Spam\:\:\$updated_at \(Illuminate\\Support\\Carbon\|null\) does not accept string\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Console/Commands/ParseSpamLogCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Bar\\Models\\BarOrderItem\:\:\$total_quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Bar/Services/CashSheetService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Bar\\Models\\BarOrderItem\:\:\$total_revenue\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Bar/Services/CashSheetService.php
+
+		-
+			message: '#^PHPDoc type array\<int, string\> of property App\\Domains\\ClubAdmin\\Club\\Models\\Room\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Domains/ClubAdmin/Club/Models/Room.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Domains/ClubAdmin/Fines/Models/Fine.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tournament\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/ClubAdmin/Payment/Notifications/WeeklyRefundReminderNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/ClubAdmin/Payment/Notifications/WeeklyRefundReminderNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\ClubAdmin\\Subscriptions\\Models\\Subscription\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/ClubAdmin/Subscriptions/Models/Subscription.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 2
+			path: app/Domains/ClubAdmin/Subscriptions/Models/Subscription.php
+
+		-
+			message: '#^Property App\\Domains\\ClubAdmin\\Subscriptions\\Models\\Subscription\:\:\$state is unused\.$#'
+			identifier: property.unused
+			count: 1
+			path: app/Domains/ClubAdmin/Subscriptions/Models/Subscription.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Contracts\\Database\\Query\\Builder\:\:whereDoesntHave\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Domains/ClubAdmin/Users/Models/User.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:competitor\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Domains/ClubAdmin/Users/Models/User.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:active\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Domains/ClubAdmin/Users/Models/User.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:pendingPayment\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Domains/ClubAdmin/Users/Models/User.php
+
+		-
+			message: '#^Match arm comparison between ''expired'' and ''expired'' is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: app/Domains/ClubAdmin/Users/Models/User.php
+
+		-
+			message: '#^PHPDoc type array\<int, string\> of property App\\Domains\\ClubAdmin\\Users\\Models\\User\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Domains/ClubAdmin/Users/Models/User.php
+
+		-
+			message: '#^PHPDoc type array\<int, string\> of property App\\Domains\\ClubAdmin\\Users\\Models\\User\:\:\$hidden is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$hidden\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Domains/ClubAdmin/Users/Models/User.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,App\\Domains\\ClubAdmin\\Users\\Models\\User\>\:\:first\(\) expects \(callable\(App\\Domains\\ClubAdmin\\Users\\Models\\User, int\)\: bool\)\|null, Closure\(App\\Domains\\ClubAdmin\\Users\\Models\\Guardian\)\: bool given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Domains/ClubAdmin/Users/Models/User.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\ClubAdmin\\Users\\Models\\User\:\:\$pivot\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\ClubAdmin\\Users\\Models\\User\:\:\$registration\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$trainingPacks\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
+
+		-
+			message: '#^Method App\\Domains\\ClubAdmin\\Users\\Services\\UserCalendarService\:\:interclubs\(\) should return Illuminate\\Support\\Collection\<int, array\<string, mixed\>\> but returns Illuminate\\Support\\Collection\<int, array\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
+
+		-
+			message: '#^Method App\\Domains\\ClubAdmin\\Users\\Services\\UserCalendarService\:\:meetings\(\) should return Illuminate\\Support\\Collection\<int, array\<string, mixed\>\> but returns Illuminate\\Support\\Collection\<int, array\{startDateTime\: mixed, title\: mixed, type\: ''meeting'', meetingId\: mixed, format\: mixed, location\: mixed, meetingLink\: mixed, registrationStatus\: mixed, \.\.\.\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
+
+		-
+			message: '#^Method App\\Domains\\ClubAdmin\\Users\\Services\\UserCalendarService\:\:tournaments\(\) should return Illuminate\\Support\\Collection\<int, array\<string, mixed\>\> but returns Illuminate\\Support\\Collection\<int, array\{startDateTime\: mixed, endDate\: mixed, title\: mixed, type\: ''tournament'', tournamentId\: mixed, registrationStatus\: mixed, waitlistPosition\: mixed, confirmDeadline\: mixed, \.\.\.\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
+
+		-
+			message: '#^Method App\\Domains\\ClubAdmin\\Users\\Services\\UserCalendarService\:\:trainingSessions\(\) should return Illuminate\\Support\\Collection\<int, array\<string, mixed\>\> but returns Illuminate\\Support\\Collection\<int, array\{startDateTime\: mixed, endTime\: mixed, title\: mixed, type\: ''training'', room\: mixed, level\: mixed, coach\: string\|null, registrationStatus\: null, \.\.\.\}\>\.$#'
+			identifier: return.type
+			count: 2
+			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\ClubPosts\\Models\\EventPost\:\:\$category\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Domains/ClubPosts/Models/EventPost.php
+
+		-
+			message: '#^Method App\\Domains\\Competitions\\Interclub\\Models\\Interclub\:\:getAvailablePlayers\(\) should return Illuminate\\Database\\Eloquent\\Collection\<int, App\\Domains\\ClubAdmin\\Users\\Models\\User\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Competitions/Interclub/Models/Interclub.php
+
+		-
+			message: '#^Method App\\Domains\\Competitions\\Interclub\\Models\\Interclub\:\:getMaybePlayers\(\) should return Illuminate\\Database\\Eloquent\\Collection\<int, App\\Domains\\ClubAdmin\\Users\\Models\\User\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Competitions/Interclub/Models/Interclub.php
+
+		-
+			message: '#^Method App\\Domains\\Competitions\\Interclub\\Models\\Interclub\:\:getPendingPlayers\(\) should return Illuminate\\Database\\Eloquent\\Collection\<int, App\\Domains\\ClubAdmin\\Users\\Models\\User\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Competitions/Interclub/Models/Interclub.php
+
+		-
+			message: '#^Method App\\Domains\\Competitions\\Interclub\\Models\\Interclub\:\:getSelectedPlayers\(\) should return Illuminate\\Database\\Eloquent\\Collection\<int, App\\Domains\\ClubAdmin\\Users\\Models\\User\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Competitions/Interclub/Models/Interclub.php
+
+		-
+			message: '#^Method App\\Domains\\Competitions\\Interclub\\Models\\Interclub\:\:getUnavailablePlayers\(\) should return Illuminate\\Database\\Eloquent\\Collection\<int, App\\Domains\\ClubAdmin\\Users\\Models\\User\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Competitions/Interclub/Models/Interclub.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Competitions\\Interclub\\Models\\League\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Competitions/Interclub/Notifications/TeamCreatedNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Competitions/Tournament/Models/Pool.php
+
+		-
+			message: '#^PHPDoc tag @property has invalid value \(mixed \$0\)\: Unexpected token "\$0", expected variable at offset 2523 on line 58$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: app/Domains/Competitions/Tournament/Models/Tournament.php
+
+		-
+			message: '#^Property App\\Domains\\Competitions\\Tournament\\Models\\Tournament\:\:\$casts \(array\<string, string\>\) does not accept default value of type array\<int\|string, string\>\.$#'
+			identifier: property.defaultValue
+			count: 1
+			path: app/Domains/Competitions/Tournament/Models/Tournament.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 2
+			path: app/Domains/Competitions/Tournament/Models/TournamentPair.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 4
+			path: app/Domains/Competitions/Tournament/Services/TournamentMatchService.php
+
+		-
+			message: '#^Result of \|\| is always false\.$#'
+			identifier: booleanOr.alwaysFalse
+			count: 3
+			path: app/Domains/Competitions/Tournament/Services/TournamentMatchService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domains/Competitions/Tournament/Services/TournamentService.php
+
+		-
+			message: '#^Method App\\Domains\\Competitions\\Tournament\\Services\\TournamentService\:\:ensurePaymentExists\(\) should return App\\Domains\\ClubAdmin\\Payment\\Models\\Payment but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Competitions/Tournament/Services/TournamentService.php
+
+		-
+			message: '#^Parameter \$payment of class App\\Domains\\Competitions\\Tournament\\Notifications\\TournamentPaymentRequestNotification constructor expects App\\Domains\\ClubAdmin\\Payment\\Models\\Payment, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Domains/Competitions/Tournament/Services/TournamentService.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: App\\Domains\\Shared\\Enums\\TournamentStatusEnum\:\:SETUP$#'
+			identifier: match.unhandled
+			count: 1
+			path: app/Domains/Competitions/Tournament/Services/TournamentStatusManager.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:tables\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Domains/Competitions/Tournament/Services/TournamentTableService.php
+
+		-
+			message: '#^Cannot call method isPlayable\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Domains/Competitions/Tournament/Services/TournamentTableService.php
+
+		-
+			message: '#^PHPDoc tag @return with type array is incompatible with native type void\.$#'
+			identifier: return.phpDocType
+			count: 1
+			path: app/Domains/Competitions/Tournament/Services/TournamentTableService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$vote\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Meetings/Models/MeetingDateProposal.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 2
+			path: app/Domains/Meetings/Models/MeetingUser.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Trainings\\Models\\TrainingPack\:\:\$pivot\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domains/Subscriptions/Notifications/SubscriptionCreatedNotification.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Model\>\:\:sum\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\|string\)\: float\)\|string\|null, Closure\(App\\Domains\\Trainings\\Models\\TrainingPack\)\: float given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Domains/Subscriptions/Notifications/SubscriptionCreatedNotification.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:affiliated\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Domains/Trainings/Models/TrainingPack.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\:\:affiliated\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: app/Domains/Trainings/Models/TrainingPack.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Domains/Trainings/Models/TrainingPack.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Domains/Trainings/Notifications/TrainingPackScheduleChangedNotification.php
+
+		-
+			message: '#^Property App\\Domains\\Trainings\\Models\\Training\:\:\$end \(Illuminate\\Support\\Carbon\) does not accept string\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Domains/Trainings/Services/TrainingBuilder.php
+
+		-
+			message: '#^Property App\\Domains\\Trainings\\Models\\Training\:\:\$start \(Illuminate\\Support\\Carbon\) does not accept string\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Domains/Trainings/Services/TrainingBuilder.php
+
+		-
+			message: '#^PHPDoc tag @throws with type App\\Domains\\Trainings\\Services\\InvalidArgumens\|Exception is not subtype of Throwable$#'
+			identifier: throws.notThrowable
+			count: 1
+			path: app/Domains/Trainings/Services/TrainingDateGenerator.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Http/Controllers/ClubAdmin/DashboardController.php
+
+		-
+			message: '#^Called ''Model\:\:make\(\)'' which performs unnecessary work, use ''new Model\(\)''\.$#'
+			identifier: larastan.noModelMake
+			count: 1
+			path: app/Http/Controllers/ClubAdmin/Users/Auth/RegisteredUserController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$registration\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ClubEvents/Meeting/MeetingRsvpController.php
+
+		-
+			message: '#^Offset ''Beginners''\|''Elite''\|''Intermediate''\|''Kids''\|''Open''\|''Young potential'' on array\{Beginners\: ''Débutant'', Elite\: ''Compétition'', Intermediate\: ''Confirmé'', Kids\: ''Jeunes'', Open\: ''Tous niveaux'', ''Young potential''\: ''Jeunes espoirs''\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Http/Controllers/HomeController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Jobs/SendPaymentReminderJob.php
+
+		-
+			message: '#^Match arm comparison between ''committee'' and ''committee'' is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: app/Listeners/NotifyParticipantsOfMeeting.php
+
+		-
+			message: '#^Trait App\\Livewire\\Concerns\\HasBulkActions is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: app/Livewire/Concerns/HasBulkActions.php
+
+		-
+			message: '#^Trait App\\Livewire\\Concerns\\HasEventPostForm is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: app/Livewire/Concerns/HasEventPostForm.php
+
+		-
+			message: '#^Trait App\\Livewire\\Concerns\\HasFilterDrawer is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: app/Livewire/Concerns/HasFilterDrawer.php
+
+		-
+			message: '#^Trait App\\Livewire\\Concerns\\HasPhotoUpload is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: app/Livewire/Concerns/HasPhotoUpload.php
+
+		-
+			message: '#^Trait App\\Livewire\\Concerns\\ManagesGuardians is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: app/Livewire/Concerns/ManagesGuardians.php
+
+		-
+			message: '#^Access to an undefined property App\\Livewire\\Public\\Articles\\ArticleList\:\:\$activeFiltersCount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/Public/Articles/ArticleList.php
+
+		-
+			message: '#^Access to an undefined property App\\Livewire\\Public\\Articles\\ArticleList\:\:\$articles\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/Public/Articles/ArticleList.php
+
+		-
+			message: '#^Access to an undefined property App\\Livewire\\Public\\Events\\EventList\:\:\$activeFiltersCount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/Public/Events/EventList.php
+
+		-
+			message: '#^Access to an undefined property App\\Livewire\\Public\\Events\\EventList\:\:\$events\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/Public/Events/EventList.php
+
+		-
+			message: '#^Access to an undefined property App\\Livewire\\Public\\Events\\EventList\:\:\$nextSeason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/Public/Events/EventList.php
+
+		-
+			message: '#^Access to an undefined property App\\Livewire\\Public\\Events\\EventList\:\:\$previousSeason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/Public/Events/EventList.php
+
+		-
+			message: '#^Access to an undefined property App\\Livewire\\Public\\Results\\ResultList\:\:\$activeFiltersCount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/Public/Results/ResultList.php
+
+		-
+			message: '#^Access to an undefined property App\\Livewire\\Public\\Results\\ResultList\:\:\$availableCategories\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/Public/Results/ResultList.php
+
+		-
+			message: '#^Access to an undefined property App\\Livewire\\Public\\Results\\ResultList\:\:\$availableDivisions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/Public/Results/ResultList.php
+
+		-
+			message: '#^Access to an undefined property App\\Livewire\\Public\\Results\\ResultList\:\:\$availableTeams\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/Public/Results/ResultList.php
+
+		-
+			message: '#^Access to an undefined property App\\Livewire\\Public\\Results\\ResultList\:\:\$teamsByCategory\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/Public/Results/ResultList.php
+
+		-
+			message: '#^Property App\\Livewire\\Public\\TournamentCard\:\:\$user \(App\\Domains\\ClubAdmin\\Users\\Models\\User\) does not accept Illuminate\\Contracts\\Auth\\Authenticatable\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Livewire/Public/TournamentCard.php
+
+		-
+			message: '#^Property App\\Livewire\\Public\\TournamentCard\:\:\$user \(App\\Domains\\ClubAdmin\\Users\\Models\\User\) does not accept Illuminate\\Contracts\\Auth\\Authenticatable\|null\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Livewire/Public/TournamentCard.php
+
+		-
+			message: '#^Method App\\Livewire\\Tournament\\PlayerRegistration\:\:IsFull\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Livewire/Tournament/PlayerRegistration.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Services/ClubAdmin/Contact/EmailTemplateRenderer.php

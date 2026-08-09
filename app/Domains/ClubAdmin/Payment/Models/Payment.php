@@ -24,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property int $invitation_counter
+ * @property Carbon|null $last_reminded_at
  * @property int|null $refund_transaction_id
  * @property string $payment_method
  * @property-read Model|\Eloquent $payable
@@ -57,6 +58,7 @@ class Payment extends Model
     protected $casts = [
         'amount_due' => 'integer',   // stocké en centimes
         'amount_paid' => 'integer',  // stocké en centimes
+        'last_reminded_at' => 'datetime',
     ];
 
     protected $fillable = [

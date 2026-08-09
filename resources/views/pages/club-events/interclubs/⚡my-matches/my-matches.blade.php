@@ -28,30 +28,26 @@
     @endif
 
     @if ($grouped->isEmpty())
-        <x-empty-state icon="o-calendar" :title="__('No upcoming matches')"
-            :description="__('You are not registered in any team for this season.')" />
+        <x-empty-state icon="o-calendar" :heading="__('No upcoming matches')"
+            :message="__('You are not registered in any team for this season.')" />
     @else
-        @php
-            $catMeta = [
-                'Hommes'   => ['bg' => 'bg-blue-50',  'border' => 'border-blue-200',  'text' => 'text-blue-700',  'dot' => 'bg-blue-500'],
-                'Vétérans' => ['bg' => 'bg-amber-50', 'border' => 'border-amber-200', 'text' => 'text-amber-700', 'dot' => 'bg-amber-500'],
-                'Dames'    => ['bg' => 'bg-pink-50',  'border' => 'border-pink-200',  'text' => 'text-pink-700',  'dot' => 'bg-pink-500'],
-            ];
-        @endphp
-
         <div class="space-y-10">
             @foreach ($grouped as $catLabel => $teamGroups)
-                @php $cat = $catMeta[$catLabel] ?? ['bg' => 'bg-gray-50', 'border' => 'border-gray-200', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400']; @endphp
+                @php
+                    $catEnum = $teamGroups->first()?->first()['category'] ?? null;
+                    $chipClasses = $catEnum?->chipClasses() ?? 'bg-base-200 border-base-300 text-base-content/70';
+                    $dotClasses = $catEnum?->dotClasses() ?? 'bg-base-300';
+                @endphp
 
                 <section x-data="{ open: true }">
                     {{-- Category header --}}
                     <button type="button" class="mb-6 flex w-full items-center gap-3 text-left" @click="open = !open">
-                        <span class="inline-flex items-center gap-2 rounded-full {{ $cat['bg'] }} {{ $cat['border'] }} border px-4 py-1.5">
-                            <span class="h-2 w-2 rounded-full {{ $cat['dot'] }}"></span>
-                            <span class="text-sm font-bold {{ $cat['text'] }} uppercase tracking-wide">{{ $catLabel }}</span>
-                            <span class="text-xs {{ $cat['text'] }} opacity-60">{{ $teamGroups->count() }} équipe{{ $teamGroups->count() > 1 ? 's' : '' }}</span>
+                        <span class="inline-flex items-center gap-2 rounded-full {{ $chipClasses }} border px-4 py-1.5">
+                            <span class="h-2 w-2 rounded-full {{ $dotClasses }}"></span>
+                            <span class="text-sm font-bold uppercase tracking-wide">{{ $catLabel }}</span>
+                            <span class="text-xs opacity-60">{{ trans_choice(':count team|:count teams', $teamGroups->count()) }}</span>
                         </span>
-                        <div class="flex-1 border-t {{ $cat['border'] }}"></div>
+                        <div class="flex-1 border-t border-base-200"></div>
                         <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
                     </button>
 
@@ -65,7 +61,7 @@
                                         @click="open = !open"
                                     >
                                         <x-icon name="o-user-group" class="h-4 w-4 opacity-40" />
-                                        <span class="flex-1 text-sm font-black uppercase tracking-widest opacity-60">{{ $teamName }}</span>
+                                        <span class="flex-1 text-sm font-bold uppercase tracking-wide opacity-60">{{ $teamName }}</span>
                                         <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
                                     </button>
 
@@ -85,8 +81,8 @@
                                     <div class="flex min-w-0 flex-1 items-center gap-4">
                                         {{-- Numéro semaine --}}
                                         <div class="bg-base-200 flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl">
-                                            <div class="text-[8px] font-black uppercase opacity-40">S</div>
-                                            <div class="text-sm font-black leading-none">{{ $matchDayMap[$match['week_number']] ?? $match['week_number'] }}</div>
+                                            <div class="text-[10px] font-semibold uppercase opacity-60">S</div>
+                                            <div class="text-sm font-bold leading-none">{{ $matchDayMap[$match['week_number']] ?? $match['week_number'] }}</div>
                                         </div>
 
                                         <div class="min-w-0">
@@ -98,8 +94,7 @@
                                                 @endif
                                                 <span class="font-bold">vs {{ $match['opponent'] }}</span>
                                                 @if ($match['is_selected'])
-                                                    <x-badge class="badge-primary badge-sm font-bold"
-                                                        value="{{ __('Selected') }}" icon="o-check" />
+                                                    <x-admin.shared.status-badge status="selected" />
                                                 @endif
                                                 @if ($urgency)
                                                     <x-badge class="badge-warning badge-sm animate-pulse font-bold"
@@ -114,7 +109,7 @@
                                                 <span class="truncate">{{ $match['address'] }}</span>
                                             </div>
                                             @if ($match['availability_note'])
-                                                <div class="text-base-content/40 mt-1 text-[11px] italic">
+                                                <div class="text-base-content/50 mt-1 text-xs italic">
                                                     "{{ $match['availability_note'] }}"
                                                 </div>
                                             @endif
@@ -128,7 +123,7 @@
                                                 :value="$avail->label()" />
                                         @else
                                             <span
-                                                class="text-base-content/30 text-[11px] font-bold uppercase tracking-wide">{{ __('No response') }}</span>
+                                                class="text-base-content/50 text-xs font-bold uppercase tracking-wide">{{ __('No response') }}</span>
                                         @endif
 
                                         <x-dropdown>
@@ -157,7 +152,7 @@
                                                 wire:click="markAvailability({{ $match['id'] }}, '{{ \App\Domains\Shared\Enums\InterclubAvailability::MAYBE->value }}')"
                                                 :title="__('Maybe')"
                                                 icon="o-question-mark-circle"
-                                                class="text-warning" />
+                                                class="text-warning-content" />
 
                                             <x-menu-item
                                                 wire:click="markAvailability({{ $match['id'] }}, '{{ \App\Domains\Shared\Enums\InterclubAvailability::UNAVAILABLE->value }}')"
@@ -203,7 +198,7 @@
     @endif
 
     <x-confirm-modal model="bulkUnavailableModal" :title="__('Mark all as unavailable?')"
-        :confirmLabel="__('Confirm')" confirmClass="btn-error" confirmAction="bulkMarkUnavailable">
+        :confirmLabel="__('Confirm')" confirmClass="btn-error" confirmAction="bulkMarkUnavailable" :open="$bulkUnavailableModal">
         <p>{{ __('This will mark all your upcoming matches as unavailable. This action can be undone match by match.') }}</p>
     </x-confirm-modal>
 </div>

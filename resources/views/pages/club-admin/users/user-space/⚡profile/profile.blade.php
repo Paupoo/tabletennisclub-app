@@ -1,29 +1,27 @@
-@php
-    if (!isset($user)) { $user = App\Models\User::firstOrFail(); }
-@endphp
-
 <x-slot:breadcrumbs>
     <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header :title="__('My Profile')" :subtitle="__('Member since Sept 2024')" separator progress-indicator>
+    <x-header :title="__('My Profile')"
+        :subtitle="__('Member since :date', ['date' => $memberSince->translatedFormat('F Y')])"
+        separator progress-indicator>
         <x-slot:actions>
             <x-button :label="__('Edit Profile')" icon="o-pencil" class="btn-outline btn-sm"
                 @click="$wire.drawer = true" responsive />
         </x-slot:actions>
     </x-header>
 
-    <div class="flex gap-8 items-start">
+    <div class="grid grid-cols-1 gap-8 items-start lg:grid-cols-3">
 
         {{-- ════════════════════════════════
              SIDEBAR GAUCHE
         ════════════════════════════════ --}}
-        <div class="w-72 shrink-0 space-y-4">
+        <div class="space-y-4">
 
             {{-- Avatar + nom + badges --}}
            
-            <x-admin.shared.side-card shadow>
+            <x-card>
                 <div class="flex flex-col items-center text-center gap-3">
                 <x-avatar :image="$user->photo ?? '/images/empty-user.jpg'" class="!w-24 !rounded-full" />
                 <div>
@@ -31,11 +29,11 @@
                     <div class="text-sm opacity-50 mt-0.5">{{ $user->is_active ? __('Active member') : __('Inactive member') }}</div>
                 </div>
                 <div class="flex flex-wrap justify-center gap-1">
-                    @if ($user->is_admin)
+                    @if ($user->hasRole(\App\Domains\Shared\Enums\Role::ADMINISTRATOR->value))
                         <x-badge value="{{ __('Admin') }}" icon="o-power" class="badge-primary badge-sm" />
                     @endif
-                    @if ($user->is_committee_member && $user->committee_role)
-                        <x-badge :value="$user->committee_role->label()" icon="o-star" class="badge-secondary badge-sm text-black" />
+                    @if ($user->committee_role)
+                        <x-badge :value="$user->committee_role->label()" icon="o-star" class="badge-secondary badge-sm text-secondary-content" />
                     @endif
                     @if (!$user->is_active)
                         <x-badge value="{{ __('Inactive') }}" class="badge-neutral badge-sm" />
@@ -44,29 +42,53 @@
                 <x-button :label="__('Edit')" icon="o-pencil" class="btn-outline btn-sm w-fit"
                     @click="$wire.drawer = true" />
             </div>
-            </x-admin.shared.side-card>
+            </x-card>
 
             {{-- Infos contact --}}
-            <x-admin.shared.side-card shadow>
+            <x-card>
             <div class="divide-y divide-base-200">
                 <div class="flex items-center gap-3 px-4 py-3">
-                    <x-icon name="o-shield-check" class="w-4 h-4 text-success shrink-0" />
-                    <div class="min-w-0">
-                        <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Status') }}</div>
-                        <div class="text-sm font-semibold text-success truncate">{{ __('Active · till 08/2026') }}</div>
-                    </div>
+                    @if (in_array($currentSubscription?->status, ['confirmed', 'paid'], true))
+                        <x-icon name="o-shield-check" class="w-4 h-4 text-success shrink-0" />
+                        <div class="min-w-0">
+                            <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Status') }}</div>
+                            <div class="text-sm font-semibold text-success truncate">
+                                {{ __('Affiliated · season :season', ['season' => $currentSeason->name]) }}
+                            </div>
+                        </div>
+                    @elseif ($currentSubscription?->status === 'pending')
+                        <x-icon name="o-clock" class="w-4 h-4 text-warning-content shrink-0" />
+                        <div class="min-w-0">
+                            <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Status') }}</div>
+                            <div class="text-sm font-semibold text-warning-content truncate">
+                                {{ __('Affiliation awaiting validation') }}
+                            </div>
+                        </div>
+                    @else
+                        <x-icon name="o-shield-exclamation" class="w-4 h-4 opacity-40 shrink-0" />
+                        <div class="min-w-0">
+                            <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Status') }}</div>
+                            <div class="text-sm font-semibold truncate">
+                                <a href="{{ route('admin.user.registration-management', $user) }}" class="link link-hover">
+                                    {{ __('Not affiliated this season') }}
+                                </a>
+                            </div>
+                        </div>
+                    @endif
                 </div>
-                <div class="flex items-center gap-3 px-4 py-3">
-                    <x-icon name="o-chevron-double-up" class="w-4 h-4 opacity-40 shrink-0" />
-                    <div class="min-w-0">
-                        <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Ranking') }}</div>
-                        <div class="text-sm font-semibold truncate">{{ $user?->ranking ?? 'B4' }}</div>
+                @if ($user->ranking)
+                    <div class="flex items-center gap-3 px-4 py-3">
+                        <x-icon name="o-chevron-double-up" class="w-4 h-4 opacity-40 shrink-0" />
+                        <div class="min-w-0">
+                            <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Ranking') }}</div>
+                            <div class="text-sm font-semibold truncate">{{ $user->ranking }}</div>
+                        </div>
                     </div>
-                </div>
+                @endif
                 <div class="flex items-center gap-3 px-4 py-3">
                     <x-icon name="o-identification" class="w-4 h-4 opacity-40 shrink-0" />
                     <div class="min-w-0">
-                        <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Licence') }}</div>
+                        <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Licence') }}</div>
                         <div class="text-sm font-semibold truncate">
                             {{ $user->is_competitor ? __('Competitor') : __('Recreative') }}
                         </div>
@@ -75,7 +97,7 @@
                 <div class="flex items-center gap-3 px-4 py-3">
                     <x-icon name="o-map-pin" class="w-4 h-4 opacity-40 shrink-0" />
                     <div class="min-w-0">
-                        <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Address') }}</div>
+                        <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Address') }}</div>
                         <div class="text-sm font-semibold truncate">{{ $user->street }}</div>
                         <div class="text-sm font-semibold truncate">{{ $user->city_name }}</div>
                     </div>
@@ -83,14 +105,14 @@
                 <div class="flex items-center gap-3 px-4 py-3">
                     <x-icon name="o-envelope" class="w-4 h-4 opacity-40 shrink-0" />
                     <div class="min-w-0">
-                        <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Email') }}</div>
+                        <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Email') }}</div>
                         <div class="text-sm font-semibold truncate">{{ $user->email }}</div>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 px-4 py-3">
                     <x-icon name="o-phone" class="w-4 h-4 opacity-40 shrink-0" />
                     <div class="min-w-0">
-                        <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Phone') }}</div>
+                        <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Phone') }}</div>
                         <div class="text-sm font-semibold truncate">{{ $user->phone_number }}</div>
                     </div>
                 </div>
@@ -98,8 +120,8 @@
                 <div class="flex items-center gap-3 px-4 py-3">
                     <x-icon name="o-building-library" class="w-4 h-4 opacity-40 shrink-0" />
                     <div class="min-w-0">
-                        <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('IBAN') }}</div>
-                        <div class="text-sm font-semibold font-mono truncate">{{ $user->iban }}</div>
+                        <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('IBAN') }}</div>
+                        <div class="text-sm font-semibold font-mono truncate">{{ $user->iban_formatted }}</div>
                     </div>
                 </div>
                 @endif
@@ -107,222 +129,110 @@
                     <div class="flex items-center gap-3 px-4 py-3">
                         <x-icon name="o-phone" class="w-4 h-4 opacity-40 shrink-0" />
                         <div class="min-w-0">
-                            <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Parent / Tutor') }}</div>
+                            <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Parent / Tutor') }}</div>
                             <div class="text-sm font-semibold truncate">{{ $user->guardian_phone_number }}</div>
                         </div>
                     </div>
                 @endif
             </div>
-            </x-admin.shared.side-card>
-
-            {{-- Stats --}}
-             <x-admin.shared.side-card shadow>
-            <div class="divide-y divide-base-200">
-           
-                @foreach ([
-                    ['icon' => 'o-trophy',             'label' => __('Matches'),       'value' => '42',    'sub' => __('This season'),         'color' => ''],
-                    ['icon' => 'o-arrow-trending-up',  'label' => __('Win Rate'),      'value' => '65%',   'sub' => __('+5% vs last season'),  'color' => 'text-primary'],
-                    ['icon' => 'o-calculator',         'label' => __('Points'),        'value' => '+142',  'sub' => __('Since Sept'),          'color' => 'text-success'],
-                    ['icon' => 'o-academic-cap',       'label' => __('Trainings'),     'value' => '28',    'sub' => __('This season'),         'color' => ''],
-                    ['icon' => 'o-sparkles',           'label' => __('Best Perf'),     'value' => 'B2',    'sub' => __('All time'),            'color' => ''],
-                    ['icon' => 'o-shield-exclamation', 'label' => __('Worst Counter'), 'value' => 'C0',    'sub' => __('This season'),         'color' => ''],
-                ] as $stat)
-                    <div class="flex items-center justify-between px-4 py-3">
-                        <div class="flex items-center gap-2">
-                            <x-icon name="{{ $stat['icon'] }}" class="w-4 h-4 opacity-40 shrink-0" />
-                            <div>
-                                <div class="text-sm font-semibold">{{ $stat['label'] }}</div>
-                                <div class="text-[10px] opacity-40">{{ $stat['sub'] }}</div>
-                            </div>
-                        </div>
-                        <span class="font-black text-sm {{ $stat['color'] }}">{{ $stat['value'] }}</span>
-                    </div>
-                @endforeach
-            </div>
-             </x-admin.shared.side-card>
+            </x-card>
 
         </div>
 
         {{-- ════════════════════════════════
              CONTENU PRINCIPAL
         ════════════════════════════════ --}}
-        <div class="flex-1 min-w-0 space-y-8">
+        <div class="min-w-0 space-y-8 lg:col-span-2">
 
             {{-- Équipes --}}
-            <x-card :title="__('My Teams')" icon="o-user-group" shadow separator>
-                @if($user->teams->isEmpty())
-                    <div class="flex flex-col items-center gap-3 py-10 text-center">
-                        <x-icon name="o-user-group" class="h-10 w-10 opacity-20" />
-                        <p class="text-sm text-gray-400">{{ __('You are not part of any team this season.') }}</p>
-                    </div>
+            <x-card :title="__('My Teams')" icon="o-user-group" separator>
+                <x-slot:menu>
+                    <x-button :label="__('Team page')" icon-right="o-arrow-right" class="btn-ghost btn-sm"
+                        link="{{ route('admin.user.teams', $user) }}" />
+                </x-slot:menu>
+
+                @if ($user->teams->isEmpty())
+                    <x-empty-state icon="o-user-group" :heading="__('No team yet')"
+                        :message="__('You are not part of any team this season.')" />
                 @else
-                    @php
-                        $categoryLabels = [
-                            'MEN'      => 'Hommes',
-                            'VETERANS' => 'Vétérans',
-                            'WOMEN'    => 'Dames',
-                        ];
-                    @endphp
-                    <x-tabs wire:model="activeTeamTab">
-                        @foreach($user->teams as $team)
+                    <div class="flex flex-wrap gap-2">
+                        @foreach ($user->teams as $team)
                             @php
-                                $rawCategory  = $team->league?->category ?? '';
-                                $frenchCat    = $categoryLabels[$rawCategory] ?? $rawCategory;
-                                $tabLabel     = $team->name . ($frenchCat ? ' — ' . $frenchCat : '');
-                                $clubName     = $team->club?->name ?? '';
-                                $seasonName   = $team->season?->name ?? '';
-                                $division     = implode(' – ', array_filter([
-                                    $team->league?->level,
+                                $teamMeta = collect([
+                                    \App\Domains\Shared\Enums\LeagueCategory::fromName($team->league?->category)?->label(),
                                     $team->league?->division,
-                                ]));
+                                ])->filter()->implode(' · ');
                             @endphp
-                            <x-tab name="team-{{ $team->id }}" label="{{ $tabLabel }}" icon="o-user-group">
-
-                                <div class="mb-4 pt-2">
-                                    <p class="text-base font-bold">
-                                        {{ trim($clubName . ' ' . $team->name) ?: $team->name }}
-                                    </p>
-                                    <p class="text-xs opacity-50">
-                                        {{ implode(' · ', array_filter([$frenchCat, $division, $seasonName ? 'Saison ' . $seasonName : ''])) ?: '—' }}
-                                    </p>
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-2">
-                                    @foreach ($team->users as $mate)
-                                        @php $isYou = $mate->id === Auth::id(); @endphp
-                                        <div @class([
-                                            'flex items-center justify-between p-2 rounded-lg border transition-all',
-                                            'bg-primary/5 border-primary/20 ring-1 ring-primary/30' => $isYou,
-                                            'bg-base-200/40 border-base-200/50 hover:shadow-sm'    => !$isYou,
-                                        ])>
-                                            <div class="flex items-center gap-3">
-                                                <x-avatar class="!w-7 !rounded-full"
-                                                    :image="$mate->photo ?? '/images/empty-user.jpg'" />
-                                                <div>
-                                                    <div class="flex items-center gap-1.5">
-                                                        <span class="text-sm font-semibold leading-none">
-                                                            {{ $mate->first_name }} {{ $mate->last_name }}
-                                                        </span>
-                                                        @if ($isYou)
-                                                            <span class="text-[9px] font-black uppercase tracking-widest opacity-40">
-                                                                {{ __('(you)') }}
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                    <span class="text-[10px] opacity-40 font-black uppercase">
-                                                        {{ $mate->ranking }}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-
-                                <div class="mt-4 flex justify-end">
-                                    <x-button :label="__('Team page')" icon="o-arrow-right"
-                                        class="btn-ghost btn-sm text-xs opacity-50"
-                                        link="{{ route('admin.interclubs.teams.show', $team->id) }}" />
-                                </div>
-
-                            </x-tab>
+                            <a href="{{ route('admin.user.teams', $user) }}"
+                                class="inline-flex items-center gap-2 rounded-full border border-base-300 bg-base-100 px-4 py-1.5 text-sm transition-colors hover:border-primary hover:text-primary">
+                                <span class="font-semibold">{{ $team->fullName() }}</span>
+                                @if ($teamMeta)
+                                    <span class="text-xs text-base-content/50">{{ $teamMeta }}</span>
+                                @endif
+                            </a>
                         @endforeach
-                    </x-tabs>
+                    </div>
                 @endif
             </x-card>
 
-            {{-- Historique --}}
-            <x-card :title="__('Individual History')" icon="o-presentation-chart-line" shadow separator>
-                <div class="space-y-6">
-                    @php
-                        $history = [
-                            [
-                                'week' => 12, 'match_day' => '30/01',
-                                'opponent_team' => 'Mont-Saint-Guibert C', 'global_score' => '12-4',
-                                'games' => [
-                                    ['player' => 'Dupont A.',   'rank' => 'C0', 'score' => '3-1', 'win' => true],
-                                    ['player' => 'Durand L.',   'rank' => 'C2', 'score' => '3-0', 'win' => true],
-                                    ['player' => 'Lefebvre G.', 'rank' => 'B6', 'score' => '2-3', 'win' => false],
-                                    ['player' => 'Moreau P.',   'rank' => 'C0', 'score' => '3-1', 'win' => true],
-                                ],
-                            ],
-                            [
-                                'week' => 11, 'match_day' => '23/01',
-                                'opponent_team' => 'Mont-Saint-Guibert C', 'global_score' => '12-4',
-                                'games' => [
-                                    ['player' => 'Dewit F.',      'rank' => 'B2', 'score' => '3-0', 'win' => false],
-                                    ['player' => 'Bourguigon S.', 'rank' => 'C2', 'score' => '1-3', 'win' => true],
-                                    ['player' => 'Anciaux T.',    'rank' => 'B6', 'score' => '3-2', 'win' => false],
-                                    ['player' => 'Fernandez J.',  'rank' => 'C0', 'score' => '2-3', 'win' => true],
-                                ],
-                            ],
-                            [
-                                'week' => 4, 'match_day' => '16/01',
-                                'opponent_team' => 'Auderghem J', 'global_score' => '7-9',
-                                'games' => [
-                                    ['player' => 'Van Pee R.', 'rank' => 'C0', 'score' => '3-1', 'win' => true],
-                                    ['player' => 'Renders E.', 'rank' => 'C2', 'score' => '3-0', 'win' => true],
-                                    ['player' => 'Godart A.',  'rank' => 'B6', 'score' => '2-3', 'win' => false],
-                                ],
-                            ],
-                        ];
-                    @endphp
+            {{-- Amendes — n'apparaît que si le membre en a (quasiment jamais) --}}
+            @if ($this->fines->isNotEmpty())
+                @php $finesDue = $this->fines->filter(fn ($f) => $f->payment?->status === 'pending'); @endphp
+                <x-card :title="__('My fines')" icon="o-scale" separator>
+                    <x-slot:menu>
+                        @if ($finesDue->isNotEmpty())
+                            <x-button :label="__('Pay')" icon-right="o-arrow-right" class="btn-ghost btn-sm"
+                                link="{{ route('admin.user.payments', $user) }}" />
+                        @endif
+                    </x-slot:menu>
 
-                    @foreach ($history as $encounter)
-                        <div class="relative pl-4 border-l-2 border-base-200">
-                            <div class="flex items-center justify-between mb-3">
-                                <div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-xs font-black opacity-40 uppercase tracking-widest">
-                                            {{ __('Week') }} {{ $encounter['week'] }}
-                                        </span>
-                                        <span class="text-[10px] opacity-30 uppercase tracking-widest">
-                                            {{ $encounter['match_day'] }}
-                                        </span>
+                    {{-- Vue d'ensemble en une ligne --}}
+                    <p class="mb-3 text-sm text-base-content/70">
+                        {{ trans_choice(':count fine|:count fines', $this->fines->count()) }}
+                        @if ($finesDue->isNotEmpty())
+                            — <span class="font-semibold text-warning-content">{{ __(':amount € still to pay', ['amount' => number_format($finesDue->sum(fn ($f) => $f->payment->amount_due), 2, ',', ' ')]) }}</span>
+                        @else
+                            — <span class="font-semibold text-success">{{ __('all settled') }}</span>
+                        @endif
+                    </p>
+
+                    <div class="space-y-2">
+                        @foreach ($this->fines as $fine)
+                            @php $isPending = $fine->payment?->status === 'pending'; @endphp
+                            <x-collapse class="border border-base-300 bg-base-100">
+                                <x-slot:heading>
+                                    <div class="flex flex-wrap items-center gap-2 text-sm">
+                                        <span class="font-semibold">{{ $fine->reason->label() }}</span>
+                                        <span class="text-xs text-base-content/50">{{ $fine->created_at?->format('d/m/Y') }}</span>
+                                        <span class="font-bold tabular-nums">{{ number_format($fine->amount, 2, ',', ' ') }} €</span>
+                                        <x-badge :value="$isPending ? __('Pending') : __('Paid')"
+                                            class="badge-sm {{ $isPending ? 'badge-warning badge-soft' : 'badge-success badge-soft' }}" />
                                     </div>
-                                    <h3 class="text-sm font-bold flex items-center gap-2">
-                                        {{ $encounter['opponent_team'] }}
-                                        <span class="text-[10px] px-1.5 py-0.5 bg-base-200 rounded text-base-content/60 font-mono">
-                                            {{ $encounter['global_score'] }}
-                                        </span>
-                                    </h3>
-                                </div>
-                                <x-button icon="o-arrow-right"
-                                    class="btn-ghost btn-xs opacity-30 hover:opacity-100"
-                                    :tooltip="__('Match details')" />
-                            </div>
+                                </x-slot:heading>
+                                <x-slot:content>
+                                    {{-- Le message du comité : c'est ce qui permet de comprendre --}}
+                                    <p class="whitespace-pre-line text-sm text-base-content/80">{{ $fine->pedagogical_message }}</p>
 
-                            <div class="grid grid-cols-2 gap-1.5">
-                                @foreach ($encounter['games'] as $game)
-                                    <div class="flex items-center justify-between p-2 rounded-lg bg-base-100 border border-base-200/50 hover:shadow-sm transition-all">
-                                        <div class="flex items-center gap-2">
-                                            <div @class([
-                                                'w-1.5 h-5 rounded-full',
-                                                'bg-success/50' => $game['win'],
-                                                'bg-error/50'   => !$game['win'],
-                                            ])></div>
-                                            <div>
-                                                <div class="text-xs font-bold leading-none">{{ $game['player'] }}</div>
-                                                <div class="text-[9px] opacity-40 font-black uppercase">{{ $game['rank'] }}</div>
-                                            </div>
-                                        </div>
-                                        <div @class([
-                                            'font-mono text-xs font-black px-2 py-1 rounded',
-                                            'text-success bg-success/5' => $game['win'],
-                                            'text-error bg-error/5'     => !$game['win'],
-                                        ])>
-                                            {{ $game['score'] }}
-                                        </div>
+                                    <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-base-200 pt-3 text-xs text-base-content/60">
+                                        @if ($fine->federation_reference)
+                                            <span>{{ __('Federation reference') }}: <span class="font-mono">{{ $fine->federation_reference }}</span></span>
+                                        @endif
+                                        @if ($fine->payment)
+                                            <span>{{ __('Reference') }}: <span class="font-mono">{{ $fine->payment->reference }}</span></span>
+                                        @endif
                                     </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
 
-                <x-slot:actions>
-                    <x-button :label="__('See all results')" class="btn-ghost btn-sm text-xs opacity-50" />
-                </x-slot:actions>
-            </x-card>
+                                    @if ($isPending)
+                                        <x-button :label="__('Go to my payments')" icon-right="o-arrow-right"
+                                            class="btn-primary btn-sm mt-3"
+                                            link="{{ route('admin.user.payments', $user) }}" />
+                                    @endif
+                                </x-slot:content>
+                            </x-collapse>
+                        @endforeach
+                    </div>
+                </x-card>
+            @endif
 
         </div>
     </div>
@@ -369,19 +279,17 @@
                         <x-input :label="__('IBAN')" wire:model="iban"
                             placeholder="BE00 0000 0000 0000"
                             :hint="__('payment.iban_format_hint')" />
-                        <div>
-                            <div wire:key="photo-container-{{ $imageKey }}">
-                                <x-file :label="__('Photo')" wire:model="photo"
-                                    accept="image/png, image/jpeg, image/webp" crop-after-change>
-                                    <img src="{{ $photo ? $photo->temporaryUrl() : ($currentPhoto ? asset($currentPhoto) : asset('images/empty-user.jpg')) }}"
-                                        alt="{{ __('Avatar') }}" class="h-36 rounded-lg object-cover">
-                                </x-file>
-                            </div>
-                            @if ($currentPhoto)
-                                <x-button :label="__('Delete photo')"
-                                    class="m-2 text-xs btn-soft btn-ghost w-36"
-                                    wire:click="$set('deleteModal', true)" />
-                            @endif
+                        <div wire:key="photo-container-{{ $imageKey }}">
+                            <x-avatar-cropper :label="__('Photo')"
+                                :preview="($photo && $photo->isPreviewable() ? $photo->temporaryUrl() : null) ?? ($currentPhoto ? asset($currentPhoto) : null)">
+                                <x-slot:delete>
+                                    @if ($currentPhoto)
+                                        <x-button :label="__('Delete photo')" icon="o-trash"
+                                            class="btn-ghost btn-soft btn-sm"
+                                            wire:click="$set('deleteModal', true)" />
+                                    @endif
+                                </x-slot:delete>
+                            </x-avatar-cropper>
                         </div>
                     </div>
                 </div>
@@ -401,7 +309,7 @@
                             accept="image/png, image/jpeg, application/pdf"
                             :hint="__('JPG, PNG or PDF — max 4 MB')" />
                         @if ($user->medical_certificate_path)
-                            <a href="{{ asset($user->medical_certificate_path) }}" target="_blank"
+                            <a href="{{ route('admin.user.documents.download', [$user, 'medical']) }}" target="_blank"
                                 class="btn btn-ghost btn-xs gap-1 mt-1">
                                 <x-icon name="o-arrow-down-tray" class="w-3 h-3" />
                                 {{ __('View current') }}
@@ -415,7 +323,7 @@
                                 accept="image/png, image/jpeg, application/pdf"
                                 :hint="__('Required for minors — JPG, PNG or PDF, max 4 MB')" />
                             @if ($user->parental_consent_path)
-                                <a href="{{ asset($user->parental_consent_path) }}" target="_blank"
+                                <a href="{{ route('admin.user.documents.download', [$user, 'parental_consent']) }}" target="_blank"
                                     class="btn btn-ghost btn-xs gap-1 mt-1">
                                     <x-icon name="o-arrow-down-tray" class="w-3 h-3" />
                                     {{ __('View current') }}
@@ -426,7 +334,6 @@
                 </div>
             </div>
             <x-slot:actions>
-                <x-button :label="__('Reset')" />
                 <x-button label="{{ $user ? __('Update') : __('Create') }}" class="btn-primary"
                     type="submit" spinner="save" />
             </x-slot:actions>
@@ -437,37 +344,9 @@
          MODAL — Delete photo
     ════════════════════════════════ --}}
     <x-confirm-modal model="deleteModal" :title="__('Confirmation of deletion')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Delete')" confirmAction="deletePhoto">
+        :confirmLabel="__('Delete')" confirmAction="deletePhoto" :open="$deleteModal">
         {{ __('Are you sure you want to delete this picture? This action is irreversible.') }}
     </x-confirm-modal>
 
-    {{-- ════════════════════════════════
-         ZONE DE DANGER (RGPD)
-    ════════════════════════════════ --}}
-    @if (Auth::user()->is($user))
-        <div class="mt-8 border-t border-error/20 pt-6">
-            <div class="mx-auto max-w-2xl">
-                <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-error/60">
-                    {{ __('Danger zone') }}
-                </p>
-                <x-card class="border border-error/20 bg-error/5">
-                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <p class="font-medium text-error">{{ __('Request account deletion') }}</p>
-                            <p class="mt-0.5 text-sm text-base-content/60">
-                                {{ __('Send a deletion request to the administrator. Your data will be anonymized. Note: requests with pending payments may be delayed.') }}
-                            </p>
-                        </div>
-                        <x-button
-                            class="btn-error btn-soft btn-sm shrink-0"
-                            icon="o-trash"
-                            :label="__('Request deletion')"
-                            wire:click="requestErasure"
-                            spinner="requestErasure" />
-                    </div>
-                </x-card>
-            </div>
-        </div>
-    @endif
 
 </div>

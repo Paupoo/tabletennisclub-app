@@ -6,10 +6,8 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Notifications\MeetingCancelledNotification;
-use App\Domains\Meetings\Notifications\MeetingDatePollNotification;
 use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
 use App\Domains\Meetings\Notifications\MeetingPostponedNotification;
-use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
@@ -24,12 +22,12 @@ uses(RefreshDatabase::class);
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function meetingAdmin(): User
 {
-    return User::factory()->create(['is_admin' => true, 'is_committee_member' => true]);
+    return User::factory()->isAdmin()->isCommitteeMember()->create();
 }
 
 function meetingMember(): User
 {
-    return User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+    return User::factory()->create();
 }
 
 function confirmedMeeting(?User $creator = null): Meeting
@@ -122,13 +120,23 @@ describe('Meeting index page', function (): void {
         Livewire::actingAs($admin)
             ->test('pages::club-events.meetings.index')
             ->set('type', MeetingTypeEnum::GENERAL_ASSEMBLY->value)
-            ->assertSeeText('No meetings match your filters');
+            ->assertSeeText(__('No meetings match your filters'));
     });
 
     test('index shows generic empty state when no meetings exist at all', function (): void {
         Livewire::actingAs(meetingAdmin())
             ->test('pages::club-events.meetings.index')
-            ->assertSeeText('No meetings yet');
+            ->assertSeeText(__('No meetings yet'));
+    });
+
+    test('index shows no stat cards and no per-row web button', function (): void {
+        $admin = meetingAdmin();
+        confirmedMeeting($admin);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.index')
+            ->assertDontSeeText(__('Upcoming'))
+            ->assertDontSee('event-post-button');
     });
 
     test('index filters by type', function (): void {
@@ -144,294 +152,13 @@ describe('Meeting index page', function (): void {
     });
 });
 
-// ── Form (create / edit) ──────────────────────────────────────────────────────
-describe('Meeting form — fixed date mode', function (): void {
-    test('admin can create a meeting with a fixed date', function (): void {
-        Bus::fake();
-
-        $admin = meetingAdmin();
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.form')
-            ->set('title', 'Réunion test')
-            ->set('type', MeetingTypeEnum::COMMITTEE->value)
-            ->set('format', MeetingFormatEnum::PHYSICAL->value)
-            ->set('location', 'Salle du club')
-            ->set('datePollMode', false)
-            ->set('scheduledAt', now()->addWeek()->format('Y-m-d\TH:i'))
-            ->set('endsAt', now()->addWeek()->addHour()->format('Y-m-d\TH:i'))
-            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
-            ->set('step', '3')
-            ->call('save');
-
-        $meeting = Meeting::where('title', 'Réunion test')->first();
-        expect($meeting)->not->toBeNull()
-            ->and($meeting->scheduled_at)->not->toBeNull();
-    });
-
-    test('creating with fixed date auto-dispatches invitation job', function (): void {
-        Bus::fake();
-
-        $admin = meetingAdmin();
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.form')
-            ->set('title', 'AG rentrée')
-            ->set('type', MeetingTypeEnum::COMMITTEE->value)
-            ->set('format', MeetingFormatEnum::PHYSICAL->value)
-            ->set('location', 'Salle du club')
-            ->set('datePollMode', false)
-            ->set('scheduledAt', now()->addWeek()->format('Y-m-d\TH:i'))
-            ->set('endsAt', now()->addWeek()->addHour()->format('Y-m-d\TH:i'))
-            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
-            ->set('step', '3')
-            ->call('save');
-
-        Bus::assertDispatched(SendMeetingInvitationsJob::class);
-    });
-
-    test('editing does NOT re-dispatch invitation job', function (): void {
-        Bus::fake();
-
-        $admin = meetingAdmin();
-        $meeting = confirmedMeeting($admin);
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.form', ['meeting' => $meeting])
-            ->set('title', 'Titre modifié')
-            ->set('step', '3')
-            ->call('save');
-
-        Bus::assertNotDispatched(SendMeetingInvitationsJob::class);
-        expect($meeting->fresh()->title)->toBe('Titre modifié');
-    });
-
-    test('nextStep advances to review step', function (): void {
-        $admin = meetingAdmin();
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.form')
-            ->set('title', 'Test meeting')
-            ->set('type', MeetingTypeEnum::COMMITTEE->value)
-            ->set('format', MeetingFormatEnum::PHYSICAL->value)
-            ->set('location', 'Salle du club')
-            ->set('datePollMode', false)
-            ->set('scheduledAt', now()->addWeek()->format('Y-m-d\TH:i'))
-            ->set('endsAt', now()->addWeek()->addHour()->format('Y-m-d\TH:i'))
-            ->set('step', '1')
-            ->call('nextStep')
-            ->assertSet('step', '2')
-            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
-            ->call('nextStep')
-            ->assertSet('step', '3');
-    });
-
-    test('prevStep goes back from review step', function (): void {
-        $admin = meetingAdmin();
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.form')
-            ->set('title', 'Test meeting')
-            ->set('type', MeetingTypeEnum::COMMITTEE->value)
-            ->set('format', MeetingFormatEnum::PHYSICAL->value)
-            ->set('location', 'Salle du club')
-            ->set('datePollMode', false)
-            ->set('scheduledAt', now()->addWeek()->format('Y-m-d\TH:i'))
-            ->set('endsAt', now()->addWeek()->addHour()->format('Y-m-d\TH:i'))
-            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
-            ->set('step', '3')
-            ->call('prevStep')
-            ->assertSet('step', '2');
-    });
-
-    test('switching to poll mode clears scheduled date', function (): void {
-        $admin = meetingAdmin();
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.form')
-            ->set('scheduledAt', now()->addWeek()->format('Y-m-d\TH:i'))
-            ->set('datePollMode', true)
-            ->assertSet('scheduledAt', null)
-            ->assertSet('endsAt', null)
-            ->assertSet('rsvpDeadline', null);
-    });
-});
-
-describe('Meeting form — poll mode', function (): void {
-    test('creating with poll mode auto-sends date poll to committee', function (): void {
-        Notification::fake();
-
-        $admin = meetingAdmin();
-        $member = User::factory()->create(['is_committee_member' => true]);
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.form')
-            ->set('title', 'Réunion sondage')
-            ->set('type', MeetingTypeEnum::COMMITTEE->value)
-            ->set('format', MeetingFormatEnum::VIRTUAL->value)
-            ->set('meetingLink', 'https://meet.example.com')
-            ->set('datePollMode', true)
-            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
-            ->set('dateProposals', [
-                ['proposed_at' => now()->addWeeks(1)->format('Y-m-d\TH:i')],
-                ['proposed_at' => now()->addWeeks(2)->format('Y-m-d\TH:i')],
-            ])
-            ->set('step', '3')
-            ->call('save');
-
-        Notification::assertSentTo($member, MeetingDatePollNotification::class);
-        Notification::assertSentTo($admin, MeetingDatePollNotification::class);
-    });
-
-    test('creating with poll mode does NOT dispatch invitation job', function (): void {
-        Bus::fake();
-        Notification::fake();
-
-        $admin = meetingAdmin();
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.form')
-            ->set('title', 'Réunion sondage')
-            ->set('type', MeetingTypeEnum::COMMITTEE->value)
-            ->set('format', MeetingFormatEnum::VIRTUAL->value)
-            ->set('meetingLink', 'https://meet.example.com')
-            ->set('datePollMode', true)
-            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
-            ->set('dateProposals', [['proposed_at' => now()->addWeek()->format('Y-m-d\TH:i')]])
-            ->set('step', '3')
-            ->call('save');
-
-        Bus::assertNotDispatched(SendMeetingInvitationsJob::class);
-    });
-
-    test('nextStep goes to review step in poll mode', function (): void {
-        $admin = meetingAdmin();
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.form')
-            ->set('title', 'Test meeting')
-            ->set('type', MeetingTypeEnum::COMMITTEE->value)
-            ->set('format', MeetingFormatEnum::VIRTUAL->value)
-            ->set('meetingLink', 'https://meet.example.com')
-            ->set('datePollMode', true)
-            ->set('step', '1')
-            ->call('nextStep')
-            ->assertSet('step', '2')
-            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
-            ->call('nextStep')
-            ->assertSet('step', '3');
-    });
-
-    test('switching to fixed date mode clears date proposals', function (): void {
-        $admin = meetingAdmin();
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.form')
-            ->set('datePollMode', true)
-            ->set('dateProposals', [['proposed_at' => now()->addWeek()->format('Y-m-d\TH:i')]])
-            ->set('datePollMode', false)
-            ->assertSet('dateProposals', []);
-    });
-
-    test('date proposals are saved when in poll mode', function (): void {
-        Bus::fake();
-        Notification::fake();
-
-        $admin = meetingAdmin();
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.form')
-            ->set('title', 'Réunion avec proposals')
-            ->set('type', MeetingTypeEnum::COMMITTEE->value)
-            ->set('format', MeetingFormatEnum::VIRTUAL->value)
-            ->set('meetingLink', 'https://meet.example.com')
-            ->set('datePollMode', true)
-            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
-            ->set('dateProposals', [
-                ['proposed_at' => now()->addWeeks(1)->format('Y-m-d\TH:i')],
-                ['proposed_at' => now()->addWeeks(2)->format('Y-m-d\TH:i')],
-            ])
-            ->set('step', '3')
-            ->call('save');
-
-        $meeting = Meeting::where('title', 'Réunion avec proposals')->first();
-        expect($meeting)->not->toBeNull()
-            ->and($meeting->dateProposals)->toHaveCount(2)
-            ->and($meeting->scheduled_at)->toBeNull();
-    });
-});
-
-describe('Meeting form — misc', function (): void {
-    test('meeting title is required', function (): void {
-        Livewire::actingAs(meetingAdmin())
-            ->test('pages::club-events.meetings.form')
-            ->set('step', '3')
-            ->call('save')
-            ->assertHasErrors(['title' => 'required']);
-    });
-
-    test('agenda items are saved with meeting', function (): void {
-        Bus::fake();
-
-        $admin = meetingAdmin();
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.form')
-            ->set('title', 'Réunion avec agenda')
-            ->set('type', MeetingTypeEnum::COMMITTEE->value)
-            ->set('format', MeetingFormatEnum::VIRTUAL->value)
-            ->set('meetingLink', 'https://meet.example.com/test')
-            ->set('datePollMode', false)
-            ->set('scheduledAt', now()->addWeek()->format('Y-m-d\TH:i'))
-            ->set('endsAt', now()->addWeek()->addHour()->format('Y-m-d\TH:i'))
-            ->set('agendaItems', [
-                ['title' => 'Point 1', 'description' => ''],
-                ['title' => 'Point 2', 'description' => 'Détails'],
-            ])
-            ->set('step', '3')
-            ->call('save');
-
-        $meeting = Meeting::where('title', 'Réunion avec agenda')->first();
-        expect($meeting)->not->toBeNull()
-            ->and($meeting->agendaItems)->toHaveCount(2);
-    });
-
-    test('quorum field appears only for general assemblies', function (): void {
-        Livewire::actingAs(meetingAdmin())
-            ->test('pages::club-events.meetings.form')
-            ->set('type', MeetingTypeEnum::COMMITTEE->value)
-            ->assertDontSee('Quorum')
-            ->set('type', MeetingTypeEnum::GENERAL_ASSEMBLY->value)
-            ->assertSee('Quorum');
-    });
-
-    test('mount detects poll mode from existing meeting', function (): void {
-        $admin = meetingAdmin();
-        $meeting = Meeting::factory()->committee()->planning()->create(['created_by' => $admin->id]);
-        $meeting->dateProposals()->create(['proposed_at' => now()->addWeek()]);
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.form', ['meeting' => $meeting])
-            ->assertSet('datePollMode', true);
-    });
-
-    test('mount detects fixed date mode from existing meeting', function (): void {
-        $admin = meetingAdmin();
-        $meeting = confirmedMeeting($admin);
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.form', ['meeting' => $meeting])
-            ->assertSet('datePollMode', false);
-    });
-});
-
 // ── SendMeetingInvitationsJob ─────────────────────────────────────────────────
 describe('SendMeetingInvitationsJob', function (): void {
     test('job sends invitation to committee members and updates pivot', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
-        $member = User::factory()->create(['is_committee_member' => true]);
+        $member = User::factory()->isCommitteeMember()->create();
         $meeting = confirmedMeeting($admin);
 
         dispatch_sync(new SendMeetingInvitationsJob($meeting->id));
@@ -446,7 +173,7 @@ describe('SendMeetingInvitationsJob', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
-        $member = User::factory()->create(['is_committee_member' => true]);
+        $member = User::factory()->isCommitteeMember()->create();
         $meeting = confirmedMeeting($admin);
 
         dispatch_sync(new SendMeetingInvitationsJob($meeting->id));
@@ -491,13 +218,14 @@ describe('Meeting show page', function (): void {
         Bus::fake();
 
         $admin = meetingAdmin();
-        $meeting = confirmedMeeting($admin);
+        $meeting = Meeting::factory()->committee()->confirmed()->physical()->create(['created_by' => $admin->id]);
+        $meeting->agendaItems()->create(['sort_order' => 0, 'title' => 'Budget']);
 
         Livewire::actingAs($admin)
             ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
             ->call('sendInvitations');
 
-        Bus::assertDispatched(SendMeetingInvitationsJob::class, fn ($job) => $job->meetingId === $meeting->id);
+        Bus::assertDispatched(SendMeetingInvitationsJob::class, fn ($job): bool => $job->meetingId === $meeting->id);
     });
 
     test('invitations cannot be dispatched if meeting is in planning status', function (): void {
@@ -534,7 +262,7 @@ describe('Meeting show page', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
-        $committee = User::factory()->create(['is_committee_member' => true]);
+        $committee = User::factory()->isCommitteeMember()->create();
         $meeting = confirmedMeeting($admin);
 
         Livewire::actingAs($admin)
@@ -568,7 +296,7 @@ describe('Meeting show page', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
-        $committee = User::factory()->create(['is_committee_member' => true]);
+        $committee = User::factory()->isCommitteeMember()->create();
         $meeting = confirmedMeeting($admin);
 
         Livewire::actingAs($admin)
@@ -601,41 +329,6 @@ describe('Meeting show page', function (): void {
     });
 });
 
-// ── Minutes ───────────────────────────────────────────────────────────────────
-describe('Meeting minutes', function (): void {
-    test('admin can publish minutes', function (): void {
-        $admin = meetingAdmin();
-        $meeting = confirmedMeeting($admin);
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
-            ->set('minutesAnnouncements', ['Annonce test'])
-            ->set('minutesDecisions', ['Décision A', 'Décision B'])
-            ->set('minutesNotes', 'Notes libres')
-            ->call('publishMinutes');
-
-        $minutes = $meeting->fresh()->minutes;
-        expect($minutes)->not->toBeNull()
-            ->and($minutes->is_published)->toBeTrue()
-            ->and($minutes->announcements)->toContain('Annonce test')
-            ->and($minutes->decisions)->toHaveCount(2);
-    });
-
-    test('minutes cannot be sent before being published', function (): void {
-        Notification::fake();
-
-        $admin = meetingAdmin();
-        $meeting = confirmedMeeting($admin);
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
-            ->call('sendMinutes', false);
-
-        expect($meeting->fresh()->minutes?->sent_to_committee_at)->toBeNull();
-        Notification::assertNothingSent();
-    });
-});
-
 describe('Meeting attendance — catering view', function (): void {
     test('the attendance tab shows the catering banner and per-attendee meal badges', function (): void {
         $admin = meetingAdmin();
@@ -657,7 +350,6 @@ describe('Meeting attendance — catering view', function (): void {
 
         Livewire::actingAs($admin)
             ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
-            ->set('activeTab', 'attendance')
             ->assertSee(__('Catering'))
             ->assertSee('12,00')
             ->assertSee(__('Meal · pending'))
@@ -672,29 +364,8 @@ describe('Meeting attendance — catering view', function (): void {
 
         Livewire::actingAs($admin)
             ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
-            ->set('activeTab', 'attendance')
             ->assertDontSee(__('Catering'));
     });
 });
 
 // ── regression: GA invitee count uses active members (is_active column was dropped) ─
-describe('meeting form invitee count', function (): void {
-    it('counts only active members for a general assembly', function (): void {
-        $admin = meetingAdmin();
-        $season = makeActiveSeason();
-
-        activeMember($season);
-        activeMember($season);
-
-        // Users without an active subscription must not be counted.
-        User::factory()->count(3)->create();
-
-        $component = Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.form')
-            ->set('type', 'general_assembly')
-            ->set('step', '3')
-            ->assertStatus(200);
-
-        expect($component->instance()->inviteeCount())->toBe(2);
-    });
-});

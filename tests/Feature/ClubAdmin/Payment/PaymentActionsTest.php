@@ -122,12 +122,12 @@ describe('GeneratePayment', function (): void {
     })->group('payments', 'generate');
 
     test('non-admin cannot generate payment (Gate denies)', function (): void {
-        $user = User::factory()->create(['is_admin' => false]);
+        $user = User::factory()->create();
         $this->actingAs($user);
 
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 125]);
 
-        expect(fn () => (new GeneratePayment)($subscription))
+        expect(fn (): RedirectResponse => (new GeneratePayment)($subscription))
             ->toThrow(AuthorizationException::class);
     })->group('payments', 'generate');
 
@@ -158,7 +158,7 @@ describe('SendPayementInvite', function (): void {
 
         (new SendPayementInvite)($payment);
 
-        Mail::assertSent(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
+        Mail::assertQueued(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
     })->group('payments', 'invite');
 
     test('increments invitation_counter after sending', function (): void {
@@ -262,7 +262,7 @@ describe('ProcessPaymentAction', function (): void {
     test('throws DomainException when no pending payment exists', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 150]);
 
-        expect(fn () => (new ProcessPaymentAction)->execute($subscription, 'TXN-1', 150.0))
+        expect(fn (): Subscription => (new ProcessPaymentAction)->execute($subscription, 'TXN-1', 150.0))
             ->toThrow(DomainException::class, 'No pending payment found');
     })->group('payments', 'process');
 
@@ -291,9 +291,9 @@ describe('SendPaymentReminderJob', function (): void {
             'invitation_counter' => 0,
         ]);
 
-        (new SendPaymentReminderJob($payment->id))->handle();
+        new SendPaymentReminderJob($payment->id)->handle();
 
-        Mail::assertSent(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
+        Mail::assertQueued(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
         expect($payment->fresh()->invitation_counter)->toBe(1);
     })->group('payments', 'reminder');
 
@@ -316,9 +316,9 @@ describe('SendPaymentReminderJob', function (): void {
             'invitation_counter' => 0,
         ]);
 
-        (new SendPaymentReminderJob($payment->id))->handle();
+        new SendPaymentReminderJob($payment->id)->handle();
 
-        Mail::assertSent(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
+        Mail::assertQueued(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
         expect($payment->fresh()->invitation_counter)->toBe(1);
     })->group('payments', 'reminder');
 
@@ -340,7 +340,7 @@ describe('SendPaymentReminderJob', function (): void {
             'invitation_counter' => 0,
         ]);
 
-        (new SendPaymentReminderJob($payment->id))->handle();
+        new SendPaymentReminderJob($payment->id)->handle();
 
         Mail::assertNothingSent();
         Notification::assertNothingSent();
@@ -362,9 +362,9 @@ describe('SendPaymentReminderJob', function (): void {
             'invitation_counter' => 0,
         ]);
 
-        (new SendPaymentReminderJob($payment->id))->handle();
+        new SendPaymentReminderJob($payment->id)->handle();
 
-        Mail::assertSent(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
+        Mail::assertQueued(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
         expect($payment->fresh()->invitation_counter)->toBe(1);
     })->group('payments', 'reminder');
 
@@ -388,7 +388,7 @@ describe('PaymentInvitationEmail content', function (): void {
 
         $mailable = new PaymentInvitationEmail($payment->load('payable.season'));
 
-        $mailable->assertSeeInHtml('Cotisation');
+        $mailable->assertSeeInHtml('Affiliation');
         $mailable->assertSeeInHtml($subscription->season->name);
     })->group('payments', 'mail-content');
 
@@ -446,6 +446,21 @@ describe('PaymentInvitationEmail content', function (): void {
         );
 
         $mailable->assertSeeInHtml('dès que possible');
+    })->group('payments', 'mail-content');
+
+    test('shows the club IBAN grouped by 4 for readability', function (): void {
+        $user = User::factory()->create();
+        $subscription = Subscription::factory()->create(['user_id' => $user->id, 'status' => 'confirmed']);
+        $payment = $subscription->payments()->create([
+            'reference' => 'INV/2026/00501',
+            'amount_due' => 125,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        $mailable = new PaymentInvitationEmail($payment->load('payable.season'));
+
+        $mailable->assertSeeInHtml('BE23 7323 3320 8791');
     })->group('payments', 'mail-content');
 
 })->group('payments');

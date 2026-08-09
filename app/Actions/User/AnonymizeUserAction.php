@@ -5,11 +5,17 @@ declare(strict_types=1);
 namespace App\Actions\User;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\ClubAdmin\Users\Notifications\GdprErasureRequestedNotification;
+use Illuminate\Notifications\DatabaseNotification;
 
 class AnonymizeUserAction
 {
     public static function handle(User $user): void
     {
+        // Physically remove private documents (health/minor data), not just the paths.
+        StoreUserDocumentAction::deleteExisting($user, 'medical');
+        StoreUserDocumentAction::deleteExisting($user, 'parental_consent');
+
         $user->update([
             'first_name' => 'Anonymized',
             'last_name' => 'User',
@@ -30,6 +36,12 @@ class AnonymizeUserAction
         ]);
 
         $user->guardians()->detach();
+
+        // Drop the now-obsolete in-app erasure notifications for every recipient.
+        DatabaseNotification::query()
+            ->where('type', GdprErasureRequestedNotification::class)
+            ->where('data->member_id', $user->id)
+            ->delete();
 
         $user->delete();
     }

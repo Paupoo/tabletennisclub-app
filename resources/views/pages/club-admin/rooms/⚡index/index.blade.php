@@ -3,65 +3,59 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <!-- HEADER -->
-    <x-header :title="__('Rooms')" separator progress-indicator>
+    <x-header :title="__('Rooms')" :subtitle="__('Rooms and their table stock')" separator progress-indicator>
         <x-slot:actions>
             @can('create', \App\Domains\ClubAdmin\Club\Models\Room::class)
-                <x-button :label="__('Create')" icon="o-plus" class="btn-primary" link="{{ route('admin.rooms.create') }}" />
+                <x-button :label="__('Create')" icon="o-plus" class="btn-primary btn-sm"
+                    link="{{ route('admin.rooms.create') }}" />
             @endcan
         </x-slot:actions>
     </x-header>
 
-    <div class="mt-6 grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+    <div class="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         @forelse ($rooms as $room)
-            <x-card title="{{ $room->name }}" shadow class="relative">
-
-                <x-slot:figure class="hidden lg:block">
-                    <img src="https://picsum.photos/200/300?random={{ $loop->iteration }}" alt=""
-                        class="w-full h-48 object-cover">
-                </x-slot:figure>
-
-                <div class="mb-2">
-                    <div class="flex items-center gap-2 mb-4">
-                        <x-admin.shared.tables-counter :total_tables="$room->tables()->count()" />
-                        <x-admin.shared.tables-capacity-counter :training_capacity="$room?->capacity_for_trainings" :interclub_capacity="$room?->capacity_for_interclubs" />
+            <x-card class="shadow-sm transition-colors hover:border-primary" wire:key="room-{{ $room->id }}">
+                <a href="{{ route('admin.rooms.show', $room) }}" class="block space-y-4">
+                    <div>
+                        <h3 class="text-lg font-bold">{{ $room->name }}</h3>
+                        @if ($room->building_name)
+                            <p class="text-xs text-base-content/50">{{ $room->building_name }}</p>
+                        @endif
                     </div>
-                    <div class="flex items-center gap-1 text-sm text-gray-500 mb-6">
-                        <x-icon name="o-map-pin" class="w-4 h-4" />
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <x-admin.shared.tables-counter :count="$room->tables_count" />
+                        <x-admin.shared.tables-capacity-counter
+                            :training_capacity="$room->capacity_for_trainings"
+                            :interclub_capacity="$room->capacity_for_interclubs" />
+                    </div>
+
+                    <div class="flex items-center gap-1 text-sm text-base-content/60">
+                        <x-icon name="o-map-pin" class="h-4 w-4 shrink-0" />
                         <span>{{ $room->street }}, {{ $room->city_code }} {{ $room->city_name }}</span>
                     </div>
-                    @foreach ($room->trainings as $training)
-                        <x-admin.shared.compact-event-preview link="#" :organizer="$training->trainer ? $training->trainer->first_name . ' ' . $training->trainer->last_name : null" :name="$training->type"
-                            :startDateTime="$training->start" type="training" />
-                    @endforeach
-                    @foreach ($room->interclubs as $interclub)
-                        <x-admin.shared.compact-event-preview link="#" :name="$interclub->week_number" :startDateTime="$interclub->start_date_time" type="interclub" />
-                    @endforeach
-                    @foreach ($room->tournaments as $tournament)
-                        @php
-                            $reg = $tournament->users->first()?->pivot;
-                            $regStatus = $reg?->registration_status;
-                            $isActive = in_array($regStatus, ['registered', 'confirmed', 'spot_offered']);
-                            $isWaiting = $regStatus === 'waiting';
-                            $isFull = $tournament->max_users > 0
-                                && $tournament->active_registrations_count >= $tournament->max_users;
-                            $remaining = $tournament->max_users > 0
-                                ? max(0, $tournament->max_users - $tournament->active_registrations_count)
-                                : null;
-                        @endphp
-                        <x-admin.shared.compact-event-preview link="#" :name="$tournament->name"
-                            :startDateTime="$tournament->start_date" :remainingSlots="$remaining" type="tournament">
-                        </x-admin.shared.compact-event-preview>
-                    @endforeach
-                </div>
+
+                    @php
+                        $upcoming = $room->trainings_count + $room->interclubs_count + $room->tournaments_count;
+                    @endphp
+                    <div class="flex items-center gap-1 text-xs text-base-content/50">
+                        <x-icon name="o-calendar-days" class="h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            {{ $upcoming > 0
+                                ? trans_choice(':count event in the next two weeks|:count events in the next two weeks', $upcoming)
+                                : __('Nothing planned in the next two weeks.') }}
+                        </span>
+                    </div>
+                </a>
+
                 <x-slot:actions>
                     @can('update', $room)
-                        <x-button class="btn-primary btn-outline btn-sm" :label="__('Modify')"
+                        <x-button class="btn-ghost btn-sm" :label="__('Modify')"
                             link="{{ route('admin.rooms.edit', $room) }}" />
                     @endcan
 
                     @can('delete', $room)
-                        <x-button class="btn-error btn-outline btn-sm" :label="__('Delete')"
+                        <x-button class="btn-ghost btn-sm text-error" :label="__('Delete')"
                             wire:click="confirmDeleteRoom({{ $room->id }})" />
                     @endcan
                 </x-slot:actions>
@@ -76,11 +70,44 @@
                     href="{{ route('admin.rooms.create') }}" />
             </div>
         @endforelse
+
     </div>
+
+    {{-- Tables sans salle. `room_id` est nullable, donc elles doivent rester
+         joignables — mais une orpheline n'est pas un lieu, elle n'a donc pas sa
+         place dans la grille des salles. Section absente tant qu'il n'y en a pas. --}}
+    @if ($unassignedTables->isNotEmpty())
+        <div class="mt-10">
+            <div class="mb-3 flex items-center gap-3">
+                <h2 class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('Unassigned') }}</h2>
+                <div class="h-px flex-1 bg-base-300"></div>
+            </div>
+
+            <x-card class="shadow-sm">
+                <p class="text-xs opacity-60">{{ __('Tables not linked to any room') }}</p>
+
+                <div class="mt-3 divide-y divide-base-200">
+                    @foreach ($unassignedTables as $table)
+                        <div class="flex items-center justify-between gap-3 py-2"
+                            wire:key="unassigned-{{ $table->id }}">
+                            <div>
+                                <div class="text-sm font-medium">{{ $table->name }}</div>
+                                <div class="text-xs text-base-content/50">{{ $table->state->getLabel() }}</div>
+                            </div>
+                            @can('update', $table)
+                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
+                                    :tooltip="__('Edit')" link="{{ route('admin.tables.edit', $table) }}" :aria-label="__('Edit')" />
+                            @endcan
+                        </div>
+                    @endforeach
+                </div>
+            </x-card>
+        </div>
+    @endif
 
     @can('create', \App\Domains\ClubAdmin\Club\Models\Room::class)
         <x-confirm-modal model="deleteRoomModal" :title="__('Delete this room?')" :subtitle="__('Warning!')"
-            :confirmLabel="__('Delete')" confirmAction="deleteRoom">
+            :confirmLabel="__('Delete')" confirmAction="deleteRoom" :open="$deleteRoomModal">
             <p>{{ __('Are you sure you want to delete this room? This action is irreversible.') }}</p>
         </x-confirm-modal>
     @endcan

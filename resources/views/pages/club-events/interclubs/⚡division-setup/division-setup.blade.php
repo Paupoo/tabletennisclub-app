@@ -5,15 +5,34 @@
 
     <x-header progress-indicator separator :title="__('Division Setup')">
         <x-slot:subtitle>{{ __('Define the opponent teams for each division, once per season.') }}</x-slot:subtitle>
-        <x-slot:middle class="justify-end!">
-            <x-select
-                :options="$seasons"
-                option-label="name"
-                option-value="id"
-                wire:model.live="seasonId"
-                :placeholder="__('Select a season')" />
-        </x-slot:middle>
+        <x-slot:actions>
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-search="false" :show-more="false" />
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-admin.shared.filters-button :count="count($filterChips)" />
+            </div>
+        </x-slot:actions>
     </x-header>
+
+    {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
+
+    {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Season') }}
+                </p>
+                <x-select
+                    :options="$seasons"
+                    option-label="name"
+                    option-value="id"
+                    wire:model.live="seasonId"
+                    :placeholder="__('Select a season')"
+                    class="w-full" />
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
 
     @if (! $seasonId)
         <x-card class="mt-4 border-none">
@@ -160,7 +179,7 @@
                                             class="btn-ghost btn-sm btn-circle text-error"
                                             icon="o-trash"
                                             :tooltip="__('Remove')"
-                                            wire:click="confirmDelete({{ $team->id }})" />
+                                            wire:click="confirmDelete({{ $team->id }})" :aria-label="__('Remove')" />
                                     </div>
                                 @endforeach
                             </div>
@@ -172,7 +191,7 @@
     @endif
 
     {{-- Modal add participant --}}
-    <x-modal wire:model="addModal" :title="__('Add opponent')" separator>
+    <x-app-modal wire:model="addModal" :title="__('Add opponent')" separator :open="$addModal">
         <div class="space-y-4">
             <x-input
                 :label="__('Club name')"
@@ -195,11 +214,11 @@
             <x-button :label="__('Cancel')" wire:click="$set('addModal', false)" />
             <x-button class="btn-primary" :label="__('Add')" wire:click="addParticipant" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- Modal delete --}}
     <x-confirm-modal model="deleteModal" :title="__('Remove participant')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Remove')" confirmAction="deleteParticipant">
+        :confirmLabel="__('Remove')" confirmAction="deleteParticipant" :open="$deleteModal">
         <p>{{ __('Are you sure you want to remove this opponent from the division?') }}</p>
     </x-confirm-modal>
 </div>

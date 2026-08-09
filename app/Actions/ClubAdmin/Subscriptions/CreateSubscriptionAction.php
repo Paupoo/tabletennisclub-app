@@ -28,14 +28,14 @@ class CreateSubscriptionAction
             throw new \DomainException('Cannot subscribe to an inactive season');
         }
 
-        if (! $season->registrations_open) {
-            throw new \DomainException('Registrations are currently closed');
+        if (! $season->affiliations_open) {
+            throw new \DomainException('Affiliations are currently closed');
         }
 
-        // Vérifie qu'il n'existe pas déjà une subscription pour cette saison
+        // Vérifie qu'il n'existe pas déjà une subscription en cours pour cette saison
         $existing = Subscription::where('user_id', $user->id)
             ->where('season_id', $season->id)
-            ->whereNotIn('status', ['cancelled'])
+            ->affiliated()
             ->first();
 
         if ($existing) {

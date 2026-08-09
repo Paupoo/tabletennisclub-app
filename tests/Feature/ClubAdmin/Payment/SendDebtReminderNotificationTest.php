@@ -28,7 +28,7 @@ it('sends a debt reminder notification to the user when payment is pending', fun
         'status' => 'pending',
     ]);
 
-    (new SendDebtReminderNotification($payment->id, $user->id, $tournament->id))->handle();
+    new SendDebtReminderNotification($payment->id, $user->id, $tournament->id)->handle();
 
     Notification::assertSentTo($user, TournamentDebtReminderNotification::class);
 });
@@ -48,7 +48,7 @@ it('does nothing when the payment status is not pending', function (): void {
         'status' => 'paid',
     ]);
 
-    (new SendDebtReminderNotification($payment->id, $user->id, $tournament->id))->handle();
+    new SendDebtReminderNotification($payment->id, $user->id, $tournament->id)->handle();
 
     Notification::assertNothingSent();
 });
@@ -60,7 +60,7 @@ it('does nothing when the payment does not exist', function (): void {
     $user = User::factory()->create();
     $tournament = Tournament::factory()->create();
 
-    (new SendDebtReminderNotification(99999, $user->id, $tournament->id))->handle();
+    new SendDebtReminderNotification(99999, $user->id, $tournament->id)->handle();
 
     Notification::assertNothingSent();
 });
@@ -78,7 +78,7 @@ it('does nothing when the user does not exist', function (): void {
         'status' => 'pending',
     ]);
 
-    (new SendDebtReminderNotification($payment->id, 99999, $tournament->id))->handle();
+    new SendDebtReminderNotification($payment->id, 99999, $tournament->id)->handle();
 
     Notification::assertNothingSent();
 });

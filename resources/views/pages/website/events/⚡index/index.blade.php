@@ -13,30 +13,10 @@
         </x-slot:middle>
         <x-slot:actions>
             {{-- Mobile: 🔍 · filter · ☰ --}}
-            <div class="flex items-center gap-1 lg:hidden">
-                <button class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true">
-                    <x-icon name="o-magnifying-glass" class="h-5 w-5" />
-                </button>
-                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                    wire:click="$set('filterDrawer', true)">
-                    <x-icon name="o-funnel" class="h-5 w-5" />
-                    @if (count($filterChips) > 0)
-                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
-                    @endif
-                </button>
-                <button class="btn btn-primary btn-circle btn-sm" @click="mobileActionsOpen = true">
-                    <x-icon name="o-bars-3" class="h-5 w-5" />
-                </button>
-            </div>
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" />
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
-                <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                    icon="o-funnel" :label="__('Filters')"
-                    wire:click="$set('filterDrawer', true)">
-                    @if (count($filterChips) > 0)
-                        <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
-                    @endif
-                </x-button>
+                <x-admin.shared.filters-button :count="count($filterChips)" />
             </div>
         </x-slot:actions>
     </x-header>
@@ -54,7 +34,8 @@
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
                     placeholder="{{ __('Search...') }}" />
             </div>
-            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+            <button type="button" @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm"
+                aria-label="{{ __('Close the search') }}">
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
@@ -69,7 +50,7 @@
             $statCards = [
                 ['label' => __('Total'),     'key' => 'total',     'icon' => 'o-calendar-days', 'bg' => 'bg-base-200',   'color' => 'text-base-content/60'],
                 ['label' => __('Published'), 'key' => 'published', 'icon' => 'o-check-circle',  'bg' => 'bg-success/10', 'color' => 'text-success'],
-                ['label' => __('Draft'),     'key' => 'draft',     'icon' => 'o-pencil-square',  'bg' => 'bg-warning/10', 'color' => 'text-warning'],
+                ['label' => __('Draft'),     'key' => 'draft',     'icon' => 'o-pencil-square',  'bg' => 'bg-warning/10', 'color' => 'text-warning-content'],
                 ['label' => __('Archived'),  'key' => 'archived',  'icon' => 'o-archive-box',   'bg' => 'bg-base-200',   'color' => 'text-base-content/30'],
             ];
         @endphp
@@ -98,70 +79,73 @@
                     \App\Domains\Shared\Enums\EventPostStatusEnum::ARCHIVED  => ['class' => 'badge-ghost',              'label' => __('Archived')],
                 };
             @endphp
-            <x-list-item :item="$event" class="bg-base-100 rounded-lg border"
+            {{-- L'identité prend la largeur, les actions passent dessous : sur une
+            carte de 335 px, une action nommée et son menu en prenaient 156 et le
+            titre était tranché. --}}
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3"
                 wire:key="mobile-event-{{ $event->id }}">
-                <x-slot:avatar>
+                <div class="flex items-start gap-3">
                     @if ($selectionModeActive)
                         <input type="checkbox"
                             class="checkbox checkbox-primary checkbox-sm"
                             value="{{ $event->id }}"
                             wire:model.live="selected" />
                     @endif
-                </x-slot:avatar>
-                <x-slot:value>
-                    <span class="font-medium">{{ $event->title }}</span>
-                </x-slot:value>
-                <x-slot:sub-value>
-                    <div class="mt-0.5 flex flex-wrap items-center gap-2">
-                        <x-badge :value="$statusBadge['label']" class="{{ $statusBadge['class'] }} badge-sm" />
-                        <span class="text-xs text-base-content/40">
-                            {{ $event->type->getIcon() }} {{ $event->type->getLabel() }}
-                        </span>
-                        <span class="text-xs text-base-content/40">
-                            {{ $event->event_date->translatedFormat('d M Y') }}
-                        </span>
+
+                    <div class="min-w-0 flex-1">
+                        <div class="font-medium">{{ $event->title }}</div>
+                        <div class="mt-0.5 flex flex-wrap items-center gap-2">
+                            <x-badge :value="$statusBadge['label']" class="{{ $statusBadge['class'] }} badge-sm" />
+                            <span class="text-xs text-base-content/40">
+                                {{ $event->type->getIcon() }} {{ $event->type->getLabel() }}
+                            </span>
+                            <span class="text-xs text-base-content/40">
+                                {{ $event->event_date->translatedFormat('d M Y') }}
+                            </span>
+                        </div>
                     </div>
-                </x-slot:sub-value>
-                <x-slot:actions>
+                </div>
+
+                <div class="mt-3">
                     @if (! $selectionModeActive)
-                        <x-admin.shared.row-actions>
+                        <x-admin.shared.row-menu
+                            :label="__('Edit')"
+                            icon="o-pencil"
+                            wire-click="openEdit({{ $event->id }})">
                             @if ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT)
-                                <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
-                                    :tooltip="__('Publish')"
-                                    wire:click="publish({{ $event->id }})" spinner />
+                                <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $event->id }})" spinner :title="__('Publish')" />
                             @elseif ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
-                                    :tooltip="__('Archive')"
-                                    wire:click="archive({{ $event->id }})" spinner />
+                                <x-menu-item icon="o-archive-box" wire:click="archive({{ $event->id }})" spinner :title="__('Archive')" />
                             @endif
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                :tooltip="__('Edit')"
-                                wire:click="openEdit({{ $event->id }})" />
                             @if ($event->canBeDeleted())
-                                <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                    :tooltip="__('Delete')"
-                                    wire:click="confirmDelete({{ $event->id }})" />
+                                <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $event->id }})" :title="__('Delete')" />
                             @endif
-                        </x-admin.shared.row-actions>
+                        </x-admin.shared.row-menu>
                     @endif
-                </x-slot:actions>
-            </x-list-item>
+                </div>
+            </div>
         @empty
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-calendar-days"
-                :heading="__('No events found')"
-                :message="__('Try adjusting your search or filters.')" />
+                :filtered="filled($search) || count($filterChips) > 0"
+                :heading="__('No events found')" />
         @endforelse
+
+        @if ($events->hasPages())
+            <div class="mt-2">
+                {{ $events->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop (table) ────────────────────────────────────────── --}}
     <div class="hidden lg:block">
         <x-card>
             @if ($events->isEmpty())
-                <x-empty-state
+                <x-admin.shared.list-empty-state
                     icon="o-calendar-days"
-                    :heading="__('No events found')"
-                    :message="__('Try adjusting your search or filters.')" />
+                    :filtered="filled($search) || count($filterChips) > 0"
+                    :heading="__('No events found')" />
             @else
                 <x-table :headers="$headers" :rows="$events" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
@@ -176,7 +160,7 @@
                         <div>
                             <span class="font-medium">{{ $event->title }}</span>
                             @if ($event->featured)
-                                <x-icon name="o-star" class="ml-1 inline h-3.5 w-3.5 text-warning" />
+                                <x-icon name="o-star" class="ml-1 inline h-3.5 w-3.5 text-warning-content" />
                             @endif
                         </div>
                     @endscope
@@ -210,7 +194,7 @@
                             @if ($event->featured_until && $event->featured_until->isPast())
                                 <span class="text-xs text-base-content/30 italic">{{ __('Expired') }}</span>
                             @else
-                                <x-icon name="o-star" class="h-4 w-4 text-warning" />
+                                <x-icon name="o-star" class="h-4 w-4 text-warning-content" />
                                 @if ($event->featured_until)
                                     <span class="ml-1 text-xs text-base-content/40">
                                         {{ __('until') }} {{ $event->featured_until->translatedFormat('d M') }}
@@ -223,25 +207,19 @@
                     @endscope
 
                     @scope('actions', $event)
-                        <x-admin.shared.row-actions>
+                        <x-admin.shared.row-menu
+                            :label="__('Edit')"
+                            icon="o-pencil"
+                            wire-click="openEdit({{ $event->id }})">
                             @if ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT)
-                                <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
-                                    :tooltip="__('Publish')"
-                                    wire:click="publish({{ $event->id }})" spinner />
+                                <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $event->id }})" spinner :title="__('Publish')" />
                             @elseif ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
-                                    :tooltip="__('Archive')"
-                                    wire:click="archive({{ $event->id }})" spinner />
+                                <x-menu-item icon="o-archive-box" wire:click="archive({{ $event->id }})" spinner :title="__('Archive')" />
                             @endif
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                :tooltip="__('Edit')"
-                                wire:click="openEdit({{ $event->id }})" />
                             @if ($event->canBeDeleted())
-                                <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                    :tooltip="__('Delete')"
-                                    wire:click="confirmDelete({{ $event->id }})" />
+                                <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $event->id }})" :title="__('Delete')" />
                             @endif
-                        </x-admin.shared.row-actions>
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">
@@ -261,7 +239,7 @@
             <x-button class="btn-ghost btn-sm" icon="o-check-circle" :label="__('Publish')"
                 wire:click="bulkPublish" spinner="bulkPublish" />
             <span class="text-base-content/20">|</span>
-            <x-button class="btn-ghost btn-sm text-warning" icon="o-archive-box" :label="__('Archive')"
+            <x-button class="btn-ghost btn-sm text-warning-content" icon="o-archive-box" :label="__('Archive')"
                 wire:click="confirmBulkArchive" />
         </x-slot:actions>
     </x-admin.shared.selection-pill>
@@ -364,13 +342,13 @@
 
     {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete this event?')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('This action is irreversible.') }}</p>
     </x-confirm-modal>
 
     {{-- ── Modal archivage bulk ──────────────────────────────────────── --}}
     <x-confirm-modal model="confirmBulkArchiveModal" :title="__('Archive selected events?')"
-        :confirmLabel="__('Archive')" confirmAction="bulkArchive">
+        :confirmLabel="__('Archive')" confirmAction="bulkArchive" :open="$confirmBulkArchiveModal">
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be archived.') }}

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Users\Models;
 
+use App\Domains\Shared\Casts\IbanCast;
+use App\Domains\Shared\Support\IbanNormalizer;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\ClubAdmin\Users\Models\GuardianFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,6 +20,10 @@ class Guardian extends Model
     /** @use HasFactory<GuardianFactory> */
     use HasFactory;
 
+    protected $casts = [
+        'iban' => IbanCast::class,
+    ];
+
     protected $fillable = [
         'user_id',
         'first_name',
@@ -26,6 +32,11 @@ class Guardian extends Model
         'email',
         'iban',
     ];
+
+    public function getIbanFormattedAttribute(): ?string
+    {
+        return IbanNormalizer::format($this->iban);
+    }
 
     /**
      * The club member this guardian record represents, when the guardian is

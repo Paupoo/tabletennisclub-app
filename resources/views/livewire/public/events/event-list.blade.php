@@ -74,9 +74,23 @@
             <div class="flex flex-col items-center justify-center gap-6 rounded-2xl bg-gray-50 px-6 py-20 text-center">
                 <span class="text-6xl">🏓</span>
                 <div class="max-w-md">
-                    <h2 class="mb-2 text-2xl font-bold text-gray-900">{{ __('No events scheduled yet') }}</h2>
-                    <p class="text-gray-500">{{ __("Events coming soon — check back, there's always something happening at the club!") }}</p>
+                    <h2 class="mb-2 text-2xl font-bold text-gray-900">{{ __("It's break time!") }}</h2>
+                    <p class="text-gray-500">{{ __("The club is taking a short breather. Meanwhile, take a look at what happened last season or what's coming next.") }}</p>
                 </div>
+                @if($previousSeason || $nextSeason)
+                    <div class="flex flex-col gap-3 sm:flex-row">
+                        @if($previousSeason)
+                            <button wire:click="viewSeason({{ $previousSeason->id }})" class="rounded-lg border-2 border-club-blue px-8 py-3 font-semibold text-club-blue transition-colors hover:bg-club-blue hover:text-white">
+                                {{ __('View last season') }}
+                            </button>
+                        @endif
+                        @if($nextSeason)
+                            <button wire:click="viewSeason({{ $nextSeason->id }})" class="rounded-lg border-2 border-club-blue px-8 py-3 font-semibold text-club-blue transition-colors hover:bg-club-blue hover:text-white">
+                                {{ __('View next season') }}
+                            </button>
+                        @endif
+                    </div>
+                @endif
                 <div class="flex flex-col gap-3 sm:flex-row">
                     <a href="{{ route('home') }}#join" class="rounded-lg bg-club-yellow px-8 py-3 font-semibold text-club-blue transition-colors hover:bg-club-yellow-light">
                         {{ __('Become a member') }}

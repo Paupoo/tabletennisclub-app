@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
+use App\Actions\User\RecalculateForceListAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
@@ -20,16 +21,18 @@ use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
 use App\Domains\Shared\Enums\Ranking;
+use App\Domains\Shared\Enums\Role;
+use App\Domains\Shared\Enums\TableStateEnum;
 use App\Domains\Shared\Models\AppSetting;
-use App\Services\ForceList;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
     public function __construct(
-        private ForceList $forceList,
         private TournamentTableService $tableService,
     ) {}
 
@@ -49,6 +52,8 @@ class DatabaseSeeder extends Seeder
             'street' => "Rue de l'Invasion 80",
             'city_code' => '1340',
             'city_name' => 'Ottignies',
+            'bic' => 'CREGBEBB',
+            'bank_account' => 'BE23732333208791',
         ]);
 
         // ── Opponent clubs (FRBTT/BBW 2025-2026) ─────────────────────────────
@@ -84,6 +89,10 @@ class DatabaseSeeder extends Seeder
         Club::create(['name' => 'CTT TOURINNES',                 'licence' => 'BBW350', 'building_name' => 'Centre sportif de Walhain',        'street' => 'Rue Chapelle Ste Anne 14',     'city_code' => '1457', 'city_name' => 'Walhain']);
 
         Season::factory(10)->create();
+
+        // Drop any stale cached season from a previous seed run so factories
+        // resolve Season::current() against the freshly-seeded rows.
+        Cache::forget('season.current');
 
         League::create([
             'division' => '4B',
@@ -121,7 +130,6 @@ class DatabaseSeeder extends Seeder
 
         // Create 1 admin
         $admin = User::make([
-            'is_admin' => true,
             'email' => 'aurelien.paulus@gmail.com',
             'password' => Hash::make('test1234'),
             'first_name' => 'Aurélien',
@@ -134,7 +142,6 @@ class DatabaseSeeder extends Seeder
             'city_name' => 'Ottignies',
             'ranking' => Ranking::E4->name,
             'licence' => '114399',
-            'is_committee_member' => true,
             'committee_role' => CommitteeRolesEnum::ADMINISTRATOR,
         ])->club()->associate(Club::own());
         $admin->save();
@@ -155,7 +162,6 @@ class DatabaseSeeder extends Seeder
         foreach ($players as $player) {
 
             $player = User::make([
-                'is_admin' => false,
                 'email' => $player[4],
                 'email_verified_at' => now(),
                 'password' => $password,
@@ -177,8 +183,6 @@ class DatabaseSeeder extends Seeder
         // Add some random users
 
         User::make([
-            'is_admin' => false,
-            'is_committee_member' => true,
             'email' => 'thierry.regnier@test.com',
             'email_verified_at' => now(),
             'password' => $password,
@@ -197,8 +201,6 @@ class DatabaseSeeder extends Seeder
         ])->club()->associate(Club::own())->save();
 
         User::make([
-            'is_admin' => false,
-            'is_committee_member' => true,
             'email' => 'manon.patigny@test.com',
             'email_verified_at' => now(),
             'password' => $password,
@@ -217,8 +219,6 @@ class DatabaseSeeder extends Seeder
         ])->club()->associate(Club::first())->save();
 
         User::make([
-            'is_admin' => false,
-            'is_committee_member' => true,
             'email' => 'olivier.pauwels@test.com',
             'email_verified_at' => now(),
             'password' => $password,
@@ -237,8 +237,6 @@ class DatabaseSeeder extends Seeder
         ])->club()->associate(Club::first())->save();
 
         User::make([
-            'is_admin' => false,
-            'is_committee_member' => true,
             'email' => 'gilles.herpigny@test.com',
             'email_verified_at' => now(),
             'password' => $password,
@@ -256,6 +254,26 @@ class DatabaseSeeder extends Seeder
             'committee_role' => CommitteeRolesEnum::TREASURER,
         ])->club()->associate(Club::first())->save();
 
+        // Roles — the boolean columns were retired, so roles are assigned here.
+        // Mirrors the application: a committee member holds the COMMITTEE base role
+        // plus the delegations its statutory title suggests, and the club owner is
+        // the administrator. Lazy loading is lifted around this block because
+        // Spatie's assignRole() reloads the roles relation as it goes, which the
+        // non-production guard would otherwise reject.
+        Model::preventLazyLoading(false);
+
+        User::whereNotNull('committee_role')->get()->each(function (User $member): void {
+            $member->assignRole(Role::COMMITTEE->value);
+
+            foreach (Role::suggestedFor($member->committee_role) as $delegation) {
+                $member->assignRole($delegation->value);
+            }
+        });
+
+        User::where('email', 'aurelien.paulus@gmail.com')->first()?->assignRole(Role::ADMINISTRATOR->value);
+
+        Model::preventLazyLoading(! app()->isProduction());
+
         $gilles = User::where('email', 'gilles.herpigny@test.com')->first();
         CashRegister::create([
             'name' => 'Caisse du club',
@@ -271,9 +289,6 @@ class DatabaseSeeder extends Seeder
         User::factory()->isNotCompetitor()->count(2)->create([
             'ranking' => 'NC',
         ]);
-
-        // Set ForceIndexes
-        $this->forceList->setOrUpdateAll();
 
         Room::create([
             'name' => 'Demeester -1',
@@ -314,7 +329,7 @@ class DatabaseSeeder extends Seeder
             Table::create([
                 'name' => $i + 1,
                 'purchased_on' => fake()->dateTimeBetween('-10 years', '-1 year'),
-                'state' => 'used',
+                'state' => TableStateEnum::GOOD,
                 'room_id' => Room::inRandomOrder()->first()->id,
             ]);
         }
@@ -345,6 +360,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call(TreasurySeeder::class);
 
+        $this->call(FineSeeder::class);
+
         $this->call(TrainingPackSeeder::class);
 
         $this->call(NewsPostSeeder::class);
@@ -356,5 +373,9 @@ class DatabaseSeeder extends Seeder
         $this->call(DirectedTrainingDemoSeeder::class);
 
         $this->call(SpamSeeder::class);
+
+        // En dernier : la force list se calcule sur la population définitive,
+        // et InterclubSeeder crée encore des compétiteurs.
+        RecalculateForceListAction::handle();
     }
 }

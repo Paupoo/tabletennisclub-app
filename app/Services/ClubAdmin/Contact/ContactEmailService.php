@@ -18,7 +18,7 @@ class ContactEmailService
      *
      * @var list<string>
      */
-    private const ALLOWED_STATUSES = ['new', 'pending', 'processed', 'rejected'];
+    private const array ALLOWED_STATUSES = ['new', 'processed', 'rejected'];
 
     public function __construct(
         private readonly EmailTemplateRenderer $renderer = new EmailTemplateRenderer,
@@ -35,8 +35,8 @@ class ContactEmailService
 
         $payload = $this->buildMailData($contact, $mailData['subject'], $mailData['body'], $senderName);
 
-        if ($sendCopy) {
-            Mail::to($user->email)->send(new CustomEmail($payload, true));
+        if ($sendCopy && $user->contactEmail() !== null) {
+            Mail::to($user->contactEmail())->send(new CustomEmail($payload, true));
         }
 
         Mail::to($contact->email)->send(new CustomEmail($payload));

@@ -21,8 +21,8 @@ describe('Date poll via Livewire', function (): void {
     test('admin can send date poll to committee', function (): void {
         Notification::fake();
 
-        $admin = User::factory()->create(['is_admin' => true, 'is_committee_member' => true]);
-        $member = User::factory()->create(['is_committee_member' => true]);
+        $admin = User::factory()->isAdmin()->isCommitteeMember()->create();
+        $member = User::factory()->isCommitteeMember()->create();
 
         $meeting = Meeting::factory()->committee()->planning()->create(['created_by' => $admin->id]);
         $meeting->dateProposals()->create(['proposed_at' => now()->addWeek()]);
@@ -36,7 +36,7 @@ describe('Date poll via Livewire', function (): void {
     });
 
     test('selecting a date proposal confirms the meeting', function (): void {
-        $admin = User::factory()->create(['is_admin' => true, 'is_committee_member' => true]);
+        $admin = User::factory()->isAdmin()->isCommitteeMember()->create();
         $meeting = Meeting::factory()->committee()->planning()->create(['created_by' => $admin->id]);
         $proposal = $meeting->dateProposals()->create(['proposed_at' => now()->addWeeks(2)]);
 
@@ -54,7 +54,7 @@ describe('Date poll via Livewire', function (): void {
     test('poll cannot be sent without proposals', function (): void {
         Notification::fake();
 
-        $admin = User::factory()->create(['is_admin' => true, 'is_committee_member' => true]);
+        $admin = User::factory()->isAdmin()->isCommitteeMember()->create();
         $meeting = Meeting::factory()->committee()->planning()->create(['created_by' => $admin->id]);
 
         Livewire::actingAs($admin)
@@ -68,8 +68,8 @@ describe('Date poll via Livewire', function (): void {
 // ── Date poll via signed URL (email link) ────────────────────────────────────
 describe('Date poll via email link', function (): void {
     test('committee member can view poll page via signed URL', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
-        $user = User::factory()->create(['is_committee_member' => true]);
+        $admin = User::factory()->isAdmin()->create();
+        $user = User::factory()->isCommitteeMember()->create();
         $meeting = Meeting::factory()->committee()->planning()->create(['created_by' => $admin->id]);
         $meeting->dateProposals()->create(['proposed_at' => now()->addWeek()]);
 
@@ -79,7 +79,7 @@ describe('Date poll via email link', function (): void {
     });
 
     test('unsigned poll URL is rejected', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $user = User::factory()->create();
         $meeting = Meeting::factory()->committee()->planning()->create(['created_by' => $admin->id]);
 
@@ -88,8 +88,8 @@ describe('Date poll via email link', function (): void {
     });
 
     test('user can submit votes via signed URL', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
-        $user = User::factory()->create(['is_committee_member' => true]);
+        $admin = User::factory()->isAdmin()->create();
+        $user = User::factory()->isCommitteeMember()->create();
         $meeting = Meeting::factory()->committee()->planning()->create(['created_by' => $admin->id]);
         $proposal = $meeting->dateProposals()->create(['proposed_at' => now()->addWeek()]);
 
@@ -107,8 +107,8 @@ describe('Date poll via email link', function (): void {
     });
 
     test('votes can be updated (upsert)', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
-        $user = User::factory()->create(['is_committee_member' => true]);
+        $admin = User::factory()->isAdmin()->create();
+        $user = User::factory()->isCommitteeMember()->create();
         $meeting = Meeting::factory()->committee()->planning()->create(['created_by' => $admin->id]);
         $proposal = $meeting->dateProposals()->create(['proposed_at' => now()->addWeek()]);
 

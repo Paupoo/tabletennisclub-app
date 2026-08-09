@@ -19,9 +19,9 @@
             @php
                 $pillClass = match($alert['type']) {
                     'error'   => 'bg-error/10 text-error border-error/20 hover:bg-error/20',
-                    'warning' => 'bg-warning/10 text-warning border-warning/20 hover:bg-warning/20',
+                    'warning' => 'bg-warning/10 text-warning-content border-warning/20 hover:bg-warning/20',
                     'info'    => 'bg-info/10 text-info border-info/20 hover:bg-info/20',
-                    default   => 'bg-warning/10 text-warning border-warning/20 hover:bg-warning/20',
+                    default   => 'bg-warning/10 text-warning-content border-warning/20 hover:bg-warning/20',
                 };
             @endphp
             <a href="{{ $alert['route'] }}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border {{ $pillClass }} transition-colors">
@@ -56,12 +56,13 @@
                     $secretaryTiles = [
                         ['icon' => 'o-users',         'label' => 'Membres',       'sub' => 'Gestion des membres',   'href' => route('admin.users.index'),            'color' => 'blue'],
                         ['icon' => 'o-user-plus',     'label' => 'Inscriptions',  'sub' => 'Nouvelles demandes',    'href' => route('admin.users.registrations'),    'color' => 'emerald'],
-                        ['icon' => 'o-newspaper',     'label' => 'News',          'sub' => 'Articles & actualités', 'href' => route('admin.website.articles.index'), 'color' => 'violet'],
-                        ['icon' => 'o-envelope',      'label' => 'Contacts',      'sub' => 'Messages reçus',        'href' => route('admin.website.contacts.index'), 'color' => 'cyan'],
-                        ['icon' => 'o-calendar-days', 'label' => 'Réunions',      'sub' => 'Comptes rendus',        'href' => route('admin.meetings.index'),         'color' => 'amber'],
-                        ['icon' => 'o-calendar',      'label' => 'Événements',    'sub' => 'Activités planifiées',  'href' => route('admin.website.events.index'),   'color' => 'orange'],
+                        ['icon' => 'o-newspaper',     'label' => 'News',          'sub' => 'Articles & actualités', 'href' => route('admin.website.articles.index'), 'color' => 'violet', 'feature' => 'website'],
+                        ['icon' => 'o-envelope',      'label' => 'Contacts',      'sub' => 'Messages reçus',        'href' => route('admin.website.contacts.index'), 'color' => 'cyan', 'feature' => 'contacts'],
+                        ['icon' => 'o-calendar-days', 'label' => 'Réunions',      'sub' => 'Comptes rendus',        'href' => route('admin.meetings.index'),         'color' => 'amber', 'feature' => 'meetings'],
+                        ['icon' => 'o-calendar',      'label' => 'Événements',    'sub' => 'Activités planifiées',  'href' => route('admin.website.events.index'),   'color' => 'orange', 'feature' => 'website'],
                         ['icon' => 'o-cog-6-tooth',   'label' => 'Configuration', 'sub' => 'Club & paramètres',    'href' => route('admin.club-info'),              'color' => 'slate'],
                     ];
+                    $secretaryTiles = array_filter($secretaryTiles, fn (array $t): bool => ! isset($t['feature']) || \App\Domains\Shared\Enums\Feature::from($t['feature'])->enabled());
                 @endphp
                 <x-section-accordion
                     :label="__('Secretary')"
@@ -78,11 +79,12 @@
                 @if($showTreasurer)
                 @php
                     $treasurerTiles = [
-                        ['icon' => 'o-banknotes',        'label' => 'Paiements',    'sub' => 'Suivi des paiements',  'href' => route('admin.treasury.payments'),     'color' => 'emerald'],
-                        ['icon' => 'o-credit-card',      'label' => 'Transactions', 'sub' => 'Relevés bancaires',    'href' => route('admin.treasury.transactions'), 'color' => 'blue'],
-                        ['icon' => 'o-building-library', 'label' => 'Caisse',       'sub' => 'Registre de caisse',   'href' => route('admin.treasury.cash'),         'color' => 'amber'],
+                        ['icon' => 'o-banknotes',        'label' => 'Paiements',    'sub' => 'Suivi des paiements',  'href' => route('admin.treasury.payments'),     'color' => 'emerald', 'feature' => 'treasury'],
+                        ['icon' => 'o-credit-card',      'label' => 'Transactions', 'sub' => 'Relevés bancaires',    'href' => route('admin.treasury.transactions'), 'color' => 'blue', 'feature' => 'treasury'],
+                        ['icon' => 'o-building-library', 'label' => 'Caisse',       'sub' => 'Registre de caisse',   'href' => route('admin.treasury.cash'),         'color' => 'amber', 'feature' => 'cash_register'],
                         ['icon' => 'o-calendar-days',    'label' => 'Saisons',      'sub' => 'Gestion des périodes', 'href' => route('admin.seasons.index'),         'color' => 'violet'],
                     ];
+                    $treasurerTiles = array_filter($treasurerTiles, fn (array $t): bool => ! isset($t['feature']) || \App\Domains\Shared\Enums\Feature::from($t['feature'])->enabled());
                 @endphp
                 <x-section-accordion
                     :label="__('Treasurer')"
@@ -99,12 +101,13 @@
                 @if($showCaptain)
                 @php
                     $captainTiles = [
-                        ['icon' => 'o-trophy',                   'label' => 'Équipes',        'sub' => 'Gestion des équipes',   'href' => route('admin.interclubs.teams'),             'color' => 'rose'],
-                        ['icon' => 'o-globe-alt',                'label' => 'Interclubs',     'sub' => 'Calendrier & matchs',   'href' => route('admin.interclubs.interclubs'),        'color' => 'blue'],
-                        ['icon' => 'o-clipboard-document-check', 'label' => 'Sélections',     'sub' => "Compositions d'équipe", 'href' => route('admin.interclubs.captain-selection'), 'color' => 'indigo'],
-                        ['icon' => 'o-chart-bar',                'label' => 'Résultats',      'sub' => 'Scores & classements',  'href' => route('admin.interclubs.results'),           'color' => 'amber'],
-                        ['icon' => 'o-adjustments-horizontal',   'label' => 'Control center', 'sub' => 'Suivi en temps réel',   'href' => route('admin.interclubs.control-center'),    'color' => 'teal'],
+                        ['icon' => 'o-trophy',                   'label' => 'Équipes',        'sub' => 'Gestion des équipes',   'href' => route('admin.interclubs.teams'),             'color' => 'rose', 'feature' => 'interclubs'],
+                        ['icon' => 'o-globe-alt',                'label' => 'Interclubs',     'sub' => 'Calendrier & matchs',   'href' => route('admin.interclubs.interclubs'),        'color' => 'blue', 'feature' => 'interclubs'],
+                        ['icon' => 'o-clipboard-document-check', 'label' => 'Sélections',     'sub' => "Compositions d'équipe", 'href' => route('admin.interclubs.captain-selection'), 'color' => 'indigo', 'feature' => 'interclubs'],
+                        ['icon' => 'o-chart-bar',                'label' => 'Résultats',      'sub' => 'Scores & classements',  'href' => route('admin.interclubs.results'),           'color' => 'amber', 'feature' => 'interclubs'],
+                        ['icon' => 'o-adjustments-horizontal',   'label' => 'Control center', 'sub' => 'Suivi en temps réel',   'href' => route('admin.interclubs.control-center'),    'color' => 'teal', 'feature' => 'interclubs'],
                     ];
+                    $captainTiles = array_filter($captainTiles, fn (array $t): bool => ! isset($t['feature']) || \App\Domains\Shared\Enums\Feature::from($t['feature'])->enabled());
                 @endphp
                 <x-section-accordion
                     :label="__('Captain / Selector')"
@@ -123,11 +126,11 @@
                     $committeeTiles = [
                         ['icon' => 'o-users',             'label' => 'Membres',       'sub' => 'Vue globale',             'href' => route('admin.users.index'),       'color' => 'blue'],
                         ['icon' => 'o-building-office-2', 'label' => 'Salles',        'sub' => 'Installations sportives', 'href' => route('admin.rooms.index'),       'color' => 'emerald'],
-                        ['icon' => 'o-clock',             'label' => 'Entraînements', 'sub' => 'Séances programmées',     'href' => route('admin.trainings.index'),   'color' => 'teal'],
+                        ['icon' => 'o-clock',             'label' => 'Entraînements', 'sub' => 'Séances programmées',     'href' => route('admin.trainings.index'),   'color' => 'teal', 'feature' => 'trainings'],
                         ['icon' => 'o-calendar-days',     'label' => 'Saisons',       'sub' => 'Gestion des périodes',    'href' => route('admin.seasons.index'),     'color' => 'violet'],
-                        ['icon' => 'o-trophy',            'label' => 'Tournois',      'sub' => 'Compétitions internes',   'href' => route('admin.tournaments.index'), 'color' => 'amber'],
-                        ['icon' => 'o-bell',              'label' => 'Notifications', 'sub' => 'Envoi de messages',       'href' => route('notifications.index'),     'color' => 'rose'],
+                        ['icon' => 'o-trophy',            'label' => 'Tournois',      'sub' => 'Compétitions internes',   'href' => route('admin.tournaments.index'), 'color' => 'amber', 'feature' => 'tournaments'],
                     ];
+                    $committeeTiles = array_filter($committeeTiles, fn (array $t): bool => ! isset($t['feature']) || \App\Domains\Shared\Enums\Feature::from($t['feature'])->enabled());
                 @endphp
                 <x-section-accordion
                     :label="__('Committee')"

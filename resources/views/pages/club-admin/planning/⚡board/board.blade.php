@@ -58,12 +58,12 @@
                                     @if ($canManage && $p->status->value !== 'archived')
                                         <x-button class="btn-sm btn-ghost" icon="o-archive-box"
                                             :tooltip="__('Archive')"
-                                            wire:click="confirmArchivePlan({{ $p->id }})" />
+                                            wire:click="confirmArchivePlan({{ $p->id }})" :aria-label="__('Archive')" />
                                     @endif
                                     @if ($canManage)
                                         <x-button class="btn-sm btn-ghost text-error" icon="o-trash"
                                             :tooltip="__('Delete')"
-                                            wire:click="confirmDeletePlan({{ $p->id }})" />
+                                            wire:click="confirmDeletePlan({{ $p->id }})" :aria-label="__('Delete')" />
                                     @endif
                                 </div>
                             </div>
@@ -75,12 +75,12 @@
 
         {{-- Confirm modals (project modals, no native JS confirm) --}}
         <x-confirm-modal model="confirmArchiveModal" :title="__('Archive this plan?')"
-            :confirmLabel="__('Archive')" confirmClass="btn-warning" confirmAction="archivePlan">
+            :confirmLabel="__('Archive')" confirmClass="btn-warning" confirmAction="archivePlan" :open="$confirmArchiveModal">
             <p>{{ __('The plan is hidden from the active list. You can still delete it later.') }}</p>
         </x-confirm-modal>
 
         <x-confirm-modal model="confirmDeleteModal" :title="__('Delete this plan permanently?')"
-            :subtitle="__('Warning!')" :confirmLabel="__('Delete')" confirmAction="deletePlan">
+            :subtitle="__('Warning!')" :confirmLabel="__('Delete')" confirmAction="deletePlan" :open="$confirmDeleteModal">
             <p>{{ __('This permanently deletes the plan and its layout. This action is irreversible.') }}</p>
         </x-confirm-modal>
     @else
@@ -89,28 +89,28 @@
             :subtitle="$season?->name">
             <x-slot:actions>
                 <div class="flex w-full flex-wrap items-center justify-end gap-2">
+                    <x-button class="btn-ghost btn-sm mr-auto" icon="o-arrow-left"
+                        :label="__('Back to plans')" wire:click="closePlan" />
                     @if ($overCapacityCount > 0)
                         <x-badge class="badge-error gap-1"
                             :value="$overCapacityCount . ' ' . __('over capacity')" />
                     @endif
+                    <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
+                        @if ($canManage)
+                            <x-menu-item icon="o-sparkles" :title="__('Suggest a layout')"
+                                wire:click="optimize" spinner="optimize" />
+                        @endif
+                        <x-menu-item icon="o-arrow-down-tray" :title="__('Export CSV')" wire:click="export('csv')" />
+                        <x-menu-item icon="o-arrow-down-tray" :title="__('Export ODS')" wire:click="export('ods')" />
+                        <x-menu-item icon="o-arrow-down-tray" :title="__('Export XLSX')" wire:click="export('xlsx')" />
+                        @if ($canManage)
+                            <x-menu-item icon="o-arrow-up-tray" :title="__('Import CSV')" wire:click="openImport" />
+                        @endif
+                    </x-dropdown>
                     @if ($canManage)
-                        <x-button class="btn-secondary btn-sm" icon="o-sparkles"
-                            :label="__('Suggest a layout')" wire:click="optimize"
-                            spinner="optimize" />
                         <x-button class="btn-primary btn-sm" icon="o-plus"
                             :label="__('Add a group')" wire:click="openAddPack" />
                     @endif
-                    <x-dropdown :label="__('Export')" icon="o-arrow-down-tray" class="btn-ghost btn-sm">
-                        <x-menu-item :title="__('CSV')" wire:click="export('csv')" />
-                        <x-menu-item :title="__('ODS')" wire:click="export('ods')" />
-                        <x-menu-item :title="__('XLSX')" wire:click="export('xlsx')" />
-                    </x-dropdown>
-                    @if ($canManage)
-                        <x-button class="btn-ghost btn-sm" icon="o-arrow-up-tray"
-                            :label="__('Import CSV')" wire:click="openImport" />
-                    @endif
-                    <x-button class="btn-ghost btn-sm" icon="o-arrow-left"
-                        :label="__('Back to plans')" wire:click="closePlan" />
                 </div>
             </x-slot:actions>
         </x-header>
@@ -128,7 +128,7 @@
                         <span class="truncate text-sm font-semibold">{{ $column['name'] }}</span>
                         <div class="flex shrink-0 items-center gap-1">
                             @if ($column['is_pool'])
-                                @php($poolFiltered = $poolAgeFilter !== '' || $poolSeriesFilter !== '')
+                                @php $poolFiltered = $poolAgeFilter !== '' || $poolSeriesFilter !== ''; @endphp
                                 <x-badge
                                     :value="$poolFiltered ? $column['current_count'] . ' / ' . ($column['total_count'] ?? $column['current_count']) : (string) $column['current_count']"
                                     class="badge-ghost badge-sm" />
@@ -141,10 +141,10 @@
                             @if ($canManage && ! $column['is_pool'])
                                 <x-button class="btn-ghost btn-xs btn-circle" icon="o-pencil-square"
                                     :tooltip="__('Edit group')"
-                                    wire:click="editPack({{ $column['pack_id'] }})" />
+                                    wire:click="editPack({{ $column['pack_id'] }})" :aria-label="__('Edit group')" />
                                 <x-button class="btn-ghost btn-xs btn-circle text-error" icon="o-trash"
                                     :tooltip="__('Remove group')"
-                                    wire:click="confirmRemovePack({{ $column['pack_id'] }})" />
+                                    wire:click="confirmRemovePack({{ $column['pack_id'] }})" :aria-label="__('Remove group')" />
                             @endif
                         </div>
                     </div>
@@ -197,7 +197,7 @@
                                             </span>
                                         @endif
                                         @if ($card['wants_to_be_captain'])
-                                            <span title="{{ __('Captain') }}"><x-icon name="o-megaphone" class="h-3.5 w-3.5 text-warning" /></span>
+                                            <span title="{{ __('Captain') }}"><x-icon name="o-megaphone" class="h-3.5 w-3.5 text-warning-content" /></span>
                                         @endif
                                         @if ($card['volunteer_help'])
                                             <span title="{{ __('Volunteer') }}"><x-icon name="o-hand-raised" class="h-3.5 w-3.5" /></span>
@@ -212,8 +212,8 @@
         </div>
 
         {{-- Add / edit hypothetical pack modal --}}
-        <x-modal wire:model="showPackModal"
-            :title="$editingPackId ? __('Edit group') : __('Add a group')" separator>
+        <x-app-modal wire:model="showPackModal"
+            :title="$editingPackId ? __('Edit group') : __('Add a group')" separator :open="$showPackModal">
             <div class="space-y-4">
                 <x-input :label="__('Group name')" wire:model="packName"
                     :placeholder="__('e.g. Tuesday Advanced')" />
@@ -240,10 +240,10 @@
                 <x-button :label="$editingPackId ? __('Save') : __('Add')" class="btn-primary"
                     wire:click="{{ $editingPackId ? 'savePack' : 'addPack' }}" spinner />
             </x-slot:actions>
-        </x-modal>
+        </x-app-modal>
 
         {{-- Import CSV modal --}}
-        <x-modal wire:model="showImportModal" :title="__('Import CSV')" separator>
+        <x-app-modal wire:model="showImportModal" :title="__('Import CSV')" separator :open="$showImportModal">
             <div class="space-y-4">
                 <p class="text-sm text-base-content/60">
                     {{ __('Upload a CSV exported from this board. Members are matched by licence, then by email.') }}
@@ -256,11 +256,11 @@
                 <x-button :label="__('Import')" class="btn-primary"
                     wire:click="import" spinner="import" />
             </x-slot:actions>
-        </x-modal>
+        </x-app-modal>
 
         {{-- Remove group confirm modal (project modal, no native JS confirm) --}}
         <x-confirm-modal model="confirmRemovePackModal" :title="__('Remove this group?')"
-            :confirmLabel="__('Remove')" confirmAction="removePack">
+            :confirmLabel="__('Remove')" confirmAction="removePack" :open="$confirmRemovePackModal">
             <p>{{ __('Its members will return to the pool.') }}</p>
         </x-confirm-modal>
     @endif

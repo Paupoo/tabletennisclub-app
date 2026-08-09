@@ -17,7 +17,7 @@ const USER_INDEX_COMPONENT = 'pages::club-admin.users.index';
 
 beforeEach(function (): void {
     // On crée un utilisateur admin pour les tests
-    $this->admin = User::factory()->create(['is_admin' => true]);
+    $this->admin = User::factory()->isAdmin()->create();
     actingAs($this->admin);
 
     Season::factory()->create(['is_active' => true]);
@@ -110,6 +110,25 @@ describe('search functionality', function (): void {
             ->set('search', 'john')
             ->assertSee($user->first_name);
     });
+
+    it('finds compound names with words spanning first and last name', function (): void {
+        // L'adresse est figée : `fake()->city()` en fr_BE tire de vraies communes,
+        // dont Saint-Martin, et la ligne affichée est celle de ce membre-ci. Le
+        // « Martin » attendu absent serait alors venu du résultat cherché, pas de
+        // celui qu'on veut voir écarté — la CI l'a fait tomber une fois.
+        $jp = User::factory()->create([
+            'first_name' => 'Jean-Pierre',
+            'last_name' => 'Van Oudenhove',
+            'street' => 'Rue du Sport 1',
+            'city_name' => 'Ottignies',
+        ]);
+        $other = User::factory()->create(['first_name' => 'Alice', 'last_name' => 'Martin']);
+
+        Livewire::test(USER_INDEX_COMPONENT)
+            ->set('search', 'Jean Van')
+            ->assertSee('Van Oudenhove')
+            ->assertDontSee('Martin');
+    });
 });
 
 describe('licence type filtering', function (): void {
@@ -166,13 +185,11 @@ describe('gender filtering', function (): void {
     it('filters users by multiple genders', function (): void {
         $male = User::factory()->create(['gender' => 'MEN']);
         $female = User::factory()->create(['gender' => 'WOMEN']);
-        $other = User::factory()->create(['gender' => 'OTHER']);
 
         Livewire::test(USER_INDEX_COMPONENT)
             ->set('categories', ['MEN', 'WOMEN'])
             ->assertSee($male->email)
-            ->assertSee($female->email)
-            ->assertDontSee($other->email);
+            ->assertSee($female->email);
     });
 
     it('resets pagination when changing categories', function (): void {
@@ -311,6 +328,30 @@ describe('sorting', function (): void {
 
         expect(array_search($alice->id, $ids))->toBeLessThan(array_search($bob->id, $ids));
         expect(array_search($bob->id, $ids))->toBeLessThan(array_search($charlie->id, $ids));
+    });
+
+    it('sorts by the name column using first name then last name', function (): void {
+        // Same last name to prove first_name is the primary sort key.
+        $anna = User::factory()->create(['first_name' => 'Anna', 'last_name' => 'Dupont']);
+        $bruno = User::factory()->create(['first_name' => 'Bruno', 'last_name' => 'Dupont']);
+
+        $users = Livewire::test(USER_INDEX_COMPONENT)
+            ->set('sortBy', ['column' => 'name', 'direction' => 'asc'])
+            ->get('users');
+
+        $ids = $users->pluck('id')->toArray();
+
+        expect(array_search($anna->id, $ids))->toBeLessThan(array_search($bruno->id, $ids));
+    });
+
+    it('falls back to a safe default when the sort column is unknown', function (): void {
+        User::factory()->count(3)->create();
+
+        // A tampered `sortBy` URL value must not reach orderBy() raw and crash.
+        Livewire::test(USER_INDEX_COMPONENT)
+            ->set('sortBy', ['column' => 'not_a_column', 'direction' => 'asc'])
+            ->assertStatus(200)
+            ->get('users');
     });
 });
 

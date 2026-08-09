@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Livewire\Livewire;
 
@@ -46,8 +47,7 @@ describe('Test Club Settings', function (): void {
         });
 
         it('displays committee members in the view', function (): void {
-            $member = User::factory()->create([
-                'is_committee_member' => true,
+            $member = User::factory()->isCommitteeMember()->create([
                 'first_name' => 'Alice',
                 'last_name' => 'Dumont',
                 'committee_role' => CommitteeRolesEnum::PRESIDENT,
@@ -59,7 +59,9 @@ describe('Test Club Settings', function (): void {
         });
 
         it('shows empty state when no committee members exist', function (): void {
-            User::where('is_committee_member', true)->update(['is_committee_member' => false]);
+            User::role(Role::COMMITTEE->value)->each(
+                fn (User $member): User => $member->removeRole(Role::COMMITTEE->value)
+            );
 
             Livewire::test(clubSettingsComponent())
                 ->assertSee(__('No committee members defined yet.'));
@@ -150,7 +152,7 @@ describe('Test Club Settings', function (): void {
     describe('addMember(in the modal)', function (): void {
 
         it('adds a user to the committee with a valid role', function (): void {
-            $user = User::factory()->create(['is_committee_member' => false]);
+            $user = User::factory()->create();
 
             Livewire::test(committeeModalComponent())
                 ->set('selectedMemberId', $user->id)
@@ -158,12 +160,12 @@ describe('Test Club Settings', function (): void {
                 ->call('addMember');
 
             expect($user->fresh())
-                ->is_committee_member->toBeTrue()
+                ->hasRole(Role::COMMITTEE->value)->toBeTrue()
                 ->committee_role->toBe(CommitteeRolesEnum::PRESIDENT);
         });
 
         it('resets selectedMemberId, selectedRoleId and closes modal after adding', function (): void {
-            $user = User::factory()->create(['is_committee_member' => false]);
+            $user = User::factory()->create();
 
             Livewire::test(committeeModalComponent())
                 ->set('selectedMemberId', $user->id)
@@ -204,7 +206,7 @@ describe('Test Club Settings', function (): void {
 
         // Skippé, car je ne sais pas comment vérifier le toast Mary UI. (non critique)
         it('dispatches a success toast after adding', function (): void {
-            $user = User::factory()->create(['is_committee_member' => false]);
+            $user = User::factory()->create();
 
             Livewire::test(committeeModalComponent())
                 ->set('selectedMemberId', $user->id)
@@ -223,8 +225,7 @@ describe('Test Club Settings', function (): void {
     describe('removeMember', function (): void {
 
         it('removes a user from the committee', function (): void {
-            $user = User::factory()->create([
-                'is_committee_member' => true,
+            $user = User::factory()->isCommitteeMember()->create([
                 'committee_role' => CommitteeRolesEnum::TREASURER,
             ]);
 
@@ -232,13 +233,13 @@ describe('Test Club Settings', function (): void {
                 ->call('removeMember', $user->id);
 
             expect($user->fresh())
-                ->is_committee_member->toBeFalse()
+                ->hasRole(Role::COMMITTEE->value)->toBeFalse()
                 ->committee_role->toBeNull();
         });
 
         // Skippé, car je ne sais pas comment vérifier le toast Mary UI. (non critique)
         it('dispatches a success toast after removing', function (): void {
-            $user = User::factory()->create(['is_committee_member' => true]);
+            $user = User::factory()->isCommitteeMember()->create();
 
             Livewire::test(clubSettingsComponent())
                 ->call('removeMember', $user->id)
@@ -271,15 +272,51 @@ describe('Test Club Settings', function (): void {
     });
 
     // ─────────────────────────────────────────────────────────────────────────────
+    // SAVE (bank_account / IBAN)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    describe('save(bank_account)', function (): void {
+
+        it('normalizes a bank_account entered with spaces before saving', function (): void {
+            Club::factory()->ownClub()->create(['bank_account' => 'BE23732333208791', 'email_contact' => 'club@example.com']);
+
+            Livewire::test(clubSettingsComponent())
+                ->set('bank_account', 'be68 5390 0754 7034')
+                ->call('save');
+
+            expect(Club::ourClub()->first()->bank_account)->toBe('BE68539007547034');
+        });
+
+        it('rejects a bank_account that fails the IBAN checksum', function (): void {
+            Club::factory()->ownClub()->create(['bank_account' => 'BE23732333208791', 'email_contact' => 'club@example.com']);
+
+            Livewire::test(clubSettingsComponent())
+                ->set('bank_account', 'BE00539007547034')
+                ->call('save')
+                ->assertHasErrors(['bank_account']);
+        });
+
+        it('requires a bank_account', function (): void {
+            Club::factory()->ownClub()->create(['bank_account' => 'BE23732333208791', 'email_contact' => 'club@example.com']);
+
+            Livewire::test(clubSettingsComponent())
+                ->set('bank_account', '')
+                ->call('save')
+                ->assertHasErrors(['bank_account']);
+        });
+
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────────
     // COMMITTEE MEMBERS ORDERING
     // ─────────────────────────────────────────────────────────────────────────────
 
     describe('committeeMembers ordering', function (): void {
 
         it('orders members by role priority: President first, then Secretary, Treasurer, others', function (): void {
-            User::factory()->create(['is_committee_member' => true, 'committee_role' => CommitteeRolesEnum::TREASURER, 'last_name' => 'Abc']);
-            User::factory()->create(['is_committee_member' => true, 'committee_role' => CommitteeRolesEnum::SECRETARY, 'last_name' => 'Abc']);
-            User::factory()->create(['is_committee_member' => true, 'committee_role' => CommitteeRolesEnum::PRESIDENT, 'last_name' => 'Abc']);
+            User::factory()->isCommitteeMember()->create(['committee_role' => CommitteeRolesEnum::TREASURER, 'last_name' => 'Abc']);
+            User::factory()->isCommitteeMember()->create(['committee_role' => CommitteeRolesEnum::SECRETARY, 'last_name' => 'Abc']);
+            User::factory()->isCommitteeMember()->create(['committee_role' => CommitteeRolesEnum::PRESIDENT, 'last_name' => 'Abc']);
 
             $component = Livewire::test(clubSettingsComponent());
 

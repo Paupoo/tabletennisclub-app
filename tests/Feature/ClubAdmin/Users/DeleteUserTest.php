@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use Livewire\Livewire;
 use Tests\Trait\CreateUser;
 
 uses(CreateUser::class);
@@ -28,7 +30,7 @@ test('admin can see delete button for other users', function (): void {
 });
 
 test('admin account is not archived when they try to delete themselves', function (): void {
-    Livewire\Livewire::actingAs($this->admin)
+    Livewire::actingAs($this->admin)
         ->test('pages::club-admin.users.index')
         ->call('confirmDelete', $this->admin->id)
         ->call('delete');
@@ -58,4 +60,36 @@ test('user cant see delete button from users show view', function (): void {
         ->get(route('admin.user.profile', $this->user));
 
     $response->assertDontSee('Delete user');
+});
+
+test('archiving a user with an unresolved subscription for the active season shows an error and keeps them active', function (): void {
+    $season = makeActiveSeason();
+    Subscription::factory()->create([
+        'user_id' => $this->user->id,
+        'season_id' => $season->id,
+        'status' => 'paid',
+    ]);
+
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-admin.users.index')
+        ->call('confirmDelete', $this->user->id)
+        ->call('delete');
+
+    expect(User::find($this->user->id))->not->toBeNull();
+});
+
+test('archiving a user whose active-season subscription is already cancelled succeeds', function (): void {
+    $season = makeActiveSeason();
+    Subscription::factory()->create([
+        'user_id' => $this->user->id,
+        'season_id' => $season->id,
+        'status' => 'cancelled',
+    ]);
+
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-admin.users.index')
+        ->call('confirmDelete', $this->user->id)
+        ->call('delete');
+
+    expect(User::find($this->user->id))->toBeNull();
 });

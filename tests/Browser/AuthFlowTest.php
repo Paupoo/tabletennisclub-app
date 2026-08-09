@@ -16,12 +16,12 @@ it('redirects guest to login when visiting dashboard', function (): void {
         ->assertPathIs('/login');
 });
 
-it('logs in with valid credentials and lands on home', function (): void {
+it('logs in with valid credentials and lands on the admin dashboard', function (): void {
     visit(route('login'))
         ->type('#email', 'admin@test.com')
         ->type('#password', 'password')
         ->click('button[type="submit"]')
-        ->assertPathIs('/')
+        ->assertPathIs('/admin/dashboard')
         ->assertNoJavaScriptErrors();
 });
 

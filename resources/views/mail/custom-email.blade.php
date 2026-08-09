@@ -1,4 +1,5 @@
 <x-mail::message>
+{{-- Échappé par CustomEmail::processMessage() : le HTML restant (<br>, liens) est le sien. --}}
 {!! $customMessage !!}
 
 Cordialement,

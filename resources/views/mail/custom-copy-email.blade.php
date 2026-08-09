@@ -21,6 +21,7 @@ Ceci est une copie de l'email envoyé au contact.
 
 ### Message envoyé :
 
+{{-- Échappé par CustomEmail::processMessage() : le HTML restant (<br>, liens) est le sien. --}}
 {!! $customMessage !!}
 
 ---

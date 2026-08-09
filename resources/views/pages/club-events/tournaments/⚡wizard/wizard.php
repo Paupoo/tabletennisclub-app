@@ -176,7 +176,7 @@ new class extends Component
 
     public function applyObjectiveSuggestion(): void
     {
-        if (empty($this->selectedObjective)) {
+        if ($this->selectedObjective === '' || $this->selectedObjective === '0') {
             $this->warning(__('Please select an objective first.'));
 
             return;
@@ -212,7 +212,7 @@ new class extends Component
         return Room::select(['id', 'name', 'total_playable_tables'])
             ->orderBy('name')
             ->get()
-            ->map(fn ($room) => [
+            ->map(fn ($room): array => [
                 'id' => $room->id,
                 'name' => $room->name . ' (' . $room->total_playable_tables . ' tables)',
             ])
@@ -257,7 +257,7 @@ new class extends Component
 
     public function confirmBulkCancel(): void
     {
-        if (empty($this->selectedPeople) || ! $this->tournamentId) {
+        if ($this->selectedPeople === [] || ! $this->tournamentId) {
             return;
         }
 
@@ -277,7 +277,7 @@ new class extends Component
 
     public function confirmBulkNoShow(): void
     {
-        if (empty($this->selectedPeople) || ! $this->tournamentId) {
+        if ($this->selectedPeople === [] || ! $this->tournamentId) {
             return;
         }
 
@@ -292,7 +292,7 @@ new class extends Component
 
     public function confirmBulkPresence(): void
     {
-        if (empty($this->selectedPeople) || ! $this->tournamentId) {
+        if ($this->selectedPeople === [] || ! $this->tournamentId) {
             return;
         }
 
@@ -533,7 +533,7 @@ new class extends Component
             ->where('tournament_id', $this->tournamentId)
             ->orderByDesc('sent_at')
             ->get()
-            ->map(fn ($row) => [
+            ->map(fn ($row): array => [
                 'id' => $row->id,
                 'count' => $row->user_count,
                 'sent_at' => $row->sent_at,
@@ -661,9 +661,9 @@ new class extends Component
             ->orderBy('match_order')
             ->get()
             ->groupBy('pool_id')
-            ->map(fn ($matches, $poolId) => [
+            ->map(fn ($matches, $poolId): array => [
                 'name' => $matches->first()->pool?->name ?? "Pool {$poolId}",
-                'matches' => $matches->map(fn ($m) => [
+                'matches' => $matches->map(fn ($m): array => [
                     'order' => $m->match_order,
                     'p1' => $isDoubles ? ($m->pair1?->displayName() ?? '—') : ($m->player1?->full_name ?? '—'),
                     'p2' => $isDoubles ? ($m->pair2?->displayName() ?? '—') : ($m->player2?->full_name ?? '—'),
@@ -700,7 +700,7 @@ new class extends Component
         }
 
         return $query->get()
-            ->map(fn (User $u) => [
+            ->map(fn (User $u): array => [
                 'id' => $u->id,
                 'name' => $u->full_name,
                 'email' => $u->email,
@@ -771,7 +771,7 @@ new class extends Component
     #[Computed]
     public function nbTables(): int
     {
-        if (empty($this->selectedRooms)) {
+        if ($this->selectedRooms === []) {
             return $this->nb_tables;
         }
 
@@ -843,7 +843,7 @@ new class extends Component
         return TournamentPair::where('tournament_id', $this->tournamentId)
             ->with(['player1', 'player2'])
             ->get()
-            ->map(fn (TournamentPair $p) => [
+            ->map(fn (TournamentPair $p): array => [
                 'id' => $p->id,
                 'name' => $p->displayName(),
                 'p1_id' => $p->player1_id,
@@ -870,13 +870,13 @@ new class extends Component
                 ->pools()
                 ->with(['pairs.player1', 'pairs.player2'])
                 ->get()
-                ->mapWithKeys(fn (Pool $pool) => [
+                ->mapWithKeys(fn (Pool $pool): array => [
                     $pool->id => [
                         'name' => $pool->name,
-                        'players' => $pool->pairs->map(fn ($pair) => [
+                        'players' => $pool->pairs->map(fn ($pair): array => [
                             'id' => $pair->id,
                             'name' => $pair->displayName(),
-                            'rank' => $pair->averageRanking(),
+                            'rank' => $pair->rankingLabel(),
                             'pts' => 0,
                         ])->toArray(),
                     ],
@@ -893,10 +893,10 @@ new class extends Component
                 ->orderBy('first_name'),
             ])
             ->get()
-            ->mapWithKeys(fn (Pool $pool) => [
+            ->mapWithKeys(fn (Pool $pool): array => [
                 $pool->id => [
                     'name' => $pool->name,
-                    'players' => $pool->users->map(fn (User $u) => [
+                    'players' => $pool->users->map(fn (User $u): array => [
                         'id' => $u->id,
                         'name' => $u->full_name,
                         'rank' => $u->ranking ?? 'NC',
@@ -943,7 +943,7 @@ new class extends Component
             ->pluck('id');
 
         $tournament->tables()->sync(
-            $tableIds->mapWithKeys(fn ($id) => [$id => ['is_table_free' => true]])->all()
+            $tableIds->mapWithKeys(fn ($id): array => [$id => ['is_table_free' => true]])->all()
         );
 
         return redirect()->route('admin.tournaments.live-center', $tournament->id);
@@ -996,7 +996,7 @@ new class extends Component
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get()
-            ->map(fn (User $u) => [
+            ->map(fn (User $u): array => [
                 'id' => $u->id,
                 'name' => $u->full_name . ' (' . ($u->ranking ?? 'NC') . ')',
             ])
@@ -1055,7 +1055,7 @@ new class extends Component
         $paymentIds = $users->map(fn (User $u) => $u->pivot->payment_id)->filter()->unique()->values();
         $paidPaymentIds = Payment::whereIn('id', $paymentIds)->where('status', 'paid')->pluck('id')->flip();
 
-        $rows = $users->map(fn (User $u) => [
+        $rows = $users->map(fn (User $u): array => [
             'id' => $u->id,
             'name' => $u->full_name,
             'ranking' => $u->ranking ?? 'NC',
@@ -1099,11 +1099,11 @@ new class extends Component
     public function render(): mixed
     {
         $search = strtolower($this->memberSearch);
-        $filteredMembers = empty($search)
+        $filteredMembers = $search === '' || $search === '0'
             ? $this->members
             : array_values(array_filter(
                 $this->members,
-                fn ($m) => str_contains(strtolower($m['name']), $search)
+                fn (array $m): bool => str_contains(strtolower($m['name']), $search)
                     || str_contains(strtolower($m['email'] ?? ''), $search)
             ));
 
@@ -1183,7 +1183,7 @@ new class extends Component
         $this->tournamentId = $tournament->id;
 
         // Notify registered players when logistical details changed.
-        if (! empty($logisticsChanged) && $this->hasRegisteredUsers) {
+        if ($logisticsChanged !== [] && $this->hasRegisteredUsers) {
             unset($this->hasRegisteredUsers);
             $tournament->users()
                 ->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered'])
@@ -1218,11 +1218,11 @@ new class extends Component
 
     public function sendInvitations(): void
     {
-        if (empty($this->selectedMembers) || ! $this->tournamentId) {
+        if ($this->selectedMembers === [] || ! $this->tournamentId) {
             return;
         }
 
-        if (empty($this->registration_deadline)) {
+        if ($this->registration_deadline === '' || $this->registration_deadline === '0') {
             $this->error(__('A registration deadline is required before sending invitations.'));
 
             return;
@@ -1337,7 +1337,7 @@ new class extends Component
     {
         if (in_array($id, $this->selectedMembers)) {
             $this->selectedMembers = array_values(
-                array_filter($this->selectedMembers, fn ($m) => $m !== $id)
+                array_filter($this->selectedMembers, fn ($m): bool => $m !== $id)
             );
         } else {
             $this->selectedMembers[] = $id;
@@ -1353,7 +1353,7 @@ new class extends Component
 
         $pairedIds = TournamentPair::where('tournament_id', $this->tournamentId)
             ->get()
-            ->flatMap(fn ($p) => [$p->player1_id, $p->player2_id])
+            ->flatMap(fn ($p): array => [$p->player1_id, $p->player2_id])
             ->unique()
             ->toArray();
 
@@ -1362,7 +1362,7 @@ new class extends Component
             ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered'])
             ->whereNotIn('users.id', $pairedIds)
             ->get()
-            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
+            ->map(fn (User $u): array => ['id' => $u->id, 'name' => $u->full_name])
             ->toArray();
     }
 
@@ -1392,7 +1392,7 @@ new class extends Component
 
     public function updatedSelectedRooms(): void
     {
-        if (! empty($this->selectedRooms)) {
+        if ($this->selectedRooms !== []) {
             $total = Room::whereIn('id', $this->selectedRooms)->sum('total_playable_tables');
 
             if ($total > 0) {
@@ -1423,7 +1423,7 @@ new class extends Component
             return;
         }
 
-        if (empty($this->name) || empty($this->registration_deadline)) {
+        if ($this->name === '' || $this->name === '0' || ($this->registration_deadline === '' || $this->registration_deadline === '0')) {
             $this->error(__('Tournament name and registration deadline are required before locking.'));
 
             return;
@@ -1453,7 +1453,7 @@ new class extends Component
             ->wherePivot('registration_status', 'waiting')
             ->orderByPivot('waitlist_position')
             ->get()
-            ->map(fn (User $u) => [
+            ->map(fn (User $u): array => [
                 'id' => $u->id,
                 'name' => $u->full_name,
                 'ranking' => $u->ranking ?? 'NC',

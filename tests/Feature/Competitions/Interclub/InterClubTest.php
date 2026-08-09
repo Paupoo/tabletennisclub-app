@@ -8,7 +8,9 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\Trait\CreateInterclub;
 use Tests\Trait\CreateUser;
 
@@ -48,6 +50,7 @@ test('admin or comitte member can create interclub', function (): void {
         ->assertOK();
 
     $committee_member = $this->createFakeCommitteeMember();
+    $committee_member->assignRole(Role::INTERCLUBS->value);
 
     $this->actingAs($committee_member)
         ->get(route('admin.interclubs.control-center'))
@@ -62,12 +65,50 @@ test('captains are able to store an interclub', function (): void {
 test('invalid request', function (): void {
     // to do
 })->todo();
-test('route control-center accessible to users', function (): void {
+test('control-center is not accessible to plain members', function (): void {
     $user = $this->createFakeUser();
 
     $this->actingAs($user)
         ->get(route('admin.interclubs.control-center'))
-        ->assertOk();
+        ->assertForbidden();
+});
+
+describe('control-center filter drawer', function (): void {
+    test('season filter chip appears only when a non-active season is selected', function (): void {
+        $admin = $this->createFakeAdmin();
+        $activeSeason = Season::where('is_active', true)->first();
+        $otherSeason = Season::factory()->create(['is_active' => false]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.interclubs.control-center')
+            ->assertSet('selectedSeasonId', $activeSeason->id)
+            ->assertViewHas('filterChips', [])
+            ->set('selectedSeasonId', $otherSeason->id)
+            ->assertViewHas('filterChips', fn ($chips): bool => count($chips) === 1 && $chips[0]['key'] === 'selectedSeasonId');
+    });
+
+    test('removing the season chip resets to the active season', function (): void {
+        $admin = $this->createFakeAdmin();
+        $activeSeason = Season::where('is_active', true)->first();
+        $otherSeason = Season::factory()->create(['is_active' => false]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.interclubs.control-center')
+            ->set('selectedSeasonId', $otherSeason->id)
+            ->call('removeFilter', 'selectedSeasonId')
+            ->assertSet('selectedSeasonId', $activeSeason->id);
+    });
+
+    test('show issues only toggle appears as a removable chip', function (): void {
+        $admin = $this->createFakeAdmin();
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.interclubs.control-center')
+            ->set('filterAlerts', true)
+            ->assertViewHas('filterChips', fn ($chips): bool => count($chips) === 1 && $chips[0]['key'] === 'filterAlerts')
+            ->call('clearFilters')
+            ->assertSet('filterAlerts', false);
+    });
 });
 
 describe('matchDayMap', function (): void {

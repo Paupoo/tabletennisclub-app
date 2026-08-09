@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property int $sort_order
  * @property string $title
  * @property string|null $description
+ * @property Carbon|null $discussed_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Meeting $meeting
@@ -44,6 +45,7 @@ class MeetingAgendaItem extends Model
 
     protected $casts = [
         'sort_order' => 'integer',
+        'discussed_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -51,6 +53,7 @@ class MeetingAgendaItem extends Model
         'sort_order',
         'title',
         'description',
+        'discussed_at',
     ];
 
     public function meeting(): BelongsTo

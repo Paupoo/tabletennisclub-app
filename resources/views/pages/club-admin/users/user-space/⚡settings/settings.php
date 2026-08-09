@@ -3,8 +3,13 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\ClubAdmin\Users\Notifications\GdprErasureRequestedNotification;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -14,60 +19,126 @@ new #[Title('My settings')] class extends Component
 {
     use HasBreadcrumbs, Toast;
 
-    public bool $notification_match = true;
+    public bool $notifyAvailabilityRequests = true;
 
-    public bool $notification_new_training = true;
+    public bool $notifyInterclubSelections = true;
 
-    public bool $notification_news_events = false;
+    public bool $notifyNewTournaments = true;
 
-    public bool $notification_team_result = false;
+    public string $password = '';
 
-    public bool $notification_waiting_list = true;
+    public string $password_confirmation = '';
 
-    public string $password;
+    // ── Contact visibility (opt-in per field)
+    public bool $shareAddress = false;
 
-    public string $password_confirmation;
+    public bool $shareEmail = false;
 
-    public bool $public_email = false;
-
-    public bool $public_phone_number = false;
-
-    public bool $public_profile = true;
+    public bool $sharePhone = false;
 
     public User $user;
+
+    public function mount(User $user): void
+    {
+        abort_unless(Auth::user()->is($user), 403);
+
+        $this->user = $user;
+        $this->notifyNewTournaments = $user->wantsNotification('new_tournaments');
+        $this->notifyAvailabilityRequests = $user->wantsNotification('availability_requests');
+        $this->notifyInterclubSelections = $user->wantsNotification('interclub_selections');
+        $this->sharePhone = $user->sharesContact('phone');
+        $this->shareEmail = $user->sharesContact('email');
+        $this->shareAddress = $user->sharesContact('address');
+    }
+
+    /**
+     * Self-service GDPR erasure request. Lives here (account settings) rather
+     * than on the profile page, which is about presenting the member.
+     */
+    public function requestErasure(): void
+    {
+        abort_unless(Auth::user()->is($this->user), 403);
+
+        // Idempotent: one request = one notification, keep the original request date.
+        if ($this->user->gdpr_erasure_requested_at) {
+            $this->success(__('Erasure request sent. The admin will process it shortly.'));
+
+            return;
+        }
+
+        $this->user->update(['gdpr_erasure_requested_at' => now()]);
+
+        $recipients = User::query()
+            ->where('id', '!=', $this->user->id)
+            ->where(function ($query): void {
+                $query->whereHas('roles', fn ($q) => $q->where('name', Role::ADMINISTRATOR->value))
+                    ->orWhere('committee_role', CommitteeRolesEnum::SECRETARY->value);
+            })
+            ->get();
+
+        Notification::send($recipients, new GdprErasureRequestedNotification($this->user));
+
+        $this->success(__('Erasure request sent. The admin will process it shortly.'));
+    }
 
     public function rules(): array
     {
         return [
             'password' => [
-                'nullable',
+                'required',
                 'confirmed',
-                Password::min(8)->letters()->numbers()->symbols()->uncompromised(),
+                Password::defaults(),
             ],
-            'password_confirmation' => 'nullable',
+            'password_confirmation' => 'required',
         ];
     }
 
-    public function save(): void
+    /**
+     * Notification toggles save themselves as soon as they are flipped —
+     * no extra submit button for a one-click preference.
+     */
+    public function updated(string $property): void
     {
-        $validated = $this->validate();
+        abort_unless(Auth::user()->is($this->user), 403);
 
-        if (! empty($validated['password'])) {
-            Hash::make($validated['password']);
-        } else {
-            unset($validated['password']);
+        if (str_starts_with($property, 'notify')) {
+            $this->user->update([
+                'notification_preferences' => [
+                    'new_tournaments' => $this->notifyNewTournaments,
+                    'availability_requests' => $this->notifyAvailabilityRequests,
+                    'interclub_selections' => $this->notifyInterclubSelections,
+                ],
+            ]);
+
+            $this->success(__('Notification preferences saved.'), position: 'toast-bottom toast-end');
+
+            return;
         }
 
-        unset($validated['password_confirmation']);
+        if (str_starts_with($property, 'share')) {
+            $this->user->update([
+                'contact_visibility' => [
+                    'phone' => $this->sharePhone,
+                    'email' => $this->shareEmail,
+                    'address' => $this->shareAddress,
+                ],
+            ]);
 
-        $this->user->update($validated);
+            $this->success(__('Privacy preferences saved.'), position: 'toast-bottom toast-end');
+        }
+    }
 
-        $this->reset([
-            'password',
-            'password_confirmation',
-        ]);
+    public function updatePassword(): void
+    {
+        abort_unless(Auth::user()->is($this->user), 403);
 
-        $this->success(__('Your settings have been updated.'));
+        $validated = $this->validate();
+
+        $this->user->update(['password' => $validated['password']]);
+
+        $this->reset(['password', 'password_confirmation']);
+
+        $this->success(__('Your password has been updated.'));
     }
 
     public function with(): array

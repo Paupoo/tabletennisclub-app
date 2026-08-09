@@ -23,8 +23,8 @@ class TrainingPackRequestedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Demande de pack d\'entraînement'),
-            'body' => __('Votre demande d\'inscription a bien été enregistrée'),
+            'title' => __('Training pack request'),
+            'body' => __('Your enrolment request has been registered'),
             'url' => route('admin.trainings.index'),
             'category' => 'training',
             'icon' => 'o-academic-cap',
@@ -34,14 +34,14 @@ class TrainingPackRequestedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject(__('Entraînement :pack — demande enregistrée', ['pack' => $this->pack->name]))
-            ->greeting(__('Bonjour :name,', ['name' => $notifiable->first_name]))
-            ->line(__('Votre demande d\'inscription au pack **:pack** pour la saison **:season** a bien été enregistrée.', [
+            ->subject(__('Training :pack — request registered', ['pack' => $this->pack->name]))
+            ->greeting(__('Hello :name,', ['name' => $notifiable->first_name]))
+            ->line(__('Your enrolment request for pack **:pack** for season **:season** has been registered.', [
                 'pack' => $this->pack->name,
                 'season' => $this->subscription->season->name,
             ]))
-            ->line(__('Le comité va la traiter prochainement. Vous serez notifié par email dès que votre inscription sera validée.'))
-            ->line(__('En cas de question, n\'hésitez pas à contacter le secrétariat du club.'));
+            ->line(__('The committee will process it shortly. You will be notified by email as soon as your enrolment is validated.'))
+            ->line(__('If you have any question, feel free to contact the club secretariat.'));
     }
 
     /** @return array<int, string> */

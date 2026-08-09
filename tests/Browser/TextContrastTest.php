@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\League;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
 use Database\Seeders\InterclubResultsSeeder;
@@ -153,7 +157,16 @@ it('keeps body text above the AA threshold on the interclubs screens', function 
     $this->seed(InterclubScheduleSeeder::class);
     $this->seed(InterclubResultsSeeder::class);
 
-    $this->actingAs(User::factory()->withRole(Role::INTERCLUBS)->create());
+    $user = User::factory()->withRole(Role::INTERCLUBS)->create();
+
+    // The selections screen answers to access-selections, which a captaincy
+    // satisfies on its own — that is the whole point of the Gate.
+    Team::query()
+        ->whereHas('club', fn ($q) => $q->where('is_own_club', true))
+        ->first()
+        ?->update(['captain_id' => $user->id]);
+
+    $this->actingAs($user);
 
     $page = visit(route($route));
 
@@ -168,4 +181,70 @@ it('keeps body text above the AA threshold on the interclubs screens', function 
 })->with([
     'admin.interclubs.results',
     'admin.interclubs.clubs',
+    'admin.interclubs.captain-selection',
 ]);
+
+/*
+ * The selection drawer holds the densest figures of the whole back office —
+ * ranking chip, availability, played/selected counters, contact details — and
+ * none of it is measured by the page-load probes above, because the drawer
+ * starts closed. It carried the worst pairing in the application: 7px labels at
+ * 30% opacity, 1.96:1.
+ */
+it('keeps the selection drawer above the AA threshold once it is open', function () use ($contrastProbe): void {
+    $season = Season::factory()->create([
+        'is_active' => true,
+        'start_at' => now()->subMonths(4),
+        'end_at' => now()->addMonths(6),
+    ]);
+    $ownClub = Club::factory()->ownClub()->create();
+    $league = League::factory()->create([
+        'season_id' => $season->id,
+        'category' => 'MEN',
+    ]);
+
+    $captain = User::factory()->isCompetitor()->create();
+
+    $team = Team::factory()->create([
+        'season_id' => $season->id,
+        'league_id' => $league->id,
+        'club_id' => $ownClub->id,
+        'captain_id' => $captain->id,
+    ]);
+
+    // Contact details, a note and mixed availabilities: every dense row the
+    // drawer can render has to be on screen for the probe to mean anything.
+    $players = User::factory()->isCompetitor()->count(4)->create(['phone_number' => '0470 12 34 56']);
+    $team->users()->attach($players->pluck('id'));
+
+    $fixture = Interclub::factory()->create([
+        'season_id' => $season->id,
+        'league_id' => $league->id,
+        'visited_team_id' => $team->id,
+        'week_number' => 3,
+        'total_players' => 4,
+        'start_date_time' => now()->addDays(6)->setTime(19, 45),
+    ]);
+
+    foreach ($players as $i => $p) {
+        $fixture->users()->attach($p->id, [
+            'availability' => ['available', 'maybe', 'unavailable', 'available'][$i],
+            'is_selected' => $i === 0,
+            'availability_note' => $i === 1 ? 'Je dois partir à 22h' : null,
+        ]);
+    }
+
+    $this->actingAs($captain);
+
+    $page = visit(route('admin.interclubs.captain-selection'))
+        ->click('[data-match-row]:first-of-type [data-row-menu-primary]')
+        ->assertSee(__('Team roster'));
+
+    $result = $page->script($contrastProbe);
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold in the selection drawer:\n%s",
+        implode("\n", $failures),
+    ));
+});

@@ -422,3 +422,20 @@ select:focus {
 [x-cloak] {
   display: none !important;
 }
+
+/* =============================================================================
+   Motion — respecter le réglage système
+   Le design system prescrit des transitions de 150–300 ms, aucune boucle infinie
+   et le respect de prefers-reduced-motion. Les pastilles `animate-pulse` des
+   écrans interclubs clignotaient sans fin quel que soit le réglage de l'OS.
+   ============================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -30,6 +30,7 @@
     carries only what they are allowed to do. --}}
     @if (filled($label))
         <x-button
+            data-row-menu-primary
             :label="$label"
             :icon="$icon"
             :link="$link"

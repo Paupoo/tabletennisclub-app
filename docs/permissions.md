@@ -27,7 +27,7 @@ compte.
 
 ### Membre du comité — `comite`
 
-Accès de base au back-office : consulter les données du club sans les gérer.
+Accès de base au back-office : consulter les données du club sans les gérer.
 
 - `users.view`
 - `subscriptions.view`
@@ -48,7 +48,7 @@ Chacune peut être confiée à n'importe quel membre, qu'il siège au comité ou
 
 ### Bar — `bar`
 
-Gérer le bar : produits, stock, commandes et feuille de caisse.
+Gérer le bar : produits, stock, commandes et feuille de caisse.
 
 - `bar.access`
 - `bar.products.manage`

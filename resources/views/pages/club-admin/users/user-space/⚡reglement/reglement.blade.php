@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" />
     </x-slot:breadcrumbs>
 
-    <x-header separator :subtitle="__('The essentials of the AFTTB regulation, in plain language')"
+    <x-header progress-indicator separator :subtitle="__('The essentials of the AFTTB regulation, in plain language')"
         :title="__('Rules & regulations')" />
 
     {{--

@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header :title="__('New meeting')"
+    <x-header progress-indicator :title="__('New meeting')"
         :subtitle="__('Title, type, date — everything else is set up from the meeting page.')" />
 
     <div class="mx-auto max-w-xl">

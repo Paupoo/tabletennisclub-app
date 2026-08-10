@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" />
     </x-slot:breadcrumbs>
 
-    <x-header separator :subtitle="__('Your payments and those of the members you are responsible for')"
+    <x-header progress-indicator separator :subtitle="__('Your payments and those of the members you are responsible for')"
         :title="__('My payments')">
         <x-slot:actions>
             <x-admin.shared.filters-button :count="count($filterChips)" class="btn-sm" />

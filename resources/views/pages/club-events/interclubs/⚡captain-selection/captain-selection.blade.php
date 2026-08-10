@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header separator :subtitle="__('Manage team selections')" :title="__('Selections')">
+    <x-header progress-indicator separator :subtitle="__('Manage team selections')" :title="__('Selections')">
         <x-slot:actions>
             <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-search="false" :show-more="false" />
             <div class="hidden lg:block">

@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" />
     </x-slot:breadcrumbs>
 
-    <x-header separator :subtitle="__('Manage your account and privacy preferences')"
+    <x-header progress-indicator separator :subtitle="__('Manage your account and privacy preferences')"
             :title="__('Settings')" />
 
     <!-- Section Appearance -->

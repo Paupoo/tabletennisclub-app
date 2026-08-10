@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header separator
+    <x-header progress-indicator separator
         :title="$team?->fullName() ?? __('My team(s)')"
         :subtitle="$team ? collect([$categoryLabel, $team->league?->division, $team->season?->name])->filter()->implode(' · ') : null">
         <x-slot:actions>

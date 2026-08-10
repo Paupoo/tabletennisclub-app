@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" />
     </x-slot:breadcrumbs>
 
-    <x-header separator :subtitle="__('Federation fines passed on to members')" :title="__('Fines')">
+    <x-header progress-indicator separator :subtitle="__('Federation fines passed on to members')" :title="__('Fines')">
         <x-slot:actions>
             <x-admin.shared.filters-button :count="count($filterChips)" class="btn-sm" />
             <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Issue a fine')"

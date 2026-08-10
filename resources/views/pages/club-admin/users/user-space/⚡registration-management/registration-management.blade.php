@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header :title="__('My season')" :subtitle="__('Manage your club membership and training enrollments')" separator />
+    <x-header progress-indicator :title="__('My season')" :subtitle="__('Manage your club membership and training enrollments')" separator />
 
     @php $isSingleMember = count($registrations) === 1; @endphp
 

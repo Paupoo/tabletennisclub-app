@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header :title="__('Table configuration')" separator>
+    <x-header progress-indicator :title="__('Table configuration')" separator>
         <x-slot:actions>
             <x-button :label="__('Back')" icon="o-arrow-left" link="{{ url()->previous() }}" />
         </x-slot:actions>

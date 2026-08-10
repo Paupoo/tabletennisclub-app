@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header title="{{ $tournament->name }}" :subtitle="__('Live tournament management')">
+    <x-header progress-indicator title="{{ $tournament->name }}" :subtitle="__('Live tournament management')">
         <x-slot:actions>
             @if ($this->tournamentClosed)
                 <x-badge value="{{ __('Closed') }}" class="badge-neutral" icon="o-lock-closed" />

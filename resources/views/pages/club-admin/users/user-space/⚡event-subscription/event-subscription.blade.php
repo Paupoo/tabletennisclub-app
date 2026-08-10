@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header separator :subtitle="__('Tournaments, dinners, and club meetings')"
+    <x-header progress-indicator separator :subtitle="__('Tournaments, dinners, and club meetings')"
         :title="__('Events and Activities')">
         <x-slot:actions>
             <x-admin.shared.mobile-header-actions :filter-count="count($this->getFilterChips())"

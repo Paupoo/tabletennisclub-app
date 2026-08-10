@@ -7,7 +7,7 @@
         {{-- ================================================================
              SESSION DETAIL
         ================================================================ --}}
-        <x-header separator
+        <x-header progress-indicator separator
             :subtitle="$selectedSession->start->translatedFormat('l d F Y') . ' · ' . $selectedSession->start->format('H:i') . '–' . $selectedSession->end->format('H:i')"
             :title="$selectedSession->trainingPack?->name ?? __('Session')">
             <x-slot:actions>
@@ -155,7 +155,7 @@
         {{-- ================================================================
              PLANNING — upcoming sessions list
         ================================================================ --}}
-        <x-header separator :subtitle="__('Your upcoming sessions')" :title="__('My sessions')" />
+        <x-header progress-indicator separator :subtitle="__('Your upcoming sessions')" :title="__('My sessions')" />
 
         @forelse ($upcomingSessions as $session)
             <button type="button" wire:click="viewSession({{ $session->id }})"

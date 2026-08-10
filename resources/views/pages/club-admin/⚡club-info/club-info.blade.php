@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header separator :subtitle="__('Configure your club identity and management team')"
+    <x-header progress-indicator separator :subtitle="__('Configure your club identity and management team')"
         :title="__('Club Info')" />
 
     <x-form wire:submit="save">

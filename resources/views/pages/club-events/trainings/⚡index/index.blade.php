@@ -6,7 +6,7 @@
     {{-- ── Header ──────────────────────────────────────────────────────────── --}}
     @if ($selectedPackId)
         {{-- SESSION LIST HEADER --}}
-        <x-header separator
+        <x-header progress-indicator separator
             :subtitle="$selectedPack?->level?->value . ' · ' . $selectedPack?->type?->value"
             :title="$selectedPack?->name ?? __('Sessions')">
             <x-slot:actions>
@@ -15,7 +15,7 @@
         </x-header>
     @else
         {{-- PACK LIST HEADER --}}
-        <x-header separator :subtitle="$viewSeason?->name ?? __('Select a season')"
+        <x-header progress-indicator separator :subtitle="$viewSeason?->name ?? __('Select a season')"
             :title="__('Trainings')">
             <x-slot:actions>
                 <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-search="false" :show-more="false" />

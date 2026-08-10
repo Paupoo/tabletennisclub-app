@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header :title="__('My Matches')" :subtitle="__('Manage your availability for upcoming interclubs')"
+    <x-header progress-indicator :title="__('My Matches')" :subtitle="__('Manage your availability for upcoming interclubs')"
         separator />
 
     @if (! $grouped->isEmpty())

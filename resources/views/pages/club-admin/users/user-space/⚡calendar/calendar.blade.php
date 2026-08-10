@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header separator :subtitle="__('Your club activities, month by month')" :title="__('Calendar')">
+    <x-header progress-indicator separator :subtitle="__('Your club activities, month by month')" :title="__('Calendar')">
         <x-slot:actions>
             <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)"
                 :show-search="false" :show-more="false" />

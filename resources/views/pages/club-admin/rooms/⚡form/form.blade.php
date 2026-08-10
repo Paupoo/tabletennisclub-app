@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header :title="__('Create a new room')" />
+    <x-header progress-indicator :title="__('Create a new room')" />
     <x-form wire:submit='save'>
         <div class="grid grid-cols-5 gap-6">
             <div class="col-span-2">

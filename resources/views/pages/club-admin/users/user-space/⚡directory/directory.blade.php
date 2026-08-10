@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" />
     </x-slot:breadcrumbs>
 
-    <x-header separator :subtitle="__('Find and contact other club members')" :title="__('Member directory')">
+    <x-header progress-indicator separator :subtitle="__('Find and contact other club members')" :title="__('Member directory')">
         <x-slot:middle>
             <div class="hidden w-full lg:block">
                 <x-input class="w-full" clearable icon="o-magnifying-glass" :placeholder="__('Search a member...')"

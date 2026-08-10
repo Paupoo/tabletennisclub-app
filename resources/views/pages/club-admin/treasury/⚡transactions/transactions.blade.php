@@ -27,7 +27,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -138,7 +138,7 @@
     {{-- Import history                              --}}
     {{-- ========================================== --}}
     @if($recentImports->isNotEmpty())
-    <x-collapse class="mt-6 border border-base-200 rounded-xl bg-base-100">
+    <x-collapse class="mt-6 border border-base-300 rounded-xl bg-base-100">
         <x-slot:heading>
             <div class="flex items-center gap-2 text-sm font-semibold">
                 <x-icon name="o-arrow-up-tray" class="w-4 h-4 opacity-50" />

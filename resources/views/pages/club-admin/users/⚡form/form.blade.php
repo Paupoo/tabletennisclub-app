@@ -80,7 +80,7 @@
                     <div class="space-y-2">
                         @foreach ($this->linkedGuardians as $guardian)
                             <div wire:key="guardian-{{ $guardian->id }}"
-                                class="flex items-center gap-3 p-3 rounded-lg border border-base-200 bg-base-100">
+                                class="flex items-center gap-3 p-3 rounded-lg border border-base-300 bg-base-100">
                                 <x-icon name="o-user" class="w-5 h-5 text-primary shrink-0" />
                                 <div class="flex-1 min-w-0">
                                     <div class="text-sm font-semibold truncate">
@@ -110,7 +110,7 @@
                     @endphp
 
                     @if ($hasResults)
-                        <div class="mt-2 space-y-1 rounded-lg border border-base-200 p-1">
+                        <div class="mt-2 space-y-1 rounded-lg border border-base-300 p-1">
                             @if ($guardianResults->isNotEmpty())
                                 <div class="px-3 pt-1 text-xs font-black uppercase tracking-wider text-base-content/40">
                                     {{ __('Existing guardians') }}
@@ -157,7 +157,7 @@
                     <x-button class="btn-soft btn-sm" icon="o-plus" :label="__('Create a new guardian')"
                         wire:click="$set('showGuardianForm', true)" />
                 @else
-                    <div class="space-y-3 rounded-lg border border-base-200 p-4">
+                    <div class="space-y-3 rounded-lg border border-base-300 p-4">
                         <div class="grid gap-3 sm:grid-cols-2">
                             <x-input :label="__('First name')" wire:model.live.blur="guardianFirstName" required />
                             <x-input :label="__('Last name')" wire:model.live.blur="guardianLastName" required />
@@ -199,7 +199,7 @@
                     <div class="space-y-2">
                         @foreach ($this->familyMembers as $member)
                             <div wire:key="family-member-{{ $member->id }}"
-                                class="flex items-center gap-3 p-3 rounded-lg border border-base-200 bg-base-100">
+                                class="flex items-center gap-3 p-3 rounded-lg border border-base-300 bg-base-100">
                                 <x-icon name="o-user" class="w-5 h-5 text-primary shrink-0" />
                                 <div class="flex-1 min-w-0">
                                     <div class="text-sm font-semibold truncate">
@@ -223,7 +223,7 @@
                     @endphp
 
                     @if ($familyResults->isNotEmpty())
-                        <div class="mt-2 space-y-1 rounded-lg border border-base-200 p-1">
+                        <div class="mt-2 space-y-1 rounded-lg border border-base-300 p-1">
                             <div class="px-3 pt-1 text-xs font-black uppercase tracking-wider text-base-content/40">
                                 {{ __('Club members') }}
                             </div>
@@ -269,7 +269,7 @@
                          défiler la page entière horizontalement. `whitespace-normal`
                          autorise le retour à la ligne, `h-auto min-h-8` laisse le bouton
                          grandir au lieu d'écraser son texte. --}}
-                    <div class="flex flex-wrap gap-2 border-t border-base-200 pt-4">
+                    <div class="flex flex-wrap gap-2 border-t border-base-300 pt-4">
                         <x-button class="btn-soft btn-sm h-auto max-w-full min-h-8 whitespace-normal" icon="o-key"
                             :label="__('Send password reset link')" wire:click="sendPasswordResetLink"
                             spinner="sendPasswordResetLink" />
@@ -423,7 +423,7 @@
                 </div>
                 <div class="col-span-6 md:col-span-4 space-y-3">
                     @if ($user->medical_certificate_path)
-                    <div class="flex items-center gap-3 p-3 rounded-lg border border-base-200 bg-base-100">
+                    <div class="flex items-center gap-3 p-3 rounded-lg border border-base-300 bg-base-100">
                         <x-icon name="o-document-check" class="w-5 h-5 text-success shrink-0" />
                         <div class="flex-1 min-w-0">
                             <div class="text-sm font-semibold">{{ __('Medical Certificate') }}</div>
@@ -435,7 +435,7 @@
                     </div>
                     @endif
                     @if ($user->parental_consent_path)
-                    <div class="flex items-center gap-3 p-3 rounded-lg border border-base-200 bg-base-100">
+                    <div class="flex items-center gap-3 p-3 rounded-lg border border-base-300 bg-base-100">
                         <x-icon name="o-document-check" class="w-5 h-5 text-success shrink-0" />
                         <div class="flex-1 min-w-0">
                             <div class="text-sm font-semibold">{{ __('Parental Consent') }}</div>

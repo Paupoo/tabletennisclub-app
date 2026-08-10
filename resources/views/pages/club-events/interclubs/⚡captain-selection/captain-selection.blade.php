@@ -199,7 +199,7 @@
                         :color="$section['color']"
                         :open="$section['open']"
                         wire:key="section-{{ $viewMode }}-{{ $isDayMode ? $selectedMatchDay : $selectedTeamId }}-{{ $section['key'] }}">
-                        <div class="divide-y divide-base-200 overflow-hidden rounded-xl border border-base-200">
+                        <div class="divide-y divide-base-200 overflow-hidden rounded-xl border border-base-300">
                             @foreach ($groups[$section['key']] as $ic)
                                 @include('pages::club-events.interclubs.⚡captain-selection._match-row', [
                                     'ic' => $ic,

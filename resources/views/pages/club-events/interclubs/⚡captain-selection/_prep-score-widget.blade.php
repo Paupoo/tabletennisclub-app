@@ -68,7 +68,7 @@
             },
             isDimmed(id) { return this.zoomed !== null && this.zoomed !== String(id); },
         }"
-        class="space-y-3 rounded-xl border border-base-200 bg-base-50 px-4 py-4 sm:px-5">
+        class="space-y-3 rounded-xl border border-base-300 bg-base-50 px-4 py-4 sm:px-5">
 
         {{-- Score global : sur mobile, les trois chiffres le disent mieux. --}}
         <div class="hidden flex-wrap items-center gap-2 lg:flex">
@@ -91,7 +91,7 @@
                 class="rounded-full border px-2.5 py-0.5 text-xs font-bold transition-colors"
                 x-bind:class="zoomed === null
                     ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-base-200 text-base-content/60 hover:border-base-300'"
+                    : 'border-base-300 text-base-content/60 hover:border-primary'"
             >{{ __('All') }}</button>
             @foreach ($weekSummary['teams'] as $t)
                 <button
@@ -101,7 +101,7 @@
                     class="rounded-full border px-2.5 py-0.5 text-xs font-bold transition-colors"
                     x-bind:class="zoomed === '{{ $t['id'] }}'
                         ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-base-200 text-base-content/60 hover:border-base-300'"
+                        : 'border-base-300 text-base-content/60 hover:border-primary'"
                 >{{ $t['name'] }}<span class="ml-1 font-normal">{{ $t['division'] }}</span></button>
             @endforeach
         </div>
@@ -181,7 +181,7 @@
                     <div @class([
                         'rounded-xl border p-3 text-center',
                         'border-error/30 bg-error/5' => $kpi['tone'] === 'todo' && $kpi['n'] > 0,
-                        'border-base-200 bg-base-100' => $kpi['tone'] !== 'todo' || $kpi['n'] === 0,
+                        'border-base-300 bg-base-100' => $kpi['tone'] !== 'todo' || $kpi['n'] === 0,
                     ])>
                         <div @class([
                             'text-2xl font-bold tabular-nums leading-none',
@@ -194,7 +194,7 @@
             </div>
 
             {{-- Une carte par catégorie : progression + verdict en toutes lettres --}}
-            <div class="divide-y divide-base-200 overflow-hidden rounded-xl border border-base-200 bg-base-100">
+            <div class="divide-y divide-base-200 overflow-hidden rounded-xl border border-base-300 bg-base-100">
                 @foreach ($weekSummary['categories'] as $standing)
                     @php
                         $remaining = $standing['total'] - $standing['played'];
@@ -260,8 +260,8 @@
             @endphp
 
             @if ($actionable->isNotEmpty())
-                <div class="overflow-hidden rounded-xl border border-base-200 bg-base-100">
-                    <div class="border-b border-base-200 bg-error/5 px-3 py-2 text-xs font-bold uppercase tracking-widest text-error">
+                <div class="overflow-hidden rounded-xl border border-base-300 bg-base-100">
+                    <div class="border-b border-base-300 bg-error/5 px-3 py-2 text-xs font-bold uppercase tracking-widest text-error">
                         {{ __('Needs attention') }} · {{ $actionable->count() }}
                     </div>
                     <div class="divide-y divide-base-200">
@@ -311,7 +311,7 @@
                             :count="$fold['rows']->count()"
                             :color="$fold['color']"
                             :open="false">
-                            <div class="divide-y divide-base-200 overflow-hidden rounded-xl border border-base-200 bg-base-100">
+                            <div class="divide-y divide-base-200 overflow-hidden rounded-xl border border-base-300 bg-base-100">
                                 @foreach ($fold['rows'] as $row)
                                     <div class="flex items-center gap-3 px-3 py-2">
                                         <div class="w-16 shrink-0">

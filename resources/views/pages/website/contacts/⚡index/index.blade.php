@@ -28,7 +28,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -317,7 +317,7 @@
 
                 @if ($canManage)
                     {{-- ── Profil (capture incrémentale, tout optionnel) ─────────── --}}
-                    <div class="border-base-200 space-y-3 rounded-lg border p-4">
+                    <div class="border-base-300 space-y-3 rounded-lg border p-4">
                         <p class="text-xs font-semibold uppercase tracking-widest text-muted">
                             {{ __('Profile') }}
                         </p>
@@ -350,7 +350,7 @@
                     </div>
 
                     @if (in_array($selectedContact->interest?->value, ['JOIN_US', 'TRIAL']) && $selectedContact->status !== 'processed')
-                        <div class="border-base-200 border-t pt-3">
+                        <div class="border-base-300 border-t pt-3">
                             @if ($this->trashedMatchFor($selectedContact))
                                 <p class="text-warning text-xs">
                                     {{ __('This email belongs to a former member account. Resolve this manually before onboarding.') }}
@@ -364,7 +364,7 @@
                         </div>
                     @endif
 
-                    <div class="border-base-200 border-t pt-2">
+                    <div class="border-base-300 border-t pt-2">
                         <x-button class="btn-ghost btn-sm w-full text-error" icon="o-trash"
                             :label="__('Delete this contact')"
                             wire:click="confirmDelete({{ $selectedContact->id }})" />

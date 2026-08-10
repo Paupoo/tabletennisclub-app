@@ -53,7 +53,7 @@
                 </x-button>
             </div>
 
-            <div class="rounded-lg border border-base-200 bg-base-200/40 p-3 text-xs text-base-content/60 space-y-1.5">
+            <div class="rounded-lg border border-base-300 bg-base-200/40 p-3 text-xs text-base-content/60 space-y-1.5">
                 <p><strong>Google Calendar</strong> — {{ __('Settings → Add calendar → From URL, then paste the link.') }}</p>
                 <p><strong>Apple Calendar</strong> — {{ __('File → New Calendar Subscription, then paste the link.') }}</p>
                 <p>{{ __('Keep this link private: anyone who has it can read your club schedule.') }}</p>
@@ -119,14 +119,14 @@
         x-on:keydown.arrow-right.window="if (! ['INPUT', 'TEXTAREA', 'SELECT'].includes($event.target.tagName)) $wire.nextMonth()">
 
         {{-- Grille mensuelle (swipe gauche/droite = changer de mois) --}}
-        <div class="min-w-0 flex-1 overflow-hidden rounded-xl border border-base-200 bg-base-100"
+        <div class="min-w-0 flex-1 overflow-hidden rounded-xl border border-base-300 bg-base-100"
             x-on:touchstart.passive="touchX = $event.touches[0].clientX; touchY = $event.touches[0].clientY"
             x-on:touchend="
                 const dx = $event.changedTouches[0].clientX - touchX;
                 const dy = $event.changedTouches[0].clientY - touchY;
                 if (Math.abs(dx) > 60 && Math.abs(dy) < 40) { dx < 0 ? $wire.nextMonth() : $wire.previousMonth() }
             ">
-            <div class="flex items-center justify-between gap-2 border-b border-base-200 px-3 py-2.5 sm:px-4">
+            <div class="flex items-center justify-between gap-2 border-b border-base-300 px-3 py-2.5 sm:px-4">
                 <div class="flex items-center gap-1">
                     <x-button class="btn-ghost btn-sm btn-square" icon="o-chevron-left"
                         wire:click="previousMonth" wire:loading.attr="disabled" wire:target="{{ $monthActions }}"
@@ -143,7 +143,7 @@
                             {{ $monthLabel }}
                         </button>
                         <div x-show="open" x-transition.opacity.duration.150ms style="display:none"
-                            class="absolute left-1/2 z-20 mt-1 w-60 -translate-x-1/2 rounded-xl border border-base-200 bg-base-100 p-3 shadow-lg">
+                            class="absolute left-1/2 z-20 mt-1 w-60 -translate-x-1/2 rounded-xl border border-base-300 bg-base-100 p-3 shadow-lg">
                             <div class="mb-2 flex items-center justify-between">
                                 <button type="button" class="btn btn-ghost btn-xs btn-square"
                                     x-on:click="year--" aria-label="{{ __('Previous') }}">‹</button>
@@ -175,7 +175,7 @@
             <div wire:loading.class="pointer-events-none opacity-50" wire:target="{{ $monthActions }}"
                 class="transition-opacity">
                 {{-- En-têtes des jours --}}
-                <div class="grid grid-cols-7 border-b border-base-200 bg-base-200/40">
+                <div class="grid grid-cols-7 border-b border-base-300 bg-base-200/40">
                     @for ($i = 0; $i < 7; $i++)
                         <div class="px-1 py-1.5 text-center text-xs font-bold uppercase tracking-wide text-base-content/50 lg:text-left lg:px-2">
                             {{ $weekStart->copy()->addDays($i)->translatedFormat('D') }}
@@ -192,7 +192,7 @@
                                 aria-label="{{ $day['ariaLabel'] }}"
                                 @if ($day['isToday']) aria-current="date" @endif
                                 :aria-pressed="(selected === '{{ $day['date'] }}').toString()"
-                                class="group relative flex min-h-12 flex-col items-center gap-0.5 border-b border-r border-base-200/60 p-1 transition-colors last:border-r-0 lg:min-h-24 lg:items-stretch lg:p-1.5"
+                                class="group relative flex min-h-12 flex-col items-center gap-0.5 border-b border-r border-base-300/60 p-1 transition-colors last:border-r-0 lg:min-h-24 lg:items-stretch lg:p-1.5"
                                 :class="selected === '{{ $day['date'] }}' ? 'bg-primary/5' : 'hover:bg-base-200/40'">
                                 <span class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold lg:h-5 lg:w-5 lg:text-xs"
                                     :class="selected === '{{ $day['date'] }}'
@@ -255,7 +255,7 @@
             </div>
 
             {{-- Légende cliquable : raccourci de filtre par catégorie --}}
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-base-200 px-3 py-2 sm:px-4">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-base-300 px-3 py-2 sm:px-4">
                 @foreach ($typeLabels as $type => $label)
                     <button type="button" wire:click="toggleCategory('{{ $type }}')"
                         :aria-pressed="@js(in_array($type, $selectedCategories))"
@@ -272,7 +272,7 @@
         </div>
 
         {{-- Panneau du jour : toutes les listes sont pré-rendues, Alpine bascule --}}
-        <div class="w-full scroll-mt-20 rounded-xl border border-base-200 bg-base-100 p-4 lg:w-96 lg:shrink-0"
+        <div class="w-full scroll-mt-20 rounded-xl border border-base-300 bg-base-100 p-4 lg:w-96 lg:shrink-0"
             x-ref="dayPanel" aria-live="polite" wire:key="day-panel">
             @foreach ($gridDays as $day)
                 <div x-show="selected === '{{ $day['date'] }}'" wire:key="panel-{{ $day['date'] }}"

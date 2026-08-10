@@ -22,7 +22,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -53,7 +53,7 @@
                 $subjectName = $subjectLabels[$activity->subject_type] ?? \Illuminate\Support\Str::afterLast($activity->subject_type, '\\');
                 $formatValue = fn ($value) => \Illuminate\Support\Str::limit(is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : (string) $value, 60);
             @endphp
-            <x-card class="border border-base-200 bg-base-100 shadow-sm" wire:key="mobile-activity-{{ $activity->id }}">
+            <x-card class="border border-base-300 bg-base-100 shadow-sm" wire:key="mobile-activity-{{ $activity->id }}">
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex min-w-0 flex-wrap items-center gap-2">
                         @if ($event === 'created')
@@ -81,7 +81,7 @@
                 </div>
 
                 @if ($changes && isset($changes['attributes']))
-                    <div x-data="{ open: {{ $event === 'created' ? 'false' : 'true' }} }" class="mt-3 border-t border-base-200 pt-2">
+                    <div x-data="{ open: {{ $event === 'created' ? 'false' : 'true' }} }" class="mt-3 border-t border-base-300 pt-2">
                         {{-- py-1.5 : le bouton ne faisait que la hauteur de son texte,
                         sous le plancher de 24px du WCAG 2.2. --}}
                         <button type="button" @click="open = !open"

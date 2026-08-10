@@ -67,7 +67,7 @@
                     @php $showAddress = filled($member->street) && $member->contactVisibleTo($viewer, 'address'); @endphp
 
                     @if ($showPhone || $showEmail || $showAddress)
-                        <div class="mt-1 space-y-1.5 border-t border-base-200 pt-3 text-sm">
+                        <div class="mt-1 space-y-1.5 border-t border-base-300 pt-3 text-sm">
                             @if ($showPhone)
                                 <a href="tel:{{ $member->phone_number }}"
                                     class="flex items-center gap-2 text-base-content/80 hover:text-primary">
@@ -90,7 +90,7 @@
                             @endif
                         </div>
                     @else
-                        <p class="mt-1 border-t border-base-200 pt-3 text-xs text-base-content/40">
+                        <p class="mt-1 border-t border-base-300 pt-3 text-xs text-base-content/40">
                             {{ __('No shared contact details') }}
                         </p>
                     @endif

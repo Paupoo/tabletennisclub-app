@@ -231,7 +231,7 @@
                 <x-card icon="o-academic-cap" separator :title="__('My upcoming sessions')">
                     <div class="space-y-2">
                         @foreach ($this->upcomingTrainingSessions as $session)
-                            <div class="flex items-center justify-between rounded-lg border border-base-200 px-3 py-2">
+                            <div class="flex items-center justify-between rounded-lg border border-base-300 px-3 py-2">
                                 <div class="flex items-center gap-3">
                                     <div class="text-center">
                                         <div class="text-xs font-bold uppercase text-base-content/50">
@@ -316,7 +316,7 @@
             @endif
             <img
                 alt="QR Code"
-                class="w-48 h-48 rounded-xl border border-base-200 shadow"
+                class="w-48 h-48 rounded-xl border border-base-300 shadow"
                 src="{{ $paymentQr }}"
             />
             <div class="w-full divide-y divide-base-200 text-sm">

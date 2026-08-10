@@ -18,7 +18,7 @@
     $editRoute   = route('admin.interclubs.teams.edit', $team->id);
 @endphp
 
-<div class="flex flex-col overflow-hidden rounded-xl border border-base-200 bg-base-100">
+<div class="flex flex-col overflow-hidden rounded-xl border border-base-300 bg-base-100">
 
     {{-- Colored header --}}
     <div class="flex items-center gap-3 {{ $c['bg'] }} px-4 py-3">
@@ -68,7 +68,7 @@
     </div>
 
     {{-- Actions --}}
-    <div class="flex items-center justify-between border-t border-base-200 bg-base-200/40 px-3 py-2">
+    <div class="flex items-center justify-between border-t border-base-300 bg-base-200/40 px-3 py-2">
         <div class="flex gap-0.5">
             <x-button class="btn-ghost btn-xs text-base-content/50 hover:text-base-content" icon="o-eye" :label="__('Details')"
                 link="{{ $showRoute }}" />

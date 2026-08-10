@@ -41,7 +41,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -445,7 +445,7 @@
                     'w-full text-left flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all duration-150',
                     'border-primary bg-primary/5 shadow-sm'   => $selectedTransactionId === $transaction->id,
                     'border-success/60 bg-success/5'          => $selectedTransactionId !== $transaction->id && $isPerfect,
-                    'border-base-200 hover:border-base-300 bg-base-100' => $selectedTransactionId !== $transaction->id && !$isPerfect,
+                    'border-base-300 hover:border-primary bg-base-100' => $selectedTransactionId !== $transaction->id && !$isPerfect,
                 ])>
 
                 <div @class([
@@ -520,7 +520,7 @@
 
             <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
                 @foreach($batchMatches as $match)
-                <div class="flex items-center gap-4 p-3 rounded-xl bg-base-100 border border-base-200">
+                <div class="flex items-center gap-4 p-3 rounded-xl bg-base-100 border border-base-300">
                     <x-icon name="o-check-circle" class="w-5 h-5 text-success shrink-0" />
                     <div class="flex-1 min-w-0">
                         <div class="font-semibold text-sm">{{ $match['member'] }}</div>
@@ -599,7 +599,7 @@
                     'border-success/60 bg-success/5'                                   => $selectedRefundTransactionId !== $transaction->id && $score === 'perfect',
                     'border-info/40 bg-info/5'                                         => $selectedRefundTransactionId !== $transaction->id && $score === 'iban',
                     'border-warning/40 bg-warning/5'                                   => $selectedRefundTransactionId !== $transaction->id && $score === 'amount',
-                    'border-base-200 hover:border-base-300 bg-base-100'               => $selectedRefundTransactionId !== $transaction->id && $score === 'none',
+                    'border-base-300 hover:border-primary bg-base-100'               => $selectedRefundTransactionId !== $transaction->id && $score === 'none',
                 ])>
 
                 <div @class([
@@ -672,7 +672,7 @@
 
             <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
                 @foreach($refundBatchMatches as $match)
-                <div class="flex items-center gap-4 p-3 rounded-xl bg-base-100 border border-base-200">
+                <div class="flex items-center gap-4 p-3 rounded-xl bg-base-100 border border-base-300">
                     <x-icon name="o-arrow-uturn-left" class="w-5 h-5 text-error shrink-0" />
                     <div class="flex-1 min-w-0">
                         <div class="font-semibold text-sm">{{ $match['member'] }}</div>

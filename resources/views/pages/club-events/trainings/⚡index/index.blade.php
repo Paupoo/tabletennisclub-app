@@ -73,8 +73,8 @@
                 @endphp
                 <div @class([
                     'flex items-center justify-between rounded-xl border px-4 py-3',
-                    'bg-base-100 border-base-200' => ! $cancelled,
-                    'bg-base-200/50 border-base-200 opacity-60' => $cancelled,
+                    'bg-base-100 border-base-300' => ! $cancelled,
+                    'bg-base-200/50 border-base-300 opacity-60' => $cancelled,
                 ])>
                     <div class="flex items-center gap-4">
                         <div class="text-center">
@@ -153,7 +153,7 @@
                                 {{-- No overflow-hidden: it would clip the actions dropdown at the
                                      bottom of the card. The header rounds its own corners instead. --}}
                                 <div
-                                    class="group flex flex-col rounded-xl border border-base-200 bg-base-100">
+                                    class="group flex flex-col rounded-xl border border-base-300 bg-base-100">
                                     {{-- Card header --}}
                                     <div class="rounded-t-xl bg-primary/5 px-4 py-3">
                                         <div class="flex items-start justify-between gap-2">
@@ -216,7 +216,7 @@
                                         </div>
 
                                         {{-- Actions --}}
-                                        <div class="mt-auto flex flex-nowrap items-center gap-1 border-t border-base-200 pt-2">
+                                        <div class="mt-auto flex flex-nowrap items-center gap-1 border-t border-base-300 pt-2">
                                             <x-button class="btn-ghost btn-sm min-w-0 flex-1 text-xs"
                                                 icon="o-calendar-days" :label="__('Sessions')"
                                                 wire:click="viewSessions({{ $pack->id }})" />
@@ -351,7 +351,7 @@
                         <div @class([
                             'cursor-pointer rounded-xl border-2 p-3 text-center transition',
                             'border-primary bg-primary/10' => $formRecurrenceType === 'weekly',
-                            'border-base-200' => $formRecurrenceType !== 'weekly',
+                            'border-base-300' => $formRecurrenceType !== 'weekly',
                         ]) wire:click="$set('formRecurrenceType', 'weekly')">
                             <x-icon class="mx-auto mb-1 h-5 w-5 text-primary" name="o-calendar" />
                             <p class="text-sm font-semibold">{{ __('Once a week') }}</p>
@@ -360,7 +360,7 @@
                         <div @class([
                             'cursor-pointer rounded-xl border-2 p-3 text-center transition',
                             'border-primary bg-primary/10' => $formRecurrenceType === 'specific_days',
-                            'border-base-200' => $formRecurrenceType !== 'specific_days',
+                            'border-base-300' => $formRecurrenceType !== 'specific_days',
                         ]) wire:click="$set('formRecurrenceType', 'specific_days')">
                             <x-icon class="mx-auto mb-1 h-5 w-5 text-primary" name="o-calendar-days" />
                             <p class="text-sm font-semibold">{{ __('Several days') }}</p>
@@ -381,7 +381,7 @@
                                 <label @class([
                                     'cursor-pointer select-none rounded-full border px-3 py-1 text-xs font-medium transition',
                                     'border-primary bg-primary text-primary-content' => in_array($day['id'], array_map('intval', $formSpecificDays)),
-                                    'border-base-200 text-base-content/70 hover:border-primary/50' => ! in_array($day['id'], array_map('intval', $formSpecificDays)),
+                                    'border-base-300 text-base-content/70 hover:border-primary/50' => ! in_array($day['id'], array_map('intval', $formSpecificDays)),
                                 ])>
                                     <input class="sr-only" type="checkbox" wire:model.live="formSpecificDays"
                                         value="{{ $day['id'] }}" />
@@ -454,7 +454,7 @@
 
                     {{-- Excluded dates (re-includable) --}}
                     @if (count($formExcludedDates) > 0)
-                        <div class="rounded-lg border border-base-200 p-3">
+                        <div class="rounded-lg border border-base-300 p-3">
                             <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-base-content/40">
                                 {{ __(':count excluded', ['count' => count($formExcludedDates)]) }}
                             </p>
@@ -495,7 +495,7 @@
                     :title="__('The pack price is added to the subscription price.')" />
 
                 {{-- Summary --}}
-                <div class="rounded-xl border border-base-200 bg-base-100 p-4 text-sm">
+                <div class="rounded-xl border border-base-300 bg-base-100 p-4 text-sm">
                     <h3 class="mb-3 font-semibold">{{ __('Summary') }}</h3>
                     <div class="space-y-1 text-base-content/70">
                         <div class="flex justify-between">
@@ -564,7 +564,7 @@
                 <div @class([
                     'cursor-pointer rounded-xl border-2 p-3 text-center transition',
                     'border-warning bg-warning/10' => $cancelType === 'FREE',
-                    'border-base-200' => $cancelType !== 'FREE',
+                    'border-base-300' => $cancelType !== 'FREE',
                 ]) wire:click="$set('cancelType', 'FREE')">
                     <x-icon class="mx-auto mb-1 h-6 w-6 text-warning-content" name="o-sun" />
                     <p class="text-sm font-semibold">{{ __('Free practice') }}</p>
@@ -573,7 +573,7 @@
                 <div @class([
                     'cursor-pointer rounded-xl border-2 p-3 text-center transition',
                     'border-error bg-error/10' => $cancelType === 'CLOSED',
-                    'border-base-200' => $cancelType !== 'CLOSED',
+                    'border-base-300' => $cancelType !== 'CLOSED',
                 ]) wire:click="$set('cancelType', 'CLOSED')">
                     <x-icon class="mx-auto mb-1 h-6 w-6 text-error" name="o-lock-closed" />
                     <p class="text-sm font-semibold">{{ __('Room closed') }}</p>

@@ -7,7 +7,7 @@
         separator />
 
     @if (! $grouped->isEmpty())
-        <div class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-base-200 bg-base-200/40 px-4 py-3">
+        <div class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-base-300 bg-base-200/40 px-4 py-3">
             <span class="text-xs font-semibold text-muted">{{ __('Set for all upcoming matches:') }}</span>
             <x-button
                 class="btn-success btn-xs btn-soft"
@@ -47,7 +47,7 @@
                             <span class="text-sm font-bold uppercase tracking-wide">{{ $catLabel }}</span>
                             <span class="text-xs opacity-60">{{ trans_choice(':count team|:count teams', $teamGroups->count()) }}</span>
                         </span>
-                        <div class="flex-1 border-t border-base-200"></div>
+                        <div class="flex-1 border-t border-base-300"></div>
                         <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
                     </button>
 
@@ -65,7 +65,7 @@
                                         <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
                                     </button>
 
-                                    <div x-show="open" x-collapse class="divide-base-200 border-base-200 divide-y overflow-hidden rounded-2xl border">
+                                    <div x-show="open" x-collapse class="divide-base-200 border-base-300 divide-y overflow-hidden rounded-2xl border">
                                         @foreach ($matches as $match)
                             @php
                                 $avail = $match['availability'];
@@ -172,7 +172,7 @@
 
                                 {{-- Note inline --}}
                                 @if ($editingInterclubId === $match['id'])
-                                    <div class="border-base-200 mt-3 flex items-center gap-2 border-t pt-3">
+                                    <div class="border-base-300 mt-3 flex items-center gap-2 border-t pt-3">
                                         <x-input class="input-sm flex-1 bg-base-200/50 border-none rounded-lg"
                                             :placeholder="__('Optional note for your captain...')"
                                             wire:model="availabilityNote" />

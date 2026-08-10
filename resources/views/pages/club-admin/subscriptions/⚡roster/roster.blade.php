@@ -21,7 +21,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition style="display:none">
         <div class="flex items-center gap-2 px-4 py-2.5">
             <div class="flex flex-1 items-center gap-2 rounded-xl bg-base-200 px-3 py-2">

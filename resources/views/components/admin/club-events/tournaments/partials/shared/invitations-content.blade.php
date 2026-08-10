@@ -23,7 +23,7 @@
         @foreach ($filteredMembers as $member)
             <button type="button" wire:key="member-{{ $member['id'] }}" wire:click="toggleMember({{ $member['id'] }})"
                 aria-pressed="{{ in_array($member['id'], $selectedMembers) ? 'true' : 'false' }}"
-                class="w-full text-left flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all {{ in_array($member['id'], $selectedMembers) ? 'border-primary bg-primary/5' : 'border-base-200 hover:border-primary/30' }}">
+                class="w-full text-left flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all {{ in_array($member['id'], $selectedMembers) ? 'border-primary bg-primary/5' : 'border-base-300 hover:border-primary/30' }}">
                 <x-avatar :placeholder="strtoupper(substr($member['name'], 0, 2))" class="w-10! h-10! rounded-lg" />
                 <div class="flex-1 min-w-0">
                     <p class="font-bold truncate text-sm">{{ $member['name'] }}</p>

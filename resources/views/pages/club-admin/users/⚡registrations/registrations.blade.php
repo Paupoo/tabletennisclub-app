@@ -34,7 +34,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="lg:hidden border-b border-base-200" x-show="mobileSearchOpen"
+    <div class="lg:hidden border-b border-base-300" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -305,7 +305,7 @@
                                 @php
                                     $line = $packLines[$pack->id] ?? null;
                                 @endphp
-                                <div class="flex items-center gap-3 rounded-lg border border-base-200 p-2.5 text-sm">
+                                <div class="flex items-center gap-3 rounded-lg border border-base-300 p-2.5 text-sm">
                                     <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 text-primary opacity-60" />
                                     <span class="flex-1">
                                         {{ $pack->name }}
@@ -335,7 +335,7 @@
                                 @php
                                     $line = $packLines[$pack->id] ?? null;
                                 @endphp
-                                <div class="flex items-center gap-3 rounded-lg border border-base-200 bg-base-200/40 p-2.5 text-sm">
+                                <div class="flex items-center gap-3 rounded-lg border border-base-300 bg-base-200/40 p-2.5 text-sm">
                                     <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 opacity-40" />
                                     <span class="flex-1">
                                         {{ $pack->name }}
@@ -364,7 +364,7 @@
                                 </div>
                             @endforeach
                             @foreach ($currentRequest->cancelled_packs as $pack)
-                                <div class="flex items-center gap-3 rounded-lg border border-base-200 p-2.5 text-sm opacity-70">
+                                <div class="flex items-center gap-3 rounded-lg border border-base-300 p-2.5 text-sm opacity-70">
                                     <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 opacity-40" />
                                     <span class="flex-1 line-through">{{ $pack->name }}</span>
                                     <x-badge value="{{ __('Cancelled') }}" class="badge-ghost badge-xs" />
@@ -380,7 +380,7 @@
                         <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Payments') }}</h3>
                         <div class="space-y-2">
                             @foreach ($currentRequest->payments as $payment)
-                                <div class="flex items-center gap-3 rounded-lg border border-base-200 p-2.5 text-sm">
+                                <div class="flex items-center gap-3 rounded-lg border border-base-300 p-2.5 text-sm">
                                     <x-icon name="o-credit-card" class="h-3.5 w-3.5 shrink-0 opacity-40" />
                                     <span class="flex-1 font-mono text-xs opacity-60">{{ $payment['reference'] }}</span>
                                     <span class="text-sm font-bold">{{ number_format($payment['amount_due'], 2) }} €</span>
@@ -398,7 +398,7 @@
                                 </div>
                             @endforeach
                         </div>
-                        <div class="mt-1 flex justify-between border-t border-base-200 pt-2 text-sm">
+                        <div class="mt-1 flex justify-between border-t border-base-300 pt-2 text-sm">
                             <span class="text-muted">{{ __('Total') }}</span>
                             <span class="font-black">{{ number_format($currentRequest->amount_due, 2) }} €</span>
                         </div>
@@ -463,7 +463,7 @@
                         <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Training Packs Requested') }}</h3>
                         <div class="space-y-2">
                             @foreach ($currentRequest->pending_packs as $pack)
-                                <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-base-200 p-3 transition-colors hover:border-primary/30 has-checked:border-primary/20 has-checked:bg-primary/5">
+                                <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-base-300 p-3 transition-colors hover:border-primary/30 has-checked:border-primary/20 has-checked:bg-primary/5">
                                     <input type="checkbox" wire:model.live="approvedPackIds" value="{{ $pack->id }}"
                                         class="checkbox checkbox-primary checkbox-sm shrink-0" />
                                     <div class="min-w-0 flex-1">
@@ -477,7 +477,7 @@
                     </div>
                 @endif
 
-                <div class="overflow-hidden rounded-xl border border-base-200 text-sm">
+                <div class="overflow-hidden rounded-xl border border-base-300 text-sm">
                     <div class="flex items-center justify-between px-4 py-3">
                         <div class="flex items-center gap-2 opacity-60">
                             <x-icon name="{{ $currentRequest->type === __('Competition') ? 'o-trophy' : 'o-heart' }}" class="h-3.5 w-3.5 shrink-0" />
@@ -486,7 +486,7 @@
                         <span class="font-semibold">{{ number_format($currentRequest->subscription_price, 2) }} €</span>
                     </div>
                     @if (! empty($this->approvedPackIds))
-                        <div class="flex items-center justify-between border-t border-base-200 px-4 py-3">
+                        <div class="flex items-center justify-between border-t border-base-300 px-4 py-3">
                             <div class="flex items-center gap-2 opacity-60">
                                 <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0" />
                                 <span>{{ __('Training packs') }} ({{ count($this->approvedPackIds) }})</span>
@@ -494,7 +494,7 @@
                             <span class="font-semibold">{{ number_format($this->pendingReviewEstimatedTotal - $currentRequest->subscription_price, 2) }} €</span>
                         </div>
                     @endif
-                    <div class="flex items-center justify-between border-t border-base-200 bg-base-200/50 px-4 py-3 font-bold">
+                    <div class="flex items-center justify-between border-t border-base-300 bg-base-200/50 px-4 py-3 font-bold">
                         <span>{{ __('Total if approved') }}</span>
                         <span class="text-primary text-base">{{ number_format($this->pendingReviewEstimatedTotal, 2) }} €</span>
                     </div>
@@ -506,7 +506,7 @@
         @if ($paymentGenerated && ! empty($paymentData))
             <div class="space-y-6">
                 <div class="flex flex-col items-center gap-3">
-                    <img src="{{ $paymentData['qr_code'] }}" alt="QR Code" class="h-48 w-48 rounded-xl border border-base-200 shadow" />
+                    <img src="{{ $paymentData['qr_code'] }}" alt="QR Code" class="h-48 w-48 rounded-xl border border-base-300 shadow" />
                     <p class="text-center text-xs text-muted">{{ __('Scan this QR code with your banking app') }}</p>
                 </div>
                 <x-menu-separator />
@@ -527,7 +527,7 @@
                         <span class="opacity-60">{{ __('Structured reference') }}</span>
                         <span class="font-mono font-bold text-primary">{{ $paymentData['reference'] }}</span>
                     </div>
-                    <div class="flex items-center justify-between border-t border-base-200 pt-1">
+                    <div class="flex items-center justify-between border-t border-base-300 pt-1">
                         <span class="font-bold">{{ __('Amount') }}</span>
                         <span class="text-primary text-lg font-black">{{ $paymentData['amount_due'] }} €</span>
                     </div>
@@ -585,7 +585,7 @@
             qui part — avant qu'il ne confirme.
         --}}
         @if (! $paymentGenerated && $currentRequest && in_array($currentRequest->status, ['confirmed', 'paid']) && Auth::user()->can('subscriptions.manage'))
-            <div class="mt-4 rounded-xl border border-base-200 p-4">
+            <div class="mt-4 rounded-xl border border-base-300 p-4">
                 <div class="mb-2 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Change of formula') }}</div>
                 <p class="text-sm opacity-70">
                     {{ $currentRequest->type === __('Competition')
@@ -647,7 +647,7 @@
                                 $inApproved = in_array($pack->id, $approvedPackIds);
                                 $discounted = $inApproved && ($pb['discounted'] ?? false);
                             @endphp
-                            <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-base-200 p-3 transition-colors hover:border-warning/30 has-checked:border-warning/20 has-checked:bg-warning/5">
+                            <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-base-300 p-3 transition-colors hover:border-warning/30 has-checked:border-warning/20 has-checked:bg-warning/5">
                                 <input type="checkbox" wire:model.live="approvedPackIds" value="{{ $pack->id }}"
                                     class="checkbox checkbox-warning checkbox-sm shrink-0" />
                                 <div class="min-w-0 flex-1">
@@ -687,7 +687,7 @@
                         </div>
                     @endif
 
-                    <div class="mt-3 flex justify-between border-t border-base-200 pt-3 text-sm">
+                    <div class="mt-3 flex justify-between border-t border-base-300 pt-3 text-sm">
                         <span class="text-muted">{{ __('Expected additional payment') }}</span>
                         <span class="font-bold text-warning-content">{{ number_format($this->trainingRequestEstimatedDelta, 2) }} €</span>
                     </div>
@@ -698,7 +698,7 @@
         @if ($paymentGenerated && ! empty($paymentData))
             <div class="space-y-6">
                 <div class="flex flex-col items-center gap-3">
-                    <img src="{{ $paymentData['qr_code'] }}" alt="QR Code" class="h-48 w-48 rounded-xl border border-base-200 shadow" />
+                    <img src="{{ $paymentData['qr_code'] }}" alt="QR Code" class="h-48 w-48 rounded-xl border border-base-300 shadow" />
                     <p class="text-center text-xs text-muted">{{ __('Scan this QR code with your banking app') }}</p>
                 </div>
                 <x-menu-separator />
@@ -707,7 +707,7 @@
                         <span class="opacity-60">{{ __('Structured reference') }}</span>
                         <span class="font-mono font-bold text-primary">{{ $paymentData['reference'] }}</span>
                     </div>
-                    <div class="flex items-center justify-between border-t border-base-200 pt-1">
+                    <div class="flex items-center justify-between border-t border-base-300 pt-1">
                         <span class="font-bold">{{ __('Amount') }}</span>
                         <span class="text-primary text-lg font-black">{{ $paymentData['amount_due'] }} €</span>
                     </div>
@@ -778,7 +778,7 @@
                 @if (strlen($searchMember) > 2)
                     {{-- Deux homonymes se distinguent à la date de naissance et
                          au classement : « prénom nom » seul ne suffit pas. --}}
-                    <div class="mt-2 rounded-xl border border-base-200 bg-base-100">
+                    <div class="mt-2 rounded-xl border border-base-300 bg-base-100">
                         @foreach ($membersFound as $m)
                             <button type="button" wire:key="member-found-{{ $m->id }}"
                                 class="flex w-full cursor-pointer items-center justify-between gap-3 border-b p-3 text-left last:border-none hover:bg-base-200"
@@ -824,7 +824,7 @@
                             wire:click="$set('showNewMemberForm', true)" />
                     </div>
                 @else
-                    <div class="mt-3 space-y-3 rounded-xl border border-base-200 bg-base-100 p-4">
+                    <div class="mt-3 space-y-3 rounded-xl border border-base-300 bg-base-100 p-4">
                         <h4 class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-base-content/60">
                             <x-icon name="o-user-plus" class="h-4 w-4" />
                             {{ __('New member') }}
@@ -853,7 +853,7 @@
             <div class="space-y-4">
                 @forelse ($familyBasket as $userId => $config)
                     <div wire:key="basket-member-{{ $userId }}"
-                        class="rounded-xl border border-base-200 bg-base-100 p-4">
+                        class="rounded-xl border border-base-300 bg-base-100 p-4">
                         <div class="mb-4 flex items-start justify-between gap-3">
                             <h3 class="flex items-center gap-2 text-base font-semibold">
                                 <x-icon name="o-user" class="h-4 w-4 shrink-0 text-base-content/40" />
@@ -886,7 +886,7 @@
                         {{-- `id` unique : le uuid de maryUI vient des props, et
                              deux cartes identiques partageraient wire:key. --}}
                         <x-collapse id="basket-involvement-{{ $userId }}"
-                            class="mt-4 border border-base-200 bg-base-100">
+                            class="mt-4 border border-base-300 bg-base-100">
                             <x-slot:heading>
                                 <div class="flex items-center gap-2 text-sm font-semibold">
                                     <x-icon name="o-hand-raised" class="h-4 w-4 text-base-content/40" />
@@ -945,7 +945,7 @@
                  famille au guichet, qu'il se saisit. Il conditionne la remise.
             --}}
             @if ($this->requiresFamilyGuardian())
-                <div class="space-y-4 rounded-xl border border-base-200 bg-base-100 p-4">
+                <div class="space-y-4 rounded-xl border border-base-300 bg-base-100 p-4">
                     <h3 class="flex items-center gap-2 text-base font-semibold">
                         <x-icon name="o-shield-check" class="h-4 w-4 shrink-0 text-base-content/40" />
                         {{ __('Guardian of the group') }}
@@ -961,7 +961,7 @@
                         <div class="space-y-2">
                             @foreach ($this->linkedGuardians as $guardian)
                                 <div wire:key="basket-guardian-{{ $guardian->id }}"
-                                    class="flex items-center gap-3 rounded-lg border border-base-200 bg-base-100 p-3">
+                                    class="flex items-center gap-3 rounded-lg border border-base-300 bg-base-100 p-3">
                                     <x-icon name="o-user" class="h-5 w-5 shrink-0 text-primary" />
                                     <div class="min-w-0 flex-1">
                                         <div class="truncate text-sm font-semibold">
@@ -991,7 +991,7 @@
                         @endphp
 
                         @if ($hasResults)
-                            <div class="mt-2 space-y-1 rounded-lg border border-base-200 p-1">
+                            <div class="mt-2 space-y-1 rounded-lg border border-base-300 p-1">
                                 @if ($guardianResults->isNotEmpty())
                                     <div class="px-3 pt-1 text-xs font-bold uppercase tracking-widest text-base-content/40">
                                         {{ __('Existing guardians') }}
@@ -1037,7 +1037,7 @@
                         <x-button class="btn-soft btn-sm" icon="o-plus" :label="__('Create a new guardian')"
                             wire:click="$set('showGuardianForm', true)" />
                     @else
-                        <div class="space-y-3 rounded-lg border border-base-200 p-4">
+                        <div class="space-y-3 rounded-lg border border-base-300 p-4">
                             <div class="grid gap-3 sm:grid-cols-2">
                                 <x-input :label="__('First name')" wire:model.live.blur="guardianFirstName" required />
                                 <x-input :label="__('Last name')" wire:model.live.blur="guardianLastName" required />
@@ -1079,7 +1079,7 @@
                      seul le total reste visible, le reste se déplie. Le desktop
                      l'ouvre d'office, l'admin y lit le devis pendant qu'il parle. --}}
                 <div x-data="{ detailOpen: window.matchMedia('(min-width: 768px)').matches }"
-                    class="rounded-xl border border-base-200 bg-base-100">
+                    class="rounded-xl border border-base-300 bg-base-100">
                     <button type="button" @click="detailOpen = ! detailOpen"
                         x-bind:aria-expanded="detailOpen ? 'true' : 'false'"
                         class="flex w-full items-center justify-between gap-3 p-4 text-left">
@@ -1096,7 +1096,7 @@
                     </button>
 
                     <div x-show="detailOpen" x-collapse>
-                        <div class="space-y-4 border-t border-base-200 p-4">
+                        <div class="space-y-4 border-t border-base-300 p-4">
                             @foreach ($quote['members'] as $memberId => $member)
                                 <div wire:key="basket-quote-{{ $memberId }}" class="space-y-1">
                                     <div class="text-xs font-bold uppercase tracking-widest text-base-content/60">
@@ -1116,7 +1116,7 @@
                                     @endforeach
                                     @if (count($quote['members']) > 1)
                                         {{-- Au guichet, l'admin annonce un montant par personne. --}}
-                                        <div class="flex items-center justify-between border-t border-dashed border-base-200 pt-1 text-sm">
+                                        <div class="flex items-center justify-between border-t border-dashed border-base-300 pt-1 text-sm">
                                             <span class="font-semibold">{{ __('Due by :name', ['name' => $member['name']]) }}</span>
                                             <span class="font-semibold tabular-nums">{{ $money($member['total']) }}</span>
                                         </div>
@@ -1124,7 +1124,7 @@
                                 </div>
                             @endforeach
 
-                            <div class="space-y-1 border-t border-base-200 pt-3">
+                            <div class="space-y-1 border-t border-base-300 pt-3">
                                 <div class="flex items-center justify-between text-sm">
                                     <span class="text-base-content/70">{{ __('Subtotal') }}</span>
                                     <span class="font-semibold tabular-nums">{{ $money($quote['subtotal']) }}</span>
@@ -1141,7 +1141,7 @@
                                         <span class="font-semibold tabular-nums">−{{ $money($quote['credit']) }}</span>
                                     </div>
                                 @endif
-                                <div class="flex items-center justify-between border-t border-base-200 pt-2 text-base">
+                                <div class="flex items-center justify-between border-t border-base-300 pt-2 text-base">
                                     <span class="font-semibold">{{ __('Group total') }}</span>
                                     <span class="font-semibold tabular-nums text-primary">{{ $money($quote['total']) }}</span>
                                 </div>

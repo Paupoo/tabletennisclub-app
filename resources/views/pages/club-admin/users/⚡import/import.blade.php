@@ -91,7 +91,7 @@
                 </x-section-accordion>
             @endif
 
-            <div class="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-base-200 bg-base-100 py-3">
+            <div class="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-base-300 bg-base-100 py-3">
                 <p class="text-sm opacity-70">
                     {{ __(':count affiliate(s) read from the file.', ['count' => count($rows)]) }}
                 </p>

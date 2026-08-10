@@ -71,7 +71,7 @@
                             $interclubDivisions = $member->teams->map(fn ($t) => $t->league?->name ?? null)->filter()->unique()->implode(', ');
                         @endphp
 
-                        <div class="border-b border-base-200 py-4 last:border-0">
+                        <div class="border-b border-base-300 py-4 last:border-0">
                             <div class="flex items-start justify-between gap-4">
                                 <div class="flex items-start gap-3">
                                     <x-avatar class="h-10 w-10"
@@ -159,7 +159,7 @@
 
         @forelse ($upcomingSessions as $session)
             <button type="button" wire:click="viewSession({{ $session->id }})"
-                class="mb-3 flex w-full cursor-pointer items-center justify-between rounded-xl border border-base-200 bg-base-100 px-4 py-3 text-left transition hover:border-primary/30 hover:bg-primary/5">
+                class="mb-3 flex w-full cursor-pointer items-center justify-between rounded-xl border border-base-300 bg-base-100 px-4 py-3 text-left transition hover:border-primary/30 hover:bg-primary/5">
                 <div class="flex items-center gap-4">
                     <div class="text-center">
                         <div class="text-xs font-bold uppercase text-base-content/50">
@@ -199,7 +199,7 @@
                 <div @class([
                     'cursor-pointer rounded-xl border-2 p-3 text-center transition',
                     'border-warning bg-warning/10' => $cancelType === 'FREE',
-                    'border-base-200' => $cancelType !== 'FREE',
+                    'border-base-300' => $cancelType !== 'FREE',
                 ]) wire:click="$set('cancelType', 'FREE')">
                     <x-icon class="mx-auto mb-1 h-6 w-6 text-warning-content" name="o-sun" />
                     <p class="text-sm font-semibold">{{ __('Free practice') }}</p>
@@ -208,7 +208,7 @@
                 <div @class([
                     'cursor-pointer rounded-xl border-2 p-3 text-center transition',
                     'border-error bg-error/10' => $cancelType === 'CLOSED',
-                    'border-base-200' => $cancelType !== 'CLOSED',
+                    'border-base-300' => $cancelType !== 'CLOSED',
                 ]) wire:click="$set('cancelType', 'CLOSED')">
                     <x-icon class="mx-auto mb-1 h-6 w-6 text-error" name="o-lock-closed" />
                     <p class="text-sm font-semibold">{{ __('Room closed') }}</p>

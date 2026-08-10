@@ -50,7 +50,7 @@
                                 'w-full text-left p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between',
                                 'border-warning/60 bg-warning/5 opacity-60' => $hasConflict,
                                 'border-primary bg-primary/5 ring-1 ring-primary/20' => $isFirst && ! $hasConflict,
-                                'border-base-200 hover:border-primary/40 bg-base-100' => ! $isFirst && ! $hasConflict,
+                                'border-base-300 hover:border-primary/40 bg-base-100' => ! $isFirst && ! $hasConflict,
                             ])>
 
                             <div class="flex-1 min-w-0">

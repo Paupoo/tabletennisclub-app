@@ -121,9 +121,9 @@
             @foreach ($columns as $column)
                 <div wire:key="col-{{ $column['id'] }}"
                     class="flex max-h-[28rem] flex-col rounded-xl border bg-base-100
-                        {{ $column['over_capacity'] ? 'border-error/40' : 'border-base-200' }}">
+                        {{ $column['over_capacity'] ? 'border-error/40' : 'border-base-300' }}">
                     {{-- Column header (stays visible above the scroll) with capacity tension --}}
-                    <div class="flex shrink-0 items-center justify-between gap-2 rounded-t-xl border-b border-base-200 px-3 py-2
+                    <div class="flex shrink-0 items-center justify-between gap-2 rounded-t-xl border-b border-base-300 px-3 py-2
                         {{ $column['over_capacity'] ? 'bg-error/10' : 'bg-base-200/40' }}">
                         <span class="truncate text-sm font-semibold">{{ $column['name'] }}</span>
                         <div class="flex shrink-0 items-center gap-1">
@@ -152,7 +152,7 @@
                     {{-- Pool-only quick filters (age category + ranking series).
                          Visible to everyone; drag-drop still works on shown cards. --}}
                     @if ($column['is_pool'])
-                        <div class="flex shrink-0 items-center gap-2 border-b border-base-200 px-2 py-1.5">
+                        <div class="flex shrink-0 items-center gap-2 border-b border-base-300 px-2 py-1.5">
                             <x-select wire:model.live="poolAgeFilter"
                                 :options="$poolAgeOptions"
                                 :placeholder="__('All ages')" placeholder-value=""
@@ -174,7 +174,7 @@
                         @foreach ($column['cards'] as $card)
                             <li wire:key="card-{{ $card['id'] }}"
                                 wire:sort:item="{{ $card['id'] }}"
-                                class="rounded-md border border-base-200 bg-base-100 px-2 py-1.5 shadow-sm {{ $canManage ? 'cursor-grab active:cursor-grabbing' : '' }}">
+                                class="rounded-md border border-base-300 bg-base-100 px-2 py-1.5 shadow-sm {{ $canManage ? 'cursor-grab active:cursor-grabbing' : '' }}">
                                 <div class="flex items-center gap-1.5">
                                     <span class="grow truncate text-sm font-medium">{{ $card['name'] }}</span>
                                     @if ($card['age_label'])

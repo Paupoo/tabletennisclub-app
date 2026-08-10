@@ -150,7 +150,7 @@
 
                 <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">{{ __('Recent activity') }}</p>
 
-                <div class="bg-base-100 rounded-xl border border-base-200 shadow-sm divide-y divide-base-200">
+                <div class="bg-base-100 rounded-xl border border-base-300 shadow-sm divide-y divide-base-200">
                     @forelse($recentActivity as $item)
                     <div class="px-3 py-2.5 hover:bg-base-200/40 transition-colors">
                         <p class="text-xs font-medium text-base-content leading-snug">{{ $item['label'] }}</p>
@@ -171,7 +171,7 @@
                 @if(count($upcomingTrainings) > 0)
                 <div class="space-y-2 pt-1">
                     <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Entraînements</p>
-                    <div class="bg-base-100 rounded-xl border border-base-200 shadow-sm divide-y divide-base-200">
+                    <div class="bg-base-100 rounded-xl border border-base-300 shadow-sm divide-y divide-base-200">
                         @foreach($upcomingTrainings as $training)
                         <div class="px-3 py-2.5">
                             <p class="text-xs font-medium text-base-content leading-snug">{{ $training['label'] }}</p>
@@ -191,7 +191,7 @@
                 @if(count($upcomingMatches) > 0)
                 <div class="space-y-2 pt-1">
                     <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Interclubs</p>
-                    <div class="bg-base-100 rounded-xl border border-base-200 shadow-sm divide-y divide-base-200">
+                    <div class="bg-base-100 rounded-xl border border-base-300 shadow-sm divide-y divide-base-200">
                         @foreach($upcomingMatches as $match)
                         <div class="px-3 py-2.5">
                             <p class="text-xs font-medium text-base-content leading-snug">{{ $match['label'] }}</p>
@@ -209,7 +209,7 @@
                 @if(count($upcomingInternalEvents) > 0)
                 <div class="space-y-2 pt-1">
                     <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Événements</p>
-                    <div class="bg-base-100 rounded-xl border border-base-200 shadow-sm divide-y divide-base-200">
+                    <div class="bg-base-100 rounded-xl border border-base-300 shadow-sm divide-y divide-base-200">
                         @foreach($upcomingInternalEvents as $event)
                         <div class="px-3 py-2.5">
                             <p class="text-xs font-medium text-base-content leading-snug">{{ $event['label'] }}</p>

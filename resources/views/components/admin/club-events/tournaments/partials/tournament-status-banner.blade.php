@@ -60,7 +60,7 @@
     unset($step);
 @endphp
 
-<div class="mb-6 rounded-xl border border-base-200 bg-base-100 shadow-sm overflow-hidden">
+<div class="mb-6 rounded-xl border border-base-300 bg-base-100 shadow-sm overflow-hidden">
 
     {{-- Steps --}}
     <div class="flex items-stretch divide-x divide-base-200">
@@ -90,7 +90,7 @@
     </div>
 
     {{-- Field lock legend --}}
-    <div class="border-t border-base-200 px-4 py-2.5 flex flex-wrap gap-x-6 gap-y-1 bg-base-50">
+    <div class="border-t border-base-300 px-4 py-2.5 flex flex-wrap gap-x-6 gap-y-1 bg-base-50">
 
         {{-- Locked fields --}}
         <div class="flex items-center gap-1.5 text-xs">

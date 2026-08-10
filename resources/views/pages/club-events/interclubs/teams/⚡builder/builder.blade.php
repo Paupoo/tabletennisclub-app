@@ -12,7 +12,7 @@
     {{-- ── ÉTAPE 1 : Paramètres ─────────────────────────────────────────── --}}
     @if ($step === 1)
         <div class="mx-auto max-w-lg">
-            <x-card class="border-gray-200 shadow-sm" :title="__('Composition settings')">
+            <x-card class="shadow-sm" :title="__('Composition settings')">
                 <div class="space-y-5">
                     <x-select
                         label="Saison"
@@ -39,7 +39,7 @@
                                     @class([
                                         'flex flex-col items-center gap-1 rounded-lg border-2 px-3 py-3 text-center text-sm transition-all',
                                         'border-blue-500 bg-blue-50 text-blue-800 shadow-sm' => $teamCategory === $value,
-                                        'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50' => $teamCategory !== $value,
+                                        'border-base-300 bg-white text-gray-600 hover:border-primary hover:bg-gray-50' => $teamCategory !== $value,
                                     ])>
                                     <span class="font-semibold leading-tight">{{ $cat['label'] }}</span>
                                     <span class="text-xs leading-tight opacity-60">{{ $cat['desc'] }}</span>
@@ -116,7 +116,7 @@
                     <div
                         wire:key="team-card-{{ $index }}"
                         class="rounded-xl border bg-white shadow-sm transition-all"
-                        :class="over === {{ $index }} ? 'border-blue-400 ring-2 ring-blue-200' : 'border-gray-200'"
+                        :class="over === {{ $index }} ? 'border-blue-400 ring-2 ring-blue-200' : 'border-base-300'"
                         @dragover.prevent="over = {{ $index }}"
                         @dragleave="over === {{ $index }} && (over = null)"
                         @drop.prevent="$wire.movePlayerToTeam(dragging, {{ $index }}); dragging = null; over = null">
@@ -191,7 +191,7 @@
                         </div>
 
                         {{-- Infos de ligue --}}
-                        <div class="border-t border-gray-100 bg-gray-50 px-4 pb-3 pt-2">
+                        <div class="border-t border-base-300 bg-gray-50 px-4 pb-3 pt-2">
                             <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Ligue</p>
                             <div class="grid grid-cols-3 gap-2">
                                 <x-select
@@ -219,7 +219,7 @@
                         class="rounded-xl border bg-white shadow-sm transition-all"
                         :class="over === 'unassigned'
                             ? 'border-orange-400 ring-2 ring-orange-200'
-                            : ({{ count($unassigned) > 0 ? 'true' : 'false' }} ? 'border-dashed border-gray-300' : 'border-dashed border-gray-200 opacity-60')"
+                            : ({{ count($unassigned) > 0 ? 'true' : 'false' }} ? 'border-dashed border-base-300' : 'border-dashed border-base-300 opacity-60')"
                         @dragover.prevent="over = 'unassigned'"
                         @dragleave="over === 'unassigned' && (over = null)"
                         @drop.prevent="$wire.movePlayerToUnassigned(dragging); dragging = null; over = null">

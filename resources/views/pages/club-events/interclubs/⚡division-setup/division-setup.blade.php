@@ -67,7 +67,7 @@
                     $catColor = ['MEN' => 'blue', 'VETERANS' => 'amber', 'WOMEN' => 'pink'];
                 @endphp
                 @foreach ($groupedLeagues as $category => $categoryLeagues)
-                    @php $meta = $categoryMeta[$category] ?? ['bg' => 'bg-gray-50', 'border' => 'border-gray-200', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400', 'label' => $category]; @endphp
+                    @php $meta = $categoryMeta[$category] ?? ['bg' => 'bg-gray-50', 'border' => 'border-base-300', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400', 'label' => $category]; @endphp
 
                     <x-section-accordion
                         :label="$meta['label']"
@@ -104,7 +104,7 @@
                                                 type="button"
                                                 wire:click="selectLeague({{ $league->id }})"
                                                 class="flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors
-                                                    {{ $active ? $meta['bg'] . ' ' . $meta['border'] : 'border-base-200 bg-base-100 hover:bg-base-200' }}"
+                                                    {{ $active ? $meta['bg'] . ' ' . $meta['border'] : 'border-base-300 bg-base-100 hover:bg-base-200' }}"
                                             >
                                                 <span class="h-2 w-2 shrink-0 rounded-full {{ $meta['dot'] }}"></span>
                                                 <div class="min-w-0 flex-1">
@@ -134,7 +134,7 @@
                 @else
                     @php
                         $selectedLeague = $leagues->firstWhere('id', $selectedLeagueId);
-                        $meta = $categoryMeta[$selectedLeague?->category ?? ''] ?? ['bg' => 'bg-gray-50', 'border' => 'border-gray-200', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400', 'label' => ''];
+                        $meta = $categoryMeta[$selectedLeague?->category ?? ''] ?? ['bg' => 'bg-gray-50', 'border' => 'border-base-300', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400', 'label' => ''];
                     @endphp
                     <div class="mb-4 flex items-center justify-between">
                         <div class="flex items-center gap-3">

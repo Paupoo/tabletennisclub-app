@@ -78,7 +78,7 @@
                             <x-icon name="o-identification" class="w-4 h-4 text-base-content/40" />
                             <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Club Membership') }}</span>
                         </div>
-                        <div class="flex-1 border-t border-base-200"></div>
+                        <div class="flex-1 border-t border-base-300"></div>
                     </div>
 
                     {{-- Current season accordion – open by default --}}
@@ -250,7 +250,7 @@
                                                 <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Your licence') }}</span>
                                             </div>
                                             <span class="text-xs text-muted italic shrink-0">{{ __('Required') }}</span>
-                                            <div class="flex-1 border-t border-base-200"></div>
+                                            <div class="flex-1 border-t border-base-300"></div>
                                         </div>
 
                                         {{-- Formula selection --}}
@@ -263,7 +263,7 @@
                                             <label @class(['relative block border-2 rounded-xl p-4 transition-all duration-200 cursor-pointer',
                                                 'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary has-[:focus-visible]:ring-offset-2',
                                                 'border-primary bg-primary/5 shadow-md' => $formula === 'competitive',
-                                                'border-base-200 hover:border-primary/50' => $formula !== 'competitive',
+                                                'border-base-300 hover:border-primary/50' => $formula !== 'competitive',
                                             ])>
                                                 <input type="radio" class="sr-only"
                                                     name="licence-formula-{{ $userId }}"
@@ -286,7 +286,7 @@
                                             <label @class(['relative block border-2 rounded-xl p-4 transition-all duration-200 cursor-pointer',
                                                 'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-secondary has-[:focus-visible]:ring-offset-2',
                                                 'border-secondary bg-secondary/5 shadow-md' => $formula === 'recreative',
-                                                'border-base-200 hover:border-secondary/50' => $formula !== 'recreative',
+                                                'border-base-300 hover:border-secondary/50' => $formula !== 'recreative',
                                             ])>
                                                 <input type="radio" class="sr-only"
                                                     name="licence-formula-{{ $userId }}"
@@ -321,7 +321,7 @@
                             @endif
 
                             {{-- ── ENTRAÎNEMENTS ──────────────────────────────────── --}}
-                                <div class="mt-6 pt-6 border-t border-base-200">
+                                <div class="mt-6 pt-6 border-t border-base-300">
                                     <div class="flex items-center gap-2 mb-4">
                                         <div class="flex items-center gap-1.5">
                                             <x-icon name="o-academic-cap" class="w-4 h-4 text-base-content/40" />
@@ -332,7 +332,7 @@
                                         @else
                                             <span class="text-xs text-muted italic shrink-0">{{ __('Optional, billed in addition to your licence') }}</span>
                                         @endif
-                                        <div class="flex-1 border-t border-base-200"></div>
+                                        <div class="flex-1 border-t border-base-300"></div>
                                     </div>
 
                                     @if(empty($availablePacks))
@@ -484,7 +484,7 @@
                                     @endif
 
                                     @if($isRegistering)
-                                        <div class="mt-4 p-4 rounded-xl border border-base-200 bg-base-200/40">
+                                        <div class="mt-4 p-4 rounded-xl border border-base-300 bg-base-200/40">
                                             <x-toggle
                                                 wire:model="registrations.{{ $userId }}.wants_directed_training"
                                                 :label="__('No slot suits you? Let us know you are interested in directed training')"
@@ -495,13 +495,13 @@
 
                             {{-- ── RÉCAPITULATIF & ENVOI (inscription en cours) ────── --}}
                             @if($isRegistering)
-                                <div class="mt-6 pt-6 border-t border-base-200">
+                                <div class="mt-6 pt-6 border-t border-base-300">
                                     <div class="flex items-center gap-2 mb-4">
                                         <div class="flex items-center gap-1.5">
                                             <x-icon name="o-paper-airplane" class="w-4 h-4 text-base-content/40" />
                                             <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Summary and submit') }}</span>
                                         </div>
-                                        <div class="flex-1 border-t border-base-200"></div>
+                                        <div class="flex-1 border-t border-base-300"></div>
                                     </div>
 
                                     @php
@@ -522,7 +522,7 @@
 
                                     <div class="space-y-5">
                                         {{-- Price estimate --}}
-                                        <div class="rounded-xl border border-base-200 bg-base-200/40 p-4 space-y-2">
+                                        <div class="rounded-xl border border-base-300 bg-base-200/40 p-4 space-y-2">
                                             <div class="text-xs font-bold uppercase tracking-wide opacity-60 mb-3">{{ __('Price estimate') }}</div>
                                             <div class="flex justify-between text-sm">
                                                 <span class="opacity-70">{{ $formula === 'competitive' ? __('Competition licence') : __('Recreational licence') }}</span>
@@ -547,7 +547,7 @@
                                             @if($applyDiscount)
                                                 <div class="text-xs text-muted italic">{{ __('Multi-pack discount applied (−10€/pack)') }}</div>
                                             @endif
-                                            <div class="flex justify-between text-base font-bold pt-2 border-t border-base-200">
+                                            <div class="flex justify-between text-base font-bold pt-2 border-t border-base-300">
                                                 <span>{{ __('Total') }}</span>
                                                 <span class="text-primary">{{ number_format($estimatedTotal, 2) }} €</span>
                                             </div>
@@ -555,7 +555,7 @@
                                         </div>
 
                                         {{-- Season involvement --}}
-                                        <div class="rounded-xl border border-base-200 bg-base-200/40 p-4 space-y-4">
+                                        <div class="rounded-xl border border-base-300 bg-base-200/40 p-4 space-y-4">
                                             <div class="text-xs font-bold uppercase tracking-wide opacity-60">{{ __('Getting involved this season') }}</div>
                                             <p class="text-xs opacity-60 -mt-2">{{ __('Optional — help us organise the season. You can update these anytime.') }}</p>
 
@@ -594,13 +594,13 @@
                             @endif
 
                             {{-- ── DOCUMENTS (saison courante) ───────────────────────── --}}
-                            <div class="mt-6 pt-6 border-t border-base-200">
+                            <div class="mt-6 pt-6 border-t border-base-300">
                                 <div class="flex items-center gap-2 mb-4">
                                     <div class="flex items-center gap-1.5">
                                         <x-icon name="o-document-text" class="w-4 h-4 text-base-content/40" />
                                         <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Documents') }}</span>
                                     </div>
-                                    <div class="flex-1 border-t border-base-200"></div>
+                                    <div class="flex-1 border-t border-base-300"></div>
                                 </div>
 
                                 <div class="space-y-4">
@@ -735,7 +735,7 @@
         @if(!empty($paymentDetails))
         <div class="space-y-6">
             <div class="flex flex-col items-center gap-3">
-                <img src="{{ $paymentDetails['qr_code'] }}" alt="QR Code" class="w-48 h-48 rounded-xl border border-base-200 shadow" />
+                <img src="{{ $paymentDetails['qr_code'] }}" alt="QR Code" class="w-48 h-48 rounded-xl border border-base-300 shadow" />
                 <p class="text-xs text-muted text-center">{{ __('Scan this QR code with your banking app') }}</p>
             </div>
 
@@ -758,7 +758,7 @@
                     <span class="opacity-60">{{ __('Structured reference') }}</span>
                     <span class="font-mono font-bold text-primary">{{ $paymentDetails['reference'] }}</span>
                 </div>
-                <div class="flex justify-between items-center pt-1 border-t border-base-200">
+                <div class="flex justify-between items-center pt-1 border-t border-base-300">
                     <span class="font-bold">{{ __('Amount') }}</span>
                     <span class="text-lg font-bold text-primary">{{ $paymentDetails['amount_due'] }} €</span>
                 </div>

@@ -26,7 +26,7 @@
 @endphp
 
 <div @class([
-    'group flex flex-col overflow-hidden rounded-xl border border-base-200 bg-base-100 shadow-sm transition-all hover:shadow-md',
+    'group flex flex-col overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-sm transition-all hover:shadow-md',
     'ring-2 ring-primary/40' => $isLive,
 ])>
 
@@ -124,7 +124,7 @@
             $canManageCard = ($u = auth()->user()) && $u->can('tournaments.manage');
         @endphp
 
-        <div class="flex items-center justify-end border-t border-base-200 pt-2">
+        <div class="flex items-center justify-end border-t border-base-300 pt-2">
             <div class="flex items-center gap-1">
 
                 @if ($canManageCard)

@@ -19,7 +19,7 @@
     <div class="mb-8 grid gap-5 lg:grid-cols-3">
 
         {{-- Infos générales --}}
-        <x-card class="border-gray-200 shadow-sm lg:col-span-1">
+        <x-card class="shadow-sm lg:col-span-1">
             <div class="space-y-4">
                 <div class="flex items-center gap-4">
                     <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-2xl font-bold text-blue-800">
@@ -59,7 +59,7 @@
         </x-card>
 
         {{-- Noyau de l'équipe --}}
-        <x-card class="border-gray-200 shadow-sm lg:col-span-2" title="Noyau">
+        <x-card class="shadow-sm lg:col-span-2" title="Noyau">
             @if ($team->users->isEmpty())
                 <p class="py-6 text-center text-sm text-gray-400 italic">Aucun joueur dans le noyau.</p>
             @else
@@ -98,7 +98,7 @@
 
     {{-- ── Prochains matchs ─────────────────────────────────────────────── --}}
     @if ($upcomingInterclubs->isNotEmpty())
-        <x-card class="mb-6 border-gray-200 shadow-sm" title="Prochains matchs">
+        <x-card class="mb-6 shadow-sm" title="Prochains matchs">
             <div class="divide-y divide-gray-100">
                 @foreach ($upcomingInterclubs as $ic)
                     @php
@@ -131,7 +131,7 @@
     @endif
 
     {{-- ── Résultats (mock) ─────────────────────────────────────────────── --}}
-    <x-card class="border-gray-200 shadow-sm" :title="__('Results')">
+    <x-card class="shadow-sm" :title="__('Results')">
         <x-slot:subtitle>
             <span class="text-xs text-orange-500">{{ __('Results module coming soon — simulated data') }}</span>
         </x-slot:subtitle>

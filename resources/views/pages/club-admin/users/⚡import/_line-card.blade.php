@@ -1,6 +1,6 @@
 {{-- One affiliate of the listing, as the reviewer is leaving them. --}}
 <div wire:key="line-{{ $line }}"
-    class="rounded-xl border border-base-200 bg-base-100 p-4 {{ $row['action'] === '' ? 'border-warning' : '' }}">
+    class="rounded-xl border border-base-300 bg-base-100 p-4 {{ $row['action'] === '' ? 'border-warning' : '' }}">
     <div class="grid gap-4 lg:grid-cols-12">
         {{-- Identity, editable: past two words the split is a guess --}}
         <div class="lg:col-span-4">
@@ -69,7 +69,7 @@
 
     {{-- The address of a child is a parent's, and the file rarely proves it --}}
     @if ($row['isMinor'] && $row['action'] !== 'skip')
-        <div class="mt-3 border-t border-base-200 pt-3">
+        <div class="mt-3 border-t border-base-300 pt-3">
             <x-checkbox wire:model.live="rows.{{ $line }}.guardianAddress"
                 :label="__('This address belongs to a guardian')"
                 :hint="__('The member is recorded without a login of their own and reached through their guardian.')" />

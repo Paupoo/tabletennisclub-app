@@ -93,8 +93,8 @@
                             'flex items-center gap-3 rounded-xl border p-3 transition-all',
                             'cursor-not-allowed' => $isBlocked,
                             'border-primary bg-primary/5 ring-1 ring-primary/40' => $isSelected && ! $isBlocked,
-                            'border-base-200 bg-base-50 opacity-60' => $isBlocked,
-                            'border-base-200 hover:border-primary/40 bg-base-100' => ! $isSelected && ! $isBlocked,
+                            'border-base-300 bg-base-50 opacity-60' => $isBlocked,
+                            'border-base-300 hover:border-primary/40 bg-base-100' => ! $isSelected && ! $isBlocked,
                         ])>
 
                         {{-- Rank chip --}}
@@ -146,7 +146,7 @@
                         </div>
 
                         {{-- Stats: joués | sél. --}}
-                        <div class="flex shrink-0 overflow-hidden rounded-lg border border-base-200 text-center">
+                        <div class="flex shrink-0 overflow-hidden rounded-lg border border-base-300 text-center">
                             <div class="flex flex-col items-center px-3 py-1.5">
                                 <span class="text-sm font-bold tabular-nums leading-none">{{ $player['matches_played'] }}</span>
                                 <span class="mt-0.5 text-xs font-bold uppercase opacity-60">{{ __('played') }}</span>

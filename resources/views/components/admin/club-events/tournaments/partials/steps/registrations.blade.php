@@ -306,21 +306,21 @@
 <x-app-modal wire:model="showQrModal" :title="__('Payment by QR / Bank Transfer')" separator box-class="max-w-lg" :open="$showQrModal">
     @if($qrCodeData)
     <div class="flex flex-col items-center gap-4">
-        <img src="{{ $qrCodeData }}" alt="SEPA QR" class="w-48 h-48 rounded-xl border border-base-200" />
+        <img src="{{ $qrCodeData }}" alt="SEPA QR" class="w-48 h-48 rounded-xl border border-base-300" />
         <div class="w-full space-y-2 text-sm">
-            <div class="flex justify-between py-1 border-b border-base-200">
+            <div class="flex justify-between py-1 border-b border-base-300">
                 <span class="opacity-60">{{ __('Beneficiary') }}</span>
                 <span class="font-semibold">{{ $qrPaymentDetails['beneficiary'] ?? '' }}</span>
             </div>
-            <div class="flex justify-between py-1 border-b border-base-200">
+            <div class="flex justify-between py-1 border-b border-base-300">
                 <span class="opacity-60">{{ __('IBAN') }}</span>
                 <span class="font-mono">{{ $qrPaymentDetails['iban'] ?? '' }}</span>
             </div>
-            <div class="flex justify-between py-1 border-b border-base-200">
+            <div class="flex justify-between py-1 border-b border-base-300">
                 <span class="opacity-60">{{ __('BIC') }}</span>
                 <span class="font-mono">{{ $qrPaymentDetails['bic'] ?? '' }}</span>
             </div>
-            <div class="flex justify-between py-1 border-b border-base-200">
+            <div class="flex justify-between py-1 border-b border-base-300">
                 <span class="opacity-60">{{ __('Reference') }}</span>
                 <span class="font-mono text-primary font-bold">{{ $qrPaymentDetails['reference'] ?? '' }}</span>
             </div>

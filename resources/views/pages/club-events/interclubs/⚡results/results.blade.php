@@ -127,7 +127,7 @@
                                                 <div class="overflow-x-auto">
                                                     <table class="w-full text-sm">
                                                         <thead>
-                                                            <tr class="border-b border-gray-100 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                                            <tr class="border-b border-base-300 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
                                                                 <th class="hidden pb-2 pr-4 sm:table-cell">{{ __('Week') }}</th>
                                                                 <th class="pb-2 pr-4">{{ __('Date') }}</th>
                                                                 <th class="pb-2 pr-4">{{ __('Opponent') }}</th>

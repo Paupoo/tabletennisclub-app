@@ -64,7 +64,7 @@
                         <div class="divide-y divide-base-200">
                             @foreach ($upcomingMatches as $match)
                                 <div class="flex items-center gap-4 py-3">
-                                    <div class="w-12 shrink-0 rounded-lg border border-base-200 bg-base-200/40 py-1 text-center">
+                                    <div class="w-12 shrink-0 rounded-lg border border-base-300 bg-base-200/40 py-1 text-center">
                                         <div class="text-base font-bold leading-tight">
                                             {{ $match['start_date_time']->format('d') }}
                                         </div>
@@ -125,7 +125,7 @@
                         </div>
                     @endif
 
-                    <div class="mt-4 border-t border-base-200 pt-3 text-xs text-base-content/50">
+                    <div class="mt-4 border-t border-base-300 pt-3 text-xs text-base-content/50">
                         {{ __('Division standings will appear here once opponent results are recorded.') }}
                     </div>
                 </x-card>

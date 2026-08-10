@@ -16,7 +16,7 @@
         {{-- ── Colonne gauche : métadonnées ──────────────────────────── --}}
         <div class="space-y-5 lg:col-span-1">
 
-            <x-card class="border-gray-200 shadow-sm" :title="__('Identity')">
+            <x-card class="shadow-sm" :title="__('Identity')">
                 <div class="space-y-4">
                     <x-input label="Titre" wire:model.live.debounce.300ms="title"
                         placeholder="Titre de l'article" />
@@ -30,7 +30,7 @@
             </x-card>
 
             {{-- Image --}}
-            <x-card class="border-gray-200 shadow-sm" :title="__('Featured image')">
+            <x-card class="shadow-sm" :title="__('Featured image')">
                 @if ($existingImage)
                     <div class="mb-3">
                         <img src="{{ Storage::url($existingImage) }}"
@@ -52,7 +52,7 @@
         </div>
 
         {{-- ── Colonne droite : éditeur Markdown split ───────────────── --}}
-        <x-card class="border-gray-200 shadow-sm lg:col-span-2" title="Contenu">
+        <x-card class="shadow-sm lg:col-span-2" title="Contenu">
             <x-slot:subtitle>
                 <span class="text-xs text-gray-400">{{ __('Markdown — live preview') }}</span>
             </x-slot:subtitle>
@@ -89,7 +89,7 @@
                     <label class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{{ __('Edit') }}</label>
                     <textarea
                         wire:model.live.debounce.400ms="content"
-                        class="flex-1 resize-none rounded-lg border border-gray-200 bg-gray-50 p-3 font-mono text-sm text-gray-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        class="flex-1 resize-none rounded-lg border border-base-300 bg-gray-50 p-3 font-mono text-sm text-gray-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
                         placeholder="## Mon titre&#10;&#10;Rédigez votre article en Markdown…&#10;&#10;- point 1&#10;- point 2"
                         style="min-height:380px"></textarea>
                     @error('content')
@@ -100,7 +100,7 @@
                 {{-- Prévisualisation --}}
                 <div class="flex flex-col">
                     <label class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{{ __('Preview') }}</label>
-                    <div class="prose prose-sm flex-1 overflow-y-auto rounded-lg border border-gray-200 bg-white p-4 text-gray-800"
+                    <div class="prose prose-sm flex-1 overflow-y-auto rounded-lg border border-base-300 bg-white p-4 text-gray-800"
                         style="min-height:380px; max-height:580px">
                         {!! $markdownPreview !!}
                     </div>

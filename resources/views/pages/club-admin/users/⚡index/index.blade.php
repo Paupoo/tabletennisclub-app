@@ -41,7 +41,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="lg:hidden border-b border-base-200" x-show="mobileSearchOpen"
+    <div class="lg:hidden border-b border-base-300" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -366,7 +366,7 @@
                     wire:model.live="team_ids" />
             </div>
             @can('users.delete')
-                <div class="border-t border-base-200 pt-4">
+                <div class="border-t border-base-300 pt-4">
                     <x-toggle wire:model.live="showArchived" :label="__('Show archived members')" right />
                 </div>
             @endcan

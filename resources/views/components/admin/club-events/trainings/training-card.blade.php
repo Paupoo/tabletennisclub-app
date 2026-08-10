@@ -41,7 +41,7 @@
     ];
 @endphp
 
-<div class="group overflow-hidden rounded-xl border border-base-200 bg-base-100">
+<div class="group overflow-hidden rounded-xl border border-base-300 bg-base-100">
 
     {{-- HEADER --}}
     <div class="{{ $colors['bg'] }} px-4 py-3">
@@ -96,7 +96,7 @@
         </div>
 
         {{-- ACTIONS --}}
-        <div class="flex items-center justify-between border-t border-base-200 pt-2">
+        <div class="flex items-center justify-between border-t border-base-300 pt-2">
 
             {{-- Links (comme mobile) --}}
             <div class="flex flex-wrap gap-3 text-xs">

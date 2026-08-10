@@ -87,7 +87,7 @@
                 <x-textarea :label="__('Body')" wire:model="formBody" rows="10" />
 
                 {{-- Variable helper near the body field --}}
-                <div class="mt-2 rounded-lg border border-base-200 bg-base-200/40 p-3 text-xs text-base-content/70">
+                <div class="mt-2 rounded-lg border border-base-300 bg-base-200/40 p-3 text-xs text-base-content/70">
                     <p class="mb-1 font-medium">{{ __('Available variables:') }}</p>
                     <div class="flex flex-wrap gap-2">
                         @foreach ($availableVariables as $variable)

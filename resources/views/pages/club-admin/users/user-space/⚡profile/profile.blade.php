@@ -213,7 +213,7 @@
                                     {{-- Le message du comité : c'est ce qui permet de comprendre --}}
                                     <p class="whitespace-pre-line text-sm text-base-content/80">{{ $fine->pedagogical_message }}</p>
 
-                                    <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-base-200 pt-3 text-xs text-base-content/60">
+                                    <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-base-300 pt-3 text-xs text-base-content/60">
                                         @if ($fine->federation_reference)
                                             <span>{{ __('Federation reference') }}: <span class="font-mono">{{ $fine->federation_reference }}</span></span>
                                         @endif

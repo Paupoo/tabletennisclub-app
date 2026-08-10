@@ -93,7 +93,7 @@
         <div class="text-xs font-bold uppercase tracking-widest text-muted mb-4">{{ __('History') }}</div>
 
         @forelse($this->register->entries->sortByDesc('created_at') as $entry)
-        <div class="flex items-center gap-4 p-3 rounded-xl border border-base-200 mb-2">
+        <div class="flex items-center gap-4 p-3 rounded-xl border border-base-300 mb-2">
             <div @class([
                 'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
                 'bg-success/15' => $entry->amount > 0,

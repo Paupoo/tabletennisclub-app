@@ -26,7 +26,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -228,7 +228,7 @@
                 <x-select :options="$formatOptions" :placeholder="__('All formats')"
                     wire:model.live="format" class="w-full" />
             </div>
-            <div class="border-t border-base-200 pt-4">
+            <div class="border-t border-base-300 pt-4">
                 <x-toggle wire:model.live="showArchived" :label="__('Show archived meetings')" right />
             </div>
         </x-slot:filters>

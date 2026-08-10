@@ -17,7 +17,7 @@
         <div class="space-y-5 lg:col-span-1">
 
             {{-- Lettre de l'équipe --}}
-            <x-card class="border-gray-200 shadow-sm" :title="__('Identity')">
+            <x-card class="shadow-sm" :title="__('Identity')">
                 <div class="space-y-4">
                     <x-select
                         :label="__('Team letter')"
@@ -63,7 +63,7 @@
             </x-card>
 
             {{-- Capitaine --}}
-            <x-card class="border-gray-200 shadow-sm" :title="__('Captain')">
+            <x-card class="shadow-sm" :title="__('Captain')">
                 @if ($captainId)
                     @php $captain = $competitors->find($captainId) ?? $team->captain; @endphp
                     <div class="mb-4 flex items-center gap-3 rounded-lg bg-yellow-50 p-3">
@@ -111,7 +111,7 @@
         </div>
 
         {{-- ── Colonne droite : composition du noyau ──────────────────── --}}
-        <x-card class="border-gray-200 shadow-sm lg:col-span-2" :title="__('Composition of the core')">
+        <x-card class="shadow-sm lg:col-span-2" :title="__('Composition of the core')">
             <x-slot:subtitle>
                 <span class="text-sm text-gray-500">
                     {{ count($memberIds) }} joueur{{ count($memberIds) > 1 ? 's' : '' }} sélectionné{{ count($memberIds) > 1 ? 's' : '' }}
@@ -137,7 +137,7 @@
 
                         {{-- Checkbox visuel --}}
                         <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition
-                            {{ $selected ? 'border-blue-500 bg-blue-500' : 'border-gray-300 bg-white' }}">
+                            {{ $selected ? 'border-blue-500 bg-blue-500' : 'border-base-300 bg-white' }}">
                             @if ($selected)
                                 <x-heroicon-s-check class="h-3 w-3 text-white" />
                             @endif

@@ -457,7 +457,7 @@
 
             <div class="mt-4 space-y-6">
                 @foreach ($rooms as $i => $room)
-                    <div class="border border-base-200 rounded-xl overflow-hidden">
+                    <div class="border border-base-300 rounded-xl overflow-hidden">
                         <div class="bg-base-200/40 px-4 py-3 flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <x-icon name="o-map-pin" class="w-4 h-4 text-primary" />

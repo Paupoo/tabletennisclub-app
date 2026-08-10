@@ -107,7 +107,7 @@
                         <div class="text-sm font-bold text-primary">{{ $label['name'] }}</div>
                     </div>
                 @endif
-                <img alt="QR Code" class="h-48 w-48 rounded-xl border border-base-200 shadow" src="{{ $paymentQr }}" />
+                <img alt="QR Code" class="h-48 w-48 rounded-xl border border-base-300 shadow" src="{{ $paymentQr }}" />
                 <div class="w-full divide-y divide-base-200 text-sm">
                     <div class="flex items-center justify-between py-2">
                         <span class="opacity-60">{{ __('Amount') }}</span>

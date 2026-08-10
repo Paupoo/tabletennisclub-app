@@ -70,6 +70,49 @@ test('all __() strings in the codebase are translated in fr_BE.json', function (
     );
 });
 
+test('English sentences shown to members are translated in fr_BE.json', function () use ($basePath): void {
+    /**
+     * Keys whose fr_BE value used to be the English key itself, so a French
+     * speaker read English. Single words that are spelled the same in both
+     * languages (Score, Format, Total…) are deliberately absent.
+     *
+     * @var string[]
+     */
+    $keys = [
+        'Bye',
+        'Cannot mark as paid from pending status. Confirm first.',
+        'Confirm and close',
+        'Could not load data.',
+        'Doubles',
+        'Export CSV',
+        'Export ODS',
+        'Export XLSX',
+        'Import transactions from your bank (CODA/CSV)',
+        'No matches found for this team.',
+        'No players on the waitlist.',
+        'Remove from team',
+        'Singles',
+        'You are already registered.',
+        'You are on the waitlist.',
+        'You are registered!',
+        'You have been removed from the waitlist.',
+        'You have successfully registered for this tournament.',
+        'You have successfully unregistered from this tournament.',
+        'Your spot has been confirmed.',
+    ];
+
+    $translations = json_decode(file_get_contents($basePath . '/lang/fr_BE.json'), associative: true);
+
+    $untranslated = array_values(array_filter(
+        $keys,
+        fn (string $key): bool => ($translations[$key] ?? $key) === $key,
+    ));
+
+    expect($untranslated)->toBeEmpty(
+        count($untranslated) . " key(s) still reading English in fr_BE.json:\n- " . implode("\n- ", $untranslated),
+    );
+});
+
 test('fr_BE values use a non-breaking space before double punctuation', function () use ($basePath): void {
     $translations = json_decode(file_get_contents($basePath . '/lang/fr_BE.json'), associative: true);
 

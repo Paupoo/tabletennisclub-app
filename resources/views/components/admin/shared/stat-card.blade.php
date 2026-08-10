@@ -22,6 +22,15 @@
     `.text-subtle`), jamais par `opacity-*` : une opacité ne se mesure pas et
     échappe à la sonde de contraste. L'eyebrow y perdait 3,43:1 sur cinq écrans.
 
+    La précision passe à la ligne au lieu d'être tronquée : coupée en plein mot
+    (« 0 paiemen… ») elle n'apprend rien, et la grille aligne de toute façon les
+    cartes d'une même rangée sur la plus haute.
+
+    Les attributs de l'appelant sont transmis par le sac (`$attributes->class()`).
+    Interpoler `{{ $attributes->get('class') }}` dans un attribut de balise de
+    composant ne marche pas — Blade coupe l'expression sur `->` et l'appelant
+    perd sa classe (`col-span-2` était muet sur quatre écrans).
+
     Purement informatif : le filtrage passe par les onglets, jamais par la carte.
 --}}
 @props([
@@ -43,7 +52,7 @@
     };
 @endphp
 
-<x-card class="shadow-sm {{ $attributes->get('class') }}">
+<x-card data-stat-card {{ $attributes->class('shadow-sm') }}>
     <div class="flex items-center gap-3">
         @if ($icon)
             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $chipClasses }}">
@@ -52,9 +61,9 @@
         @endif
         <div class="min-w-0">
             <div class="text-xs font-bold uppercase tracking-widest text-muted">{{ $label }}</div>
-            <div class="{{ $emphasis ? 'text-3xl' : 'text-2xl' }} font-black tabular-nums">{{ $value }}</div>
+            <div data-stat-value class="{{ $emphasis ? 'text-3xl' : 'text-2xl' }} font-black tabular-nums">{{ $value }}</div>
             @if ($hint)
-                <div class="mt-0.5 truncate text-xs text-subtle">{{ $hint }}</div>
+                <div data-stat-hint class="mt-0.5 text-xs text-subtle">{{ $hint }}</div>
             @endif
         </div>
     </div>

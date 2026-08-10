@@ -64,7 +64,7 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- Stats --}}
-    <div class="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-3">
         <x-admin.shared.stat-card
             :label="__('Pending')"
             :value="number_format($this->stats['pending_total'], 2, ',', ' ') . ' €'"
@@ -87,7 +87,7 @@
             :hint="$this->stats['to_refund_count'] . ' ' . __('refund(s) pending')"
             icon="o-arrow-uturn-left"
             :color="$this->stats['to_refund_count'] > 0 ? 'error' : 'neutral'"
-            class="col-span-2 lg:col-span-1 {{ $statusFilter === 'to_refund' ? 'ring-2 ring-primary/30' : '' }}" />
+            class="sm:col-span-2 lg:col-span-1 {{ $statusFilter === 'to_refund' ? 'ring-2 ring-primary/30' : '' }}" />
     </div>
 
     {{-- Status filter — folder tabs; the filtered table lives outside as its own card --}}

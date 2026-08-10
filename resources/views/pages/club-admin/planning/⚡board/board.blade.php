@@ -5,10 +5,13 @@
 
     @if ($plan === null)
         {{-- ── Plan management ─────────────────────────────────────────── --}}
-        <x-header progress-indicator separator :title="__('Planning board')"
+        <x-header data-board-header progress-indicator separator :title="__('Planning board')"
             :subtitle="$season?->name" />
 
-        <div class="mx-auto w-full max-w-3xl space-y-6">
+        {{-- Full width, like every other back-office screen: the header sits
+        outside this block, so a centred max-width put the title 160px to the
+        left of everything it introduced. --}}
+        <div data-board-body class="w-full space-y-6">
             @if ($season === null)
                 <x-admin.shared.missing-season-state
                     :message="__('A plan is composed from an active season. Open one to start composing training groups.')" />

@@ -63,7 +63,7 @@
         $entriesIn = $this->register->entries->where('amount', '>', 0);
         $entriesOut = $this->register->entries->where('amount', '<', 0);
     @endphp
-    <div class="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-3">
         <x-admin.shared.stat-card
             :label="__('Current balance')"
             :value="number_format($this->balance / 100, 2, ',', ' ') . ' €'"
@@ -71,7 +71,7 @@
             icon="o-currency-euro"
             :color="$this->balance >= 0 ? 'success' : 'error'"
             emphasis
-            class="col-span-2 lg:col-span-1" />
+            class="sm:col-span-2 lg:col-span-1" />
 
         <x-admin.shared.stat-card
             :label="__('Total in')"

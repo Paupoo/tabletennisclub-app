@@ -50,7 +50,7 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- Stats --}}
-    <div class="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-3">
         <x-admin.shared.stat-card
             :label="__('Total')"
             :value="$this->stats['total']"
@@ -70,7 +70,7 @@
             :hint="__('incoming, no match yet')"
             icon="o-clock"
             color="warning"
-            class="col-span-2 lg:col-span-1" />
+            class="sm:col-span-2 lg:col-span-1" />
     </div>
 
     <x-card class="bg-base-100 shadow-sm">

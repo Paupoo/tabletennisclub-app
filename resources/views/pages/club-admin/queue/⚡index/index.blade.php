@@ -17,68 +17,39 @@
         </x-slot:actions>
     </x-header>
 
-    {{-- ── Health tiles ─────────────────────────────────────────────────────── --}}
+    {{-- ── Health tiles ─────────────────────────────────────────────────────
+    Three figures, read side by side. The worker tile used to show a sentence
+    where its neighbours showed a number — and the same sentence the empty state
+    repeats 200px below. It now carries the one figure that says whether the
+    worker is running: how long the oldest job has been waiting. --}}
+    @php
+        [$waitIcon, $waitColor, $waitHint] = match ($workerStatus) {
+            'stalled' => ['o-exclamation-triangle', 'error', __('Worker probably down')],
+            'busy' => ['o-arrow-path', 'primary', __('Jobs are flowing normally')],
+            default => ['o-check-circle', 'success', __('Nothing waiting to be processed')],
+        };
+    @endphp
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-        {{-- Worker status --}}
-        <x-card class="bg-base-100 shadow-sm">
-            <div class="flex items-center gap-3">
-                @if ($workerStatus === 'stalled')
-                    <div class="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center shrink-0">
-                        <x-icon name="o-exclamation-triangle" class="w-5 h-5 text-error" />
-                    </div>
-                    <div>
-                        <p class="text-sm font-semibold text-error">{{ __('Worker probably down') }}</p>
-                        <p class="text-xs text-base-content/50">{{ __('Oldest job waiting for :minutes min', ['minutes' => $oldestPendingMinutes]) }}</p>
-                    </div>
-                @elseif ($workerStatus === 'busy')
-                    <div class="w-10 h-10 rounded-full bg-info/10 flex items-center justify-center shrink-0">
-                        <x-icon name="o-arrow-path" class="w-5 h-5 text-info" />
-                    </div>
-                    <div>
-                        <p class="text-sm font-semibold text-info">{{ __('Processing') }}</p>
-                        <p class="text-xs text-base-content/50">{{ __('Jobs are flowing normally') }}</p>
-                    </div>
-                @else
-                    <div class="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                        <x-icon name="o-check-circle" class="w-5 h-5 text-success" />
-                    </div>
-                    <div>
-                        <p class="text-sm font-semibold text-success">{{ __('Queue empty') }}</p>
-                        <p class="text-xs text-base-content/50">{{ __('Nothing waiting to be processed') }}</p>
-                    </div>
-                @endif
-            </div>
-        </x-card>
+        <x-admin.shared.stat-card
+            :label="__('Oldest wait')"
+            :value="__(':minutes min', ['minutes' => $oldestPendingMinutes ?? 0])"
+            :hint="$waitHint"
+            :icon="$waitIcon"
+            :color="$waitColor" />
 
-        {{-- Pending count --}}
-        <x-card class="bg-base-100 shadow-sm">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <x-icon name="o-queue-list" class="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                    <p class="text-2xl font-bold tabular-nums leading-none">{{ $pendingCount }}</p>
-                    <p class="text-xs text-base-content/50 mt-1">{{ __('Pending jobs') }}</p>
-                </div>
-            </div>
-        </x-card>
+        <x-admin.shared.stat-card
+            :label="__('Pending jobs')"
+            :value="(string) $pendingCount"
+            :hint="__('Waiting to be processed')"
+            icon="o-queue-list"
+            color="primary" />
 
-        {{-- Failed count --}}
-        <x-card class="bg-base-100 shadow-sm">
-            <div class="flex items-center gap-3">
-                <div @class([
-                    'w-10 h-10 rounded-full flex items-center justify-center shrink-0',
-                    'bg-error/10' => $failedCount > 0,
-                    'bg-base-200' => $failedCount === 0,
-                ])>
-                    <x-icon name="o-x-circle" @class(['w-5 h-5', 'text-error' => $failedCount > 0, 'text-base-content/30' => $failedCount === 0]) />
-                </div>
-                <div>
-                    <p class="text-2xl font-bold tabular-nums leading-none">{{ $failedCount }}</p>
-                    <p class="text-xs text-base-content/50 mt-1">{{ __('Failed jobs') }}</p>
-                </div>
-            </div>
-        </x-card>
+        <x-admin.shared.stat-card
+            :label="__('Failed jobs')"
+            :value="(string) $failedCount"
+            :hint="__('Failed recently')"
+            icon="o-x-circle"
+            :color="$failedCount > 0 ? 'error' : 'neutral'" />
     </div>
 
     {{-- ── Pending jobs ─────────────────────────────────────────────────────── --}}

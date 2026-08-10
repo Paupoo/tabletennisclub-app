@@ -13,8 +13,12 @@
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <x-input icon="o-trophy" :label="__('Club Name')" placeholder="E.g. CTT Ottignies"
                         wire:model="name" required />
+                    {{-- Read-only, not disabled: daisyUI strips a disabled field
+                    of its border and its fill, which left a bare icon floating
+                    under a label. The licence comes from the federation. --}}
                     <x-input icon="o-identification" :label="__('Club ID / Licence')"
-                        wire:model="licence" readonly disabled />
+                        :hint="__('Assigned by the federation — not editable here')"
+                        wire:model="licence" readonly />
                 </div>
 
             </div>

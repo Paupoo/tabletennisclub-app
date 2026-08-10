@@ -7,8 +7,12 @@
             </p>
         </div>
         
+        {{-- No sponsor, no tiles: the four "Logo Sponsor" placeholders were mock
+        content, and the heading plus the invitation below already carry the
+        section on their own. --}}
+        @if(! empty($sponsors))
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8 items-center animate-on-scroll">
-            @forelse($sponsors ?? [] as $sponsor)
+            @foreach($sponsors as $sponsor)
                 <div data-sponsor-tile class="bg-gray-800 rounded-lg p-6 text-center h-44 flex items-center justify-center">
                     @if($sponsor['url'])
                     <a href="{{ $sponsor['url'] }}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center">
@@ -29,22 +33,9 @@
                     </a>
                 </div>
                 @endif
-            @empty
-                <!-- Placeholder sponsor logos -->
-                <div class="bg-gray-100 rounded-lg p-6 text-center h-24 flex items-center justify-center">
-                    <span class="text-gray-400 font-medium">Logo Sponsor</span>
-                </div>
-                <div class="bg-gray-100 rounded-lg p-6 text-center h-24 flex items-center justify-center">
-                    <span class="text-gray-400 font-medium">Logo Sponsor</span>
-                </div>
-                <div class="bg-gray-100 rounded-lg p-6 text-center h-24 flex items-center justify-center">
-                    <span class="text-gray-400 font-medium">Logo Sponsor</span>
-                </div>
-                <div class="bg-gray-100 rounded-lg p-6 text-center h-24 flex items-center justify-center">
-                    <span class="text-gray-400 font-medium">Logo Sponsor</span>
-                </div>
-            @endforelse
+            @endforeach
         </div>
+        @endif
         
         <div class="text-center mt-8 animate-on-scroll">
             <p class="text-gray-600 mb-4">{{ __('Interested in sponsoring our club?') }}</p>

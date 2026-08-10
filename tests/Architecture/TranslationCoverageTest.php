@@ -70,6 +70,30 @@ test('all __() strings in the codebase are translated in fr_BE.json', function (
     );
 });
 
+test('fr_BE values use a non-breaking space before double punctuation', function () use ($basePath): void {
+    $translations = json_decode(file_get_contents($basePath . '/lang/fr_BE.json'), associative: true);
+
+    /**
+     * A plain U+0020 followed by ? ! or ;, or by a colon that does not open a
+     * Laravel placeholder such as :amount. French typography requires U+00A0 there.
+     */
+    $offenders = [];
+
+    foreach ($translations as $key => $value) {
+        if (! is_string($value)) {
+            continue;
+        }
+
+        if (preg_match('/ (?:[?!;]|:(?![A-Za-z_]))/u', $value) === 1) {
+            $offenders[] = $key . ' => ' . $value;
+        }
+    }
+
+    expect($offenders)->toBeEmpty(
+        count($offenders) . " fr_BE value(s) with a breaking space before double punctuation:\n- " . implode("\n- ", $offenders),
+    );
+});
+
 test('all __() strings in the codebase are translated in nl_BE.json', function () use ($basePath): void {
     $translated = json_decode(file_get_contents($basePath . '/lang/nl_BE.json'), associative: true);
 

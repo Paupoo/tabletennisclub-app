@@ -214,17 +214,17 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">{{ __('Type') }}</p>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">{{ __('Type') }}</p>
                 <x-select :options="$typeOptions" :placeholder="__('All types')"
                     wire:model.live="type" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">{{ __('Status') }}</p>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">{{ __('Status') }}</p>
                 <x-select :options="$statusOptions" :placeholder="__('All statuses')"
                     wire:model.live="status" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">{{ __('Format') }}</p>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">{{ __('Format') }}</p>
                 <x-select :options="$formatOptions" :placeholder="__('All formats')"
                     wire:model.live="format" class="w-full" />
             </div>

@@ -29,7 +29,7 @@
                         :aria-label="__('Affiliate listing')" accept=".csv,.txt"
                         hint="CSV · {{ __('semicolon separated, as exported') }}" />
 
-                    <p class="text-xs opacity-50">
+                    <p class="text-xs text-muted">
                         {{ __('Expected columns: Licence, Nom, DATE NAISSANCE, CH, CD, SA, Statut, Email, Tel, GSM, Adresse, Numéro, CP, Localité') }}
                     </p>
                 </div>
@@ -169,7 +169,7 @@
                                 <a class="link link-hover" href="{{ route('admin.users.edit', $member) }}">
                                     {{ $member->full_name }}
                                 </a>
-                                <span class="font-mono text-xs opacity-40"> #{{ $member->licence }}</span>
+                                <span class="font-mono text-xs text-muted"> #{{ $member->licence }}</span>
                             </li>
                         @endforeach
                     </ul>

@@ -26,7 +26,7 @@
                 <x-avatar :image="$user->photo ?? '/images/empty-user.jpg'" class="!w-24 !rounded-full" />
                 <div>
                     <div class="font-bold text-xl">{{ $user->first_name }} {{ $user->last_name }}</div>
-                    <div class="text-sm opacity-50 mt-0.5">{{ $user->is_active ? __('Active member') : __('Inactive member') }}</div>
+                    <div class="text-sm text-muted mt-0.5">{{ $user->is_active ? __('Active member') : __('Inactive member') }}</div>
                 </div>
                 <div class="flex flex-wrap justify-center gap-1">
                     @if ($user->hasRole(\App\Domains\Shared\Enums\Role::ADMINISTRATOR->value))

@@ -243,14 +243,14 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Category') }}
                 </p>
                 <x-select :options="$categoryOptions" :placeholder="__('All categories')"
                     wire:model.live="category" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Status') }}
                 </p>
                 <x-select :options="$statusOptions" :placeholder="__('All statuses')"

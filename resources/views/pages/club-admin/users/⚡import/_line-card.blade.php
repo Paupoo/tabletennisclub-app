@@ -5,7 +5,7 @@
         {{-- Identity, editable: past two words the split is a guess --}}
         <div class="lg:col-span-4">
             <div class="mb-2 flex flex-wrap items-center gap-2">
-                <span class="font-mono text-xs opacity-40">#{{ $row['licence'] }}</span>
+                <span class="font-mono text-xs text-muted">#{{ $row['licence'] }}</span>
                 @if ($row['needsNameReview'])
                     <span class="badge badge-warning badge-soft badge-sm">{{ __('Check the name') }}</span>
                 @endif
@@ -33,7 +33,7 @@
                 @endif
             </p>
             <p class="truncate opacity-70">{{ $row['email'] ?? __('No address') }}</p>
-            <p class="truncate text-xs opacity-50">
+            <p class="truncate text-xs text-muted">
                 {{ collect([$row['street'], $row['cityCode'], $row['cityName']])->filter()->join(' · ') }}
             </p>
         </div>
@@ -81,11 +81,11 @@
                     <x-input wire:model="rows.{{ $line }}.guardianLastName" class="input-sm"
                         :label="__('Guardian last name')" />
                 </div>
-                <p class="mt-1 text-xs opacity-50">
+                <p class="mt-1 text-xs text-muted">
                     {{ __('Suggested from the address — correct it, nothing is recorded until you import.') }}
                 </p>
             @elseif ($row['guardianAddress'])
-                <p class="mt-1 text-xs opacity-50">
+                <p class="mt-1 text-xs text-muted">
                     {{ __('Reached through the adult listed under the same address.') }}
                 </p>
             @endif

@@ -63,7 +63,7 @@
                                 @if ($table->brand || $table->model)
                                     <span>{{ trim($table->brand . ' ' . $table->model) }}</span>
                                 @else
-                                    <span class="text-xs opacity-50">{{ __('Not specified') }}</span>
+                                    <span class="text-xs text-muted">{{ __('Not specified') }}</span>
                                 @endif
                             @endscope
 
@@ -163,7 +163,7 @@
                 @endphp
 
                 @if (! $hasUpcoming)
-                    <p class="text-sm italic opacity-50">{{ __('Nothing planned in the next two weeks.') }}</p>
+                    <p class="text-sm italic text-muted">{{ __('Nothing planned in the next two weeks.') }}</p>
                 @else
                     @foreach ($room->trainings as $training)
                         <x-admin.shared.compact-event-preview link="#"

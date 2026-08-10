@@ -15,7 +15,7 @@
                     <x-icon name="o-users" class="w-4 h-4 text-base-content/40" />
                     <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Your family') }}</span>
                 </div>
-                <span class="text-xs opacity-50 italic shrink-0">— {{ __('Select the person to manage') }}</span>
+                <span class="text-xs text-muted italic shrink-0">— {{ __('Select the person to manage') }}</span>
             </div>
             <div class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-2.5 mb-6">
                 @foreach($registrations as $userId => $reg)
@@ -249,7 +249,7 @@
                                                 <x-icon name="o-identification" class="w-4 h-4 text-base-content/40" />
                                                 <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Your licence') }}</span>
                                             </div>
-                                            <span class="text-xs opacity-50 italic shrink-0">{{ __('Required') }}</span>
+                                            <span class="text-xs text-muted italic shrink-0">{{ __('Required') }}</span>
                                             <div class="flex-1 border-t border-base-200"></div>
                                         </div>
 
@@ -272,7 +272,7 @@
                                                 <div class="flex justify-between items-start">
                                                     <x-icon name="o-trophy" @class(['w-10 h-10',
                                                         'text-primary' => $formula === 'competitive',
-                                                        'opacity-50'   => $formula !== 'competitive',
+                                                        'text-muted'   => $formula !== 'competitive',
                                                     ]) />
                                                     @if($formula === 'competitive')
                                                         <x-badge value="{{ __('Selected') }}" class="badge-primary" />
@@ -295,7 +295,7 @@
                                                 <div class="flex justify-between items-start">
                                                     <x-icon name="o-heart" @class(['w-10 h-10',
                                                         'text-secondary' => $formula === 'recreative',
-                                                        'opacity-50'     => $formula !== 'recreative',
+                                                        'text-muted'     => $formula !== 'recreative',
                                                     ]) />
                                                     @if($formula === 'recreative')
                                                         <x-badge value="{{ __('Selected') }}" class="badge-secondary" />
@@ -328,15 +328,15 @@
                                             <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Directed training') }}</span>
                                         </div>
                                         @if(!$hasActiveSub && ($affiliationsOpen || $canReAffiliate))
-                                            <span class="text-xs opacity-50 italic shrink-0">{{ __('Optional, billed in addition — tick to include in your affiliation') }}</span>
+                                            <span class="text-xs text-muted italic shrink-0">{{ __('Optional, billed in addition — tick to include in your affiliation') }}</span>
                                         @else
-                                            <span class="text-xs opacity-50 italic shrink-0">{{ __('Optional, billed in addition to your licence') }}</span>
+                                            <span class="text-xs text-muted italic shrink-0">{{ __('Optional, billed in addition to your licence') }}</span>
                                         @endif
                                         <div class="flex-1 border-t border-base-200"></div>
                                     </div>
 
                                     @if(empty($availablePacks))
-                                        <div class="flex flex-col items-center gap-2 py-8 opacity-40">
+                                        <div class="flex flex-col items-center gap-2 py-8 text-muted">
                                             <x-icon name="o-academic-cap" class="w-10 h-10" />
                                             <p class="text-sm italic">{{ __('No training packs available for this season.') }}</p>
                                         </div>
@@ -353,7 +353,7 @@
                                                 <div @class(['flex items-center gap-4 p-4 rounded-xl border bg-base-100 transition-colors',
                                                     'border-primary/40' => $enrollStatus === 'enrolled' || $isSelectedForReg,
                                                     'border-base-300'   => !($enrollStatus === 'enrolled' || $isSelectedForReg),
-                                                    'opacity-50'        => $isOwnPack,
+                                                    'text-muted'        => $isOwnPack,
                                                 ])>
                                                     <div class="flex-1 min-w-0">
                                                         <div class="flex items-center gap-2 flex-wrap">
@@ -375,24 +375,24 @@
                                                         </div>
                                                         <div class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 mt-1.5 text-xs">
                                                             @if(!empty($pack['schedule']))
-                                                                <span class="opacity-40">{{ __('Schedule') }}</span>
+                                                                <span class="text-muted">{{ __('Schedule') }}</span>
                                                                 <span class="font-medium">{{ $pack['schedule'] }}</span>
                                                             @endif
                                                             @if(!empty($pack['room']))
-                                                                <span class="opacity-40">{{ __('Room') }}</span>
+                                                                <span class="text-muted">{{ __('Room') }}</span>
                                                                 <span class="font-medium">{{ $pack['room'] }}</span>
                                                             @endif
-                                                            <span class="opacity-40">{{ __('Level') }}</span>
+                                                            <span class="text-muted">{{ __('Level') }}</span>
                                                             <span class="font-medium">{{ __($pack['level']) }}</span>
                                                             @if(!empty($pack['coach']))
-                                                                <span class="opacity-40">{{ __('Trainer') }}</span>
+                                                                <span class="text-muted">{{ __('Trainer') }}</span>
                                                                 <span class="font-medium">{{ $pack['coach'] }}</span>
                                                             @endif
                                                         </div>
                                                         <div class="mt-1 flex items-center gap-2">
                                                             <span class="text-xs font-semibold">{{ number_format($pack['price'], 2) }} €</span>
                                                             @if($pack['allow_discount'])
-                                                                <span class="text-xs opacity-40 italic">{{ __('(discount may apply)') }}</span>
+                                                                <span class="text-xs text-muted italic">{{ __('(discount may apply)') }}</span>
                                                             @endif
                                                             @if(!empty($pack['description']))
                                                                 <button type="button" @click="descOpen = !descOpen" class="text-xs text-primary underline">
@@ -421,7 +421,7 @@
                                                         <div class="flex items-center gap-2 shrink-0">
                                                             @if($enrollStatus === 'enrolled')
                                                                 <x-admin.shared.status-badge status="enrolled" />
-                                                                <div class="text-xs opacity-40 italic">{{ __('Contact the club to unenroll') }}</div>
+                                                                <div class="text-xs text-muted italic">{{ __('Contact the club to unenroll') }}</div>
                                                             @elseif($enrollStatus === 'pending')
                                                                 <x-admin.shared.status-badge status="pending" />
                                                                 <x-button
@@ -538,20 +538,20 @@
                                                     <span class="opacity-70">{{ $packItem['name'] }}</span>
                                                     <span class="font-semibold">
                                                         @if($packDiscount > 0)
-                                                            <span class="line-through opacity-40 mr-1">{{ number_format($packPrice, 2) }}</span>
+                                                            <span class="line-through text-muted mr-1">{{ number_format($packPrice, 2) }}</span>
                                                         @endif
                                                         {{ number_format($packFinal, 2) }} €
                                                     </span>
                                                 </div>
                                             @endforeach
                                             @if($applyDiscount)
-                                                <div class="text-xs opacity-50 italic">{{ __('Multi-pack discount applied (−10€/pack)') }}</div>
+                                                <div class="text-xs text-muted italic">{{ __('Multi-pack discount applied (−10€/pack)') }}</div>
                                             @endif
                                             <div class="flex justify-between text-base font-bold pt-2 border-t border-base-200">
                                                 <span>{{ __('Total') }}</span>
                                                 <span class="text-primary">{{ number_format($estimatedTotal, 2) }} €</span>
                                             </div>
-                                            <div class="text-xs opacity-40 italic">{{ __('Indicative — the club may adjust training prices upon validation.') }}</div>
+                                            <div class="text-xs text-muted italic">{{ __('Indicative — the club may adjust training prices upon validation.') }}</div>
                                         </div>
 
                                         {{-- Season involvement --}}
@@ -707,7 +707,7 @@
                                             <span class="font-bold ml-auto">{{ $past['amount_due'] }} €</span>
                                         </div>
                                         @foreach($past['enrolled_packs'] as $packInfo)
-                                            <div class="flex items-center gap-2 text-xs opacity-50">
+                                            <div class="flex items-center gap-2 text-xs text-muted">
                                                 <x-icon name="o-academic-cap" class="w-3.5 h-3.5 shrink-0" />
                                                 <span>{{ $packInfo['name'] }}</span>
                                             </div>
@@ -736,7 +736,7 @@
         <div class="space-y-6">
             <div class="flex flex-col items-center gap-3">
                 <img src="{{ $paymentDetails['qr_code'] }}" alt="QR Code" class="w-48 h-48 rounded-xl border border-base-200 shadow" />
-                <p class="text-xs opacity-50 text-center">{{ __('Scan this QR code with your banking app') }}</p>
+                <p class="text-xs text-muted text-center">{{ __('Scan this QR code with your banking app') }}</p>
             </div>
 
             <x-menu-separator />

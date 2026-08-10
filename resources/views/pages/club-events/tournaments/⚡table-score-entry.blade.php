@@ -221,7 +221,7 @@ new class extends Component
 
         {{-- Match header --}}
         <div class="bg-base-100 rounded-2xl shadow p-5">
-            <div class="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-3 text-center">
+            <div class="text-xs font-bold uppercase tracking-widest text-muted mb-3 text-center">
                 {{ $match->pool?->name ?? __('Bracket') }} · {{ __('Table') }} {{ $table->name }}
             </div>
 
@@ -263,7 +263,7 @@ new class extends Component
                             +{{ $hp1 }}
                         </div>
                     </div>
-                    <div class="text-xs font-bold opacity-30">pts</div>
+                    <div class="text-xs font-bold text-muted">pts</div>
                     <div class="flex-1 text-center">
                         <div class="text-[10px] font-bold opacity-60 truncate">{{ $match->player2?->full_name ?? '—' }}</div>
                         <div @class(['text-3xl font-extrabold leading-none mt-1', 'text-warning-content' => $hp2 > 0, 'text-base-content/30' => $hp2 === 0])>
@@ -356,7 +356,7 @@ new class extends Component
 
                 @if ($winner)
                     <div>
-                        <p class="text-xs uppercase font-bold opacity-40 mb-1">{{ __('Winner') }}</p>
+                        <p class="text-xs uppercase font-bold text-muted mb-1">{{ __('Winner') }}</p>
                         <p class="text-xl font-black">{{ $winner->full_name }}</p>
                         <p class="text-4xl font-extrabold text-success mt-1">{{ $p1Sets }} — {{ $p2Sets }}</p>
                     </div>

@@ -66,9 +66,9 @@
                             <x-badge :value="$activity->description" class="badge-ghost badge-sm" />
                         @endif
                         <span class="text-sm font-semibold">{{ $subjectName }}</span>
-                        <span class="font-mono text-xs opacity-40">#{{ $activity->subject_id }}</span>
+                        <span class="font-mono text-xs text-muted">#{{ $activity->subject_id }}</span>
                     </div>
-                    <span class="shrink-0 text-xs tabular-nums opacity-50">{{ $activity->created_at->format('d/m/Y H:i') }}</span>
+                    <span class="shrink-0 text-xs tabular-nums text-muted">{{ $activity->created_at->format('d/m/Y H:i') }}</span>
                 </div>
 
                 <div class="mt-2 flex items-center gap-1.5 text-xs text-base-content/60">
@@ -99,7 +99,7 @@
                                     <span class="font-semibold opacity-70">{{ $field }}:</span>
                                     @if ($event !== 'created' && isset($changes['old'][$field]) && $changes['old'][$field] !== null && $changes['old'][$field] !== '')
                                         <span class="text-error/70 line-through">{{ $formatValue($changes['old'][$field]) }}</span>
-                                        <span class="opacity-40">→</span>
+                                        <span class="text-muted">→</span>
                                     @endif
                                     <span class="break-all text-success/80">{{ $formatValue($newValue) ?: '—' }}</span>
                                 </div>
@@ -134,7 +134,7 @@
             @if ($activity->causer)
             <span class="text-sm font-medium">{{ $activity->causer->first_name }} {{ $activity->causer->last_name }}</span>
             @else
-            <span class="text-sm italic opacity-50">{{ __('System') }}</span>
+            <span class="text-sm italic text-muted">{{ __('System') }}</span>
             @endif
             @endscope
 
@@ -154,7 +154,7 @@
             @scope('cell_subject', $activity, $subjectLabels)
             <div>
                 <div class="text-sm font-medium">{{ $subjectLabels[$activity->subject_type] ?? \Illuminate\Support\Str::afterLast($activity->subject_type, '\\') }}</div>
-                <div class="font-mono text-xs opacity-40">#{{ $activity->subject_id }}</div>
+                <div class="font-mono text-xs text-muted">#{{ $activity->subject_id }}</div>
             </div>
             @endscope
 
@@ -203,7 +203,7 @@
                             <span class="font-semibold opacity-70">{{ $field }}:</span>
                             @if (isset($changes['old'][$field]) && $changes['old'][$field] !== null && $changes['old'][$field] !== '')
                             <span class="text-error/70 line-through">{{ $formatValue($changes['old'][$field]) }}</span>
-                            <span class="opacity-40">→</span>
+                            <span class="text-muted">→</span>
                             @endif
                             <span class="text-success/80">{{ $formatValue($newValue) ?: '—' }}</span>
                         </div>
@@ -219,7 +219,7 @@
         </x-table>
 
         @if ($activities->total() === 0)
-        <div class="flex flex-col items-center justify-center py-12 opacity-40">
+        <div class="flex flex-col items-center justify-center py-12 text-muted">
             <x-icon name="o-document-magnifying-glass" class="w-12 h-12 mb-4" />
             <p class="text-sm italic">{{ __('No activity recorded yet.') }}</p>
         </div>

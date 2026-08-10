@@ -185,7 +185,7 @@
             <div>
                 <span class="font-medium">{{ $payment->member }}</span>
                 @if ($payment->event_name)
-                    <div class="text-[10px] opacity-50 mt-0.5">
+                    <div class="text-xs text-muted mt-0.5">
                         <span class="font-medium">{{ $payment->event_type }}</span>
                         · {{ $payment->event_name }}
                     </div>
@@ -424,12 +424,12 @@
             </div>
             <div class="text-right shrink-0">
                 <div class="text-lg font-black">{{ number_format($currentPayment->amount_due, 2, ',', ' ') }} €</div>
-                <div class="text-xs opacity-50">{{ __('expected') }}</div>
+                <div class="text-xs text-muted">{{ __('expected') }}</div>
             </div>
         </div>
 
         <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
-            <div class="text-xs font-bold uppercase tracking-widest opacity-50 mb-3">
+            <div class="text-xs font-bold uppercase tracking-widest text-muted mb-3">
                 {{ __('Unreconciled bank transactions') }}
             </div>
 
@@ -472,18 +472,18 @@
                     @if($transaction->structured_reference)
                     <div class="font-mono text-xs text-primary mt-0.5">{{ $transaction->structured_reference }}</div>
                     @elseif($transaction->free_reference)
-                    <div class="text-xs opacity-50 mt-0.5 truncate italic">{{ $transaction->free_reference }}</div>
+                    <div class="text-xs text-muted mt-0.5 truncate italic">{{ $transaction->free_reference }}</div>
                     @endif
                 </div>
 
                 <div class="text-right shrink-0">
                     <div class="font-bold tabular-nums">{{ number_format($transaction->amount, 2, ',', ' ') }} €</div>
-                    <div class="text-xs opacity-50">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</div>
+                    <div class="text-xs text-muted">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</div>
                 </div>
             </button>
 
             @empty
-            <div class="flex flex-col items-center justify-center py-10 opacity-40">
+            <div class="flex flex-col items-center justify-center py-10 text-muted">
                 <x-icon name="o-inbox" class="w-10 h-10 mb-3" />
                 <p class="text-sm italic">{{ __('No unreconciled transactions. Import a bank statement first.') }}</p>
             </div>
@@ -525,7 +525,7 @@
                     <div class="flex-1 min-w-0">
                         <div class="font-semibold text-sm">{{ $match['member'] }}</div>
                         @if (! empty($match['event_name']))
-                            <div class="text-[10px] opacity-50 mt-0.5">
+                            <div class="text-xs text-muted mt-0.5">
                                 <span class="font-medium">{{ $match['event_type'] }}</span> · {{ $match['event_name'] }}
                             </div>
                         @endif
@@ -579,12 +579,12 @@
             </div>
             <div class="text-right shrink-0">
                 <div class="text-lg font-black text-error">{{ number_format($currentRefundPayment->amount_paid, 2, ',', ' ') }} €</div>
-                <div class="text-xs opacity-50">{{ __('to refund') }}</div>
+                <div class="text-xs text-muted">{{ __('to refund') }}</div>
             </div>
         </div>
 
         <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
-            <div class="text-xs font-bold uppercase tracking-widest opacity-50 mb-3">
+            <div class="text-xs font-bold uppercase tracking-widest text-muted mb-3">
                 {{ __('Outgoing bank transactions') }}
             </div>
 
@@ -630,12 +630,12 @@
 
                 <div class="text-right shrink-0">
                     <div class="font-bold tabular-nums text-error">{{ number_format($transaction->amount, 2, ',', ' ') }} €</div>
-                    <div class="text-xs opacity-50">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</div>
+                    <div class="text-xs text-muted">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</div>
                 </div>
             </button>
 
             @empty
-            <div class="flex flex-col items-center justify-center py-10 opacity-40">
+            <div class="flex flex-col items-center justify-center py-10 text-muted">
                 <x-icon name="o-inbox" class="w-10 h-10 mb-3" />
                 <p class="text-sm italic">{{ __('No outgoing transactions found. Import a bank statement containing the refund transfer.') }}</p>
             </div>
@@ -677,7 +677,7 @@
                     <div class="flex-1 min-w-0">
                         <div class="font-semibold text-sm">{{ $match['member'] }}</div>
                         @if (! empty($match['event_name']))
-                            <div class="text-[10px] opacity-50 mt-0.5">
+                            <div class="text-xs text-muted mt-0.5">
                                 <span class="font-medium">{{ $match['event_type'] }}</span> · {{ $match['event_name'] }}
                             </div>
                         @endif

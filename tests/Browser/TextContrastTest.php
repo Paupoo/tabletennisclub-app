@@ -80,6 +80,19 @@ $contrastProbe = <<<'JS'
     return base;
   };
 
+  // `opacity` never reaches getComputedStyle().color: it composites the whole
+  // element at paint time, after the cascade has resolved. A probe that reads
+  // `color` alone is blind to it by construction — and opacity-* is how this
+  // codebase dims most of its text. Fold the whole ancestor chain into the
+  // alpha, which is exactly what the compositor does.
+  const chainOpacity = (el) => {
+    let o = 1;
+    for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+      o *= parseFloat(getComputedStyle(n).opacity || '1');
+    }
+    return o;
+  };
+
   // A scope that matches nothing would make the assertion pass without probing
   // anything at all, so say so rather than report success.
   const roots = document.querySelectorAll('__SCOPE__');
@@ -96,12 +109,15 @@ $contrastProbe = <<<'JS'
     if (text.length < 3) continue;
     const cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+    // Fully transparent is hidden, not unreadable: x-show leaves panels at 0.
+    if (chainOpacity(el) < 0.01) continue;
     const r = el.getBoundingClientRect();
     if (r.width < 1 || r.height < 1) continue;
 
     const bg = backdrop(el);
     const [fr, fg_, fb, fa] = toRgba(cs.color);
-    const mixed = [fr, fg_, fb].map((v, i) => v * fa + bg[i] * (1 - fa));
+    const alpha = fa * chainOpacity(el);
+    const mixed = [fr, fg_, fb].map((v, i) => v * alpha + bg[i] * (1 - alpha));
 
     const l1 = lum(mixed), l2 = lum(bg);
     const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
@@ -111,7 +127,7 @@ $contrastProbe = <<<'JS'
     const required = (px >= 24 || (bold && px >= 18.66)) ? 3 : 4.5;
 
     if (ratio < required) {
-      failures.push(ratio.toFixed(2) + ':1 (needs ' + required + ') - "' + text.slice(0, 34) + '" [' + cs.fontSize + ' ' + cs.color + ']');
+      failures.push(ratio.toFixed(2) + ':1 (needs ' + required + ') - "' + text.slice(0, 34) + '" [' + cs.fontSize + ' ' + cs.color + ' a=' + alpha.toFixed(2) + ']');
     }
   }
   return failures.slice(0, 25);
@@ -257,7 +273,10 @@ it('keeps the selection drawer above the AA threshold once it is open', function
 
     $page = visit(route('admin.interclubs.captain-selection'))
         ->click('[data-match-row]:first-of-type [data-row-menu-primary]')
-        ->assertSee(__('Team roster'));
+        ->assertSee(__('Team roster'))
+        // The drawer fades in. Now that the probe reads opacity, measuring it
+        // mid-transition reports the animation rather than the design.
+        ->wait(1);
 
     $result = $page->script($probe());
     $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;

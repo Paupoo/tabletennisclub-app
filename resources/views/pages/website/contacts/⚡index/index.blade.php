@@ -226,35 +226,35 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Interest') }}
                 </p>
                 <x-select :options="$interestOptions" :placeholder="__('All interests')"
                     wire:model.live="interest" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Status') }}
                 </p>
                 <x-select :options="$statusOptions" :placeholder="__('All statuses')"
                     wire:model.live="status" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Age category') }}
                 </p>
                 <x-select :options="$ageCategoryOptions" :placeholder="__('All age categories')"
                     wire:model.live="ageCategory" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Experience') }}
                 </p>
                 <x-select :options="$experienceOptions" :placeholder="__('All levels')"
                     wire:model.live="experience" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Competition') }}
                 </p>
                 <x-select :options="$triStateOptions" :placeholder="__('Any')"
@@ -283,7 +283,7 @@
 
                 @if ($selectedContact->message)
                     <div>
-                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest opacity-50">
+                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-muted">
                             {{ __('Message') }}
                         </p>
                         <p class="text-sm leading-relaxed">{{ $selectedContact->message }}</p>
@@ -303,12 +303,12 @@
                 @endif
 
                 <div>
-                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                         {{ __('Status') }}
                     </p>
                     <div class="flex flex-wrap gap-2">
                         @foreach ([['new', __('New'), 'btn-info'], ['processed', __('Processed'), 'btn-success'], ['rejected', __('Rejected'), 'btn-error']] as [$val, $label, $cls])
-                            <x-button class="btn-sm btn-soft {{ $cls }} {{ $selectedContact->status === $val ? 'opacity-100' : 'opacity-40' }}"
+                            <x-button class="btn-sm btn-soft {{ $cls }} {{ $selectedContact->status === $val ? 'opacity-100' : 'opacity-70' }}"
                                 :label="$label" :disabled="! $canManage"
                                 wire:click="updateStatus({{ $selectedContact->id }}, '{{ $val }}')" />
                         @endforeach
@@ -318,7 +318,7 @@
                 @if ($canManage)
                     {{-- ── Profil (capture incrémentale, tout optionnel) ─────────── --}}
                     <div class="border-base-200 space-y-3 rounded-lg border p-4">
-                        <p class="text-xs font-semibold uppercase tracking-widest opacity-50">
+                        <p class="text-xs font-semibold uppercase tracking-widest text-muted">
                             {{ __('Profile') }}
                         </p>
                         <x-select :label="__('Age category')" :options="$ageCategoryOptions"
@@ -337,7 +337,7 @@
                     </div>
 
                     <div>
-                        <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                        <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                             {{ __('Send an email') }}
                         </p>
                         <x-select :options="$templateOptions"

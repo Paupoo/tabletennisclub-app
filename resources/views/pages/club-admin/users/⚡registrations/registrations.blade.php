@@ -99,7 +99,7 @@
                         <div class="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
                             <div class="min-w-0 flex-1">
                                 <div class="text-sm font-semibold">{{ $sub->user->first_name }} {{ $sub->user->last_name }}</div>
-                                <div class="mt-0.5 text-xs opacity-50">{{ __('New affiliation request') }}</div>
+                                <div class="mt-0.5 text-xs text-muted">{{ __('New affiliation request') }}</div>
                             </div>
                             <x-button :label="__('Review')" icon="o-check-circle"
                                 class="btn-sm btn-warning"
@@ -196,7 +196,7 @@
                     @scope('cell_name', $req)
                         <div>
                             <span class="font-bold text-base-content">{{ $req->name }}</span>
-                            <div class="hidden text-xs opacity-50 md:block">{{ $req->type }}</div>
+                            <div class="hidden text-xs text-muted md:block">{{ $req->type }}</div>
                         </div>
                     @endscope
 
@@ -278,7 +278,7 @@
             <div class="space-y-6">
 
                 <div>
-                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Affiliation') }}</h3>
+                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Affiliation') }}</h3>
                     <div class="flex items-center gap-3 rounded-xl border border-base-300 bg-base-200/60 p-3 text-sm">
                         <x-icon name="{{ $currentRequest->type === __('Competition') ? 'o-trophy' : 'o-heart' }}" class="h-4 w-4 shrink-0 opacity-50" />
                         <span class="flex-1">{{ $currentRequest->type }}</span>
@@ -299,7 +299,7 @@
                         $packLines = $this->reviewPackLines;
                     @endphp
                     <div>
-                        <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Training Packs') }}</h3>
+                        <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Training Packs') }}</h3>
                         <div class="space-y-2">
                             @foreach ($currentRequest->enrolled_packs as $pack)
                                 @php
@@ -316,7 +316,7 @@
                                         @endif
                                     </span>
                                     <x-badge value="{{ __('Enrolled') }}" class="badge-primary badge-xs" />
-                                    <span class="text-xs font-semibold opacity-50">{{ number_format($line['amount'] ?? (float) $pack->price, 2) }} €</span>
+                                    <span class="text-xs font-semibold text-muted">{{ number_format($line['amount'] ?? (float) $pack->price, 2) }} €</span>
                                     @if (in_array($currentRequest->status, ['confirmed', 'paid']))
                                         @can('subscriptions.manage')
                                             <x-button icon="o-adjustments-horizontal" :tooltip="__('Adjust period or amount')"
@@ -340,13 +340,13 @@
                                     <span class="flex-1">
                                         {{ $pack->name }}
                                         @if ($pack->pivot->ends_on)
-                                            <span class="text-xs opacity-50">
+                                            <span class="text-xs text-muted">
                                                 — {{ __('until :date', ['date' => \Illuminate\Support\Carbon::parse($pack->pivot->ends_on)->format('d/m/Y')]) }}
                                             </span>
                                         @endif
                                     </span>
                                     <x-badge value="{{ __('Left') }}" class="badge-ghost badge-xs" />
-                                    <span class="text-xs font-semibold opacity-50">{{ number_format($line['amount'] ?? 0.0, 2) }} €</span>
+                                    <span class="text-xs font-semibold text-muted">{{ number_format($line['amount'] ?? 0.0, 2) }} €</span>
                                     @can('subscriptions.manage')
                                         <x-button icon="o-adjustments-horizontal" :tooltip="__('Adjust period or amount')"
                                             class="btn-ghost btn-xs"
@@ -360,7 +360,7 @@
                                     <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 text-warning-content opacity-60" />
                                     <span class="flex-1">{{ $pack->name }}</span>
                                     <x-badge value="{{ __('Awaiting validation') }}" class="badge-warning badge-xs" />
-                                    <span class="text-xs font-semibold opacity-50">{{ number_format((float) $pack->price, 2) }} €</span>
+                                    <span class="text-xs font-semibold text-muted">{{ number_format((float) $pack->price, 2) }} €</span>
                                 </div>
                             @endforeach
                             @foreach ($currentRequest->cancelled_packs as $pack)
@@ -368,7 +368,7 @@
                                     <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 opacity-40" />
                                     <span class="flex-1 line-through">{{ $pack->name }}</span>
                                     <x-badge value="{{ __('Cancelled') }}" class="badge-ghost badge-xs" />
-                                    <span class="text-xs font-semibold opacity-50">{{ number_format((float) $pack->price, 2) }} €</span>
+                                    <span class="text-xs font-semibold text-muted">{{ number_format((float) $pack->price, 2) }} €</span>
                                 </div>
                             @endforeach
                         </div>
@@ -377,7 +377,7 @@
 
                 @if (! empty($currentRequest->payments))
                     <div>
-                        <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Payments') }}</h3>
+                        <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Payments') }}</h3>
                         <div class="space-y-2">
                             @foreach ($currentRequest->payments as $payment)
                                 <div class="flex items-center gap-3 rounded-lg border border-base-200 p-2.5 text-sm">
@@ -399,7 +399,7 @@
                             @endforeach
                         </div>
                         <div class="mt-1 flex justify-between border-t border-base-200 pt-2 text-sm">
-                            <span class="opacity-50">{{ __('Total') }}</span>
+                            <span class="text-muted">{{ __('Total') }}</span>
                             <span class="font-black">{{ number_format($currentRequest->amount_due, 2) }} €</span>
                         </div>
                     </div>
@@ -412,12 +412,12 @@
         @if (! $paymentGenerated && $currentRequest && $currentRequest->status === 'pending')
             <div class="space-y-6">
                 <div>
-                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Members & Licence') }}</h3>
+                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Members & Licence') }}</h3>
                     <div class="space-y-3">
                         @foreach ($currentRequest->members as $member)
                             <div class="rounded-xl border border-base-300/50 bg-base-200 p-4">
                                 <div class="font-bold text-base-content">{{ $member['first_name'] }} {{ $member['last_name'] }}</div>
-                                <div class="mt-0.5 text-xs opacity-50">{{ $currentRequest->type }}</div>
+                                <div class="mt-0.5 text-xs text-muted">{{ $currentRequest->type }}</div>
                             </div>
                         @endforeach
                     </div>
@@ -429,7 +429,7 @@
                     s'encode. Les champs sont pré-remplis depuis la fiche membre.
                 --}}
                 <div>
-                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Federation details') }}</h3>
+                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Federation details') }}</h3>
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <x-input :label="__('Licence number')" mandatory numeric wire:model.live.debounce="reviewLicence"
                             :hint="__('6 digits')" />
@@ -460,7 +460,7 @@
 
                 @if ($currentRequest->pending_packs->count() > 0)
                     <div>
-                        <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Training Packs Requested') }}</h3>
+                        <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Training Packs Requested') }}</h3>
                         <div class="space-y-2">
                             @foreach ($currentRequest->pending_packs as $pack)
                                 <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-base-200 p-3 transition-colors hover:border-primary/30 has-checked:border-primary/20 has-checked:bg-primary/5">
@@ -468,12 +468,12 @@
                                         class="checkbox checkbox-primary checkbox-sm shrink-0" />
                                     <div class="min-w-0 flex-1">
                                         <div class="text-sm font-semibold">{{ $pack->name }}</div>
-                                        <div class="text-xs opacity-50">{{ number_format((float) $pack->price, 2) }} €</div>
+                                        <div class="text-xs text-muted">{{ number_format((float) $pack->price, 2) }} €</div>
                                     </div>
                                 </label>
                             @endforeach
                         </div>
-                        <p class="mt-2 text-xs italic opacity-40">{{ __('Unchecked packs will be removed from the request.') }}</p>
+                        <p class="mt-2 text-xs italic text-muted">{{ __('Unchecked packs will be removed from the request.') }}</p>
                     </div>
                 @endif
 
@@ -507,7 +507,7 @@
             <div class="space-y-6">
                 <div class="flex flex-col items-center gap-3">
                     <img src="{{ $paymentData['qr_code'] }}" alt="QR Code" class="h-48 w-48 rounded-xl border border-base-200 shadow" />
-                    <p class="text-center text-xs opacity-50">{{ __('Scan this QR code with your banking app') }}</p>
+                    <p class="text-center text-xs text-muted">{{ __('Scan this QR code with your banking app') }}</p>
                 </div>
                 <x-menu-separator />
                 <div class="space-y-3 text-sm">
@@ -540,7 +540,7 @@
                     <x-icon name="o-envelope" class="h-4 w-4 shrink-0 opacity-50" />
                     <span class="flex-1 opacity-70">{{ $paymentData['member_name'] }} &lt;{{ $paymentData['member_email'] }}&gt;</span>
                     @if (($paymentData['invitation_counter'] ?? 0) > 0)
-                        <span class="shrink-0 text-xs italic opacity-50">
+                        <span class="shrink-0 text-xs italic text-muted">
                             {{ __('Sent :n×', ['n' => $paymentData['invitation_counter']]) }}
                         </span>
                     @endif
@@ -557,7 +557,7 @@
                     {{ __('Add a rejection reason') }}
                 </button>
                 <div x-show="rejectOpen" x-collapse class="mt-3 space-y-3 rounded-xl border border-error/20 bg-error/5 p-4">
-                    <div class="mb-2 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Rejection template') }}</div>
+                    <div class="mb-2 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Rejection template') }}</div>
                     <div class="space-y-2">
                         <label class="flex cursor-pointer items-center gap-2 text-sm">
                             <input type="radio" wire:model="rejectionTemplate" value="" class="radio radio-xs" />
@@ -586,13 +586,13 @@
         --}}
         @if (! $paymentGenerated && $currentRequest && in_array($currentRequest->status, ['confirmed', 'paid']) && Auth::user()->can('subscriptions.manage'))
             <div class="mt-4 rounded-xl border border-base-200 p-4">
-                <div class="mb-2 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Change of formula') }}</div>
+                <div class="mb-2 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Change of formula') }}</div>
                 <p class="text-sm opacity-70">
                     {{ $currentRequest->type === __('Competition')
                         ? __('Switching to recreative reprices the affiliation at 60 € and takes the member out of the force lists. Any overpayment is reported to you for refund, capped at what they actually paid.')
                         : __('Switching to competition reprices the affiliation at 125 € and invoices the difference as a new payment with its own structured reference.') }}
                 </p>
-                <p class="mt-2 text-xs italic opacity-50">{{ __('The member will be notified by email.') }}</p>
+                <p class="mt-2 text-xs italic text-muted">{{ __('The member will be notified by email.') }}</p>
                 <x-button :label="__('Change formula')" icon="o-arrows-right-left" class="btn-soft btn-sm mt-3"
                     wire:click="changeFormula"
                     wire:confirm="{{ __('Change the formula of this affiliation? The member will be notified.') }}"
@@ -638,7 +638,7 @@
                 </div>
 
                 <div>
-                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Packs Requested') }}</h3>
+                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Packs Requested') }}</h3>
                     @php $bd = $this->trainingRequestPricingBreakdown; @endphp
                     <div class="space-y-2">
                         @foreach ($currentTrainingRequest->trainingPacks as $pack)
@@ -654,18 +654,18 @@
                                     <div class="text-sm font-semibold">{{ $pack->name }}</div>
                                     <div class="mt-0.5 flex items-center gap-1.5">
                                         @if ($discounted)
-                                            <span class="text-xs line-through opacity-40">{{ number_format($pb['full_price'], 2) }} €</span>
+                                            <span class="text-xs line-through text-muted">{{ number_format($pb['full_price'], 2) }} €</span>
                                             <span class="text-xs font-bold text-success">{{ number_format($pb['effective_price'], 2) }} €</span>
                                             <x-badge class="badge-soft badge-success badge-xs" value="−10 €" />
                                         @else
-                                            <span class="text-xs opacity-50">{{ number_format((float) $pack->price, 2) }} €</span>
+                                            <span class="text-xs text-muted">{{ number_format((float) $pack->price, 2) }} €</span>
                                         @endif
                                     </div>
                                 </div>
                             </label>
                         @endforeach
                     </div>
-                    <p class="mt-2 text-xs italic opacity-40">{{ __('Unchecked packs will be removed from the request.') }}</p>
+                    <p class="mt-2 text-xs italic text-muted">{{ __('Unchecked packs will be removed from the request.') }}</p>
 
                     @if (! empty($bd['retro_adjustments'] ?? []))
                         <div class="mt-3 space-y-2 rounded-xl border border-info/20 bg-info/5 p-3">
@@ -677,7 +677,7 @@
                                 <div class="flex items-center justify-between text-xs">
                                     <span class="flex-1 truncate pr-3 opacity-60">{{ $adj['name'] }}</span>
                                     <span class="flex shrink-0 items-center gap-1.5">
-                                        <span class="line-through opacity-40">{{ number_format($adj['original_price'], 2) }} €</span>
+                                        <span class="line-through text-muted">{{ number_format($adj['original_price'], 2) }} €</span>
                                         <x-icon name="o-arrow-right" class="h-3 w-3 opacity-30" />
                                         <span class="font-semibold">{{ number_format($adj['new_price'], 2) }} €</span>
                                         <x-badge class="badge-soft badge-info badge-xs" value="−10 €" />
@@ -688,7 +688,7 @@
                     @endif
 
                     <div class="mt-3 flex justify-between border-t border-base-200 pt-3 text-sm">
-                        <span class="opacity-50">{{ __('Expected additional payment') }}</span>
+                        <span class="text-muted">{{ __('Expected additional payment') }}</span>
                         <span class="font-bold text-warning-content">{{ number_format($this->trainingRequestEstimatedDelta, 2) }} €</span>
                     </div>
                 </div>
@@ -699,7 +699,7 @@
             <div class="space-y-6">
                 <div class="flex flex-col items-center gap-3">
                     <img src="{{ $paymentData['qr_code'] }}" alt="QR Code" class="h-48 w-48 rounded-xl border border-base-200 shadow" />
-                    <p class="text-center text-xs opacity-50">{{ __('Scan this QR code with your banking app') }}</p>
+                    <p class="text-center text-xs text-muted">{{ __('Scan this QR code with your banking app') }}</p>
                 </div>
                 <x-menu-separator />
                 <div class="space-y-3 text-sm">
@@ -727,7 +727,7 @@
                     {{ __('Add a rejection reason') }}
                 </button>
                 <div x-show="rejectOpen" x-collapse class="mt-3 space-y-3 rounded-xl border border-error/20 bg-error/5 p-4">
-                    <div class="mb-2 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Rejection template') }}</div>
+                    <div class="mb-2 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Rejection template') }}</div>
                     <div class="space-y-2">
                         <label class="flex cursor-pointer items-center gap-2 text-sm">
                             <input type="radio" wire:model="rejectionTemplate" value="" class="radio radio-xs" />
@@ -1170,7 +1170,7 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Season') }}
                 </p>
                 <x-select
@@ -1181,7 +1181,7 @@
                     class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Status') }}
                 </p>
                 <x-select :options="$statusOptions" :placeholder="__('All statuses')"
@@ -1246,14 +1246,14 @@
                         <span class="text-xs opacity-60">{{ $reconcile['member'] }}</span>
                     </div>
                     @if ($reconcile['prorata_available'])
-                        <p class="mt-2 text-xs opacity-50">
+                        <p class="mt-2 text-xs text-muted">
                             {{ __('Pack runs from :start to :end', [
                                 'start' => $reconcile['pack']->pack_start_date->format('d/m/Y'),
                                 'end'   => $reconcile['pack']->pack_end_date->format('d/m/Y'),
                             ]) }}
                         </p>
                     @else
-                        <p class="mt-2 text-xs opacity-50">{{ __('This pack has no start and end date: it cannot be pro-rated. Force the amount instead.') }}</p>
+                        <p class="mt-2 text-xs text-muted">{{ __('This pack has no start and end date: it cannot be pro-rated. Force the amount instead.') }}</p>
                     @endif
                 </div>
 
@@ -1279,7 +1279,7 @@
                 </div>
 
                 <div class="space-y-3 rounded-xl border border-warning/20 bg-warning/5 p-3">
-                    <p class="text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Force the amount') }}</p>
+                    <p class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Force the amount') }}</p>
                     <x-input :label="__('Forced amount (€)')" type="number" step="0.01" min="0"
                         wire:model.live.blur="reconcileOverrideAmount"
                         :hint="__('Empty = keep the calculated amount')" />
@@ -1317,7 +1317,7 @@
                     <x-input :label="__('Amount to refund (€)')" wire:model="cancelRefundAmount"
                         type="number" step="0.01" min="0.01" max="{{ $cancelTotalPaid }}"
                         :hint="__('Already paid: :amount €', ['amount' => number_format($cancelTotalPaid, 2)])" />
-                    <p class="-mt-2 text-xs italic opacity-40">{{ __('Suggested amount excludes the training months already attended, which the club keeps.') }}</p>
+                    <p class="-mt-2 text-xs italic text-muted">{{ __('Suggested amount excludes the training months already attended, which the club keeps.') }}</p>
 
                     @if ($cancelUser->iban)
                         <div class="flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 p-3 text-sm">
@@ -1333,11 +1333,11 @@
                 @endif
 
                 <div>
-                    <label class="mb-1 block text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Message to the member (optional)') }}</label>
+                    <label class="mb-1 block text-xs font-bold uppercase tracking-widest text-muted">{{ __('Message to the member (optional)') }}</label>
                     <textarea wire:model="cancelMessage"
                         placeholder="{{ __('Optional personal note to the member...') }}"
                         class="textarea textarea-bordered textarea-sm w-full text-sm" rows="2"></textarea>
-                    <p class="mt-1 text-xs italic opacity-40">{{ __('Included in the cancellation email sent to the member.') }}</p>
+                    <p class="mt-1 text-xs italic text-muted">{{ __('Included in the cancellation email sent to the member.') }}</p>
                 </div>
             </div>
         @endif

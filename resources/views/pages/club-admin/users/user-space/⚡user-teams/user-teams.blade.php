@@ -36,10 +36,10 @@
                                             {{ $mate->first_name }} {{ $mate->last_name }}
                                         </span>
                                         @if ($isYou)
-                                            <span class="text-xs opacity-50">{{ __('(you)') }}</span>
+                                            <span class="text-xs text-muted">{{ __('(you)') }}</span>
                                         @endif
                                     </div>
-                                    <div class="text-xs opacity-50">{{ $mate->ranking }}</div>
+                                    <div class="text-xs text-muted">{{ $mate->ranking }}</div>
                                 </div>
                                 @if ($team->captain_id === $mate->id)
                                     <x-badge :value="__('Captain')" class="badge-secondary badge-sm" />

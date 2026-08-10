@@ -46,12 +46,12 @@
                 </span>
                 <div class="flex items-center gap-2">
                     @if ($match->referee)
-                        <span class="flex items-center gap-1 text-[10px] opacity-50">
+                        <span class="flex items-center gap-1 text-xs text-muted">
                             <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                             {{ $match->referee->full_name }}
                         </span>
                     @endif
-                    <x-badge value="{{ __('Best of') }} {{ $maxSets }}" class="badge-outline badge-xs opacity-50 font-bold" />
+                    <x-badge value="{{ __('Best of') }} {{ $maxSets }}" class="badge-outline badge-xs text-muted font-bold" />
                 </div>
             </div>
 
@@ -89,7 +89,7 @@
                             +{{ $hp1 }}
                         </div>
                     </div>
-                    <div class="text-[10px] font-bold opacity-40 uppercase">pts</div>
+                    <div class="text-xs font-bold text-muted uppercase">pts</div>
                     <div class="flex-1 text-center">
                         <div class="text-[10px] font-bold opacity-60 truncate">{{ $side2Name }}</div>
                         <div @class(['text-2xl font-extrabold leading-none', 'text-warning-content' => $hp2 > 0, 'text-base-content/30' => $hp2 === 0])>
@@ -167,7 +167,7 @@
                 $svgQr  = substr((new \Endroid\QrCode\Writer\SvgWriter)->write($qrCode)->getString(), 22);
             @endphp
             <div class="mt-6 pt-6 border-t border-base-300 flex flex-col items-center gap-2">
-                <p class="text-[10px] uppercase font-bold opacity-40 tracking-widest">{{ __('Mobile score entry') }}</p>
+                <p class="text-xs uppercase font-bold text-muted tracking-widest">{{ __('Mobile score entry') }}</p>
                 <a href="{{ $qrUrl }}" target="_blank"
                     class="opacity-60 hover:opacity-100 transition-opacity p-2 bg-white rounded-xl inline-block shadow-sm">
                     {!! $svgQr !!}
@@ -182,7 +182,7 @@
                 <x-icon name="o-trophy" class="w-12 h-12 mx-auto text-success" />
                 @if ($winnerName)
                     <div>
-                        <p class="text-xs uppercase font-bold opacity-40 mb-1">{{ __('Winner') }}</p>
+                        <p class="text-xs uppercase font-bold text-muted mb-1">{{ __('Winner') }}</p>
                         <p class="text-xl font-black">{{ $winnerName }}</p>
                         <p class="text-3xl font-extrabold text-success mt-1">{{ $p1Sets }} — {{ $p2Sets }}</p>
                     </div>

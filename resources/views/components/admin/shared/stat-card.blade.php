@@ -18,6 +18,10 @@
     `resources/css/app.css:105-110`, et le commentaire ligne 134 qui documente
     l'intention pour le thème sombre.
 
+    L'eyebrow et la précision s'atténuent par la couleur (`.text-muted`,
+    `.text-subtle`), jamais par `opacity-*` : une opacité ne se mesure pas et
+    échappe à la sonde de contraste. L'eyebrow y perdait 3,43:1 sur cinq écrans.
+
     Purement informatif : le filtrage passe par les onglets, jamais par la carte.
 --}}
 @props([
@@ -47,10 +51,10 @@
             </div>
         @endif
         <div class="min-w-0">
-            <div class="text-xs font-bold uppercase tracking-widest opacity-50">{{ $label }}</div>
+            <div class="text-xs font-bold uppercase tracking-widest text-muted">{{ $label }}</div>
             <div class="{{ $emphasis ? 'text-3xl' : 'text-2xl' }} font-black tabular-nums">{{ $value }}</div>
             @if ($hint)
-                <div class="mt-0.5 truncate text-xs opacity-60">{{ $hint }}</div>
+                <div class="mt-0.5 truncate text-xs text-subtle">{{ $hint }}</div>
             @endif
         </div>
     </div>

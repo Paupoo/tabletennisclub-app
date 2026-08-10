@@ -20,7 +20,7 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Season') }}
                 </p>
                 <x-select
@@ -85,7 +85,7 @@
                                 @foreach ($byLevel as $level => $levelLeagues)
                                     <div class="space-y-1.5">
                                         @if ($hasMultipleLevels)
-                                            <p class="px-1 text-[10px] font-semibold uppercase tracking-widest {{ $meta['text'] }} opacity-40">
+                                            <p class="px-1 text-xs font-semibold uppercase tracking-widest {{ $meta['text'] }}">
                                                 {{ $levelLabels[$level] ?? $level }}
                                             </p>
                                         @endif
@@ -109,10 +109,10 @@
                                                 <span class="h-2 w-2 shrink-0 rounded-full {{ $meta['dot'] }}"></span>
                                                 <div class="min-w-0 flex-1">
                                                     <p class="text-sm font-semibold {{ $active ? $meta['text'] : '' }}">
-                                                        <span class="mr-1 text-xs font-normal opacity-40">{{ __('Division') }}</span>{{ $league->division }}
+                                                        <span class="mr-1 text-xs font-normal text-muted">{{ __('Division') }}</span>{{ $league->division }}
                                                     </p>
                                                     @if ($ourTeamLetters)
-                                                        <p class="text-xs opacity-50">{{ __('Team') }} {{ $ourTeamLetters }}</p>
+                                                        <p class="text-xs text-muted">{{ __('Team') }} {{ $ourTeamLetters }}</p>
                                                     @endif
                                                 </div>
                                                 <span class="text-xs font-medium {{ $active ? $meta['text'] : 'text-gray-400' }}">{{ $count }}</span>

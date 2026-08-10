@@ -84,7 +84,7 @@
             <div>
                 <div class="font-medium text-sm">{{ $transaction->counterparty_name ?? '—' }}</div>
                 @if($transaction->counterparty_bank_account)
-                <div class="font-mono text-xs opacity-50">{{ $transaction->counterparty_bank_account }}</div>
+                <div class="font-mono text-xs text-muted">{{ $transaction->counterparty_bank_account }}</div>
                 @endif
             </div>
             @endscope
@@ -122,7 +122,7 @@
         </x-table>
 
         @if($transactions->total() === 0)
-        <div class="flex flex-col items-center justify-center py-12 opacity-40">
+        <div class="flex flex-col items-center justify-center py-12 text-muted">
             <x-icon name="o-building-library" class="w-12 h-12 mb-4" />
             <p class="text-sm italic">{{ __('No transactions yet. Import a bank statement to get started.') }}</p>
         </div>
@@ -149,7 +149,7 @@
         <x-slot:content class="p-0">
             <table class="table table-sm w-full">
                 <thead>
-                    <tr class="text-xs opacity-50 uppercase tracking-widest">
+                    <tr class="text-xs text-muted uppercase tracking-widest">
                         <th>{{ __('Date') }}</th>
                         <th>{{ __('By') }}</th>
                         <th class="text-right text-success">{{ __('New') }}</th>
@@ -163,7 +163,7 @@
                         <td class="tabular-nums text-xs">{{ $import->created_at->format('d/m/Y H:i') }}</td>
                         <td class="text-xs">{{ $import->user->name ?? '—' }}</td>
                         <td class="text-right font-bold text-success">+{{ $import->new_count }}</td>
-                        <td class="text-right opacity-40">{{ $import->duplicate_count }}</td>
+                        <td class="text-right text-muted">{{ $import->duplicate_count }}</td>
                         <td class="text-right">
                             @if($import->error_count > 0)
                             <span class="text-error font-semibold">{{ $import->error_count }}</span>
@@ -286,7 +286,7 @@
             <p class="text-sm opacity-70">
                 {{ __('Upload your bank export (ODS, XLSX, CSV). Transactions will be imported and available for reconciliation.') }}
             </p>
-            <p class="text-xs opacity-50">
+            <p class="text-xs text-muted">
                 {{ __('Expected columns: Date, Montant, Description, Nom contrepartie, Numéro de compte contrepartie, Communication structurée, Communication libre') }}
             </p>
             <x-file

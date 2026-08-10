@@ -34,7 +34,7 @@
                         :placeholder="__('Dear participants…')"
                         rows="7" />
 
-                    <p class="text-[10px] opacity-40">
+                    <p class="text-xs text-muted">
                         {{ __('Sent to all confirmed participants. Rankings are automatically appended.') }}
                     </p>
                 </div>
@@ -63,7 +63,7 @@
                         :placeholder="__('Markdown supported…')"
                         rows="6" />
 
-                    <p class="text-[10px] opacity-40">
+                    <p class="text-xs text-muted">
                         {{ __('Saved as draft — you can publish it from the news section.') }}
                     </p>
                 </div>
@@ -98,7 +98,7 @@
                                         {{ mb_strtoupper(mb_substr($user->first_name ?? '?', 0, 1)) }}{{ mb_strtoupper(mb_substr($user->last_name ?? '', 0, 1)) }}
                                     </div>
                                     <span class="flex-1 text-sm font-medium">{{ $user->full_name }}</span>
-                                    <span class="text-xs opacity-40">{{ $user->email }}</span>
+                                    <span class="text-xs text-muted">{{ $user->email }}</span>
                                 </div>
                             @endforeach
                         </div>

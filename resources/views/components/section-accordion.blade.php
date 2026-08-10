@@ -31,7 +31,10 @@
             <span class="h-2 w-2 rounded-full {{ $c['dot'] }}"></span>
             <span @class(['text-sm font-bold', $c['pill_text'], 'uppercase tracking-wide' => $uppercase])>{{ $label }}</span>
             @if($count !== null)
-                <span class="text-xs {{ $c['pill_text'] }} opacity-60">{{ $count }}</span>
+                {{-- Le compteur se distingue du libellé par la taille et la graisse.
+                     Une opacité en plus retombait sous 2,5:1, la couleur de pastille
+                     portant déjà son propre alpha. --}}
+                <span class="text-xs {{ $c['pill_text'] }}">{{ $count }}</span>
             @endif
             @isset($suffix){{ $suffix }}@endisset
         </span>

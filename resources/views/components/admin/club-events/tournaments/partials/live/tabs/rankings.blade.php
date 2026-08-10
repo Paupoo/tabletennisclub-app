@@ -45,7 +45,7 @@
 <div @if($tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
 
     @if ($rankings->isEmpty())
-        <div class="flex flex-col items-center py-20 opacity-30">
+        <div class="flex flex-col items-center py-20 text-muted">
             <x-icon name="o-chart-bar" class="w-12 h-12 mb-3" />
             <p class="text-sm">{{ __('Rankings will appear as matches are completed.') }}</p>
         </div>
@@ -60,7 +60,7 @@
                         <div class="flex flex-col items-center flex-1 min-w-0">
 
                             {{-- Rank number --}}
-                            <span @class(['text-3xl font-black opacity-20 leading-none mb-1', $podiumNumber[$rank]])>
+                            <span @class(['text-3xl font-black text-muted leading-none mb-1', $podiumNumber[$rank]])>
                                 {{ $rank }}
                             </span>
 
@@ -76,7 +76,7 @@
 
                             {{-- Platform --}}
                             <div @class(['w-full rounded-t-md mt-2 flex items-center justify-center', $podiumHeight[$rank], $podiumPlatform[$rank]])>
-                                <span class="text-[10px] font-bold uppercase tracking-wider opacity-50">
+                                <span class="text-xs font-bold uppercase tracking-wider text-muted">
                                     {{ $podiumLabel[$rank] }}
                                 </span>
                             </div>
@@ -106,7 +106,7 @@
                         'text-amber-500'  => $rank === 1,
                         'text-slate-400'  => $rank === 2,
                         'text-orange-400' => $rank === 3,
-                        'opacity-30'      => $rank > 3,
+                        'text-muted'      => $rank > 3,
                     ])>{{ $rank }}</span>
 
                     {{-- Avatar --}}
@@ -126,7 +126,7 @@
                     ])>{{ $entryName($entry) }}</span>
 
                     {{-- Result label --}}
-                    <span class="text-xs opacity-40 shrink-0">{{ $entry['result'] }}</span>
+                    <span class="text-xs text-muted shrink-0">{{ $entry['result'] }}</span>
 
                 </div>
             @endforeach

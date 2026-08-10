@@ -53,7 +53,7 @@
                                         {{ implode(', ', array_filter([$club->street, trim($club->city_code . ' ' . $club->city_name)])) }}
                                     </span>
                                 @endif
-                                <span class="flex items-center gap-1 opacity-50">
+                                <span class="flex items-center gap-1 text-muted">
                                     <x-icon name="o-identification" class="h-3 w-3" />
                                     {{ $club->licence }}
                                 </span>

@@ -315,13 +315,13 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Licence type') }}
                 </p>
                 <x-radio wire:model.live="selectedLicenceType" :options="$licenceTypes" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Gender') }}
                 </p>
                 <div class="space-y-1">
@@ -331,13 +331,13 @@
                 </div>
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Account') }}
                 </p>
                 <x-radio wire:model.live="invitationState" :options="$invitationStates" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Profile') }}
                 </p>
                 <x-toggle :label="__('Incomplete profile')" wire:model.live="incompleteProfile" />
@@ -346,20 +346,20 @@
                     wire:model.live="adultWithoutAddress" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Subscription') }}
                 </p>
                 <x-toggle :label="__('Unpaid subscription')" wire:model.live="unpaidSubscription" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Equipment') }}
                 </p>
                 <x-toggle :label="__('Has a key')" wire:model.live="hasKey" />
                 <x-toggle :label="__('Has a cash register')" wire:model.live="hasCashRegister" class="mt-2" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Teams') }}
                 </p>
                 <x-choices :options="$teams" class="w-full" clearable :placeholder="__('Select a team...')"

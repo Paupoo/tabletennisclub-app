@@ -248,14 +248,14 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Status') }}
                 </p>
                 <x-select :options="$statusOptions" :placeholder="__('All statuses')"
                     wire:model.live="status" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Type') }}
                 </p>
                 <x-select :options="$typeOptions" :placeholder="__('All types')"
@@ -279,7 +279,7 @@
 
                 {{-- Statut --}}
                 <div>
-                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                         {{ __('Status') }}
                     </p>
                     <div class="flex flex-wrap gap-2">
@@ -288,7 +288,7 @@
                             ['PUBLISHED', __('Published'), 'btn-success'],
                             ['ARCHIVED',  __('Archived'),  'btn-ghost'],
                         ] as [$val, $label, $cls])
-                            <x-button class="btn-sm btn-soft {{ $cls }} {{ $editStatus === $val ? 'opacity-100' : 'opacity-40' }}"
+                            <x-button class="btn-sm btn-soft {{ $cls }} {{ $editStatus === $val ? 'opacity-100' : 'opacity-70' }}"
                                 :label="$label"
                                 wire:click="$set('editStatus', '{{ $val }}')" />
                         @endforeach

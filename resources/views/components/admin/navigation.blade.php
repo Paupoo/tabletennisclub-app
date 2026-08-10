@@ -7,7 +7,7 @@
             <div class="flex items-center gap-3">
                 <div class="overflow-hidden truncate">
                     <div class="truncate font-bold">{{ $user->first_name }}</div>
-                    <div class="truncate text-[10px] opacity-50">{{ $user->email }}</div>
+                    <div class="truncate text-xs text-muted">{{ $user->email }}</div>
                 </div>
             </div>
         </x-slot:title>

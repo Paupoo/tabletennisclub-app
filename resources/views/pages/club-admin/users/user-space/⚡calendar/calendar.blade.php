@@ -207,7 +207,7 @@
                                         <span @class([
                                             'h-1.5 w-1.5 rounded-full',
                                             $typeDotClasses[$event['type']] ?? 'bg-base-300',
-                                            'opacity-40' => $day['isPast'],
+                                            'text-muted' => $day['isPast'],
                                         ])></span>
                                     @endforeach
                                     @if (count($day['events']) > 3)
@@ -221,7 +221,7 @@
                                         <span @class([
                                             'block truncate rounded border-l-[3px] px-1 py-0.5 text-left text-[11px] font-medium leading-tight',
                                             $typeChipClasses[$event['type']] ?? 'border-base-300 bg-base-200',
-                                            'opacity-50' => $day['isPast'],
+                                            'text-muted' => $day['isPast'],
                                         ])>
                                             @if (($event['dayIndex'] ?? 1) > 1)
                                                 {{ __('Day :current/:total', ['current' => $event['dayIndex'], 'total' => $event['dayCount']]) }}

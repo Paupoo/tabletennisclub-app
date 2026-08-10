@@ -6,7 +6,7 @@
         </p>
 
         @if ($this->upcomingMatches->isEmpty())
-            <div class="flex flex-col items-center py-16 opacity-30">
+            <div class="flex flex-col items-center py-16 text-muted">
                 <x-icon name="o-no-symbol" class="w-12 h-12 mx-auto mb-3" />
                 <p class="text-sm">{{ __('No matches scheduled.') }}</p>
             </div>
@@ -64,7 +64,7 @@
                                     <span @class(['font-bold text-sm truncate', 'text-warning-content line-through' => $p2Busy])>{{ $side2Name }}</span>
                                 </div>
                                 @if ($refereeName)
-                                    <div class="mt-1.5 flex items-center gap-1 text-xs opacity-50">
+                                    <div class="mt-1.5 flex items-center gap-1 text-xs text-muted">
                                         <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                                         <span>{{ $refereeName }}</span>
                                     </div>

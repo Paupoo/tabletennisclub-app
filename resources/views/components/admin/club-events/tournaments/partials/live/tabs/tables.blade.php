@@ -1,6 +1,6 @@
 <div @if($tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
     @if ($this->tables->isEmpty())
-        <div class="flex flex-col items-center py-20 opacity-30">
+        <div class="flex flex-col items-center py-20 text-muted">
             <x-icon name="o-squares-2x2" class="w-12 h-12 mb-3" />
             <p class="text-sm">{{ __('No tables linked to this tournament.') }}</p>
         </div>
@@ -11,7 +11,7 @@
                     <x-icon name="o-map-pin" class="w-5 h-5 text-base-content/40" />
                     <span class="text-lg font-black tracking-tighter uppercase">{{ $roomName }}</span>
                     <div class="h-px bg-base-300 grow"></div>
-                    <span class="text-xs opacity-40">
+                    <span class="text-xs text-muted">
                         {{ $roomTables->where('is_free', true)->count() }} {{ __('available') }} /
                         {{ $roomTables->count() }} {{ __('total') }}
                     </span>
@@ -44,7 +44,7 @@
 
                             <div class="flex justify-between items-start mb-4">
                                 <div>
-                                    <div class="text-[10px] uppercase font-bold opacity-40">{{ __('Table') }}</div>
+                                    <div class="text-xs uppercase font-bold text-muted">{{ __('Table') }}</div>
                                     <div class="text-xl font-black truncate max-w-25">{{ $table['name'] }}</div>
                                 </div>
 
@@ -81,7 +81,7 @@
                                     </div>
                                     
                                     @if ($match->referee)
-                                        <div class="flex items-center gap-1 text-[10px] opacity-50">
+                                        <div class="flex items-center gap-1 text-xs text-muted">
                                             <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                                             <span class="truncate">{{ $match->referee->full_name }}</span>
                                         </div>

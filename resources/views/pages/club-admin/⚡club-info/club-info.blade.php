@@ -124,7 +124,7 @@
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {{-- Key holders --}}
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-widest opacity-50 mb-3">
+                    <p class="text-xs font-semibold uppercase tracking-widest text-muted mb-3">
                         {{ __('Key holders') }}
                     </p>
                     @forelse($keyHolders as $holder)
@@ -139,7 +139,7 @@
 
                 {{-- Cash register holders --}}
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-widest opacity-50 mb-3">
+                    <p class="text-xs font-semibold uppercase tracking-widest text-muted mb-3">
                         {{ __('Cash register holders') }}
                     </p>
                     @forelse($cashRegisterHolders as $register)

@@ -21,7 +21,7 @@
     </x-header>
 
     @if($this->registers->isEmpty())
-    <div class="flex flex-col items-center justify-center py-20 opacity-40">
+    <div class="flex flex-col items-center justify-center py-20 text-muted">
         <x-icon name="o-currency-euro" class="w-16 h-16 mb-4" />
         <p class="text-sm italic">{{ __('No cash register yet. Create one to get started.') }}</p>
     </div>
@@ -90,7 +90,7 @@
 
     {{-- Entries history --}}
     <x-card class="bg-base-100 border-none shadow-sm">
-        <div class="text-xs font-bold uppercase tracking-widest opacity-50 mb-4">{{ __('History') }}</div>
+        <div class="text-xs font-bold uppercase tracking-widest text-muted mb-4">{{ __('History') }}</div>
 
         @forelse($this->register->entries->sortByDesc('created_at') as $entry)
         <div class="flex items-center gap-4 p-3 rounded-xl border border-base-200 mb-2">
@@ -119,7 +119,7 @@
                 @if($entry->notes)
                 <div class="text-xs opacity-60 mt-0.5 truncate">{{ $entry->notes }}</div>
                 @endif
-                <div class="text-xs opacity-40 mt-0.5">
+                <div class="text-xs text-muted mt-0.5">
                     {{ $entry->recordedBy?->first_name }} {{ $entry->recordedBy?->last_name }}
                     · {{ $entry->created_at->format('d/m/Y H:i') }}
                 </div>
@@ -133,7 +133,7 @@
             </div>
         </div>
         @empty
-        <div class="flex flex-col items-center justify-center py-10 opacity-40">
+        <div class="flex flex-col items-center justify-center py-10 text-muted">
             <x-icon name="o-inbox" class="w-10 h-10 mb-3" />
             <p class="text-sm italic">{{ __('No entries yet.') }}</p>
         </div>

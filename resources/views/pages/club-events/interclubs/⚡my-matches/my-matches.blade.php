@@ -8,7 +8,7 @@
 
     @if (! $grouped->isEmpty())
         <div class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-base-200 bg-base-200/40 px-4 py-3">
-            <span class="text-xs font-semibold opacity-50">{{ __('Set for all upcoming matches:') }}</span>
+            <span class="text-xs font-semibold text-muted">{{ __('Set for all upcoming matches:') }}</span>
             <x-button
                 class="btn-success btn-xs btn-soft"
                 icon="o-check-circle"

@@ -212,14 +212,14 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Period') }}
                 </p>
                 <x-select :options="$periodOptions" :placeholder="__('All periods')"
                     wire:model.live="period" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Type') }}
                 </p>
                 <x-select :options="$userAgentOptions" :placeholder="__('All types')"
@@ -234,22 +234,22 @@
             <div class="space-y-3">
                 <div class="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest opacity-50">IP</p>
+                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-muted">IP</p>
                         <p class="font-mono">{{ $detailSpam->ip }}</p>
                     </div>
                     <div>
-                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest opacity-50">
+                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-muted">
                             {{ __('Date') }}
                         </p>
                         <p>{{ $detailSpam->created_at->translatedFormat('d M Y à H:i') }}</p>
                     </div>
                 </div>
                 <div>
-                    <p class="mb-1 text-xs font-semibold uppercase tracking-widest opacity-50">User Agent</p>
+                    <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-muted">User Agent</p>
                     <p class="break-all text-xs text-base-content/60">{{ $detailSpam->user_agent }}</p>
                 </div>
                 <div>
-                    <p class="mb-1 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-muted">
                         {{ __('Submitted data') }}
                     </p>
                     <pre class="bg-base-200 max-h-48 overflow-auto rounded-lg p-3 text-xs">{{ json_encode($detailSpam->inputs, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>

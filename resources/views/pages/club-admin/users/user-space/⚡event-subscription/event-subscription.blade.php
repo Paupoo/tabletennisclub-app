@@ -261,7 +261,7 @@
             @if ($this->myPastTournaments->isNotEmpty())
                 <x-collapse>
                     <x-slot:heading>
-                        <div class="text-sm font-bold opacity-40">
+                        <div class="text-sm font-bold text-muted">
                             {{ __('Past tournaments') }}
                             <span class="ml-1 font-normal">({{ $this->myPastTournaments->count() }})</span>
                         </div>

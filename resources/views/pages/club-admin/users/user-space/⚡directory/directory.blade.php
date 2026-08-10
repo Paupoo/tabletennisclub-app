@@ -107,20 +107,20 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Ranking') }}
                 </p>
                 <x-select wire:model.live="rankingFilter" :placeholder="__('All rankings')"
                     :options="collect($this->rankingsForFilter)->map(fn ($r) => ['id' => $r, 'name' => $r])->all()" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Season') }}
                 </p>
                 <x-select wire:model.live="seasonFilter" :options="$this->seasonsForFilter" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Team') }}
                 </p>
                 <x-select wire:model.live="teamFilter" :placeholder="__('All teams')"

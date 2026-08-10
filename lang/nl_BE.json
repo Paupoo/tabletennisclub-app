@@ -512,6 +512,7 @@
     "Hello,": "Beste,",
     "Included in the cancellation email sent to the member.": "Wordt opgenomen in de annulatiemail naar het lid.",
     "Job": "Taak",
+    "Job queue": "Wachtrij",
     "Job queued for retry.": "Taak opnieuw gestart.",
     "Jobs are flowing normally": "De taken verlopen normaal",
     "The refund will be paid to account :iban.": "De terugbetaling wordt gestort op rekening :iban.",

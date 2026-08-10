@@ -510,6 +510,7 @@
     "Hello,": "Bonjour,",
     "Included in the cancellation email sent to the member.": "Inclus dans l'email d'annulation envoyé au membre.",
     "Job": "Tâche",
+    "Job queue": "File d'attente",
     "Job queued for retry.": "Tâche relancée.",
     "Jobs are flowing normally": "Les tâches s'écoulent normalement",
     "The refund will be paid to account :iban.": "Le remboursement sera versé sur le compte :iban.",

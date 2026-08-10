@@ -7,7 +7,10 @@
             <div class="flex items-center gap-3">
                 <div class="overflow-hidden truncate">
                     <div class="truncate font-bold">{{ $user->first_name }}</div>
-                    <div class="truncate text-xs text-muted">{{ $user->email }}</div>
+                    {{-- The only string here that belongs to the member rather
+                    than to the interface, so it is the only one allowed to
+                    truncate: see SidebarLabelTest. --}}
+                    <div data-user-email class="truncate text-xs text-muted">{{ $user->email }}</div>
                 </div>
             </div>
         </x-slot:title>
@@ -160,7 +163,9 @@
         @endcan
         @can('interclubs.manage')
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.interclubs.interclubs') }}" :title="__('Planning')" />
-        <x-menu-sub icon="o-cog-6-tooth" :title="__('Season configuration')">
+        {{-- Two levels of indent leave 156px for a label. "Interclubs" already
+        names the section this sits in, so the season goes without saying. --}}
+        <x-menu-sub icon="o-cog-6-tooth" :title="__('Configuration')">
             <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" :title="__('Our teams')" />
             <x-menu-item icon="o-table-cells" link="{{ route('admin.interclubs.division-setup') }}" :title="__('Opponents')" />
             <x-menu-item icon="o-building-office-2" link="{{ route('admin.interclubs.clubs') }}" :title="__('Clubs')" />
@@ -228,10 +233,12 @@
 
     @feature('supervision')
     @can('view-queue-monitoring')
+    {{-- The full "Queue monitoring" was one pixel too wide, which cost it four
+    characters and an ellipsis. The screen keeps the long title. --}}
     <x-menu-item
         icon="o-queue-list"
         link="{{ route('admin.queue.index') }}"
-        :title="__('Queue monitoring')"
+        :title="__('Job queue')"
     />
     @endcan
     @endfeature

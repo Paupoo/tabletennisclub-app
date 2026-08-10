@@ -23,9 +23,8 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     @if (! $seasonId)
-        <x-card class="mt-4">
-            <p class="py-12 text-center text-sm text-gray-500">{{ __('Select a season to manage the schedule.') }}</p>
-        </x-card>
+        <x-admin.shared.missing-season-state
+            :message="__('The match schedule belongs to a season. Open one to plan and record its matches.')" />
     @elseif ($grouped->isEmpty())
         <x-card class="mt-4">
             <div class="py-16 text-center text-gray-500">

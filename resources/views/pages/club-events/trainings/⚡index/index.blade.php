@@ -56,8 +56,8 @@
     {{-- ── Season guard ────────────────────────────────────────────────────── --}}
     @if (! $viewSeason && ! $selectedPackId)
         @if (empty($seasonOptions))
-            <x-alert class="alert-warning" icon="o-exclamation-triangle"
-                :title="__('No seasons found. Create a season first.')" />
+            <x-admin.shared.missing-season-state
+                :message="__('Training packs belong to a season. Open one to build this year\'s offer.')" />
         @else
             <x-alert class="alert-info" icon="o-information-circle"
                 :title="__('Select a season above to view training packs.')" />

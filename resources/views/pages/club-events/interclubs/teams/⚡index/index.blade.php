@@ -55,19 +55,17 @@
     {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
-    @if ($teams->isEmpty())
+    @if (! $season)
+        <x-admin.shared.missing-season-state
+            :message="__('Teams are registered season by season. Open one to compose this year\'s teams.')" />
+    @elseif ($teams->isEmpty())
         <x-card>
-            <div class="py-16 text-center text-gray-500">
-                @if ($season)
-                    Aucune équipe pour la saison {{ $season->name }}.
-                    <div class="mt-4">
-                        <x-button class="btn-primary" link="{{ route('admin.interclubs.teams.builder') }}"
-                            icon="o-squares-plus" :label="__('Build teams')" />
-                    </div>
-                @else
-                    Aucune saison active. Activez une saison pour gérer les équipes.
-                @endif
-            </div>
+            <x-empty-state
+                icon="o-trophy"
+                :heading="__('No team for the :season season', ['season' => $season->name])"
+                :message="__('Build the teams to register them in their divisions.')"
+                :buttonText="__('Build teams')"
+                :href="route('admin.interclubs.teams.builder')" />
         </x-card>
     @else
         @php

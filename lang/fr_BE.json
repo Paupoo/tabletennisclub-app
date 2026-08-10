@@ -4126,5 +4126,14 @@
     "Your enrolment request for pack **:pack** for season **:season** has been cancelled.": "Votre demande d'inscription au pack **:pack** pour la saison **:season** a bien été annulée.",
     "Your enrolment request for pack **:pack** for season **:season** has been registered.": "Votre demande d'inscription au pack **:pack** pour la saison **:season** a bien été enregistrée.",
     "Your enrolment request for pack **:pack** for season **:season** has unfortunately been rejected.": "Votre demande d'inscription au pack **:pack** pour la saison **:season** a malheureusement été refusée.",
-    "The spot offered to you for :pack was not confirmed in time": "Votre place proposée pour :pack n'a pas été confirmée à temps"
+    "The spot offered to you for :pack was not confirmed in time": "Votre place proposée pour :pack n'a pas été confirmée à temps",
+    "No active season": "Aucune saison active",
+    "Manage seasons": "Gérer les saisons",
+    "Everything on this screen belongs to a season. Open one to get started.": "Tout ce que porte cet écran appartient à une saison. Ouvrez-en une pour commencer.",
+    "The match schedule belongs to a season. Open one to plan and record its matches.": "Le calendrier des matchs appartient à une saison. Ouvrez-en une pour planifier et encoder ses rencontres.",
+    "Training packs belong to a season. Open one to build this year's offer.": "Les packs d'entraînement appartiennent à une saison. Ouvrez-en une pour construire l'offre de l'année.",
+    "A plan is composed from an active season. Open one to start composing training groups.": "Un plan se compose à partir d'une saison active. Ouvrez-en une pour commencer à former les groupes.",
+    "Teams are registered season by season. Open one to compose this year's teams.": "Les équipes s'inscrivent saison par saison. Ouvrez-en une pour composer les équipes de l'année.",
+    "No team for the :season season": "Aucune équipe pour la saison :season",
+    "Build the teams to register them in their divisions.": "Composez les équipes pour les inscrire dans leurs divisions."
 }

@@ -10,9 +10,8 @@
 
         <div class="mx-auto w-full max-w-3xl space-y-6">
             @if ($season === null)
-                <x-alert icon="o-exclamation-triangle" class="alert-warning">
-                    {{ __('No active season.') }}
-                </x-alert>
+                <x-admin.shared.missing-season-state
+                    :message="__('A plan is composed from an active season. Open one to start composing training groups.')" />
             @elseif ($canManage)
                 <x-card :title="__('Create a new plan')"
                     :subtitle="__('Starts a draft from the active season — packs and current enrolments are copied.')"

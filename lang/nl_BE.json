@@ -4126,5 +4126,14 @@
     "Your enrolment request for pack **:pack** for season **:season** has been cancelled.": "Uw inschrijvingsaanvraag voor pakket **:pack** voor het seizoen **:season** werd geannuleerd.",
     "Your enrolment request for pack **:pack** for season **:season** has been registered.": "Uw inschrijvingsaanvraag voor pakket **:pack** voor het seizoen **:season** werd geregistreerd.",
     "Your enrolment request for pack **:pack** for season **:season** has unfortunately been rejected.": "Uw inschrijvingsaanvraag voor pakket **:pack** voor het seizoen **:season** werd helaas geweigerd.",
-    "The spot offered to you for :pack was not confirmed in time": "De aangeboden plaats voor :pack werd niet tijdig bevestigd"
+    "The spot offered to you for :pack was not confirmed in time": "De aangeboden plaats voor :pack werd niet tijdig bevestigd",
+    "No active season": "Geen actief seizoen",
+    "Manage seasons": "Seizoenen beheren",
+    "Everything on this screen belongs to a season. Open one to get started.": "Alles op dit scherm hoort bij een seizoen. Open er een om te beginnen.",
+    "The match schedule belongs to a season. Open one to plan and record its matches.": "De wedstrijdkalender hoort bij een seizoen. Open er een om de wedstrijden te plannen en in te geven.",
+    "Training packs belong to a season. Open one to build this year's offer.": "Trainingspakketten horen bij een seizoen. Open er een om het aanbod van dit jaar op te bouwen.",
+    "A plan is composed from an active season. Open one to start composing training groups.": "Een plan wordt samengesteld vanuit een actief seizoen. Open er een om trainingsgroepen samen te stellen.",
+    "Teams are registered season by season. Open one to compose this year's teams.": "Ploegen worden per seizoen ingeschreven. Open er een om de ploegen van dit jaar samen te stellen.",
+    "No team for the :season season": "Geen ploeg voor het seizoen :season",
+    "Build the teams to register them in their divisions.": "Stel de ploegen samen om ze in hun afdelingen in te schrijven."
 }

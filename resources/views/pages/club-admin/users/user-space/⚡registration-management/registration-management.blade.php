@@ -41,7 +41,7 @@
                         <div class="min-w-0">
                             <div class="font-bold text-sm truncate">{{ $reg['name'] }}</div>
                             @if($memberStatus === 'paid')
-                                <div class="text-xs text-success font-medium">✓ {{ __('Paid') }}</div>
+                                <div class="text-xs text-success font-medium"><x-icon name="o-check" class="mb-0.5 inline h-3.5 w-3.5" /> {{ __('Paid') }}</div>
                             @elseif($memberStatus === 'confirmed')
                                 <div class="text-xs text-info font-medium">{{ __('To pay') }}</div>
                             @elseif($memberStatus === 'pending')

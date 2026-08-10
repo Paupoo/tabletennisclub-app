@@ -19,7 +19,7 @@
                     <x-input label="Tournament name(*)" placeholder="Ex: Spring Grand Prix" icon="o-trophy"
                         wire:model.live.debounce.500ms="name"
                         :readonly="$this->isContractLocked"
-                        :hint="$this->isContractLocked ? __('🔒 Locked — tournament validated') : null" />
+                        :hint="$this->isContractLocked ? __('Locked — tournament validated') : null" />
                 </div>
 
                 {{-- Rooms — always editable, notification if players registered --}}
@@ -72,7 +72,7 @@
                 <x-input label="Registration fee" suffix="€" type="number" icon="o-banknotes"
                     wire:model="price"
                     :readonly="$this->isContractLocked"
-                    :hint="$this->isContractLocked ? __('🔒 Locked — tournament validated') : null" />
+                    :hint="$this->isContractLocked ? __('Locked — tournament validated') : null" />
 
                 <div class="col-span-2">
                     <x-toggle :label="__('Open registrations')" icon="o-eye"
@@ -153,7 +153,7 @@
             </p>
             @if (! $deuceEnabled)
                 <p class="text-xs text-warning-content/80 font-semibold mt-0.5">
-                    ⚡ {{ __('Recommended for "Minimize duration" objective.') }}
+                    <x-icon name="o-bolt" class="mb-0.5 inline h-3.5 w-3.5" /> {{ __('Recommended for "Minimize duration" objective.') }}
                 </p>
             @endif
         </div>
@@ -164,7 +164,7 @@
             </p>
             @if (! $hasHandicapPoints)
                 <p class="text-xs text-warning-content/80 font-semibold mt-0.5">
-                    🏆 {{ __('Disabled for "Competitive format" objective.') }}
+                    <x-icon name="o-trophy" class="mb-0.5 inline h-3.5 w-3.5" /> {{ __('Disabled for "Competitive format" objective.') }}
                 </p>
             @endif
         </div>

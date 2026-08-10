@@ -13,7 +13,7 @@
                         <x-input label="Tournament name(*)" placeholder="Ex: Spring Grand Prix" icon="o-trophy"
                             wire:model.live.debounce.500ms="name"
                             :readonly="$this->isContractLocked"
-                            :hint="$this->isContractLocked ? __('🔒 Locked — invitations sent or article published') : null" />
+                            :hint="$this->isContractLocked ? __('Locked — invitations sent or article published') : null" />
                     </div>
 
                     {{-- Rooms — always editable, notification if players registered --}}
@@ -52,7 +52,7 @@
                     <x-input label="Registration fee" suffix="€" type="number" icon="o-banknotes"
                         wire:model="price"
                         :readonly="$this->isContractLocked"
-                        :hint="$this->isContractLocked ? __('🔒 Locked — invitations sent or article published') : null" />
+                        :hint="$this->isContractLocked ? __('Locked — invitations sent or article published') : null" />
 
                     <div class="col-span-2">
                         <x-toggle :label="__('Open registrations')" icon="o-eye"

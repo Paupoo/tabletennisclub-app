@@ -79,7 +79,7 @@
                         <div><span class="text-blue-700">> citation</span> → blockquote</div>
                         <div><span class="text-blue-700">`code`</span> → <code>code</code></div>
                     </div>
-                    <p class="mt-2 text-xs text-blue-600">{{ __('⚠️ Headings require a space after the # :') }}<code class="bg-blue-100 px-1">## Mon titre</code> et non <code class="bg-red-100 px-1">##Mon titre</code></p>
+                    <p class="mt-2 text-xs text-blue-600"><x-icon name="o-exclamation-triangle" class="mb-0.5 inline h-3.5 w-3.5" /> {{ __('Headings require a space after the # :') }}<code class="bg-blue-100 px-1">## Mon titre</code> et non <code class="bg-red-100 px-1">##Mon titre</code></p>
                 </div>
             </div>
 

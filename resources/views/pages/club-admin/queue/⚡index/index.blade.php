@@ -57,6 +57,27 @@
         @if (count($pendingJobs) === 0)
             <x-empty-state icon="o-inbox" :heading="__('Queue empty')" :message="__('Nothing waiting to be processed')" />
         @else
+            {{-- ── Vue mobile ─────────────────────────────────────────────
+            Four columns do not fit a phone, and the table only scrolled
+            sideways. Below lg the rows are cards, as thirteen sibling lists
+            already do. --}}
+            <div class="grid grid-cols-1 gap-3 lg:hidden">
+                @foreach ($pendingJobs as $job)
+                    <div class="rounded-lg border border-base-300 bg-base-100 p-3" wire:key="mobile-pending-{{ $job['id'] }}">
+                        <div class="flex items-start justify-between gap-3">
+                            <span class="min-w-0 break-words text-sm font-medium">{{ $job['name'] }}</span>
+                            <x-badge :value="$job['queue']" class="badge-ghost badge-sm shrink-0" />
+                        </div>
+                        <div class="mt-1 flex flex-wrap items-baseline gap-x-2 text-xs text-muted">
+                            <span @class(['text-error font-semibold' => $job['is_late']])>{{ $job['age'] }}</span>
+                            <span>·</span>
+                            <span>{{ __('Attempts') }} : {{ $job['attempts'] }}</span>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="hidden lg:block">
             <x-table :headers="[
                 ['key' => 'name',     'label' => __('Job')],
                 ['key' => 'queue',    'label' => __('Queue')],
@@ -80,6 +101,7 @@
                 </span>
                 @endscope
             </x-table>
+            </div>
         @endif
     </x-card>
 
@@ -88,6 +110,35 @@
         @if (count($failedJobs) === 0)
             <x-empty-state icon="o-check-badge" :heading="__('No failures')" :message="__('No job has failed recently.')" />
         @else
+            {{-- ── Vue mobile ───────────────────────────────────────────── --}}
+            <div class="grid grid-cols-1 gap-3 lg:hidden">
+                @foreach ($failedJobs as $job)
+                    <div class="rounded-lg border border-base-300 bg-base-100 p-3" wire:key="mobile-failed-{{ $job['uuid'] }}">
+                        <div class="flex items-start justify-between gap-3">
+                            <span class="min-w-0 break-words text-sm font-medium">{{ $job['name'] }}</span>
+                            <x-badge :value="$job['queue']" class="badge-ghost badge-sm shrink-0" />
+                        </div>
+                        <div class="mt-1 text-xs tabular-nums text-muted">{{ $job['failed_at'] }}</div>
+                        <p class="mt-1 break-words font-mono text-xs text-error/80">{{ $job['error'] }}</p>
+                        <div class="mt-3 flex items-center gap-1">
+                            <x-button
+                                icon="o-arrow-path"
+                                class="btn-ghost btn-sm"
+                                :label="__('Retry')"
+                                wire:click="retry('{{ $job['uuid'] }}')"
+                                spinner />
+                            <x-button
+                                icon="o-trash"
+                                class="btn-ghost btn-sm text-error"
+                                :label="__('Delete')"
+                                wire:click="forget('{{ $job['uuid'] }}')"
+                                spinner />
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="hidden lg:block">
             <x-table :headers="[
                 ['key' => 'name',      'label' => __('Job')],
                 ['key' => 'queue',     'label' => __('Queue')],
@@ -128,6 +179,7 @@
                 </div>
                 @endscope
             </x-table>
+            </div>
         @endif
     </x-card>
 </div>

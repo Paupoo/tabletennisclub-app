@@ -106,7 +106,7 @@
 
             <p class="mb-6 text-sm text-gray-500">
                 {{ count($proposedTeams) }} équipes proposées ·
-                <span class="text-gray-400">{{ __('drag and drop players · click ⭐ to designate a captain') }}</span>
+                <span class="text-gray-400">{{ __('drag and drop players · click the star to designate a captain') }}</span>
             </p>
 
             <div class="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">

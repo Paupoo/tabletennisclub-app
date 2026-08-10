@@ -254,7 +254,7 @@ new class extends Component
         @if ($tournament->has_handicap_points && ($hp1 > 0 || $hp2 > 0))
             <div class="bg-base-100 rounded-2xl shadow px-5 py-4">
                 <p class="text-xs font-bold uppercase tracking-widest text-warning-content text-center mb-3">
-                    ⚡ {{ __('Handicap per set — starting scores') }}
+                    <x-icon name="o-bolt" class="mb-0.5 inline h-3.5 w-3.5" /> {{ __('Handicap per set — starting scores') }}
                 </p>
                 <div class="flex justify-between items-center gap-4">
                     <div class="flex-1 text-center">

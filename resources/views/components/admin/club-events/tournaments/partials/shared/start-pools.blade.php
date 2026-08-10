@@ -80,8 +80,9 @@
 
     {{-- Generate Matches --}}
     <div class="mt-6 flex justify-center">
-        <x-button :label="$this->matchesGenerated ? __('Matches ready') . ' ✓' : __('Generate Matches')"
-            icon="o-table-cells"
+        {{-- The state rides on the icon, not on a check glued to the label. --}}
+        <x-button :label="$this->matchesGenerated ? __('Matches ready') : __('Generate Matches')"
+            :icon="$this->matchesGenerated ? 'o-check' : 'o-table-cells'"
             :class="$this->matchesGenerated ? 'btn-success btn-outline' : 'btn-secondary'"
             wire:click="generateMatches"
             spinner="generateMatches"

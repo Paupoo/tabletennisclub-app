@@ -11,8 +11,50 @@
         </x-slot:actions>
     </x-header>
 
-    {{-- ── Table ───────────────────────────────────────────────────────────── --}}
-    <x-card>
+    {{-- ── Vue mobile ──────────────────────────────────────────────────────
+    Five columns on a phone left the table scrolling sideways, with the row
+    actions off the right edge. Below lg the rows are cards, as thirteen
+    sibling lists already do. --}}
+    <div class="grid grid-cols-1 gap-3 lg:hidden">
+        @forelse ($templates as $template)
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3" wire:key="mobile-template-{{ $template->id }}">
+                <div class="min-w-0">
+                    <div class="break-words font-medium">{{ $template->name }}</div>
+                    <code class="text-xs text-base-content/60">{{ $template->key }}</code>
+                </div>
+
+                <div class="mt-2 flex flex-wrap items-center gap-1">
+                    @if ($template->apply_status)
+                        <x-badge class="badge-soft badge-info badge-sm" :value="ucfirst($template->apply_status)" />
+                    @endif
+                    @if ($template->is_questionnaire)
+                        <x-badge class="badge-soft badge-warning badge-sm" :value="__('Questionnaire')" />
+                    @endif
+                    @unless ($template->is_active)
+                        <x-badge class="badge-soft badge-ghost badge-sm" :value="__('Inactive')" />
+                    @endunless
+                </div>
+
+                <div class="mt-3 flex flex-wrap items-center gap-1">
+                    <x-button class="btn-ghost btn-sm"
+                        :icon="$template->is_active ? 'o-eye' : 'o-eye-slash'"
+                        :label="$template->is_active ? __('Deactivate') : __('Activate')"
+                        wire:click="toggleActive({{ $template->id }})" />
+                    <x-button class="btn-ghost btn-sm" icon="o-pencil"
+                        :label="__('Edit')" wire:click="openEdit({{ $template->id }})" />
+                    <x-button class="btn-ghost btn-sm text-error" icon="o-trash"
+                        :label="__('Delete')" wire:click="confirmDelete({{ $template->id }})" />
+                </div>
+            </div>
+        @empty
+            <x-admin.shared.list-empty-state
+                icon="o-envelope"
+                :heading="__('No templates yet')" />
+        @endforelse
+    </div>
+
+    {{-- ── Vue desktop ─────────────────────────────────────────────────────── --}}
+    <x-card class="hidden lg:block">
         <x-table :headers="$headers" :rows="$templates" wire:key="email-templates-table">
             @scope('cell_name', $template)
                 <span class="font-medium">{{ $template->name }}</span>

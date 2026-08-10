@@ -102,7 +102,7 @@
 
                                     @if ($isFinal && $match->status === 'completed')
                                         <div class="text-center text-xs font-bold text-yellow-500 mt-1">
-                                            🏆 {{ $winnerName }}
+                                            <x-icon name="o-trophy" class="mb-0.5 inline h-3.5 w-3.5" /> {{ $winnerName }}
                                         </div>
                                     @endif
 
@@ -170,7 +170,7 @@
 
                 @if ($isFinal && $match->status === 'completed')
                     <div class="text-center text-xs font-bold text-yellow-500 mt-1">
-                        🏆 {{ $winnerName }}
+                        <x-icon name="o-trophy" class="mb-0.5 inline h-3.5 w-3.5" /> {{ $winnerName }}
                     </div>
                 @endif
             </div>

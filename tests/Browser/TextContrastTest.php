@@ -27,6 +27,12 @@ beforeEach(function (): void {
  *
  * Icons and borders are deliberately out of scope: they answer to 1.4.11 at
  * 3:1, and folding them in here would hide real text failures behind noise.
+ *
+ * `__SCOPE__` is a CSS selector the caller substitutes to narrow the sweep.
+ * It exists for the public pages: their hero and section headers sit on
+ * photography, whose luminance no `backgroundColor` walk can read, so an
+ * unscoped sweep there reports white-on-white failures that nobody can see.
+ * Scoping the probe to the surface under test keeps the result honest.
  */
 $contrastProbe = <<<'JS'
 (() => {
@@ -74,8 +80,18 @@ $contrastProbe = <<<'JS'
     return base;
   };
 
+  // A scope that matches nothing would make the assertion pass without probing
+  // anything at all, so say so rather than report success.
+  const roots = document.querySelectorAll('__SCOPE__');
+  if (roots.length === 0) return ['no element matched the probe scope "__SCOPE__"'];
+
+  const targets = new Set();
+  for (const root of roots) {
+    for (const el of root.querySelectorAll('p, span, div, td, th, li, label, small, a, button')) targets.add(el);
+  }
+
   const failures = [];
-  for (const el of document.querySelectorAll('p, span, div, td, th, li, label, small, a, button')) {
+  for (const el of targets) {
     const text = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent.trim()).join('');
     if (text.length < 3) continue;
     const cs = getComputedStyle(el);
@@ -102,14 +118,17 @@ $contrastProbe = <<<'JS'
 })()
 JS;
 
-it('keeps body text above the AA contrast threshold on the members list', function () use ($contrastProbe): void {
+/** Compiles the probe for one surface; the default sweeps the whole document. */
+$probe = fn (string $scope = ':root'): string => str_replace('__SCOPE__', $scope, $contrastProbe);
+
+it('keeps body text above the AA contrast threshold on the members list', function () use ($probe): void {
     User::factory()->count(3)->create();
 
     $this->actingAs($this->admin);
 
     $page = visit(route('admin.users.index'));
 
-    $result = $page->script($contrastProbe);
+    $result = $page->script($probe());
 
     // script() hands back one entry per script; older shapes return the value flat.
     $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
@@ -124,12 +143,12 @@ it('keeps body text above the AA contrast threshold on the members list', functi
  * The members list was the first slice. These are the next densest screens, and
  * the ones where a treasurer or a secretary reads small figures for a long time.
  */
-it('keeps body text above the AA threshold on the dense back-office screens', function (string $route, Role $role) use ($contrastProbe): void {
+it('keeps body text above the AA threshold on the dense back-office screens', function (string $route, Role $role) use ($probe): void {
     $this->actingAs(User::factory()->withRole($role)->create());
 
     $page = visit(route($route));
 
-    $result = $page->script($contrastProbe);
+    $result = $page->script($probe());
     $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
 
     expect($failures)->toBe([], sprintf(
@@ -149,7 +168,7 @@ it('keeps body text above the AA threshold on the dense back-office screens', fu
  * figures — weeks, team counts, scores — are read quickly, often in a badly lit
  * sports hall. Fixtures are seeded first: an empty page has no figures to dim.
  */
-it('keeps body text above the AA threshold on the interclubs screens', function (string $route) use ($contrastProbe): void {
+it('keeps body text above the AA threshold on the interclubs screens', function (string $route) use ($probe): void {
     Club::firstOrCreate(
         ['licence' => 'BBW214'],
         ['name' => 'C.T.T Ottignies-Blocry', 'is_own_club' => true, 'city_code' => '1340', 'city_name' => 'Ottignies'],
@@ -170,7 +189,7 @@ it('keeps body text above the AA threshold on the interclubs screens', function 
 
     $page = visit(route($route));
 
-    $result = $page->script($contrastProbe);
+    $result = $page->script($probe());
     $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
 
     expect($failures)->toBe([], sprintf(
@@ -191,7 +210,7 @@ it('keeps body text above the AA threshold on the interclubs screens', function 
  * starts closed. It carried the worst pairing in the application: 7px labels at
  * 30% opacity, 1.96:1.
  */
-it('keeps the selection drawer above the AA threshold once it is open', function () use ($contrastProbe): void {
+it('keeps the selection drawer above the AA threshold once it is open', function () use ($probe): void {
     $season = Season::factory()->create([
         'is_active' => true,
         'start_at' => now()->subMonths(4),
@@ -240,7 +259,7 @@ it('keeps the selection drawer above the AA threshold once it is open', function
         ->click('[data-match-row]:first-of-type [data-row-menu-primary]')
         ->assertSee(__('Team roster'));
 
-    $result = $page->script($contrastProbe);
+    $result = $page->script($probe());
     $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
 
     expect($failures)->toBe([], sprintf(
@@ -248,3 +267,32 @@ it('keeps the selection drawer above the AA threshold once it is open', function
         implode("\n", $failures),
     ));
 });
+
+/*
+ * Nothing measured the public site until now, and it is the half of the
+ * application a visitor sees first. Its dark surfaces are the exposed ones: the
+ * footer sits on gray-900 and the sponsor tiles on gray-800, while the greys the
+ * markup asks for are clamped towards a colour computed for a light ground.
+ *
+ * The footer is on every public page, so both routes probe it; the sponsor tiles
+ * only render on the home page, and only once a sponsor exists.
+ */
+it('keeps text readable on the dark surfaces of the public site', function (string $route, string $surface) use ($probe): void {
+    Club::factory()->ownClub()->create();
+
+    $page = visit(route($route));
+
+    $result = $page->script($probe($surface));
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold on %s, inside %s:\n%s",
+        $route,
+        $surface,
+        implode("\n", $failures),
+    ));
+})->with([
+    ['home', 'footer'],
+    ['results', 'footer'],
+    ['home', '[data-sponsor-tile]'],
+]);

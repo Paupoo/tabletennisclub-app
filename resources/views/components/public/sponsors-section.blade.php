@@ -9,23 +9,23 @@
         
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8 items-center animate-on-scroll">
             @forelse($sponsors ?? [] as $sponsor)
-                <div class="bg-gray-800 rounded-lg p-6 text-center h-44 flex items-center justify-center">
+                <div data-sponsor-tile class="bg-gray-800 rounded-lg p-6 text-center h-44 flex items-center justify-center">
                     @if($sponsor['url'])
                     <a href="{{ $sponsor['url'] }}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center">
                     @endif
                         @if($sponsor['logo'])
                             <img src="{{ $sponsor['logo'] }}" alt="{{ $sponsor['name'] }}" class="max-h-40 max-w-full rounded-xl">
                         @else
-                            <span class="text-gray-400 font-medium">{{ $sponsor['name'] }}</span>
+                            <span class="text-white/70 font-medium">{{ $sponsor['name'] }}</span>
                         @endif
                     @if($sponsor['url'])
                     </a>
                     @endif
                 </div>
                 @if($loop->last)
-                <div class="bg-gray-800 rounded-lg p-6 text-center h-44 flex items-center justify-center">
+                <div data-sponsor-tile class="bg-gray-800 rounded-lg p-6 text-center h-44 flex items-center justify-center">
                     <a href="#contact" target="_self" rel="noopener noreferrer" class="flex items-center justify-center">
-                            <span class="text-gray-400 font-medium">{{ __('Your company here?')}}</span>
+                            <span class="text-white/70 font-medium">{{ __('Your company here?')}}</span>
                     </a>
                 </div>
                 @endif

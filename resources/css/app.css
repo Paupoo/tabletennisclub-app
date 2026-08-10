@@ -407,6 +407,11 @@ select:focus {
   They are also theme-blind: a fixed grey cannot be right on both grounds. The
   clamp routes them to the same token as .text-muted, which follows the theme.
   The dark: variants compile to their own selectors and are untouched.
+
+  The token it lands on is computed for a light ground, so text-gray-* must not
+  be used on a dark surface: the public footer (bg-gray-900) and the sponsor
+  tiles (bg-gray-800) measured 1.7:1 and 1.4:1 that way. Those surfaces state
+  their own colour — text-white/70 — instead of borrowing from this scale.
 */
 .text-gray-300,
 .text-gray-400,

@@ -3,7 +3,7 @@
         <div class="grid md:grid-cols-3 gap-8">
             <div>
                 <h3 class="text-2xl font-bold mb-4">🏓 CTT Ottignies-Blocry</h3>
-                <p class="text-gray-400 mb-4">
+                <p class="text-white/70 mb-4">
                     Votre destination de choix pour le tennis de table à Ottignies et environs. Rejoignez notre
                     communauté dès aujourd'hui !
                 </p>
@@ -12,19 +12,19 @@
             <div>
                 <h4 class="text-lg font-semibold mb-4">Liens Rapides</h4>
                 <ul class="space-y-2">
-                    <li><a href="{{ route('home') }}" class="text-gray-400 hover:text-white transition-colors">Accueil</a>
+                    <li><a href="{{ route('home') }}" class="text-white/70 hover:text-white transition-colors">Accueil</a>
                     </li>
                     <li><a href="{{ route('results') }}"
-                            class="text-gray-400 hover:text-white transition-colors">{{ __('Results') }}</a></li>
+                            class="text-white/70 hover:text-white transition-colors">{{ __('Results') }}</a></li>
                     <li><a href="{{ route('eventPosts') }}"
-                            class="text-gray-400 hover:text-white transition-colors">{{ __('Events') }}</a></li>
-                    <li><a href="#contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                            class="text-white/70 hover:text-white transition-colors">{{ __('Events') }}</a></li>
+                    <li><a href="#contact" class="text-white/70 hover:text-white transition-colors">Contact</a></li>
                 </ul>
             </div>
 
             <div>
                 <h4 class="text-lg font-semibold mb-4">Informations de contact</h4>
-                <div class="space-y-2 text-gray-400">
+                <div class="space-y-2 text-white/70">
                     @if($club)
                     <div class="flex gap-4 items-start">
                         <p>
@@ -63,7 +63,7 @@
             </div>
         </div>
 
-        <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+        <div class="border-t border-gray-800 mt-8 pt-8 text-center text-white/70">
             <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
                 <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm">
                     <p class="flex items-center">
@@ -71,7 +71,7 @@
                         <x-icon name="s-heart" class="w-4 h-4 mx-1 text-red-400" />
                         by <span class="font-medium text-white ml-1">Aurélien Paulus</span>
                     </p>
-                    <span class="hidden sm:inline text-gray-600">•</span>
+                    <span class="hidden sm:inline text-white/40">•</span>
                     <p class="text-xs">
                         Powered by
                         <span class="text-blue-400 font-medium"><a
@@ -85,15 +85,15 @@
 
                 <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm">
                     <p>&copy; {{ date('Y') }} CTT Ottignies-Blocry. Tous droits réservés.</p>
-                    <span class="hidden sm:inline text-gray-600">•</span>
-                    <a href="#" class="text-gray-400 underline hover:text-white transition-colors text-xs"
+                    <span class="hidden sm:inline text-white/40">•</span>
+                    <a href="#" class="text-white/70 underline hover:text-white transition-colors text-xs"
                         onclick="showLicense(); return false;">
                         Licence MIT
                     </a>
-                    <span class="hidden sm:inline text-gray-600">•</span>
+                    <span class="hidden sm:inline text-white/40">•</span>
                     <a href="https://github.com/Paupoo/tabletennisclub-app"
                         target="_blank" rel="noopener noreferrer"
-                        class="flex items-center gap-1 text-gray-400 hover:text-white transition-colors text-xs">
+                        class="flex items-center gap-1 text-white/70 hover:text-white transition-colors text-xs">
                         <x-icon name="o-code-bracket" class="w-4 h-4" />
                         GitHub
                     </a>
@@ -115,7 +115,7 @@
         >
             <p class="text-sm text-gray-800 md:w-3/4">
                 Ce site utilise des cookies uniquement pour la gestion de la connexion. En continuant à utiliser ce site, vous acceptez cette utilisation. Pour plus d'informations, consultez notre
-                <button class="underline text-blue-600 font-semibold" @click="showPrivacyPolicy()">{{ __('privacy policy') }}</button>.
+                <button class="underline text-club-blue font-semibold" @click="showPrivacyPolicy()">{{ __('privacy policy') }}</button>.
             </p>
             <div class="mt-4 md:mt-0 md:w-1/4 md:text-right">
                 <button

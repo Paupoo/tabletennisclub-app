@@ -74,7 +74,7 @@
                                     <p class="text-sm font-medium text-gray-900">
                                         {{ $user->first_name }} {{ $user->last_name }}
                                         @if ($team->captain_id === $user->id)
-                                            <span class="ml-1 rounded bg-yellow-100 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-700">C</span>
+                                            <span class="ml-1 rounded bg-yellow-100 px-1.5 py-0.5 text-xs font-semibold text-yellow-700">C</span>
                                         @endif
                                     </p>
                                 </div>
@@ -86,7 +86,7 @@
                                     </span>
                                 @endif
                                 @if ($user->is_competitor)
-                                    <span class="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">{{ __('Competitor') }}</span>
+                                    <span class="rounded bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700">{{ __('Competitor') }}</span>
                                 @endif
                             </div>
                         </div>
@@ -107,7 +107,7 @@
                     @endphp
                     <div class="flex items-center justify-between py-3" wire:key="upcoming-{{ $ic->id }}">
                         <div class="flex items-center gap-3">
-                            <span class="rounded px-2 py-0.5 text-[10px] font-bold uppercase
+                            <span class="rounded px-2 py-0.5 text-xs font-bold uppercase
                                 {{ $isHome ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600' }}">
                                 {{ $isHome ? 'Dom.' : 'Ext.' }}
                             </span>

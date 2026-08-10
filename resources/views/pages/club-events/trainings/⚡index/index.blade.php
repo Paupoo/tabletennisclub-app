@@ -189,7 +189,7 @@
 
                                     {{-- Card body --}}
                                     <div class="flex flex-1 flex-col px-4 py-3">
-                                        <div class="mb-3 space-y-1 text-[13px] text-base-content/70">
+                                        <div class="mb-3 space-y-1 text-sm text-base-content/70">
                                             <div class="flex items-center gap-2">
                                                 <x-icon class="h-4 w-4 shrink-0 opacity-40" name="o-user" />
                                                 {{ $pack->trainer?->full_name ?? __('No coach') }}
@@ -202,7 +202,7 @@
 
                                         {{-- Capacity --}}
                                         <div class="mb-3">
-                                            <div class="mb-1 flex justify-between text-[11px] text-base-content/50">
+                                            <div class="mb-1 flex justify-between text-xs text-base-content/50">
                                                 <span>{{ $enrolled }} / {{ $max ?: '∞' }} {{ __('enrolled') }}</span>
                                                 @if ($full)
                                                     <span class="font-medium text-error">{{ __('Full') }}</span>
@@ -437,7 +437,7 @@
                         </p>
                         <div class="flex flex-wrap gap-1.5">
                             @foreach ($previewDates as $d)
-                                <span class="group relative inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-[11px] text-primary">
+                                <span class="group relative inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary">
                                     {{ $d->translatedFormat('D d M') }}
                                     <button
                                         class="ml-0.5 rounded-full opacity-50 transition hover:opacity-100 hover:text-error"
@@ -461,7 +461,7 @@
                             <div class="flex flex-wrap gap-1.5">
                                 @foreach ($formExcludedDates as $excluded)
                                     <button
-                                        class="inline-flex items-center gap-1 rounded-md border border-dashed border-base-300 px-2 py-0.5 text-[11px] text-base-content/40 line-through transition hover:border-primary hover:text-primary hover:no-underline"
+                                        class="inline-flex items-center gap-1 rounded-md border border-dashed border-base-300 px-2 py-0.5 text-xs text-base-content/40 line-through transition hover:border-primary hover:text-primary hover:no-underline"
                                         :title="__('Re-include this date')"
                                         wire:click="toggleExcludeDate('{{ $excluded }}')"
                                         wire:key="exclude-{{ $excluded }}"

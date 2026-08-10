@@ -154,7 +154,7 @@
                     @forelse($recentActivity as $item)
                     <div class="px-3 py-2.5 hover:bg-base-200/40 transition-colors">
                         <p class="text-xs font-medium text-base-content leading-snug">{{ $item['label'] }}</p>
-                        <p class="text-[10px] text-base-content/40 mt-0.5">{{ $item['time'] }}</p>
+                        <p class="text-xs text-base-content/40 mt-0.5">{{ $item['time'] }}</p>
                     </div>
                     @empty
                     <div class="px-4 py-6 text-center text-xs text-base-content/40">
@@ -176,7 +176,7 @@
                         <div class="px-3 py-2.5">
                             <p class="text-xs font-medium text-base-content leading-snug">{{ $training['label'] }}</p>
                             @if($training['sub'])
-                            <p class="text-[10px] text-base-content/40 mt-0.5">{{ $training['sub'] }}</p>
+                            <p class="text-xs text-base-content/40 mt-0.5">{{ $training['sub'] }}</p>
                             @endif
                         </div>
                         @endforeach
@@ -195,7 +195,7 @@
                         @foreach($upcomingMatches as $match)
                         <div class="px-3 py-2.5">
                             <p class="text-xs font-medium text-base-content leading-snug">{{ $match['label'] }}</p>
-                            <p class="text-[10px] text-base-content/40 mt-0.5">{{ $match['sub'] }}</p>
+                            <p class="text-xs text-base-content/40 mt-0.5">{{ $match['sub'] }}</p>
                         </div>
                         @endforeach
                     </div>
@@ -213,7 +213,7 @@
                         @foreach($upcomingInternalEvents as $event)
                         <div class="px-3 py-2.5">
                             <p class="text-xs font-medium text-base-content leading-snug">{{ $event['label'] }}</p>
-                            <p class="text-[10px] text-base-content/40 mt-0.5">{{ $event['sub'] }}</p>
+                            <p class="text-xs text-base-content/40 mt-0.5">{{ $event['sub'] }}</p>
                         </div>
                         @endforeach
                     </div>

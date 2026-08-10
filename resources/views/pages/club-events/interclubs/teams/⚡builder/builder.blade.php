@@ -42,7 +42,7 @@
                                         'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50' => $teamCategory !== $value,
                                     ])>
                                     <span class="font-semibold leading-tight">{{ $cat['label'] }}</span>
-                                    <span class="text-[10px] leading-tight opacity-60">{{ $cat['desc'] }}</span>
+                                    <span class="text-xs leading-tight opacity-60">{{ $cat['desc'] }}</span>
                                 </button>
                             @endforeach
                         </div>
@@ -131,7 +131,7 @@
                                 @if (($teamData['captainId'] ?? null) !== null)
                                     @php $cap = $competitors[$teamData['captainId']] ?? null; @endphp
                                     @if ($cap)
-                                        <span class="flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-semibold text-yellow-700">
+                                        <span class="flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700">
                                             <x-heroicon-s-star class="h-2.5 w-2.5" />
                                             {{ $cap->first_name }}
                                         </span>
@@ -165,12 +165,12 @@
                                         </span>
 
                                         @if ($player->ranking)
-                                            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-600">
+                                            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-600">
                                                 {{ $player->ranking }}
                                             </span>
                                         @endif
                                         @if ($player->forceListFor($teamCategory) !== null)
-                                            <span class="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-400"
+                                            <span class="rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-semibold text-indigo-400"
                                                 title="Liste de force">
                                                 #{{ $player->forceListFor($teamCategory) }}
                                             </span>
@@ -192,7 +192,7 @@
 
                         {{-- Infos de ligue --}}
                         <div class="border-t border-gray-100 bg-gray-50 px-4 pb-3 pt-2">
-                            <p class="mb-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Ligue</p>
+                            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Ligue</p>
                             <div class="grid grid-cols-3 gap-2">
                                 <x-select
                                     :options="$categoryOptions"
@@ -250,12 +250,12 @@
                                             {{ $player->first_name }} {{ $player->last_name }}
                                         </span>
                                         @if ($player->ranking)
-                                            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-600">
+                                            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-600">
                                                 {{ $player->ranking }}
                                             </span>
                                         @endif
                                         @if ($player->forceListFor($teamCategory) !== null)
-                                            <span class="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-400"
+                                            <span class="rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-semibold text-indigo-400"
                                                 title="Liste de force">
                                                 #{{ $player->forceListFor($teamCategory) }}
                                             </span>

@@ -27,7 +27,7 @@
         </div>
         <div class="min-w-0 flex-1">
             <p class="{{ $c['text'] }} truncate text-sm font-semibold">{{ $team->name }}</p>
-            <p class="{{ $c['text'] }} mt-0.5 truncate text-[11px] opacity-70">{{ $team->division }}</p>
+            <p class="{{ $c['text'] }} mt-0.5 truncate text-xs opacity-70">{{ $team->division }}</p>
         </div>
     </div>
 
@@ -35,7 +35,7 @@
     <div class="flex-1 divide-y divide-base-200 px-4">
 
         <div class="flex items-center justify-between gap-4 py-2.5">
-            <span class="shrink-0 text-[11px] font-medium uppercase tracking-wide text-base-content/40">Capitaine</span>
+            <span class="shrink-0 text-xs font-medium uppercase tracking-wide text-base-content/40">Capitaine</span>
             @if ($hasCapitain)
                 <span class="truncate text-sm font-medium text-base-content">{{ $team->captain_name }}</span>
             @else
@@ -44,7 +44,7 @@
         </div>
 
         <div class="flex items-center justify-between gap-4 py-2.5">
-            <span class="shrink-0 text-[11px] font-medium uppercase tracking-wide text-base-content/40">Noyau</span>
+            <span class="shrink-0 text-xs font-medium uppercase tracking-wide text-base-content/40">Noyau</span>
             @if ($team->membersCount > 0)
                 <span class="text-sm font-medium text-base-content">
                     {{ $team->membersCount }} joueur{{ $team->membersCount > 1 ? 's' : '' }}
@@ -55,7 +55,7 @@
         </div>
 
         <div class="flex items-center justify-between gap-4 py-2.5">
-            <span class="shrink-0 text-[11px] font-medium uppercase tracking-wide text-base-content/40">Prochain match</span>
+            <span class="shrink-0 text-xs font-medium uppercase tracking-wide text-base-content/40">Prochain match</span>
             @if ($team->nextMatchDate)
                 <span class="text-sm font-medium text-base-content">
                     {{ \Carbon\Carbon::parse($team->nextMatchDate)->translatedFormat('D d M') }}

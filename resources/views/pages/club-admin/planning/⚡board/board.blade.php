@@ -178,11 +178,11 @@
                                 <div class="flex items-center gap-1.5">
                                     <span class="grow truncate text-sm font-medium">{{ $card['name'] }}</span>
                                     @if ($card['age_label'])
-                                        <span class="shrink-0 text-[10px] font-medium uppercase tracking-wide text-base-content/40">
+                                        <span class="shrink-0 text-xs font-medium uppercase tracking-wide text-base-content/40">
                                             {{ \Illuminate\Support\Str::substr($card['age_label'], 0, 3) }}</span>
                                     @endif
                                     @if ($card['ranking'])
-                                        <span class="shrink-0 rounded bg-base-200 px-1 text-[11px] font-bold text-base-content/70">{{ $card['ranking'] }}</span>
+                                        <span class="shrink-0 rounded bg-base-200 px-1 text-xs font-bold text-base-content/70">{{ $card['ranking'] }}</span>
                                     @endif
                                 </div>
                                 @if ($card['is_competitive'] || $card['can_drive'] || $card['wants_to_be_captain'] || $card['volunteer_help'])
@@ -193,7 +193,7 @@
                                         @if ($card['can_drive'])
                                             <span class="inline-flex items-center gap-0.5 text-info" title="{{ __('Drives') }}">
                                                 <x-icon name="o-truck" class="h-3.5 w-3.5" />
-                                                @if ($card['seats_available'] !== null)<span class="text-[10px] font-semibold">{{ $card['seats_available'] }}</span>@endif
+                                                @if ($card['seats_available'] !== null)<span class="text-xs font-semibold">{{ $card['seats_available'] }}</span>@endif
                                             </span>
                                         @endif
                                         @if ($card['wants_to_be_captain'])

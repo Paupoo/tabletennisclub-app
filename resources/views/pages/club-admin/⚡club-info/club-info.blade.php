@@ -66,7 +66,7 @@
                                         placeholder="{{ mb_substr($member->first_name, 0, 1) }}{{ mb_substr($member->last_name, 0,1) }}" />
                                     <div>
                                         <div class="text-sm font-bold">{{ $member->first_name }} {{ $member->last_name }}</div>
-                                            <div class="badge badge-outline text-[10px] opacity-70">
+                                            <div class="badge badge-outline text-xs opacity-70">
                                                 {{ __($member->committee_role
                                                     ? $member->committee_role->label()
                                                     : 'Unknown role') }}

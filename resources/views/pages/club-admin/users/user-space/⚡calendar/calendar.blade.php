@@ -177,7 +177,7 @@
                 {{-- En-têtes des jours --}}
                 <div class="grid grid-cols-7 border-b border-base-200 bg-base-200/40">
                     @for ($i = 0; $i < 7; $i++)
-                        <div class="px-1 py-1.5 text-center text-[10px] font-bold uppercase tracking-wide text-base-content/50 lg:text-left lg:px-2">
+                        <div class="px-1 py-1.5 text-center text-xs font-bold uppercase tracking-wide text-base-content/50 lg:text-left lg:px-2">
                             {{ $weekStart->copy()->addDays($i)->translatedFormat('D') }}
                         </div>
                     @endfor
@@ -194,7 +194,7 @@
                                 :aria-pressed="(selected === '{{ $day['date'] }}').toString()"
                                 class="group relative flex min-h-12 flex-col items-center gap-0.5 border-b border-r border-base-200/60 p-1 transition-colors last:border-r-0 lg:min-h-24 lg:items-stretch lg:p-1.5"
                                 :class="selected === '{{ $day['date'] }}' ? 'bg-primary/5' : 'hover:bg-base-200/40'">
-                                <span class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold lg:h-5 lg:w-5 lg:text-[11px]"
+                                <span class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold lg:h-5 lg:w-5 lg:text-xs"
                                     :class="selected === '{{ $day['date'] }}'
                                         ? 'bg-primary text-primary-content{{ $day['isToday'] ? ' ring-2 ring-primary/40 ring-offset-1 ring-offset-base-100' : '' }}'
                                         : '{{ $day['isToday'] ? 'text-primary font-bold ring-1 ring-primary' : ($day['inMonth'] ? 'text-base-content/70' : 'text-base-content/30') }}'">
@@ -202,7 +202,7 @@
                                 </span>
 
                                 {{-- Mobile : pastilles --}}
-                                <span class="flex h-1.5 items-center justify-center gap-0.5 lg:hidden">
+                                <span class="flex h-3 items-center justify-center gap-0.5 lg:hidden">
                                     @foreach (array_slice($day['events'], 0, 3) as $event)
                                         <span @class([
                                             'h-1.5 w-1.5 rounded-full',
@@ -211,7 +211,7 @@
                                         ])></span>
                                     @endforeach
                                     @if (count($day['events']) > 3)
-                                        <span class="text-[8px] font-bold leading-none text-base-content/50">+{{ count($day['events']) - 3 }}</span>
+                                        <span class="text-xs font-bold leading-none text-base-content/50">+{{ count($day['events']) - 3 }}</span>
                                     @endif
                                 </span>
 
@@ -219,7 +219,7 @@
                                 <span class="hidden w-full min-w-0 flex-col gap-0.5 lg:flex">
                                     @foreach (array_slice($day['events'], 0, 3) as $event)
                                         <span @class([
-                                            'block truncate rounded border-l-[3px] px-1 py-0.5 text-left text-[11px] font-medium leading-tight',
+                                            'block truncate rounded border-l-[3px] px-1 py-0.5 text-left text-xs font-medium leading-tight',
                                             $typeChipClasses[$event['type']] ?? 'border-base-300 bg-base-200',
                                             'text-muted' => $day['isPast'],
                                         ])>
@@ -232,7 +232,7 @@
                                         </span>
                                     @endforeach
                                     @if (count($day['events']) > 3)
-                                        <span class="px-1 text-left text-[10px] font-semibold text-base-content/50">
+                                        <span class="px-1 text-left text-xs font-semibold text-base-content/50">
                                             +{{ count($day['events']) - 3 }}
                                         </span>
                                     @endif
@@ -260,7 +260,7 @@
                     <button type="button" wire:click="toggleCategory('{{ $type }}')"
                         :aria-pressed="@js(in_array($type, $selectedCategories))"
                         @class([
-                            'flex items-center gap-1.5 text-[11px] transition-opacity',
+                            'flex items-center gap-1.5 text-xs transition-opacity',
                             'text-base-content/60 hover:text-base-content' => $selectedCategories === [] || in_array($type, $selectedCategories),
                             'opacity-35 line-through hover:opacity-70' => $selectedCategories !== [] && ! in_array($type, $selectedCategories),
                         ])>

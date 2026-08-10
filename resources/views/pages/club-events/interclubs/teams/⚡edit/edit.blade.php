@@ -97,7 +97,7 @@
                                 {{ $captainId === $member->id ? 'bg-yellow-50 font-semibold text-yellow-800' : 'text-gray-700' }}">
                             <span>{{ $member->first_name }} {{ $member->last_name }}</span>
                             @if ($member->ranking)
-                                <span class="ml-auto rounded bg-gray-100 px-1 py-0.5 text-[10px] font-semibold text-gray-500">
+                                <span class="ml-auto rounded bg-gray-100 px-1 py-0.5 text-xs font-semibold text-gray-500">
                                     {{ $member->ranking }}
                                 </span>
                             @endif
@@ -149,7 +149,7 @@
                                     {{ $user->first_name }} {{ $user->last_name }}
                                 </span>
                                 @if ($captainId === $user->id)
-                                    <span class="ml-1.5 rounded bg-yellow-100 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-700">Cap.</span>
+                                    <span class="ml-1.5 rounded bg-yellow-100 px-1.5 py-0.5 text-xs font-semibold text-yellow-700">Cap.</span>
                                 @endif
                             </div>
                             @if ($user->ranking)

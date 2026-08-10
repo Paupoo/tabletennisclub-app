@@ -111,7 +111,7 @@
 
                     {{-- Avatar --}}
                     <div @class([
-                        'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 bg-base-200',
+                        'w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0 bg-base-200',
                         'ring-1 ring-amber-400'  => $rank === 1,
                         'ring-1 ring-slate-400'  => $rank === 2,
                         'ring-1 ring-orange-400' => $rank === 3,

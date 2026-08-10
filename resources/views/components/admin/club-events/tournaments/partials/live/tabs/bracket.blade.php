@@ -24,7 +24,7 @@
                 @if (isset($rounds[$round]) && $rounds[$round]->count() > 0)
                     <div class="flex flex-col min-w-[200px]">
                         <div
-                            class="text-center font-bold text-base-content/40 uppercase text-[10px] tracking-widest h-8 mb-2">
+                            class="text-center font-bold text-base-content/40 uppercase text-xs tracking-widest h-8 mb-2">
                             {{ $roundLabels[$round] ?? $round }}
                         </div>
 
@@ -130,7 +130,7 @@
                 $b2Name = $bDoubles ? $bronze->pair2?->displayName() ?? '—' : $bronze->player2?->full_name ?? '—';
             @endphp
             <div class="mt-6 max-w-xs border-2 border-info rounded-xl p-4 space-y-2 shadow">
-                <div class="text-center font-bold text-info uppercase text-[10px] tracking-widest mb-3">
+                <div class="text-center font-bold text-info uppercase text-xs tracking-widest mb-3">
                     {{ __('3rd Place') }}
                 </div>
                 <div @class([

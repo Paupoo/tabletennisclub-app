@@ -60,7 +60,7 @@
                                 </div>
                                 <div class="flex flex-col">
                                     <span @class(['font-bold text-sm truncate', 'text-warning-content line-through' => $p1Busy])>{{ $side1Name }}</span>
-                                    <span class="text-[10px] opacity-30 italic font-black my-0.5">VS</span>
+                                    <span class="text-xs opacity-30 italic font-black my-0.5">VS</span>
                                     <span @class(['font-bold text-sm truncate', 'text-warning-content line-through' => $p2Busy])>{{ $side2Name }}</span>
                                 </div>
                                 @if ($refereeName)

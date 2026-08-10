@@ -48,7 +48,7 @@
         <div class="flex items-center justify-between">
 
             <div>
-                <p class="{{ $colors['header_text'] }} text-[15px] font-medium leading-tight">
+                <p class="{{ $colors['header_text'] }} text-base font-medium leading-tight">
                     {{ $training['title'] }}
                 </p>
             </div>
@@ -59,7 +59,7 @@
     <div class="px-4 py-3">
 
         {{-- INFOS --}}
-        <div class="mb-3 space-y-1.5 text-[13px] text-base-content/80">
+        <div class="mb-3 space-y-1.5 text-sm text-base-content/80">
 
             <div class="flex items-center gap-2">
                 <x-icon class="h-4 w-4 opacity-50" name="o-clock" />
@@ -80,7 +80,7 @@
 
         {{-- PROGRESS --}}
         <div class="mb-3">
-            <div class="mb-1 flex items-center justify-between text-[11px] text-base-content/60">
+            <div class="mb-1 flex items-center justify-between text-xs text-base-content/60">
                 <span>
                     {{ $training['current_spots'] }} / {{ $training['max_spots'] }}
                 </span>
@@ -99,7 +99,7 @@
         <div class="flex items-center justify-between border-t border-base-200 pt-2">
 
             {{-- Links (comme mobile) --}}
-            <div class="flex flex-wrap gap-3 text-[12px]">
+            <div class="flex flex-wrap gap-3 text-xs">
                 <x-button class="btn-ghost btn-sm text-xs text-base-content/60 transition hover:text-base-content" href="#">
                     {{ __('Details') }}
                 </x-button>

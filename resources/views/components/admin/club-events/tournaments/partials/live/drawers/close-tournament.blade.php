@@ -94,7 +94,7 @@
                         <div class="divide-y divide-base-200">
                             @foreach ($this->unpaidParticipants as $user)
                                 <div class="flex items-center gap-3 px-3 py-2">
-                                    <div class="w-7 h-7 rounded-full bg-base-200 flex items-center justify-center text-[10px] font-black shrink-0">
+                                    <div class="w-7 h-7 rounded-full bg-base-200 flex items-center justify-center text-xs font-black shrink-0">
                                         {{ mb_strtoupper(mb_substr($user->first_name ?? '?', 0, 1)) }}{{ mb_strtoupper(mb_substr($user->last_name ?? '', 0, 1)) }}
                                     </div>
                                     <span class="flex-1 text-sm font-medium">{{ $user->full_name }}</span>

@@ -21,7 +21,7 @@
                         <x-choices label="Room(s)(*)" wire:model.live="selectedRooms" :options="$this->availableRooms"
                             icon="o-map-pin" />
                         @if ($this->hasRegisteredUsers)
-                            <span class="absolute top-0 right-0 text-[10px] text-warning-content font-medium flex items-center gap-0.5">
+                            <span class="absolute top-0 right-0 text-xs text-warning-content font-medium flex items-center gap-0.5">
                                 <x-icon name="o-bell-alert" class="w-3 h-3" /> {{ __('Will notify') }}
                             </span>
                         @endif
@@ -32,7 +32,7 @@
                         <x-datepicker label="Date(*)" icon="o-calendar"
                             wire:model="tournamentDate" type="date" />
                         @if ($this->hasRegisteredUsers)
-                            <span class="absolute top-0 right-0 text-[10px] text-warning-content font-medium flex items-center gap-0.5">
+                            <span class="absolute top-0 right-0 text-xs text-warning-content font-medium flex items-center gap-0.5">
                                 <x-icon name="o-bell-alert" class="w-3 h-3" /> {{ __('Will notify') }}
                             </span>
                         @endif
@@ -42,7 +42,7 @@
                     <div class="relative">
                         <x-input label="Start time(*)" type="time" icon="o-clock" wire:model="startTime" />
                         @if ($this->hasRegisteredUsers)
-                            <span class="absolute top-0 right-0 text-[10px] text-warning-content font-medium flex items-center gap-0.5">
+                            <span class="absolute top-0 right-0 text-xs text-warning-content font-medium flex items-center gap-0.5">
                                 <x-icon name="o-bell-alert" class="w-3 h-3" /> {{ __('Will notify') }}
                             </span>
                         @endif

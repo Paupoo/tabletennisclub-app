@@ -209,7 +209,7 @@
             @if ($payment->last_reminded_at)
                 @php $chasedDaysAgo = \Carbon\Carbon::parse($payment->last_reminded_at)->diffInDays(now()); @endphp
                 <div @class([
-                    'text-[11px] mt-0.5',
+                    'text-xs mt-0.5',
                     'text-warning font-semibold' => $chasedDaysAgo >= 15,
                     'text-muted' => $chasedDaysAgo < 15,
                 ])>
@@ -462,11 +462,11 @@
                     <div class="flex items-center gap-2">
                         <span class="font-medium text-sm truncate">{{ $transaction->counterparty_name ?? '—' }}</span>
                         @if($score === 'perfect')
-                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-success bg-success/15 px-1.5 py-0.5 rounded">{{ __('Perfect match') }}</span>
+                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-success bg-success/15 px-1.5 py-0.5 rounded">{{ __('Perfect match') }}</span>
                         @elseif($score === 'reference')
-                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-info bg-info/15 px-1.5 py-0.5 rounded">{{ __('Ref. match') }}</span>
+                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-info bg-info/15 px-1.5 py-0.5 rounded">{{ __('Ref. match') }}</span>
                         @elseif($score === 'amount')
-                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-warning-content bg-warning/15 px-1.5 py-0.5 rounded">{{ __('Amount match') }}</span>
+                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-warning-content bg-warning/15 px-1.5 py-0.5 rounded">{{ __('Amount match') }}</span>
                         @endif
                     </div>
                     @if($transaction->structured_reference)
@@ -616,11 +616,11 @@
                     <div class="flex items-center gap-2">
                         <span class="font-medium text-sm truncate">{{ $transaction->counterparty_name ?? '—' }}</span>
                         @if($score === 'perfect')
-                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-success bg-success/15 px-1.5 py-0.5 rounded">{{ __('Perfect match') }}</span>
+                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-success bg-success/15 px-1.5 py-0.5 rounded">{{ __('Perfect match') }}</span>
                         @elseif($score === 'iban')
-                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-info bg-info/15 px-1.5 py-0.5 rounded">{{ __('IBAN match') }}</span>
+                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-info bg-info/15 px-1.5 py-0.5 rounded">{{ __('IBAN match') }}</span>
                         @elseif($score === 'amount')
-                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-warning-content bg-warning/15 px-1.5 py-0.5 rounded">{{ __('Amount match') }}</span>
+                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-warning-content bg-warning/15 px-1.5 py-0.5 rounded">{{ __('Amount match') }}</span>
                         @endif
                     </div>
                     @if($transaction->counterparty_bank_account)

@@ -81,7 +81,7 @@
                                     <div class="flex min-w-0 flex-1 items-center gap-4">
                                         {{-- Numéro semaine --}}
                                         <div class="bg-base-200 flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl">
-                                            <div class="text-[10px] font-semibold uppercase opacity-60">S</div>
+                                            <div class="text-xs font-semibold uppercase opacity-60">S</div>
                                             <div class="text-sm font-bold leading-none">{{ $matchDayMap[$match['week_number']] ?? $match['week_number'] }}</div>
                                         </div>
 

@@ -14,7 +14,6 @@
         'violet'  => ['pill_bg' => 'bg-violet-50 dark:bg-violet-950/40', 'pill_border' => 'border-violet-200 dark:border-violet-800', 'pill_text' => 'text-violet-700 dark:text-violet-300', 'dot' => 'bg-violet-500', 'sep' => 'border-violet-100 dark:border-violet-900/50'],
         'emerald' => ['pill_bg' => 'bg-emerald-50 dark:bg-emerald-950/40','pill_border' => 'border-emerald-200 dark:border-emerald-800','pill_text' => 'text-emerald-700 dark:text-emerald-300','dot' => 'bg-emerald-500','sep' => 'border-emerald-100 dark:border-emerald-900/50'],
         'pink'    => ['pill_bg' => 'bg-pink-50   dark:bg-pink-950/40',   'pill_border' => 'border-pink-200   dark:border-pink-800',   'pill_text' => 'text-pink-700   dark:text-pink-300',   'dot' => 'bg-pink-500',   'sep' => 'border-pink-100   dark:border-pink-900/50'],
-        'indigo'  => ['pill_bg' => 'bg-indigo-50 dark:bg-indigo-950/40', 'pill_border' => 'border-indigo-200 dark:border-indigo-800', 'pill_text' => 'text-indigo-700 dark:text-indigo-300', 'dot' => 'bg-indigo-500', 'sep' => 'border-indigo-100 dark:border-indigo-900/50'],
         'gray'    => ['pill_bg' => 'bg-base-200  dark:bg-base-300/20',   'pill_border' => 'border-base-300',                          'pill_text' => 'text-base-content/60',                  'dot' => 'bg-base-content/30','sep' => 'border-base-200'],
     ];
     $c = $colors[$color] ?? $colors['gray'];

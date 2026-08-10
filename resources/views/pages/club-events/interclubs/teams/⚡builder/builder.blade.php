@@ -170,7 +170,7 @@
                                             </span>
                                         @endif
                                         @if ($player->forceListFor($teamCategory) !== null)
-                                            <span class="rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-semibold text-indigo-400"
+                                            <span class="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary"
                                                 title="Liste de force">
                                                 #{{ $player->forceListFor($teamCategory) }}
                                             </span>
@@ -255,7 +255,7 @@
                                             </span>
                                         @endif
                                         @if ($player->forceListFor($teamCategory) !== null)
-                                            <span class="rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-semibold text-indigo-400"
+                                            <span class="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary"
                                                 title="Liste de force">
                                                 #{{ $player->forceListFor($teamCategory) }}
                                             </span>

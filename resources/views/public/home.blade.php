@@ -1,4 +1,4 @@
-<x-guest-layout title="Accueil - CTT Ottignies">
+<x-guest-layout :title="'Accueil - ' . config('app.name')">
     <section id="home">
         <x-public.hero />
     </section>

@@ -1,5 +1,5 @@
 <div>
-    <x-guest-layout title="Actualités - CTT Ottignies-Blocry">
+    <x-guest-layout :title="'Actualités - ' . config('app.name')">
         
         <!-- Header -->
 <div class="relative h-auto pt-16 text-white flex items-center overflow-hidden">

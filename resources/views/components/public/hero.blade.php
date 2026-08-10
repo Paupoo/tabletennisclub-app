@@ -10,7 +10,7 @@
     <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div class="text-center">
             <h1 class="text-5xl md:text-7xl font-bold mb-6 fade-in-up drop-shadow-lg">
-                {{ $title ?? 'CTT Ottignies-Blocry' }}
+                {{ $title ?? config('app.name') }}
             </h1>
             <p class="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90 fade-in-up drop-shadow-md" style="animation-delay: 0.2s;">
                 {{ $subtitle ?? 'Rejoignez notre communauté passionnée de joueurs de tennis de table. Des débutants aux champions, tout le monde est le bienvenu au sein de notre club.' }}

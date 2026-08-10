@@ -66,25 +66,20 @@
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
     <div class="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
         @php
+            /** La couleur vit sur la pastille, jamais sur le chiffre : voir l'en-tête de `stat-card`. */
             $statCards = [
-                ['label' => __('Total'),        'key' => 'total',        'icon' => 'o-users',        'bg' => 'bg-base-200',    'color' => 'text-base-content/60'],
-                ['label' => __('Registered'),   'key' => 'registered',   'icon' => 'o-check-circle', 'bg' => 'bg-success/10',  'color' => 'text-success'],
-                ['label' => __('Competitive'),  'key' => 'competitive',  'icon' => 'o-trophy',       'bg' => 'bg-primary/10',  'color' => 'text-primary'],
-                ['label' => __('Unregistered'), 'key' => 'unregistered', 'icon' => 'o-x-circle',     'bg' => 'bg-base-200',    'color' => 'text-base-content/30'],
+                ['label' => __('Total'),        'key' => 'total',        'icon' => 'o-users',        'color' => 'neutral'],
+                ['label' => __('Registered'),   'key' => 'registered',   'icon' => 'o-check-circle', 'color' => 'success'],
+                ['label' => __('Competitive'),  'key' => 'competitive',  'icon' => 'o-trophy',       'color' => 'primary'],
+                ['label' => __('Unregistered'), 'key' => 'unregistered', 'icon' => 'o-x-circle',     'color' => 'neutral'],
             ];
         @endphp
         @foreach ($statCards as $card)
-            <x-card class="shadow-sm">
-                <div class="flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl {{ $card['bg'] }}">
-                        <x-icon name="{{ $card['icon'] }}" class="h-5 w-5 {{ $card['color'] }}" />
-                    </div>
-                    <div>
-                        <p class="text-2xl font-bold {{ $card['color'] }}">{{ $stats[$card['key']] ?? 0 }}</p>
-                        <p class="text-xs text-muted">{{ $card['label'] }}</p>
-                    </div>
-                </div>
-            </x-card>
+            <x-admin.shared.stat-card
+                :label="$card['label']"
+                :value="$stats[$card['key']] ?? 0"
+                :icon="$card['icon']"
+                :color="$card['color']" />
         @endforeach
     </div>
 

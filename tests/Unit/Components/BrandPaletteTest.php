@@ -28,7 +28,7 @@ function brandScannedFiles(): array
 
     return collect($roots)
         ->flatMap(fn (string $root): array => File::allFiles($root))
-        ->filter(fn ($file): bool => in_array($file->getExtension(), ['php'], true))
+        ->filter(fn ($file): bool => $file->getExtension() === 'php')
         ->map(fn ($file): string => $file->getPathname())
         ->values()
         ->all();

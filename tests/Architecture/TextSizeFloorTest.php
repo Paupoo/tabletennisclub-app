@@ -39,7 +39,7 @@ it('never sizes text below the 12px floor, nor off the scale', function (): void
             $offenders[] = sprintf(
                 '%s:%d  %s',
                 str_replace($viewsPath . '/', '', $file->getPathname()),
-                substr_count(substr($source, 0, (int) $whole[1]), "\n") + 1,
+                substr_count(substr($source, 0, $whole[1]), "\n") + 1,
                 $whole[0],
             );
         }

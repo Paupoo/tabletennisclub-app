@@ -19,6 +19,9 @@
         </x-slot:actions>
     </x-header>
 
+    {{-- ── Season: navigation, not a filter (DS-A) ──────────────────────────── --}}
+    <x-admin.shared.season-nav model="seasonId" :options="$seasons" class="mt-4" />
+
     {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
@@ -194,18 +197,6 @@
     {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
-            <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
-                    {{ __('Season') }}
-                </p>
-                <x-select
-                    :options="$seasons"
-                    option-label="name"
-                    option-value="id"
-                    wire:model.live="seasonId"
-                    :placeholder="__('Select a season')"
-                    class="w-full" />
-            </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Team') }}

@@ -131,9 +131,12 @@ new class extends Component
         $this->selectedPackId = null;
     }
 
+    /**
+     * The season is navigation, not a filter (DS-A): clearing the filters must
+     * not send the reader back to another season than the one they are looking at.
+     */
     public function clearFilters(): void
     {
-        $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
         $this->showInactive = false;
     }
 
@@ -267,13 +270,6 @@ new class extends Component
     public function getFilterChips(): array
     {
         $chips = [];
-
-        $activeSeasonId = Season::where('is_active', true)->value('id') ?? 0;
-
-        if ($this->viewSeasonId !== $activeSeasonId) {
-            $seasonName = Season::find($this->viewSeasonId)?->name ?? __('All seasons');
-            $chips[] = ['key' => 'viewSeasonId', 'label' => __('Season') . ': ' . $seasonName];
-        }
 
         if ($this->showInactive) {
             $chips[] = ['key' => 'showInactive', 'label' => __('Withdrawn packs shown')];
@@ -528,12 +524,6 @@ new class extends Component
 
     public function removeFilter(string $key): void
     {
-        if ($key === 'viewSeasonId') {
-            $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
-
-            return;
-        }
-
         $this->reset([$key]);
     }
 

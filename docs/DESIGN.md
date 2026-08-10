@@ -318,28 +318,21 @@ breadcrumbs → header (title | search | [filters] [create]) → filter-chips �
 
 | Slot | Content | When |
 |------|---------|------|
-| `x-slot:middle` | Search input | Always (unless season selector is present) |
-| `x-slot:middle` | Season `<x-select>` | When page is scoped by season (replaces search in middle) |
+| `x-slot:middle` | Search input | Always |
 | `x-slot:actions` | `[Filters▾ N]` button | When page has filterable columns |
 | `x-slot:actions` | `[+ Create]` button | Always |
-| `x-slot:actions` | Search input | Only when middle is taken by season selector |
 
-**Season selector edge case** — when a page is season-scoped, the season selector takes the middle slot and search moves to actions:
+**Season-scoped pages (DS-A, validated 2026-08-08)** — a criterion that determines
+*what the page is about* (exactly one value, never empty, nothing renders without it)
+is **navigation**, not a filter. It stays visible above the content; it never goes in
+the header slots and never in the filter drawer, and it produces no `filter-chip`:
 
 ```blade
-<x-header progress-indicator separator :title="__('Teams')">
-    <x-slot:middle>
-        <x-select :options="$seasons" option-label="name" option-value="id"
-            wire:model.live="selectedSeasonId" :placeholder="__('Select a season')"
-            class="w-48" />
-    </x-slot:middle>
-    <x-slot:actions>
-        <x-input clearable icon="o-magnifying-glass" :placeholder="__('Search...')"
-            wire:model.live.debounce.300ms="search" />
-        <x-button class="btn-primary" icon="o-plus" :label="__('Create')" ... />
-    </x-slot:actions>
-</x-header>
+<x-admin.shared.season-nav model="seasonId" :options="$seasons" class="mt-4" />
 ```
+
+`clearFilters()` must leave it alone — clearing filters is not a way to change page.
+A season that genuinely *narrows a set* (captain-selection) stays a filter, in the drawer.
 
 ---
 

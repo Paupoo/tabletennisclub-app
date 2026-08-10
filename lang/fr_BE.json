@@ -672,7 +672,6 @@
     "Cannot delete: this team has matches linked to it.": "Impossible de supprimer : cette équipe a des matchs associés.",
     "Cannot enroll with a cancelled subscription.": "Impossible de s'inscrire avec une affiliation annulée.",
     "Cannot generate payment for current subscription state.": "Impossible de générer un paiement pour l'état d'affiliation actuel.",
-    "Cannot mark as paid from pending status. Confirm first.": "Impossible de marquer comme payé depuis le statut en attente. Confirmez d'abord.",
     "Cannot publish": "Impossible de publier",
     "Capacities": "Capacités",
     "Capacity": "Capacité",

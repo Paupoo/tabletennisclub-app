@@ -76,11 +76,16 @@ test('English sentences shown to members are translated in fr_BE.json', function
      * speaker read English. Single words that are spelled the same in both
      * languages (Score, Format, Total…) are deliberately absent.
      *
+     * 'Cannot mark as paid from pending status. Confirm first.' is absent on
+     * purpose: it is the message of a LogicException that signals a programmer
+     * error and never reaches a member, and its two sibling states throw the
+     * same family of exception in plain English. It no longer goes through
+     * __(), so there is nothing left to translate.
+     *
      * @var string[]
      */
     $keys = [
         'Bye',
-        'Cannot mark as paid from pending status. Confirm first.',
         'Confirm and close',
         'Could not load data.',
         'Doubles',

@@ -1,5 +1,5 @@
 <div>
-    <x-guest-layout :title="'Actualités - ' . config('app.name')">
+    <x-guest-layout :title="'Actualités - ' . config('club.name')">
         
         <!-- Header -->
 <div class="relative h-auto pt-16 text-white flex items-center overflow-hidden">

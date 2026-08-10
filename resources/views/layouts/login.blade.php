@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Connexion - {{ config('app.name') }}</title>
+    <title>Connexion - {{ config('club.name') }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-club.svg') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @if(app()->environment('production'))
@@ -28,7 +28,7 @@
                 </a>
                 <!-- Nom du club sous le logo -->
                 <h1 class="mt-4 text-2xl font-bold text-center text-gray-800 dark:text-gray-100">
-                    {{ config('app.name') }}
+                    {{ config('club.name') }}
                 </h1>
 
             </div>

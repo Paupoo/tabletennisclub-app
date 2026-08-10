@@ -1,4 +1,4 @@
-<x-guest-layout :title="'Accueil - ' . config('app.name')">
+<x-guest-layout :title="'Accueil - ' . config('club.name')">
     <section id="home">
         <x-public.hero />
     </section>

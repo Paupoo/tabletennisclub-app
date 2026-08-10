@@ -31,7 +31,7 @@ class AppBrand extends Component
                         <div class="flex flex-col items-center shrink-0 gap-2">
                             <x-logo class="block w-auto text-primary fill-current h-9" />
                             <span class="hidden sm:block ml-4 text-lg font-bold text-primary">
-                                {{ config('app.name', 'Club') }}
+                                {{ config('club.name') }}
                             </span>
                         </div>
                     </div>

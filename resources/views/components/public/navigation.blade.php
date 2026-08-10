@@ -8,7 +8,7 @@
 
                             <x-logo class="block w-auto text-club-blue dark:text-club-yellow fill-current h-9 group-hover:text-club-blue-light transition-colors duration-200" />
 
-                            <h1 class="text-2xl md:text-xl lg:text-2xl font-bold text-club-blue dark:dark:text-club-yellow">{{ config('app.name') }}</h1>
+                            <h1 class="text-2xl md:text-xl lg:text-2xl font-bold text-club-blue dark:dark:text-club-yellow">{{ config('club.name') }}</h1>
                         </div>
                     </a>
                 </div>

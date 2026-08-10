@@ -2,7 +2,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid md:grid-cols-3 gap-8">
             <div>
-                <h3 class="text-2xl font-bold mb-4">🏓 {{ config('app.name') }}</h3>
+                <h3 class="text-2xl font-bold mb-4">🏓 {{ config('club.name') }}</h3>
                 <p class="text-white/70 mb-4">
                     Votre destination de choix pour le tennis de table à Ottignies et environs. Rejoignez notre
                     communauté dès aujourd'hui !
@@ -84,7 +84,7 @@
                 </div>
 
                 <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm">
-                    <p>&copy; {{ date('Y') }} {{ config('app.name') }}. Tous droits réservés.</p>
+                    <p>&copy; {{ date('Y') }} {{ config('club.name') }}. Tous droits réservés.</p>
                     <span class="hidden sm:inline text-white/40">•</span>
                     <a href="#" class="text-white/70 underline hover:text-white transition-colors text-xs"
                         onclick="showLicense(); return false;">

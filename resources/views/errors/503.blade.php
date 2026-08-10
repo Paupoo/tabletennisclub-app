@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maintenance en cours - {{ config('app.name') }}</title>
+    <title>Maintenance en cours - {{ config('club.name') }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -58,7 +58,7 @@
             <!-- Description -->
             <div class="space-y-4 mb-8 text-gray-600">
                 <p class="text-lg md:text-xl leading-relaxed">
-                    Le site du {{ config('app.name') }} est actuellement en maintenance pour améliorer votre expérience.
+                    Le site du {{ config('club.name') }} est actuellement en maintenance pour améliorer votre expérience.
                 </p>
                 <p class="text-base">
                     Notre équipe travaille activement pour remettre le service en ligne dans les plus brefs délais.

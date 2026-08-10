@@ -373,11 +373,16 @@ select:focus {
   Breadcrumb entries are 19px tall at text-sm, which puts the trail back to the
   dashboard under the thumb floor on every screen that has one. Mary renders the
   trail as a bare <ul class="flex items-center">, so the layout supplies the hook.
+
+  The gap belongs here too: Mary puts the entry's icon and its label side by side
+  with nothing but Blade whitespace between them, and inline-flex drops that
+  whitespace — the home icon would otherwise touch its label on every screen.
 */
 .breadcrumb-trail a,
 .breadcrumb-trail button {
   display: inline-flex;
   align-items: center;
+  gap: 0.25rem;
   min-block-size: 24px;
 }
 

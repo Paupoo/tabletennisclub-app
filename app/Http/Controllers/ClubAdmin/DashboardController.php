@@ -276,7 +276,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return array<int, array{icon: string, label: string, sub: string, href: string, color: string}>
+     * @return array<int, array{icon: string, label: string, sub: string, href: string}>
      */
     private function buildMemberTiles(User $user): array
     {

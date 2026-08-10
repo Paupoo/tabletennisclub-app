@@ -174,7 +174,7 @@
     </div>
 
     {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
-    <x-card class="hidden bg-base-100 border-none shadow-sm rounded-t-none lg:block">
+    <x-card class="hidden bg-base-100 shadow-sm rounded-t-none lg:block">
         <x-table :headers="$headers" :rows="$payments" :sort-by="$sortBy" wire:model.live="selected" selectable hover>
 
             @scope('cell_reference', $payment)

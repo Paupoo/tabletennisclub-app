@@ -123,7 +123,7 @@
     </div>
 
     {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
-    <x-card class="bg-base-100 border-none shadow-sm mt-6 hidden lg:block">
+    <x-card class="bg-base-100 shadow-sm mt-6 hidden lg:block">
         <x-table :headers="$headers" :rows="$activities" :sort-by="$sortBy" hover>
 
             @scope('cell_created_at', $activity)

@@ -56,7 +56,7 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     @if ($teams->isEmpty())
-        <x-card class="border-none">
+        <x-card>
             <div class="py-16 text-center text-gray-500">
                 @if ($season)
                     Aucune équipe pour la saison {{ $season->name }}.

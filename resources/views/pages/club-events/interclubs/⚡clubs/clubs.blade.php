@@ -22,7 +22,7 @@
     </x-header>
 
     @if ($clubs->isEmpty())
-        <x-card class="mt-4 border-none">
+        <x-card class="mt-4">
             <div class="py-16 text-center text-gray-500">
                 @if ($search)
                     <p class="text-sm">{{ __('No clubs match your search.') }}</p>

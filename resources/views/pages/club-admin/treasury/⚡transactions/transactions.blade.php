@@ -73,7 +73,7 @@
             class="col-span-2 lg:col-span-1" />
     </div>
 
-    <x-card class="bg-base-100 border-none shadow-sm">
+    <x-card class="bg-base-100 shadow-sm">
         <x-table :headers="$headers" :rows="$transactions" :sort-by="$sortBy" wire:model.live="selected" selectable hover>
 
             @scope('cell_date', $transaction)

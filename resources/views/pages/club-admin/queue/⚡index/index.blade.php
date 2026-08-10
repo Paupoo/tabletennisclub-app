@@ -20,7 +20,7 @@
     {{-- ── Health tiles ─────────────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
         {{-- Worker status --}}
-        <x-card class="bg-base-100 border-none shadow-sm">
+        <x-card class="bg-base-100 shadow-sm">
             <div class="flex items-center gap-3">
                 @if ($workerStatus === 'stalled')
                     <div class="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center shrink-0">
@@ -51,7 +51,7 @@
         </x-card>
 
         {{-- Pending count --}}
-        <x-card class="bg-base-100 border-none shadow-sm">
+        <x-card class="bg-base-100 shadow-sm">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <x-icon name="o-queue-list" class="w-5 h-5 text-primary" />
@@ -64,7 +64,7 @@
         </x-card>
 
         {{-- Failed count --}}
-        <x-card class="bg-base-100 border-none shadow-sm">
+        <x-card class="bg-base-100 shadow-sm">
             <div class="flex items-center gap-3">
                 <div @class([
                     'w-10 h-10 rounded-full flex items-center justify-center shrink-0',
@@ -82,7 +82,7 @@
     </div>
 
     {{-- ── Pending jobs ─────────────────────────────────────────────────────── --}}
-    <x-card class="bg-base-100 border-none shadow-sm mt-6" :title="__('Pending jobs')">
+    <x-card class="bg-base-100 shadow-sm mt-6" :title="__('Pending jobs')">
         @if (count($pendingJobs) === 0)
             <x-empty-state icon="o-inbox" :heading="__('Queue empty')" :message="__('Nothing waiting to be processed')" />
         @else
@@ -113,7 +113,7 @@
     </x-card>
 
     {{-- ── Failed jobs ──────────────────────────────────────────────────────── --}}
-    <x-card class="bg-base-100 border-none shadow-sm mt-6" :title="__('Failed jobs')">
+    <x-card class="bg-base-100 shadow-sm mt-6" :title="__('Failed jobs')">
         @if (count($failedJobs) === 0)
             <x-empty-state icon="o-check-badge" :heading="__('No failures')" :message="__('No job has failed recently.')" />
         @else

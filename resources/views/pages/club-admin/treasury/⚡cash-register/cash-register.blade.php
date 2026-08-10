@@ -89,7 +89,7 @@
     </div>
 
     {{-- Entries history --}}
-    <x-card class="bg-base-100 border-none shadow-sm">
+    <x-card class="bg-base-100 shadow-sm">
         <div class="text-xs font-bold uppercase tracking-widest text-muted mb-4">{{ __('History') }}</div>
 
         @forelse($this->register->entries->sortByDesc('created_at') as $entry)

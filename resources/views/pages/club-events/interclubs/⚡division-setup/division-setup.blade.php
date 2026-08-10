@@ -35,11 +35,11 @@
     </x-admin.shared.filter-drawer>
 
     @if (! $seasonId)
-        <x-card class="mt-4 border-none">
+        <x-card class="mt-4">
             <p class="py-12 text-center text-sm text-gray-500">{{ __('Select a season to manage divisions.') }}</p>
         </x-card>
     @elseif ($leagues->isEmpty())
-        <x-card class="mt-4 border-none">
+        <x-card class="mt-4">
             <p class="py-12 text-center text-sm text-gray-500">{{ __('No divisions found for this season. Create your club\'s teams first.') }}</p>
         </x-card>
     @else

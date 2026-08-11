@@ -387,6 +387,7 @@ new class extends Component
             ['key' => 'email',          'label' => __('Email'),   'sortable' => true],
             ['key' => 'is_competitive', 'label' => __('Licence'), 'sortable' => true],
             ['key' => 'ranking',        'label' => __('Ranking'), 'sortable' => true],
+            ['key' => 'status',         'label' => __('Status'),  'sortable' => false],
         ];
     }
 

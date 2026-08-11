@@ -200,13 +200,16 @@
                     @scope('cell_photo', $user)
                         <x-avatar class="h-10 w-10" image="{{ $user->photo ?? '/images/empty-user.jpg' }}" />
                     @endscope
+                    {{-- A member's name is what the eye scans down the column, so it stays
+                         on one line: the status column added here costs width, and without
+                         this every name of average length folded in two. --}}
                     @scope('cell_name', $user)
                         @can('update', $user)
-                            <a class="font-medium hover:underline" href="{{ route('admin.users.edit', $user) }}">
+                            <a class="font-medium whitespace-nowrap hover:underline" href="{{ route('admin.users.edit', $user) }}">
                                 {{ $user->first_name }} {{ $user->last_name }}
                             </a>
                         @else
-                            <span class="font-medium">{{ $user->first_name }} {{ $user->last_name }}</span>
+                            <span class="font-medium whitespace-nowrap">{{ $user->first_name }} {{ $user->last_name }}</span>
                         @endcan
                     @endscope
                     @scope('cell_is_competitive', $user)
@@ -219,23 +222,36 @@
                     @scope('cell_ranking', $user)
                         <span class="text-sm font-mono">{{ $user->ranking ?? '—' }}</span>
                     @endscope
+                    {{-- Where the member stands belongs to a column of its own. Sharing the
+                         actions cell, "Compte créé" had 22px of text in a 14px badge-xs and
+                         was clipped on every row: a cell sized for controls is not sized
+                         for prose. --}}
+                    @scope('cell_status', $user)
+                        @php
+                            $invBadge = match($user->invitationStatus()) {
+                                'active'  => ['label' => __('Account created'), 'class' => 'badge-success badge-soft badge-sm'],
+                                'pending' => ['label' => __('Pending'),         'class' => 'badge-warning badge-soft badge-sm'],
+                                'expired' => ['label' => __('Expired'),         'class' => 'badge-error badge-soft badge-sm'],
+                                default   => ['label' => __('Not invited'),     'class' => 'badge-ghost badge-sm'],
+                            };
+                        @endphp
+                        {{-- shrink-0 is what keeps the label whole: inside a flex row the
+                             badge is squeezed under its own text width, and a badge has a
+                             fixed height, so the second line is clipped rather than shown. --}}
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <x-badge :value="$invBadge['label']" class="shrink-0 whitespace-nowrap {{ $invBadge['class'] }}" />
+                            @if ($user->has_paid)
+                                <x-badge :value="__('Paid')" class="badge-success badge-soft badge-sm shrink-0 whitespace-nowrap" />
+                            @else
+                                <x-badge :value="__('Unpaid')" class="badge-error badge-soft badge-sm shrink-0 whitespace-nowrap" />
+                            @endif
+                        </div>
+                    @endscope
                     @scope('actions', $user)
                         @php
                             $invStatus = $user->invitationStatus();
-                            $invBadge = match($invStatus) {
-                                'active'  => ['label' => __('Account created'),     'class' => 'badge-success badge-soft badge-xs'],
-                                'pending' => ['label' => __('Pending'),    'class' => 'badge-warning badge-soft badge-xs'],
-                                'expired' => ['label' => __('Expired'),    'class' => 'badge-error badge-soft badge-xs'],
-                                default   => ['label' => __('Not invited'),'class' => 'badge-ghost badge-xs'],
-                            };
                         @endphp
-                        <div class="flex items-center gap-2">
-                            <x-badge :value="$invBadge['label']" class="{{ $invBadge['class'] }}" />
-                            @if ($user->has_paid)
-                                <x-badge :value="__('Paid')" class="badge-success badge-soft badge-xs" />
-                            @else
-                                <x-badge :value="__('Unpaid')" class="badge-error badge-soft badge-xs" />
-                            @endif
+                        <div class="flex items-center justify-end gap-2">
                             <x-admin.shared.row-menu
                                     :label="auth()->user()->can('update', $user) ? __('Edit') : null"
                                     icon="o-pencil"

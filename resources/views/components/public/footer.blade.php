@@ -22,10 +22,14 @@
                 </ul>
             </div>
 
+            {{-- A heading with nothing under it reads as a broken page, so the whole
+                 column waits for the club record. Before the club sheet is filled —
+                 which is the state a fresh install starts in — there is nothing to
+                 announce. --}}
+            @if($club)
             <div>
                 <h4 class="text-lg font-semibold mb-4">Informations de contact</h4>
                 <div class="space-y-2 text-white/70">
-                    @if($club)
                     <div class="flex gap-4 items-start">
                         <p>
                             📍
@@ -58,9 +62,9 @@
                         </p>
                     </div>
                     @endif
-                    @endif
                 </div>
             </div>
+            @endif
         </div>
 
         <div class="border-t border-gray-800 mt-8 pt-8 text-center text-white/70">

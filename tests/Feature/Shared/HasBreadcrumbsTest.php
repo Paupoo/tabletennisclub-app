@@ -25,7 +25,7 @@ describe('HasBreadcrumbs trait', function (): void {
 
         expect($items)->toHaveCount(1)
             ->and($items[0]['label'])->toBe(__('Admin Panel'))
-            ->and($items[0]['icon'])->toBe('s-home');
+            ->and($items[0]['icon'])->toBe('o-home');
     });
 
     it('subclass can override breadcrumbChain()', function (): void {

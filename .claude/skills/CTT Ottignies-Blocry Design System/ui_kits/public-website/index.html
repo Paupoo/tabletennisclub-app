@@ -1,0 +1,80 @@
+<!-- @dsCard group="Public Website" viewport="1200x720" name="Public website — home" subtitle="CTT Ottignies-Blocry marketing site (interactive)" -->
+<!-- @startingPoint section="Public" subtitle="Full marketing homepage — hero, about, events, news, contact" viewport="1200x800" -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CTT Ottignies-Blocry</title>
+<link rel="stylesheet" href="../../styles.css">
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; font-family: var(--font-sans); color: var(--text-strong); background: var(--white); }
+  .login-overlay { position: fixed; inset: 0; background: rgba(17,24,39,.55); backdrop-filter: blur(3px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 24px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="../../assets/heroicons.jsx" type="text/babel" data-presets="react"></script>
+<script src="PublicSite.jsx" type="text/babel" data-presets="react"></script>
+<script type="text/babel" data-presets="react">
+  const DS = window.CTTOttigniesBlocryDesignSystem_a28edf;
+  const e = React.createElement;
+
+  function LoginModal({ onClose }) {
+    const { Button, Input } = DS;
+    return e('div', { className: 'login-overlay', onClick: onClose },
+      e('div', { onClick: (ev) => ev.stopPropagation(), style: { background: '#fff', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-lg)', width: 400, maxWidth: '100%', padding: 36 } },
+        e('div', { style: { textAlign: 'center', marginBottom: 24 } },
+          e('img', { src: '../../assets/logo-club.svg', alt: 'CTT', style: { height: 52 } }),
+          e('h2', { style: { fontSize: 22, fontWeight: 700, margin: '14px 0 4px' } }, 'Espace membre'),
+          e('p', { style: { margin: 0, color: 'var(--text-muted)', fontSize: 14 } }, 'Connectez-vous à votre compte'),
+        ),
+        e('form', { onSubmit: (ev) => { ev.preventDefault(); onClose(); }, style: { display: 'flex', flexDirection: 'column', gap: 16 } },
+          e(Input, { label: 'Email', type: 'email', placeholder: 'vous@exemple.be', required: true }),
+          e(Input, { label: 'Mot de passe', type: 'password', placeholder: '••••••••', required: true }),
+          e('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 } },
+            e('label', { style: { display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)' } }, e('input', { type: 'checkbox' }), 'Se souvenir de moi'),
+            e('a', { href: '#', style: { color: 'var(--club-blue)', textDecoration: 'none' } }, 'Mot de passe oublié ?'),
+          ),
+          e(Button, { variant: 'primary', type: 'submit', style: { width: '100%' } }, 'Se connecter'),
+        ),
+      ),
+    );
+  }
+
+  function App() {
+    const { Nav, Hero, About, Events, News, Schedule, Contact, Footer } = window.PublicSite;
+    const [active, setActive] = React.useState('home');
+    const [login, setLogin] = React.useState(false);
+
+    const onNav = (id) => {
+      if (id === 'login') { setLogin(true); return; }
+      setActive(id);
+      const map = { home: 'home', about: 'about', results: 'news', events: 'events', news: 'news', contact: 'contact' };
+      const el = document.getElementById(map[id] || id);
+      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 64, behavior: 'smooth' });
+    };
+
+    return e(React.Fragment, null,
+      e(Nav, { onNav, active }),
+      e('div', { id: 'home' }, e(Hero, { onNav })),
+      e('div', { id: 'about' }, e(About)),
+      e('div', { id: 'events' }, e(Events)),
+      e('div', { id: 'news' }, e(News)),
+      e('div', { id: 'schedules' }, e(Schedule)),
+      e('div', { id: 'contact' }, e(Contact, {})),
+      e(Footer),
+      login && e(LoginModal, { onClose: () => setLogin(false) }),
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(e(App));
+</script>
+</body>
+</html>

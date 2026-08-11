@@ -1,0 +1,43 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Neutral canvas" subtitle="bumblebee base + Tailwind gray scale" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--white); color: var(--text-strong); }
+  .wrap { padding: 18px; }
+  .scale { display: flex; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border-default); }
+  .cell { flex: 1; height: 56px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 5px; font-size: 9px; font-weight: 600; }
+  .lbl { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
+  .grp { margin-bottom: 14px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="grp">
+      <div class="lbl">Gray scale — borders, text, dark surfaces</div>
+      <div class="scale">
+        <div class="cell" style="background:var(--gray-50)">50</div>
+        <div class="cell" style="background:var(--gray-100)">100</div>
+        <div class="cell" style="background:var(--gray-200)">200</div>
+        <div class="cell" style="background:var(--gray-300)">300</div>
+        <div class="cell" style="background:var(--gray-400);color:#fff">400</div>
+        <div class="cell" style="background:var(--gray-500);color:#fff">500</div>
+        <div class="cell" style="background:var(--gray-600);color:#fff">600</div>
+        <div class="cell" style="background:var(--gray-800);color:#fff">800</div>
+        <div class="cell" style="background:var(--gray-900);color:#fff">900</div>
+      </div>
+    </div>
+    <div class="grp" style="margin-bottom:0">
+      <div class="lbl">daisyUI bumblebee base</div>
+      <div class="scale">
+        <div class="cell" style="background:var(--base-100)">base-100</div>
+        <div class="cell" style="background:var(--base-200)">base-200</div>
+        <div class="cell" style="background:var(--base-300)">base-300</div>
+        <div class="cell" style="background:var(--base-content);color:#fff">content</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

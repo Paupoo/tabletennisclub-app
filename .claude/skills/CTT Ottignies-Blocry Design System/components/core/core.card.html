@@ -1,0 +1,78 @@
+<!-- @dsCard group="Components" viewport="700x340" name="Core — Button, Badge, Input, Avatar" subtitle="Brand primitives over the bumblebee theme" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--white); color: var(--text-strong); }
+  .pad { padding: 22px; display: flex; flex-direction: column; gap: 20px; }
+  .lbl { font-size: 11px; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .grp { display: flex; gap: 36px; flex-wrap: wrap; }
+  .col { flex: 1; min-width: 240px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const { Button, Badge, Input, Avatar } = window.CTTOttigniesBlocryDesignSystem_a28edf;
+  const Plus = <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>;
+  function Demo() {
+    return (
+      <div className="pad">
+        <div>
+          <div className="lbl">Buttons</div>
+          <div className="row">
+            <Button variant="primary">Rejoindre le club</Button>
+            <Button variant="secondary">En savoir plus</Button>
+            <Button variant="outline">Annuler</Button>
+            <Button variant="ghost">Détails</Button>
+            <Button variant="danger">Supprimer</Button>
+            <Button variant="primary" icon={Plus}>Nouveau</Button>
+            <Button variant="primary" disabled>Désactivé</Button>
+          </div>
+          <div className="row" style={{ marginTop: 10 }}>
+            <Button variant="primary" size="sm">Small</Button>
+            <Button variant="primary" size="md">Medium</Button>
+            <Button variant="primary" size="lg">Large</Button>
+          </div>
+        </div>
+        <div className="grp">
+          <div className="col">
+            <div className="lbl">Badges</div>
+            <div className="row">
+              <Badge tone="primary" solid>Compétition</Badge>
+              <Badge tone="secondary" solid>Formation</Badge>
+              <Badge tone="dark" solid>Entraînement</Badge>
+              <Badge tone="success">Payé</Badge>
+              <Badge tone="warning">En attente</Badge>
+              <Badge tone="error">Annulé</Badge>
+              <Badge tone="info">Tous niveaux</Badge>
+            </div>
+            <div className="lbl" style={{ marginTop: 18 }}>Avatars</div>
+            <div className="row">
+              <Avatar name="Aurélien Paulus" />
+              <Avatar name="Marie Dubois" size={48} ring />
+              <Avatar name="Tom Vasseur" size={32} />
+            </div>
+          </div>
+          <div className="col">
+            <div className="lbl">Inputs</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Input label="Email" type="email" placeholder="vous@exemple.be" required />
+              <Input label="Mot de passe" type="password" error="Champ requis" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body>
+</html>

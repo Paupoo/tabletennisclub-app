@@ -24,7 +24,10 @@ class ClubFactory extends Factory
         return [
             'name' => 'C.T.T. ' . fake()->city(),
             'is_active' => true,
-            'licence' => 'BBW' . fake()->randomNumber(3),
+            // unique(), not randomNumber(3): the column is unique and the draw had
+            // a thousand values, so two clubs in one test collided now and then —
+            // a red build with nothing wrong in the code under test.
+            'licence' => 'BBW' . fake()->unique()->numberBetween(100, 999),
             'street' => fake()->streetAddress(),
             'city_code' => '13' . fake()->randomNumber(2, true),
             'city_name' => fake()->city(),

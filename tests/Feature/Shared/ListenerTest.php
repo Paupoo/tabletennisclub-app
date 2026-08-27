@@ -14,6 +14,8 @@ use App\Domains\Shared\Events\Interclub\TeamCreated;
 use App\Domains\Shared\Events\Meetings\MeetingCreated;
 use App\Domains\Shared\Events\Subscriptions\SubscriptionCreated;
 use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;
+use App\Jobs\SendMeetingInvitationJob;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Notification;
 
 test('subscription created event triggers notification', function (): void {
@@ -42,6 +44,27 @@ test('meeting created event notifies all members for general assembly', function
 
     Notification::assertSentTo($user1, MeetingInvitationNotification::class);
     Notification::assertSentTo($user2, MeetingInvitationNotification::class);
+});
+
+/*
+ * The convocations must leave through the throttled job, not in one blast: a
+ * general assembly goes to every active member, and fifty near identical mails
+ * in three seconds is what gets the club classified as a spammer (issue #69).
+ */
+test('meeting created event fans the general assembly out onto the throttled job', function (): void {
+    Bus::fake([SendMeetingInvitationJob::class]);
+
+    $season = makeActiveSeason();
+    $members = User::factory()->count(3)->create([]);
+    foreach ($members as $member) {
+        Subscription::factory()->for($member)->create(['season_id' => $season->id, 'status' => 'confirmed']);
+    }
+
+    $meeting = Meeting::factory()->create(['type' => MeetingTypeEnum::GENERAL_ASSEMBLY]);
+
+    event(new MeetingCreated($meeting));
+
+    Bus::assertDispatchedTimes(SendMeetingInvitationJob::class, 3);
 });
 
 test('meeting created event notifies committee only for committee meeting', function (): void {

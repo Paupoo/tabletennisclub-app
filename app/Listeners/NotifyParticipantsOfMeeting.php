@@ -6,12 +6,18 @@ namespace App\Listeners;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
-use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
 use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Events\Meetings\MeetingCreated;
+use App\Jobs\SendMeetingInvitationJob;
+use App\Jobs\SendMeetingInvitationsJob;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Notification;
 
+/**
+ * The other door onto a general assembly's convocations, and it had the same
+ * burst problem as {@see SendMeetingInvitationsJob}: creating the
+ * meeting sent every active member their notification in one call. It now fans
+ * out onto the same throttled job.
+ */
 class NotifyParticipantsOfMeeting
 {
     public function handle(MeetingCreated $event): void
@@ -20,11 +26,8 @@ class NotifyParticipantsOfMeeting
 
         $participants = $this->getParticipants($meeting);
 
-        if ($participants->isNotEmpty()) {
-            Notification::send(
-                $participants,
-                new MeetingInvitationNotification($meeting)
-            );
+        foreach ($participants as $participant) {
+            SendMeetingInvitationJob::dispatch($meeting->id, $participant->id);
         }
     }
 

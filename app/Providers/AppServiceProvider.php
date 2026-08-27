@@ -50,6 +50,15 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('invitations', fn (): Limit => Limit::perMinute(15));
 
         /*
+         * Convocations get a limiter of their own, and a faster one. Same burst
+         * problem as the invitations above, but a convocation carries a date the
+         * member has to answer for: a general assembly to the whole club goes out
+         * in a couple of minutes rather than three quarters of an hour, which is
+         * still nothing like fifty messages in three seconds.
+         */
+        RateLimiter::for('convocations', fn (): Limit => Limit::perMinute(30));
+
+        /*
          * Le limiteur que le groupe `api` référence par son nom (`throttle:api`).
          * Il vivait dans RouteServiceProvider, que le squelette 13 remplace par
          * withRouting() — et withRouting ne définit pas de limiteur.

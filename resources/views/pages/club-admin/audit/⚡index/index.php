@@ -63,6 +63,7 @@ new class extends Component
             'updated' => __('Modified'),
             'deleted' => __('Deleted'),
             'training_pack_reconciled' => __('Training pack adjusted'),
+            'roles_changed' => __('Rights changed'),
             default => $event,
         };
     }

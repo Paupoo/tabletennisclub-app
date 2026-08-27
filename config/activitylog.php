@@ -51,6 +51,11 @@ return [
     'default_except_attributes' => [
         'password',
         'remember_token',
+        // Bookkeeping, not a business change: the log already names the author in
+        // its own causer column, so logging it again produced a whole "Modified"
+        // entry whose entire content was `updated_by: 1` every time a member was
+        // saved with nothing else touched.
+        'updated_by',
     ],
 
     /*

@@ -195,10 +195,8 @@ class Interclub extends Model
             $this->total_players = $total;
 
             return $this;
-        } else {
-
-            throw new Exception('This category is unknown and not allowed.');
         }
+        throw new Exception('This category is unknown and not allowed.');
     }
 
     public function setWeekNumber(string $date): self

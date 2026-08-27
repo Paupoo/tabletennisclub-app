@@ -23,7 +23,7 @@ class TeamCreatedNotification extends Notification implements ShouldQueue
         return [
             'title' => __('New team created'),
             'body' => __('Team ":name" has been created', ['name' => $this->team->name]),
-            'url' => route('admin.interclub.teams.show', $this->team),
+            'url' => route('admin.interclubs.teams.show', $this->team),
             'category' => 'interclub',
             'icon' => 'o-users',
         ];
@@ -40,7 +40,7 @@ class TeamCreatedNotification extends Notification implements ShouldQueue
             ->line(__('Name: :name', ['name' => $this->team->name]))
             ->line(__('Captain: :captain', ['captain' => $this->team->captain->full_name ?? 'TBD']))
             ->line(__('League: :league', ['league' => $this->team->league?->name ?? 'TBD']))
-            ->action(__('View team'), route('admin.interclub.teams.show', $this->team))
+            ->action(__('View team'), route('admin.interclubs.teams.show', $this->team))
             ->line(__('Thank you!'));
     }
 

@@ -63,7 +63,7 @@
                         @elseif ($event === 'deleted')
                             <x-badge :value="__('Deleted')" class="badge-error badge-sm badge-soft" />
                         @else
-                            <x-badge :value="$activity->description" class="badge-ghost badge-sm" />
+                            <x-badge :value="$this->eventLabel($event)" class="badge-ghost badge-sm" />
                         @endif
                         <span class="text-sm font-semibold">{{ $subjectName }}</span>
                         <span class="font-mono text-xs text-muted">#{{ $activity->subject_id }}</span>
@@ -147,7 +147,7 @@
             @elseif ($event === 'deleted')
             <x-badge :value="__('Deleted')" class="badge-error badge-sm badge-soft" />
             @else
-            <x-badge :value="$activity->description" class="badge-ghost badge-sm" />
+            <x-badge :value="$this->eventLabel($event)" class="badge-ghost badge-sm" />
             @endif
             @endscope
 

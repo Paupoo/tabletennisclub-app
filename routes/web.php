@@ -115,8 +115,11 @@ Route::prefix('admin/club-admin/users/')
         Route::livewire('create', 'pages::club-admin.users.form')
             ->middleware('can:users.create')
             ->name('admin.users.create');
+        // Two duties, one screen: whoever keeps the member's data up to date, and
+        // whoever hands out their rights. Neither holds the other's permission,
+        // and the form renders only the sections the visitor may actually write.
         Route::livewire('{user}/edit', 'pages::club-admin.users.form')
-            ->middleware('can:users.update')
+            ->middleware('can.any:users.update,access.manage')
             ->name('admin.users.edit');
         // Seeding the roster from the federation listing is creating members in
         // bulk, and belongs to whoever may create them one at a time.
@@ -126,10 +129,11 @@ Route::prefix('admin/club-admin/users/')
         Route::livewire('registrations', 'pages::club-admin.users.registrations')
             ->middleware('can:subscriptions.view')
             ->name('admin.users.registrations');
-        // Who holds what: readable by whoever may edit members, since that is who
-        // hands the duties out.
+        // Who holds what: readable by whoever hands the duties out, and by whoever
+        // edits the members — the overview is where both go to check coverage.
+        // Read-only on purpose: assigning happens on the member's own form.
         Route::livewire('delegations', 'pages::club-admin.users.delegations')
-            ->middleware('can:users.update')
+            ->middleware('can.any:users.update,access.manage')
             ->name('admin.users.delegations');
         // Season roster — readable at the committee baseline, editing reserved to
         // the members délégation (guarded inside the component).

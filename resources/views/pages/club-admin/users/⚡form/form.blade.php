@@ -19,6 +19,13 @@
     <x-form wire:submit="save">
         <div class="grid grid-cols-6 gap-4 md:gap-6">
 
+            {{--
+                Everything from here to the Status section is the *data* half of
+                the file. Whoever may only hand out rights never receives it —
+                not disabled, not rendered — and gets the compact identity header
+                below instead, enough to be sure of who they are acting on.
+            --}}
+            @if ($this->canEditData)
             <!-- Section Personal -->
             <div class="col-span-6 md:col-span-2">
                 <x-header :subtitle="__('Personal information')" :title="__('Personal')" />
@@ -302,12 +309,49 @@
             <div class="col-span-6">
                 <x-menu-separator />
             </div>
+            @else
+                {{-- Identity, read-only: photo, name, licence, statutory title. --}}
+                <div class="col-span-6">
+                    <div class="flex flex-wrap items-start gap-4 rounded-xl border border-base-300 bg-base-100 p-4">
+                        <x-avatar class="h-14 w-14 shrink-0" image="{{ $user?->photo ?? '/images/empty-user.jpg' }}" />
+                        <div class="min-w-0 flex-1">
+                            <p class="text-base font-semibold break-words text-base-content">
+                                {{ $user?->first_name }} {{ $user?->last_name }}
+                            </p>
+                            <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-base-content/60">
+                                @if ($user?->licence)
+                                    <span class="inline-flex items-center gap-1">
+                                        <x-icon name="o-identification" class="h-4 w-4 shrink-0" />
+                                        {{ $user->licence }}
+                                    </span>
+                                @endif
+                                @if ($user?->committee_role)
+                                    <span class="inline-flex items-center gap-1">
+                                        <x-icon name="o-briefcase" class="h-4 w-4 shrink-0" />
+                                        {{ $user->committee_role->label() }}
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    <x-alert icon="o-lock-closed" class="alert-info mt-3">
+                        <span class="text-sm">
+                            {{ __('You are here to hand out rights: this member\'s details are shown so you know who you are acting on, and are not editable here.') }}
+                        </span>
+                    </x-alert>
+                </div>
+
+                <div class="col-span-6">
+                    <x-menu-separator />
+                </div>
+            @endif
 
             {{--
                 Section Statut — the statutory title. It is displayed (profile badge,
                 committee list) and never decides an access: what someone may do is
                 carried by the délégations below.
             --}}
+            @if ($this->canManageAccess)
             <div class="col-span-6 md:col-span-2">
                 <x-header :subtitle="__('Seat on the committee — a title, not an access right')"
                     :title="__('Status')" />
@@ -326,10 +370,61 @@
                         </p>
                     </div>
                 @endif
-                <x-checkbox :hint="__('With great power comes great responsibility...')"
-                    :label="__('Is an administrator')" wire:model="is_admin" />
+                {{-- Handing over the whole application is not a délégation: this one
+                     checkbox stays with the administrators, whatever else the
+                     visitor may hand out. --}}
+                @if ($this->canPromoteAdmin)
+                    <x-checkbox :hint="__('With great power comes great responsibility...')"
+                        :label="__('Is an administrator')" wire:model="is_admin" />
+                @endif
             </div>
+            @elseif ($user?->exists)
+            {{--
+                State 2 — the data delegate. The rights are shown as a read-only
+                summary of what is held: sixteen greyed-out cards would say the
+                same thing at sixteen times the cost, and read as a grid that has
+                simply stopped working.
 
+                Only for a member who exists: the summary states what someone
+                holds, and on the create form there is nobody yet to hold
+                anything — "holds no management right" would be a fact asserted
+                about nobody.
+            --}}
+            <div class="col-span-6 md:col-span-2">
+                <x-header :subtitle="__('Held rights, read-only. Handing them out is its own delegation.')"
+                    :title="__('Rights')" />
+            </div>
+            <div class="col-span-6 md:col-span-4">
+                @php $rights = $this->heldRights; @endphp
+                <div class="flex flex-wrap gap-2">
+                    @if ($rights['isAdmin'])
+                        <span class="inline-flex items-center gap-1 rounded-full border border-warning/40 bg-warning/10 px-3 py-1 text-xs font-semibold text-base-content">
+                            <x-icon name="o-shield-check" class="h-4 w-4 shrink-0" />
+                            {{ __('Administrator') }}
+                        </span>
+                    @endif
+                    @if ($rights['isCommitteeMember'])
+                        <span class="inline-flex items-center gap-1 rounded-full border border-base-300 bg-base-200 px-3 py-1 text-xs font-semibold text-base-content">
+                            <x-icon name="o-briefcase" class="h-4 w-4 shrink-0" />
+                            {{ $rights['title'] ?? __('Committee member') }}
+                        </span>
+                    @endif
+                    @foreach ($rights['delegations'] as $held)
+                        <span class="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold text-base-content">
+                            {{ $held->label() }}
+                        </span>
+                    @endforeach
+                </div>
+
+                @if (! $rights['isAdmin'] && ! $rights['isCommitteeMember'] && $rights['delegations'] === [])
+                    <p class="mt-3 text-xs text-base-content/60">
+                        {{ __('No delegation: this member holds no management right.') }}
+                    </p>
+                @endif
+            </div>
+            @endif
+
+            @if ($this->canManageAccess)
             <div class="col-span-6">
                 <x-menu-separator />
             </div>
@@ -343,35 +438,62 @@
                     :title="__('Delegations')" />
             </div>
             <div class="col-span-6 md:col-span-4">
-                {{-- Cards stack on mobile and pair up from md: 16 duties never fit a
+                {{-- Cards stack on mobile and pair up from md: 17 duties never fit a
                      single readable column on a phone, nor a wide row on a laptop. --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                     @foreach ($this->delegationOptions as $delegation)
                         @php $isHeld = in_array($delegation['value'], $delegations, true); @endphp
-                        <label
-                            for="delegation-{{ $delegation['value'] }}"
-                            @class([
-                                'flex gap-3 items-start p-3 rounded-xl border cursor-pointer transition-colors duration-150',
-                                'border-primary/60 bg-primary/5' => $isHeld,
-                                'border-base-300 hover:border-primary/40' => ! $isHeld,
-                            ])
-                        >
-                            <input
-                                type="checkbox"
-                                id="delegation-{{ $delegation['value'] }}"
-                                value="{{ $delegation['value'] }}"
-                                wire:model.live="delegations"
-                                class="checkbox checkbox-sm checkbox-primary mt-0.5 shrink-0"
-                            />
-                            <span class="min-w-0">
-                                <span class="block text-sm font-semibold text-base-content">
-                                    {{ $delegation['label'] }}
+                        @if ($delegation['locked'])
+                            {{-- Rendered, not hidden: a duty missing from the grid reads
+                                 as a duty that does not exist, and the point is the
+                                 opposite — it exists, and it is not yours to hand out. --}}
+                            <div
+                                @class([
+                                    'flex gap-3 items-start p-3 rounded-xl border cursor-not-allowed',
+                                    'border-base-300 bg-base-200/60' => ! $isHeld,
+                                    'border-base-300 bg-base-200' => $isHeld,
+                                ])
+                                aria-disabled="true"
+                            >
+                                <x-icon name="o-lock-closed" class="mt-0.5 h-5 w-5 shrink-0 text-base-content/40" />
+                                <span class="min-w-0">
+                                    <span class="block text-sm font-semibold text-base-content/70">
+                                        {{ $delegation['label'] }}
+                                    </span>
+                                    <span class="block text-xs text-base-content/50 leading-snug">
+                                        {{ $delegation['description'] }}
+                                    </span>
+                                    <span class="mt-1 block text-xs font-medium text-base-content/60">
+                                        {{ $isHeld ? __('Held — reserved to administrators') : __('Reserved to administrators') }}
+                                    </span>
                                 </span>
-                                <span class="block text-xs text-base-content/60 leading-snug">
-                                    {{ $delegation['description'] }}
+                            </div>
+                        @else
+                            <label
+                                for="delegation-{{ $delegation['value'] }}"
+                                @class([
+                                    'flex gap-3 items-start p-3 rounded-xl border cursor-pointer transition-colors duration-150',
+                                    'border-primary/60 bg-primary/5' => $isHeld,
+                                    'border-base-300 hover:border-primary/40' => ! $isHeld,
+                                ])
+                            >
+                                <input
+                                    type="checkbox"
+                                    id="delegation-{{ $delegation['value'] }}"
+                                    value="{{ $delegation['value'] }}"
+                                    wire:model.live="delegations"
+                                    class="checkbox checkbox-sm checkbox-primary mt-0.5 shrink-0"
+                                />
+                                <span class="min-w-0">
+                                    <span class="block text-sm font-semibold text-base-content">
+                                        {{ $delegation['label'] }}
+                                    </span>
+                                    <span class="block text-xs text-base-content/60 leading-snug">
+                                        {{ $delegation['description'] }}
+                                    </span>
                                 </span>
-                            </span>
-                        </label>
+                            </label>
+                        @endif
                     @endforeach
                 </div>
 
@@ -381,7 +503,9 @@
                     </p>
                 @endif
             </div>
+            @endif
 
+            @if ($this->canEditData)
             <div class="col-span-6">
                 <x-menu-separator />
             </div>
@@ -498,6 +622,7 @@
                         </x-card>
                     </div>
                 @endif
+            @endif
             @endif
 
         </div>

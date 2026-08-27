@@ -88,7 +88,7 @@
     </x-menu-sub>
     @endcanany
 
-    @canany(['users.view', 'subscriptions.view', 'users.update', 'training_plans.manage'])
+    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'training_plans.manage'])
     <x-menu-sub icon="o-user-group" :title="__('Members Admin')">
         @can('users.view')
             <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
@@ -96,9 +96,9 @@
         @can('subscriptions.view')
             <x-menu-item icon="o-list-bullet" link="{{ route('admin.users.registrations') }}" :title="__('Affiliations')" />
         @endcan
-        @can('users.update')
+        @canany(['users.update', 'access.manage'])
             <x-menu-item icon="o-key" link="{{ route('admin.users.delegations') }}" :title="__('Delegations')" />
-        @endcan
+        @endcanany
         @can('subscriptions.view')
             <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
         @endcan

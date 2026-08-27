@@ -268,3 +268,17 @@ describe('profile shows real season data — no prototype leftovers', function (
             ->assertDontSee(__('Reset'));
     });
 });
+
+/*
+| Gating deletePhoto must not lock a member out of their own portrait: the trait
+| is shared with the self-service profile, where nobody holds `users.update`.
+*/
+it('lets a member delete their own photo from the profile screen', function (): void {
+    $user = User::factory()->create(['photo' => '/storage/users/portrait.jpg']);
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+        ->call('deletePhoto');
+
+    expect($user->fresh()->photo)->toBeNull();
+});

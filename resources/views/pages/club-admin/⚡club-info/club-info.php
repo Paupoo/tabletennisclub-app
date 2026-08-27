@@ -12,9 +12,11 @@ use App\Domains\Shared\Models\AppSetting;
 use App\Domains\Shared\Rules\ValidIban;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -86,6 +88,18 @@ new class extends Component
     #[Validate('nullable|string')]
     public ?string $website_url;
 
+    /**
+     * Whether the visitor may seat or unseat anyone at all.
+     *
+     * Asked of an unsaved User because the button it guards targets nobody yet;
+     * the per-member check below is what refuses a visitor their own row.
+     */
+    #[Computed()]
+    public function canManageAccess(): bool
+    {
+        return Gate::allows('manageAccess', new User);
+    }
+
     public function mount(): void
     {
         $club = Club::own();
@@ -120,9 +134,17 @@ new class extends Component
         // grâce au `with()` qui est appelé après chaque interaction
     }
 
+    /**
+     * The seat and its statutory title are rights, so taking them away answers to
+     * whoever manages rights — not to whoever may edit the venue settings, which
+     * is all this screen used to ask for.
+     */
     public function removeMember(int $id): void
     {
         $user = User::findOrFail($id);
+
+        Gate::authorize('manageAccess', $user);
+
         $user->removeRole(Role::COMMITTEE->value);
         $user->update(['committee_role' => null]);
 

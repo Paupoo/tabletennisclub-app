@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Meetings\Notifications;
 
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Services\IcsGenerator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -14,7 +15,7 @@ use Illuminate\Queue\SerializesModels;
 
 class MeetingPostponedNotification extends Notification implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use LinksToMemberSpace, Queueable, SerializesModels;
 
     public function __construct(
         public Meeting $meeting,
@@ -27,7 +28,7 @@ class MeetingPostponedNotification extends Notification implements ShouldQueue
         return [
             'title' => __('Meeting postponed: :title', ['title' => $this->meeting->title]),
             'body' => __('The meeting has been postponed to :date', ['date' => $this->meeting->postponed_to?->translatedFormat('d M Y') ?? __('TBD')]),
-            'url' => route('admin.meetings.show', $this->meeting),
+            'url' => $this->meetingUrl($notifiable, $this->meeting),
             'category' => 'meeting',
             'icon' => 'o-calendar-days',
         ];

@@ -6,6 +6,7 @@ namespace App\Domains\Competitions\Tournament\Notifications;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\URL;
 
 class NewTournamentPublishedNotification extends Notification
 {
-    use Queueable;
+    use LinksToMemberSpace, Queueable;
 
     /**
      * Create a new notification instance.
@@ -33,7 +34,7 @@ class NewTournamentPublishedNotification extends Notification
         return [
             'title' => __('Nouveau tournoi : :name', ['name' => $this->tournament->name]),
             'body' => __('A new tournament has been published'),
-            'url' => route('admin.tournaments.index'),
+            'url' => $this->memberEventsUrl($notifiable),
             'category' => 'tournament',
             'icon' => 'o-trophy',
         ];

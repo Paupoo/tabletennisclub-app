@@ -613,6 +613,30 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Whose my-space a notification about this member should link to.
+     *
+     * Every my-space page is self-only (`abort_unless(Auth::user()->is($user))`),
+     * so a link is only useful to whoever can actually sign in. A managed member
+     * has no address of their own, which is exactly what says they have no login
+     * either — the mail went to a guardian, and it is the guardian's my-space
+     * that lists the ward. Same fallback as {@see self::contactEmail()}, so the
+     * link and the envelope always agree on who is being addressed.
+     *
+     * Falls back to the member when no guardian holds an account: a dead link is
+     * still better than pointing at somebody who cannot be reached either.
+     */
+    public function mySpaceOwner(): self
+    {
+        if ($this->email !== null) {
+            return $this;
+        }
+
+        return $this->guardians
+            ->map(fn (Guardian $guardian): ?self => $guardian->member)
+            ->first(fn (?self $member): bool => $member?->email !== null) ?? $this;
+    }
+
+    /**
      * Retrieve the contact this user was onboarded from, if any.
      *
      * Phase 2 uses this to recover the carry-over seed via

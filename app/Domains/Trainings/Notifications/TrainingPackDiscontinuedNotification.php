@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Trainings\Notifications;
 
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -17,7 +18,7 @@ use Illuminate\Notifications\Notification;
  */
 class TrainingPackDiscontinuedNotification extends Notification
 {
-    use Queueable;
+    use LinksToMemberSpace, Queueable;
 
     public function __construct(
         public TrainingPack $pack,
@@ -31,7 +32,7 @@ class TrainingPackDiscontinuedNotification extends Notification
         return [
             'title' => __('Training discontinued'),
             'body' => __(':pack will no longer run', ['pack' => $this->pack->name]),
-            'url' => route('admin.trainings.index'),
+            'url' => $this->memberTrainingsUrl($notifiable),
             'category' => 'training',
             'icon' => 'o-x-circle',
         ];
@@ -55,7 +56,7 @@ class TrainingPackDiscontinuedNotification extends Notification
         }
 
         return $mail
-            ->action(__('See my trainings'), url('/'))
+            ->action(__('See my trainings'), $this->memberTrainingsUrl($notifiable))
             ->salutation(__('The club team'));
     }
 

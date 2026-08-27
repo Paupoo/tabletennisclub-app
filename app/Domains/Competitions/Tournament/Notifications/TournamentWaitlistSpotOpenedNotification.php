@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Competitions\Tournament\Notifications;
 
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\URL;
 
 class TournamentWaitlistSpotOpenedNotification extends Notification
 {
-    use Queueable;
+    use LinksToMemberSpace, Queueable;
 
     public function __construct(
         public Tournament $tournament,
@@ -27,7 +28,7 @@ class TournamentWaitlistSpotOpenedNotification extends Notification
         return [
             'title' => __('Place disponible : :name', ['name' => $this->tournament->name]),
             'body' => __('See the tournament details'),
-            'url' => route('admin.tournaments.index'),
+            'url' => $this->memberEventsUrl($notifiable),
             'category' => 'tournament',
             'icon' => 'o-trophy',
         ];

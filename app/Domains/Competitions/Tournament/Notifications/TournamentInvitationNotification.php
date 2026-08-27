@@ -6,6 +6,7 @@ namespace App\Domains\Competitions\Tournament\Notifications;
 
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\URL;
 
 class TournamentInvitationNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use LinksToMemberSpace, Queueable;
 
     public function __construct(
         public Tournament $tournament,
@@ -31,7 +32,7 @@ class TournamentInvitationNotification extends Notification implements ShouldQue
         return [
             'title' => __('Invitation : :name', ['name' => $this->tournament->name]),
             'body' => __('See the tournament details'),
-            'url' => route('admin.tournaments.index'),
+            'url' => $this->memberEventsUrl($notifiable),
             'category' => 'tournament',
             'icon' => 'o-trophy',
         ];

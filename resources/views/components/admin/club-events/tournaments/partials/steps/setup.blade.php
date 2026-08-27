@@ -107,6 +107,25 @@
             type="number" icon="o-arrows-right-left" suffix="min" hint="Rotation, scoring, movement"
             min="0" max="10" />
 
+        {{-- Le plafond d'inscriptions suit la structure tant qu'on n'y touche pas.
+             Sans ce champ il n'était jamais saisissable, et « Places restantes »
+             affichait une valeur que personne n'avait choisie (issue #37). --}}
+        <div>
+            <x-input wire:model.live.debounce.500ms="maxUsers" :label="__('Maximum number of players')"
+                type="number" icon="o-user-group" min="0"
+                :hint="$maxUsersManual
+                    ? __('Set by hand. 0 means no limit.')
+                    : __('Follows the structure: :pools pools × :size players. Type a value to fix it.', [
+                        'pools' => $nb_poules,
+                        'size' => $pool_size,
+                    ])" />
+
+            @if ($maxUsersManual)
+                <x-button :label="__('Follow the structure again')" class="btn-ghost btn-xs mt-1"
+                    icon="o-arrow-path" wire:click="resetMaxUsersToStructure" />
+            @endif
+        </div>
+
     </x-admin.shared.form-section>
 
     {{-- ── Section 3 : Rules & format ─────────────────────────────────────── --}}

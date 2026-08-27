@@ -359,3 +359,96 @@ describe('registerableMembersOptions', function (): void {
         expect($active->is_active)->toBeTrue();
     });
 })->group('Tournament', 'Wizard');
+
+// ── Registration ceiling (issue #37) ─────────────────────────────────────────
+
+/*
+ * The wizard read `maxUsers` in ten places — "Inscrits 12 / 24", "Places
+ * restantes", the guard that closes registrations — and offered nowhere to set
+ * it. The only writer was a private helper deriving it from the structure, so
+ * the ceiling the committee saw was one nobody had chosen, and the structure is
+ * itself suggested from the tables the selected rooms hold.
+ */
+describe('registration ceiling', function (): void {
+    function wizardAdmin(): User
+    {
+        return User::factory()->isAdmin()->create();
+    }
+
+    /*
+     * The whole ticket is that the field did not exist: asserting the behaviour
+     * without asserting the input proves nothing a committee member can reach.
+     */
+    it('offers the committee a field to set it', function (): void {
+        $tournament = wizardTournament();
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            // A published tournament opens on step 4; the ceiling lives on step 1.
+            ->set('step', '1')
+            ->assertSeeHtml('wire:model.live.debounce.500ms="maxUsers"');
+    });
+
+    it('follows the structure until somebody sets it', function (): void {
+        $tournament = wizardTournament(['nb_pools' => 2, 'pool_size' => 4, 'max_users' => 8]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('maxUsersManual', false)
+            ->set('nb_poules', 5)
+            ->assertSet('maxUsers', 20)
+            ->set('pool_size', 6)
+            ->assertSet('maxUsers', 30);
+    });
+
+    /*
+     * The old guard compared maxUsers to the *new* capacity while its comment
+     * claimed the old one, so a second change to the structure never moved the
+     * ceiling again. This is that second change.
+     */
+    it('keeps following the structure past the first change', function (): void {
+        $tournament = wizardTournament(['nb_pools' => 2, 'pool_size' => 4, 'max_users' => 8]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('nb_poules', 3)
+            ->set('nb_poules', 7)
+            ->assertSet('maxUsers', 28);
+    });
+
+    it('stops following it once the committee types a number', function (): void {
+        $tournament = wizardTournament(['nb_pools' => 2, 'pool_size' => 4, 'max_users' => 8]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('maxUsers', 12)
+            ->assertSet('maxUsersManual', true)
+            ->set('nb_poules', 9)
+            ->assertSet('maxUsers', 12);
+    });
+
+    it('can be handed back to the structure', function (): void {
+        $tournament = wizardTournament(['nb_pools' => 3, 'pool_size' => 4, 'max_users' => 12]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('maxUsers', 12345)
+            ->call('resetMaxUsersToStructure')
+            ->assertSet('maxUsersManual', false)
+            ->assertSet('maxUsers', 12);
+    });
+
+    /*
+     * A ceiling already stored that does not match the structure was typed by
+     * somebody: reopening the wizard must not quietly overwrite it.
+     */
+    it('treats a stored ceiling that differs from the structure as deliberate', function (): void {
+        $tournament = wizardTournament(['nb_pools' => 4, 'pool_size' => 4, 'max_users' => 12]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('maxUsersManual', true)
+            ->set('nb_poules', 8)
+            ->assertSet('maxUsers', 12);
+    });
+});

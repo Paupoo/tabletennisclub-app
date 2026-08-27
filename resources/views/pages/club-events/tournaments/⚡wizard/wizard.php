@@ -64,6 +64,15 @@ new class extends Component
     // ── Limite d'inscriptions (0 = illimité)
     public int $maxUsers = 0;
 
+    /**
+     * Le plafond a-t-il été saisi à la main ?
+     *
+     * Tant qu'il ne l'est pas, il suit la structure (poules × joueurs par poule).
+     * Une fois saisi, plus rien ne l'écrase — c'est la salle qui s'adapte au
+     * tournoi voulu, pas l'inverse (issue #37).
+     */
+    public bool $maxUsersManual = false;
+
     // ── Étape 2 – Invitations
     public string $memberSearch = '';
 
@@ -196,6 +205,10 @@ new class extends Component
         $this->hasHandicapPoints = $config->hasHandicapPoints;
         $this->logistics_buffer = $config->logisticsBufferMinutes;
         $this->matchType = $config->matchType;
+
+        // La suggestion redessine les poules : sans ça le plafond restait celui
+        // de la configuration précédente, sans que rien ne le signale.
+        $this->suggestMaxUsers();
 
         $this->success(
             title: __('Suggestion applied!'),
@@ -733,6 +746,8 @@ new class extends Component
             $this->pool_size = $tournament->pool_size;
             $this->nb_qualifies = $tournament->nb_qualifiers_per_pool;
             $this->maxUsers = $tournament->max_users;
+            $this->maxUsersManual = $tournament->max_users > 0
+                && $tournament->max_users !== $tournament->nb_pools * $tournament->pool_size;
             $this->price = (float) ($tournament->price ?? 0);
             $this->selectedObjective = $tournament->objective?->value ?? '';
             $this->selectedRooms = $tournament->rooms->pluck('id')->toArray();
@@ -1373,6 +1388,17 @@ new class extends Component
 
     // ── Hooks
 
+    public function resetMaxUsersToStructure(): void
+    {
+        $this->maxUsersManual = false;
+        $this->suggestMaxUsers();
+    }
+
+    public function updatedMaxUsers(): void
+    {
+        $this->maxUsersManual = true;
+    }
+
     public function updatedNbPoules(): void
     {
         $this->markPoolsStaleIfGenerated();
@@ -1521,12 +1547,20 @@ new class extends Component
 
     // ── Private helpers
 
+    /**
+     * Aligne le plafond d'inscriptions sur la structure, sauf saisie manuelle.
+     *
+     * L'ancienne garde comparait `maxUsers` à la capacité *nouvelle* alors que
+     * son commentaire annonçait l'ancienne : dès la première modification de la
+     * structure, les deux différaient et la valeur restait figée sur celle de la
+     * configuration précédente.
+     */
     private function suggestMaxUsers(): void
     {
-        $capacity = $this->nb_poules * $this->pool_size;
-        // Only auto-update if unset (0) or if it matches the previous auto-computed value.
-        if ($this->maxUsers === 0 || $this->maxUsers === $capacity) {
-            $this->maxUsers = $capacity;
+        if ($this->maxUsersManual) {
+            return;
         }
+
+        $this->maxUsers = $this->nb_poules * $this->pool_size;
     }
 };

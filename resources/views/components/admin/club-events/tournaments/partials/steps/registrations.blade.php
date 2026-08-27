@@ -120,7 +120,6 @@
 
     @php
         $registrationCount = $this->registrations->count();
-        $capacity = $maxUsers > 0 ? $maxUsers : $this->simulation->totalPlayers;
         $waitlistCount = $this->waitlist->count();
     @endphp
 

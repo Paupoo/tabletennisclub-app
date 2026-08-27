@@ -56,7 +56,7 @@
                     <div class="mb-4 flex items-center justify-between">
                         <span
                             class="text-xs font-bold uppercase tracking-widest opacity-60">{{ __('Board Members') }}</span>
-                        @if($committeeMembers->count() > 0)
+                        @if($committeeMembers->count() > 0 && $this->canManageAccess)
                         <x-button @click="$dispatch('open-committee-modal')" class="btn-xs btn-outline"
                             icon="o-plus" :label="__('Add Member')" />
                         @endif
@@ -77,15 +77,19 @@
                                             </div>
                                     </div>
                                 </div>
-                                <x-button class="btn-circle btn-ghost btn-xs text-error" icon="o-trash"
-                                    wire:click="removeMember({{ $member->id }})" />
+                                @can('manageAccess', $member)
+                                    <x-button class="btn-circle btn-ghost btn-xs text-error" icon="o-trash"
+                                        wire:click="removeMember({{ $member->id }})" />
+                                @endcan
                             </div>
                         @empty
                             <x-admin.shared.empty
                                 icon="o-users"
                                 :title="__('No committee members defined yet.')"
-                                :subtitle="__('Add your first board member using the button above.')"
-                                action="{{ __('Add Member') }}"
+                                :subtitle="$this->canManageAccess
+                                    ? __('Add your first board member using the button above.')
+                                    : __('Seats are handed out by whoever manages access rights.')"
+                                :action="$this->canManageAccess ? __('Add Member') : null"
                                 wireClick="$dispatch('open-committee-modal')"
                             />
                         @endforelse

@@ -10,7 +10,6 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Gender;
-use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Rules\ValidIban;
 use App\Domains\Shared\Rules\ValidPhone;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -185,11 +184,11 @@ new class extends Component
                 guardian_phone_number: $this->user->guardian_phone_number,
                 iban: $this->iban,
                 // Admin-only fields are preserved from the current model (not self-editable).
-                is_committee_member: $this->user->hasRole(Role::COMMITTEE->value),
-                is_admin: $this->user->hasRole(Role::ADMINISTRATOR->value),
                 licence: $this->user->licence,
                 ranking: $this->user->ranking,
-                committee_role: $this->user->committee_role,
+                // The rights layer is left out entirely rather than re-read and
+                // handed back: nobody edits their own rights, so this screen has
+                // nothing to say about them.
                 guardianIds: $this->user->guardians()->pluck('guardians.id')->all(),
             ),
             $actor,

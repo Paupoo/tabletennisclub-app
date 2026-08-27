@@ -20,6 +20,9 @@ use Database\Seeders\RoleSeeder;
  */
 enum Permission: string
 {
+    // Accès et droits
+    case AccessManage = 'access.manage';
+
     // Supervision technique
     case AuditLogView = 'audit_log.view';
 

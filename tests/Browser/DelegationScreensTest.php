@@ -155,3 +155,25 @@ it('keeps the member form usable on a phone', function (): void {
 
     $this->assertSame('', $report, "Le formulaire membre déborde à 375 px :\n" . $report);
 });
+
+/*
+ * State 3 — the access manager on somebody else's file: a compact read-only
+ * identity header, then the rights sections alone. Brand-new markup, so it gets
+ * the one browser case the batch allows: does it render, and does it render
+ * without taking Alpine down with it. No click — a click on an element this
+ * suite considers hidden or ambiguous hangs the run rather than failing it.
+ */
+it('renders the rights-only member file without JS errors', function (): void {
+    $accessManager = User::factory()->withRole(Role::ACCESS)->create();
+    $member = User::factory()->withRole(Role::BAR)->create(['last_name' => 'Moreau']);
+
+    $this->actingAs($accessManager);
+
+    visit(route('admin.users.edit', $member))
+        ->assertNoJavaScriptErrors()
+        ->assertSee('Moreau')
+        ->assertSee('Délégations')
+        ->assertSee(Role::BAR->label())
+        ->assertSee('Réservé aux administrateurs')
+        ->assertDontSee('Informations personnelles');
+});

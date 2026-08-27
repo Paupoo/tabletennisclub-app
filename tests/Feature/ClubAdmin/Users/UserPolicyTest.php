@@ -10,6 +10,8 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->create();
+    // Holds the `acces` duty — the rights layer, without the right to edit data.
+    $this->accessManager = User::factory()->withRole(Role::ACCESS)->create();
     // Holds the `membres` duty — which is what these abilities now ask for.
     $this->member = User::factory()->isCommitteeMember()->withRole(Role::MEMBERS)->create();
     // On the committee, but without that duty.
@@ -137,6 +139,13 @@ describe('promoteAdmin', function (): void {
         $target = User::factory()->create();
         expect($this->member->can('promoteAdmin', $target))->toBeFalse();
     });
+    it('stops an administrator changing their own administrator status', function (): void {
+        expect($this->admin->can('promoteAdmin', $this->admin))->toBeFalse();
+    });
+    it('denies the access manager, who distributes everything but this', function (): void {
+        $target = User::factory()->create();
+        expect($this->accessManager->can('promoteAdmin', $target))->toBeFalse();
+    });
 });
 
 describe('promoteCommitteeMember', function (): void {
@@ -144,13 +153,52 @@ describe('promoteCommitteeMember', function (): void {
         $target = User::factory()->create();
         expect($this->admin->can('promoteCommitteeMember', $target))->toBeTrue();
     });
-    it('allows committee member to promote to committee member', function (): void {
+    // Flipped deliberately: the committee seat moved to the `acces` duty, so
+    // holding `membres` no longer carries it. See the manageAccess block below.
+    it('denies the members delegate, who no longer holds the rights layer', function (): void {
         $target = User::factory()->create();
-        expect($this->member->can('promoteCommitteeMember', $target))->toBeTrue();
+        expect($this->member->can('promoteCommitteeMember', $target))->toBeFalse();
+    });
+    it('allows the access manager', function (): void {
+        $target = User::factory()->create();
+        expect($this->accessManager->can('promoteCommitteeMember', $target))->toBeTrue();
     });
     it('denies regular user to promote to committee member', function (): void {
         $target = User::factory()->create();
         expect($this->regular->can('promoteCommitteeMember', $target))->toBeFalse();
+    });
+    it('stops anyone seating themselves on the committee', function (): void {
+        expect($this->accessManager->can('promoteCommitteeMember', $this->accessManager))->toBeFalse();
+    });
+});
+
+// ── manageAccess (the rights layer of a member's file) ───────────────────────
+
+describe('manageAccess', function (): void {
+    it('allows the access manager on somebody else', function (): void {
+        expect($this->accessManager->can('manageAccess', User::factory()->create()))->toBeTrue();
+    });
+
+    it('allows an administrator, who holds every permission', function (): void {
+        expect($this->admin->can('manageAccess', User::factory()->create()))->toBeTrue();
+    });
+
+    it('denies the members delegate — editing a file is not handing out rights', function (): void {
+        expect($this->member->can('manageAccess', User::factory()->create()))->toBeFalse();
+    });
+
+    it('denies a plain member', function (): void {
+        expect($this->regular->can('manageAccess', User::factory()->create()))->toBeFalse();
+    });
+
+    it('stops everyone on their own file, administrators included', function (): void {
+        expect($this->accessManager->can('manageAccess', $this->accessManager))->toBeFalse()
+            ->and($this->admin->can('manageAccess', $this->admin))->toBeFalse();
+    });
+
+    it('leaves update meaning exactly what it meant — the data layer', function (): void {
+        expect($this->accessManager->can('update', User::factory()->create()))->toBeFalse()
+            ->and($this->member->can('update', User::factory()->create()))->toBeTrue();
     });
 });
 

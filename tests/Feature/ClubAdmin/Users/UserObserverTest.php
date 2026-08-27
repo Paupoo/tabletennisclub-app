@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Actions\User\SyncUserRolesAction;
+use App\Actions\User\SyncUserAccessAction;
+use App\Data\User\AccessData;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
@@ -15,8 +16,12 @@ uses(RefreshDatabase::class);
 | UserObserver::saving(). It could not stay there once `is_committee_member`
 | started resolving against roles: roles only exist after the row does, so on
 | creation the observer read "not a committee member" and wiped the title being
-| set. It now runs in SyncUserRolesAction, and these scenarios follow it there.
+| set. It now runs in SyncUserAccessAction, and these scenarios follow it there.
 */
+
+beforeEach(function (): void {
+    $this->actor = User::factory()->isAdmin()->create();
+});
 
 describe('statutory title follows committee membership', function (): void {
     it('clears committee_role when the user stops being a committee member', function (): void {
@@ -24,7 +29,7 @@ describe('statutory title follows committee membership', function (): void {
             'committee_role' => CommitteeRolesEnum::PRESIDENT,
         ]);
 
-        SyncUserRolesAction::handle($user, isAdmin: false, isCommitteeMember: false);
+        SyncUserAccessAction::handle($user, new AccessData(isCommitteeMember: false), $this->actor);
 
         expect($user->fresh()->committee_role)->toBeNull();
     });
@@ -34,8 +39,11 @@ describe('statutory title follows committee membership', function (): void {
             'committee_role' => CommitteeRolesEnum::PRESIDENT,
         ]);
 
-        $user->update(['committee_role' => CommitteeRolesEnum::TREASURER]);
-        SyncUserRolesAction::handle($user, isAdmin: false, isCommitteeMember: true);
+        SyncUserAccessAction::handle(
+            $user,
+            new AccessData(isCommitteeMember: true, committeeRole: CommitteeRolesEnum::TREASURER),
+            $this->actor,
+        );
 
         expect($user->fresh()->committee_role)->toBe(CommitteeRolesEnum::TREASURER);
     });
@@ -53,7 +61,7 @@ describe('statutory title follows committee membership', function (): void {
     it('does not let a plain member keep a committee_role', function (): void {
         $user = User::factory()->create(['committee_role' => CommitteeRolesEnum::TREASURER]);
 
-        SyncUserRolesAction::handle($user, isAdmin: false, isCommitteeMember: false);
+        SyncUserAccessAction::handle($user, new AccessData(isCommitteeMember: false), $this->actor);
 
         expect($user->fresh()->committee_role)->toBeNull();
     });
@@ -63,14 +71,18 @@ describe('base roles', function (): void {
     it('grants and revokes the base roles from the form booleans', function (): void {
         $user = User::factory()->create();
 
-        SyncUserRolesAction::handle($user, isAdmin: true, isCommitteeMember: true, delegations: [Role::COACH->value]);
+        SyncUserAccessAction::handle(
+            $user,
+            new AccessData(isAdmin: true, isCommitteeMember: true, delegations: [Role::COACH->value]),
+            $this->actor,
+        );
 
         expect($user->fresh())
             ->hasRole(Role::ADMINISTRATOR->value)->toBeTrue()
             ->hasRole(Role::COMMITTEE->value)->toBeTrue()
             ->hasRole(Role::COACH->value)->toBeTrue();
 
-        SyncUserRolesAction::handle($user, isAdmin: false, isCommitteeMember: true, delegations: []);
+        SyncUserAccessAction::handle($user, new AccessData(isCommitteeMember: true), $this->actor);
 
         expect($user->fresh())
             ->hasRole(Role::ADMINISTRATOR->value)->toBeFalse()
@@ -81,9 +93,10 @@ describe('base roles', function (): void {
     it('leaves délégations alone when the caller does not manage them', function (): void {
         $user = User::factory()->withRole(Role::CASH_REGISTER)->create();
 
-        // null, not [] — the self-service profile screen edits personal details
-        // and knows nothing about duties; passing [] there would strip them.
-        SyncUserRolesAction::handle($user, isAdmin: false, isCommitteeMember: false, delegations: null);
+        // null, not an empty AccessData — the self-service profile screen edits
+        // personal details and knows nothing about duties; an empty one would
+        // strip them.
+        SyncUserAccessAction::handle($user, null, $this->actor);
 
         expect($user->fresh()->getRoleNames()->all())->toContain(Role::CASH_REGISTER->value);
     });
@@ -91,12 +104,16 @@ describe('base roles', function (): void {
     it('refuses to grant a base role through the délégations field', function (): void {
         $user = User::factory()->create();
 
-        SyncUserRolesAction::handle($user, isAdmin: false, isCommitteeMember: false, delegations: [
-            Role::ADMINISTRATOR->value,
-            Role::COMMITTEE->value,
-            Role::WEBSITE->value,
-            'role-inexistant',
-        ]);
+        SyncUserAccessAction::handle(
+            $user,
+            new AccessData(delegations: [
+                Role::ADMINISTRATOR->value,
+                Role::COMMITTEE->value,
+                Role::WEBSITE->value,
+                'role-inexistant',
+            ]),
+            $this->actor,
+        );
 
         expect($user->fresh())
             ->hasRole(Role::ADMINISTRATOR->value)->toBeFalse()
@@ -104,13 +121,21 @@ describe('base roles', function (): void {
             ->and($user->fresh()->getRoleNames()->all())->toBe([Role::WEBSITE->value]);
     });
 
-    it('never revokes a délégation the member holds elsewhere', function (): void {
+    // The layer travels as one object, so a caller that manages rights states
+    // all of them at once: what it leaves out is revoked, and a caller with
+    // nothing to say passes null instead. The scenario this replaces asked the
+    // old two-level signal to keep duties the call did not mention.
+    it('revokes the délégations a rights-managing caller leaves out', function (): void {
         $user = User::factory()->withRole(Role::CASH_REGISTER, Role::WEBSITE)->create();
 
-        SyncUserRolesAction::handle($user, isAdmin: false, isCommitteeMember: true);
+        SyncUserAccessAction::handle(
+            $user,
+            new AccessData(isCommitteeMember: true, delegations: [Role::WEBSITE->value]),
+            $this->actor,
+        );
 
         expect($user->fresh()->getRoleNames()->all())
-            ->toContain(Role::CASH_REGISTER->value)
+            ->not->toContain(Role::CASH_REGISTER->value)
             ->toContain(Role::WEBSITE->value)
             ->toContain(Role::COMMITTEE->value);
     });

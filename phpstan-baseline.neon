@@ -517,18 +517,6 @@ parameters:
 			path: app/Livewire/Public/Results/ResultList.php
 
 		-
-			message: '#^Property App\\Livewire\\Public\\TournamentCard\:\:\$user \(App\\Domains\\ClubAdmin\\Users\\Models\\User\) does not accept Illuminate\\Contracts\\Auth\\Authenticatable\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Livewire/Public/TournamentCard.php
-
-		-
-			message: '#^Property App\\Livewire\\Public\\TournamentCard\:\:\$user \(App\\Domains\\ClubAdmin\\Users\\Models\\User\) does not accept Illuminate\\Contracts\\Auth\\Authenticatable\|null\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Livewire/Public/TournamentCard.php
-
-		-
 			message: '#^Method App\\Livewire\\Tournament\\PlayerRegistration\:\:IsFull\(\) is unused\.$#'
 			identifier: method.unused
 			count: 1

@@ -7,8 +7,6 @@ use Rector\CodeQuality\Rector\FuncCall\SortCallLikeNamedArgsRector;
 use Rector\CodeQuality\Rector\Identical\FlipTypeControlToUseExclusiveTypeRector;
 use Rector\Config\RectorConfig;
 use Rector\DeadCode\Rector\ClassMethod\RemoveReturnTagIncompatibleWithNativeTypeRector;
-use Rector\DeadCode\Rector\MethodCall\RemoveNullArgOnNullDefaultParamRector;
-use Rector\DeadCode\Rector\MethodCall\RemoveNullNamedArgOnNullDefaultParamRector;
 use Rector\Php85\Rector\Property\AddOverrideAttributeToOverriddenPropertiesRector;
 use Rector\TypeDeclaration\Rector\ArrowFunction\AddArrowFunctionReturnTypeRector;
 use Rector\TypeDeclaration\Rector\ClassMethod\NarrowObjectReturnTypeRector;
@@ -70,18 +68,6 @@ return RectorConfig::configure()
         // mailables, huit fichiers changent pour un déplacement de virgule.
         SortCallLikeNamedArgsRector::class,
         /*
-         * Ces deux-là suppriment un argument `null` que la signature reprend par
-         * défaut. C'est exact, et c'est précisément ce qu'il ne faut pas faire
-         * ici : la moitié de nos tests passent ce null pour l'éprouver.
-         * `->set('gender')` ne dit plus quelle valeur est mise, un test nommé
-         * « handles null values properly » perd ses valeurs nulles, et le
-         * commentaire « null, not [] — passing [] there would strip them » de
-         * UserObserverTest se met à commenter un argument disparu. Un test qui
-         * ne montre plus son entrée ne prouve plus rien.
-         */
-        RemoveNullArgOnNullDefaultParamRector::class,
-        RemoveNullNamedArgOnNullDefaultParamRector::class,
-        /*
          * Ces deux-là marchent ensemble et se soldent par une perte. La première
          * resserre `: object` en `: \stdClass` ; la seconde en déduit que le
          * `@return object{id: int, name: string, ...}` de roster.php ne colle plus
@@ -118,5 +104,21 @@ return RectorConfig::configure()
         AddOverrideAttributeToOverriddenPropertiesRector::class,
     ])
     ->withTypeCoverageLevel(73)
+    /*
+     * Plafonné volontairement à 68 des 74 règles. Aux index 71 et 72,
+     * RemoveNullArgOnNullDefaultParamRector et sa variante nommée suppriment un
+     * argument `null` que la signature reprend par défaut. C'est exact, et c'est
+     * précisément ce qu'il ne faut pas faire ici : la moitié de nos tests passent
+     * ce null pour l'éprouver. `->set('gender')` ne dit plus quelle valeur est
+     * mise, un test nommé « handles null values properly » perd ses valeurs
+     * nulles, et le commentaire « null, not [] — passing [] there would strip
+     * them » de UserObserverTest se met à commenter un argument disparu. Un test
+     * qui ne montre plus son entrée ne prouve plus rien.
+     *
+     * Elles ont vécu dans withSkip(), où Rector avertissait à chaque exécution
+     * qu'on ne peut pas écarter une règle qu'il n'enregistre pas. Monter ce
+     * niveau au-delà de 70 les active : les réinscrire dans withSkip() à ce
+     * moment-là, et pas avant.
+     */
     ->withDeadCodeLevel(68)
     ->withCodeQualityLevel(76);

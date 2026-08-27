@@ -23,9 +23,10 @@ use App\Domains\Trainings\Notifications\TrainingPackRequestedNotification;
 
 function trainingNotificationUrl(User $member): string
 {
-    $subscription = Subscription::factory()->for($member)->create([
-        'season_id' => makeActiveSeason()->id,
-    ]);
+    // No season passed on purpose: the factory reuses whatever season exists, and
+    // forcing a fresh one here collided with the pack's own (seasons may not
+    // overlap). The link does not depend on the season anyway.
+    $subscription = Subscription::factory()->for($member)->create();
 
     return (new TrainingPackRequestedNotification(TrainingPack::factory()->create(), $subscription))
         ->toArray($member)['url'];

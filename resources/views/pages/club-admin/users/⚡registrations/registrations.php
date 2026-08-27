@@ -1030,6 +1030,13 @@ new class extends Component
     {
         return Subscription::with(['user', 'trainingPacks', 'payments'])
             ->when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId))
+            // Une affiliation annulée n'a jamais tenu : elle sort de l'effectif,
+            // sans quoi un membre rejeté puis réinscrit y figure deux fois — la
+            // ligne annulée et la nouvelle (issue #29). Le domaine le dit déjà
+            // dans {@see Subscription::scopeActive()}, la liste ne le suivait pas.
+            // Elle reste atteignable : le filtre « Annulée » la demande nommément.
+            ->unless($this->statusFilter === 'cancelled',
+                fn ($q) => $q->where('status', '!=', 'cancelled'))
             ->when($this->statusFilter, fn ($q) => $this->statusFilter === 'pending'
                 ? $q->where(fn ($sub) => $sub
                     ->where('status', 'pending')
@@ -1116,7 +1123,12 @@ new class extends Component
 
     public function render(): View
     {
-        $statsBase = Subscription::when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId));
+        // Même périmètre que la liste : les quatre cartes chiffrées se somment
+        // dans « Total », ce qui cessait d'être vrai dès qu'une annulation
+        // entrait dans le compte sans avoir de carte à elle.
+        $statsBase = Subscription::query()
+            ->where('status', '!=', 'cancelled')
+            ->when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId));
 
         return $this->view([
             'headers' => $this->headers(),

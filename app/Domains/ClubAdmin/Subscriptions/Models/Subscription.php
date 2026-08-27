@@ -244,7 +244,7 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
      */
     public function isTerminal(): bool
     {
-        return in_array($this->status, ['paid', 'canceled', 'refunded'], true);
+        return in_array($this->status, ['paid', 'cancelled', 'refunded'], true);
     }
 
     public function markAsPaid(): void

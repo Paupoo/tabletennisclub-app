@@ -4150,5 +4150,8 @@
     "No team for the :season season": "Geen ploeg voor het seizoen :season",
     "Build the teams to register them in their divisions.": "Stel de ploegen samen om ze in hun afdelingen in te schrijven.",
     "Headings require a space after the # :": "Titels vereisen een spatie na de #:",
-    "drag and drop players · click the star to designate a captain": "sleep spelers · klik de ster om een kapitein aan te wijzen"
+    "drag and drop players · click the star to designate a captain": "sleep spelers · klik de ster om een kapitein aan te wijzen",
+    "Set by hand. 0 means no limit.": "Handmatig ingesteld. 0 betekent geen limiet.",
+    "Follows the structure: :pools pools × :size players. Type a value to fix it.": "Volgt de structuur: :pools poules × :size spelers. Typ een waarde om die vast te zetten.",
+    "Follow the structure again": "Opnieuw de structuur volgen"
 }

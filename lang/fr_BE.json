@@ -4150,5 +4150,8 @@
     "No team for the :season season": "Aucune équipe pour la saison :season",
     "Build the teams to register them in their divisions.": "Composez les équipes pour les inscrire dans leurs divisions.",
     "Headings require a space after the # :": "Les titres nécessitent un espace après les # :",
-    "drag and drop players · click the star to designate a captain": "glissez-déposez les joueurs · cliquez l'étoile pour désigner un capitaine"
+    "drag and drop players · click the star to designate a captain": "glissez-déposez les joueurs · cliquez l'étoile pour désigner un capitaine",
+    "Set by hand. 0 means no limit.": "Fixé à la main. 0 = pas de limite.",
+    "Follows the structure: :pools pools × :size players. Type a value to fix it.": "Suit la structure : :pools poules × :size joueurs. Saisissez une valeur pour la figer.",
+    "Follow the structure again": "Revenir à la structure"
 }

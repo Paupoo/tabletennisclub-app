@@ -63,6 +63,7 @@ new class extends Component
             'updated' => __('Modified'),
             'deleted' => __('Deleted'),
             'training_pack_reconciled' => __('Training pack adjusted'),
+            'roles_changed' => __('Rights changed'),
             default => $event,
         };
     }
@@ -245,7 +246,7 @@ new class extends Component
             ->when($this->dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
             ->when($this->dateTo, fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo))
             ->orderBy($col, $dir)
-            ->paginate(50);
+            ->paginate(25);
     }
 
     /**

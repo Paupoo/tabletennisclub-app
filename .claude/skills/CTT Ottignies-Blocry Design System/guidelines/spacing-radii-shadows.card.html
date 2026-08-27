@@ -1,0 +1,29 @@
+<!-- @dsCard group="Spacing" viewport="700x170" name="Radii & shadows" subtitle="rounded-lg cards, full pills · soft low-depth shadows" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--base-200); color: var(--text-strong); }
+  .wrap { padding: 22px; display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+  .box { width: 78px; height: 64px; background: var(--white); border: 1px solid var(--border-default); display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; font-size: 10px; color: var(--text-muted); }
+  .col { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+  .col > .t { font-size: 10px; color: var(--text-faint); }
+  .sep { width: 1px; height: 64px; background: var(--border-default); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="col"><div class="box" style="border-radius:var(--radius-field)">field</div><div class="t">4px</div></div>
+    <div class="col"><div class="box" style="border-radius:var(--radius-lg)">lg</div><div class="t">8px</div></div>
+    <div class="col"><div class="box" style="border-radius:var(--radius-xl)">xl</div><div class="t">12px</div></div>
+    <div class="col"><div class="box" style="border-radius:var(--radius-2xl)">2xl</div><div class="t">16px</div></div>
+    <div class="col"><div class="box" style="border-radius:var(--radius-full);width:64px">full</div><div class="t">pill</div></div>
+    <div class="sep"></div>
+    <div class="col"><div class="box" style="border:none;box-shadow:var(--shadow-sm)">sm</div><div class="t">shadow-sm</div></div>
+    <div class="col"><div class="box" style="border:none;box-shadow:var(--shadow-md)">md</div><div class="t">shadow-md</div></div>
+    <div class="col"><div class="box" style="border:none;box-shadow:var(--shadow-lg)">lg</div><div class="t">shadow-lg</div></div>
+  </div>
+</body>
+</html>

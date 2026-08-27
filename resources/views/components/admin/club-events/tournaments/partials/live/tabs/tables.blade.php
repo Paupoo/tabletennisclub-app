@@ -1,6 +1,6 @@
 <div @if($tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
     @if ($this->tables->isEmpty())
-        <div class="flex flex-col items-center py-20 opacity-30">
+        <div class="flex flex-col items-center py-20 text-muted">
             <x-icon name="o-squares-2x2" class="w-12 h-12 mb-3" />
             <p class="text-sm">{{ __('No tables linked to this tournament.') }}</p>
         </div>
@@ -11,7 +11,7 @@
                     <x-icon name="o-map-pin" class="w-5 h-5 text-base-content/40" />
                     <span class="text-lg font-black tracking-tighter uppercase">{{ $roomName }}</span>
                     <div class="h-px bg-base-300 grow"></div>
-                    <span class="text-xs opacity-40">
+                    <span class="text-xs text-muted">
                         {{ $roomTables->where('is_free', true)->count() }} {{ __('available') }} /
                         {{ $roomTables->count() }} {{ __('total') }}
                     </span>
@@ -36,7 +36,7 @@
                             class="border transition-all {{ $table['is_free'] ? 'bg-base-200/40 border-base-300' : ($isOverdue ? 'bg-error/5 border-error/50 ring-1 ring-error/30' : 'bg-base-100 border-primary/20') }} relative">
 
                             @if ($isOverdue)
-                                <div class="flex items-center gap-1.5 text-error text-[11px] font-bold mb-2 animate-pulse">
+                                <div class="flex items-center gap-1.5 text-error text-xs font-bold mb-2 animate-pulse">
                                     <x-icon name="o-exclamation-triangle" class="w-3.5 h-3.5 shrink-0" />
                                     {{ __(':n min — check the referee!', ['n' => $minutesElapsed]) }}
                                 </div>
@@ -44,7 +44,7 @@
 
                             <div class="flex justify-between items-start mb-4">
                                 <div>
-                                    <div class="text-[10px] uppercase font-bold opacity-40">{{ __('Table') }}</div>
+                                    <div class="text-xs uppercase font-bold text-muted">{{ __('Table') }}</div>
                                     <div class="text-xl font-black truncate max-w-25">{{ $table['name'] }}</div>
                                 </div>
 
@@ -71,17 +71,17 @@
                                         $side2Name  = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
                                     @endphp
                                     <div class="bg-base-200 rounded-lg p-2 border border-base-300">
-                                        <div class="text-[11px] font-bold truncate">{{ $side1Name }}</div>
+                                        <div class="text-xs font-bold truncate">{{ $side1Name }}</div>
                                         <div class="flex items-center gap-2 my-1">
                                             <div class="h-px grow bg-base-300"></div>
-                                            <span class="text-[9px] font-black opacity-30 italic">VS</span>
+                                            <span class="text-xs font-black opacity-30 italic">VS</span>
                                             <div class="h-px grow bg-base-300"></div>
                                         </div>
-                                        <div class="text-[11px] text-right font-bold truncate">{{ $side2Name }}</div>
+                                        <div class="text-xs text-right font-bold truncate">{{ $side2Name }}</div>
                                     </div>
                                     
                                     @if ($match->referee)
-                                        <div class="flex items-center gap-1 text-[10px] opacity-50">
+                                        <div class="flex items-center gap-1 text-xs text-muted">
                                             <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                                             <span class="truncate">{{ $match->referee->full_name }}</span>
                                         </div>
@@ -98,7 +98,7 @@
                                             @foreach ($match->sets as $set)
                                                 <x-badge
                                                     value="{{ $set->player1_score }}-{{ $set->player2_score }}"
-                                                    class="badge-info badge-soft font-mono text-[10px] px-2" />
+                                                    class="badge-info badge-soft font-mono text-xs px-2" />
                                             @endforeach
                                         </div>
                                     @endif

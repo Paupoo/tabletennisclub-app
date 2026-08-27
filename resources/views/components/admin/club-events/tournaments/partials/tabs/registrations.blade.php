@@ -88,7 +88,7 @@
                 </x-slot:menu>
 
                 <div class="space-y-0">
-                    <div class="flex justify-between font-bold border-b border-base-300 pb-1 mb-1 opacity-50 text-xs px-2">
+                    <div class="flex justify-between font-bold border-b border-base-300 pb-1 mb-1 text-muted text-xs px-2">
                         <span class="w-6 text-center">#</span>
                         <span class="flex-1 ml-2">{{ __('Player') }}</span>
                         <span class="w-16 text-right">{{ __('Rank') }}</span>
@@ -101,7 +101,7 @@
                             <span class="w-6 text-center font-mono font-bold text-warning-content">{{ $entry['position'] }}</span>
                             <span class="flex-1 font-medium truncate">{{ $entry['name'] }}</span>
                             <span class="w-16 text-right font-mono text-xs opacity-60">{{ $entry['ranking'] }}</span>
-                            <span class="w-28 text-right text-xs opacity-50">
+                            <span class="w-28 text-right text-xs text-muted">
                                 {{ \Carbon\Carbon::parse($entry['registered_at'])->format('d/m H:i') }}
                             </span>
                             <div class="w-20 flex justify-end gap-1">
@@ -121,7 +121,7 @@
     </div>
 
     {{-- ── Close registrations modal ─────────────────────────────── --}}
-    <x-app-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur">
+    <x-app-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur" :open="$showCloseRegistrationsModal">
         <div class="space-y-4">
             <div class="flex items-start gap-3 p-4 bg-error/10 border border-error/20 rounded-xl text-sm text-error">
                 <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5" />
@@ -149,7 +149,7 @@
     </x-app-modal>
 
     {{-- ── Open registrations modal ──────────────────────────────── --}}
-    <x-app-modal wire:model="showOpenRegistrationsModal" :title="__('Reopen registrations?')" class="backdrop-blur">
+    <x-app-modal wire:model="showOpenRegistrationsModal" :title="__('Reopen registrations?')" class="backdrop-blur" :open="$showOpenRegistrationsModal">
         <div class="p-4 bg-warning/10 border border-warning/20 rounded-xl flex items-start gap-3 text-sm">
             <x-icon name="o-information-circle" class="w-5 h-5 shrink-0 mt-0.5 text-warning-content" />
             <p>{{ __('Reopening registrations will set the tournament back to "published" status. The tournament cannot be started until registrations are closed again.') }}</p>

@@ -1,0 +1,43 @@
+<!-- @dsCard group="Club Admin" viewport="1280x800" name="Club admin — dashboard" subtitle="Back-office: sidebar, stats, quick actions, activity (interactive)" -->
+<!-- @startingPoint section="Admin" subtitle="Club back-office shell — sidebar + dashboard, members, teams" viewport="1280x820" -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CTT Ottignies — Espace club</title>
+<link rel="stylesheet" href="../../styles.css">
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--font-sans); color: var(--base-content); background: var(--base-200); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="../../assets/heroicons.jsx" type="text/babel" data-presets="react"></script>
+<script src="AdminApp.jsx" type="text/babel" data-presets="react"></script>
+<script type="text/babel" data-presets="react">
+  const e = React.createElement;
+  function App() {
+    const { Shell, Dashboard, Members, Teams } = window.AdminApp;
+    const [active, setActive] = React.useState('dashboard');
+    const meta = {
+      dashboard: ['Tableau de bord', 'Accueil'],
+      members: ['Utilisateurs', 'Membres / Utilisateurs'],
+      teams: ['Nos équipes', 'Interclubs / Configuration'],
+    };
+    const screen = active === 'members' ? e(Members)
+      : active === 'teams' ? e(Teams)
+      : active === 'dashboard' ? e(Dashboard)
+      : e('div', { style: { padding: 40, textAlign: 'center', color: 'var(--text-faint)' } }, 'Écran « ' + active + ' » — recreation non incluse dans ce kit.');
+    const [title, crumbs] = meta[active] || [active, ''];
+    return e(Shell, { active, onNav: setActive, title, crumbs }, screen);
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(e(App));
+</script>
+</body>
+</html>

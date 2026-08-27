@@ -120,13 +120,13 @@ describe('Meeting index page', function (): void {
         Livewire::actingAs($admin)
             ->test('pages::club-events.meetings.index')
             ->set('type', MeetingTypeEnum::GENERAL_ASSEMBLY->value)
-            ->assertSeeText('No meetings match your filters');
+            ->assertSeeText(__('No meetings match your filters'));
     });
 
     test('index shows generic empty state when no meetings exist at all', function (): void {
         Livewire::actingAs(meetingAdmin())
             ->test('pages::club-events.meetings.index')
-            ->assertSeeText('No meetings yet');
+            ->assertSeeText(__('No meetings yet'));
     });
 
     test('index shows no stat cards and no per-row web button', function (): void {

@@ -33,7 +33,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -45,7 +45,8 @@
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
                     placeholder="{{ __('Search...') }}" />
             </div>
-            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+            <button type="button" @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm"
+                aria-label="{{ __('Close the search') }}">
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
@@ -54,19 +55,17 @@
     {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
-    @if ($teams->isEmpty())
-        <x-card class="border-none">
-            <div class="py-16 text-center text-gray-500">
-                @if ($season)
-                    Aucune équipe pour la saison {{ $season->name }}.
-                    <div class="mt-4">
-                        <x-button class="btn-primary" link="{{ route('admin.interclubs.teams.builder') }}"
-                            icon="o-squares-plus" :label="__('Build teams')" />
-                    </div>
-                @else
-                    Aucune saison active. Activez une saison pour gérer les équipes.
-                @endif
-            </div>
+    @if (! $season)
+        <x-admin.shared.missing-season-state
+            :message="__('Teams are registered season by season. Open one to compose this year\'s teams.')" />
+    @elseif ($teams->isEmpty())
+        <x-card>
+            <x-empty-state
+                icon="o-trophy"
+                :heading="__('No team for the :season season', ['season' => $season->name])"
+                :message="__('Build the teams to register them in their divisions.')"
+                :buttonText="__('Build teams')"
+                :href="route('admin.interclubs.teams.builder')" />
         </x-card>
     @else
         @php
@@ -93,7 +92,7 @@
     @endif
 
     {{-- Modal création libre --}}
-    <x-app-modal :title="__('New team')" wire:model="createModal">
+    <x-app-modal :title="__('New team')" wire:model="createModal" :open="$createModal">
         <div class="space-y-4">
             <x-select label="Lettre" :options="$teamNameOptions" wire:model="newTeamName"
                 placeholder="Choisir A – Z" />
@@ -122,12 +121,12 @@
     </x-app-modal>
 
     <x-confirm-modal model="deleteModal" :title="__('Delete this team?')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('Are you sure you want to delete this team? This action is irreversible.') }}</p>
     </x-confirm-modal>
 
     <x-confirm-modal model="deleteAllModal" :title="__('Delete all teams?')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Delete all')" confirmAction="deleteAll">
+        :confirmLabel="__('Delete all')" confirmAction="deleteAll" :open="$deleteAllModal">
         <p>
             {{ __('Are you sure you want to delete') }} <strong>{{ __('all teams') }}</strong>
             {{ __('for the current season? This action is irreversible and will also remove all players from their teams.') }}
@@ -138,7 +137,7 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Season') }}
                 </p>
                 <x-select

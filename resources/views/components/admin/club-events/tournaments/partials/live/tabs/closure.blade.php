@@ -8,7 +8,7 @@
             </div>
             <div>
                 <p class="text-lg font-bold">{{ __('Tournament closed') }}</p>
-                <p class="text-sm opacity-50 mt-1">{{ __('All data has been recorded. Results are final.') }}</p>
+                <p class="text-sm text-muted mt-1">{{ __('All data has been recorded. Results are final.') }}</p>
             </div>
             @if ($tournament->newsPost)
                 <x-button :label="__('View news post')" icon="o-newspaper"
@@ -77,7 +77,7 @@
                         rows="7" />
                 </div>
             @else
-                <p class="text-sm opacity-40 italic">{{ __('No email will be sent.') }}</p>
+                <p class="text-sm text-muted italic">{{ __('No email will be sent.') }}</p>
             @endif
         </x-card>
 
@@ -154,7 +154,7 @@
 
                         <div class="grid gap-4 lg:grid-cols-2" style="min-height:340px">
                             <div class="flex flex-col">
-                                <label class="mb-1 text-xs font-semibold uppercase tracking-wide opacity-40">{{ __('Edit') }}</label>
+                                <label class="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">{{ __('Edit') }}</label>
                                 <textarea
                                     wire:model.live.debounce.400ms="newsPostContent"
                                     class="flex-1 resize-none rounded-lg border border-base-300 bg-base-200/50 p-3 font-mono text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -162,7 +162,7 @@
                                     style="min-height:320px"></textarea>
                             </div>
                             <div class="flex flex-col">
-                                <label class="mb-1 text-xs font-semibold uppercase tracking-wide opacity-40">{{ __('Preview') }}</label>
+                                <label class="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">{{ __('Preview') }}</label>
                                 <div class="prose prose-sm flex-1 overflow-y-auto rounded-lg border border-base-300 bg-base-100 p-4"
                                     style="min-height:320px; max-height:480px">
                                     {!! $this->newsPostMarkdownPreview !!}
@@ -172,7 +172,7 @@
                     </div>
                 </div>
             @else
-                <p class="text-sm opacity-40 italic">{{ __('No news post will be created.') }}</p>
+                <p class="text-sm text-muted italic">{{ __('No news post will be created.') }}</p>
             @endif
         </x-card>
 
@@ -202,7 +202,7 @@
                         <div class="divide-y divide-base-200">
                             @foreach ($this->unpaidParticipants as $entry)
                                 <div class="flex items-center gap-3 px-4 py-2.5">
-                                    <div class="w-7 h-7 rounded-full bg-base-200 flex items-center justify-center text-[10px] font-black shrink-0">
+                                    <div class="w-7 h-7 rounded-full bg-base-200 flex items-center justify-center text-xs font-black shrink-0">
                                         {{ mb_strtoupper(mb_substr($entry['user']->first_name ?? '?', 0, 1)) }}{{ mb_strtoupper(mb_substr($entry['user']->last_name ?? '', 0, 1)) }}
                                     </div>
                                     <span class="flex-1 text-sm font-medium">{{ $entry['user']->full_name }}</span>

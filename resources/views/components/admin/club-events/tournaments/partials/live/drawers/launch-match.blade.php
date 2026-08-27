@@ -6,7 +6,7 @@
         </p>
 
         @if ($this->upcomingMatches->isEmpty())
-            <div class="flex flex-col items-center py-16 opacity-30">
+            <div class="flex flex-col items-center py-16 text-muted">
                 <x-icon name="o-no-symbol" class="w-12 h-12 mx-auto mb-3" />
                 <p class="text-sm">{{ __('No matches scheduled.') }}</p>
             </div>
@@ -45,12 +45,12 @@
                             </div>
                         @endif
 
-                        <div wire:click="startMatch({{ $match->id }})"
+                        <button type="button" wire:click="startMatch({{ $match->id }})"
                             @class([
-                                'p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between',
+                                'w-full text-left p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between',
                                 'border-warning/60 bg-warning/5 opacity-60' => $hasConflict,
                                 'border-primary bg-primary/5 ring-1 ring-primary/20' => $isFirst && ! $hasConflict,
-                                'border-base-200 hover:border-primary/40 bg-base-100' => ! $isFirst && ! $hasConflict,
+                                'border-base-300 hover:border-primary/40 bg-base-100' => ! $isFirst && ! $hasConflict,
                             ])>
 
                             <div class="flex-1 min-w-0">
@@ -60,11 +60,11 @@
                                 </div>
                                 <div class="flex flex-col">
                                     <span @class(['font-bold text-sm truncate', 'text-warning-content line-through' => $p1Busy])>{{ $side1Name }}</span>
-                                    <span class="text-[10px] opacity-30 italic font-black my-0.5">VS</span>
+                                    <span class="text-xs opacity-30 italic font-black my-0.5">VS</span>
                                     <span @class(['font-bold text-sm truncate', 'text-warning-content line-through' => $p2Busy])>{{ $side2Name }}</span>
                                 </div>
                                 @if ($refereeName)
-                                    <div class="mt-1.5 flex items-center gap-1 text-xs opacity-50">
+                                    <div class="mt-1.5 flex items-center gap-1 text-xs text-muted">
                                         <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                                         <span>{{ $refereeName }}</span>
                                     </div>
@@ -75,12 +75,15 @@
                                 @if ($hasConflict)
                                     <x-icon name="o-exclamation-triangle" class="w-5 h-5 text-warning-content" />
                                 @else
-                                    <x-button icon="o-play"
-                                        class="btn-circle {{ $isFirst ? 'btn-primary' : 'btn-ghost' }} btn-sm"
-                                        wire:loading.attr="disabled" />
+                                    {{-- Décor : c'est la carte entière qui lance le match, et un
+                                         bouton ne peut pas en contenir un autre. --}}
+                                    <span aria-hidden="true"
+                                        class="btn btn-circle {{ $isFirst ? 'btn-primary' : 'btn-ghost' }} btn-sm pointer-events-none">
+                                        <x-icon name="o-play" class="h-4 w-4" />
+                                    </span>
                                 @endif
                             </div>
-                        </div>
+                        </button>
                     </div>
                 @endforeach
             </div>

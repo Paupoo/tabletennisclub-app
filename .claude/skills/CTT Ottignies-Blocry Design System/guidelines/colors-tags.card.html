@@ -1,0 +1,39 @@
+<!-- @dsCard group="Colors" viewport="700x170" name="Category & level tags" subtitle="Pill palettes for articles, schedules and event types" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--white); color: var(--text-strong); }
+  .wrap { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .lbl { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-bottom: 8px; }
+  .pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill { font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: var(--radius-full); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div>
+      <div class="lbl">Article / event categories — solid brand fills</div>
+      <div class="pills">
+        <span class="pill" style="background:var(--tag-comp-bg);color:var(--tag-comp-fg)">Compétition</span>
+        <span class="pill" style="background:var(--tag-form-bg);color:var(--tag-form-fg)">Formation</span>
+        <span class="pill" style="background:var(--tag-neutral-bg);color:var(--tag-neutral-fg)">Vie du club</span>
+        <span class="pill" style="background:var(--club-blue);color:#fff">Tournoi</span>
+        <span class="pill" style="background:var(--gray-800);color:#fff">Entraînement</span>
+      </div>
+    </div>
+    <div>
+      <div class="lbl">Player levels — soft tinted pills</div>
+      <div class="pills">
+        <span class="pill" style="background:var(--level-all-bg);color:var(--level-all)">Tous niveaux</span>
+        <span class="pill" style="background:var(--level-begin-bg);color:var(--level-begin)">Débutant</span>
+        <span class="pill" style="background:var(--level-confirm-bg);color:var(--level-confirm)">Confirmé</span>
+        <span class="pill" style="background:var(--level-pro-bg);color:var(--level-pro)">Compétition</span>
+        <span class="pill" style="background:var(--level-hope-bg);color:var(--level-hope)">Jeunes espoirs</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

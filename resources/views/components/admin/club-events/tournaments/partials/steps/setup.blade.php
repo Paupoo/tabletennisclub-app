@@ -19,7 +19,7 @@
                     <x-input label="Tournament name(*)" placeholder="Ex: Spring Grand Prix" icon="o-trophy"
                         wire:model.live.debounce.500ms="name"
                         :readonly="$this->isContractLocked"
-                        :hint="$this->isContractLocked ? __('🔒 Locked — tournament validated') : null" />
+                        :hint="$this->isContractLocked ? __('Locked — tournament validated') : null" />
                 </div>
 
                 {{-- Rooms — always editable, notification if players registered --}}
@@ -27,7 +27,7 @@
                     <x-choices label="Room(s)(*)" wire:model.live="selectedRooms" :options="$this->availableRooms"
                         icon="o-map-pin" />
                     @if ($this->hasRegisteredUsers)
-                        <span class="absolute top-0 right-0 text-[10px] text-warning-content font-medium flex items-center gap-0.5">
+                        <span class="absolute top-0 right-0 text-xs text-warning-content font-medium flex items-center gap-0.5">
                             <x-icon name="o-bell-alert" class="w-3 h-3" /> {{ __('Will notify') }}
                         </span>
                     @endif
@@ -47,7 +47,7 @@
                     <x-datepicker label="Date(*)" icon="o-calendar"
                         wire:model="tournamentDate" type="date" />
                     @if ($this->hasRegisteredUsers)
-                        <span class="absolute top-0 right-0 text-[10px] text-warning-content font-medium flex items-center gap-0.5">
+                        <span class="absolute top-0 right-0 text-xs text-warning-content font-medium flex items-center gap-0.5">
                             <x-icon name="o-bell-alert" class="w-3 h-3" /> {{ __('Will notify') }}
                         </span>
                     @endif
@@ -57,7 +57,7 @@
                 <div class="relative">
                     <x-input label="Start time(*)" type="time" icon="o-clock" wire:model="startTime" />
                     @if ($this->hasRegisteredUsers)
-                        <span class="absolute top-0 right-0 text-[10px] text-warning-content font-medium flex items-center gap-0.5">
+                        <span class="absolute top-0 right-0 text-xs text-warning-content font-medium flex items-center gap-0.5">
                             <x-icon name="o-bell-alert" class="w-3 h-3" /> {{ __('Will notify') }}
                         </span>
                     @endif
@@ -72,7 +72,7 @@
                 <x-input label="Registration fee" suffix="€" type="number" icon="o-banknotes"
                     wire:model="price"
                     :readonly="$this->isContractLocked"
-                    :hint="$this->isContractLocked ? __('🔒 Locked — tournament validated') : null" />
+                    :hint="$this->isContractLocked ? __('Locked — tournament validated') : null" />
 
                 <div class="col-span-2">
                     <x-toggle :label="__('Open registrations')" icon="o-eye"
@@ -129,7 +129,7 @@
                         <span class="text-sm">{{ __('Players choose partners') }}</span>
                     </label>
                 </div>
-                <p class="text-[11px] text-base-content/50">
+                <p class="text-xs text-base-content/50">
                     @if ($doublesRegistrationMode === 'club')
                         {{ __('Admin composes pairs in the Registrations tab.') }}
                     @else
@@ -144,7 +144,7 @@
             hint="Best of {{ ($this->totalSets * 2) - 1 }}" />
         <div class="flex flex-col gap-1">
             <x-toggle wire:model.live="deuceEnabled" :label="__('Deuce rule')" right />
-            <p class="text-[11px] text-base-content/50 leading-tight">
+            <p class="text-xs text-base-content/50 leading-tight">
                 @if ($deuceEnabled)
                     {{ __('Standard: win at 11 with a 2-point lead. At 10-10, play continues until +2 (e.g. 12-10).') }}
                 @else
@@ -152,19 +152,19 @@
                 @endif
             </p>
             @if (! $deuceEnabled)
-                <p class="text-[11px] text-warning-content/80 font-semibold mt-0.5">
-                    ⚡ {{ __('Recommended for "Minimize duration" objective.') }}
+                <p class="text-xs text-warning-content/80 font-semibold mt-0.5">
+                    <x-icon name="o-bolt" class="mb-0.5 inline h-3.5 w-3.5" /> {{ __('Recommended for "Minimize duration" objective.') }}
                 </p>
             @endif
         </div>
         <div class="flex flex-col gap-1">
             <x-toggle wire:model.live="hasHandicapPoints" :label="__('Handicap points (AFTT)')" right />
-            <p class="text-[11px] text-base-content/50 leading-tight">
+            <p class="text-xs text-base-content/50 leading-tight">
                 {{ __('Each set starts with a score advantage based on player rankings. Ideal for friendly or mixed-level tournaments.') }}
             </p>
             @if (! $hasHandicapPoints)
-                <p class="text-[11px] text-warning-content/80 font-semibold mt-0.5">
-                    🏆 {{ __('Disabled for "Competitive format" objective.') }}
+                <p class="text-xs text-warning-content/80 font-semibold mt-0.5">
+                    <x-icon name="o-trophy" class="mb-0.5 inline h-3.5 w-3.5" /> {{ __('Disabled for "Competitive format" objective.') }}
                 </p>
             @endif
         </div>
@@ -371,7 +371,7 @@
                                 <x-icon name="o-exclamation-triangle" class="w-3.5 h-3.5 shrink-0" />
                                 {{ __('~:n table(s) may sit idle — tournament will run longer than needed', ['n' => $eff['idle']]) }}
                             </div>
-                            <ul class="text-[11px] text-base-content/60 space-y-0.5 pl-1">
+                            <ul class="text-xs text-base-content/60 space-y-0.5 pl-1">
                                 @if ($eff['extraPools'] > 0)
                                     <li>→ {{ __('Add :n pool(s) → :t total', ['n' => $eff['extraPools'], 't' => $eff['suggestedNbPools']]) }}</li>
                                 @endif

@@ -203,7 +203,7 @@ This section defines **the one true way** to implement each recurring UI pattern
 Every admin list page follows this structure (in order):
 
 ```
-breadcrumbs → header (title | search | [filters] [create]) → filter-bar → bulk-bar → mobile cards → desktop table → modals
+breadcrumbs → header (title | search | [filters] [create]) → filter-chips → mobile cards → desktop table → selection-pill → filter-drawer → modals
 ```
 
 ```blade
@@ -221,14 +221,7 @@ breadcrumbs → header (title | search | [filters] [create]) → filter-bar → 
                 wire:model.live.debounce.300ms="search" />
         </x-slot:middle>
         <x-slot:actions>
-            <x-button class="btn-ghost {{ $activeFiltersCount > 0 ? 'btn-active' : '' }}"
-                wire:click="$toggle('showFilters')">
-                <x-icon name="o-funnel" class="h-5 w-5" />
-                {{ __('Filters') }}
-                @if ($activeFiltersCount > 0)
-                    <x-badge class="badge-sm badge-primary" value="{{ $activeFiltersCount }}" />
-                @endif
-            </x-button>
+            <x-admin.shared.filters-button :count="count($filterChips)" />
             {{-- Short form (≤ 4 fields) → modal --}}
             <x-button class="btn-primary" icon="o-plus" :label="__('Create')"
                 wire:click="$set('createModal', true)" />
@@ -238,29 +231,10 @@ breadcrumbs → header (title | search | [filters] [create]) → filter-bar → 
         </x-slot:actions>
     </x-header>
 
-    {{-- 3. Filter bar (collapsible) --}}
-    <x-admin.shared.filter-bar :active-filters-count="$activeFiltersCount" :show="$showFilters">
-        <x-slot:filters>
-            <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                    {{ __('Filter group label') }}
-                </p>
-                <x-radio wire:model.live="someFilter" :options="$filterOptions" />
-            </div>
-        </x-slot:filters>
-    </x-admin.shared.filter-bar>
+    {{-- 3. Active filters, as removable chips --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
 
-    {{-- 4. Bulk bar (conditionally visible) --}}
-    @if (count($selected) > 0)
-        <x-admin.shared.bulk-bar :selected="$selected">
-            <x-slot:actions>
-                <x-button class="btn-ghost btn-sm text-error" icon="o-trash"
-                    :label="__('Delete')" wire:click="confirmBulkDelete" />
-            </x-slot:actions>
-        </x-admin.shared.bulk-bar>
-    @endif
-
-    {{-- 5. Mobile view (cards) --}}
+    {{-- 4. Mobile view (cards) --}}
     <div class="grid grid-cols-1 gap-4 lg:hidden">
         @forelse ($items as $item)
             <x-list-item :item="$item" class="bg-base-100 rounded-lg border">
@@ -280,7 +254,7 @@ breadcrumbs → header (title | search | [filters] [create]) → filter-bar → 
         @endforelse
     </div>
 
-    {{-- 6. Desktop view (table) --}}
+    {{-- 5. Desktop view (table) --}}
     <div class="hidden lg:block">
         <x-card>
             @if ($items->isEmpty())
@@ -308,7 +282,29 @@ breadcrumbs → header (title | search | [filters] [create]) → filter-bar → 
         </x-card>
     </div>
 
-    {{-- 7. Modals --}}
+    {{-- 6. Bulk actions, floating over the list while a selection exists --}}
+    <x-admin.shared.selection-pill
+        :selected="$selected" :total="$items->total()"
+        :selecting-all-results="$selectingAllResults" :select-all="$selectAll">
+        <x-slot:actions>
+            <x-button class="btn-ghost btn-sm text-error" icon="o-trash"
+                :label="__('Delete')" wire:click="confirmBulkDelete" />
+        </x-slot:actions>
+    </x-admin.shared.selection-pill>
+
+    {{-- 7. Filter drawer --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
+                    {{ __('Filter group label') }}
+                </p>
+                <x-radio wire:model.live="someFilter" :options="$filterOptions" />
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
+
+    {{-- 8. Modals --}}
     <x-confirm-modal model="deleteModal" :title="__('Confirm deletion')" :subtitle="__('Warning!')"
         :confirmLabel="__('Delete')" confirmAction="delete">
         <p>{{ __('This action is irreversible.') }}</p>
@@ -322,28 +318,21 @@ breadcrumbs → header (title | search | [filters] [create]) → filter-bar → 
 
 | Slot | Content | When |
 |------|---------|------|
-| `x-slot:middle` | Search input | Always (unless season selector is present) |
-| `x-slot:middle` | Season `<x-select>` | When page is scoped by season (replaces search in middle) |
+| `x-slot:middle` | Search input | Always |
 | `x-slot:actions` | `[Filters▾ N]` button | When page has filterable columns |
 | `x-slot:actions` | `[+ Create]` button | Always |
-| `x-slot:actions` | Search input | Only when middle is taken by season selector |
 
-**Season selector edge case** — when a page is season-scoped, the season selector takes the middle slot and search moves to actions:
+**Season-scoped pages (DS-A, validated 2026-08-08)** — a criterion that determines
+*what the page is about* (exactly one value, never empty, nothing renders without it)
+is **navigation**, not a filter. It stays visible above the content; it never goes in
+the header slots and never in the filter drawer, and it produces no `filter-chip`:
 
 ```blade
-<x-header progress-indicator separator :title="__('Teams')">
-    <x-slot:middle>
-        <x-select :options="$seasons" option-label="name" option-value="id"
-            wire:model.live="selectedSeasonId" :placeholder="__('Select a season')"
-            class="w-48" />
-    </x-slot:middle>
-    <x-slot:actions>
-        <x-input clearable icon="o-magnifying-glass" :placeholder="__('Search...')"
-            wire:model.live.debounce.300ms="search" />
-        <x-button class="btn-primary" icon="o-plus" :label="__('Create')" ... />
-    </x-slot:actions>
-</x-header>
+<x-admin.shared.season-nav model="seasonId" :options="$seasons" class="mt-4" />
 ```
+
+`clearFilters()` must leave it alone — clearing filters is not a way to change page.
+A season that genuinely *narrows a set* (captain-selection) stays a filter, in the drawer.
 
 ---
 
@@ -394,58 +383,6 @@ neutral; categories carry their color.
 **Dark mode.** Filter UIs (and everything else) use daisyUI tokens only
 (`base-*`, `primary`, `warning-content`…) — never raw palette classes
 (`bg-blue-50`, `text-black`) which break the `dark` theme.
-
----
-
-### Filter Bar — `<x-admin.shared.filter-bar>` (legacy)
-
-Older collapsible-panel variant, superseded by the filter drawer above. Do not use
-for new pages. Controlled by a `$showFilters` boolean + `$activeFiltersCount` integer in the Livewire component.
-
-```blade
-{{-- Toggle button (in header actions) --}}
-<x-button class="btn-ghost {{ $activeFiltersCount > 0 ? 'btn-active' : '' }}"
-    wire:click="$toggle('showFilters')">
-    <x-icon name="o-funnel" class="h-5 w-5" />
-    {{ __('Filters') }}
-    @if ($activeFiltersCount > 0)
-        <x-badge class="badge-sm badge-primary" value="{{ $activeFiltersCount }}" />
-    @endif
-</x-button>
-
-{{-- Panel (below header) --}}
-<x-admin.shared.filter-bar :active-filters-count="$activeFiltersCount" :show="$showFilters">
-    <x-slot:filters>
-        {{-- Each filter group --}}
-        <div>
-            <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                {{ __('Label') }}
-            </p>
-            <x-radio wire:model.live="field" :options="$options" />
-        </div>
-    </x-slot:filters>
-</x-admin.shared.filter-bar>
-```
-
-In the Livewire component:
-
-```php
-public bool $showFilters = false;
-public string $search = '';
-// filter properties…
-
-public function resetFilters(): void
-{
-    $this->reset(['search', /* filter properties */]);
-}
-
-public function getActiveFiltersCountProperty(): int
-{
-    return collect([/* filter properties */])
-        ->filter(fn ($v) => filled($v))
-        ->count();
-}
-```
 
 ---
 

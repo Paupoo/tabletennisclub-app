@@ -88,6 +88,8 @@ it('shows the training of a cancelled affiliation as cancelled, not pending', fu
     Livewire::test('pages::club-admin.users.registrations')
         ->set('statusFilter', 'cancelled')
         ->set('currentRequestId', $subscription->id)
+        // Le détail de la demande vit dans la modale de revue.
+        ->set('reviewModal', true)
         ->assertSee($pack->name)
         ->assertSee(__('Cancelled'))
         ->assertDontSee(__('Awaiting validation'));

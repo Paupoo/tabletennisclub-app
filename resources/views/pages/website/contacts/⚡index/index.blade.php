@@ -13,21 +13,7 @@
         </x-slot:middle>
         <x-slot:actions>
             {{-- Mobile: 🔍 · filter · ☰ --}}
-            <div class="flex items-center gap-1 lg:hidden">
-                <button class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true">
-                    <x-icon name="o-magnifying-glass" class="h-5 w-5" />
-                </button>
-                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                    wire:click="$set('filterDrawer', true)">
-                    <x-icon name="o-funnel" class="h-5 w-5" />
-                    @if (count($filterChips) > 0)
-                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
-                    @endif
-                </button>
-                <button class="btn btn-primary btn-circle btn-sm" @click="mobileActionsOpen = true">
-                    <x-icon name="o-bars-3" class="h-5 w-5" />
-                </button>
-            </div>
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" />
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
                 <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
@@ -42,7 +28,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -54,7 +40,8 @@
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
                     placeholder="{{ __('Search by name, email…') }}" />
             </div>
-            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+            <button type="button" @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm"
+                aria-label="{{ __('Close the search') }}">
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
@@ -87,6 +74,8 @@
         @endforeach
     </div>
 
+    @php $hasActiveFilters = count($filterChips) > 0 || filled($search); @endphp
+
     {{-- ── Vue mobile ───────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($contacts as $contact)
@@ -116,7 +105,13 @@
                     @endif
                 </x-slot:avatar>
                 <x-slot:value>
-                    <span class="font-medium">{{ $contact->first_name }} {{ $contact->last_name }}</span>
+                    {{-- Le nom EST la commande : au clavier, la carte n'offrait que
+                         « Supprimer ». Un bouton nommé de plus écraserait l'identité
+                         (voir MobileMemberCardTest) ; le nom, lui, ne coûte rien. --}}
+                    <button type="button" class="w-full text-left font-medium"
+                        wire:click.stop="openDetail({{ $contact->id }})">
+                        {{ $contact->first_name }} {{ $contact->last_name }}
+                    </button>
                 </x-slot:value>
                 <x-slot:sub-value>
                     <div class="mt-0.5 flex items-center gap-2">
@@ -136,21 +131,27 @@
                 </x-slot:actions>
             </x-list-item>
         @empty
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-envelope"
-                :heading="__('No contacts found')"
-                :message="__('Try adjusting your search or filters.')" />
+                :heading="__('No contacts yet')"
+                :filtered="$hasActiveFilters" />
         @endforelse
+
+        @if ($contacts->hasPages())
+            <div class="mt-2">
+                {{ $contacts->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
     <div class="hidden lg:block">
         <x-card>
             @if ($contacts->isEmpty())
-                <x-empty-state
+                <x-admin.shared.list-empty-state
                     icon="o-envelope"
-                    :heading="__('No contacts found')"
-                    :message="__('Try adjusting your search or filters.')" />
+                    :heading="__('No contacts yet')"
+                    :filtered="$hasActiveFilters" />
             @else
                 <x-table :headers="$headers" :rows="$contacts" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
@@ -225,35 +226,35 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Interest') }}
                 </p>
                 <x-select :options="$interestOptions" :placeholder="__('All interests')"
                     wire:model.live="interest" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Status') }}
                 </p>
                 <x-select :options="$statusOptions" :placeholder="__('All statuses')"
                     wire:model.live="status" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Age category') }}
                 </p>
                 <x-select :options="$ageCategoryOptions" :placeholder="__('All age categories')"
                     wire:model.live="ageCategory" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Experience') }}
                 </p>
                 <x-select :options="$experienceOptions" :placeholder="__('All levels')"
                     wire:model.live="experience" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Competition') }}
                 </p>
                 <x-select :options="$triStateOptions" :placeholder="__('Any')"
@@ -282,7 +283,7 @@
 
                 @if ($selectedContact->message)
                     <div>
-                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest opacity-50">
+                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-muted">
                             {{ __('Message') }}
                         </p>
                         <p class="text-sm leading-relaxed">{{ $selectedContact->message }}</p>
@@ -302,12 +303,12 @@
                 @endif
 
                 <div>
-                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                         {{ __('Status') }}
                     </p>
                     <div class="flex flex-wrap gap-2">
                         @foreach ([['new', __('New'), 'btn-info'], ['processed', __('Processed'), 'btn-success'], ['rejected', __('Rejected'), 'btn-error']] as [$val, $label, $cls])
-                            <x-button class="btn-sm btn-soft {{ $cls }} {{ $selectedContact->status === $val ? 'opacity-100' : 'opacity-40' }}"
+                            <x-button class="btn-sm btn-soft {{ $cls }} {{ $selectedContact->status === $val ? 'opacity-100' : 'opacity-70' }}"
                                 :label="$label" :disabled="! $canManage"
                                 wire:click="updateStatus({{ $selectedContact->id }}, '{{ $val }}')" />
                         @endforeach
@@ -316,8 +317,8 @@
 
                 @if ($canManage)
                     {{-- ── Profil (capture incrémentale, tout optionnel) ─────────── --}}
-                    <div class="border-base-200 space-y-3 rounded-lg border p-4">
-                        <p class="text-xs font-semibold uppercase tracking-widest opacity-50">
+                    <div class="border-base-300 space-y-3 rounded-lg border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-widest text-muted">
                             {{ __('Profile') }}
                         </p>
                         <x-select :label="__('Age category')" :options="$ageCategoryOptions"
@@ -336,7 +337,7 @@
                     </div>
 
                     <div>
-                        <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                        <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                             {{ __('Send an email') }}
                         </p>
                         <x-select :options="$templateOptions"
@@ -349,7 +350,7 @@
                     </div>
 
                     @if (in_array($selectedContact->interest?->value, ['JOIN_US', 'TRIAL']) && $selectedContact->status !== 'processed')
-                        <div class="border-base-200 border-t pt-3">
+                        <div class="border-base-300 border-t pt-3">
                             @if ($this->trashedMatchFor($selectedContact))
                                 <p class="text-warning text-xs">
                                     {{ __('This email belongs to a former member account. Resolve this manually before onboarding.') }}
@@ -363,7 +364,7 @@
                         </div>
                     @endif
 
-                    <div class="border-base-200 border-t pt-2">
+                    <div class="border-base-300 border-t pt-2">
                         <x-button class="btn-ghost btn-sm w-full text-error" icon="o-trash"
                             :label="__('Delete this contact')"
                             wire:click="confirmDelete({{ $selectedContact->id }})" />
@@ -374,7 +375,7 @@
     </x-drawer>
 
     {{-- ── Modal email personnalisé ──────────────────────────────────── --}}
-    <x-app-modal wire:model="emailModal" :title="__('Custom email')">
+    <x-app-modal wire:model="emailModal" :title="__('Custom email')" :open="$emailModal">
         <div class="space-y-4">
             <x-input :label="__('Subject')" wire:model="emailSubject" />
             <x-textarea :label="__('Message')" wire:model="emailBody" rows="6" />
@@ -392,14 +393,14 @@
 
     {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete this contact?')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('This action is irreversible.') }}</p>
     </x-confirm-modal>
 
     {{-- ── Modal confirmation de lien vers un compte existant ──────────── --}}
     <x-confirm-modal model="confirmLinkModal" :title="__('Link to existing account?')"
         :confirmLabel="__('Link to existing account')" confirmClass="btn-primary" confirmAction="linkToExistingUser"
-        cancelAction="cancelLink">
+        cancelAction="cancelLink" :open="$confirmLinkModal">
         @if ($linkTargetUser ?? null)
             <p>
                 {{ __('This email matches an existing member: :name.', ['name' => $linkTargetUser->first_name . ' ' . $linkTargetUser->last_name]) }}
@@ -412,7 +413,7 @@
 
     {{-- ── Modal suppression bulk ───────────────────────────────────── --}}
     <x-confirm-modal model="confirmBulkDeleteModal" :title="__('Delete selected contacts?')"
-        :confirmLabel="__('Delete')" confirmAction="bulkDelete">
+        :confirmLabel="__('Delete')" confirmAction="bulkDelete" :open="$confirmBulkDeleteModal">
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be permanently deleted.') }}

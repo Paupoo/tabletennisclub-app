@@ -26,7 +26,7 @@
                 <x-avatar :image="$user->photo ?? '/images/empty-user.jpg'" class="!w-24 !rounded-full" />
                 <div>
                     <div class="font-bold text-xl">{{ $user->first_name }} {{ $user->last_name }}</div>
-                    <div class="text-sm opacity-50 mt-0.5">{{ $user->is_active ? __('Active member') : __('Inactive member') }}</div>
+                    <div class="text-sm text-muted mt-0.5">{{ $user->is_active ? __('Active member') : __('Inactive member') }}</div>
                 </div>
                 <div class="flex flex-wrap justify-center gap-1">
                     @if ($user->hasRole(\App\Domains\Shared\Enums\Role::ADMINISTRATOR->value))
@@ -213,7 +213,7 @@
                                     {{-- Le message du comité : c'est ce qui permet de comprendre --}}
                                     <p class="whitespace-pre-line text-sm text-base-content/80">{{ $fine->pedagogical_message }}</p>
 
-                                    <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-base-200 pt-3 text-xs text-base-content/60">
+                                    <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-base-300 pt-3 text-xs text-base-content/60">
                                         @if ($fine->federation_reference)
                                             <span>{{ __('Federation reference') }}: <span class="font-mono">{{ $fine->federation_reference }}</span></span>
                                         @endif
@@ -344,7 +344,7 @@
          MODAL — Delete photo
     ════════════════════════════════ --}}
     <x-confirm-modal model="deleteModal" :title="__('Confirmation of deletion')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Delete')" confirmAction="deletePhoto">
+        :confirmLabel="__('Delete')" confirmAction="deletePhoto" :open="$deleteModal">
         {{ __('Are you sure you want to delete this picture? This action is irreversible.') }}
     </x-confirm-modal>
 

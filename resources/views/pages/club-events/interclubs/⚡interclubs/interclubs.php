@@ -48,9 +48,12 @@ new class extends Component
 
     public ?int $selectedTeamId = null;
 
+    /**
+     * The season is navigation, not a filter (DS-A): clearing the filters must
+     * not send the reader back to another season than the one they are looking at.
+     */
     public function clearFilters(): void
     {
-        $this->seasonId = Season::current()?->id;
         $this->selectedTeamId = null;
     }
 
@@ -82,11 +85,6 @@ new class extends Component
     public function getFilterChips(): array
     {
         $chips = [];
-
-        if ($this->seasonId !== Season::current()?->id) {
-            $seasonName = Season::find($this->seasonId)?->name ?? __('All seasons');
-            $chips[] = ['key' => 'seasonId', 'label' => __('Season') . ': ' . $seasonName];
-        }
 
         if ($this->selectedTeamId) {
             $teamName = Team::find($this->selectedTeamId)?->name ?? '';
@@ -135,12 +133,6 @@ new class extends Component
 
     public function removeFilter(string $key): void
     {
-        if ($key === 'seasonId') {
-            $this->seasonId = Season::current()?->id;
-
-            return;
-        }
-
         $this->reset([$key]);
     }
 

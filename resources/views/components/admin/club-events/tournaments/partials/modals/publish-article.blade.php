@@ -1,4 +1,4 @@
-<x-app-modal wire:model="showPublishModal" :title="__('Save article')" separator>
+<x-app-modal wire:model="showPublishModal" :title="__('Save article')" separator :open="$showPublishModal">
     <div class="space-y-4">
         <div class="p-4 bg-info/10 border border-info/20 rounded-xl flex gap-4">
             <x-icon name="o-information-circle" class="w-6 h-6 text-info shrink-0" />

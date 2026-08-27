@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header separator
+    <x-header progress-indicator separator
         :title="$team?->fullName() ?? __('My team(s)')"
         :subtitle="$team ? collect([$categoryLabel, $team->league?->division, $team->season?->name])->filter()->implode(' · ') : null">
         <x-slot:actions>
@@ -36,10 +36,10 @@
                                             {{ $mate->first_name }} {{ $mate->last_name }}
                                         </span>
                                         @if ($isYou)
-                                            <span class="text-xs opacity-50">{{ __('(you)') }}</span>
+                                            <span class="text-xs text-muted">{{ __('(you)') }}</span>
                                         @endif
                                     </div>
-                                    <div class="text-xs opacity-50">{{ $mate->ranking }}</div>
+                                    <div class="text-xs text-muted">{{ $mate->ranking }}</div>
                                 </div>
                                 @if ($team->captain_id === $mate->id)
                                     <x-badge :value="__('Captain')" class="badge-secondary badge-sm" />
@@ -64,7 +64,7 @@
                         <div class="divide-y divide-base-200">
                             @foreach ($upcomingMatches as $match)
                                 <div class="flex items-center gap-4 py-3">
-                                    <div class="w-12 shrink-0 rounded-lg border border-base-200 bg-base-200/40 py-1 text-center">
+                                    <div class="w-12 shrink-0 rounded-lg border border-base-300 bg-base-200/40 py-1 text-center">
                                         <div class="text-base font-bold leading-tight">
                                             {{ $match['start_date_time']->format('d') }}
                                         </div>
@@ -125,7 +125,7 @@
                         </div>
                     @endif
 
-                    <div class="mt-4 border-t border-base-200 pt-3 text-xs text-base-content/50">
+                    <div class="mt-4 border-t border-base-300 pt-3 text-xs text-base-content/50">
                         {{ __('Division standings will appear here once opponent results are recorded.') }}
                     </div>
                 </x-card>

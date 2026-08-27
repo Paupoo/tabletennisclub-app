@@ -25,10 +25,11 @@
                         {{ __('No email is sent by an import, ever. Members are invited later, from the members list, when the committee decides to.') }}
                     </x-alert>
 
-                    <x-file wire:model="importFile" :label="__('Affiliate listing')" accept=".csv,.txt"
+                    <x-file wire:model="importFile" :label="__('Affiliate listing')"
+                        :aria-label="__('Affiliate listing')" accept=".csv,.txt"
                         hint="CSV · {{ __('semicolon separated, as exported') }}" />
 
-                    <p class="text-xs opacity-50">
+                    <p class="text-xs text-muted">
                         {{ __('Expected columns: Licence, Nom, DATE NAISSANCE, CH, CD, SA, Statut, Email, Tel, GSM, Adresse, Numéro, CP, Localité') }}
                     </p>
                 </div>
@@ -90,7 +91,7 @@
                 </x-section-accordion>
             @endif
 
-            <div class="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-base-200 bg-base-100 py-3">
+            <div class="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-base-300 bg-base-100 py-3">
                 <p class="text-sm opacity-70">
                     {{ __(':count affiliate(s) read from the file.', ['count' => count($rows)]) }}
                 </p>
@@ -168,7 +169,7 @@
                                 <a class="link link-hover" href="{{ route('admin.users.edit', $member) }}">
                                     {{ $member->full_name }}
                                 </a>
-                                <span class="font-mono text-xs opacity-40"> #{{ $member->licence }}</span>
+                                <span class="font-mono text-xs text-muted"> #{{ $member->licence }}</span>
                             </li>
                         @endforeach
                     </ul>

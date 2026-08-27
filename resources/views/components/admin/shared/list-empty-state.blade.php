@@ -27,10 +27,13 @@
             wire:click="clearFilters" />
     </x-empty-state>
 @else
+    {{-- Le slot sert de message. Il ne peut pas être passé tel quel à
+    <x-empty-state>, qui rend son propre slot *à la place* du bouton : une
+    explication ferait alors disparaître l'action. --}}
     <x-empty-state
         :icon="$icon"
         :heading="$heading"
-        :message="$slot->isNotEmpty() ? null : __('Nothing here yet.')"
+        :message="$slot->isNotEmpty() ? trim((string) $slot) : __('Nothing here yet.')"
         :buttonText="$createHref ? $createLabel : null"
         :href="$createHref" />
 @endif

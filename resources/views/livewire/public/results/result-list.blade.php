@@ -1,4 +1,8 @@
 <div>
+    {{-- Nothing to filter until the club has a season: the bar used to open on a
+    46px control holding nothing but its chevron, the first thing a visitor met
+    under the hero. The three other filters already guard themselves this way. --}}
+    @if($seasons->isNotEmpty())
     <x-public.filter-bar>
         <x-slot:filters>
             <div class="flex items-center gap-2">
@@ -91,6 +95,7 @@
             </x-slot:chips>
         @endif
     </x-public.filter-bar>
+    @endif
 
     {{-- Results content --}}
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 pt-8">

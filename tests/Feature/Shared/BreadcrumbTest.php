@@ -7,10 +7,10 @@ use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Route;
 
 dataset('simple_methods', [
-    ['articles',      'Articles',       'clubPosts.newsPosts.index',            '/custom-articles',      's-home'],
+    ['articles',      'Articles',       'clubPosts.newsPosts.index',            '/custom-articles',      null],
     ['contacts',      'Contacts',       'clubAdmin.contacts.index',             '/custom-contacts',      null],
-    ['events',        'Events',         'clubPosts.eventPosts.index',           '/custom-events',        's-home'],
-    ['matches',       'Matches',        'admin.interclubs.interclubs',          '/custom-matches',       's-home'],
+    ['events',        'Events',         'clubPosts.eventPosts.index',           '/custom-events',        null],
+    ['matches',       'Matches',        'admin.interclubs.interclubs',          '/custom-matches',       null],
     ['rooms',         'Rooms',          'admin.rooms.index',                    '/custom-rooms',         null],
     ['seasons',       'Seasons',        'admin.seasons.index',                  '/custom-seasons',       'o-calendar'],
     ['teams',         'Teams',          'teams.index',                          '/custom-teams',          null],
@@ -111,8 +111,8 @@ describe('Breadcrumb', function (): void {
 
             expect($items)->toHaveCount(4)
                 ->and($items[0]['label'])->toBe(__('Admin Panel'))
-                ->and($items[0]['icon'])->toBe('s-home')
-                ->and($items[1]['label'])->toBe('Tournaments')
+                ->and($items[0]['icon'])->toBe('o-home')
+                ->and($items[1]['label'])->toBe(__('Tournaments'))
                 ->and($items[2]['label'])->toBe('World Cup 2024')
                 ->and($items[2]['link'])->toContain((string) $tournament->id)
                 ->and($items[3]['label'])->toBe('Edit')
@@ -132,7 +132,7 @@ describe('Breadcrumb', function (): void {
 
             expect($items)->toHaveCount(3)
                 ->and($items[0]['label'])->toBe(__('Admin Panel'))
-                ->and($items[1]['label'])->toBe('Users')
+                ->and($items[1]['label'])->toBe(__('Users'))
                 ->and($items[2]['label'])->toBe('Create User')
                 ->and($items[2]['link'])->toBe(null);
         });

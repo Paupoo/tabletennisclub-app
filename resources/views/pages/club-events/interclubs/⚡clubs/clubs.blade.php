@@ -22,7 +22,7 @@
     </x-header>
 
     @if ($clubs->isEmpty())
-        <x-card class="mt-4 border-none">
+        <x-card class="mt-4">
             <div class="py-16 text-center text-gray-500">
                 @if ($search)
                     <p class="text-sm">{{ __('No clubs match your search.') }}</p>
@@ -53,7 +53,7 @@
                                         {{ implode(', ', array_filter([$club->street, trim($club->city_code . ' ' . $club->city_name)])) }}
                                     </span>
                                 @endif
-                                <span class="flex items-center gap-1 opacity-50">
+                                <span class="flex items-center gap-1 text-muted">
                                     <x-icon name="o-identification" class="h-3 w-3" />
                                     {{ $club->licence }}
                                 </span>
@@ -87,7 +87,7 @@
     @endif
 
     {{-- Modal create / edit --}}
-    <x-app-modal wire:model="editModal" :title="$editingClubId ? __('Edit club') : __('New club')" separator>
+    <x-app-modal wire:model="editModal" :title="$editingClubId ? __('Edit club') : __('New club')" separator :open="$editModal">
         <div class="space-y-4">
             <x-input
                 :label="__('Club name')"
@@ -126,7 +126,7 @@
     </x-app-modal>
 
     <x-confirm-modal model="deleteModal" :title="__('Delete club?')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('Are you sure you want to delete this club? This action cannot be undone.') }}</p>
     </x-confirm-modal>
 </div>

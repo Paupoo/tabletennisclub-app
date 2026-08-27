@@ -12,7 +12,7 @@
     {{-- ── ÉTAPE 1 : Paramètres ─────────────────────────────────────────── --}}
     @if ($step === 1)
         <div class="mx-auto max-w-lg">
-            <x-card class="border-gray-200 shadow-sm" :title="__('Composition settings')">
+            <x-card class="shadow-sm" :title="__('Composition settings')">
                 <div class="space-y-5">
                     <x-select
                         label="Saison"
@@ -39,10 +39,10 @@
                                     @class([
                                         'flex flex-col items-center gap-1 rounded-lg border-2 px-3 py-3 text-center text-sm transition-all',
                                         'border-blue-500 bg-blue-50 text-blue-800 shadow-sm' => $teamCategory === $value,
-                                        'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50' => $teamCategory !== $value,
+                                        'border-base-300 bg-white text-gray-600 hover:border-primary hover:bg-gray-50' => $teamCategory !== $value,
                                     ])>
                                     <span class="font-semibold leading-tight">{{ $cat['label'] }}</span>
-                                    <span class="text-[10px] leading-tight opacity-60">{{ $cat['desc'] }}</span>
+                                    <span class="text-xs leading-tight opacity-60">{{ $cat['desc'] }}</span>
                                 </button>
                             @endforeach
                         </div>
@@ -59,8 +59,11 @@
                         </div>
                     @endif
 
+                    {{-- Mary pose son label dans un <legend> : cela nomme le groupe,
+                    pas le curseur. L'aria-label nomme le curseur lui-même. --}}
                     <x-range
                         :label="__('Core size (players per team)')"
+                        :aria-label="__('Core size (players per team)')"
                         wire:model.live="nucleusSize"
                         min="5"
                         max="20"
@@ -103,7 +106,7 @@
 
             <p class="mb-6 text-sm text-gray-500">
                 {{ count($proposedTeams) }} équipes proposées ·
-                <span class="text-gray-400">{{ __('drag and drop players · click ⭐ to designate a captain') }}</span>
+                <span class="text-gray-400">{{ __('drag and drop players · click the star to designate a captain') }}</span>
             </p>
 
             <div class="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
@@ -113,7 +116,7 @@
                     <div
                         wire:key="team-card-{{ $index }}"
                         class="rounded-xl border bg-white shadow-sm transition-all"
-                        :class="over === {{ $index }} ? 'border-blue-400 ring-2 ring-blue-200' : 'border-gray-200'"
+                        :class="over === {{ $index }} ? 'border-blue-400 ring-2 ring-blue-200' : 'border-base-300'"
                         @dragover.prevent="over = {{ $index }}"
                         @dragleave="over === {{ $index }} && (over = null)"
                         @drop.prevent="$wire.movePlayerToTeam(dragging, {{ $index }}); dragging = null; over = null">
@@ -128,7 +131,7 @@
                                 @if (($teamData['captainId'] ?? null) !== null)
                                     @php $cap = $competitors[$teamData['captainId']] ?? null; @endphp
                                     @if ($cap)
-                                        <span class="flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-semibold text-yellow-700">
+                                        <span class="flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700">
                                             <x-heroicon-s-star class="h-2.5 w-2.5" />
                                             {{ $cap->first_name }}
                                         </span>
@@ -162,12 +165,12 @@
                                         </span>
 
                                         @if ($player->ranking)
-                                            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-600">
+                                            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-600">
                                                 {{ $player->ranking }}
                                             </span>
                                         @endif
                                         @if ($player->forceListFor($teamCategory) !== null)
-                                            <span class="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-400"
+                                            <span class="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary"
                                                 title="Liste de force">
                                                 #{{ $player->forceListFor($teamCategory) }}
                                             </span>
@@ -188,8 +191,8 @@
                         </div>
 
                         {{-- Infos de ligue --}}
-                        <div class="border-t border-gray-100 bg-gray-50 px-4 pb-3 pt-2">
-                            <p class="mb-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Ligue</p>
+                        <div class="border-t border-base-300 bg-gray-50 px-4 pb-3 pt-2">
+                            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Ligue</p>
                             <div class="grid grid-cols-3 gap-2">
                                 <x-select
                                     :options="$categoryOptions"
@@ -216,7 +219,7 @@
                         class="rounded-xl border bg-white shadow-sm transition-all"
                         :class="over === 'unassigned'
                             ? 'border-orange-400 ring-2 ring-orange-200'
-                            : ({{ count($unassigned) > 0 ? 'true' : 'false' }} ? 'border-dashed border-gray-300' : 'border-dashed border-gray-200 opacity-60')"
+                            : ({{ count($unassigned) > 0 ? 'true' : 'false' }} ? 'border-dashed border-base-300' : 'border-dashed border-base-300 opacity-60')"
                         @dragover.prevent="over = 'unassigned'"
                         @dragleave="over === 'unassigned' && (over = null)"
                         @drop.prevent="$wire.movePlayerToUnassigned(dragging); dragging = null; over = null">
@@ -247,12 +250,12 @@
                                             {{ $player->first_name }} {{ $player->last_name }}
                                         </span>
                                         @if ($player->ranking)
-                                            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-600">
+                                            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-600">
                                                 {{ $player->ranking }}
                                             </span>
                                         @endif
                                         @if ($player->forceListFor($teamCategory) !== null)
-                                            <span class="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-400"
+                                            <span class="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary"
                                                 title="Liste de force">
                                                 #{{ $player->forceListFor($teamCategory) }}
                                             </span>
@@ -279,7 +282,7 @@
     @endif
 
     {{-- Modal calcul de distribution --}}
-    <x-app-modal wire:model="showComputingModal" :title="__('Building teams')" separator persistent>
+    <x-app-modal wire:model="showComputingModal" :title="__('Building teams')" separator persistent :open="$showComputingModal">
         <div class="py-10 text-center">
             <div class="mb-6 flex justify-center">
                 <span class="loading loading-dots loading-lg text-primary"></span>

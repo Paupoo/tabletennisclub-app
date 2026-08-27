@@ -148,7 +148,7 @@
             </x-slot:menu>
 
             <div class="space-y-0">
-                <div class="flex justify-between font-bold border-b border-base-300 pb-1 mb-1 opacity-50 text-xs px-2">
+                <div class="flex justify-between font-bold border-b border-base-300 pb-1 mb-1 text-muted text-xs px-2">
                     <span class="w-6 text-center">#</span>
                     <span class="flex-1 ml-2">{{ __('Player') }}</span>
                     <span class="w-16 text-right">{{ __('Rank') }}</span>
@@ -161,7 +161,7 @@
                         <span class="w-6 text-center font-mono font-bold text-warning-content">{{ $entry['position'] }}</span>
                         <span class="flex-1 font-medium truncate">{{ $entry['name'] }}</span>
                         <span class="w-16 text-right font-mono text-xs opacity-60">{{ $entry['ranking'] }}</span>
-                        <span class="w-28 text-right text-xs opacity-50">
+                        <span class="w-28 text-right text-xs text-muted">
                             {{ \Carbon\Carbon::parse($entry['registered_at'])->format('d/m H:i') }}
                         </span>
                         @if (! $this->isLaunched)
@@ -235,7 +235,7 @@
 @endif
 
 {{-- Manual register modal --}}
-<x-app-modal wire:model="showRegisterModal" :title="__('Register a member')" class="backdrop-blur">
+<x-app-modal wire:model="showRegisterModal" :title="__('Register a member')" class="backdrop-blur" :open="$showRegisterModal">
     <div class="space-y-4">
         <x-select
             :label="__('Select member')"
@@ -261,7 +261,7 @@
 </x-app-modal>
 
 {{-- ── Close registrations modal ─────────────────────────────── --}}
-<x-app-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur">
+<x-app-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur" :open="$showCloseRegistrationsModal">
     <div class="space-y-4">
         <div class="flex items-start gap-3 p-4 bg-error/10 border border-error/20 rounded-xl text-sm text-error">
             <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5" />
@@ -289,7 +289,7 @@
 </x-app-modal>
 
 {{-- ── Open registrations modal ──────────────────────────────── --}}
-<x-app-modal wire:model="showOpenRegistrationsModal" :title="__('Reopen registrations?')" class="backdrop-blur">
+<x-app-modal wire:model="showOpenRegistrationsModal" :title="__('Reopen registrations?')" class="backdrop-blur" :open="$showOpenRegistrationsModal">
     <div class="p-4 bg-warning/10 border border-warning/20 rounded-xl flex items-start gap-3 text-sm">
         <x-icon name="o-information-circle" class="w-5 h-5 shrink-0 mt-0.5 text-warning-content" />
         <p>{{ __('Reopening registrations will set the tournament back to "published" status. The tournament cannot be started until registrations are closed again.') }}</p>
@@ -303,24 +303,24 @@
 </x-app-modal>
 
 {{-- ── QR / bank transfer modal ──────────────────────────── --}}
-<x-app-modal wire:model="showQrModal" :title="__('Payment by QR / Bank Transfer')" separator box-class="max-w-lg">
+<x-app-modal wire:model="showQrModal" :title="__('Payment by QR / Bank Transfer')" separator box-class="max-w-lg" :open="$showQrModal">
     @if($qrCodeData)
     <div class="flex flex-col items-center gap-4">
-        <img src="{{ $qrCodeData }}" alt="SEPA QR" class="w-48 h-48 rounded-xl border border-base-200" />
+        <img src="{{ $qrCodeData }}" alt="SEPA QR" class="w-48 h-48 rounded-xl border border-base-300" />
         <div class="w-full space-y-2 text-sm">
-            <div class="flex justify-between py-1 border-b border-base-200">
+            <div class="flex justify-between py-1 border-b border-base-300">
                 <span class="opacity-60">{{ __('Beneficiary') }}</span>
                 <span class="font-semibold">{{ $qrPaymentDetails['beneficiary'] ?? '' }}</span>
             </div>
-            <div class="flex justify-between py-1 border-b border-base-200">
+            <div class="flex justify-between py-1 border-b border-base-300">
                 <span class="opacity-60">{{ __('IBAN') }}</span>
                 <span class="font-mono">{{ $qrPaymentDetails['iban'] ?? '' }}</span>
             </div>
-            <div class="flex justify-between py-1 border-b border-base-200">
+            <div class="flex justify-between py-1 border-b border-base-300">
                 <span class="opacity-60">{{ __('BIC') }}</span>
                 <span class="font-mono">{{ $qrPaymentDetails['bic'] ?? '' }}</span>
             </div>
-            <div class="flex justify-between py-1 border-b border-base-200">
+            <div class="flex justify-between py-1 border-b border-base-300">
                 <span class="opacity-60">{{ __('Reference') }}</span>
                 <span class="font-mono text-primary font-bold">{{ $qrPaymentDetails['reference'] ?? '' }}</span>
             </div>
@@ -329,7 +329,7 @@
                 <span class="font-black text-lg">{{ number_format($qrPaymentDetails['amount_due'] ?? 0, 2, ',', ' ') }} €</span>
             </div>
         </div>
-        <p class="text-xs text-center opacity-50">{{ __('Scan the QR code with your banking app or use the details above.') }}</p>
+        <p class="text-xs text-center text-muted">{{ __('Scan the QR code with your banking app or use the details above.') }}</p>
     </div>
     @endif
     <x-slot:actions>
@@ -347,7 +347,7 @@
 </x-app-modal>
 
 {{-- ── Cash payment confirm modal ────────────────────────── --}}
-<x-app-modal wire:model="showCashConfirmModal" :title="__('Confirm cash payment')" separator>
+<x-app-modal wire:model="showCashConfirmModal" :title="__('Confirm cash payment')" separator :open="$showCashConfirmModal">
     <div class="flex items-start gap-3 p-4 bg-success/10 border border-success/20 rounded-xl text-sm">
         <x-icon name="o-currency-euro" class="w-5 h-5 shrink-0 mt-0.5 text-success" />
         <div>

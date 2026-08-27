@@ -616,3 +616,35 @@ describe('sendInvitation', function (): void {
             ->assertDispatched('toast');
     })->skip('Mary UI toast events are not assertable in this test setup');
 });
+
+describe('the stat strip', function (): void {
+    /*
+     * The members list is the most visited screen of the back office, and it
+     * hand-rolled its four stat cards — inverting the rule the shared component
+     * documents in its own header: colour belongs on the icon chip, never on the
+     * figure. A green "0", a blue "0" and a "7" at 30 % opacity sat side by side.
+     */
+    /** Only the stat strip: the table below repeats these words in its own cells. */
+    function statStrip(string $html): string
+    {
+        return str($html)->after('grid grid-cols-2 gap-4 lg:grid-cols-4')->before('</div>&#10;')->toString();
+    }
+
+    it('draws its four figures with the shared stat card', function (): void {
+        $html = Livewire::test(USER_INDEX_COMPONENT)->html();
+
+        $strip = statStrip($html);
+
+        expect(substr_count($strip, 'font-black tabular-nums'))->toBe(4);
+    });
+
+    it('never colours the figure itself', function (): void {
+        $html = Livewire::test(USER_INDEX_COMPONENT)->html();
+
+        $strip = statStrip($html);
+
+        foreach (['text-success', 'text-primary', 'text-base-content/30', 'text-base-content/60'] as $colour) {
+            expect($strip)->not->toContain('font-bold ' . $colour);
+        }
+    });
+});

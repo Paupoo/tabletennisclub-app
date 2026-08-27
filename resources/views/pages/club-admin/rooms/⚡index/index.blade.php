@@ -79,7 +79,7 @@
     @if ($unassignedTables->isNotEmpty())
         <div class="mt-10">
             <div class="mb-3 flex items-center gap-3">
-                <h2 class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('Unassigned') }}</h2>
+                <h2 class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Unassigned') }}</h2>
                 <div class="h-px flex-1 bg-base-300"></div>
             </div>
 
@@ -107,7 +107,7 @@
 
     @can('create', \App\Domains\ClubAdmin\Club\Models\Room::class)
         <x-confirm-modal model="deleteRoomModal" :title="__('Delete this room?')" :subtitle="__('Warning!')"
-            :confirmLabel="__('Delete')" confirmAction="deleteRoom">
+            :confirmLabel="__('Delete')" confirmAction="deleteRoom" :open="$deleteRoomModal">
             <p>{{ __('Are you sure you want to delete this room? This action is irreversible.') }}</p>
         </x-confirm-modal>
     @endcan

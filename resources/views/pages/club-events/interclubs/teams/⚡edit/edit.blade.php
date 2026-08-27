@@ -17,7 +17,7 @@
         <div class="space-y-5 lg:col-span-1">
 
             {{-- Lettre de l'équipe --}}
-            <x-card class="border-gray-200 shadow-sm" :title="__('Identity')">
+            <x-card class="shadow-sm" :title="__('Identity')">
                 <div class="space-y-4">
                     <x-select
                         :label="__('Team letter')"
@@ -63,7 +63,7 @@
             </x-card>
 
             {{-- Capitaine --}}
-            <x-card class="border-gray-200 shadow-sm" :title="__('Captain')">
+            <x-card class="shadow-sm" :title="__('Captain')">
                 @if ($captainId)
                     @php $captain = $competitors->find($captainId) ?? $team->captain; @endphp
                     <div class="mb-4 flex items-center gap-3 rounded-lg bg-yellow-50 p-3">
@@ -97,7 +97,7 @@
                                 {{ $captainId === $member->id ? 'bg-yellow-50 font-semibold text-yellow-800' : 'text-gray-700' }}">
                             <span>{{ $member->first_name }} {{ $member->last_name }}</span>
                             @if ($member->ranking)
-                                <span class="ml-auto rounded bg-gray-100 px-1 py-0.5 text-[10px] font-semibold text-gray-500">
+                                <span class="ml-auto rounded bg-gray-100 px-1 py-0.5 text-xs font-semibold text-gray-500">
                                     {{ $member->ranking }}
                                 </span>
                             @endif
@@ -111,7 +111,7 @@
         </div>
 
         {{-- ── Colonne droite : composition du noyau ──────────────────── --}}
-        <x-card class="border-gray-200 shadow-sm lg:col-span-2" :title="__('Composition of the core')">
+        <x-card class="shadow-sm lg:col-span-2" :title="__('Composition of the core')">
             <x-slot:subtitle>
                 <span class="text-sm text-gray-500">
                     {{ count($memberIds) }} joueur{{ count($memberIds) > 1 ? 's' : '' }} sélectionné{{ count($memberIds) > 1 ? 's' : '' }}
@@ -128,15 +128,16 @@
             <div class="divide-y divide-gray-100">
                 @forelse ($competitors as $user)
                     @php $selected = in_array($user->id, $memberIds); @endphp
-                    <div
+                    <button type="button"
                         wire:key="competitor-{{ $user->id }}"
-                        class="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2.5 transition
+                        aria-pressed="{{ $selected ? 'true' : 'false' }}"
+                        class="flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-2.5 text-left transition
                             {{ $selected ? 'bg-blue-50' : 'hover:bg-gray-50' }}"
                         wire:click="toggleMember({{ $user->id }})">
 
                         {{-- Checkbox visuel --}}
                         <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition
-                            {{ $selected ? 'border-blue-500 bg-blue-500' : 'border-gray-300 bg-white' }}">
+                            {{ $selected ? 'border-blue-500 bg-blue-500' : 'border-base-300 bg-white' }}">
                             @if ($selected)
                                 <x-heroicon-s-check class="h-3 w-3 text-white" />
                             @endif
@@ -148,7 +149,7 @@
                                     {{ $user->first_name }} {{ $user->last_name }}
                                 </span>
                                 @if ($captainId === $user->id)
-                                    <span class="ml-1.5 rounded bg-yellow-100 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-700">Cap.</span>
+                                    <span class="ml-1.5 rounded bg-yellow-100 px-1.5 py-0.5 text-xs font-semibold text-yellow-700">Cap.</span>
                                 @endif
                             </div>
                             @if ($user->ranking)
@@ -157,7 +158,7 @@
                                 </span>
                             @endif
                         </div>
-                    </div>
+                    </button>
                 @empty
                     <p class="py-6 text-center text-sm text-gray-400 italic">{{ __('No results.') }}</p>
                 @endforelse

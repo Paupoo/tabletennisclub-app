@@ -27,5 +27,22 @@ parameters:
         # rule that can never hide a real bug.
         - identifier: nullsafe.neverNull
 
+        # `Interclub::users()` aliases its pivot with ->as('registration'), so
+        # $user->registration is a dynamic accessor larastan cannot resolve.
+        # The pattern is not new — it only became visible when this code moved
+        # out of resources/views/pages, which `paths` does not analyse.
+        -
+            identifier: property.notFound
+            message: '#User::\$registration\.#'
+            path: app/Domains/Competitions/Interclub/Services/InterclubPreparationService.php
+
+        # Livewire v4 single-file components live under resources/views/pages,
+        # outside `paths`. A trait used only by them therefore looks unused.
+        # Scoped to the concerns folder so a genuinely dead trait elsewhere
+        # still fails.
+        -
+            identifier: trait.unused
+            path: app/Livewire/Concerns/*
+
 #    excludePaths:
 #        - ./*/*/FileToBeExcluded.php

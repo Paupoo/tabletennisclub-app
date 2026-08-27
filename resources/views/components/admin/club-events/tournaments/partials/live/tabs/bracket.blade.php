@@ -12,7 +12,7 @@
 
 <div @if ($tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
     @if (empty($activeRounds))
-        <div class="flex flex-col items-center py-20 opacity-30">
+        <div class="flex flex-col items-center py-20 text-muted">
             <x-icon name="o-trophy" class="w-12 h-12 mb-3" />
             <p class="text-sm">{{ __('Bracket not yet generated.') }}</p>
         </div>
@@ -24,7 +24,7 @@
                 @if (isset($rounds[$round]) && $rounds[$round]->count() > 0)
                     <div class="flex flex-col min-w-[200px]">
                         <div
-                            class="text-center font-bold text-base-content/40 uppercase text-[10px] tracking-widest h-8 mb-2">
+                            class="text-center font-bold text-base-content/40 uppercase text-xs tracking-widest h-8 mb-2">
                             {{ $roundLabels[$round] ?? $round }}
                         </div>
 
@@ -60,7 +60,7 @@
                                     <div @class([
                                         'flex justify-between items-center text-sm gap-2',
                                         'font-bold text-success' => $p1Won,
-                                        'opacity-40 line-through' => $p2Won,
+                                        'text-muted line-through' => $p2Won,
                                     ])>
                                         <span class="truncate">{{ $side1Name }}</span>
                                         <span
@@ -73,7 +73,7 @@
                                     <div @class([
                                         'flex justify-between items-center text-sm gap-2',
                                         'font-bold text-success' => $p2Won,
-                                        'opacity-40 line-through' => $p1Won,
+                                        'text-muted line-through' => $p1Won,
                                     ])>
                                         <span class="truncate">{{ $side2Name }}</span>
                                         <span
@@ -82,19 +82,19 @@
 
                                     @if ($match->referee)
                                         <div
-                                            class="flex items-center gap-1 text-[10px] opacity-40 pt-1 border-t border-base-300/40">
+                                            class="flex items-center gap-1 text-xs text-muted pt-1 border-t border-base-300/40">
                                             <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                                             <span class="truncate">{{ $match->referee->full_name }}</span>
                                         </div>
                                     @elseif (in_array($round, ['final', 'bronze']) && $match->player1_id)
                                         <div
-                                            class="flex items-center gap-1 text-[10px] opacity-40 pt-1 border-t border-base-300/40 italic">
+                                            class="flex items-center gap-1 text-xs text-muted pt-1 border-t border-base-300/40 italic">
                                             <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                                             <span>{{ __('Organisation') }}</span>
                                         </div>
                                     @elseif ($match->status === 'scheduled' && $match->player1_id)
                                         <div
-                                            class="flex items-center gap-1 text-[10px] opacity-30 pt-1 border-t border-base-300/40 italic">
+                                            class="flex items-center gap-1 text-xs text-muted pt-1 border-t border-base-300/40 italic">
                                             <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                                             <span>{{ __('Referee needed') }}</span>
                                         </div>
@@ -102,7 +102,7 @@
 
                                     @if ($isFinal && $match->status === 'completed')
                                         <div class="text-center text-xs font-bold text-yellow-500 mt-1">
-                                            🏆 {{ $winnerName }}
+                                            <x-icon name="o-trophy" class="mb-0.5 inline h-3.5 w-3.5" /> {{ $winnerName }}
                                         </div>
                                     @endif
 
@@ -130,13 +130,13 @@
                 $b2Name = $bDoubles ? $bronze->pair2?->displayName() ?? '—' : $bronze->player2?->full_name ?? '—';
             @endphp
             <div class="mt-6 max-w-xs border-2 border-info rounded-xl p-4 space-y-2 shadow">
-                <div class="text-center font-bold text-info uppercase text-[10px] tracking-widest mb-3">
+                <div class="text-center font-bold text-info uppercase text-xs tracking-widest mb-3">
                     {{ __('3rd Place') }}
                 </div>
                 <div @class([
                     'flex justify-between text-sm',
                     'font-bold text-success' => $b1Won,
-                    'opacity-40' => $b2Won,
+                    'text-muted' => $b2Won,
                 ])>
                     <span class="truncate">{{ $b1Name }}</span>
                     <span class="font-mono">{{ $bronze->getSetsWon($bronze->player1_id ?? 0) }}</span>
@@ -145,24 +145,24 @@
                 <div @class([
                     'flex justify-between text-sm',
                     'font-bold text-success' => $b2Won,
-                    'opacity-40' => $b1Won,
+                    'text-muted' => $b1Won,
                 ])>
                     <span class="truncate">{{ $b2Name }}</span>
                     <span class="font-mono">{{ $bronze->getSetsWon($bronze->player2_id ?? 0) }}</span>
                 </div>
 
                 @if ($match->referee)
-                    <div class="flex items-center gap-1 text-[10px] opacity-40 pt-1 border-t border-base-300/40">
+                    <div class="flex items-center gap-1 text-xs text-muted pt-1 border-t border-base-300/40">
                         <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                         <span class="truncate">{{ $match->referee->full_name }}</span>
                     </div>
                 @elseif (in_array($round, ['final', 'bronze']) && $match->player1_id)
-                    <div class="flex items-center gap-1 text-[10px] opacity-40 pt-1 border-t border-base-300/40 italic">
+                    <div class="flex items-center gap-1 text-xs text-muted pt-1 border-t border-base-300/40 italic">
                         <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                         <span>{{ __('Organisation') }}</span>
                     </div>
                 @elseif ($match->status === 'scheduled' && $match->player1_id)
-                    <div class="flex items-center gap-1 text-[10px] opacity-30 pt-1 border-t border-base-300/40 italic">
+                    <div class="flex items-center gap-1 text-xs text-muted pt-1 border-t border-base-300/40 italic">
                         <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                         <span>{{ __('Referee needed') }}</span>
                     </div>
@@ -170,7 +170,7 @@
 
                 @if ($isFinal && $match->status === 'completed')
                     <div class="text-center text-xs font-bold text-yellow-500 mt-1">
-                        🏆 {{ $winnerName }}
+                        <x-icon name="o-trophy" class="mb-0.5 inline h-3.5 w-3.5" /> {{ $winnerName }}
                     </div>
                 @endif
             </div>

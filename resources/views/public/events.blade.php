@@ -1,4 +1,4 @@
-<x-guest-layout title="Événements - {{ config('app.name') }}">
+<x-guest-layout title="Événements - {{ config('club.name') }}">
 
     <!-- Header -->
     <div class="relative h-auto pt-16 text-white flex items-center overflow-hidden">

@@ -34,6 +34,6 @@
 </x-drawer>
 
 <x-confirm-modal model="bulkCancelModal" :title="__('Cancel registrations?')"
-    :confirmLabel="__('Cancel registrations')" confirmClass="btn-error" confirmAction="confirmBulkCancel">
+    :confirmLabel="__('Cancel registrations')" confirmClass="btn-error" confirmAction="confirmBulkCancel" :open="$bulkCancelModal">
     <p>{{ __('This will cancel the registration for all selected players. This action is irreversible.') }}</p>
 </x-confirm-modal>

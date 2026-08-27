@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header :title="__('Tournament Setup Assistant')"
+    <x-header progress-indicator :title="__('Tournament Setup Assistant')"
         :subtitle="__('Configure and manage your tournament')">
         <x-slot:actions>
             {{-- Cancel button — always accessible when tournament exists and not already cancelled --}}
@@ -99,7 +99,7 @@
     @include('admin.club-events.tournaments.partials.modals.launch')
 
     {{-- Cancel confirmation modal --}}
-    <x-app-modal wire:model="showCancelModal" :title="__('Cancel tournament')" class="backdrop-blur">
+    <x-app-modal wire:model="showCancelModal" :title="__('Cancel tournament')" class="backdrop-blur" :open="$showCancelModal">
         <div class="space-y-4">
             <x-alert
                 :title="__('This action cannot be undone')"

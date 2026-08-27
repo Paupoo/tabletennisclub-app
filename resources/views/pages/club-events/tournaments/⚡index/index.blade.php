@@ -26,7 +26,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -38,7 +38,8 @@
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
                     placeholder="{{ __('Search…') }}" />
             </div>
-            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+            <button type="button" @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm"
+                aria-label="{{ __('Close the search') }}">
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
@@ -86,31 +87,34 @@
                     default     => ['class' => 'badge-outline',             'label' => __('Draft')],
                 };
             @endphp
-            <x-list-item :item="$tournament" class="bg-base-100 rounded-lg border"
+            {{-- L'identité prend la largeur, les actions passent dessous : sur une
+            carte de 335 px, une action nommée et son menu en prenaient 156 et le
+            titre était tranché. --}}
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3"
                 wire:key="mobile-tournament-{{ $tournament->id }}">
-                <x-slot:avatar>
+                <div class="flex items-start gap-3">
                     @if ($selectionModeActive && $this->canManage)
                         <input type="checkbox"
                             class="checkbox checkbox-primary checkbox-sm"
                             value="{{ $tournament->id }}"
                             wire:model.live="selected" />
                     @endif
-                </x-slot:avatar>
-                <x-slot:value>
-                    <span class="font-medium">{{ $tournament->name }}</span>
-                </x-slot:value>
-                <x-slot:sub-value>
-                    <div class="mt-0.5 flex flex-wrap items-center gap-2">
-                        <x-badge :value="$statusBadge['label']" class="{{ $statusBadge['class'] }} badge-sm" />
-                        <span class="text-xs text-base-content/40">
-                            {{ $tournament->start_date->translatedFormat('d M Y') }}
-                        </span>
-                        <span class="text-xs text-base-content/40">
-                            {{ $tournament->match_type === 'double' ? __('Doubles') : __('Singles') }}
-                        </span>
+
+                    <div class="min-w-0 flex-1">
+                        <div class="font-medium">{{ $tournament->name }}</div>
+                        <div class="mt-0.5 flex flex-wrap items-center gap-2">
+                            <x-badge :value="$statusBadge['label']" class="{{ $statusBadge['class'] }} badge-sm" />
+                            <span class="text-xs text-base-content/40">
+                                {{ $tournament->start_date->translatedFormat('d M Y') }}
+                            </span>
+                            <span class="text-xs text-base-content/40">
+                                {{ $tournament->match_type === 'double' ? __('Doubles') : __('Singles') }}
+                            </span>
+                        </div>
                     </div>
-                </x-slot:sub-value>
-                <x-slot:actions>
+                </div>
+
+                <div class="mt-3">
                     @if (! $selectionModeActive)
                         <x-admin.shared.row-menu
                             :label="__('Settings')"
@@ -139,19 +143,28 @@
                             @endif
                         </x-admin.shared.row-menu>
                     @endif
-                </x-slot:actions>
-            </x-list-item>
+                </div>
+            </div>
         @empty
             @php
+                $hasActiveFilters = count($filterChips) > 0 || filled($search);
                 $emptyHeading = $search
                     ? __('No tournament matches ":search"', ['search' => $search])
-                    : __('No tournaments yet');
-                $emptyMessage = ! $search && $this->canManage
-                    ? ''
-                    : __('Try adjusting your search or filters.');
+                    : ($hasActiveFilters ? __('No tournaments match your filters') : __('No tournaments yet'));
             @endphp
-            <x-empty-state icon="o-trophy" :heading="$emptyHeading" :message="$emptyMessage" />
+            <x-admin.shared.list-empty-state
+                icon="o-trophy"
+                :heading="$emptyHeading"
+                :filtered="$hasActiveFilters"
+                :create-label="__('Create a tournament')"
+                :create-href="$this->canManage ? route('admin.tournaments.wizard') : null" />
         @endforelse
+
+        @if ($tournaments->hasPages())
+            <div class="mt-2">
+                {{ $tournaments->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop (table) ────────────────────────────────────────── --}}
@@ -159,14 +172,17 @@
         <x-card>
             @if ($tournaments->isEmpty())
                 @php
+                    $hasActiveFilters = count($filterChips) > 0 || filled($search);
                     $emptyHeading = $search
                         ? __('No tournament matches ":search"', ['search' => $search])
-                        : __('No tournaments yet');
-                    $emptyMessage = ! $search && $this->canManage
-                        ? ''
-                        : __('Try adjusting your search or filters.');
+                        : ($hasActiveFilters ? __('No tournaments match your filters') : __('No tournaments yet'));
                 @endphp
-                <x-empty-state icon="o-trophy" :heading="$emptyHeading" :message="$emptyMessage" />
+                <x-admin.shared.list-empty-state
+                    icon="o-trophy"
+                    :heading="$emptyHeading"
+                    :filtered="$hasActiveFilters"
+                    :create-label="__('Create a tournament')"
+                    :create-href="$this->canManage ? route('admin.tournaments.wizard') : null" />
             @else
                 <x-table :headers="$headers" :rows="$tournaments" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
@@ -277,28 +293,28 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Status') }}
                 </p>
                 <x-select :options="$statusOptions" :placeholder="__('All statuses')"
                     wire:model.live="status" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Type') }}
                 </p>
                 <x-select :options="$matchTypeOptions" :placeholder="__('Singles & Doubles')"
                     wire:model.live="matchType" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Spots') }}
                 </p>
                 <x-select :options="$isFullOptions" :placeholder="__('All')"
                     wire:model.live="isFull" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Website') }}
                 </p>
                 <x-select :options="$hasEventOptions" :placeholder="__('All')"
@@ -309,7 +325,7 @@
 
     {{-- ── Modal annulation bulk ──────────────────────────────────────── --}}
     <x-confirm-modal model="confirmBulkCancelModal" :title="__('Cancel selected tournaments?')"
-        :confirmLabel="__('Confirm cancellation')" confirmAction="bulkCancel">
+        :confirmLabel="__('Confirm cancellation')" confirmAction="bulkCancel" :open="$confirmBulkCancelModal">
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be marked as cancelled.') }}

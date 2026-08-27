@@ -4,7 +4,7 @@
 
         {{-- Header --}}
         <div class="w-full max-w-sm mb-6 text-center px-2">
-            <p class="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-1 truncate">{{ $tournament->name }}</p>
+            <p class="text-xs font-bold uppercase tracking-widest text-muted mb-1 truncate">{{ $tournament->name }}</p>
             <h1 class="text-lg font-black">{{ __('Table') }} {{ $table->name }}</h1>
         </div>
 

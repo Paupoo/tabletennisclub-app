@@ -38,8 +38,8 @@
             <div wire:key="{{ $season->id }}" @class([
                 'flex items-center justify-between rounded-xl border px-5 py-4 transition',
                 'border-primary/30 bg-primary/5' => $isCurrent,
-                'border-base-200 bg-base-100 opacity-60' => $isPast,
-                'border-base-200 bg-base-100' => $isFuture,
+                'border-base-300 bg-base-100 opacity-60' => $isPast,
+                'border-base-300 bg-base-100' => $isFuture,
             ])>
                 {{-- Left: name + dates --}}
                 <div class="flex items-center gap-4">
@@ -103,19 +103,14 @@
     </div>
 
     {{-- ── Auto-provision info ─────────────────────────────────────────────── --}}
-    <div class="mt-6 rounded-xl border border-base-200 bg-base-100 p-4 text-sm text-base-content/60">
-        <div class="flex items-start gap-3">
-            <x-icon class="mt-0.5 h-4 w-4 shrink-0 text-info" name="o-information-circle" />
-            <p>
-                {{ __('Every year on July 1st, the application automatically provisions the next two upcoming seasons (September → June). Use "Auto-provision" to trigger this manually, or "New season" to create a custom one.') }}
-            </p>
-        </div>
-    </div>
+    <x-admin.shared.info-alert class="mt-6">
+        {{ __('Every year on July 1st, the application automatically provisions the next two upcoming seasons (September → June). Use "Auto-provision" to trigger this manually, or "New season" to create a custom one.') }}
+    </x-admin.shared.info-alert>
 
     {{-- ================================================================
          PROVISION MODAL
     ================================================================ --}}
-    <x-app-modal :title="__('Auto-provision seasons')" wire:model="provisionModal" separator>
+    <x-app-modal :title="__('Auto-provision seasons')" wire:model="provisionModal" separator :open="$provisionModal">
         <div class="space-y-3 text-sm text-base-content/70">
             <p>{{ __('This will create the next two seasons after the current active season, if they do not already exist.') }}</p>
             <p>{{ __('Each season runs from September 1st to June 30th. Already-existing seasons and overlapping date ranges are automatically skipped.') }}</p>
@@ -131,7 +126,7 @@
     {{-- ================================================================
          ACTIVATE MODAL
     ================================================================ --}}
-    <x-app-modal :title="__('Activate season')" wire:model="activateModal" separator>
+    <x-app-modal :title="__('Activate season')" wire:model="activateModal" separator :open="$activateModal">
         <div class="space-y-4">
             <p class="text-base-content/70">
                 {{ __('You are about to make') }}
@@ -152,7 +147,7 @@
     {{-- ================================================================
          EDIT MODAL
     ================================================================ --}}
-    <x-app-modal :title="__('Edit season')" wire:model="editModal" separator>
+    <x-app-modal :title="__('Edit season')" wire:model="editModal" separator :open="$editModal">
         <div class="space-y-4">
             <x-input :label="__('Name')" :placeholder="__('E.g. 2026-2027')"
                 wire:model="editName" />
@@ -172,7 +167,7 @@
     {{-- ================================================================
          CREATE MODAL
     ================================================================ --}}
-    <x-app-modal :title="__('New season')" wire:model="createModal" separator>
+    <x-app-modal :title="__('New season')" wire:model="createModal" separator :open="$createModal">
         <div class="space-y-4">
             <x-input :label="__('Name')" :placeholder="__('E.g. 2026-2027')"
                 wire:model="createName" />

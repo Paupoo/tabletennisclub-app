@@ -14,7 +14,6 @@ use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
@@ -39,8 +38,6 @@ class AppServiceProvider extends ServiceProvider
         Password::defaults(fn (): Password => $this->app->isProduction()
             ? Password::min(8)->letters()->numbers()->uncompromised()
             : Password::min(8)->letters()->numbers());
-
-        Paginator::defaultView('custom-paginate');
 
         /*
          * Invitations leave through Gmail, which tolerates the volume and not the

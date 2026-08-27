@@ -1,4 +1,4 @@
-<x-app-modal wire:model="showInviteModal" title="Confirmer l'envoi" separator>
+<x-app-modal wire:model="showInviteModal" title="Confirmer l'envoi" separator :open="$showInviteModal">
     <div class="space-y-4">
         <p>{{ __('You are about to send an invitation to') }}<strong>{{ count($selectedMembers) }}</strong>
             membres.</p>

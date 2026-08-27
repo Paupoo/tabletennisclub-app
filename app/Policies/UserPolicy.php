@@ -56,6 +56,24 @@ class UserPolicy
     }
 
     /**
+     * Writing the rights layer of a member's file: the délégations, the committee
+     * seat and the statutory title that comes with it.
+     *
+     * Never on your own file, administrators included — the same doctrine as
+     * delete() and anonymize(). Someone who can widen their own rights is bounded
+     * by nothing, so an administrator wanting a right removed asks another one.
+     * With a single administrator in the club that is a deliberate cost, weighed
+     * against an escalation path that no matrix change could close.
+     *
+     * Deliberately narrower than the administrator checkbox, which stays on
+     * promoteAdmin(): handing over the whole application is not a délégation.
+     */
+    public function manageAccess(User $user, User $model): bool
+    {
+        return $user->can(Permission::AccessManage->value) && $user->isNot($model);
+    }
+
+    /**
      * A member manages their own affiliation; managing someone else's is a duty.
      */
     public function manageSubscription(User $user, User $model): bool
@@ -70,12 +88,17 @@ class UserPolicy
      */
     public function promoteAdmin(User $user, User $model): bool
     {
-        return $user->hasRole(Role::ADMINISTRATOR->value);
+        return $user->hasRole(Role::ADMINISTRATOR->value) && $user->isNot($model);
     }
 
+    /**
+     * The committee seat and its statutory title are rights, not data: they are
+     * handed over by whoever hands over the délégations, not by whoever keeps the
+     * member's address up to date.
+     */
     public function promoteCommitteeMember(User $user, User $model): bool
     {
-        return $user->can(Permission::UsersUpdate->value);
+        return $this->manageAccess($user, $model);
     }
 
     public function restore(User $user, User $model): bool
@@ -104,6 +127,20 @@ class UserPolicy
     }
 
     public function updatePassword(User $user, User $model): bool
+    {
+        return $user->can(Permission::UsersUpdate->value) || $user->is($model);
+    }
+
+    /**
+     * A member owns their own portrait; replacing or removing somebody else's is
+     * editing their file.
+     *
+     * Same shape as updatePassword(), and named separately because the screens
+     * that offer it are not the same ones: the self-service profile and the
+     * onboarding wizard both hand a member their own photo, while the member
+     * form hands an editor everyone's.
+     */
+    public function updatePhoto(User $user, User $model): bool
     {
         return $user->can(Permission::UsersUpdate->value) || $user->is($model);
     }

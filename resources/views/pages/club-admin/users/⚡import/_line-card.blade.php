@@ -1,11 +1,11 @@
 {{-- One affiliate of the listing, as the reviewer is leaving them. --}}
 <div wire:key="line-{{ $line }}"
-    class="rounded-xl border border-base-200 bg-base-100 p-4 {{ $row['action'] === '' ? 'border-warning' : '' }}">
+    class="rounded-xl border border-base-300 bg-base-100 p-4 {{ $row['action'] === '' ? 'border-warning' : '' }}">
     <div class="grid gap-4 lg:grid-cols-12">
         {{-- Identity, editable: past two words the split is a guess --}}
         <div class="lg:col-span-4">
             <div class="mb-2 flex flex-wrap items-center gap-2">
-                <span class="font-mono text-xs opacity-40">#{{ $row['licence'] }}</span>
+                <span class="font-mono text-xs text-muted">#{{ $row['licence'] }}</span>
                 @if ($row['needsNameReview'])
                     <span class="badge badge-warning badge-soft badge-sm">{{ __('Check the name') }}</span>
                 @endif
@@ -33,7 +33,7 @@
                 @endif
             </p>
             <p class="truncate opacity-70">{{ $row['email'] ?? __('No address') }}</p>
-            <p class="truncate text-xs opacity-50">
+            <p class="truncate text-xs text-muted">
                 {{ collect([$row['street'], $row['cityCode'], $row['cityName']])->filter()->join(' · ') }}
             </p>
         </div>
@@ -69,7 +69,7 @@
 
     {{-- The address of a child is a parent's, and the file rarely proves it --}}
     @if ($row['isMinor'] && $row['action'] !== 'skip')
-        <div class="mt-3 border-t border-base-200 pt-3">
+        <div class="mt-3 border-t border-base-300 pt-3">
             <x-checkbox wire:model.live="rows.{{ $line }}.guardianAddress"
                 :label="__('This address belongs to a guardian')"
                 :hint="__('The member is recorded without a login of their own and reached through their guardian.')" />
@@ -81,11 +81,11 @@
                     <x-input wire:model="rows.{{ $line }}.guardianLastName" class="input-sm"
                         :label="__('Guardian last name')" />
                 </div>
-                <p class="mt-1 text-xs opacity-50">
+                <p class="mt-1 text-xs text-muted">
                     {{ __('Suggested from the address — correct it, nothing is recorded until you import.') }}
                 </p>
             @elseif ($row['guardianAddress'])
-                <p class="mt-1 text-xs opacity-50">
+                <p class="mt-1 text-xs text-muted">
                     {{ __('Reached through the adult listed under the same address.') }}
                 </p>
             @endif

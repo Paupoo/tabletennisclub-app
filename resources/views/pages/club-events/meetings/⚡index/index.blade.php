@@ -26,7 +26,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -38,7 +38,8 @@
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
                     placeholder="{{ __('Search…') }}" />
             </div>
-            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+            <button type="button" @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm"
+                aria-label="{{ __('Close the search') }}">
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
@@ -53,64 +54,76 @@
         $emptyHeading = $search
             ? __('No meeting matches ":search"', ['search' => $search])
             : ($hasActiveFilters ? __('No meetings match your filters') : __('No meetings yet'));
-        $emptyMessage = $hasActiveFilters
-            ? __('Try adjusting your search or filters.')
-            : ($this->canManage ? '' : __('No meetings have been created yet.'));
+        $emptyFiltered = $hasActiveFilters;
     @endphp
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($meetings as $meeting)
-            <x-list-item :item="$meeting" class="bg-base-100 rounded-lg border"
+            {{-- L'identité prend la largeur, les actions passent dessous : sur une
+            carte de 335 px, une action nommée et son menu en prenaient 156 et le
+            titre était tranché. --}}
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3"
                 wire:key="mob-meeting-{{ $meeting->id }}">
-                <x-slot:avatar>
+                <div class="flex items-start gap-3">
                     @if ($selectionModeActive && $this->canManage)
                         <input type="checkbox"
                             class="checkbox checkbox-primary checkbox-sm"
                             value="{{ $meeting->id }}"
                             wire:model.live="selected" />
                     @endif
-                </x-slot:avatar>
-                <x-slot:value>
-                    <span class="font-medium">{{ $meeting->title }}</span>
-                </x-slot:value>
-                <x-slot:sub-value>
-                    <div class="mt-0.5 flex flex-wrap items-center gap-2">
-                        <x-badge :value="$meeting->status->getLabel()"
-                            class="{{ $meeting->status->getBadgeClass() }} badge-sm" />
-                        <span class="text-xs text-base-content/50">{{ $meeting->type->getLabel() }}</span>
-                        @if ($meeting->scheduled_at)
-                            <span class="text-xs text-base-content/40">
-                                {{ $meeting->scheduled_at->translatedFormat('d M Y · H\hi') }}
-                            </span>
-                        @else
-                            <span class="text-xs text-base-content/30">{{ __('Date TBD') }}</span>
-                        @endif
+
+                    <div class="min-w-0 flex-1">
+                        <div class="font-medium">{{ $meeting->title }}</div>
+                        <div class="mt-0.5 flex flex-wrap items-center gap-2">
+                            <x-badge :value="$meeting->status->getLabel()"
+                                class="{{ $meeting->status->getBadgeClass() }} badge-sm" />
+                            <span class="text-xs text-base-content/50">{{ $meeting->type->getLabel() }}</span>
+                            @if ($meeting->scheduled_at)
+                                <span class="text-xs text-base-content/40">
+                                    {{ $meeting->scheduled_at->translatedFormat('d M Y · H\hi') }}
+                                </span>
+                            @else
+                                <span class="text-xs text-base-content/30">{{ __('Date TBD') }}</span>
+                            @endif
+                        </div>
                     </div>
-                </x-slot:sub-value>
-                <x-slot:actions>
+                </div>
+
+                <div class="mt-3">
                     @if (! $selectionModeActive)
                         <x-admin.shared.row-menu
                             :label="__('View')"
                             icon="o-eye"
                             link="{{ route('admin.meetings.show', $meeting) }}">
-
                         </x-admin.shared.row-menu>
                     @endif
-                </x-slot:actions>
-            </x-list-item>
+                </div>
+            </div>
         @empty
-            <x-empty-state icon="o-calendar-days"
+            <x-admin.shared.list-empty-state
+                icon="o-calendar-days"
                 :heading="$emptyHeading"
-                :message="$emptyMessage" />
+                :filtered="$emptyFiltered"
+                :create-label="__('New meeting')"
+                :create-href="$this->canManage ? route('admin.meetings.create') : null" />
         @endforelse
+
+        @if ($meetings->hasPages())
+            <div class="mt-2">
+                {{ $meetings->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Desktop table ─────────────────────────────────────────────── --}}
     <div class="hidden lg:block">
         <x-card>
             @if ($meetings->isEmpty())
-                <x-empty-state icon="o-calendar-days"
+                <x-admin.shared.list-empty-state
+                    icon="o-calendar-days"
                     :heading="$emptyHeading"
-                    :message="$emptyMessage" />
+                    :filtered="$emptyFiltered"
+                    :create-label="__('New meeting')"
+                    :create-href="$this->canManage ? route('admin.meetings.create') : null" />
             @else
                 <x-table :headers="$headers" :rows="$meetings" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
@@ -201,21 +214,21 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">{{ __('Type') }}</p>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">{{ __('Type') }}</p>
                 <x-select :options="$typeOptions" :placeholder="__('All types')"
                     wire:model.live="type" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">{{ __('Status') }}</p>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">{{ __('Status') }}</p>
                 <x-select :options="$statusOptions" :placeholder="__('All statuses')"
                     wire:model.live="status" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">{{ __('Format') }}</p>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">{{ __('Format') }}</p>
                 <x-select :options="$formatOptions" :placeholder="__('All formats')"
                     wire:model.live="format" class="w-full" />
             </div>
-            <div class="border-t border-base-200 pt-4">
+            <div class="border-t border-base-300 pt-4">
                 <x-toggle wire:model.live="showArchived" :label="__('Show archived meetings')" right />
             </div>
         </x-slot:filters>
@@ -223,7 +236,7 @@
 
     {{-- ── Modal annulation bulk ──────────────────────────────────────── --}}
     <x-confirm-modal model="confirmBulkCancelModal" :title="__('Cancel selected meetings?')"
-        :confirmLabel="__('Confirm cancellation')" confirmAction="bulkCancel">
+        :confirmLabel="__('Confirm cancellation')" confirmAction="bulkCancel" :open="$confirmBulkCancelModal">
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be marked as cancelled.') }}
@@ -232,7 +245,7 @@
 
     {{-- ── Modal suppression bulk ─────────────────────────────────────── --}}
     <x-confirm-modal model="confirmBulkDeleteModal" :title="__('Delete selected meetings?')"
-        :confirmLabel="__('Confirm deletion')" confirmAction="bulkDelete">
+        :confirmLabel="__('Confirm deletion')" confirmAction="bulkDelete" :open="$confirmBulkDeleteModal">
         <p>
             {{ __('Only meetings that have not taken place and have no invitations sent will be deleted. This action is irreversible.') }}
         </p>

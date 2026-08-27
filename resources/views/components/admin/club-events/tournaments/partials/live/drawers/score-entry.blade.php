@@ -41,17 +41,17 @@
         {{-- Match header --}}
         <div class="bg-base-200 p-4 rounded-xl mb-6 border border-base-300">
             <div class="flex justify-between items-center mb-3">
-                <span class="text-[10px] font-black uppercase tracking-widest opacity-60">
+                <span class="text-xs font-black uppercase tracking-widest opacity-60">
                     {{ $match->pool?->name ?? __('Bracket') }}
                 </span>
                 <div class="flex items-center gap-2">
                     @if ($match->referee)
-                        <span class="flex items-center gap-1 text-[10px] opacity-50">
+                        <span class="flex items-center gap-1 text-xs text-muted">
                             <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                             {{ $match->referee->full_name }}
                         </span>
                     @endif
-                    <x-badge value="{{ __('Best of') }} {{ $maxSets }}" class="badge-outline badge-xs opacity-50 font-bold" />
+                    <x-badge value="{{ __('Best of') }} {{ $maxSets }}" class="badge-outline badge-xs text-muted font-bold" />
                 </div>
             </div>
 
@@ -79,19 +79,19 @@
         {{-- Handicap info bar --}}
         @if ($tournament->has_handicap_points && ($hp1 > 0 || $hp2 > 0))
             <div class="rounded-xl border border-warning/40 bg-warning/10 p-3 mb-4">
-                <p class="text-[10px] font-bold uppercase tracking-widest text-warning-content text-center mb-2">
+                <p class="text-xs font-bold uppercase tracking-widest text-warning-content text-center mb-2">
                     {{ __('Handicap per set — starting scores') }}
                 </p>
                 <div class="flex justify-between items-center">
                     <div class="flex-1 text-center">
-                        <div class="text-[10px] font-bold opacity-60 truncate">{{ $side1Name }}</div>
+                        <div class="text-xs font-bold opacity-60 truncate">{{ $side1Name }}</div>
                         <div @class(['text-2xl font-extrabold leading-none', 'text-warning-content' => $hp1 > 0, 'text-base-content/30' => $hp1 === 0])>
                             +{{ $hp1 }}
                         </div>
                     </div>
-                    <div class="text-[10px] font-bold opacity-40 uppercase">pts</div>
+                    <div class="text-xs font-bold text-muted uppercase">pts</div>
                     <div class="flex-1 text-center">
-                        <div class="text-[10px] font-bold opacity-60 truncate">{{ $side2Name }}</div>
+                        <div class="text-xs font-bold opacity-60 truncate">{{ $side2Name }}</div>
                         <div @class(['text-2xl font-extrabold leading-none', 'text-warning-content' => $hp2 > 0, 'text-base-content/30' => $hp2 === 0])>
                             +{{ $hp2 }}
                         </div>
@@ -136,7 +136,7 @@
                         'bg-success text-success-content' => $setDone,
                         'bg-base-200 text-base-content/50' => ! $setDone,
                     ])>
-                        <span class="text-[9px] uppercase font-bold leading-none">Set</span>
+                        <span class="text-xs uppercase font-bold leading-none">Set</span>
                         <span class="text-lg font-black leading-none">{{ $i + 1 }}</span>
                     </div>
 
@@ -167,7 +167,7 @@
                 $svgQr  = substr((new \Endroid\QrCode\Writer\SvgWriter)->write($qrCode)->getString(), 22);
             @endphp
             <div class="mt-6 pt-6 border-t border-base-300 flex flex-col items-center gap-2">
-                <p class="text-[10px] uppercase font-bold opacity-40 tracking-widest">{{ __('Mobile score entry') }}</p>
+                <p class="text-xs uppercase font-bold text-muted tracking-widest">{{ __('Mobile score entry') }}</p>
                 <a href="{{ $qrUrl }}" target="_blank"
                     class="opacity-60 hover:opacity-100 transition-opacity p-2 bg-white rounded-xl inline-block shadow-sm">
                     {!! $svgQr !!}
@@ -182,7 +182,7 @@
                 <x-icon name="o-trophy" class="w-12 h-12 mx-auto text-success" />
                 @if ($winnerName)
                     <div>
-                        <p class="text-xs uppercase font-bold opacity-40 mb-1">{{ __('Winner') }}</p>
+                        <p class="text-xs uppercase font-bold text-muted mb-1">{{ __('Winner') }}</p>
                         <p class="text-xl font-black">{{ $winnerName }}</p>
                         <p class="text-3xl font-extrabold text-success mt-1">{{ $p1Sets }} — {{ $p2Sets }}</p>
                     </div>

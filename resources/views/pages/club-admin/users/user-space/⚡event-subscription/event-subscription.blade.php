@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header separator :subtitle="__('Tournaments, dinners, and club meetings')"
+    <x-header progress-indicator separator :subtitle="__('Tournaments, dinners, and club meetings')"
         :title="__('Events and Activities')">
         <x-slot:actions>
             <x-admin.shared.mobile-header-actions :filter-count="count($this->getFilterChips())"
@@ -231,7 +231,7 @@
                 <x-card icon="o-academic-cap" separator :title="__('My upcoming sessions')">
                     <div class="space-y-2">
                         @foreach ($this->upcomingTrainingSessions as $session)
-                            <div class="flex items-center justify-between rounded-lg border border-base-200 px-3 py-2">
+                            <div class="flex items-center justify-between rounded-lg border border-base-300 px-3 py-2">
                                 <div class="flex items-center gap-3">
                                     <div class="text-center">
                                         <div class="text-xs font-bold uppercase text-base-content/50">
@@ -261,7 +261,7 @@
             @if ($this->myPastTournaments->isNotEmpty())
                 <x-collapse>
                     <x-slot:heading>
-                        <div class="text-sm font-bold opacity-40">
+                        <div class="text-sm font-bold text-muted">
                             {{ __('Past tournaments') }}
                             <span class="ml-1 font-normal">({{ $this->myPastTournaments->count() }})</span>
                         </div>
@@ -299,7 +299,7 @@
     </x-admin.shared.filter-drawer>
 
     {{-- Modal détails paiement --}}
-    <x-app-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm">
+    <x-app-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm" :open="$paymentModal">
     @if ($paymentQr && $selectedPaymentId)
         @php
             $payment = \App\Domains\ClubAdmin\Payment\Models\Payment::find($selectedPaymentId);
@@ -316,7 +316,7 @@
             @endif
             <img
                 alt="QR Code"
-                class="w-48 h-48 rounded-xl border border-base-200 shadow"
+                class="w-48 h-48 rounded-xl border border-base-300 shadow"
                 src="{{ $paymentQr }}"
             />
             <div class="w-full divide-y divide-base-200 text-sm">
@@ -345,7 +345,7 @@
     </x-app-modal>
 
     {{-- Modal participation réunion --}}
-    <x-app-modal wire:model="meetingRsvpModal" :title="__('My participation')" box-class="max-w-sm">
+    <x-app-modal wire:model="meetingRsvpModal" :title="__('My participation')" box-class="max-w-sm" :open="$meetingRsvpModal">
         @php $rsvpMeeting = $this->rsvpMeetingId ? \App\Domains\Meetings\Models\Meeting::find($this->rsvpMeetingId) : null; @endphp
         @if ($rsvpMeeting)
             @php $rsvpReg = $this->meetingRegistrations[$rsvpMeeting->id] ?? null; @endphp
@@ -402,7 +402,7 @@
     </x-app-modal>
 
     <x-confirm-modal model="cancelConfirmModal" :title="__('Cancel registration?')"
-        :confirmLabel="__('Confirm')" confirmClass="btn-error" confirmAction="confirmCancel">
+        :confirmLabel="__('Confirm')" confirmClass="btn-error" confirmAction="confirmCancel" :open="$cancelConfirmModal">
         <p>{{ __('This will remove you from the tournament. This action is irreversible.') }}</p>
     </x-confirm-modal>
 </div>

@@ -27,12 +27,12 @@ class CreateUserAction
             'has_key' => $data->has_key,
             'licence' => $data->licence,
             'ranking' => $data->ranking ?? 'NA',
-            'committee_role' => $data->committee_role,
+            // committee_role is deliberately absent: see UpdateUserAction.
             'updated_by' => $actor->id,
             'password' => $hasPassword ? Hash::make($data->password) : '',
         ]);
 
-        SyncUserRolesAction::handle($user, $data->is_admin, $data->is_committee_member, $data->delegations);
+        SyncUserAccessAction::handle($user, $data->access, $actor);
 
         if ($data->guardianIds !== []) {
             $user->guardians()->sync($data->guardianIds);

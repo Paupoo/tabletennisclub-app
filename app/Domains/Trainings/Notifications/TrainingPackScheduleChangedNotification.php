@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Trainings\Notifications;
 
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -18,7 +19,7 @@ use Illuminate\Notifications\Notification;
  */
 class TrainingPackScheduleChangedNotification extends Notification
 {
-    use Queueable;
+    use LinksToMemberSpace, Queueable;
 
     public function __construct(
         public TrainingPack $pack,
@@ -30,7 +31,7 @@ class TrainingPackScheduleChangedNotification extends Notification
         return [
             'title' => __('Training schedule changed'),
             'body' => __(':pack has a new schedule', ['pack' => $this->pack->name]),
-            'url' => route('admin.trainings.index'),
+            'url' => $this->memberTrainingsUrl($notifiable),
             'category' => 'training',
             'icon' => 'o-calendar-days',
         ];
@@ -53,7 +54,7 @@ class TrainingPackScheduleChangedNotification extends Notification
 
         return $mail
             ->line(__('Please check the calendar for the exact dates of the sessions to come.'))
-            ->action(__('See my trainings'), url('/'))
+            ->action(__('See my trainings'), $this->memberTrainingsUrl($notifiable))
             ->salutation(__('The club team'));
     }
 

@@ -244,7 +244,7 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
      */
     public function isTerminal(): bool
     {
-        return in_array($this->status, ['paid', 'canceled', 'refunded'], true);
+        return in_array($this->status, ['paid', 'cancelled', 'refunded'], true);
     }
 
     public function markAsPaid(): void
@@ -400,11 +400,12 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     }
 
     /**
-     * @return BelongsToMany<TrainingPack, $this>
+     * @return BelongsToMany<TrainingPack, $this, SubscriptionTrainingPack, 'pivot'>
      */
     public function trainingPacks(): BelongsToMany
     {
         return $this->belongsToMany(TrainingPack::class)
+            ->using(SubscriptionTrainingPack::class)
             ->withPivot([
                 'status',
                 'waitlist_position',

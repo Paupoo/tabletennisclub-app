@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Meetings\Notifications;
 
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\URL;
 
 class MeetingDatePollNotification extends Notification implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use LinksToMemberSpace, Queueable, SerializesModels;
 
     public function __construct(public Meeting $meeting) {}
 
@@ -24,7 +25,7 @@ class MeetingDatePollNotification extends Notification implements ShouldQueue
         return [
             'title' => __('Date poll: :title', ['title' => $this->meeting->title]),
             'body' => __('Please vote for your availability'),
-            'url' => route('admin.meetings.show', $this->meeting),
+            'url' => $this->meetingUrl($notifiable, $this->meeting),
             'category' => 'meeting',
             'icon' => 'o-calendar-days',
         ];

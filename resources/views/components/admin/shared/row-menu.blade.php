@@ -74,8 +74,6 @@
 
             {{-- 44px is the Apple HIG comfort target; daisyUI's menu rows come in at 38.
             The sheet is the one place a thumb operates, so it gets the taller rows. --}}
-            {{-- 44px is the Apple HIG comfort target; daisyUI's menu rows come in at 38.
-            The sheet is the one place a thumb operates, so it gets the taller rows. --}}
             <ul class="menu w-full [&_li>*]:min-h-11 lg:[&_li>*]:min-h-9">
                 {{ $slot }}
             </ul>

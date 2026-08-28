@@ -4150,5 +4150,18 @@
     "No team for the :season season": "Geen ploeg voor het seizoen :season",
     "Build the teams to register them in their divisions.": "Stel de ploegen samen om ze in hun afdelingen in te schrijven.",
     "Headings require a space after the # :": "Titels vereisen een spatie na de #:",
-    "drag and drop players · click the star to designate a captain": "sleep spelers · klik de ster om een kapitein aan te wijzen"
+    "drag and drop players · click the star to designate a captain": "sleep spelers · klik de ster om een kapitein aan te wijzen",
+    "Set by hand. 0 means no limit.": "Handmatig ingesteld. 0 betekent geen limiet.",
+    "Follows the structure: :pools pools × :size players. Type a value to fix it.": "Volgt de structuur: :pools poules × :size spelers. Typ een waarde om die vast te zetten.",
+    "Follow the structure again": "Opnieuw de structuur volgen",
+    "Ready to open": "Klaar om te openen",
+    "Registrations open": "Inschrijvingen open",
+    "Registrations are closed": "De inschrijvingen zijn gesloten",
+    "Registrations are open — members can sign up.": "De inschrijvingen zijn open — leden kunnen zich inschrijven.",
+    "Members cannot see this tournament yet, and invitations would lead them nowhere.": "Leden zien dit toernooi nog niet, en een uitnodiging zou nergens heen leiden.",
+    "Open the registrations first — members cannot sign up yet.": "Open eerst de inschrijvingen — leden kunnen zich nog niet inschrijven.",
+    "The tournament becomes visible to members, who can sign up from their own space. Name and price stay locked.": "Het toernooi wordt zichtbaar voor leden, die zich vanuit hun eigen ruimte kunnen inschrijven. Naam en prijs blijven vastgezet.",
+    "Not on the website": "Niet op de website",
+    "No article": "Geen artikel",
+    "Join us at :name on :date": "Doe mee met :name op :date"
 }

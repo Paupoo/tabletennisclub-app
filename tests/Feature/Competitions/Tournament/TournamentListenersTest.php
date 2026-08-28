@@ -34,10 +34,19 @@ describe('UserUnregisteredToTournamentToTournament listener', function (): void 
 });
 
 describe('SendPublishedTournamentNotification listener', function (): void {
-    it('sends a NewTournamentPublished notification to all users', function (): void {
+    /*
+     * This test used to create bare users and assert every one of them was
+     * written to — it encoded the fault of issue #81, where the listener looped
+     * over User::cursor(). The audience is now the active members; who is left
+     * out is asserted in TournamentAnnouncementTest. What stays valuable here is
+     * the signed action URL, which must reach the member-facing join route and
+     * never the back office.
+     */
+    it('sends a NewTournamentPublished notification to the active members', function (): void {
         Notification::fake();
 
-        $users = User::factory()->count(3)->create();
+        $season = makeActiveSeason();
+        $users = collect(range(1, 3))->map(fn (): User => activeMember($season));
         $tournament = Tournament::factory()->create();
         $event = new NewTournamentPublished($tournament);
 

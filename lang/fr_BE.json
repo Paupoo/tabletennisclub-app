@@ -4150,5 +4150,18 @@
     "No team for the :season season": "Aucune équipe pour la saison :season",
     "Build the teams to register them in their divisions.": "Composez les équipes pour les inscrire dans leurs divisions.",
     "Headings require a space after the # :": "Les titres nécessitent un espace après les # :",
-    "drag and drop players · click the star to designate a captain": "glissez-déposez les joueurs · cliquez l'étoile pour désigner un capitaine"
+    "drag and drop players · click the star to designate a captain": "glissez-déposez les joueurs · cliquez l'étoile pour désigner un capitaine",
+    "Set by hand. 0 means no limit.": "Fixé à la main. 0 = pas de limite.",
+    "Follows the structure: :pools pools × :size players. Type a value to fix it.": "Suit la structure : :pools poules × :size joueurs. Saisissez une valeur pour la figer.",
+    "Follow the structure again": "Revenir à la structure",
+    "Ready to open": "Prêt à ouvrir",
+    "Registrations open": "Inscriptions ouvertes",
+    "Registrations are closed": "Les inscriptions sont fermées",
+    "Registrations are open — members can sign up.": "Les inscriptions sont ouvertes — les membres peuvent s'inscrire.",
+    "Members cannot see this tournament yet, and invitations would lead them nowhere.": "Les membres ne voient pas encore ce tournoi, et une invitation ne mènerait nulle part.",
+    "Open the registrations first — members cannot sign up yet.": "Ouvrez d'abord les inscriptions — les membres ne peuvent pas encore s'inscrire.",
+    "The tournament becomes visible to members, who can sign up from their own space. Name and price stay locked.": "Le tournoi devient visible des membres, qui peuvent s'inscrire depuis leur espace. Le nom et le prix restent figés.",
+    "Not on the website": "Pas sur le site",
+    "No article": "Pas d'article",
+    "Join us at :name on :date": "Rejoignez-nous au :name le :date"
 }

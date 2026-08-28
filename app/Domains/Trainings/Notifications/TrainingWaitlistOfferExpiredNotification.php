@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Trainings\Notifications;
 
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -18,7 +19,7 @@ use Illuminate\Notifications\Notification;
  */
 class TrainingWaitlistOfferExpiredNotification extends Notification
 {
-    use Queueable;
+    use LinksToMemberSpace, Queueable;
 
     public function __construct(
         public TrainingPack $pack,
@@ -30,7 +31,7 @@ class TrainingWaitlistOfferExpiredNotification extends Notification
         return [
             'title' => __('Training spot expired'),
             'body' => __('The spot offered to you for :pack was not confirmed in time', ['pack' => $this->pack->name]),
-            'url' => route('admin.trainings.index'),
+            'url' => $this->memberTrainingsUrl($notifiable),
             'category' => 'training',
             'icon' => 'o-clock',
         ];
@@ -43,7 +44,7 @@ class TrainingWaitlistOfferExpiredNotification extends Notification
             ->greeting(__('Hello :name!', ['name' => $notifiable->first_name]))
             ->line(__('The spot we offered you for **:pack** was not confirmed in time, so it has been passed on to the next person on the waiting list.', ['pack' => $this->pack->name]))
             ->line(__('You are no longer on the waiting list for this training. If you are still interested, you can ask to join it again.'))
-            ->action(__('See the trainings'), url('/'))
+            ->action(__('See the trainings'), $this->memberTrainingsUrl($notifiable))
             ->salutation(__('The club team'));
     }
 

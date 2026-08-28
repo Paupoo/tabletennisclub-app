@@ -185,7 +185,7 @@ new class extends Component
                 iban: $this->iban,
                 // Admin-only fields are preserved from the current model (not self-editable).
                 licence: $this->user->licence,
-                ranking: $this->user->ranking,
+                ranking: $this->user->ranking->value,
                 // The rights layer is left out entirely rather than re-read and
                 // handed back: nobody edits their own rights, so this screen has
                 // nothing to say about them.

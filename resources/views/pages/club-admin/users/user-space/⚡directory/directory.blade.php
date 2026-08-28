@@ -40,7 +40,7 @@
                         <div class="min-w-0">
                             <p class="truncate font-semibold">{{ $member->first_name }} {{ $member->last_name }}</p>
                             <div class="mt-0.5 flex items-center gap-2 text-xs text-base-content/60">
-                                <span class="font-mono">{{ $member->ranking ?: '—' }}</span>
+                                <span class="font-mono">{{ $member->ranking->getLabel() }}</span>
                                 @if ($member->force_list)
                                     <span class="text-base-content/30">·</span>
                                     <span>{{ __('Force') }} {{ $member->force_list }}</span>

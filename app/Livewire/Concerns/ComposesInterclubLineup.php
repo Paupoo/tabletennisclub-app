@@ -156,8 +156,8 @@ trait ComposesInterclubLineup
             // the members' opt-in contact-visibility preferences.
             'phone_number' => $player->phone_number,
             'email' => $player->email,
-            'rank' => $player->ranking ?? '—',
-            'rank_sort' => $player->ranking ?? 'ZZZ',
+            'rank' => $player->ranking->getLabel(),
+            'rank_sort' => $player->ranking->value,
             'availability' => $availability,
             'availability_note' => $pivot?->availability_note,
             'matches_played' => $season && $team

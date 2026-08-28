@@ -8,6 +8,7 @@ use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Services\IcsGenerator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,7 +18,7 @@ use Illuminate\Queue\SerializesModels;
 
 class MeetingRsvpConfirmationNotification extends Notification implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use LinksToMemberSpace, Queueable, SerializesModels;
 
     public function __construct(
         public Meeting $meeting,
@@ -30,7 +31,7 @@ class MeetingRsvpConfirmationNotification extends Notification implements Should
         return [
             'title' => __('Attendance confirmed: :title', ['title' => $this->meeting->title]),
             'body' => __('Your attendance at the :date meeting is confirmed', ['date' => $this->meeting->scheduled_at?->translatedFormat('d M Y') ?? __('TBD')]),
-            'url' => route('admin.meetings.show', $this->meeting),
+            'url' => $this->meetingUrl($notifiable, $this->meeting),
             'category' => 'meeting',
             'icon' => 'o-calendar-days',
         ];

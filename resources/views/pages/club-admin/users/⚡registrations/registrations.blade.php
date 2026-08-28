@@ -794,7 +794,7 @@
                                     <div class="truncate text-xs text-base-content/60">
                                         {{ $m->birthdate?->format('d/m/Y') ?? __('Birth date unknown') }}
                                         ·
-                                        {{ $m->ranking && $m->ranking !== 'NA' ? $m->ranking : __('No ranking') }}
+                                        {{ $m->ranking === \App\Domains\Shared\Enums\Ranking::NA ? __('No ranking') : $m->ranking->getLabel() }}
                                         @if ($m->email === null && $m->guardians->isNotEmpty())
                                             · {{ __('via :guardian', [
                                                 'guardian' => $m->guardians->first()->first_name . ' ' . $m->guardians->first()->last_name,

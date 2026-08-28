@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Meetings\Notifications;
 
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -13,7 +14,7 @@ use Illuminate\Queue\SerializesModels;
 
 class MeetingMinutesNotification extends Notification implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use LinksToMemberSpace, Queueable, SerializesModels;
 
     public function __construct(public Meeting $meeting) {}
 
@@ -23,7 +24,7 @@ class MeetingMinutesNotification extends Notification implements ShouldQueue
         return [
             'title' => __('Minutes: :title', ['title' => $this->meeting->title]),
             'body' => __('The minutes of the :date meeting are available', ['date' => $this->meeting->scheduled_at?->translatedFormat('d M Y') ?? __('TBD')]),
-            'url' => route('admin.meetings.show', $this->meeting),
+            'url' => $this->meetingUrl($notifiable, $this->meeting),
             'category' => 'meeting',
             'icon' => 'o-calendar-days',
         ];
@@ -57,7 +58,7 @@ class MeetingMinutesNotification extends Notification implements ShouldQueue
         }
 
         return $mail
-            ->action(__('View full minutes'), route('admin.meetings.show', $meeting))
+            ->action(__('View full minutes'), $this->meetingUrl($notifiable, $meeting))
             ->salutation(__('Regards,'));
     }
 

@@ -359,3 +359,205 @@ describe('registerableMembersOptions', function (): void {
         expect($active->is_active)->toBeTrue();
     });
 })->group('Tournament', 'Wizard');
+
+// ── Registration ceiling (issue #37) ─────────────────────────────────────────
+
+/*
+ * The wizard read `maxUsers` in ten places — "Inscrits 12 / 24", "Places
+ * restantes", the guard that closes registrations — and offered nowhere to set
+ * it. The only writer was a private helper deriving it from the structure, so
+ * the ceiling the committee saw was one nobody had chosen, and the structure is
+ * itself suggested from the tables the selected rooms hold.
+ */
+describe('registration ceiling', function (): void {
+    function wizardAdmin(): User
+    {
+        return User::factory()->isAdmin()->create();
+    }
+
+    /*
+     * The whole ticket is that the field did not exist: asserting the behaviour
+     * without asserting the input proves nothing a committee member can reach.
+     */
+    it('offers the committee a field to set it', function (): void {
+        $tournament = wizardTournament();
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            // A published tournament opens on step 4; the ceiling lives on step 1.
+            ->set('step', '1')
+            ->assertSeeHtml('wire:model.live.debounce.500ms="maxUsers"');
+    });
+
+    it('follows the structure until somebody sets it', function (): void {
+        $tournament = wizardTournament(['nb_pools' => 2, 'pool_size' => 4, 'max_users' => 8]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('maxUsersManual', false)
+            ->set('nb_poules', 5)
+            ->assertSet('maxUsers', 20)
+            ->set('pool_size', 6)
+            ->assertSet('maxUsers', 30);
+    });
+
+    /*
+     * The old guard compared maxUsers to the *new* capacity while its comment
+     * claimed the old one, so a second change to the structure never moved the
+     * ceiling again. This is that second change.
+     */
+    it('keeps following the structure past the first change', function (): void {
+        $tournament = wizardTournament(['nb_pools' => 2, 'pool_size' => 4, 'max_users' => 8]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('nb_poules', 3)
+            ->set('nb_poules', 7)
+            ->assertSet('maxUsers', 28);
+    });
+
+    it('stops following it once the committee types a number', function (): void {
+        $tournament = wizardTournament(['nb_pools' => 2, 'pool_size' => 4, 'max_users' => 8]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('maxUsers', 12)
+            ->assertSet('maxUsersManual', true)
+            ->set('nb_poules', 9)
+            ->assertSet('maxUsers', 12);
+    });
+
+    it('can be handed back to the structure', function (): void {
+        $tournament = wizardTournament(['nb_pools' => 3, 'pool_size' => 4, 'max_users' => 12]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('maxUsers', 12345)
+            ->call('resetMaxUsersToStructure')
+            ->assertSet('maxUsersManual', false)
+            ->assertSet('maxUsers', 12);
+    });
+
+    /*
+     * A ceiling already stored that does not match the structure was typed by
+     * somebody: reopening the wizard must not quietly overwrite it.
+     */
+    it('treats a stored ceiling that differs from the structure as deliberate', function (): void {
+        $tournament = wizardTournament(['nb_pools' => 4, 'pool_size' => 4, 'max_users' => 12]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('maxUsersManual', true)
+            ->set('nb_poules', 8)
+            ->assertSet('maxUsers', 12);
+    });
+});
+
+// ── Opening registrations (issue #35) ────────────────────────────────────────
+
+/*
+ * The committee published a tournament and watched the status stay on "draft".
+ * There was no button to press: the hop from locked to published was a side
+ * effect of sending the first invitation, and nothing said so. What they had
+ * published was the article, which is a separate axis entirely.
+ *
+ * Opening the registrations is now a named action, and it is a prerequisite for
+ * inviting anybody — an invitation to a tournament nobody can sign up for leads
+ * the member nowhere.
+ */
+describe('opening registrations', function (): void {
+    it('offers the action while the tournament is only locked', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::LOCKED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('step', '4')
+            ->assertSee(__('Open registrations'))
+            ->assertSee(__('Registrations are closed'));
+    });
+
+    it('says so instead once they are open', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('step', '4')
+            ->assertSee(__('Registrations are open — members can sign up.'))
+            ->assertDontSee(__('Members cannot see this tournament yet, and invitations would lead them nowhere.'));
+    });
+
+    it('moves a locked tournament to published', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::LOCKED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('confirmOpenRegistrations')
+            ->assertSet('showOpenRegistrationsModal', false);
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::PUBLISHED);
+    });
+
+    /* The same button reopens a tournament whose registrations were closed. */
+    it('reopens a tournament that was closed for setup', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::SETUP]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('confirmOpenRegistrations');
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::PUBLISHED);
+    });
+
+    /* Name and price are not locked yet in draft: opening would skip the contract. */
+    it('refuses to open a tournament still in draft', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::DRAFT]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('confirmOpenRegistrations');
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::DRAFT);
+    });
+});
+
+describe('inviting members', function (): void {
+    it('refuses to invite anybody while the registrations are closed', function (): void {
+        Notification::fake();
+
+        $tournament = wizardTournament([
+            'status' => TournamentStatusEnum::LOCKED,
+            'registration_deadline' => now()->addWeek(),
+        ]);
+        $member = User::factory()->create();
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('selectedMembers', [$member->id])
+            ->call('sendInvitations');
+
+        Notification::assertNothingSentTo($member);
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::LOCKED);
+    });
+
+    /*
+     * The hop that used to hide here is gone: sending invitations is now only
+     * sending invitations.
+     */
+    it('leaves the status alone once they are open', function (): void {
+        Notification::fake();
+
+        $tournament = wizardTournament([
+            'status' => TournamentStatusEnum::PUBLISHED,
+            'registration_deadline' => now()->addWeek(),
+        ]);
+        $member = User::factory()->create();
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('selectedMembers', [$member->id])
+            ->call('sendInvitations');
+
+        Notification::assertSentTo($member, TournamentInvitationNotification::class);
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::PUBLISHED);
+    });
+});

@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Subscriptions\Notifications\SubscriptionFormulaChangedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -59,7 +60,7 @@ it('accepts the affiliation with the licence number entered in the review modal'
         ->call('approve');
 
     expect($member->fresh()->licence)->toBe('123456')
-        ->and($member->fresh()->ranking)->toBe('C4')
+        ->and($member->fresh()->ranking)->toBe(Ranking::C4)
         ->and($subscription->fresh()->status)->toBe('confirmed')
         ->and($subscription->payments()->count())->toBe(1);
 });

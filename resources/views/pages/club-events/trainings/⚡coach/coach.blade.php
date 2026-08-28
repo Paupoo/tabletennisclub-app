@@ -79,8 +79,8 @@
                                     <div>
                                         <p class="font-medium">{{ $member->full_name }}</p>
                                         <div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-base-content/60">
-                                            @if ($member->ranking && $member->ranking !== 'NA')
-                                                <span>{{ $member->ranking }}</span>
+                                            @if ($member->ranking !== \App\Domains\Shared\Enums\Ranking::NA)
+                                                <span>{{ $member->ranking->getLabel() }}</span>
                                             @endif
 
                                             @if ($presenceRate > 0)

@@ -3,9 +3,9 @@
 @php
     $statusConfig = [
         'pending'   => ['bg' => 'bg-primary/10',  'text' => 'text-primary',          'badge' => 'badge-primary',  'label' => __('Live')],
-        'published' => ['bg' => 'bg-success/10',  'text' => 'text-success',          'badge' => 'badge-success',  'label' => __('Published')],
-        'setup'     => ['bg' => 'bg-info/10',     'text' => 'text-info',             'badge' => 'badge-info',     'label' => __('Setup')],
-        'locked'    => ['bg' => 'bg-warning/10',  'text' => 'text-warning-content',          'badge' => 'badge-warning',  'label' => __('Locked')],
+        'published' => ['bg' => 'bg-success/10',  'text' => 'text-success',          'badge' => 'badge-success',  'label' => __('Registrations open')],
+        'setup'     => ['bg' => 'bg-info/10',     'text' => 'text-info',             'badge' => 'badge-info',     'label' => __('Registrations closed')],
+        'locked'    => ['bg' => 'bg-warning/10',  'text' => 'text-warning-content',          'badge' => 'badge-warning',  'label' => __('Ready to open')],
         'closed'    => ['bg' => 'bg-base-200',    'text' => 'text-base-content/50',  'badge' => 'badge-ghost',    'label' => __('Closed')],
         'cancelled' => ['bg' => 'bg-error/10',    'text' => 'text-error',            'badge' => 'badge-error',    'label' => __('Cancelled')],
         'draft'     => ['bg' => 'bg-base-300',    'text' => 'text-base-content/40',  'badge' => 'badge-outline',  'label' => __('Draft')],
@@ -17,6 +17,14 @@
     $waitingCount = $tournament->waiting_count ?? 0;
     $maxUsers     = $tournament->max_users;
     $percent      = $maxUsers > 0 ? min(100, ($activeCount / $maxUsers) * 100) : 0;
+
+    /*
+     * Deux axes indépendants, et le mot « publié » désignait les deux (issue #35).
+     * Le statut décide si un membre peut s'inscrire ; l'article décide si le
+     * tournoi apparaît sur le site public. L'un n'entraîne jamais l'autre, donc
+     * la carte les montre côte à côte plutôt que de laisser deviner.
+     */
+    $articlePublished = $tournament->eventPost?->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED;
 
     $formatTags = collect([
         $tournament->sets_to_win > 0  ? trans_choice('{1} :n winning set|[2,*] :n winning sets', $tournament->sets_to_win, ['n' => $tournament->sets_to_win]) : null,
@@ -81,6 +89,16 @@
                 </span>
                 @if ($waitingCount > 0)
                     <span class="text-xs font-medium text-warning-content">(+{{ $waitingCount }} {{ __('waiting') }})</span>
+                @endif
+            </div>
+
+            {{-- Site public — l'axe que le statut ne dit pas --}}
+            <div class="flex items-center gap-2">
+                <x-icon class="h-3.5 w-3.5 shrink-0 opacity-50" name="o-globe-alt" />
+                @if ($articlePublished)
+                    <span>{{ __('Article published') }}</span>
+                @else
+                    <span class="text-base-content/50">{{ __('Not on the website') }}</span>
                 @endif
             </div>
 

@@ -120,7 +120,6 @@
 
     @php
         $registrationCount = $this->registrations->count();
-        $capacity = $maxUsers > 0 ? $maxUsers : $this->simulation->totalPlayers;
         $waitlistCount = $this->waitlist->count();
     @endphp
 
@@ -285,20 +284,6 @@
         <x-button :label="__('Cancel')" wire:click="$set('showCloseRegistrationsModal', false)" />
         <x-button :label="__('Close registrations')" icon="o-lock-closed" class="btn-error"
             wire:click="confirmCloseRegistrations" />
-    </x-slot:actions>
-</x-app-modal>
-
-{{-- ── Open registrations modal ──────────────────────────────── --}}
-<x-app-modal wire:model="showOpenRegistrationsModal" :title="__('Reopen registrations?')" class="backdrop-blur" :open="$showOpenRegistrationsModal">
-    <div class="p-4 bg-warning/10 border border-warning/20 rounded-xl flex items-start gap-3 text-sm">
-        <x-icon name="o-information-circle" class="w-5 h-5 shrink-0 mt-0.5 text-warning-content" />
-        <p>{{ __('Reopening registrations will set the tournament back to "published" status. The tournament cannot be started until registrations are closed again.') }}</p>
-    </div>
-
-    <x-slot:actions>
-        <x-button :label="__('Cancel')" wire:click="$set('showOpenRegistrationsModal', false)" />
-        <x-button :label="__('Reopen registrations')" icon="o-lock-open" class="btn-warning"
-            wire:click="confirmOpenRegistrations" />
     </x-slot:actions>
 </x-app-modal>
 

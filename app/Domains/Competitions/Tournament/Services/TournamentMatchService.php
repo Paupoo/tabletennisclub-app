@@ -489,10 +489,10 @@ class TournamentMatchService
             return ['pair1_handicap' => 0, 'pair2_handicap' => 0];
         }
 
-        $valid = $this->isValidRanking($p1a->ranking ?? Ranking::NC->value)
-            && $this->isValidRanking($p1b->ranking ?? Ranking::NC->value)
-            && $this->isValidRanking($p2a->ranking ?? Ranking::NC->value)
-            && $this->isValidRanking($p2b->ranking ?? Ranking::NC->value);
+        $valid = $this->isValidRanking($p1a->ranking->value)
+            && $this->isValidRanking($p1b->ranking->value)
+            && $this->isValidRanking($p2a->ranking->value)
+            && $this->isValidRanking($p2b->ranking->value);
 
         if (! $valid) {
             return ['pair1_handicap' => 0, 'pair2_handicap' => 0];
@@ -842,11 +842,11 @@ class TournamentMatchService
      */
     private function calculateHandicapPointsToReceive(User $player1, User $player2): int
     {
-        if (! $this->isValidRanking($player1->ranking) || ! $this->isValidRanking($player2->ranking)) {
+        if (! $this->isValidRanking($player1->ranking->value) || ! $this->isValidRanking($player2->ranking->value)) {
             throw new InvalidArgumentException('Classement invalide.');
         }
 
-        return $this->handicapPoints[$player2->ranking][$player1->ranking];
+        return $this->handicapPoints[$player2->ranking->value][$player1->ranking->value];
     }
 
     /**

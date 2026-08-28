@@ -6,6 +6,7 @@ namespace App\Domains\Meetings\Notifications;
 
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\URL;
 
 class MeetingInvitationNotification extends Notification implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use LinksToMemberSpace, Queueable, SerializesModels;
 
     public function __construct(public Meeting $meeting) {}
 
@@ -25,7 +26,7 @@ class MeetingInvitationNotification extends Notification implements ShouldQueue
         return [
             'title' => __('Invitation: :title', ['title' => $this->meeting->title]),
             'body' => __('You are invited to the :date meeting', ['date' => $this->meeting->scheduled_at?->translatedFormat('d M Y') ?? __('TBD')]),
-            'url' => route('admin.meetings.show', $this->meeting),
+            'url' => $this->meetingUrl($notifiable, $this->meeting),
             'category' => 'meeting',
             'icon' => 'o-calendar-days',
         ];

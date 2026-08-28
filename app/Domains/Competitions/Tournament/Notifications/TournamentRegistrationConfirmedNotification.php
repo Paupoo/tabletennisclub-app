@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Domains\Competitions\Tournament\Notifications;
 
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class TournamentRegistrationConfirmedNotification extends Notification
 {
-    use Queueable;
+    use LinksToMemberSpace, Queueable;
 
     public function __construct(
         public Tournament $tournament,
@@ -25,7 +26,7 @@ class TournamentRegistrationConfirmedNotification extends Notification
         return [
             'title' => __($this->isWaitlisted ? "Liste d'attente confirmée : :name" : 'Inscription confirmée : :name', ['name' => $this->tournament->name]),
             'body' => __($this->isWaitlisted ? "Position en liste d'attente : #:pos" : 'Votre inscription au tournoi est confirmée', ['pos' => $this->waitlistPosition]),
-            'url' => route('admin.tournaments.index'),
+            'url' => $this->memberEventsUrl($notifiable),
             'category' => 'tournament',
             'icon' => 'o-trophy',
         ];

@@ -459,6 +459,52 @@ class EditTeam extends Component {
 
 ---
 
+### 11. Envois en masse throttlés (Job + limiteur + échéance)
+
+**Purpose**: Écrire à tous les membres sans se faire classer spammeur par Gmail, qui
+tolère le volume mais pas le burst.
+
+**Les trois pièces vont ensemble** — il en manque une et l'envoi part en spam, ou disparaît :
+
+```php
+// app/Jobs/SendTournamentAnnouncementJob.php
+class SendTournamentAnnouncementJob implements ShouldQueue
+{
+    use Queueable, RetriesWhileRateLimited;   // 3. la politique de retry
+
+    public function __construct(public int $tournamentId, public int $userId) {}
+
+    public function middleware(): array
+    {
+        return [new RateLimited('invitations')];   // 2. le limiteur, partagé
+    }
+}
+
+// Le fan-out : un job par destinataire, jamais une boucle d'envois.  // 1.
+User::active()->each(fn (User $m) => SendTournamentAnnouncementJob::dispatch($t->id, $m->id));
+```
+
+1. **Un job par destinataire**, portant des `id` et non des modèles : un membre archivé
+   entre le fan-out et l'envoi est simplement ignoré, là où un modèle sérialisé ferait
+   échouer le job. L'audience se filtre avec `User::active()`, jamais `User::cursor()`.
+2. **Un limiteur partagé**, déclaré dans `AppServiceProvider` : `invitations` (15/min) pour
+   tout ce qui n'est pas attendu, `convocations` (30/min) quand le message porte une date à
+   laquelle répondre. Une nouvelle diffusion **réutilise** une de ces clés plutôt que d'en
+   ajouter une troisième : Gmail compte le burst total, pas le type de job, donc trois
+   limiteurs qui s'additionnent bornent moins bien qu'une clé commune.
+3. **`RetriesWhileRateLimited`** (`app/Jobs/Concerns/`) : `RateLimited` ne met pas un job en
+   attente, il le **release**, et un release consomme une tentative. Sans ce trait, tout ce
+   qui dépasse la première fenêtre meurt en `MaxAttemptsExceededException` avant même
+   d'être exécuté. Le trait remplace le compteur par une échéance (`retryUntil`, 6 h), plus
+   `maxExceptions = 3` pour qu'une vraie panne SMTP échoue vite au lieu d'être réessayée
+   six heures durant.
+
+**À tester**: pas la configuration, mais le comportement — voir
+`tests/Feature/Jobs/ThrottledMailingsTest.php`, qui fait tourner un vrai `Worker` en
+`--tries=1` et vérifie que le job retardé repart à la fenêtre suivante.
+
+---
+
 ## Conventions de codage
 
 ### Naming

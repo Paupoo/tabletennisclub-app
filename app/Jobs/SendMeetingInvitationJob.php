@@ -7,6 +7,7 @@ namespace App\Jobs;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
+use App\Jobs\Concerns\RetriesWhileRateLimited;
 use App\Providers\AppServiceProvider;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -28,7 +29,7 @@ use Illuminate\Support\Facades\Notification;
  */
 class SendMeetingInvitationJob implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, RetriesWhileRateLimited;
 
     public function __construct(public int $meetingId, public int $userId) {}
 

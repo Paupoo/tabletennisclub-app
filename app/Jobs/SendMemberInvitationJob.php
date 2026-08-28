@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Actions\User\SendInvitationAction;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Jobs\Concerns\RetriesWhileRateLimited;
 use App\Providers\AppServiceProvider;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -27,7 +28,7 @@ use Illuminate\Queue\Middleware\RateLimited;
  */
 class SendMemberInvitationJob implements ShouldQueue
 {
-    use Batchable, Queueable;
+    use Batchable, Queueable, RetriesWhileRateLimited;
 
     public function __construct(public int $userId) {}
 

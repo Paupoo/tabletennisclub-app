@@ -9,6 +9,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
@@ -155,6 +156,31 @@ class UserCalendarService
     }
 
     /**
+     * One calendar row for a tournament, and the member's registration on it.
+     *
+     * Extracted so the row keeps the loose contract the calendar is built on:
+     * Collection's value template is invariant, so an inferred array shape —
+     * however accurate — cannot satisfy `Collection<int, array<string, mixed>>`
+     * from inside a closure.
+     *
+     * @return array<string, mixed>
+     */
+    private function tournamentRow(Tournament $tournament, ?TournamentRegistration $registration): array
+    {
+        return [
+            'startDateTime' => $tournament->start_date->format('Y-m-d H:i:s'),
+            'endDate' => $tournament->end_date?->format('Y-m-d'),
+            'title' => $tournament->name,
+            'type' => 'tournament',
+            'tournamentId' => $tournament->id,
+            'registrationStatus' => $registration?->registration_status,
+            'waitlistPosition' => $registration?->waitlist_position,
+            'confirmDeadline' => $registration?->confirmation_deadline?->format('Y-m-d H:i:s'),
+            'monthKey' => $tournament->start_date->translatedFormat('F Y'),
+        ];
+    }
+
+    /**
      * @return Collection<int, array<string, mixed>>
      */
     private function tournaments(User $user, bool $showAllEvents, CarbonInterface $from, ?CarbonInterface $to): Collection
@@ -172,21 +198,22 @@ class UserCalendarService
             );
         }
 
-        return $tournamentsQuery
-            ->with(['users' => fn ($q) => $q->where('tournament_user.user_id', $user->id)])
-            ->orderBy('start_date')
+        $tournaments = $tournamentsQuery->orderBy('start_date')->get();
+
+        /*
+         * The member's own registration row, read through the pivot model rather
+         * than through `$tournament->users->first()->pivot`. Same three columns,
+         * but typed — and looked up once per tournament instead of three times,
+         * which is what the previous shape did.
+         */
+        $registrations = TournamentRegistration::where('user_id', $user->id)
+            ->whereIn('tournament_id', $tournaments->pluck('id'))
             ->get()
-            ->map(fn ($t): array => [
-                'startDateTime' => $t->start_date->format('Y-m-d H:i:s'),
-                'endDate' => $t->end_date?->format('Y-m-d'),
-                'title' => $t->name,
-                'type' => 'tournament',
-                'tournamentId' => $t->id,
-                'registrationStatus' => $t->users->first()?->pivot->registration_status,
-                'waitlistPosition' => $t->users->first()?->pivot->waitlist_position,
-                'confirmDeadline' => $t->users->first()?->pivot->confirmation_deadline?->format('Y-m-d H:i:s'),
-                'monthKey' => $t->start_date->translatedFormat('F Y'),
-            ]);
+            ->keyBy('tournament_id');
+
+        return $tournaments->map(
+            fn (Tournament $t): array => $this->tournamentRow($t, $registrations->get($t->id)),
+        );
     }
 
     /**

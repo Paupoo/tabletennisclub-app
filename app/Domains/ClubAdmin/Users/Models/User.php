@@ -133,7 +133,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read Collection<int, User> $dependents
  * @property-read int|null $dependents_count
  * @property-read string $full_name
- * @property-read Collection<int, User> $guardians
+ * @property-read Collection<int, Guardian> $guardians
  * @property-read int|null $guardians_count
  * @property-read Collection<int, Meeting> $meetings
  * @property-read int|null $meetings_count
@@ -502,6 +502,9 @@ class User extends Authenticatable implements MustVerifyEmail
             ->exists();
     }
 
+    /**
+     * @return BelongsToMany<Guardian, $this>
+     */
     public function guardians(): BelongsToMany
     {
         return $this->belongsToMany(Guardian::class, 'guardian_user');

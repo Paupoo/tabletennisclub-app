@@ -31,16 +31,19 @@ class NotifyParticipantsOfMeeting
         }
     }
 
+    /** @return Collection<int, User> */
     private function getAGParticipants(): Collection
     {
         return User::active()->get();
     }
 
+    /** @return Collection<int, User> */
     private function getCommitteeMembers(): Collection
     {
         return User::role(Role::COMMITTEE->value)->get();
     }
 
+    /** @return Collection<int, User> */
     private function getParticipants(Meeting $meeting): Collection
     {
         $type = $meeting->type->value;

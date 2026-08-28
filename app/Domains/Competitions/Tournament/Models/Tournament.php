@@ -244,6 +244,9 @@ class Tournament extends Model
 
     /* Relations */
 
+    /**
+     * @return BelongsToMany<User, $this, TournamentRegistration, 'pivot'>
+     */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)

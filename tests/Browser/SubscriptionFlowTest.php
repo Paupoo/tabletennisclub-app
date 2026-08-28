@@ -5,6 +5,14 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 
+/*
+ * Dans ce plugin, `waitForText()` est un alias de `assertSee()` : il photographie
+ * le DOM et ne réessaie pas. Aucune assertion de cette API n'attend. Tout ce qui
+ * suit une frappe dans un champ `wire:model.live.debounce.300ms`, ou l'ouverture
+ * d'un tiroir, doit donc passer par `wait()` — le seul primitif d'attente réel.
+ * Constaté quand la version « liste des membres » de ce motif a lâché en CI.
+ */
+
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->isCommitteeMember()->create();
     $this->season = makeActiveSeason();
@@ -39,7 +47,7 @@ it('filter drawer opens when clicking Filtres', function (): void {
 
     visit(route('admin.users.registrations'))
         ->click('Filtres')
-        ->waitForText('Statut')
+        ->wait(1)
         ->assertSee('Statut');
 });
 

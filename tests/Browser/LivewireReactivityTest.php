@@ -5,6 +5,14 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 
+/*
+ * Dans ce plugin, `waitForText()` est un alias de `assertSee()` : il photographie
+ * le DOM et ne réessaie pas. Aucune assertion de cette API n'attend. Tout ce qui
+ * suit une frappe dans un champ `wire:model.live.debounce.300ms`, ou l'ouverture
+ * d'un tiroir, doit donc passer par `wait()` — le seul primitif d'attente réel.
+ * Constaté quand la version « liste des membres » de ce motif a lâché en CI.
+ */
+
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->isCommitteeMember()->create([
         'first_name' => 'Admin',
@@ -18,7 +26,7 @@ it('filter drawer opens on meetings list', function (): void {
 
     visit(route('admin.meetings.index'))
         ->click('Filtres')
-        ->waitForText('Effacer les filtres')
+        ->wait(1)
         ->assertSee('Effacer les filtres');
 });
 
@@ -32,7 +40,8 @@ it('search filters the meetings list in real time', function (): void {
         ->assertSee('Alpha Unique 4Def')
         ->assertSee('Beta Unique 5Ghi')
         ->type('input[id$="search"]', 'Alpha')
-        ->waitForText('Alpha Unique 4Def')
+        ->wait(2)
+        ->assertSee('Alpha Unique 4Def')
         ->assertDontSee('Beta Unique 5Ghi');
 });
 
@@ -41,7 +50,8 @@ it('empty state message shown when search matches nothing', function (): void {
 
     visit(route('admin.meetings.index'))
         ->type('input[id$="search"]', 'xqzxqzxqznoMatchExpected999')
-        ->waitForText('Aucune réunion ne correspond');
+        ->wait(2)
+        ->assertSee('Aucune réunion ne correspond');
 });
 
 it('users index search updates list reactively', function (): void {
@@ -52,6 +62,7 @@ it('users index search updates list reactively', function (): void {
     visit(route('admin.users.index'))
         ->assertSee('ReactTest')
         ->type('input[id$="search"]', 'ReactTest')
-        ->waitForText('ReactTest')
+        ->wait(2)
+        ->assertSee('ReactTest')
         ->assertDontSee('Admin Test');
 });

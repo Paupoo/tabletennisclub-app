@@ -7,6 +7,7 @@ namespace App\Jobs;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Notifications\NewTournamentPublishedNotification;
+use App\Jobs\Concerns\RetriesWhileRateLimited;
 use App\Providers\AppServiceProvider;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -26,7 +27,7 @@ use Illuminate\Queue\Middleware\RateLimited;
  */
 class SendTournamentAnnouncementJob implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, RetriesWhileRateLimited;
 
     public function __construct(public int $tournamentId, public int $userId) {}
 

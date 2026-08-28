@@ -237,6 +237,47 @@ php artisan test
 
 ---
 
+## Un envoi en masse s'arrête au bout de quelques mails
+
+### Symptôme
+```
+App\Jobs\SendTournamentAnnouncementJob has been attempted too many times.
+Illuminate\Queue\MaxAttemptsExceededException
+```
+Une rafale d'échecs de quelques millisecondes chacun, juste après une publication de
+tournoi ou un envoi d'invitations. Les premiers destinataires reçoivent leur mail, les
+autres jamais — et rien ne le signale à l'utilisateur.
+
+### Cause
+Le middleware `RateLimited` ne met pas un job en attente : quand la fenêtre du limiteur est
+pleine, il le **release** en fin de file, et un release **consomme une tentative**. Un job
+qui attend son tour est donc « tenté » une fois par fenêtre traversée. Sous un worker lancé
+avec `--tries=1` — ce que fait `composer dev` — il est tué à son retour, avant que
+`handle()` ne s'exécute.
+
+### Solution
+La politique de retry appartient au job, pas au flag du worker (qui diffère entre
+`composer dev` et le serveur). Utiliser le trait prévu pour ça :
+
+```php
+use App\Jobs\Concerns\RetriesWhileRateLimited;
+
+class SendTournamentAnnouncementJob implements ShouldQueue
+{
+    use Queueable, RetriesWhileRateLimited;
+```
+
+Il pose une échéance (`retryUntil`, 6 h) au lieu d'un compteur — dans le worker, une
+`retryUntil` court-circuite entièrement `maxTries` — et un `maxExceptions = 3` pour qu'une
+vraie panne échoue vite. Voir le pattern 11 de `ARCHITECTURE.md`.
+
+Pour relancer les mails déjà perdus :
+```bash
+php artisan queue:retry all
+```
+
+---
+
 ## Validation échoue en Livewire
 
 ### Symptôme

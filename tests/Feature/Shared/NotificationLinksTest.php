@@ -28,7 +28,7 @@ function trainingNotificationUrl(User $member): string
     // overlap). The link does not depend on the season anyway.
     $subscription = Subscription::factory()->for($member)->create();
 
-    return (new TrainingPackRequestedNotification(TrainingPack::factory()->create(), $subscription))
+    return new TrainingPackRequestedNotification(TrainingPack::factory()->create(), $subscription)
         ->toArray($member)['url'];
 }
 
@@ -47,7 +47,7 @@ describe('a member notification', function (): void {
         $member = User::factory()->create();
         $tournament = Tournament::factory()->create();
 
-        $url = (new TournamentRegistrationConfirmedNotification($tournament))->toArray($member)['url'];
+        $url = new TournamentRegistrationConfirmedNotification($tournament)->toArray($member)['url'];
 
         expect($url)->toBe(route('admin.user.event-subscription', $member));
 
@@ -106,7 +106,7 @@ describe('a meeting convocation', function (): void {
         $committee = User::factory()->isCommitteeMember()->create();
         $meeting = Meeting::factory()->create();
 
-        expect((new MeetingInvitationNotification($meeting))->toArray($committee)['url'])
+        expect(new MeetingInvitationNotification($meeting)->toArray($committee)['url'])
             ->toBe(route('admin.meetings.show', $meeting));
     });
 
@@ -114,7 +114,7 @@ describe('a meeting convocation', function (): void {
         $member = User::factory()->create();
         $meeting = Meeting::factory()->create();
 
-        $url = (new MeetingInvitationNotification($meeting))->toArray($member)['url'];
+        $url = new MeetingInvitationNotification($meeting)->toArray($member)['url'];
 
         expect($url)->toBe(route('admin.user.event-subscription', $member));
 

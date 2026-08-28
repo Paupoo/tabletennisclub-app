@@ -107,9 +107,7 @@ class TournamentPair extends Model
         $weakest = count($cases);
 
         return collect([$this->player1?->ranking, $this->player2?->ranking])
-            ->map(function (?Ranking $ranking) use ($cases, $weakest): int {
-                return $ranking === null ? $weakest : (int) array_search($ranking, $cases, true);
-            })
+            ->map(fn (?Ranking $ranking): int => $ranking === null ? $weakest : (int) array_search($ranking, $cases, true))
             ->sum();
     }
 

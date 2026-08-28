@@ -126,7 +126,7 @@ it('names the tournament through a placeholder, not a bespoke key', function ():
     $member = activeMember(makeActiveSeason());
     $tournament = announcedTournament();
 
-    $mail = (new NewTournamentPublishedNotification($tournament, $member))->toMail($member);
+    $mail = new NewTournamentPublishedNotification($tournament, $member)->toMail($member);
 
     expect($mail->subject)->toContain('Tournoi des crêpes')
         ->and($mail->subject)->not->toContain(':name');

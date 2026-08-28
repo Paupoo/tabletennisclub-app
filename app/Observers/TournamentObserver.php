@@ -22,7 +22,7 @@ class TournamentObserver implements ShouldHandleEventsAfterCommit
      * `setup` is deliberately absent: a tournament in setup has already been
      * open once and closed again, so reopening it is a reopening, not news.
      */
-    private const NEVER_OPENED = [
+    private const array NEVER_OPENED = [
         TournamentStatusEnum::DRAFT,
         TournamentStatusEnum::LOCKED,
     ];

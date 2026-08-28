@@ -595,7 +595,7 @@ new class extends Component
             $searchResults = $eligible->take(8)->map(fn (User $u): array => [
                 'id' => $u->id,
                 'name' => $u->last_name . ' ' . $u->first_name,
-                'rank' => $u->ranking ?? '—',
+                'rank' => $u->ranking->getLabel(),
             ])->values();
 
             if ($searchResults->isEmpty()) {

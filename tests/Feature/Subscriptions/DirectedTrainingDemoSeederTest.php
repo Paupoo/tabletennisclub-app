@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Shared\Enums\AgeCategoryEnum;
+use App\Domains\Shared\Enums\Ranking;
 use Database\Seeders\DirectedTrainingDemoSeeder;
 
 beforeEach(function (): void {
@@ -38,9 +39,9 @@ it('keeps the level modest — no ranking stronger than D4 (only NG/E/D)', funct
         ->pluck('user.ranking');
 
     // Allowed series only: unranked (NC), E, D — never C/B/A. And within D, max D4.
-    $allowed = ['NC', 'E6', 'E4', 'E2', 'E0', 'D6', 'D4'];
+    $allowed = [Ranking::NC, Ranking::E6, Ranking::E4, Ranking::E2, Ranking::E0, Ranking::D6, Ranking::D4];
 
-    expect($rankings->every(fn (string $r): bool => in_array($r, $allowed, true)))->toBeTrue();
+    expect($rankings->every(fn (Ranking $r): bool => in_array($r, $allowed, true)))->toBeTrue();
 });
 
 it('is idempotent — does not duplicate the cohort on a second run', function (): void {

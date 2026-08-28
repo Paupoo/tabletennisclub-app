@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Ranking;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -44,7 +45,7 @@ describe('ranking — members without an affiliation yet', function (): void {
             ->set('password', '')
             ->call('save');
 
-        expect($user->fresh()->ranking)->toBe('NA');
+        expect($user->fresh()->ranking)->toBe(Ranking::NA);
     });
 
     it('does not throw a QueryException (no DB truncation) when saving', function (): void {
@@ -155,7 +156,7 @@ describe('licence and ranking — editable on the member form', function (): voi
             ->assertHasNoErrors();
 
         expect($user->fresh()->licence)->toBe('654321')
-            ->and($user->fresh()->ranking)->toBe('C4');
+            ->and($user->fresh()->ranking)->toBe(Ranking::C4);
     });
 
     it('corrects the licence of a paid affiliation without notifying or moving money', function (): void {

@@ -7,6 +7,7 @@ use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Mail\PaymentInvitationEmail;
@@ -597,7 +598,7 @@ it('hands the drawer search what it takes to tell two homonyms apart', function 
         ->sole();
 
     expect($found->birthdate->format('Y-m-d'))->toBe('2014-03-09')
-        ->and($found->ranking)->toBe('NC')
+        ->and($found->ranking)->toBe(Ranking::NC)
         ->and($found->email)->toBeNull()
         // Le badge « compte géré » nomme le tuteur qui reçoit le courrier :
         // sans la relation chargée, chaque résultat rouvrirait la base.

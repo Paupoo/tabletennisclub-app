@@ -75,7 +75,7 @@
                                 {{ $captain?->first_name }} {{ $captain?->last_name }}
                             </p>
                             @if ($captain?->ranking)
-                                <p class="text-xs text-gray-500">{{ $captain->ranking }}</p>
+                                <p class="text-xs text-gray-500">{{ $captain->ranking->getLabel() }}</p>
                             @endif
                         </div>
                         <x-button class="btn-ghost btn-xs text-gray-400 hover:text-red-500"
@@ -98,7 +98,7 @@
                             <span>{{ $member->first_name }} {{ $member->last_name }}</span>
                             @if ($member->ranking)
                                 <span class="ml-auto rounded bg-gray-100 px-1 py-0.5 text-xs font-semibold text-gray-500">
-                                    {{ $member->ranking }}
+                                    {{ $member->ranking->getLabel() }}
                                 </span>
                             @endif
                             @if ($captainId === $member->id)
@@ -154,7 +154,7 @@
                             </div>
                             @if ($user->ranking)
                                 <span class="rounded bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500">
-                                    {{ $user->ranking }}
+                                    {{ $user->ranking->getLabel() }}
                                 </span>
                             @endif
                         </div>

@@ -293,7 +293,7 @@ describe('pool filtering', function (): void {
         $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
         $makePooled($plan, $this->season, 'BeeOne', 'B2', now()->subYears(30));
         $makePooled($plan, $this->season, 'DeeOne', 'D0', now()->subYears(30));
-        $makePooled($plan, $this->season, 'NoRank', '', now()->subYears(30));
+        $makePooled($plan, $this->season, 'NoRank', 'NA', now()->subYears(30));
 
         $component = Livewire::actingAs($this->manager)
             ->test(BOARD, ['selectedPlanId' => $plan->id])
@@ -308,7 +308,7 @@ describe('pool filtering', function (): void {
     it('filters the pool to unranked members with the NC series', function () use ($makePooled): void {
         $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
         $makePooled($plan, $this->season, 'BeeOne', 'B2', now()->subYears(30));
-        $makePooled($plan, $this->season, 'NoRank', '', now()->subYears(30));
+        $makePooled($plan, $this->season, 'NoRank', 'NA', now()->subYears(30));
 
         $component = Livewire::actingAs($this->manager)
             ->test(BOARD, ['selectedPlanId' => $plan->id])

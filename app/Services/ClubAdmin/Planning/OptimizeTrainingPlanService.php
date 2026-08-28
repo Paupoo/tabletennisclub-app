@@ -72,7 +72,7 @@ class OptimizeTrainingPlanService
             /** @var Collection<int, TrainingPlanAssignment> $pool */
             $pool = $plan->assignments
                 ->whereNull('training_plan_pack_id')
-                ->sortByDesc(fn (TrainingPlanAssignment $a): int => $this->rankingValue($a->user->ranking))
+                ->sortByDesc(fn (TrainingPlanAssignment $a): int => $this->rankingValue($a->user->ranking->value))
                 ->values();
 
             $assigned = 0;
@@ -133,7 +133,7 @@ class OptimizeTrainingPlanService
     private function absorb(array &$packs, int $packId, User $user): void
     {
         $packs[$packId]['count']++;
-        $packs[$packId]['level_sum'] += $this->rankingValue($user->ranking);
+        $packs[$packId]['level_sum'] += $this->rankingValue($user->ranking->value);
         $packs[$packId]['level_count']++;
         $this->bumpAge($packs[$packId]['age_counts'], $this->ageCategory($user));
     }
@@ -157,7 +157,7 @@ class OptimizeTrainingPlanService
      */
     private function bestPackFor(User $candidate, array $packs): ?array
     {
-        $candidateValue = $this->rankingValue($candidate->ranking);
+        $candidateValue = $this->rankingValue($candidate->ranking->value);
         $candidateAge = $this->ageCategory($candidate);
 
         $best = null;
@@ -208,7 +208,7 @@ class OptimizeTrainingPlanService
 
             foreach ($members as $assignment) {
                 /** @var TrainingPlanAssignment $assignment */
-                $levelSum += $this->rankingValue($assignment->user->ranking);
+                $levelSum += $this->rankingValue($assignment->user->ranking->value);
                 $levelCount++;
                 $this->bumpAge($ageCounts, $this->ageCategory($assignment->user));
             }

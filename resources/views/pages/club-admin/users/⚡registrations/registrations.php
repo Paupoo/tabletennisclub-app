@@ -172,7 +172,7 @@ new class extends Component
         $subscription = Subscription::with(['user', 'season', 'trainingPacks'])->find($this->currentRequestId);
 
         $licence = filled($this->reviewLicence) ? trim($this->reviewLicence) : $subscription->user->licence;
-        $ranking = filled($this->reviewRanking) ? $this->reviewRanking : $subscription->user->ranking;
+        $ranking = filled($this->reviewRanking) ? $this->reviewRanking : $subscription->user->ranking->value;
 
         // An affiliation is what ties a member to the federation: accepting one
         // without a licence number would register someone the AFTT cannot identify.
@@ -1180,7 +1180,7 @@ new class extends Component
         // Accepting an affiliation is the moment the licence number is checked
         // against the federation, so it is offered for edit right here.
         $this->reviewLicence = $subscription?->user?->licence;
-        $this->reviewRanking = $subscription?->user?->ranking;
+        $this->reviewRanking = $subscription?->user?->ranking->value;
     }
 
     /**
@@ -1703,7 +1703,7 @@ new class extends Component
      */
     private function canBeConfirmedDirectly(User $user): bool
     {
-        if (blank($user->licence) || blank($user->ranking) || $user->ranking === Ranking::NA->name) {
+        if (blank($user->licence) || $user->ranking === Ranking::NA) {
             return false;
         }
 

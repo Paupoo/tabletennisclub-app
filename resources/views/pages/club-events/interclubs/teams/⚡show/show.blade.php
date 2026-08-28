@@ -82,7 +82,7 @@
                             <div class="flex items-center gap-2">
                                 @if ($user->ranking)
                                     <span class="rounded bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
-                                        {{ $user->ranking }}
+                                        {{ $user->ranking->getLabel() }}
                                     </span>
                                 @endif
                                 @if ($user->is_competitor)

@@ -220,7 +220,7 @@
                         @endif
                     @endscope
                     @scope('cell_ranking', $user)
-                        <span class="text-sm font-mono">{{ $user->ranking ?? '—' }}</span>
+                        <span class="text-sm font-mono">{{ $user->ranking->getLabel() }}</span>
                     @endscope
                     {{-- Where the member stands belongs to a column of its own. Sharing the
                          actions cell, "Compte créé" had 22px of text in a 14px badge-xs and

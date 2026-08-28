@@ -81,7 +81,7 @@
                         <x-icon name="o-chevron-double-up" class="w-4 h-4 opacity-40 shrink-0" />
                         <div class="min-w-0">
                             <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Ranking') }}</div>
-                            <div class="text-sm font-semibold truncate">{{ $user->ranking }}</div>
+                            <div class="text-sm font-semibold truncate">{{ $user->ranking->getLabel() }}</div>
                         </div>
                     </div>
                 @endif

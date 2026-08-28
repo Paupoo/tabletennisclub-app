@@ -7,6 +7,7 @@ namespace App\Actions\User;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\Ranking;
 use Illuminate\Support\Collection;
 
 class RecalculateForceListAction
@@ -58,8 +59,10 @@ class RecalculateForceListAction
     private static function blockIndexByUser(Collection $users): array
     {
         $groups = $users
-            ->reject(fn (User $user): bool => $user->ranking === 'NA')
-            ->groupBy(fn (User $user) => in_array($user->ranking, ['E6', 'NC'], true) ? 'E6-NC' : $user->ranking)
+            ->reject(fn (User $user): bool => $user->ranking === Ranking::NA)
+            ->groupBy(fn (User $user): string => in_array($user->ranking, [Ranking::E6, Ranking::NC], true)
+                ? 'E6-NC'
+                : $user->ranking->value)
             ->sortKeys();
 
         $index = [];

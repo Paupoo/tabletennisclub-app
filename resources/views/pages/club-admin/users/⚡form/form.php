@@ -386,7 +386,7 @@ new class extends Component
             $this->familyMemberIds = $user->familyMembers()->pluck('id')->all();
             $this->currentPhoto = $user->photo;
             $this->licence = $user->licence;
-            $this->ranking = $user->ranking ?? Ranking::NA->value;
+            $this->ranking = $user->ranking->value;
             $this->is_committee_member = $user->hasRole(Role::COMMITTEE->value);
             $this->is_admin = $user->hasRole(Role::ADMINISTRATOR->value);
             $this->has_key = (bool) ($user->has_key ?? false);

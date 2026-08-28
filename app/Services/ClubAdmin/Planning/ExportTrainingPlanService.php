@@ -199,7 +199,7 @@ class ExportTrainingPlanService
             (string) ($user->licence ?? ''),
             (string) ($user->last_name ?? ''),
             (string) ($user->first_name ?? ''),
-            (string) ($user->ranking ?? ''),
+            $user->ranking->value,
             $category?->getLabel() ?? '',
             $this->boolean($subscription?->is_competitive),
             $this->boolean($subscription?->can_drive),

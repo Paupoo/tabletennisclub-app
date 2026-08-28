@@ -166,7 +166,7 @@
 
                                         @if ($player->ranking)
                                             <span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-600">
-                                                {{ $player->ranking }}
+                                                {{ $player->ranking->getLabel() }}
                                             </span>
                                         @endif
                                         @if ($player->forceListFor($teamCategory) !== null)
@@ -251,7 +251,7 @@
                                         </span>
                                         @if ($player->ranking)
                                             <span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-600">
-                                                {{ $player->ranking }}
+                                                {{ $player->ranking->getLabel() }}
                                             </span>
                                         @endif
                                         @if ($player->forceListFor($teamCategory) !== null)

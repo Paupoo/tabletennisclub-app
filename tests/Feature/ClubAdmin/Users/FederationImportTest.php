@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\MemberImport;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\ImportLineAction;
+use App\Domains\Shared\Enums\Ranking;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Mail;
 
@@ -33,7 +34,7 @@ describe('importing the federation listing', function (): void {
             ->and($created->first_name)->toBe('Marc')
             ->and($created->last_name)->toBe('Dupont')
             ->and($created->email)->toBe('marc@example.com')
-            ->and($created->ranking)->toBe('C2')
+            ->and($created->ranking)->toBe(Ranking::C2)
             ->and($created->federation_licence_type)->toBe('JO')
             ->and($created->member_import_id)->toBe($import->id);
 
@@ -413,7 +414,7 @@ describe('re-importing a member the club already holds', function (): void {
             new ImportLine(row: federationRow(['ranking' => 'C2']), action: ImportLineAction::UPDATE, existingUserId: $member->id),
         ], $secretary);
 
-        expect($member->fresh()->ranking)->toBe('C2');
+        expect($member->fresh()->ranking)->toBe(Ranking::C2);
     });
 
     /*
@@ -436,7 +437,7 @@ describe('re-importing a member the club already holds', function (): void {
 
         expect($restored)->not->toBeNull()
             ->and($restored->trashed())->toBeFalse()
-            ->and($restored->ranking)->toBe('C2');
+            ->and($restored->ranking)->toBe(Ranking::C2);
     });
 
     it('takes the new licence type from the federation', function (): void {

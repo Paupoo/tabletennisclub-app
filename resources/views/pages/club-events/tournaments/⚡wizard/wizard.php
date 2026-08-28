@@ -733,7 +733,7 @@ new class extends Component
                 'id' => $u->id,
                 'name' => $u->full_name,
                 'email' => $u->email,
-                'ranking' => $u->ranking ?? 'NC',
+                'ranking' => $u->ranking->getLabel(),
             ])
             ->toArray();
     }
@@ -930,7 +930,7 @@ new class extends Component
                     'players' => $pool->users->map(fn (User $u): array => [
                         'id' => $u->id,
                         'name' => $u->full_name,
-                        'rank' => $u->ranking ?? 'NC',
+                        'rank' => $u->ranking->getLabel(),
                         'pts' => 0,
                     ])->toArray(),
                 ],
@@ -1029,7 +1029,7 @@ new class extends Component
             ->get()
             ->map(fn (User $u): array => [
                 'id' => $u->id,
-                'name' => $u->full_name . ' (' . ($u->ranking ?? 'NC') . ')',
+                'name' => $u->full_name . ' (' . $u->ranking->getLabel() . ')',
             ])
             ->toArray();
     }
@@ -1112,7 +1112,7 @@ new class extends Component
         $rows = $users->map(fn (User $u): array => [
             'id' => $u->id,
             'name' => $u->full_name,
-            'ranking' => $u->ranking ?? 'NC',
+            'ranking' => $u->ranking->getLabel(),
             'status' => $u->pivot->registration_status,
             'has_paid' => (bool) $u->pivot->has_paid || isset($paidPaymentIds[$u->pivot->payment_id]),
             'qr_confirmed' => (bool) $u->pivot->qr_confirmed,
@@ -1517,7 +1517,7 @@ new class extends Component
             ->map(fn (User $u): array => [
                 'id' => $u->id,
                 'name' => $u->full_name,
-                'ranking' => $u->ranking ?? 'NC',
+                'ranking' => $u->ranking->getLabel(),
                 'position' => $u->pivot->waitlist_position,
                 'registered_at' => $u->pivot->created_at,
             ]);

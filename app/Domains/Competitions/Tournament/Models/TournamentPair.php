@@ -83,7 +83,7 @@ class TournamentPair extends Model
     public function rankingLabel(): string
     {
         return collect([$this->player1?->ranking, $this->player2?->ranking])
-            ->map(fn (?string $ranking): string => $ranking ?: Ranking::NC->value)
+            ->map(fn (?Ranking $ranking): string => ($ranking ?? Ranking::NC)->getLabel())
             ->implode('/');
     }
 
@@ -107,10 +107,8 @@ class TournamentPair extends Model
         $weakest = count($cases);
 
         return collect([$this->player1?->ranking, $this->player2?->ranking])
-            ->map(function (?string $ranking) use ($cases, $weakest): int {
-                $case = $ranking === null ? null : Ranking::tryFrom($ranking);
-
-                return $case === null ? $weakest : (int) array_search($case, $cases, true);
+            ->map(function (?Ranking $ranking) use ($cases, $weakest): int {
+                return $ranking === null ? $weakest : (int) array_search($ranking, $cases, true);
             })
             ->sum();
     }

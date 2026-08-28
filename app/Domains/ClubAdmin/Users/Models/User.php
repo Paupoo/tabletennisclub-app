@@ -22,6 +22,7 @@ use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Support\AddressNormalizer;
 use App\Domains\Shared\Support\IbanNormalizer;
 use App\Domains\Shared\Traits\HasAuditLog;
@@ -67,7 +68,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $street
  * @property string|null $city_code
  * @property string|null $city_name
- * @property string $ranking
+ * @property Ranking $ranking
  * @property string|null $licence
  * @property int|null $force_list
  * @property int|null $force_list_women
@@ -195,7 +196,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'street' => 'string',
         'city_code' => 'string',
         'city_name' => 'string',
-        'ranking' => 'string',
+        'ranking' => Ranking::class,
         'licence' => 'string',
         'force_list' => 'integer',
         'force_list_women' => 'integer',

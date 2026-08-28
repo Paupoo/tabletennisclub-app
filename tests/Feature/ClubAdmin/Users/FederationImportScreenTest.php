@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\MemberImport;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Enums\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -380,7 +381,7 @@ describe('the report the run leaves behind', function (): void {
             ->assertDontSee('Sans Licence');
 
         expect($absentee->fresh()->trashed())->toBeFalse()
-            ->and($listed->fresh()->ranking)->toBe('C2')
+            ->and($listed->fresh()->ranking)->toBe(Ranking::C2)
             ->and($unlicensed->fresh())->not->toBeNull();
     });
 });
@@ -504,7 +505,7 @@ describe('importing a child whose guardian is already a member', function (): vo
 
         // The other half of the bug: his line used to be written onto her file.
         expect($marie->fresh()->licence)->toBe('111111')
-            ->and($marie->fresh()->ranking)->toBe('D4')
+            ->and($marie->fresh()->ranking)->toBe(Ranking::D4)
             ->and($marie->fresh()->first_name)->toBe('Marie');
     });
 

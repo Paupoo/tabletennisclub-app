@@ -154,24 +154,9 @@ parameters:
 			count: 1
 			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
 
-		-
-			message: '#^Method App\\Domains\\ClubAdmin\\Users\\Services\\UserCalendarService\:\:interclubs\(\) should return Illuminate\\Support\\Collection\<int, array\<string, mixed\>\> but returns Illuminate\\Support\\Collection\<int, array\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
-
-		-
-			message: '#^Method App\\Domains\\ClubAdmin\\Users\\Services\\UserCalendarService\:\:meetings\(\) should return Illuminate\\Support\\Collection\<int, array\<string, mixed\>\> but returns Illuminate\\Support\\Collection\<int, array\{startDateTime\: mixed, title\: mixed, type\: ''meeting'', meetingId\: mixed, format\: mixed, location\: mixed, meetingLink\: mixed, registrationStatus\: mixed, \.\.\.\}\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
 
 
-		-
-			message: '#^Method App\\Domains\\ClubAdmin\\Users\\Services\\UserCalendarService\:\:trainingSessions\(\) should return Illuminate\\Support\\Collection\<int, array\<string, mixed\>\> but returns Illuminate\\Support\\Collection\<int, array\{startDateTime\: mixed, endTime\: mixed, title\: mixed, type\: ''training'', room\: mixed, level\: mixed, coach\: string\|null, registrationStatus\: null, \.\.\.\}\>\.$#'
-			identifier: return.type
-			count: 2
-			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
+
 
 		-
 			message: '#^Access to an undefined property App\\Domains\\ClubPosts\\Models\\EventPost\:\:\$category\.$#'

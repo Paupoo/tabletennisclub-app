@@ -57,6 +57,11 @@ class UserCalendarService
         return $events->sortBy('startDateTime')->values();
     }
 
+    /**
+     * @param  int[]  $ourTeamIds
+     * @param  int[]  $userTeamIds
+     * @return array<string, mixed>
+     */
     private function formatInterclub(Interclub $ic, array $ourTeamIds, array $userTeamIds): array
     {
         $isHome = in_array($ic->visited_team_id, $ourTeamIds);
@@ -126,6 +131,30 @@ class UserCalendarService
     }
 
     /**
+     * One calendar row for a meeting.
+     *
+     * Extracted for the same reason as {@see self::tournamentRow()}: Collection's
+     * value template is invariant, so an inferred array shape cannot satisfy
+     * `Collection<int, array<string, mixed>>` from inside a closure.
+     *
+     * @return array<string, mixed>
+     */
+    private function meetingRow(Meeting $meeting): array
+    {
+        return [
+            'startDateTime' => $meeting->scheduled_at->format('Y-m-d H:i:s'),
+            'title' => $meeting->title,
+            'type' => 'meeting',
+            'meetingId' => $meeting->id,
+            'format' => $meeting->format->value,
+            'location' => $meeting->location,
+            'meetingLink' => $meeting->meeting_link,
+            'registrationStatus' => $meeting->users->first()?->registration?->status?->value,
+            'monthKey' => $meeting->scheduled_at->translatedFormat('F Y'),
+        ];
+    }
+
+    /**
      * @return Collection<int, array<string, mixed>>
      */
     private function meetings(User $user, bool $showAllEvents, CarbonInterface $from, ?CarbonInterface $to): Collection
@@ -142,17 +171,7 @@ class UserCalendarService
             ->with(['users' => fn ($q) => $q->where('users.id', $user->id)])
             ->orderBy('scheduled_at')
             ->get()
-            ->map(fn ($m): array => [
-                'startDateTime' => $m->scheduled_at->format('Y-m-d H:i:s'),
-                'title' => $m->title,
-                'type' => 'meeting',
-                'meetingId' => $m->id,
-                'format' => $m->format->value,
-                'location' => $m->location,
-                'meetingLink' => $m->meeting_link,
-                'registrationStatus' => $m->users->first()?->registration?->status?->value,
-                'monthKey' => $m->scheduled_at->translatedFormat('F Y'),
-            ]);
+            ->map(fn (Meeting $m): array => $this->meetingRow($m));
     }
 
     /**
@@ -217,6 +236,56 @@ class UserCalendarService
     }
 
     /**
+     * One calendar row for a training session.
+     *
+     * `$packStatuses` is null when the member is browsing the club's whole
+     * calendar: the enrolment columns are then not theirs to show. It is an
+     * array — possibly empty — when the row belongs to their own calendar, which
+     * is why emptiness cannot stand in for the distinction: a coach with no pack
+     * of their own still gets their own calendar.
+     *
+     * Extracted for the same reason as {@see self::tournamentRow()}, and it
+     * happens to remove the copy of this row that the two branches each kept.
+     *
+     * @param  array<int, array<string, mixed>>|null  $packStatuses
+     * @return array<string, mixed>
+     */
+    private function trainingRow(Training $session, ?array $packStatuses): array
+    {
+        $row = [
+            'startDateTime' => $session->start->format('Y-m-d H:i:s'),
+            'endTime' => $session->end?->format('H:i'),
+            'title' => $session->trainingPack?->name ?? __('Training'),
+            'type' => 'training',
+            'room' => $session->room?->name,
+            'level' => $session->trainingPack?->level?->value,
+            'coach' => $session->trainer
+                ? trim($session->trainer->first_name . ' ' . $session->trainer->last_name)
+                : null,
+            'registrationStatus' => null,
+        ];
+
+        // `monthKey` reste la dernière clé des deux formes, comme avant
+        // l'extraction : les colonnes d'inscription s'insèrent avant elle.
+        $monthKey = ['monthKey' => $session->start->translatedFormat('F Y')];
+
+        if ($packStatuses === null) {
+            return [...$row, ...$monthKey];
+        }
+
+        $enrolment = $packStatuses[$session->training_pack_id] ?? [];
+
+        return [
+            ...$row,
+            'packId' => $session->training_pack_id,
+            'packStatus' => $enrolment['status'] ?? 'enrolled',
+            'confirmDeadline' => $enrolment['deadline'] ?? null,
+            'packWaitlistPosition' => $enrolment['waitlist_position'] ?? null,
+            ...$monthKey,
+        ];
+    }
+
+    /**
      * @return Collection<int, array<string, mixed>>
      */
     private function trainingSessions(User $user, bool $showAllEvents, CarbonInterface $from, ?CarbonInterface $to): Collection
@@ -234,17 +303,7 @@ class UserCalendarService
                 ->when($to, fn ($q) => $q->where('start', '<=', $to))
                 ->orderBy('start')
                 ->get()
-                ->map(fn ($s): array => [
-                    'startDateTime' => $s->start->format('Y-m-d H:i:s'),
-                    'endTime' => $s->end?->format('H:i'),
-                    'title' => $s->trainingPack?->name ?? __('Training'),
-                    'type' => 'training',
-                    'room' => $s->room?->name,
-                    'level' => $s->trainingPack?->level?->value,
-                    'coach' => $s->trainer ? trim($s->trainer->first_name . ' ' . $s->trainer->last_name) : null,
-                    'registrationStatus' => null,
-                    'monthKey' => $s->start->translatedFormat('F Y'),
-                ]);
+                ->map(fn (Training $s): array => $this->trainingRow($s, null));
         }
 
         // Sessions the user is personally involved in.
@@ -310,21 +369,7 @@ class UserCalendarService
             ->whereIn('id', $sessionIds->unique())
             ->orderBy('start')
             ->get()
-            ->map(fn ($s): array => [
-                'startDateTime' => $s->start->format('Y-m-d H:i:s'),
-                'endTime' => $s->end?->format('H:i'),
-                'title' => $s->trainingPack?->name ?? __('Training'),
-                'type' => 'training',
-                'room' => $s->room?->name,
-                'level' => $s->trainingPack?->level?->value,
-                'coach' => $s->trainer ? trim($s->trainer->first_name . ' ' . $s->trainer->last_name) : null,
-                'registrationStatus' => null,
-                'packId' => $s->training_pack_id,
-                'packStatus' => $packStatusMap[$s->training_pack_id]['status'] ?? 'enrolled',
-                'confirmDeadline' => $packStatusMap[$s->training_pack_id]['deadline'] ?? null,
-                'packWaitlistPosition' => $packStatusMap[$s->training_pack_id]['waitlist_position'] ?? null,
-                'monthKey' => $s->start->translatedFormat('F Y'),
-            ]);
+            ->map(fn (Training $s): array => $this->trainingRow($s, $packStatusMap));
     }
 
     /**

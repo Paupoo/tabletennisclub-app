@@ -13,11 +13,29 @@ use Illuminate\Support\Facades\Event;
 class TournamentObserver implements ShouldHandleEventsAfterCommit
 {
     /**
+     * Statuses a tournament sits in before it has ever been open to members.
+     *
+     * The wizard walks draft → locked → published; it never goes from draft
+     * straight to published, which is the only transition this observer used to
+     * watch for. The announcement therefore never went out (issue #81).
+     *
+     * `setup` is deliberately absent: a tournament in setup has already been
+     * open once and closed again, so reopening it is a reopening, not news.
+     */
+    private const NEVER_OPENED = [
+        TournamentStatusEnum::DRAFT,
+        TournamentStatusEnum::LOCKED,
+    ];
+
+    /**
      * Handle the Tournament "updated" event.
      */
     public function updated(Tournament $tournament): void
     {
-        if ($tournament->getOriginal('status') === TournamentStatusEnum::DRAFT && $tournament->status === TournamentStatusEnum::PUBLISHED) {
+        $opensForTheFirstTime = in_array($tournament->getOriginal('status'), self::NEVER_OPENED, true)
+            && $tournament->status === TournamentStatusEnum::PUBLISHED;
+
+        if ($opensForTheFirstTime) {
             Event::dispatch(new NewTournamentPublished($tournament));
         }
     }

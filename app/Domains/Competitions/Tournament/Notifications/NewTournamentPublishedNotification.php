@@ -45,12 +45,23 @@ class NewTournamentPublishedNotification extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
+        /*
+         * Placeholders, not concatenation. `__('Join us at ' . $name)` builds a
+         * different translation key for every tournament, so none of them ever
+         * matched an entry and the mail went out in English. It had never been
+         * noticed because the announcement itself never fired (issue #81).
+         */
+        $invitation = __('Join us at :name on :date', [
+            'name' => $this->tournament->name,
+            'date' => $this->tournament->start_date->format('d/m/Y'),
+        ]);
+
         return (new MailMessage)
-            ->subject(__('Join us at ' . $this->tournament->name . ' on the ' . $this->tournament->start_date->format('d/m/Y')))
-            ->greeting(__('Hi ' . $this->user->first_name . ' !'))
-            ->line(__('Join us at ' . $this->tournament->name . ' on the ' . $this->tournament->start_date->format('d/m/Y')))
+            ->subject($invitation)
+            ->greeting(__('Hi :name!', ['name' => $this->user->first_name]))
+            ->line($invitation)
             ->line(__('Click on the button below to join us and play your best table tennis!'))
-            ->action('I want to play', URL::signedRoute(
+            ->action(__('I want to play'), URL::signedRoute(
                 'tournament.register.email',
                 ['tournament' => $this->tournament->id, 'user' => $this->user->id],
                 now()->addDays(7),

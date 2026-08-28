@@ -1,8 +1,8 @@
 # Plan — états d'un tournoi (options B et C)
 
-> **Statut global :** 🟢 Option A livrée (`666058ee`) — options B et C planifiées, pas commencées
+> **Statut global :** 🟢 Option A livrée (`09e8247e`) et #81 corrigée — options B et C planifiées, pas commencées
 > **Branche :** `develop`
-> **Issue d'origine :** #35 · **Issue dérivée ouverte au passage :** #81
+> **Issue d'origine :** #35 · **Issue dérivée, corrigée depuis :** #81
 > **Carte d'analyse (lecture) :** <https://claude.ai/code/artifact/1ef13c8d-e353-4c44-964e-5be48520c182>
 > **Dernière mise à jour :** 2026-08-28
 
@@ -77,7 +77,7 @@ Au-delà de l'affichage, sept endroits font dépendre un comportement du statut 
 - `UserCalendarService:164` — le calendrier ne montre que `published`
 - `DashboardController:307` — exclut `cancelled`
 - `⚡event-subscription:336` — « Mes inscriptions » ne montre que `published`
-- `TournamentObserver:20` — voir #81
+- `TournamentObserver` — annonce la première ouverture (`draft|locked → published`) ; corrigé par #81
 
 ### 2.4 Le code mort (vérifié : zéro appelant en production)
 
@@ -181,7 +181,7 @@ Cette différence n'est pas cosmétique — elle porte trois comportements disti
 |---|---|---|
 | Poules et matchs | non générables | générables |
 | Libellé du bouton d'ouverture | « Ouvrir » | « Rouvrir » |
-| Annonce aux membres (#81) | première ouverture | réouverture, ne doit pas ré-annoncer |
+| Annonce aux membres | première ouverture | réouverture, ne doit pas ré-annoncer |
 
 **Conclusion : ne pas fusionner `locked` et `setup`.** Un seul statut obligerait à
 retrouver l'information perdue par un autre moyen (une date de première ouverture, un
@@ -235,8 +235,9 @@ Aucune migration de données. Aucun risque de retour en arrière ambigu.
 
 ## 5. Ordre d'exécution proposé
 
-1. **#81** (annonce jamais envoyée) — indépendant, et c'est un bug utilisateur réel.
-   Le corriger avant B évite d'avoir à re-tester l'observer deux fois.
+1. ~~**#81** (annonce jamais envoyée)~~ — **fait**. Déclencheur corrigé
+   (`draft|locked → published`, une réouverture ne ré-annonce pas), audience ramenée à
+   `User::active()`, envoi éclaté sur un job throttlé partageant le limiteur `invitations`.
 2. **B étape 1** — supprimer `TournamentStatusManager` et ses tests.
 3. **B étapes 2 à 4** — réparer et compléter les classes `State`.
 4. **B étapes 5 et 6** — brancher les huit écritures, puis les computed.

@@ -2,7 +2,9 @@
 
 > **Statut global :** 🟢 Option A livrée (`09e8247e`) et #81 corrigée — options B et C planifiées, pas commencées
 > **Branche :** `develop`
-> **Issue d'origine :** #35 · **Issue dérivée, corrigée depuis :** #81
+> **Issue d'origine :** #35, fermée le 2026-08-28 (symptôme corrigé) · **Issue dérivée, corrigée aussi :** #81
+>
+> Ce document survit à la fermeture du ticket : c'est lui qui porte B et C.
 > **Carte d'analyse (lecture) :** <https://claude.ai/code/artifact/1ef13c8d-e353-4c44-964e-5be48520c182>
 > **Dernière mise à jour :** 2026-08-28
 

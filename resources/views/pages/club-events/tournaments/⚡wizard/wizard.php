@@ -268,6 +268,22 @@ new class extends Component
         $this->error($user->full_name . ' ' . __('has been unregistered.'));
     }
 
+    /**
+     * Reste-t-il un geste d'ouverture à poser ?
+     *
+     * Verrouillé : le tournoi n'a jamais été ouvert. Configuration : il l'a été,
+     * puis refermé. Les deux se rouvrent par le même bouton.
+     */
+    #[Computed]
+    public function canOpenRegistrations(): bool
+    {
+        return in_array(
+            $this->currentTournament?->status,
+            [TournamentStatusEnum::LOCKED, TournamentStatusEnum::SETUP],
+            true,
+        );
+    }
+
     public function confirmBulkCancel(): void
     {
         if ($this->selectedPeople === [] || ! $this->tournamentId) {
@@ -1066,29 +1082,6 @@ new class extends Component
         return $this->currentTournament !== null && $this->currentTournament->status === TournamentStatusEnum::SETUP;
     }
 
-    /** Le tournoi est-il ouvert aux inscriptions, c'est-à-dire visible du membre ? */
-    #[Computed]
-    public function registrationsOpen(): bool
-    {
-        return $this->currentTournament?->status === TournamentStatusEnum::PUBLISHED;
-    }
-
-    /**
-     * Reste-t-il un geste d'ouverture à poser ?
-     *
-     * Verrouillé : le tournoi n'a jamais été ouvert. Configuration : il l'a été,
-     * puis refermé. Les deux se rouvrent par le même bouton.
-     */
-    #[Computed]
-    public function canOpenRegistrations(): bool
-    {
-        return in_array(
-            $this->currentTournament?->status,
-            [TournamentStatusEnum::LOCKED, TournamentStatusEnum::SETUP],
-            true,
-        );
-    }
-
     // ── Computed: active registrations (not waiting, not cancelled)
 
     #[Computed]
@@ -1124,6 +1117,13 @@ new class extends Component
         return $dir === 'asc'
             ? $rows->sortBy($col)->values()
             : $rows->sortByDesc($col)->values();
+    }
+
+    /** Le tournoi est-il ouvert aux inscriptions, c'est-à-dire visible du membre ? */
+    #[Computed]
+    public function registrationsOpen(): bool
+    {
+        return $this->currentTournament?->status === TournamentStatusEnum::PUBLISHED;
     }
 
     public function removeFromWaitlist(int $userId): void
@@ -1164,6 +1164,14 @@ new class extends Component
         return $this->view([
             'filteredMembers' => $filteredMembers,
         ]);
+    }
+
+    // ── Hooks
+
+    public function resetMaxUsersToStructure(): void
+    {
+        $this->maxUsersManual = false;
+        $this->suggestMaxUsers();
     }
 
     // ── Save (create or update)
@@ -1419,14 +1427,6 @@ new class extends Component
     public function updatedMatchType(): void
     {
         $this->markPoolsStaleIfGenerated();
-    }
-
-    // ── Hooks
-
-    public function resetMaxUsersToStructure(): void
-    {
-        $this->maxUsersManual = false;
-        $this->suggestMaxUsers();
     }
 
     public function updatedMaxUsers(): void

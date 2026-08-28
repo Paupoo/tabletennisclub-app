@@ -372,11 +372,20 @@ new class extends Component
 
         $tournament->update(['status' => TournamentStatusEnum::SETUP]);
 
-        unset($this->currentTournament, $this->waitlist, $this->registrations);
+        unset($this->currentTournament, $this->waitlist, $this->registrations, $this->registrationsOpen, $this->canOpenRegistrations);
         $this->showCloseRegistrationsModal = false;
         $this->success(__('Registrations closed. Waitlisted players have been notified.'), icon: 'o-lock-closed');
     }
 
+    /**
+     * Ouvre les inscriptions, depuis un tournoi verrouillé comme depuis un
+     * tournoi dont les inscriptions ont été closes.
+     *
+     * C'est le geste que le comité cherchait sous le nom « Publier » : c'est lui
+     * qui rend le tournoi visible et inscriptible côté membre. Il n'existait pas
+     * — le passage verrouillé → publié était un effet de bord de la première
+     * invitation envoyée, que rien n'annonçait (issue #35).
+     */
     public function confirmOpenRegistrations(): void
     {
         if (! $this->tournamentId) {
@@ -384,9 +393,16 @@ new class extends Component
         }
 
         $tournament = Tournament::findOrFail($this->tournamentId);
+
+        if (! in_array($tournament->status, [TournamentStatusEnum::LOCKED, TournamentStatusEnum::SETUP], true)) {
+            $this->showOpenRegistrationsModal = false;
+
+            return;
+        }
+
         $tournament->update(['status' => TournamentStatusEnum::PUBLISHED]);
 
-        unset($this->currentTournament);
+        unset($this->currentTournament, $this->registrationsOpen, $this->canOpenRegistrations);
         $this->showOpenRegistrationsModal = false;
         $this->success(__('Registrations are now open.'), icon: 'o-lock-open');
     }
@@ -1050,6 +1066,29 @@ new class extends Component
         return $this->currentTournament !== null && $this->currentTournament->status === TournamentStatusEnum::SETUP;
     }
 
+    /** Le tournoi est-il ouvert aux inscriptions, c'est-à-dire visible du membre ? */
+    #[Computed]
+    public function registrationsOpen(): bool
+    {
+        return $this->currentTournament?->status === TournamentStatusEnum::PUBLISHED;
+    }
+
+    /**
+     * Reste-t-il un geste d'ouverture à poser ?
+     *
+     * Verrouillé : le tournoi n'a jamais été ouvert. Configuration : il l'a été,
+     * puis refermé. Les deux se rouvrent par le même bouton.
+     */
+    #[Computed]
+    public function canOpenRegistrations(): bool
+    {
+        return in_array(
+            $this->currentTournament?->status,
+            [TournamentStatusEnum::LOCKED, TournamentStatusEnum::SETUP],
+            true,
+        );
+    }
+
     // ── Computed: active registrations (not waiting, not cancelled)
 
     #[Computed]
@@ -1245,8 +1284,11 @@ new class extends Component
 
         $tournament = Tournament::findOrFail($this->tournamentId);
 
-        if (! in_array($tournament->status, [TournamentStatusEnum::LOCKED, TournamentStatusEnum::PUBLISHED])) {
-            $this->error(__('Invitations cannot be sent while registrations are closed.'));
+        // Inviter quelqu'un à s'inscrire à un tournoi fermé n'a pas de sens : le
+        // membre suit le lien et ne peut rien faire. L'ouverture est désormais un
+        // geste à part entière, nommé, et c'est un prérequis.
+        if ($tournament->status !== TournamentStatusEnum::PUBLISHED) {
+            $this->error(__('Open the registrations first — members cannot sign up yet.'));
 
             return;
         }
@@ -1277,13 +1319,6 @@ new class extends Component
             description: "{$count} " . __('members have been notified.'),
             icon: 'o-paper-airplane',
         );
-
-        // First invitation transitions locked → published and advances to registrations.
-        if ($tournament->status === TournamentStatusEnum::LOCKED) {
-            $tournament->update(['status' => TournamentStatusEnum::PUBLISHED]);
-            unset($this->currentTournament, $this->isContractLocked);
-            $this->step = '5';
-        }
 
         $this->showInviteModal = false;
         $this->inviteMessage = '';
@@ -1457,7 +1492,7 @@ new class extends Component
 
         Tournament::findOrFail($this->tournamentId)->update(['status' => TournamentStatusEnum::LOCKED]);
 
-        unset($this->currentTournament, $this->isContractLocked);
+        unset($this->currentTournament, $this->isContractLocked, $this->registrationsOpen, $this->canOpenRegistrations);
 
         $this->step = '4';
         $this->success(__('Tournament validated! Name and price are now locked.'), icon: 'o-lock-closed');

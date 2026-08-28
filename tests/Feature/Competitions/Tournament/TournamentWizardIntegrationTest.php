@@ -452,3 +452,112 @@ describe('registration ceiling', function (): void {
             ->assertSet('maxUsers', 12);
     });
 });
+
+// ── Opening registrations (issue #35) ────────────────────────────────────────
+
+/*
+ * The committee published a tournament and watched the status stay on "draft".
+ * There was no button to press: the hop from locked to published was a side
+ * effect of sending the first invitation, and nothing said so. What they had
+ * published was the article, which is a separate axis entirely.
+ *
+ * Opening the registrations is now a named action, and it is a prerequisite for
+ * inviting anybody — an invitation to a tournament nobody can sign up for leads
+ * the member nowhere.
+ */
+describe('opening registrations', function (): void {
+    it('offers the action while the tournament is only locked', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::LOCKED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('step', '4')
+            ->assertSee(__('Open registrations'))
+            ->assertSee(__('Registrations are closed'));
+    });
+
+    it('says so instead once they are open', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('step', '4')
+            ->assertSee(__('Registrations are open — members can sign up.'))
+            ->assertDontSee(__('Members cannot see this tournament yet, and invitations would lead them nowhere.'));
+    });
+
+    it('moves a locked tournament to published', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::LOCKED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('confirmOpenRegistrations')
+            ->assertSet('showOpenRegistrationsModal', false);
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::PUBLISHED);
+    });
+
+    /* The same button reopens a tournament whose registrations were closed. */
+    it('reopens a tournament that was closed for setup', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::SETUP]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('confirmOpenRegistrations');
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::PUBLISHED);
+    });
+
+    /* Name and price are not locked yet in draft: opening would skip the contract. */
+    it('refuses to open a tournament still in draft', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::DRAFT]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('confirmOpenRegistrations');
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::DRAFT);
+    });
+});
+
+describe('inviting members', function (): void {
+    it('refuses to invite anybody while the registrations are closed', function (): void {
+        Notification::fake();
+
+        $tournament = wizardTournament([
+            'status' => TournamentStatusEnum::LOCKED,
+            'registration_deadline' => now()->addWeek(),
+        ]);
+        $member = User::factory()->create();
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('selectedMembers', [$member->id])
+            ->call('sendInvitations');
+
+        Notification::assertNothingSentTo($member);
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::LOCKED);
+    });
+
+    /*
+     * The hop that used to hide here is gone: sending invitations is now only
+     * sending invitations.
+     */
+    it('leaves the status alone once they are open', function (): void {
+        Notification::fake();
+
+        $tournament = wizardTournament([
+            'status' => TournamentStatusEnum::PUBLISHED,
+            'registration_deadline' => now()->addWeek(),
+        ]);
+        $member = User::factory()->create();
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('selectedMembers', [$member->id])
+            ->call('sendInvitations');
+
+        Notification::assertSentTo($member, TournamentInvitationNotification::class);
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::PUBLISHED);
+    });
+});

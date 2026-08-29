@@ -255,12 +255,6 @@ parameters:
 			path: app/Domains/Competitions/Tournament/Services/TournamentService.php
 
 		-
-			message: '#^Match expression does not handle remaining value\: App\\Domains\\Shared\\Enums\\TournamentStatusEnum\:\:SETUP$#'
-			identifier: match.unhandled
-			count: 1
-			path: app/Domains/Competitions/Tournament/Services/TournamentStatusManager.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:tables\(\)\.$#'
 			identifier: method.notFound
 			count: 2

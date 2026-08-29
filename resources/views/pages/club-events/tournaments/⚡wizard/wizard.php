@@ -243,12 +243,12 @@ new class extends Component
 
         try {
             (new TournamentStateMachine($tournament))->cancel();
-        } catch (\LogicException) {
+        } catch (LogicException) {
             $this->showCancelModal = false;
             $this->error(__('Matches have already been played: this tournament can no longer be cancelled.'));
 
             return;
-        } catch (\InvalidArgumentException) {
+        } catch (InvalidArgumentException) {
             $this->showCancelModal = false;
             $this->error(__('This tournament is already over, so there is nothing left to cancel.'));
 
@@ -386,7 +386,7 @@ new class extends Component
 
         try {
             (new TournamentStateMachine($tournament))->setUp();
-        } catch (\InvalidArgumentException) {
+        } catch (InvalidArgumentException) {
             $this->showCloseRegistrationsModal = false;
             $this->error(__('Nobody has registered yet, so there are no registrations to close. Cancel the tournament instead.'));
 

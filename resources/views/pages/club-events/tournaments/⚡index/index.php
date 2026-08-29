@@ -55,7 +55,7 @@ new class extends Component
             try {
                 (new TournamentStateMachine($tournament))->cancel();
                 $cancelled++;
-            } catch (\InvalidArgumentException | \LogicException) {
+            } catch (InvalidArgumentException|LogicException) {
                 // Played, closed or already cancelled: cancel what can be
                 // cancelled and account for the rest rather than reporting a
                 // clean sweep that did not happen.

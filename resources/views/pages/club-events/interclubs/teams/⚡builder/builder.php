@@ -14,6 +14,7 @@ use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\Ranking;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Builder;
@@ -299,7 +300,11 @@ new class extends Component
             return $playerIds;
         }
 
-        $rankings = User::whereIn('id', $playerIds)->pluck('ranking', 'id');
+        // `ranking` est casté en enum : on repasse par sa valeur pour comparer
+        // des chaînes, et 'ZZ' garde les joueurs sans classement en fin de liste.
+        $rankings = User::whereIn('id', $playerIds)
+            ->pluck('ranking', 'id')
+            ->map(fn (?Ranking $ranking): string => $ranking?->value ?? 'ZZ');
 
         usort($playerIds, fn (int $a, int $b): int => strcmp(
             $rankings[$a] ?? 'ZZ',

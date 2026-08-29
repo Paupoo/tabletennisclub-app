@@ -5,7 +5,13 @@
     </div>
 @endif
 
-<div class="mt-8 grid grid-cols-6 gap-4 md:gap-6 @if($this->isLaunched) pointer-events-none opacity-60 @endif">
+{{--
+    The sections stack; each one owns its own two-column grid since 5db5a83c.
+    A `grid grid-cols-6` here made every section — and every separator between
+    them — a grid item one sixth of the width, so the three sections lined up in
+    ~160px columns and every label overlapped its own field.
+--}}
+<div class="mt-8 flex flex-col gap-4 md:gap-6 @if($this->isLaunched) pointer-events-none opacity-60 @endif">
 
     {{-- ── Section 1 : Details ─────────────────────────────────────────── --}}
     <x-admin.shared.form-section title="Details"

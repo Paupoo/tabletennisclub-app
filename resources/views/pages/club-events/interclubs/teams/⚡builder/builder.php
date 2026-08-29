@@ -63,6 +63,10 @@ new class extends Component
 
     public function computeDistribution(): void
     {
+        // Le modal d'attente est ouvert par startComputing() : toute sortie doit
+        // le refermer, sinon l'écran reste bloqué derrière un calcul terminé.
+        $this->showComputingModal = false;
+
         RecalculateForceListAction::handle();
 
         $competitors = $this->buildEligibleQuery()->get();
@@ -91,7 +95,6 @@ new class extends Component
 
         $this->sortAllTeams();
 
-        $this->showComputingModal = false;
         $this->step = 2;
     }
 

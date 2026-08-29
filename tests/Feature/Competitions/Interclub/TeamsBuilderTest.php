@@ -48,6 +48,33 @@ test('computing the distribution sorts players by ranking', function (): void {
         ->assertSet('proposedTeams.0.players', $players->pluck('id')->all());
 });
 
+test('the waiting modal closes when there are not enough competitors', function (): void {
+    eligibleCompetitor(Ranking::C4, 'Alone');
+
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.teams.builder')
+        ->set('nucleusSize', 6)
+        ->call('startComputing')
+        ->assertSet('showComputingModal', true)
+        ->call('computeDistribution')
+        ->assertSet('showComputingModal', false)
+        ->assertSet('step', 1)
+        ->assertSet('proposedTeams', []);
+});
+
+test('the waiting modal closes once the distribution is computed', function (): void {
+    collect([Ranking::C4, Ranking::D2, Ranking::E0, Ranking::E6, Ranking::NC, Ranking::NC])
+        ->each(fn (Ranking $ranking, int $i): User => eligibleCompetitor($ranking, 'Eee' . $i));
+
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.teams.builder')
+        ->set('nucleusSize', 6)
+        ->call('startComputing')
+        ->call('computeDistribution')
+        ->assertSet('showComputingModal', false)
+        ->assertSet('step', 2);
+});
+
 test('moving a player back into a team re-sorts it by ranking', function (): void {
     $strongest = eligibleCompetitor(Ranking::B0, 'Aaa');
     $others = collect([Ranking::C4, Ranking::D2, Ranking::E0, Ranking::E6, Ranking::NC])

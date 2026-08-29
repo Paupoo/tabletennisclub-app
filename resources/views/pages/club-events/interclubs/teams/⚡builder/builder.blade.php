@@ -282,7 +282,9 @@
     @endif
 
     {{-- Modal calcul de distribution --}}
-    <x-app-modal wire:model="showComputingModal" :title="__('Building teams')" separator persistent :open="$showComputingModal">
+    {{-- Volontairement non `persistent` : si le calcul échoue côté serveur, le
+         modal n'offre aucun bouton de sortie et l'écran reste mort. --}}
+    <x-app-modal wire:model="showComputingModal" :title="__('Building teams')" separator :open="$showComputingModal">
         <div class="py-10 text-center">
             <div class="mb-6 flex justify-center">
                 <span class="loading loading-dots loading-lg text-primary"></span>

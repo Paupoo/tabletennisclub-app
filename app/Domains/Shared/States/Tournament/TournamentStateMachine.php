@@ -73,6 +73,12 @@ final class TournamentStateMachine
 
     // Actions
 
+    public function lock(): void
+    {
+        $this->state->lock($this->tournament);
+        $this->refreshState();
+    }
+
     public function publish(): void
     {
         $this->state->publish($this->tournament);

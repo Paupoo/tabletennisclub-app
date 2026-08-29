@@ -48,4 +48,18 @@ final class ClosedState extends AbstractTournamentState
     {
         return TournamentStatusEnum::CLOSED;
     }
+
+    #[\Override]
+    public function hasBeenLaunched(): bool
+    {
+        // It was played and is now over.
+        return true;
+    }
+
+    #[\Override]
+    public function hasLockedContract(): bool
+    {
+        // The tournament is over; nothing about it moves again.
+        return true;
+    }
 }

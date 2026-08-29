@@ -10,6 +10,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Shared\Casts\MoneyCast;
+use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\States\Tournament\Contracts\TournamentStateInterface;
@@ -175,6 +176,18 @@ class Tournament extends Model
         return $this->morphOne(EventPost::class, 'eventable');
     }
 
+    /**
+     * Is the tournament announced on the public website?
+     *
+     * The other axis. It lives on the article, not on the status: a tournament
+     * can take registrations without an article, and carry a published article
+     * while its registrations are closed.
+     */
+    public function isOnPublicWebsite(): bool
+    {
+        return $this->eventPost?->status === EventPostStatusEnum::PUBLISHED;
+    }
+
     public function isPaid(): bool
     {
         return $this->price > 0;
@@ -207,9 +220,26 @@ class Tournament extends Model
         return $this->hasMany(Pool::class);
     }
 
+    /**
+     * Can a member sign up right now?
+     *
+     * One of the two axes that both used to be called "published" (issue #35).
+     * This one is about registrations, and only `published` carries it.
+     */
+    public function registrationsAreOpen(): bool
+    {
+        return $this->state()->canRegisterUsers();
+    }
+
     public function rooms(): BelongsToMany
     {
         return $this->BelongsToMany(Room::class);
+    }
+
+    /** @param Builder<Tournament> $query */
+    public function scopeRegistrationsOpen(Builder $query): void
+    {
+        $query->where('status', TournamentStatusEnum::PUBLISHED);
     }
 
     /** Scopes */

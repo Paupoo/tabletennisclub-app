@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Notifications\TournamentInvitationNotification;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
@@ -36,6 +37,17 @@ function wizardTournament(array $overrides = []): Tournament
 function competitiveUsers(int $count): Collection
 {
     return User::factory($count)->create();
+}
+
+/** A match already played, which freezes the tournament against being walked back. */
+function playedMatch(Tournament $tournament): TournamentMatch
+{
+    return TournamentMatch::factory()->create([
+        'tournament_id' => $tournament->id,
+        'pool_id' => null,
+        'table_id' => null,
+        'status' => 'completed',
+    ]);
 }
 
 // ── sendInvitations ───────────────────────────────────────────────────────────
@@ -559,5 +571,86 @@ describe('inviting members', function (): void {
 
         Notification::assertSentTo($member, TournamentInvitationNotification::class);
         expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::PUBLISHED);
+    });
+});
+
+// ── Transitions the state machine refuses, and what the committee is told ─────
+
+describe('closing registrations', function (): void {
+    it('closes them once somebody has entered', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+        $tournament->users()->attach(competitiveUsers(1));
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('confirmCloseRegistrations')
+            ->assertSet('showCloseRegistrationsModal', false);
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::SETUP);
+    });
+
+    /*
+     * There is nothing to close on a tournament nobody joined, and the wizard
+     * has to say which way out exists rather than fail silently.
+     */
+    it('refuses on a tournament nobody joined, and says to cancel it instead', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('confirmCloseRegistrations')
+            ->assertSet('showCloseRegistrationsModal', false);
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::PUBLISHED);
+    });
+
+    /* A refusal must not strand the waitlist: they were not kicked. */
+    it('leaves the waitlist alone when it refuses', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('confirmCloseRegistrations');
+
+        expect(DB::table('tournament_user')->where('tournament_id', $tournament->id)->count())->toBe(0);
+    });
+});
+
+describe('cancelling a tournament', function (): void {
+    it('cancels one that has not been played', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('cancelTournament')
+            ->assertSet('showCancelModal', false);
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::CANCELLED);
+    });
+
+    /*
+     * Cancelling a tournament whose matches have been played would strand
+     * results that were announced in the room.
+     */
+    it('refuses once a match has been played', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PENDING]);
+        playedMatch($tournament);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('cancelTournament')
+            ->assertSet('showCancelModal', false);
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::PENDING);
+    });
+
+    it('refuses on a tournament that is already closed', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::CLOSED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('cancelTournament');
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::CLOSED);
     });
 });

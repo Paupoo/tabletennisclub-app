@@ -7,6 +7,7 @@ use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Domains\Shared\States\Tournament\TournamentStateMachine;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
@@ -47,11 +48,35 @@ new class extends Component
 
     public function bulkCancel(): void
     {
-        $count = count($this->selected);
-        Tournament::whereIn('id', $this->selected)->update(['status' => TournamentStatusEnum::CANCELLED]);
+        $cancelled = 0;
+        $refused = 0;
+
+        foreach (Tournament::whereIn('id', $this->selected)->get() as $tournament) {
+            try {
+                (new TournamentStateMachine($tournament))->cancel();
+                $cancelled++;
+            } catch (\InvalidArgumentException | \LogicException) {
+                // Played, closed or already cancelled: cancel what can be
+                // cancelled and account for the rest rather than reporting a
+                // clean sweep that did not happen.
+                $refused++;
+            }
+        }
+
         $this->confirmBulkCancelModal = false;
         $this->clearSelection();
-        $this->warning(trans_choice('{1} Tournament cancelled.|[2,*] :count tournaments cancelled.', $count, ['count' => $count]));
+
+        if ($cancelled > 0) {
+            $this->warning(trans_choice('{1} Tournament cancelled.|[2,*] :count tournaments cancelled.', $cancelled, ['count' => $cancelled]));
+        }
+
+        if ($refused > 0) {
+            $this->error(trans_choice(
+                '{1} One tournament could not be cancelled: it has already been played or closed.|[2,*] :count tournaments could not be cancelled: they have already been played or closed.',
+                $refused,
+                ['count' => $refused],
+            ));
+        }
     }
 
     // ── Computed ──────────────────────────────────────────────────────────────

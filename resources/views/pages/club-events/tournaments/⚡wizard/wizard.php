@@ -26,6 +26,7 @@ use App\Domains\Competitions\Tournament\Services\TournamentSimulator;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Domains\Shared\States\Tournament\TournamentStateMachine;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasEventPostForm;
 use App\Support\Breadcrumb;
@@ -239,7 +240,20 @@ new class extends Component
         }
 
         $tournament = Tournament::with('users')->findOrFail($this->tournamentId);
-        $tournament->update(['status' => TournamentStatusEnum::CANCELLED]);
+
+        try {
+            (new TournamentStateMachine($tournament))->cancel();
+        } catch (\LogicException) {
+            $this->showCancelModal = false;
+            $this->error(__('Matches have already been played: this tournament can no longer be cancelled.'));
+
+            return;
+        } catch (\InvalidArgumentException) {
+            $this->showCancelModal = false;
+            $this->error(__('This tournament is already over, so there is nothing left to cancel.'));
+
+            return;
+        }
 
         $tournament->users()
             ->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered', 'waiting'])
@@ -277,11 +291,8 @@ new class extends Component
     #[Computed]
     public function canOpenRegistrations(): bool
     {
-        return in_array(
-            $this->currentTournament?->status,
-            [TournamentStatusEnum::LOCKED, TournamentStatusEnum::SETUP],
-            true,
-        );
+        return $this->currentTournament?->state()
+            ->canTransitionTo(TournamentStatusEnum::PUBLISHED) ?? false;
     }
 
     public function confirmBulkCancel(): void
@@ -373,6 +384,15 @@ new class extends Component
 
         $tournament = Tournament::findOrFail($this->tournamentId);
 
+        try {
+            (new TournamentStateMachine($tournament))->setUp();
+        } catch (\InvalidArgumentException) {
+            $this->showCloseRegistrationsModal = false;
+            $this->error(__('Nobody has registered yet, so there are no registrations to close. Cancel the tournament instead.'));
+
+            return;
+        }
+
         // Kick everyone still on the waitlist — they no longer have a chance.
         $tournament->users()
             ->wherePivotIn('registration_status', ['waiting'])
@@ -385,8 +405,6 @@ new class extends Component
 
                 $user->notify(new TournamentWaitlistRemovedNotification($tournament));
             });
-
-        $tournament->update(['status' => TournamentStatusEnum::SETUP]);
 
         unset($this->currentTournament, $this->waitlist, $this->registrations, $this->registrationsOpen, $this->canOpenRegistrations);
         $this->showCloseRegistrationsModal = false;
@@ -416,7 +434,7 @@ new class extends Component
             return;
         }
 
-        $tournament->update(['status' => TournamentStatusEnum::PUBLISHED]);
+        (new TournamentStateMachine($tournament))->publish();
 
         unset($this->currentTournament, $this->registrationsOpen, $this->canOpenRegistrations);
         $this->showOpenRegistrationsModal = false;
@@ -597,20 +615,13 @@ new class extends Component
             return false;
         }
 
-        $status = $this->currentTournament?->status;
-
-        return $status !== null && ! in_array($status, [
-            TournamentStatusEnum::DRAFT,
-            TournamentStatusEnum::CANCELLED,
-        ]);
+        return $this->currentTournament?->state()->hasLockedContract() ?? false;
     }
 
     #[Computed]
     public function isLaunched(): bool
     {
-        $status = $this->currentTournament?->status;
-
-        return $status !== null && in_array($status, [TournamentStatusEnum::PENDING, TournamentStatusEnum::CLOSED]);
+        return $this->currentTournament?->state()->hasBeenLaunched() ?? false;
     }
 
     // ── Launch
@@ -983,7 +994,7 @@ new class extends Component
             return null;
         }
 
-        $tournament->update(['status' => TournamentStatusEnum::PENDING]);
+        (new TournamentStateMachine($tournament))->start();
 
         // Populate table_tournament pivot from the tournament's linked rooms
         $tableIds = Table::whereHas('room', fn ($q) => $q->whereIn('rooms.id', $tournament->rooms()->pluck('rooms.id')))
@@ -1079,7 +1090,7 @@ new class extends Component
     #[Computed]
     public function registrationClosed(): bool
     {
-        return $this->currentTournament !== null && $this->currentTournament->status === TournamentStatusEnum::SETUP;
+        return $this->currentTournament?->state()->canCreatePools() ?? false;
     }
 
     // ── Computed: active registrations (not waiting, not cancelled)
@@ -1123,7 +1134,7 @@ new class extends Component
     #[Computed]
     public function registrationsOpen(): bool
     {
-        return $this->currentTournament?->status === TournamentStatusEnum::PUBLISHED;
+        return $this->currentTournament?->state()->canRegisterUsers() ?? false;
     }
 
     public function removeFromWaitlist(int $userId): void
@@ -1295,7 +1306,7 @@ new class extends Component
         // Inviter quelqu'un à s'inscrire à un tournoi fermé n'a pas de sens : le
         // membre suit le lien et ne peut rien faire. L'ouverture est désormais un
         // geste à part entière, nommé, et c'est un prérequis.
-        if ($tournament->status !== TournamentStatusEnum::PUBLISHED) {
+        if (! $tournament->registrationsAreOpen()) {
             $this->error(__('Open the registrations first — members cannot sign up yet.'));
 
             return;
@@ -1490,7 +1501,7 @@ new class extends Component
             return;
         }
 
-        Tournament::findOrFail($this->tournamentId)->update(['status' => TournamentStatusEnum::LOCKED]);
+        (new TournamentStateMachine(Tournament::findOrFail($this->tournamentId)))->lock();
 
         unset($this->currentTournament, $this->isContractLocked, $this->registrationsOpen, $this->canOpenRegistrations);
 

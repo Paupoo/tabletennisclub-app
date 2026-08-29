@@ -4163,5 +4163,9 @@
     "The tournament becomes visible to members, who can sign up from their own space. Name and price stay locked.": "Het toernooi wordt zichtbaar voor leden, die zich vanuit hun eigen ruimte kunnen inschrijven. Naam en prijs blijven vastgezet.",
     "Not on the website": "Niet op de website",
     "No article": "Geen artikel",
-    "Join us at :name on :date": "Doe mee met :name op :date"
+    "Join us at :name on :date": "Doe mee met :name op :date",
+    "Nobody has registered yet, so there are no registrations to close. Cancel the tournament instead.": "Er heeft zich nog niemand ingeschreven: er zijn geen inschrijvingen om af te sluiten. Annuleer het toernooi in plaats daarvan.",
+    "Matches have already been played: this tournament can no longer be cancelled.": "Er zijn al wedstrijden gespeeld: dit toernooi kan niet meer worden geannuleerd.",
+    "This tournament is already over, so there is nothing left to cancel.": "Dit toernooi is al afgelopen: er valt niets meer te annuleren.",
+    "{1} One tournament could not be cancelled: it has already been played or closed.|[2,*] :count tournaments could not be cancelled: they have already been played or closed.": "{1} Eén toernooi kon niet worden geannuleerd: het is al gespeeld of afgesloten.|[2,*] :count toernooien konden niet worden geannuleerd: ze zijn al gespeeld of afgesloten."
 }

@@ -4163,5 +4163,9 @@
     "The tournament becomes visible to members, who can sign up from their own space. Name and price stay locked.": "Le tournoi devient visible des membres, qui peuvent s'inscrire depuis leur espace. Le nom et le prix restent figés.",
     "Not on the website": "Pas sur le site",
     "No article": "Pas d'article",
-    "Join us at :name on :date": "Rejoignez-nous au :name le :date"
+    "Join us at :name on :date": "Rejoignez-nous au :name le :date",
+    "Nobody has registered yet, so there are no registrations to close. Cancel the tournament instead.": "Personne ne s'est encore inscrit : il n'y a aucune inscription à clôturer. Annulez plutôt le tournoi.",
+    "Matches have already been played: this tournament can no longer be cancelled.": "Des matchs ont déjà été joués : ce tournoi ne peut plus être annulé.",
+    "This tournament is already over, so there is nothing left to cancel.": "Ce tournoi est déjà terminé : il n'y a plus rien à annuler.",
+    "{1} One tournament could not be cancelled: it has already been played or closed.|[2,*] :count tournaments could not be cancelled: they have already been played or closed.": "{1} Un tournoi n'a pas pu être annulé : il a déjà été joué ou clôturé.|[2,*] :count tournois n'ont pas pu être annulés : ils ont déjà été joués ou clôturés."
 }

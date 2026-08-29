@@ -17,6 +17,7 @@ use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Domains\Shared\States\Tournament\TournamentStateMachine;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Mail\TournamentResultsMail;
 use App\Support\Breadcrumb;
@@ -151,7 +152,7 @@ new class extends Component
             'newsPostImage' => ['nullable', 'image', 'max:4096'],
         ]);
 
-        $this->tournament->update(['status' => TournamentStatusEnum::CLOSED]);
+        (new TournamentStateMachine($this->tournament))->close();
 
         if ($this->sendThankYou && $this->thankYouSubject !== '' && $this->thankYouBody !== '') {
             $rankings = $this->rankings;

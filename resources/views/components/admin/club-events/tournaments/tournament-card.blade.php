@@ -3,9 +3,9 @@
 @php
     $statusConfig = [
         'pending'   => ['bg' => 'bg-primary/10',  'text' => 'text-primary',          'badge' => 'badge-primary',  'label' => __('Live')],
-        'published' => ['bg' => 'bg-success/10',  'text' => 'text-success',          'badge' => 'badge-success',  'label' => __('Published')],
-        'setup'     => ['bg' => 'bg-info/10',     'text' => 'text-info',             'badge' => 'badge-info',     'label' => __('Setup')],
-        'locked'    => ['bg' => 'bg-warning/10',  'text' => 'text-warning-content',          'badge' => 'badge-warning',  'label' => __('Locked')],
+        'published' => ['bg' => 'bg-success/10',  'text' => 'text-success',          'badge' => 'badge-success',  'label' => __('Registrations open')],
+        'setup'     => ['bg' => 'bg-info/10',     'text' => 'text-info',             'badge' => 'badge-info',     'label' => __('Registrations closed')],
+        'locked'    => ['bg' => 'bg-warning/10',  'text' => 'text-warning-content',          'badge' => 'badge-warning',  'label' => __('Ready to open')],
         'closed'    => ['bg' => 'bg-base-200',    'text' => 'text-base-content/50',  'badge' => 'badge-ghost',    'label' => __('Closed')],
         'cancelled' => ['bg' => 'bg-error/10',    'text' => 'text-error',            'badge' => 'badge-error',    'label' => __('Cancelled')],
         'draft'     => ['bg' => 'bg-base-300',    'text' => 'text-base-content/40',  'badge' => 'badge-outline',  'label' => __('Draft')],
@@ -18,6 +18,14 @@
     $maxUsers     = $tournament->max_users;
     $percent      = $maxUsers > 0 ? min(100, ($activeCount / $maxUsers) * 100) : 0;
 
+    /*
+     * Deux axes indépendants, et le mot « publié » désignait les deux (issue #35).
+     * Le statut décide si un membre peut s'inscrire ; l'article décide si le
+     * tournoi apparaît sur le site public. L'un n'entraîne jamais l'autre, donc
+     * la carte les montre côte à côte plutôt que de laisser deviner.
+     */
+    $articlePublished = $tournament->eventPost?->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED;
+
     $formatTags = collect([
         $tournament->sets_to_win > 0  ? trans_choice('{1} :n winning set|[2,*] :n winning sets', $tournament->sets_to_win, ['n' => $tournament->sets_to_win]) : null,
         $tournament->has_handicap_points ? __('Handicap') : null,
@@ -26,7 +34,7 @@
 @endphp
 
 <div @class([
-    'group flex flex-col overflow-hidden rounded-xl border border-base-200 bg-base-100 shadow-sm transition-all hover:shadow-md',
+    'group flex flex-col overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-sm transition-all hover:shadow-md',
     'ring-2 ring-primary/40' => $isLive,
 ])>
 
@@ -35,10 +43,10 @@
         <div class="flex items-start justify-between gap-2">
 
             <div class="min-w-0 flex-1">
-                <p class="{{ $s['text'] }} mb-0.5 text-[10px] font-bold uppercase tracking-wider">
+                <p class="{{ $s['text'] }} mb-0.5 text-xs font-bold uppercase tracking-wider">
                     {{ __('Tournament') }}
                 </p>
-                <p class="truncate text-[15px] font-semibold text-base-content" title="{{ $tournament->name }}">
+                <p class="truncate text-base font-semibold text-base-content" title="{{ $tournament->name }}">
                     {{ $tournament->name }}
                 </p>
             </div>
@@ -62,7 +70,7 @@
     <div class="flex flex-1 flex-col px-4 py-3">
 
         {{-- Info rows --}}
-        <div class="mb-3 space-y-1.5 text-[13px] text-base-content/70">
+        <div class="mb-3 space-y-1.5 text-sm text-base-content/70">
 
             {{-- Date --}}
             <div class="flex items-center gap-2">
@@ -80,7 +88,17 @@
                     @endif
                 </span>
                 @if ($waitingCount > 0)
-                    <span class="text-[11px] font-medium text-warning-content">(+{{ $waitingCount }} {{ __('waiting') }})</span>
+                    <span class="text-xs font-medium text-warning-content">(+{{ $waitingCount }} {{ __('waiting') }})</span>
+                @endif
+            </div>
+
+            {{-- Site public — l'axe que le statut ne dit pas --}}
+            <div class="flex items-center gap-2">
+                <x-icon class="h-3.5 w-3.5 shrink-0 opacity-50" name="o-globe-alt" />
+                @if ($articlePublished)
+                    <span>{{ __('Article published') }}</span>
+                @else
+                    <span class="text-base-content/50">{{ __('Not on the website') }}</span>
                 @endif
             </div>
 
@@ -100,7 +118,7 @@
         @if (count($formatTags))
             <div class="mb-3 flex flex-wrap gap-1">
                 @foreach ($formatTags as $tag)
-                    <span class="badge badge-ghost badge-xs text-[10px] uppercase tracking-wide">{{ $tag }}</span>
+                    <span class="badge badge-ghost badge-xs text-xs uppercase tracking-wide">{{ $tag }}</span>
                 @endforeach
             </div>
         @endif
@@ -124,7 +142,7 @@
             $canManageCard = ($u = auth()->user()) && $u->can('tournaments.manage');
         @endphp
 
-        <div class="flex items-center justify-end border-t border-base-200 pt-2">
+        <div class="flex items-center justify-end border-t border-base-300 pt-2">
             <div class="flex items-center gap-1">
 
                 @if ($canManageCard)

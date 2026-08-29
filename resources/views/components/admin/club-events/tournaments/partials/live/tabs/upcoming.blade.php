@@ -1,7 +1,7 @@
 <div @if($tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
 
     @if ($this->upcomingMatches->isEmpty())
-        <div class="flex flex-col items-center py-20 opacity-30">
+        <div class="flex flex-col items-center py-20 text-muted">
             <x-icon name="o-check-circle" class="w-12 h-12 mb-3" />
             <p class="text-sm">{{ __('All matches are done or in progress.') }}</p>
         </div>
@@ -23,8 +23,8 @@
                     $hasConflict  = $isReady && ($side1Ids->intersect($busyIds)->isNotEmpty() || $side2Ids->intersect($busyIds)->isNotEmpty());
                     $side1Name    = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
                     $side2Name    = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
-                    $side1Rank    = $isDoubles ? ($match->pair1?->rankingLabel() ?? $nc) : ($match->player1?->ranking ?? $nc);
-                    $side2Rank    = $isDoubles ? ($match->pair2?->rankingLabel() ?? $nc) : ($match->player2?->ranking ?? $nc);
+                    $side1Rank    = $isDoubles ? ($match->pair1?->rankingLabel() ?? $nc) : ($match->player1?->ranking?->getLabel() ?? $nc);
+                    $side2Rank    = $isDoubles ? ($match->pair2?->rankingLabel() ?? $nc) : ($match->player2?->ranking?->getLabel() ?? $nc);
                     $refereeName  = $match->referee?->full_name;
                     $label        = $isPool
                         ? ($match->pool?->name ?? __('Pool'))
@@ -42,7 +42,7 @@
                         'flex items-stretch shadow border rounded-lg overflow-hidden transition-opacity',
                         'bg-warning/10 border-warning/40'              => $hasConflict,
                         'bg-base-300 border-base-content/10'           => $isReady && ! $hasConflict,
-                        'bg-base-200 border-base-content/5 opacity-50' => ! $isReady,
+                        'bg-base-200 border-base-content/5 text-muted' => ! $isReady,
                     ])>
 
                     {{-- Position indicator --}}
@@ -59,7 +59,7 @@
                                 <x-badge :value="$label"
                                     class="{{ $isPool ? 'badge-ghost' : 'badge-warning' }} badge-xs uppercase font-bold" />
                                 @if ($hasConflict)
-                                    <span class="flex items-center gap-1 text-[10px] font-bold text-warning-content">
+                                    <span class="flex items-center gap-1 text-xs font-bold text-warning-content">
                                         <x-icon name="o-exclamation-triangle" class="w-3 h-3 shrink-0" />
                                         {{ __('Player busy') }}
                                     </span>
@@ -68,22 +68,22 @@
                             @if ($index === 0 && $isReady && ! $hasConflict)
                                 <x-badge value="{{ __('Next') }}" class="badge-primary badge-xs" />
                             @elseif (! $isReady)
-                                <x-badge value="{{ __('Awaiting') }}" class="badge-ghost badge-xs opacity-50" />
+                                <x-badge value="{{ __('Awaiting') }}" class="badge-ghost badge-xs text-muted" />
                             @endif
                         </div>
                         <div class="flex justify-between items-center gap-2">
-                            <div @class(['text-sm font-bold flex-1 truncate', 'italic opacity-40' => ! $isReady])>
+                            <div @class(['text-sm font-bold flex-1 truncate', 'italic text-muted' => ! $isReady])>
                                 @if ($isReady)
                                     {{ $side1Name }}
-                                    <span class="text-[10px] opacity-40 font-normal ml-1">({{ $side1Rank }})</span>
+                                    <span class="text-xs text-muted font-normal ml-1">({{ $side1Rank }})</span>
                                 @else
                                     {{ __('TBD') }}
                                 @endif
                             </div>
                             <div class="text-xs font-black italic opacity-25 shrink-0">VS</div>
-                            <div @class(['text-sm font-bold flex-1 truncate text-right', 'italic opacity-40' => ! $isReady])>
+                            <div @class(['text-sm font-bold flex-1 truncate text-right', 'italic text-muted' => ! $isReady])>
                                 @if ($isReady)
-                                    <span class="text-[10px] opacity-40 font-normal mr-1">({{ $side2Rank }})</span>
+                                    <span class="text-xs text-muted font-normal mr-1">({{ $side2Rank }})</span>
                                     {{ $side2Name }}
                                 @else
                                     {{ __('TBD') }}
@@ -91,18 +91,18 @@
                             </div>
                         </div>
                         @if ($refereeName)
-                            <div class="mt-1.5 flex items-center gap-1 text-xs opacity-50">
+                            <div class="mt-1.5 flex items-center gap-1 text-xs text-muted">
                                 <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                                 <span>{{ $refereeName }}</span>
                             </div>
                         @elseif (! $isPool && $isReady && in_array($match->round, ['final', 'bronze']))
-                            <div class="mt-1.5 flex items-center gap-1 text-xs opacity-50 italic">
+                            <div class="mt-1.5 flex items-center gap-1 text-xs text-muted italic">
                                 <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                                 <span>{{ __('Organisation') }}</span>
                             </div>
                         @elseif (! $isPool && $isReady)
                             <div class="mt-1.5">
-                                <x-badge value="{{ __('Referee needed') }}" icon="o-eye" class="badge-ghost badge-xs opacity-50" />
+                                <x-badge value="{{ __('Referee needed') }}" icon="o-eye" class="badge-ghost badge-xs text-muted" />
                             </div>
                         @endif
                     </div>

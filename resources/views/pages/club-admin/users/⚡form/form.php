@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Actions\User\AnonymizeUserAction;
 use App\Actions\User\CreateUserAction;
 use App\Actions\User\SendInvitationAction;
+use App\Actions\User\SyncUserAccessAction;
 use App\Actions\User\UpdateUserAction;
+use App\Data\User\AccessData;
 use App\Data\User\CreateUserData;
 use App\Data\User\UpdateUserData;
 use App\Domains\ClubAdmin\Users\Models\FamilyGroup;
@@ -21,6 +23,7 @@ use App\Livewire\Concerns\HasPhotoUpload;
 use App\Livewire\Concerns\ManagesGuardians;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -60,7 +63,7 @@ new class extends Component
      * Délégations held, as Role values. Duties, not a statutory title: they may be
      * handed to anyone, committee member or not, and they stack.
      *
-     * The rule keeps the payload well-formed; SyncUserRolesAction is what refuses
+     * The rule keeps the payload well-formed; SyncUserAccessAction is what refuses
      * a base role slipped in here, since that is a rule about the domain rather
      * than about this form.
      *
@@ -155,6 +158,61 @@ new class extends Component
         unset($this->familyMembers, $this->familySearchResults);
     }
 
+    /**
+     * Whether the visitor may write the member's data — name, address, IBAN,
+     * documents, password, and the anonymisation that erases them.
+     *
+     * A computed property rather than a public one on purpose: a public property
+     * is part of the payload and comes back from the client on every request, so
+     * an authorisation held there would be an authorisation the client can set.
+     */
+    #[Computed()]
+    public function canEditData(): bool
+    {
+        return $this->user?->exists
+            ? Gate::allows('update', $this->user)
+            : Gate::allows('create', User::class);
+    }
+
+    /**
+     * Whether the visitor may write the member's rights — the délégations, the
+     * committee seat and the statutory title that comes with it.
+     *
+     * Never true on your own file: nobody hands themselves a right.
+     */
+    #[Computed()]
+    public function canManageAccess(): bool
+    {
+        return Gate::allows('manageAccess', $this->user?->exists ? $this->user : new User);
+    }
+
+    /**
+     * Whether the reserved délégations are within the visitor's reach.
+     *
+     * Rendered locked rather than hidden for everyone else: a duty missing from
+     * the grid reads as a duty that does not exist, and the point is the opposite
+     * — it exists, somebody holds it, and it is not yours to hand out.
+     */
+    #[Computed()]
+    public function canManageReservedDelegations(): bool
+    {
+        return Auth::user()?->hasRole(Role::ADMINISTRATOR->value) ?? false;
+    }
+
+    /**
+     * Whether the visitor may move the administrator checkbox on this file.
+     *
+     * Kept apart from every other right on the screen: an administrator holds
+     * the whole application, so making one is never a délégation — and, since
+     * the batch closed the escalation this form used to allow, never on your
+     * own file either.
+     */
+    #[Computed()]
+    public function canPromoteAdmin(): bool
+    {
+        return Gate::allows('promoteAdmin', $this->user?->exists ? $this->user : new User);
+    }
+
     #[Computed()]
     public function CommitteeRoleOptions(): array
     {
@@ -180,15 +238,18 @@ new class extends Component
     }
 
     /**
-     * @return array<int, array{value: string, label: string, description: string}>
+     * @return array<int, array{value: string, label: string, description: string, locked: bool}>
      */
     #[Computed()]
     public function delegationOptions(): array
     {
+        $mayHandOutReserved = $this->canManageReservedDelegations;
+
         return array_map(static fn (Role $role): array => [
             'value' => $role->value,
             'label' => $role->label(),
             'description' => $role->description(),
+            'locked' => $role->isReservedToAdministrators() && ! $mayHandOutReserved,
         ], Role::delegations());
     }
 
@@ -245,6 +306,34 @@ new class extends Component
     }
 
     /**
+     * The rights the member actually holds, read back from the model for the
+     * read-only summary shown to whoever edits their data without handing them
+     * out.
+     *
+     * Read from the model rather than from the form properties on purpose: those
+     * come back from the client on every request, so a summary built from them
+     * would show whatever the payload claimed rather than what is true — a lie
+     * on the one screen whose whole job is to state the facts.
+     *
+     * @return array{isAdmin: bool, isCommitteeMember: bool, title: string|null, delegations: array<int, Role>}
+     */
+    #[Computed()]
+    public function heldRights(): array
+    {
+        $names = $this->user?->exists ? $this->user->getRoleNames()->all() : [];
+
+        return [
+            'isAdmin' => in_array(Role::ADMINISTRATOR->value, $names, true),
+            'isCommitteeMember' => in_array(Role::COMMITTEE->value, $names, true),
+            'title' => $this->user?->committee_role?->label(),
+            'delegations' => array_values(array_filter(
+                Role::delegations(),
+                static fn (Role $role): bool => in_array($role->value, $names, true),
+            )),
+        ];
+    }
+
+    /**
      * Whether the currently entered birthdate makes the member a minor (< 18y).
      */
     #[Computed()]
@@ -271,9 +360,15 @@ new class extends Component
 
     public function mount(?User $user): void
     {
-        // Defense in depth: the route already gates this behind the committee
-        // middleware, but guard the component itself in case it is mounted elsewhere.
-        Gate::authorize($user?->exists ? 'update' : 'create', $user ?? User::class);
+        // Defense in depth: the route already gates this, but guard the component
+        // itself in case it is mounted elsewhere. Two rights open this screen and
+        // neither implies the other, so both are asked for by name — `update`
+        // alone would turn away the access manager the batch exists for.
+        if ($user?->exists) {
+            abort_unless($this->canEditData || $this->canManageAccess, 403);
+        } else {
+            Gate::authorize('create', User::class);
+        }
 
         if ($user && $user->exists) {
             $this->first_name = $user->first_name ?? '';
@@ -291,7 +386,7 @@ new class extends Component
             $this->familyMemberIds = $user->familyMembers()->pluck('id')->all();
             $this->currentPhoto = $user->photo;
             $this->licence = $user->licence;
-            $this->ranking = $user->ranking ?? Ranking::NA->value;
+            $this->ranking = $user->ranking->value;
             $this->is_committee_member = $user->hasRole(Role::COMMITTEE->value);
             $this->is_admin = $user->hasRole(Role::ADMINISTRATOR->value);
             $this->has_key = (bool) ($user->has_key ?? false);
@@ -342,9 +437,17 @@ new class extends Component
     public function rules(): array
     {
         return [
+            // A seat on the committee carries a statutory title — but only for
+            // whoever may actually set one. Folded into a read-only summary for
+            // everyone else, the select is not on their screen, so demanding it
+            // would make a committee member who never had a title unsaveable by
+            // the very person whose job is to keep their address current.
             'committee_role' => [
                 'nullable',
-                ValidationRule::when($this->is_committee_member, ['required', new Enum(CommitteeRolesEnum::class)]),
+                ValidationRule::when(
+                    $this->canManageAccess && $this->is_committee_member,
+                    ['required', new Enum(CommitteeRolesEnum::class)],
+                ),
             ],
             // An address identifies a login, and a member reached through their
             // guardian has none — so it is the guardian, not the age, that lifts
@@ -422,7 +525,22 @@ new class extends Component
 
     public function save(): void
     {
-        Gate::authorize($this->user?->exists ? 'update' : 'create', $this->user ?? User::class);
+        if ($this->user?->exists) {
+            abort_unless($this->canEditData || $this->canManageAccess, 403);
+        } else {
+            Gate::authorize('create', User::class);
+        }
+
+        // Rights only: a single branch that never instantiates UpdateUserData, so
+        // there is no data field to filter out and no way to write one by
+        // accident. It validates the rights fields alone — a managed account has
+        // no address of its own, and demanding one here would leave the access
+        // manager unable to hand that member anything.
+        if (! $this->canEditData) {
+            $this->saveAccessOnly();
+
+            return;
+        }
 
         // An emptied input arrives as '', and `nullable` only ever short-circuits
         // on null — Livewire does not go through the middleware that converts one
@@ -468,9 +586,10 @@ new class extends Component
         // incomplete profiles looks for NULL, and an empty string would hide them
         // from the very list meant to surface them.
         $phoneNumber = $this->phone_number !== '' ? $this->phone_number : null;
-        $committeeRole = ($this->is_committee_member && $this->committee_role !== null && $this->committee_role !== '')
-            ? CommitteeRolesEnum::from($this->committee_role)
-            : null;
+        // Null, not an empty AccessData: whoever may not hand out rights says
+        // nothing about them rather than submitting what the form happens to
+        // hold, so a payload forged past the markup writes nothing.
+        $access = $this->canManageAccess ? $this->accessData() : null;
 
         if ($this->user) {
             $this->handlePhotoUpload($this->user);
@@ -489,16 +608,13 @@ new class extends Component
                     birthdate: $this->birthdate,
                     guardian_phone_number: $this->user->guardian_phone_number,
                     iban: $this->iban,
-                    is_committee_member: $this->is_committee_member,
-                    is_admin: $this->is_admin,
                     has_key: $this->has_key,
                     licence: $licence,
                     ranking: $ranking,
-                    committee_role: $committeeRole,
                     password: $this->password !== '' ? $this->password : null,
                     guardianIds: $this->guardianIds,
                     familyMemberIds: $this->familyMemberIds,
-                    delegations: $this->delegations,
+                    access: $access,
                 ),
                 $actor,
             );
@@ -522,16 +638,13 @@ new class extends Component
                     city_code: $this->city_code,
                     city_name: $this->city_name,
                     birthdate: $this->birthdate,
-                    is_committee_member: $this->is_committee_member,
-                    is_admin: $this->is_admin,
                     has_key: $this->has_key,
                     licence: $licence,
                     ranking: $ranking,
-                    committee_role: $committeeRole,
                     password: $this->password !== '' ? $this->password : null,
                     guardianIds: $this->guardianIds,
                     familyMemberIds: $this->familyMemberIds,
-                    delegations: $this->delegations,
+                    access: $access,
                 ),
                 $actor,
             );
@@ -579,6 +692,12 @@ new class extends Component
      */
     public function updatedCommitteeRole(): void
     {
+        // Suggesting duties is handing them out, one click earlier: without the
+        // right to do so, picking a title must move nothing.
+        if (! $this->canManageAccess) {
+            return;
+        }
+
         if ($this->committee_role === null || $this->committee_role === '') {
             return;
         }
@@ -677,6 +796,25 @@ new class extends Component
     }
 
     /**
+     * The rights layer as the writer expects it, built from the form.
+     *
+     * Only ever called once the visitor's right to write it has been checked;
+     * SyncUserAccessAction checks again, since a Livewire property stays
+     * writable from the client whatever the markup renders.
+     */
+    private function accessData(): AccessData
+    {
+        return new AccessData(
+            isAdmin: $this->is_admin,
+            isCommitteeMember: $this->is_committee_member,
+            committeeRole: ($this->is_committee_member && $this->committee_role !== null && $this->committee_role !== '')
+                ? CommitteeRolesEnum::from($this->committee_role)
+                : null,
+            delegations: $this->delegations,
+        );
+    }
+
+    /**
      * The family group the edited user is (or will be) part of: their own group,
      * or the group of an already-linked member when they are joining an existing
      * family. Null while no family is established on either side.
@@ -706,5 +844,31 @@ new class extends Component
     private function needsLogin(): bool
     {
         return ! ($this->user?->exists ?? false) && filled($this->email);
+    }
+
+    /**
+     * The rights-only save: state 3, the access manager on somebody else's file.
+     */
+    private function saveAccessOnly(): void
+    {
+        abort_unless($this->user?->exists && $this->canManageAccess, 403);
+
+        try {
+            $this->validate(Arr::only(
+                $this->getRules(),
+                ['is_admin', 'is_committee_member', 'committee_role', 'delegations'],
+            ));
+        } catch (ValidationException $e) {
+            $this->error('Une erreur est survenue. Veuillez vérifier les champs du formulaire.');
+
+            throw $e;
+        }
+
+        SyncUserAccessAction::handle($this->user, $this->accessData(), Auth::user());
+
+        $this->success(
+            __('Rights updated for :name.', ['name' => $this->user->first_name]),
+            redirectTo: route('admin.users.index'),
+        );
     }
 };

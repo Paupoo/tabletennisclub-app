@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" />
     </x-slot:breadcrumbs>
 
-    <x-header separator :subtitle="__('Federation fines passed on to members')" :title="__('Fines')">
+    <x-header progress-indicator separator :subtitle="__('Federation fines passed on to members')" :title="__('Fines')">
         <x-slot:actions>
             <x-admin.shared.filters-button :count="count($filterChips)" class="btn-sm" />
             <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Issue a fine')"
@@ -72,7 +72,7 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">{{ __('Status') }}</p>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">{{ __('Status') }}</p>
                 <x-select wire:model.live="statusFilter" :placeholder="__('All statuses')"
                     :options="[['id' => 'pending', 'name' => __('Pending')], ['id' => 'paid', 'name' => __('Paid')]]" />
             </div>
@@ -105,7 +105,7 @@
 
             {{-- Live preview of what the member will read --}}
             <div class="rounded-xl border border-base-300 bg-base-200/40 p-4">
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">{{ __('Email preview') }}</p>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">{{ __('Email preview') }}</p>
                 <p class="mb-3 text-sm font-bold">{{ __('A fine has been issued') }}</p>
                 <p class="whitespace-pre-line text-sm text-base-content/80">{{ $pedagogicalMessage }}</p>
                 @if ($amount)

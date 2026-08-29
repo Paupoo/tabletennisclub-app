@@ -16,7 +16,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
  * carry an explicit aria-label instead.
  */
 
-const UNNAMED_CONTROLS = <<<'JS'
+const UNNAMED_CONTROLS = <<<'JS_WRAP'
 (() => {
   const text = el => (el.textContent || '').replace(/\s+/g, ' ').trim();
   const shown = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
@@ -41,7 +41,7 @@ const UNNAMED_CONTROLS = <<<'JS'
 
   return JSON.stringify(unnamed);
 })()
-JS;
+JS_WRAP;
 
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->isCommitteeMember()->create();

@@ -1,0 +1,50 @@
+/* ===========================================================================
+   CTT Ottignies-Blocry — Typography tokens
+   Family: Instrument Sans (matches the app's --font-sans). Editorial accent:
+   Instrument Serif. Scale mirrors the Tailwind utilities used across the site
+   (hero text-5xl/7xl, h2 text-4xl, body text-xl…text-xs).
+   ========================================================================= */
+
+:root {
+  --font-sans:  'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+
+  /* Weights */
+  --fw-regular:  400; /* @kind font */
+  --fw-medium:   500; /* @kind font */
+  --fw-semibold: 600; /* @kind font */
+  --fw-bold:     700; /* @kind font */
+
+  /* Type scale (px → rem @16) */
+  --text-xs:    0.75rem;   /* 12 — meta, badges */
+  --text-sm:    0.875rem;  /* 14 — secondary, nav */
+  --text-base:  1rem;      /* 16 — body */
+  --text-lg:    1.125rem;  /* 18 */
+  --text-xl:    1.25rem;   /* 20 — lead, card titles */
+  --text-2xl:   1.5rem;    /* 24 — section sub-heads */
+  --text-3xl:   1.875rem;  /* 30 */
+  --text-4xl:   2.25rem;   /* 36 — section H2 */
+  --text-5xl:   3rem;      /* 48 — hero (mobile) */
+  --text-6xl:   3.75rem;   /* 60 */
+  --text-7xl:   4.5rem;    /* 72 — hero (desktop) */
+
+  /* Line heights */
+  --leading-tight:   1.1;
+  --leading-snug:    1.25;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.65;
+
+  /* Tracking */
+  --tracking-tight:   -0.02em;
+  --tracking-normal:  0;
+  --tracking-wide:    0.05em;
+  --tracking-widest:  0.15em;  /* uppercase eyebrows */
+
+  /* Semantic roles */
+  --font-display: var(--fw-bold) var(--text-7xl)/var(--leading-tight) var(--font-sans);
+  --font-h2:      var(--fw-bold) var(--text-4xl)/var(--leading-snug) var(--font-sans);
+  --font-h3:      var(--fw-semibold) var(--text-xl)/var(--leading-snug) var(--font-sans);
+  --font-lead:    var(--fw-regular) var(--text-xl)/var(--leading-relaxed) var(--font-sans);
+  --font-body:    var(--fw-regular) var(--text-base)/var(--leading-relaxed) var(--font-sans);
+  --font-eyebrow: var(--fw-bold) var(--text-sm)/1 var(--font-sans);
+}

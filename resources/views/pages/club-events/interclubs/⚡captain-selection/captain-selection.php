@@ -9,9 +9,10 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Services\InterclubAvailabilityService;
+use App\Domains\Competitions\Interclub\Services\InterclubPreparationService;
 use App\Domains\Shared\Enums\Gender;
-use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Domains\Shared\Enums\Permission;
+use App\Livewire\Concerns\ComposesInterclubLineup;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
@@ -26,7 +27,12 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasBreadcrumbs, HasFilterDrawer, Toast;
+    use ComposesInterclubLineup, HasBreadcrumbs, HasFilterDrawer, Toast;
+
+    #[Locked]
+    public ?int $availabilityRequestId = null;
+
+    public bool $availabilityRequestModal = false;
 
     public string $captainMeetupInfo = '';
 
@@ -34,6 +40,12 @@ new class extends Component
     public ?int $currentUserId = null;
 
     public bool $drawerSelection = false;
+
+    /**
+     * Hérité du centre de contrôle : ne garder que ce qui demande une action.
+     * C'est un filtre au sens de DS-A — il restreint un ensemble et s'efface.
+     */
+    public bool $filterAlerts = false;
 
     public bool $isUpdateMode = false;
 
@@ -50,12 +62,22 @@ new class extends Component
     #[Locked]
     public ?int $selectedInterclubId = null;
 
+    public ?int $selectedMatchDay = null;
+
     /** @var array<int, int> */
     public array $selectedPlayerIds = [];
 
     public ?int $selectedSeasonId = null;
 
     public ?int $selectedTeamId = null;
+
+    /**
+     * A season is a matrix of teams × match days. 'team' reads one row — a team,
+     * all its days. 'day' reads one column — a day, all the teams. The control
+     * center was that column on a page of its own, and duplicated everything
+     * around it to get there.
+     */
+    public string $viewMode = 'team';
 
     /**
      * Memoised for the render: `with()` and `getFilterChips()` both need the
@@ -70,15 +92,39 @@ new class extends Component
         $this->currentUserId = Auth::id();
     }
 
+    /**
+     * Clearing the filters no longer clears the team: the team is navigation,
+     * and there is no "no team" state to fall back to. Only the season resets.
+     */
     public function clearFilters(): void
     {
         $this->selectedSeasonId = Season::current()?->id;
+        $this->filterAlerts = false;
 
-        $user = Auth::user();
-        $this->selectedTeamId = $this->loadAccessibleTeams($user, Season::current())->first()?->id;
+        $this->ensureSelectedTeamIsReachable();
     }
 
-    /** @return array<int, array{key: string, label: string}> */
+    /**
+     * Arms the confirmation. The request mails the whole team, and it used to
+     * fire straight from a bare icon — five clicks meant five rounds of mail to
+     * the same people.
+     */
+    public function confirmAvailabilityRequest(int $interclubId): void
+    {
+        $interclub = Interclub::findOrFail($interclubId);
+        $this->authorizeInterclub($interclub);
+
+        $this->availabilityRequestId = $interclubId;
+        $this->availabilityRequestModal = true;
+    }
+
+    /**
+     * The season is the only filter left. Under DS-A the team determines the
+     * object of the page — exactly one, never none — so it is navigation, and
+     * navigation does not belong in the filter drawer or in a removable chip.
+     *
+     * @return array<int, array{key: string, label: string}>
+     */
     public function getFilterChips(): array
     {
         $chips = [];
@@ -88,17 +134,8 @@ new class extends Component
             $chips[] = ['key' => 'selectedSeasonId', 'label' => __('Season') . ': ' . $seasonName];
         }
 
-        $user = Auth::user();
-        $season = $this->selectedSeasonId ? Season::find($this->selectedSeasonId) : Season::current();
-        $teams = $this->loadAccessibleTeams($user, $season);
-
-        if ($teams->count() > 1 && $this->selectedTeamId && $this->selectedTeamId !== $teams->first()?->id) {
-            $team = $teams->firstWhere('id', $this->selectedTeamId);
-
-            if ($team) {
-                $label = $team->name . ($team->league?->category ? ' · ' . $this->categoryLabel($team->league->category) : '');
-                $chips[] = ['key' => 'selectedTeamId', 'label' => $label];
-            }
+        if ($this->filterAlerts) {
+            $chips[] = ['key' => 'filterAlerts', 'label' => __('Show issues only')];
         }
 
         return $chips;
@@ -125,6 +162,15 @@ new class extends Component
             return;
         }
 
+        // The alert banner reaches across teams, so opening a fixture has to
+        // bring the page with it. Leaving the filter behind used to compose the
+        // lineup out of the *filtered* team's players.
+        $ourTeam = $this->ownTeamOf($interclub);
+
+        if ($ourTeam && $ourTeam->id !== $this->selectedTeamId) {
+            $this->selectedTeamId = $ourTeam->id;
+        }
+
         $this->selectedInterclubId = $interclubId;
 
         $this->selectedPlayerIds = $interclub->users()
@@ -141,9 +187,11 @@ new class extends Component
             $this->selectedSeasonId = Season::current()?->id;
         }
 
-        $user = Auth::user();
-        $season = $this->selectedSeasonId ? Season::find($this->selectedSeasonId) : Season::current();
-        $this->selectedTeamId = $this->loadAccessibleTeams($user, $season)->first()?->id;
+        if ($key === 'filterAlerts') {
+            $this->filterAlerts = false;
+        }
+
+        $this->ensureSelectedTeamIsReachable();
     }
 
     public function render(): View
@@ -151,12 +199,19 @@ new class extends Component
         return $this->view();
     }
 
-    public function requestAvailability(int $interclubId, InterclubAvailabilityService $service): void
+    public function requestAvailability(InterclubAvailabilityService $service): void
     {
-        $interclub = Interclub::findOrFail($interclubId);
+        if (! $this->availabilityRequestId) {
+            return;
+        }
+
+        $interclub = Interclub::findOrFail($this->availabilityRequestId);
         $this->authorizeInterclub($interclub);
 
         $service->requestAvailability($interclub);
+
+        $this->availabilityRequestModal = false;
+        $this->availabilityRequestId = null;
 
         $this->success(
             __('Availability request sent!'),
@@ -250,6 +305,38 @@ new class extends Component
         $this->modalMessage = true;
     }
 
+    /**
+     * The day view is bounded by the same rule as the team switcher: it never
+     * shows a team the caller could not already reach on their own. A captain
+     * sees their own teams on that day, a club-wide selector sees every team.
+     */
+    public function selectDay(?int $weekNumber): void
+    {
+        $this->selectedMatchDay = $weekNumber;
+        $this->selectedInterclubId = null;
+        $this->selectedPlayerIds = [];
+        $this->drawerSelection = false;
+    }
+
+    /**
+     * Switching team is a navigation, so it authorises like one: a captain only
+     * reaches the teams they lead, whatever id arrives from the client.
+     */
+    public function selectTeam(int $teamId): void
+    {
+        $user = Auth::user();
+        $season = $this->selectedSeasonId ? Season::find($this->selectedSeasonId) : Season::current();
+
+        if (! $this->loadAccessibleTeams($user, $season)->contains('id', $teamId)) {
+            return;
+        }
+
+        $this->selectedTeamId = $teamId;
+        $this->selectedInterclubId = null;
+        $this->selectedPlayerIds = [];
+        $this->drawerSelection = false;
+    }
+
     public function sendLineupToTeam(InterclubAvailabilityService $service): void
     {
         $interclub = $this->selectedInterclub();
@@ -271,6 +358,19 @@ new class extends Component
             __('All team members have been notified.'),
             icon: 'o-paper-airplane'
         );
+    }
+
+    /** Reading direction of the matrix. Anything else is ignored. */
+    public function setViewMode(string $mode): void
+    {
+        if (! in_array($mode, ['team', 'day'], true)) {
+            return;
+        }
+
+        $this->viewMode = $mode;
+        $this->selectedInterclubId = null;
+        $this->selectedPlayerIds = [];
+        $this->drawerSelection = false;
     }
 
     public function skipSending(): void
@@ -343,18 +443,12 @@ new class extends Component
 
         $teams = $this->loadAccessibleTeams($user, $season);
 
-        $allTeamsForSummary = $isAdminOrCommittee
-            ? Team::with(['league'])->inClub()->when($season, fn ($q) => $q->where('season_id', $season->id))->get()
-            : Team::newModelInstance()->newCollection();
-
         // Single pass: every fixture this render needs, loaded once with the
         // pivot rows the status rule depends on. The team cards and the
         // preparation matrix both read from here — they used to each query per
         // team, and the matrix additionally queried per cell, which is what put
         // a nine-team season past a thousand queries per render.
-        $fixtures = $this->loadFixtures(
-            $teams->pluck('id')->merge($allTeamsForSummary->pluck('id'))->unique()->values()->all()
-        );
+        $fixtures = $this->loadFixtures($teams->pluck('id')->all());
 
         $teamsData = $teams->map(fn (Team $team): array => $this->buildTeamData($team, $fixtures));
 
@@ -362,10 +456,51 @@ new class extends Component
             $this->selectedTeamId = $teamsData->first()['id'] ?? null;
         }
 
+        // The banner routes to the teams that are *not* on screen. The urgent
+        // fixtures of the visible team are rows in the list right below it;
+        // repeating them there only spent the top of the page saying it twice.
         $alertMatches = $teamsData
+            ->reject(fn ($t): bool => $t['id'] === $this->selectedTeamId)
             ->flatMap(fn ($t) => collect($t['matches'])->map(fn ($m): array => array_merge($m, ['team_name' => $t['name'], 'team_id' => $t['id']])))
             ->filter(fn ($m): bool => $m['status'] === 'urgent')
             ->values();
+
+        $selectedTeamData = $teamsData->firstWhere('id', $this->selectedTeamId);
+        $matchGroups = $this->groupMatches($selectedTeamData['matches'] ?? []);
+
+        // ── Lecture par colonne : une journée, toutes les équipes atteignables.
+        // Les rencontres viennent de $teamsData, donc du même périmètre que le
+        // sélecteur d'équipe : la vue journée ne peut pas montrer davantage.
+        // Chronologique, pas numérique : les bulles affichent l'indice de journée
+        // (matchDayMap), qui suit les coups d'envoi. Trier par numéro de semaine
+        // les mélangeait dès que deux catégories alternent — et une catégorie
+        // occupe précisément les semaines de repos de l'autre.
+        $matchDays = $teamsData
+            ->flatMap(fn (array $t): array => $t['matches'])
+            ->sortBy('starts_at')
+            ->pluck('wk')
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($this->selectedMatchDay === null || ! in_array($this->selectedMatchDay, $matchDays, true)) {
+            $this->selectedMatchDay = $this->firstMatchDayNeedingAttention($teamsData, $matchDays);
+        }
+
+        $dayMatches = $teamsData
+            ->flatMap(fn (array $t): array => collect($t['matches'])
+                ->where('wk', $this->selectedMatchDay)
+                ->map(fn (array $m): array => array_merge($m, [
+                    'team_id' => $t['id'],
+                    'team_name' => $t['name'],
+                    'team_division' => $t['division'],
+                ]))
+                ->all())
+            ->sortBy('team_name')
+            ->values()
+            ->all();
+
+        $dayGroups = $this->groupMatches($dayMatches);
 
         // Drawer data: roster for the selected match
         $drawerInterclub = null;
@@ -378,59 +513,26 @@ new class extends Component
                 ?? Interclub::find($this->selectedInterclubId);
 
             if ($drawerInterclub) {
-                $selectedTeam = $teams->firstWhere('id', $this->selectedTeamId);
+                // The roster belongs to the fixture, never to the filter: a
+                // filter is a display preference, the roster is a rule.
+                $fixtureTeam = $this->ownTeamOf($drawerInterclub);
+                $selectedTeam = ($fixtureTeam ? $teams->firstWhere('id', $fixtureTeam->id) : null)
+                    ?? $teams->firstWhere('id', $this->selectedTeamId);
                 $maxPlayers = $drawerInterclub->total_players;
 
                 $pivotMap = $drawerInterclub->users
                     ->keyBy('id')
                     ->map(fn ($u) => $u->registration);
 
-                // Players selected in another team same week -> blocked. This
-                // deliberately keeps its own query: a plain captain only has
-                // their own teams in $fixtures, and the whole point is to catch
-                // a player lined up by someone else.
-                $blockedPlayerData = [];
-                $sameWeekMatches = Interclub::where('season_id', $drawerInterclub->season_id)
-                    ->where('week_number', $drawerInterclub->week_number)
-                    ->where('id', '!=', $drawerInterclub->id)
-                    ->with([
-                        'visitedTeam.club',
-                        'visitingTeam.club',
-                        'users' => fn ($q) => $q->wherePivot('is_selected', true),
-                    ])
-                    ->get();
+                $blockedPlayerIds = array_keys($this->blockedPlayerData($drawerInterclub));
 
-                foreach ($sameWeekMatches as $swMatch) {
-                    $swTeam = $swMatch->visitedTeam?->club?->is_own_club
-                        ? $swMatch->visitedTeam
-                        : $swMatch->visitingTeam;
-
-                    foreach ($swMatch->users as $swUser) {
-                        $blockedPlayerData[$swUser->id] = $swTeam?->name ?? '?';
-                    }
-                }
-
-                $blockedPlayerIds = array_keys($blockedPlayerData);
-
-                // Roster from team members
-                $roster = ($selectedTeam?->users ?? collect())->map(
-                    fn (User $player): array => $this->buildPlayerData($player, $pivotMap, $selectedTeam, $season, $fixtures, $blockedPlayerData)
-                )->sortBy([
-                    ['rank_sort', 'asc'],
-                    ['last_name', 'asc'],
-                    ['first_name', 'asc'],
-                ])->values();
-
-                // Add substitutes: selected players not on the team
-                $teamUserIds = $selectedTeam?->users->pluck('id')->toArray() ?? [];
-                $substituteIds = array_diff($this->selectedPlayerIds, $teamUserIds);
-
-                if ($substituteIds !== []) {
-                    $substitutes = User::whereIn('id', $substituteIds)->get()->map(
-                        fn (User $player): array => $this->buildPlayerData($player, $pivotMap, $selectedTeam, $season, $fixtures, $blockedPlayerData)
-                    )->values();
-                    $roster = $roster->concat($substitutes)->values();
-                }
+                $roster = $this->buildLineupRoster(
+                    $drawerInterclub,
+                    $selectedTeam,
+                    $season,
+                    $fixtures,
+                    $this->selectedPlayerIds,
+                );
             }
         }
 
@@ -493,7 +595,7 @@ new class extends Component
             $searchResults = $eligible->take(8)->map(fn (User $u): array => [
                 'id' => $u->id,
                 'name' => $u->last_name . ' ' . $u->first_name,
-                'rank' => $u->ranking ?? '—',
+                'rank' => $u->ranking->getLabel(),
             ])->values();
 
             if ($searchResults->isEmpty()) {
@@ -507,15 +609,38 @@ new class extends Component
             'breadcrumbs' => $this->getBreadcrumbs(),
             'seasons_list' => $seasons->map(fn ($s): array => ['id' => $s->id, 'name' => $s->name]),
             'teams_list' => $teams->map(fn ($t): array => ['id' => $t->id, 'name' => ($t->club?->name ?? '?') . ' ' . $t->name]),
-            'teams_for_filter' => $teams->count() > 1
-                ? $teams
-                    ->sortBy(fn (Team $t): string => sprintf('%d_%s', ['MEN' => 0, 'WOMEN' => 1, 'VETERANS' => 2][$t->league?->category] ?? 99, $t->name))
-                    ->map(fn (Team $t): array => [
-                        'id' => $t->id,
-                        'name' => $t->name . ($t->league?->category ? ' · ' . $this->categoryLabel($t->league->category) : ''),
-                    ])->values()->all()
-                : [],
+            // DS-A: navigation, not a filter — so it is always offered, and it
+            // is offered outside the filter drawer.
+            'teams_for_switcher' => $teams
+                ->sortBy(fn (Team $t): string => sprintf('%d_%s', ['MEN' => 0, 'WOMEN' => 1, 'VETERANS' => 2][$t->league?->category] ?? 99, $t->name))
+                ->map(fn (Team $t): array => [
+                    'id' => $t->id,
+                    'name' => $t->name,
+                    'label' => $t->name . ($t->league?->category ? ' · ' . $this->categoryLabel($t->league->category) : ''),
+                ])->values()->all(),
+            // Le titre du tiroir se calculait dans le template, à coups de
+            // flatMap sur toutes les rencontres. C'est de la présentation, mais
+            // pas du gabarit.
+            'drawerTitle' => $drawerInterclub
+                ? __('Selection') . ' — ' . __('Match day') . ' ' . ($matchDayMap[$drawerInterclub->week_number] ?? $drawerInterclub->week_number)
+                : __('Selection'),
+            'drawerSubtitle' => $drawerInterclub
+                ? trim(sprintf(
+                    'vs %s — %s',
+                    $this->opponentNameOf($drawerInterclub),
+                    $drawerInterclub->start_date_time->format('d/m/Y'),
+                ))
+                : '',
             'teamsData' => $teamsData,
+            'selectedTeamData' => $selectedTeamData,
+            'matchGroups' => $matchGroups,
+            'matchDays' => $matchDays,
+            'dayGroups' => $dayGroups,
+            // La matrice de la saison, bornée aux mêmes équipes que le reste de
+            // la page : elle ne montre jamais plus que les deux modes de lecture.
+            'weekSummary' => $isAdminOrCommittee
+                ? app(InterclubPreparationService::class)->summary($teams, $fixtures)
+                : null,
             'alertMatches' => $alertMatches,
             'roster' => $roster,
             'maxPlayers' => $maxPlayers,
@@ -524,7 +649,6 @@ new class extends Component
             'drawerInterclub' => $drawerInterclub,
             'isAdminOrCommittee' => $isAdminOrCommittee,
             'canSearchSubstitute' => $canSearchSubstitute,
-            'weekSummary' => $isAdminOrCommittee ? $this->buildWeekSummary($allTeamsForSummary, $fixtures) : null,
             'matchDayMap' => $matchDayMap,
             'filterChips' => $this->getFilterChips(),
             'pendingAddedNames' => $pendingAddedNames,
@@ -537,7 +661,9 @@ new class extends Component
     {
         return Breadcrumb::make()
             ->home()
-            ->current(__('Captain Selection'));
+            // Un seul nom pour cet écran : le fil d'Ariane, le titre et l'entrée
+            // de menu en disaient trois différents.
+            ->current(__('Selections'));
     }
 
     /**
@@ -552,48 +678,6 @@ new class extends Component
     private function authorizeInterclub(Interclub $interclub): void
     {
         Gate::authorize('selectLineup', $interclub);
-    }
-
-    /**
-     * @param  Collection<int, mixed>  $pivotMap
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
-     * @param  array<int, string>  $blockedPlayerData  user_id => team_name already selected this week
-     * @return array<string, mixed>
-     */
-    private function buildPlayerData(User $player, Collection $pivotMap, ?Team $team, ?Season $season, \Illuminate\Database\Eloquent\Collection $fixtures, array $blockedPlayerData = []): array
-    {
-        $pivot = $pivotMap->get($player->id);
-        $avail = $pivot?->availability
-            ? InterclubAvailability::from($pivot->availability)
-            : null;
-
-        $matchesPlayed = $season && $team
-            ? $this->matchesPlayedCount($player->id, $team->id, $season, $fixtures)
-            : 0;
-
-        $matchesSelected = $season && $team
-            ? $this->matchesSelectedCount($player->id, $team->id, $season, $fixtures)
-            : 0;
-
-        return [
-            'id' => $player->id,
-            'name' => $player->last_name . ' ' . $player->first_name,
-            'last_name' => $player->last_name ?? '',
-            'first_name' => $player->first_name ?? '',
-            // Captain override (decision T8): a captain always sees their own
-            // players' contact details on the selection screen, regardless of
-            // the members' opt-in contact-visibility preferences.
-            'phone_number' => $player->phone_number,
-            'email' => $player->email,
-            'rank' => $player->ranking ?? '—',
-            'rank_sort' => $player->ranking ?? 'ZZZ',
-            'availability' => $avail,
-            'availability_note' => $pivot?->availability_note,
-            'matches_played' => $matchesPlayed,
-            'matches_selected' => $matchesSelected,
-            'is_blocked' => isset($blockedPlayerData[$player->id]),
-            'blocked_team' => $blockedPlayerData[$player->id] ?? null,
-        ];
     }
 
     /**
@@ -687,6 +771,7 @@ new class extends Component
                 'id' => $ic->id,
                 'wk' => $ic->week_number,
                 'date' => $ic->start_date_time->format('d/m/Y'),
+                'starts_at' => $ic->start_date_time->getTimestamp(),
                 'time' => $ic->start_date_time->format('H:i'),
                 'opponent' => $opponent,
                 'is_home' => $isHome,
@@ -713,42 +798,6 @@ new class extends Component
         ];
     }
 
-    /**
-     * The team zoom is not applied here: it only dims the other rows, which
-     * Alpine does client-side. Filtering server-side also emptied the team
-     * chips, leaving no way back to another team without clearing the zoom.
-     *
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Team>  $teams
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
-     */
-    private function buildWeekSummary(\Illuminate\Database\Eloquent\Collection $teams, \Illuminate\Database\Eloquent\Collection $fixtures): array
-    {
-        $weekNumbers = $this->weekNumbers($teams, $fixtures);
-
-        $weeks = $weekNumbers->map(fn (int $wk): array => [
-            'wk' => $wk,
-            'status' => $this->weekStatus($wk, $teams, $fixtures),
-        ])->values()->all();
-
-        // A week everyone has already played is behind us, not prepared: it
-        // leaves the score entirely rather than counting as ready. The score
-        // therefore reads "ready out of what is left", and its denominator
-        // shrinks as the season goes.
-        $scored = collect($weeks)->reject(fn (array $w): bool => $w['status'] === 'past');
-
-        $total = $scored->count();
-        $ok = $scored->where('status', 'confirmed')->count();
-
-        return [
-            'weeks' => $weeks,
-            'preparation_score' => $total > 0 ? (int) round($ok / $total * 100) : 0,
-            'total' => $total,
-            'ok' => $ok,
-            'matrix' => $this->teamWeekMatrix($teams, $weekNumbers, $fixtures),
-            'teams' => $teams->map(fn (Team $t): array => ['id' => $t->id, 'name' => $t->name])->values()->all(),
-        ];
-    }
-
     private function categoryLabel(string $category): string
     {
         return match ($category) {
@@ -757,6 +806,54 @@ new class extends Component
             'VETERANS' => __('Veterans'),
             default => $category,
         };
+    }
+
+    /**
+     * A season change can strand the selection on a team that does not exist in
+     * the new season. Falling back to the first reachable team keeps the page's
+     * "exactly one team, never none" invariant true.
+     */
+    private function ensureSelectedTeamIsReachable(): void
+    {
+        $user = Auth::user();
+        $season = $this->selectedSeasonId ? Season::find($this->selectedSeasonId) : Season::current();
+        $teams = $this->loadAccessibleTeams($user, $season);
+
+        if (! $teams->contains('id', $this->selectedTeamId)) {
+            $this->selectedTeamId = $teams->first()?->id;
+        }
+    }
+
+    /**
+     * Which day to land on. The first one still holding work, or failing that
+     * the first one still to be played — never day 1 of a season that is over.
+     *
+     * @param  Collection<int, array<string, mixed>>  $teamsData
+     * @param  array<int, int>  $matchDays
+     */
+    private function firstMatchDayNeedingAttention(Collection $teamsData, array $matchDays): ?int
+    {
+        $matches = $teamsData->flatMap(fn (array $t): array => $t['matches']);
+
+        // Par coup d'envoi, pas par numéro de semaine : la journée la plus proche
+        // n'est pas celle qui porte le plus petit numéro.
+        $needsWork = $matches
+            ->filter(fn (array $m): bool => in_array($m['status'], ['urgent', 'actionable'], true))
+            ->sortBy('starts_at')
+            ->pluck('wk')
+            ->first();
+
+        if ($needsWork !== null) {
+            return $needsWork;
+        }
+
+        $upcoming = $matches
+            ->reject(fn (array $m): bool => $m['is_past'])
+            ->sortBy('starts_at')
+            ->pluck('wk')
+            ->first();
+
+        return $upcoming ?? ($matchDays === [] ? null : end($matchDays));
     }
 
     /**
@@ -769,43 +866,47 @@ new class extends Component
             || $ic->visiting_team_id === $teamId)->values();
     }
 
-    /**
-     * The status rule, in one place. Both the team cards and the preparation
-     * matrix read it — they used to restate it separately and were free to
-     * drift apart.
-     */
+    /** The rule lives in InterclubPreparationService; this page only reads it. */
     private function fixtureStatus(Interclub $interclub): string
     {
-        if ($interclub->start_date_time < now()) {
-            return 'past';
-        }
-
-        $users = $interclub->users;
-        $maxPlayers = $interclub->total_players;
-
-        $confirmedAtCount = $users->filter(fn ($u): bool => $u->registration?->is_selected && $u->registration?->selection_confirmed_at)->count();
-        $selectedCount = $users->filter(fn ($u) => $u->registration?->is_selected)->count();
-        $availableCount = $users->filter(fn ($u): bool => $u->registration?->availability === 'available')->count();
-        $daysUntil = (int) now()->diffInDays($interclub->start_date_time, false);
-
-        return match (true) {
-            $confirmedAtCount > 0 => 'confirmed',
-            $selectedCount >= $maxPlayers => 'actionable',
-            $availableCount >= $maxPlayers => 'actionable',
-            $daysUntil <= 14 => 'urgent',
-            default => 'future',
-        };
+        return app(InterclubPreparationService::class)->fixtureStatus($interclub);
     }
 
-    private function isPlayerDoubleBooked(int $userId, Interclub $interclub): bool
+    /**
+     * A captain opens this page to answer "what needs me today?". Chronological
+     * order answered "what happened first?" instead, and put the fixtures already
+     * played at the top. The four groups are ordered by that question, and they
+     * are the same in both reading directions.
+     *
+     * "Under control" is deliberately its own group rather than part of what is
+     * coming: a lineup already sent is a settled deadline, not an approaching one.
+     *
+     * @param  array<int, array<string, mixed>>  $matches
+     * @return array{todo: array<int, array<string, mixed>>, controlled: array<int, array<string, mixed>>, upcoming: array<int, array<string, mixed>>, played: array<int, array<string, mixed>>}
+     */
+    private function groupMatches(array $matches): array
     {
-        return Interclub::where('season_id', $interclub->season_id)
-            ->where('week_number', $interclub->week_number)
-            ->where('id', '!=', $interclub->id)
-            ->whereHas('users', fn ($q) => $q
-                ->where('users.id', $userId)
-                ->where('interclub_user.is_selected', 1))
-            ->exists();
+        $groups = ['todo' => [], 'controlled' => [], 'upcoming' => [], 'played' => []];
+
+        foreach ($matches as $match) {
+            $key = match (true) {
+                $match['is_past'] => 'played',
+                in_array($match['status'], ['urgent', 'actionable'], true) => 'todo',
+                $match['status'] === 'confirmed' => 'controlled',
+                default => 'upcoming',
+            };
+
+            $groups[$key][] = $match;
+        }
+
+        // Most recent first: the last result is the one a captain looks up.
+        $groups['played'] = array_reverse($groups['played']);
+
+        if ($this->filterAlerts) {
+            return ['todo' => $groups['todo'], 'controlled' => [], 'upcoming' => [], 'played' => []];
+        }
+
+        return $groups;
     }
 
     private function loadAccessibleTeams(User $user, ?Season $season): \Illuminate\Database\Eloquent\Collection
@@ -844,7 +945,7 @@ new class extends Component
             return Interclub::newModelInstance()->newCollection();
         }
 
-        return Interclub::with(['visitedTeam.club', 'visitingTeam.club', 'users'])
+        return Interclub::with(['league', 'visitedTeam.club', 'visitingTeam.club', 'users'])
             ->where(fn ($q) => $q
                 ->whereIn('visited_team_id', $teamIds)
                 ->orWhereIn('visiting_team_id', $teamIds))
@@ -853,23 +954,26 @@ new class extends Component
             ->get();
     }
 
-    /** @param \Illuminate\Database\Eloquent\Collection<int, Interclub> $fixtures */
-    private function matchesPlayedCount(int $userId, int $teamId, Season $season, \Illuminate\Database\Eloquent\Collection $fixtures): int
+    /** The other club's side of a fixture, named for display. */
+    private function opponentNameOf(Interclub $interclub): string
     {
-        return $this->fixturesForTeam($fixtures, $teamId)
-            ->filter(fn (Interclub $ic): bool => $ic->season_id === $season->id
-                && $ic->start_date_time < now()
-                && $ic->users->contains(fn (User $u): bool => $u->id === $userId && (bool) $u->registration?->has_played))
-            ->count();
+        $ourTeam = $this->ownTeamOf($interclub);
+        $opponent = $interclub->visitedTeam?->id === $ourTeam?->id
+            ? $interclub->visitingTeam
+            : $interclub->visitedTeam;
+
+        return trim(($opponent?->club?->name ?? '') . ' ' . ($opponent?->name ?? '')) ?: '—';
     }
 
-    /** @param \Illuminate\Database\Eloquent\Collection<int, Interclub> $fixtures */
-    private function matchesSelectedCount(int $userId, int $teamId, Season $season, \Illuminate\Database\Eloquent\Collection $fixtures): int
+    /**
+     * The own-club side of a fixture. Both sides are teams; only one of them is
+     * ours, and which one it is decides whose roster the drawer shows.
+     */
+    private function ownTeamOf(Interclub $interclub): ?Team
     {
-        return $this->fixturesForTeam($fixtures, $teamId)
-            ->filter(fn (Interclub $ic): bool => $ic->season_id === $season->id
-                && $ic->users->contains(fn (User $u): bool => $u->id === $userId && (bool) $u->registration?->is_selected))
-            ->count();
+        return $interclub->visitedTeam?->club?->is_own_club
+            ? $interclub->visitedTeam
+            : $interclub->visitingTeam;
     }
 
     private function resetSendModal(): void
@@ -894,102 +998,5 @@ new class extends Component
         }
 
         return $interclub;
-    }
-
-    /**
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Team>  $teams
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
-     * @return array<int, array<int, string|null>>
-     */
-    private function teamWeekMatrix(\Illuminate\Database\Eloquent\Collection $teams, Collection $weekNumbers, \Illuminate\Database\Eloquent\Collection $fixtures): array
-    {
-        $matrix = [];
-
-        foreach ($teams as $team) {
-            $teamFixtures = $this->fixturesForTeam($fixtures, $team->id);
-            $matrix[$team->id] = [];
-
-            foreach ($weekNumbers as $wk) {
-                $matrix[$team->id][$wk] = $teamFixtures->firstWhere('week_number', $wk)
-                    ? $this->weekStatus($wk, Team::newModelInstance()->newCollection([$team]), $fixtures)
-                    : null;
-            }
-        }
-
-        return $matrix;
-    }
-
-    /**
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Team>  $teams
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
-     */
-    private function weekNumbers(\Illuminate\Database\Eloquent\Collection $teams, \Illuminate\Database\Eloquent\Collection $fixtures): Collection
-    {
-        $teamIds = $teams->pluck('id')->all();
-
-        return $fixtures
-            ->filter(fn (Interclub $ic): bool => in_array($ic->visited_team_id, $teamIds, true)
-                || in_array($ic->visiting_team_id, $teamIds, true))
-            ->reject(fn (Interclub $ic): bool => $ic->week_number === null)
-            ->pluck('week_number')
-            ->unique()
-            ->values();
-    }
-
-    /**
-     * Worst status across the teams playing that week. A week where every
-     * fixture has been played reports 'past' so it can leave the preparation
-     * score rather than inflate it.
-     *
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Team>  $teams
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
-     */
-    private function weekStatus(int $weekNumber, \Illuminate\Database\Eloquent\Collection $teams, \Illuminate\Database\Eloquent\Collection $fixtures): string
-    {
-        $liveStatus = null;
-        $sawPlayedFixture = false;
-
-        foreach ($teams as $team) {
-            // Fixtures are ordered by kick-off, so a team playing twice in one
-            // week is rated on its earliest fixture. The query this replaced
-            // had no ORDER BY and picked whichever row the engine returned.
-            $interclub = $this->fixturesForTeam($fixtures, $team->id)
-                ->firstWhere('week_number', $weekNumber);
-
-            if (! $interclub) {
-                continue;
-            }
-
-            $status = $this->fixtureStatus($interclub);
-
-            if ($status === 'past') {
-                $sawPlayedFixture = true;
-
-                continue;
-            }
-
-            $liveStatus = $this->worstOf($liveStatus ?? 'confirmed', $status);
-        }
-
-        // A single fixture still to play decides the week; 'past' is reserved
-        // for weeks where there is nothing left to prepare.
-        if ($liveStatus !== null) {
-            return $liveStatus;
-        }
-
-        return $sawPlayedFixture ? 'past' : 'confirmed';
-    }
-
-    /**
-     * Ordered by how much attention the week needs. A distant fixture with
-     * nothing done asks less of a selector than one that could be composed
-     * right now, so 'actionable' outranks 'future' — it used to be the other
-     * way round, and a week with real work to do showed up as quiet.
-     */
-    private function worstOf(string $a, string $b): string
-    {
-        $rank = ['confirmed' => 0, 'future' => 1, 'actionable' => 2, 'urgent' => 3];
-
-        return ($rank[$b] ?? 0) > ($rank[$a] ?? 0) ? $b : $a;
     }
 };

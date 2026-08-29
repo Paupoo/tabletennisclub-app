@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header :title="__('New meeting')"
+    <x-header progress-indicator :title="__('New meeting')"
         :subtitle="__('Title, type, date — everything else is set up from the meeting page.')" />
 
     <div class="mx-auto max-w-xl">
@@ -23,7 +23,7 @@
                         <label @class([
                             'flex flex-1 cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors',
                             'border-primary bg-primary/5' => $dateMode === 'fixed',
-                            'border-base-200 hover:border-base-300' => $dateMode !== 'fixed',
+                            'border-base-300 hover:border-primary' => $dateMode !== 'fixed',
                         ])>
                             <input type="radio" value="fixed" wire:model.live="dateMode" class="radio radio-sm radio-primary" />
                             <span class="text-sm font-medium">{{ __('Fixed date') }}</span>
@@ -31,7 +31,7 @@
                         <label @class([
                             'flex flex-1 cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors',
                             'border-primary bg-primary/5' => $dateMode === 'poll',
-                            'border-base-200 hover:border-base-300' => $dateMode !== 'poll',
+                            'border-base-300 hover:border-primary' => $dateMode !== 'poll',
                         ])>
                             <input type="radio" value="poll" wire:model.live="dateMode" class="radio radio-sm radio-primary" />
                             <span class="text-sm font-medium">{{ __('Date poll') }}</span>

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\User\SyncUserAccessAction;
+use App\Data\User\AccessData;
 use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\Bar\Models\BarPayment;
@@ -345,3 +347,64 @@ it('grants audit log access on the supervision delegation', function (array $rol
     'treasurer without the delegation' => [[Role::COMMITTEE], CommitteeRolesEnum::TREASURER, false],
     'regular member' => [[], null, false],
 ]);
+
+/*
+| A rights change first shipped rendering as a bare `roles_changed` badge with an
+| empty Details column: the label map existed but the table never called it, and
+| the diff went into `properties` while the screen reads `attribute_changes`.
+| Both are one-line mistakes that no assertion on the action alone would catch.
+*/
+it('renders a rights change like any other entry, named and with its diff', function (): void {
+    $admin = User::factory()->isAdmin()->create();
+    $member = User::factory()->withRole(Role::BAR)->create();
+
+    SyncUserAccessAction::handle(
+        $member,
+        new AccessData(delegations: [Role::WEBSITE->value]),
+        $admin,
+    );
+
+    Livewire::actingAs($admin)
+        ->test('pages::club-admin.audit.index')
+        ->assertSee(__('Rights changed'))
+        ->assertDontSee('roles_changed')
+        ->assertSee(Role::BAR->value)
+        ->assertSee(Role::WEBSITE->value);
+});
+
+/*
+| `updated_by` is fillable, so logFillable() counted it as a business change. A
+| save that touched nothing else still produced a "Modified" entry whose entire
+| content was `updated_by: 1`, sitting next to the real one and making a single
+| rights change look like two. The log already names the author in its own
+| column, so the attribute only ever restated it.
+*/
+it('logs nothing when only the bookkeeping author column moves', function (): void {
+    $admin = User::factory()->isAdmin()->create();
+    $member = User::factory()->create();
+
+    // `theme` carries a SQL default the in-memory model never sees after the
+    // insert, so the next save would report it as a change of its own and hide
+    // what this is measuring. Realigned before the log is cleared.
+    $member->refresh();
+    Activity::query()->delete();
+
+    $member->update(['updated_by' => $admin->id]);
+
+    expect(Activity::query()->count())->toBe(0);
+});
+
+it('leaves a rights change as the single entry it is', function (): void {
+    $admin = User::factory()->isAdmin()->create();
+    $member = User::factory()->create();
+
+    Activity::query()->delete();
+
+    SyncUserAccessAction::handle(
+        $member,
+        new AccessData(delegations: [Role::BAR->value]),
+        $admin,
+    );
+
+    expect(Activity::query()->pluck('event')->all())->toBe(['roles_changed']);
+});

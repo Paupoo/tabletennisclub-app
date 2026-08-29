@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Trainings\Notifications;
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -12,7 +13,7 @@ use Illuminate\Notifications\Notification;
 
 class TrainingPackCancelledNotification extends Notification
 {
-    use Queueable;
+    use LinksToMemberSpace, Queueable;
 
     public function __construct(
         public readonly TrainingPack $pack,
@@ -25,7 +26,7 @@ class TrainingPackCancelledNotification extends Notification
         return [
             'title' => __('Training pack cancelled'),
             'body' => __('Your enrolment request has been cancelled'),
-            'url' => route('admin.trainings.index'),
+            'url' => $this->memberTrainingsUrl($notifiable),
             'category' => 'training',
             'icon' => 'o-academic-cap',
         ];

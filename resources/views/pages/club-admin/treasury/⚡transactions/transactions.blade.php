@@ -27,7 +27,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -50,7 +50,7 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- Stats --}}
-    <div class="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-3">
         <x-admin.shared.stat-card
             :label="__('Total')"
             :value="$this->stats['total']"
@@ -70,10 +70,10 @@
             :hint="__('incoming, no match yet')"
             icon="o-clock"
             color="warning"
-            class="col-span-2 lg:col-span-1" />
+            class="sm:col-span-2 lg:col-span-1" />
     </div>
 
-    <x-card class="bg-base-100 border-none shadow-sm">
+    <x-card class="bg-base-100 shadow-sm">
         <x-table :headers="$headers" :rows="$transactions" :sort-by="$sortBy" wire:model.live="selected" selectable hover>
 
             @scope('cell_date', $transaction)
@@ -84,7 +84,7 @@
             <div>
                 <div class="font-medium text-sm">{{ $transaction->counterparty_name ?? '—' }}</div>
                 @if($transaction->counterparty_bank_account)
-                <div class="font-mono text-xs opacity-50">{{ $transaction->counterparty_bank_account }}</div>
+                <div class="font-mono text-xs text-muted">{{ $transaction->counterparty_bank_account }}</div>
                 @endif
             </div>
             @endscope
@@ -122,7 +122,7 @@
         </x-table>
 
         @if($transactions->total() === 0)
-        <div class="flex flex-col items-center justify-center py-12 opacity-40">
+        <div class="flex flex-col items-center justify-center py-12 text-muted">
             <x-icon name="o-building-library" class="w-12 h-12 mb-4" />
             <p class="text-sm italic">{{ __('No transactions yet. Import a bank statement to get started.') }}</p>
         </div>
@@ -138,7 +138,7 @@
     {{-- Import history                              --}}
     {{-- ========================================== --}}
     @if($recentImports->isNotEmpty())
-    <x-collapse class="mt-6 border border-base-200 rounded-xl bg-base-100">
+    <x-collapse class="mt-6 border border-base-300 rounded-xl bg-base-100">
         <x-slot:heading>
             <div class="flex items-center gap-2 text-sm font-semibold">
                 <x-icon name="o-arrow-up-tray" class="w-4 h-4 opacity-50" />
@@ -149,7 +149,7 @@
         <x-slot:content class="p-0">
             <table class="table table-sm w-full">
                 <thead>
-                    <tr class="text-xs opacity-50 uppercase tracking-widest">
+                    <tr class="text-xs text-muted uppercase tracking-widest">
                         <th>{{ __('Date') }}</th>
                         <th>{{ __('By') }}</th>
                         <th class="text-right text-success">{{ __('New') }}</th>
@@ -163,7 +163,7 @@
                         <td class="tabular-nums text-xs">{{ $import->created_at->format('d/m/Y H:i') }}</td>
                         <td class="text-xs">{{ $import->user->name ?? '—' }}</td>
                         <td class="text-right font-bold text-success">+{{ $import->new_count }}</td>
-                        <td class="text-right opacity-40">{{ $import->duplicate_count }}</td>
+                        <td class="text-right text-muted">{{ $import->duplicate_count }}</td>
                         <td class="text-right">
                             @if($import->error_count > 0)
                             <span class="text-error font-semibold">{{ $import->error_count }}</span>
@@ -286,7 +286,7 @@
             <p class="text-sm opacity-70">
                 {{ __('Upload your bank export (ODS, XLSX, CSV). Transactions will be imported and available for reconciliation.') }}
             </p>
-            <p class="text-xs opacity-50">
+            <p class="text-xs text-muted">
                 {{ __('Expected columns: Date, Montant, Description, Nom contrepartie, Numéro de compte contrepartie, Communication structurée, Communication libre') }}
             </p>
             <x-file

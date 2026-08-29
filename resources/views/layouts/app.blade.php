@@ -12,7 +12,7 @@
     layout viewport, so capping the scale was never what held that together. --}}
     <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
     <meta content="{{ csrf_token() }}" name="csrf-token">
-    <title>{{ isset($title) ? config('app.name') . ' - ' . $title : config('app.name') }}</title>
+    <title>{{ isset($title) ? config('club.name') . ' - ' . $title : config('club.name') }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-club.svg') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -106,6 +106,9 @@ position:fixed overlay (notification sheet, drawers) gets cropped on the right. 
         @endphp
         <div x-data x-init="toast({{ $flashToast }})"></div>
     @endif
+    {{-- Ctrl+K → la recherche de la page, sur les 19 écrans qui en ont une. --}}
+    <x-admin.shared.search-shortcut />
+
     @livewireScripts
 </body>
 

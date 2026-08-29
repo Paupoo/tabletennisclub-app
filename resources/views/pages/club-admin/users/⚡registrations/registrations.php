@@ -172,7 +172,7 @@ new class extends Component
         $subscription = Subscription::with(['user', 'season', 'trainingPacks'])->find($this->currentRequestId);
 
         $licence = filled($this->reviewLicence) ? trim($this->reviewLicence) : $subscription->user->licence;
-        $ranking = filled($this->reviewRanking) ? $this->reviewRanking : $subscription->user->ranking;
+        $ranking = filled($this->reviewRanking) ? $this->reviewRanking : $subscription->user->ranking->value;
 
         // An affiliation is what ties a member to the federation: accepting one
         // without a licence number would register someone the AFTT cannot identify.
@@ -1003,36 +1003,6 @@ new class extends Component
     }
 
     /**
-     * La liste affichée, paginée.
-     *
-     * Elle rendait toute la saison d'un coup — 144 lignes sur la base de dev, et
-     * l'écran n'en montre qu'une dizaine. Le tri par statut passe en SQL pour que
-     * la pagination porte sur l'ordre réel et non sur un tri fait après coup.
-     */
-    public function registrations(): LengthAwarePaginator
-    {
-        return Subscription::with(['user', 'trainingPacks', 'payments'])
-            ->when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId))
-            ->when($this->statusFilter, fn ($q) => $this->statusFilter === 'pending'
-                ? $q->where(fn ($sub) => $sub
-                    ->where('status', 'pending')
-                    ->orWhere(fn ($withPacks) => $withPacks
-                        ->whereIn('status', ['confirmed', 'paid'])
-                        ->whereHas('trainingPacks', fn ($tp) => $tp->where('subscription_training_pack.status', 'pending'))
-                    )
-                )
-                : $q->where('status', $this->statusFilter)
-            )
-            ->when($this->search, fn ($q) => $q->whereHas('user', fn ($u) => $u
-                ->where('first_name', 'like', "%{$this->search}%")
-                ->orWhere('last_name', 'like', "%{$this->search}%")
-            ))
-            ->orderByRaw("CASE status WHEN 'pending' THEN 1 WHEN 'confirmed' THEN 2 WHEN 'paid' THEN 3 WHEN 'refunded' THEN 4 ELSE 5 END")
-            ->paginate(20)
-            ->through(fn (Subscription $sub) => $this->toRow($sub));
-    }
-
-    /**
      * Une ligne isolée, retrouvée par son identifiant.
      *
      * Les modales cherchaient leur ligne dans la liste affichée ; depuis qu'elle
@@ -1049,55 +1019,41 @@ new class extends Component
         return $subscription === null ? null : $this->toRow($subscription);
     }
 
-    /** @return object la forme qu'attendent la liste et les modales */
-    private function toRow(Subscription $sub): object
+    /**
+     * La liste affichée, paginée.
+     *
+     * Elle rendait toute la saison d'un coup — 144 lignes sur la base de dev, et
+     * l'écran n'en montre qu'une dizaine. Le tri par statut passe en SQL pour que
+     * la pagination porte sur l'ordre réel et non sur un tri fait après coup.
+     */
+    public function registrations(): LengthAwarePaginator
     {
-        return (function (Subscription $sub) {
-                $enrolledPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'enrolled');
-                $pendingPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'pending');
-                $cancelledPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'cancelled');
-                // Packs quittés : encore facturés au pro rata des mois suivis,
-                // donc toujours visibles dans le détail de la cotisation.
-                $leftPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'left');
-
-                // A voided affiliation drags its trainings down with it, so any
-                // pack still flagged pending/enrolled reads as cancelled here —
-                // this also rescues rows cancelled before the status cascade.
-                if (in_array($sub->status, ['cancelled', 'refunded'], true)) {
-                    $cancelledPacks = $cancelledPacks->concat($pendingPacks)->concat($enrolledPacks);
-                    $pendingPacks = $enrolledPacks = collect();
-                }
-
-                return (object) [
-                    'id' => $sub->id,
-                    'first_name' => $sub->user->first_name,
-                    'last_name' => $sub->user->last_name,
-                    'name' => $sub->user->first_name . ' ' . $sub->user->last_name,
-                    'type' => $sub->is_competitive ? __('Competition') : __('Recreational'),
-                    'status' => $sub->status,
-                    'amount_due' => $sub->amount_due,
-                    'total_paid' => (float) $sub->payments->whereIn('status', ['paid', 'refunded'])->sum('amount_paid'),
-                    'trainings_count' => $sub->trainings_count,
-                    'pending_packs' => $pendingPacks,
-                    'enrolled_packs' => $enrolledPacks,
-                    'cancelled_packs' => $cancelledPacks,
-                    'left_packs' => $leftPacks,
-                    'has_pending_packs' => $pendingPacks->isNotEmpty(),
-                    'subscription_price' => $sub->is_competitive ? 125.0 : 60.0,
-                    'members' => [[
-                        'first_name' => $sub->user->first_name,
-                        'last_name' => $sub->user->last_name,
-                        'trainings' => $sub->trainingPacks->pluck('name')->toArray(),
-                    ]],
-                    'total_price' => $sub->amount_due,
-                    'payments' => $sub->payments->map(fn ($p): array => [
-                        'reference' => $p->reference,
-                        'amount_due' => $p->amount_due,
-                        'status' => $p->status,
-                    ])->values()->toArray(),
-                    'payment_status' => $sub->payments->sortByDesc('created_at')->first()?->status,
-                ];
-        })($sub);
+        return Subscription::with(['user', 'trainingPacks', 'payments'])
+            ->when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId))
+            // Une affiliation annulée n'a jamais tenu : elle sort de l'effectif,
+            // sans quoi un membre rejeté puis réinscrit y figure deux fois — la
+            // ligne annulée et la nouvelle (issue #29). Le domaine le dit déjà
+            // dans {@see Subscription::scopeActive()}, la liste ne le suivait pas.
+            // Elle reste atteignable : le filtre « Annulée » la demande nommément.
+            ->unless($this->statusFilter === 'cancelled',
+                fn ($q) => $q->where('status', '!=', 'cancelled'))
+            ->when($this->statusFilter, fn ($q) => $this->statusFilter === 'pending'
+                ? $q->where(fn ($sub) => $sub
+                    ->where('status', 'pending')
+                    ->orWhere(fn ($withPacks) => $withPacks
+                        ->whereIn('status', ['confirmed', 'paid'])
+                        ->whereHas('trainingPacks', fn ($tp) => $tp->where('subscription_training_pack.status', 'pending'))
+                    )
+                )
+                : $q->where('status', $this->statusFilter)
+            )
+            ->when($this->search, fn ($q) => $q->whereHas('user', fn ($u) => $u
+                ->where('first_name', 'like', "%{$this->search}%")
+                ->orWhere('last_name', 'like', "%{$this->search}%")
+            ))
+            ->orderByRaw("CASE status WHEN 'pending' THEN 1 WHEN 'confirmed' THEN 2 WHEN 'paid' THEN 3 WHEN 'refunded' THEN 4 ELSE 5 END")
+            ->paginate(20)
+            ->through(fn (Subscription $sub): object => $this->toRow($sub));
     }
 
     public function reject(): void
@@ -1167,7 +1123,12 @@ new class extends Component
 
     public function render(): View
     {
-        $statsBase = Subscription::when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId));
+        // Même périmètre que la liste : les quatre cartes chiffrées se somment
+        // dans « Total », ce qui cessait d'être vrai dès qu'une annulation
+        // entrait dans le compte sans avoir de carte à elle.
+        $statsBase = Subscription::query()
+            ->where('status', '!=', 'cancelled')
+            ->when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId));
 
         return $this->view([
             'headers' => $this->headers(),
@@ -1219,7 +1180,7 @@ new class extends Component
         // Accepting an affiliation is the moment the licence number is checked
         // against the federation, so it is offered for edit right here.
         $this->reviewLicence = $subscription?->user?->licence;
-        $this->reviewRanking = $subscription?->user?->ranking;
+        $this->reviewRanking = $subscription?->user?->ranking->value;
     }
 
     /**
@@ -1742,7 +1703,7 @@ new class extends Component
      */
     private function canBeConfirmedDirectly(User $user): bool
     {
-        if (blank($user->licence) || blank($user->ranking) || $user->ranking === Ranking::NA->name) {
+        if (blank($user->licence) || $user->ranking === Ranking::NA) {
             return false;
         }
 
@@ -1804,5 +1765,56 @@ new class extends Component
         $this->newMemberEmail = null;
         $this->newMemberGender = '';
         $this->showNewMemberForm = false;
+    }
+
+    /** @return object la forme qu'attendent la liste et les modales */
+    private function toRow(Subscription $sub): object
+    {
+        return (function (Subscription $sub) {
+            $enrolledPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'enrolled');
+            $pendingPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'pending');
+            $cancelledPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'cancelled');
+            // Packs quittés : encore facturés au pro rata des mois suivis,
+            // donc toujours visibles dans le détail de la cotisation.
+            $leftPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'left');
+
+            // A voided affiliation drags its trainings down with it, so any
+            // pack still flagged pending/enrolled reads as cancelled here —
+            // this also rescues rows cancelled before the status cascade.
+            if (in_array($sub->status, ['cancelled', 'refunded'], true)) {
+                $cancelledPacks = $cancelledPacks->concat($pendingPacks)->concat($enrolledPacks);
+                $pendingPacks = $enrolledPacks = collect();
+            }
+
+            return (object) [
+                'id' => $sub->id,
+                'first_name' => $sub->user->first_name,
+                'last_name' => $sub->user->last_name,
+                'name' => $sub->user->first_name . ' ' . $sub->user->last_name,
+                'type' => $sub->is_competitive ? __('Competition') : __('Recreational'),
+                'status' => $sub->status,
+                'amount_due' => $sub->amount_due,
+                'total_paid' => (float) $sub->payments->whereIn('status', ['paid', 'refunded'])->sum('amount_paid'),
+                'trainings_count' => $sub->trainings_count,
+                'pending_packs' => $pendingPacks,
+                'enrolled_packs' => $enrolledPacks,
+                'cancelled_packs' => $cancelledPacks,
+                'left_packs' => $leftPacks,
+                'has_pending_packs' => $pendingPacks->isNotEmpty(),
+                'subscription_price' => $sub->is_competitive ? 125.0 : 60.0,
+                'members' => [[
+                    'first_name' => $sub->user->first_name,
+                    'last_name' => $sub->user->last_name,
+                    'trainings' => $sub->trainingPacks->pluck('name')->toArray(),
+                ]],
+                'total_price' => $sub->amount_due,
+                'payments' => $sub->payments->map(fn ($p): array => [
+                    'reference' => $p->reference,
+                    'amount_due' => $p->amount_due,
+                    'status' => $p->status,
+                ])->values()->toArray(),
+                'payment_status' => $sub->payments->sortByDesc('created_at')->first()?->status,
+            ];
+        })($sub);
     }
 };

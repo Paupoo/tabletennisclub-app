@@ -13,7 +13,7 @@
                         <x-input label="Tournament name(*)" placeholder="Ex: Spring Grand Prix" icon="o-trophy"
                             wire:model.live.debounce.500ms="name"
                             :readonly="$this->isContractLocked"
-                            :hint="$this->isContractLocked ? __('🔒 Locked — invitations sent or article published') : null" />
+                            :hint="$this->isContractLocked ? __('Locked — invitations sent or article published') : null" />
                     </div>
 
                     {{-- Rooms — always editable, notification if players registered --}}
@@ -21,7 +21,7 @@
                         <x-choices label="Room(s)(*)" wire:model.live="selectedRooms" :options="$this->availableRooms"
                             icon="o-map-pin" />
                         @if ($this->hasRegisteredUsers)
-                            <span class="absolute top-0 right-0 text-[10px] text-warning-content font-medium flex items-center gap-0.5">
+                            <span class="absolute top-0 right-0 text-xs text-warning-content font-medium flex items-center gap-0.5">
                                 <x-icon name="o-bell-alert" class="w-3 h-3" /> {{ __('Will notify') }}
                             </span>
                         @endif
@@ -32,7 +32,7 @@
                         <x-datepicker label="Date(*)" icon="o-calendar"
                             wire:model="tournamentDate" type="date" />
                         @if ($this->hasRegisteredUsers)
-                            <span class="absolute top-0 right-0 text-[10px] text-warning-content font-medium flex items-center gap-0.5">
+                            <span class="absolute top-0 right-0 text-xs text-warning-content font-medium flex items-center gap-0.5">
                                 <x-icon name="o-bell-alert" class="w-3 h-3" /> {{ __('Will notify') }}
                             </span>
                         @endif
@@ -42,7 +42,7 @@
                     <div class="relative">
                         <x-input label="Start time(*)" type="time" icon="o-clock" wire:model="startTime" />
                         @if ($this->hasRegisteredUsers)
-                            <span class="absolute top-0 right-0 text-[10px] text-warning-content font-medium flex items-center gap-0.5">
+                            <span class="absolute top-0 right-0 text-xs text-warning-content font-medium flex items-center gap-0.5">
                                 <x-icon name="o-bell-alert" class="w-3 h-3" /> {{ __('Will notify') }}
                             </span>
                         @endif
@@ -52,7 +52,7 @@
                     <x-input label="Registration fee" suffix="€" type="number" icon="o-banknotes"
                         wire:model="price"
                         :readonly="$this->isContractLocked"
-                        :hint="$this->isContractLocked ? __('🔒 Locked — invitations sent or article published') : null" />
+                        :hint="$this->isContractLocked ? __('Locked — invitations sent or article published') : null" />
 
                     <div class="col-span-2">
                         <x-toggle :label="__('Open registrations')" icon="o-eye"

@@ -15,6 +15,7 @@
 <div class="flex items-center gap-1 lg:hidden">
     @if ($showSearch)
         <button type="button" class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true"
+            data-search-toggle
             aria-label="{{ __('Search') }}">
             <x-icon name="o-magnifying-glass" class="h-5 w-5" />
         </button>

@@ -22,7 +22,7 @@
     </x-header>
 
     @if ($clubs->isEmpty())
-        <x-card class="mt-4 border-none">
+        <x-card class="mt-4">
             <div class="py-16 text-center text-gray-500">
                 @if ($search)
                     <p class="text-sm">{{ __('No clubs match your search.') }}</p>
@@ -53,7 +53,7 @@
                                         {{ implode(', ', array_filter([$club->street, trim($club->city_code . ' ' . $club->city_name)])) }}
                                     </span>
                                 @endif
-                                <span class="flex items-center gap-1 opacity-50">
+                                <span class="flex items-center gap-1 text-muted">
                                     <x-icon name="o-identification" class="h-3 w-3" />
                                     {{ $club->licence }}
                                 </span>

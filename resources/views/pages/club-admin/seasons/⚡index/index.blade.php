@@ -38,8 +38,8 @@
             <div wire:key="{{ $season->id }}" @class([
                 'flex items-center justify-between rounded-xl border px-5 py-4 transition',
                 'border-primary/30 bg-primary/5' => $isCurrent,
-                'border-base-200 bg-base-100 opacity-60' => $isPast,
-                'border-base-200 bg-base-100' => $isFuture,
+                'border-base-300 bg-base-100 opacity-60' => $isPast,
+                'border-base-300 bg-base-100' => $isFuture,
             ])>
                 {{-- Left: name + dates --}}
                 <div class="flex items-center gap-4">

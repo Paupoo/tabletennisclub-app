@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header :title="__('Tournament Setup Assistant')"
+    <x-header progress-indicator :title="__('Tournament Setup Assistant')"
         :subtitle="__('Configure and manage your tournament')">
         <x-slot:actions>
             {{-- Cancel button — always accessible when tournament exists and not already cancelled --}}
@@ -97,6 +97,33 @@
 
     {{-- Modal de lancement du tournoi --}}
     @include('admin.club-events.tournaments.partials.modals.launch')
+
+    {{-- Ouverture des inscriptions — au niveau du wizard, parce que l'étape 4
+         la propose pour un tournoi jamais ouvert et l'étape 5 pour une
+         réouverture : un modal par étape en aurait fait deux à maintenir. --}}
+    <x-app-modal wire:model="showOpenRegistrationsModal"
+        :title="$this->registrationClosed ? __('Reopen registrations?') : __('Open registrations?')"
+        class="backdrop-blur" :open="$showOpenRegistrationsModal">
+        <div class="flex items-start gap-3 rounded-xl border border-warning/20 bg-warning/10 p-4 text-sm">
+            <x-icon name="o-information-circle" class="mt-0.5 h-5 w-5 shrink-0 text-warning-content" />
+            <p>
+                @if ($this->registrationClosed)
+                    {{ __('Reopening registrations will set the tournament back to "published" status. The tournament cannot be started until registrations are closed again.') }}
+                @else
+                    {{ __('The tournament becomes visible to members, who can sign up from their own space. Name and price stay locked.') }}
+                @endif
+            </p>
+        </div>
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('showOpenRegistrationsModal', false)" />
+            <x-button
+                :label="$this->registrationClosed ? __('Reopen registrations') : __('Open registrations')"
+                icon="o-lock-open"
+                :class="$this->registrationClosed ? 'btn-warning' : 'btn-primary'"
+                wire:click="confirmOpenRegistrations" spinner />
+        </x-slot:actions>
+    </x-app-modal>
 
     {{-- Cancel confirmation modal --}}
     <x-app-modal wire:model="showCancelModal" :title="__('Cancel tournament')" class="backdrop-blur" :open="$showCancelModal">

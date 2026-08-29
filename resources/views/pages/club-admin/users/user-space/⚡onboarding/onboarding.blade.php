@@ -89,7 +89,7 @@
                 <div class="space-y-2 mb-4">
                     @foreach ($this->linkedGuardians as $guardian)
                         <div wire:key="guardian-{{ $guardian->id }}"
-                            class="flex items-center gap-3 p-3 rounded-lg border border-base-200 bg-base-100">
+                            class="flex items-center gap-3 p-3 rounded-lg border border-base-300 bg-base-100">
                             <x-icon name="o-user" class="w-5 h-5 text-primary shrink-0" />
                             <div class="flex-1 min-w-0">
                                 <div class="text-sm font-semibold truncate">
@@ -108,7 +108,7 @@
 
             {{-- Primary path: create the guardian --}}
             @if ($showGuardianForm)
-                <div class="space-y-3 rounded-lg border border-base-200 p-4">
+                <div class="space-y-3 rounded-lg border border-base-300 p-4">
                     <div class="grid gap-3 sm:grid-cols-2">
                         <x-input :label="__('First name')" wire:model.live.blur="guardianFirstName" required />
                         <x-input :label="__('Last name')" wire:model.live.blur="guardianLastName" required />
@@ -156,7 +156,7 @@
                     @endphp
 
                     @if ($hasResults)
-                        <div class="mt-2 space-y-1 rounded-lg border border-base-200 p-1">
+                        <div class="mt-2 space-y-1 rounded-lg border border-base-300 p-1">
                             @if ($guardianResults->isNotEmpty())
                                 <div class="px-3 pt-1 text-xs font-semibold uppercase tracking-wide text-base-content/50">
                                     {{ __('Existing guardians') }}

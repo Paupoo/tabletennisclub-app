@@ -1,0 +1,78 @@
+/* ===========================================================================
+   CTT Ottignies-Blocry — Color tokens
+   Source of truth: resources/css/app.css (Tailwind v4 @theme + daisyUI
+   "bumblebee" theme). Two brand colors — club blue + club yellow — over a
+   clean neutral-gray canvas.
+   ========================================================================= */
+
+:root {
+  /* ---- Brand ------------------------------------------------------------ */
+  --club-blue:          #1e40af;  /* primary — blue-800 */
+  --club-blue-light:    #3b82f6;  /* primary hover / accents — blue-500 */
+  --club-blue-dark:     #1a3691;  /* pressed */
+  --club-yellow:        #fbbf24;  /* secondary — amber-400 */
+  --club-yellow-light:  #fcd34d;  /* secondary hover — amber-300 */
+  --club-yellow-dark:   #f0ad15;  /* pressed */
+
+  /* ---- Neutral canvas (Tailwind gray scale) ----------------------------- */
+  --gray-50:   #f9fafb;
+  --gray-100:  #f3f4f6;
+  --gray-200:  #e5e7eb;
+  --gray-300:  #d1d5db;
+  --gray-400:  #9ca3af;
+  --gray-500:  #6b7280;
+  --gray-600:  #4b5563;
+  --gray-700:  #374151;
+  --gray-800:  #1f2937;
+  --gray-900:  #111827;
+  --white:     #ffffff;
+  --black:     #000000;
+
+  /* ---- daisyUI "bumblebee" base ----------------------------------------- */
+  --base-100:        #ffffff;  /* surfaces */
+  --base-200:        #f5f5f5;  /* app background (oklch 97%) */
+  --base-300:        #e8e8e8;  /* borders / dividers (oklch 92%) */
+  --base-content:    #303030;  /* text on base (oklch 20%) */
+
+  /* ---- Semantic status (daisyUI bumblebee) ------------------------------ */
+  --info:        #3b82f6;
+  --success:     #10b981;  /* emerald — oklch(76% .177 163) */
+  --success-fg:  #047857;
+  --warning:     #f5a524;  /* amber — oklch(82% .189 84) */
+  --warning-fg:  #b45309;
+  --error:       #f1576c;  /* red — oklch(70% .191 22) */
+  --error-fg:    #be123c;
+
+  /* ---- Semantic aliases -------------------------------------------------- */
+  --color-primary:        var(--club-blue);
+  --color-primary-hover:  var(--club-blue-light);
+  --color-secondary:      var(--club-yellow);
+  --color-accent:         var(--black);
+
+  --surface-page:    var(--base-200);
+  --surface-card:    var(--white);
+  --surface-dark:    var(--gray-900);   /* footer, sponsor tiles */
+  --surface-muted:   var(--gray-50);    /* alt sections */
+
+  --text-strong:     var(--gray-900);   /* headings */
+  --text-body:       var(--gray-600);   /* paragraphs */
+  --text-muted:      var(--gray-500);
+  --text-faint:      var(--gray-400);   /* timestamps, meta */
+  --text-on-brand:   var(--white);
+
+  --border-default:  var(--gray-200);
+  --border-strong:   var(--gray-300);
+  --border-hover:    var(--club-blue);
+
+  /* ---- Tag / badge palettes (public site categories) -------------------- */
+  --tag-comp-bg:     var(--club-blue);   --tag-comp-fg:  var(--white);   /* Compétition / Tournoi */
+  --tag-form-bg:     var(--club-yellow); --tag-form-fg:  var(--club-blue); /* Formation */
+  --tag-neutral-bg:  var(--gray-100);    --tag-neutral-fg: var(--gray-800);
+
+  /* level / training type accents */
+  --level-all:    #1d4ed8;  --level-all-bg:    #dbeafe;
+  --level-begin:  #15803d;  --level-begin-bg:  #dcfce7;
+  --level-pro:    #b91c1c;  --level-pro-bg:    #fee2e2;
+  --level-hope:   #7e22ce;  --level-hope-bg:   #f3e8ff;
+  --level-confirm:#c2410c;  --level-confirm-bg:#ffedd5;
+}

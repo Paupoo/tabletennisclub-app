@@ -42,7 +42,7 @@ class PendingState implements SubscriptionState
     public function markAsPaid(Subscription $subscription): void
     {
         // On ne peut pas payer directement depuis pending
-        throw new \LogicException(__('Cannot mark as paid from pending status. Confirm first.'));
+        throw new \LogicException('Cannot mark as paid from pending status. Confirm first.');
     }
 
     public function refund(Subscription $subscription): void

@@ -28,7 +28,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -105,7 +105,13 @@
                     @endif
                 </x-slot:avatar>
                 <x-slot:value>
-                    <span class="font-medium">{{ $contact->first_name }} {{ $contact->last_name }}</span>
+                    {{-- Le nom EST la commande : au clavier, la carte n'offrait que
+                         « Supprimer ». Un bouton nommé de plus écraserait l'identité
+                         (voir MobileMemberCardTest) ; le nom, lui, ne coûte rien. --}}
+                    <button type="button" class="w-full text-left font-medium"
+                        wire:click.stop="openDetail({{ $contact->id }})">
+                        {{ $contact->first_name }} {{ $contact->last_name }}
+                    </button>
                 </x-slot:value>
                 <x-slot:sub-value>
                     <div class="mt-0.5 flex items-center gap-2">
@@ -220,35 +226,35 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Interest') }}
                 </p>
                 <x-select :options="$interestOptions" :placeholder="__('All interests')"
                     wire:model.live="interest" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Status') }}
                 </p>
                 <x-select :options="$statusOptions" :placeholder="__('All statuses')"
                     wire:model.live="status" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Age category') }}
                 </p>
                 <x-select :options="$ageCategoryOptions" :placeholder="__('All age categories')"
                     wire:model.live="ageCategory" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Experience') }}
                 </p>
                 <x-select :options="$experienceOptions" :placeholder="__('All levels')"
                     wire:model.live="experience" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Competition') }}
                 </p>
                 <x-select :options="$triStateOptions" :placeholder="__('Any')"
@@ -277,7 +283,7 @@
 
                 @if ($selectedContact->message)
                     <div>
-                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest opacity-50">
+                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-muted">
                             {{ __('Message') }}
                         </p>
                         <p class="text-sm leading-relaxed">{{ $selectedContact->message }}</p>
@@ -297,12 +303,12 @@
                 @endif
 
                 <div>
-                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                         {{ __('Status') }}
                     </p>
                     <div class="flex flex-wrap gap-2">
                         @foreach ([['new', __('New'), 'btn-info'], ['processed', __('Processed'), 'btn-success'], ['rejected', __('Rejected'), 'btn-error']] as [$val, $label, $cls])
-                            <x-button class="btn-sm btn-soft {{ $cls }} {{ $selectedContact->status === $val ? 'opacity-100' : 'opacity-40' }}"
+                            <x-button class="btn-sm btn-soft {{ $cls }} {{ $selectedContact->status === $val ? 'opacity-100' : 'opacity-70' }}"
                                 :label="$label" :disabled="! $canManage"
                                 wire:click="updateStatus({{ $selectedContact->id }}, '{{ $val }}')" />
                         @endforeach
@@ -311,8 +317,8 @@
 
                 @if ($canManage)
                     {{-- ── Profil (capture incrémentale, tout optionnel) ─────────── --}}
-                    <div class="border-base-200 space-y-3 rounded-lg border p-4">
-                        <p class="text-xs font-semibold uppercase tracking-widest opacity-50">
+                    <div class="border-base-300 space-y-3 rounded-lg border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-widest text-muted">
                             {{ __('Profile') }}
                         </p>
                         <x-select :label="__('Age category')" :options="$ageCategoryOptions"
@@ -331,7 +337,7 @@
                     </div>
 
                     <div>
-                        <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                        <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                             {{ __('Send an email') }}
                         </p>
                         <x-select :options="$templateOptions"
@@ -344,7 +350,7 @@
                     </div>
 
                     @if (in_array($selectedContact->interest?->value, ['JOIN_US', 'TRIAL']) && $selectedContact->status !== 'processed')
-                        <div class="border-base-200 border-t pt-3">
+                        <div class="border-base-300 border-t pt-3">
                             @if ($this->trashedMatchFor($selectedContact))
                                 <p class="text-warning text-xs">
                                     {{ __('This email belongs to a former member account. Resolve this manually before onboarding.') }}
@@ -358,7 +364,7 @@
                         </div>
                     @endif
 
-                    <div class="border-base-200 border-t pt-2">
+                    <div class="border-base-300 border-t pt-2">
                         <x-button class="btn-ghost btn-sm w-full text-error" icon="o-trash"
                             :label="__('Delete this contact')"
                             wire:click="confirmDelete({{ $selectedContact->id }})" />

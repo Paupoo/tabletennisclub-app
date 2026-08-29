@@ -19,7 +19,7 @@
     <div class="mb-8 grid gap-5 lg:grid-cols-3">
 
         {{-- Infos générales --}}
-        <x-card class="border-gray-200 shadow-sm lg:col-span-1">
+        <x-card class="shadow-sm lg:col-span-1">
             <div class="space-y-4">
                 <div class="flex items-center gap-4">
                     <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-2xl font-bold text-blue-800">
@@ -59,7 +59,7 @@
         </x-card>
 
         {{-- Noyau de l'équipe --}}
-        <x-card class="border-gray-200 shadow-sm lg:col-span-2" title="Noyau">
+        <x-card class="shadow-sm lg:col-span-2" title="Noyau">
             @if ($team->users->isEmpty())
                 <p class="py-6 text-center text-sm text-gray-400 italic">Aucun joueur dans le noyau.</p>
             @else
@@ -74,7 +74,7 @@
                                     <p class="text-sm font-medium text-gray-900">
                                         {{ $user->first_name }} {{ $user->last_name }}
                                         @if ($team->captain_id === $user->id)
-                                            <span class="ml-1 rounded bg-yellow-100 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-700">C</span>
+                                            <span class="ml-1 rounded bg-yellow-100 px-1.5 py-0.5 text-xs font-semibold text-yellow-700">C</span>
                                         @endif
                                     </p>
                                 </div>
@@ -82,11 +82,11 @@
                             <div class="flex items-center gap-2">
                                 @if ($user->ranking)
                                     <span class="rounded bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
-                                        {{ $user->ranking }}
+                                        {{ $user->ranking->getLabel() }}
                                     </span>
                                 @endif
                                 @if ($user->is_competitor)
-                                    <span class="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">{{ __('Competitor') }}</span>
+                                    <span class="rounded bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700">{{ __('Competitor') }}</span>
                                 @endif
                             </div>
                         </div>
@@ -98,7 +98,7 @@
 
     {{-- ── Prochains matchs ─────────────────────────────────────────────── --}}
     @if ($upcomingInterclubs->isNotEmpty())
-        <x-card class="mb-6 border-gray-200 shadow-sm" title="Prochains matchs">
+        <x-card class="mb-6 shadow-sm" title="Prochains matchs">
             <div class="divide-y divide-gray-100">
                 @foreach ($upcomingInterclubs as $ic)
                     @php
@@ -107,7 +107,7 @@
                     @endphp
                     <div class="flex items-center justify-between py-3" wire:key="upcoming-{{ $ic->id }}">
                         <div class="flex items-center gap-3">
-                            <span class="rounded px-2 py-0.5 text-[10px] font-bold uppercase
+                            <span class="rounded px-2 py-0.5 text-xs font-bold uppercase
                                 {{ $isHome ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600' }}">
                                 {{ $isHome ? 'Dom.' : 'Ext.' }}
                             </span>
@@ -131,7 +131,7 @@
     @endif
 
     {{-- ── Résultats (mock) ─────────────────────────────────────────────── --}}
-    <x-card class="border-gray-200 shadow-sm" :title="__('Results')">
+    <x-card class="shadow-sm" :title="__('Results')">
         <x-slot:subtitle>
             <span class="text-xs text-orange-500">{{ __('Results module coming soon — simulated data') }}</span>
         </x-slot:subtitle>

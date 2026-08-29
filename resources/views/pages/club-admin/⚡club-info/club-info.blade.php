@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header separator :subtitle="__('Configure your club identity and management team')"
+    <x-header progress-indicator separator :subtitle="__('Configure your club identity and management team')"
         :title="__('Club Info')" />
 
     <x-form wire:submit="save">
@@ -13,8 +13,12 @@
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <x-input icon="o-trophy" :label="__('Club Name')" placeholder="E.g. CTT Ottignies"
                         wire:model="name" required />
+                    {{-- Read-only, not disabled: daisyUI strips a disabled field
+                    of its border and its fill, which left a bare icon floating
+                    under a label. The licence comes from the federation. --}}
                     <x-input icon="o-identification" :label="__('Club ID / Licence')"
-                        wire:model="licence" readonly disabled />
+                        :hint="__('Assigned by the federation — not editable here')"
+                        wire:model="licence" readonly />
                 </div>
 
             </div>
@@ -52,7 +56,7 @@
                     <div class="mb-4 flex items-center justify-between">
                         <span
                             class="text-xs font-bold uppercase tracking-widest opacity-60">{{ __('Board Members') }}</span>
-                        @if($committeeMembers->count() > 0)
+                        @if($committeeMembers->count() > 0 && $this->canManageAccess)
                         <x-button @click="$dispatch('open-committee-modal')" class="btn-xs btn-outline"
                             icon="o-plus" :label="__('Add Member')" />
                         @endif
@@ -66,22 +70,26 @@
                                         placeholder="{{ mb_substr($member->first_name, 0, 1) }}{{ mb_substr($member->last_name, 0,1) }}" />
                                     <div>
                                         <div class="text-sm font-bold">{{ $member->first_name }} {{ $member->last_name }}</div>
-                                            <div class="badge badge-outline text-[10px] opacity-70">
+                                            <div class="badge badge-outline text-xs opacity-70">
                                                 {{ __($member->committee_role
                                                     ? $member->committee_role->label()
                                                     : 'Unknown role') }}
                                             </div>
                                     </div>
                                 </div>
-                                <x-button class="btn-circle btn-ghost btn-xs text-error" icon="o-trash"
-                                    wire:click="removeMember({{ $member->id }})" />
+                                @can('manageAccess', $member)
+                                    <x-button class="btn-circle btn-ghost btn-xs text-error" icon="o-trash"
+                                        wire:click="removeMember({{ $member->id }})" />
+                                @endcan
                             </div>
                         @empty
                             <x-admin.shared.empty
                                 icon="o-users"
                                 :title="__('No committee members defined yet.')"
-                                :subtitle="__('Add your first board member using the button above.')"
-                                action="{{ __('Add Member') }}"
+                                :subtitle="$this->canManageAccess
+                                    ? __('Add your first board member using the button above.')
+                                    : __('Seats are handed out by whoever manages access rights.')"
+                                :action="$this->canManageAccess ? __('Add Member') : null"
                                 wireClick="$dispatch('open-committee-modal')"
                             />
                         @endforelse
@@ -124,7 +132,7 @@
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {{-- Key holders --}}
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-widest opacity-50 mb-3">
+                    <p class="text-xs font-semibold uppercase tracking-widest text-muted mb-3">
                         {{ __('Key holders') }}
                     </p>
                     @forelse($keyHolders as $holder)
@@ -139,7 +147,7 @@
 
                 {{-- Cash register holders --}}
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-widest opacity-50 mb-3">
+                    <p class="text-xs font-semibold uppercase tracking-widest text-muted mb-3">
                         {{ __('Cash register holders') }}
                     </p>
                     @forelse($cashRegisterHolders as $register)

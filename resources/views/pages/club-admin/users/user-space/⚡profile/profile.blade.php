@@ -26,7 +26,7 @@
                 <x-avatar :image="$user->photo ?? '/images/empty-user.jpg'" class="!w-24 !rounded-full" />
                 <div>
                     <div class="font-bold text-xl">{{ $user->first_name }} {{ $user->last_name }}</div>
-                    <div class="text-sm opacity-50 mt-0.5">{{ $user->is_active ? __('Active member') : __('Inactive member') }}</div>
+                    <div class="text-sm text-muted mt-0.5">{{ $user->is_active ? __('Active member') : __('Inactive member') }}</div>
                 </div>
                 <div class="flex flex-wrap justify-center gap-1">
                     @if ($user->hasRole(\App\Domains\Shared\Enums\Role::ADMINISTRATOR->value))
@@ -81,7 +81,7 @@
                         <x-icon name="o-chevron-double-up" class="w-4 h-4 opacity-40 shrink-0" />
                         <div class="min-w-0">
                             <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Ranking') }}</div>
-                            <div class="text-sm font-semibold truncate">{{ $user->ranking }}</div>
+                            <div class="text-sm font-semibold truncate">{{ $user->ranking->getLabel() }}</div>
                         </div>
                     </div>
                 @endif
@@ -213,7 +213,7 @@
                                     {{-- Le message du comité : c'est ce qui permet de comprendre --}}
                                     <p class="whitespace-pre-line text-sm text-base-content/80">{{ $fine->pedagogical_message }}</p>
 
-                                    <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-base-200 pt-3 text-xs text-base-content/60">
+                                    <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-base-300 pt-3 text-xs text-base-content/60">
                                         @if ($fine->federation_reference)
                                             <span>{{ __('Federation reference') }}: <span class="font-mono">{{ $fine->federation_reference }}</span></span>
                                         @endif

@@ -110,7 +110,7 @@
   --color-error-content: oklch(39% 0.141 25.723);
   --radius-selector: 0.5rem;
   --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
+  --radius-box: 0.75rem; /* 12 px — the design system tile radius (--radius-xl) */
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
@@ -132,7 +132,7 @@
   --color-base-200: oklch(20% 0 0);
   --color-base-content: oklch(95% 0 0); /* Texte clair sur fond sombre */
   --color-warning-content: oklch(82% 0.189 84.429); /* Texte lisible sur fond sombre (sinon trop proche de base-100) */
-  --radius-box: 1rem; /* On garde la même cohérence que le light */
+  --radius-box: 0.75rem; /* On garde la même cohérence que le light */
 }
 
 
@@ -275,6 +275,29 @@
   @apply bg-white rounded-lg shadow-xs border p-6;
 } */
 
+/*
+  One card, bordered, 12 px corners.
+
+  The design system defines almost every surface with a 1px grey border, but
+  daisyUI paints `.card` with no border at all: it reserves `--border` for the
+  opt-in `.card-border` class. So no theme variable can give Mary's <x-card> that
+  border, and the alternative was editing 125 call sites. The radius does come
+  from the theme (`--radius-box`, raised to 12px above); only the border lives here.
+
+  base-300 rather than base-200: base-200 is the page background itself, so a
+  base-200 border on a base-100 card is invisible on the very surface it defines.
+  base-300 is the theme's counterpart to the design system's --border-default.
+
+  It sits in the components layer on purpose — utilities still win, so a card
+  that means to opt out (`class="border-none"`) or to shout (`border-primary`)
+  keeps overriding it.
+*/
+@layer components {
+  .card {
+    border: var(--border) solid var(--color-base-300);
+  }
+}
+
 /* Smooth scroll pour les ancres */
 html {
   scroll-behavior: smooth;
@@ -350,11 +373,16 @@ select:focus {
   Breadcrumb entries are 19px tall at text-sm, which puts the trail back to the
   dashboard under the thumb floor on every screen that has one. Mary renders the
   trail as a bare <ul class="flex items-center">, so the layout supplies the hook.
+
+  The gap belongs here too: Mary puts the entry's icon and its label side by side
+  with nothing but Blade whitespace between them, and inline-flex drops that
+  whitespace — the home icon would otherwise touch its label on every screen.
 */
 .breadcrumb-trail a,
 .breadcrumb-trail button {
   display: inline-flex;
   align-items: center;
+  gap: 0.25rem;
   min-block-size: 24px;
 }
 
@@ -407,6 +435,11 @@ select:focus {
   They are also theme-blind: a fixed grey cannot be right on both grounds. The
   clamp routes them to the same token as .text-muted, which follows the theme.
   The dark: variants compile to their own selectors and are untouched.
+
+  The token it lands on is computed for a light ground, so text-gray-* must not
+  be used on a dark surface: the public footer (bg-gray-900) and the sponsor
+  tiles (bg-gray-800) measured 1.7:1 and 1.4:1 that way. Those surfaces state
+  their own colour — text-white/70 — instead of borrowing from this scale.
 */
 .text-gray-300,
 .text-gray-400,
@@ -421,4 +454,21 @@ select:focus {
 */
 [x-cloak] {
   display: none !important;
+}
+
+/* =============================================================================
+   Motion — respecter le réglage système
+   Le design system prescrit des transitions de 150–300 ms, aucune boucle infinie
+   et le respect de prefers-reduced-motion. Les pastilles `animate-pulse` des
+   écrans interclubs clignotaient sans fin quel que soit le réglage de l'OS.
+   ============================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

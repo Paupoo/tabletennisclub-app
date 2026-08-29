@@ -41,7 +41,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="lg:hidden border-b border-base-200" x-show="mobileSearchOpen"
+    <div class="lg:hidden border-b border-base-300" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -66,25 +66,20 @@
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
     <div class="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
         @php
+            /** La couleur vit sur la pastille, jamais sur le chiffre : voir l'en-tête de `stat-card`. */
             $statCards = [
-                ['label' => __('Total'),        'key' => 'total',        'icon' => 'o-users',        'bg' => 'bg-base-200',    'color' => 'text-base-content/60'],
-                ['label' => __('Registered'),   'key' => 'registered',   'icon' => 'o-check-circle', 'bg' => 'bg-success/10',  'color' => 'text-success'],
-                ['label' => __('Competitive'),  'key' => 'competitive',  'icon' => 'o-trophy',       'bg' => 'bg-primary/10',  'color' => 'text-primary'],
-                ['label' => __('Unregistered'), 'key' => 'unregistered', 'icon' => 'o-x-circle',     'bg' => 'bg-base-200',    'color' => 'text-base-content/30'],
+                ['label' => __('Total'),        'key' => 'total',        'icon' => 'o-users',        'color' => 'neutral'],
+                ['label' => __('Registered'),   'key' => 'registered',   'icon' => 'o-check-circle', 'color' => 'success'],
+                ['label' => __('Competitive'),  'key' => 'competitive',  'icon' => 'o-trophy',       'color' => 'primary'],
+                ['label' => __('Unregistered'), 'key' => 'unregistered', 'icon' => 'o-x-circle',     'color' => 'neutral'],
             ];
         @endphp
         @foreach ($statCards as $card)
-            <x-card class="shadow-sm">
-                <div class="flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl {{ $card['bg'] }}">
-                        <x-icon name="{{ $card['icon'] }}" class="h-5 w-5 {{ $card['color'] }}" />
-                    </div>
-                    <div>
-                        <p class="text-2xl font-bold {{ $card['color'] }}">{{ $stats[$card['key']] ?? 0 }}</p>
-                        <p class="text-xs text-muted">{{ $card['label'] }}</p>
-                    </div>
-                </div>
-            </x-card>
+            <x-admin.shared.stat-card
+                :label="$card['label']"
+                :value="$stats[$card['key']] ?? 0"
+                :icon="$card['icon']"
+                :color="$card['color']" />
         @endforeach
     </div>
 
@@ -139,9 +134,9 @@
                 <div class="mt-3">
                     @if (! $selectionModeActive)
                         <x-admin.shared.row-menu
-                            :label="auth()->user()->can('update', $user) ? __('Edit') : null"
+                            :label="$this->mayOpenMemberFile($user) ? __('Edit') : null"
                             icon="o-pencil"
-                            :link="auth()->user()->can('update', $user) ? route('admin.users.edit', $user->id) : null">
+                            :link="$this->mayOpenMemberFile($user) ? route('admin.users.edit', $user->id) : null">
                             @if ($invStatus !== 'active')
                                 @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
                                     {{-- An invitation hands over a login, so it only goes to the
@@ -205,14 +200,17 @@
                     @scope('cell_photo', $user)
                         <x-avatar class="h-10 w-10" image="{{ $user->photo ?? '/images/empty-user.jpg' }}" />
                     @endscope
+                    {{-- A member's name is what the eye scans down the column, so it stays
+                         on one line: the status column added here costs width, and without
+                         this every name of average length folded in two. --}}
                     @scope('cell_name', $user)
-                        @can('update', $user)
-                            <a class="font-medium hover:underline" href="{{ route('admin.users.edit', $user) }}">
+                        @if ($this->mayOpenMemberFile($user))
+                            <a class="font-medium whitespace-nowrap hover:underline" href="{{ route('admin.users.edit', $user) }}">
                                 {{ $user->first_name }} {{ $user->last_name }}
                             </a>
                         @else
-                            <span class="font-medium">{{ $user->first_name }} {{ $user->last_name }}</span>
-                        @endcan
+                            <span class="font-medium whitespace-nowrap">{{ $user->first_name }} {{ $user->last_name }}</span>
+                        @endif
                     @endscope
                     @scope('cell_is_competitive', $user)
                         @if ($user->is_competitor)
@@ -222,29 +220,42 @@
                         @endif
                     @endscope
                     @scope('cell_ranking', $user)
-                        <span class="text-sm font-mono">{{ $user->ranking ?? '—' }}</span>
+                        <span class="text-sm font-mono">{{ $user->ranking->getLabel() }}</span>
+                    @endscope
+                    {{-- Where the member stands belongs to a column of its own. Sharing the
+                         actions cell, "Compte créé" had 22px of text in a 14px badge-xs and
+                         was clipped on every row: a cell sized for controls is not sized
+                         for prose. --}}
+                    @scope('cell_status', $user)
+                        @php
+                            $invBadge = match($user->invitationStatus()) {
+                                'active'  => ['label' => __('Account created'), 'class' => 'badge-success badge-soft badge-sm'],
+                                'pending' => ['label' => __('Pending'),         'class' => 'badge-warning badge-soft badge-sm'],
+                                'expired' => ['label' => __('Expired'),         'class' => 'badge-error badge-soft badge-sm'],
+                                default   => ['label' => __('Not invited'),     'class' => 'badge-ghost badge-sm'],
+                            };
+                        @endphp
+                        {{-- shrink-0 is what keeps the label whole: inside a flex row the
+                             badge is squeezed under its own text width, and a badge has a
+                             fixed height, so the second line is clipped rather than shown. --}}
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <x-badge :value="$invBadge['label']" class="shrink-0 whitespace-nowrap {{ $invBadge['class'] }}" />
+                            @if ($user->has_paid)
+                                <x-badge :value="__('Paid')" class="badge-success badge-soft badge-sm shrink-0 whitespace-nowrap" />
+                            @else
+                                <x-badge :value="__('Unpaid')" class="badge-error badge-soft badge-sm shrink-0 whitespace-nowrap" />
+                            @endif
+                        </div>
                     @endscope
                     @scope('actions', $user)
                         @php
                             $invStatus = $user->invitationStatus();
-                            $invBadge = match($invStatus) {
-                                'active'  => ['label' => __('Account created'),     'class' => 'badge-success badge-soft badge-xs'],
-                                'pending' => ['label' => __('Pending'),    'class' => 'badge-warning badge-soft badge-xs'],
-                                'expired' => ['label' => __('Expired'),    'class' => 'badge-error badge-soft badge-xs'],
-                                default   => ['label' => __('Not invited'),'class' => 'badge-ghost badge-xs'],
-                            };
                         @endphp
-                        <div class="flex items-center gap-2">
-                            <x-badge :value="$invBadge['label']" class="{{ $invBadge['class'] }}" />
-                            @if ($user->has_paid)
-                                <x-badge :value="__('Paid')" class="badge-success badge-soft badge-xs" />
-                            @else
-                                <x-badge :value="__('Unpaid')" class="badge-error badge-soft badge-xs" />
-                            @endif
+                        <div class="flex items-center justify-end gap-2">
                             <x-admin.shared.row-menu
-                                    :label="auth()->user()->can('update', $user) ? __('Edit') : null"
+                                    :label="$this->mayOpenMemberFile($user) ? __('Edit') : null"
                                     icon="o-pencil"
-                                    :link="auth()->user()->can('update', $user) ? route('admin.users.edit', $user->id) : null">
+                                    :link="$this->mayOpenMemberFile($user) ? route('admin.users.edit', $user->id) : null">
                                     @if ($invStatus !== 'active')
                                         @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
                                             {{-- An invitation hands over a login, so it only goes to the
@@ -315,13 +326,13 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Licence type') }}
                 </p>
                 <x-radio wire:model.live="selectedLicenceType" :options="$licenceTypes" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Gender') }}
                 </p>
                 <div class="space-y-1">
@@ -331,13 +342,13 @@
                 </div>
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Account') }}
                 </p>
                 <x-radio wire:model.live="invitationState" :options="$invitationStates" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Profile') }}
                 </p>
                 <x-toggle :label="__('Incomplete profile')" wire:model.live="incompleteProfile" />
@@ -346,27 +357,27 @@
                     wire:model.live="adultWithoutAddress" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Subscription') }}
                 </p>
                 <x-toggle :label="__('Unpaid subscription')" wire:model.live="unpaidSubscription" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Equipment') }}
                 </p>
                 <x-toggle :label="__('Has a key')" wire:model.live="hasKey" />
                 <x-toggle :label="__('Has a cash register')" wire:model.live="hasCashRegister" class="mt-2" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Teams') }}
                 </p>
                 <x-choices :options="$teams" class="w-full" clearable :placeholder="__('Select a team...')"
                     wire:model.live="team_ids" />
             </div>
             @can('users.delete')
-                <div class="border-t border-base-200 pt-4">
+                <div class="border-t border-base-300 pt-4">
                     <x-toggle wire:model.live="showArchived" :label="__('Show archived members')" right />
                 </div>
             @endcan

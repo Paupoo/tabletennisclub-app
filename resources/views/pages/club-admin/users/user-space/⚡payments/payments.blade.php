@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" />
     </x-slot:breadcrumbs>
 
-    <x-header separator :subtitle="__('Your payments and those of the members you are responsible for')"
+    <x-header progress-indicator separator :subtitle="__('Your payments and those of the members you are responsible for')"
         :title="__('My payments')">
         <x-slot:actions>
             <x-admin.shared.filters-button :count="count($filterChips)" class="btn-sm" />
@@ -76,18 +76,18 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">{{ __('Status') }}</p>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">{{ __('Status') }}</p>
                 <x-select wire:model.live="statusFilter" :placeholder="__('All statuses')"
                     :options="collect($this->statusOptions())->map(fn ($label, $id) => ['id' => $id, 'name' => $label])->values()->all()" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">{{ __('Type') }}</p>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">{{ __('Type') }}</p>
                 <x-select wire:model.live="typeFilter" :placeholder="__('All types')"
                     :options="collect($this->typeOptions())->map(fn ($label, $id) => ['id' => $id, 'name' => $label])->values()->all()" />
             </div>
             @if ($multiPerson)
                 <div>
-                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">{{ __('Person') }}</p>
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">{{ __('Person') }}</p>
                     <x-select wire:model.live="personFilter" :placeholder="__('Everyone')"
                         :options="$this->payableUsers->map(fn ($u) => ['id' => $u->id, 'name' => $u->full_name])->all()" />
                 </div>
@@ -107,7 +107,7 @@
                         <div class="text-sm font-bold text-primary">{{ $label['name'] }}</div>
                     </div>
                 @endif
-                <img alt="QR Code" class="h-48 w-48 rounded-xl border border-base-200 shadow" src="{{ $paymentQr }}" />
+                <img alt="QR Code" class="h-48 w-48 rounded-xl border border-base-300 shadow" src="{{ $paymentQr }}" />
                 <div class="w-full divide-y divide-base-200 text-sm">
                     <div class="flex items-center justify-between py-2">
                         <span class="opacity-60">{{ __('Amount') }}</span>

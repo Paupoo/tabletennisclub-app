@@ -118,10 +118,23 @@ Desktop.ini
 # AI agents
 # ============================================
 *.agents
-*.claude
 
-# Claude Code — skills installés via npm/Laravel (régénérables) & artefacts transitoires
-.claude/skills/
-.claude/worktrees/
-.claude/playwright-test-plan.md
+# Claude Code — l'état local reste dehors, la connaissance projet reste dedans.
+#
+# 22 des 24 skills viennent de skills-lock.json : ils se réinstallent, on les ignore.
+# Les deux ci-dessous sont écrits à la main et n'existent nulle part ailleurs — le
+# Design System dit les couleurs, la typo et le ton du club, bulk-actions encode les
+# conventions des écrans de liste. Perdre ce disque, ou cloner le dépôt, suffirait à
+# les perdre, et le prochain agent réinventerait à leur place.
+#
+# Le dossier .claude lui-même ne peut pas être exclu : git refuse de ré-inclure un
+# fichier dont un parent est exclu. D'où .claude/* plutôt que .claude/.
+.claude/*
+!.claude/settings.json
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/bulk-actions/
+!.claude/skills/CTT Ottignies-Blocry Design System/
+# Les 4 photos du kit sont des copies bit-à-bit de public/images/ : 1,8 Mo de doublons.
+.claude/skills/CTT Ottignies-Blocry Design System/assets/images/
 tests/Browser/Screenshots/

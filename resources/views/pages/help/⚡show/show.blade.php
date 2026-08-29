@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header :title="$this->article->title" :subtitle="$this->article->summary" separator>
+    <x-header progress-indicator :title="$this->article->title" :subtitle="$this->article->summary" separator>
         <x-slot:actions>
             <x-button :label="__('Back to help')" icon="o-arrow-left" class="btn-ghost btn-sm"
                 :link="route('admin.help.index')" wire:navigate />

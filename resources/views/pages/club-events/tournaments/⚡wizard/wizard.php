@@ -64,6 +64,15 @@ new class extends Component
     // ── Limite d'inscriptions (0 = illimité)
     public int $maxUsers = 0;
 
+    /**
+     * Le plafond a-t-il été saisi à la main ?
+     *
+     * Tant qu'il ne l'est pas, il suit la structure (poules × joueurs par poule).
+     * Une fois saisi, plus rien ne l'écrase — c'est la salle qui s'adapte au
+     * tournoi voulu, pas l'inverse (issue #37).
+     */
+    public bool $maxUsersManual = false;
+
     // ── Étape 2 – Invitations
     public string $memberSearch = '';
 
@@ -197,6 +206,10 @@ new class extends Component
         $this->logistics_buffer = $config->logisticsBufferMinutes;
         $this->matchType = $config->matchType;
 
+        // La suggestion redessine les poules : sans ça le plafond restait celui
+        // de la configuration précédente, sans que rien ne le signale.
+        $this->suggestMaxUsers();
+
         $this->success(
             title: __('Suggestion applied!'),
             description: TournamentObjectiveEnum::from($this->selectedObjective)->label(),
@@ -253,6 +266,22 @@ new class extends Component
         unset($this->waitlist);
 
         $this->error($user->full_name . ' ' . __('has been unregistered.'));
+    }
+
+    /**
+     * Reste-t-il un geste d'ouverture à poser ?
+     *
+     * Verrouillé : le tournoi n'a jamais été ouvert. Configuration : il l'a été,
+     * puis refermé. Les deux se rouvrent par le même bouton.
+     */
+    #[Computed]
+    public function canOpenRegistrations(): bool
+    {
+        return in_array(
+            $this->currentTournament?->status,
+            [TournamentStatusEnum::LOCKED, TournamentStatusEnum::SETUP],
+            true,
+        );
     }
 
     public function confirmBulkCancel(): void
@@ -359,11 +388,20 @@ new class extends Component
 
         $tournament->update(['status' => TournamentStatusEnum::SETUP]);
 
-        unset($this->currentTournament, $this->waitlist, $this->registrations);
+        unset($this->currentTournament, $this->waitlist, $this->registrations, $this->registrationsOpen, $this->canOpenRegistrations);
         $this->showCloseRegistrationsModal = false;
         $this->success(__('Registrations closed. Waitlisted players have been notified.'), icon: 'o-lock-closed');
     }
 
+    /**
+     * Ouvre les inscriptions, depuis un tournoi verrouillé comme depuis un
+     * tournoi dont les inscriptions ont été closes.
+     *
+     * C'est le geste que le comité cherchait sous le nom « Publier » : c'est lui
+     * qui rend le tournoi visible et inscriptible côté membre. Il n'existait pas
+     * — le passage verrouillé → publié était un effet de bord de la première
+     * invitation envoyée, que rien n'annonçait (issue #35).
+     */
     public function confirmOpenRegistrations(): void
     {
         if (! $this->tournamentId) {
@@ -371,9 +409,16 @@ new class extends Component
         }
 
         $tournament = Tournament::findOrFail($this->tournamentId);
+
+        if (! in_array($tournament->status, [TournamentStatusEnum::LOCKED, TournamentStatusEnum::SETUP], true)) {
+            $this->showOpenRegistrationsModal = false;
+
+            return;
+        }
+
         $tournament->update(['status' => TournamentStatusEnum::PUBLISHED]);
 
-        unset($this->currentTournament);
+        unset($this->currentTournament, $this->registrationsOpen, $this->canOpenRegistrations);
         $this->showOpenRegistrationsModal = false;
         $this->success(__('Registrations are now open.'), icon: 'o-lock-open');
     }
@@ -704,7 +749,7 @@ new class extends Component
                 'id' => $u->id,
                 'name' => $u->full_name,
                 'email' => $u->email,
-                'ranking' => $u->ranking ?? 'NC',
+                'ranking' => $u->ranking->getLabel(),
             ])
             ->toArray();
     }
@@ -733,6 +778,8 @@ new class extends Component
             $this->pool_size = $tournament->pool_size;
             $this->nb_qualifies = $tournament->nb_qualifiers_per_pool;
             $this->maxUsers = $tournament->max_users;
+            $this->maxUsersManual = $tournament->max_users > 0
+                && $tournament->max_users !== $tournament->nb_pools * $tournament->pool_size;
             $this->price = (float) ($tournament->price ?? 0);
             $this->selectedObjective = $tournament->objective?->value ?? '';
             $this->selectedRooms = $tournament->rooms->pluck('id')->toArray();
@@ -899,7 +946,7 @@ new class extends Component
                     'players' => $pool->users->map(fn (User $u): array => [
                         'id' => $u->id,
                         'name' => $u->full_name,
-                        'rank' => $u->ranking ?? 'NC',
+                        'rank' => $u->ranking->getLabel(),
                         'pts' => 0,
                     ])->toArray(),
                 ],
@@ -998,7 +1045,7 @@ new class extends Component
             ->get()
             ->map(fn (User $u): array => [
                 'id' => $u->id,
-                'name' => $u->full_name . ' (' . ($u->ranking ?? 'NC') . ')',
+                'name' => $u->full_name . ' (' . $u->ranking->getLabel() . ')',
             ])
             ->toArray();
     }
@@ -1058,7 +1105,7 @@ new class extends Component
         $rows = $users->map(fn (User $u): array => [
             'id' => $u->id,
             'name' => $u->full_name,
-            'ranking' => $u->ranking ?? 'NC',
+            'ranking' => $u->ranking->getLabel(),
             'status' => $u->pivot->registration_status,
             'has_paid' => (bool) $u->pivot->has_paid || isset($paidPaymentIds[$u->pivot->payment_id]),
             'qr_confirmed' => (bool) $u->pivot->qr_confirmed,
@@ -1070,6 +1117,13 @@ new class extends Component
         return $dir === 'asc'
             ? $rows->sortBy($col)->values()
             : $rows->sortByDesc($col)->values();
+    }
+
+    /** Le tournoi est-il ouvert aux inscriptions, c'est-à-dire visible du membre ? */
+    #[Computed]
+    public function registrationsOpen(): bool
+    {
+        return $this->currentTournament?->status === TournamentStatusEnum::PUBLISHED;
     }
 
     public function removeFromWaitlist(int $userId): void
@@ -1110,6 +1164,14 @@ new class extends Component
         return $this->view([
             'filteredMembers' => $filteredMembers,
         ]);
+    }
+
+    // ── Hooks
+
+    public function resetMaxUsersToStructure(): void
+    {
+        $this->maxUsersManual = false;
+        $this->suggestMaxUsers();
     }
 
     // ── Save (create or update)
@@ -1230,8 +1292,11 @@ new class extends Component
 
         $tournament = Tournament::findOrFail($this->tournamentId);
 
-        if (! in_array($tournament->status, [TournamentStatusEnum::LOCKED, TournamentStatusEnum::PUBLISHED])) {
-            $this->error(__('Invitations cannot be sent while registrations are closed.'));
+        // Inviter quelqu'un à s'inscrire à un tournoi fermé n'a pas de sens : le
+        // membre suit le lien et ne peut rien faire. L'ouverture est désormais un
+        // geste à part entière, nommé, et c'est un prérequis.
+        if ($tournament->status !== TournamentStatusEnum::PUBLISHED) {
+            $this->error(__('Open the registrations first — members cannot sign up yet.'));
 
             return;
         }
@@ -1262,13 +1327,6 @@ new class extends Component
             description: "{$count} " . __('members have been notified.'),
             icon: 'o-paper-airplane',
         );
-
-        // First invitation transitions locked → published and advances to registrations.
-        if ($tournament->status === TournamentStatusEnum::LOCKED) {
-            $tournament->update(['status' => TournamentStatusEnum::PUBLISHED]);
-            unset($this->currentTournament, $this->isContractLocked);
-            $this->step = '5';
-        }
 
         $this->showInviteModal = false;
         $this->inviteMessage = '';
@@ -1371,7 +1429,10 @@ new class extends Component
         $this->markPoolsStaleIfGenerated();
     }
 
-    // ── Hooks
+    public function updatedMaxUsers(): void
+    {
+        $this->maxUsersManual = true;
+    }
 
     public function updatedNbPoules(): void
     {
@@ -1431,7 +1492,7 @@ new class extends Component
 
         Tournament::findOrFail($this->tournamentId)->update(['status' => TournamentStatusEnum::LOCKED]);
 
-        unset($this->currentTournament, $this->isContractLocked);
+        unset($this->currentTournament, $this->isContractLocked, $this->registrationsOpen, $this->canOpenRegistrations);
 
         $this->step = '4';
         $this->success(__('Tournament validated! Name and price are now locked.'), icon: 'o-lock-closed');
@@ -1456,7 +1517,7 @@ new class extends Component
             ->map(fn (User $u): array => [
                 'id' => $u->id,
                 'name' => $u->full_name,
-                'ranking' => $u->ranking ?? 'NC',
+                'ranking' => $u->ranking->getLabel(),
                 'position' => $u->pivot->waitlist_position,
                 'registered_at' => $u->pivot->created_at,
             ]);
@@ -1521,12 +1582,20 @@ new class extends Component
 
     // ── Private helpers
 
+    /**
+     * Aligne le plafond d'inscriptions sur la structure, sauf saisie manuelle.
+     *
+     * L'ancienne garde comparait `maxUsers` à la capacité *nouvelle* alors que
+     * son commentaire annonçait l'ancienne : dès la première modification de la
+     * structure, les deux différaient et la valeur restait figée sur celle de la
+     * configuration précédente.
+     */
     private function suggestMaxUsers(): void
     {
-        $capacity = $this->nb_poules * $this->pool_size;
-        // Only auto-update if unset (0) or if it matches the previous auto-computed value.
-        if ($this->maxUsers === 0 || $this->maxUsers === $capacity) {
-            $this->maxUsers = $capacity;
+        if ($this->maxUsersManual) {
+            return;
         }
+
+        $this->maxUsers = $this->nb_poules * $this->pool_size;
     }
 };

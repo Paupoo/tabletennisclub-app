@@ -17,7 +17,7 @@
     </x-header>
 
     {{-- Stats --}}
-    <div class="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-3">
         <x-admin.shared.stat-card
             :label="__('Tables')"
             :value="$tables->count()"
@@ -36,7 +36,7 @@
             :value="$room->capacity_for_interclubs"
             :hint="__('tables')"
             icon="o-trophy"
-            class="col-span-2 lg:col-span-1" />
+            class="sm:col-span-2 lg:col-span-1" />
     </div>
 
     <div class="grid gap-6 lg:grid-cols-3">
@@ -63,7 +63,7 @@
                                 @if ($table->brand || $table->model)
                                     <span>{{ trim($table->brand . ' ' . $table->model) }}</span>
                                 @else
-                                    <span class="text-xs opacity-50">{{ __('Not specified') }}</span>
+                                    <span class="text-xs text-muted">{{ __('Not specified') }}</span>
                                 @endif
                             @endscope
 
@@ -163,7 +163,7 @@
                 @endphp
 
                 @if (! $hasUpcoming)
-                    <p class="text-sm italic opacity-50">{{ __('Nothing planned in the next two weeks.') }}</p>
+                    <p class="text-sm italic text-muted">{{ __('Nothing planned in the next two weeks.') }}</p>
                 @else
                     @foreach ($room->trainings as $training)
                         <x-admin.shared.compact-event-preview link="#"

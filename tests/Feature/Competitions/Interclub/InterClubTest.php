@@ -42,19 +42,24 @@ beforeEach(function (): void {
     ]);
 });
 
-test('admin or comitte member can create interclub', function (): void {
-    $admin = $this->createFakeAdmin();
-
-    $this->actingAs($admin)
-        ->get(route('admin.interclubs.control-center'))
+/*
+ * Séparation des devoirs, telle que Role::INTERCLUBS la décrit : « gérer le
+ * calendrier et choisir qui joue sont deux délégations que le club distribue
+ * indépendamment ». Le centre de contrôle ne la respectait pas — il n'appelait
+ * aucune autorisation, et un délégué interclubs pouvait y composer n'importe
+ * quelle équipe. La fusion referme cela.
+ */
+test('the selections screen is closed to the interclubs délégation', function (): void {
+    $this->actingAs($this->createFakeAdmin())
+        ->get(route('admin.interclubs.captain-selection'))
         ->assertOK();
 
     $committee_member = $this->createFakeCommitteeMember();
     $committee_member->assignRole(Role::INTERCLUBS->value);
 
     $this->actingAs($committee_member)
-        ->get(route('admin.interclubs.control-center'))
-        ->assertOK();
+        ->get(route('admin.interclubs.captain-selection'))
+        ->assertForbidden();
 });
 test('captains are able to create an interclub', function (): void {
     // to do
@@ -65,22 +70,33 @@ test('captains are able to store an interclub', function (): void {
 test('invalid request', function (): void {
     // to do
 })->todo();
-test('control-center is not accessible to plain members', function (): void {
+/*
+ * Le centre de contrôle a fusionné avec l'écran des sélections : il en était la
+ * transposée (une journée, toutes les équipes) et dupliquait tout le reste. Son
+ * ancienne URL redirige, pour ne pas casser un signet.
+ */
+test('the old control-center url redirects to the selections screen', function (): void {
+    $this->actingAs($this->createFakeAdmin())
+        ->get('/admin/club-events/interclubs/control-center')
+        ->assertRedirect(route('admin.interclubs.captain-selection'));
+});
+
+test('the selections screen is not accessible to plain members', function (): void {
     $user = $this->createFakeUser();
 
     $this->actingAs($user)
-        ->get(route('admin.interclubs.control-center'))
+        ->get(route('admin.interclubs.captain-selection'))
         ->assertForbidden();
 });
 
-describe('control-center filter drawer', function (): void {
+describe('selections filter drawer', function (): void {
     test('season filter chip appears only when a non-active season is selected', function (): void {
         $admin = $this->createFakeAdmin();
         $activeSeason = Season::where('is_active', true)->first();
         $otherSeason = Season::factory()->create(['is_active' => false]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.interclubs.control-center')
+            ->test('pages::club-events.interclubs.captain-selection')
             ->assertSet('selectedSeasonId', $activeSeason->id)
             ->assertViewHas('filterChips', [])
             ->set('selectedSeasonId', $otherSeason->id)
@@ -93,7 +109,7 @@ describe('control-center filter drawer', function (): void {
         $otherSeason = Season::factory()->create(['is_active' => false]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.interclubs.control-center')
+            ->test('pages::club-events.interclubs.captain-selection')
             ->set('selectedSeasonId', $otherSeason->id)
             ->call('removeFilter', 'selectedSeasonId')
             ->assertSet('selectedSeasonId', $activeSeason->id);
@@ -103,7 +119,7 @@ describe('control-center filter drawer', function (): void {
         $admin = $this->createFakeAdmin();
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.interclubs.control-center')
+            ->test('pages::club-events.interclubs.captain-selection')
             ->set('filterAlerts', true)
             ->assertViewHas('filterChips', fn ($chips): bool => count($chips) === 1 && $chips[0]['key'] === 'filterAlerts')
             ->call('clearFilters')

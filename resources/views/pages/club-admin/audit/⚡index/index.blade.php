@@ -22,7 +22,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -53,7 +53,7 @@
                 $subjectName = $subjectLabels[$activity->subject_type] ?? \Illuminate\Support\Str::afterLast($activity->subject_type, '\\');
                 $formatValue = fn ($value) => \Illuminate\Support\Str::limit(is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : (string) $value, 60);
             @endphp
-            <x-card class="border border-base-200 bg-base-100 shadow-sm" wire:key="mobile-activity-{{ $activity->id }}">
+            <x-card class="border border-base-300 bg-base-100 shadow-sm" wire:key="mobile-activity-{{ $activity->id }}">
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex min-w-0 flex-wrap items-center gap-2">
                         @if ($event === 'created')
@@ -63,12 +63,12 @@
                         @elseif ($event === 'deleted')
                             <x-badge :value="__('Deleted')" class="badge-error badge-sm badge-soft" />
                         @else
-                            <x-badge :value="$activity->description" class="badge-ghost badge-sm" />
+                            <x-badge :value="$this->eventLabel($event)" class="badge-ghost badge-sm" />
                         @endif
                         <span class="text-sm font-semibold">{{ $subjectName }}</span>
-                        <span class="font-mono text-xs opacity-40">#{{ $activity->subject_id }}</span>
+                        <span class="font-mono text-xs text-muted">#{{ $activity->subject_id }}</span>
                     </div>
-                    <span class="shrink-0 text-xs tabular-nums opacity-50">{{ $activity->created_at->format('d/m/Y H:i') }}</span>
+                    <span class="shrink-0 text-xs tabular-nums text-muted">{{ $activity->created_at->format('d/m/Y H:i') }}</span>
                 </div>
 
                 <div class="mt-2 flex items-center gap-1.5 text-xs text-base-content/60">
@@ -81,7 +81,7 @@
                 </div>
 
                 @if ($changes && isset($changes['attributes']))
-                    <div x-data="{ open: {{ $event === 'created' ? 'false' : 'true' }} }" class="mt-3 border-t border-base-200 pt-2">
+                    <div x-data="{ open: {{ $event === 'created' ? 'false' : 'true' }} }" class="mt-3 border-t border-base-300 pt-2">
                         {{-- py-1.5 : le bouton ne faisait que la hauteur de son texte,
                         sous le plancher de 24px du WCAG 2.2. --}}
                         <button type="button" @click="open = !open"
@@ -99,7 +99,7 @@
                                     <span class="font-semibold opacity-70">{{ $field }}:</span>
                                     @if ($event !== 'created' && isset($changes['old'][$field]) && $changes['old'][$field] !== null && $changes['old'][$field] !== '')
                                         <span class="text-error/70 line-through">{{ $formatValue($changes['old'][$field]) }}</span>
-                                        <span class="opacity-40">→</span>
+                                        <span class="text-muted">→</span>
                                     @endif
                                     <span class="break-all text-success/80">{{ $formatValue($newValue) ?: '—' }}</span>
                                 </div>
@@ -123,7 +123,7 @@
     </div>
 
     {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
-    <x-card class="bg-base-100 border-none shadow-sm mt-6 hidden lg:block">
+    <x-card class="bg-base-100 shadow-sm mt-6 hidden lg:block">
         <x-table :headers="$headers" :rows="$activities" :sort-by="$sortBy" hover>
 
             @scope('cell_created_at', $activity)
@@ -134,7 +134,7 @@
             @if ($activity->causer)
             <span class="text-sm font-medium">{{ $activity->causer->first_name }} {{ $activity->causer->last_name }}</span>
             @else
-            <span class="text-sm italic opacity-50">{{ __('System') }}</span>
+            <span class="text-sm italic text-muted">{{ __('System') }}</span>
             @endif
             @endscope
 
@@ -147,14 +147,14 @@
             @elseif ($event === 'deleted')
             <x-badge :value="__('Deleted')" class="badge-error badge-sm badge-soft" />
             @else
-            <x-badge :value="$activity->description" class="badge-ghost badge-sm" />
+            <x-badge :value="$this->eventLabel($event)" class="badge-ghost badge-sm" />
             @endif
             @endscope
 
             @scope('cell_subject', $activity, $subjectLabels)
             <div>
                 <div class="text-sm font-medium">{{ $subjectLabels[$activity->subject_type] ?? \Illuminate\Support\Str::afterLast($activity->subject_type, '\\') }}</div>
-                <div class="font-mono text-xs opacity-40">#{{ $activity->subject_id }}</div>
+                <div class="font-mono text-xs text-muted">#{{ $activity->subject_id }}</div>
             </div>
             @endscope
 
@@ -203,7 +203,7 @@
                             <span class="font-semibold opacity-70">{{ $field }}:</span>
                             @if (isset($changes['old'][$field]) && $changes['old'][$field] !== null && $changes['old'][$field] !== '')
                             <span class="text-error/70 line-through">{{ $formatValue($changes['old'][$field]) }}</span>
-                            <span class="opacity-40">→</span>
+                            <span class="text-muted">→</span>
                             @endif
                             <span class="text-success/80">{{ $formatValue($newValue) ?: '—' }}</span>
                         </div>
@@ -219,7 +219,7 @@
         </x-table>
 
         @if ($activities->total() === 0)
-        <div class="flex flex-col items-center justify-center py-12 opacity-40">
+        <div class="flex flex-col items-center justify-center py-12 text-muted">
             <x-icon name="o-document-magnifying-glass" class="w-12 h-12 mb-4" />
             <p class="text-sm italic">{{ __('No activity recorded yet.') }}</p>
         </div>

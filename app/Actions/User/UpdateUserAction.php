@@ -29,7 +29,9 @@ class UpdateUserAction
             'has_key' => $data->has_key,
             'licence' => $data->licence,
             'ranking' => $data->ranking ?? 'NA',
-            'committee_role' => $data->committee_role,
+            // committee_role is deliberately absent: the statutory title is a
+            // right, written by SyncUserAccessAction alongside the seat it
+            // belongs to, never by whoever edits the member's data.
             'updated_by' => $actor->id,
         ];
 
@@ -39,7 +41,7 @@ class UpdateUserAction
 
         $user->update($attributes);
 
-        SyncUserRolesAction::handle($user, $data->is_admin, $data->is_committee_member, $data->delegations);
+        SyncUserAccessAction::handle($user, $data->access, $actor);
 
         $user->guardians()->sync($data->guardianIds);
         SyncFamilyGroupMembersAction::handle($user, $data->familyMemberIds);

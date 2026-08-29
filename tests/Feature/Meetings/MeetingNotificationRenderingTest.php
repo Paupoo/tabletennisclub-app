@@ -22,13 +22,15 @@ describe('Meeting mails are rendered in French', function (): void {
 
         $mail = new MeetingInvitationNotification($meeting)->toMail($user);
 
-        expect($mail->subject)->toContain('Invitation : Réunion de comité')
+        // French puts a non-breaking space before a colon, so these assertions
+        // carry U+00A0 rather than a plain space — see the typography pass.
+        expect($mail->subject)->toContain("Invitation\u{A0}: Réunion de comité")
             ->and($mail->greeting)->toContain('Bonjour Aurélien')
             ->and(implode(' ', $mail->introLines))
             ->toContain('Vous êtes invité à')
-            ->toContain('**Lieu :**')
-            ->toContain('**Repas :**')
-            ->toContain('**Quorum requis :**')
+            ->toContain("**Lieu\u{A0}:**")
+            ->toContain("**Repas\u{A0}:**")
+            ->toContain("**Quorum requis\u{A0}:**")
             ->and($mail->actionText)->not->toContain('Respond to the invitation');
     });
 

@@ -70,6 +70,78 @@ test('all __() strings in the codebase are translated in fr_BE.json', function (
     );
 });
 
+test('English sentences shown to members are translated in fr_BE.json', function () use ($basePath): void {
+    /**
+     * Keys whose fr_BE value used to be the English key itself, so a French
+     * speaker read English. Single words that are spelled the same in both
+     * languages (Score, Format, Total…) are deliberately absent.
+     *
+     * 'Cannot mark as paid from pending status. Confirm first.' is absent on
+     * purpose: it is the message of a LogicException that signals a programmer
+     * error and never reaches a member, and its two sibling states throw the
+     * same family of exception in plain English. It no longer goes through
+     * __(), so there is nothing left to translate.
+     *
+     * @var string[]
+     */
+    $keys = [
+        'Bye',
+        'Confirm and close',
+        'Could not load data.',
+        'Doubles',
+        'Export CSV',
+        'Export ODS',
+        'Export XLSX',
+        'Import transactions from your bank (CODA/CSV)',
+        'No matches found for this team.',
+        'No players on the waitlist.',
+        'Remove from team',
+        'Singles',
+        'You are already registered.',
+        'You are on the waitlist.',
+        'You are registered!',
+        'You have been removed from the waitlist.',
+        'You have successfully registered for this tournament.',
+        'You have successfully unregistered from this tournament.',
+        'Your spot has been confirmed.',
+    ];
+
+    $translations = json_decode(file_get_contents($basePath . '/lang/fr_BE.json'), associative: true);
+
+    $untranslated = array_values(array_filter(
+        $keys,
+        fn (string $key): bool => ($translations[$key] ?? $key) === $key,
+    ));
+
+    expect($untranslated)->toBeEmpty(
+        count($untranslated) . " key(s) still reading English in fr_BE.json:\n- " . implode("\n- ", $untranslated),
+    );
+});
+
+test('fr_BE values use a non-breaking space before double punctuation', function () use ($basePath): void {
+    $translations = json_decode(file_get_contents($basePath . '/lang/fr_BE.json'), associative: true);
+
+    /**
+     * A plain U+0020 followed by ? ! or ;, or by a colon that does not open a
+     * Laravel placeholder such as :amount. French typography requires U+00A0 there.
+     */
+    $offenders = [];
+
+    foreach ($translations as $key => $value) {
+        if (! is_string($value)) {
+            continue;
+        }
+
+        if (preg_match('/ (?:[?!;]|:(?![A-Za-z_]))/u', $value) === 1) {
+            $offenders[] = $key . ' => ' . $value;
+        }
+    }
+
+    expect($offenders)->toBeEmpty(
+        count($offenders) . " fr_BE value(s) with a breaking space before double punctuation:\n- " . implode("\n- ", $offenders),
+    );
+});
+
 test('all __() strings in the codebase are translated in nl_BE.json', function () use ($basePath): void {
     $translated = json_decode(file_get_contents($basePath . '/lang/nl_BE.json'), associative: true);
 

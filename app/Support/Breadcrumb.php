@@ -25,7 +25,7 @@ final class Breadcrumb
 
     public function articles(?string $url = null): Breadcrumb
     {
-        return $this->add(__('Articles'), $url ?: route('admin.website.articles.index'), 's-home');
+        return $this->add(__('Articles'), $url ?: route('admin.website.articles.index'));
     }
 
     public function contacts(?string $url = null): Breadcrumb
@@ -40,17 +40,17 @@ final class Breadcrumb
 
     public function events(?string $url = null): Breadcrumb
     {
-        return $this->add(__('Events'), $url ?: route('eventPosts'), 's-home');
+        return $this->add(__('Events'), $url ?: route('eventPosts'));
     }
 
     public function home(?string $url = null): Breadcrumb
     {
-        return $this->add(__('Admin Panel'), $url ?: route('dashboard'), 's-home');
+        return $this->add(__('Admin Panel'), $url ?: route('dashboard'), 'o-home');
     }
 
     public function matches(?string $url = null): Breadcrumb
     {
-        return $this->add(__('Matches'), $url ?: route('admin.interclubs.interclubs'), 's-home');
+        return $this->add(__('Matches'), $url ?: route('admin.interclubs.interclubs'));
     }
 
     public function meetings(?string $url = null): Breadcrumb

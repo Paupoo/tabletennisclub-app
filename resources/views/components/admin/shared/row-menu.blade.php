@@ -30,6 +30,7 @@
     carries only what they are allowed to do. --}}
     @if (filled($label))
         <x-button
+            data-row-menu-primary
             :label="$label"
             :icon="$icon"
             :link="$link"
@@ -71,8 +72,6 @@
         >
             <div class="px-4 pt-3 pb-1 text-sm font-semibold lg:hidden">{{ __('Choose an action') }}</div>
 
-            {{-- 44px is the Apple HIG comfort target; daisyUI's menu rows come in at 38.
-            The sheet is the one place a thumb operates, so it gets the taller rows. --}}
             {{-- 44px is the Apple HIG comfort target; daisyUI's menu rows come in at 38.
             The sheet is the one place a thumb operates, so it gets the taller rows. --}}
             <ul class="menu w-full [&_li>*]:min-h-11 lg:[&_li>*]:min-h-9">

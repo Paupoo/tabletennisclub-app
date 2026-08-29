@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Domains\Competitions\Tournament\Notifications;
 
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class TournamentCancelledNotification extends Notification
 {
-    use Queueable;
+    use LinksToMemberSpace, Queueable;
 
     public function __construct(
         public Tournament $tournament,
@@ -23,7 +24,7 @@ class TournamentCancelledNotification extends Notification
         return [
             'title' => __('Tournament cancelled: :name', ['name' => $this->tournament->name]),
             'body' => __('The tournament has been cancelled'),
-            'url' => route('admin.tournaments.index'),
+            'url' => $this->memberEventsUrl($notifiable),
             'category' => 'tournament',
             'icon' => 'o-trophy',
         ];

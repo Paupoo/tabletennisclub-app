@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\League;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Role;
 
 /*
@@ -75,4 +79,39 @@ it('still shows the contacts and members menus to a committee member', function 
     expect(renderAdminNavigation($committee))
         ->toContain(route('admin.website.contacts.index'))
         ->toContain(route('admin.users.index'));
+});
+
+/*
+ * A captain is a relation (teams.captain_id), never a délégation. The Gates
+ * guarding the selections and results screens say so explicitly, but the menu
+ * asked for the selections.manage / results.manage permissions instead — so a
+ * plain captain could use the pages and never find them.
+ */
+it('shows the selections and results menus to a plain captain holding no permission', function (): void {
+    $captain = User::factory()->isCompetitor()->create();
+
+    $season = Season::factory()->create(['is_active' => true]);
+    $league = League::factory()->create([
+        'season_id' => $season->id,
+        'category' => 'MEN',
+    ]);
+    Team::factory()->create([
+        'season_id' => $season->id,
+        'league_id' => $league->id,
+        'club_id' => Club::factory()->ownClub()->create()->id,
+        'captain_id' => $captain->id,
+    ]);
+
+    expect(renderAdminNavigation($captain))
+        ->toContain(route('admin.interclubs.captain-selection'))
+        ->toContain(route('admin.interclubs.results'))
+        // …without opening the season configuration, which stays committee-only.
+        ->not->toContain(route('admin.interclubs.teams'))
+        ->not->toContain(route('admin.users.index'));
+});
+
+it('keeps the interclubs menu hidden from a member who captains nothing', function (): void {
+    expect(renderAdminNavigation(User::factory()->isCompetitor()->create()))
+        ->not->toContain(route('admin.interclubs.captain-selection'))
+        ->not->toContain(route('admin.interclubs.results'));
 });

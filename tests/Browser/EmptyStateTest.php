@@ -15,7 +15,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
  * clear the filters, or create the first record.
  */
 
-const EMPTY_STATE_READING = <<<'JS'
+const EMPTY_STATE_READING = <<<'JS_WRAP'
 (() => {
   const main = document.querySelector('main') || document.body;
   const text = el => (el.textContent || '').replace(/\s+/g, ' ').trim();
@@ -35,7 +35,7 @@ const EMPTY_STATE_READING = <<<'JS'
     actions: [...block.querySelectorAll('a[href], button')].map(text).filter(Boolean),
   });
 })()
-JS;
+JS_WRAP;
 
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->isCommitteeMember()->create();

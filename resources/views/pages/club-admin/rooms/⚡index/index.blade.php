@@ -79,7 +79,7 @@
     @if ($unassignedTables->isNotEmpty())
         <div class="mt-10">
             <div class="mb-3 flex items-center gap-3">
-                <h2 class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('Unassigned') }}</h2>
+                <h2 class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Unassigned') }}</h2>
                 <div class="h-px flex-1 bg-base-300"></div>
             </div>
 

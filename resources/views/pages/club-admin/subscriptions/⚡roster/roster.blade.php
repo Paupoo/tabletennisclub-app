@@ -21,7 +21,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition style="display:none">
         <div class="flex items-center gap-2 px-4 py-2.5">
             <div class="flex flex-1 items-center gap-2 rounded-xl bg-base-200 px-3 py-2">
@@ -129,42 +129,42 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Competitive') }}
                 </p>
                 <x-select :options="$triStateOptions" :placeholder="__('Any')"
                     wire:model.live="competitive" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Can drive') }}
                 </p>
                 <x-select :options="$triStateOptions" :placeholder="__('Any')"
                     wire:model.live="canDrive" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Captain') }}
                 </p>
                 <x-select :options="$triStateOptions" :placeholder="__('Any')"
                     wire:model.live="wantsToBeCaptain" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Volunteer') }}
                 </p>
                 <x-select :options="$triStateOptions" :placeholder="__('Any')"
                     wire:model.live="volunteerHelp" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Directed') }}
                 </p>
                 <x-select :options="$triStateOptions" :placeholder="__('Any')"
                     wire:model.live="wantsDirectedTraining" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Age category') }}
                 </p>
                 <x-select :options="$ageCategoryOptions" :placeholder="__('All age categories')"

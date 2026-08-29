@@ -20,14 +20,14 @@ Trois familles cohabitent, et une seule décide :
 
 Accès sans restriction à toute l'application.
 
-Détient les 59 permissions. Accordées explicitement plutôt que
+Détient les 60 permissions. Accordées explicitement plutôt que
 par un court-circuit `Gate::before`, car certaines policies encodent des règles qui
 doivent survivre à un administrateur — il ne peut toujours pas supprimer son propre
 compte.
 
 ### Membre du comité — `comite`
 
-Accès de base au back-office : consulter les données du club sans les gérer.
+Accès de base au back-office : consulter les données du club sans les gérer.
 
 - `users.view`
 - `subscriptions.view`
@@ -46,9 +46,16 @@ Accès de base au back-office : consulter les données du club sans les gérer.
 
 Chacune peut être confiée à n'importe quel membre, qu'il siège au comité ou non.
 
+### Accès et droits — `acces`
+
+Attribue les délégations et le siège au comité. N'ouvre pas la fiche du membre elle-même.
+
+- `users.view`
+- `access.manage`
+
 ### Bar — `bar`
 
-Gérer le bar : produits, stock, commandes et feuille de caisse.
+Gérer le bar : produits, stock, commandes et feuille de caisse.
 
 - `bar.access`
 - `bar.products.manage`

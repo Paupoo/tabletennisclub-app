@@ -7,6 +7,7 @@ namespace App\Domains\Competitions\Tournament\Notifications;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -14,7 +15,7 @@ use Illuminate\Notifications\Notification;
 
 class TournamentPaymentReminderNotification extends Notification
 {
-    use Queueable;
+    use LinksToMemberSpace, Queueable;
 
     public function __construct(
         public Tournament $tournament,
@@ -28,7 +29,7 @@ class TournamentPaymentReminderNotification extends Notification
         return [
             'title' => __('Payment reminder: :name', ['name' => $this->tournament->name]),
             'body' => __('See the tournament details'),
-            'url' => route('admin.tournaments.index'),
+            'url' => $this->memberEventsUrl($notifiable),
             'category' => 'tournament',
             'icon' => 'o-trophy',
         ];

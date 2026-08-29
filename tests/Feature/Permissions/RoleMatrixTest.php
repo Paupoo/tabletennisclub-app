@@ -116,3 +116,45 @@ describe('the retired flags each have a role', function (): void {
         expect(User::factory()->create()->getAttributes())->not->toHaveKey($flag);
     })->with(['is_admin', 'is_committee_member', 'is_coach', 'is_selector']);
 });
+
+/*
+| `acces` is the délégation that hands out délégations. It is the only one whose
+| own checkbox an administrator has to tick, and the only one that reaches a
+| member's file without being allowed to edit it — hence its own block.
+*/
+describe('the access delegation', function (): void {
+    it('reaches the member file without being allowed to edit it', function (): void {
+        expect(Role::ACCESS->permissions())
+            ->toContain(Permission::UsersView)
+            ->toContain(Permission::AccessManage)
+            ->not->toContain(Permission::UsersUpdate);
+    });
+
+    it('stays a délégation even though only an administrator may hand it out', function (): void {
+        expect(Role::ACCESS->isDelegation())->toBeTrue()
+            ->and(Role::ACCESS->isReservedToAdministrators())->toBeTrue();
+    });
+
+    it('is the only role the matrix reserves to administrators', function (): void {
+        $reserved = array_values(array_filter(
+            Role::cases(),
+            static fn (Role $role): bool => $role->isReservedToAdministrators(),
+        ));
+
+        expect($reserved)->toBe([Role::ACCESS]);
+    });
+
+    it('is never suggested by a statutory title', function (CommitteeRolesEnum $title): void {
+        expect(Role::suggestedFor($title))->not->toContain(Role::ACCESS);
+    })->with(CommitteeRolesEnum::cases());
+
+    it('grants its holder the rights layer and nothing of the data layer', function (): void {
+        $delegate = User::factory()->withRole(Role::ACCESS)->create();
+
+        expect($delegate)
+            ->can(Permission::UsersView->value)->toBeTrue()
+            ->can(Permission::AccessManage->value)->toBeTrue()
+            ->can(Permission::UsersUpdate->value)->toBeFalse()
+            ->can(Permission::UsersCreate->value)->toBeFalse();
+    });
+});

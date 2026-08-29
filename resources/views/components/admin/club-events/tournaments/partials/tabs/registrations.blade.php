@@ -68,7 +68,6 @@
 
         @php
             $registrationCount = $this->registrations->count();
-            $capacity = $maxUsers > 0 ? $maxUsers : $this->simulation->totalPlayers;
             $waitlistCount = $this->waitlist->count();
         @endphp
 
@@ -88,7 +87,7 @@
                 </x-slot:menu>
 
                 <div class="space-y-0">
-                    <div class="flex justify-between font-bold border-b border-base-300 pb-1 mb-1 opacity-50 text-xs px-2">
+                    <div class="flex justify-between font-bold border-b border-base-300 pb-1 mb-1 text-muted text-xs px-2">
                         <span class="w-6 text-center">#</span>
                         <span class="flex-1 ml-2">{{ __('Player') }}</span>
                         <span class="w-16 text-right">{{ __('Rank') }}</span>
@@ -101,7 +100,7 @@
                             <span class="w-6 text-center font-mono font-bold text-warning-content">{{ $entry['position'] }}</span>
                             <span class="flex-1 font-medium truncate">{{ $entry['name'] }}</span>
                             <span class="w-16 text-right font-mono text-xs opacity-60">{{ $entry['ranking'] }}</span>
-                            <span class="w-28 text-right text-xs opacity-50">
+                            <span class="w-28 text-right text-xs text-muted">
                                 {{ \Carbon\Carbon::parse($entry['registered_at'])->format('d/m H:i') }}
                             </span>
                             <div class="w-20 flex justify-end gap-1">

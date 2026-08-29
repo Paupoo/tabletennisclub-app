@@ -23,7 +23,7 @@
                 <x-input-label :value="__('Choose the recurrence')" class="mb-3" />
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <label for="none" class="relative flex items-center gap-2 px-4 py-3 border rounded-lg cursor-pointer transition-colors"
-                        :class="recurrence === '{{ \App\Domains\Shared\Enums\Recurrence::NONE->name }}' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
+                        :class="recurrence === '{{ \App\Domains\Shared\Enums\Recurrence::NONE->name }}' ? 'border-primary bg-primary/10' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
                         <x-radio-input id="none" name="recurrence"
                             value="{{ \App\Domains\Shared\Enums\Recurrence::NONE->name }}"
                             :checked="old('recurrence') === \App\Domains\Shared\Enums\Recurrence::NONE->name"
@@ -33,7 +33,7 @@
                     </label>
 
                     <label for="daily" class="relative flex items-center gap-2 px-4 py-3 border rounded-lg cursor-pointer transition-colors"
-                        :class="recurrence === '{{ \App\Domains\Shared\Enums\Recurrence::DAILY->name }}' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
+                        :class="recurrence === '{{ \App\Domains\Shared\Enums\Recurrence::DAILY->name }}' ? 'border-primary bg-primary/10' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
                         <x-radio-input id="daily" name="recurrence"
                             value="{{ \App\Domains\Shared\Enums\Recurrence::DAILY->name }}"
                             :checked="old('recurrence') === \App\Domains\Shared\Enums\Recurrence::DAILY->name"
@@ -43,7 +43,7 @@
                     </label>
 
                     <label for="weekly" class="relative flex items-center gap-2 px-4 py-3 border rounded-lg cursor-pointer transition-colors"
-                        :class="recurrence === '{{ \App\Domains\Shared\Enums\Recurrence::WEEKLY->name }}' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
+                        :class="recurrence === '{{ \App\Domains\Shared\Enums\Recurrence::WEEKLY->name }}' ? 'border-primary bg-primary/10' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
                         <x-radio-input id="weekly" name="recurrence"
                             value="{{ \App\Domains\Shared\Enums\Recurrence::WEEKLY->name }}"
                             :checked="old('recurrence') === \App\Domains\Shared\Enums\Recurrence::WEEKLY->name"
@@ -53,7 +53,7 @@
                     </label>
 
                     <label for="biweekly" class="relative flex items-center gap-2 px-4 py-3 border rounded-lg cursor-pointer transition-colors"
-                        :class="recurrence === '{{ \App\Domains\Shared\Enums\Recurrence::BIWEEKLY->name }}' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
+                        :class="recurrence === '{{ \App\Domains\Shared\Enums\Recurrence::BIWEEKLY->name }}' ? 'border-primary bg-primary/10' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
                         <x-radio-input id="biweekly" name="recurrence"
                             value="{{ \App\Domains\Shared\Enums\Recurrence::BIWEEKLY->name }}"
                             :checked="old('recurrence') === \App\Domains\Shared\Enums\Recurrence::BIWEEKLY->name"

@@ -19,15 +19,17 @@
         </x-slot:actions>
     </x-header>
 
+    {{-- ── Season: navigation, not a filter (DS-A) ──────────────────────────── --}}
+    <x-admin.shared.season-nav model="seasonId" :options="$seasons" class="mt-4" />
+
     {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     @if (! $seasonId)
-        <x-card class="mt-4 border-none">
-            <p class="py-12 text-center text-sm text-gray-500">{{ __('Select a season to manage the schedule.') }}</p>
-        </x-card>
+        <x-admin.shared.missing-season-state
+            :message="__('The match schedule belongs to a season. Open one to plan and record its matches.')" />
     @elseif ($grouped->isEmpty())
-        <x-card class="mt-4 border-none">
+        <x-card class="mt-4">
             <div class="py-16 text-center text-gray-500">
                 {{ __('No matches scheduled for this season.') }}
                 <div class="mt-4">
@@ -54,19 +56,26 @@
                     <div class="space-y-6">
                             @foreach ($teams->sortKeys() as $teamName => $matches)
                                 <section x-data="{ open: false }">
-                                    <div
-                                        class="mb-3 flex w-full cursor-pointer items-center gap-3"
-                                        @click="open = !open"
-                                    >
-                                        <span class="bg-base-200 rounded-lg px-3 py-1.5 text-sm font-bold">{{ $teamName }}</span>
-                                        <span class="text-base-content/40 text-xs">{{ $matches->count() }} match{{ $matches->count() > 1 ? 's' : '' }}</span>
-                                        <div class="border-base-200 flex-1 border-t"></div>
+                                    {{-- Le dépliant est un bouton — il ne pouvait pas en contenir un
+                                         second, « Ajouter un match » est donc passé à côté. Ce bouton
+                                         nommé remplace l'infobulle du « + » : celle-ci mesurait 145 px
+                                         sur un bouton de 30, et débordait la page de 46 px (fiche IC-4). --}}
+                                    <div class="mb-3 flex w-full items-center gap-3">
+                                        <button type="button"
+                                            class="flex flex-1 cursor-pointer items-center gap-3 text-left"
+                                            @click="open = !open"
+                                            :aria-expanded="open ? 'true' : 'false'"
+                                        >
+                                            <span class="bg-base-200 rounded-lg px-3 py-1.5 text-sm font-bold">{{ $teamName }}</span>
+                                            <span class="text-base-content/40 text-xs">{{ $matches->count() }} match{{ $matches->count() > 1 ? 's' : '' }}</span>
+                                            <div class="border-base-300 flex-1 border-t"></div>
+                                            <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
+                                        </button>
                                         <x-button
-                                            class="btn-ghost btn-sm btn-circle"
+                                            class="btn-ghost btn-sm shrink-0"
                                             icon="o-plus"
-                                            :tooltip="__('Add match for this team')"
-                                            wire:click.stop="openCreateModal({{ $matches->first()['our_team_id'] }})" :aria-label="__('Add match for this team')" />
-                                        <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
+                                            :label="__('Add a match')"
+                                            wire:click.stop="openCreateModal({{ $matches->first()['our_team_id'] }})" />
                                     </div>
 
                                     <div x-show="open" x-collapse>
@@ -76,7 +85,7 @@
                                                     <div class="hover:bg-base-50 flex items-center gap-4 px-4 py-3 transition-colors">
                                                         {{-- Week badge --}}
                                                         <div class="bg-base-200 flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl">
-                                                            <div class="text-[8px] font-black uppercase opacity-40">S</div>
+                                                            <div class="text-xs font-black uppercase opacity-40">S</div>
                                                             <div class="text-sm font-black leading-none">{{ isset($match['week']) ? ($matchDayMap[$match['week']] ?? $match['week']) : '—' }}</div>
                                                         </div>
 
@@ -189,19 +198,7 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                    {{ __('Season') }}
-                </p>
-                <x-select
-                    :options="$seasons"
-                    option-label="name"
-                    option-value="id"
-                    wire:model.live="seasonId"
-                    :placeholder="__('Select a season')"
-                    class="w-full" />
-            </div>
-            <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Team') }}
                 </p>
                 <x-select

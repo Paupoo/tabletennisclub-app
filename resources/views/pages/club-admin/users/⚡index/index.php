@@ -387,6 +387,7 @@ new class extends Component
             ['key' => 'email',          'label' => __('Email'),   'sortable' => true],
             ['key' => 'is_competitive', 'label' => __('Licence'), 'sortable' => true],
             ['key' => 'ranking',        'label' => __('Ranking'), 'sortable' => true],
+            ['key' => 'status',         'label' => __('Status'),  'sortable' => false],
         ];
     }
 
@@ -418,6 +419,20 @@ new class extends Component
             ['id' => 'competitive', 'name' => __('Competitive')],
             ['id' => 'recreative',  'name' => __('Recreative')],
         ];
+    }
+
+    /**
+     * Whether the visitor may open a member's file — for their data, for their
+     * rights, or for both.
+     *
+     * The list carries five "Edit" links across its desktop and mobile twins,
+     * and all five ask this rather than `update` alone: an access manager holds
+     * no `users.update`, and asking for it would show them a directory whose
+     * every row leads nowhere.
+     */
+    public function mayOpenMemberFile(User $user): bool
+    {
+        return Gate::allows('update', $user) || Gate::allows('manageAccess', $user);
     }
 
     public function openAnonymizeModal(int $userId): void

@@ -7,7 +7,7 @@
         <span class="relative inline-flex">
             <x-icon name="o-bell" class="h-5 w-5" />
             @if ($unreadCount > 0)
-                <span class="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-error px-0.5 text-[9px] font-bold leading-none text-error-content">
+                <span class="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-0.5 text-xs font-bold leading-none text-error-content">
                     {{ $unreadCount }}
                 </span>
             @endif

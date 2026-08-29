@@ -22,6 +22,7 @@ use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Support\AddressNormalizer;
 use App\Domains\Shared\Support\IbanNormalizer;
 use App\Domains\Shared\Traits\HasAuditLog;
@@ -67,7 +68,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $street
  * @property string|null $city_code
  * @property string|null $city_name
- * @property string $ranking
+ * @property Ranking $ranking
  * @property string|null $licence
  * @property int|null $force_list
  * @property int|null $force_list_women
@@ -133,7 +134,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read Collection<int, User> $dependents
  * @property-read int|null $dependents_count
  * @property-read string $full_name
- * @property-read Collection<int, User> $guardians
+ * @property-read Collection<int, Guardian> $guardians
  * @property-read int|null $guardians_count
  * @property-read Collection<int, Meeting> $meetings
  * @property-read int|null $meetings_count
@@ -195,7 +196,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'street' => 'string',
         'city_code' => 'string',
         'city_name' => 'string',
-        'ranking' => 'string',
+        'ranking' => Ranking::class,
         'licence' => 'string',
         'force_list' => 'integer',
         'force_list_women' => 'integer',
@@ -502,6 +503,9 @@ class User extends Authenticatable implements MustVerifyEmail
             ->exists();
     }
 
+    /**
+     * @return BelongsToMany<Guardian, $this>
+     */
     public function guardians(): BelongsToMany
     {
         return $this->belongsToMany(Guardian::class, 'guardian_user');
@@ -610,6 +614,30 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Meeting::class)
             ->withPivot(['status', 'invitation_sent_at', 'response_at'])
             ->withTimestamps();
+    }
+
+    /**
+     * Whose my-space a notification about this member should link to.
+     *
+     * Every my-space page is self-only (`abort_unless(Auth::user()->is($user))`),
+     * so a link is only useful to whoever can actually sign in. A managed member
+     * has no address of their own, which is exactly what says they have no login
+     * either — the mail went to a guardian, and it is the guardian's my-space
+     * that lists the ward. Same fallback as {@see self::contactEmail()}, so the
+     * link and the envelope always agree on who is being addressed.
+     *
+     * Falls back to the member when no guardian holds an account: a dead link is
+     * still better than pointing at somebody who cannot be reached either.
+     */
+    public function mySpaceOwner(): self
+    {
+        if ($this->email !== null) {
+            return $this;
+        }
+
+        return $this->guardians
+            ->map(fn (Guardian $guardian): ?self => $guardian->member)
+            ->first(fn (?self $member): bool => $member?->email !== null) ?? $this;
     }
 
     /**

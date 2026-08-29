@@ -49,7 +49,7 @@
         @foreach ($this->pools as $poolId => $data)
             <x-card wire:key="pool-card-{{ $poolId }}" title="{{ $data['name'] }}" shadow compact class="border-0">
                 <div>
-                    <div class="flex justify-between font-bold border-b border-base-300 pb-1 mb-1 opacity-50 text-sm">
+                    <div class="flex justify-between font-bold border-b border-base-300 pb-1 mb-1 text-muted text-sm">
                         <span>{{ __('Player') }}</span>
                         <div class="flex gap-4">
                             <span class="w-10 text-right">{{ __('Rank.') }}</span>
@@ -80,8 +80,9 @@
 
     {{-- Generate Matches --}}
     <div class="mt-6 flex justify-center">
-        <x-button :label="$this->matchesGenerated ? __('Matches ready') . ' ✓' : __('Generate Matches')"
-            icon="o-table-cells"
+        {{-- The state rides on the icon, not on a check glued to the label. --}}
+        <x-button :label="$this->matchesGenerated ? __('Matches ready') : __('Generate Matches')"
+            :icon="$this->matchesGenerated ? 'o-check' : 'o-table-cells'"
             :class="$this->matchesGenerated ? 'btn-success btn-outline' : 'btn-secondary'"
             wire:click="generateMatches"
             spinner="generateMatches"
@@ -104,9 +105,9 @@
                         <div class="space-y-1">
                             @foreach ($poolData['matches'] as $match)
                                 <div class="flex items-center gap-2 py-1 border-b border-base-300/30 text-sm">
-                                    <span class="font-mono text-xs opacity-40 w-5 text-right">{{ $match['order'] }}</span>
+                                    <span class="font-mono text-xs text-muted w-5 text-right">{{ $match['order'] }}</span>
                                     <span class="flex-1 truncate">{{ $match['p1'] }}</span>
-                                    <span class="text-xs opacity-40 font-bold">vs</span>
+                                    <span class="text-xs text-muted font-bold">vs</span>
                                     <span class="flex-1 truncate text-right">{{ $match['p2'] }}</span>
                                 </div>
                             @endforeach
@@ -117,7 +118,7 @@
         </div>
     @endif
 @else
-    <div class="flex flex-col items-center py-16 opacity-40">
+    <div class="flex flex-col items-center py-16 text-muted">
         <x-icon name="o-user-group" class="w-12 h-12 mb-3" />
         <p class="text-sm">{{ $this->registrationClosed ? __('Click "Generate Pools" to distribute players.') : __('Close registrations first.') }}</p>
     </div>

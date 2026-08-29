@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header separator :subtitle="__('Tournaments, dinners, and club meetings')"
+    <x-header progress-indicator separator :subtitle="__('Tournaments, dinners, and club meetings')"
         :title="__('Events and Activities')">
         <x-slot:actions>
             <x-admin.shared.mobile-header-actions :filter-count="count($this->getFilterChips())"
@@ -231,7 +231,7 @@
                 <x-card icon="o-academic-cap" separator :title="__('My upcoming sessions')">
                     <div class="space-y-2">
                         @foreach ($this->upcomingTrainingSessions as $session)
-                            <div class="flex items-center justify-between rounded-lg border border-base-200 px-3 py-2">
+                            <div class="flex items-center justify-between rounded-lg border border-base-300 px-3 py-2">
                                 <div class="flex items-center gap-3">
                                     <div class="text-center">
                                         <div class="text-xs font-bold uppercase text-base-content/50">
@@ -261,7 +261,7 @@
             @if ($this->myPastTournaments->isNotEmpty())
                 <x-collapse>
                     <x-slot:heading>
-                        <div class="text-sm font-bold opacity-40">
+                        <div class="text-sm font-bold text-muted">
                             {{ __('Past tournaments') }}
                             <span class="ml-1 font-normal">({{ $this->myPastTournaments->count() }})</span>
                         </div>
@@ -316,7 +316,7 @@
             @endif
             <img
                 alt="QR Code"
-                class="w-48 h-48 rounded-xl border border-base-200 shadow"
+                class="w-48 h-48 rounded-xl border border-base-300 shadow"
                 src="{{ $paymentQr }}"
             />
             <div class="w-full divide-y divide-base-200 text-sm">

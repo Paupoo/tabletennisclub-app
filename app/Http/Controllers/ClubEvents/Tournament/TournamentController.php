@@ -8,7 +8,6 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
-use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
@@ -132,7 +131,7 @@ class TournamentController extends Controller
                 ->with('already_on_list', true);
         }
 
-        if ($tournament->status !== TournamentStatusEnum::PUBLISHED) {
+        if (! $tournament->registrationsAreOpen()) {
             return redirect()
                 ->route('tournament.registration.confirmed', $tournament)
                 ->with('error', 'Registrations are closed for this tournament.');

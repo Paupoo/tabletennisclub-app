@@ -333,7 +333,7 @@ new class extends Component
     #[Computed]
     public function upcomingTournaments(): Collection
     {
-        return Tournament::where('status', TournamentStatusEnum::PUBLISHED)
+        return Tournament::registrationsOpen()
             ->where('start_date', '>=', now())
             ->withCount([
                 'users AS active_registrations_count' => fn ($q) => $q->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered']),

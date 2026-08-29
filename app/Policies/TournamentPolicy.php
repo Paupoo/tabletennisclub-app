@@ -56,7 +56,7 @@ class TournamentPolicy
      */
     public function updatesBeforeStart(User $user, Tournament $tournament): bool
     {
-        return $user->can(Permission::TournamentsManage->value) && $tournament->status->value === TournamentStatusEnum::PUBLISHED->value;
+        return $user->can(Permission::TournamentsManage->value) && $tournament->registrationsAreOpen();
     }
 
     /**
@@ -64,7 +64,7 @@ class TournamentPolicy
      */
     public function updateSubscriptionAsUser(User $user, Tournament $tournament): bool
     {
-        return $tournament->status->value === TournamentStatusEnum::PUBLISHED->value;
+        return $tournament->registrationsAreOpen();
     }
 
     /**

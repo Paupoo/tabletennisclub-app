@@ -14,15 +14,15 @@
 <div class="mt-8 flex flex-col gap-4 md:gap-6 @if($this->isLaunched) pointer-events-none opacity-60 @endif">
 
     {{-- ── Section 1 : Details ─────────────────────────────────────────── --}}
-    <x-admin.shared.form-section title="Details"
-        subtitle="Define the framework for your competition: location, date and rules of the game.">
+    <x-admin.shared.form-section :title="__('Details')"
+        :subtitle="__('Define the framework for your competition: location, date and rules of the game.')">
 
         <div class="lg:col-span-2 space-y-6">
             <div class="grid md:grid-cols-2 gap-5">
 
                 {{-- Name — locked after validation --}}
                 <div class="md:col-span-2">
-                    <x-input label="Tournament name(*)" placeholder="Ex: Spring Grand Prix" icon="o-trophy"
+                    <x-input :label="__('Tournament name(*)')" :placeholder="__('Ex: Spring Grand Prix')" icon="o-trophy"
                         wire:model.live.debounce.500ms="name"
                         :readonly="$this->isContractLocked"
                         :hint="$this->isContractLocked ? __('Locked — tournament validated') : null" />
@@ -30,7 +30,7 @@
 
                 {{-- Rooms — always editable, notification if players registered --}}
                 <div class="relative">
-                    <x-choices label="Room(s)(*)" wire:model.live="selectedRooms" :options="$this->availableRooms"
+                    <x-choices :label="__('Room(s)(*)')" wire:model.live="selectedRooms" :options="$this->availableRooms"
                         icon="o-map-pin" />
                     @if ($this->hasRegisteredUsers)
                         <span class="absolute top-0 right-0 text-xs text-warning-content font-medium flex items-center gap-0.5">
@@ -50,7 +50,7 @@
 
                 {{-- Date — always editable, notification if players registered --}}
                 <div class="relative">
-                    <x-datepicker label="Date(*)" icon="o-calendar"
+                    <x-datepicker :label="__('Date(*)')" icon="o-calendar"
                         wire:model="tournamentDate" type="date" />
                     @if ($this->hasRegisteredUsers)
                         <span class="absolute top-0 right-0 text-xs text-warning-content font-medium flex items-center gap-0.5">
@@ -61,7 +61,7 @@
 
                 {{-- Time — always editable, notification if players registered --}}
                 <div class="relative">
-                    <x-input label="Start time(*)" type="time" icon="o-clock" wire:model="startTime" />
+                    <x-input :label="__('Start time(*)')" type="time" icon="o-clock" wire:model="startTime" />
                     @if ($this->hasRegisteredUsers)
                         <span class="absolute top-0 right-0 text-xs text-warning-content font-medium flex items-center gap-0.5">
                             <x-icon name="o-bell-alert" class="w-3 h-3" /> {{ __('Will notify') }}
@@ -75,7 +75,7 @@
                     :hint="__('Required before sending invitations')" />
 
                 {{-- Price — locked after validation --}}
-                <x-input label="Registration fee" suffix="€" type="number" icon="o-banknotes"
+                <x-input :label="__('Registration fee')" suffix="€" type="number" icon="o-banknotes"
                     wire:model="price"
                     :readonly="$this->isContractLocked"
                     :hint="$this->isContractLocked ? __('Locked — tournament validated') : null" />
@@ -91,26 +91,26 @@
     </x-admin.shared.form-section>
 
     {{-- ── Section 2 : Capacity & logistics ──────────────────────────────── --}}
-    <x-admin.shared.form-section title="Capacity and logistics"
-        subtitle="These physical parameters define the maximum number of playable matches. Everything else follows from this.">
+    <x-admin.shared.form-section :title="__('Capacity and logistics')"
+        :subtitle="__('These physical parameters define the maximum number of playable matches. Everything else follows from this.')">
 
-        <x-input wire:model.live.debounce.500ms="tournament_minutes" label="Total duration"
-            type="number" icon="o-clock" suffix="min" hint="Ex: 180 = 3 hours" min="60"
+        <x-input wire:model.live.debounce.500ms="tournament_minutes" :label="__('Total duration')"
+            type="number" icon="o-clock" suffix="min" :hint="__('Ex: 180 = 3 hours')" min="60"
             step="30" />
 
         {{-- nb_tables: auto from rooms, or manual if no rooms selected --}}
         @if (count($selectedRooms) > 0)
             <div>
-                <x-input label="Available tables" type="number" icon="o-table-cells"
-                    hint="Auto-computed from selected rooms" :value="$this->nbTables" readonly />
+                <x-input :label="__('Available tables')" type="number" icon="o-table-cells"
+                    :hint="__('Auto-computed from selected rooms')" :value="$this->nbTables" readonly />
             </div>
         @else
-            <x-input wire:model.live.debounce.500ms="nb_tables" label="Available tables" type="number"
-                icon="o-table-cells" hint="Select rooms above or enter manually" min="1" />
+            <x-input wire:model.live.debounce.500ms="nb_tables" :label="__('Available tables')" type="number"
+                icon="o-table-cells" :hint="__('Select rooms above or enter manually')" min="1" />
         @endif
 
-        <x-input wire:model.live.debounce.500ms="logistics_buffer" label="Buffer between matches"
-            type="number" icon="o-arrows-right-left" suffix="min" hint="Rotation, scoring, movement"
+        <x-input wire:model.live.debounce.500ms="logistics_buffer" :label="__('Buffer between matches')"
+            type="number" icon="o-arrows-right-left" suffix="min" :hint="__('Rotation, scoring, movement')"
             min="0" max="10" />
 
         {{-- Le plafond d'inscriptions suit la structure tant qu'on n'y touche pas.
@@ -135,11 +135,11 @@
     </x-admin.shared.form-section>
 
     {{-- ── Section 3 : Rules & format ─────────────────────────────────────── --}}
-    <x-admin.shared.form-section title="Rules and format"
-        subtitle="Sport parameters directly impact the number and duration of matches.">
+    <x-admin.shared.form-section :title="__('Rules and format')"
+        :subtitle="__('Sport parameters directly impact the number and duration of matches.')">
 
         <x-select :label="__('Match type(*)')" icon="o-user" wire:model.live="matchType"
-            :options="[['id' => 'single', 'name' => 'Singles'], ['id' => 'double', 'name' => 'Doubles']]" />
+            :options="[['id' => 'single', 'name' => __('Singles')], ['id' => 'double', 'name' => __('Doubles')]]" />
 
         @if ($matchType === 'double')
             <div class="flex flex-col gap-2">
@@ -166,7 +166,7 @@
 
         <x-select wire:model.live.debounce.500ms="totalSets" :options="$this->setOptions"
             :label="__('Winning sets(*)')" icon="o-star"
-            hint="Best of {{ ($this->totalSets * 2) - 1 }}" />
+            :hint="__('Best of :count', ['count' => ($this->totalSets * 2) - 1])" />
         <div class="flex flex-col gap-1">
             <x-toggle wire:model.live="deuceEnabled" :label="__('Deuce rule')" right />
             <p class="text-xs text-base-content/50 leading-tight">
@@ -196,28 +196,28 @@
         <x-input wire:model.live.debounce.500ms="nb_poules" :label="__('Number of pools(*)')"
             icon="o-calculator" type="number" min="1" />
         <x-select wire:model.live.debounce.500ms="pool_size" :label="__('Players per pool(*)')"
-            icon="o-user-group" :options="$poolSizeOptions" hint="Strong impact on match count" />
+            icon="o-user-group" :options="$poolSizeOptions" :hint="__('Strong impact on match count')" />
         <x-input wire:model.live.debounce.500ms="nb_qualifies" :label="__('Qualified per pool(*)')"
-            icon="o-trophy" type="number" hint="Players advancing to the bracket" min="1"
+            icon="o-trophy" type="number" :hint="__('Players advancing to the bracket')" min="1"
             numeric />
 
 
         <div class="lg:col-span-2">
-            <x-textarea label="Additional information" rows="4"
-                placeholder="Specific rules, dress code..." />
+            <x-textarea :label="__('Additional information')" rows="4"
+                :placeholder="__('Specific rules, dress code...')" />
         </div>
 
     </x-admin.shared.form-section>
 
     {{-- ── Section 4 : Objective & Suggestion ────────────────────────────── --}}
-    <x-admin.shared.form-section title="Optimization objective"
-        subtitle="Let the assistant suggest the best configuration for your constraints.">
+    <x-admin.shared.form-section :title="__('Optimization objective')"
+        :subtitle="__('Let the assistant suggest the best configuration for your constraints.')">
 
         <div class="lg:col-span-2 space-y-4">
             <x-select :label="__('Tournament objective')" icon="o-light-bulb"
                 wire:model.live="selectedObjective"
                 :options="$objectiveOptions"
-                placeholder="Choose an objective..." />
+                :placeholder="__('Choose an objective...')" />
 
             @if ($selectedObjective)
                 @php
@@ -258,10 +258,10 @@
             <x-slot:title>
                 <div class="flex items-center gap-2">
                     <x-icon name="o-beaker" class="w-4 h-4 shrink-0 text-base-content/50" />
-                    <span class="text-base font-semibold">Feasibility simulation</span>
+                    <span class="text-base font-semibold">{{ __('Feasibility simulation') }}</span>
 
                     @if ($risk === 'ok')
-                        <x-badge value="Feasible" class="badge-success badge-soft ml-auto" />
+                        <x-badge :value="__('Feasible')" class="badge-success badge-soft ml-auto" />
                     @elseif ($risk === 'warning')
                         <x-badge value="Tight" class="badge-warning badge-soft ml-auto" />
                     @else
@@ -290,7 +290,7 @@
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2 text-sm text-base-content/60">
                                 <x-icon name="o-clock" class="w-4 h-4 shrink-0" />
-                                <span>Estimated duration</span>
+                                <span>{{ __('Estimated duration') }}</span>
                             </div>
                             <div class="text-right text-sm">
                                 <span class="font-semibold tabular-nums {{ $durationRisk === 'error' ? 'text-error' : '' }}">
@@ -308,7 +308,7 @@
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2 text-sm text-base-content/60">
                                 <x-icon name="o-chart-bar" class="w-4 h-4 shrink-0" />
-                                <span>Table occupancy</span>
+                                <span>{{ __('Table occupancy') }}</span>
                             </div>
                             <span class="font-medium tabular-nums text-sm">{{ min($occupancy, 999) }}%</span>
                         </div>
@@ -329,42 +329,40 @@
                     <div class="flex items-center justify-between py-2.5">
                         <div class="flex items-center gap-2 text-sm text-base-content/60">
                             <x-icon name="o-user-group" class="w-4 h-4 shrink-0" />
-                            <span>Capacity</span>
+                            <span>{{ __('Capacity') }}</span>
                         </div>
                         <div class="text-right text-sm">
                             <span class="font-semibold tabular-nums">{{ $sim->totalPlayers }} {{ __('players') }}</span>
-                            <span class="text-base-content/40 ml-1">{{ $nb_poules }}×{{ $pool_size }} → {{ $sim->finalistsCount }} finalists</span>
+                            <span class="text-base-content/40 ml-1">{{ $nb_poules }}×{{ $pool_size }} → {{ $sim->finalistsCount }} {{ __('finalists') }}</span>
                         </div>
                     </div>
                     
                     <div class="flex items-center justify-between py-2.5">
                         <div class="flex items-center gap-2 text-sm text-base-content/60">
                             <x-icon name="o-table-cells" class="w-4 h-4 shrink-0" />
-                            <span>Total matches</span>
+                            <span>{{ __('Total matches') }}</span>
                         </div>
                         <div class="text-right text-sm">
                             <span class="font-semibold tabular-nums">{{ $sim->grandTotalMatches }}</span>
-                            <span class="text-base-content/40 ml-1">{{ $sim->poolMatchesTotal }}
-                                pools · {{ $sim->bracketMatchesTotal }} bracket</span>
+                            <span class="text-base-content/40 ml-1">{{ __(':pools in pools · :bracket in the bracket', ['pools' => $sim->poolMatchesTotal, 'bracket' => $sim->bracketMatchesTotal]) }}</span>
                         </div>
                     </div>
 
                     <div class="flex items-center justify-between py-2.5">
                         <div class="flex items-center gap-2 text-sm text-base-content/60">
                             <x-icon name="o-bolt" class="w-4 h-4 shrink-0" />
-                            <span>Matches per player</span>
+                            <span>{{ __('Matches per player') }}</span>
                         </div>
                         <div class="text-right text-sm">
                             <span class="font-semibold tabular-nums">{{ $sim->avgMatchesPerPlayer }}</span>
-                            <span class="text-base-content/40 ml-1">~{{ $sim->avgMatchMinutes }}min
-                                each</span>
+                            <span class="text-base-content/40 ml-1">{{ __('~:count min each', ['count' => $sim->avgMatchMinutes]) }}</span>
                         </div>
                     </div>
 
                     <div class="flex items-center justify-between py-2.5">
                         <div class="flex items-center gap-2 text-sm text-base-content/60">
                             <x-icon name="o-pause-circle" class="w-4 h-4 shrink-0" />
-                            <span>Avg wait between matches</span>
+                            <span>{{ __('Avg wait between matches') }}</span>
                         </div>
                         <div class="text-right text-sm">
                             <span class="font-semibold tabular-nums">~{{ $sim->avgWaitTimeMinutes }}min</span>
@@ -377,16 +375,16 @@
                 <div class="space-y-2 pt-1">
                     @if ($risk === 'danger')
                         <x-alert
-                            title="{{ $sim->grandTotalMatches - $sim->totalMatchCapacity }} matches over capacity"
-                            description="Reduce pools, pool size, or increase available tables / total duration."
+                            :title="__(':count matches over capacity', ['count' => $sim->grandTotalMatches - $sim->totalMatchCapacity])"
+                            :description="__('Reduce pools, pool size, or increase available tables / total duration.')"
                             icon="o-x-circle" class="alert-error alert-soft" />
                     @elseif ($risk === 'warning')
-                        <x-alert title="Tight schedule"
-                            description="Delays could compromise the end of the tournament. A 20% safety margin is recommended."
+                        <x-alert :title="__('Tight schedule')"
+                            :description="__('Delays could compromise the end of the tournament. A 20% safety margin is recommended.')"
                             icon="o-exclamation-triangle" class="alert-warning alert-soft" />
                     @else
-                        <x-alert title="Configuration looks good"
-                            description="Buffer: {{ $sim->safetyMarginMatches }} matches to absorb unexpected delays."
+                        <x-alert :title="__('Configuration looks good')"
+                            :description="__('Buffer: :count matches to absorb unexpected delays.', ['count' => $sim->safetyMarginMatches])"
                             icon="o-check-circle" class="alert-success alert-soft" />
                     @endif
 

@@ -26,7 +26,7 @@
                             :disabled="!$tournamentId" />
                     @endif
                     <x-button
-                        label="Bulk actions"
+                        :label="__('Bulk actions')"
                         icon="o-funnel"
                         class="btn-ghost btn-sm"
                         @click="$wire.bulkDrawer = true"

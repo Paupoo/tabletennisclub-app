@@ -29,6 +29,8 @@ enum Role: string
     case ACCESS = 'acces';
     case ADMINISTRATOR = 'administrateur';
     case BAR = 'bar';
+    case BARMAN = 'barman';
+    case STORE_KEEPER = 'storekeeper';
     case CASH_REGISTER = 'caisse';
     case COACH = 'coach';
     case COMMITTEE = 'comite';
@@ -99,6 +101,8 @@ enum Role: string
             self::COACH => __('Lead training sessions and record attendance.'),
             self::MEETINGS => __('Convene meetings, write and publish the minutes.'),
             self::BAR => __('Manage the bar: products, stock, orders and cash sheet.'),
+            self::BARMAN => __('Serve drinks and snacks, close orders and take over others.'),
+            self::STORE_KEEPER => __('Manage the stock, the products and the categories.'),
             self::FACILITIES => __('Manage rooms, tables and entrusted equipment.'),
             self::SEASONS => __('Open, close and provision the seasons.'),
             self::SUPERVISION => __('Read the audit log, monitor the queue, edit club settings.'),
@@ -143,6 +147,8 @@ enum Role: string
             self::COACH => __('Coach'),
             self::MEETINGS => __('Meetings'),
             self::BAR => __('Bar'),
+            self::BARMAN => __('Barman'),
+            self::STORE_KEEPER => __('Store keeper'),
             self::FACILITIES => __('Facilities'),
             self::SEASONS => __('Seasons'),
             self::SUPERVISION => __('Technical supervision'),
@@ -283,10 +289,20 @@ enum Role: string
 
             self::BAR => [
                 Permission::BarAccess,
-                Permission::BarProductsManage,
-                Permission::BarOrdersManage,
-                Permission::BarCashSheetSend,
             ],
+            self::BARMAN => [
+                Permission::BarAccess,
+                Permission::BarOrdersManage,
+                Permission::BarOrdersClose,
+                Permission::BarOrdersPay,
+                Permission::BarOrdersTakeover,
+                ],
+            self::STORE_KEEPER => [
+                Permission::BarAccess,
+                Permission::BarCategoriesManage,
+                Permission::BarProductsManage,
+                Permission::BarStockManage,
+                ],
 
             self::FACILITIES => [
                 Permission::RoomsManage,

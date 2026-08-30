@@ -89,77 +89,87 @@
         // Availability checkbox
         $checked = ((int) $p->is_available === 1);
         @endphp
-        <form method="POST" 
-            action="{{ route('bar.products.update', $p) }}" 
-            class="product-card">
-            @csrf
-            @method('PUT')
-            <div class="product-card-top">
-                <div>
-                    <p class="product-card-name">{{ $p->name }}</p>
-                    <p class="product-card-category">{{ $category->name }}</p>
-                </div>
-                
-                {{-- Use existing badge style tokens if you have them --}}
-                <span class="stock-badge {{ $danger ? 'stock-badge--low' : 'stock-badge--ok' }}">{{ $stock }} en stock</span>
-            </div>
-
-            <div class="product-compact-row">
-                <div class="product-field product-field--price">
-                    <label>Prix (€)</label>
-                    <input class="product-input" name="sale_price" inputmode="decimal" value="{{ number_format($p->sale_price / 100, 2, ',', '') }}">
-                </div>
-                
-                <div class="product-field product-field--stock">
-                    <label>Stock</label>
-                    <input type="number" min="0" name="stock" value="{{ $stock }}" class="product-input">
-                </div>
-                
-                <label class="avail-inline">
-                    {{-- Ensure 0 is sent when unchecked --}}
-                    <input type="hidden" name="is_available" value="0">
-                    <input type="checkbox" name="is_available" value="1" @checked($checked)>
-                    <span>Dispo</span>
-                </label>
-            </div>
-            
-            <div style="display:flex; gap:10px; margin-top:8px;">
-                {{-- UPDATE BUTTON (same form) --}}
-                <button type="submit" class="btn-save" style="flex:1;">💾 Sauvegarder</button>
-            </form>
-        
-        {{-- DELETE FORM (separate form, side by side) --}}
-        <div style="flex:1;" x-data="{ confirming: false }">
-            @if ($stock > 0)
-                <button class="btn btn-clear btn-block" type="button" disabled
-                    title="{{ __('Stock is not empty: cannot delete') }}">🗑 Supprimer</button>
-            @else
-                <button x-show="!confirming" class="btn btn-clear btn-block" type="button"
-                    @click="confirming = true">🗑 Supprimer</button>
-                <div x-show="confirming" x-cloak style="display:flex; flex-direction:column; gap:6px;">
-                    <span style="font-size:12px; color:#b91c1c;">{{ __('Delete') }} « {{ $p->name }} » ?</span>
-                    <div style="display:flex; gap:6px;">
-                        <form method="POST" action="{{ route('bar.products.destroy', $p) }}" style="flex:1;">
-                            @csrf
-                            @method('DELETE')
-                            <button class="btn btn-clear btn-block" type="submit">✓ Oui</button>
-                        </form>
-                        <button class="btn btn-block" type="button" style="flex:1;"
-                            @click="confirming = false">✕ Non</button>
+        <div class="product-card">
+            {{-- UPDATE FORM: only wraps the editable fields. The save button below
+                 references it via the form="" attribute so it can sit next to the
+                 delete controls without being nested inside this form. --}}
+            <form id="product-update-{{ $p->id }}" method="POST"
+                action="{{ route('bar.products.update', $p) }}">
+                @csrf
+                @method('PUT')
+                <div class="product-card-top">
+                    <div>
+                        <p class="product-card-name">{{ $p->name }}</p>
+                        <p class="product-card-category">{{ $category->name }}</p>
                     </div>
+
+                    {{-- Use existing badge style tokens if you have them --}}
+                    <span class="stock-badge {{ $danger ? 'stock-badge--low' : 'stock-badge--ok' }}">{{ $stock }} en stock</span>
                 </div>
-            @endif
+
+                <div class="product-compact-row">
+                    <div class="product-field product-field--price">
+                        <label>Prix (€)</label>
+                        <input class="product-input" name="sale_price" inputmode="decimal" value="{{ number_format($p->sale_price / 100, 2, ',', '') }}">
+                    </div>
+
+                    <div class="product-field product-field--stock">
+                        <label>Stock</label>
+                        <input type="number" min="0" name="stock" value="{{ $stock }}" class="product-input">
+                    </div>
+
+                    <label class="avail-inline">
+                        {{-- Ensure 0 is sent when unchecked --}}
+                        <input type="hidden" name="is_available" value="0">
+                        <input type="checkbox" name="is_available" value="1" @checked($checked)>
+                        <span>Dispo</span>
+                    </label>
+                </div>
+            </form>
+
+            <div class="product-card-actions" style="display:flex; gap:10px; margin-top:8px;">
+                {{-- UPDATE BUTTON (submits the form above via the form="" attribute) --}}
+                <button type="submit" form="product-update-{{ $p->id }}" class="btn-save" style="flex:1; min-width:0;">💾 Sauvegarder</button>
+
+                {{-- DELETE, only allowed when stock is at zero --}}
+                <div style="flex:1; min-width:0;">
+                    @if ($stock > 0)
+                        <button class="btn btn-clear btn-block" type="button" disabled
+                            title="{{ __('Stock is not empty: cannot delete') }}">🗑 Supprimer</button>
+                    @else
+                        <button id="delete-trigger-{{ $p->id }}" class="btn btn-clear btn-block" type="button"
+                            onclick="toggleDeleteConfirm('{{ $p->id }}', true)">🗑 Supprimer</button>
+                        <div id="delete-confirm-{{ $p->id }}" style="display:none; flex-direction:column; gap:6px; width:100%; min-width:0; box-sizing:border-box;">
+                            <span style="font-size:12px; color:#b91c1c;">{{ __('Delete') }} « {{ $p->name }} » ?</span>
+                            <div style="display:flex; gap:6px; min-width:0;">
+                                <form method="POST" action="{{ route('bar.products.destroy', $p) }}" style="flex:1; min-width:0;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="btn btn-clear btn-block" type="submit" style="width:100%; min-width:0; padding-left:4px; padding-right:4px; white-space:nowrap;">✓ Oui</button>
+                                </form>
+                                <button class="btn btn-block" type="button" style="flex:1; min-width:0; padding-left:4px; padding-right:4px; white-space:nowrap;"
+                                    onclick="toggleDeleteConfirm('{{ $p->id }}', false)">✕ Non</button>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
-    </div>
-    </form>
         @endforeach
         @endif
     </div>
 </div>
     @endforeach
-</div>
 @endsection
 <script>
+function toggleDeleteConfirm(productId, show) {
+    const trigger = document.getElementById('delete-trigger-' + productId);
+    const confirmBox = document.getElementById('delete-confirm-' + productId);
+    if (!trigger || !confirmBox) return;
+    trigger.style.display = show ? 'none' : '';
+    confirmBox.style.display = show ? 'flex' : 'none';
+}
+
 async function goToCategoryPage() {
     const form = document.getElementById('product-form');
     const data = new FormData(form);

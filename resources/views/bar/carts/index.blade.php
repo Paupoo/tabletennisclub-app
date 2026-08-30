@@ -25,10 +25,11 @@
                     $unitPrice = $product->sale_price;
                     $realStock = (int) $product->stock;
                     $availableStock = max(0, $realStock);
-                    $maxQty = 20;
+                    <!-- $maxQty = 20; -->
                     $isStockLimit = $qty >= $realStock;
-                    $isMaxLimit = $qty >= $maxQty;
-                    $disablePlus = $isStockLimit || $isMaxLimit;
+                    <!-- $isMaxLimit = $qty >= $maxQty; -->
+                    $disablePlus = $isStockLimit;
+                    <!-- || $isMaxLimit; -->
                 @endphp
 
                 <div class="order-line">
@@ -41,8 +42,8 @@
                         </div>
                         @if ($isStockLimit)
                             <div class="text-warning small" style="display: flex;">Stock maximum atteint pour ce produit.</div>
-                        @elseif ($isMaxLimit)
-                            <div class="text-warning small" style="display: flex;">Quantité maximale autorisée atteinte.</div>
+                        <!-- @elseif ($isMaxLimit)
+                            <div class="text-warning small" style="display: flex;">Quantité maximale autorisée atteinte.</div> -->
                         @endif
                     </div>
 

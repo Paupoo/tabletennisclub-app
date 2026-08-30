@@ -18,7 +18,7 @@ class BarController extends Controller
     /**
      * Must stay in sync with the front-end limit used in bar/index.blade.php.
      */
-    private const MAX_QTY_PER_PRODUCT = 20;
+    // private const MAX_QTY_PER_PRODUCT = 20;
 
     public function add(Request $request): RedirectResponse
     {
@@ -45,9 +45,9 @@ class BarController extends Controller
             return back()->with('error', 'Stock maximum atteint pour ce produit.');
         }
 
-        if ($currentQty >= self::MAX_QTY_PER_PRODUCT) {
-            return back()->with('error', 'Quantité maximale atteinte pour ce produit.');
-        }
+        // if ($currentQty >= self::MAX_QTY_PER_PRODUCT) {
+        //     return back()->with('error', 'Quantité maximale atteinte pour ce produit.');
+        // }
 
         $cart[$id] = $currentQty + 1;
 

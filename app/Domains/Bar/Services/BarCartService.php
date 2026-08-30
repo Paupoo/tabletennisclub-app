@@ -16,7 +16,7 @@ class BarCartService
 
     private const string ACTION_VALIDATE = 'validate';
 
-    private const int MAX_QTY_PER_PRODUCT = 20;
+    // private const int MAX_QTY_PER_PRODUCT = 20;
 
     public function __construct(private readonly StockService $stockService) {}
 
@@ -45,12 +45,12 @@ class BarCartService
             ];
         }
 
-        if ($currentQty >= self::MAX_QTY_PER_PRODUCT) {
-            return [
-                'status' => 'error',
-                'message' => sprintf('Quantité maximale atteinte pour %s.', $product->name),
-            ];
-        }
+        // if ($currentQty >= self::MAX_QTY_PER_PRODUCT) {
+        //     return [
+        //         'status' => 'error',
+        //         'message' => sprintf('Quantité maximale atteinte pour %s.', $product->name),
+        //     ];
+        // }
 
         $cart[$productId] = $currentQty + 1;
         session()->put('cart', $cart);
@@ -110,9 +110,9 @@ class BarCartService
                     throw new \RuntimeException(sprintf('Stock insuffisant pour %s.', $product->name));
                 }
 
-                if ($qty > self::MAX_QTY_PER_PRODUCT) {
-                    throw new \RuntimeException(sprintf('Quantité maximale atteinte pour %s.', $product->name));
-                }
+                // if ($qty > self::MAX_QTY_PER_PRODUCT) {
+                //     throw new \RuntimeException(sprintf('Quantité maximale atteinte pour %s.', $product->name));
+                // }
 
                 $unitPrice = (int) $product->sale_price;
                 $lineTotal = $unitPrice * $qty;

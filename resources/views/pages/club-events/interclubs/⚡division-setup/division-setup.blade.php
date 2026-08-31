@@ -193,16 +193,42 @@
     {{-- Modal add participant --}}
     <x-app-modal wire:model="addModal" :title="__('Add opponent')" separator :open="$addModal">
         <div class="space-y-4">
-            <x-input
-                :label="__('Club name')"
-                wire:model="formClubName"
-                placeholder="ex: TT Wavre"
-                icon="o-building-office" />
-            <x-input
-                :label="__('Address (optional)')"
-                wire:model="formClubStreet"
-                placeholder="ex: Rue de la Gare 10, 1300 Wavre"
-                icon="o-map-pin" />
+            @if ($formNewClub)
+                <x-input
+                    :label="__('Club name')"
+                    wire:model="formClubName"
+                    placeholder="ex: TT Wavre"
+                    icon="o-building-office" />
+                <x-input
+                    :label="__('Address (optional)')"
+                    wire:model="formClubStreet"
+                    placeholder="ex: Rue de la Gare 10, 1300 Wavre"
+                    icon="o-map-pin" />
+                <x-button
+                    class="btn-ghost btn-sm px-0"
+                    icon="o-arrow-uturn-left"
+                    :label="__('Pick an existing club instead')"
+                    wire:click="toggleNewClub" />
+            @else
+                <x-choices
+                    :label="__('Club')"
+                    wire:model.live="formClubId"
+                    :options="$clubOptions"
+                    option-sub-label="street"
+                    :placeholder="__('Search a club...')"
+                    :no-result-text="__('No club found. Encode it as a new one.')"
+                    :hint="__('Clubs already encoded in the application.')"
+                    icon="o-building-office"
+                    debounce="250"
+                    single
+                    searchable
+                    clearable />
+                <x-button
+                    class="btn-ghost btn-sm px-0"
+                    icon="o-plus"
+                    :label="__('Club not listed? Encode a new one')"
+                    wire:click="toggleNewClub" />
+            @endif
             <x-input
                 :label="__('Team letter')"
                 wire:model="formTeamLetter"

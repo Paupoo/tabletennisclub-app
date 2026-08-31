@@ -4163,5 +4163,10 @@
     "The tournament becomes visible to members, who can sign up from their own space. Name and price stay locked.": "Le tournoi devient visible des membres, qui peuvent s'inscrire depuis leur espace. Le nom et le prix restent figés.",
     "Not on the website": "Pas sur le site",
     "No article": "Pas d'article",
-    "Join us at :name on :date": "Rejoignez-nous au :name le :date"
+    "Join us at :name on :date": "Rejoignez-nous au :name le :date",
+    "Club not listed? Encode a new one": "Club absent de la liste ? Encoder un nouveau club",
+    "Clubs already encoded in the application.": "Clubs déjà encodés dans l'application.",
+    "No club found. Encode it as a new one.": "Aucun club trouvé. Encodez-le comme nouveau club.",
+    "Pick an existing club instead": "Choisir plutôt un club existant",
+    "Search a club...": "Rechercher un club..."
 }

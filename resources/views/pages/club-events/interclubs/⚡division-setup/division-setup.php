@@ -13,6 +13,8 @@ use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -25,13 +27,20 @@ new class extends Component
 
     public bool $addModal = false;
 
+    /** @var array<int, array{id: int, name: string, street: string}> */
+    public array $clubOptions = [];
+
     public bool $deleteModal = false;
 
     public ?int $deletingTeamId = null;
 
+    public ?int $formClubId = null;
+
     public string $formClubName = '';
 
     public string $formClubStreet = '';
+
+    public bool $formNewClub = false;
 
     public string $formTeamLetter = '';
 
@@ -41,19 +50,26 @@ new class extends Component
 
     public function addParticipant(): void
     {
-        $this->validate([
-            'formClubName' => ['required', 'string', 'max:100'],
-            'formTeamLetter' => ['required', 'string', 'size:1', 'alpha'],
-            'formClubStreet' => ['nullable', 'string', 'max:255'],
-        ]);
+        $rules = ['formTeamLetter' => ['required', 'string', 'size:1', 'alpha']];
 
-        $club = Club::firstOrCreate(
-            ['name' => trim($this->formClubName)],
-            [
-                'licence' => 'OPP-' . strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $this->formClubName), 0, 6)),
-                'street' => $this->formClubStreet ?: null,
-            ]
-        );
+        if ($this->formClubId) {
+            $rules['formClubId'] = ['integer', 'exists:clubs,id'];
+        } else {
+            $rules['formClubName'] = ['required', 'string', 'max:100'];
+            $rules['formClubStreet'] = ['nullable', 'string', 'max:255'];
+        }
+
+        $this->validate($rules);
+
+        $club = $this->formClubId
+            ? Club::findOrFail($this->formClubId)
+            : Club::firstOrCreate(
+                ['name' => trim($this->formClubName)],
+                [
+                    'licence' => 'OPP-' . strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $this->formClubName), 0, 6)),
+                    'street' => $this->formClubStreet ?: null,
+                ]
+            );
 
         $already = Team::where([
             'name' => strtoupper($this->formTeamLetter),
@@ -147,9 +163,12 @@ new class extends Component
     public function openAddModal(): void
     {
         $this->resetErrorBag();
+        $this->formClubId = null;
         $this->formClubName = '';
         $this->formClubStreet = '';
+        $this->formNewClub = false;
         $this->formTeamLetter = '';
+        $this->search();
         $this->addModal = true;
     }
 
@@ -169,9 +188,50 @@ new class extends Component
         return $this->view()->title(__('Division Setup'));
     }
 
+    /**
+     * Feeds the searchable club picker (maryUI x-choices calls this method).
+     * Only opponent clubs already encoded are listed; the selected one is kept
+     * in the list so the choice stays visible once picked.
+     */
+    public function search(string $value = ''): void
+    {
+        $selected = $this->formClubId
+            ? Club::whereKey($this->formClubId)->get(['id', 'name', 'street'])
+            : new EloquentCollection;
+
+        $this->clubOptions = Club::query()
+            ->otherClubs()
+            ->when($value !== '', fn (Builder $q) => $q->where('name', 'like', '%' . $value . '%'))
+            ->orderBy('name')
+            ->take(20)
+            ->get(['id', 'name', 'street'])
+            ->merge($selected)
+            ->unique('id')
+            ->sortBy('name')
+            ->map(fn (Club $club): array => [
+                'id' => $club->id,
+                'name' => $club->name,
+                'street' => $club->street ?? '',
+            ])
+            ->values()
+            ->all();
+    }
+
     public function selectLeague(int $leagueId): void
     {
         $this->selectedLeagueId = $leagueId;
+    }
+
+    /**
+     * Switch between picking an already encoded club and typing a brand new one.
+     */
+    public function toggleNewClub(): void
+    {
+        $this->resetErrorBag();
+        $this->formNewClub = ! $this->formNewClub;
+        $this->formClubId = null;
+        $this->formClubName = '';
+        $this->formClubStreet = '';
     }
 
     public function with(): array

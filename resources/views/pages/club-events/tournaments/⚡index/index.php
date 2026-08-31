@@ -120,16 +120,7 @@ new class extends Component
         $chips = [];
 
         if (filled($this->status)) {
-            $label = match ($this->status) {
-                'pending' => __('Live'),
-                'published' => __('Registrations open'),
-                'setup' => __('Registrations closed'),
-                'locked' => __('Ready to open'),
-                'closed' => __('Closed'),
-                'cancelled' => __('Cancelled'),
-                'draft' => __('Draft'),
-                default => $this->status,
-            };
+            $label = TournamentStatusEnum::tryFrom($this->status)?->getLabel() ?? $this->status;
             $chips[] = ['key' => 'status', 'label' => __('Status') . ': ' . $label];
         }
 
@@ -239,18 +230,7 @@ new class extends Component
             'closed' => (clone $statsBase)->whereIn('status', ['closed', 'cancelled'])->count(),
         ];
 
-        $statusOptions = [
-            ['id' => TournamentStatusEnum::PENDING->value,   'name' => __('Live')],
-            ['id' => TournamentStatusEnum::PUBLISHED->value, 'name' => __('Registrations open')],
-            ['id' => TournamentStatusEnum::SETUP->value,     'name' => __('Registrations closed')],
-            ['id' => TournamentStatusEnum::LOCKED->value,    'name' => __('Ready to open')],
-            ['id' => TournamentStatusEnum::CLOSED->value,    'name' => __('Closed')],
-            ['id' => TournamentStatusEnum::CANCELLED->value, 'name' => __('Cancelled')],
-        ];
-
-        if ($this->canManage) {
-            $statusOptions[] = ['id' => TournamentStatusEnum::DRAFT->value, 'name' => __('Draft')];
-        }
+        $statusOptions = TournamentStatusEnum::toOptions(withDraft: $this->canManage);
 
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),

@@ -76,17 +76,6 @@
     {{-- ── Vue mobile (list) ─────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($tournaments as $tournament)
-            @php
-                $statusBadge = match ($tournament->status->value) {
-                    'pending'   => ['class' => 'badge-primary badge-soft',  'label' => __('Live')],
-                    'published' => ['class' => 'badge-success badge-soft',  'label' => __('Published')],
-                    'setup'     => ['class' => 'badge-info badge-soft',     'label' => __('Setup')],
-                    'locked'    => ['class' => 'badge-warning badge-soft',  'label' => __('Locked')],
-                    'closed'    => ['class' => 'badge-ghost',               'label' => __('Closed')],
-                    'cancelled' => ['class' => 'badge-error badge-soft',    'label' => __('Cancelled')],
-                    default     => ['class' => 'badge-outline',             'label' => __('Draft')],
-                };
-            @endphp
             {{-- L'identité prend la largeur, les actions passent dessous : sur une
             carte de 335 px, une action nommée et son menu en prenaient 156 et le
             titre était tranché. --}}
@@ -103,7 +92,8 @@
                     <div class="min-w-0 flex-1">
                         <div class="font-medium">{{ $tournament->name }}</div>
                         <div class="mt-0.5 flex flex-wrap items-center gap-2">
-                            <x-badge :value="$statusBadge['label']" class="{{ $statusBadge['class'] }} badge-sm" />
+                            <x-badge :value="$tournament->status->getLabel()"
+                                class="{{ $tournament->status->badgeClass() }} badge-sm" />
                             <span class="text-xs text-base-content/40">
                                 {{ $tournament->start_date->translatedFormat('d M Y') }}
                             </span>
@@ -218,18 +208,10 @@
                     @endscope
 
                     @scope('cell_status', $tournament)
-                        @php
-                            $s = match ($tournament->status->value) {
-                                'pending'   => ['class' => 'badge-primary badge-soft',  'label' => __('Live')],
-                                'published' => ['class' => 'badge-success badge-soft',  'label' => __('Published')],
-                                'setup'     => ['class' => 'badge-info badge-soft',     'label' => __('Setup')],
-                                'locked'    => ['class' => 'badge-warning badge-soft',  'label' => __('Locked')],
-                                'closed'    => ['class' => 'badge-ghost',               'label' => __('Closed')],
-                                'cancelled' => ['class' => 'badge-error badge-soft',    'label' => __('Cancelled')],
-                                default     => ['class' => 'badge-outline',             'label' => __('Draft')],
-                            };
-                        @endphp
-                        <x-badge :value="$s['label']" class="{{ $s['class'] }}" />
+                        {{-- Le libellé et la classe viennent de l'enum : le filtre et la
+                             colonne nommaient le même statut de deux façons. --}}
+                        <x-badge :value="$tournament->status->getLabel()"
+                            :class="$tournament->status->badgeClass()" />
                     @endscope
 
                     @scope('cell_event', $tournament)

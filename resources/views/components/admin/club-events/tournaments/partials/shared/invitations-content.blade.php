@@ -5,18 +5,19 @@
     <x-slot:menu>
         @if (! $isLocked)
             <div class="flex gap-2">
-                <x-button label="Tous" icon="o-check" class="btn-sm btn-ghost" wire:click="selectAllMembers" />
-                <x-button label="Aucun" icon="o-x-mark" class="btn-sm btn-ghost" wire:click="selectNoMembers" />
-                <x-button label="Envoyer les invitations" icon="o-paper-airplane" class="btn-primary btn-sm"
+                <x-button :label="__('All')" icon="o-check" class="btn-sm btn-ghost" wire:click="selectAllMembers" />
+                <x-button :label="__('None')" icon="o-x-mark" class="btn-sm btn-ghost" wire:click="selectNoMembers" />
+                <x-button :label="__('Send invitations')" icon="o-paper-airplane" class="btn-primary btn-sm"
                     @click="$wire.showInviteModal = true" :disabled="count($selectedMembers) === 0" />
             </div>
         @endif
     </x-slot:menu>
 
     <div class="flex flex-col md:flex-row gap-4 justify-between items-center mb-6">
-        <x-input placeholder="Rechercher un membre..." icon="o-magnifying-glass"
+        <x-input :placeholder="__('Search a member…')" icon="o-magnifying-glass"
             wire:model.live.debounce.300ms="memberSearch" class="max-w-sm" clearable />
-        <x-badge value="{{ count($selectedMembers) }} membres sélectionnés" class="badge-primary p-4" />
+        <x-badge :value="trans_choice('{0} No member selected|{1} :count member selected|[2,*] :count members selected', count($selectedMembers), ['count' => count($selectedMembers)])"
+            class="badge-primary p-4" />
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -54,7 +55,7 @@
                         <x-icon name="o-paper-airplane" class="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                        <p class="text-sm font-bold">{{ $batch['count'] }} invitations envoyées</p>
+                        <p class="text-sm font-bold">{{ trans_choice('{1} :count invitation sent|[2,*] :count invitations sent', $batch['count'], ['count' => $batch['count']]) }}</p>
                         <p class="text-xs text-muted">
                             {{ \Carbon\Carbon::parse($batch['sent_at'])->diffForHumans() }}</p>
                     </div>

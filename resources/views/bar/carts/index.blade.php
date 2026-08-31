@@ -60,7 +60,7 @@
                             <form method="POST" action="{{ route('bar.cart.add') }}" style="margin:0;">
                                 @csrf
                                 @php
-                                    $disablePlus = $qty >= $realStock || $qty >= 20;
+                                    $disablePlus = $qty >= $realStock;
                                 @endphp
 
                                 <input type="hidden" name="product_id" value="{{ $product->id }}">

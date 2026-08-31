@@ -124,8 +124,8 @@
     @endphp
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <x-stat title="Inscrits" :value="$registrationCount . ($maxUsers > 0 ? ' / ' . $maxUsers : '')" icon="o-user-group" />
-        <x-stat title="Places restantes" :value="$maxUsers > 0 ? max(0, $maxUsers - $registrationCount) : '∞'" icon="o-receipt-percent" />
+        <x-stat :title="__('Registered players')" :value="$registrationCount . ($maxUsers > 0 ? ' / ' . $maxUsers : '')" icon="o-user-group" />
+        <x-stat :title="__('Spots left')" :value="$maxUsers > 0 ? max(0, $maxUsers - $registrationCount) : '∞'" icon="o-receipt-percent" />
         <x-stat :title="__('Confirmed')"
             :value="$this->registrations->filter(fn ($r) => $r['status'] === 'confirmed')->count()"
             icon="o-check-badge" />
@@ -146,25 +146,38 @@
                 </div>
             </x-slot:menu>
 
+            {{--
+                Les colonnes fixes (w-6 + w-16 + w-28 + w-20, plus les gouttières) exigeaient
+                328 px quand un téléphone de 375 en laisse 295 : le nom était comprimé à zéro
+                et la ligne débordait. Sous `sm`, le nom prend toute la largeur et le
+                classement, l'horodatage et les actions passent en dessous.
+            --}}
             <div class="space-y-0">
-                <div class="flex justify-between font-bold border-b border-base-300 pb-1 mb-1 text-muted text-xs px-2">
+                <div class="hidden border-b border-base-300 px-2 pb-1 mb-1 text-xs font-bold text-muted sm:flex sm:justify-between">
                     <span class="w-6 text-center">#</span>
-                    <span class="flex-1 ml-2">{{ __('Player') }}</span>
+                    <span class="ml-2 flex-1">{{ __('Player') }}</span>
                     <span class="w-16 text-right">{{ __('Rank') }}</span>
                     <span class="w-28 text-right">{{ __('Registered at') }}</span>
                     <span class="w-20"></span>
                 </div>
                 @foreach ($this->waitlist as $entry)
+                    @php
+                        $registeredAt = \Carbon\Carbon::parse($entry['registered_at'])->format('d/m H:i');
+                    @endphp
                     <div wire:key="waitlist-{{ $entry['id'] }}"
-                        class="flex items-center gap-2 border-b border-base-300/30 py-2 px-2 hover:bg-base-200/40 text-sm">
-                        <span class="w-6 text-center font-mono font-bold text-warning-content">{{ $entry['position'] }}</span>
-                        <span class="flex-1 font-medium truncate">{{ $entry['name'] }}</span>
-                        <span class="w-16 text-right font-mono text-xs opacity-60">{{ $entry['ranking'] }}</span>
-                        <span class="w-28 text-right text-xs text-muted">
-                            {{ \Carbon\Carbon::parse($entry['registered_at'])->format('d/m H:i') }}
+                        class="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-base-300/30 px-2 py-2 text-sm hover:bg-base-200/40 sm:flex-nowrap">
+                        <span class="w-6 shrink-0 text-center font-mono font-bold text-warning-content">{{ $entry['position'] }}</span>
+
+                        <span class="min-w-0 flex-1 truncate font-medium">{{ $entry['name'] }}</span>
+
+                        {{-- Métadonnées : en colonnes dès sm, sur une ligne dessous en deçà. --}}
+                        <span class="order-last ml-8 flex items-center gap-3 text-xs text-muted sm:order-none sm:ml-0 sm:contents">
+                            <span class="font-mono opacity-60 sm:w-16 sm:text-right">{{ $entry['ranking'] }}</span>
+                            <span class="sm:w-28 sm:text-right">{{ $registeredAt }}</span>
                         </span>
+
                         @if (! $this->isLaunched)
-                            <div class="w-20 flex justify-end gap-1">
+                            <div class="flex shrink-0 justify-end gap-1 sm:w-20">
                                 <x-button icon="o-arrow-up-circle" class="btn-ghost btn-xs text-success"
                                     :tooltip="__('Promote to registered')"
                                     wire:click="promoteFromWaitlist({{ $entry['id'] }})"

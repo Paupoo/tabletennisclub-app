@@ -9,6 +9,16 @@ export function setupPlugins() {
         new Sortable(el, {
             group: 'shared-teams',
             animation: 200,
+            // Sans poignée, tout glissement vertical au doigt déplaçait un joueur
+            // au lieu de faire défiler la page : les poules étaient inatteignables
+            // sur téléphone. La poignée existait déjà dans le balisage, elle
+            // n'était simplement pas déclarée ici.
+            handle: '[data-drag-handle]',
+            // Au doigt seulement : une pression courte reste un défilement, un
+            // appui maintenu démarre le déplacement. La souris n'attend pas.
+            delayOnTouchOnly: true,
+            delay: 150,
+            touchStartThreshold: 5,
             onEnd: () => {
                 let structure = [];
                 document.querySelectorAll('[data-team-id]').forEach(zone => {

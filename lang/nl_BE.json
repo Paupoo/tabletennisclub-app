@@ -4163,5 +4163,10 @@
     "The tournament becomes visible to members, who can sign up from their own space. Name and price stay locked.": "Het toernooi wordt zichtbaar voor leden, die zich vanuit hun eigen ruimte kunnen inschrijven. Naam en prijs blijven vastgezet.",
     "Not on the website": "Niet op de website",
     "No article": "Geen artikel",
-    "Join us at :name on :date": "Doe mee met :name op :date"
+    "Join us at :name on :date": "Doe mee met :name op :date",
+    "Club not listed? Encode a new one": "Club niet in de lijst? Voer een nieuwe club in",
+    "Clubs already encoded in the application.": "Clubs die al in de applicatie zijn ingevoerd.",
+    "No club found. Encode it as a new one.": "Geen club gevonden. Voer ze in als nieuwe club.",
+    "Pick an existing club instead": "Kies liever een bestaande club",
+    "Search a club...": "Zoek een club..."
 }

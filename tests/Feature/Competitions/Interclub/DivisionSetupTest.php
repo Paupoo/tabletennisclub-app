@@ -192,3 +192,79 @@ it('blocks deletion of a team that has matches', function (): void {
 
     expect(Team::find($oppTeam->id))->not->toBeNull();
 });
+
+it('lists already encoded opponent clubs in the picker', function (): void {
+    Club::factory()->create(['name' => 'TT Jodoigne', 'licence' => 'OPP-TTJODO', 'street' => 'Rue Neuve 4']);
+    Club::factory()->create(['name' => 'TT Perwez', 'licence' => 'OPP-TTPERW']);
+
+    $component = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->call('openAddModal');
+
+    $names = array_column($component->get('clubOptions'), 'name');
+
+    expect($names)->toContain('TT Jodoigne', 'TT Perwez')
+        ->and($names)->not->toContain($this->ourClub->name);
+
+    $component->call('search', 'Jodo');
+
+    expect(array_column($component->get('clubOptions'), 'name'))->toBe(['TT Jodoigne']);
+});
+
+it('reuses the club selected in the picker without creating a new one', function (): void {
+    $existing = Club::factory()->create(['name' => 'TT Chastre', 'licence' => 'OPP-TTCHAS']);
+    $before = Club::count();
+
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->set('seasonId', $this->season->id)
+        ->call('selectLeague', $this->league->id)
+        ->call('openAddModal')
+        ->set('formClubId', $existing->id)
+        ->set('formTeamLetter', 'C')
+        ->call('addParticipant')
+        ->assertHasNoErrors();
+
+    expect(Club::count())->toBe($before);
+    expect(
+        Team::where('club_id', $existing->id)
+            ->where('league_id', $this->league->id)
+            ->where('name', 'C')
+            ->exists()
+    )->toBeTrue();
+});
+
+it('keeps the selected club visible after a narrowing search', function (): void {
+    $existing = Club::factory()->create(['name' => 'TT Beauvechain', 'licence' => 'OPP-TTBEAU']);
+    Club::factory()->create(['name' => 'TT Tubize', 'licence' => 'OPP-TTTUBI']);
+
+    $component = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->call('openAddModal')
+        ->set('formClubId', $existing->id)
+        ->call('search', 'Tubize');
+
+    expect(array_column($component->get('clubOptions'), 'name'))
+        ->toContain('TT Beauvechain', 'TT Tubize');
+});
+
+it('switches to manual encoding and clears the picked club', function (): void {
+    $existing = Club::factory()->create(['name' => 'TT Nivelles', 'licence' => 'OPP-TTNIVE']);
+
+    $component = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->call('openAddModal')
+        ->set('formClubId', $existing->id)
+        ->call('toggleNewClub');
+
+    expect($component->get('formNewClub'))->toBeTrue()
+        ->and($component->get('formClubId'))->toBeNull();
+});
+
+it('accepts the picker being cleared', function (): void {
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->call('openAddModal')
+        ->set('formClubId', '')
+        ->assertSet('formClubId', null);
+});

@@ -20,13 +20,6 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     @foreach ($roomTables as $table)
                         @php
-                            $tableUrl = route('tournament.table.score', [$tournament, $table['id']]);
-                            $qrSmall  = new \Endroid\QrCode\QrCode($tableUrl, size: 80, margin: 2);
-                            $writer   = new \Endroid\QrCode\Writer\SvgWriter;
-                            $svgSmall = substr($writer->write($qrSmall)->getString(), 22);
-                        @endphp
-
-                        @php
                             $minutesElapsed = ! $table['is_free'] && $table['match_started_at']
                                 ? (int) \Carbon\Carbon::parse($table['match_started_at'])->diffInMinutes(now())
                                 : 0;
@@ -113,12 +106,9 @@
                                     </div>
                                 @endif
 
-                                {{-- QR code — direct link to mobile score page --}}
-                                {{-- <a href="{{ $tableUrl }}" target="_blank"
-                                    class="w-full flex justify-center pt-1 opacity-40 hover:opacity-90 transition-opacity"
-                                    :title="__('Open mobile score page')">
-                                    {!! $svgSmall !!}
-                                </a> --}}
+                                {{-- Le QR de la table vit dans le tiroir de score, où il n'est
+                                     construit qu'à l'ouverture. Ici, il était régénéré pour chaque
+                                     table à chaque tour de wire:poll.5s, pour un lien commenté. --}}
                             </div>
                         </x-card>
                     @endforeach

@@ -447,3 +447,84 @@ describe('generateBracket startingRound selection', function (): void {
     })->group('bracket', 'round-selection');
 
 })->group('bracket');
+
+// ── Petite finale : le bloc lisait les variables de la boucle précédente ──────
+
+/*
+ * Sous le tableau, la carte de la petite finale utilisait $match, $round,
+ * $isFinal et $winnerName — quatre variables laissées par le @foreach de la
+ * finale, fermé juste au-dessus. Elle affichait donc l'arbitre et le vainqueur
+ * de la FINALE. Ces tests fixent la frontière : ce que la carte montre doit
+ * venir du match de petite finale, et de lui seul.
+ */
+describe('bronze card reads its own match', function (): void {
+
+    /** @return array{tournament: Tournament, referee: User, winner: User} */
+    function bronzeScenario(): array
+    {
+        $tournament = Tournament::factory()->create([
+            'status' => TournamentStatusEnum::PENDING,
+            'sets_to_win' => 3,
+            'has_handicap_points' => false,
+            'deuce_enabled' => false,
+        ]);
+
+        [$a, $b, $c, $d] = User::factory(4)->create()->all();
+
+        // L'arbitre n'est inscrit à rien : son nom ne peut apparaître qu'au
+        // titre de l'arbitrage, ce qui rend le comptage d'occurrences probant.
+        $referee = User::factory()->create(['first_name' => 'Zoé', 'last_name' => 'Arbitrale']);
+
+        TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => null,
+            'round' => 'final',
+            'player1_id' => $a->id,
+            'player2_id' => $b->id,
+            'winner_id' => $a->id,
+            'referee_id' => $referee->id,
+            'status' => 'completed',
+            'match_order' => 1,
+        ]);
+
+        // La petite finale n'a ni arbitre, ni vainqueur, ni résultat.
+        TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => null,
+            'round' => 'bronze',
+            'player1_id' => $c->id,
+            'player2_id' => $d->id,
+            'status' => 'scheduled',
+            'match_order' => 2,
+        ]);
+
+        return ['tournament' => $tournament, 'referee' => $referee, 'winner' => $a];
+    }
+
+    it('does not borrow the final referee', function (): void {
+        ['tournament' => $tournament, 'referee' => $referee] = bronzeScenario();
+
+        $html = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament])
+            ->html();
+
+        // Une seule fois : sur la carte de la finale, qui est bien la sienne.
+        expect(substr_count($html, $referee->full_name))->toBe(1);
+    });
+
+    it('does not announce a winner for a match nobody has played', function (): void {
+        ['tournament' => $tournament] = bronzeScenario();
+
+        $html = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament])
+            ->html();
+
+        /*
+         * `text-yellow-500` n'habille qu'une chose dans le tableau : la ligne
+         * « vainqueur » d'un match terminé. Seule la finale l'est ; la petite
+         * finale est programmée. Deux occurrences signifieraient qu'elle a
+         * repris le vainqueur de la finale.
+         */
+        expect(substr_count($html, 'text-yellow-500'))->toBe(1);
+    });
+});

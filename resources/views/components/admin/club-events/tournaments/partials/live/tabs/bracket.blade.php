@@ -128,6 +128,17 @@
                 $bDoubles = $bronze->pair1_id !== null;
                 $b1Name = $bDoubles ? $bronze->pair1?->displayName() ?? '—' : $bronze->player1?->full_name ?? '—';
                 $b2Name = $bDoubles ? $bronze->pair2?->displayName() ?? '—' : $bronze->player2?->full_name ?? '—';
+
+                /*
+                 * Le bloc lisait $match, $round, $isFinal et $winnerName, laissés par le
+                 * @foreach fermé au-dessus : il affichait l'arbitre et le vainqueur de la
+                 * finale sur la carte de la petite finale.
+                 */
+                $bWinnerName = $bronze->winner_id
+                    ? ($bDoubles
+                        ? ($b1Won ? $bronze->pair1?->displayName() : $bronze->pair2?->displayName())
+                        : $bronze->winner?->full_name)
+                    : null;
             @endphp
             <div class="mt-6 max-w-xs border-2 border-info rounded-xl p-4 space-y-2 shadow">
                 <div class="text-center font-bold text-info uppercase text-xs tracking-widest mb-3">
@@ -151,26 +162,22 @@
                     <span class="font-mono">{{ $bronze->getSetsWon($bronze->player2_id ?? 0) }}</span>
                 </div>
 
-                @if ($match->referee)
+                @if ($bronze->referee)
                     <div class="flex items-center gap-1 text-xs text-muted pt-1 border-t border-base-300/40">
                         <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
-                        <span class="truncate">{{ $match->referee->full_name }}</span>
+                        <span class="truncate">{{ $bronze->referee->full_name }}</span>
                     </div>
-                @elseif (in_array($round, ['final', 'bronze']) && $match->player1_id)
+                @elseif ($bronze->player1_id)
+                    {{-- Une petite finale sans arbitre désigné revient toujours à l'organisation. --}}
                     <div class="flex items-center gap-1 text-xs text-muted pt-1 border-t border-base-300/40 italic">
                         <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                         <span>{{ __('Organisation') }}</span>
                     </div>
-                @elseif ($match->status === 'scheduled' && $match->player1_id)
-                    <div class="flex items-center gap-1 text-xs text-muted pt-1 border-t border-base-300/40 italic">
-                        <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
-                        <span>{{ __('Referee needed') }}</span>
-                    </div>
                 @endif
 
-                @if ($isFinal && $match->status === 'completed')
+                @if ($bWinnerName && $bronze->status === 'completed')
                     <div class="text-center text-xs font-bold text-yellow-500 mt-1">
-                        <x-icon name="o-trophy" class="mb-0.5 inline h-3.5 w-3.5" /> {{ $winnerName }}
+                        <x-icon name="o-trophy" class="mb-0.5 inline h-3.5 w-3.5" /> {{ $bWinnerName }}
                     </div>
                 @endif
             </div>

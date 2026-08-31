@@ -732,3 +732,83 @@ describe('wizard step', function (): void {
             ->assertSee(__('Details'));
     });
 });
+
+// ── Le simulateur reste sous les yeux ────────────────────────────────────────
+
+/*
+ * Le verdict de faisabilité vivait ~1780 px sous les champs qui le déterminent
+ * -- 2,7 écrans sur un portable 1366x768. Il occupe maintenant une colonne
+ * collée, et une barre compacte prend le relais quand cette colonne n'a plus
+ * la place.
+ */
+describe('feasibility panel placement', function (): void {
+
+    it('follows the scroll beside the form', function (): void {
+        $tournament = wizardTournament();
+
+        $html = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('step', '1')
+            ->html();
+
+        expect($html)->toContain('xl:sticky');
+
+        // Le verdict et le bouton d'enregistrement partagent la colonne collée :
+        // dans une page de cette longueur, le bouton était lui aussi hors d'atteinte.
+        $sticky = strpos($html, 'xl:sticky');
+        $panel = strpos($html, (string) __('Feasibility simulation'));
+        $save = strpos($html, (string) __('Update tournament'));
+
+        expect($panel)->toBeGreaterThan($sticky)->and($save)->toBeGreaterThan($panel);
+    });
+
+    it('falls back to a compact bar when the column has no room', function (): void {
+        $tournament = wizardTournament();
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('step', '1')
+            ->assertSeeHtml('sticky top-2 z-10 xl:hidden');
+    });
+
+    it('offers the save button once, not twice', function (): void {
+        $tournament = wizardTournament();
+
+        $html = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('step', '1')
+            ->html();
+
+        expect(substr_count($html, (string) __('Update tournament')))->toBe(1);
+    });
+});
+
+// ── Le fil des six étapes sur téléphone ──────────────────────────────────────
+
+/*
+ * La ligne métro mesure ~825 px pour 335 disponibles sur un téléphone, sans
+ * signaler son débordement ni amener l'étape active dans le champ de vision --
+ * alors que mount() peut en choisir la cinquième.
+ */
+describe('mobile step selector', function (): void {
+
+    it('says where you are and how many steps there are', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::SETUP]);
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSee(__('Step :current of :total', ['current' => 5, 'total' => 6]));
+    });
+
+    it('keeps the metro line for wider screens', function (): void {
+        $tournament = wizardTournament();
+
+        $html = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->html();
+
+        // Le sélecteur sous md, la ligne métro à partir de md : jamais les deux.
+        expect($html)->toContain('mb-8 md:hidden')
+            ->and($html)->toContain('mb-8 hidden items-center gap-0 overflow-x-auto md:flex');
+    });
+});

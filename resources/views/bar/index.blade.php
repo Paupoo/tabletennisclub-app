@@ -8,17 +8,13 @@
 </div>
 
 @php
-    <!-- $maxQty = 20; -->
-
-    $resolveProductMeta = function ($product) use ($cart, $maxQty) {
+    $resolveProductMeta = function ($product) use ($cart) {
         $qty = $cart[$product->id] ?? 0;
         $realStock = (int) $product->stock;
         $theoreticalStock = max(0, $realStock - $qty);
         $isUnavailable = ! $product->is_available;
         $isStockLimit = $qty >= $realStock;
-        <!-- $isMaxLimit = $qty >= $maxQty; -->
         $disablePlus = $isUnavailable || $isStockLimit;
-        <!-- || $isMaxLimit; -->
 
         $labelClass = 'stock-label--ok';
         $labelText = $realStock . ' en stock';
@@ -32,9 +28,6 @@
         } elseif ($isStockLimit) {
             $labelClass = 'stock-label--empty';
             $labelText = 'Stock maximum atteint';
-        <!-- } elseif ($isMaxLimit) {
-            $labelClass = 'stock-label--low';
-            $labelText = 'Quantité max atteinte'; -->
         } elseif ($realStock <= 3) {
             $labelClass = 'stock-label--low';
             $labelText = 'Plus que ' . $realStock;
@@ -44,7 +37,6 @@
             'qty', 'realStock', 'theoreticalStock',
             'isUnavailable', 'isStockLimit', 
             'disablePlus', 'labelClass', 'labelText'
-            <!-- 'isMaxLimit', -->
         );
     };
 @endphp

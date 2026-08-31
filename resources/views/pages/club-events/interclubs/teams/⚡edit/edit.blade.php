@@ -125,6 +125,10 @@
                 :placeholder="__('Search for a competitor…')"
                 wire:model.live.debounce.250ms="memberSearch" />
 
+            @error('memberIds')
+                <p class="mb-4 text-sm text-error">{{ $message }}</p>
+            @enderror
+
             <div class="divide-y divide-gray-100">
                 @forelse ($competitors as $user)
                     @php $selected = in_array($user->id, $memberIds); @endphp

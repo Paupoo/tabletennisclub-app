@@ -79,12 +79,21 @@ new class extends Component
         // une division pas encore déclarée resterait impossible (issue #27).
         $rules = [
             'name' => ['required', 'string', 'size:1'],
-            'memberIds' => ['array', 'min:1'],
+            'memberIds' => ['array'],
         ];
         $messages = [
             'name.size' => __('The name must be a single letter (A–Z).'),
             'memberIds.min' => 'L\'équipe doit avoir au moins un joueur.',
         ];
+
+        // Une équipe naît sans joueur : la liste la crée avec sa seule lettre et
+        // sa division. Exiger un noyau ici bloquerait toute correction tant que
+        // personne n'y est inscrit — le formulaire refusait d'enregistrer sans
+        // rien afficher. On protège seulement contre le vidage d'un noyau
+        // déjà constitué.
+        if ($team->users()->exists()) {
+            $rules['memberIds'][] = 'min:1';
+        }
 
         if ($canChangeLeague && $this->newDivisionMode) {
             $rules += [

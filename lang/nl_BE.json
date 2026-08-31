@@ -4227,5 +4227,10 @@
     "{1} :count player|[2,*] :count players": "{1} :count speler|[2,*] :count spelers",
     "{1} Tournament cancelled.|[2,*] :count tournaments cancelled.": "{1} Toernooi geannuleerd.|[2,*] :count toernooien geannuleerd.",
     "{1} You are about to invite :count member.|[2,*] You are about to invite :count members.": "{1} U staat op het punt :count lid uit te nodigen.|[2,*] U staat op het punt :count leden uit te nodigen.",
-    "~:count min each": "~:count min elk"
+    "~:count min each": "~:count min elk",
+    "Club not listed? Encode a new one": "Club niet in de lijst? Voer een nieuwe club in",
+    "Clubs already encoded in the application.": "Clubs die al in de applicatie zijn ingevoerd.",
+    "No club found. Encode it as a new one.": "Geen club gevonden. Voer ze in als nieuwe club.",
+    "Pick an existing club instead": "Kies liever een bestaande club",
+    "Search a club...": "Zoek een club..."
 }

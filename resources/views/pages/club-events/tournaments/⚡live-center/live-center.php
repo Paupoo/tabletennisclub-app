@@ -36,7 +36,13 @@ new class extends Component
 {
     use HasBreadcrumbs, Toast, WithFileUploads;
 
-    public string $activeTab = 'pools';
+    /**
+     * L'onglet ouvert au chargement.
+     *
+     * Résolu dans mount() : le comité arrive sur la régie, qui est son écran de
+     * travail, et un joueur -- pour qui l'onglet n'existe pas -- sur les poules.
+     */
+    public string $activeTab = '';
 
     public bool $createNewsPost = false;
 
@@ -262,6 +268,10 @@ new class extends Component
 
     public function mount(): void
     {
+        if ($this->activeTab === '') {
+            $this->activeTab = $this->canManageTournament ? 'control-room' : 'pools';
+        }
+
         $this->thankYouSubject = __('Results') . ' — ' . $this->tournament->name;
         $this->thankYouBody = __('Dear participants,') . "\n\n"
             . __('Thank you for joining us for :name! It was a great day of table tennis.', ['name' => $this->tournament->name]) . "\n\n"
@@ -346,6 +356,36 @@ new class extends Component
         return $this->tournament->pools->every(
             fn (Pool $pool) => $poolService->isPoolFinished($pool)
         );
+    }
+
+    /**
+     * The playable queue, each match already knowing whether it is blocked.
+     *
+     * The "player already on a table" check lived twice, in Blade: once in the
+     * Upcoming tab and once in the launch drawer, with the same intersect
+     * against busyPlayerIds written out by hand. Two views of one queue, kept
+     * in step manually. They both read this now.
+     *
+     * @return Collection<int, array{match: TournamentMatch, ready: bool, side1Blocked: bool, side2Blocked: bool, blocked: bool}>
+     */
+    #[Computed]
+    public function queue(): Collection
+    {
+        $busy = $this->busyPlayerIds;
+
+        return $this->upcomingMatches->map(function (TournamentMatch $match) use ($busy): array {
+            $ready = $match->player1_id !== null && $match->player2_id !== null;
+            $side1Blocked = $ready && $match->sidePlayerIds(1)->intersect($busy)->isNotEmpty();
+            $side2Blocked = $ready && $match->sidePlayerIds(2)->intersect($busy)->isNotEmpty();
+
+            return [
+                'match' => $match,
+                'ready' => $ready,
+                'side1Blocked' => $side1Blocked,
+                'side2Blocked' => $side2Blocked,
+                'blocked' => $side1Blocked || $side2Blocked,
+            ];
+        });
     }
 
     #[Computed]

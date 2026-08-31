@@ -12,6 +12,7 @@ use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
 use App\Domains\Shared\Enums\TableStateEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
+use Livewire\Livewire;
 
 function conflictTournament(): Tournament
 {
@@ -159,3 +160,110 @@ describe('detectStartConflict', function (): void {
         expect(app(TournamentMatchService::class)->detectStartConflict($tournament, $next))->not->toBeNull();
     });
 })->group('Tournament', 'Conflict');
+
+// ── La file, calculée une seule fois ─────────────────────────────────────────
+
+/*
+ * Le drapeau « joueur en piste » vivait en double, en Blade : une fois dans
+ * l'onglet À venir, une fois dans le tiroir de lancement, avec le même
+ * intersect recopié. Deux vues d'une seule file, à tenir synchronisées à la
+ * main. Il est maintenant calculé par queue() et les deux vues le lisent.
+ */
+describe('queue', function (): void {
+
+    it('flags the side whose player is already on a table', function (): void {
+        $tournament = conflictTournament();
+        [$busy, $free, $other] = User::factory(3)->create()->all();
+
+        conflictMatch($tournament, $busy->id, $other->id, status: 'in_progress');
+        $waiting = conflictMatch($tournament, $free->id, $busy->id);
+
+        $entry = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament])
+            ->get('queue')
+            ->firstWhere(fn (array $row): bool => $row['match']->is($waiting));
+
+        expect($entry['ready'])->toBeTrue()
+            ->and($entry['blocked'])->toBeTrue()
+            ->and($entry['side1Blocked'])->toBeFalse()
+            ->and($entry['side2Blocked'])->toBeTrue();
+    });
+
+    it('leaves a match alone when both players are available', function (): void {
+        $tournament = conflictTournament();
+        [$a, $b] = User::factory(2)->create()->all();
+
+        $waiting = conflictMatch($tournament, $a->id, $b->id);
+
+        $entry = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament])
+            ->get('queue')
+            ->firstWhere(fn (array $row): bool => $row['match']->is($waiting));
+
+        expect($entry['blocked'])->toBeFalse()->and($entry['ready'])->toBeTrue();
+    });
+
+    it('never calls a match with an undetermined player blocked', function (): void {
+        $tournament = conflictTournament();
+        $a = User::factory()->create();
+
+        // Un match de tableau dont l'adversaire n'est pas encore connu.
+        $pending = TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => null,
+            'round' => 'final',
+            'player1_id' => $a->id,
+            'player2_id' => null,
+            'status' => 'scheduled',
+            'match_order' => 9,
+        ]);
+
+        $entry = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament])
+            ->get('queue')
+            ->firstWhere(fn (array $row): bool => $row['match']->is($pending));
+
+        expect($entry['ready'])->toBeFalse()->and($entry['blocked'])->toBeFalse();
+    });
+});
+
+// ── Les identifiants d'un côté ───────────────────────────────────────────────
+
+describe('TournamentMatch::sidePlayerIds', function (): void {
+
+    it('returns the single player of each side', function (): void {
+        $tournament = conflictTournament();
+        [$a, $b] = User::factory(2)->create()->all();
+        $match = conflictMatch($tournament, $a->id, $b->id);
+
+        expect($match->sidePlayerIds(1)->all())->toBe([$a->id])
+            ->and($match->sidePlayerIds(2)->all())->toBe([$b->id]);
+    });
+
+    it('returns both members of a pair', function (): void {
+        $tournament = conflictTournament();
+        [$a, $b, $c, $d] = User::factory(4)->create()->all();
+
+        $pair = fn (int $p1, int $p2): TournamentPair => TournamentPair::create([
+            'tournament_id' => $tournament->id,
+            'player1_id' => $p1,
+            'player2_id' => $p2,
+            'registered_by' => $p1,
+        ]);
+
+        $pair1 = $pair($a->id, $b->id);
+        $pair2 = $pair($c->id, $d->id);
+
+        $match = TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => conflictPool($tournament)->id,
+            'pair1_id' => $pair1->id,
+            'pair2_id' => $pair2->id,
+            'status' => 'scheduled',
+            'match_order' => 1,
+        ]);
+
+        expect($match->sidePlayerIds(1)->all())->toBe([$a->id, $b->id])
+            ->and($match->sidePlayerIds(2)->all())->toBe([$c->id, $d->id]);
+    });
+});

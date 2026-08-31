@@ -110,6 +110,35 @@ test('team must have at least one member', function (): void {
         ->assertHasErrors('memberIds');
 });
 
+test('the empty core message is rendered, not just raised', function (): void {
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
+        ->set('memberIds', [])
+        ->call('save')
+        ->assertSee('au moins un joueur');
+});
+
+/**
+ * La liste crée une équipe sans joueur ni capitaine. Exiger un noyau à
+ * l'édition rendait ces équipes impossibles à enregistrer : le bouton ne
+ * faisait rien, l'erreur n'étant affichée nulle part.
+ */
+test('a team created without any player can still be saved', function (): void {
+    $emptyTeam = Team::create([
+        'name' => 'A',
+        'season_id' => $this->team->season_id,
+        'league_id' => $this->team->league_id,
+    ]);
+
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.teams.edit', ['team' => $emptyTeam])
+        ->set('name', 'B')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($emptyTeam->fresh()->name)->toBe('B');
+});
+
 test('admin can toggle team member', function (): void {
     Livewire::actingAs($this->admin)
         ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])

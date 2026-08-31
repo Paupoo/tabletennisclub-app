@@ -119,9 +119,9 @@
                         <x-admin.shared.row-menu
                             :label="__('Settings')"
                             icon="o-cog-6-tooth"
-                            link="{{ route('admin.tournaments.wizard.edit', $tournament) }}">
-                            @if ($this->canManage)
-                            @endif
+                            {{-- ?step=1 : l'icône réglages doit ouvrir la configuration. Sans étape
+                 explicite, mount() la déduit du statut et ouvre les invitations. --}}
+                link="{{ route('admin.tournaments.wizard.edit', [$tournament, 'step' => 1]) }}">
                             @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
                                 <x-menu-item icon="o-rocket-launch" link="{{ route('admin.tournaments.live-center', $tournament->id) }}" :title="__('Live Center')" />
                             @endif
@@ -259,9 +259,9 @@
                         <x-admin.shared.row-menu
                             :label="__('Settings')"
                             icon="o-cog-6-tooth"
-                            link="{{ route('admin.tournaments.wizard.edit', $tournament) }}">
-                            @if ($this->canManage)
-                            @endif
+                            {{-- ?step=1 : l'icône réglages doit ouvrir la configuration. Sans étape
+                 explicite, mount() la déduit du statut et ouvre les invitations. --}}
+                link="{{ route('admin.tournaments.wizard.edit', [$tournament, 'step' => 1]) }}">
                             @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
                                 <x-menu-item icon="o-rocket-launch" link="{{ route('admin.tournaments.live-center', $tournament->id) }}" :title="__('Live Center')" />
                             @endif

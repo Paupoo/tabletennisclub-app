@@ -654,3 +654,81 @@ describe('cancelling a tournament', function (): void {
         expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::CLOSED);
     });
 });
+
+// ── Informations complémentaires ─────────────────────────────────────────────
+
+/*
+ * Le champ existait dans le formulaire depuis le début, sans wire:model ni
+ * propriété : ce que le comité y tapait disparaissait au premier aller-retour
+ * Livewire, sans le moindre signal. La colonne `description`, elle, existait
+ * déjà sur la table — elle manquait seulement au $fillable.
+ */
+describe('additional information', function (): void {
+
+    it('stores what the committee types', function (): void {
+        $tournament = wizardTournament();
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('step', '1')
+            ->set('description', 'Tenue de club obligatoire. Buvette ouverte dès 8h30.')
+            ->call('save');
+
+        expect($tournament->fresh()->description)
+            ->toBe('Tenue de club obligatoire. Buvette ouverte dès 8h30.');
+    });
+
+    it('reads it back when the wizard reopens', function (): void {
+        $tournament = wizardTournament(['description' => 'Raquettes fournies sur demande.']);
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('description', 'Raquettes fournies sur demande.');
+    });
+
+    it('binds the field so the value can reach the component', function (): void {
+        $tournament = wizardTournament();
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('step', '1')
+            ->assertSeeHtml('wire:model="description"');
+    });
+});
+
+// ── L'étape vit dans l'URL ───────────────────────────────────────────────────
+
+/*
+ * mount() déduisait l'étape du statut, sans exception : l'icône réglages de la
+ * liste ouvrait donc les invitations pour un tournoi publié, et jamais la
+ * configuration. Une étape explicite doit l'emporter.
+ */
+describe('wizard step', function (): void {
+
+    it('still derives the step from the status when the URL says nothing', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('step', '4');
+    });
+
+    it('lets an explicit step win over the one derived from the status', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::SETUP]);
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->withQueryParams(['step' => '3'])
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('step', '3');
+    });
+
+    it('opens the configuration when the settings icon asks for it', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->withQueryParams(['step' => '1'])
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('step', '1')
+            ->assertSee(__('Details'));
+    });
+});

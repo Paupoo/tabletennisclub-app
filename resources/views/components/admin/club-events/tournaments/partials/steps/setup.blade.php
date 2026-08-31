@@ -10,8 +10,15 @@
     A `grid grid-cols-6` here made every section — and every separator between
     them — a grid item one sixth of the width, so the three sections lined up in
     ~160px columns and every label overlapped its own field.
+
+    `pointer-events-none` ne bloquait ni la tabulation ni la soumission : un
+    tournoi lancé restait modifiable au clavier. `<fieldset disabled>` désactive
+    vraiment chaque champ. `min-w-0` neutralise le `min-width: min-content` que
+    les navigateurs imposent aux fieldset et que Preflight ne réinitialise pas :
+    sans lui, le bloc refuserait de rétrécir sous la largeur de son contenu.
 --}}
-<div class="mt-8 flex flex-col gap-4 md:gap-6 @if($this->isLaunched) pointer-events-none opacity-60 @endif">
+<fieldset @disabled($this->isLaunched)
+    @class(['mt-8 flex min-w-0 flex-col gap-4 md:gap-6', 'opacity-60' => $this->isLaunched])>
 
     {{-- ── Section 1 : Details ─────────────────────────────────────────── --}}
     <x-admin.shared.form-section :title="__('Details')"
@@ -203,7 +210,7 @@
 
 
         <div class="lg:col-span-2">
-            <x-textarea :label="__('Additional information')" rows="4"
+            <x-textarea wire:model="description" :label="__('Additional information')" rows="4"
                 :placeholder="__('Specific rules, dress code...')" />
         </div>
 
@@ -252,7 +259,7 @@
         $eff = $this->tableEfficiency;
     @endphp
 
-    <div class="col-span-6">
+    <div>
         <x-card shadow>
 
             <x-slot:title>
@@ -263,9 +270,9 @@
                     @if ($risk === 'ok')
                         <x-badge :value="__('Feasible')" class="badge-success badge-soft ml-auto" />
                     @elseif ($risk === 'warning')
-                        <x-badge value="Tight" class="badge-warning badge-soft ml-auto" />
+                        <x-badge :value="__('Tight')" class="badge-warning badge-soft ml-auto" />
                     @else
-                        <x-badge value="Not feasible" class="badge-error badge-soft ml-auto" />
+                        <x-badge :value="__('Not feasible')" class="badge-error badge-soft ml-auto" />
                     @endif
                 </div>
             </x-slot:title>
@@ -415,7 +422,7 @@
     </div>
 
     {{-- ── Save button ─────────────────────────────────────────────────────── --}}
-    <div class="col-span-6 flex justify-end pt-2">
+    <div class="flex justify-end pt-2">
         <x-button
             :label="$tournamentId ? __('Update tournament') : __('Create tournament')"
             icon="{{ $tournamentId ? 'o-arrow-path' : 'o-plus-circle' }}"
@@ -424,4 +431,4 @@
             spinner="save" />
     </div>
 
-</div>
+</fieldset>

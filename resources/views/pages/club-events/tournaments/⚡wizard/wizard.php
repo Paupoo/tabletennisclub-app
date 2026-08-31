@@ -35,6 +35,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
@@ -49,6 +50,8 @@ new class extends Component
     public bool $bulkDrawer = false;
 
     public bool $deuceEnabled = true;
+
+    public string $description = '';
 
     public string $doublesRegistrationMode = 'club';
 
@@ -99,12 +102,8 @@ new class extends Component
     public int $pool_size = 4;
 
     // ── Options statiques
-    public array $poolSizeOptions = [
-        ['id' => 3, 'name' => '3 joueurs'],
-        ['id' => 4, 'name' => '4 joueurs'],
-        ['id' => 5, 'name' => '5 joueurs'],
-        ['id' => 6, 'name' => '6 joueurs'],
-    ];
+    /** @var array<int, array{id: int, name: string}> */
+    public array $poolSizeOptions = [];
 
     // ── Pools staleness flag
     public bool $poolsStale = false;
@@ -164,7 +163,19 @@ new class extends Component
 
     public string $startTime = '';
 
-    public string $step = '1';
+    /**
+     * L'étape courante de l'assistant.
+     *
+     * Dans l'URL pour que le lien soit partageable, que le retour navigateur
+     * fonctionne, et qu'un rechargement ne renvoie pas ailleurs.
+     *
+     * La valeur par défaut est vide, et non '1' : c'est le seul moyen de
+     * distinguer « aucune étape demandée » — où le statut décide — de
+     * « ouvre-moi l'étape 1 », que l'icône réglages de la liste demande
+     * explicitement. mount() résout le vide avant le premier rendu.
+     */
+    #[Url(except: '')]
+    public string $step = '';
 
     public array $tagOptions = [
         ['id' => 1, 'name' => 'Tournoi'],
@@ -771,9 +782,22 @@ new class extends Component
     {
         $this->tournamentDate = today()->addWeek()->format('Y-m-d');
 
+        /*
+         * Les libellés étaient écrits en français dans la déclaration de propriété,
+         * là où __() n'est pas encore résolu. Ils se construisent donc ici.
+         */
+        $this->poolSizeOptions = array_map(
+            fn (int $size): array => [
+                'id' => $size,
+                'name' => trans_choice('{1} :count player|[2,*] :count players', $size, ['count' => $size]),
+            ],
+            [3, 4, 5, 6],
+        );
+
         if ($tournament !== null) {
             $this->tournamentId = $tournament->id;
             $this->name = $tournament->name;
+            $this->description = $tournament->description ?? '';
             $this->tournamentDate = $tournament->start_date?->format('Y-m-d') ?? $this->tournamentDate;
             $this->startTime = $tournament->start_time ?? '';
             $this->registration_deadline = $tournament->registration_deadline?->format('Y-m-d') ?? '';
@@ -796,16 +820,28 @@ new class extends Component
             $this->selectedRooms = $tournament->rooms->pluck('id')->toArray();
             $this->nb_tables = (int) $tournament->rooms->sum('total_playable_tables') ?: 8;
 
-            $this->step = match ($tournament->status) {
-                TournamentStatusEnum::LOCKED => '4',
-                TournamentStatusEnum::PUBLISHED => '4',
-                TournamentStatusEnum::SETUP => '5',
-                TournamentStatusEnum::PENDING,
-                TournamentStatusEnum::CLOSED => '6',
-                default => '1',
-            };
+            /*
+             * Le statut ne choisit l'étape que si l'URL n'en porte pas une : l'icône
+             * réglages de la liste pointe vers ?step=1 et doit ouvrir la configuration,
+             * pas l'étape déduite du statut.
+             */
+            if ($this->step === '') {
+                $this->step = match ($tournament->status) {
+                    TournamentStatusEnum::LOCKED => '4',
+                    TournamentStatusEnum::PUBLISHED => '4',
+                    TournamentStatusEnum::SETUP => '5',
+                    TournamentStatusEnum::PENDING,
+                    TournamentStatusEnum::CLOSED => '6',
+                    default => '1',
+                };
+            }
 
             $this->initEventPost($tournament->eventPost, $tournament->name);
+        }
+
+        // Aucune étape demandée et aucun statut pour en déduire une : on commence au début.
+        if ($this->step === '') {
+            $this->step = '1';
         }
 
         // Pre-fill location from the first room's address if not already set
@@ -1204,6 +1240,7 @@ new class extends Component
             'doublesRegistrationMode' => 'nullable|in:club,self',
             'maxUsers' => 'required|integer|min:0',
             'price' => 'required|numeric|min:0',
+            'description' => 'nullable|string|max:2000',
         ]);
 
         // Snapshot logistical values before saving so we can detect changes.
@@ -1232,6 +1269,7 @@ new class extends Component
             ['id' => $this->tournamentId],
             [
                 'name' => $this->name,
+                'description' => $this->description ?: null,
                 'start_date' => $this->tournamentDate,
                 'start_time' => $this->startTime ?: null,
                 'duration_minutes' => $this->tournament_minutes,

@@ -16,6 +16,26 @@
 
     <x-admin.shared.filter-chips :chips="$this->getFilterChips()" />
 
+    {{--
+        Un tournoi qui se joue maintenant passe devant tout le reste : le membre
+        qui ouvre cette page depuis la salle cherche une seule chose.
+    --}}
+    @foreach ($this->liveTournaments as $liveTournament)
+        <a wire:key="live-tournament-{{ $liveTournament->id }}"
+            href="{{ route('admin.tournaments.live', $liveTournament) }}"
+            class="mb-6 flex items-center gap-3 rounded-xl border border-error/40 bg-error/5 px-4 py-3 transition-colors hover:bg-error/10">
+            <span class="relative flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-error opacity-75"></span>
+                <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-error"></span>
+            </span>
+            <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-bold">{{ $liveTournament->name }}</p>
+                <p class="text-xs text-base-content/60">{{ __('Follow the tournament live') }}</p>
+            </div>
+            <x-icon name="o-chevron-right" class="h-4 w-4 shrink-0 text-base-content/40" />
+        </a>
+    @endforeach
+
     {{-- Paiements en attente — seule zone teintée de la page (alerte actionnable) --}}
     @if ($this->pendingPayments->isNotEmpty())
         <div class="mb-6 rounded-xl border border-warning/40 bg-warning/10">
@@ -76,7 +96,7 @@
                     <x-admin.shared.compact-event-preview
                         :location="null"
                         :remainingSlots="$remaining"
-                        :startDateTime="$tournament->start_date->format('Y-m-d H:i:s')"
+                        :startDateTime="$tournament->startsAt()?->format('Y-m-d H:i:s')"
                         :name="$tournament->name"
                         type="tournament"
                     >

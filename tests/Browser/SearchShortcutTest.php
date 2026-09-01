@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 
 /*
  * Ctrl+K (⌘K sur Mac) amène le curseur dans la recherche de la page.
@@ -337,4 +339,34 @@ it('keeps the badge after Livewire replaces the list', function (): void {
 
     expect($state['badges'])->toBe(1, 'Le badge doit survivre au morph — et ne pas s\'y dupliquer.');
     expect($state['aria'])->toBe('Control+K Slash', 'Le raccourci doit rester annoncé après un rafraîchissement.');
+});
+
+/*
+ * Le raccourci ne visait que les champs liés à une propriété nommée `search`.
+ * La sélection des invités d'un tournoi filtre sur `memberSearch` : Ctrl+K
+ * l'ignorait en silence, sur le seul écran où l'on parcourt deux cents noms.
+ * Un écran dont la recherche porte un autre nom la désigne par
+ * `data-page-search`.
+ */
+it('reaches a search field that is not called search', function (): void {
+    $this->actingAs($this->admin);
+
+    $tournament = Tournament::factory()->create([
+        'status' => TournamentStatusEnum::PUBLISHED,
+        'duration_minutes' => 180,
+        'pool_size' => 4,
+        'nb_pools' => 2,
+        'nb_qualifiers_per_pool' => 2,
+        'sets_to_win' => 3,
+        'logistics_buffer_minutes' => 3,
+    ]);
+
+    $page = visit(route('admin.tournaments.wizard.edit', [$tournament, 'step' => 4]));
+
+    $result = $page->script(PRESS_CTRL_K);
+    $state = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($state['tag'])->toBe('input', 'Ctrl+K doit atteindre la recherche de membres.');
+    expect($state['bound'])->toBe('memberSearch', 'Le champ désigné par data-page-search doit gagner.');
+    expect($state['announced'])->toBe('Control+K Slash', 'Le raccourci doit être annoncé ici aussi.');
 });

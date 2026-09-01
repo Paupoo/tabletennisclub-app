@@ -81,6 +81,13 @@ final class PublishedState extends AbstractTournamentState
         return TournamentStatusEnum::PUBLISHED;
     }
 
+    #[\Override]
+    public function hasLockedContract(): bool
+    {
+        // Members are entering against a published name and price.
+        return true;
+    }
+
     public function unpublish(Tournament $tournament): void
     {
         $this->tournamentService->unregisterAllUsers($tournament);

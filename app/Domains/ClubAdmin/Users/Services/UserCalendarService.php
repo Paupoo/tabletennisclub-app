@@ -13,7 +13,6 @@ use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
-use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\Training;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -187,7 +186,7 @@ class UserCalendarService
     private function tournamentRow(Tournament $tournament, ?TournamentRegistration $registration): array
     {
         return [
-            'startDateTime' => $tournament->start_date->format('Y-m-d H:i:s'),
+            'startDateTime' => $tournament->startsAt()?->format('Y-m-d H:i:s'),
             'endDate' => $tournament->end_date?->format('Y-m-d'),
             'title' => $tournament->name,
             'type' => 'tournament',
@@ -206,7 +205,7 @@ class UserCalendarService
     {
         // A tournament overlaps the window as soon as it hasn't ended before $from
         // (multi-day tournaments keep showing while ongoing).
-        $tournamentsQuery = Tournament::where('status', TournamentStatusEnum::PUBLISHED)
+        $tournamentsQuery = Tournament::onTheCalendar()
             ->whereRaw('COALESCE(end_date, start_date) >= ?', [$from])
             ->when($to, fn ($q) => $q->where('start_date', '<=', $to));
 

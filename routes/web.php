@@ -15,6 +15,7 @@ use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingRsvpController;
 use App\Http\Controllers\ClubEvents\Tournament\TableScoreController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
+use App\Http\Controllers\ClubEvents\Tournament\TournamentPrintController;
 use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\ClubPosts\PublicNewsPostController;
 use App\Http\Controllers\HomeController;
@@ -279,6 +280,23 @@ Route::prefix('admin/club-events/tournaments')
         Route::livewire('{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');
         Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
         Route::livewire('{tournament}/wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard.edit');
+        Route::get('{tournament}/print/pools', [TournamentPrintController::class, 'poolsPoster'])->name('admin.tournaments.print.pools');
+        Route::get('{tournament}/print/match-sheets', [TournamentPrintController::class, 'matchSheets'])->name('admin.tournaments.print.matches');
+    });
+
+/*
+ * La même journée par l'autre bout : le tournoi vu par un joueur.
+ *
+ * Hors du groupe ci-dessus, qui est fermé au comité. La page ne sait rien
+ * écrire — pas un score, pas une table, pas un statut — et c'est ce qui permet
+ * de l'ouvrir aux inscrits. Elle vérifie elle-même l'inscription dans mount(),
+ * parce que « être inscrit à ce tournoi-ci » n'est pas une permission mais une
+ * ligne de pivot.
+ */
+Route::prefix('admin/club-events/tournaments')
+    ->middleware(['auth', 'verified', 'feature:tournaments'])
+    ->group(function (): void {
+        Route::livewire('{tournament}/live', 'pages::club-events.tournaments.live')->name('admin.tournaments.live');
     });
 
 Route::prefix('admin/club-events/interclubs/')

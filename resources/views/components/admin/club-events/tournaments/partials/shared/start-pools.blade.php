@@ -32,7 +32,7 @@
 </div>
 
 {{-- Generate Pools --}}
-<x-header :title="__('Pools')" subtitle="Distribute players automatically, then adjust if needed" class="mt-8" size="md">
+<x-header :title="__('Pools')" :subtitle="__('Distribute players automatically, then adjust if needed')" class="mt-8" size="md">
     <x-slot:actions>
         <x-button label="{{ $this->poolsGenerated ? __('Regenerate Pools') : __('Generate Pools') }}"
             icon="o-user-group"
@@ -60,10 +60,15 @@
                     <div x-init="initSortable($el, $wire)" data-team-id="{{ $poolId }}" class="min-h-25 space-y-1">
                         @foreach ($data['players'] as $player)
                             <div wire:key="player-{{ $player['id'] }}" data-id="{{ $player['id'] }}"
-                                @class(['flex justify-between items-center border-b border-base-300/30 py-1 group cursor-grab active:cursor-grabbing', 'text-primary underline underline-offset-4 decoration-2' => $player['id'] === auth()->id()])>
+                                @class(['flex justify-between items-center border-b border-base-300/30 py-1 group', 'text-primary underline underline-offset-4 decoration-2' => $player['id'] === auth()->id()])>
                                 <div class="flex items-center gap-2 truncate">
-                                    <x-icon name="o-bars-3"
-                                        class="w-4 h-4 opacity-20 group-hover:opacity-100 transition-opacity" />
+                                    {{-- La zone de saisie du glissement : hors d'elle, le doigt fait défiler. --}}
+                                    <span data-drag-handle
+                                        class="-m-2 flex h-8 w-8 shrink-0 cursor-grab items-center justify-center p-2 active:cursor-grabbing"
+                                        aria-label="{{ __('Move :player', ['player' => $player['name']]) }}">
+                                        <x-icon name="o-bars-3"
+                                            class="w-4 h-4 opacity-20 group-hover:opacity-100 transition-opacity" />
+                                    </span>
                                     <span class="truncate font-medium">{{ $player['name'] }}</span>
                                 </div>
                                 <div class="flex gap-5 items-center">

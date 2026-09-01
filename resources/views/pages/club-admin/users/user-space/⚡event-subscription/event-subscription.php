@@ -150,6 +150,30 @@ new class extends Component
     }
 
     /**
+     * Les tournois du membre qui se jouent en ce moment.
+     *
+     * La liste ci-dessous est celle des inscriptions ouvertes, ce qui est le
+     * bon filtre pour s'inscrire et le mauvais le jour J : au moment où le
+     * membre est dans la salle, son tournoi en a fini avec les inscriptions et
+     * ne s'affiche plus nulle part. D'où ce bandeau, qui ne propose rien à
+     * signer et mène droit à la page de suivi.
+     *
+     * @return Collection<int, Tournament>
+     */
+    #[Computed]
+    public function liveTournaments(): Collection
+    {
+        return Tournament::query()
+            ->where('status', TournamentStatusEnum::PENDING)
+            ->whereHas('users', fn ($q) => $q
+                ->where('tournament_user.user_id', $this->user->id)
+                ->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered', 'waiting'])
+            )
+            ->orderBy('start_date')
+            ->get();
+    }
+
+    /**
      * This user's meeting registrations (with payment), keyed by meeting id —
      * powers the row status/meal badges and the RSVP modal prefill.
      *
@@ -333,7 +357,7 @@ new class extends Component
     #[Computed]
     public function upcomingTournaments(): Collection
     {
-        return Tournament::where('status', TournamentStatusEnum::PUBLISHED)
+        return Tournament::registrationsOpen()
             ->where('start_date', '>=', now())
             ->withCount([
                 'users AS active_registrations_count' => fn ($q) => $q->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered']),

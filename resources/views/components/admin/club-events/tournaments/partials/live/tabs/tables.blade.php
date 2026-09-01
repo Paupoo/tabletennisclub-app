@@ -1,126 +1,99 @@
-<div @if($tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
+{{--
+    L'état de la salle. Le poll est porté par la régie qui inclut ce partiel.
+
+    La grille passe à deux colonnes dès le téléphone : à une seule, un écran de
+    375 px montrait deux tables sur douze, et l'organisateur qui marche dans la
+    salle cherche justement d'un coup d'œil lesquelles sont libres. La carte est
+    donc compacte par défaut et se remplit à partir de sm.
+--}}
+<div>
     @if ($this->tables->isEmpty())
         <div class="flex flex-col items-center py-20 text-muted">
-            <x-icon name="o-squares-2x2" class="w-12 h-12 mb-3" />
+            <x-icon name="o-squares-2x2" class="mb-3 h-12 w-12" />
             <p class="text-sm">{{ __('No tables linked to this tournament.') }}</p>
         </div>
     @else
         @foreach ($this->tables as $roomName => $roomTables)
             <div class="mb-10">
-                <div class="flex items-center gap-3 mb-6">
-                    <x-icon name="o-map-pin" class="w-5 h-5 text-base-content/40" />
-                    <span class="text-lg font-black tracking-tighter uppercase">{{ $roomName }}</span>
-                    <div class="h-px bg-base-300 grow"></div>
-                    <span class="text-xs text-muted">
-                        {{ $roomTables->where('is_free', true)->count() }} {{ __('available') }} /
-                        {{ $roomTables->count() }} {{ __('total') }}
+                <div class="mb-4 flex items-center gap-3">
+                    <x-icon name="o-map-pin" class="h-5 w-5 shrink-0 text-base-content/40" />
+                    <span class="truncate text-lg font-black uppercase tracking-tighter">{{ $roomName }}</span>
+                    <div class="h-px grow bg-base-300"></div>
+                    <span class="shrink-0 text-xs text-muted">
+                        {{ __(':free free / :total', ['free' => $roomTables->where('is_free', true)->count(), 'total' => $roomTables->count()]) }}
                     </span>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
                     @foreach ($roomTables as $table)
-                        @php
-                            $tableUrl = route('tournament.table.score', [$tournament, $table['id']]);
-                            $qrSmall  = new \Endroid\QrCode\QrCode($tableUrl, size: 80, margin: 2);
-                            $writer   = new \Endroid\QrCode\Writer\SvgWriter;
-                            $svgSmall = substr($writer->write($qrSmall)->getString(), 22);
-                        @endphp
-
                         @php
                             $minutesElapsed = ! $table['is_free'] && $table['match_started_at']
                                 ? (int) \Carbon\Carbon::parse($table['match_started_at'])->diffInMinutes(now())
                                 : 0;
                             $isOverdue = $minutesElapsed > 20;
+                            $match = $table['is_free'] ? null : $table['match'];
                         @endphp
-                        <x-card wire:key="table-{{ $table['id'] }}" shadow
-                            class="border transition-all {{ $table['is_free'] ? 'bg-base-200/40 border-base-300' : ($isOverdue ? 'bg-error/5 border-error/50 ring-1 ring-error/30' : 'bg-base-100 border-primary/20') }} relative">
 
-                            @if ($isOverdue)
-                                <div class="flex items-center gap-1.5 text-error text-xs font-bold mb-2 animate-pulse">
-                                    <x-icon name="o-exclamation-triangle" class="w-3.5 h-3.5 shrink-0" />
-                                    {{ __(':n min — check the referee!', ['n' => $minutesElapsed]) }}
-                                </div>
-                            @endif
-
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <div class="text-xs uppercase font-bold text-muted">{{ __('Table') }}</div>
-                                    <div class="text-xl font-black truncate max-w-25">{{ $table['name'] }}</div>
-                                </div>
+                        <div wire:key="table-{{ $table['id'] }}" @class([
+                            'flex flex-col rounded-xl border p-3 transition-colors',
+                            'border-success/60 bg-success/5' => $table['is_free'],
+                            'border-error/50 bg-error/5' => $isOverdue,
+                            'border-primary/25 bg-base-100' => ! $table['is_free'] && ! $isOverdue,
+                        ])>
+                            <div class="mb-2 flex items-center justify-between gap-2">
+                                <span class="truncate text-lg font-black leading-none">{{ $table['name'] }}</span>
 
                                 @if ($table['is_free'])
-                                    <x-badge value="{{ __('AVAILABLE') }}" class="badge-success badge-sm font-bold" />
+                                    <x-badge :value="__('FREE')" class="badge-success badge-xs shrink-0 font-bold" />
                                 @else
-                                    @php
-                                        $elapsed = $table['match_started_at']
-                                            ? \Carbon\Carbon::parse($table['match_started_at'])->diffForHumans(short: true)
-                                            : null;
-                                    @endphp
-                                    <x-badge value="{{ $elapsed ?? '—' }}"
-                                        class="{{ $isOverdue ? 'badge-error' : 'badge-ghost' }} badge-xs"
-                                        icon="o-clock" />
+                                    <x-badge value="{{ $minutesElapsed }}′"
+                                        class="{{ $isOverdue ? 'badge-error' : 'badge-ghost' }} badge-xs shrink-0" />
                                 @endif
                             </div>
 
-                            <div class="space-y-3">
-                                @if (! $table['is_free'] && $table['match'])
-                                    @php
-                                        $match      = $table['match'];
-                                        $isDoubles  = $match->pair1_id !== null;
-                                        $side1Name  = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
-                                        $side2Name  = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
-                                    @endphp
-                                    <div class="bg-base-200 rounded-lg p-2 border border-base-300">
-                                        <div class="text-xs font-bold truncate">{{ $side1Name }}</div>
-                                        <div class="flex items-center gap-2 my-1">
-                                            <div class="h-px grow bg-base-300"></div>
-                                            <span class="text-xs font-black opacity-30 italic">VS</span>
-                                            <div class="h-px grow bg-base-300"></div>
-                                        </div>
-                                        <div class="text-xs text-right font-bold truncate">{{ $side2Name }}</div>
-                                    </div>
-                                    
-                                    @if ($match->referee)
-                                        <div class="flex items-center gap-1 text-xs text-muted">
-                                            <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
-                                            <span class="truncate">{{ $match->referee->full_name }}</span>
-                                        </div>
-                                    @endif
+                            @if ($isOverdue)
+                                <p class="mb-2 flex items-center gap-1 text-xs font-bold text-error">
+                                    <x-icon name="o-exclamation-triangle" class="h-3.5 w-3.5 shrink-0" />
+                                    <span class="truncate">{{ __('check the referee!') }}</span>
+                                </p>
+                            @endif
 
-                                    <div class="flex gap-2 pt-1">
-                                        <x-button :label="__('Score')" icon="o-pencil"
-                                            class="btn-ghost btn-xs flex-1 bg-base-200"
-                                            wire:click="openScoreEntry({{ $match->id }}, {{ $table['id'] }})" />
-                                    </div>
+                            @if ($match)
+                                @php
+                                    $isDoubles = $match->pair1_id !== null;
+                                    $side1Name = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
+                                    $side2Name = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
+                                @endphp
+                                <div class="text-xs leading-tight">
+                                    <p class="truncate font-semibold">{{ $side1Name }}</p>
+                                    <p class="truncate font-semibold text-base-content/60">{{ $side2Name }}</p>
+                                </div>
 
-                                    @if ($match->sets->count())
-                                        <div class="flex flex-wrap justify-center gap-1">
-                                            @foreach ($match->sets as $set)
-                                                <x-badge
-                                                    value="{{ $set->player1_score }}-{{ $set->player2_score }}"
-                                                    class="badge-info badge-soft font-mono text-xs px-2" />
-                                            @endforeach
-                                        </div>
-                                    @endif
+                                @if ($match->referee)
+                                    <p class="mt-1.5 hidden items-center gap-1 text-xs text-muted sm:flex">
+                                        <x-icon name="o-eye" class="h-3 w-3 shrink-0" />
+                                        <span class="truncate">{{ $match->referee->full_name }}</span>
+                                    </p>
+                                @endif
 
-                                @else
-                                    <div class="py-4 flex flex-col items-center justify-center border-2 border-dashed border-base-300 rounded-lg gap-3">
-                                        <x-button
-                                            :label="__('Launch')"
-                                            icon="o-play"
-                                            class="btn-outline btn-sm text-success"
-                                            wire:click="openLaunchDrawer({{ $table['id'] }})" />
+                                @if ($match->sets->count())
+                                    <div class="mt-1.5 hidden flex-wrap gap-1 sm:flex">
+                                        @foreach ($match->sets as $set)
+                                            <x-badge value="{{ $set->player1_score }}-{{ $set->player2_score }}"
+                                                class="badge-info badge-soft px-1.5 font-mono text-xs" />
+                                        @endforeach
                                     </div>
                                 @endif
 
-                                {{-- QR code — direct link to mobile score page --}}
-                                {{-- <a href="{{ $tableUrl }}" target="_blank"
-                                    class="w-full flex justify-center pt-1 opacity-40 hover:opacity-90 transition-opacity"
-                                    :title="__('Open mobile score page')">
-                                    {!! $svgSmall !!}
-                                </a> --}}
-                            </div>
-                        </x-card>
+                                <x-button :label="__('Score')" icon="o-pencil"
+                                    class="btn-outline btn-xs mt-2 w-full"
+                                    wire:click="openScoreEntry({{ $match->id }}, {{ $table['id'] }})" />
+                            @else
+                                <x-button :label="__('Launch a match')" icon="o-play"
+                                    class="btn-outline btn-xs mt-auto w-full text-success"
+                                    wire:click="openLaunchDrawer({{ $table['id'] }})" />
+                            @endif
+                        </div>
                     @endforeach
                 </div>
             </div>

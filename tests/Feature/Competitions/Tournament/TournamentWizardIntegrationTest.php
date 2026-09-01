@@ -5,12 +5,17 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
-use App\Domains\Competitions\Tournament\Notifications\TournamentInvitationNotification;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
 use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Jobs\SendTournamentCancellationJob;
+use App\Jobs\SendTournamentInvitationJob;
+use App\Jobs\SendTournamentUpdateJob;
+use Illuminate\Bus\PendingBatch;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
@@ -38,27 +43,45 @@ function competitiveUsers(int $count): Collection
     return User::factory($count)->create();
 }
 
+/** A match already played, which freezes the tournament against being walked back. */
+function playedMatch(Tournament $tournament): TournamentMatch
+{
+    return TournamentMatch::factory()->create([
+        'tournament_id' => $tournament->id,
+        'pool_id' => null,
+        'table_id' => null,
+        'status' => 'completed',
+    ]);
+}
+
 // ── sendInvitations ───────────────────────────────────────────────────────────
 
 describe('sendInvitations', function (): void {
-    it('dispatches invitation notification to each selected user', function (): void {
+    /*
+     * This used to notify the three members by hand and then assert they had
+     * been notified, which is a test of nothing: it passed whatever the wizard
+     * did. It now calls the wizard, and what it asserts is that the mailing is
+     * queued rather than sent — one job per member, none of them leaving in the
+     * request.
+     */
+    it('queues one throttled job per selected member instead of sending in the request', function (): void {
+        Bus::fake();
         Notification::fake();
 
-        $tournament = wizardTournament();
+        $tournament = wizardTournament(['registration_deadline' => now()->addWeek()]);
         $users = competitiveUsers(3);
 
-        $notification = new TournamentInvitationNotification(
-            tournament: $tournament,
-            customMessage: 'Bring your best game!',
-        );
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('inviteMessage', 'Bring your best game!')
+            ->set('selectedMembers', $users->pluck('id')->all())
+            ->call('sendInvitations');
 
-        foreach ($users as $user) {
-            $user->notify($notification);
-        }
+        Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs->count() === 3
+            && $batch->jobs->every(fn (object $job): bool => $job instanceof SendTournamentInvitationJob)
+            && $batch->jobs->every(fn (SendTournamentInvitationJob $job): bool => $job->customMessage === 'Bring your best game!'));
 
-        Notification::assertSentTo($users[0], TournamentInvitationNotification::class);
-        Notification::assertSentTo($users[2], TournamentInvitationNotification::class);
-        Notification::assertCount(3);
+        Notification::assertNothingSent();
     });
 
     it('creates a tournament_invitations record', function (): void {
@@ -522,6 +545,7 @@ describe('opening registrations', function (): void {
 
 describe('inviting members', function (): void {
     it('refuses to invite anybody while the registrations are closed', function (): void {
+        Bus::fake();
         Notification::fake();
 
         $tournament = wizardTournament([
@@ -535,6 +559,7 @@ describe('inviting members', function (): void {
             ->set('selectedMembers', [$member->id])
             ->call('sendInvitations');
 
+        Bus::assertNothingBatched();
         Notification::assertNothingSentTo($member);
         expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::LOCKED);
     });
@@ -544,6 +569,7 @@ describe('inviting members', function (): void {
      * sending invitations.
      */
     it('leaves the status alone once they are open', function (): void {
+        Bus::fake();
         Notification::fake();
 
         $tournament = wizardTournament([
@@ -557,7 +583,331 @@ describe('inviting members', function (): void {
             ->set('selectedMembers', [$member->id])
             ->call('sendInvitations');
 
-        Notification::assertSentTo($member, TournamentInvitationNotification::class);
+        Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs->count() === 1);
         expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::PUBLISHED);
+    });
+});
+
+// ── Transitions the state machine refuses, and what the committee is told ─────
+
+describe('closing registrations', function (): void {
+    it('closes them once somebody has entered', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+        $tournament->users()->attach(competitiveUsers(1));
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('confirmCloseRegistrations')
+            ->assertSet('showCloseRegistrationsModal', false);
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::SETUP);
+    });
+
+    /*
+     * There is nothing to close on a tournament nobody joined, and the wizard
+     * has to say which way out exists rather than fail silently.
+     */
+    it('refuses on a tournament nobody joined, and says to cancel it instead', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('confirmCloseRegistrations')
+            ->assertSet('showCloseRegistrationsModal', false);
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::PUBLISHED);
+    });
+
+    /* A refusal must not strand the waitlist: they were not kicked. */
+    it('leaves the waitlist alone when it refuses', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('confirmCloseRegistrations');
+
+        expect(DB::table('tournament_user')->where('tournament_id', $tournament->id)->count())->toBe(0);
+    });
+});
+
+describe('cancelling a tournament', function (): void {
+    /*
+     * A full draw is sixty four players, and "the tournament is off" used to
+     * reach all of them in one loop inside the request. It goes out over the
+     * `convocations` limiter now — the urgent one, not the invitations key:
+     * somebody who blocked out Saturday morning has to be told today.
+     */
+    it('queues one throttled notice per registered player instead of sending in the request', function (): void {
+        Bus::fake();
+        Notification::fake();
+
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+        $players = competitiveUsers(3);
+        $tournament->users()->attach($players->pluck('id'), ['registration_status' => 'registered']);
+
+        // On the waitlist, and told too: the spot they were queueing for is gone.
+        $waiting = User::factory()->create();
+        $tournament->users()->attach($waiting->id, ['registration_status' => 'waiting']);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('cancelTournament');
+
+        Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs->count() === 4
+            && $batch->jobs->every(fn (object $job): bool => $job instanceof SendTournamentCancellationJob));
+
+        Notification::assertNothingSent();
+    });
+
+    it('batches nothing when nobody had registered', function (): void {
+        Bus::fake();
+
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('cancelTournament');
+
+        Bus::assertNothingBatched();
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::CANCELLED);
+    });
+
+    it('cancels one that has not been played', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('cancelTournament')
+            ->assertSet('showCancelModal', false);
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::CANCELLED);
+    });
+
+    /*
+     * Cancelling a tournament whose matches have been played would strand
+     * results that were announced in the room.
+     */
+    it('refuses once a match has been played', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PENDING]);
+        playedMatch($tournament);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('cancelTournament')
+            ->assertSet('showCancelModal', false);
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::PENDING);
+    });
+
+    it('refuses on a tournament that is already closed', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::CLOSED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('cancelTournament');
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::CLOSED);
+    });
+});
+
+// ── Informations complémentaires ─────────────────────────────────────────────
+
+/*
+ * Le champ existait dans le formulaire depuis le début, sans wire:model ni
+ * propriété : ce que le comité y tapait disparaissait au premier aller-retour
+ * Livewire, sans le moindre signal. La colonne `description`, elle, existait
+ * déjà sur la table — elle manquait seulement au $fillable.
+ */
+describe('additional information', function (): void {
+
+    it('stores what the committee types', function (): void {
+        $tournament = wizardTournament();
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('step', '1')
+            ->set('description', 'Tenue de club obligatoire. Buvette ouverte dès 8h30.')
+            ->call('save');
+
+        expect($tournament->fresh()->description)
+            ->toBe('Tenue de club obligatoire. Buvette ouverte dès 8h30.');
+    });
+
+    it('reads it back when the wizard reopens', function (): void {
+        $tournament = wizardTournament(['description' => 'Raquettes fournies sur demande.']);
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('description', 'Raquettes fournies sur demande.');
+    });
+
+    it('binds the field so the value can reach the component', function (): void {
+        $tournament = wizardTournament();
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('step', '1')
+            ->assertSeeHtml('wire:model="description"');
+    });
+});
+
+// ── L'étape vit dans l'URL ───────────────────────────────────────────────────
+
+/*
+ * mount() déduisait l'étape du statut, sans exception : l'icône réglages de la
+ * liste ouvrait donc les invitations pour un tournoi publié, et jamais la
+ * configuration. Une étape explicite doit l'emporter.
+ */
+describe('wizard step', function (): void {
+
+    it('still derives the step from the status when the URL says nothing', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('step', '4');
+    });
+
+    it('lets an explicit step win over the one derived from the status', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::SETUP]);
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->withQueryParams(['step' => '3'])
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('step', '3');
+    });
+
+    it('opens the configuration when the settings icon asks for it', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->withQueryParams(['step' => '1'])
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSet('step', '1')
+            ->assertSee(__('Details'));
+    });
+});
+
+// ── Le simulateur reste sous les yeux ────────────────────────────────────────
+
+/*
+ * Le verdict de faisabilité vivait ~1780 px sous les champs qui le déterminent
+ * -- 2,7 écrans sur un portable 1366x768. Il occupe maintenant une colonne
+ * collée, et une barre compacte prend le relais quand cette colonne n'a plus
+ * la place.
+ */
+describe('feasibility panel placement', function (): void {
+
+    it('follows the scroll beside the form', function (): void {
+        $tournament = wizardTournament();
+
+        $html = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('step', '1')
+            ->html();
+
+        expect($html)->toContain('xl:sticky');
+
+        // Le verdict et le bouton d'enregistrement partagent la colonne collée :
+        // dans une page de cette longueur, le bouton était lui aussi hors d'atteinte.
+        $sticky = strpos($html, 'xl:sticky');
+        $panel = strpos($html, (string) __('Feasibility simulation'));
+        $save = strpos($html, (string) __('Update tournament'));
+
+        expect($panel)->toBeGreaterThan($sticky)->and($save)->toBeGreaterThan($panel);
+    });
+
+    it('falls back to a compact bar when the column has no room', function (): void {
+        $tournament = wizardTournament();
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('step', '1')
+            ->assertSeeHtml('sticky top-2 z-10 xl:hidden');
+    });
+
+    it('offers the save button once, not twice', function (): void {
+        $tournament = wizardTournament();
+
+        $html = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('step', '1')
+            ->html();
+
+        expect(substr_count($html, (string) __('Update tournament')))->toBe(1);
+    });
+});
+
+// ── Le fil des six étapes sur téléphone ──────────────────────────────────────
+
+/*
+ * La ligne métro mesure ~825 px pour 335 disponibles sur un téléphone, sans
+ * signaler son débordement ni amener l'étape active dans le champ de vision --
+ * alors que mount() peut en choisir la cinquième.
+ */
+describe('mobile step selector', function (): void {
+
+    it('says where you are and how many steps there are', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::SETUP]);
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSee(__('Step :current of :total', ['current' => 5, 'total' => 6]));
+    });
+
+    it('keeps the metro line for wider screens', function (): void {
+        $tournament = wizardTournament();
+
+        $html = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->html();
+
+        // Le sélecteur sous md, la ligne métro à partir de md : jamais les deux.
+        expect($html)->toContain('mb-8 md:hidden')
+            ->and($html)->toContain('mb-8 hidden items-center gap-0 overflow-x-auto md:flex');
+    });
+});
+
+// ── A logistics change reaches the players the same way ───────────────────────
+
+describe('changing the logistics of a tournament', function (): void {
+    /*
+     * Moving the start time notifies everybody who signed up. Same audience
+     * size as a cancellation, same urgency, same limiter.
+     */
+    it('queues one throttled notice per registered player when the time moves', function (): void {
+        Bus::fake();
+        Notification::fake();
+
+        $tournament = wizardTournament([
+            'status' => TournamentStatusEnum::PUBLISHED,
+            'start_time' => '10:00:00',
+        ]);
+        $players = competitiveUsers(2);
+        $tournament->users()->attach($players->pluck('id'), ['registration_status' => 'confirmed']);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('startTime', '14:00')
+            ->call('save');
+
+        Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs->count() === 2
+            && $batch->jobs->every(fn (object $job): bool => $job instanceof SendTournamentUpdateJob)
+            && $batch->jobs->every(fn (SendTournamentUpdateJob $job): bool => $job->changes === ['time']));
+
+        Notification::assertNothingSent();
+    });
+
+    it('says nothing to anybody when the logistics did not move', function (): void {
+        Bus::fake();
+
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+        $tournament->users()->attach(User::factory()->create()->id, ['registration_status' => 'confirmed']);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('save');
+
+        Bus::assertNothingBatched();
     });
 });

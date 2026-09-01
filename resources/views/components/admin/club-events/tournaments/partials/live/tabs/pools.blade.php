@@ -1,3 +1,15 @@
+{{--
+    Le classement des poules, lisible depuis le bord du terrain.
+
+    C'est la page qu'un joueur ouvre sur son téléphone pendant le tournoi. Elle
+    disait qui menait la poule et jamais où quelque chose se jouait : l'info
+    vivait dans l'onglet « Tables », trié par salle, c'est-à-dire à l'endroit
+    où on ne cherche pas un nom.
+
+    Un numéro de table à côté du joueur, et rien d'autre. Une première version
+    ajoutait un bandeau par poule et une pastille rouge clignotante ; ça noyait
+    le classement, qui doit rester un classement.
+--}}
 <div @if($tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
     @if ($this->pools->isEmpty())
         <div class="flex flex-col items-center py-20 text-muted">
@@ -5,6 +17,8 @@
             <p class="text-sm">{{ __('No pools generated yet.') }}</p>
         </div>
     @else
+        @php $placements = $this->livePlacements; @endphp
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @foreach ($this->pools as $pool)
                 <x-card wire:key="pool-{{ $pool['id'] }}"
@@ -37,6 +51,10 @@
                                 $isMe        = $hasPair
                                     ? (auth()->id() === $entry['pair']->player1_id || auth()->id() === $entry['pair']->player2_id)
                                     : ($entryUserId === auth()->id());
+                                // Une paire est en piste dès que l'un de ses deux joueurs l'est.
+                                $playing = $hasPair
+                                    ? ($placements[$entry['pair']->player1_id] ?? $placements[$entry['pair']->player2_id] ?? null)
+                                    : ($entryUserId !== null ? ($placements[$entryUserId] ?? null) : null);
                             @endphp
                             <div wire:key="pool-{{ $pool['id'] }}-player-{{ $entryUserId ?? $i }}"
                                 @class([
@@ -51,6 +69,9 @@
                                     ])>{{ $displayName }}</span>
                                     @if ($entry['no_show'])
                                         <x-badge value="{{ __('Forfeit') }}" class="badge-error badge-xs shrink-0" />
+                                    @elseif ($playing)
+                                        <x-badge value="{{ __('Table :name', ['name' => $playing['table']]) }}"
+                                            class="badge-primary badge-soft badge-xs shrink-0 font-semibold" />
                                     @elseif ($isMe)
                                         <x-icon name="o-arrow-left" class="w-3 h-3 ml-1 shrink-0" />
                                     @endif

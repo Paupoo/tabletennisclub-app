@@ -7,10 +7,15 @@ namespace App\Domains\Shared\States\Tournament\States;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\States\Tournament\AbstractTournamentState;
-use InvalidArgumentException;
 
 final class DraftState extends AbstractTournamentState
 {
+    public function cancel(Tournament $tournament): void
+    {
+        $tournament->status = TournamentStatusEnum::CANCELLED;
+        $tournament->save();
+    }
+
     #[\Override]
     public function canCreatePools(): bool
     {
@@ -43,7 +48,10 @@ final class DraftState extends AbstractTournamentState
 
     public function getAllowedTransitions(): array
     {
-        return [TournamentStatusEnum::PUBLISHED];
+        return [
+            TournamentStatusEnum::LOCKED,
+            TournamentStatusEnum::CANCELLED,
+        ];
     }
 
     public function getStatus(): TournamentStatusEnum
@@ -51,17 +59,16 @@ final class DraftState extends AbstractTournamentState
         return TournamentStatusEnum::DRAFT;
     }
 
-    public function publish(Tournament $tournament): void
+    /**
+     * Validate the contract: the name and the price stop being editable.
+     *
+     * This is the wizard's fourth step. It does not open anything — a locked
+     * tournament is still invisible to members until the registrations are
+     * explicitly opened (issue #35).
+     */
+    public function lock(Tournament $tournament): void
     {
-        if ($tournament->tables()->count() === 0) {
-            throw new InvalidArgumentException('Cannot publish tournament without at least one table');
-        }
-
-        if ($tournament->start_date <= today()) {
-            throw new InvalidArgumentException('Cannot public a tournament not in the future.');
-        }
-
-        $tournament->status = TournamentStatusEnum::PUBLISHED;
+        $tournament->status = TournamentStatusEnum::LOCKED;
         $tournament->save();
     }
 }

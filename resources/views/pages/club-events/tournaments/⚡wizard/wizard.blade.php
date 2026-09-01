@@ -43,7 +43,50 @@
             ];
         @endphp
 
-        <div class="flex items-center gap-0 mb-8 overflow-x-auto">
+        {{--
+            Sur téléphone, la ligne métro mesure ~825 px pour 335 disponibles : elle
+            partait en défilement horizontal, sans rien qui signale le débordement et
+            sans amener l'étape active dans le champ de vision -- or mount() peut en
+            choisir la cinquième. Le sélecteur ci-dessous répond en une ligne aux deux
+            questions, « où suis-je » et « combien reste-t-il », et apporte le geste
+            précédent/suivant qui manquait partout, y compris sur desktop.
+        --}}
+        <div class="mb-8 md:hidden">
+            <div class="rounded-xl border border-base-300 bg-base-100 px-3 py-2.5">
+                <div class="flex items-center gap-2.5">
+                    <x-button icon="o-chevron-left" class="btn-outline btn-sm btn-square shrink-0"
+                        :aria-label="__('Previous step')"
+                        :disabled="$currentStep <= 1"
+                        wire:click="$set('step', '{{ max(1, $currentStep - 1) }}')" />
+
+                    <div class="min-w-0 flex-1 text-center">
+                        <p class="text-xs font-bold uppercase tracking-widest text-base-content/45">
+                            {{ __('Step :current of :total', ['current' => $currentStep, 'total' => count($wizardSteps)]) }}
+                        </p>
+                        <p class="truncate text-sm font-bold">{{ $wizardSteps[$currentStep]['label'] ?? '' }}</p>
+                    </div>
+
+                    <x-button icon="o-chevron-right" class="btn-outline btn-sm btn-square shrink-0"
+                        :aria-label="__('Next step')"
+                        :disabled="$currentStep >= $maxReachable"
+                        wire:click="$set('step', '{{ min($maxReachable, $currentStep + 1) }}')" />
+                </div>
+
+                {{-- La progression, une barre par étape : atteinte, courante, à venir. --}}
+                <div class="mt-2.5 flex gap-1" role="presentation">
+                    @foreach ($wizardSteps as $num => $info)
+                        <div @class([
+                            'h-1 flex-1 rounded-full',
+                            'bg-success'  => $num < $currentStep,
+                            'bg-primary'  => $num === $currentStep,
+                            'bg-base-300' => $num > $currentStep,
+                        ])></div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-8 hidden items-center gap-0 overflow-x-auto md:flex">
             @foreach ($wizardSteps as $num => $info)
                 @php $reachable = $num <= $maxReachable; @endphp
 

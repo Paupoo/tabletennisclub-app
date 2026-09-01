@@ -1,10 +1,13 @@
-<x-app-modal wire:model="showInviteModal" title="Confirmer l'envoi" separator :open="$showInviteModal">
+<x-app-modal wire:model="showInviteModal" :title="__('Confirm sending')" separator :open="$showInviteModal">
     <div class="space-y-4">
-        <p>{{ __('You are about to send an invitation to') }}<strong>{{ count($selectedMembers) }}</strong>
-            membres.</p>
+        <p>{{ trans_choice(
+            '{1} You are about to invite :count member.|[2,*] You are about to invite :count members.',
+            count($selectedMembers),
+            ['count' => count($selectedMembers)],
+        ) }}</p>
 
         <x-alert icon="o-information-circle" class="alert-info text-sm text-white">
-            Un email contenant les détails du tournoi et un lien de confirmation leur sera envoyé.
+            {{ __('They will receive an email with the tournament details and a confirmation link.') }}
         </x-alert>
 
         <x-textarea :label="__('Custom message (optional)')" wire:model="inviteMessage"
@@ -17,8 +20,8 @@
     </div>
 
     <x-slot:actions>
-        <x-button label="Annuler" @click="$wire.showInviteModal = false" />
-        <x-button label="Envoyer maintenant" icon="o-paper-airplane" class="btn-primary"
+        <x-button :label="__('Cancel')" @click="$wire.showInviteModal = false" />
+        <x-button :label="__('Send now')" icon="o-paper-airplane" class="btn-primary"
             wire:click="sendInvitations" spinner="sendInvitations" />
     </x-slot:actions>
 </x-app-modal>

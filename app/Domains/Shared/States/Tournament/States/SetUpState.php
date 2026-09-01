@@ -64,6 +64,13 @@ final class SetUpState extends AbstractTournamentState
         return TournamentStatusEnum::SETUP;
     }
 
+    #[\Override]
+    public function hasLockedContract(): bool
+    {
+        // Registrations have been taken: the contract cannot move now.
+        return true;
+    }
+
     public function publish(Tournament $tournament): void
     {
         $tournament->status = TournamentStatusEnum::PUBLISHED;

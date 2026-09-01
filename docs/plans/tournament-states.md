@@ -1,12 +1,12 @@
 # Plan — états d'un tournoi (options B et C)
 
-> **Statut global :** 🟢 Option A livrée (`09e8247e`) et #81 corrigée — options B et C planifiées, pas commencées
+> **Statut global :** 🟢 A livrée · **B livrée intégralement (2026-08-29, non commitée)** · C1 et C3 livrées, C2 classée sans suite
 > **Branche :** `develop`
 > **Issue d'origine :** #35, fermée le 2026-08-28 (symptôme corrigé) · **Issue dérivée, corrigée aussi :** #81
 >
 > Ce document survit à la fermeture du ticket : c'est lui qui porte B et C.
 > **Carte d'analyse (lecture) :** <https://claude.ai/code/artifact/1ef13c8d-e353-4c44-964e-5be48520c182>
-> **Dernière mise à jour :** 2026-08-28
+> **Dernière mise à jour :** 2026-08-29
 
 Ce document est **exécutable sans refaire l'analyse** : chaque inventaire a été vérifié par
 recherche d'appelants, production et tests inclus. Les commandes de vérification (§6) sont à
@@ -86,9 +86,18 @@ Au-delà de l'affichage, sept endroits font dépendre un comportement du statut 
 | Élément | Fichier | Défaut connu |
 |---|---|---|
 | `TournamentStatusManager` | `app/Domains/Competitions/Tournament/Services/` | table de transitions sans cas `setup` → `UnhandledMatchError` si appelé sur un tournoi en configuration ; place `locked` là où les classes `State` placent `setup` |
-| `TournamentStateMachine` | `app/Domains/Shared/States/Tournament/` | `refreshState()` fait `$tournament->refresh()` **après** que l'état a modifié le statut en mémoire : la transition est écrasée avant d'être enregistrée |
+| `TournamentStateMachine` | `app/Domains/Shared/States/Tournament/` | ~~`refreshState()` écrase la transition avant enregistrement~~ — **ce défaut n'existait pas.** Les sept classes `State` font toutes `save()` avant que `refreshState()` ne relise. Vérifié par test le 2026-08-29 : la transition survit en base, la machine pointe sur le nouvel état, une transition interdite lève sans rien écrire. Aucun correctif n'a été nécessaire |
 | `TournamentStateFactory` + 7 classes `State` | `app/Domains/Shared/States/Tournament/` | `cancelled` mappé sur `LockedState` (donc `CancelledState` jamais instanciée) ; `LockedState::getStatus()` retourne `CANCELLED` |
 | `Tournament::state()` | `Models/Tournament.php:226` | aucun appelant |
+
+**Deux défauts que cette analyse avait manqués** (trouvés en implémentant B, le 2026-08-29) :
+
+- `LockedState::getAllowedTransitions()` retournait `[]` et la classe n'avait ni `publish()`
+  ni `cancel()`. La transition `locked → published` livrée par l'option A était donc
+  **inexprimable** par la machine — l'étape 4 était plus lourde que « compléter la table ».
+- `PendingState::close()` faisait `$tournament->matches()->whereNot('completed')` : un
+  `whereNot()` à un seul argument, sans colonne. La garde de clôture ne comptait pas les
+  matchs non terminés. Jamais exécutée, la classe étant morte.
 
 **Tests trompeurs à connaître.** `TournamentStatusManager` est couvert par *deux* fichiers
 de tests quasi identiques — `tests/Unit/Competitions/TournamentStatusManagerTest.php` et
@@ -247,6 +256,74 @@ Aucune migration de données. Aucun risque de retour en arrière ambigu.
 6. **C3** — les deux prédicats et le remplacement des lectures.
 
 Chaque étape est committable seule et laisse la suite verte.
+
+---
+
+## 5 bis. Journal d'exécution
+
+### 2026-08-29 — B intégrale, C1 et C3 (non commité)
+
+**Filet.** Baseline avant de toucher quoi que ce soit : 3391 passed, 29 skipped, 7 todos,
+0 échec. Après : **3423 passed, 0 échec**. PHPStan **No errors**. Pint propre.
+
+**Étape 1 — le code mort est parti.** `TournamentStatusManager` et ses deux fichiers de
+tests supprimés (15 tests verts qui ne protégeaient rien). Son entrée dans
+`phpstan-baseline.neon` — le `match.unhandled` sur `SETUP`, exactement le défaut décrit
+au §2.4 — est partie avec : le baseline passe de 78 à 77 entrées.
+
+**Étape 2 — les classes `State` réparées.** `TournamentStateFactory` mappe `CANCELLED` sur
+`CancelledState` ; `LockedState::getStatus()` retourne `LOCKED`. Le troisième défaut annoncé
+n'existait pas (voir §2.4). Aucun test ne couvrait ces classes : `TournamentStateMachineTest`
+est écrit de zéro, 37 tests.
+
+**Étape 3 — gardes métier reportées.** `PendingState::cancel()` refuse désormais si un match
+est `in_progress` ou `completed` ; la garde de `setUp()` et celle de `cancel()` partagent
+`refuseIfPlayHasBegun()`. Le `whereNot('completed')` cassé de `close()` est corrigé.
+
+**Étape 4 — la table décrit le parcours réel.** Nouveau verbe `lock()` (le `draft → locked`
+du wizard n'avait aucun verbe). `LockedState` gagne `publish()` et `cancel()`. `DraftState`
+gagne `cancel()` et `lock()`, et **perd `publish()`** : le wizard ne publie jamais un
+brouillon, il le valide d'abord. Effet de bord voulu — `canOpenRegistrations` devient
+exactement `canTransitionTo(PUBLISHED)`.
+
+**Étape 5 — les huit écritures passent par la machine.**
+`grep -rn "update(\['status' => TournamentStatusEnum" app resources/views` ne renvoie plus
+rien. Trois décisions prises avec l'auteur, toutes des changements de comportement assumés :
+
+| Site | Garde nouvelle | Décision |
+|---|---|---|
+| `confirmCloseRegistrations` + `tournament:close-registrations` | refus si zéro inscrit | **Garde conservée partout.** Un tournoi que personne n'a rejoint ne se referme plus : il faut l'annuler. La commande nocturne le signale (`Left open: …`) et poursuit sa boucle au lieu d'avorter. |
+| `cancelTournament` | refus si un match a été joué, ou si déjà clos | **Refus + message à l'écran**, deux messages distincts (joué / déjà terminé). |
+| `bulkCancel` | idem, par tournoi | Annule ce qui peut l'être, **compte et annonce** ce qui a été écarté. L'`UPDATE` de masse qui aplatissait tout, tournois clos compris, a disparu. |
+
+Un test existant a dû être adapté : `tournament:close-registrations` fermait un tournoi sans
+aucun inscrit. Il attache désormais un inscrit, et deux tests neufs couvrent le refus.
+
+**Étape 6 — les computed du wizard lisent l'état.** Les cinq comparaisons d'enum à la main
+sont parties. Deux prédicats ont dû être ajoutés à l'interface, les trois autres existaient :
+
+| Computed | Devient |
+|---|---|
+| `registrationsOpen` | `state()->canRegisterUsers()` |
+| `registrationClosed` | `state()->canCreatePools()` |
+| `canOpenRegistrations` | `state()->canTransitionTo(PUBLISHED)` |
+| `isContractLocked` | `state()->hasLockedContract()` *(nouveau)* |
+| `isLaunched` | `state()->hasBeenLaunched()` *(nouveau)* |
+
+**C1** — close par l'étape 2 : `CancelledState` est instanciée.
+**C3** — `Tournament::registrationsAreOpen()`, `Tournament::isOnPublicWebsite()` et le scope
+`registrationsOpen()` existent ; les 10 lectures dispersées de `PUBLISHED` (policy, service,
+contrôleur, calendrier, commande, 4 vues) passent par eux. Les statuts restent **sept**,
+conformément au §4.4.
+
+**Piège rencontré, à retenir.** Les composants `⚡` Livewire compilent dans le **namespace
+global** : `use InvalidArgumentException;` y déclenche
+`The use statement with non-compound name has no effect` et casse tout l'écran. Attraper ces
+exceptions dans un `⚡` exige `catch (\InvalidArgumentException)`.
+
+**Pas encore fait :** la suite `Browser` (dont `TournamentFlowTest`) n'a pas tourné — un
+`composer run dev` était actif et `public/hot` doit disparaître avant. À lancer via
+`composer test` quand la stack est arrêtée.
 
 ---
 

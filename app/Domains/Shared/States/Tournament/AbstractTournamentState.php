@@ -56,7 +56,22 @@ abstract class AbstractTournamentState implements TournamentStateInterface
         throw new \InvalidArgumentException('Cannot close tournament from ' . $this->getStatus()->value . ' state');
     }
 
+    public function hasBeenLaunched(): bool
+    {
+        return false;
+    }
+
+    public function hasLockedContract(): bool
+    {
+        return false;
+    }
+
     // Transitions par défaut (lèvent des exceptions)
+    public function lock(Tournament $tournament): void
+    {
+        throw new \InvalidArgumentException('Cannot lock tournament from ' . $this->getStatus()->value . ' state');
+    }
+
     public function publish(Tournament $tournament): void
     {
         throw new \InvalidArgumentException('Cannot publish tournament from ' . $this->getStatus()->value . ' state');

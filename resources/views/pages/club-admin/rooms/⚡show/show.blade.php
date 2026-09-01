@@ -178,7 +178,7 @@
 
                     @foreach ($room->tournaments as $tournament)
                         <x-admin.shared.compact-event-preview link="#" :name="$tournament->name"
-                            :startDateTime="$tournament->start_date" type="tournament" />
+                            :startDateTime="$tournament->startsAt()" type="tournament" />
                     @endforeach
                 @endif
             </x-card>

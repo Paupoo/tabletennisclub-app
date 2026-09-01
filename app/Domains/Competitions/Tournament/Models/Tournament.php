@@ -178,6 +178,19 @@ class Tournament extends Model
     }
 
     /**
+     * Whether an hour is actually known, as opposed to defaulted to midnight.
+     *
+     * A tournament saved without a start time has no hour to show, and showing
+     * it as 00:00 is worse than showing nothing: a member reads it as a real
+     * time and turns up at the wrong one.
+     */
+    public function hasKnownStartTime(): bool
+    {
+        return $this->start_time !== null
+            || ($this->start_date !== null && ! $this->start_date->isStartOfDay());
+    }
+
+    /**
      * Is the tournament announced on the public website?
      *
      * The other axis. It lives on the article, not on the status: a tournament
@@ -252,6 +265,32 @@ class Tournament extends Model
     {
         $query->where('name', 'like', '%' . $value . '%')
             ->orWhere('price', 'like', '%' . $value . '%');
+    }
+
+    /**
+     * When the tournament actually starts — the day from `start_date`, the hour
+     * from `start_time`.
+     *
+     * The two are separate columns and only one of them is maintained. The
+     * wizard writes the day into `start_date` and the hour into `start_time`,
+     * so `start_date`'s own time component is whatever the row was created
+     * with: midnight, for everything the wizard has ever made. Reading it for
+     * an hour is reading a field nobody sets, which is how the calendar, the
+     * subscription page and the tournament list all came to announce a ten
+     * o'clock tournament as starting at 00:00.
+     *
+     * Rows that predate `start_time` carry their hour in `start_date` instead,
+     * so that one is kept when there is nothing better.
+     */
+    public function startsAt(): ?Carbon
+    {
+        if ($this->start_date === null) {
+            return null;
+        }
+
+        return $this->start_time === null
+            ? $this->start_date->copy()
+            : $this->start_date->copy()->setTimeFromTimeString($this->start_time);
     }
 
     public function state(): TournamentStateInterface

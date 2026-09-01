@@ -186,7 +186,7 @@ class UserCalendarService
     private function tournamentRow(Tournament $tournament, ?TournamentRegistration $registration): array
     {
         return [
-            'startDateTime' => $tournament->start_date->format('Y-m-d H:i:s'),
+            'startDateTime' => $tournament->startsAt()?->format('Y-m-d H:i:s'),
             'endDate' => $tournament->end_date?->format('Y-m-d'),
             'title' => $tournament->name,
             'type' => 'tournament',

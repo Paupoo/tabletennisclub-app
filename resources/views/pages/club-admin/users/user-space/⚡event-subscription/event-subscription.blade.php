@@ -76,7 +76,7 @@
                     <x-admin.shared.compact-event-preview
                         :location="null"
                         :remainingSlots="$remaining"
-                        :startDateTime="$tournament->start_date->format('Y-m-d H:i:s')"
+                        :startDateTime="$tournament->startsAt()?->format('Y-m-d H:i:s')"
                         :name="$tournament->name"
                         type="tournament"
                     >

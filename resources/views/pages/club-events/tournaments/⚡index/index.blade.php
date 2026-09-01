@@ -212,7 +212,9 @@
 
                     @scope('cell_start_date', $tournament)
                         <span class="text-sm text-base-content/60">
-                            {{ $tournament->start_date->translatedFormat('d M Y · H\hi') }}
+                            {{ $tournament->hasKnownStartTime()
+                                ? $tournament->startsAt()->translatedFormat('d M Y · H\hi')
+                                : $tournament->start_date->translatedFormat('d M Y') }}
                         </span>
                     @endscope
 

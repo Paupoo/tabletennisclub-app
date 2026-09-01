@@ -268,3 +268,63 @@ it('accepts the picker being cleared', function (): void {
         ->set('formClubId', '')
         ->assertSet('formClubId', null);
 });
+
+it('records the postal code and the city of a newly encoded club', function (): void {
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->set('seasonId', $this->season->id)
+        ->call('selectLeague', $this->league->id)
+        ->call('openAddModal')
+        ->call('toggleNewClub')
+        ->set('formClubName', 'CTT Tubize')
+        ->set('formClubStreet', 'Allée des Sports 5')
+        ->set('formClubCityCode', '1480')
+        ->set('formClubCityName', 'Tubize')
+        ->set('formTeamLetter', 'C')
+        ->call('addParticipant')
+        ->assertHasNoErrors();
+
+    $club = Club::where('name', 'CTT Tubize')->sole();
+
+    expect($club->city_code)->toBe('1480')
+        ->and($club->city_name)->toBe('Tubize')
+        ->and($club->address)->toBe('Allée des Sports 5, 1480 Tubize');
+});
+
+it('offers the full address as the picker sub-label', function (): void {
+    Club::factory()->create([
+        'name' => 'CTT Wavre',
+        'licence' => 'OPP-TTWAVR',
+        'street' => 'Rue de la Gare 10',
+        'city_code' => '1300',
+        'city_name' => 'Wavre',
+    ]);
+
+    $options = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->call('openAddModal')
+        ->get('clubOptions');
+
+    $wavre = collect($options)->firstWhere('name', 'CTT Wavre');
+
+    expect($wavre['address'])->toBe('Rue de la Gare 10, 1300 Wavre');
+});
+
+it('leaves the city empty rather than storing a blank string', function (): void {
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->set('seasonId', $this->season->id)
+        ->call('selectLeague', $this->league->id)
+        ->call('openAddModal')
+        ->call('toggleNewClub')
+        ->set('formClubName', 'TT Sans Adresse')
+        ->set('formTeamLetter', 'A')
+        ->call('addParticipant')
+        ->assertHasNoErrors();
+
+    $club = Club::where('name', 'TT Sans Adresse')->sole();
+
+    expect($club->city_code)->toBeNull()
+        ->and($club->city_name)->toBeNull()
+        ->and($club->address)->toBeNull();
+});

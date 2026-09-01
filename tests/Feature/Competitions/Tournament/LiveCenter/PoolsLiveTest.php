@@ -105,7 +105,12 @@ it('leaves a free table out of the live placements', function (): void {
     expect($placements)->toBe([]);
 });
 
-it('hangs the match in progress on its own pool', function (): void {
+/*
+ * Le bandeau par poule a été retiré : le classement reste un classement, et
+ * seul le numéro de table à côté du nom en sort. Ce qui doit rester vrai, c'est
+ * que jouer dans une poule ne place personne dans une autre.
+ */
+it('places only the players of the match in progress, whatever their pool', function (): void {
     $tournament = poolsLiveTournament();
     $poolA = Pool::factory()->for($tournament)->create(['name' => 'A']);
     $poolB = Pool::factory()->for($tournament)->create(['name' => 'B']);
@@ -115,29 +120,23 @@ it('hangs the match in progress on its own pool', function (): void {
     poolsLiveMatch($poolB, $c->id, $d->id, 'scheduled');
     poolsLiveTable($tournament, 'DEMEESTER 5', 'Demeester', $live);
 
-    $pools = Livewire::actingAs(User::factory()->isAdmin()->create())
+    $placements = Livewire::actingAs(User::factory()->isAdmin()->create())
         ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament])
-        ->get('pools');
+        ->get('livePlacements');
 
-    $rowA = $pools->firstWhere('name', 'A');
-    $rowB = $pools->firstWhere('name', 'B');
-
-    expect($rowA['live'])->toHaveCount(1)
-        ->and($rowA['live'][0]['table'])->toBe('DEMEESTER 5')
-        ->and($rowB['live'])->toHaveCount(0);
+    expect(array_keys($placements))->toEqualCanonicalizing([$a->id, $b->id]);
 });
 
 /*
  * assertSee('DEMEESTER 5') passerait sans rien afficher ici : l'onglet Tables
- * est rendu dans la même page et porte déjà ce nom. On vise donc le bandeau et
- * la ligne du joueur par leurs clés, qui n'existent que dans cet onglet.
+ * est rendu dans la même page et porte déjà ce nom. On vise donc la ligne du
+ * joueur par sa clé, qui n'existe que dans cet onglet.
  */
-it('shows the table on the pools tab itself', function (): void {
+it('puts the table next to the name of whoever is playing, and nobody else', function (): void {
     $tournament = poolsLiveTournament();
     $pool = Pool::factory()->for($tournament)->create(['name' => 'A']);
     [$a, $b, $away] = User::factory(3)->create()->all();
     $tournament->users()->attach([$a->id, $b->id, $away->id], ['registration_status' => 'confirmed']);
-
     $pool->users()->attach([$a->id, $b->id, $away->id]);
 
     $live = poolsLiveMatch($pool, $a->id, $b->id, 'in_progress');
@@ -148,15 +147,11 @@ it('shows the table on the pools tab itself', function (): void {
         ->set('activeTab', 'pools')
         ->html();
 
-    $banner = poolsLiveFragment($html, "pool-{$pool->id}-live-{$live->id}");
+    $label = e(__('Table :name', ['name' => 'DEMEESTER 5']));
 
-    expect($banner)->toContain('DEMEESTER 5')
-        ->and($banner)->toContain('Demeester');
-
-    // Les deux joueurs en piste portent la pastille, personne d'autre.
-    expect(poolsLiveFragment($html, "pool-{$pool->id}-player-{$a->id}"))->toContain('animate-ping')
-        ->and(poolsLiveFragment($html, "pool-{$pool->id}-player-{$b->id}"))->toContain('animate-ping')
-        ->and(poolsLiveFragment($html, "pool-{$pool->id}-player-{$away->id}"))->not->toContain('animate-ping');
+    expect(poolsLiveFragment($html, "pool-{$pool->id}-player-{$a->id}"))->toContain($label)
+        ->and(poolsLiveFragment($html, "pool-{$pool->id}-player-{$b->id}"))->toContain($label)
+        ->and(poolsLiveFragment($html, "pool-{$pool->id}-player-{$away->id}"))->not->toContain($label);
 });
 
 /** Le fragment de HTML qui va d'une clé Livewire jusqu'à la suivante. */

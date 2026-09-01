@@ -579,6 +579,7 @@
     "Subscription of :user cancelled. Refund of :amount € to be issued to :iban.": "Aansluiting van :user geannuleerd. Terugbetaling van :amount € te storten naar :iban.",
     "Switching to competition reprices the affiliation at 125 € and invoices the difference as a new payment with its own structured reference.": "Overschakelen naar competitie brengt de aansluiting op 125 € en factureert het verschil als een nieuwe betaling met een eigen gestructureerde mededeling.",
     "Switching to recreative reprices the affiliation at 60 € and takes the member out of the force lists. Any overpayment is reported to you for refund, capped at what they actually paid.": "Overschakelen naar recreatief brengt de aansluiting op 60 € en haalt het lid uit de krachtlijsten. Het te veel betaalde wordt aan u gemeld voor terugbetaling, begrensd tot wat werkelijk betaald werd.",
+    "Table :name": "Tafel :name",
     "Table configuration": "Tafelconfiguratie",
     "Tables not linked to any room": "Tafels die aan geen enkele zaal zijn gekoppeld",
     "Take part in organized events": "Deelnemen aan georganiseerde evenementen",

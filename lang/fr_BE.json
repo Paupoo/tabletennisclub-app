@@ -575,6 +575,7 @@
     "Subscription of :user cancelled. Refund of :amount € to be issued to :iban.": "Affiliation de :user annulée. Remboursement de :amount € à effectuer vers :iban.",
     "Switching to competition reprices the affiliation at 125 € and invoices the difference as a new payment with its own structured reference.": "Passer en compétition porte l'affiliation à 125 € et facture la différence via un nouveau paiement, avec sa propre communication structurée.",
     "Switching to recreative reprices the affiliation at 60 € and takes the member out of the force lists. Any overpayment is reported to you for refund, capped at what they actually paid.": "Passer en récréatif ramène l'affiliation à 60 € et retire le membre des listes de force. Le trop-perçu vous est signalé pour remboursement, plafonné à ce qu'il a réellement versé.",
+    "Table :name": "Table :name",
     "Table configuration": "Configuration de la table",
     "Tables not linked to any room": "Tables rattachées à aucune salle",
     "Take part in organized events": "Participer aux événements organisés",

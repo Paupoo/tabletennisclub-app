@@ -52,9 +52,9 @@ trait ReadsTournamentLiveState
      * Where every player currently on a table is, keyed by their id.
      *
      * The pool standings are the page a player actually reads — their own row
-     * and their friends' — so the standings are where "playing now, table 5"
-     * belongs. Both members of a pair are listed: a doubles player looking for
-     * their partner is looking for a name, not a pair.
+     * and their friends' — so a table number next to a name is all the
+     * standings need to say. Both members of a pair are listed: a doubles
+     * player looking for their partner is looking for a name, not a pair.
      *
      * @return array<int, array{table: string, room: string, startedAt: mixed}>
      */
@@ -79,20 +79,18 @@ trait ReadsTournamentLiveState
     }
 
     /**
-     * @return Collection<int, array{id: int, name: string, finished: bool, players: Collection<int, mixed>, live: Collection<int, mixed>}>
+     * @return Collection<int, array{id: int, name: string, finished: bool, players: Collection<int, mixed>}>
      */
     #[Computed]
     public function pools(): Collection
     {
         $matchService = app(TournamentMatchService::class);
-        $live = $this->liveMatches;
 
         return $this->tournament->pools->map(fn (Pool $pool): array => [
             'id' => $pool->id,
             'name' => $pool->name,
             'finished' => app(TournamentPoolService::class)->isPoolFinished($pool),
             'players' => $matchService->calculatePoolStandings($pool),
-            'live' => $live->filter(fn (array $entry): bool => $entry['match']->pool_id === $pool->id)->values(),
         ]);
     }
 

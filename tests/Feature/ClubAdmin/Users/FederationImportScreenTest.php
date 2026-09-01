@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Users\Models\MemberImport;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Enums\Role;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
@@ -695,5 +696,104 @@ describe('the affiliates the listing has nothing new to say about', function ():
             ->assertSet('step', 3);
 
         expect(MemberImport::query()->latest('id')->first()->updated_count)->toBe(1);
+    });
+});
+
+/*
+ * Fifty-eight affiliates answered one select at a time is the other half of what
+ * made the screen unusable. The sections are what a bulk action applies to — and
+ * the line the screen refuses to cross is that none of them ever writes a line
+ * the matcher would not commit to.
+ */
+describe('answering a whole section at once', function (): void {
+
+    /*
+     * A namesake with a different birthdate, next to an affiliate nobody knows.
+     * The first holds the import back; the second is not the bulk action's
+     * business.
+     */
+    it('sets the undecided lines aside without touching the settled ones', function (): void {
+        User::factory()->create([
+            'first_name' => 'Marc',
+            'last_name' => 'Dupont',
+            'birthdate' => '1980-01-01',
+            'email' => 'autre@example.com',
+            'licence' => null,
+        ]);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
+                '166037;LEGRAND ANNE;1985-03-02;D4;D4;N;N;SE;LR;2021-09-01;anne@example.com;;0475987654;RUE DU TEST;15;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSet('rows.2.outcome', 'suspect')
+            ->assertSet('rows.2.action', '')
+            ->assertSet('tally.undecided', 1)
+            ->call('skipUndecided')
+            ->assertSet('rows.2.action', 'skip')
+            ->assertSet('rows.3.action', 'create')
+            ->assertSet('tally.undecided', 0)
+            ->call('import')
+            ->assertSet('step', 3);
+
+        // The namesake was set aside, never written over.
+        expect(User::query()->where('licence', '166036')->exists())->toBeFalse()
+            ->and(User::query()->where('licence', '166037')->exists())->toBeTrue();
+    });
+
+    it('sets aside every line it was ready to write, and takes it back', function (): void {
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
+                '166037;LEGRAND ANNE;1985-03-02;D4;D4;N;N;SE;LR;2021-09-01;anne@example.com;;0475987654;RUE DU TEST;15;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSet('tally.create', 2)
+            ->call('skipReady')
+            ->assertSet('tally.create', 0)
+            ->assertSet('tally.skip', 2)
+            ->call('restoreReady')
+            ->assertSet('tally.create', 2)
+            ->assertSet('tally.skip', 0);
+    });
+
+    /*
+     * Safe by construction: these lines were filed as unchanged because nothing
+     * would move, so forcing them writes the date the federation was last read
+     * and nothing else. It is how the club says "the listing still carries them".
+     */
+    it('writes the already up to date lines when asked, and only their sync date', function (): void {
+        $line = '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE';
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->call('import');
+
+        $member = User::query()->where('licence', '166036')->first();
+        $member->forceFill(['federation_synced_at' => CarbonImmutable::parse('2025-08-14 10:00:00')])->save();
+        $before = $member->fresh();
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->assertSet('tally.unchanged', 1)
+            ->call('updateUnchanged')
+            ->assertSet('tally.update', 1)
+            ->assertSet('tally.unchanged', 0)
+            ->call('releaseUnchanged')
+            ->assertSet('tally.unchanged', 1)
+            ->call('updateUnchanged')
+            ->call('import')
+            ->assertSet('step', 3);
+
+        $after = $member->fresh();
+
+        expect($after->federation_synced_at->greaterThan($before->federation_synced_at))->toBeTrue()
+            ->and($after->ranking)->toBe($before->ranking)
+            ->and($after->email)->toBe($before->email)
+            ->and($after->street)->toBe($before->street)
+            ->and(MemberImport::query()->latest('id')->first()->updated_count)->toBe(1);
     });
 });

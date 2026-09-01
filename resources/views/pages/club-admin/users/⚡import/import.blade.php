@@ -74,6 +74,17 @@
             @if (count($this->linesToReview) > 0)
                 <x-section-accordion :label="__('Needs your attention')" :count="count($this->linesToReview)"
                     color="amber" :open="true">
+                    {{-- The only bulk action these lines get, and it only ever sets
+                         aside. Writing a namesake or an archived member in bulk is
+                         how the federation's data lands on somebody else's file. --}}
+                    @if ($this->tally['undecided'] > 0)
+                        <div class="mb-3 flex justify-end">
+                            <x-button class="btn-ghost btn-sm" icon="o-no-symbol"
+                                :label="__('Ignore the :count undecided line(s)', ['count' => $this->tally['undecided']])"
+                                wire:click="skipUndecided" />
+                        </div>
+                    @endif
+
                     <div class="space-y-3">
                         @foreach ($this->linesToReview as $line => $row)
                             @include('pages::club-admin.users.⚡import._line-card', ['line' => $line, 'row' => $row])
@@ -85,6 +96,21 @@
             @if (count($this->linesReadToImport) > 0)
                 <x-section-accordion :label="__('Nothing to report')" :count="count($this->linesReadToImport)"
                     color="gray" :open="false">
+                    @php
+                        $readyActions = array_column($this->linesReadToImport, 'action');
+                        $allSetAside = $readyActions === array_fill(0, count($readyActions), 'skip');
+                    @endphp
+
+                    <div class="mb-3 flex justify-end">
+                        @if ($allSetAside)
+                            <x-button class="btn-ghost btn-sm" icon="o-arrow-uturn-left"
+                                :label="__('Restore the proposed actions')" wire:click="restoreReady" />
+                        @else
+                            <x-button class="btn-ghost btn-sm" icon="o-no-symbol" :label="__('Ignore them all')"
+                                wire:click="skipReady" />
+                        @endif
+                    </div>
+
                     <div class="space-y-3">
                         @foreach ($this->linesReadToImport as $line => $row)
                             @include('pages::club-admin.users.⚡import._line-card', ['line' => $line, 'row' => $row])
@@ -99,6 +125,24 @@
             @if (count($this->linesUnchanged) > 0)
                 <x-section-accordion :label="__('Already up to date')" :count="count($this->linesUnchanged)"
                     color="gray" :open="$showUnchanged" wire-toggle="toggleUnchanged">
+                    @php
+                        $unchangedActions = array_column($this->linesUnchanged, 'action');
+                        $allForced = $unchangedActions === array_fill(0, count($unchangedActions), 'update');
+                    @endphp
+
+                    {{-- Safe by construction: these lines were filed here because
+                         nothing would change, so the only column that moves is the
+                         date the federation was last read. --}}
+                    <div class="mb-3 flex justify-end">
+                        @if ($allForced)
+                            <x-button class="btn-ghost btn-sm" icon="o-arrow-uturn-left" :label="__('Write nothing')"
+                                wire:click="releaseUnchanged" />
+                        @else
+                            <x-button class="btn-ghost btn-sm" icon="o-arrow-path" :label="__('Update them all')"
+                                wire:click="updateUnchanged" />
+                        @endif
+                    </div>
+
                     <div class="space-y-2">
                         @foreach ($this->linesUnchanged as $line => $row)
                             @include('pages::club-admin.users.⚡import._unchanged-line', ['line' => $line, 'row' => $row])

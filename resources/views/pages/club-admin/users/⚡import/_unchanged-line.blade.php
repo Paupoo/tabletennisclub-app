@@ -17,6 +17,8 @@
     <span class="ms-auto flex items-center gap-2">
         @if ($row['action'] === 'update')
             <span class="badge badge-primary badge-soft badge-sm">{{ __('Will be updated') }}</span>
+            <x-button class="btn-ghost btn-xs" :label="__('Leave alone')"
+                wire:click="releaseUpdate({{ $line }})" />
         @else
             <x-button class="btn-ghost btn-xs" :label="__('Update anyway')"
                 wire:click="forceUpdate({{ $line }})" />

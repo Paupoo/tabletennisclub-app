@@ -258,11 +258,78 @@ new class extends Component
         $this->step = 2;
     }
 
+    /**
+     * Put the already-up-to-date lines back to writing nothing.
+     */
+    public function releaseUnchanged(): void
+    {
+        $this->setActionWhere(
+            static fn (array $row): bool => $row['unchanged'],
+            static fn (): string => ImportLineAction::UNCHANGED->value,
+        );
+    }
+
+    /**
+     * Take back a line that was forced open.
+     */
+    public function releaseUpdate(int $line): void
+    {
+        if (($this->rows[$line]['unchanged'] ?? false) === true) {
+            $this->rows[$line]['action'] = ImportLineAction::UNCHANGED->value;
+        }
+    }
+
     public function render(): mixed
     {
         return $this->view([
             'breadcrumbs' => $this->getBreadcrumbs(),
         ]);
+    }
+
+    /**
+     * Hand a whole section back to what the screen had proposed for it.
+     *
+     * The counterpart of {@see skipReady()}: a bulk action nobody can undo is a
+     * bulk action nobody dares press.
+     */
+    public function restoreReady(): void
+    {
+        $this->setActionWhere(
+            static fn (array $row): bool => ! $row['needsReview'] && ! $row['unchanged'],
+            fn (array $row): string => $this->proposedAction(MemberMatchOutcome::from($row['outcome'])),
+        );
+    }
+
+    /**
+     * Set aside every line the screen was ready to write.
+     *
+     * For the run where only the newcomers are wanted, or where the listing is
+     * being read to see what it says before letting it near the roster.
+     */
+    public function skipReady(): void
+    {
+        $this->setActionWhere(
+            static fn (array $row): bool => ! $row['needsReview'] && ! $row['unchanged'],
+            static fn (): string => ImportLineAction::SKIP->value,
+        );
+    }
+
+    /**
+     * Set aside the lines nobody has answered for.
+     *
+     * The one bulk action the screen needs, because those lines are what holds
+     * the import back. It only ever sets aside: a namesake and an archived
+     * member are exactly the two answers the matcher would not commit to, and
+     * writing them in bulk is how the federation's data lands on somebody else's
+     * file. Setting a line aside costs the club a line; writing it onto the
+     * wrong person costs them a member.
+     */
+    public function skipUndecided(): void
+    {
+        $this->setActionWhere(
+            static fn (array $row): bool => $row['action'] === '',
+            static fn (): string => ImportLineAction::SKIP->value,
+        );
     }
 
     /**
@@ -301,6 +368,22 @@ new class extends Component
             $this->rows,
             static fn (array $row): bool => $row['action'] === '',
         ));
+    }
+
+    /**
+     * Write every already-up-to-date line after all.
+     *
+     * Harmless by construction: these lines were filed here because nothing
+     * would change, so the only column that moves is `federation_synced_at`.
+     * That is the point — it is how the club says "the listing still carries
+     * them" without touching anything else.
+     */
+    public function updateUnchanged(): void
+    {
+        $this->setActionWhere(
+            static fn (array $row): bool => $row['unchanged'],
+            static fn (): string => ImportLineAction::UPDATE->value,
+        );
     }
 
     protected function breadcrumbChain(): Breadcrumb
@@ -524,5 +607,20 @@ new class extends Component
             'guardianFirstName' => $guardianName['firstName'],
             'guardianLastName' => $guardianName['lastName'],
         ];
+    }
+
+    /**
+     * Give every line the section describes the same action.
+     *
+     * @param  callable(array<string, mixed>): bool  $matches
+     * @param  callable(array<string, mixed>): string  $action
+     */
+    private function setActionWhere(callable $matches, callable $action): void
+    {
+        foreach ($this->rows as $line => $row) {
+            if ($matches($row)) {
+                $this->rows[$line]['action'] = $action($row);
+            }
+        }
     }
 };

@@ -205,7 +205,7 @@ class UserCalendarService
     {
         // A tournament overlaps the window as soon as it hasn't ended before $from
         // (multi-day tournaments keep showing while ongoing).
-        $tournamentsQuery = Tournament::registrationsOpen()
+        $tournamentsQuery = Tournament::onTheCalendar()
             ->whereRaw('COALESCE(end_date, start_date) >= ?', [$from])
             ->when($to, fn ($q) => $q->where('start_date', '<=', $to));
 

@@ -250,7 +250,39 @@ class Tournament extends Model
         return $this->BelongsToMany(Room::class);
     }
 
-    /** @param Builder<Tournament> $query */
+    /**
+     * Every tournament that is actually going to happen, or did.
+     *
+     * Not the same question as scopeRegistrationsOpen(), which is about one
+     * status and was being used as a stand-in for "visible". A tournament whose
+     * registrations have closed is still on that Saturday, and one that is
+     * being played right now is the most present event the club has — both
+     * disappeared from the member calendar and from the room planning the
+     * moment the committee closed the entries.
+     *
+     * Draft and locked are left out because nothing has been announced yet, and
+     * cancelled because it is precisely not happening.
+     *
+     * @param  Builder<Tournament>  $query
+     */
+    public function scopeOnTheCalendar(Builder $query): void
+    {
+        $query->whereIn('status', [
+            TournamentStatusEnum::PUBLISHED,
+            TournamentStatusEnum::SETUP,
+            TournamentStatusEnum::PENDING,
+            TournamentStatusEnum::CLOSED,
+        ]);
+    }
+
+    /**
+     * The one status that takes registrations.
+     *
+     * Narrower than scopeOnTheCalendar() on purpose: this answers "can somebody
+     * still sign up", not "is this happening".
+     *
+     * @param  Builder<Tournament>  $query
+     */
     public function scopeRegistrationsOpen(Builder $query): void
     {
         $query->where('status', TournamentStatusEnum::PUBLISHED);

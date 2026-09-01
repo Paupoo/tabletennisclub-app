@@ -77,7 +77,7 @@ new class extends Component
                 'trainings' => fn ($query) => $query->whereBetween('start', [$start, $end]),
                 'interclubs' => fn ($query) => $query->whereBetween('start_date_time', [$start, $end]),
                 'tournaments' => fn ($query) => $query
-                    ->registrationsOpen()
+                    ->onTheCalendar()
                     ->whereBetween('start_date', [$start, $end]),
             ])
             ->orderBy('name')

@@ -14,6 +14,7 @@ use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\ImportLineAction;
 use App\Domains\Shared\Enums\MemberMatchOutcome;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Support\AddressNormalizer;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Services\ClubAdmin\Users\FederationListingParser;
 use App\Services\ClubAdmin\Users\FederationMemberMatcher;
@@ -371,6 +372,28 @@ new class extends Component
     }
 
     /**
+     * Keep the address warning honest while the reviewer types.
+     *
+     * Only the badge moves. Which section a line sits in is settled when the
+     * file is read and never recomputed: a line that jumped to another fold the
+     * moment it was corrected would shift the grid under the pointer.
+     */
+    public function updated(string $property): void
+    {
+        if (preg_match('/^rows\.(\d+)\.(street|cityCode|cityName)$/', $property, $matches) !== 1) {
+            return;
+        }
+
+        $line = (int) $matches[1];
+
+        $this->rows[$line]['needsAddressReview'] = AddressNormalizer::looksShifted(
+            $this->rows[$line]['street'],
+            $this->rows[$line]['cityCode'],
+            $this->rows[$line]['cityName'],
+        );
+    }
+
+    /**
      * Write every already-up-to-date line after all.
      *
      * Harmless by construction: these lines were filed here because nothing
@@ -429,6 +452,15 @@ new class extends Component
      */
     private function importLine(array $row): ImportLine
     {
+        // Asked again here rather than read off the row: this is the last word
+        // before anything is written, and a stale flag would let through exactly
+        // what it was raised to stop.
+        $suspectAddress = AddressNormalizer::looksShifted(
+            $row['street'],
+            $row['cityCode'],
+            $row['cityName'],
+        );
+
         return new ImportLine(
             row: new FederationRow(
                 lineNumber: (int) $row['line'],
@@ -441,9 +473,15 @@ new class extends Component
                 federationLicenceType: $row['federationLicenceType'],
                 email: $row['email'],
                 phone: $row['phone'],
-                street: $row['street'],
-                cityCode: $row['cityCode'],
-                cityName: $row['cityName'],
+                // An address still failing the rule that flagged it is handed
+                // over empty, and an empty cell is never written back. The club
+                // keeps the address it has rather than having a shifted export
+                // laid over it — and a locality landing in a ten-character
+                // postcode column never reaches the database, where it would
+                // abort the whole run.
+                street: $suspectAddress ? null : $row['street'],
+                cityCode: $suspectAddress ? null : $row['cityCode'],
+                cityName: $suspectAddress ? null : $row['cityName'],
             ),
             action: ImportLineAction::from((string) $row['action']),
             existingUserId: $row['existingUserId'],

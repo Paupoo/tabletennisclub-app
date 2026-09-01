@@ -4465,5 +4465,8 @@
     "Restore the proposed actions": "Voorgestelde acties herstellen",
     "Update them all": "Alles bijwerken",
     "Write nothing": "Niets schrijven",
-    "Leave alone": "Ongemoeid laten"
+    "Leave alone": "Ongemoeid laten",
+    "Postcode": "Postcode",
+    "Locality": "Gemeente",
+    "Left as it is, the address is not written and the club keeps the one it holds.": "Zo gelaten wordt het adres niet geschreven en behoudt de club het zijne."
 }

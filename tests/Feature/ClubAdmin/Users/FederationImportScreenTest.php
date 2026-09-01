@@ -25,6 +25,14 @@ const IMPORT_COMPONENT = 'pages::club-admin.users.import';
 const IMPORT_HEADER = 'Licence;Nom;DATE NAISSANCE;CH;CD;LFM;CONF;SA;Statut;Date 1ere affiliation;Email;Tel;GSM;Adresse;Numéro;CP;Localité';
 
 /**
+ * A row the export shifted by one: the street landed where the house number
+ * belongs, and the locality where the postcode belongs. `users.city_code` is ten
+ * characters wide, so LOUVAIN-LA-NEUVE written there aborts an entire import
+ * under a strict MySQL.
+ */
+const SHIFTED_LINE = '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;LOUVAIN-LA-NEUVE;';
+
+/**
  * A listing as the federation hands it over: Windows-1252 bytes, CRLF endings.
  *
  * @param  array<int, string>  $lines
@@ -795,5 +803,100 @@ describe('answering a whole section at once', function (): void {
             ->and($after->email)->toBe($before->email)
             ->and($after->street)->toBe($before->street)
             ->and(MemberImport::query()->latest('id')->first()->updated_count)->toBe(1);
+    });
+});
+
+/*
+ * Some exports drop a cell mid-row and every column after it moves one to the
+ * left: the locality lands in the postcode column. The screen used to flag it and
+ * offer nothing to do about it — and `users.city_code` is ten characters wide
+ * under a strict MySQL, so a sixteen-letter commune written there does not fail
+ * that line, it aborts the whole run.
+ */
+describe('the addresses the export shifted', function (): void {
+
+    it('offers the address for correction rather than only flagging it', function (): void {
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([SHIFTED_LINE]))
+            ->call('parse')
+            ->assertSet('rows.2.needsAddressReview', true)
+            ->assertSeeHtml('rows.2.street')
+            ->assertSeeHtml('rows.2.cityCode')
+            ->assertSeeHtml('rows.2.cityName');
+    });
+
+    it('leaves the club its own address rather than laying a shifted one over it', function (): void {
+        $member = User::factory()->create([
+            'licence' => '166036',
+            'first_name' => 'Marc',
+            'last_name' => 'Dupont',
+            'street' => 'Rue Réelle 4',
+            'city_code' => '1348',
+            'city_name' => 'Louvain-la-Neuve',
+            'ranking' => Ranking::D6,
+        ]);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([SHIFTED_LINE]))
+            ->call('parse')
+            ->set('rows.2.action', 'update')
+            ->call('import')
+            ->assertSet('step', 3);
+
+        $after = $member->fresh();
+
+        // The address is untouched, and the rest of the line went in as usual.
+        expect($after->street)->toBe('Rue Réelle 4')
+            ->and($after->city_code)->toBe('1348')
+            ->and($after->city_name)->toBe('Louvain-la-Neuve')
+            ->and($after->ranking)->toBe(Ranking::C2);
+    });
+
+    it('writes the address once the reviewer has put it right', function (): void {
+        $member = User::factory()->create([
+            'licence' => '166036',
+            'first_name' => 'Marc',
+            'last_name' => 'Dupont',
+            'street' => 'Rue Réelle 4',
+            'city_code' => '1348',
+            'city_name' => 'Louvain-la-Neuve',
+        ]);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([SHIFTED_LINE]))
+            ->call('parse')
+            ->set('rows.2.cityCode', '1450')
+            ->set('rows.2.cityName', 'Chastre')
+            // The warning follows the correction: the rule that rejected the
+            // export is the rule the reviewer has to satisfy.
+            ->assertSet('rows.2.needsAddressReview', false)
+            ->set('rows.2.action', 'update')
+            ->call('import')
+            ->assertSet('step', 3);
+
+        $after = $member->fresh();
+
+        expect($after->city_code)->toBe('1450')
+            ->and($after->city_name)->toBe('Chastre')
+            ->and($after->street)->toBe('Rue du Test 13');
+    });
+
+    /*
+     * The failure this whole rule exists to prevent. SQLite ignores column
+     * widths, so the assertion is on what reaches the model, not on an exception
+     * the test database would never raise.
+     */
+    it('never hands the database a locality to store as a postcode', function (): void {
+        User::factory()->create(['licence' => '166036', 'first_name' => 'Marc', 'last_name' => 'Dupont']);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([SHIFTED_LINE]))
+            ->call('parse')
+            ->set('rows.2.action', 'update')
+            ->call('import');
+
+        $stored = User::query()->where('licence', '166036')->first()->city_code;
+
+        expect($stored === null || mb_strlen($stored) <= 10)->toBeTrue();
     });
 });

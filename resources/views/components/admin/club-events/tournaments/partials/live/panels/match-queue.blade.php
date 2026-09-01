@@ -66,9 +66,10 @@
                             class="{{ $isPool ? 'badge-ghost' : 'badge-warning' }} badge-xs font-bold uppercase" />
 
                         @if ($entry['blocked'])
+                            {{-- Nommer qui bloque : un arbitre pris se remplace, un joueur en piste s'attend. --}}
                             <span class="flex items-center gap-1 text-xs font-bold text-warning-content">
                                 <x-icon name="o-exclamation-triangle" class="h-3 w-3 shrink-0" />
-                                {{ __('Player busy') }}
+                                {{ $entry['side1Blocked'] || $entry['side2Blocked'] ? __('Player busy') : __('Referee busy') }}
                             </span>
                         @elseif ($isNext)
                             <x-badge :value="__('Next')" class="badge-primary badge-xs" />
@@ -90,9 +91,13 @@
                     @endif
 
                     @if ($match->referee)
-                        <p class="mt-1.5 flex items-center gap-1 text-xs text-muted">
+                        <p @class([
+                            'mt-1.5 flex items-center gap-1 text-xs',
+                            'font-semibold text-warning-content' => $entry['refereeBlocked'],
+                            'text-muted' => ! $entry['refereeBlocked'],
+                        ])>
                             <x-icon name="o-eye" class="h-3 w-3 shrink-0" />
-                            <span class="truncate">{{ $match->referee->full_name }}</span>
+                            <span @class(['truncate', 'line-through' => $entry['refereeBlocked']])>{{ $match->referee->full_name }}</span>
                         </p>
                     @elseif (! $isPool && $entry['ready'])
                         <p class="mt-1.5 flex items-center gap-1 text-xs italic text-muted">

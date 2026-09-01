@@ -366,7 +366,15 @@ new class extends Component
      * against busyPlayerIds written out by hand. Two views of one queue, kept
      * in step manually. They both read this now.
      *
-     * @return Collection<int, array{match: TournamentMatch, ready: bool, side1Blocked: bool, side2Blocked: bool, blocked: bool}>
+     * The referee counts. busyPlayerIds has always included the referees of the
+     * matches in progress — somebody watching a table cannot play on another —
+     * but this only ever tested the two sides of the incoming match against it,
+     * so a match refereed by somebody already on a table looked perfectly
+     * playable and was recommended. Starting it then failed on
+     * TournamentMatchService::detectStartConflict(), which does count the
+     * incoming referee. The queue said go, the launch said no.
+     *
+     * @return Collection<int, array{match: TournamentMatch, ready: bool, side1Blocked: bool, side2Blocked: bool, refereeBlocked: bool, blocked: bool}>
      */
     #[Computed]
     public function queue(): Collection
@@ -377,13 +385,15 @@ new class extends Component
             $ready = $match->player1_id !== null && $match->player2_id !== null;
             $side1Blocked = $ready && $match->sidePlayerIds(1)->intersect($busy)->isNotEmpty();
             $side2Blocked = $ready && $match->sidePlayerIds(2)->intersect($busy)->isNotEmpty();
+            $refereeBlocked = $ready && $match->referee_id !== null && in_array($match->referee_id, $busy, true);
 
             return [
                 'match' => $match,
                 'ready' => $ready,
                 'side1Blocked' => $side1Blocked,
                 'side2Blocked' => $side2Blocked,
-                'blocked' => $side1Blocked || $side2Blocked,
+                'refereeBlocked' => $refereeBlocked,
+                'blocked' => $side1Blocked || $side2Blocked || $refereeBlocked,
             ];
         });
     }

@@ -225,6 +225,66 @@ describe('queue', function (): void {
 
         expect($entry['ready'])->toBeFalse()->and($entry['blocked'])->toBeFalse();
     });
+
+    /*
+     * Le cas signalé en salle : le match recommandé était arbitré par une
+     * joueuse déjà en piste sur une autre table. Rien ne le signalait, et le
+     * lancer échouait sur « Conflit : … déjà dans un match en cours ».
+     *
+     * busyPlayerIds a toujours compté les arbitres des matchs en cours ; c'est
+     * l'arbitre du match *entrant* que la file ne regardait pas.
+     */
+    it('flags a match whose referee is already on a table', function (): void {
+        $tournament = conflictTournament();
+        [$busy, $partner, $a, $b] = User::factory(4)->create()->all();
+
+        conflictMatch($tournament, $busy->id, $partner->id, status: 'in_progress');
+        $waiting = conflictMatch($tournament, $a->id, $b->id, referee: $busy->id);
+
+        $entry = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament])
+            ->get('queue')
+            ->firstWhere(fn (array $row): bool => $row['match']->is($waiting));
+
+        expect($entry['ready'])->toBeTrue()
+            ->and($entry['refereeBlocked'])->toBeTrue()
+            ->and($entry['blocked'])->toBeTrue()
+            // Les deux joueurs sont libres : c'est l'arbitre qu'il faut remplacer.
+            ->and($entry['side1Blocked'])->toBeFalse()
+            ->and($entry['side2Blocked'])->toBeFalse();
+    });
+
+    /*
+     * L'invariant qui manquait. La file dit ce qui est jouable, le lancement le
+     * vérifie — les deux doivent dire la même chose, sinon l'organisateur clique
+     * sur un match recommandé et se prend un refus.
+     */
+    it('agrees with the launch check on every match it lists', function (): void {
+        $tournament = conflictTournament();
+        [$busy, $partner, $a, $b, $c, $d] = User::factory(6)->create()->all();
+
+        conflictMatch($tournament, $busy->id, $partner->id, status: 'in_progress');
+        conflictMatch($tournament, $a->id, $b->id, referee: $busy->id);   // arbitre pris
+        conflictMatch($tournament, $busy->id, $c->id);                    // joueuse prise
+        conflictMatch($tournament, $c->id, $d->id);                       // libre
+
+        $queue = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament])
+            ->get('queue');
+
+        $service = app(TournamentMatchService::class);
+
+        expect($queue)->toHaveCount(3);
+
+        foreach ($queue as $entry) {
+            $refused = $service->detectStartConflict($tournament, $entry['match']) !== null;
+
+            expect($entry['blocked'])->toBe(
+                $refused,
+                "queue said blocked={$entry['blocked']} for match {$entry['match']->id}, launch said refused=" . ($refused ? '1' : '0'),
+            );
+        }
+    });
 });
 
 // ── Les identifiants d'un côté ───────────────────────────────────────────────

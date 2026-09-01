@@ -35,8 +35,9 @@
                     <div class="group relative" wire:key="launch-match-{{ $match->id }}">
                         @if ($entry['blocked'])
                             <div class="absolute -top-2 left-4 z-10">
-                                <x-badge :value="__('Player busy')" icon="o-exclamation-triangle"
-                                    class="badge-warning badge-xs font-bold shadow-sm" />
+                                <x-badge
+                                    :value="$entry['side1Blocked'] || $entry['side2Blocked'] ? __('Player busy') : __('Referee busy')"
+                                    icon="o-exclamation-triangle" class="badge-warning badge-xs font-bold shadow-sm" />
                             </div>
                         @elseif ($isRecommended)
                             <div class="absolute -top-2 left-4 z-10">
@@ -63,9 +64,13 @@
                                     <span @class(['truncate text-sm font-bold', 'text-warning-content line-through' => $entry['side2Blocked']])>{{ $side2Name }}</span>
                                 </div>
                                 @if ($match->referee)
-                                    <div class="mt-1.5 flex items-center gap-1 text-xs text-muted">
+                                    <div @class([
+                                        'mt-1.5 flex items-center gap-1 text-xs',
+                                        'font-semibold text-warning-content' => $entry['refereeBlocked'],
+                                        'text-muted' => ! $entry['refereeBlocked'],
+                                    ])>
                                         <x-icon name="o-eye" class="h-3 w-3 shrink-0" />
-                                        <span class="truncate">{{ $match->referee->full_name }}</span>
+                                        <span @class(['truncate', 'line-through' => $entry['refereeBlocked']])>{{ $match->referee->full_name }}</span>
                                     </div>
                                 @endif
                             </div>

@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Data\Tournament\NextAction;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Services\TournamentNextActionService;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
@@ -37,6 +39,16 @@ new class extends Component
     #[Url]
     public string $matchType = '';
 
+    /**
+     * Le filtre grossier de l'en-tête : en cours, à venir, terminés.
+     *
+     * Distinct de `status`, qui reste dans le tiroir pour viser un statut
+     * précis. Les deux se composent -- « à venir » ET « inscriptions
+     * ouvertes » est une question qu'on pose.
+     */
+    #[Url]
+    public string $phase = '';
+
     #[Url]
     public string $search = '';
 
@@ -45,6 +57,27 @@ new class extends Component
 
     #[Url]
     public string $status = '';
+
+    /**
+     * Les statuts couverts par chaque phase de l'en-tête.
+     *
+     * @return array<string, array<int, string>>
+     */
+    public static function phaseStatuses(): array
+    {
+        return [
+            'live' => [TournamentStatusEnum::PENDING->value],
+            'upcoming' => [
+                TournamentStatusEnum::PUBLISHED->value,
+                TournamentStatusEnum::LOCKED->value,
+                TournamentStatusEnum::SETUP->value,
+            ],
+            'done' => [
+                TournamentStatusEnum::CLOSED->value,
+                TournamentStatusEnum::CANCELLED->value,
+            ],
+        ];
+    }
 
     public function bulkCancel(): void
     {
@@ -91,6 +124,7 @@ new class extends Component
 
     public function clearFilters(): void
     {
+        $this->phase = '';
         $this->status = '';
         $this->matchType = '';
         $this->isFull = '';
@@ -118,6 +152,18 @@ new class extends Component
     public function getFilterChips(): array
     {
         $chips = [];
+
+        if (filled($this->phase)) {
+            $chips[] = [
+                'key' => 'phase',
+                'label' => match ($this->phase) {
+                    'live' => __('Live'),
+                    'upcoming' => __('Upcoming'),
+                    'done' => __('Closed'),
+                    default => $this->phase,
+                },
+            ];
+        }
 
         if (filled($this->status)) {
             $label = TournamentStatusEnum::tryFrom($this->status)?->getLabel() ?? $this->status;
@@ -153,6 +199,16 @@ new class extends Component
         return $this->tournaments->total();
     }
 
+    /**
+     * Ce que ce tournoi attend du comité, ou null s'il n'attend rien.
+     *
+     * La règle vit dans le service : la vue ne fait que l'afficher.
+     */
+    public function nextActionFor(Tournament $tournament): ?NextAction
+    {
+        return app(TournamentNextActionService::class)->for($tournament);
+    }
+
     public function refreshTournaments(): void
     {
         unset($this->tournaments);
@@ -174,6 +230,10 @@ new class extends Component
             ->when(! $this->canManage, fn ($q) => $q->whereNotIn('status', [TournamentStatusEnum::DRAFT->value]))
             ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%"))
             ->when($this->status, fn ($q) => $q->where('status', $this->status))
+            ->when(
+                self::phaseStatuses()[$this->phase] ?? null,
+                fn ($q, array $statuses) => $q->whereIn('status', $statuses),
+            )
             ->when($this->matchType, fn ($q) => $q->where('match_type', $this->matchType))
             ->when($this->isFull === 'full', fn ($q) => $q->whereRaw(
                 '(SELECT COUNT(*) FROM tournament_user WHERE tournament_id = tournaments.id AND registration_status IN (?, ?, ?)) >= tournaments.max_users AND tournaments.max_users > 0',
@@ -207,6 +267,11 @@ new class extends Component
     // ── Filter hooks ──────────────────────────────────────────────────────────
 
     public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedPhase(): void
     {
         $this->resetPage();
     }
@@ -250,12 +315,12 @@ new class extends Component
                 ['id' => 'no',  'name' => __('Not published')],
             ],
             'headers' => [
-                ['key' => 'name',       'label' => __('Name')],
-                ['key' => 'start_date', 'label' => __('Date')],
-                ['key' => 'match_type', 'label' => __('Type'),         'class' => 'hidden sm:table-cell', 'sortable' => false],
-                ['key' => 'spots',      'label' => __('Participants'), 'class' => 'hidden md:table-cell', 'sortable' => false],
-                ['key' => 'status',     'label' => __('Status'),       'sortable' => false],
-                ['key' => 'event',      'label' => __('Website'),      'class' => 'hidden lg:table-cell', 'sortable' => false],
+                ['key' => 'name',        'label' => __('Tournament')],
+                ['key' => 'start_date',  'label' => __('Date')],
+                ['key' => 'match_type',  'label' => __('Type'),          'class' => 'hidden xl:table-cell', 'sortable' => false],
+                ['key' => 'spots',       'label' => __('Registrations'), 'class' => 'hidden md:table-cell', 'sortable' => false],
+                ['key' => 'status',      'label' => __('Status'),        'sortable' => false],
+                ['key' => 'next_action', 'label' => __('Waiting on you'), 'sortable' => false],
             ],
             'filterChips' => $this->filterChips,
         ];

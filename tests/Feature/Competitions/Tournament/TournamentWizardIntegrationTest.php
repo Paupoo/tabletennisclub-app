@@ -10,7 +10,9 @@ use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
 use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Jobs\SendTournamentCancellationJob;
 use App\Jobs\SendTournamentInvitationJob;
+use App\Jobs\SendTournamentUpdateJob;
 use Illuminate\Bus\PendingBatch;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Bus;
@@ -629,6 +631,47 @@ describe('closing registrations', function (): void {
 });
 
 describe('cancelling a tournament', function (): void {
+    /*
+     * A full draw is sixty four players, and "the tournament is off" used to
+     * reach all of them in one loop inside the request. It goes out over the
+     * `convocations` limiter now — the urgent one, not the invitations key:
+     * somebody who blocked out Saturday morning has to be told today.
+     */
+    it('queues one throttled notice per registered player instead of sending in the request', function (): void {
+        Bus::fake();
+        Notification::fake();
+
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+        $players = competitiveUsers(3);
+        $tournament->users()->attach($players->pluck('id'), ['registration_status' => 'registered']);
+
+        // On the waitlist, and told too: the spot they were queueing for is gone.
+        $waiting = User::factory()->create();
+        $tournament->users()->attach($waiting->id, ['registration_status' => 'waiting']);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('cancelTournament');
+
+        Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs->count() === 4
+            && $batch->jobs->every(fn (object $job): bool => $job instanceof SendTournamentCancellationJob));
+
+        Notification::assertNothingSent();
+    });
+
+    it('batches nothing when nobody had registered', function (): void {
+        Bus::fake();
+
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('cancelTournament');
+
+        Bus::assertNothingBatched();
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::CANCELLED);
+    });
+
     it('cancels one that has not been played', function (): void {
         $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
 
@@ -822,5 +865,49 @@ describe('mobile step selector', function (): void {
         // Le sélecteur sous md, la ligne métro à partir de md : jamais les deux.
         expect($html)->toContain('mb-8 md:hidden')
             ->and($html)->toContain('mb-8 hidden items-center gap-0 overflow-x-auto md:flex');
+    });
+});
+
+// ── A logistics change reaches the players the same way ───────────────────────
+
+describe('changing the logistics of a tournament', function (): void {
+    /*
+     * Moving the start time notifies everybody who signed up. Same audience
+     * size as a cancellation, same urgency, same limiter.
+     */
+    it('queues one throttled notice per registered player when the time moves', function (): void {
+        Bus::fake();
+        Notification::fake();
+
+        $tournament = wizardTournament([
+            'status' => TournamentStatusEnum::PUBLISHED,
+            'start_time' => '10:00:00',
+        ]);
+        $players = competitiveUsers(2);
+        $tournament->users()->attach($players->pluck('id'), ['registration_status' => 'confirmed']);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('startTime', '14:00')
+            ->call('save');
+
+        Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs->count() === 2
+            && $batch->jobs->every(fn (object $job): bool => $job instanceof SendTournamentUpdateJob)
+            && $batch->jobs->every(fn (SendTournamentUpdateJob $job): bool => $job->changes === ['time']));
+
+        Notification::assertNothingSent();
+    });
+
+    it('says nothing to anybody when the logistics did not move', function (): void {
+        Bus::fake();
+
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
+        $tournament->users()->attach(User::factory()->create()->id, ['registration_status' => 'confirmed']);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('save');
+
+        Bus::assertNothingBatched();
     });
 });

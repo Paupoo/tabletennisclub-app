@@ -10,7 +10,9 @@ use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Jobs\SendMeetingInvitationJob;
 use App\Jobs\SendMemberInvitationJob;
 use App\Jobs\SendTournamentAnnouncementJob;
+use App\Jobs\SendTournamentCancellationJob;
 use App\Jobs\SendTournamentInvitationJob;
+use App\Jobs\SendTournamentUpdateJob;
 use Illuminate\Cache\RateLimiter as RateLimiterStore;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Queue\Middleware\RateLimited;
@@ -66,6 +68,8 @@ it('bounds every throttled mailing by a deadline rather than by a count', functi
         new SendMemberInvitationJob(1),
         new SendMeetingInvitationJob(1, 1),
         new SendTournamentInvitationJob(1, 1),
+        new SendTournamentCancellationJob(1, 1),
+        new SendTournamentUpdateJob(1, 1, ['time']),
     ];
 
     foreach ($mailings as $mailing) {
@@ -86,6 +90,8 @@ it('runs every club-wide mailing through a declared limiter', function (): void 
         [new SendTournamentAnnouncementJob(1, 1), 'invitations'],
         [new SendTournamentInvitationJob(1, 1), 'invitations'],
         [new SendMeetingInvitationJob(1, 1), 'convocations'],
+        [new SendTournamentCancellationJob(1, 1), 'convocations'],
+        [new SendTournamentUpdateJob(1, 1, ['time']), 'convocations'],
     ];
 
     foreach ($expected as [$mailing, $limiter]) {

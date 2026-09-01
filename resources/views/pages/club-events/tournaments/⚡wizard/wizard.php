@@ -15,8 +15,6 @@ use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
-use App\Domains\Competitions\Tournament\Notifications\TournamentCancelledNotification;
-use App\Domains\Competitions\Tournament\Notifications\TournamentUpdatedNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistRemovedNotification;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
 use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
@@ -26,7 +24,9 @@ use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\States\Tournament\TournamentStateMachine;
+use App\Jobs\SendTournamentCancellationJob;
 use App\Jobs\SendTournamentInvitationJob;
+use App\Jobs\SendTournamentUpdateJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasEventPostForm;
 use App\Support\Breadcrumb;
@@ -267,10 +267,20 @@ new class extends Component
             return;
         }
 
-        $tournament->users()
+        // Fanned out over the `convocations` limiter, like every other mailing
+        // that goes to more than one member. A full draw is sixty four notices.
+        $players = $tournament->users()
             ->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered', 'waiting'])
-            ->get()
-            ->each->notify(new TournamentCancelledNotification($tournament));
+            ->get();
+
+        if ($players->isNotEmpty()) {
+            Bus::batch(
+                $players->map(fn (User $player): SendTournamentCancellationJob => new SendTournamentCancellationJob(
+                    tournamentId: $tournament->id,
+                    userId: $player->id,
+                ))->all()
+            )->name('tournament-cancellation')->dispatch();
+        }
 
         unset($this->currentTournament, $this->isContractLocked);
         $this->showCancelModal = false;
@@ -1306,10 +1316,19 @@ new class extends Component
         // Notify registered players when logistical details changed.
         if ($logisticsChanged !== [] && $this->hasRegisteredUsers) {
             unset($this->hasRegisteredUsers);
-            $tournament->users()
+            $players = $tournament->users()
                 ->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered'])
-                ->get()
-                ->each->notify(new TournamentUpdatedNotification($tournament, $logisticsChanged));
+                ->get();
+
+            if ($players->isNotEmpty()) {
+                Bus::batch(
+                    $players->map(fn (User $player): SendTournamentUpdateJob => new SendTournamentUpdateJob(
+                        tournamentId: $tournament->id,
+                        userId: $player->id,
+                        changes: $logisticsChanged,
+                    ))->all()
+                )->name('tournament-update')->dispatch();
+            }
         }
 
         unset($this->isContractLocked, $this->hasRegisteredUsers, $this->currentTournament);

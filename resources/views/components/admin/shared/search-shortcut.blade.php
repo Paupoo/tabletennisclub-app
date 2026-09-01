@@ -28,15 +28,23 @@
         field() {
             const modal = document.querySelector('.modal-open');
 
+            const reachable = (input) => input.getClientRects().length > 0
+                && (! modal || modal.contains(input));
+
+            {{-- Un écran dont la recherche ne s'appelle pas `search` la désigne
+                 explicitement : les invitations du tournoi filtrent sur
+                 `memberSearch`, et le raccourci les ignorait en silence. --}}
+            const declared = [...document.querySelectorAll('input[data-page-search]')].find(reachable);
+
+            if (declared) {
+                return declared;
+            }
+
             return [...document.querySelectorAll('input')].find((input) => {
                 const bound = [...input.attributes]
                     .some((attribute) => attribute.name.startsWith('wire:model') && attribute.value === 'search');
 
-                if (! bound || input.getClientRects().length === 0) {
-                    return false;
-                }
-
-                return ! modal || modal.contains(input);
+                return bound && reachable(input);
             }) ?? null;
         },
 

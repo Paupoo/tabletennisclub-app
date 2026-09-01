@@ -47,75 +47,145 @@
             $headers[] = ['key' => 'has_paid', 'label' => __('Payment'), 'sortable' => false];
         }
     @endphp
-    <x-table wire:model.live="selectedPeople" :headers="$headers" :rows="$this->registrations"
-        :sort-by="$sortBy" selectable>
-            @scope('cell_status', $row)
-                @if (! $this->isLaunched && in_array($row['status'], ['registered', 'spot_offered']))
-                    <div class="flex items-center gap-1">
-                        <x-button
-                            icon="o-check"
-                            class="btn-ghost btn-xs text-success"
-                            :tooltip="__('Confirm')"
-                            wire:click="confirmPresence({{ $row['id'] }})"
-                            wire:loading.attr="disabled" :aria-label="__('Confirm')" />
-                        <x-button
-                            icon="o-no-symbol"
-                            class="btn-ghost btn-xs text-warning-content"
-                            :tooltip="__('No show')"
-                            wire:click="markNoShow({{ $row['id'] }})" :aria-label="__('No show')" />
+    {{--
+        Vue mobile : le tableau partait en défilement latéral -- le overflow-x-auto
+        de Mary prenait le relais et emportait les entêtes avec lui. C'est
+        exactement ce que la liste des tournois avait pris la peine d'éviter. Ici
+        aussi, le nom prend la largeur et les métadonnées passent dessous.
+    --}}
+    <div class="flex flex-col gap-2 lg:hidden">
+        @forelse ($this->registrations as $row)
+            <div wire:key="registration-card-{{ $row['id'] }}"
+                class="rounded-xl border border-base-300 bg-base-100 p-3">
+                <div class="flex items-start gap-3">
+                    <input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5 shrink-0"
+                        value="{{ $row['id'] }}" wire:model.live="selectedPeople"
+                        aria-label="{{ __('Select :player', ['player' => $row['name']]) }}" />
+
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-semibold">{{ $row['name'] }}</p>
+
+                        <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-content/55">
+                            <x-badge :value="$row['status']"
+                                :class="match ($row['status']) {
+                                    'confirmed' => 'badge-success',
+                                    'no_show' => 'badge-warning',
+                                    'cancelled' => 'badge-error',
+                                    default => 'badge-ghost',
+                                }" class="badge-xs" />
+                            <span class="tabular-nums">{{ $row['ranking'] }}</span>
+                            @if ($row['registered_at'])
+                                <span>{{ \Carbon\Carbon::parse($row['registered_at'])->format('d/m H:i') }}</span>
+                            @endif
+                            @if ($isPaidTournament)
+                                @if ($row['has_paid'])
+                                    <x-badge :value="__('Paid')" class="badge-success badge-xs" />
+                                @elseif ($row['qr_confirmed'])
+                                    <x-badge :value="__('QR seen')" class="badge-info badge-xs" />
+                                @else
+                                    <x-badge :value="__('Pending')" class="badge-warning badge-xs" />
+                                @endif
+                            @endif
+                        </div>
                     </div>
-                @else
-                    <x-badge :value="$row['status']"
-                        :class="match($row['status']) {
-                            'confirmed' => 'badge-success',
-                            'no_show'   => 'badge-warning',
-                            'cancelled' => 'badge-error',
-                            default     => 'badge-ghost',
-                        }" class="badge-sm" />
+                </div>
+
+                @if (! $this->isLaunched)
+                    <div class="mt-2.5 flex flex-wrap gap-1.5">
+                        @if (in_array($row['status'], ['registered', 'spot_offered'], true))
+                            <x-button :label="__('Confirm')" icon="o-check" class="btn-outline btn-xs text-success"
+                                wire:click="confirmPresence({{ $row['id'] }})" />
+                            <x-button :label="__('No show')" icon="o-no-symbol" class="btn-outline btn-xs"
+                                wire:click="markNoShow({{ $row['id'] }})" />
+                        @endif
+                        @if ($isPaidTournament && ! $row['has_paid'])
+                            <x-button :label="__('Cash')" icon="o-currency-euro" class="btn-outline btn-xs text-success"
+                                wire:click="openCashConfirmModal({{ $row['id'] }})" />
+                            <x-button icon="o-qr-code" class="btn-outline btn-xs" :aria-label="__('QR / bank transfer')"
+                                wire:click="openQrModal({{ $row['id'] }})" />
+                        @endif
+                        <x-button icon="o-trash" class="btn-ghost btn-xs ml-auto text-error"
+                            :aria-label="__('Cancel registration')"
+                            wire:click="cancelUserRegistration({{ $row['id'] }})" />
+                    </div>
                 @endif
-            @endscope
+            </div>
+        @empty
+            <p class="py-8 text-center text-sm text-muted">{{ __('No registered players yet.') }}</p>
+        @endforelse
+    </div>
 
-            @scope('cell_registered_at', $row)
-                <span class="text-xs text-base-content/60">
-                    {{ $row['registered_at'] ? \Carbon\Carbon::parse($row['registered_at'])->format('d/m/Y H:i') : '—' }}
-                </span>
-            @endscope
-
-            @scope('cell_has_paid', $row)
-                @if($row['has_paid'])
-                    <x-badge value="{{ __('Paid') }}" class="badge-success badge-sm" icon="o-check-circle" />
-                @elseif($row['qr_confirmed'])
-                    <x-badge value="{{ __('QR seen') }}" class="badge-info badge-sm" icon="o-eye" />
-                @elseif(! $row['payment_id'] && ! ($this->currentTournament?->isPaid() ?? false))
-                    <x-badge value="{{ __('Free') }}" class="badge-ghost badge-sm" />
-                @else
-                    @if (! $this->isLaunched)
+    <div class="hidden lg:block">
+        <x-table wire:model.live="selectedPeople" :headers="$headers" :rows="$this->registrations"
+            :sort-by="$sortBy" selectable>
+                @scope('cell_status', $row)
+                    @if (! $this->isLaunched && in_array($row['status'], ['registered', 'spot_offered']))
                         <div class="flex items-center gap-1">
                             <x-button
-                                icon="o-qr-code"
-                                class="btn-ghost btn-xs"
-                                :tooltip="__('QR / bank transfer')"
-                                wire:click="openQrModal({{ $row['id'] }})" :aria-label="__('QR / bank transfer')" />
-                            <x-button
-                                icon="o-currency-euro"
+                                icon="o-check"
                                 class="btn-ghost btn-xs text-success"
-                                :tooltip="__('Cash')"
-                                wire:click="openCashConfirmModal({{ $row['id'] }})" :aria-label="__('Cash')" />
+                                :tooltip="__('Confirm')"
+                                wire:click="confirmPresence({{ $row['id'] }})"
+                                wire:loading.attr="disabled" :aria-label="__('Confirm')" />
+                            <x-button
+                                icon="o-no-symbol"
+                                class="btn-ghost btn-xs text-warning-content"
+                                :tooltip="__('No show')"
+                                wire:click="markNoShow({{ $row['id'] }})" :aria-label="__('No show')" />
                         </div>
                     @else
-                        <x-badge value="{{ __('Pending') }}" class="badge-warning badge-sm" icon="o-clock" />
+                        <x-badge :value="$row['status']"
+                            :class="match($row['status']) {
+                                'confirmed' => 'badge-success',
+                                'no_show'   => 'badge-warning',
+                                'cancelled' => 'badge-error',
+                                default     => 'badge-ghost',
+                            }" class="badge-sm" />
                     @endif
-                @endif
-            @endscope
+                @endscope
 
-            @scope('actions', $row)
-                @if (! $this->isLaunched)
-                    <x-button icon="o-trash" class="btn-ghost btn-sm text-error"
-                        tooltip-left="{{ __('Cancel registration') }}"
-                        wire:click="cancelUserRegistration({{ $row['id'] }})" aria-label="{{ __('Cancel registration') }}" />
-                @endif
-            @endscope
-        </x-table>
+                @scope('cell_registered_at', $row)
+                    <span class="text-xs text-base-content/60">
+                        {{ $row['registered_at'] ? \Carbon\Carbon::parse($row['registered_at'])->format('d/m/Y H:i') : '—' }}
+                    </span>
+                @endscope
+
+                @scope('cell_has_paid', $row)
+                    @if($row['has_paid'])
+                        <x-badge value="{{ __('Paid') }}" class="badge-success badge-sm" icon="o-check-circle" />
+                    @elseif($row['qr_confirmed'])
+                        <x-badge value="{{ __('QR seen') }}" class="badge-info badge-sm" icon="o-eye" />
+                    @elseif(! $row['payment_id'] && ! ($this->currentTournament?->isPaid() ?? false))
+                        <x-badge value="{{ __('Free') }}" class="badge-ghost badge-sm" />
+                    @else
+                        @if (! $this->isLaunched)
+                            <div class="flex items-center gap-1">
+                                <x-button
+                                    icon="o-qr-code"
+                                    class="btn-ghost btn-xs"
+                                    :tooltip="__('QR / bank transfer')"
+                                    wire:click="openQrModal({{ $row['id'] }})" :aria-label="__('QR / bank transfer')" />
+                                <x-button
+                                    icon="o-currency-euro"
+                                    class="btn-ghost btn-xs text-success"
+                                    :tooltip="__('Cash')"
+                                    wire:click="openCashConfirmModal({{ $row['id'] }})" :aria-label="__('Cash')" />
+                            </div>
+                        @else
+                            <x-badge value="{{ __('Pending') }}" class="badge-warning badge-sm" icon="o-clock" />
+                        @endif
+                    @endif
+                @endscope
+
+                @scope('actions', $row)
+                    @if (! $this->isLaunched)
+                        <x-button icon="o-trash" class="btn-ghost btn-sm text-error"
+                            tooltip-left="{{ __('Cancel registration') }}"
+                            wire:click="cancelUserRegistration({{ $row['id'] }})" aria-label="{{ __('Cancel registration') }}" />
+                    @endif
+                @endscope
+            </x-table>
+    </div>
     </x-card>
 
     @php

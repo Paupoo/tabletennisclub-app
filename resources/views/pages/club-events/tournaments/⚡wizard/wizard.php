@@ -611,7 +611,7 @@ new class extends Component
                 'id' => $row->id,
                 'count' => $row->user_count,
                 'sent_at' => $row->sent_at,
-                'status' => 'Envoyé',
+                'status' => __('Sent'),
             ])
             ->toArray();
     }
@@ -766,12 +766,21 @@ new class extends Component
             $query->whereNotIn('id', $alreadyInvolved);
         }
 
+        /*
+         * L'assiduité pèse sur la décision : inviter quelqu'un qui n'est jamais
+         * venu n'est pas la même chose que relancer un habitué. Un seul
+         * withCount, pas une requête par ligne.
+         */
+        $query->withCount(['tournaments as tournaments_played_count' => fn ($q) => $q
+            ->where('tournament_user.registration_status', 'confirmed')]);
+
         return $query->get()
             ->map(fn (User $u): array => [
                 'id' => $u->id,
                 'name' => $u->full_name,
                 'email' => $u->email,
                 'ranking' => $u->ranking->getLabel(),
+                'played' => $u->tournaments_played_count ?? 0,
             ])
             ->toArray();
     }
@@ -1320,6 +1329,17 @@ new class extends Component
     public function selectAllMembers(): void
     {
         $this->selectedMembers = array_column($this->members, 'id');
+    }
+
+    /**
+     * Vider la sélection de membres.
+     *
+     * Nom imposé par x-admin.shared.selection-pill, que la liste des tournois
+     * utilise déjà : le comité retrouve le même geste des deux côtés.
+     */
+    public function clearSelection(): void
+    {
+        $this->selectNoMembers();
     }
 
     public function selectNoMembers(): void

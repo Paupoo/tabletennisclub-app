@@ -7,189 +7,135 @@
         'final' => __('Final'),
         'bronze' => __('3rd Place'),
     ];
-    $activeRounds = array_filter($rounds, fn($matches) => $matches->count() > 0);
+
+    // L'arbre ne dessine que la voie principale ; la petite finale vit à côté.
+    $mainRounds = collect(['round_16', 'quarterfinal', 'semifinal', 'final'])
+        ->filter(fn (string $round): bool => isset($rounds[$round]) && $rounds[$round]->count() > 0)
+        ->values();
+
+    $bronze = ($rounds['bronze'] ?? null)?->first();
 @endphp
 
 <div @if ($tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
-    @if (empty($activeRounds))
+    @if ($mainRounds->isEmpty() && $bronze === null)
         <div class="flex flex-col items-center py-20 text-muted">
-            <x-icon name="o-trophy" class="w-12 h-12 mb-3" />
+            <x-icon name="o-trophy" class="mb-3 h-12 w-12" />
             <p class="text-sm">{{ __('Bracket not yet generated.') }}</p>
         </div>
     @else
-        {{-- Bracket: horizontal scroll, all rounds except bronze --}}
-        <div class="flex gap-8 overflow-x-auto pb-10" style="min-height: 600px;">
+        {{--
+            L'arbre, à partir de lg.
 
-            @foreach (['round_16', 'quarterfinal', 'semifinal', 'final'] as $round)
-                @if (isset($rounds[$round]) && $rounds[$round]->count() > 0)
-                    <div class="flex flex-col min-w-[200px]">
-                        <div
-                            class="text-center font-bold text-base-content/40 uppercase text-xs tracking-widest h-8 mb-2">
+            Les tours étaient rendus en colonnes flex indépendantes, chacune en
+            justify-around : un quart de finale ne tombait jamais à la hauteur de
+            la demie qu'il alimente, donc on ne pouvait pas suivre un joueur à
+            l'œil. Les « connecteurs » étaient des traits de 16 px collés à
+            droite d'une carte, qui ne reliaient rien.
+
+            Ici, chaque tour occupe une colonne de grille, et la colonne de
+            liaison qui le suit est découpée en autant de blocs que le tour
+            SUIVANT compte de rencontres. Chaque bloc trace une accolade en
+            quatre traits positionnés en pourcentage — pas de SVG, pas de mesure
+            JavaScript — si bien que la rencontre d'arrivée tombe exactement à
+            mi-hauteur de ses deux alimentantes.
+        --}}
+        <div class="hidden lg:block">
+            <div class="grid items-stretch gap-0"
+                style="grid-template-columns: {{ $mainRounds->map(fn (): string => 'minmax(0,1fr) 3rem')->implode(' ') }} minmax(0,1fr);">
+
+                @foreach ($mainRounds as $i => $round)
+                    <div class="flex flex-col">
+                        <p class="mb-3 h-8 text-center text-xs font-bold uppercase tracking-widest text-base-content/40">
                             {{ $roundLabels[$round] ?? $round }}
-                        </div>
-
-                        <div class="flex flex-col justify-around flex-grow gap-3">
+                        </p>
+                        <div class="flex flex-1 flex-col justify-around gap-4">
                             @foreach ($rounds[$round] as $match)
-                                @php
-                                    $isDoubles = $match->pair1_id !== null;
-                                    $p1Won = $match->winner_id === $match->player1_id;
-                                    $p2Won = $match->winner_id === $match->player2_id;
-                                    $isFinal = $round === 'final';
-                                    $side1Name = $isDoubles
-                                        ? $match->pair1?->displayName() ?? '—'
-                                        : $match->player1?->full_name ?? '—';
-                                    $side2Name = $isDoubles
-                                        ? $match->pair2?->displayName() ?? '—'
-                                        : $match->player2?->full_name ?? '—';
-                                    $winnerName = $isDoubles
-                                        ? ($p1Won
-                                            ? $match->pair1?->displayName()
-                                            : $match->pair2?->displayName())
-                                        : $match->winner?->full_name;
-                                @endphp
-                                <div wire:key="bracket-{{ $match->id }}" @class([
-                                    'p-3 rounded-xl shadow space-y-2 relative border-2',
-                                    'border-yellow-500 bg-base-100 scale-105 shadow-xl' => $isFinal,
-                                    'border-primary/30 bg-base-100' =>
-                                        !$isFinal && $match->status === 'in_progress',
-                                    'border-base-300 bg-base-100' =>
-                                        !$isFinal && $match->status !== 'in_progress',
-                                ])>
-
-                                    {{-- Side 1 --}}
-                                    <div @class([
-                                        'flex justify-between items-center text-sm gap-2',
-                                        'font-bold text-success' => $p1Won,
-                                        'text-muted line-through' => $p2Won,
-                                    ])>
-                                        <span class="truncate">{{ $side1Name }}</span>
-                                        <span
-                                            class="font-mono shrink-0">{{ $match->getSetsWon($match->player1_id ?? 0) }}</span>
-                                    </div>
-
-                                    <div class="border-t border-base-300/50"></div>
-
-                                    {{-- Side 2 --}}
-                                    <div @class([
-                                        'flex justify-between items-center text-sm gap-2',
-                                        'font-bold text-success' => $p2Won,
-                                        'text-muted line-through' => $p1Won,
-                                    ])>
-                                        <span class="truncate">{{ $side2Name }}</span>
-                                        <span
-                                            class="font-mono shrink-0">{{ $match->getSetsWon($match->player2_id ?? 0) }}</span>
-                                    </div>
-
-                                    @if ($match->referee)
-                                        <div
-                                            class="flex items-center gap-1 text-xs text-muted pt-1 border-t border-base-300/40">
-                                            <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
-                                            <span class="truncate">{{ $match->referee->full_name }}</span>
-                                        </div>
-                                    @elseif (in_array($round, ['final', 'bronze']) && $match->player1_id)
-                                        <div
-                                            class="flex items-center gap-1 text-xs text-muted pt-1 border-t border-base-300/40 italic">
-                                            <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
-                                            <span>{{ __('Organisation') }}</span>
-                                        </div>
-                                    @elseif ($match->status === 'scheduled' && $match->player1_id)
-                                        <div
-                                            class="flex items-center gap-1 text-xs text-muted pt-1 border-t border-base-300/40 italic">
-                                            <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
-                                            <span>{{ __('Referee needed') }}</span>
-                                        </div>
-                                    @endif
-
-                                    @if ($isFinal && $match->status === 'completed')
-                                        <div class="text-center text-xs font-bold text-yellow-500 mt-1">
-                                            <x-icon name="o-trophy" class="mb-0.5 inline h-3.5 w-3.5" /> {{ $winnerName }}
-                                        </div>
-                                    @endif
-
-                                    {{-- Connector --}}
-                                    @if ($round !== 'final')
-                                        <div class="absolute -right-4 top-1/2 w-4 h-px bg-base-300"></div>
-                                    @endif
-                                </div>
+                                @include('components.admin.club-events.tournaments.partials.live.bracket-match', [
+                                    'match' => $match,
+                                    'round' => $round,
+                                ])
                             @endforeach
                         </div>
                     </div>
-                @endif
-            @endforeach
 
+                    @if (! $loop->last)
+                        @php $pairs = intdiv($rounds[$round]->count(), 2); @endphp
+                        <div class="relative mt-11" aria-hidden="true">
+                            @for ($pair = 0; $pair < $pairs; $pair++)
+                                @php
+                                    $unit = 100 / $rounds[$round]->count();
+                                    $top = ($pair * 2 + 0.5) * $unit;
+                                    $bottom = ($pair * 2 + 1.5) * $unit;
+                                @endphp
+                                <div class="absolute left-0 right-1/2 h-px bg-base-300" style="top: {{ $top }}%"></div>
+                                <div class="absolute left-0 right-1/2 h-px bg-base-300" style="top: {{ $bottom }}%"></div>
+                                <div class="absolute left-1/2 w-px bg-base-300"
+                                    style="top: {{ $top }}%; height: {{ $bottom - $top }}%"></div>
+                                <div class="absolute left-1/2 right-0 h-px bg-base-300"
+                                    style="top: {{ ($top + $bottom) / 2 }}%"></div>
+                            @endfor
+                        </div>
+                    @endif
+                @endforeach
+
+                {{-- La petite finale prend la place à droite de la finale plutôt
+                     que de traîner sous l'arbre. --}}
+                @if ($bronze !== null)
+                    <div class="col-start-[-2] row-start-1 flex flex-col">
+                        <p class="mb-3 h-8 text-center text-xs font-bold uppercase tracking-widest text-info">
+                            {{ $roundLabels['bronze'] }}
+                        </p>
+                        <div class="flex flex-1 flex-col justify-around">
+                            @include('components.admin.club-events.tournaments.partials.live.bracket-match', [
+                                'match' => $bronze,
+                                'round' => 'bronze',
+                            ])
+                        </div>
+                    </div>
+                @endif
+            </div>
         </div>
 
-        {{-- Bronze match below --}}
-        @if (isset($rounds['bronze']) && $rounds['bronze']->count() > 0)
-            @php
-                $bronze = $rounds['bronze']->first();
-                $b1Won = $bronze->winner_id === $bronze->player1_id;
-                $b2Won = $bronze->winner_id === $bronze->player2_id;
-                $bDoubles = $bronze->pair1_id !== null;
-                $b1Name = $bDoubles ? $bronze->pair1?->displayName() ?? '—' : $bronze->player1?->full_name ?? '—';
-                $b2Name = $bDoubles ? $bronze->pair2?->displayName() ?? '—' : $bronze->player2?->full_name ?? '—';
-
-                /*
-                 * Le bloc lisait $match, $round, $isFinal et $winnerName, laissés par le
-                 * @foreach fermé au-dessus : il affichait l'arbitre et le vainqueur de la
-                 * finale sur la carte de la petite finale.
-                 */
-                $bWinnerName = $bronze->winner_id
-                    ? ($bDoubles
-                        ? ($b1Won ? $bronze->pair1?->displayName() : $bronze->pair2?->displayName())
-                        : $bronze->winner?->full_name)
-                    : null;
-            @endphp
-            <div class="mt-6 max-w-xs border-2 border-info rounded-xl p-4 space-y-2 shadow">
-                <div class="text-center font-bold text-info uppercase text-xs tracking-widest mb-3">
-                    {{ __('3rd Place') }}
-                </div>
-                <div @class([
-                    'flex justify-between text-sm',
-                    'font-bold text-success' => $b1Won,
-                    'text-muted' => $b2Won,
-                ])>
-                    <span class="truncate">{{ $b1Name }}</span>
-                    <span class="font-mono">{{ $bronze->getSetsWon($bronze->player1_id ?? 0) }}</span>
-                </div>
-                <div class="border-t border-base-300/50"></div>
-                <div @class([
-                    'flex justify-between text-sm',
-                    'font-bold text-success' => $b2Won,
-                    'text-muted' => $b1Won,
-                ])>
-                    <span class="truncate">{{ $b2Name }}</span>
-                    <span class="font-mono">{{ $bronze->getSetsWon($bronze->player2_id ?? 0) }}</span>
-                </div>
-
-                @if ($bronze->referee)
-                    <div class="flex items-center gap-1 text-xs text-muted pt-1 border-t border-base-300/40">
-                        <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
-                        <span class="truncate">{{ $bronze->referee->full_name }}</span>
+        {{--
+            Repli étroit : les mêmes rencontres, empilées par tour. Un arbre
+            demande de la largeur ; sur un téléphone il n'y en a pas, et un
+            défilement horizontal de six colonnes ne se lit pas davantage.
+        --}}
+        <div class="space-y-6 lg:hidden">
+            @foreach ($mainRounds as $round)
+                <div>
+                    <div class="mb-3 flex items-center gap-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-base-content/45">
+                            {{ $roundLabels[$round] ?? $round }}
+                        </span>
+                        <div class="h-px grow bg-base-300"></div>
+                        <span class="text-xs tabular-nums text-base-content/35">
+                            {{ $rounds[$round]->where('status', 'completed')->count() }}/{{ $rounds[$round]->count() }}
+                        </span>
                     </div>
-                @elseif ($bronze->player1_id)
-                    {{-- Une petite finale sans arbitre désigné revient toujours à l'organisation. --}}
-                    <div class="flex items-center gap-1 text-xs text-muted pt-1 border-t border-base-300/40 italic">
-                        <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
-                        <span>{{ __('Organisation') }}</span>
+                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        @foreach ($rounds[$round] as $match)
+                            @include('components.admin.club-events.tournaments.partials.live.bracket-match', [
+                                'match' => $match,
+                                'round' => $round,
+                            ])
+                        @endforeach
                     </div>
-                @endif
+                </div>
+            @endforeach
 
-                @if ($bWinnerName && $bronze->status === 'completed')
-                    <div class="text-center text-xs font-bold text-yellow-500 mt-1">
-                        <x-icon name="o-trophy" class="mb-0.5 inline h-3.5 w-3.5" /> {{ $bWinnerName }}
+            @if ($bronze !== null)
+                <div>
+                    <div class="mb-3 flex items-center gap-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-info">{{ $roundLabels['bronze'] }}</span>
+                        <div class="h-px grow bg-base-300"></div>
                     </div>
-                @endif
-            </div>
-        @endif
-
-        {{-- Close tournament button
-        @if ($this->bracketPhaseComplete && !$this->tournamentClosed)
-            <div class="mt-12 flex justify-center">
-                <x-button :label="__('Close tournament')" icon="o-flag"
-                    class="btn-error btn-outline"
-                    wire:click="closeTournament" wire:confirm="__('This will mark the tournament as closed. Continue?')" />
-            </div>
-        @endif --}}
+                    @include('components.admin.club-events.tournaments.partials.live.bracket-match', [
+                        'match' => $bronze,
+                        'round' => 'bronze',
+                    ])
+                </div>
+            @endif
+        </div>
     @endif
 </div>

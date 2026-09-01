@@ -333,16 +333,72 @@ new class extends Component
 
     // ── Computed: tab data
 
+    /**
+     * The matches being played right now, each with the table it is on.
+     *
+     * Read off the occupied tables rather than queried again: `tables` already
+     * carries the pivot that ties a match to a table, and the two answers must
+     * not be able to disagree.
+     *
+     * @return Collection<int, array{match: TournamentMatch, table: string, room: string, startedAt: mixed}>
+     */
+    #[Computed]
+    public function liveMatches(): Collection
+    {
+        return $this->tables
+            ->collapse()
+            ->reject(fn (array $table): bool => $table['is_free'] || ! $table['match'] instanceof TournamentMatch)
+            ->map(fn (array $table): array => [
+                'match' => $table['match'],
+                'table' => $table['name'],
+                'room' => $table['room_name'],
+                'startedAt' => $table['match_started_at'],
+            ])
+            ->values();
+    }
+
+    /**
+     * Where every player currently on a table is, keyed by their id.
+     *
+     * The pool standings are the page a player actually reads — their own row
+     * and their friends' — so the standings are where "playing now, table 5"
+     * belongs. Both members of a pair are listed: a doubles player looking for
+     * their partner is looking for a name, not a pair.
+     *
+     * @return array<int, array{table: string, room: string, startedAt: mixed}>
+     */
+    #[Computed]
+    public function livePlacements(): array
+    {
+        $placements = [];
+
+        foreach ($this->liveMatches as $live) {
+            $match = $live['match'];
+
+            foreach ($match->sidePlayerIds(1)->merge($match->sidePlayerIds(2)) as $playerId) {
+                $placements[$playerId] = [
+                    'table' => $live['table'],
+                    'room' => $live['room'],
+                    'startedAt' => $live['startedAt'],
+                ];
+            }
+        }
+
+        return $placements;
+    }
+
     #[Computed]
     public function pools(): Collection
     {
         $matchService = app(TournamentMatchService::class);
+        $live = $this->liveMatches;
 
         return $this->tournament->pools->map(fn (Pool $pool): array => [
             'id' => $pool->id,
             'name' => $pool->name,
             'finished' => app(TournamentPoolService::class)->isPoolFinished($pool),
             'players' => $matchService->calculatePoolStandings($pool),
+            'live' => $live->filter(fn (array $entry): bool => $entry['match']->pool_id === $pool->id)->values(),
         ]);
     }
 

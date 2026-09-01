@@ -26,7 +26,7 @@ class CloseRegistrationsByDeadlineCommand extends Command
 
         foreach ($tournaments as $tournament) {
             try {
-                (new TournamentStateMachine($tournament))->setUp();
+                new TournamentStateMachine($tournament)->setUp();
             } catch (InvalidArgumentException $e) {
                 // A tournament nobody joined cannot be closed for setup; it has
                 // to be cancelled instead. Say so and keep going rather than

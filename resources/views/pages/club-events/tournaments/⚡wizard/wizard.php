@@ -50,9 +50,9 @@ new class extends Component
 
     public bool $bulkDrawer = false;
 
-    public bool $deuceEnabled = true;
-
     public string $description = '';
+
+    public bool $deuceEnabled = true;
 
     public string $doublesRegistrationMode = 'club';
 
@@ -254,7 +254,7 @@ new class extends Component
         $tournament = Tournament::with('users')->findOrFail($this->tournamentId);
 
         try {
-            (new TournamentStateMachine($tournament))->cancel();
+            new TournamentStateMachine($tournament)->cancel();
         } catch (LogicException) {
             $this->showCancelModal = false;
             $this->error(__('Matches have already been played: this tournament can no longer be cancelled.'));
@@ -315,6 +315,17 @@ new class extends Component
     {
         return $this->currentTournament?->state()
             ->canTransitionTo(TournamentStatusEnum::PUBLISHED) ?? false;
+    }
+
+    /**
+     * Vider la sélection de membres.
+     *
+     * Nom imposé par x-admin.shared.selection-pill, que la liste des tournois
+     * utilise déjà : le comité retrouve le même geste des deux côtés.
+     */
+    public function clearSelection(): void
+    {
+        $this->selectNoMembers();
     }
 
     public function confirmBulkCancel(): void
@@ -407,7 +418,7 @@ new class extends Component
         $tournament = Tournament::findOrFail($this->tournamentId);
 
         try {
-            (new TournamentStateMachine($tournament))->setUp();
+            new TournamentStateMachine($tournament)->setUp();
         } catch (InvalidArgumentException) {
             $this->showCloseRegistrationsModal = false;
             $this->error(__('Nobody has registered yet, so there are no registrations to close. Cancel the tournament instead.'));
@@ -456,7 +467,7 @@ new class extends Component
             return;
         }
 
-        (new TournamentStateMachine($tournament))->publish();
+        new TournamentStateMachine($tournament)->publish();
 
         unset($this->currentTournament, $this->registrationsOpen, $this->canOpenRegistrations);
         $this->showOpenRegistrationsModal = false;
@@ -1050,7 +1061,7 @@ new class extends Component
             return null;
         }
 
-        (new TournamentStateMachine($tournament))->start();
+        new TournamentStateMachine($tournament)->start();
 
         // Populate table_tournament pivot from the tournament's linked rooms
         $tableIds = Table::whereHas('room', fn ($q) => $q->whereIn('rooms.id', $tournament->rooms()->pluck('rooms.id')))
@@ -1351,17 +1362,6 @@ new class extends Component
         $this->selectedMembers = array_column($this->members, 'id');
     }
 
-    /**
-     * Vider la sélection de membres.
-     *
-     * Nom imposé par x-admin.shared.selection-pill, que la liste des tournois
-     * utilise déjà : le comité retrouve le même geste des deux côtés.
-     */
-    public function clearSelection(): void
-    {
-        $this->selectNoMembers();
-    }
-
     public function selectNoMembers(): void
     {
         $this->selectedMembers = [];
@@ -1589,7 +1589,7 @@ new class extends Component
             return;
         }
 
-        (new TournamentStateMachine(Tournament::findOrFail($this->tournamentId)))->lock();
+        new TournamentStateMachine(Tournament::findOrFail($this->tournamentId))->lock();
 
         unset($this->currentTournament, $this->isContractLocked, $this->registrationsOpen, $this->canOpenRegistrations);
 

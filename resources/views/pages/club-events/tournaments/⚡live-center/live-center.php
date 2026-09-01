@@ -1,8 +1,6 @@
 <?php
 
 declare(strict_types=1);
-
-use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\NewsPost;
@@ -90,7 +88,6 @@ new class extends Component
             ->exists();
     }
 
-
     #[Computed]
     public function bracketPhaseComplete(): bool
     {
@@ -152,7 +149,7 @@ new class extends Component
             'newsPostImage' => ['nullable', 'image', 'max:4096'],
         ]);
 
-        (new TournamentStateMachine($this->tournament))->close();
+        new TournamentStateMachine($this->tournament)->close();
 
         if ($this->sendThankYou && $this->thankYouSubject !== '' && $this->thankYouBody !== '') {
             $rankings = $this->rankings;
@@ -252,7 +249,6 @@ new class extends Component
         $this->activeTab = 'bracket';
         $this->success(__('Bracket created!'));
     }
-
 
     public function mount(): void
     {
@@ -370,7 +366,6 @@ new class extends Component
             ];
         });
     }
-
 
     // ── Actions: closure
 

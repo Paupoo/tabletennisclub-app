@@ -42,7 +42,7 @@ it('maps every status to the state class that claims it', function (TournamentSt
 it('persists a transition so a fresh read from the database sees it', function (): void {
     $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::SETUP]);
 
-    (new TournamentStateMachine($tournament))->publish();
+    new TournamentStateMachine($tournament)->publish();
 
     expect(Tournament::findOrFail($tournament->id)->status)
         ->toBe(TournamentStatusEnum::PUBLISHED);
@@ -60,7 +60,7 @@ it('leaves the machine pointing at the state it just moved into', function (): v
 it('refuses a transition the current state does not allow', function (): void {
     $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::CLOSED]);
 
-    expect(fn (): mixed => (new TournamentStateMachine($tournament))->publish())
+    expect(fn (): mixed => new TournamentStateMachine($tournament)->publish())
         ->toThrow(InvalidArgumentException::class);
 
     expect(Tournament::findOrFail($tournament->id)->status)
@@ -90,7 +90,7 @@ it('refuses to cancel a running tournament once a match has started', function (
     $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PENDING]);
     matchWithStatus($tournament, $matchStatus);
 
-    expect(fn (): mixed => (new TournamentStateMachine($tournament))->cancel())
+    expect(fn (): mixed => new TournamentStateMachine($tournament)->cancel())
         ->toThrow(LogicException::class);
 
     expect(Tournament::findOrFail($tournament->id)->status)
@@ -101,7 +101,7 @@ it('still cancels a running tournament while every match is only scheduled', fun
     $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PENDING]);
     matchWithStatus($tournament, 'scheduled');
 
-    (new TournamentStateMachine($tournament))->cancel();
+    new TournamentStateMachine($tournament)->cancel();
 
     expect(Tournament::findOrFail($tournament->id)->status)
         ->toBe(TournamentStatusEnum::CANCELLED);
@@ -111,7 +111,7 @@ it('refuses to close a tournament while a match is left unplayed', function (): 
     $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PENDING]);
     matchWithStatus($tournament, 'in_progress');
 
-    expect(fn (): mixed => (new TournamentStateMachine($tournament))->close())
+    expect(fn (): mixed => new TournamentStateMachine($tournament)->close())
         ->toThrow(LogicException::class);
 
     expect(Tournament::findOrFail($tournament->id)->status)
@@ -122,7 +122,7 @@ it('closes a tournament once every match is completed', function (): void {
     $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PENDING]);
     matchWithStatus($tournament, 'completed');
 
-    (new TournamentStateMachine($tournament))->close();
+    new TournamentStateMachine($tournament)->close();
 
     expect(Tournament::findOrFail($tournament->id)->status)
         ->toBe(TournamentStatusEnum::CLOSED);
@@ -161,7 +161,7 @@ it('allows exactly the transitions the wizard walks', function (TournamentStatus
 it('opens the registrations of a locked tournament, which is what option A delivered', function (): void {
     $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::LOCKED]);
 
-    (new TournamentStateMachine($tournament))->publish();
+    new TournamentStateMachine($tournament)->publish();
 
     expect(Tournament::findOrFail($tournament->id)->status)
         ->toBe(TournamentStatusEnum::PUBLISHED);
@@ -170,7 +170,7 @@ it('opens the registrations of a locked tournament, which is what option A deliv
 it('locks a validated draft', function (): void {
     $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
 
-    (new TournamentStateMachine($tournament))->lock();
+    new TournamentStateMachine($tournament)->lock();
 
     expect(Tournament::findOrFail($tournament->id)->status)
         ->toBe(TournamentStatusEnum::LOCKED);
@@ -179,7 +179,7 @@ it('locks a validated draft', function (): void {
 it('cancels from every status the committee can still back out of', function (TournamentStatusEnum $from): void {
     $tournament = Tournament::factory()->create(['status' => $from]);
 
-    (new TournamentStateMachine($tournament))->cancel();
+    new TournamentStateMachine($tournament)->cancel();
 
     expect(Tournament::findOrFail($tournament->id)->status)
         ->toBe(TournamentStatusEnum::CANCELLED);

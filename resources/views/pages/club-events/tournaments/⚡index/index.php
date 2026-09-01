@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Domains\ClubAdmin\Users\Models\User;
 use App\Data\Tournament\NextAction;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Services\TournamentNextActionService;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
@@ -86,7 +86,7 @@ new class extends Component
 
         foreach (Tournament::whereIn('id', $this->selected)->get() as $tournament) {
             try {
-                (new TournamentStateMachine($tournament))->cancel();
+                new TournamentStateMachine($tournament)->cancel();
                 $cancelled++;
             } catch (InvalidArgumentException|LogicException) {
                 // Played, closed or already cancelled: cancel what can be
@@ -264,14 +264,14 @@ new class extends Component
         $this->resetPage();
     }
 
-    // ── Filter hooks ──────────────────────────────────────────────────────────
-
-    public function updatedSearch(): void
+    public function updatedPhase(): void
     {
         $this->resetPage();
     }
 
-    public function updatedPhase(): void
+    // ── Filter hooks ──────────────────────────────────────────────────────────
+
+    public function updatedSearch(): void
     {
         $this->resetPage();
     }

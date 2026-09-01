@@ -115,7 +115,7 @@ it('sends the tournament invitation inside the throttled job, not from a second 
     $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PUBLISHED]);
     $member = User::factory()->create();
 
-    (new SendTournamentInvitationJob($tournament->id, $member->id, 'Bring water'))->handle();
+    new SendTournamentInvitationJob($tournament->id, $member->id, 'Bring water')->handle();
 
     Notification::assertSentTo(
         $member,
@@ -129,7 +129,7 @@ it('skips a member archived between the fan-out and the send', function (): void
 
     $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PUBLISHED]);
 
-    (new SendTournamentInvitationJob($tournament->id, 99999))->handle();
+    new SendTournamentInvitationJob($tournament->id, 99999)->handle();
 
     Notification::assertNothingSent();
 });

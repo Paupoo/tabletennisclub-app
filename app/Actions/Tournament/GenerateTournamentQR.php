@@ -32,14 +32,14 @@ class GenerateTournamentQR
      */
     public function __invoke(string $url, int $size = 320): string
     {
-        $result = (new Builder(
+        $result = new Builder(
             writer: new PngWriter,
             data: $url,
             encoding: new Encoding('UTF-8'),
             errorCorrectionLevel: ErrorCorrectionLevel::High,
             size: $size,
             margin: 8,
-        ))->build();
+        )->build();
 
         return 'data:image/png;base64,' . base64_encode($result->getString());
     }

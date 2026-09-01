@@ -15,6 +15,7 @@ use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingRsvpController;
 use App\Http\Controllers\ClubEvents\Tournament\TableScoreController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
+use App\Http\Controllers\ClubEvents\Tournament\TournamentPrintController;
 use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\ClubPosts\PublicNewsPostController;
 use App\Http\Controllers\HomeController;
@@ -279,6 +280,7 @@ Route::prefix('admin/club-events/tournaments')
         Route::livewire('{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');
         Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
         Route::livewire('{tournament}/wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard.edit');
+        Route::get('{tournament}/print', TournamentPrintController::class)->name('admin.tournaments.print');
     });
 
 /*

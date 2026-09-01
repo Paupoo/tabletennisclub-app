@@ -541,3 +541,159 @@ describe('importing a child whose guardian is already a member', function (): vo
         expect($marie->fresh()->licence)->toBe('111111');
     });
 });
+
+/*
+ * The listing is exported once a season and the club barely moves between two of
+ * them: most of what it carries is a member the club already holds, in the state
+ * the club already holds them. Those lines used to be laid out card by card,
+ * every minor among them demanding an answer that had been given the year before.
+ * They are now recognised, folded away, and written off.
+ */
+describe('the affiliates the listing has nothing new to say about', function (): void {
+
+    /*
+     * The scenario in one test: the same file, twice. Whatever the first run
+     * wrote, the second must find nothing left to do — which is also the only
+     * honest way to build a member identical to a row, mutators and casts
+     * included.
+     */
+    it('asks nothing of the file it has just written', function (): void {
+        $line = '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE';
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->call('import')
+            ->assertSet('step', 3);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->assertSet('rows.2.unchanged', true)
+            ->assertSet('rows.2.needsReview', false)
+            ->assertSet('rows.2.action', 'unchanged')
+            ->assertSet('tally.unchanged', 1)
+            ->assertSet('tally.update', 0);
+    });
+
+    /*
+     * A ranking moves every season, and that alone is an import. The point of the
+     * fold is to hide what has nothing to say, never to swallow something that has.
+     */
+    it('takes a line back out of the fold when a single field moves', function (): void {
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->call('import');
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166036;DUPONT MARC;1990-06-05;B6;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSet('rows.2.unchanged', false)
+            ->assertSet('rows.2.action', 'update')
+            ->assertSet('tally.unchanged', 0);
+    });
+
+    /*
+     * Whose address is this? — the question every minor raises, and the one that
+     * made the screen unusable: twenty-two children re-asked every August. It is a
+     * question only until it has been answered, and the answer is on file.
+     */
+    it('stops asking about a child once a guardian answers for them', function (): void {
+        $line = '166042;CARTIAUX PAUL;2014-02-08;NC;NC;N;N;PO;LR;2025-09-01;olivier.cartiaux@example.com;;0470445566;RUE DU TEST;42;1348;LOUVAIN-LA-NEUVE';
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->set('rows.2.guardianAddress', true)
+            ->call('import')
+            ->assertSet('step', 3);
+
+        expect(User::query()->where('licence', '166042')->first()->guardians()->exists())->toBeTrue();
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->assertSet('rows.2.isMinor', true)
+            ->assertSet('rows.2.unchanged', true)
+            ->assertSet('rows.2.needsReview', false);
+    });
+
+    /*
+     * The other half of the same rule. A child nobody answers for is a loose end,
+     * and folding them away would bury it for good.
+     */
+    it('keeps asking about a child no guardian answers for', function (): void {
+        $line = '166042;CARTIAUX PAUL;2014-02-08;NC;NC;N;N;PO;LR;2025-09-01;olivier.cartiaux@example.com;;0470445566;RUE DU TEST;42;1348;LOUVAIN-LA-NEUVE';
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->call('import')
+            ->assertSet('step', 3);
+
+        expect(User::query()->where('licence', '166042')->first()->guardians()->exists())->toBeFalse();
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->assertSet('rows.2.unchanged', false)
+            ->assertSet('rows.2.needsReview', true);
+    });
+
+    /*
+     * The whole point of the fold. Alpine's version keeps the cards in the page
+     * and only hides them, which on a listing of two hundred is two hundred cards
+     * rebuilt every time an action is picked elsewhere. Closed, these are not
+     * rendered at all.
+     */
+    it('does not build the folded cards until they are asked for', function (): void {
+        $line = '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE';
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->call('import');
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->assertSee(__('Already up to date'))
+            ->assertDontSeeHtml('unchanged-2')
+            ->call('toggleUnchanged')
+            ->assertSeeHtml('unchanged-2')
+            ->assertSee('Dupont');
+    });
+
+    /*
+     * "Nothing changed" is a claim about the file. The secretary may know
+     * something the file does not, so the way out stays open — and the line does
+     * not move when they take it, because a section that reshuffles itself hands
+     * the next click to the wrong affiliate.
+     */
+    it('lets the reviewer write a line the file called unchanged', function (): void {
+        $line = '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE';
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->call('import');
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->call('forceUpdate', 2)
+            ->assertSet('rows.2.action', 'update')
+            ->assertSet('rows.2.unchanged', true)
+            ->assertSet('tally.update', 1)
+            ->assertSet('tally.unchanged', 0)
+            ->call('import')
+            ->assertSet('step', 3);
+
+        expect(MemberImport::query()->latest('id')->first()->updated_count)->toBe(1);
+    });
+});

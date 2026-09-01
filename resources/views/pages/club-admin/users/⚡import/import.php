@@ -63,6 +63,17 @@ new class extends Component
      */
     public array $rows = [];
 
+    /**
+     * Whether the reviewer asked to see the affiliates the listing had nothing
+     * new to say about.
+     *
+     * Server-side rather than a class toggle: on a listing of two hundred, the
+     * unchanged are the bulk of it, and cards nobody asked for cost a render
+     * apiece every time an action is picked elsewhere on the screen. Folded
+     * away, they are not built at all.
+     */
+    public bool $showUnchanged = false;
+
     public int $step = 1;
 
     /**
@@ -98,6 +109,10 @@ new class extends Component
      * creating a second file for them would fail on the constraint, so the choice
      * is between taking their file back and leaving them be.
      *
+     * An unchanged line is not offered here at all: it carries no select, only
+     * a way to force it open, because there is nothing to choose between when
+     * every field already agrees.
+     *
      * @return array<int, array{id: string, name: string}>
      */
     public function actionOptions(string $outcome): array
@@ -115,6 +130,21 @@ new class extends Component
             ],
             MemberMatchOutcome::SUSPECT => [$create, $update, $skip],
         };
+    }
+
+    /**
+     * Write a line the screen had classed as already up to date after all.
+     *
+     * The line does not move: it was filed under the unchanged when the file was
+     * read and it stays there, marked. Sections that reshuffle themselves under
+     * the pointer hand the next click to the wrong affiliate, which is why the
+     * filing is settled once and never recomputed.
+     */
+    public function forceUpdate(int $line): void
+    {
+        if (($this->rows[$line]['unchanged'] ?? false) === true) {
+            $this->rows[$line]['action'] = ImportLineAction::UPDATE->value;
+        }
     }
 
     /**
@@ -160,15 +190,18 @@ new class extends Component
     }
 
     /**
-     * The lines nobody has to look at: the roster and the listing agree, and the
-     * parser read them without guessing.
+     * The lines nobody has to look at, but which still have something to write:
+     * an affiliate the club does not hold, or one whose file the listing moves.
      *
      * @return array<int, array<string, mixed>>
      */
     #[Computed]
     public function linesReadToImport(): array
     {
-        return array_filter($this->rows, static fn (array $row): bool => ! $row['needsReview']);
+        return array_filter(
+            $this->rows,
+            static fn (array $row): bool => ! $row['needsReview'] && ! $row['unchanged'],
+        );
     }
 
     /**
@@ -180,6 +213,21 @@ new class extends Component
     public function linesToReview(): array
     {
         return array_filter($this->rows, static fn (array $row): bool => $row['needsReview']);
+    }
+
+    /**
+     * The lines the listing had nothing to say about.
+     *
+     * The bulk of a yearly export, and the reason the screen used to be unusable:
+     * a member the club already holds, in the state the club already holds them.
+     * Nothing is written for them, and nothing is asked.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    #[Computed]
+    public function linesUnchanged(): array
+    {
+        return array_filter($this->rows, static fn (array $row): bool => $row['unchanged']);
     }
 
     public function parse(): void
@@ -230,9 +278,18 @@ new class extends Component
         return [
             'create' => count(array_keys($actions, ImportLineAction::CREATE->value, true)),
             'update' => count(array_keys($actions, ImportLineAction::UPDATE->value, true)),
+            'unchanged' => count(array_keys($actions, ImportLineAction::UNCHANGED->value, true)),
             'skip' => count(array_keys($actions, ImportLineAction::SKIP->value, true)),
             'undecided' => $this->undecidedCount(),
         ];
+    }
+
+    /**
+     * Show or fold away the affiliates that are already up to date.
+     */
+    public function toggleUnchanged(): void
+    {
+        $this->showUnchanged = ! $this->showUnchanged;
     }
 
     /**
@@ -323,6 +380,70 @@ new class extends Component
     }
 
     /**
+     * Whether this line asks for nothing at all: nothing to write, nothing to
+     * ask.
+     *
+     * Nothing to write is Eloquent's own answer, taken from
+     * {@see ImportFederationMembersAction::pendingChanges()} — the values are
+     * laid over a copy of the member and the dirty attributes read back — so the
+     * screen and the writer cannot drift apart on what an update would do.
+     *
+     * Nothing to ask is the other half, and it is the half that empties the
+     * screen. A name the parser had to guess at, an address that looks shifted:
+     * both are questions the file raises regardless of what the roster holds. A
+     * minor is a question too — whose address is this? — but only until it has
+     * been answered: a child already tied to a guardian was settled last year,
+     * and asking again every August is how the screen came to be unusable.
+     *
+     * Anything short of MATCHED is out of reach by construction. An archived
+     * member and a namesake are undecided by design, and a new affiliate has
+     * nothing to be unchanged against.
+     */
+    private function isUnchanged(
+        MemberMatch $match,
+        ?SharedAddressDecision $decision,
+        bool $minor,
+        bool $hasGuardian,
+    ): bool {
+        $existing = $match->existing;
+
+        if ($match->outcome !== MemberMatchOutcome::MATCHED || ! $existing instanceof User) {
+            return false;
+        }
+
+        if ($match->row->needsNameReview || $match->row->needsAddressReview) {
+            return false;
+        }
+
+        if ($minor && ! $hasGuardian) {
+            return false;
+        }
+
+        $line = new ImportLine(
+            row: $match->row,
+            action: ImportLineAction::UPDATE,
+            existingUserId: $existing->id,
+            keepsEmail: $this->keepsEmail($decision, $hasGuardian),
+        );
+
+        return ImportFederationMembersAction::pendingChanges($line, $existing) === [];
+    }
+
+    /**
+     * Whether this affiliate may keep the listed address as their own login.
+     *
+     * A child already reached through a guardian never may. The listing carries
+     * the parent's mailbox against them year after year, and the club settled
+     * that question the first time it read the file: without this, every import
+     * would offer to hand the child their parent's login again, and the line
+     * would be a question for as long as the child plays.
+     */
+    private function keepsEmail(?SharedAddressDecision $decision, bool $hasGuardian): bool
+    {
+        return ! $hasGuardian && ($decision?->keepsEmail ?? true);
+    }
+
+    /**
      * What the matcher's answer means for the import, when it means anything.
      *
      * A namesake and an archived record are questions, not conclusions: they name
@@ -350,6 +471,12 @@ new class extends Component
         $row = $match->row;
         $minor = $row->birthdate !== null && $row->birthdate->age < 18;
         $guardianName = $this->guardianNameFrom($row->email, $row->lastName);
+        // The answer given the first time this child was read, taken back off the
+        // roster instead of being asked for again.
+        $hasGuardian = $minor
+            && $match->existing instanceof User
+            && $match->existing->guardians()->exists();
+        $unchanged = $this->isUnchanged($match, $decision, $minor, $hasGuardian);
 
         return [
             'line' => $row->lineNumber,
@@ -370,22 +497,29 @@ new class extends Component
             // Settled once, when the file is read, and never recomputed: a line that
             // moved to the other section the moment it was answered would shift the
             // grid under the pointer and hand the next click to the wrong affiliate.
-            'needsReview' => $this->proposedAction($match->outcome) === ''
+            'needsReview' => ! $unchanged && (
+                $this->proposedAction($match->outcome) === ''
                 || $row->needsNameReview
                 || $row->needsAddressReview
-                || $minor,
+                || $minor
+            ),
+            'unchanged' => $unchanged,
             'outcome' => $match->outcome->value,
             'existingUserId' => $match->existing?->id,
             'existingLabel' => $match->existing?->full_name,
             'discrepancies' => $match->discrepancies,
-            'action' => $this->proposedAction($match->outcome),
-            'keepsEmail' => $decision?->keepsEmail ?? true,
+            'action' => $unchanged
+                ? ImportLineAction::UNCHANGED->value
+                : $this->proposedAction($match->outcome),
+            'keepsEmail' => $this->keepsEmail($decision, $hasGuardian),
             'isMinor' => $minor,
             // Ticked where two affiliates were listed under one address, since the
-            // file proved it there. Everywhere else it is only offered: a child
-            // alone on a parent's address looks exactly like an adult on their own,
-            // and no rule tells them apart. The secretary knows the families.
-            'guardianAddress' => $minor && $decision !== null,
+            // file proved it there — and ticked again for a child the club already
+            // reaches through a guardian, which is the same answer given a year
+            // earlier. Everywhere else it is only offered: a child alone on a
+            // parent's address looks exactly like an adult on their own, and no
+            // rule tells them apart. The secretary knows the families.
+            'guardianAddress' => $hasGuardian || ($minor && $decision !== null),
             'guardianLineNumber' => $decision?->guardianLineNumber,
             'guardianFirstName' => $guardianName['firstName'],
             'guardianLastName' => $guardianName['lastName'],

@@ -45,11 +45,13 @@
     {{-- ── Step 2 · the review ──────────────────────────────────────────────── --}}
     @if ($step === 2)
         <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div class="grid grid-cols-2 gap-3 lg:grid-cols-5">
                 <x-admin.shared.stat-card :label="__('To create')" :value="(string) $this->tally['create']"
                     icon="o-user-plus" color="success" />
                 <x-admin.shared.stat-card :label="__('To update')" :value="(string) $this->tally['update']"
                     icon="o-arrow-path" color="primary" />
+                <x-admin.shared.stat-card :label="__('Already up to date')" :value="(string) $this->tally['unchanged']"
+                    icon="o-check-circle" />
                 <x-admin.shared.stat-card :label="__('Ignored')" :value="(string) $this->tally['skip']"
                     icon="o-no-symbol" />
                 <x-admin.shared.stat-card :label="__('To be decided')" :value="(string) $this->tally['undecided']"
@@ -91,6 +93,20 @@
                 </x-section-accordion>
             @endif
 
+            {{-- The bulk of a yearly listing, and the reason it is folded: nothing
+                 will be written for these, and nothing is asked about them. The
+                 cards are not built at all until the fold is opened. --}}
+            @if (count($this->linesUnchanged) > 0)
+                <x-section-accordion :label="__('Already up to date')" :count="count($this->linesUnchanged)"
+                    color="gray" :open="$showUnchanged" wire-toggle="toggleUnchanged">
+                    <div class="space-y-2">
+                        @foreach ($this->linesUnchanged as $line => $row)
+                            @include('pages::club-admin.users.⚡import._unchanged-line', ['line' => $line, 'row' => $row])
+                        @endforeach
+                    </div>
+                </x-section-accordion>
+            @endif
+
             <div class="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-base-300 bg-base-100 py-3">
                 <p class="text-sm opacity-70">
                     {{ __(':count affiliate(s) read from the file.', ['count' => count($rows)]) }}
@@ -108,11 +124,13 @@
     {{-- ── Step 3 · what was done ───────────────────────────────────────────── --}}
     @if ($step === 3 && $this->importRun)
         <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div class="grid grid-cols-2 gap-3 lg:grid-cols-5">
                 <x-admin.shared.stat-card :label="__('Created')" :value="(string) $this->importRun->new_count"
                     icon="o-user-plus" color="success" />
                 <x-admin.shared.stat-card :label="__('Updated')" :value="(string) $this->importRun->updated_count"
                     icon="o-arrow-path" color="primary" />
+                <x-admin.shared.stat-card :label="__('Already up to date')"
+                    :value="(string) $this->importRun->unchanged_count" icon="o-check-circle" />
                 <x-admin.shared.stat-card :label="__('Ignored')" :value="(string) $this->importRun->skipped_count"
                     icon="o-no-symbol" />
                 <x-admin.shared.stat-card :label="__('Errors')" :value="(string) $this->importRun->error_count"

@@ -91,9 +91,16 @@
         :selected="$selectedMembers"
         :total="count($filteredMembers)">
         <x-slot:actions>
+            {{--
+                `wire:click` et non `@click="$wire.showInviteModal = true"` :
+                x-app-modal ne rend son corps et ses actions que si `:open` est
+                vrai côté serveur, et une affectation Alpine est un set différé
+                qui ne provoque pas de rendu. La modale s'ouvrait donc vide --
+                rien à confirmer, rien à annuler.
+            --}}
             <x-button class="btn-primary btn-sm" icon="o-paper-airplane"
                 :label="__('Send invitations')"
-                @click="$wire.showInviteModal = true" />
+                wire:click="$set('showInviteModal', true)" />
         </x-slot:actions>
     </x-admin.shared.selection-pill>
 @endif

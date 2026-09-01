@@ -267,3 +267,52 @@ it('is not linked to somebody who did not sign up', function (): void {
         ->test('pages::club-admin.users.user-space.event-subscription', ['user' => $stranger])
         ->assertDontSee(route('admin.tournaments.live', $tournament), escape: false);
 });
+
+// ── Les onglets partagés avec la régie ────────────────────────────────────────
+
+/*
+ * Le joueur et le comité regardent le même tournoi : l'arbre et les classements
+ * sont les fichiers de la régie, inclus tels quels. Deux rendus finiraient par
+ * ne plus dire la même chose.
+ */
+it('shows the bracket and the rankings, from the same views as the control room', function (): void {
+    $tournament = playerTournament();
+    $pool = Pool::factory()->for($tournament)->create(['name' => 'A']);
+    [$champion, $finalist] = User::factory(2)->create()->all();
+    playerRegister($tournament, $champion, $finalist);
+    $pool->users()->attach([$champion->id, $finalist->id]);
+
+    $final = TournamentMatch::create([
+        'tournament_id' => $tournament->id,
+        'pool_id' => null,
+        'round' => 'final',
+        'player1_id' => $champion->id,
+        'player2_id' => $finalist->id,
+        'winner_id' => $champion->id,
+        'player1_handicap_points' => 0,
+        'player2_handicap_points' => 0,
+        'status' => 'completed',
+        'match_order' => 1,
+    ]);
+
+    $html = Livewire::actingAs($champion)
+        ->test(PLAYER_LIVE_COMPONENT, ['tournament' => $tournament])
+        ->html();
+
+    // L'arbre rend la carte de la finale, avec la même clé que dans la régie.
+    expect($html)->toContain('wire:key="bracket-' . $final->id . '"')
+        // Et le classement place le vainqueur.
+        ->and($html)->toContain(e(__('Champion')))
+        ->and($html)->toContain(e(__('Runner-up')));
+});
+
+it('leaves the empty states alone before anything is played', function (): void {
+    $tournament = playerTournament();
+    $player = User::factory()->create();
+    playerRegister($tournament, $player);
+
+    Livewire::actingAs($player)
+        ->test(PLAYER_LIVE_COMPONENT, ['tournament' => $tournament])
+        ->assertSee(__('Bracket not yet generated.'))
+        ->assertSee(__('Rankings will appear as matches are completed.'));
+});

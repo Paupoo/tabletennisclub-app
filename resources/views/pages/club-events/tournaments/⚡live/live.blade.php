@@ -31,7 +31,9 @@
     <div @if($this->tournamentIsLive) wire:poll.10s @endif>
         <x-tabs wire:model="activeTab" class="mb-6">
 
-            <x-tab name="my-tournament" icon="o-user" :label="__('My tournament')">
+            <x-tab name="my-tournament" icon="o-user">
+                <x-slot:label>{{ __('My tournament') }}</x-slot:label>
+
 
                 {{-- 1. Ce que je fais maintenant. --}}
                 @if ($this->myLiveMatch)
@@ -227,8 +229,25 @@
                 @endif
             </x-tab>
 
-            <x-tab name="pools" icon="o-user-group" :label="__('Pools')">
-                <x-admin.club-events.tournaments.partials.live.tabs.pools :tournament="$tournament" />
+            {{--
+                Les mêmes onglets que la régie, aux mêmes fichiers : le joueur
+                et le comité regardent le même tournoi, et deux rendus de
+                l'arbre finiraient par ne plus dire la même chose. Aucun des
+                trois ne sait écrire quoi que ce soit.
+            --}}
+            <x-tab name="pools" icon="o-user-group">
+                <x-slot:label>{{ __('Pools') }}</x-slot:label>
+                @include('admin.club-events.tournaments.partials.live.tabs.pools')
+            </x-tab>
+
+            <x-tab name="bracket" icon="o-trophy">
+                <x-slot:label>{{ __('Bracket') }}</x-slot:label>
+                @include('admin.club-events.tournaments.partials.live.tabs.bracket')
+            </x-tab>
+
+            <x-tab name="rankings" icon="o-chart-bar">
+                <x-slot:label>{{ __('Rankings') }}</x-slot:label>
+                @include('admin.club-events.tournaments.partials.live.tabs.rankings')
             </x-tab>
 
         </x-tabs>

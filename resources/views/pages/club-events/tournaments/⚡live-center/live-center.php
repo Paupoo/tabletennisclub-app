@@ -90,13 +90,6 @@ new class extends Component
             ->exists();
     }
 
-    #[Computed]
-    public function bracketExists(): bool
-    {
-        return TournamentMatch::where('tournament_id', $this->tournament->id)
-            ->whereNotNull('round')
-            ->exists();
-    }
 
     #[Computed]
     public function bracketPhaseComplete(): bool
@@ -260,12 +253,6 @@ new class extends Component
         $this->success(__('Bracket created!'));
     }
 
-    #[Computed]
-    public function knockoutMatches(): array
-    {
-        return app(TournamentFinalPhaseService::class)
-            ->getKnockoutMatches($this->tournament);
-    }
 
     public function mount(): void
     {
@@ -384,77 +371,6 @@ new class extends Component
         });
     }
 
-    #[Computed]
-    public function rankings(): Collection
-    {
-        /** @var array<int, array{user: mixed, rank: int, result: string}> */
-        $ranked = [];
-
-        $bracketMatches = TournamentMatch::where('tournament_id', $this->tournament->id)
-            ->whereNotNull('round')
-            ->where('status', 'completed')
-            ->with(['player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2'])
-            ->get();
-
-        $place = function (TournamentMatch $match, int $winnerRank, int $loserRank, string $winnerLabel, string $loserLabel) use (&$ranked): void {
-            if (! $match->winner_id) {
-                return;
-            }
-            $isP1 = $match->winner_id === $match->player1_id;
-            $wid = $match->winner_id;
-            $lid = $isP1 ? $match->player2_id : $match->player1_id;
-            $wu = $isP1 ? $match->player1 : $match->player2;
-            $lu = $isP1 ? $match->player2 : $match->player1;
-            $wp = $isP1 ? $match->pair1 : $match->pair2;
-            $lp = $isP1 ? $match->pair2 : $match->pair1;
-
-            $ranked[$wid] = ['user' => $wu, 'pair' => $wp, 'rank' => $winnerRank, 'result' => $winnerLabel];
-            $ranked[$lid] = ['user' => $lu, 'pair' => $lp, 'rank' => $loserRank,  'result' => $loserLabel];
-        };
-
-        if ($final = $bracketMatches->firstWhere('round', 'final')) {
-            $place($final, 1, 2, __('Champion'), __('Runner-up'));
-        }
-
-        if ($bronze = $bracketMatches->firstWhere('round', 'bronze')) {
-            $place($bronze, 3, 4, __('3rd place'), __('4th place'));
-        }
-
-        foreach (['quarterfinal' => [5, 'Quarterfinalist'], 'round_16' => [9, 'Round of 16']] as $round => [$startRank, $label]) {
-            $pos = $startRank;
-            foreach ($bracketMatches->where('round', $round) as $match) {
-                if (! $match->winner_id) {
-                    continue;
-                }
-                $isP1 = $match->winner_id === $match->player1_id;
-                $lid = $isP1 ? $match->player2_id : $match->player1_id;
-                $lu = $isP1 ? $match->player2 : $match->player1;
-                $lp = $isP1 ? $match->pair2 : $match->pair1;
-                if (! isset($ranked[$lid])) {
-                    $ranked[$lid] = ['user' => $lu, 'pair' => $lp, 'rank' => $pos++, 'result' => __($label)];
-                }
-            }
-        }
-
-        $matchService = app(TournamentMatchService::class);
-        $nextRank = $ranked === [] ? 1 : collect($ranked)->max('rank') + 1;
-
-        foreach ($this->tournament->pools as $pool) {
-            foreach ($matchService->calculatePoolStandings($pool) as $standing) {
-                $pid = $standing['player']->id;
-                if (! isset($ranked[$pid])) {
-                    $ranked[$pid] = [
-                        'user' => $standing['player'],
-                        'pair' => $standing['pair'] ?? null,
-                        'rank' => $nextRank++,
-                        'result' => $pool->name,
-                    ];
-                }
-            }
-        }
-
-        return collect($ranked)->sortBy('rank')->values();
-    }
 
     // ── Actions: closure
 

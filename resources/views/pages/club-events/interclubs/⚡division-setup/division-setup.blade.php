@@ -171,8 +171,8 @@
                                         </div>
                                         <div class="min-w-0 flex-1">
                                             <p class="text-sm font-semibold">{{ $team->club?->name ?? '—' }}</p>
-                                            @if ($team->club?->street)
-                                                <p class="text-base-content/50 text-xs">{{ $team->club->street }}</p>
+                                            @if ($team->club?->address)
+                                                <p class="text-base-content/50 text-xs">{{ $team->club->address }}</p>
                                             @endif
                                         </div>
                                         <x-button
@@ -200,10 +200,21 @@
                     placeholder="ex: TT Wavre"
                     icon="o-building-office" />
                 <x-input
-                    :label="__('Address (optional)')"
+                    :label="__('Street address (optional)')"
                     wire:model="formClubStreet"
-                    placeholder="ex: Rue de la Gare 10, 1300 Wavre"
+                    placeholder="ex: Rue de la Gare 10"
                     icon="o-map-pin" />
+                <div class="grid grid-cols-3 gap-4">
+                    <x-input
+                        :label="__('Postal code')"
+                        wire:model="formClubCityCode"
+                        placeholder="1300" />
+                    <x-input
+                        class="col-span-2"
+                        :label="__('City')"
+                        wire:model="formClubCityName"
+                        placeholder="Wavre" />
+                </div>
                 <x-button
                     class="btn-ghost btn-sm px-0"
                     icon="o-arrow-uturn-left"
@@ -214,7 +225,7 @@
                     :label="__('Club')"
                     wire:model.live="formClubId"
                     :options="$clubOptions"
-                    option-sub-label="street"
+                    option-sub-label="address"
                     :placeholder="__('Search a club...')"
                     :no-result-text="__('No club found. Encode it as a new one.')"
                     :hint="__('Clubs already encoded in the application.')"

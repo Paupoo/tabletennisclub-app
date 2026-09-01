@@ -265,7 +265,7 @@ new class extends Component
             $this->formAddress = $this->ourClubAddress();
         } elseif ($this->formOpponentTeamId) {
             $team = Team::with('club')->find($this->formOpponentTeamId);
-            $this->formAddress = $team?->club?->street ?? $this->formAddress;
+            $this->formAddress = $team?->club?->address ?? $this->formAddress;
         }
     }
 
@@ -304,7 +304,7 @@ new class extends Component
 
     private function ourClubAddress(): ?string
     {
-        return Club::own()?->street;
+        return Club::own()?->address;
     }
 
     private function totalPlayersByCategory(?string $category): int

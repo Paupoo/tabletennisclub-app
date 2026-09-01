@@ -4168,5 +4168,6 @@
     "Clubs already encoded in the application.": "Clubs déjà encodés dans l'application.",
     "No club found. Encode it as a new one.": "Aucun club trouvé. Encodez-le comme nouveau club.",
     "Pick an existing club instead": "Choisir plutôt un club existant",
-    "Search a club...": "Rechercher un club..."
+    "Search a club...": "Rechercher un club...",
+    "Street address (optional)": "Adresse (optionnel)"
 }

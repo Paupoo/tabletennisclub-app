@@ -280,7 +280,8 @@ Route::prefix('admin/club-events/tournaments')
         Route::livewire('{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');
         Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
         Route::livewire('{tournament}/wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard.edit');
-        Route::get('{tournament}/print', TournamentPrintController::class)->name('admin.tournaments.print');
+        Route::get('{tournament}/print/pools', [TournamentPrintController::class, 'poolsPoster'])->name('admin.tournaments.print.pools');
+        Route::get('{tournament}/print/match-sheets', [TournamentPrintController::class, 'matchSheets'])->name('admin.tournaments.print.matches');
     });
 
 /*

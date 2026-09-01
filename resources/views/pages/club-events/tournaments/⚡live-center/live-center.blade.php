@@ -12,12 +12,17 @@
     <x-header progress-indicator title="{{ $tournament->name }}" :subtitle="__('Live tournament management')">
         <x-slot:actions>
             @if ($this->canManageTournament)
-                {{-- La feuille du mur : le QR de la page joueur et le tirage des
-                     poules, sur un seul papier. Un onglet à part, parce qu'une
-                     page d'impression n'a rien à cacher au moment d'imprimer. --}}
-                <x-button :label="__('Print sheet')" icon="o-printer"
+                {{-- Deux papiers, deux usages : l'affiche du tirage part au mur,
+                     les feuilles de match se découpent et vont aux joueurs. Des
+                     onglets à part, parce qu'une page d'impression n'a rien à
+                     cacher au moment d'imprimer. --}}
+                <x-button :label="__('Print the draw')" icon="o-printer"
                     class="btn-ghost btn-sm"
-                    :link="route('admin.tournaments.print', $tournament)" external />
+                    :link="route('admin.tournaments.print.pools', $tournament)" external />
+
+                <x-button :label="__('Print the match sheets')" icon="o-scissors"
+                    class="btn-ghost btn-sm"
+                    :link="route('admin.tournaments.print.matches', $tournament)" external />
             @endif
 
             @if ($this->tournamentClosed)

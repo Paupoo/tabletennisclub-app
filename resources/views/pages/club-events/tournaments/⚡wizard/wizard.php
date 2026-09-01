@@ -16,7 +16,6 @@ use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Competitions\Tournament\Notifications\TournamentCancelledNotification;
-use App\Domains\Competitions\Tournament\Notifications\TournamentInvitationNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentUpdatedNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistRemovedNotification;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
@@ -27,12 +26,14 @@ use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\States\Tournament\TournamentStateMachine;
+use App\Jobs\SendTournamentInvitationJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasEventPostForm;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -1371,29 +1372,39 @@ new class extends Component
         }
         $users = User::whereIn('id', $this->selectedMembers)->get();
 
-        $notification = new TournamentInvitationNotification(
-            tournament: $tournament,
-            customMessage: $this->inviteMessage,
-            includeArticleLink: $this->inviteIncludeArticle && $this->eventPostId !== null,
-            newsPostId: $this->inviteIncludeArticle ? $this->eventPostId : null,
-        );
+        $includeArticle = $this->inviteIncludeArticle && $this->eventPostId !== null;
 
-        foreach ($users as $user) {
-            $user->notify($notification);
-        }
+        /*
+         * Fanned out over the `invitations` limiter rather than sent in the
+         * request. Inviting the whole club used to be a hundred and forty three
+         * messages leaving as fast as the worker drained them, which is the
+         * burst that gets a sender classed as a spammer — and the one mass
+         * mailing in the application that had never been throttled. Batched, so
+         * the send has a name in the queue rather than being a hundred loose
+         * jobs.
+         */
+        Bus::batch(
+            $users->map(fn (User $user): SendTournamentInvitationJob => new SendTournamentInvitationJob(
+                tournamentId: $tournament->id,
+                userId: $user->id,
+                customMessage: $this->inviteMessage,
+                includeArticleLink: $includeArticle,
+                newsPostId: $this->inviteIncludeArticle ? $this->eventPostId : null,
+            ))->all()
+        )->name('invitations')->dispatch();
 
         DB::table('tournament_invitations')->insert([
             'tournament_id' => $this->tournamentId,
             'user_count' => $users->count(),
             'message' => $this->inviteMessage ?: null,
-            'include_article' => $this->inviteIncludeArticle && $this->eventPostId !== null,
+            'include_article' => $includeArticle,
             'sent_at' => now(),
         ]);
 
-        $count = $users->count();
+        // Le vocabulaire des convocations : elles sont en file, pas parties.
         $this->success(
-            title: __('Invitations sent!'),
-            description: "{$count} " . __('members have been notified.'),
+            title: __('Invitations queued — members will receive them shortly'),
+            description: __(':count invitation(s) on their way.', ['count' => $users->count()]),
             icon: 'o-paper-airplane',
         );
 

@@ -7,11 +7,13 @@ use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
-use App\Domains\Competitions\Tournament\Notifications\TournamentInvitationNotification;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
 use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Jobs\SendTournamentInvitationJob;
+use Illuminate\Bus\PendingBatch;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
@@ -53,24 +55,31 @@ function playedMatch(Tournament $tournament): TournamentMatch
 // ── sendInvitations ───────────────────────────────────────────────────────────
 
 describe('sendInvitations', function (): void {
-    it('dispatches invitation notification to each selected user', function (): void {
+    /*
+     * This used to notify the three members by hand and then assert they had
+     * been notified, which is a test of nothing: it passed whatever the wizard
+     * did. It now calls the wizard, and what it asserts is that the mailing is
+     * queued rather than sent — one job per member, none of them leaving in the
+     * request.
+     */
+    it('queues one throttled job per selected member instead of sending in the request', function (): void {
+        Bus::fake();
         Notification::fake();
 
-        $tournament = wizardTournament();
+        $tournament = wizardTournament(['registration_deadline' => now()->addWeek()]);
         $users = competitiveUsers(3);
 
-        $notification = new TournamentInvitationNotification(
-            tournament: $tournament,
-            customMessage: 'Bring your best game!',
-        );
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('inviteMessage', 'Bring your best game!')
+            ->set('selectedMembers', $users->pluck('id')->all())
+            ->call('sendInvitations');
 
-        foreach ($users as $user) {
-            $user->notify($notification);
-        }
+        Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs->count() === 3
+            && $batch->jobs->every(fn (object $job): bool => $job instanceof SendTournamentInvitationJob)
+            && $batch->jobs->every(fn (SendTournamentInvitationJob $job): bool => $job->customMessage === 'Bring your best game!'));
 
-        Notification::assertSentTo($users[0], TournamentInvitationNotification::class);
-        Notification::assertSentTo($users[2], TournamentInvitationNotification::class);
-        Notification::assertCount(3);
+        Notification::assertNothingSent();
     });
 
     it('creates a tournament_invitations record', function (): void {
@@ -534,6 +543,7 @@ describe('opening registrations', function (): void {
 
 describe('inviting members', function (): void {
     it('refuses to invite anybody while the registrations are closed', function (): void {
+        Bus::fake();
         Notification::fake();
 
         $tournament = wizardTournament([
@@ -547,6 +557,7 @@ describe('inviting members', function (): void {
             ->set('selectedMembers', [$member->id])
             ->call('sendInvitations');
 
+        Bus::assertNothingBatched();
         Notification::assertNothingSentTo($member);
         expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::LOCKED);
     });
@@ -556,6 +567,7 @@ describe('inviting members', function (): void {
      * sending invitations.
      */
     it('leaves the status alone once they are open', function (): void {
+        Bus::fake();
         Notification::fake();
 
         $tournament = wizardTournament([
@@ -569,7 +581,7 @@ describe('inviting members', function (): void {
             ->set('selectedMembers', [$member->id])
             ->call('sendInvitations');
 
-        Notification::assertSentTo($member, TournamentInvitationNotification::class);
+        Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs->count() === 1);
         expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::PUBLISHED);
     });
 });

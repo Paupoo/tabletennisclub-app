@@ -27,12 +27,16 @@ new class extends Component
 
     public bool $addModal = false;
 
-    /** @var array<int, array{id: int, name: string, street: string}> */
+    /** @var array<int, array{id: int, name: string, address: string}> */
     public array $clubOptions = [];
 
     public bool $deleteModal = false;
 
     public ?int $deletingTeamId = null;
+
+    public string $formClubCityCode = '';
+
+    public string $formClubCityName = '';
 
     public ?int $formClubId = null;
 
@@ -57,6 +61,8 @@ new class extends Component
         } else {
             $rules['formClubName'] = ['required', 'string', 'max:100'];
             $rules['formClubStreet'] = ['nullable', 'string', 'max:255'];
+            $rules['formClubCityCode'] = ['nullable', 'string', 'max:10'];
+            $rules['formClubCityName'] = ['nullable', 'string', 'max:100'];
         }
 
         $this->validate($rules);
@@ -68,6 +74,8 @@ new class extends Component
                 [
                     'licence' => 'OPP-' . strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $this->formClubName), 0, 6)),
                     'street' => $this->formClubStreet ?: null,
+                    'city_code' => $this->formClubCityCode ?: null,
+                    'city_name' => $this->formClubCityName ?: null,
                 ]
             );
 
@@ -163,6 +171,8 @@ new class extends Component
     public function openAddModal(): void
     {
         $this->resetErrorBag();
+        $this->formClubCityCode = '';
+        $this->formClubCityName = '';
         $this->formClubId = null;
         $this->formClubName = '';
         $this->formClubStreet = '';
@@ -196,7 +206,7 @@ new class extends Component
     public function search(string $value = ''): void
     {
         $selected = $this->formClubId
-            ? Club::whereKey($this->formClubId)->get(['id', 'name', 'street'])
+            ? Club::whereKey($this->formClubId)->get(['id', 'name', 'street', 'city_code', 'city_name'])
             : new EloquentCollection;
 
         $this->clubOptions = Club::query()
@@ -204,14 +214,14 @@ new class extends Component
             ->when($value !== '', fn (Builder $q) => $q->where('name', 'like', '%' . $value . '%'))
             ->orderBy('name')
             ->take(20)
-            ->get(['id', 'name', 'street'])
+            ->get(['id', 'name', 'street', 'city_code', 'city_name'])
             ->merge($selected)
             ->unique('id')
             ->sortBy('name')
             ->map(fn (Club $club): array => [
                 'id' => $club->id,
                 'name' => $club->name,
-                'street' => $club->street ?? '',
+                'address' => $club->address ?? '',
             ])
             ->values()
             ->all();
@@ -229,6 +239,8 @@ new class extends Component
     {
         $this->resetErrorBag();
         $this->formNewClub = ! $this->formNewClub;
+        $this->formClubCityCode = '';
+        $this->formClubCityName = '';
         $this->formClubId = null;
         $this->formClubName = '';
         $this->formClubStreet = '';

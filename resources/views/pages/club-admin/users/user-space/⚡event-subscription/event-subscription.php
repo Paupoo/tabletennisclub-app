@@ -16,6 +16,7 @@ use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\Training;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
@@ -327,6 +328,30 @@ new class extends Component
                     return $payment && $payment->status === 'pending';
                 })
                 ->values());
+    }
+
+    /**
+     * Les tournois du membre qui se jouent en ce moment.
+     *
+     * La liste ci-dessous est celle des inscriptions ouvertes, ce qui est le
+     * bon filtre pour s'inscrire et le mauvais le jour J : au moment où le
+     * membre est dans la salle, son tournoi en a fini avec les inscriptions et
+     * ne s'affiche plus nulle part. D'où ce bandeau, qui ne propose rien à
+     * signer et mène droit à la page de suivi.
+     *
+     * @return Collection<int, Tournament>
+     */
+    #[Computed]
+    public function liveTournaments(): Collection
+    {
+        return Tournament::query()
+            ->where('status', TournamentStatusEnum::PENDING)
+            ->whereHas('users', fn ($q) => $q
+                ->where('tournament_user.user_id', $this->user->id)
+                ->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered', 'waiting'])
+            )
+            ->orderBy('start_date')
+            ->get();
     }
 
     #[Computed]

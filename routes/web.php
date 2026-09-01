@@ -281,6 +281,21 @@ Route::prefix('admin/club-events/tournaments')
         Route::livewire('{tournament}/wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard.edit');
     });
 
+/*
+ * La même journée par l'autre bout : le tournoi vu par un joueur.
+ *
+ * Hors du groupe ci-dessus, qui est fermé au comité. La page ne sait rien
+ * écrire — pas un score, pas une table, pas un statut — et c'est ce qui permet
+ * de l'ouvrir aux inscrits. Elle vérifie elle-même l'inscription dans mount(),
+ * parce que « être inscrit à ce tournoi-ci » n'est pas une permission mais une
+ * ligne de pivot.
+ */
+Route::prefix('admin/club-events/tournaments')
+    ->middleware(['auth', 'verified', 'feature:tournaments'])
+    ->group(function (): void {
+        Route::livewire('{tournament}/live', 'pages::club-events.tournaments.live')->name('admin.tournaments.live');
+    });
+
 Route::prefix('admin/club-events/interclubs/')
     ->middleware(['auth', 'verified', 'feature:interclubs'])
     ->group(function (): void {

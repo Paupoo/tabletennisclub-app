@@ -287,6 +287,11 @@
                             $isWaiting     = $regStatus === 'waiting';
                             $isTraining    = $event['type'] === 'training';
                             $isInterclub   = $event['type'] === 'interclub';
+                            // Un tournoi auquel on est inscrit mène à sa page joueur :
+                            // le jour J, c'est par le calendrier qu'on le cherche.
+                            $myTournament  = $event['type'] === 'tournament'
+                                && in_array($regStatus, ['registered', 'confirmed', 'spot_offered', 'waiting'], true)
+                                && ! empty($event['tournamentId']);
                         @endphp
                         <x-admin.shared.compact-event-preview
                             wire:key="event-{{ $day['date'] }}-{{ $loop->index }}"
@@ -294,7 +299,11 @@
                             :startDateTime="$event['startDateTime']"
                             :endTime="$isTraining ? ($event['endTime'] ?? null) : null"
                             :type="$event['type']"
-                            :link="$isInterclub && $event['isUserInTeam'] ? route('admin.interclubs.my-matches') : '#'"
+                            :link="match (true) {
+                                $isInterclub && $event['isUserInTeam'] => route('admin.interclubs.my-matches'),
+                                $myTournament => route('admin.tournaments.live', $event['tournamentId']),
+                                default => '#',
+                            }"
                             :location="$isInterclub ? $event['address'] : ($event['room'] ?? '')"
                             :organizer="$isTraining && ! empty($event['coach']) ? $event['coach'] : null"
                         >

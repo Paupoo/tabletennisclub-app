@@ -19,6 +19,7 @@ use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\States\Tournament\TournamentStateMachine;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\ReadsTournamentLiveState;
 use App\Mail\TournamentResultsMail;
 use App\Support\Breadcrumb;
 use App\Support\Markdown;
@@ -34,7 +35,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasBreadcrumbs, Toast, WithFileUploads;
+    use HasBreadcrumbs, ReadsTournamentLiveState, Toast, WithFileUploads;
 
     /**
      * L'onglet ouvert au chargement.
@@ -333,77 +334,6 @@ new class extends Component
 
     // ── Computed: tab data
 
-    /**
-     * The matches being played right now, each with the table it is on.
-     *
-     * Read off the occupied tables rather than queried again: `tables` already
-     * carries the pivot that ties a match to a table, and the two answers must
-     * not be able to disagree.
-     *
-     * @return Collection<int, array{match: TournamentMatch, table: string, room: string, startedAt: mixed}>
-     */
-    #[Computed]
-    public function liveMatches(): Collection
-    {
-        return $this->tables
-            ->collapse()
-            ->reject(fn (array $table): bool => $table['is_free'] || ! $table['match'] instanceof TournamentMatch)
-            ->map(fn (array $table): array => [
-                'match' => $table['match'],
-                'table' => $table['name'],
-                'room' => $table['room_name'],
-                'startedAt' => $table['match_started_at'],
-            ])
-            ->values();
-    }
-
-    /**
-     * Where every player currently on a table is, keyed by their id.
-     *
-     * The pool standings are the page a player actually reads — their own row
-     * and their friends' — so the standings are where "playing now, table 5"
-     * belongs. Both members of a pair are listed: a doubles player looking for
-     * their partner is looking for a name, not a pair.
-     *
-     * @return array<int, array{table: string, room: string, startedAt: mixed}>
-     */
-    #[Computed]
-    public function livePlacements(): array
-    {
-        $placements = [];
-
-        foreach ($this->liveMatches as $live) {
-            $match = $live['match'];
-
-            foreach ($match->sidePlayerIds(1)->merge($match->sidePlayerIds(2)) as $playerId) {
-                $placements[$playerId] = [
-                    'table' => $live['table'],
-                    'room' => $live['room'],
-                    'startedAt' => $live['startedAt'],
-                ];
-            }
-        }
-
-        return $placements;
-    }
-
-    #[Computed]
-    public function pools(): Collection
-    {
-        $matchService = app(TournamentMatchService::class);
-        $live = $this->liveMatches;
-
-        return $this->tournament->pools->map(fn (Pool $pool): array => [
-            'id' => $pool->id,
-            'name' => $pool->name,
-            'finished' => app(TournamentPoolService::class)->isPoolFinished($pool),
-            'players' => $matchService->calculatePoolStandings($pool),
-            'live' => $live->filter(fn (array $entry): bool => $entry['match']->pool_id === $pool->id)->values(),
-        ]);
-    }
-
-    // ── Computed: phase flags
-
     #[Computed]
     public function poolsPhaseComplete(): bool
     {
@@ -677,33 +607,6 @@ new class extends Component
             ? ($match->winner_id === $match->player1_id ? $match->pair1?->displayName() : $match->pair2?->displayName())
             : ($match->winner_id === $match->player1_id ? $match->player1?->full_name : $match->player2?->full_name);
         $this->success(($winnerName ?? '—') . ' ' . __('wins!'));
-    }
-
-    #[Computed]
-    public function tables(): Collection
-    {
-        return $this->tournament->tables()
-            ->with('room')
-            ->get()
-            ->map(function (Table $table): array {
-                $pivot = $table->pivot;
-                $match = null;
-
-                if ($pivot->tournament_match_id) {
-                    $match = TournamentMatch::with(['player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2', 'sets', 'referee'])
-                        ->find($pivot->tournament_match_id);
-                }
-
-                return [
-                    'id' => $table->id,
-                    'name' => $table->name,
-                    'room_name' => $table->room?->name ?? '—',
-                    'is_free' => (bool) $pivot->is_table_free,
-                    'match' => $match,
-                    'match_started_at' => $pivot->match_started_at,
-                ];
-            })
-            ->groupBy('room_name');
     }
 
     #[Computed]

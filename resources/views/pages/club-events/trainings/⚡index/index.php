@@ -618,6 +618,33 @@ new class extends Component
         }
     }
 
+    /**
+     * Confie une séance à un autre coach que celui du pack.
+     *
+     * Le remplacement improvisé — titulaire malade le mardi soir, un collègue
+     * prend la salle — laissait sinon la séance non pointée à vie : le
+     * remplaçant n'y avait pas accès et le titulaire n'y était pas.
+     *
+     * Ne touche que cette séance : le coach du pack reste inchangé pour toutes
+     * les autres.
+     */
+    public function reassignSessionCoach(int $trainingId, int $userId): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        $session = Training::findOrFail($trainingId);
+        $coach = User::findOrFail($userId);
+
+        $session->update(['trainer_id' => $coach->id]);
+
+        unset($this->sessions);
+
+        $this->success(__(':session handed over to :coach.', [
+            'session' => $session->start->translatedFormat('D d/m'),
+            'coach' => $coach->first_name . ' ' . $coach->last_name,
+        ]), icon: 'o-arrow-path');
+    }
+
     public function refreshPacks(): void
     {
         unset($this->packs);

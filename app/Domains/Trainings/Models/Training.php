@@ -9,6 +9,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\TrainingCancellationType;
 use App\Domains\Shared\Traits\HasAuditLog;
+use Database\Factories\Domains\Trainings\Models\TrainingFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +32,8 @@ use Illuminate\Support\Carbon;
  * @property string $status
  * @property string|null $cancellation_note
  * @property Carbon|null $cancelled_at
+ * @property Carbon|null $attendance_taken_at
+ * @property int|null $attendance_taken_by
  * @property-read Room $room
  * @property-read Season|null $season
  * @property-read Collection<int, User> $trainees
@@ -61,12 +64,16 @@ use Illuminate\Support\Carbon;
 class Training extends Model
 {
     use HasAuditLog;
+
+    /** @use HasFactory<TrainingFactory> */
     use HasFactory;
 
     protected $casts = [
         'start' => 'datetime',
         'end' => 'datetime',
         'cancelled_at' => 'datetime',
+        'attendance_taken_at' => 'datetime',
+        'attendance_taken_by' => 'integer',
         'training_pack_id' => 'integer',
         'room_id' => 'integer',
         'season_id' => 'integer',
@@ -85,6 +92,8 @@ class Training extends Model
         'status',
         'cancellation_note',
         'cancelled_at',
+        'attendance_taken_at',
+        'attendance_taken_by',
     ];
 
     public function cancel(TrainingCancellationType $type, ?string $note = null): void

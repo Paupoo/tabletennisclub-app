@@ -4283,5 +4283,17 @@
     "This member has no active membership for the season.": "Ce membre n'a pas d'affiliation active pour la saison.",
     "Enrolments reopened for :pack.": "Inscriptions rouvertes pour :pack.",
     "Enrolments closed for :pack. The committee can still add members.": "Inscriptions closes pour :pack. Le comité peut toujours y ajouter des membres.",
-    "Sign-ups closed": "Inscriptions closes"
+    "Sign-ups closed": "Inscriptions closes",
+    "A cancelled session cannot be counted.": "Une séance annulée ne peut pas être pointée.",
+    "Attendance recorded for this session.": "Pointage enregistré pour cette séance.",
+    ":session handed over to :coach.": "Séance du :session confiée à :coach.",
+    "Save attendance": "Valider le pointage",
+    "Came without being enrolled": "Venus sans être inscrits",
+    "Adding someone here records their presence only. It enrols nobody and bills nothing.": "Ajouter quelqu'un ici note sa présence, rien d'autre : aucune inscription n'est créée, rien n'est facturé.",
+    "not enrolled": "non inscrit",
+    "Add a member to this session": "Ajouter un membre à cette séance",
+    ":count session still to record|:count sessions still to record": ":count séance reste à pointer|:count séances restent à pointer",
+    "Tonight — to record": "Ce soir — à pointer",
+    "Never recorded": "Jamais pointée",
+    "Coming up": "À venir"
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\TrainingType;
+use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use Livewire\Livewire;
 
@@ -113,5 +114,24 @@ describe('training pack wizard', function (): void {
         expect($latecomer->trainingPacks()->where('training_pack_id', $pack->id)->first()?->pivot->status)
             ->toBe('enrolled');
     })->group('training', 'pack');
+
+    it('hands one session over to the coach who actually took it', function (): void {
+        $pack = editablePack();
+        $session = Training::factory()->past()->for($pack, 'trainingPack')->create([
+            'trainer_id' => $pack->trainer_id,
+        ]);
+        $standIn = User::factory()->isCoach()->create();
+
+        // Le titulaire est malade, un collègue prend la séance. Sans ce geste
+        // la séance reste non pointée pour toujours : le remplaçant n'y a pas
+        // accès et le titulaire n'y était pas.
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('viewSessions', $pack->id)
+            ->call('reassignSessionCoach', $session->id, $standIn->id);
+
+        expect($session->fresh()->trainer_id)->toBe($standIn->id)
+            ->and($standIn->can('recordAttendance', $session->fresh()))->toBeTrue();
+    })->group('training', 'attendance');
 
 });

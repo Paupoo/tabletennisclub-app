@@ -4283,5 +4283,17 @@
     "This member has no active membership for the season.": "Dit lid heeft geen actieve aansluiting voor het seizoen.",
     "Enrolments reopened for :pack.": "Inschrijvingen heropend voor :pack.",
     "Enrolments closed for :pack. The committee can still add members.": "Inschrijvingen gesloten voor :pack. Het comité kan nog leden toevoegen.",
-    "Sign-ups closed": "Inschrijvingen gesloten"
+    "Sign-ups closed": "Inschrijvingen gesloten",
+    "A cancelled session cannot be counted.": "Een geannuleerde sessie kan niet worden afgetekend.",
+    "Attendance recorded for this session.": "Aanwezigheid geregistreerd voor deze sessie.",
+    ":session handed over to :coach.": "Sessie van :session toevertrouwd aan :coach.",
+    "Save attendance": "Aanwezigheid bevestigen",
+    "Came without being enrolled": "Gekomen zonder ingeschreven te zijn",
+    "Adding someone here records their presence only. It enrols nobody and bills nothing.": "Iemand hier toevoegen registreert enkel de aanwezigheid: er wordt niemand ingeschreven en niets aangerekend.",
+    "not enrolled": "niet ingeschreven",
+    "Add a member to this session": "Een lid aan deze sessie toevoegen",
+    ":count session still to record|:count sessions still to record": ":count sessie nog af te tekenen|:count sessies nog af te tekenen",
+    "Tonight — to record": "Vanavond — af te tekenen",
+    "Never recorded": "Nooit afgetekend",
+    "Coming up": "Binnenkort"
 }

@@ -16,6 +16,7 @@ use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingPackScheduleChangedNotification;
 use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
+use App\Domains\Trainings\Services\TrainingWaitlistService;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
@@ -626,6 +627,11 @@ new class extends Component
         $pack = $this->packId
             ? tap(TrainingPack::findOrFail($this->packId))->update($data)
             : TrainingPack::create($data);
+
+        // Relever le plafond ouvre des places pour de bon : la file doit être
+        // appelée, sinon les places se remplissent au premier arrivé pendant
+        // que ceux qui attendaient gardent leur rang pour rien.
+        app(TrainingWaitlistService::class)->releaseSpot($pack);
 
         if (! $this->packId) {
             $pack->generateSessions($season);

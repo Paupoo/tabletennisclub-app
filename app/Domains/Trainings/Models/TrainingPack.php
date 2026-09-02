@@ -167,12 +167,17 @@ class TrainingPack extends Model
      * On filtre sur affiliated() et non active() : un membre en attente de
      * validation qui a réservé une place la conserve, sinon la place serait
      * attribuée deux fois. Seuls les états terminaux libèrent la place.
+     *
+     * `offered` compte au même titre : une place promise pour 48 h est retenue.
+     * L'exclure laisserait un nouvel arrivant prendre la place qu'on vient
+     * d'offrir à quelqu'un de la file, et {@see TrainingWaitlistService} en
+     * offrirait autant de fois qu'il reste de gens à appeler.
      */
     public function committedCount(): int
     {
         return $this->subscriptions()
             ->affiliated()
-            ->wherePivotIn('status', ['enrolled', 'pending'])
+            ->wherePivotIn('status', ['enrolled', 'pending', 'offered'])
             ->count();
     }
 

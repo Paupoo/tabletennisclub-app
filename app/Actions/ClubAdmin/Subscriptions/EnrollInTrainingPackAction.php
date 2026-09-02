@@ -13,6 +13,14 @@ use Illuminate\Support\Facades\DB;
 
 class EnrollInTrainingPackAction
 {
+    /**
+     * Statuts qui racontent un passage terminé, et non un engagement en cours :
+     * ils n'interdisent pas de se réinscrire.
+     *
+     * @var list<string>
+     */
+    private const array SPENT_STATUSES = ['left', 'expired'];
+
     public function __construct(private readonly TrainingPackProrata $prorata = new TrainingPackProrata) {}
 
     public function __invoke(Subscription $subscription, TrainingPack $pack, int $familyMembersCount = 1): string
@@ -26,9 +34,9 @@ class EnrollInTrainingPackAction
             ->where('training_pack_id', $pack->id)
             ->first();
 
-        // Already enrolled or waitlisted. A `left` line is history, not a
-        // commitment: it must not lock the member out of coming back.
-        if ($existing && $existing->status !== 'left') {
+        // Already enrolled or waitlisted. A `left` or `expired` line is history,
+        // not a commitment: it must not lock the member out of coming back.
+        if ($existing && ! in_array($existing->status, self::SPENT_STATUSES, true)) {
             throw new \DomainException(__('Already enrolled or waitlisted for this training pack.'));
         }
 

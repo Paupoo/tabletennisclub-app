@@ -31,6 +31,7 @@ use App\Domains\Subscriptions\Notifications\SubscriptionRejectedNotification;
 use App\Domains\Subscriptions\Notifications\TrainingPackRejectedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Services\TrainingPackProrata;
+use App\Domains\Trainings\Services\TrainingWaitlistService;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Livewire\Concerns\ManagesGuardians;
@@ -1095,6 +1096,14 @@ new class extends Component
         }
 
         $subscription->trainingPacks()->wherePivot('status', 'pending')->detach();
+
+        // Une demande refusée rend sa place — `pending` en occupait une. Sans
+        // cet appel le pack restait affiché complet, la file figée derrière.
+        $waitlist = app(TrainingWaitlistService::class);
+
+        foreach ($pendingPacks as $pack) {
+            $waitlist->releaseSpot($pack);
+        }
 
         $this->trainingRequestModal = false;
         $this->currentTrainingRequestId = null;

@@ -38,6 +38,12 @@ uses(
     RefreshDatabase::class,
 )->in('Feature', 'Unit', 'Browser', '../resources/views');
 
+/*
+ * The contract suite talks to the federation and needs no database: it asserts
+ * that the live API still carries what the importer reads.
+ */
+uses(TestCase::class)->in('Contract');
+
 pest()->browser()->timeout(15_000);
 
 uses(RefusesParallelExecution::class)->in('Browser');

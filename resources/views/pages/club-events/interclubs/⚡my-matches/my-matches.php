@@ -32,7 +32,8 @@ new class extends Component
         $enum = InterclubAvailability::from($availability);
         $teamIds = $user->teams()->pluck('teams.id');
 
-        Interclub::where('start_date_time', '>=', now())
+        Interclub::withoutByes()
+            ->where('start_date_time', '>=', now())
             ->where(fn ($q) => $q->whereIn('visited_team_id', $teamIds)
                 ->orWhereIn('visiting_team_id', $teamIds))
             ->get()
@@ -93,6 +94,7 @@ new class extends Component
             'visitingTeam.league',
             'league',
         ])
+            ->withoutByes()
             ->where(function ($q) use ($teamIds): void {
                 $q->whereIn('visited_team_id', $teamIds)
                     ->orWhereIn('visiting_team_id', $teamIds);

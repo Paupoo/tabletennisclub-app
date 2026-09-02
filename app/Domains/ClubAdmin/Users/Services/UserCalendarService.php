@@ -120,6 +120,7 @@ class UserCalendarService
             'league',
             'users' => fn ($q) => $q->where('users.id', $user->id),
         ])
+            ->withoutByes()
             ->where('season_id', $season->id)
             ->where(fn ($q) => $q->whereIn('visited_team_id', $filterTeamIds)->orWhereIn('visiting_team_id', $filterTeamIds))
             ->where('start_date_time', '>=', $from)

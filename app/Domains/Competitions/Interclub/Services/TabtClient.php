@@ -223,7 +223,7 @@ class TabtClient
         $fault = $xml->xpath('//faultstring');
 
         if ($fault !== [] && $fault !== null) {
-            throw new RuntimeException('TabT refused ' . $action . ': ' . (string) $fault[0]);
+            throw new RuntimeException('TabT refused ' . $action . ': ' . $fault[0]);
         }
 
         return $xml;

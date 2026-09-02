@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Competitions\Interclub\Services;
 
 use App\Data\Interclub\AfttClub;
+use App\Data\Interclub\AfttDivision;
 use App\Data\Interclub\AfttMatch;
 use App\Data\Interclub\AfttSeasons;
 use App\Data\Interclub\AfttTeam;
@@ -142,6 +143,40 @@ class TabtClient
         }
 
         return $matches;
+    }
+
+    /**
+     * Every division of the season, keyed by its federation id.
+     *
+     * Fetched whole rather than one by one: the federation offers no per-division
+     * lookup, the whole list is one call, and we need the level of each division
+     * our teams play in.
+     *
+     * @return array<int, AfttDivision>
+     */
+    public function divisions(int $season): array
+    {
+        $body = $this->call('GetDivisions', 'GetDivisions', [
+            'Season' => $season,
+            'ShowDivisionName' => 'yes',
+        ]);
+
+        $divisions = [];
+
+        foreach ($body->xpath('//t:DivisionEntries') ?: [] as $entry) {
+            $entry->registerXPathNamespace('t', self::NAMESPACE);
+
+            $id = (int) $this->text($entry, 'DivisionId');
+
+            $divisions[$id] = new AfttDivision(
+                id: $id,
+                name: $this->text($entry, 'DivisionName') ?? '',
+                category: (int) $this->text($entry, 'DivisionCategory'),
+                level: (int) $this->text($entry, 'Level'),
+            );
+        }
+
+        return $divisions;
     }
 
     public function seasons(): AfttSeasons

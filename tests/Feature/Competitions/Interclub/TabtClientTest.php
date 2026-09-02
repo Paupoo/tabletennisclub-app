@@ -110,3 +110,18 @@ it('returns nothing for a club the federation does not know', function (): void 
 
     expect(app(TabtClient::class)->club('XXX999', 27))->toBeNull();
 });
+
+it('reads the level of a division, which only the division list carries', function (): void {
+    Http::fake([
+        'api.aftt.be/*' => Http::response(afttFixture('get-divisions.xml')),
+    ]);
+
+    $divisions = app(TabtClient::class)->divisions(27);
+
+    expect($divisions[9756]->level)->toBe(11)
+        ->and($divisions[9756]->category)->toBe(3)
+        ->and($divisions[9756]->name)->toBe('Division 3D - Prov. B.B.W. - Vétérans')
+        ->and($divisions[9496]->level)->toBe(1)
+        ->and($divisions[9565]->level)->toBe(16)
+        ->and($divisions[9824]->category)->toBe(41);
+});

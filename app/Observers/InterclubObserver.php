@@ -35,7 +35,14 @@ class InterclubObserver
     {
         $interclub->loadMissing(['visitedTeam.club', 'visitingTeam.club']);
 
-        $isHome = $interclub->visitedTeam?->club?->is_own_club;
+        /**
+         * Cast, because a bye has only one side. The federation states no
+         * opponent for it, so one of the two team columns is null, and the
+         * nullable read used to write null into `is_home`, which does not accept
+         * it. Absent visited team means the fixture is not ours to host — which
+         * is the same answer this gives for an ordinary away match.
+         */
+        $isHome = (bool) $interclub->visitedTeam?->club?->is_own_club;
         $ourTeam = $isHome ? $interclub->visitedTeam : $interclub->visitingTeam;
         $opponentTeam = $isHome ? $interclub->visitingTeam : $interclub->visitedTeam;
 

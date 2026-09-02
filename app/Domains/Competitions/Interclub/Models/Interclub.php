@@ -84,12 +84,14 @@ class Interclub extends Model
 
     protected $fillable = [
         'address',
+        'aftt_match_id',
         'is_bye',
         'league_id',
         'result',
         'score',
         'season_id',
         'start_date_time',
+        'round_number',
         'total_players',
         'visited_team_id',
         'visiting_team_id',

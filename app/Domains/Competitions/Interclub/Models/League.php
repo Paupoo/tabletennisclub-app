@@ -53,6 +53,7 @@ class League extends Model
     ];
 
     protected $fillable = [
+        'aftt_division_id',
         'division',
         'level',
         'category',

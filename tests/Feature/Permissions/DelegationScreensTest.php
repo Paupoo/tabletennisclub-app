@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -58,6 +59,57 @@ describe('the overview screen', function (): void {
         Livewire::actingAs($this->admin)
             ->test(DELEGATIONS)
             ->assertDontSee(Role::ADMINISTRATOR->label());
+    });
+
+    it('lists the delegations alphabetically in the language they are read in', function (): void {
+        app()->setLocale('fr_BE');
+
+        $labels = Livewire::actingAs($this->admin)
+            ->test(DELEGATIONS)
+            ->instance()
+            ->delegationRows
+            ->map(fn (array $row): string => $row['role']->label())
+            ->all();
+
+        $alphabetical = $labels;
+        usort($alphabetical, fn (string $a, string $b): int => Str::lower(Str::ascii($a)) <=> Str::lower(Str::ascii($b)));
+
+        expect($labels)->toBe($alphabetical)
+            ->and(array_search('Réunions', $labels, true))
+            ->toBeGreaterThan(array_search("Offre d'entraînement", $labels, true))
+            ->toBeLessThan(array_search('Saisons', $labels, true));
+    });
+
+    it('names the uncovered delegations in that same order', function (): void {
+        app()->setLocale('fr_BE');
+
+        $labels = Livewire::actingAs($this->admin)
+            ->test(DELEGATIONS)
+            ->instance()
+            ->uncoveredDelegations
+            ->map(fn (Role $role): string => $role->label())
+            ->all();
+
+        expect($labels)->toBe(collect($labels)->sortBy(fn (string $label): string => Str::lower(Str::ascii($label)))->values()->all());
+    });
+
+    it('sorts a member\'s badges the same way', function (): void {
+        app()->setLocale('fr_BE');
+
+        User::factory()
+            ->withRole(Role::WEBSITE, Role::CASH_REGISTER, Role::MEETINGS)
+            ->create(['last_name' => 'Dubois']);
+
+        $roles = Livewire::actingAs($this->admin)
+            ->test(DELEGATIONS)
+            ->set('view', 'members')
+            ->instance()
+            ->memberRows
+            ->firstWhere(fn (array $row): bool => $row['user']->last_name === 'Dubois')['roles']
+            ->map(fn (Role $role): string => $role->label())
+            ->all();
+
+        expect($roles)->toBe(['Caisse', 'Réunions', 'Site web']);
     });
 
     it('filters by delegation', function (): void {

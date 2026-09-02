@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\User\SyncUserAccessAction;
+use App\Data\User\AccessData;
 use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\Bar\Models\BarPayment;
@@ -103,7 +105,7 @@ function auditedModels(): array
     ];
 }
 
-it('logs an activity when an audited model is updated', function () {
+it('logs an activity when an audited model is updated', function (): void {
     $user = User::factory()->create(['first_name' => 'Original']);
 
     $user->update(['first_name' => 'Changed']);
@@ -118,7 +120,7 @@ it('logs an activity when an audited model is updated', function () {
         ->and($activity->attribute_changes['old']['first_name'])->toBe('Original');
 });
 
-it('logs a created activity when an audited model is created', function () {
+it('logs a created activity when an audited model is created', function (): void {
     $room = Room::factory()->create();
 
     $activity = Activity::query()
@@ -130,7 +132,7 @@ it('logs a created activity when an audited model is created', function () {
         ->and($activity->subject->id)->toBe($room->id);
 });
 
-it('logs a deleted activity for each transaction when bulk-deleted', function () {
+it('logs a deleted activity for each transaction when bulk-deleted', function (): void {
     $admin = User::factory()->isAdmin()->create();
     $transactions = collect([
         Transaction::create(['date' => '2026-06-01', 'description' => 'A', 'amount' => 10]),
@@ -139,41 +141,41 @@ it('logs a deleted activity for each transaction when bulk-deleted', function ()
 
     Livewire::actingAs($admin)
         ->test('pages::club-admin.treasury.transactions')
-        ->set('selected', $transactions->pluck('id')->map(fn ($id) => (string) $id)->all())
+        ->set('selected', $transactions->pluck('id')->map(fn ($id): string => (string) $id)->all())
         ->call('bulkDelete');
 
     expect(Activity::query()->where('subject_type', Transaction::class)->where('description', 'deleted')->count())
         ->toBe(2);
 });
 
-it('logs a deleted activity for each contact when bulk-deleted', function () {
+it('logs a deleted activity for each contact when bulk-deleted', function (): void {
     $admin = User::factory()->isAdmin()->create();
     $contacts = Contact::factory()->count(2)->create();
 
     Livewire::actingAs($admin)
         ->test('pages::website.contacts.index')
-        ->set('selected', $contacts->pluck('id')->map(fn ($id) => (string) $id)->all())
+        ->set('selected', $contacts->pluck('id')->map(fn ($id): string => (string) $id)->all())
         ->call('bulkDelete');
 
     expect(Activity::query()->where('subject_type', Contact::class)->where('description', 'deleted')->count())
         ->toBe(2);
 });
 
-it('logs a deleted activity for each spam entry when bulk-deleted', function () {
+it('logs a deleted activity for each spam entry when bulk-deleted', function (): void {
     $admin = User::factory()->isAdmin()->create();
     $spams = Spam::factory()->count(2)->create();
 
     Livewire::actingAs($admin)
         ->test('pages::website.spams.index')
-        ->set('selected', $spams->pluck('id')->map(fn ($id) => (string) $id)->all())
+        ->set('selected', $spams->pluck('id')->map(fn ($id): string => (string) $id)->all())
         ->call('bulkDelete');
 
     expect(Activity::query()->where('subject_type', Spam::class)->where('description', 'deleted')->count())
         ->toBe(2);
 });
 
-it('never bulk-deletes an audited model via whereIn()->delete(), which bypasses the audit log', function () {
-    $shortNames = array_unique(array_map(fn (string $class): string => class_basename($class), auditedModels()));
+it('never bulk-deletes an audited model via whereIn()->delete(), which bypasses the audit log', function (): void {
+    $shortNames = array_unique(array_map(class_basename(...), auditedModels()));
     $violations = [];
 
     foreach ([app_path(), resource_path('views/pages')] as $directory) {
@@ -200,12 +202,12 @@ it('never bulk-deletes an audited model via whereIn()->delete(), which bypasses 
     );
 });
 
-it('applies the audit trait to every model in the agreed scope', function (string $modelClass) {
+it('applies the audit trait to every model in the agreed scope', function (string $modelClass): void {
     expect(in_array(HasAuditLog::class, class_uses_recursive($modelClass), true))
         ->toBeTrue("{$modelClass} should use HasAuditLog");
 })->with(auditedModels());
 
-it('forbids the audit log page to users without access', function () {
+it('forbids the audit log page to users without access', function (): void {
     $user = User::factory()->create(['committee_role' => null]);
 
     $this->actingAs($user)
@@ -213,7 +215,7 @@ it('forbids the audit log page to users without access', function () {
         ->assertForbidden();
 });
 
-it('shows the audit log page to authorised users', function () {
+it('shows the audit log page to authorised users', function (): void {
     $user = User::factory()->isAdmin()->create();
 
     $this->actingAs($user)
@@ -221,7 +223,7 @@ it('shows the audit log page to authorised users', function () {
         ->assertOk();
 });
 
-it('lists logged activity and filters it by item type', function () {
+it('lists logged activity and filters it by item type', function (): void {
     $admin = User::factory()->isAdmin()->create();
 
     $room = Room::factory()->create(['name' => 'Salle A']);
@@ -237,7 +239,7 @@ it('lists logged activity and filters it by item type', function () {
         ->assertDontSee('Marcelle');
 });
 
-it('finds an audit entry by the name of its author', function () {
+it('finds an audit entry by the name of its author', function (): void {
     $viewer = User::factory()->isAdmin()->create(['first_name' => 'Zoé', 'last_name' => 'Verhoeven', 'email' => 'viewer@ctt.test']);
     $author = User::factory()->isAdmin()->create(['first_name' => 'Jean', 'last_name' => 'Dupont', 'email' => 'author@ctt.test']);
     $bystander = User::factory()->isAdmin()->create(['first_name' => 'Paul', 'last_name' => 'Lefebvre', 'email' => 'bystander@ctt.test']);
@@ -255,7 +257,7 @@ it('finds an audit entry by the name of its author', function () {
         ->assertDontSee('Omegaroom');
 });
 
-it('finds an audit entry by the name of the member it targets', function () {
+it('finds an audit entry by the name of the member it targets', function (): void {
     $viewer = User::factory()->isAdmin()->create(['first_name' => 'Zoé', 'last_name' => 'Verhoeven', 'email' => 'viewer@ctt.test']);
 
     $target = User::factory()->create(['first_name' => 'Alice', 'last_name' => 'Vandenberghe', 'email' => 'target@ctt.test']);
@@ -271,7 +273,7 @@ it('finds an audit entry by the name of the member it targets', function () {
         ->assertDontSee('Bobby');
 });
 
-it('finds audit entries by the human label of the audited model', function () {
+it('finds audit entries by the human label of the audited model', function (): void {
     $viewer = User::factory()->isAdmin()->create(['first_name' => 'Zoé', 'last_name' => 'Verhoeven', 'email' => 'viewer@ctt.test']);
 
     $member = User::factory()->create(['first_name' => 'Marc', 'last_name' => 'Lemoine', 'email' => 'member@ctt.test']);
@@ -292,7 +294,7 @@ it('finds audit entries by the human label of the audited model', function () {
 | SQL operator precedence turned "search AND author" into "search OR (… AND
 | author)" and entries from every other author leaked into a filtered list.
 */
-it('keeps the author filter binding when it is combined with the search', function () {
+it('keeps the author filter binding when it is combined with the search', function (): void {
     $viewer = User::factory()->isAdmin()->create(['first_name' => 'Zoé', 'last_name' => 'Verhoeven', 'email' => 'viewer@ctt.test']);
     $author = User::factory()->isAdmin()->create(['first_name' => 'Jean', 'last_name' => 'Dupont', 'email' => 'author@ctt.test']);
     $bystander = User::factory()->isAdmin()->create(['first_name' => 'Paul', 'last_name' => 'Lefebvre', 'email' => 'bystander@ctt.test']);
@@ -309,13 +311,11 @@ it('keeps the author filter binding when it is combined with the search', functi
         ->set('causerFilter', (string) $author->id)
         ->assertSee('Alpharoom')
         ->assertDontSee('Omegaroom')
-        ->assertViewHas('activities', function ($activities) use ($author): bool {
-            return $activities->total() > 0
-                && collect($activities->items())->every(fn (Activity $activity): bool => (int) $activity->causer_id === $author->id);
-        });
+        ->assertViewHas('activities', fn ($activities): bool => $activities->total() > 0
+            && collect($activities->items())->every(fn (Activity $activity): bool => (int) $activity->causer_id === $author->id));
 });
 
-it('renders the audit log when a logged activity has an array-cast attribute', function () {
+it('renders the audit log when a logged activity has an array-cast attribute', function (): void {
     $admin = User::factory()->isAdmin()->create();
 
     // Spam casts `inputs` to an array, so the created activity stores an array
@@ -335,7 +335,7 @@ it('renders the audit log when a logged activity has an array-cast attribute', f
 | president, vice-president, secretary and treasurer. It is the supervision duty
 | now, so the title neither grants nor withholds it.
 */
-it('grants audit log access on the supervision delegation', function (array $roles, ?CommitteeRolesEnum $committeeRole, bool $expected) {
+it('grants audit log access on the supervision delegation', function (array $roles, ?CommitteeRolesEnum $committeeRole, bool $expected): void {
     $user = User::factory()->withRole(...$roles)->create(['committee_role' => $committeeRole]);
 
     expect($user->canViewAuditLog())->toBe($expected);
@@ -347,3 +347,64 @@ it('grants audit log access on the supervision delegation', function (array $rol
     'treasurer without the delegation' => [[Role::COMMITTEE], CommitteeRolesEnum::TREASURER, false],
     'regular member' => [[], null, false],
 ]);
+
+/*
+| A rights change first shipped rendering as a bare `roles_changed` badge with an
+| empty Details column: the label map existed but the table never called it, and
+| the diff went into `properties` while the screen reads `attribute_changes`.
+| Both are one-line mistakes that no assertion on the action alone would catch.
+*/
+it('renders a rights change like any other entry, named and with its diff', function (): void {
+    $admin = User::factory()->isAdmin()->create();
+    $member = User::factory()->withRole(Role::BAR)->create();
+
+    SyncUserAccessAction::handle(
+        $member,
+        new AccessData(delegations: [Role::WEBSITE->value]),
+        $admin,
+    );
+
+    Livewire::actingAs($admin)
+        ->test('pages::club-admin.audit.index')
+        ->assertSee(__('Rights changed'))
+        ->assertDontSee('roles_changed')
+        ->assertSee(Role::BAR->value)
+        ->assertSee(Role::WEBSITE->value);
+});
+
+/*
+| `updated_by` is fillable, so logFillable() counted it as a business change. A
+| save that touched nothing else still produced a "Modified" entry whose entire
+| content was `updated_by: 1`, sitting next to the real one and making a single
+| rights change look like two. The log already names the author in its own
+| column, so the attribute only ever restated it.
+*/
+it('logs nothing when only the bookkeeping author column moves', function (): void {
+    $admin = User::factory()->isAdmin()->create();
+    $member = User::factory()->create();
+
+    // `theme` carries a SQL default the in-memory model never sees after the
+    // insert, so the next save would report it as a change of its own and hide
+    // what this is measuring. Realigned before the log is cleared.
+    $member->refresh();
+    Activity::query()->delete();
+
+    $member->update(['updated_by' => $admin->id]);
+
+    expect(Activity::query()->count())->toBe(0);
+});
+
+it('leaves a rights change as the single entry it is', function (): void {
+    $admin = User::factory()->isAdmin()->create();
+    $member = User::factory()->create();
+
+    Activity::query()->delete();
+
+    SyncUserAccessAction::handle(
+        $member,
+        new AccessData(delegations: [Role::BAR->value]),
+        $admin,
+    );
+
+    expect(Activity::query()->pluck('event')->all())->toBe(['roles_changed']);
+});

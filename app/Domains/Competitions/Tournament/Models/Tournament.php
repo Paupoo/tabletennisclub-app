@@ -10,6 +10,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Shared\Casts\MoneyCast;
+use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\States\Tournament\Contracts\TournamentStateInterface;
@@ -140,6 +141,7 @@ class Tournament extends Model
 
     protected $fillable = [
         'name',
+        'description',
         'start_date',
         'start_time',
         'end_date',
@@ -175,6 +177,31 @@ class Tournament extends Model
         return $this->morphOne(EventPost::class, 'eventable');
     }
 
+    /**
+     * Whether an hour is actually known, as opposed to defaulted to midnight.
+     *
+     * A tournament saved without a start time has no hour to show, and showing
+     * it as 00:00 is worse than showing nothing: a member reads it as a real
+     * time and turns up at the wrong one.
+     */
+    public function hasKnownStartTime(): bool
+    {
+        return $this->start_time !== null
+            || ($this->start_date !== null && ! $this->start_date->isStartOfDay());
+    }
+
+    /**
+     * Is the tournament announced on the public website?
+     *
+     * The other axis. It lives on the article, not on the status: a tournament
+     * can take registrations without an article, and carry a published article
+     * while its registrations are closed.
+     */
+    public function isOnPublicWebsite(): bool
+    {
+        return $this->eventPost?->status === EventPostStatusEnum::PUBLISHED;
+    }
+
     public function isPaid(): bool
     {
         return $this->price > 0;
@@ -207,9 +234,58 @@ class Tournament extends Model
         return $this->hasMany(Pool::class);
     }
 
+    /**
+     * Can a member sign up right now?
+     *
+     * One of the two axes that both used to be called "published" (issue #35).
+     * This one is about registrations, and only `published` carries it.
+     */
+    public function registrationsAreOpen(): bool
+    {
+        return $this->state()->canRegisterUsers();
+    }
+
     public function rooms(): BelongsToMany
     {
         return $this->BelongsToMany(Room::class);
+    }
+
+    /**
+     * Every tournament that is actually going to happen, or did.
+     *
+     * Not the same question as scopeRegistrationsOpen(), which is about one
+     * status and was being used as a stand-in for "visible". A tournament whose
+     * registrations have closed is still on that Saturday, and one that is
+     * being played right now is the most present event the club has — both
+     * disappeared from the member calendar and from the room planning the
+     * moment the committee closed the entries.
+     *
+     * Draft and locked are left out because nothing has been announced yet, and
+     * cancelled because it is precisely not happening.
+     *
+     * @param  Builder<Tournament>  $query
+     */
+    public function scopeOnTheCalendar(Builder $query): void
+    {
+        $query->whereIn('status', [
+            TournamentStatusEnum::PUBLISHED,
+            TournamentStatusEnum::SETUP,
+            TournamentStatusEnum::PENDING,
+            TournamentStatusEnum::CLOSED,
+        ]);
+    }
+
+    /**
+     * The one status that takes registrations.
+     *
+     * Narrower than scopeOnTheCalendar() on purpose: this answers "can somebody
+     * still sign up", not "is this happening".
+     *
+     * @param  Builder<Tournament>  $query
+     */
+    public function scopeRegistrationsOpen(Builder $query): void
+    {
+        $query->where('status', TournamentStatusEnum::PUBLISHED);
     }
 
     /** Scopes */
@@ -221,6 +297,32 @@ class Tournament extends Model
     {
         $query->where('name', 'like', '%' . $value . '%')
             ->orWhere('price', 'like', '%' . $value . '%');
+    }
+
+    /**
+     * When the tournament actually starts — the day from `start_date`, the hour
+     * from `start_time`.
+     *
+     * The two are separate columns and only one of them is maintained. The
+     * wizard writes the day into `start_date` and the hour into `start_time`,
+     * so `start_date`'s own time component is whatever the row was created
+     * with: midnight, for everything the wizard has ever made. Reading it for
+     * an hour is reading a field nobody sets, which is how the calendar, the
+     * subscription page and the tournament list all came to announce a ten
+     * o'clock tournament as starting at 00:00.
+     *
+     * Rows that predate `start_time` carry their hour in `start_date` instead,
+     * so that one is kept when there is nothing better.
+     */
+    public function startsAt(): ?Carbon
+    {
+        if ($this->start_date === null) {
+            return null;
+        }
+
+        return $this->start_time === null
+            ? $this->start_date->copy()
+            : $this->start_date->copy()->setTimeFromTimeString($this->start_time);
     }
 
     public function state(): TournamentStateInterface
@@ -244,6 +346,9 @@ class Tournament extends Model
 
     /* Relations */
 
+    /**
+     * @return BelongsToMany<User, $this, TournamentRegistration, 'pivot'>
+     */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)

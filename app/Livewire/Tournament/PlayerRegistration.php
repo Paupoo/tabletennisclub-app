@@ -59,7 +59,7 @@ class PlayerRegistration extends Component
     public function getFilteredPlayers(): Collection
     {
         $query = trim($this->searchQuery);
-        if (empty($query)) {
+        if ($query === '' || $query === '0') {
             return collect();
         }
 
@@ -156,20 +156,12 @@ class PlayerRegistration extends Component
 
     public function updatedSearchQuery(): void
     {
-        $this->showDropdown = ! empty(trim($this->searchQuery));
+        $this->showDropdown = ! in_array(trim($this->searchQuery), ['', '0'], true);
         $this->highlightedIndex = -1;
 
         // Si on efface la recherche, on désélectionne le joueur
-        if (empty(trim($this->searchQuery))) {
+        if (in_array(trim($this->searchQuery), ['', '0'], true)) {
             $this->selectedPlayerId = null;
         }
-    }
-
-    /**
-     * Check if there the tournament has reached its maximum amount of players
-     */
-    private function IsFull(Tournament $tournament): bool
-    {
-        return $tournament->total_users >= $tournament->max_users;
     }
 }

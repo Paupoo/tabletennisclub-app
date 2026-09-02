@@ -26,7 +26,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -38,7 +38,8 @@
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
                     placeholder="{{ __('Search…') }}" />
             </div>
-            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+            <button type="button" @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm"
+                aria-label="{{ __('Close the search') }}">
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
@@ -47,81 +48,102 @@
     {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
-    {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
-    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        @php
-            $statCards = [
-                ['label' => __('Total'),    'key' => 'total',    'icon' => 'o-trophy',        'bg' => 'bg-base-200',   'color' => 'text-base-content/60'],
-                ['label' => __('Live'),     'key' => 'live',     'icon' => 'o-rocket-launch', 'bg' => 'bg-primary/10', 'color' => 'text-primary'],
-                ['label' => __('Upcoming'), 'key' => 'upcoming', 'icon' => 'o-calendar',      'bg' => 'bg-info/10',    'color' => 'text-info'],
-                ['label' => __('Closed'),   'key' => 'closed',   'icon' => 'o-check-circle',  'bg' => 'bg-base-200',   'color' => 'text-base-content/40'],
-            ];
-        @endphp
-        @foreach ($statCards as $card)
-            <x-card class="shadow-sm">
-                <div class="flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl {{ $card['bg'] }}">
-                        <x-icon name="{{ $card['icon'] }}" class="h-5 w-5 {{ $card['color'] }}" />
-                    </div>
-                    <div>
-                        <p class="text-2xl font-bold {{ $card['color'] }}">{{ $stats[$card['key']] ?? 0 }}</p>
-                        <p class="text-xs text-base-content/40">{{ $card['label'] }}</p>
-                    </div>
-                </div>
-            </x-card>
+    {{--
+        Les quatre compteurs occupaient 110 px, répétaient le filtre du tiroir et
+        n'étaient pas cliquables : on les lit une fois. Le même dénombrement tient
+        en 36 px et filtre. Le tiroir garde le filtre par statut précis ; les deux
+        se composent.
+    --}}
+    @php
+        $phases = [
+            ''         => ['label' => __('All'),      'count' => $stats['total']],
+            'live'     => ['label' => __('Live'),     'count' => $stats['live']],
+            'upcoming' => ['label' => __('Upcoming'), 'count' => $stats['upcoming']],
+            'done'     => ['label' => __('Closed'),   'count' => $stats['closed']],
+        ];
+    @endphp
+    <div class="mb-6 flex flex-wrap gap-1.5" role="group" aria-label="{{ __('Filter by phase') }}">
+        @foreach ($phases as $value => $phase)
+            <button type="button"
+                wire:click="$set('phase', '{{ $value }}')"
+                aria-pressed="{{ $value === $this->phase ? 'true' : 'false' }}"
+                @class([
+                    'flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
+                    'border-primary bg-primary text-primary-content' => $value === $this->phase,
+                    'border-base-300 text-base-content/70 hover:border-primary/40 hover:text-base-content' => $value !== $this->phase,
+                ])>
+                <span>{{ $phase['label'] }}</span>
+                <span @class([
+                    'rounded px-1.5 text-xs font-bold tabular-nums',
+                    'bg-primary-content/20' => $value === $this->phase,
+                    'bg-base-200' => $value !== $this->phase,
+                ])>{{ $phase['count'] }}</span>
+            </button>
         @endforeach
     </div>
 
     {{-- ── Vue mobile (list) ─────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($tournaments as $tournament)
-            @php
-                $statusBadge = match ($tournament->status->value) {
-                    'pending'   => ['class' => 'badge-primary badge-soft',  'label' => __('Live')],
-                    'published' => ['class' => 'badge-success badge-soft',  'label' => __('Published')],
-                    'setup'     => ['class' => 'badge-info badge-soft',     'label' => __('Setup')],
-                    'locked'    => ['class' => 'badge-warning badge-soft',  'label' => __('Locked')],
-                    'closed'    => ['class' => 'badge-ghost',               'label' => __('Closed')],
-                    'cancelled' => ['class' => 'badge-error badge-soft',    'label' => __('Cancelled')],
-                    default     => ['class' => 'badge-outline',             'label' => __('Draft')],
-                };
-            @endphp
-            <x-list-item :item="$tournament" class="bg-base-100 rounded-lg border"
+            {{-- L'identité prend la largeur, les actions passent dessous : sur une
+            carte de 335 px, une action nommée et son menu en prenaient 156 et le
+            titre était tranché. --}}
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3"
                 wire:key="mobile-tournament-{{ $tournament->id }}">
-                <x-slot:avatar>
+                <div class="flex items-start gap-3">
                     @if ($selectionModeActive && $this->canManage)
                         <input type="checkbox"
                             class="checkbox checkbox-primary checkbox-sm"
                             value="{{ $tournament->id }}"
                             wire:model.live="selected" />
                     @endif
-                </x-slot:avatar>
-                <x-slot:value>
-                    <span class="font-medium">{{ $tournament->name }}</span>
-                </x-slot:value>
-                <x-slot:sub-value>
-                    <div class="mt-0.5 flex flex-wrap items-center gap-2">
-                        <x-badge :value="$statusBadge['label']" class="{{ $statusBadge['class'] }} badge-sm" />
-                        <span class="text-xs text-base-content/40">
-                            {{ $tournament->start_date->translatedFormat('d M Y') }}
-                        </span>
-                        <span class="text-xs text-base-content/40">
-                            {{ $tournament->match_type === 'double' ? __('Doubles') : __('Singles') }}
-                        </span>
+
+                    <div class="min-w-0 flex-1">
+                        <div class="font-medium">{{ $tournament->name }}</div>
+                        <div class="mt-0.5 flex flex-wrap items-center gap-2">
+                            <x-badge :value="$tournament->status->getLabel()"
+                                class="{{ $tournament->status->badgeClass() }} badge-sm" />
+                            <span class="text-xs text-base-content/40">
+                                {{ $tournament->start_date->translatedFormat('d M Y') }}
+                            </span>
+                            <span class="text-xs text-base-content/40">
+                                {{ $tournament->match_type === 'double' ? __('Doubles') : __('Singles') }}
+                            </span>
+                            @php
+                                $mobileActive = $tournament->active_registrations_count ?? 0;
+                                $mobileMax = $tournament->max_users;
+                            @endphp
+                            <span class="text-xs tabular-nums text-base-content/40">
+                                {{ $mobileActive }}@if ($mobileMax > 0)&nbsp;/&nbsp;{{ $mobileMax }}@endif
+                            </span>
+                        </div>
+
+                        {{-- La même réponse que la colonne « Attend de vous » du tableau :
+                             la carte mobile ne doit pas dire moins que la ligne desktop. --}}
+                        @php $mobileNext = $this->nextActionFor($tournament); @endphp
+                        @if ($mobileNext !== null)
+                            <p @class([
+                                'mt-1.5 flex items-center gap-1 text-xs',
+                                'text-warning-content' => $mobileNext->urgent,
+                                'text-base-content/60' => ! $mobileNext->urgent,
+                            ])>
+                                <x-icon name="o-arrow-right-circle" class="h-3.5 w-3.5 shrink-0" />
+                                <span class="truncate">{{ $mobileNext->label }}</span>
+                            </p>
+                        @endif
                     </div>
-                </x-slot:sub-value>
-                <x-slot:actions>
+                </div>
+
+                <div class="mt-3">
                     @if (! $selectionModeActive)
-                        <x-admin.shared.row-actions>
-                            @if ($this->canManage)
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-cog-6-tooth"
-                                    :tooltip="__('Settings')"
-                                    link="{{ route('admin.tournaments.wizard.edit', $tournament) }}" />
-                            @endif
+                        <x-admin.shared.row-menu
+                            :label="__('Settings')"
+                            icon="o-cog-6-tooth"
+                            {{-- ?step=1 : l'icône réglages doit ouvrir la configuration. Sans étape
+                 explicite, mount() la déduit du statut et ouvre les invitations. --}}
+                link="{{ route('admin.tournaments.wizard.edit', [$tournament, 'step' => 1]) }}">
                             @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-rocket-launch"
-                                    :tooltip="__('Live Center')"
-                                    link="{{ route('admin.tournaments.live-center', $tournament->id) }}" />
+                                <x-menu-item icon="o-rocket-launch" link="{{ route('admin.tournaments.live-center', $tournament->id) }}" :title="__('Live Center')" />
                             @endif
                             @if ($this->canManage)
                                 <livewire:admin.shared.event-post-button
@@ -139,21 +161,30 @@
                                     wire:key="ep-mob-tournament-{{ $tournament->id }}"
                                     @event-post-saved.window="$wire.refreshTournaments()" />
                             @endif
-                        </x-admin.shared.row-actions>
+                        </x-admin.shared.row-menu>
                     @endif
-                </x-slot:actions>
-            </x-list-item>
+                </div>
+            </div>
         @empty
             @php
+                $hasActiveFilters = count($filterChips) > 0 || filled($search);
                 $emptyHeading = $search
                     ? __('No tournament matches ":search"', ['search' => $search])
-                    : __('No tournaments yet');
-                $emptyMessage = ! $search && $this->canManage
-                    ? ''
-                    : __('Try adjusting your search or filters.');
+                    : ($hasActiveFilters ? __('No tournaments match your filters') : __('No tournaments yet'));
             @endphp
-            <x-empty-state icon="o-trophy" :heading="$emptyHeading" :message="$emptyMessage" />
+            <x-admin.shared.list-empty-state
+                icon="o-trophy"
+                :heading="$emptyHeading"
+                :filtered="$hasActiveFilters"
+                :create-label="__('Create a tournament')"
+                :create-href="$this->canManage ? route('admin.tournaments.wizard') : null" />
         @endforelse
+
+        @if ($tournaments->hasPages())
+            <div class="mt-2">
+                {{ $tournaments->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop (table) ────────────────────────────────────────── --}}
@@ -161,14 +192,17 @@
         <x-card>
             @if ($tournaments->isEmpty())
                 @php
+                    $hasActiveFilters = count($filterChips) > 0 || filled($search);
                     $emptyHeading = $search
                         ? __('No tournament matches ":search"', ['search' => $search])
-                        : __('No tournaments yet');
-                    $emptyMessage = ! $search && $this->canManage
-                        ? ''
-                        : __('Try adjusting your search or filters.');
+                        : ($hasActiveFilters ? __('No tournaments match your filters') : __('No tournaments yet'));
                 @endphp
-                <x-empty-state icon="o-trophy" :heading="$emptyHeading" :message="$emptyMessage" />
+                <x-admin.shared.list-empty-state
+                    icon="o-trophy"
+                    :heading="$emptyHeading"
+                    :filtered="$hasActiveFilters"
+                    :create-label="__('Create a tournament')"
+                    :create-href="$this->canManage ? route('admin.tournaments.wizard') : null" />
             @else
                 <x-table :headers="$headers" :rows="$tournaments" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
@@ -178,7 +212,9 @@
 
                     @scope('cell_start_date', $tournament)
                         <span class="text-sm text-base-content/60">
-                            {{ $tournament->start_date->translatedFormat('d M Y · H\hi') }}
+                            {{ $tournament->hasKnownStartTime()
+                                ? $tournament->startsAt()->translatedFormat('d M Y · H\hi')
+                                : $tournament->start_date->translatedFormat('d M Y') }}
                         </span>
                     @endscope
 
@@ -195,65 +231,78 @@
                             $waiting = $tournament->waiting_count ?? 0;
                             $isFull  = $max > 0 && $active >= $max;
                         @endphp
-                        <span @class(['text-sm', 'font-semibold text-error' => $isFull])>
-                            {{ $active }}@if ($max > 0) / {{ $max }}@endif
-                        </span>
-                        @if ($waiting > 0)
-                            <span class="ml-1 text-xs text-warning-content">(+{{ $waiting }})</span>
-                        @endif
+                        <div class="min-w-24">
+                            <span @class(['text-sm tabular-nums', 'font-semibold text-error' => $isFull])>
+                                {{ $active }}@if ($max > 0) / {{ $max }}@endif
+                            </span>
+                            @if ($waiting > 0)
+                                <span class="ml-1 text-xs text-warning-content">+{{ $waiting }}</span>
+                            @endif
+
+                            @if ($max > 0)
+                                <div class="mt-1 h-1 overflow-hidden rounded-full bg-base-300">
+                                    <div @class(['h-full rounded-full', 'bg-error' => $isFull, 'bg-primary' => ! $isFull])
+                                        style="width: {{ min(100, (int) round($active / $max * 100)) }}%"></div>
+                                </div>
+                            @endif
+                        </div>
                     @endscope
 
                     @scope('cell_status', $tournament)
-                        @php
-                            $s = match ($tournament->status->value) {
-                                'pending'   => ['class' => 'badge-primary badge-soft',  'label' => __('Live')],
-                                'published' => ['class' => 'badge-success badge-soft',  'label' => __('Published')],
-                                'setup'     => ['class' => 'badge-info badge-soft',     'label' => __('Setup')],
-                                'locked'    => ['class' => 'badge-warning badge-soft',  'label' => __('Locked')],
-                                'closed'    => ['class' => 'badge-ghost',               'label' => __('Closed')],
-                                'cancelled' => ['class' => 'badge-error badge-soft',    'label' => __('Cancelled')],
-                                default     => ['class' => 'badge-outline',             'label' => __('Draft')],
-                            };
-                        @endphp
-                        <x-badge :value="$s['label']" class="{{ $s['class'] }}" />
+                        {{-- Le libellé et la classe viennent de l'enum : le filtre et la
+                             colonne nommaient le même statut de deux façons. --}}
+                        <x-badge :value="$tournament->status->getLabel()"
+                            :class="$tournament->status->badgeClass()" />
                     @endscope
 
-                    @scope('cell_event', $tournament)
-                        @if ($this->canManage)
-                            <livewire:admin.shared.event-post-button
-                                :model-class="\App\Domains\Competitions\Tournament\Models\Tournament::class"
-                                :model-id="$tournament->id"
-                                event-type="TOURNAMENT"
-                                icon="🏆"
-                                :event-date="$tournament->start_date->toDateString()"
-                                :start-time="$tournament->start_time ? \Carbon\Carbon::parse($tournament->start_time)->format('H:i:s') : '00:00:00'"
-                                :end-time="null"
-                                :price="(string) $tournament->price"
-                                :max-participants="$tournament->max_users ?: null"
-                                :default-title="$tournament->name"
-                                :can-publish="true"
-                                wire:key="ep-desk-tournament-{{ $tournament->id }}"
-                                @event-post-saved.window="$wire.refreshTournaments()" />
-                        @elseif ($tournament->eventPost?->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
-                            <x-icon name="o-check-circle" class="h-4 w-4 text-success" />
+                    @scope('cell_next_action', $tournament)
+                        {{-- La règle vit dans TournamentNextActionService : la vue affiche. --}}
+                        @php $next = $this->nextActionFor($tournament); @endphp
+
+                        @if ($next === null)
+                            <span class="text-sm text-base-content/30">—</span>
+                        @elseif ($this->canManage)
+                            <x-button :label="$next->label" :link="$next->url"
+                                :class="$next->urgent ? 'btn-outline btn-xs border-warning/60 text-warning-content' : 'btn-outline btn-xs'" />
                         @else
-                            <span class="text-base-content/30">—</span>
+                            <span class="text-sm text-base-content/50">{{ $next->label }}</span>
                         @endif
                     @endscope
 
                     @scope('actions', $tournament)
-                        <x-admin.shared.row-actions>
-                            @if ($this->canManage)
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-cog-6-tooth"
-                                    :tooltip="__('Settings')"
-                                    link="{{ route('admin.tournaments.wizard.edit', $tournament) }}" />
-                            @endif
+                        {{-- ?step=1 : l'icône réglages doit ouvrir la configuration. Sans étape
+                             explicite, mount() la déduit du statut et ouvre les invitations. --}}
+                        <x-admin.shared.row-menu
+                            :label="__('Settings')"
+                            icon="o-cog-6-tooth"
+                            link="{{ route('admin.tournaments.wizard.edit', [$tournament, 'step' => 1]) }}">
+
                             @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-rocket-launch"
-                                    :tooltip="__('Live Center')"
-                                    link="{{ route('admin.tournaments.live-center', $tournament->id) }}" />
+                                <x-menu-item icon="o-rocket-launch"
+                                    link="{{ route('admin.tournaments.live-center', $tournament->id) }}"
+                                    :title="__('Live Center')" />
                             @endif
-                        </x-admin.shared.row-actions>
+
+                            {{-- L'article vivait dans une colonne « Site web » que la colonne
+                                 « Attend de vous » remplace : son entrée rejoint le menu de
+                                 ligne, où la vue mobile la plaçait déjà. --}}
+                            @if ($this->canManage)
+                                <livewire:admin.shared.event-post-button
+                                    :model-class="\App\Domains\Competitions\Tournament\Models\Tournament::class"
+                                    :model-id="$tournament->id"
+                                    event-type="TOURNAMENT"
+                                    icon="🏆"
+                                    :event-date="$tournament->start_date->toDateString()"
+                                    :start-time="$tournament->start_time ? \Carbon\Carbon::parse($tournament->start_time)->format('H:i:s') : '00:00:00'"
+                                    :end-time="null"
+                                    :price="(string) $tournament->price"
+                                    :max-participants="$tournament->max_users ?: null"
+                                    :default-title="$tournament->name"
+                                    :can-publish="true"
+                                    wire:key="ep-desk-tournament-{{ $tournament->id }}"
+                                    @event-post-saved.window="$wire.refreshTournaments()" />
+                            @endif
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">
@@ -281,28 +330,28 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Status') }}
                 </p>
                 <x-select :options="$statusOptions" :placeholder="__('All statuses')"
                     wire:model.live="status" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Type') }}
                 </p>
                 <x-select :options="$matchTypeOptions" :placeholder="__('Singles & Doubles')"
                     wire:model.live="matchType" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Spots') }}
                 </p>
                 <x-select :options="$isFullOptions" :placeholder="__('All')"
                     wire:model.live="isFull" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Website') }}
                 </p>
                 <x-select :options="$hasEventOptions" :placeholder="__('All')"
@@ -313,7 +362,7 @@
 
     {{-- ── Modal annulation bulk ──────────────────────────────────────── --}}
     <x-confirm-modal model="confirmBulkCancelModal" :title="__('Cancel selected tournaments?')"
-        :confirmLabel="__('Confirm cancellation')" confirmAction="bulkCancel">
+        :confirmLabel="__('Confirm cancellation')" confirmAction="bulkCancel" :open="$confirmBulkCancelModal">
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be marked as cancelled.') }}

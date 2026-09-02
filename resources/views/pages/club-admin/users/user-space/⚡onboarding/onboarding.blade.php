@@ -53,8 +53,9 @@
                 <x-group :options="$genders" class="btn-soft" inline :label="__('Gender')"
                     wire:model="gender" />
                 <x-input :label="__('Birthdate')" type="date" wire:model.live="birthdate" required />
-                <x-input :label="__('Phone Number')" wire:model="phone_number"
-                    placeholder="0470 00 00 00" required />
+                <x-input :hint="$this->isMinor ? __('Optional — the next step asks for the guardian\'s number') : null"
+                    :label="__('Phone Number')" placeholder="0470 00 00 00"
+                    :required="! $this->isMinor" wire:model="phone_number" />
             </div>
 
             <div class="flex justify-end mt-6">
@@ -88,7 +89,7 @@
                 <div class="space-y-2 mb-4">
                     @foreach ($this->linkedGuardians as $guardian)
                         <div wire:key="guardian-{{ $guardian->id }}"
-                            class="flex items-center gap-3 p-3 rounded-lg border border-base-200 bg-base-100">
+                            class="flex items-center gap-3 p-3 rounded-lg border border-base-300 bg-base-100">
                             <x-icon name="o-user" class="w-5 h-5 text-primary shrink-0" />
                             <div class="flex-1 min-w-0">
                                 <div class="text-sm font-semibold truncate">
@@ -99,7 +100,7 @@
                                 </div>
                             </div>
                             <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-x-mark"
-                                :tooltip="__('Unlink')" wire:click="detachGuardian({{ $guardian->id }})" />
+                                :tooltip="__('Unlink')" wire:click="detachGuardian({{ $guardian->id }})" :aria-label="__('Unlink')" />
                         </div>
                     @endforeach
                 </div>
@@ -107,7 +108,7 @@
 
             {{-- Primary path: create the guardian --}}
             @if ($showGuardianForm)
-                <div class="space-y-3 rounded-lg border border-base-200 p-4">
+                <div class="space-y-3 rounded-lg border border-base-300 p-4">
                     <div class="grid gap-3 sm:grid-cols-2">
                         <x-input :label="__('First name')" wire:model.live.blur="guardianFirstName" required />
                         <x-input :label="__('Last name')" wire:model.live.blur="guardianLastName" required />
@@ -155,7 +156,7 @@
                     @endphp
 
                     @if ($hasResults)
-                        <div class="mt-2 space-y-1 rounded-lg border border-base-200 p-1">
+                        <div class="mt-2 space-y-1 rounded-lg border border-base-300 p-1">
                             @if ($guardianResults->isNotEmpty())
                                 <div class="px-3 pt-1 text-xs font-semibold uppercase tracking-wide text-base-content/50">
                                     {{ __('Existing guardians') }}

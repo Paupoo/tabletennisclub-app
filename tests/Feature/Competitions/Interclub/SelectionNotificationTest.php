@@ -73,7 +73,7 @@ it('selection notification carries the captain message', function (): void {
     Notification::assertSentTo(
         $this->player1,
         InterclubSelectionNotification::class,
-        fn ($notification) => $notification->captainMessage === $message,
+        fn ($notification): bool => $notification->captainMessage === $message,
     );
 });
 
@@ -146,7 +146,7 @@ it('broadcast notification carries the captain message and selected lineup', fun
     Notification::assertSentTo(
         $this->player3,
         InterclubLineupBroadcastNotification::class,
-        fn ($notification) => $notification->captainMessage === $message
+        fn ($notification): bool => $notification->captainMessage === $message
             && $notification->selectedPlayers->contains('id', $this->player1->id),
     );
 });
@@ -196,7 +196,7 @@ it('notifies added players and broadcasts an update when the selection becomes c
     Notification::assertSentTo(
         $this->captain,
         InterclubLineupBroadcastNotification::class,
-        fn ($notification) => $notification->isUpdate === true,
+        fn ($notification): bool => $notification->isUpdate === true,
     );
 
     $this->assertDatabaseHas('interclub_user', [

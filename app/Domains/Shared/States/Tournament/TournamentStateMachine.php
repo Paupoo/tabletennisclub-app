@@ -12,7 +12,7 @@ final class TournamentStateMachine
 {
     private TournamentStateInterface $state;
 
-    public function __construct(private Tournament $tournament)
+    public function __construct(private readonly Tournament $tournament)
     {
         $this->state = TournamentStateFactory::create($tournament->status);
     }
@@ -72,6 +72,12 @@ final class TournamentStateMachine
     }
 
     // Actions
+
+    public function lock(): void
+    {
+        $this->state->lock($this->tournament);
+        $this->refreshState();
+    }
 
     public function publish(): void
     {

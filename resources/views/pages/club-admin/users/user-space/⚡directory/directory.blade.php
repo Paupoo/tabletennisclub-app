@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" />
     </x-slot:breadcrumbs>
 
-    <x-header separator :subtitle="__('Find and contact other club members')" :title="__('Member directory')">
+    <x-header progress-indicator separator :subtitle="__('Find and contact other club members')" :title="__('Member directory')">
         <x-slot:middle>
             <div class="hidden w-full lg:block">
                 <x-input class="w-full" clearable icon="o-magnifying-glass" :placeholder="__('Search a member...')"
@@ -26,8 +26,10 @@
     @php $viewer = auth()->user(); @endphp
 
     @if ($this->members->isEmpty())
-        <x-empty-state icon="o-users" :heading="__('No members found')"
-            :message="__('Try adjusting your search or filters.')" />
+        <x-admin.shared.list-empty-state
+            icon="o-users"
+            :heading="__('No members in the directory')"
+            :filtered="count($filterChips) > 0 || filled($search)" />
     @else
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             @foreach ($this->members as $member)
@@ -38,7 +40,7 @@
                         <div class="min-w-0">
                             <p class="truncate font-semibold">{{ $member->first_name }} {{ $member->last_name }}</p>
                             <div class="mt-0.5 flex items-center gap-2 text-xs text-base-content/60">
-                                <span class="font-mono">{{ $member->ranking ?: '—' }}</span>
+                                <span class="font-mono">{{ $member->ranking->getLabel() }}</span>
                                 @if ($member->force_list)
                                     <span class="text-base-content/30">·</span>
                                     <span>{{ __('Force') }} {{ $member->force_list }}</span>
@@ -65,7 +67,7 @@
                     @php $showAddress = filled($member->street) && $member->contactVisibleTo($viewer, 'address'); @endphp
 
                     @if ($showPhone || $showEmail || $showAddress)
-                        <div class="mt-1 space-y-1.5 border-t border-base-200 pt-3 text-sm">
+                        <div class="mt-1 space-y-1.5 border-t border-base-300 pt-3 text-sm">
                             @if ($showPhone)
                                 <a href="tel:{{ $member->phone_number }}"
                                     class="flex items-center gap-2 text-base-content/80 hover:text-primary">
@@ -88,7 +90,7 @@
                             @endif
                         </div>
                     @else
-                        <p class="mt-1 border-t border-base-200 pt-3 text-xs text-base-content/40">
+                        <p class="mt-1 border-t border-base-300 pt-3 text-xs text-base-content/40">
                             {{ __('No shared contact details') }}
                         </p>
                     @endif
@@ -105,20 +107,20 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Ranking') }}
                 </p>
                 <x-select wire:model.live="rankingFilter" :placeholder="__('All rankings')"
                     :options="collect($this->rankingsForFilter)->map(fn ($r) => ['id' => $r, 'name' => $r])->all()" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Season') }}
                 </p>
                 <x-select wire:model.live="seasonFilter" :options="$this->seasonsForFilter" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Team') }}
                 </p>
                 <x-select wire:model.live="teamFilter" :placeholder="__('All teams')"

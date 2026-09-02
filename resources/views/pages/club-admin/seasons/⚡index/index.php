@@ -94,7 +94,7 @@ new class extends Component
                 'is_active' => false,
                 'affiliations_open' => false,
             ]);
-        } catch (DomainException $e) {
+        } catch (DomainException) {
             $this->addError('createStartAt', __('These dates overlap with an existing season.'));
 
             return;
@@ -181,7 +181,7 @@ new class extends Component
                 'start_at' => Carbon::parse($this->editStartAt)->startOfDay(),
                 'end_at' => Carbon::parse($this->editEndAt)->endOfDay(),
             ]);
-        } catch (DomainException $e) {
+        } catch (DomainException) {
             $this->addError('editStartAt', __('These dates overlap with an existing season.'));
 
             return;
@@ -195,7 +195,7 @@ new class extends Component
     public function with(): array
     {
         $all = $this->seasons;
-        $pastCount = $all->filter(fn (Season $s) => $s->isPast())->count();
+        $pastCount = $all->filter(fn (Season $s): bool => $s->isPast())->count();
         $hiddenPastCount = $this->showAllPastSeasons ? 0 : max(0, $pastCount - 1);
 
         return [

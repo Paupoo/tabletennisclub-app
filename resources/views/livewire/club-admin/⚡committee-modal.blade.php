@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Role;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rules\Enum;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
@@ -37,13 +38,11 @@ new class extends Component
             ->orWhere('licence', 'like', "%{$value}%")
             ->take(5)
             ->get(['id', 'first_name', 'last_name', 'licence'])
-            ->map(function (User $user) {
-                return [
-                'id' => $user->id,
-                'name' => "{$user->first_name} {$user->last_name}",
-                'description' => $user->licence
-                ];
-            });
+            ->map(fn(User $user): array => [
+            'id' => $user->id,
+            'name' => "{$user->first_name} {$user->last_name}",
+            'description' => $user->licence
+            ]);
     }
 
     public function searchMembers(string $value = ''): void
@@ -69,6 +68,9 @@ new class extends Component
         $validated = $this->validate();
 
         $user = User::findOrFail($validated['selectedMemberId']);
+
+        Gate::authorize('manageAccess', $user);
+
         $user->assignRole(Role::COMMITTEE->value);
         $user->update(['committee_role' => $validated['selectedRoleId']]);
 
@@ -96,7 +98,7 @@ new class extends Component
 ?>
 
 <div>
-    <x-modal wire:model="isOpen" :title="__('Add Committee Member')" separator>
+    <x-app-modal wire:model="isOpen" :title="__('Add Committee Member')" separator :open="$isOpen">
         <div class="grid gap-4">
             <x-choices
                 :label="__('Search Member')"
@@ -136,5 +138,5 @@ new class extends Component
                 spinner="addMember" 
             />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

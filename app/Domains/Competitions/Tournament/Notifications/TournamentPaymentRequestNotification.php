@@ -6,6 +6,7 @@ namespace App\Domains\Competitions\Tournament\Notifications;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Mail\TournamentPaymentRequestMail;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -13,7 +14,7 @@ use Illuminate\Notifications\Notification;
 
 class TournamentPaymentRequestNotification extends Notification
 {
-    use Queueable;
+    use LinksToMemberSpace, Queueable;
 
     public function __construct(
         public Tournament $tournament,
@@ -27,7 +28,7 @@ class TournamentPaymentRequestNotification extends Notification
         return [
             'title' => __('Payment request: :name', ['name' => $this->tournament->name]),
             'body' => __('See the tournament details'),
-            'url' => route('admin.tournaments.index'),
+            'url' => $this->memberEventsUrl($notifiable),
             'category' => 'tournament',
             'icon' => 'o-trophy',
         ];
@@ -35,7 +36,7 @@ class TournamentPaymentRequestNotification extends Notification
 
     public function toMail(object $notifiable): TournamentPaymentRequestMail
     {
-        return (new TournamentPaymentRequestMail($this->tournament, $this->payment, $this->deadline))
+        return new TournamentPaymentRequestMail($this->tournament, $this->payment, $this->deadline)
             ->to($notifiable->email, $notifiable->full_name);
     }
 

@@ -7,10 +7,10 @@ use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Route;
 
 dataset('simple_methods', [
-    ['articles',      'Articles',       'clubPosts.newsPosts.index',            '/custom-articles',      's-home'],
+    ['articles',      'Articles',       'clubPosts.newsPosts.index',            '/custom-articles',      null],
     ['contacts',      'Contacts',       'clubAdmin.contacts.index',             '/custom-contacts',      null],
-    ['events',        'Events',         'clubPosts.eventPosts.index',           '/custom-events',        's-home'],
-    ['matches',       'Matches',        'admin.interclubs.interclubs',          '/custom-matches',       's-home'],
+    ['events',        'Events',         'clubPosts.eventPosts.index',           '/custom-events',        null],
+    ['matches',       'Matches',        'admin.interclubs.interclubs',          '/custom-matches',       null],
     ['rooms',         'Rooms',          'admin.rooms.index',                    '/custom-rooms',         null],
     ['seasons',       'Seasons',        'admin.seasons.index',                  '/custom-seasons',       'o-calendar'],
     ['teams',         'Teams',          'teams.index',                          '/custom-teams',          null],
@@ -95,9 +95,9 @@ describe('Breadcrumb', function (): void {
     describe('complex breadcrumb chains', function (): void {
         it('can build a complete breadcrumb navigation', function (): void {
             // Define routes
-            Route::get('/dashboard', fn () => 'dashboard')->name('dashboard');
-            Route::get('/tournaments', fn () => 'tournaments')->name('tournaments.index');
-            Route::get('/tournaments/{tournament}/live', fn ($tournament) => 'tournament')->name('admin.tournaments.live-center');
+            Route::get('/dashboard', fn (): string => 'dashboard')->name('dashboard');
+            Route::get('/tournaments', fn (): string => 'tournaments')->name('tournaments.index');
+            Route::get('/tournaments/{tournament}/live', fn ($tournament): string => 'tournament')->name('admin.tournaments.live-center');
 
             $tournament = Tournament::factory()->create(['name' => 'World Cup 2024']);
 
@@ -111,8 +111,8 @@ describe('Breadcrumb', function (): void {
 
             expect($items)->toHaveCount(4)
                 ->and($items[0]['label'])->toBe(__('Admin Panel'))
-                ->and($items[0]['icon'])->toBe('s-home')
-                ->and($items[1]['label'])->toBe('Tournaments')
+                ->and($items[0]['icon'])->toBe('o-home')
+                ->and($items[1]['label'])->toBe(__('Tournaments'))
                 ->and($items[2]['label'])->toBe('World Cup 2024')
                 ->and($items[2]['link'])->toContain((string) $tournament->id)
                 ->and($items[3]['label'])->toBe('Edit')
@@ -120,8 +120,8 @@ describe('Breadcrumb', function (): void {
         });
 
         it('can build user management breadcrumb', function (): void {
-            Route::get('/dashboard', fn () => 'dashboard')->name('dashboard');
-            Route::get('/users', fn () => 'users')->name('users.index');
+            Route::get('/dashboard', fn (): string => 'dashboard')->name('dashboard');
+            Route::get('/users', fn (): string => 'users')->name('users.index');
 
             $breadcrumb = Breadcrumb::make()
                 ->home()
@@ -132,13 +132,13 @@ describe('Breadcrumb', function (): void {
 
             expect($items)->toHaveCount(3)
                 ->and($items[0]['label'])->toBe(__('Admin Panel'))
-                ->and($items[1]['label'])->toBe('Users')
+                ->and($items[1]['label'])->toBe(__('Users'))
                 ->and($items[2]['label'])->toBe('Create User')
                 ->and($items[2]['link'])->toBe(null);
         });
 
         it('can mix predefined and custom breadcrumbs', function (): void {
-            Route::get('/dashboard', fn () => 'dashboard')->name('dashboard');
+            Route::get('/dashboard', fn (): string => 'dashboard')->name('dashboard');
 
             $breadcrumb = Breadcrumb::make()
                 ->home()
@@ -175,7 +175,7 @@ describe('Breadcrumb', function (): void {
         });
 
         it('handles tournament with special characters in name', function (): void {
-            Route::get('/tournaments/{tournament}/live', fn ($tournament) => 'tournament')->name('admin.tournaments.live-center');
+            Route::get('/tournaments/{tournament}/live', fn ($tournament): string => 'tournament')->name('admin.tournaments.live-center');
 
             $tournament = Tournament::factory()->create(['name' => 'Tournament & Championship 2024']);
 
@@ -208,7 +208,7 @@ describe('Breadcrumb', function (): void {
 
     describe('can generate all breadcrumbs types', function (): void {
         it('adds breadcrumb with correct icon', function (string $method, string $label, string $routeName, string $customUrl, ?string $icon): void {
-            Route::get('/' . $method, fn () => '')->name($routeName);
+            Route::get('/' . $method, fn (): string => '')->name($routeName);
 
             $items = Breadcrumb::make()->{$method}()->toArray();
 

@@ -82,7 +82,7 @@
                 <div class="space-y-2">
                     @foreach ($meeting->users->sortBy('last_name') as $user)
                         @php $reg = $user->registration; @endphp
-                        <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-base-200 px-4 py-2.5"
+                        <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-base-300 px-4 py-2.5"
                             wire:key="att-{{ $user->id }}">
                             <p class="text-sm font-medium">{{ $user->full_name }}</p>
                             <div class="flex items-center gap-2">
@@ -90,12 +90,12 @@
                                 @if ($reg->status !== \App\Domains\Shared\Enums\MeetingUserStatusEnum::ATTENDED)
                                     <x-button icon="o-check" class="btn-ghost btn-xs btn-circle"
                                         :tooltip="__('Mark attended')"
-                                        wire:click="markAttended({{ $user->id }})" />
+                                        wire:click="markAttended({{ $user->id }})" :aria-label="__('Mark attended')" />
                                 @endif
                                 @if ($reg->status !== \App\Domains\Shared\Enums\MeetingUserStatusEnum::ABSENT)
                                     <x-button icon="o-x-mark" class="btn-ghost btn-xs btn-circle"
                                         :tooltip="__('Mark absent')"
-                                        wire:click="markAbsent({{ $user->id }})" />
+                                        wire:click="markAbsent({{ $user->id }})" :aria-label="__('Mark absent')" />
                                 @endif
                             </div>
                         </div>
@@ -142,7 +142,7 @@
         <x-card :title="__('Action items')" :subtitle="__('Tasks that need follow-up after the meeting.')">
             <div class="space-y-3">
                 @foreach ($actionItems as $i => $item)
-                    <div class="rounded-xl border border-base-200 p-4" wire:key="action-{{ $i }}">
+                    <div class="rounded-xl border border-base-300 p-4" wire:key="action-{{ $i }}">
                         <div class="flex items-start gap-2">
                             <x-checkbox wire:model.live="actionItems.{{ $i }}.is_completed" class="mt-1" />
                             <div class="flex-1 space-y-2">
@@ -181,7 +181,7 @@
         </fieldset>
 
         {{-- ── Publish / send ────────────────────────────────────────── --}}
-        <div class="flex flex-wrap items-center justify-end gap-2 border-t border-base-200 pt-4">
+        <div class="flex flex-wrap items-center justify-end gap-2 border-t border-base-300 pt-4">
             @if (! $meeting->scheduled_at?->isPast())
                 <p class="text-sm italic text-base-content/50">
                     {{ __('This meeting has not taken place yet — publish once it is over') }}

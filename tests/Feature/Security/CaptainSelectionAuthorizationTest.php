@@ -66,12 +66,23 @@ it('forbids a captain from opening another team lineup', function (): void {
         ->assertForbidden();
 });
 
+/**
+ * The request now goes through a confirmation, so the fixture is authorised
+ * twice: once to arm the modal, once to actually send. Both gates are checked —
+ * the second one matters most, because the id survives in component state.
+ */
 it('forbids a captain from requesting availability for another team', function (): void {
     Livewire::actingAs($this->captainA)
         ->test('pages::club-events.interclubs.captain-selection')
-        ->call('requestAvailability', $this->matchB->id)
+        ->call('confirmAvailabilityRequest', $this->matchB->id)
         ->assertForbidden();
 });
+
+it('prevents the armed availability request from being retargeted client-side', function (): void {
+    Livewire::actingAs($this->captainA)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->set('availabilityRequestId', $this->matchB->id);
+})->throws(CannotUpdateLockedPropertyException::class);
 
 it('allows a captain to open their own team lineup', function (): void {
     Livewire::actingAs($this->captainA)

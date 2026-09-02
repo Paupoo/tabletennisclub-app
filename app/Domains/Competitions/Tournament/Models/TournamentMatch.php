@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection as SupportCollection;
 
 /**
  * @property int $id
@@ -198,9 +199,6 @@ class TournamentMatch extends Model
         return $this->belongsTo(User::class, 'player2_id');
     }
 
-    /**
-     * Get the pool this match belongs to
-     */
     public function pool(): BelongsTo
     {
         return $this->belongsTo(Pool::class);
@@ -297,6 +295,34 @@ class TournamentMatch extends Model
     public function sets(): HasMany
     {
         return $this->hasMany(MatchSet::class);
+    }
+
+    /**
+     * Get the pool this match belongs to
+     */
+    /**
+     * The user ids playing on one side of the match.
+     *
+     * A singles match carries one player per side, a doubles match the pair's
+     * two. Both views of the queue -- the Upcoming tab and the launch drawer --
+     * unpacked this in Blade, with the same `collect()` written twice, and the
+     * "player already on a table" warning was computed from those two copies.
+     *
+     * @param  1|2  $side
+     * @return SupportCollection<int, int>
+     */
+    public function sidePlayerIds(int $side): SupportCollection
+    {
+        $pair = $side === 1 ? $this->pair1 : $this->pair2;
+
+        $candidates = $pair !== null
+            ? [$pair->player1_id, $pair->player2_id]
+            : [$side === 1 ? $this->player1_id : $this->player2_id];
+
+        /** @var list<int> $ids */
+        $ids = array_values(array_filter($candidates, fn (?int $id): bool => $id !== null));
+
+        return collect($ids);
     }
 
     /**

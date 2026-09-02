@@ -43,7 +43,7 @@
 
         {{-- Pill --}}
         <div class="pointer-events-auto flex max-w-2xl flex-wrap items-center gap-2 rounded-2xl border border-base-300 bg-base-100 px-4 py-3 shadow-2xl">
-            <span class="shrink-0 border-r border-base-200 pr-3 text-sm font-semibold text-base-content/80">
+            <span class="shrink-0 border-r border-base-300 pr-3 text-sm font-semibold text-base-content/80">
                 {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             </span>
 
@@ -55,7 +55,7 @@
                 class="btn-ghost btn-sm btn-circle"
                 icon="o-x-mark"
                 :tooltip="__('Clear selection')"
-                wire:click="clearSelection" />
+                wire:click="clearSelection" :aria-label="__('Clear selection')" />
         </div>
     </div>
 

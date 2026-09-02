@@ -15,9 +15,6 @@ use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
-use App\Domains\Competitions\Tournament\Notifications\TournamentCancelledNotification;
-use App\Domains\Competitions\Tournament\Notifications\TournamentInvitationNotification;
-use App\Domains\Competitions\Tournament\Notifications\TournamentUpdatedNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistRemovedNotification;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
 use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
@@ -26,14 +23,20 @@ use App\Domains\Competitions\Tournament\Services\TournamentSimulator;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Domains\Shared\States\Tournament\TournamentStateMachine;
+use App\Jobs\SendTournamentCancellationJob;
+use App\Jobs\SendTournamentInvitationJob;
+use App\Jobs\SendTournamentUpdateJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasEventPostForm;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
@@ -46,6 +49,8 @@ new class extends Component
     public bool $bulkCancelModal = false;
 
     public bool $bulkDrawer = false;
+
+    public string $description = '';
 
     public bool $deuceEnabled = true;
 
@@ -63,6 +68,15 @@ new class extends Component
 
     // ── Limite d'inscriptions (0 = illimité)
     public int $maxUsers = 0;
+
+    /**
+     * Le plafond a-t-il été saisi à la main ?
+     *
+     * Tant qu'il ne l'est pas, il suit la structure (poules × joueurs par poule).
+     * Une fois saisi, plus rien ne l'écrase — c'est la salle qui s'adapte au
+     * tournoi voulu, pas l'inverse (issue #37).
+     */
+    public bool $maxUsersManual = false;
 
     // ── Étape 2 – Invitations
     public string $memberSearch = '';
@@ -89,12 +103,8 @@ new class extends Component
     public int $pool_size = 4;
 
     // ── Options statiques
-    public array $poolSizeOptions = [
-        ['id' => 3, 'name' => '3 joueurs'],
-        ['id' => 4, 'name' => '4 joueurs'],
-        ['id' => 5, 'name' => '5 joueurs'],
-        ['id' => 6, 'name' => '6 joueurs'],
-    ];
+    /** @var array<int, array{id: int, name: string}> */
+    public array $poolSizeOptions = [];
 
     // ── Pools staleness flag
     public bool $poolsStale = false;
@@ -154,7 +164,19 @@ new class extends Component
 
     public string $startTime = '';
 
-    public string $step = '1';
+    /**
+     * L'étape courante de l'assistant.
+     *
+     * Dans l'URL pour que le lien soit partageable, que le retour navigateur
+     * fonctionne, et qu'un rechargement ne renvoie pas ailleurs.
+     *
+     * La valeur par défaut est vide, et non '1' : c'est le seul moyen de
+     * distinguer « aucune étape demandée » — où le statut décide — de
+     * « ouvre-moi l'étape 1 », que l'icône réglages de la liste demande
+     * explicitement. mount() résout le vide avant le premier rendu.
+     */
+    #[Url(except: '')]
+    public string $step = '';
 
     public array $tagOptions = [
         ['id' => 1, 'name' => 'Tournoi'],
@@ -176,7 +198,7 @@ new class extends Component
 
     public function applyObjectiveSuggestion(): void
     {
-        if (empty($this->selectedObjective)) {
+        if ($this->selectedObjective === '' || $this->selectedObjective === '0') {
             $this->warning(__('Please select an objective first.'));
 
             return;
@@ -197,6 +219,10 @@ new class extends Component
         $this->logistics_buffer = $config->logisticsBufferMinutes;
         $this->matchType = $config->matchType;
 
+        // La suggestion redessine les poules : sans ça le plafond restait celui
+        // de la configuration précédente, sans que rien ne le signale.
+        $this->suggestMaxUsers();
+
         $this->success(
             title: __('Suggestion applied!'),
             description: TournamentObjectiveEnum::from($this->selectedObjective)->label(),
@@ -212,7 +238,7 @@ new class extends Component
         return Room::select(['id', 'name', 'total_playable_tables'])
             ->orderBy('name')
             ->get()
-            ->map(fn ($room) => [
+            ->map(fn ($room): array => [
                 'id' => $room->id,
                 'name' => $room->name . ' (' . $room->total_playable_tables . ' tables)',
             ])
@@ -226,12 +252,35 @@ new class extends Component
         }
 
         $tournament = Tournament::with('users')->findOrFail($this->tournamentId);
-        $tournament->update(['status' => TournamentStatusEnum::CANCELLED]);
 
-        $tournament->users()
+        try {
+            new TournamentStateMachine($tournament)->cancel();
+        } catch (LogicException) {
+            $this->showCancelModal = false;
+            $this->error(__('Matches have already been played: this tournament can no longer be cancelled.'));
+
+            return;
+        } catch (InvalidArgumentException) {
+            $this->showCancelModal = false;
+            $this->error(__('This tournament is already over, so there is nothing left to cancel.'));
+
+            return;
+        }
+
+        // Fanned out over the `convocations` limiter, like every other mailing
+        // that goes to more than one member. A full draw is sixty four notices.
+        $players = $tournament->users()
             ->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered', 'waiting'])
-            ->get()
-            ->each->notify(new TournamentCancelledNotification($tournament));
+            ->get();
+
+        if ($players->isNotEmpty()) {
+            Bus::batch(
+                $players->map(fn (User $player): SendTournamentCancellationJob => new SendTournamentCancellationJob(
+                    tournamentId: $tournament->id,
+                    userId: $player->id,
+                ))->all()
+            )->name('tournament-cancellation')->dispatch();
+        }
 
         unset($this->currentTournament, $this->isContractLocked);
         $this->showCancelModal = false;
@@ -255,9 +304,33 @@ new class extends Component
         $this->error($user->full_name . ' ' . __('has been unregistered.'));
     }
 
+    /**
+     * Reste-t-il un geste d'ouverture à poser ?
+     *
+     * Verrouillé : le tournoi n'a jamais été ouvert. Configuration : il l'a été,
+     * puis refermé. Les deux se rouvrent par le même bouton.
+     */
+    #[Computed]
+    public function canOpenRegistrations(): bool
+    {
+        return $this->currentTournament?->state()
+            ->canTransitionTo(TournamentStatusEnum::PUBLISHED) ?? false;
+    }
+
+    /**
+     * Vider la sélection de membres.
+     *
+     * Nom imposé par x-admin.shared.selection-pill, que la liste des tournois
+     * utilise déjà : le comité retrouve le même geste des deux côtés.
+     */
+    public function clearSelection(): void
+    {
+        $this->selectNoMembers();
+    }
+
     public function confirmBulkCancel(): void
     {
-        if (empty($this->selectedPeople) || ! $this->tournamentId) {
+        if ($this->selectedPeople === [] || ! $this->tournamentId) {
             return;
         }
 
@@ -277,7 +350,7 @@ new class extends Component
 
     public function confirmBulkNoShow(): void
     {
-        if (empty($this->selectedPeople) || ! $this->tournamentId) {
+        if ($this->selectedPeople === [] || ! $this->tournamentId) {
             return;
         }
 
@@ -292,7 +365,7 @@ new class extends Component
 
     public function confirmBulkPresence(): void
     {
-        if (empty($this->selectedPeople) || ! $this->tournamentId) {
+        if ($this->selectedPeople === [] || ! $this->tournamentId) {
             return;
         }
 
@@ -344,6 +417,15 @@ new class extends Component
 
         $tournament = Tournament::findOrFail($this->tournamentId);
 
+        try {
+            new TournamentStateMachine($tournament)->setUp();
+        } catch (InvalidArgumentException) {
+            $this->showCloseRegistrationsModal = false;
+            $this->error(__('Nobody has registered yet, so there are no registrations to close. Cancel the tournament instead.'));
+
+            return;
+        }
+
         // Kick everyone still on the waitlist — they no longer have a chance.
         $tournament->users()
             ->wherePivotIn('registration_status', ['waiting'])
@@ -357,13 +439,20 @@ new class extends Component
                 $user->notify(new TournamentWaitlistRemovedNotification($tournament));
             });
 
-        $tournament->update(['status' => TournamentStatusEnum::SETUP]);
-
-        unset($this->currentTournament, $this->waitlist, $this->registrations);
+        unset($this->currentTournament, $this->waitlist, $this->registrations, $this->registrationsOpen, $this->canOpenRegistrations);
         $this->showCloseRegistrationsModal = false;
         $this->success(__('Registrations closed. Waitlisted players have been notified.'), icon: 'o-lock-closed');
     }
 
+    /**
+     * Ouvre les inscriptions, depuis un tournoi verrouillé comme depuis un
+     * tournoi dont les inscriptions ont été closes.
+     *
+     * C'est le geste que le comité cherchait sous le nom « Publier » : c'est lui
+     * qui rend le tournoi visible et inscriptible côté membre. Il n'existait pas
+     * — le passage verrouillé → publié était un effet de bord de la première
+     * invitation envoyée, que rien n'annonçait (issue #35).
+     */
     public function confirmOpenRegistrations(): void
     {
         if (! $this->tournamentId) {
@@ -371,9 +460,16 @@ new class extends Component
         }
 
         $tournament = Tournament::findOrFail($this->tournamentId);
-        $tournament->update(['status' => TournamentStatusEnum::PUBLISHED]);
 
-        unset($this->currentTournament);
+        if (! in_array($tournament->status, [TournamentStatusEnum::LOCKED, TournamentStatusEnum::SETUP], true)) {
+            $this->showOpenRegistrationsModal = false;
+
+            return;
+        }
+
+        new TournamentStateMachine($tournament)->publish();
+
+        unset($this->currentTournament, $this->registrationsOpen, $this->canOpenRegistrations);
         $this->showOpenRegistrationsModal = false;
         $this->success(__('Registrations are now open.'), icon: 'o-lock-open');
     }
@@ -533,11 +629,11 @@ new class extends Component
             ->where('tournament_id', $this->tournamentId)
             ->orderByDesc('sent_at')
             ->get()
-            ->map(fn ($row) => [
+            ->map(fn ($row): array => [
                 'id' => $row->id,
                 'count' => $row->user_count,
                 'sent_at' => $row->sent_at,
-                'status' => 'Envoyé',
+                'status' => __('Sent'),
             ])
             ->toArray();
     }
@@ -552,20 +648,13 @@ new class extends Component
             return false;
         }
 
-        $status = $this->currentTournament?->status;
-
-        return $status !== null && ! in_array($status, [
-            TournamentStatusEnum::DRAFT,
-            TournamentStatusEnum::CANCELLED,
-        ]);
+        return $this->currentTournament?->state()->hasLockedContract() ?? false;
     }
 
     #[Computed]
     public function isLaunched(): bool
     {
-        $status = $this->currentTournament?->status;
-
-        return $status !== null && in_array($status, [TournamentStatusEnum::PENDING, TournamentStatusEnum::CLOSED]);
+        return $this->currentTournament?->state()->hasBeenLaunched() ?? false;
     }
 
     // ── Launch
@@ -661,9 +750,9 @@ new class extends Component
             ->orderBy('match_order')
             ->get()
             ->groupBy('pool_id')
-            ->map(fn ($matches, $poolId) => [
+            ->map(fn ($matches, $poolId): array => [
                 'name' => $matches->first()->pool?->name ?? "Pool {$poolId}",
-                'matches' => $matches->map(fn ($m) => [
+                'matches' => $matches->map(fn ($m): array => [
                     'order' => $m->match_order,
                     'p1' => $isDoubles ? ($m->pair1?->displayName() ?? '—') : ($m->player1?->full_name ?? '—'),
                     'p2' => $isDoubles ? ($m->pair2?->displayName() ?? '—') : ($m->player2?->full_name ?? '—'),
@@ -699,12 +788,21 @@ new class extends Component
             $query->whereNotIn('id', $alreadyInvolved);
         }
 
+        /*
+         * L'assiduité pèse sur la décision : inviter quelqu'un qui n'est jamais
+         * venu n'est pas la même chose que relancer un habitué. Un seul
+         * withCount, pas une requête par ligne.
+         */
+        $query->withCount(['tournaments as tournaments_played_count' => fn ($q) => $q
+            ->where('tournament_user.registration_status', 'confirmed')]);
+
         return $query->get()
-            ->map(fn (User $u) => [
+            ->map(fn (User $u): array => [
                 'id' => $u->id,
                 'name' => $u->full_name,
                 'email' => $u->email,
-                'ranking' => $u->ranking ?? 'NC',
+                'ranking' => $u->ranking->getLabel(),
+                'played' => $u->tournaments_played_count ?? 0,
             ])
             ->toArray();
     }
@@ -715,9 +813,22 @@ new class extends Component
     {
         $this->tournamentDate = today()->addWeek()->format('Y-m-d');
 
+        /*
+         * Les libellés étaient écrits en français dans la déclaration de propriété,
+         * là où __() n'est pas encore résolu. Ils se construisent donc ici.
+         */
+        $this->poolSizeOptions = array_map(
+            fn (int $size): array => [
+                'id' => $size,
+                'name' => trans_choice('{1} :count player|[2,*] :count players', $size, ['count' => $size]),
+            ],
+            [3, 4, 5, 6],
+        );
+
         if ($tournament !== null) {
             $this->tournamentId = $tournament->id;
             $this->name = $tournament->name;
+            $this->description = $tournament->description ?? '';
             $this->tournamentDate = $tournament->start_date?->format('Y-m-d') ?? $this->tournamentDate;
             $this->startTime = $tournament->start_time ?? '';
             $this->registration_deadline = $tournament->registration_deadline?->format('Y-m-d') ?? '';
@@ -733,21 +844,35 @@ new class extends Component
             $this->pool_size = $tournament->pool_size;
             $this->nb_qualifies = $tournament->nb_qualifiers_per_pool;
             $this->maxUsers = $tournament->max_users;
+            $this->maxUsersManual = $tournament->max_users > 0
+                && $tournament->max_users !== $tournament->nb_pools * $tournament->pool_size;
             $this->price = (float) ($tournament->price ?? 0);
             $this->selectedObjective = $tournament->objective?->value ?? '';
             $this->selectedRooms = $tournament->rooms->pluck('id')->toArray();
             $this->nb_tables = (int) $tournament->rooms->sum('total_playable_tables') ?: 8;
 
-            $this->step = match ($tournament->status) {
-                TournamentStatusEnum::LOCKED => '4',
-                TournamentStatusEnum::PUBLISHED => '4',
-                TournamentStatusEnum::SETUP => '5',
-                TournamentStatusEnum::PENDING,
-                TournamentStatusEnum::CLOSED => '6',
-                default => '1',
-            };
+            /*
+             * Le statut ne choisit l'étape que si l'URL n'en porte pas une : l'icône
+             * réglages de la liste pointe vers ?step=1 et doit ouvrir la configuration,
+             * pas l'étape déduite du statut.
+             */
+            if ($this->step === '') {
+                $this->step = match ($tournament->status) {
+                    TournamentStatusEnum::LOCKED => '4',
+                    TournamentStatusEnum::PUBLISHED => '4',
+                    TournamentStatusEnum::SETUP => '5',
+                    TournamentStatusEnum::PENDING,
+                    TournamentStatusEnum::CLOSED => '6',
+                    default => '1',
+                };
+            }
 
             $this->initEventPost($tournament->eventPost, $tournament->name);
+        }
+
+        // Aucune étape demandée et aucun statut pour en déduire une : on commence au début.
+        if ($this->step === '') {
+            $this->step = '1';
         }
 
         // Pre-fill location from the first room's address if not already set
@@ -771,7 +896,7 @@ new class extends Component
     #[Computed]
     public function nbTables(): int
     {
-        if (empty($this->selectedRooms)) {
+        if ($this->selectedRooms === []) {
             return $this->nb_tables;
         }
 
@@ -843,7 +968,7 @@ new class extends Component
         return TournamentPair::where('tournament_id', $this->tournamentId)
             ->with(['player1', 'player2'])
             ->get()
-            ->map(fn (TournamentPair $p) => [
+            ->map(fn (TournamentPair $p): array => [
                 'id' => $p->id,
                 'name' => $p->displayName(),
                 'p1_id' => $p->player1_id,
@@ -870,10 +995,10 @@ new class extends Component
                 ->pools()
                 ->with(['pairs.player1', 'pairs.player2'])
                 ->get()
-                ->mapWithKeys(fn (Pool $pool) => [
+                ->mapWithKeys(fn (Pool $pool): array => [
                     $pool->id => [
                         'name' => $pool->name,
-                        'players' => $pool->pairs->map(fn ($pair) => [
+                        'players' => $pool->pairs->map(fn ($pair): array => [
                             'id' => $pair->id,
                             'name' => $pair->displayName(),
                             'rank' => $pair->rankingLabel(),
@@ -893,13 +1018,13 @@ new class extends Component
                 ->orderBy('first_name'),
             ])
             ->get()
-            ->mapWithKeys(fn (Pool $pool) => [
+            ->mapWithKeys(fn (Pool $pool): array => [
                 $pool->id => [
                     'name' => $pool->name,
-                    'players' => $pool->users->map(fn (User $u) => [
+                    'players' => $pool->users->map(fn (User $u): array => [
                         'id' => $u->id,
                         'name' => $u->full_name,
-                        'rank' => $u->ranking ?? 'NC',
+                        'rank' => $u->ranking->getLabel(),
                         'pts' => 0,
                     ])->toArray(),
                 ],
@@ -936,14 +1061,14 @@ new class extends Component
             return null;
         }
 
-        $tournament->update(['status' => TournamentStatusEnum::PENDING]);
+        new TournamentStateMachine($tournament)->start();
 
         // Populate table_tournament pivot from the tournament's linked rooms
         $tableIds = Table::whereHas('room', fn ($q) => $q->whereIn('rooms.id', $tournament->rooms()->pluck('rooms.id')))
             ->pluck('id');
 
         $tournament->tables()->sync(
-            $tableIds->mapWithKeys(fn ($id) => [$id => ['is_table_free' => true]])->all()
+            $tableIds->mapWithKeys(fn ($id): array => [$id => ['is_table_free' => true]])->all()
         );
 
         return redirect()->route('admin.tournaments.live-center', $tournament->id);
@@ -996,9 +1121,9 @@ new class extends Component
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get()
-            ->map(fn (User $u) => [
+            ->map(fn (User $u): array => [
                 'id' => $u->id,
-                'name' => $u->full_name . ' (' . ($u->ranking ?? 'NC') . ')',
+                'name' => $u->full_name . ' (' . $u->ranking->getLabel() . ')',
             ])
             ->toArray();
     }
@@ -1032,7 +1157,7 @@ new class extends Component
     #[Computed]
     public function registrationClosed(): bool
     {
-        return $this->currentTournament !== null && $this->currentTournament->status === TournamentStatusEnum::SETUP;
+        return $this->currentTournament?->state()->canCreatePools() ?? false;
     }
 
     // ── Computed: active registrations (not waiting, not cancelled)
@@ -1055,10 +1180,10 @@ new class extends Component
         $paymentIds = $users->map(fn (User $u) => $u->pivot->payment_id)->filter()->unique()->values();
         $paidPaymentIds = Payment::whereIn('id', $paymentIds)->where('status', 'paid')->pluck('id')->flip();
 
-        $rows = $users->map(fn (User $u) => [
+        $rows = $users->map(fn (User $u): array => [
             'id' => $u->id,
             'name' => $u->full_name,
-            'ranking' => $u->ranking ?? 'NC',
+            'ranking' => $u->ranking->getLabel(),
             'status' => $u->pivot->registration_status,
             'has_paid' => (bool) $u->pivot->has_paid || isset($paidPaymentIds[$u->pivot->payment_id]),
             'qr_confirmed' => (bool) $u->pivot->qr_confirmed,
@@ -1070,6 +1195,13 @@ new class extends Component
         return $dir === 'asc'
             ? $rows->sortBy($col)->values()
             : $rows->sortByDesc($col)->values();
+    }
+
+    /** Le tournoi est-il ouvert aux inscriptions, c'est-à-dire visible du membre ? */
+    #[Computed]
+    public function registrationsOpen(): bool
+    {
+        return $this->currentTournament?->state()->canRegisterUsers() ?? false;
     }
 
     public function removeFromWaitlist(int $userId): void
@@ -1099,17 +1231,25 @@ new class extends Component
     public function render(): mixed
     {
         $search = strtolower($this->memberSearch);
-        $filteredMembers = empty($search)
+        $filteredMembers = $search === '' || $search === '0'
             ? $this->members
             : array_values(array_filter(
                 $this->members,
-                fn ($m) => str_contains(strtolower($m['name']), $search)
+                fn (array $m): bool => str_contains(strtolower($m['name']), $search)
                     || str_contains(strtolower($m['email'] ?? ''), $search)
             ));
 
         return $this->view([
             'filteredMembers' => $filteredMembers,
         ]);
+    }
+
+    // ── Hooks
+
+    public function resetMaxUsersToStructure(): void
+    {
+        $this->maxUsersManual = false;
+        $this->suggestMaxUsers();
     }
 
     // ── Save (create or update)
@@ -1131,6 +1271,7 @@ new class extends Component
             'doublesRegistrationMode' => 'nullable|in:club,self',
             'maxUsers' => 'required|integer|min:0',
             'price' => 'required|numeric|min:0',
+            'description' => 'nullable|string|max:2000',
         ]);
 
         // Snapshot logistical values before saving so we can detect changes.
@@ -1159,6 +1300,7 @@ new class extends Component
             ['id' => $this->tournamentId],
             [
                 'name' => $this->name,
+                'description' => $this->description ?: null,
                 'start_date' => $this->tournamentDate,
                 'start_time' => $this->startTime ?: null,
                 'duration_minutes' => $this->tournament_minutes,
@@ -1183,12 +1325,21 @@ new class extends Component
         $this->tournamentId = $tournament->id;
 
         // Notify registered players when logistical details changed.
-        if (! empty($logisticsChanged) && $this->hasRegisteredUsers) {
+        if ($logisticsChanged !== [] && $this->hasRegisteredUsers) {
             unset($this->hasRegisteredUsers);
-            $tournament->users()
+            $players = $tournament->users()
                 ->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered'])
-                ->get()
-                ->each->notify(new TournamentUpdatedNotification($tournament, $logisticsChanged));
+                ->get();
+
+            if ($players->isNotEmpty()) {
+                Bus::batch(
+                    $players->map(fn (User $player): SendTournamentUpdateJob => new SendTournamentUpdateJob(
+                        tournamentId: $tournament->id,
+                        userId: $player->id,
+                        changes: $logisticsChanged,
+                    ))->all()
+                )->name('tournament-update')->dispatch();
+            }
         }
 
         unset($this->isContractLocked, $this->hasRegisteredUsers, $this->currentTournament);
@@ -1218,11 +1369,11 @@ new class extends Component
 
     public function sendInvitations(): void
     {
-        if (empty($this->selectedMembers) || ! $this->tournamentId) {
+        if ($this->selectedMembers === [] || ! $this->tournamentId) {
             return;
         }
 
-        if (empty($this->registration_deadline)) {
+        if ($this->registration_deadline === '' || $this->registration_deadline === '0') {
             $this->error(__('A registration deadline is required before sending invitations.'));
 
             return;
@@ -1230,45 +1381,51 @@ new class extends Component
 
         $tournament = Tournament::findOrFail($this->tournamentId);
 
-        if (! in_array($tournament->status, [TournamentStatusEnum::LOCKED, TournamentStatusEnum::PUBLISHED])) {
-            $this->error(__('Invitations cannot be sent while registrations are closed.'));
+        // Inviter quelqu'un à s'inscrire à un tournoi fermé n'a pas de sens : le
+        // membre suit le lien et ne peut rien faire. L'ouverture est désormais un
+        // geste à part entière, nommé, et c'est un prérequis.
+        if (! $tournament->registrationsAreOpen()) {
+            $this->error(__('Open the registrations first — members cannot sign up yet.'));
 
             return;
         }
         $users = User::whereIn('id', $this->selectedMembers)->get();
 
-        $notification = new TournamentInvitationNotification(
-            tournament: $tournament,
-            customMessage: $this->inviteMessage,
-            includeArticleLink: $this->inviteIncludeArticle && $this->eventPostId !== null,
-            newsPostId: $this->inviteIncludeArticle ? $this->eventPostId : null,
-        );
+        $includeArticle = $this->inviteIncludeArticle && $this->eventPostId !== null;
 
-        foreach ($users as $user) {
-            $user->notify($notification);
-        }
+        /*
+         * Fanned out over the `invitations` limiter rather than sent in the
+         * request. Inviting the whole club used to be a hundred and forty three
+         * messages leaving as fast as the worker drained them, which is the
+         * burst that gets a sender classed as a spammer — and the one mass
+         * mailing in the application that had never been throttled. Batched, so
+         * the send has a name in the queue rather than being a hundred loose
+         * jobs.
+         */
+        Bus::batch(
+            $users->map(fn (User $user): SendTournamentInvitationJob => new SendTournamentInvitationJob(
+                tournamentId: $tournament->id,
+                userId: $user->id,
+                customMessage: $this->inviteMessage,
+                includeArticleLink: $includeArticle,
+                newsPostId: $this->inviteIncludeArticle ? $this->eventPostId : null,
+            ))->all()
+        )->name('invitations')->dispatch();
 
         DB::table('tournament_invitations')->insert([
             'tournament_id' => $this->tournamentId,
             'user_count' => $users->count(),
             'message' => $this->inviteMessage ?: null,
-            'include_article' => $this->inviteIncludeArticle && $this->eventPostId !== null,
+            'include_article' => $includeArticle,
             'sent_at' => now(),
         ]);
 
-        $count = $users->count();
+        // Le vocabulaire des convocations : elles sont en file, pas parties.
         $this->success(
-            title: __('Invitations sent!'),
-            description: "{$count} " . __('members have been notified.'),
+            title: __('Invitations queued — members will receive them shortly'),
+            description: __(':count invitation(s) on their way.', ['count' => $users->count()]),
             icon: 'o-paper-airplane',
         );
-
-        // First invitation transitions locked → published and advances to registrations.
-        if ($tournament->status === TournamentStatusEnum::LOCKED) {
-            $tournament->update(['status' => TournamentStatusEnum::PUBLISHED]);
-            unset($this->currentTournament, $this->isContractLocked);
-            $this->step = '5';
-        }
 
         $this->showInviteModal = false;
         $this->inviteMessage = '';
@@ -1337,7 +1494,7 @@ new class extends Component
     {
         if (in_array($id, $this->selectedMembers)) {
             $this->selectedMembers = array_values(
-                array_filter($this->selectedMembers, fn ($m) => $m !== $id)
+                array_filter($this->selectedMembers, fn ($m): bool => $m !== $id)
             );
         } else {
             $this->selectedMembers[] = $id;
@@ -1353,7 +1510,7 @@ new class extends Component
 
         $pairedIds = TournamentPair::where('tournament_id', $this->tournamentId)
             ->get()
-            ->flatMap(fn ($p) => [$p->player1_id, $p->player2_id])
+            ->flatMap(fn ($p): array => [$p->player1_id, $p->player2_id])
             ->unique()
             ->toArray();
 
@@ -1362,7 +1519,7 @@ new class extends Component
             ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered'])
             ->whereNotIn('users.id', $pairedIds)
             ->get()
-            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
+            ->map(fn (User $u): array => ['id' => $u->id, 'name' => $u->full_name])
             ->toArray();
     }
 
@@ -1371,7 +1528,10 @@ new class extends Component
         $this->markPoolsStaleIfGenerated();
     }
 
-    // ── Hooks
+    public function updatedMaxUsers(): void
+    {
+        $this->maxUsersManual = true;
+    }
 
     public function updatedNbPoules(): void
     {
@@ -1392,7 +1552,7 @@ new class extends Component
 
     public function updatedSelectedRooms(): void
     {
-        if (! empty($this->selectedRooms)) {
+        if ($this->selectedRooms !== []) {
             $total = Room::whereIn('id', $this->selectedRooms)->sum('total_playable_tables');
 
             if ($total > 0) {
@@ -1423,15 +1583,15 @@ new class extends Component
             return;
         }
 
-        if (empty($this->name) || empty($this->registration_deadline)) {
+        if ($this->name === '' || $this->name === '0' || ($this->registration_deadline === '' || $this->registration_deadline === '0')) {
             $this->error(__('Tournament name and registration deadline are required before locking.'));
 
             return;
         }
 
-        Tournament::findOrFail($this->tournamentId)->update(['status' => TournamentStatusEnum::LOCKED]);
+        new TournamentStateMachine(Tournament::findOrFail($this->tournamentId))->lock();
 
-        unset($this->currentTournament, $this->isContractLocked);
+        unset($this->currentTournament, $this->isContractLocked, $this->registrationsOpen, $this->canOpenRegistrations);
 
         $this->step = '4';
         $this->success(__('Tournament validated! Name and price are now locked.'), icon: 'o-lock-closed');
@@ -1453,10 +1613,10 @@ new class extends Component
             ->wherePivot('registration_status', 'waiting')
             ->orderByPivot('waitlist_position')
             ->get()
-            ->map(fn (User $u) => [
+            ->map(fn (User $u): array => [
                 'id' => $u->id,
                 'name' => $u->full_name,
-                'ranking' => $u->ranking ?? 'NC',
+                'ranking' => $u->ranking->getLabel(),
                 'position' => $u->pivot->waitlist_position,
                 'registered_at' => $u->pivot->created_at,
             ]);
@@ -1521,12 +1681,20 @@ new class extends Component
 
     // ── Private helpers
 
+    /**
+     * Aligne le plafond d'inscriptions sur la structure, sauf saisie manuelle.
+     *
+     * L'ancienne garde comparait `maxUsers` à la capacité *nouvelle* alors que
+     * son commentaire annonçait l'ancienne : dès la première modification de la
+     * structure, les deux différaient et la valeur restait figée sur celle de la
+     * configuration précédente.
+     */
     private function suggestMaxUsers(): void
     {
-        $capacity = $this->nb_poules * $this->pool_size;
-        // Only auto-update if unset (0) or if it matches the previous auto-computed value.
-        if ($this->maxUsers === 0 || $this->maxUsers === $capacity) {
-            $this->maxUsers = $capacity;
+        if ($this->maxUsersManual) {
+            return;
         }
+
+        $this->maxUsers = $this->nb_poules * $this->pool_size;
     }
 };

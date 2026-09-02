@@ -1,0 +1,51 @@
+<!-- @dsCard group="Components" viewport="700x260" name="Public — NewsCard & Card" subtitle="Marketing surfaces: article cards, accented feature cards" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--base-200); color: var(--text-strong); }
+  .pad { padding: 22px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; align-items: start; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const { NewsCard, Card, Badge } = window.CTTOttigniesBlocryDesignSystem_a28edf;
+  function Demo() {
+    return (
+      <div className="pad">
+        <NewsCard
+          image="../../assets/images/background_news.webp"
+          category="Compétition"
+          date="14 juin 2026"
+          title="Victoire de l'équipe A en D2"
+          excerpt="Un week-end décisif pour nos joueurs, qui s'imposent 10-6 face à Wavre et grimpent au classement."
+          href="#" />
+        <NewsCard
+          image="../../assets/images/background_events.webp"
+          category="Formation"
+          date="2 juin 2026"
+          title="Stage jeunes pendant les vacances"
+          excerpt="Cinq jours d'entraînement encadré pour les 8-14 ans, tous niveaux. Inscriptions ouvertes."
+          href="#" />
+        <Card accent="var(--club-blue)" hoverable>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <span style={{ fontSize: 22 }}>🏆</span>
+            <Badge tone="primary" solid size="sm">Interclub</Badge>
+          </div>
+          <h3 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 700 }}>Finale provinciale</h3>
+          <p style={{ margin: 0, color: 'var(--text-body)', fontSize: 14, lineHeight: 1.5 }}>Samedi 21 juin · 14h00 · Centre sportif de Blocry</p>
+        </Card>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body>
+</html>

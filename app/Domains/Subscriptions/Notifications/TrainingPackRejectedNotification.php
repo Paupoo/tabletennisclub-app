@@ -51,7 +51,7 @@ class TrainingPackRejectedNotification extends Notification
             $mail->line(__('**Reason:** the competition teams are full for this season.'));
         }
 
-        if (! empty($this->message)) {
+        if ($this->message !== '' && $this->message !== '0') {
             $mail->line('---')
                 ->line(__('**Message from the secretariat:**'))
                 ->line($this->message);

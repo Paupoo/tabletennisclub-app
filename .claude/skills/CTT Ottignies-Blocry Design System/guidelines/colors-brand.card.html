@@ -1,0 +1,27 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Brand colors" subtitle="Club blue + club yellow — the two-color identity" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--white); color: var(--text-strong); }
+  .row { display: flex; gap: 14px; padding: 18px; flex-wrap: wrap; }
+  .sw { width: 150px; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border-default); }
+  .chip { height: 64px; display: flex; align-items: flex-end; padding: 8px 10px; }
+  .meta { padding: 8px 10px; }
+  .name { font-size: 12px; font-weight: 600; }
+  .hex { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .tag { font-size: 10px; font-weight: 700; color: #fff; opacity: .9; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="sw"><div class="chip" style="background:var(--club-blue)"><span class="tag">PRIMARY</span></div><div class="meta"><div class="name">Club Blue</div><div class="hex">#1e40af</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--club-blue-light)"></div><div class="meta"><div class="name">Blue Light</div><div class="hex">#3b82f6</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--club-yellow)"><span class="tag" style="color:var(--club-blue)">SECONDARY</span></div><div class="meta"><div class="name">Club Yellow</div><div class="hex">#fbbf24</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--club-yellow-light)"></div><div class="meta"><div class="name">Yellow Light</div><div class="hex">#fcd34d</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--black)"><span class="tag">ACCENT</span></div><div class="meta"><div class="name">Accent</div><div class="hex">#000000</div></div></div>
+  </div>
+</body>
+</html>

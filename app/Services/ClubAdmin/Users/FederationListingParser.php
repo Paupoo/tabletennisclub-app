@@ -27,7 +27,7 @@ class FederationListingParser
      *
      * @var array<string, string>
      */
-    private const COLUMNS = [
+    private const array COLUMNS = [
         'licence' => 'licence',
         'nom' => 'name',
         'date naissance' => 'birthdate',
@@ -123,7 +123,7 @@ class FederationListingParser
     {
         $contents = (string) preg_replace('/^\xEF\xBB\xBF/', '', $contents);
 
-        return (string) mb_convert_encoding($contents, 'UTF-8', 'Windows-1252');
+        return mb_convert_encoding($contents, 'UTF-8', 'Windows-1252');
     }
 
     /**

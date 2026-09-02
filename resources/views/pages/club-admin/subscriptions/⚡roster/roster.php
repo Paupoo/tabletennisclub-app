@@ -312,7 +312,7 @@ new class extends Component
         return (object) [
             'id' => $sub->id,
             'name' => $sub->user->first_name . ' ' . $sub->user->last_name,
-            'ranking' => $sub->user->ranking,
+            'ranking' => $sub->user->ranking->getLabel(),
             'age_category' => $category?->value,
             'age_label' => $category?->getLabel(),
             'is_competitive' => $sub->is_competitive,

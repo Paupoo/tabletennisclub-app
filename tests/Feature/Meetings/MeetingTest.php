@@ -11,8 +11,11 @@ use App\Domains\Meetings\Notifications\MeetingPostponedNotification;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Jobs\SendMeetingInvitationJob;
 use App\Jobs\SendMeetingInvitationsJob;
+use Illuminate\Cache\RateLimiter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
@@ -120,13 +123,13 @@ describe('Meeting index page', function (): void {
         Livewire::actingAs($admin)
             ->test('pages::club-events.meetings.index')
             ->set('type', MeetingTypeEnum::GENERAL_ASSEMBLY->value)
-            ->assertSeeText('No meetings match your filters');
+            ->assertSeeText(__('No meetings match your filters'));
     });
 
     test('index shows generic empty state when no meetings exist at all', function (): void {
         Livewire::actingAs(meetingAdmin())
             ->test('pages::club-events.meetings.index')
-            ->assertSeeText('No meetings yet');
+            ->assertSeeText(__('No meetings yet'));
     });
 
     test('index shows no stat cards and no per-row web button', function (): void {
@@ -183,6 +186,59 @@ describe('SendMeetingInvitationsJob', function (): void {
             ->and($pivot->invitation_sent_at)->not->toBeNull();
     });
 
+    /*
+     * The convocations used to leave as one `Notification::send()` over every
+     * active member — fifty near identical messages in three seconds, which is
+     * what a spam filter is built to catch, and a club whose convocations land
+     * in spam has fifty families to explain it to. The pivot still moves in one
+     * upsert; only the sending is fanned out and spread.
+     */
+    test('job fans the sending out into one throttled job per recipient', function (): void {
+        // Partial fake: the parent job has to actually run to fan anything out.
+        Bus::fake([SendMeetingInvitationJob::class]);
+
+        $admin = meetingAdmin();
+        $members = User::factory()->count(3)->isCommitteeMember()->create();
+        $meeting = confirmedMeeting($admin);
+
+        dispatch_sync(new SendMeetingInvitationsJob($meeting->id));
+
+        // The three members plus the admin, who is a committee member too.
+        Bus::assertDispatchedTimes(SendMeetingInvitationJob::class, 4);
+
+        foreach ($members as $member) {
+            Bus::assertDispatched(
+                SendMeetingInvitationJob::class,
+                fn (SendMeetingInvitationJob $job): bool => $job->userId === $member->id
+                    && $job->meetingId === $meeting->id
+            );
+        }
+    });
+
+    test('a convocation is throttled, on a limiter of its own', function (): void {
+        $job = new SendMeetingInvitationJob(1, 1);
+
+        expect($job->middleware())->toHaveCount(1)
+            ->and($job->middleware()[0])->toBeInstanceOf(RateLimited::class);
+
+        expect(app(RateLimiter::class)->limiter('convocations'))->not->toBeNull();
+    });
+
+    /*
+     * Ids rather than models: a member archived between the fan-out and the send
+     * is skipped, where a serialised model would fail the job.
+     */
+    test('a convocation whose recipient vanished is skipped, not failed', function (): void {
+        Notification::fake();
+
+        $admin = meetingAdmin();
+        $meeting = confirmedMeeting($admin);
+
+        dispatch_sync(new SendMeetingInvitationJob($meeting->id, 99999));
+
+        Notification::assertNothingSent();
+    });
+
     test('job re-invites GA to all active members', function (): void {
         Notification::fake();
 
@@ -225,7 +281,7 @@ describe('Meeting show page', function (): void {
             ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
             ->call('sendInvitations');
 
-        Bus::assertDispatched(SendMeetingInvitationsJob::class, fn ($job) => $job->meetingId === $meeting->id);
+        Bus::assertDispatched(SendMeetingInvitationsJob::class, fn ($job): bool => $job->meetingId === $meeting->id);
     });
 
     test('invitations cannot be dispatched if meeting is in planning status', function (): void {

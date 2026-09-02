@@ -69,7 +69,7 @@ describe('Season Model', function (): void {
 
         try {
             $season2->activate();
-        } catch (Exception $e) {
+        } catch (Exception) {
             // Expected
         }
 

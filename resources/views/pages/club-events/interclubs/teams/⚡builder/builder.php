@@ -14,6 +14,7 @@ use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\Ranking;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Builder;
@@ -62,6 +63,10 @@ new class extends Component
 
     public function computeDistribution(): void
     {
+        // Le modal d'attente est ouvert par startComputing() : toute sortie doit
+        // le refermer, sinon l'écran reste bloqué derrière un calcul terminé.
+        $this->showComputingModal = false;
+
         RecalculateForceListAction::handle();
 
         $competitors = $this->buildEligibleQuery()->get();
@@ -76,7 +81,7 @@ new class extends Component
         $names = $this->teamNameSequence($totalTeams);
         $playerChunks = $competitors->chunk($this->nucleusSize);
 
-        $this->proposedTeams = collect($names)->values()->map(fn (string $name, int $i) => [
+        $this->proposedTeams = collect($names)->values()->map(fn (string $name, int $i): array => [
             'letter' => $name,
             'players' => $playerChunks->get($i)?->pluck('id')->toArray() ?? [],
             'captainId' => null,
@@ -85,12 +90,11 @@ new class extends Component
             'division' => '',
         ])->toArray();
 
-        $assignedIds = collect($this->proposedTeams)->flatMap(fn ($t) => $t['players'])->toArray();
+        $assignedIds = collect($this->proposedTeams)->flatMap(fn ($t): mixed => $t['players'])->toArray();
         $this->unassigned = $competitors->whereNotIn('id', $assignedIds)->pluck('id')->toArray();
 
         $this->sortAllTeams();
 
-        $this->showComputingModal = false;
         $this->step = 2;
     }
 
@@ -108,13 +112,13 @@ new class extends Component
         foreach ($this->proposedTeams as &$team) {
             $team['players'] = array_values(array_filter(
                 $team['players'],
-                fn (int $id) => $id !== $userId
+                fn (int $id): bool => $id !== $userId
             ));
         }
 
         $this->unassigned = array_values(array_filter(
             $this->unassigned,
-            fn (int $id) => $id !== $userId
+            fn (int $id): bool => $id !== $userId
         ));
 
         $this->proposedTeams[$teamIndex]['players'][] = $userId;
@@ -132,7 +136,7 @@ new class extends Component
 
             $team['players'] = array_values(array_filter(
                 $team['players'],
-                fn (int $id) => $id !== $userId
+                fn (int $id): bool => $id !== $userId
             ));
         }
 
@@ -239,8 +243,8 @@ new class extends Component
             'missingBirthdateCount' => $this->teamCategory === 'VETERANS'
                 ? User::interclubEligible()->whereNull('birthdate')->count()
                 : 0,
-            'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c) => ['id' => $c->name, 'name' => $c->value]),
-            'levelOptions' => collect(LeagueLevel::cases())->map(fn ($l) => ['id' => $l->name, 'name' => $l->value]),
+            'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c): array => ['id' => $c->name, 'name' => $c->value]),
+            'levelOptions' => collect(LeagueLevel::cases())->map(fn ($l): array => ['id' => $l->name, 'name' => $l->value]),
         ];
     }
 
@@ -299,9 +303,13 @@ new class extends Component
             return $playerIds;
         }
 
-        $rankings = User::whereIn('id', $playerIds)->pluck('ranking', 'id');
+        // `ranking` est casté en enum : on repasse par sa valeur pour comparer
+        // des chaînes, et 'ZZ' garde les joueurs sans classement en fin de liste.
+        $rankings = User::whereIn('id', $playerIds)
+            ->pluck('ranking', 'id')
+            ->map(fn (?Ranking $ranking): string => $ranking?->value ?? 'ZZ');
 
-        usort($playerIds, fn (int $a, int $b) => strcmp(
+        usort($playerIds, fn (int $a, int $b): int => strcmp(
             $rankings[$a] ?? 'ZZ',
             $rankings[$b] ?? 'ZZ'
         ));
@@ -318,8 +326,8 @@ new class extends Component
      */
     private function teamNameSequence(int $count): array
     {
-        $letters = array_map(fn (int $i) => chr(ord('A') + $i), range(0, 25));
-        $numbers = array_map(fn (int $i) => (string) $i, range(1, max(0, $count - 26)));
+        $letters = array_map(fn (int $i): string => chr(ord('A') + $i), range(0, 25));
+        $numbers = array_map(fn (int $i): string => (string) $i, range(1, max(0, $count - 26)));
 
         return array_slice(array_merge($letters, $numbers), 0, $count);
     }

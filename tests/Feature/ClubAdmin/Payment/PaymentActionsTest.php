@@ -127,7 +127,7 @@ describe('GeneratePayment', function (): void {
 
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 125]);
 
-        expect(fn () => (new GeneratePayment)($subscription))
+        expect(fn (): RedirectResponse => (new GeneratePayment)($subscription))
             ->toThrow(AuthorizationException::class);
     })->group('payments', 'generate');
 
@@ -262,7 +262,7 @@ describe('ProcessPaymentAction', function (): void {
     test('throws DomainException when no pending payment exists', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 150]);
 
-        expect(fn () => (new ProcessPaymentAction)->execute($subscription, 'TXN-1', 150.0))
+        expect(fn (): Subscription => (new ProcessPaymentAction)->execute($subscription, 'TXN-1', 150.0))
             ->toThrow(DomainException::class, 'No pending payment found');
     })->group('payments', 'process');
 
@@ -291,7 +291,7 @@ describe('SendPaymentReminderJob', function (): void {
             'invitation_counter' => 0,
         ]);
 
-        (new SendPaymentReminderJob($payment->id))->handle();
+        new SendPaymentReminderJob($payment->id)->handle();
 
         Mail::assertQueued(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
         expect($payment->fresh()->invitation_counter)->toBe(1);
@@ -316,7 +316,7 @@ describe('SendPaymentReminderJob', function (): void {
             'invitation_counter' => 0,
         ]);
 
-        (new SendPaymentReminderJob($payment->id))->handle();
+        new SendPaymentReminderJob($payment->id)->handle();
 
         Mail::assertQueued(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
         expect($payment->fresh()->invitation_counter)->toBe(1);
@@ -340,7 +340,7 @@ describe('SendPaymentReminderJob', function (): void {
             'invitation_counter' => 0,
         ]);
 
-        (new SendPaymentReminderJob($payment->id))->handle();
+        new SendPaymentReminderJob($payment->id)->handle();
 
         Mail::assertNothingSent();
         Notification::assertNothingSent();
@@ -362,7 +362,7 @@ describe('SendPaymentReminderJob', function (): void {
             'invitation_counter' => 0,
         ]);
 
-        (new SendPaymentReminderJob($payment->id))->handle();
+        new SendPaymentReminderJob($payment->id)->handle();
 
         Mail::assertQueued(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
         expect($payment->fresh()->invitation_counter)->toBe(1);

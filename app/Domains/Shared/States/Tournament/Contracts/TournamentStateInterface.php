@@ -35,7 +35,15 @@ interface TournamentStateInterface
 
     public function getStatus(): TournamentStatusEnum;
 
+    /** Has play started, so the wizard hands over to the live centre? */
+    public function hasBeenLaunched(): bool;
+
+    /** Are the name and the price frozen, i.e. has the contract been validated? */
+    public function hasLockedContract(): bool;
+
     // Transitions
+    public function lock(Tournament $tournament): void;
+
     public function publish(Tournament $tournament): void;
 
     public function start(Tournament $tournament): void;

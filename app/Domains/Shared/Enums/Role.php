@@ -27,6 +27,7 @@ enum Role: string
 {
     // Kept alphabetical by Pint; the socle/délégation split is carried by
     // isDelegation(), not by the ordering here.
+    case ACCESS = 'acces';
     case ADMINISTRATOR = 'administrateur';
     case BAR = 'bar';
     case CASH_REGISTER = 'caisse';
@@ -116,6 +117,7 @@ enum Role: string
     public function description(): string
     {
         return match ($this) {
+            self::ACCESS => __('Hand out the délégations and the committee seat. Does not open the member file itself.'),
             self::ADMINISTRATOR => __('Unrestricted access to the whole application.'),
             self::COMMITTEE => __('Baseline back-office access: consult the club data without managing it.'),
             self::TREASURY => __('Reconcile payments, import bank statements, handle refunds.'),
@@ -142,9 +144,24 @@ enum Role: string
         return ! in_array($this, [self::ADMINISTRATOR, self::COMMITTEE], true);
     }
 
+    /**
+     * Délégations only an administrator may hand out.
+     *
+     * A holder of {@see self::ACCESS} distributes every other duty; letting them
+     * hand out that one too would let them promote themselves out of any limit
+     * placed on them, or manufacture an accomplice. The rule lives in the matrix
+     * rather than in the form, so that the single source of truth stays single —
+     * the form renders it, the policy enforces it, the seeder never sees it.
+     */
+    public function isReservedToAdministrators(): bool
+    {
+        return $this === self::ACCESS;
+    }
+
     public function label(): string
     {
         return match ($this) {
+            self::ACCESS => __('Access rights'),
             self::ADMINISTRATOR => __('Administrator'),
             self::COMMITTEE => __('Committee member'),
             self::TREASURY => __('Treasury'),
@@ -178,6 +195,16 @@ enum Role: string
             // their own account, GuardianPolicy forbids forceDelete to everyone —
             // and a blanket short-circuit would silently override them.
             self::ADMINISTRATOR => Permission::cases(),
+
+            // The rights layer of a member's file, and only it: reaching the file
+            // (UsersView) and writing what its holder may do (AccessManage).
+            // Deliberately not UsersUpdate — the separation this délégation exists
+            // for cuts both ways, so an access manager cannot edit an address or
+            // an IBAN any more than a members delegate can hand out a duty.
+            self::ACCESS => [
+                Permission::UsersView,
+                Permission::AccessManage,
+            ],
 
             self::COMMITTEE => [
                 Permission::UsersView,

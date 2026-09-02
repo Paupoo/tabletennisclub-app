@@ -175,6 +175,7 @@ class Season extends Model
             ->withTimestamps();
     }
 
+    #[\Override]
     protected static function booted(): void
     {
         static::saving(function (self $season): void {
@@ -196,6 +197,7 @@ class Season extends Model
         });
     }
 
+    #[\Override]
     protected function casts(): array
     {
         return [

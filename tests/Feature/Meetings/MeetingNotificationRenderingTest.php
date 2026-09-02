@@ -20,15 +20,17 @@ describe('Meeting mails are rendered in French', function (): void {
             ->withMeal('Pizzas', 1200)->withQuorum(8)
             ->create(['title' => 'Réunion de comité', 'created_by' => $user->id]);
 
-        $mail = (new MeetingInvitationNotification($meeting))->toMail($user);
+        $mail = new MeetingInvitationNotification($meeting)->toMail($user);
 
-        expect($mail->subject)->toContain('Invitation : Réunion de comité')
+        // French puts a non-breaking space before a colon, so these assertions
+        // carry U+00A0 rather than a plain space — see the typography pass.
+        expect($mail->subject)->toContain("Invitation\u{A0}: Réunion de comité")
             ->and($mail->greeting)->toContain('Bonjour Aurélien')
             ->and(implode(' ', $mail->introLines))
             ->toContain('Vous êtes invité à')
-            ->toContain('**Lieu :**')
-            ->toContain('**Repas :**')
-            ->toContain('**Quorum requis :**')
+            ->toContain("**Lieu\u{A0}:**")
+            ->toContain("**Repas\u{A0}:**")
+            ->toContain("**Quorum requis\u{A0}:**")
             ->and($mail->actionText)->not->toContain('Respond to the invitation');
     });
 
@@ -38,7 +40,7 @@ describe('Meeting mails are rendered in French', function (): void {
             ->create(['title' => 'AG extraordinaire', 'created_by' => $user->id]);
         $meeting->dateProposals()->create(['proposed_at' => now()->addWeek()]);
 
-        $mail = (new MeetingDatePollNotification($meeting))->toMail($user);
+        $mail = new MeetingDatePollNotification($meeting)->toMail($user);
 
         $text = $mail->subject . ' ' . $mail->greeting . ' ' . implode(' ', $mail->introLines);
         expect($text)->not->toContain('We need your availability');
@@ -49,9 +51,9 @@ describe('Meeting mails are rendered in French', function (): void {
         $meeting = Meeting::factory()->committee()->confirmed()
             ->create(['title' => 'Réunion test', 'created_by' => $user->id]);
 
-        $cancelled = (new MeetingCancelledNotification($meeting))->toMail($user);
-        $postponed = (new MeetingPostponedNotification($meeting))->toMail($user);
-        $minutes = (new MeetingMinutesNotification($meeting))->toMail($user);
+        $cancelled = new MeetingCancelledNotification($meeting)->toMail($user);
+        $postponed = new MeetingPostponedNotification($meeting)->toMail($user);
+        $minutes = new MeetingMinutesNotification($meeting)->toMail($user);
 
         foreach ([$cancelled, $postponed, $minutes] as $mail) {
             $text = $mail->subject . ' ' . implode(' ', $mail->introLines);

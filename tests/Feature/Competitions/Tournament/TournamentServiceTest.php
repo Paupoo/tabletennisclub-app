@@ -283,7 +283,7 @@ describe('cancelRegistration', function (): void {
             'status' => 'to_refund',
         ]);
 
-        $mail = (new RefundRequestedNotification($payment, $member, $tournament))->toMail($treasurer);
+        $mail = new RefundRequestedNotification($payment, $member, $tournament)->toMail($treasurer);
         $html = $mail->render()->__toString();
 
         expect($html)->toContain(route('admin.users.edit', $member->id));
@@ -439,7 +439,7 @@ describe('expirePaymentDeadlines', function (): void {
         $tournament = paymentTournament(['price' => 10]);
         $user = User::factory()->create();
 
-        $rendered = (string) (new TournamentPaymentExpiredNotification($tournament))->toMail($user)->render();
+        $rendered = (string) new TournamentPaymentExpiredNotification($tournament)->toMail($user)->render();
 
         expect($rendered)->toContain('paiement')
             ->and($rendered)->not->toContain('has been cancelled because we did not receive')

@@ -50,7 +50,7 @@ new class extends Component
     {
         Gate::authorize(Permission::SpamsManage->value);
 
-        if (empty($this->selected)) {
+        if ($this->selected === []) {
             return;
         }
 
@@ -260,7 +260,7 @@ new class extends Component
     {
         return $this->spams
             ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
+            ->map(fn (int $id): string => (string) $id)
             ->toArray();
     }
 };

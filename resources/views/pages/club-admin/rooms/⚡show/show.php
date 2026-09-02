@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
-use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Collection;
@@ -82,14 +80,11 @@ new class extends Component
         $start = now();
         $end = (clone $start)->addWeeks(2);
 
-        /** @var User $user */
-        $user = auth()->user();
-
         $this->room->load([
             'trainings' => fn ($query) => $query->with('trainer')->whereBetween('start', [$start, $end]),
             'interclubs' => fn ($query) => $query->whereBetween('start_date_time', [$start, $end]),
             'tournaments' => fn ($query) => $query
-                ->where('status', TournamentStatusEnum::PUBLISHED)
+                ->onTheCalendar()
                 ->whereBetween('start_date', [$start, $end]),
         ]);
 

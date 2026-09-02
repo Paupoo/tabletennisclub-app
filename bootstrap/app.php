@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Http\Middleware\CommitteeMemberMiddelware;
+use App\Http\Middleware\EnsureAnyPermission;
 use App\Http\Middleware\EnsureFeatureIsEnabled;
 use App\Http\Middleware\EnsureProfileIsComplete;
 use App\Http\Middleware\EnsureSetupComplete;
@@ -77,6 +78,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
+            'can.any' => EnsureAnyPermission::class,
             'committee' => CommitteeMemberMiddelware::class,
             'feature' => EnsureFeatureIsEnabled::class,
             'guest' => RedirectIfAuthenticated::class,

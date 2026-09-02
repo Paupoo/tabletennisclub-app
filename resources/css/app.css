@@ -95,7 +95,7 @@
   --color-primary: #1e40af;
   --color-primary-content: oklch(98% 0.003 247.858);
   --color-secondary: #fbbf24;
-  --color-secondary-content: oklch(98% 0.003 247.858);
+  --color-secondary-content: #1e40af; /* club blue: white on club yellow measured 1.58:1 */
   --color-accent: oklch(0% 0 0);
   --color-accent-content: oklch(100% 0 0);
   --color-neutral: oklch(43% 0 0);
@@ -110,7 +110,7 @@
   --color-error-content: oklch(39% 0.141 25.723);
   --radius-selector: 0.5rem;
   --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
+  --radius-box: 0.75rem; /* 12 px — the design system tile radius (--radius-xl) */
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
@@ -125,14 +125,14 @@
   --color-primary: #fbbf24;
   --color-primary-content: #241f31;
   --color-secondary: #fbbf24;
-  --color-secondary-content: oklch(98% 0.003 247.858);
+  --color-secondary-content: #1e40af; /* club blue: white on club yellow measured 1.58:1 */
   --color-info: #3b82f6;
   --color-info-content: oklch(28% 0.091 267.935);
   --color-base-100: oklch(25% 0 0);
   --color-base-200: oklch(20% 0 0);
   --color-base-content: oklch(95% 0 0); /* Texte clair sur fond sombre */
   --color-warning-content: oklch(82% 0.189 84.429); /* Texte lisible sur fond sombre (sinon trop proche de base-100) */
-  --radius-box: 1rem; /* On garde la même cohérence que le light */
+  --radius-box: 0.75rem; /* On garde la même cohérence que le light */
 }
 
 
@@ -275,6 +275,29 @@
   @apply bg-white rounded-lg shadow-xs border p-6;
 } */
 
+/*
+  One card, bordered, 12 px corners.
+
+  The design system defines almost every surface with a 1px grey border, but
+  daisyUI paints `.card` with no border at all: it reserves `--border` for the
+  opt-in `.card-border` class. So no theme variable can give Mary's <x-card> that
+  border, and the alternative was editing 125 call sites. The radius does come
+  from the theme (`--radius-box`, raised to 12px above); only the border lives here.
+
+  base-300 rather than base-200: base-200 is the page background itself, so a
+  base-200 border on a base-100 card is invisible on the very surface it defines.
+  base-300 is the theme's counterpart to the design system's --border-default.
+
+  It sits in the components layer on purpose — utilities still win, so a card
+  that means to opt out (`class="border-none"`) or to shout (`border-primary`)
+  keeps overriding it.
+*/
+@layer components {
+  .card {
+    border: var(--border) solid var(--color-base-300);
+  }
+}
+
 /* Smooth scroll pour les ancres */
 html {
   scroll-behavior: smooth;
@@ -286,4 +309,166 @@ textarea:focus,
 select:focus {
   outline: none;
   box-shadow: var(--shadow-focus);
+}
+/*
+  Secondary text used to be dimmed with alpha — text-base-content/40 and friends.
+  Alpha escapes any contrast budget: what reaches the eye depends on whatever the
+  text happens to sit on, and on this palette /40 composites to 2.56:1, well under
+  the 4.5:1 that WCAG 1.4.3 asks of body text.
+
+  These two steps are colours, not opacities, so they stay measurable. Use
+  .text-muted for supporting text that must be read (an e-mail, a card label) and
+  .text-subtle for text that only orients (a timestamp, a hint).
+*/
+@utility text-muted {
+  color: color-mix(in oklab, var(--color-base-content) 78%, var(--color-base-100));
+}
+
+@utility text-subtle {
+  color: color-mix(in oklab, var(--color-base-content) 64%, var(--color-base-100));
+}
+
+/*
+  daisyUI's soft badges pair a very light tint with a light foreground. At
+  badge-xs the text is 10px, where that pairing measured 1.87:1 — a status a
+  member cannot read is not a status.
+*/
+.badge-soft {
+  color: color-mix(in oklab, currentColor 100%, black 34%);
+  font-weight: 600;
+}
+
+/*
+  daisyUI's --color-error sits around 0.7 lightness, which reads well as a fill
+  but measures 2.68:1 as text on base-100 — the logout entry and every inline
+  error label failed on it. Darkening the text form keeps the semantic meaning
+  and leaves fills, borders and icons untouched.
+*/
+.text-error {
+  color: color-mix(in oklab, var(--color-error) 72%, black);
+}
+
+/*
+  WCAG 2.5.8 puts the floor for a pointer target at 24x24 CSS pixels; the Apple
+  HIG asks 44x44 for anything used one-handed. Both are about the *hit area*, not
+  the drawing, so these grow the box with padding and leave the icon alone.
+*/
+@utility tap-min {
+  min-block-size: 24px;
+  min-inline-size: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@utility tap-comfort {
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/*
+  Breadcrumb entries are 19px tall at text-sm, which puts the trail back to the
+  dashboard under the thumb floor on every screen that has one. Mary renders the
+  trail as a bare <ul class="flex items-center">, so the layout supplies the hook.
+
+  The gap belongs here too: Mary puts the entry's icon and its label side by side
+  with nothing but Blade whitespace between them, and inline-flex drops that
+  whitespace — the home icon would otherwise touch its label on every screen.
+*/
+.breadcrumb-trail a,
+.breadcrumb-trail button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-block-size: 24px;
+}
+
+/*
+  daisyUI's checkbox-sm draws a 20px box, under the 24px floor of WCAG 2.5.8.
+  Row-selection checkboxes are the densest targets in the back office and the
+  ones most often missed with a thumb, so the floor applies to all of them.
+*/
+.checkbox {
+  min-block-size: 24px;
+  min-inline-size: 24px;
+}
+
+/*
+  The palette's low alpha steps are not text colours: composited on base-100 they
+  measure 2.56:1 at /40 and 3.38:1 at /50, where WCAG 1.4.3 asks 4.5:1. There are
+  ~590 of them across 119 files, and hunting each call site would take weeks and
+  miss the next one written.
+
+  Clamping the steps themselves fixes every occurrence at once and keeps the
+  authored intent readable in the markup. Icons and borders inherit more contrast
+  than they need, which costs nothing. Use .text-muted / .text-subtle in new code.
+*/
+.text-base-content\/20,
+.text-base-content\/25,
+.text-base-content\/30,
+.text-base-content\/35,
+.text-base-content\/40,
+.text-base-content\/45,
+.text-base-content\/50,
+.text-base-content\/60 {
+  color: color-mix(in oklab, var(--color-base-content) 78%, var(--color-base-100));
+}
+
+/*
+  daisyUI dims an inactive tab with its own alpha, outside the clamp above, which
+  left tab labels at 3.38:1. Tabs are navigation: an unreadable one hides a
+  section rather than merely looking faint.
+*/
+.tabs .tab:not(.tab-active) {
+  color: color-mix(in oklab, var(--color-base-content) 78%, var(--color-base-100));
+}
+
+/*
+  The light steps of Tailwind's neutral scale are not text colours here:
+  text-gray-500 composites to 2.60:1 on base-100, against the 4.5:1 WCAG 1.4.3
+  asks of body text. They carry the table headers of the interclubs results —
+  weeks, scores, opponents — read quickly and often in a badly lit sports hall.
+
+  They are also theme-blind: a fixed grey cannot be right on both grounds. The
+  clamp routes them to the same token as .text-muted, which follows the theme.
+  The dark: variants compile to their own selectors and are untouched.
+
+  The token it lands on is computed for a light ground, so text-gray-* must not
+  be used on a dark surface: the public footer (bg-gray-900) and the sponsor
+  tiles (bg-gray-800) measured 1.7:1 and 1.4:1 that way. Those surfaces state
+  their own colour — text-white/70 — instead of borrowing from this scale.
+*/
+.text-gray-300,
+.text-gray-400,
+.text-gray-500 {
+  color: color-mix(in oklab, var(--color-base-content) 78%, var(--color-base-100));
+}
+
+/*
+  x-cloak is only an attribute: without this rule Alpine hides nothing, and every
+  element marked with it flashes on screen before Alpine boots. Seven views rely
+  on it — including a full-screen avatar cropper.
+*/
+[x-cloak] {
+  display: none !important;
+}
+
+/* =============================================================================
+   Motion — respecter le réglage système
+   Le design system prescrit des transitions de 150–300 ms, aucune boucle infinie
+   et le respect de prefers-reduced-motion. Les pastilles `animate-pulse` des
+   écrans interclubs clignotaient sans fin quel que soit le réglage de l'OS.
+   ============================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
-use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -153,8 +152,12 @@ describe('Cash register view', function (): void {
         activeMember($season, ['first_name' => 'Olga', 'last_name' => 'Activsky']);
         User::factory()->create(['first_name' => 'Igor', 'last_name' => 'Inactif']);
 
+        // La liste des porteurs vit dans la modale de création : depuis 87ddb05a
+        // le corps d'une modale fermée n'est plus rendu, il faut donc l'ouvrir —
+        // ce que fait le bouton « Créer une caisse ».
         Livewire::actingAs($admin)
             ->test('pages::club-admin.treasury.cash-register')
+            ->set('createRegisterModal', true)
             ->assertSee('Olga Activsky')
             ->assertDontSee('Igor Inactif');
     });

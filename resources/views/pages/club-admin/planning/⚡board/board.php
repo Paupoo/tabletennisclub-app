@@ -623,7 +623,7 @@ new class extends Component
             'id' => $assignment->id,
             'user_id' => $user->id,
             'name' => $user->first_name . ' ' . $user->last_name,
-            'ranking' => $user->ranking,
+            'ranking' => $user->ranking->value,
             'age_category' => $category?->value,
             'age_label' => $category?->getLabel(),
             'is_competitive' => (bool) $sub?->is_competitive,

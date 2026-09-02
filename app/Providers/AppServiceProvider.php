@@ -14,7 +14,6 @@ use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
@@ -40,8 +39,6 @@ class AppServiceProvider extends ServiceProvider
             ? Password::min(8)->letters()->numbers()->uncompromised()
             : Password::min(8)->letters()->numbers());
 
-        Paginator::defaultView('custom-paginate');
-
         /*
          * Invitations leave through Gmail, which tolerates the volume and not the
          * burst: a season's worth of members invited in one click is fifty near
@@ -51,6 +48,15 @@ class AppServiceProvider extends ServiceProvider
          * mail in the first place.
          */
         RateLimiter::for('invitations', fn (): Limit => Limit::perMinute(15));
+
+        /*
+         * Convocations get a limiter of their own, and a faster one. Same burst
+         * problem as the invitations above, but a convocation carries a date the
+         * member has to answer for: a general assembly to the whole club goes out
+         * in a couple of minutes rather than three quarters of an hour, which is
+         * still nothing like fifty messages in three seconds.
+         */
+        RateLimiter::for('convocations', fn (): Limit => Limit::perMinute(30));
 
         /*
          * Le limiteur que le groupe `api` référence par son nom (`throttle:api`).
@@ -89,32 +95,19 @@ class AppServiceProvider extends ServiceProvider
         // Several domains may be passed: the block shows as soon as one of them is
         // on. That is what keeps a grouping menu — "Events", holding meetings and
         // tournaments — from rendering as an empty shell once both are off.
-        Blade::if('feature', function (string ...$features): bool {
-            foreach ($features as $feature) {
-                if (Feature::from($feature)->enabled()) {
-                    return true;
-                }
-            }
-
-            return false;
-        });
+        Blade::if('feature', fn (string ...$features): bool => array_any($features, fn (string $feature) => Feature::from($feature)->enabled()));
     }
 
     /**
      * Register any application services.
      */
+    #[\Override]
     public function register(): void
     {
-        $this->app->singleton(TrainingDateGenerator::class, function (Application $app): TrainingDateGenerator {
-            return new TrainingDateGenerator;
-        });
+        $this->app->singleton(TrainingDateGenerator::class, fn (Application $app): TrainingDateGenerator => new TrainingDateGenerator);
 
-        $this->app->singleton(TrainingBuilder::class, function (Application $app): TrainingBuilder {
-            return new TrainingBuilder;
-        });
+        $this->app->singleton(TrainingBuilder::class, fn (Application $app): TrainingBuilder => new TrainingBuilder);
 
-        $this->app->singleton(InterclubService::class, function (Application $app): InterclubService {
-            return new InterclubService;
-        });
+        $this->app->singleton(InterclubService::class, fn (Application $app): InterclubService => new InterclubService);
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
-use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Collection;
@@ -78,7 +77,7 @@ new class extends Component
                 'trainings' => fn ($query) => $query->whereBetween('start', [$start, $end]),
                 'interclubs' => fn ($query) => $query->whereBetween('start_date_time', [$start, $end]),
                 'tournaments' => fn ($query) => $query
-                    ->where('status', TournamentStatusEnum::PUBLISHED)
+                    ->onTheCalendar()
                     ->whereBetween('start_date', [$start, $end]),
             ])
             ->orderBy('name')

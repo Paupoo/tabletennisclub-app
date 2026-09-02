@@ -26,7 +26,7 @@ use PhpOffice\PhpSpreadsheet\Writer\IWriter;
 class ExportTrainingPlanService
 {
     /** Supported export formats mapped to their PhpSpreadsheet writer type. */
-    private const WRITERS = [
+    private const array WRITERS = [
         'csv' => 'Csv',
         'ods' => 'Ods',
         'xlsx' => 'Xlsx',
@@ -199,7 +199,7 @@ class ExportTrainingPlanService
             (string) ($user->licence ?? ''),
             (string) ($user->last_name ?? ''),
             (string) ($user->first_name ?? ''),
-            (string) ($user->ranking ?? ''),
+            $user->ranking->value,
             $category?->getLabel() ?? '',
             $this->boolean($subscription?->is_competitive),
             $this->boolean($subscription?->can_drive),

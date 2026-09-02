@@ -1,8 +1,6 @@
 <?php
 
 declare(strict_types=1);
-
-use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\NewsPost;
@@ -17,7 +15,9 @@ use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Domains\Shared\States\Tournament\TournamentStateMachine;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\ReadsTournamentLiveState;
 use App\Mail\TournamentResultsMail;
 use App\Support\Breadcrumb;
 use App\Support\Markdown;
@@ -33,9 +33,15 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasBreadcrumbs, Toast, WithFileUploads;
+    use HasBreadcrumbs, ReadsTournamentLiveState, Toast, WithFileUploads;
 
-    public string $activeTab = 'pools';
+    /**
+     * L'onglet ouvert au chargement.
+     *
+     * Résolu dans mount() : le comité arrive sur la régie, qui est son écran de
+     * travail, et un joueur -- pour qui l'onglet n'existe pas -- sur les poules.
+     */
+    public string $activeTab = '';
 
     public bool $createNewsPost = false;
 
@@ -83,14 +89,6 @@ new class extends Component
     }
 
     #[Computed]
-    public function bracketExists(): bool
-    {
-        return TournamentMatch::where('tournament_id', $this->tournament->id)
-            ->whereNotNull('round')
-            ->exists();
-    }
-
-    #[Computed]
     public function bracketPhaseComplete(): bool
     {
         return TournamentMatch::where('tournament_id', $this->tournament->id)
@@ -112,7 +110,7 @@ new class extends Component
             )
             ->with(['pair1', 'pair2'])
             ->get()
-            ->flatMap(fn (TournamentMatch $m) => [
+            ->flatMap(fn (TournamentMatch $m): array => [
                 $m->player1_id,
                 $m->player2_id,
                 $m->pair1?->player1_id,
@@ -151,7 +149,7 @@ new class extends Component
             'newsPostImage' => ['nullable', 'image', 'max:4096'],
         ]);
 
-        $this->tournament->update(['status' => TournamentStatusEnum::CLOSED]);
+        new TournamentStateMachine($this->tournament)->close();
 
         if ($this->sendThankYou && $this->thankYouSubject !== '' && $this->thankYouBody !== '') {
             $rankings = $this->rankings;
@@ -206,7 +204,7 @@ new class extends Component
             return;
         }
 
-        $podiumLines = $top3->map(fn ($e) => $e['rank'] . '. ' . $e['user']->full_name . ' (' . $e['result'] . ')')->implode("\n");
+        $podiumLines = $top3->map(fn ($e): string => $e['rank'] . '. ' . $e['user']->full_name . ' (' . $e['result'] . ')')->implode("\n");
 
         $this->thankYouBody = __('Dear participants,') . "\n\n"
             . __('Thank you for joining us for :name! It was a great day of table tennis.', ['name' => $this->tournament->name]) . "\n\n"
@@ -215,7 +213,7 @@ new class extends Component
 
         $this->newsPostContent = '## ' . $this->tournament->name . "\n\n"
             . '**' . __('Podium') . " :**\n\n"
-            . $top3->map(fn ($e) => '- **' . $e['rank'] . '. ' . $e['user']->full_name . '** — ' . $e['result'])->implode("\n")
+            . $top3->map(fn ($e): string => '- **' . $e['rank'] . '. ' . $e['user']->full_name . '** — ' . $e['result'])->implode("\n")
             . "\n\n" . __('Congratulations to all participants!');
     }
 
@@ -252,15 +250,12 @@ new class extends Component
         $this->success(__('Bracket created!'));
     }
 
-    #[Computed]
-    public function knockoutMatches(): array
-    {
-        return app(TournamentFinalPhaseService::class)
-            ->getKnockoutMatches($this->tournament);
-    }
-
     public function mount(): void
     {
+        if ($this->activeTab === '') {
+            $this->activeTab = $this->canManageTournament ? 'control-room' : 'pools';
+        }
+
         $this->thankYouSubject = __('Results') . ' — ' . $this->tournament->name;
         $this->thankYouBody = __('Dear participants,') . "\n\n"
             . __('Thank you for joining us for :name! It was a great day of table tennis.', ['name' => $this->tournament->name]) . "\n\n"
@@ -323,21 +318,6 @@ new class extends Component
     // ── Computed: tab data
 
     #[Computed]
-    public function pools(): Collection
-    {
-        $matchService = app(TournamentMatchService::class);
-
-        return $this->tournament->pools->map(fn (Pool $pool) => [
-            'id' => $pool->id,
-            'name' => $pool->name,
-            'finished' => app(TournamentPoolService::class)->isPoolFinished($pool),
-            'players' => $matchService->calculatePoolStandings($pool),
-        ]);
-    }
-
-    // ── Computed: phase flags
-
-    #[Computed]
     public function poolsPhaseComplete(): bool
     {
         $poolService = app(TournamentPoolService::class);
@@ -347,76 +327,44 @@ new class extends Component
         );
     }
 
+    /**
+     * The playable queue, each match already knowing whether it is blocked.
+     *
+     * The "player already on a table" check lived twice, in Blade: once in the
+     * Upcoming tab and once in the launch drawer, with the same intersect
+     * against busyPlayerIds written out by hand. Two views of one queue, kept
+     * in step manually. They both read this now.
+     *
+     * The referee counts. busyPlayerIds has always included the referees of the
+     * matches in progress — somebody watching a table cannot play on another —
+     * but this only ever tested the two sides of the incoming match against it,
+     * so a match refereed by somebody already on a table looked perfectly
+     * playable and was recommended. Starting it then failed on
+     * TournamentMatchService::detectStartConflict(), which does count the
+     * incoming referee. The queue said go, the launch said no.
+     *
+     * @return Collection<int, array{match: TournamentMatch, ready: bool, side1Blocked: bool, side2Blocked: bool, refereeBlocked: bool, blocked: bool}>
+     */
     #[Computed]
-    public function rankings(): Collection
+    public function queue(): Collection
     {
-        /** @var array<int, array{user: mixed, rank: int, result: string}> */
-        $ranked = [];
+        $busy = $this->busyPlayerIds;
 
-        $bracketMatches = TournamentMatch::where('tournament_id', $this->tournament->id)
-            ->whereNotNull('round')
-            ->where('status', 'completed')
-            ->with(['player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2'])
-            ->get();
+        return $this->upcomingMatches->map(function (TournamentMatch $match) use ($busy): array {
+            $ready = $match->player1_id !== null && $match->player2_id !== null;
+            $side1Blocked = $ready && $match->sidePlayerIds(1)->intersect($busy)->isNotEmpty();
+            $side2Blocked = $ready && $match->sidePlayerIds(2)->intersect($busy)->isNotEmpty();
+            $refereeBlocked = $ready && $match->referee_id !== null && in_array($match->referee_id, $busy, true);
 
-        $place = function (TournamentMatch $match, int $winnerRank, int $loserRank, string $winnerLabel, string $loserLabel) use (&$ranked): void {
-            if (! $match->winner_id) {
-                return;
-            }
-            $isP1 = $match->winner_id === $match->player1_id;
-            $wid = $match->winner_id;
-            $lid = $isP1 ? $match->player2_id : $match->player1_id;
-            $wu = $isP1 ? $match->player1 : $match->player2;
-            $lu = $isP1 ? $match->player2 : $match->player1;
-            $wp = $isP1 ? $match->pair1 : $match->pair2;
-            $lp = $isP1 ? $match->pair2 : $match->pair1;
-
-            $ranked[$wid] = ['user' => $wu, 'pair' => $wp, 'rank' => $winnerRank, 'result' => $winnerLabel];
-            $ranked[$lid] = ['user' => $lu, 'pair' => $lp, 'rank' => $loserRank,  'result' => $loserLabel];
-        };
-
-        if ($final = $bracketMatches->firstWhere('round', 'final')) {
-            $place($final, 1, 2, __('Champion'), __('Runner-up'));
-        }
-
-        if ($bronze = $bracketMatches->firstWhere('round', 'bronze')) {
-            $place($bronze, 3, 4, __('3rd place'), __('4th place'));
-        }
-
-        foreach (['quarterfinal' => [5, 'Quarterfinalist'], 'round_16' => [9, 'Round of 16']] as $round => [$startRank, $label]) {
-            $pos = $startRank;
-            foreach ($bracketMatches->where('round', $round) as $match) {
-                if (! $match->winner_id) {
-                    continue;
-                }
-                $isP1 = $match->winner_id === $match->player1_id;
-                $lid = $isP1 ? $match->player2_id : $match->player1_id;
-                $lu = $isP1 ? $match->player2 : $match->player1;
-                $lp = $isP1 ? $match->pair2 : $match->pair1;
-                if (! isset($ranked[$lid])) {
-                    $ranked[$lid] = ['user' => $lu, 'pair' => $lp, 'rank' => $pos++, 'result' => __($label)];
-                }
-            }
-        }
-
-        $matchService = app(TournamentMatchService::class);
-        $nextRank = empty($ranked) ? 1 : collect($ranked)->max('rank') + 1;
-
-        foreach ($this->tournament->pools as $pool) {
-            foreach ($matchService->calculatePoolStandings($pool) as $standing) {
-                $pid = $standing['player']->id;
-                if (! isset($ranked[$pid])) {
-                    $ranked[$pid] = [
-                        'user' => $standing['player'],
-                        'pair' => $standing['pair'] ?? null,
-                        'rank' => $nextRank++,
-                        'result' => $pool->name,
-                    ];
-                }
-            }
-        }
-
-        return collect($ranked)->sortBy('rank')->values();
+            return [
+                'match' => $match,
+                'ready' => $ready,
+                'side1Blocked' => $side1Blocked,
+                'side2Blocked' => $side2Blocked,
+                'refereeBlocked' => $refereeBlocked,
+                'blocked' => $side1Blocked || $side2Blocked || $refereeBlocked,
+            ];
+        });
     }
 
     // ── Actions: closure
@@ -450,7 +398,7 @@ new class extends Component
 
         ['results' => $setResults] = $this->parseSetResults();
 
-        if (empty($setResults)) {
+        if ($setResults === []) {
             $this->error(__('No set scores to save.'));
 
             return;
@@ -531,7 +479,7 @@ new class extends Component
 
         ['results' => $setResults, 'p1Sets' => $p1Sets, 'p2Sets' => $p2Sets] = $this->parseSetResults();
 
-        if (empty($setResults)) {
+        if ($setResults === []) {
             $this->error(__('Please enter at least one set score.'));
 
             return;
@@ -573,33 +521,6 @@ new class extends Component
     }
 
     #[Computed]
-    public function tables(): Collection
-    {
-        return $this->tournament->tables()
-            ->with('room')
-            ->get()
-            ->map(function (Table $table) {
-                $pivot = $table->pivot;
-                $match = null;
-
-                if ($pivot->tournament_match_id) {
-                    $match = TournamentMatch::with(['player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2', 'sets', 'referee'])
-                        ->find($pivot->tournament_match_id);
-                }
-
-                return [
-                    'id' => $table->id,
-                    'name' => $table->name,
-                    'room_name' => $table->room?->name ?? '—',
-                    'is_free' => (bool) $pivot->is_table_free,
-                    'match' => $match,
-                    'match_started_at' => $pivot->match_started_at,
-                ];
-            })
-            ->groupBy('room_name');
-    }
-
-    #[Computed]
     public function tournamentClosed(): bool
     {
         return $this->tournament->status === TournamentStatusEnum::CLOSED;
@@ -621,8 +542,8 @@ new class extends Component
         $paidIds = Payment::whereIn('id', $paymentIds)->where('status', 'paid')->pluck('id')->flip();
 
         return $users
-            ->filter(fn ($u) => ! isset($paidIds[$u->pivot->payment_id]))
-            ->map(fn ($u) => [
+            ->filter(fn ($u): bool => ! isset($paidIds[$u->pivot->payment_id]))
+            ->map(fn ($u): array => [
                 'user' => $u,
                 'qr_confirmed' => (bool) $u->pivot->qr_confirmed,
             ])

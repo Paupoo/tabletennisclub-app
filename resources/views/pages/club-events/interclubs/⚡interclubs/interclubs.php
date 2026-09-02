@@ -48,9 +48,12 @@ new class extends Component
 
     public ?int $selectedTeamId = null;
 
+    /**
+     * The season is navigation, not a filter (DS-A): clearing the filters must
+     * not send the reader back to another season than the one they are looking at.
+     */
     public function clearFilters(): void
     {
-        $this->seasonId = Season::current()?->id;
         $this->selectedTeamId = null;
     }
 
@@ -82,11 +85,6 @@ new class extends Component
     public function getFilterChips(): array
     {
         $chips = [];
-
-        if ($this->seasonId !== Season::current()?->id) {
-            $seasonName = Season::find($this->seasonId)?->name ?? __('All seasons');
-            $chips[] = ['key' => 'seasonId', 'label' => __('Season') . ': ' . $seasonName];
-        }
 
         if ($this->selectedTeamId) {
             $teamName = Team::find($this->selectedTeamId)?->name ?? '';
@@ -135,12 +133,6 @@ new class extends Component
 
     public function removeFilter(string $key): void
     {
-        if ($key === 'seasonId') {
-            $this->seasonId = Season::current()?->id;
-
-            return;
-        }
-
         $this->reset([$key]);
     }
 
@@ -220,7 +212,7 @@ new class extends Component
             $query->where(fn ($q) => $q->where('visited_team_id', $this->selectedTeamId)->orWhere('visiting_team_id', $this->selectedTeamId));
         }
 
-        $interclubs = $query->get()->map(fn (Interclub $ic) => $this->formatInterclub($ic, $ourTeamIds));
+        $interclubs = $query->get()->map(fn (Interclub $ic): array => $this->formatInterclub($ic, $ourTeamIds));
 
         $grouped = $interclubs
             ->sortBy([['category_sort', 'asc'], ['our_team_name', 'asc'], ['date_sort', 'asc']])
@@ -237,7 +229,7 @@ new class extends Component
             ->when($selectedLeagueId, fn ($q) => $q->where('league_id', $selectedLeagueId))
             ->orderBy('name')
             ->get()
-            ->map(fn (Team $t) => [
+            ->map(fn (Team $t): array => [
                 'id' => $t->id,
                 'name' => trim(($t->club?->name ?? '') . ' ' . $t->name),
             ]);
@@ -249,7 +241,7 @@ new class extends Component
             'filterChips' => $this->filterChips,
             'seasons' => Season::orderBy('start_at')->get(),
             'ourTeams' => $ourTeams,
-            'ourTeamOptions' => $ourTeams->map(fn (Team $t) => [
+            'ourTeamOptions' => $ourTeams->map(fn (Team $t): array => [
                 'id' => $t->id,
                 'name' => trim(($t->club?->name ?? '') . ' ' . $t->name),
             ])->values()->toArray(),
@@ -273,7 +265,7 @@ new class extends Component
             $this->formAddress = $this->ourClubAddress();
         } elseif ($this->formOpponentTeamId) {
             $team = Team::with('club')->find($this->formOpponentTeamId);
-            $this->formAddress = $team?->club?->street ?? $this->formAddress;
+            $this->formAddress = $team?->club?->address ?? $this->formAddress;
         }
     }
 
@@ -312,7 +304,7 @@ new class extends Component
 
     private function ourClubAddress(): ?string
     {
-        return Club::own()?->street;
+        return Club::own()?->address;
     }
 
     private function totalPlayersByCategory(?string $category): int

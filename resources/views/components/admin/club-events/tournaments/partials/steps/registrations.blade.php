@@ -26,7 +26,7 @@
                             :disabled="!$tournamentId" />
                     @endif
                     <x-button
-                        label="Bulk actions"
+                        :label="__('Bulk actions')"
                         icon="o-funnel"
                         class="btn-ghost btn-sm"
                         @click="$wire.bulkDrawer = true"
@@ -47,86 +47,155 @@
             $headers[] = ['key' => 'has_paid', 'label' => __('Payment'), 'sortable' => false];
         }
     @endphp
-    <x-table wire:model.live="selectedPeople" :headers="$headers" :rows="$this->registrations"
-        :sort-by="$sortBy" selectable>
-            @scope('cell_status', $row)
-                @if (! $this->isLaunched && in_array($row['status'], ['registered', 'spot_offered']))
-                    <div class="flex items-center gap-1">
-                        <x-button
-                            icon="o-check"
-                            class="btn-ghost btn-xs text-success"
-                            :tooltip="__('Confirm')"
-                            wire:click="confirmPresence({{ $row['id'] }})"
-                            wire:loading.attr="disabled" />
-                        <x-button
-                            icon="o-no-symbol"
-                            class="btn-ghost btn-xs text-warning-content"
-                            :tooltip="__('No show')"
-                            wire:click="markNoShow({{ $row['id'] }})" />
+    {{--
+        Vue mobile : le tableau partait en défilement latéral -- le overflow-x-auto
+        de Mary prenait le relais et emportait les entêtes avec lui. C'est
+        exactement ce que la liste des tournois avait pris la peine d'éviter. Ici
+        aussi, le nom prend la largeur et les métadonnées passent dessous.
+    --}}
+    <div class="flex flex-col gap-2 lg:hidden">
+        @forelse ($this->registrations as $row)
+            <div wire:key="registration-card-{{ $row['id'] }}"
+                class="rounded-xl border border-base-300 bg-base-100 p-3">
+                <div class="flex items-start gap-3">
+                    <input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5 shrink-0"
+                        value="{{ $row['id'] }}" wire:model.live="selectedPeople"
+                        aria-label="{{ __('Select :player', ['player' => $row['name']]) }}" />
+
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-semibold">{{ $row['name'] }}</p>
+
+                        <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-content/55">
+                            <x-badge :value="$row['status']"
+                                :class="match ($row['status']) {
+                                    'confirmed' => 'badge-success',
+                                    'no_show' => 'badge-warning',
+                                    'cancelled' => 'badge-error',
+                                    default => 'badge-ghost',
+                                }" class="badge-xs" />
+                            <span class="tabular-nums">{{ $row['ranking'] }}</span>
+                            @if ($row['registered_at'])
+                                <span>{{ \Carbon\Carbon::parse($row['registered_at'])->format('d/m H:i') }}</span>
+                            @endif
+                            @if ($isPaidTournament)
+                                @if ($row['has_paid'])
+                                    <x-badge :value="__('Paid')" class="badge-success badge-xs" />
+                                @elseif ($row['qr_confirmed'])
+                                    <x-badge :value="__('QR seen')" class="badge-info badge-xs" />
+                                @else
+                                    <x-badge :value="__('Pending')" class="badge-warning badge-xs" />
+                                @endif
+                            @endif
+                        </div>
                     </div>
-                @else
-                    <x-badge :value="$row['status']"
-                        :class="match($row['status']) {
-                            'confirmed' => 'badge-success',
-                            'no_show'   => 'badge-warning',
-                            'cancelled' => 'badge-error',
-                            default     => 'badge-ghost',
-                        }" class="badge-sm" />
+                </div>
+
+                @if (! $this->isLaunched)
+                    <div class="mt-2.5 flex flex-wrap gap-1.5">
+                        @if (in_array($row['status'], ['registered', 'spot_offered'], true))
+                            <x-button :label="__('Confirm')" icon="o-check" class="btn-outline btn-xs text-success"
+                                wire:click="confirmPresence({{ $row['id'] }})" />
+                            <x-button :label="__('No show')" icon="o-no-symbol" class="btn-outline btn-xs"
+                                wire:click="markNoShow({{ $row['id'] }})" />
+                        @endif
+                        @if ($isPaidTournament && ! $row['has_paid'])
+                            <x-button :label="__('Cash')" icon="o-currency-euro" class="btn-outline btn-xs text-success"
+                                wire:click="openCashConfirmModal({{ $row['id'] }})" />
+                            <x-button icon="o-qr-code" class="btn-outline btn-xs" :aria-label="__('QR / bank transfer')"
+                                wire:click="openQrModal({{ $row['id'] }})" />
+                        @endif
+                        <x-button icon="o-trash" class="btn-ghost btn-xs ml-auto text-error"
+                            :aria-label="__('Cancel registration')"
+                            wire:click="cancelUserRegistration({{ $row['id'] }})" />
+                    </div>
                 @endif
-            @endscope
+            </div>
+        @empty
+            <p class="py-8 text-center text-sm text-muted">{{ __('No registered players yet.') }}</p>
+        @endforelse
+    </div>
 
-            @scope('cell_registered_at', $row)
-                <span class="text-xs text-base-content/60">
-                    {{ $row['registered_at'] ? \Carbon\Carbon::parse($row['registered_at'])->format('d/m/Y H:i') : '—' }}
-                </span>
-            @endscope
-
-            @scope('cell_has_paid', $row)
-                @if($row['has_paid'])
-                    <x-badge value="{{ __('Paid') }}" class="badge-success badge-sm" icon="o-check-circle" />
-                @elseif($row['qr_confirmed'])
-                    <x-badge value="{{ __('QR seen') }}" class="badge-info badge-sm" icon="o-eye" />
-                @elseif(! $row['payment_id'] && ! ($this->currentTournament?->isPaid() ?? false))
-                    <x-badge value="{{ __('Free') }}" class="badge-ghost badge-sm" />
-                @else
-                    @if (! $this->isLaunched)
+    <div class="hidden lg:block">
+        <x-table wire:model.live="selectedPeople" :headers="$headers" :rows="$this->registrations"
+            :sort-by="$sortBy" selectable>
+                @scope('cell_status', $row)
+                    @if (! $this->isLaunched && in_array($row['status'], ['registered', 'spot_offered']))
                         <div class="flex items-center gap-1">
                             <x-button
-                                icon="o-qr-code"
-                                class="btn-ghost btn-xs"
-                                :tooltip="__('QR / bank transfer')"
-                                wire:click="openQrModal({{ $row['id'] }})" />
-                            <x-button
-                                icon="o-currency-euro"
+                                icon="o-check"
                                 class="btn-ghost btn-xs text-success"
-                                :tooltip="__('Cash')"
-                                wire:click="openCashConfirmModal({{ $row['id'] }})" />
+                                :tooltip="__('Confirm')"
+                                wire:click="confirmPresence({{ $row['id'] }})"
+                                wire:loading.attr="disabled" :aria-label="__('Confirm')" />
+                            <x-button
+                                icon="o-no-symbol"
+                                class="btn-ghost btn-xs text-warning-content"
+                                :tooltip="__('No show')"
+                                wire:click="markNoShow({{ $row['id'] }})" :aria-label="__('No show')" />
                         </div>
                     @else
-                        <x-badge value="{{ __('Pending') }}" class="badge-warning badge-sm" icon="o-clock" />
+                        <x-badge :value="$row['status']"
+                            :class="match($row['status']) {
+                                'confirmed' => 'badge-success',
+                                'no_show'   => 'badge-warning',
+                                'cancelled' => 'badge-error',
+                                default     => 'badge-ghost',
+                            }" class="badge-sm" />
                     @endif
-                @endif
-            @endscope
+                @endscope
 
-            @scope('actions', $row)
-                @if (! $this->isLaunched)
-                    <x-button icon="o-trash" class="btn-ghost btn-sm text-error"
-                        tooltip-left="{{ __('Cancel registration') }}"
-                        wire:click="cancelUserRegistration({{ $row['id'] }})" />
-                @endif
-            @endscope
-        </x-table>
+                @scope('cell_registered_at', $row)
+                    <span class="text-xs text-base-content/60">
+                        {{ $row['registered_at'] ? \Carbon\Carbon::parse($row['registered_at'])->format('d/m/Y H:i') : '—' }}
+                    </span>
+                @endscope
+
+                @scope('cell_has_paid', $row)
+                    @if($row['has_paid'])
+                        <x-badge value="{{ __('Paid') }}" class="badge-success badge-sm" icon="o-check-circle" />
+                    @elseif($row['qr_confirmed'])
+                        <x-badge value="{{ __('QR seen') }}" class="badge-info badge-sm" icon="o-eye" />
+                    @elseif(! $row['payment_id'] && ! ($this->currentTournament?->isPaid() ?? false))
+                        <x-badge value="{{ __('Free') }}" class="badge-ghost badge-sm" />
+                    @else
+                        @if (! $this->isLaunched)
+                            <div class="flex items-center gap-1">
+                                <x-button
+                                    icon="o-qr-code"
+                                    class="btn-ghost btn-xs"
+                                    :tooltip="__('QR / bank transfer')"
+                                    wire:click="openQrModal({{ $row['id'] }})" :aria-label="__('QR / bank transfer')" />
+                                <x-button
+                                    icon="o-currency-euro"
+                                    class="btn-ghost btn-xs text-success"
+                                    :tooltip="__('Cash')"
+                                    wire:click="openCashConfirmModal({{ $row['id'] }})" :aria-label="__('Cash')" />
+                            </div>
+                        @else
+                            <x-badge value="{{ __('Pending') }}" class="badge-warning badge-sm" icon="o-clock" />
+                        @endif
+                    @endif
+                @endscope
+
+                @scope('actions', $row)
+                    @if (! $this->isLaunched)
+                        <x-button icon="o-trash" class="btn-ghost btn-sm text-error"
+                            tooltip-left="{{ __('Cancel registration') }}"
+                            wire:click="cancelUserRegistration({{ $row['id'] }})" aria-label="{{ __('Cancel registration') }}" />
+                    @endif
+                @endscope
+            </x-table>
+    </div>
     </x-card>
 
     @php
         $registrationCount = $this->registrations->count();
-        $capacity = $maxUsers > 0 ? $maxUsers : $this->simulation->totalPlayers;
         $waitlistCount = $this->waitlist->count();
     @endphp
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <x-stat title="Inscrits" :value="$registrationCount . ($maxUsers > 0 ? ' / ' . $maxUsers : '')" icon="o-user-group" />
-        <x-stat title="Places restantes" :value="$maxUsers > 0 ? max(0, $maxUsers - $registrationCount) : '∞'" icon="o-receipt-percent" />
+        <x-stat :title="__('Registered players')" :value="$registrationCount . ($maxUsers > 0 ? ' / ' . $maxUsers : '')" icon="o-user-group" />
+        <x-stat :title="__('Spots left')" :value="$maxUsers > 0 ? max(0, $maxUsers - $registrationCount) : '∞'" icon="o-receipt-percent" />
         <x-stat :title="__('Confirmed')"
             :value="$this->registrations->filter(fn ($r) => $r['status'] === 'confirmed')->count()"
             icon="o-check-badge" />
@@ -147,32 +216,45 @@
                 </div>
             </x-slot:menu>
 
+            {{--
+                Les colonnes fixes (w-6 + w-16 + w-28 + w-20, plus les gouttières) exigeaient
+                328 px quand un téléphone de 375 en laisse 295 : le nom était comprimé à zéro
+                et la ligne débordait. Sous `sm`, le nom prend toute la largeur et le
+                classement, l'horodatage et les actions passent en dessous.
+            --}}
             <div class="space-y-0">
-                <div class="flex justify-between font-bold border-b border-base-300 pb-1 mb-1 opacity-50 text-xs px-2">
+                <div class="hidden border-b border-base-300 px-2 pb-1 mb-1 text-xs font-bold text-muted sm:flex sm:justify-between">
                     <span class="w-6 text-center">#</span>
-                    <span class="flex-1 ml-2">{{ __('Player') }}</span>
+                    <span class="ml-2 flex-1">{{ __('Player') }}</span>
                     <span class="w-16 text-right">{{ __('Rank') }}</span>
                     <span class="w-28 text-right">{{ __('Registered at') }}</span>
                     <span class="w-20"></span>
                 </div>
                 @foreach ($this->waitlist as $entry)
+                    @php
+                        $registeredAt = \Carbon\Carbon::parse($entry['registered_at'])->format('d/m H:i');
+                    @endphp
                     <div wire:key="waitlist-{{ $entry['id'] }}"
-                        class="flex items-center gap-2 border-b border-base-300/30 py-2 px-2 hover:bg-base-200/40 text-sm">
-                        <span class="w-6 text-center font-mono font-bold text-warning-content">{{ $entry['position'] }}</span>
-                        <span class="flex-1 font-medium truncate">{{ $entry['name'] }}</span>
-                        <span class="w-16 text-right font-mono text-xs opacity-60">{{ $entry['ranking'] }}</span>
-                        <span class="w-28 text-right text-xs opacity-50">
-                            {{ \Carbon\Carbon::parse($entry['registered_at'])->format('d/m H:i') }}
+                        class="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-base-300/30 px-2 py-2 text-sm hover:bg-base-200/40 sm:flex-nowrap">
+                        <span class="w-6 shrink-0 text-center font-mono font-bold text-warning-content">{{ $entry['position'] }}</span>
+
+                        <span class="min-w-0 flex-1 truncate font-medium">{{ $entry['name'] }}</span>
+
+                        {{-- Métadonnées : en colonnes dès sm, sur une ligne dessous en deçà. --}}
+                        <span class="order-last ml-8 flex items-center gap-3 text-xs text-muted sm:order-none sm:ml-0 sm:contents">
+                            <span class="font-mono opacity-60 sm:w-16 sm:text-right">{{ $entry['ranking'] }}</span>
+                            <span class="sm:w-28 sm:text-right">{{ $registeredAt }}</span>
                         </span>
+
                         @if (! $this->isLaunched)
-                            <div class="w-20 flex justify-end gap-1">
+                            <div class="flex shrink-0 justify-end gap-1 sm:w-20">
                                 <x-button icon="o-arrow-up-circle" class="btn-ghost btn-xs text-success"
                                     :tooltip="__('Promote to registered')"
                                     wire:click="promoteFromWaitlist({{ $entry['id'] }})"
-                                    :disabled="$maxUsers > 0 && $this->registrations->count() >= $maxUsers" />
+                                    :disabled="$maxUsers > 0 && $this->registrations->count() >= $maxUsers" :aria-label="__('Promote to registered')" />
                                 <x-button icon="o-x-mark" class="btn-ghost btn-xs text-error"
                                     :tooltip="__('Remove from waitlist')"
-                                    wire:click="removeFromWaitlist({{ $entry['id'] }})" />
+                                    wire:click="removeFromWaitlist({{ $entry['id'] }})" :aria-label="__('Remove from waitlist')" />
                             </div>
                         @endif
                     </div>
@@ -206,7 +288,7 @@
                         @if (! $this->isLaunched)
                             <x-button icon="o-x-mark" class="btn-ghost btn-xs text-error"
                                 :tooltip="__('Delete pair')"
-                                wire:click="deletePair({{ $pair['id'] }})" />
+                                wire:click="deletePair({{ $pair['id'] }})" :aria-label="__('Delete pair')" />
                         @endif
                     </div>
                 @endforeach
@@ -235,7 +317,7 @@
 @endif
 
 {{-- Manual register modal --}}
-<x-modal wire:model="showRegisterModal" :title="__('Register a member')" class="backdrop-blur">
+<x-app-modal wire:model="showRegisterModal" :title="__('Register a member')" class="backdrop-blur" :open="$showRegisterModal">
     <div class="space-y-4">
         <x-select
             :label="__('Select member')"
@@ -258,10 +340,10 @@
             wire:click="registerMember" spinner="registerMember"
             :disabled="!$memberToRegister" />
     </x-slot:actions>
-</x-modal>
+</x-app-modal>
 
 {{-- ── Close registrations modal ─────────────────────────────── --}}
-<x-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur">
+<x-app-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur" :open="$showCloseRegistrationsModal">
     <div class="space-y-4">
         <div class="flex items-start gap-3 p-4 bg-error/10 border border-error/20 rounded-xl text-sm text-error">
             <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5" />
@@ -286,41 +368,27 @@
         <x-button :label="__('Close registrations')" icon="o-lock-closed" class="btn-error"
             wire:click="confirmCloseRegistrations" />
     </x-slot:actions>
-</x-modal>
-
-{{-- ── Open registrations modal ──────────────────────────────── --}}
-<x-modal wire:model="showOpenRegistrationsModal" :title="__('Reopen registrations?')" class="backdrop-blur">
-    <div class="p-4 bg-warning/10 border border-warning/20 rounded-xl flex items-start gap-3 text-sm">
-        <x-icon name="o-information-circle" class="w-5 h-5 shrink-0 mt-0.5 text-warning-content" />
-        <p>{{ __('Reopening registrations will set the tournament back to "published" status. The tournament cannot be started until registrations are closed again.') }}</p>
-    </div>
-
-    <x-slot:actions>
-        <x-button :label="__('Cancel')" wire:click="$set('showOpenRegistrationsModal', false)" />
-        <x-button :label="__('Reopen registrations')" icon="o-lock-open" class="btn-warning"
-            wire:click="confirmOpenRegistrations" />
-    </x-slot:actions>
-</x-modal>
+</x-app-modal>
 
 {{-- ── QR / bank transfer modal ──────────────────────────── --}}
-<x-modal wire:model="showQrModal" :title="__('Payment by QR / Bank Transfer')" separator box-class="max-w-lg">
+<x-app-modal wire:model="showQrModal" :title="__('Payment by QR / Bank Transfer')" separator box-class="max-w-lg" :open="$showQrModal">
     @if($qrCodeData)
     <div class="flex flex-col items-center gap-4">
-        <img src="{{ $qrCodeData }}" alt="SEPA QR" class="w-48 h-48 rounded-xl border border-base-200" />
+        <img src="{{ $qrCodeData }}" alt="SEPA QR" class="w-48 h-48 rounded-xl border border-base-300" />
         <div class="w-full space-y-2 text-sm">
-            <div class="flex justify-between py-1 border-b border-base-200">
+            <div class="flex justify-between py-1 border-b border-base-300">
                 <span class="opacity-60">{{ __('Beneficiary') }}</span>
                 <span class="font-semibold">{{ $qrPaymentDetails['beneficiary'] ?? '' }}</span>
             </div>
-            <div class="flex justify-between py-1 border-b border-base-200">
+            <div class="flex justify-between py-1 border-b border-base-300">
                 <span class="opacity-60">{{ __('IBAN') }}</span>
                 <span class="font-mono">{{ $qrPaymentDetails['iban'] ?? '' }}</span>
             </div>
-            <div class="flex justify-between py-1 border-b border-base-200">
+            <div class="flex justify-between py-1 border-b border-base-300">
                 <span class="opacity-60">{{ __('BIC') }}</span>
                 <span class="font-mono">{{ $qrPaymentDetails['bic'] ?? '' }}</span>
             </div>
-            <div class="flex justify-between py-1 border-b border-base-200">
+            <div class="flex justify-between py-1 border-b border-base-300">
                 <span class="opacity-60">{{ __('Reference') }}</span>
                 <span class="font-mono text-primary font-bold">{{ $qrPaymentDetails['reference'] ?? '' }}</span>
             </div>
@@ -329,7 +397,7 @@
                 <span class="font-black text-lg">{{ number_format($qrPaymentDetails['amount_due'] ?? 0, 2, ',', ' ') }} €</span>
             </div>
         </div>
-        <p class="text-xs text-center opacity-50">{{ __('Scan the QR code with your banking app or use the details above.') }}</p>
+        <p class="text-xs text-center text-muted">{{ __('Scan the QR code with your banking app or use the details above.') }}</p>
     </div>
     @endif
     <x-slot:actions>
@@ -344,10 +412,10 @@
                 spinner="markQrConfirmed" />
         @endif
     </x-slot:actions>
-</x-modal>
+</x-app-modal>
 
 {{-- ── Cash payment confirm modal ────────────────────────── --}}
-<x-modal wire:model="showCashConfirmModal" :title="__('Confirm cash payment')" separator>
+<x-app-modal wire:model="showCashConfirmModal" :title="__('Confirm cash payment')" separator :open="$showCashConfirmModal">
     <div class="flex items-start gap-3 p-4 bg-success/10 border border-success/20 rounded-xl text-sm">
         <x-icon name="o-currency-euro" class="w-5 h-5 shrink-0 mt-0.5 text-success" />
         <div>
@@ -360,5 +428,5 @@
         <x-button :label="__('Confirm cash payment')" icon="o-currency-euro" class="btn-success"
             wire:click="confirmCashPayment" spinner />
     </x-slot:actions>
-</x-modal>
+</x-app-modal>
 

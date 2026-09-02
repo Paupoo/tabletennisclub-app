@@ -34,7 +34,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="lg:hidden border-b border-base-200" x-show="mobileSearchOpen"
+    <div class="lg:hidden border-b border-base-300" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -46,7 +46,8 @@
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
                     placeholder="{{ __('Search a member...') }}" />
             </div>
-            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+            <button type="button" @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm"
+                aria-label="{{ __('Close the search') }}">
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
@@ -98,7 +99,7 @@
                         <div class="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
                             <div class="min-w-0 flex-1">
                                 <div class="text-sm font-semibold">{{ $sub->user->first_name }} {{ $sub->user->last_name }}</div>
-                                <div class="mt-0.5 text-xs opacity-50">{{ __('New affiliation request') }}</div>
+                                <div class="mt-0.5 text-xs text-muted">{{ __('New affiliation request') }}</div>
                             </div>
                             <x-button :label="__('Review')" icon="o-check-circle"
                                 class="btn-sm btn-warning"
@@ -160,7 +161,7 @@
                                 <x-button icon="o-x-circle"
                                     :tooltip="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
                                     class="btn-xs btn-ghost text-error"
-                                    wire:click.stop="openCancelModal({{ $req->id }})" spinner />
+                                    wire:click.stop="openCancelModal({{ $req->id }})" spinner :aria-label="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')" />
                             @endcan
                         @endif
                         <x-button :label="__('Details')" wire:click.stop="review({{ $req->id }})"
@@ -169,27 +170,33 @@
                 </x-slot:actions>
             </x-list-item>
         @empty
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-users"
-                :heading="__('No affiliations found')"
-                :message="__('Try adjusting your search or filters.')" />
+                :heading="__('No affiliations yet')"
+                :filtered="count($filterChips) > 0 || filled($search)" />
         @endforelse
+
+        @if ($registrations->hasPages())
+            <div class="mt-2">
+                {{ $registrations->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop (table) ────────────────────────────────────────── --}}
     <div class="hidden lg:block">
         <x-card class="mb-8 shadow-sm">
             @if ($registrations->isEmpty())
-                <x-empty-state
+                <x-admin.shared.list-empty-state
                     icon="o-users"
-                    :heading="__('No affiliations found')"
-                    :message="__('Try adjusting your search or filters.')" />
+                    :heading="__('No affiliations yet')"
+                    :filtered="count($filterChips) > 0 || filled($search)" />
             @else
                 <x-table :headers="$headers" :rows="$registrations" hover>
                     @scope('cell_name', $req)
                         <div>
                             <span class="font-bold text-base-content">{{ $req->name }}</span>
-                            <div class="hidden text-xs opacity-50 md:block">{{ $req->type }}</div>
+                            <div class="hidden text-xs text-muted md:block">{{ $req->type }}</div>
                         </div>
                     @endscope
 
@@ -241,7 +248,7 @@
                                     <x-button icon="o-x-circle"
                                         :tooltip="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
                                         class="btn-xs btn-ghost text-error"
-                                        wire:click="openCancelModal({{ $req->id }})" spinner />
+                                        wire:click="openCancelModal({{ $req->id }})" spinner :aria-label="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')" />
                                 @endcan
                             @endif
                             <x-button :label="__('Details')" wire:click="review({{ $req->id }})"
@@ -249,6 +256,10 @@
                         </div>
                     @endscope
                 </x-table>
+
+                <div class="mt-4">
+                    {{ $registrations->links() }}
+                </div>
             @endif
         </x-card>
     </div>
@@ -256,14 +267,18 @@
     {{-- ── Modales et drawers (inchangés) ─────────────────────────────── --}}
 
     {{-- ── Modal de review (tous statuts) ─────────────────────────────── --}}
-    <x-modal wire:model="reviewModal" title="{{ $currentRequest?->name ?? '' }}" separator class="backdrop-blur-sm">
+    {{-- The member's name is the useful heading, but it is only known once a request
+    is picked. Falling back to an empty string left the dialog nameless on first
+    render, which is what a screen reader announces. --}}
+    <x-app-modal wire:model="reviewModal" :title="$currentRequest?->name ?? __('Affiliation request')" separator
+        class="backdrop-blur-sm" :open="$reviewModal">
 
         {{-- Vue lecture seule pour confirmed/paid/cancelled --}}
         @if ($currentRequest && $currentRequest->status !== 'pending' && ! $paymentGenerated)
             <div class="space-y-6">
 
                 <div>
-                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Affiliation') }}</h3>
+                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Affiliation') }}</h3>
                     <div class="flex items-center gap-3 rounded-xl border border-base-300 bg-base-200/60 p-3 text-sm">
                         <x-icon name="{{ $currentRequest->type === __('Competition') ? 'o-trophy' : 'o-heart' }}" class="h-4 w-4 shrink-0 opacity-50" />
                         <span class="flex-1">{{ $currentRequest->type }}</span>
@@ -284,13 +299,13 @@
                         $packLines = $this->reviewPackLines;
                     @endphp
                     <div>
-                        <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Training Packs') }}</h3>
+                        <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Training Packs') }}</h3>
                         <div class="space-y-2">
                             @foreach ($currentRequest->enrolled_packs as $pack)
                                 @php
                                     $line = $packLines[$pack->id] ?? null;
                                 @endphp
-                                <div class="flex items-center gap-3 rounded-lg border border-base-200 p-2.5 text-sm">
+                                <div class="flex items-center gap-3 rounded-lg border border-base-300 p-2.5 text-sm">
                                     <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 text-primary opacity-60" />
                                     <span class="flex-1">
                                         {{ $pack->name }}
@@ -301,17 +316,17 @@
                                         @endif
                                     </span>
                                     <x-badge value="{{ __('Enrolled') }}" class="badge-primary badge-xs" />
-                                    <span class="text-xs font-semibold opacity-50">{{ number_format($line['amount'] ?? (float) $pack->price, 2) }} €</span>
+                                    <span class="text-xs font-semibold text-muted">{{ number_format($line['amount'] ?? (float) $pack->price, 2) }} €</span>
                                     @if (in_array($currentRequest->status, ['confirmed', 'paid']))
                                         @can('subscriptions.manage')
                                             <x-button icon="o-adjustments-horizontal" :tooltip="__('Adjust period or amount')"
                                                 class="btn-ghost btn-xs"
                                                 wire:click="openReconcileModal({{ $currentRequest->id }}, {{ $pack->id }})"
-                                                spinner />
+                                                spinner :aria-label="__('Adjust period or amount')" />
                                             <x-button icon="o-arrow-uturn-left" :tooltip="__('Remove & refund')"
                                                 class="btn-ghost btn-xs text-error"
                                                 wire:click="openRefundModal({{ $currentRequest->id }}, {{ $pack->id }})"
-                                                spinner />
+                                                spinner :aria-label="__('Remove & refund')" />
                                         @endcan
                                     @endif
                                 </div>
@@ -320,23 +335,23 @@
                                 @php
                                     $line = $packLines[$pack->id] ?? null;
                                 @endphp
-                                <div class="flex items-center gap-3 rounded-lg border border-base-200 bg-base-200/40 p-2.5 text-sm">
+                                <div class="flex items-center gap-3 rounded-lg border border-base-300 bg-base-200/40 p-2.5 text-sm">
                                     <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 opacity-40" />
                                     <span class="flex-1">
                                         {{ $pack->name }}
                                         @if ($pack->pivot->ends_on)
-                                            <span class="text-xs opacity-50">
+                                            <span class="text-xs text-muted">
                                                 — {{ __('until :date', ['date' => \Illuminate\Support\Carbon::parse($pack->pivot->ends_on)->format('d/m/Y')]) }}
                                             </span>
                                         @endif
                                     </span>
                                     <x-badge value="{{ __('Left') }}" class="badge-ghost badge-xs" />
-                                    <span class="text-xs font-semibold opacity-50">{{ number_format($line['amount'] ?? 0.0, 2) }} €</span>
+                                    <span class="text-xs font-semibold text-muted">{{ number_format($line['amount'] ?? 0.0, 2) }} €</span>
                                     @can('subscriptions.manage')
                                         <x-button icon="o-adjustments-horizontal" :tooltip="__('Adjust period or amount')"
                                             class="btn-ghost btn-xs"
                                             wire:click="openReconcileModal({{ $currentRequest->id }}, {{ $pack->id }})"
-                                            spinner />
+                                            spinner :aria-label="__('Adjust period or amount')" />
                                     @endcan
                                 </div>
                             @endforeach
@@ -345,15 +360,15 @@
                                     <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 text-warning-content opacity-60" />
                                     <span class="flex-1">{{ $pack->name }}</span>
                                     <x-badge value="{{ __('Awaiting validation') }}" class="badge-warning badge-xs" />
-                                    <span class="text-xs font-semibold opacity-50">{{ number_format((float) $pack->price, 2) }} €</span>
+                                    <span class="text-xs font-semibold text-muted">{{ number_format((float) $pack->price, 2) }} €</span>
                                 </div>
                             @endforeach
                             @foreach ($currentRequest->cancelled_packs as $pack)
-                                <div class="flex items-center gap-3 rounded-lg border border-base-200 p-2.5 text-sm opacity-70">
+                                <div class="flex items-center gap-3 rounded-lg border border-base-300 p-2.5 text-sm opacity-70">
                                     <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 opacity-40" />
                                     <span class="flex-1 line-through">{{ $pack->name }}</span>
                                     <x-badge value="{{ __('Cancelled') }}" class="badge-ghost badge-xs" />
-                                    <span class="text-xs font-semibold opacity-50">{{ number_format((float) $pack->price, 2) }} €</span>
+                                    <span class="text-xs font-semibold text-muted">{{ number_format((float) $pack->price, 2) }} €</span>
                                 </div>
                             @endforeach
                         </div>
@@ -362,10 +377,10 @@
 
                 @if (! empty($currentRequest->payments))
                     <div>
-                        <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Payments') }}</h3>
+                        <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Payments') }}</h3>
                         <div class="space-y-2">
                             @foreach ($currentRequest->payments as $payment)
-                                <div class="flex items-center gap-3 rounded-lg border border-base-200 p-2.5 text-sm">
+                                <div class="flex items-center gap-3 rounded-lg border border-base-300 p-2.5 text-sm">
                                     <x-icon name="o-credit-card" class="h-3.5 w-3.5 shrink-0 opacity-40" />
                                     <span class="flex-1 font-mono text-xs opacity-60">{{ $payment['reference'] }}</span>
                                     <span class="text-sm font-bold">{{ number_format($payment['amount_due'], 2) }} €</span>
@@ -383,8 +398,8 @@
                                 </div>
                             @endforeach
                         </div>
-                        <div class="mt-1 flex justify-between border-t border-base-200 pt-2 text-sm">
-                            <span class="opacity-50">{{ __('Total') }}</span>
+                        <div class="mt-1 flex justify-between border-t border-base-300 pt-2 text-sm">
+                            <span class="text-muted">{{ __('Total') }}</span>
                             <span class="font-black">{{ number_format($currentRequest->amount_due, 2) }} €</span>
                         </div>
                     </div>
@@ -397,12 +412,12 @@
         @if (! $paymentGenerated && $currentRequest && $currentRequest->status === 'pending')
             <div class="space-y-6">
                 <div>
-                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Members & Licence') }}</h3>
+                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Members & Licence') }}</h3>
                     <div class="space-y-3">
                         @foreach ($currentRequest->members as $member)
                             <div class="rounded-xl border border-base-300/50 bg-base-200 p-4">
                                 <div class="font-bold text-base-content">{{ $member['first_name'] }} {{ $member['last_name'] }}</div>
-                                <div class="mt-0.5 text-xs opacity-50">{{ $currentRequest->type }}</div>
+                                <div class="mt-0.5 text-xs text-muted">{{ $currentRequest->type }}</div>
                             </div>
                         @endforeach
                     </div>
@@ -414,7 +429,7 @@
                     s'encode. Les champs sont pré-remplis depuis la fiche membre.
                 --}}
                 <div>
-                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Federation details') }}</h3>
+                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Federation details') }}</h3>
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <x-input :label="__('Licence number')" mandatory numeric wire:model.live.debounce="reviewLicence"
                             :hint="__('6 digits')" />
@@ -445,24 +460,24 @@
 
                 @if ($currentRequest->pending_packs->count() > 0)
                     <div>
-                        <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Training Packs Requested') }}</h3>
+                        <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Training Packs Requested') }}</h3>
                         <div class="space-y-2">
                             @foreach ($currentRequest->pending_packs as $pack)
-                                <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-base-200 p-3 transition-colors hover:border-primary/30 has-checked:border-primary/20 has-checked:bg-primary/5">
+                                <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-base-300 p-3 transition-colors hover:border-primary/30 has-checked:border-primary/20 has-checked:bg-primary/5">
                                     <input type="checkbox" wire:model.live="approvedPackIds" value="{{ $pack->id }}"
                                         class="checkbox checkbox-primary checkbox-sm shrink-0" />
                                     <div class="min-w-0 flex-1">
                                         <div class="text-sm font-semibold">{{ $pack->name }}</div>
-                                        <div class="text-xs opacity-50">{{ number_format((float) $pack->price, 2) }} €</div>
+                                        <div class="text-xs text-muted">{{ number_format((float) $pack->price, 2) }} €</div>
                                     </div>
                                 </label>
                             @endforeach
                         </div>
-                        <p class="mt-2 text-xs italic opacity-40">{{ __('Unchecked packs will be removed from the request.') }}</p>
+                        <p class="mt-2 text-xs italic text-muted">{{ __('Unchecked packs will be removed from the request.') }}</p>
                     </div>
                 @endif
 
-                <div class="overflow-hidden rounded-xl border border-base-200 text-sm">
+                <div class="overflow-hidden rounded-xl border border-base-300 text-sm">
                     <div class="flex items-center justify-between px-4 py-3">
                         <div class="flex items-center gap-2 opacity-60">
                             <x-icon name="{{ $currentRequest->type === __('Competition') ? 'o-trophy' : 'o-heart' }}" class="h-3.5 w-3.5 shrink-0" />
@@ -471,7 +486,7 @@
                         <span class="font-semibold">{{ number_format($currentRequest->subscription_price, 2) }} €</span>
                     </div>
                     @if (! empty($this->approvedPackIds))
-                        <div class="flex items-center justify-between border-t border-base-200 px-4 py-3">
+                        <div class="flex items-center justify-between border-t border-base-300 px-4 py-3">
                             <div class="flex items-center gap-2 opacity-60">
                                 <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0" />
                                 <span>{{ __('Training packs') }} ({{ count($this->approvedPackIds) }})</span>
@@ -479,7 +494,7 @@
                             <span class="font-semibold">{{ number_format($this->pendingReviewEstimatedTotal - $currentRequest->subscription_price, 2) }} €</span>
                         </div>
                     @endif
-                    <div class="flex items-center justify-between border-t border-base-200 bg-base-200/50 px-4 py-3 font-bold">
+                    <div class="flex items-center justify-between border-t border-base-300 bg-base-200/50 px-4 py-3 font-bold">
                         <span>{{ __('Total if approved') }}</span>
                         <span class="text-primary text-base">{{ number_format($this->pendingReviewEstimatedTotal, 2) }} €</span>
                     </div>
@@ -491,8 +506,8 @@
         @if ($paymentGenerated && ! empty($paymentData))
             <div class="space-y-6">
                 <div class="flex flex-col items-center gap-3">
-                    <img src="{{ $paymentData['qr_code'] }}" alt="QR Code" class="h-48 w-48 rounded-xl border border-base-200 shadow" />
-                    <p class="text-center text-xs opacity-50">{{ __('Scan this QR code with your banking app') }}</p>
+                    <img src="{{ $paymentData['qr_code'] }}" alt="QR Code" class="h-48 w-48 rounded-xl border border-base-300 shadow" />
+                    <p class="text-center text-xs text-muted">{{ __('Scan this QR code with your banking app') }}</p>
                 </div>
                 <x-menu-separator />
                 <div class="space-y-3 text-sm">
@@ -512,7 +527,7 @@
                         <span class="opacity-60">{{ __('Structured reference') }}</span>
                         <span class="font-mono font-bold text-primary">{{ $paymentData['reference'] }}</span>
                     </div>
-                    <div class="flex items-center justify-between border-t border-base-200 pt-1">
+                    <div class="flex items-center justify-between border-t border-base-300 pt-1">
                         <span class="font-bold">{{ __('Amount') }}</span>
                         <span class="text-primary text-lg font-black">{{ $paymentData['amount_due'] }} €</span>
                     </div>
@@ -525,7 +540,7 @@
                     <x-icon name="o-envelope" class="h-4 w-4 shrink-0 opacity-50" />
                     <span class="flex-1 opacity-70">{{ $paymentData['member_name'] }} &lt;{{ $paymentData['member_email'] }}&gt;</span>
                     @if (($paymentData['invitation_counter'] ?? 0) > 0)
-                        <span class="shrink-0 text-xs italic opacity-50">
+                        <span class="shrink-0 text-xs italic text-muted">
                             {{ __('Sent :n×', ['n' => $paymentData['invitation_counter']]) }}
                         </span>
                     @endif
@@ -542,7 +557,7 @@
                     {{ __('Add a rejection reason') }}
                 </button>
                 <div x-show="rejectOpen" x-collapse class="mt-3 space-y-3 rounded-xl border border-error/20 bg-error/5 p-4">
-                    <div class="mb-2 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Rejection template') }}</div>
+                    <div class="mb-2 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Rejection template') }}</div>
                     <div class="space-y-2">
                         <label class="flex cursor-pointer items-center gap-2 text-sm">
                             <input type="radio" wire:model="rejectionTemplate" value="" class="radio radio-xs" />
@@ -570,14 +585,14 @@
             qui part — avant qu'il ne confirme.
         --}}
         @if (! $paymentGenerated && $currentRequest && in_array($currentRequest->status, ['confirmed', 'paid']) && Auth::user()->can('subscriptions.manage'))
-            <div class="mt-4 rounded-xl border border-base-200 p-4">
-                <div class="mb-2 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Change of formula') }}</div>
+            <div class="mt-4 rounded-xl border border-base-300 p-4">
+                <div class="mb-2 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Change of formula') }}</div>
                 <p class="text-sm opacity-70">
                     {{ $currentRequest->type === __('Competition')
                         ? __('Switching to recreative reprices the affiliation at 60 € and takes the member out of the force lists. Any overpayment is reported to you for refund, capped at what they actually paid.')
                         : __('Switching to competition reprices the affiliation at 125 € and invoices the difference as a new payment with its own structured reference.') }}
                 </p>
-                <p class="mt-2 text-xs italic opacity-50">{{ __('The member will be notified by email.') }}</p>
+                <p class="mt-2 text-xs italic text-muted">{{ __('The member will be notified by email.') }}</p>
                 <x-button :label="__('Change formula')" icon="o-arrows-right-left" class="btn-soft btn-sm mt-3"
                     wire:click="changeFormula"
                     wire:confirm="{{ __('Change the formula of this affiliation? The member will be notified.') }}"
@@ -605,10 +620,10 @@
                 <x-button :label="__('Close')" @click="$wire.reviewModal = false" class="btn-ghost" />
             @endif
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Modal demande d'entraînement (Flux B) ───────────────────────── --}}
-    <x-modal wire:model="trainingRequestModal" :title="__('Training Request')" separator class="backdrop-blur-sm">
+    <x-app-modal wire:model="trainingRequestModal" :title="__('Training Request')" separator class="backdrop-blur-sm" :open="$trainingRequestModal">
 
         @if (! $paymentGenerated && $currentTrainingRequest)
             <div class="space-y-6">
@@ -623,7 +638,7 @@
                 </div>
 
                 <div>
-                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Packs Requested') }}</h3>
+                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Packs Requested') }}</h3>
                     @php $bd = $this->trainingRequestPricingBreakdown; @endphp
                     <div class="space-y-2">
                         @foreach ($currentTrainingRequest->trainingPacks as $pack)
@@ -632,25 +647,25 @@
                                 $inApproved = in_array($pack->id, $approvedPackIds);
                                 $discounted = $inApproved && ($pb['discounted'] ?? false);
                             @endphp
-                            <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-base-200 p-3 transition-colors hover:border-warning/30 has-checked:border-warning/20 has-checked:bg-warning/5">
+                            <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-base-300 p-3 transition-colors hover:border-warning/30 has-checked:border-warning/20 has-checked:bg-warning/5">
                                 <input type="checkbox" wire:model.live="approvedPackIds" value="{{ $pack->id }}"
                                     class="checkbox checkbox-warning checkbox-sm shrink-0" />
                                 <div class="min-w-0 flex-1">
                                     <div class="text-sm font-semibold">{{ $pack->name }}</div>
                                     <div class="mt-0.5 flex items-center gap-1.5">
                                         @if ($discounted)
-                                            <span class="text-xs line-through opacity-40">{{ number_format($pb['full_price'], 2) }} €</span>
+                                            <span class="text-xs line-through text-muted">{{ number_format($pb['full_price'], 2) }} €</span>
                                             <span class="text-xs font-bold text-success">{{ number_format($pb['effective_price'], 2) }} €</span>
                                             <x-badge class="badge-soft badge-success badge-xs" value="−10 €" />
                                         @else
-                                            <span class="text-xs opacity-50">{{ number_format((float) $pack->price, 2) }} €</span>
+                                            <span class="text-xs text-muted">{{ number_format((float) $pack->price, 2) }} €</span>
                                         @endif
                                     </div>
                                 </div>
                             </label>
                         @endforeach
                     </div>
-                    <p class="mt-2 text-xs italic opacity-40">{{ __('Unchecked packs will be removed from the request.') }}</p>
+                    <p class="mt-2 text-xs italic text-muted">{{ __('Unchecked packs will be removed from the request.') }}</p>
 
                     @if (! empty($bd['retro_adjustments'] ?? []))
                         <div class="mt-3 space-y-2 rounded-xl border border-info/20 bg-info/5 p-3">
@@ -662,7 +677,7 @@
                                 <div class="flex items-center justify-between text-xs">
                                     <span class="flex-1 truncate pr-3 opacity-60">{{ $adj['name'] }}</span>
                                     <span class="flex shrink-0 items-center gap-1.5">
-                                        <span class="line-through opacity-40">{{ number_format($adj['original_price'], 2) }} €</span>
+                                        <span class="line-through text-muted">{{ number_format($adj['original_price'], 2) }} €</span>
                                         <x-icon name="o-arrow-right" class="h-3 w-3 opacity-30" />
                                         <span class="font-semibold">{{ number_format($adj['new_price'], 2) }} €</span>
                                         <x-badge class="badge-soft badge-info badge-xs" value="−10 €" />
@@ -672,8 +687,8 @@
                         </div>
                     @endif
 
-                    <div class="mt-3 flex justify-between border-t border-base-200 pt-3 text-sm">
-                        <span class="opacity-50">{{ __('Expected additional payment') }}</span>
+                    <div class="mt-3 flex justify-between border-t border-base-300 pt-3 text-sm">
+                        <span class="text-muted">{{ __('Expected additional payment') }}</span>
                         <span class="font-bold text-warning-content">{{ number_format($this->trainingRequestEstimatedDelta, 2) }} €</span>
                     </div>
                 </div>
@@ -683,8 +698,8 @@
         @if ($paymentGenerated && ! empty($paymentData))
             <div class="space-y-6">
                 <div class="flex flex-col items-center gap-3">
-                    <img src="{{ $paymentData['qr_code'] }}" alt="QR Code" class="h-48 w-48 rounded-xl border border-base-200 shadow" />
-                    <p class="text-center text-xs opacity-50">{{ __('Scan this QR code with your banking app') }}</p>
+                    <img src="{{ $paymentData['qr_code'] }}" alt="QR Code" class="h-48 w-48 rounded-xl border border-base-300 shadow" />
+                    <p class="text-center text-xs text-muted">{{ __('Scan this QR code with your banking app') }}</p>
                 </div>
                 <x-menu-separator />
                 <div class="space-y-3 text-sm">
@@ -692,7 +707,7 @@
                         <span class="opacity-60">{{ __('Structured reference') }}</span>
                         <span class="font-mono font-bold text-primary">{{ $paymentData['reference'] }}</span>
                     </div>
-                    <div class="flex items-center justify-between border-t border-base-200 pt-1">
+                    <div class="flex items-center justify-between border-t border-base-300 pt-1">
                         <span class="font-bold">{{ __('Amount') }}</span>
                         <span class="text-primary text-lg font-black">{{ $paymentData['amount_due'] }} €</span>
                     </div>
@@ -712,7 +727,7 @@
                     {{ __('Add a rejection reason') }}
                 </button>
                 <div x-show="rejectOpen" x-collapse class="mt-3 space-y-3 rounded-xl border border-error/20 bg-error/5 p-4">
-                    <div class="mb-2 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Rejection template') }}</div>
+                    <div class="mb-2 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Rejection template') }}</div>
                     <div class="space-y-2">
                         <label class="flex cursor-pointer items-center gap-2 text-sm">
                             <input type="radio" wire:model="rejectionTemplate" value="" class="radio radio-xs" />
@@ -748,7 +763,7 @@
                 @endcan
             @endif
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Drawer inscription/renouvellement ───────────────────────────── --}}
     @can('subscriptions.manage')
@@ -763,10 +778,10 @@
                 @if (strlen($searchMember) > 2)
                     {{-- Deux homonymes se distinguent à la date de naissance et
                          au classement : « prénom nom » seul ne suffit pas. --}}
-                    <div class="mt-2 rounded-xl border border-base-200 bg-base-100">
+                    <div class="mt-2 rounded-xl border border-base-300 bg-base-100">
                         @foreach ($membersFound as $m)
-                            <div wire:key="member-found-{{ $m->id }}"
-                                class="flex cursor-pointer items-center justify-between gap-3 border-b p-3 last:border-none hover:bg-base-200"
+                            <button type="button" wire:key="member-found-{{ $m->id }}"
+                                class="flex w-full cursor-pointer items-center justify-between gap-3 border-b p-3 text-left last:border-none hover:bg-base-200"
                                 wire:click="addToBasket({{ $m->id }})">
                                 <div class="min-w-0 flex-1">
                                     <div class="flex flex-wrap items-center gap-2">
@@ -779,7 +794,7 @@
                                     <div class="truncate text-xs text-base-content/60">
                                         {{ $m->birthdate?->format('d/m/Y') ?? __('Birth date unknown') }}
                                         ·
-                                        {{ $m->ranking && $m->ranking !== 'NA' ? $m->ranking : __('No ranking') }}
+                                        {{ $m->ranking === \App\Domains\Shared\Enums\Ranking::NA ? __('No ranking') : $m->ranking->getLabel() }}
                                         @if ($m->email === null && $m->guardians->isNotEmpty())
                                             · {{ __('via :guardian', [
                                                 'guardian' => $m->guardians->first()->first_name . ' ' . $m->guardians->first()->last_name,
@@ -788,7 +803,7 @@
                                     </div>
                                 </div>
                                 <x-icon name="o-plus-circle" class="h-5 w-5 shrink-0 text-primary" />
-                            </div>
+                            </button>
                         @endforeach
 
                         @if ($membersFoundOverflow > 0)
@@ -809,7 +824,7 @@
                             wire:click="$set('showNewMemberForm', true)" />
                     </div>
                 @else
-                    <div class="mt-3 space-y-3 rounded-xl border border-base-200 bg-base-100 p-4">
+                    <div class="mt-3 space-y-3 rounded-xl border border-base-300 bg-base-100 p-4">
                         <h4 class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-base-content/60">
                             <x-icon name="o-user-plus" class="h-4 w-4" />
                             {{ __('New member') }}
@@ -838,7 +853,7 @@
             <div class="space-y-4">
                 @forelse ($familyBasket as $userId => $config)
                     <div wire:key="basket-member-{{ $userId }}"
-                        class="rounded-xl border border-base-200 bg-base-100 p-4">
+                        class="rounded-xl border border-base-300 bg-base-100 p-4">
                         <div class="mb-4 flex items-start justify-between gap-3">
                             <h3 class="flex items-center gap-2 text-base font-semibold">
                                 <x-icon name="o-user" class="h-4 w-4 shrink-0 text-base-content/40" />
@@ -849,7 +864,7 @@
                             <x-button id="basket-remove-{{ $userId }}" icon="o-trash"
                                 class="btn-ghost btn-sm btn-circle shrink-0 text-error"
                                 :tooltip-left="__('Remove from the group')"
-                                wire:click="removeFromBasket({{ $userId }})" />
+                                wire:click="removeFromBasket({{ $userId }})" :aria-label="__('Remove from the group')" />
                         </div>
                         <div class="grid grid-cols-1 gap-4">
                             {{-- `.live` : le récapitulatif chiffré plus bas doit suivre chaque clic. --}}
@@ -871,7 +886,7 @@
                         {{-- `id` unique : le uuid de maryUI vient des props, et
                              deux cartes identiques partageraient wire:key. --}}
                         <x-collapse id="basket-involvement-{{ $userId }}"
-                            class="mt-4 border border-base-200 bg-base-100">
+                            class="mt-4 border border-base-300 bg-base-100">
                             <x-slot:heading>
                                 <div class="flex items-center gap-2 text-sm font-semibold">
                                     <x-icon name="o-hand-raised" class="h-4 w-4 text-base-content/40" />
@@ -930,7 +945,7 @@
                  famille au guichet, qu'il se saisit. Il conditionne la remise.
             --}}
             @if ($this->requiresFamilyGuardian())
-                <div class="space-y-4 rounded-xl border border-base-200 bg-base-100 p-4">
+                <div class="space-y-4 rounded-xl border border-base-300 bg-base-100 p-4">
                     <h3 class="flex items-center gap-2 text-base font-semibold">
                         <x-icon name="o-shield-check" class="h-4 w-4 shrink-0 text-base-content/40" />
                         {{ __('Guardian of the group') }}
@@ -946,7 +961,7 @@
                         <div class="space-y-2">
                             @foreach ($this->linkedGuardians as $guardian)
                                 <div wire:key="basket-guardian-{{ $guardian->id }}"
-                                    class="flex items-center gap-3 rounded-lg border border-base-200 bg-base-100 p-3">
+                                    class="flex items-center gap-3 rounded-lg border border-base-300 bg-base-100 p-3">
                                     <x-icon name="o-user" class="h-5 w-5 shrink-0 text-primary" />
                                     <div class="min-w-0 flex-1">
                                         <div class="truncate text-sm font-semibold">
@@ -957,7 +972,7 @@
                                         </div>
                                     </div>
                                     <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-x-mark"
-                                        :tooltip="__('Unlink')" wire:click="detachGuardian({{ $guardian->id }})" />
+                                        :tooltip="__('Unlink')" wire:click="detachGuardian({{ $guardian->id }})" :aria-label="__('Unlink')" />
                                 </div>
                             @endforeach
                         </div>
@@ -976,9 +991,9 @@
                         @endphp
 
                         @if ($hasResults)
-                            <div class="mt-2 space-y-1 rounded-lg border border-base-200 p-1">
+                            <div class="mt-2 space-y-1 rounded-lg border border-base-300 p-1">
                                 @if ($guardianResults->isNotEmpty())
-                                    <div class="px-3 pt-1 text-[10px] font-bold uppercase tracking-widest text-base-content/40">
+                                    <div class="px-3 pt-1 text-xs font-bold uppercase tracking-widest text-base-content/40">
                                         {{ __('Existing guardians') }}
                                     </div>
                                     @foreach ($guardianResults as $result)
@@ -995,7 +1010,7 @@
                                 @endif
 
                                 @if ($memberResults->isNotEmpty())
-                                    <div class="px-3 pt-1 text-[10px] font-bold uppercase tracking-widest text-base-content/40">
+                                    <div class="px-3 pt-1 text-xs font-bold uppercase tracking-widest text-base-content/40">
                                         {{ __('Club members') }}
                                     </div>
                                     @foreach ($memberResults as $member)
@@ -1022,7 +1037,7 @@
                         <x-button class="btn-soft btn-sm" icon="o-plus" :label="__('Create a new guardian')"
                             wire:click="$set('showGuardianForm', true)" />
                     @else
-                        <div class="space-y-3 rounded-lg border border-base-200 p-4">
+                        <div class="space-y-3 rounded-lg border border-base-300 p-4">
                             <div class="grid gap-3 sm:grid-cols-2">
                                 <x-input :label="__('First name')" wire:model.live.blur="guardianFirstName" required />
                                 <x-input :label="__('Last name')" wire:model.live.blur="guardianLastName" required />
@@ -1064,7 +1079,7 @@
                      seul le total reste visible, le reste se déplie. Le desktop
                      l'ouvre d'office, l'admin y lit le devis pendant qu'il parle. --}}
                 <div x-data="{ detailOpen: window.matchMedia('(min-width: 768px)').matches }"
-                    class="rounded-xl border border-base-200 bg-base-100">
+                    class="rounded-xl border border-base-300 bg-base-100">
                     <button type="button" @click="detailOpen = ! detailOpen"
                         x-bind:aria-expanded="detailOpen ? 'true' : 'false'"
                         class="flex w-full items-center justify-between gap-3 p-4 text-left">
@@ -1081,7 +1096,7 @@
                     </button>
 
                     <div x-show="detailOpen" x-collapse>
-                        <div class="space-y-4 border-t border-base-200 p-4">
+                        <div class="space-y-4 border-t border-base-300 p-4">
                             @foreach ($quote['members'] as $memberId => $member)
                                 <div wire:key="basket-quote-{{ $memberId }}" class="space-y-1">
                                     <div class="text-xs font-bold uppercase tracking-widest text-base-content/60">
@@ -1101,7 +1116,7 @@
                                     @endforeach
                                     @if (count($quote['members']) > 1)
                                         {{-- Au guichet, l'admin annonce un montant par personne. --}}
-                                        <div class="flex items-center justify-between border-t border-dashed border-base-200 pt-1 text-sm">
+                                        <div class="flex items-center justify-between border-t border-dashed border-base-300 pt-1 text-sm">
                                             <span class="font-semibold">{{ __('Due by :name', ['name' => $member['name']]) }}</span>
                                             <span class="font-semibold tabular-nums">{{ $money($member['total']) }}</span>
                                         </div>
@@ -1109,7 +1124,7 @@
                                 </div>
                             @endforeach
 
-                            <div class="space-y-1 border-t border-base-200 pt-3">
+                            <div class="space-y-1 border-t border-base-300 pt-3">
                                 <div class="flex items-center justify-between text-sm">
                                     <span class="text-base-content/70">{{ __('Subtotal') }}</span>
                                     <span class="font-semibold tabular-nums">{{ $money($quote['subtotal']) }}</span>
@@ -1126,7 +1141,7 @@
                                         <span class="font-semibold tabular-nums">−{{ $money($quote['credit']) }}</span>
                                     </div>
                                 @endif
-                                <div class="flex items-center justify-between border-t border-base-200 pt-2 text-base">
+                                <div class="flex items-center justify-between border-t border-base-300 pt-2 text-base">
                                     <span class="font-semibold">{{ __('Group total') }}</span>
                                     <span class="font-semibold tabular-nums text-primary">{{ $money($quote['total']) }}</span>
                                 </div>
@@ -1155,7 +1170,7 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Season') }}
                 </p>
                 <x-select
@@ -1166,7 +1181,7 @@
                     class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Status') }}
                 </p>
                 <x-select :options="$statusOptions" :placeholder="__('All statuses')"
@@ -1177,11 +1192,12 @@
 
     {{-- ── Modal remboursement ───────────────────────────────────────── --}}
     @php
-        $refundSub  = $refundSubscriptionId ? $this->registrations()->firstWhere('id', $refundSubscriptionId) : null;
+        // La liste est paginée : la ligne visée peut vivre sur une autre page.
+        $refundSub  = $this->registrationRow($refundSubscriptionId);
         $refundPack = $refundPackId ? $refundSub?->enrolled_packs->firstWhere('id', $refundPackId) : null;
     @endphp
     @can('subscriptions.manage')
-    <x-modal wire:model="refundModal" :title="__('Remove & Refund')" separator class="backdrop-blur-sm">
+    <x-app-modal wire:model="refundModal" :title="__('Remove & Refund')" separator class="backdrop-blur-sm" :open="$refundModal">
         @if ($refundPack)
             <div class="space-y-4">
                 <p class="text-sm">
@@ -1212,12 +1228,12 @@
             <x-button :label="__('Cancel')" @click="$wire.refundModal = false" class="btn-ghost" />
             <x-button :label="__('Confirm refund')" icon="o-arrow-uturn-left" class="btn-error" wire:click="confirmRefund" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
     @endcan
 
     {{-- ── Modal de réconciliation d'une ligne d'entraînement ─────────── --}}
     @can('subscriptions.manage')
-    <x-modal wire:model="reconcileModal" :title="__('Adjust training pack')" separator class="backdrop-blur-sm">
+    <x-app-modal wire:model="reconcileModal" :title="__('Adjust training pack')" separator class="backdrop-blur-sm" :open="$reconcileModal">
         @php
             $reconcile = $this->reconcilePreview;
         @endphp
@@ -1230,14 +1246,14 @@
                         <span class="text-xs opacity-60">{{ $reconcile['member'] }}</span>
                     </div>
                     @if ($reconcile['prorata_available'])
-                        <p class="mt-2 text-xs opacity-50">
+                        <p class="mt-2 text-xs text-muted">
                             {{ __('Pack runs from :start to :end', [
                                 'start' => $reconcile['pack']->pack_start_date->format('d/m/Y'),
                                 'end'   => $reconcile['pack']->pack_end_date->format('d/m/Y'),
                             ]) }}
                         </p>
                     @else
-                        <p class="mt-2 text-xs opacity-50">{{ __('This pack has no start and end date: it cannot be pro-rated. Force the amount instead.') }}</p>
+                        <p class="mt-2 text-xs text-muted">{{ __('This pack has no start and end date: it cannot be pro-rated. Force the amount instead.') }}</p>
                     @endif
                 </div>
 
@@ -1263,7 +1279,7 @@
                 </div>
 
                 <div class="space-y-3 rounded-xl border border-warning/20 bg-warning/5 p-3">
-                    <p class="text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Force the amount') }}</p>
+                    <p class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Force the amount') }}</p>
                     <x-input :label="__('Forced amount (€)')" type="number" step="0.01" min="0"
                         wire:model.live.blur="reconcileOverrideAmount"
                         :hint="__('Empty = keep the calculated amount')" />
@@ -1277,12 +1293,12 @@
             <x-button :label="__('Cancel')" @click="$wire.reconcileModal = false" class="btn-ghost" />
             <x-button :label="__('Save adjustment')" icon="o-check" class="btn-primary" wire:click="saveReconciliation" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
     @endcan
 
     {{-- ── Modal d'annulation de cotisation (avec remboursement éventuel) ── --}}
     @can('subscriptions.manage')
-    <x-modal wire:model="cancelModal" :title="$this->subscriptionToCancel?->totalPaid() > 0 ? __('Cancel & refund') : __('Cancel subscription')" separator class="backdrop-blur-sm">
+    <x-app-modal wire:model="cancelModal" :title="$this->subscriptionToCancel?->totalPaid() > 0 ? __('Cancel & refund') : __('Cancel subscription')" separator class="backdrop-blur-sm" :open="$cancelModal">
         @if ($this->subscriptionToCancel)
             @php
                 $cancelUser = $this->subscriptionToCancel->user;
@@ -1301,7 +1317,7 @@
                     <x-input :label="__('Amount to refund (€)')" wire:model="cancelRefundAmount"
                         type="number" step="0.01" min="0.01" max="{{ $cancelTotalPaid }}"
                         :hint="__('Already paid: :amount €', ['amount' => number_format($cancelTotalPaid, 2)])" />
-                    <p class="-mt-2 text-xs italic opacity-40">{{ __('Suggested amount excludes the training months already attended, which the club keeps.') }}</p>
+                    <p class="-mt-2 text-xs italic text-muted">{{ __('Suggested amount excludes the training months already attended, which the club keeps.') }}</p>
 
                     @if ($cancelUser->iban)
                         <div class="flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 p-3 text-sm">
@@ -1317,11 +1333,11 @@
                 @endif
 
                 <div>
-                    <label class="mb-1 block text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Message to the member (optional)') }}</label>
+                    <label class="mb-1 block text-xs font-bold uppercase tracking-widest text-muted">{{ __('Message to the member (optional)') }}</label>
                     <textarea wire:model="cancelMessage"
                         placeholder="{{ __('Optional personal note to the member...') }}"
                         class="textarea textarea-bordered textarea-sm w-full text-sm" rows="2"></textarea>
-                    <p class="mt-1 text-xs italic opacity-40">{{ __('Included in the cancellation email sent to the member.') }}</p>
+                    <p class="mt-1 text-xs italic text-muted">{{ __('Included in the cancellation email sent to the member.') }}</p>
                 </div>
             </div>
         @endif
@@ -1332,7 +1348,7 @@
                 icon="o-x-circle" class="btn-error"
                 wire:click="confirmCancelSubscription" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
     @endcan
 
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}

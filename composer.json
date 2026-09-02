@@ -31,7 +31,6 @@
         "laravel/pint": "^1.0",
         "mockery/mockery": "^1.4.4",
         "nunomaduro/collision": "^8.1",
-        "peckphp/peck": "^0.3.0",
         "pestphp/pest": "^5.0",
         "pestphp/pest-plugin-browser": "^5.0",
         "pestphp/pest-plugin-laravel": "^5.0",
@@ -76,8 +75,14 @@
         "lint": [
             "pint --parallel"
         ],
+        "refactor": [
+            "rector process"
+        ],
         "test:lint": [
             "pint --parallel --test"
+        ],
+        "test:refactor": [
+            "rector process --dry-run --no-progress-bar --clear-cache"
         ],
         "test:types": [
             "phpstan analyse --memory-limit=2G"
@@ -97,6 +102,7 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@test:lint",
+            "@test:refactor",
             "@test:types",
             "@php artisan test --parallel --compact --testsuite=Unit,Feature,Architecture",
             "@php artisan test --compact --testsuite=Browser"

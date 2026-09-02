@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Trainings\Notifications;
 
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -11,7 +12,7 @@ use Illuminate\Notifications\Notification;
 
 class TrainingWaitlistJoinedNotification extends Notification
 {
-    use Queueable;
+    use LinksToMemberSpace, Queueable;
 
     public function __construct(
         public TrainingPack $pack,
@@ -24,7 +25,7 @@ class TrainingWaitlistJoinedNotification extends Notification
         return [
             'title' => __('Joined the waiting list'),
             'body' => __('See the training details'),
-            'url' => route('admin.trainings.index'),
+            'url' => $this->memberTrainingsUrl($notifiable),
             'category' => 'training',
             'icon' => 'o-academic-cap',
         ];

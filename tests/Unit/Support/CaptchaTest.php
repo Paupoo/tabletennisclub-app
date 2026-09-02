@@ -41,15 +41,15 @@ describe('Captcha', function (): void {
         $captcha = new Captcha;
 
         $captchaData = ['a' => 2, 'b' => 3, 'operation' => '-'];
-        expect(fn () => $captcha->validate($captchaData, 5))->toThrow(InvalidArgumentException::class);
+        expect(fn (): bool => $captcha->validate($captchaData, 5))->toThrow(InvalidArgumentException::class);
     });
 
     it('throws an error for non-integer user results', function (): void {
         $captcha = new Captcha;
 
         $captchaData = ['a' => 2, 'b' => 3, 'operation' => '+'];
-        expect(fn () => $captcha->validate($captchaData, '5'))->toThrow(TypeError::class);
-        expect(fn () => $captcha->validate($captchaData, 5.0))->toThrow(TypeError::class);
+        expect(fn (): bool => $captcha->validate($captchaData, '5'))->toThrow(TypeError::class);
+        expect(fn (): bool => $captcha->validate($captchaData, 5.0))->toThrow(TypeError::class);
     });
 
     it('returns false for missing keys in captcha data', function (): void {
@@ -68,13 +68,13 @@ describe('Captcha', function (): void {
     it('throws an error for non-array captcha data', function (): void {
         $captcha = new Captcha;
 
-        expect(fn () => $captcha->validate('not an array', 5))->toThrow(TypeError::class);
+        expect(fn (): bool => $captcha->validate('not an array', 5))->toThrow(TypeError::class);
     });
 
     it('throws an error for null captcha data', function (): void {
         $captcha = new Captcha;
 
-        expect(fn () => $captcha->validate(null, 5))->toThrow(TypeError::class);
+        expect(fn (): bool => $captcha->validate(null, 5))->toThrow(TypeError::class);
     });
 
     it('returns false for empty captcha data', function (): void {
@@ -87,20 +87,20 @@ describe('Captcha', function (): void {
         $captcha = new Captcha;
 
         $captchaData = ['a' => 'not an integer', 'b' => 3, 'operation' => '+'];
-        expect(fn () => $captcha->validate($captchaData, 5))->toThrow(TypeError::class);
+        expect(fn (): bool => $captcha->validate($captchaData, 5))->toThrow(TypeError::class);
 
         $captchaData = ['a' => 2, 'b' => 'not an integer', 'operation' => '+'];
-        expect(fn () => $captcha->validate($captchaData, 5))->toThrow(TypeError::class);
+        expect(fn (): bool => $captcha->validate($captchaData, 5))->toThrow(TypeError::class);
     });
 
     it('returns false for a or b values out of range', function (): void {
         $captcha = new Captcha;
 
         $captchaData = ['a' => -1, 'b' => 3, 'operation' => '+'];
-        expect(fn () => $captcha->validate($captchaData, 5))->toThrow(InvalidArgumentException::class);
+        expect(fn (): bool => $captcha->validate($captchaData, 5))->toThrow(InvalidArgumentException::class);
 
         $captchaData = ['a' => 2, 'b' => 11, 'operation' => '+'];
-        expect(fn () => $captcha->validate($captchaData, 5))->toThrow(InvalidArgumentException::class);
+        expect(fn (): bool => $captcha->validate($captchaData, 5))->toThrow(InvalidArgumentException::class);
     });
 
 })->group('unit', 'support', 'captcha');

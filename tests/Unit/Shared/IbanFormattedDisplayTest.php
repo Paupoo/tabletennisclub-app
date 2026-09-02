@@ -38,7 +38,7 @@ it('shows the member IBAN grouped by 4 in the club-admin refund notification', f
     $payment = ibanNotificationTestPayment($member);
     $tournament = Tournament::factory()->create();
 
-    $mail = (new RefundRequestedNotification($payment, $member, $tournament))->toMail($member);
+    $mail = new RefundRequestedNotification($payment, $member, $tournament)->toMail($member);
 
     expect(ibanNotificationLines($mail))->toContain('BE68 5390 0754 7034');
 });
@@ -48,7 +48,7 @@ it('shows the member IBAN grouped by 4 in the subscription refund notification',
     $subscription = Subscription::factory()->create(['user_id' => $member->id]);
     $payment = ibanNotificationTestPayment($member);
 
-    $mail = (new SubscriptionRefundRequestedNotification($payment, $subscription))->toMail($member);
+    $mail = new SubscriptionRefundRequestedNotification($payment, $subscription)->toMail($member);
 
     expect(ibanNotificationLines($mail))->toContain('BE68 5390 0754 7034');
 });
@@ -57,7 +57,7 @@ it('shows the member IBAN grouped by 4 in the weekly refund reminder', function 
     $user = User::factory()->create(['iban' => 'BE68539007547034']);
     $payment = ibanNotificationTestPayment($user);
 
-    $mail = (new WeeklyRefundReminderNotification(new Collection([$payment])))->toMail($user);
+    $mail = new WeeklyRefundReminderNotification(new Collection([$payment]))->toMail($user);
 
     expect(ibanNotificationLines($mail))->toContain('BE68 5390 0754 7034');
 });
@@ -68,7 +68,7 @@ it('shows the club IBAN grouped by 4 in the tournament debt reminder', function 
     $tournament = Tournament::factory()->create();
     $payment = ibanNotificationTestPayment($user);
 
-    $mail = (new TournamentDebtReminderNotification($tournament, $payment))->toMail($user);
+    $mail = new TournamentDebtReminderNotification($tournament, $payment)->toMail($user);
 
     expect(ibanNotificationLines($mail))->toContain('BE68 5390 0754 7034');
 });
@@ -79,7 +79,7 @@ it('shows the club IBAN grouped by 4 in the tournament payment reminder', functi
     $tournament = Tournament::factory()->create();
     $payment = ibanNotificationTestPayment($user);
 
-    $mail = (new TournamentPaymentReminderNotification($tournament, $payment, Carbon::now()->addDay()))->toMail($user);
+    $mail = new TournamentPaymentReminderNotification($tournament, $payment, Carbon::now()->addDay())->toMail($user);
 
     expect(ibanNotificationLines($mail))->toContain('BE68 5390 0754 7034');
 });

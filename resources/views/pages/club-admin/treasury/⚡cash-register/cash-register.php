@@ -175,7 +175,7 @@ new class extends Component
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get(['id', 'first_name', 'last_name'])
-            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->first_name . ' ' . $u->last_name]);
+            ->map(fn (User $u): array => ['id' => $u->id, 'name' => $u->first_name . ' ' . $u->last_name]);
     }
 
     protected function breadcrumbChain(): Breadcrumb

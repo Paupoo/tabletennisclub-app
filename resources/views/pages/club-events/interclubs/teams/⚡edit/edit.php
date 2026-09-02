@@ -79,12 +79,21 @@ new class extends Component
         // une division pas encore déclarée resterait impossible (issue #27).
         $rules = [
             'name' => ['required', 'string', 'size:1'],
-            'memberIds' => ['array', 'min:1'],
+            'memberIds' => ['array'],
         ];
         $messages = [
             'name.size' => __('The name must be a single letter (A–Z).'),
             'memberIds.min' => 'L\'équipe doit avoir au moins un joueur.',
         ];
+
+        // Une équipe naît sans joueur : la liste la crée avec sa seule lettre et
+        // sa division. Exiger un noyau ici bloquerait toute correction tant que
+        // personne n'y est inscrit — le formulaire refusait d'enregistrer sans
+        // rien afficher. On protège seulement contre le vidage d'un noyau
+        // déjà constitué.
+        if ($team->users()->exists()) {
+            $rules['memberIds'][] = 'min:1';
+        }
 
         if ($canChangeLeague && $this->newDivisionMode) {
             $rules += [
@@ -161,7 +170,7 @@ new class extends Component
     public function toggleMember(int $userId): void
     {
         if (in_array($userId, $this->memberIds)) {
-            $this->memberIds = array_values(array_filter($this->memberIds, fn ($id) => $id !== $userId));
+            $this->memberIds = array_values(array_filter($this->memberIds, fn ($id): bool => $id !== $userId));
         } else {
             $this->memberIds[] = $userId;
         }
@@ -197,7 +206,7 @@ new class extends Component
             ->get();
 
         $teamNameOptions = collect(TeamName::cases())
-            ->map(fn ($n) => ['id' => $n->name, 'name' => $n->name]);
+            ->map(fn ($n): array => ['id' => $n->name, 'name' => $n->name]);
 
         // Divisions déjà déclarées pour la saison de l'équipe. On ne propose que
         // l'existant : créer une division reste une action délibérée, ailleurs.
@@ -231,8 +240,8 @@ new class extends Component
             'teamNameOptions' => $teamNameOptions,
             'leagueOptions' => $leagueOptions,
             'scheduledMatchCount' => $scheduledMatchCount,
-            'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c) => ['id' => $c->name, 'name' => $c->value]),
-            'levelOptions' => collect(LeagueLevel::cases())->map(fn ($l) => ['id' => $l->name, 'name' => $l->value]),
+            'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c): array => ['id' => $c->name, 'name' => $c->value]),
+            'levelOptions' => collect(LeagueLevel::cases())->map(fn ($l): array => ['id' => $l->name, 'name' => $l->value]),
         ];
     }
 

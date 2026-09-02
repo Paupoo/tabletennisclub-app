@@ -272,7 +272,7 @@ class ImportTrainingPlanService
                     continue;
                 }
 
-                $rows[] = array_map(static fn ($cell): string => (string) ($cell ?? ''), $cells);
+                $rows[] = array_map(static fn ($cell): string => $cell ?? '', $cells);
             }
         } finally {
             fclose($stream);

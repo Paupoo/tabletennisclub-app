@@ -199,15 +199,15 @@ describe('filters', function (): void {
 
 describe('sorting', function (): void {
     it('sorts by ranking', function (): void {
-        rosterMember($this->season, ['first_name' => 'Aaa', 'ranking' => 'B0']);
-        rosterMember($this->season, ['first_name' => 'Bbb', 'ranking' => 'A30']);
+        rosterMember($this->season, ['first_name' => 'Aaa', 'ranking' => 'C0']);
+        rosterMember($this->season, ['first_name' => 'Bbb', 'ranking' => 'B0']);
 
         $rows = Livewire::actingAs($this->manager)
             ->test(ROSTER)
             ->set('sortBy', ['column' => 'ranking', 'direction' => 'asc'])
             ->viewData('rows');
 
-        expect($rows->first()->ranking)->toBe('A30');
+        expect($rows->first()->ranking)->toBe('B0');
     });
 });
 

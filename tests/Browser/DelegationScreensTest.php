@@ -33,25 +33,65 @@ it('renders the delegations overview without JS errors', function (): void {
         ->assertSee('Dubois');
 });
 
-it('never scrolls the page sideways on a phone', function (): void {
+/*
+ * These two used to assert `document.scrollWidth > clientWidth`, which on this
+ * application can never be true: layouts/app.blade.php puts overflow-x-hidden on
+ * <body>, so anything too wide is *clipped* rather than made scrollable and the
+ * document never grows. The check passed on every screen, including the ones
+ * losing content off the right edge.
+ *
+ * The probe below asks the question the comment always meant: is any element
+ * pushed past the viewport without a scrollable ancestor to reach it through?
+ * A table scrolling inside its own box stays legal; content clipped away does not.
+ */
+$clippedContent = <<<'JS'
+(() => {
+  const vw = document.documentElement.clientWidth;
+  const lost = [];
+  for (const el of document.querySelectorAll('body *')) {
+    const cs = getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) continue;
+    if (r.right <= vw + 1) continue;
+
+    let reachable = false;
+    for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+      const ox = getComputedStyle(n).overflowX;
+      if (ox === 'auto' || ox === 'scroll') {
+        reachable = n.scrollWidth > n.clientWidth + 1;
+        break;
+      }
+    }
+    if (reachable) continue;
+    if (lost.some((o) => o.el.contains(el))) continue;
+    lost.push({ el, out: Math.round(r.right - vw) });
+    if (lost.length >= 5) break;
+  }
+  return lost.map((o) => o.out + 'px past the right edge: <' + o.el.tagName.toLowerCase() + ' class="' + (o.el.className || '').toString().slice(0, 60) + '">');
+})()
+JS;
+
+it('never clips content off the right edge on a phone', function () use ($clippedContent): void {
     $this->actingAs($this->admin);
 
     $page = visit(route('admin.users.delegations'))->resize(375, 812);
 
-    // The table is allowed to scroll inside its own box; the document is not.
-    $overflows = $page->script('document.documentElement.scrollWidth > document.documentElement.clientWidth + 1');
+    $result = $page->script($clippedContent);
+    $lost = is_array($result[0] ?? null) ? $result[0] : (array) $result;
 
-    expect($overflows)->toBeFalse();
+    expect($lost)->toBe([], implode("\n", $lost));
 });
 
-it('keeps the member view readable on a phone', function (): void {
+it('keeps the member view readable on a phone', function () use ($clippedContent): void {
     $this->actingAs($this->admin);
 
     $page = visit(route('admin.users.delegations') . '?view=members')->resize(375, 812);
 
-    $overflows = $page->script('document.documentElement.scrollWidth > document.documentElement.clientWidth + 1');
+    $result = $page->script($clippedContent);
+    $lost = is_array($result[0] ?? null) ? $result[0] : (array) $result;
 
-    expect($overflows)->toBeFalse();
+    expect($lost)->toBe([], implode("\n", $lost));
 });
 
 it('renders in dark mode without losing the delegation badges', function (): void {
@@ -114,4 +154,26 @@ it('keeps the member form usable on a phone', function (): void {
     JS);
 
     $this->assertSame('', $report, "Le formulaire membre déborde à 375 px :\n" . $report);
+});
+
+/*
+ * State 3 — the access manager on somebody else's file: a compact read-only
+ * identity header, then the rights sections alone. Brand-new markup, so it gets
+ * the one browser case the batch allows: does it render, and does it render
+ * without taking Alpine down with it. No click — a click on an element this
+ * suite considers hidden or ambiguous hangs the run rather than failing it.
+ */
+it('renders the rights-only member file without JS errors', function (): void {
+    $accessManager = User::factory()->withRole(Role::ACCESS)->create();
+    $member = User::factory()->withRole(Role::BAR)->create(['last_name' => 'Moreau']);
+
+    $this->actingAs($accessManager);
+
+    visit(route('admin.users.edit', $member))
+        ->assertNoJavaScriptErrors()
+        ->assertSee('Moreau')
+        ->assertSee('Délégations')
+        ->assertSee(Role::BAR->label())
+        ->assertSee('Réservé aux administrateurs')
+        ->assertDontSee('Informations personnelles');
 });

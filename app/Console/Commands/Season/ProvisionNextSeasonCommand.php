@@ -24,7 +24,7 @@ class ProvisionNextSeasonCommand extends Command
         // Offsets [1,2,3] relative to (currentYear-1) = current season + 2 ahead.
         [$referenceStartYear, $offsets] = $reference
             ? [(int) $reference->start_at->format('Y'), [1, 2]]
-            : [self::currentSeasonStartYear() - 1, [1, 2, 3]];
+            : [$this->currentSeasonStartYear() - 1, [1, 2, 3]];
 
         $created = 0;
 
@@ -60,7 +60,7 @@ class ProvisionNextSeasonCommand extends Command
         return Command::SUCCESS;
     }
 
-    private static function currentSeasonStartYear(): int
+    private function currentSeasonStartYear(): int
     {
         $now = now();
 

@@ -276,21 +276,21 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return array<int, array{icon: string, label: string, sub: string, href: string, color: string}>
+     * @return array<int, array{icon: string, label: string, sub: string, href: string}>
      */
     private function buildMemberTiles(User $user): array
     {
         $tiles = [
-            ['icon' => 'o-user',                     'label' => 'Mon profil',     'sub' => 'Données personnelles',                    'href' => route('admin.user.profile', $user),                 'color' => 'blue'],
-            ['icon' => 'o-clipboard-document-list',  'label' => 'Cotisations',    'sub' => 'Gérer ma cotisation et mes entraînements', 'href' => route('admin.user.registration-management', $user), 'color' => 'emerald'],
-            ['icon' => 'o-banknotes',                'label' => 'Mes paiements',  'sub' => 'Suivi & historique',                      'href' => route('admin.user.registration-management', $user), 'color' => 'teal'],
-            ['icon' => 'o-calendar',                 'label' => 'Événements',     'sub' => 'Agenda du club',                          'href' => route('admin.user.calendar', $user),                'color' => 'amber'],
-            ['icon' => 'o-bell',                     'label' => 'Notifications',  'sub' => 'Infos & tâches',                          'href' => route('notifications.index'),                       'color' => 'rose'],
+            ['icon' => 'o-user',                     'label' => 'Mon profil',     'sub' => 'Données personnelles',                    'href' => route('admin.user.profile', $user)],
+            ['icon' => 'o-clipboard-document-list',  'label' => 'Cotisations',    'sub' => 'Gérer ma cotisation et mes entraînements', 'href' => route('admin.user.registration-management', $user)],
+            ['icon' => 'o-banknotes',                'label' => 'Mes paiements',  'sub' => 'Suivi & historique',                      'href' => route('admin.user.registration-management', $user)],
+            ['icon' => 'o-calendar',                 'label' => 'Événements',     'sub' => 'Agenda du club',                          'href' => route('admin.user.calendar', $user)],
+            ['icon' => 'o-bell',                     'label' => 'Notifications',  'sub' => 'Infos & tâches',                          'href' => route('notifications.index')],
         ];
 
         if ($user->is_competitor && Feature::Interclubs->enabled()) {
-            $tiles[] = ['icon' => 'o-calendar-days', 'label' => 'Disponibilités', 'sub' => 'Interclubs', 'href' => route('admin.user.calendar', $user),  'color' => 'indigo'];
-            $tiles[] = ['icon' => 'o-globe-alt',     'label' => 'Mes matchs',     'sub' => 'Interclubs', 'href' => route('admin.interclubs.my-matches'), 'color' => 'rose'];
+            $tiles[] = ['icon' => 'o-calendar-days', 'label' => 'Disponibilités', 'sub' => 'Interclubs', 'href' => route('admin.user.calendar', $user)];
+            $tiles[] = ['icon' => 'o-globe-alt',     'label' => 'Mes matchs',     'sub' => 'Interclubs', 'href' => route('admin.interclubs.my-matches')];
         }
 
         return $tiles;

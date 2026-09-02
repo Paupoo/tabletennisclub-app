@@ -1,10 +1,30 @@
-<div class="p-4 max-w-6xl mx-auto">
+{{--
+    Plus de max-w-6xl : la régie met les tables et la file côte à côte, et les
+    368 px que le bridage laissait vides sur un 1920 sont exactement ce qui
+    permet à la colonne de droite d'exister. La clôture, plus proche d'un
+    formulaire, garde sa propre largeur de lecture.
+--}}
+<div class="p-4">
     <x-slot:breadcrumbs>
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header title="{{ $tournament->name }}" :subtitle="__('Live tournament management')">
+    <x-header progress-indicator title="{{ $tournament->name }}" :subtitle="__('Live tournament management')">
         <x-slot:actions>
+            @if ($this->canManageTournament)
+                {{-- Deux papiers, deux usages : l'affiche du tirage part au mur,
+                     les feuilles de match se découpent et vont aux joueurs. Des
+                     onglets à part, parce qu'une page d'impression n'a rien à
+                     cacher au moment d'imprimer. --}}
+                <x-button :label="__('Print the draw')" icon="o-printer"
+                    class="btn-ghost btn-sm"
+                    :link="route('admin.tournaments.print.pools', $tournament)" external />
+
+                <x-button :label="__('Print the match sheets')" icon="o-scissors"
+                    class="btn-ghost btn-sm"
+                    :link="route('admin.tournaments.print.matches', $tournament)" external />
+            @endif
+
             @if ($this->tournamentClosed)
                 <x-badge value="{{ __('Closed') }}" class="badge-neutral" icon="o-lock-closed" />
             @elseif ($this->canManageTournament && $this->poolsPhaseComplete && ! $this->bracketExists)
@@ -62,33 +82,24 @@
     {{-- ── Tabs ────────────────────────────────────────────────────── --}}
     <x-tabs wire:model="activeTab" class="mb-6">
 
-        <x-tab name="pools" icon="o-user-group">
-            <x-slot:label>{{ __('Pools') }}</x-slot:label>
-            @include('admin.club-events.tournaments.partials.live.tabs.pools')
-        </x-tab>
-
         @if ($this->canManageTournament)
-        <x-tab name="tables" icon="o-squares-2x2">
+        {{-- Piloter d'un côté, consulter de l'autre : « Tables » et « À venir »
+             étaient les deux moitiés d'un même geste, séparées par un clic. --}}
+        <x-tab name="control-room" icon="o-squares-2x2">
             <x-slot:label>
-                {{ __('Tables') }}
+                {{ __('Control room') }}
                 @php $inProgress = $this->tables->flatten(1)->where('is_free', false)->count(); @endphp
                 @if ($inProgress > 0)
                     <x-badge value="{{ $inProgress }}" class="ml-1 badge-primary badge-sm" />
                 @endif
             </x-slot:label>
-            @include('admin.club-events.tournaments.partials.live.tabs.tables')
+            @include('admin.club-events.tournaments.partials.live.tabs.control-room')
         </x-tab>
         @endif
 
-        <x-tab name="upcoming" icon="o-megaphone">
-            <x-slot:label>
-                {{ __('Upcoming') }}
-                @php $upcomingCount = $this->upcomingMatches->count(); @endphp
-                @if ($upcomingCount > 0)
-                    <x-badge value="{{ $upcomingCount }}" class="ml-1 badge-ghost badge-sm" />
-                @endif
-            </x-slot:label>
-            @include('admin.club-events.tournaments.partials.live.tabs.upcoming')
+        <x-tab name="pools" icon="o-user-group">
+            <x-slot:label>{{ __('Pools') }}</x-slot:label>
+            @include('admin.club-events.tournaments.partials.live.tabs.pools')
         </x-tab>
 
         <x-tab name="bracket" icon="o-trophy">

@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header separator :subtitle="__('Tournaments, dinners, and club meetings')"
+    <x-header progress-indicator separator :subtitle="__('Tournaments, dinners, and club meetings')"
         :title="__('Events and Activities')">
         <x-slot:actions>
             <x-admin.shared.mobile-header-actions :filter-count="count($this->getFilterChips())"
@@ -15,6 +15,26 @@
     </x-header>
 
     <x-admin.shared.filter-chips :chips="$this->getFilterChips()" />
+
+    {{--
+        Un tournoi qui se joue maintenant passe devant tout le reste : le membre
+        qui ouvre cette page depuis la salle cherche une seule chose.
+    --}}
+    @foreach ($this->liveTournaments as $liveTournament)
+        <a wire:key="live-tournament-{{ $liveTournament->id }}"
+            href="{{ route('admin.tournaments.live', $liveTournament) }}"
+            class="mb-6 flex items-center gap-3 rounded-xl border border-error/40 bg-error/5 px-4 py-3 transition-colors hover:bg-error/10">
+            <span class="relative flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-error opacity-75"></span>
+                <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-error"></span>
+            </span>
+            <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-bold">{{ $liveTournament->name }}</p>
+                <p class="text-xs text-base-content/60">{{ __('Follow the tournament live') }}</p>
+            </div>
+            <x-icon name="o-chevron-right" class="h-4 w-4 shrink-0 text-base-content/40" />
+        </a>
+    @endforeach
 
     {{-- Paiements en attente — seule zone teintée de la page (alerte actionnable) --}}
     @if ($this->pendingPayments->isNotEmpty())
@@ -76,7 +96,7 @@
                     <x-admin.shared.compact-event-preview
                         :location="null"
                         :remainingSlots="$remaining"
-                        :startDateTime="$tournament->start_date->format('Y-m-d H:i:s')"
+                        :startDateTime="$tournament->startsAt()?->format('Y-m-d H:i:s')"
                         :name="$tournament->name"
                         type="tournament"
                     >
@@ -94,7 +114,7 @@
                                             value="{{ $myPair->player1_id === $this->user->id ? $myPair->player2?->full_name : $myPair->player1?->full_name }}" />
                                         <x-button class="btn-ghost btn-xs text-error" icon="o-x-mark"
                                             :tooltip="__('Remove pair')"
-                                            wire:click="removeFromPair({{ $tournament->id }})" />
+                                            wire:click="removeFromPair({{ $tournament->id }})" :aria-label="__('Remove pair')" />
                                     @elseif ($partnerTournamentId === $tournament->id)
                                         <x-select wire:model.live="selectedPartnerId"
                                             :options="$this->availablePartners"
@@ -118,8 +138,7 @@
                                     icon="o-x-mark"
                                     :tooltip="__('Cancel registration')"
                                     spinner="cancelRegistration"
-                                    wire:click="openCancelConfirm({{ $tournament->id }})"
-                                />
+                                    wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Cancel registration')" />
                             @elseif ($isSpotOffered)
                                 @if ($reg->confirmation_deadline)
                                     <span class="hidden text-xs text-base-content/50 sm:inline">
@@ -142,8 +161,7 @@
                                     icon="o-x-mark"
                                     :tooltip="__('Decline this spot')"
                                     spinner="cancelRegistration"
-                                    wire:click="openCancelConfirm({{ $tournament->id }})"
-                                />
+                                    wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Decline this spot')" />
                             @elseif ($isWaiting)
                                 <x-admin.shared.status-badge status="waiting" :detail="$reg->waitlist_position" />
                                 <x-button
@@ -151,8 +169,7 @@
                                     icon="o-x-mark"
                                     :tooltip="__('Leave waitlist')"
                                     spinner="cancelRegistration"
-                                    wire:click="openCancelConfirm({{ $tournament->id }})"
-                                />
+                                    wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Leave waitlist')" />
                             @elseif ($isFull)
                                 <x-admin.shared.status-badge status="full" />
                                 <x-button
@@ -234,7 +251,7 @@
                 <x-card icon="o-academic-cap" separator :title="__('My upcoming sessions')">
                     <div class="space-y-2">
                         @foreach ($this->upcomingTrainingSessions as $session)
-                            <div class="flex items-center justify-between rounded-lg border border-base-200 px-3 py-2">
+                            <div class="flex items-center justify-between rounded-lg border border-base-300 px-3 py-2">
                                 <div class="flex items-center gap-3">
                                     <div class="text-center">
                                         <div class="text-xs font-bold uppercase text-base-content/50">
@@ -264,7 +281,7 @@
             @if ($this->myPastTournaments->isNotEmpty())
                 <x-collapse>
                     <x-slot:heading>
-                        <div class="text-sm font-bold opacity-40">
+                        <div class="text-sm font-bold text-muted">
                             {{ __('Past tournaments') }}
                             <span class="ml-1 font-normal">({{ $this->myPastTournaments->count() }})</span>
                         </div>
@@ -302,7 +319,7 @@
     </x-admin.shared.filter-drawer>
 
     {{-- Modal détails paiement --}}
-    <x-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm">
+    <x-app-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm" :open="$paymentModal">
     @if ($paymentQr && $selectedPaymentId)
         @php
             $payment = \App\Domains\ClubAdmin\Payment\Models\Payment::find($selectedPaymentId);
@@ -319,7 +336,7 @@
             @endif
             <img
                 alt="QR Code"
-                class="w-48 h-48 rounded-xl border border-base-200 shadow"
+                class="w-48 h-48 rounded-xl border border-base-300 shadow"
                 src="{{ $paymentQr }}"
             />
             <div class="w-full divide-y divide-base-200 text-sm">
@@ -345,10 +362,10 @@
     <x-slot:actions>
         <x-button :label="__('Close')" wire:click="$set('paymentModal', false)" />
     </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- Modal participation réunion --}}
-    <x-modal wire:model="meetingRsvpModal" :title="__('My participation')" box-class="max-w-sm">
+    <x-app-modal wire:model="meetingRsvpModal" :title="__('My participation')" box-class="max-w-sm" :open="$meetingRsvpModal">
         @php $rsvpMeeting = $this->rsvpMeetingId ? \App\Domains\Meetings\Models\Meeting::find($this->rsvpMeetingId) : null; @endphp
         @if ($rsvpMeeting)
             @php $rsvpReg = $this->meetingRegistrations[$rsvpMeeting->id] ?? null; @endphp
@@ -402,10 +419,10 @@
                     wire:click="saveMeetingRsvp" spinner="saveMeetingRsvp" />
             </x-slot:actions>
         @endif
-    </x-modal>
+    </x-app-modal>
 
     <x-confirm-modal model="cancelConfirmModal" :title="__('Cancel registration?')"
-        :confirmLabel="__('Confirm')" confirmClass="btn-error" confirmAction="confirmCancel">
+        :confirmLabel="__('Confirm')" confirmClass="btn-error" confirmAction="confirmCancel" :open="$cancelConfirmModal">
         <p>{{ __('This will remove you from the tournament. This action is irreversible.') }}</p>
     </x-confirm-modal>
 </div>

@@ -28,7 +28,7 @@ class IcsGenerator
                 : null,
             $meeting->agendaItems->isNotEmpty()
                 ? __('Agenda:') . '\n' . $meeting->agendaItems
-                    ->map(fn (MeetingAgendaItem $item, int $i) => ($i + 1) . '. ' . $item->title)
+                    ->map(fn (MeetingAgendaItem $item, int $i): string => ($i + 1) . '. ' . $item->title)
                     ->implode('\n')
                 : null,
         ])->filter()->implode('\n\n');

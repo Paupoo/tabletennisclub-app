@@ -85,12 +85,12 @@ new class extends Component
 
         $ids = $this->selectingAllResults
             ? $this->allMatchingPaymentIds()
-            : array_map('intval', $this->selected);
+            : array_map(intval(...), $this->selected);
 
         $payments = Payment::whereIn('id', $ids)->where('status', 'to_refund')->get();
 
-        $blocked = $payments->filter(fn (Payment $p) => $p->refund_transaction_id !== null);
-        $toCancel = $payments->filter(fn (Payment $p) => $p->refund_transaction_id === null);
+        $blocked = $payments->filter(fn (Payment $p): bool => $p->refund_transaction_id !== null);
+        $toCancel = $payments->filter(fn (Payment $p): bool => $p->refund_transaction_id === null);
 
         foreach ($toCancel as $payment) {
             $payment->update(['status' => 'paid']);
@@ -117,7 +117,7 @@ new class extends Component
 
         $ids = $this->selectingAllResults
             ? $this->allMatchingPaymentIds()
-            : array_map('intval', $this->selected);
+            : array_map(intval(...), $this->selected);
 
         foreach ($ids as $id) {
             SendPaymentReminderJob::dispatch($id);
@@ -368,7 +368,7 @@ new class extends Component
                 fn ($q) => $q->where('user_id', $this->userId)
             ))
             ->when($this->eventType, fn ($q) => $q->where('payable_type', $this->eventType))
-            ->when($this->eventName, fn ($q) => $this->applyEventNameFilter($q, $this->eventName))
+            ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName))
             ->get()
             ->map(function (Payment $p) {
                 $label = $p->payable instanceof DescribesPayment ? $p->payable->getPaymentLabel() : null;
@@ -382,6 +382,7 @@ new class extends Component
                     'status' => $p->status,
                     'created_at' => $p->created_at,
                     'invitation_counter' => $p->invitation_counter,
+                    'last_reminded_at' => $p->last_reminded_at,
                     'iban' => $p->payable?->user?->iban,
                     'event_name' => $label['name'] ?? null,
                     'event_type' => $label['type'] ?? null,
@@ -411,7 +412,7 @@ new class extends Component
             ->where('amount', '>', 0)
             ->orderBy('date', 'desc')
             ->get()
-            ->map(function (Transaction $t) use ($payment, $normalizedPayRef) {
+            ->map(function (Transaction $t) use ($payment, $normalizedPayRef): Transaction {
                 if (! $payment) {
                     $t->match_score = 'none';
 
@@ -431,7 +432,7 @@ new class extends Component
 
                 return $t;
             })
-            ->sortByDesc(fn ($t) => match ($t->match_score) {
+            ->sortByDesc(fn ($t): int => match ($t->match_score) {
                 'perfect' => 3,
                 'reference' => 2,
                 'amount' => 1,
@@ -452,7 +453,7 @@ new class extends Component
         $unreconciledTransactions = Transaction::whereDoesntHave('payment')
             ->where('amount', '>', 0)
             ->get()
-            ->keyBy(fn ($t) => $this->normalizeReference($t->structured_reference ?? '___' . $t->id));
+            ->keyBy(fn ($t): string => $this->normalizeReference($t->structured_reference ?? '___' . $t->id));
 
         $this->batchMatches = [];
 
@@ -482,7 +483,7 @@ new class extends Component
             }
         }
 
-        if (empty($this->batchMatches)) {
+        if ($this->batchMatches === []) {
             $this->warning(__('No perfect matches found. Import a bank statement or reconcile manually.'));
 
             return;
@@ -539,7 +540,7 @@ new class extends Component
             }
         }
 
-        if (empty($this->refundBatchMatches)) {
+        if ($this->refundBatchMatches === []) {
             $this->warning(__('No refund matches found. Import a bank statement containing outgoing transfers or reconcile manually.'));
 
             return;
@@ -579,7 +580,7 @@ new class extends Component
 
                 return $t;
             })
-            ->sortByDesc(fn (Transaction $t) => match ($t->match_score) {
+            ->sortByDesc(fn (Transaction $t): int => match ($t->match_score) {
                 'perfect' => 3,
                 'iban' => 2,
                 'amount' => 1,
@@ -627,7 +628,7 @@ new class extends Component
             $this->usersSearchList = $this->userId
                 ? User::where('id', $this->userId)
                     ->get(['id', 'first_name', 'last_name'])
-                    ->map(fn ($u) => ['id' => $u->id, 'name' => $u->full_name])
+                    ->map(fn ($u): array => ['id' => $u->id, 'name' => $u->full_name])
                     ->toArray()
                 : [];
 
@@ -641,7 +642,7 @@ new class extends Component
             ->orderBy('last_name')
             ->limit(10)
             ->get(['id', 'first_name', 'last_name'])
-            ->map(fn ($u) => ['id' => $u->id, 'name' => $u->full_name])
+            ->map(fn ($u): array => ['id' => $u->id, 'name' => $u->full_name])
             ->toArray();
     }
 
@@ -659,10 +660,25 @@ new class extends Component
             return;
         }
 
+        // Only the tab filter used to keep this button away from settled payments,
+        // which is a rendering detail: a stale Livewire request or a double click
+        // during a tab change was enough to dun a member who had already paid.
+        if ($payment->status !== 'pending') {
+            $this->error(__('This payment is settled: there is nothing to chase.'));
+
+            return;
+        }
+
         Mail::to($payment->payable->user)->send(
             new PaymentInvitationEmail($payment, __('Please settle your payment as soon as possible.'))
         );
-        $payment->increment('invitation_counter');
+        // One write, not two: the counter and the date describe the same event, and
+        // an increment followed by a separate save can leave the count raised with
+        // no date behind it.
+        $payment->forceFill([
+            'invitation_counter' => $payment->invitation_counter + 1,
+            'last_reminded_at' => now(),
+        ])->save();
 
         $this->success(__('Reminder sent to :email.', ['email' => $payment->payable->user->email]));
     }
@@ -740,7 +756,7 @@ new class extends Component
     {
         return collect($this->payments()->items())
             ->pluck('id')
-            ->map(fn ($id) => (string) $id)
+            ->map(fn ($id): string => (string) $id)
             ->toArray();
     }
 
@@ -763,7 +779,7 @@ new class extends Component
                 fn ($q) => $q->where('user_id', $this->userId)
             ))
             ->when($this->eventType, fn ($q) => $q->where('payable_type', $this->eventType))
-            ->when($this->eventName, fn ($q) => $this->applyEventNameFilter($q, $this->eventName))
+            ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName))
             ->pluck('id')
             ->toArray();
     }

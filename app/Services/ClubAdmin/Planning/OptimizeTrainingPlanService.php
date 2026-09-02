@@ -32,7 +32,7 @@ class OptimizeTrainingPlanService
     /**
      * Ranking series strength (higher = stronger). NC / NA / unknown is the floor.
      */
-    private const SERIES_STRENGTH = [
+    private const array SERIES_STRENGTH = [
         'A' => 5,
         'B' => 4,
         'C' => 3,
@@ -72,7 +72,7 @@ class OptimizeTrainingPlanService
             /** @var Collection<int, TrainingPlanAssignment> $pool */
             $pool = $plan->assignments
                 ->whereNull('training_plan_pack_id')
-                ->sortByDesc(fn (TrainingPlanAssignment $a): int => $this->rankingValue($a->user->ranking))
+                ->sortByDesc(fn (TrainingPlanAssignment $a): int => $this->rankingValue($a->user->ranking->value))
                 ->values();
 
             $assigned = 0;
@@ -133,7 +133,7 @@ class OptimizeTrainingPlanService
     private function absorb(array &$packs, int $packId, User $user): void
     {
         $packs[$packId]['count']++;
-        $packs[$packId]['level_sum'] += $this->rankingValue($user->ranking);
+        $packs[$packId]['level_sum'] += $this->rankingValue($user->ranking->value);
         $packs[$packId]['level_count']++;
         $this->bumpAge($packs[$packId]['age_counts'], $this->ageCategory($user));
     }
@@ -157,7 +157,7 @@ class OptimizeTrainingPlanService
      */
     private function bestPackFor(User $candidate, array $packs): ?array
     {
-        $candidateValue = $this->rankingValue($candidate->ranking);
+        $candidateValue = $this->rankingValue($candidate->ranking->value);
         $candidateAge = $this->ageCategory($candidate);
 
         $best = null;
@@ -208,7 +208,7 @@ class OptimizeTrainingPlanService
 
             foreach ($members as $assignment) {
                 /** @var TrainingPlanAssignment $assignment */
-                $levelSum += $this->rankingValue($assignment->user->ranking);
+                $levelSum += $this->rankingValue($assignment->user->ranking->value);
                 $levelCount++;
                 $this->bumpAge($ageCounts, $this->ageCategory($assignment->user));
             }
@@ -244,9 +244,9 @@ class OptimizeTrainingPlanService
     {
         // 1. Level homogeneity: distance to the pack's current level average.
         $isEmpty = $state['level_count'] === 0;
-        $packLevel = ! $isEmpty
-            ? $state['level_sum'] / $state['level_count']
-            : ($state['declared_value'] ?? $candidateValue); // empty pack with no declared level = neutral
+        $packLevel = $isEmpty
+            ? ($state['declared_value'] ?? $candidateValue) // empty pack with no declared level = neutral
+            : $state['level_sum'] / $state['level_count'];
 
         $levelCost = self::W_LEVEL * abs($candidateValue - $packLevel);
 
@@ -281,6 +281,6 @@ class OptimizeTrainingPlanService
 
         arsort($ageCounts);
 
-        return (string) array_key_first($ageCounts);
+        return array_key_first($ageCounts);
     }
 }

@@ -158,7 +158,7 @@ describe('Pro rata — mois calendaires entamés', function (): void {
         $pack = referencePack();
         $pack->pack_start_date = null;
 
-        expect(fn () => (new TrainingPackProrata)->ratio($pack, '2027-01-12', null))
+        expect(fn (): float => (new TrainingPackProrata)->ratio($pack, '2027-01-12', null))
             ->toThrow(RuntimeException::class);
     })->group('training', 'pricing', 'prorata');
 
@@ -444,7 +444,7 @@ describe('Réconciliation manuelle', function (): void {
         $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
         (new CalculatePriceAction)($subscription);
 
-        expect(fn () => (new ReconcileTrainingPackAction)($subscription, $pack, null, null, 75.5, '   '))
+        expect(fn (): Subscription => (new ReconcileTrainingPackAction)($subscription, $pack, null, null, 75.5, '   '))
             ->toThrow(DomainException::class);
 
         expect($subscription->fresh()->amount_due)->toBe(270.0)
@@ -457,7 +457,7 @@ describe('Réconciliation manuelle', function (): void {
 
         $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
 
-        expect(fn () => (new ReconcileTrainingPackAction)($subscription, $pack, '2027-02-01', '2027-01-01'))
+        expect(fn (): Subscription => (new ReconcileTrainingPackAction)($subscription, $pack, '2027-02-01', '2027-01-01'))
             ->toThrow(DomainException::class);
     })->group('training', 'reconciliation');
 

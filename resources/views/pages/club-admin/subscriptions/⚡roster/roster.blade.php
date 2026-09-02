@@ -21,7 +21,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition style="display:none">
         <div class="flex items-center gap-2 px-4 py-2.5">
             <div class="flex flex-1 items-center gap-2 rounded-xl bg-base-200 px-3 py-2">
@@ -30,7 +30,8 @@
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
                     placeholder="{{ __('Search by name…') }}" />
             </div>
-            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+            <button type="button" @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm"
+                aria-label="{{ __('Close the search') }}">
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
@@ -40,10 +41,10 @@
 
     <x-card>
         @if ($rows->isEmpty())
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-users"
-                :heading="__('No members found')"
-                :message="__('Try adjusting your search or filters.')" />
+                :heading="__('No members in this season roster')"
+                :filtered="count($filterChips) > 0 || filled($search)" />
         @else
             <x-table :headers="$headers" :rows="$rows" :sort-by="$sortBy">
                 @scope('cell_name', $row)
@@ -128,42 +129,42 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Competitive') }}
                 </p>
                 <x-select :options="$triStateOptions" :placeholder="__('Any')"
                     wire:model.live="competitive" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Can drive') }}
                 </p>
                 <x-select :options="$triStateOptions" :placeholder="__('Any')"
                     wire:model.live="canDrive" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Captain') }}
                 </p>
                 <x-select :options="$triStateOptions" :placeholder="__('Any')"
                     wire:model.live="wantsToBeCaptain" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Volunteer') }}
                 </p>
                 <x-select :options="$triStateOptions" :placeholder="__('Any')"
                     wire:model.live="volunteerHelp" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Directed') }}
                 </p>
                 <x-select :options="$triStateOptions" :placeholder="__('Any')"
                     wire:model.live="wantsDirectedTraining" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Age category') }}
                 </p>
                 <x-select :options="$ageCategoryOptions" :placeholder="__('All age categories')"

@@ -41,6 +41,8 @@ class Guardian extends Model
     /**
      * The club member this guardian record represents, when the guardian is
      * also a registered user. Null for external (non-member) guardians.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function member(): BelongsTo
     {

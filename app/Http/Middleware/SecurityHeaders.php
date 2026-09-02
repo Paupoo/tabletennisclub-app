@@ -32,7 +32,7 @@ class SecurityHeaders
      *
      * @var array<int, string>
      */
-    private const CSP_DIRECTIVES = [
+    private const array CSP_DIRECTIVES = [
         "default-src 'self'",
         "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
         "style-src 'self' 'unsafe-inline'",

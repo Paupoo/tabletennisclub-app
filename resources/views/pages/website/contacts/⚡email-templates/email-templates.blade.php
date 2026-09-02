@@ -11,8 +11,50 @@
         </x-slot:actions>
     </x-header>
 
-    {{-- ── Table ───────────────────────────────────────────────────────────── --}}
-    <x-card>
+    {{-- ── Vue mobile ──────────────────────────────────────────────────────
+    Five columns on a phone left the table scrolling sideways, with the row
+    actions off the right edge. Below lg the rows are cards, as thirteen
+    sibling lists already do. --}}
+    <div class="grid grid-cols-1 gap-3 lg:hidden">
+        @forelse ($templates as $template)
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3" wire:key="mobile-template-{{ $template->id }}">
+                <div class="min-w-0">
+                    <div class="break-words font-medium">{{ $template->name }}</div>
+                    <code class="text-xs text-base-content/60">{{ $template->key }}</code>
+                </div>
+
+                <div class="mt-2 flex flex-wrap items-center gap-1">
+                    @if ($template->apply_status)
+                        <x-badge class="badge-soft badge-info badge-sm" :value="ucfirst($template->apply_status)" />
+                    @endif
+                    @if ($template->is_questionnaire)
+                        <x-badge class="badge-soft badge-warning badge-sm" :value="__('Questionnaire')" />
+                    @endif
+                    @unless ($template->is_active)
+                        <x-badge class="badge-soft badge-ghost badge-sm" :value="__('Inactive')" />
+                    @endunless
+                </div>
+
+                <div class="mt-3 flex flex-wrap items-center gap-1">
+                    <x-button class="btn-ghost btn-sm"
+                        :icon="$template->is_active ? 'o-eye' : 'o-eye-slash'"
+                        :label="$template->is_active ? __('Deactivate') : __('Activate')"
+                        wire:click="toggleActive({{ $template->id }})" />
+                    <x-button class="btn-ghost btn-sm" icon="o-pencil"
+                        :label="__('Edit')" wire:click="openEdit({{ $template->id }})" />
+                    <x-button class="btn-ghost btn-sm text-error" icon="o-trash"
+                        :label="__('Delete')" wire:click="confirmDelete({{ $template->id }})" />
+                </div>
+            </div>
+        @empty
+            <x-admin.shared.list-empty-state
+                icon="o-envelope"
+                :heading="__('No templates yet')" />
+        @endforelse
+    </div>
+
+    {{-- ── Vue desktop ─────────────────────────────────────────────────────── --}}
+    <x-card class="hidden lg:block">
         <x-table :headers="$headers" :rows="$templates" wire:key="email-templates-table">
             @scope('cell_name', $template)
                 <span class="font-medium">{{ $template->name }}</span>
@@ -46,11 +88,11 @@
                     <x-button class="btn-ghost btn-sm"
                         :icon="$template->is_active ? 'o-eye' : 'o-eye-slash'"
                         :tooltip="$template->is_active ? __('Deactivate') : __('Activate')"
-                        wire:click="toggleActive({{ $template->id }})" />
+                        wire:click="toggleActive({{ $template->id }})" :aria-label="$template->is_active ? __('Deactivate') : __('Activate')" />
                     <x-button class="btn-ghost btn-sm" icon="o-pencil"
-                        :tooltip="__('Edit')" wire:click="openEdit({{ $template->id }})" />
+                        :tooltip="__('Edit')" wire:click="openEdit({{ $template->id }})" :aria-label="__('Edit')" />
                     <x-button class="btn-ghost btn-sm text-error" icon="o-trash"
-                        :tooltip="__('Delete')" wire:click="confirmDelete({{ $template->id }})" />
+                        :tooltip="__('Delete')" wire:click="confirmDelete({{ $template->id }})" :aria-label="__('Delete')" />
                 </div>
             @endscope
 
@@ -68,8 +110,8 @@
     {{-- ================================================================
          CREATE / EDIT MODAL
     ================================================================ --}}
-    <x-modal wire:model="formModal" separator
-        :title="$editingId ? __('Edit template') : __('New template')">
+    <x-app-modal wire:model="formModal" separator
+        :title="$editingId ? __('Edit template') : __('New template')" :open="$formModal">
         <div class="space-y-4">
             <x-input :label="__('Name')" wire:model="formName"
                 :placeholder="__('E.g. Welcome message')" />
@@ -87,7 +129,7 @@
                 <x-textarea :label="__('Body')" wire:model="formBody" rows="10" />
 
                 {{-- Variable helper near the body field --}}
-                <div class="mt-2 rounded-lg border border-base-200 bg-base-200/40 p-3 text-xs text-base-content/70">
+                <div class="mt-2 rounded-lg border border-base-300 bg-base-200/40 p-3 text-xs text-base-content/70">
                     <p class="mb-1 font-medium">{{ __('Available variables:') }}</p>
                     <div class="flex flex-wrap gap-2">
                         @foreach ($availableVariables as $variable)
@@ -110,13 +152,13 @@
             <x-button class="btn-primary" icon="o-check" :label="__('Save')"
                 wire:click="saveTemplate" spinner="saveTemplate" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ================================================================
          DELETE MODAL
     ================================================================ --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete this template?')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Delete')" confirmAction="deleteTemplate">
+        :confirmLabel="__('Delete')" confirmAction="deleteTemplate" :open="$deleteModal">
         <p>{{ __('Are you sure you want to delete this template? This action is irreversible.') }}</p>
     </x-confirm-modal>
 </div>

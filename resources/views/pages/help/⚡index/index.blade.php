@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header :title="__('Help')" :subtitle="__('One page per task — only what concerns your role.')" separator>
+    <x-header progress-indicator :title="__('Help')" :subtitle="__('One page per task — only what concerns your role.')" separator>
         <x-slot:middle>
             <x-input class="w-full" clearable icon="o-magnifying-glass" :placeholder="__('Search help...')"
                 wire:model.live.debounce.300ms="search" />

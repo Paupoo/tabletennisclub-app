@@ -156,7 +156,7 @@ new class extends Component
     {
         Gate::authorize(Permission::UsersDelete->value);
 
-        $selfIncluded = in_array((string) Auth::id(), array_map('strval', $this->selected));
+        $selfIncluded = in_array((string) Auth::id(), array_map(strval(...), $this->selected));
 
         User::whereIn('id', $this->selected)
             ->where('id', '!=', Auth::id())
@@ -358,7 +358,7 @@ new class extends Component
             $chips[] = ['key' => 'hasCashRegister', 'label' => __('Has a cash register')];
         }
 
-        if (! empty($this->team_ids)) {
+        if ($this->team_ids !== []) {
             $chips[] = [
                 'key' => 'team_ids',
                 'label' => trans_choice('{1} 1 team|[2,*] :count teams', count($this->team_ids), ['count' => count($this->team_ids)]),
@@ -387,6 +387,7 @@ new class extends Component
             ['key' => 'email',          'label' => __('Email'),   'sortable' => true],
             ['key' => 'is_competitive', 'label' => __('Licence'), 'sortable' => true],
             ['key' => 'ranking',        'label' => __('Ranking'), 'sortable' => true],
+            ['key' => 'status',         'label' => __('Status'),  'sortable' => false],
         ];
     }
 
@@ -418,6 +419,20 @@ new class extends Component
             ['id' => 'competitive', 'name' => __('Competitive')],
             ['id' => 'recreative',  'name' => __('Recreative')],
         ];
+    }
+
+    /**
+     * Whether the visitor may open a member's file — for their data, for their
+     * rights, or for both.
+     *
+     * The list carries five "Edit" links across its desktop and mobile twins,
+     * and all five ask this rather than `update` alone: an access manager holds
+     * no `users.update`, and asking for it would show them a directory whose
+     * every row leads nowhere.
+     */
+    public function mayOpenMemberFile(User $user): bool
+    {
+        return Gate::allows('update', $user) || Gate::allows('manageAccess', $user);
     }
 
     public function openAnonymizeModal(int $userId): void
@@ -476,7 +491,7 @@ new class extends Component
         if (str_starts_with($key, 'categories_')) {
             $value = substr($key, strlen('categories_'));
             $this->categories = array_values(
-                array_filter($this->categories, fn (string $v) => $v !== $value)
+                array_filter($this->categories, fn (string $v): bool => $v !== $value)
             );
         } else {
             $this->reset([$key]);
@@ -559,7 +574,7 @@ new class extends Component
         return Team::with('captain')
             ->orderBy('name')
             ->get()
-            ->map(fn (Team $team) => [
+            ->map(fn (Team $team): array => [
                 'id' => $team->id,
                 'name' => __('Team') . ' ' . $team->name,
                 'avatar' => $team->captain->photo ?? '/images/empty-user.jpg',
@@ -675,7 +690,7 @@ new class extends Component
     {
         return $this->users
             ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
+            ->map(fn (int $id): string => (string) $id)
             ->toArray();
     }
 

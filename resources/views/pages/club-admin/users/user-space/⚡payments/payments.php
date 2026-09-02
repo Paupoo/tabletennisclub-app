@@ -27,7 +27,7 @@ new class extends Component
     use HasBreadcrumbs, HasFilterDrawer, WithPagination;
 
     /** Payable types a member can hold — the whole scope of the hub. */
-    private const PAYABLE_TYPES = [
+    private const array PAYABLE_TYPES = [
         Subscription::class,
         TournamentRegistration::class,
         MeetingUser::class,

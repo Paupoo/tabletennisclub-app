@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Trainings\Notifications;
 
 use App\Domains\Shared\Enums\TrainingCancellationType;
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Domains\Trainings\Models\Training;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -12,7 +13,7 @@ use Illuminate\Notifications\Notification;
 
 class TrainingSessionCancelledNotification extends Notification
 {
-    use Queueable;
+    use LinksToMemberSpace, Queueable;
 
     public function __construct(
         public readonly Training $training,
@@ -26,7 +27,7 @@ class TrainingSessionCancelledNotification extends Notification
         return [
             'title' => __('Training session cancelled'),
             'body' => __('See the training details'),
-            'url' => route('admin.trainings.index'),
+            'url' => $this->memberTrainingsUrl($notifiable),
             'category' => 'training',
             'icon' => 'o-academic-cap',
         ];

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\Finder\SplFileInfo;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,7 +37,7 @@ function filesReferencing(string $namespace): array
         ->contains('/' . preg_quote($namespace, '/') . '/');
 
     return array_map(
-        fn ($file): string => str_replace($root . '/', '', $file->getRealPath()),
+        fn (SplFileInfo $file): string => str_replace($root . '/', '', $file->getRealPath()),
         iterator_to_array($files, preserve_keys: false),
     );
 }

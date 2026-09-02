@@ -22,7 +22,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -34,7 +34,8 @@
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
                     placeholder="{{ __('Search by IP or user agent…') }}" />
             </div>
-            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+            <button type="button" @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm"
+                aria-label="{{ __('Close the search') }}">
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
@@ -80,6 +81,8 @@
         </x-card>
     </div>
 
+    @php $hasActiveFilters = count($filterChips) > 0 || filled($search); @endphp
+
     {{-- ── Vue mobile ───────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($spams as $spam)
@@ -114,33 +117,38 @@
                 </x-slot:sub-value>
                 <x-slot:actions>
                     @if (! $selectionModeActive)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
-                                :tooltip="__('View')"
-                                wire:click="openDetail({{ $spam->id }})" />
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
+                        <x-admin.shared.row-menu
+                            :label="__('View')"
+                            icon="o-eye"
+                            wire-click="openDetail({{ $spam->id }})">
+                            <x-menu-item icon="o-trash" class="text-error" :title="__('Delete')"
                                 wire:click="confirmDelete({{ $spam->id }})" />
-                        </x-admin.shared.row-actions>
+                        </x-admin.shared.row-menu>
                     @endif
                 </x-slot:actions>
             </x-list-item>
         @empty
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-shield-check"
                 :heading="__('No spam recorded')"
-                :message="__('Try adjusting your search or filters.')" />
+                :filtered="$hasActiveFilters" />
         @endforelse
+
+        @if ($spams->hasPages())
+            <div class="mt-2">
+                {{ $spams->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
     <div class="hidden lg:block">
         <x-card>
             @if ($spams->isEmpty())
-                <x-empty-state
+                <x-admin.shared.list-empty-state
                     icon="o-shield-check"
                     :heading="__('No spam recorded')"
-                    :message="__('Try adjusting your search or filters.')" />
+                    :filtered="$hasActiveFilters" />
             @else
                 <x-table :headers="$headers" :rows="$spams" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
@@ -172,14 +180,13 @@
                         </span>
                     @endscope
                     @scope('actions', $spam)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
-                                :tooltip="__('View')"
-                                wire:click="openDetail({{ $spam->id }})" />
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
+                        <x-admin.shared.row-menu
+                            :label="__('View')"
+                            icon="o-eye"
+                            wire-click="openDetail({{ $spam->id }})">
+                            <x-menu-item icon="o-trash" class="text-error" :title="__('Delete')"
                                 wire:click="confirmDelete({{ $spam->id }})" />
-                        </x-admin.shared.row-actions>
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">
@@ -205,14 +212,14 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Period') }}
                 </p>
                 <x-select :options="$periodOptions" :placeholder="__('All periods')"
                     wire:model.live="period" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Type') }}
                 </p>
                 <x-select :options="$userAgentOptions" :placeholder="__('All types')"
@@ -222,27 +229,27 @@
     </x-admin.shared.filter-drawer>
 
     {{-- ── Modal détail spam ─────────────────────────────────────────── --}}
-    <x-modal wire:model="detailModal" :title="__('Spam detail')">
+    <x-app-modal wire:model="detailModal" :title="__('Spam detail')" :open="$detailModal">
         @if ($detailSpam)
             <div class="space-y-3">
                 <div class="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest opacity-50">IP</p>
+                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-muted">IP</p>
                         <p class="font-mono">{{ $detailSpam->ip }}</p>
                     </div>
                     <div>
-                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest opacity-50">
+                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-muted">
                             {{ __('Date') }}
                         </p>
                         <p>{{ $detailSpam->created_at->translatedFormat('d M Y à H:i') }}</p>
                     </div>
                 </div>
                 <div>
-                    <p class="mb-1 text-xs font-semibold uppercase tracking-widest opacity-50">User Agent</p>
+                    <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-muted">User Agent</p>
                     <p class="break-all text-xs text-base-content/60">{{ $detailSpam->user_agent }}</p>
                 </div>
                 <div>
-                    <p class="mb-1 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-muted">
                         {{ __('Submitted data') }}
                     </p>
                     <pre class="bg-base-200 max-h-48 overflow-auto rounded-lg p-3 text-xs">{{ json_encode($detailSpam->inputs, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
@@ -252,17 +259,17 @@
         <x-slot:actions>
             <x-button :label="__('Close')" wire:click="$set('detailModal', false)" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete this spam?')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('This action is irreversible.') }}</p>
     </x-confirm-modal>
 
     {{-- ── Modal suppression bulk ───────────────────────────────────── --}}
     <x-confirm-modal model="bulkDeleteModal" :title="__('Delete selection?')"
-        :confirmLabel="__('Delete')" confirmAction="bulkDelete">
+        :confirmLabel="__('Delete')" confirmAction="bulkDelete" :open="$bulkDeleteModal">
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be permanently deleted.') }}

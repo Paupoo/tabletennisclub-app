@@ -81,7 +81,7 @@ describe('OptimizeTrainingPlanService', function (): void {
             'user_id' => $placedUser->id,
         ]);
 
-        poolMember($plan, $this->season->id, 'A1', now()->subYears(30));
+        poolMember($plan, $this->season->id, 'B0', now()->subYears(30));
 
         optimizeService()->optimize($plan);
 

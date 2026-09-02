@@ -37,11 +37,23 @@ it('search filters users via Livewire reactive update', function (): void {
 
     $this->actingAs($this->admin);
 
+    /*
+     * Ce test échouait en CI et passait en local, et `waitForText` n'y était
+     * pour rien — au sens propre : dans ce plugin, `waitForText()` est un alias
+     * de `assertSee()`, qui photographie le DOM sans réessayer. Aucune assertion
+     * de cette API n'attend quoi que ce soit.
+     *
+     * Le champ est en `wire:model.live.debounce.300ms` : entre la frappe et la
+     * liste filtrée il y a 300 ms plus un aller-retour serveur, pendant lesquels
+     * `assertDontSee` voyait encore la ligne. La seule attente réelle offerte est
+     * `wait()`, donc on l'utilise, largement au-dessus du debounce.
+     */
     visit(route('admin.users.index'))
         ->assertSee('Juliette')
         ->assertSee('ZzzZzz')
         ->type('input[id$="search"]', 'Juliette')
-        ->waitForText('Juliette')
+        ->wait(2)
+        ->assertSee('Juliette')
         ->assertDontSee('ZzzZzz');
 });
 

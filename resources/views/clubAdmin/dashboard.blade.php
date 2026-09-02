@@ -43,7 +43,7 @@
                 <x-section-accordion
                     label="Mon espace"
                     :count="count($memberTiles) . ' accès'"
-                    color="emerald">
+                    color="gray">
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-2">
                         @foreach($memberTiles as $tile)
                             @include('clubAdmin._dashboard_tile', $tile)
@@ -54,20 +54,20 @@
                 @if($showSecretary)
                 @php
                     $secretaryTiles = [
-                        ['icon' => 'o-users',         'label' => 'Membres',       'sub' => 'Gestion des membres',   'href' => route('admin.users.index'),            'color' => 'blue'],
-                        ['icon' => 'o-user-plus',     'label' => 'Inscriptions',  'sub' => 'Nouvelles demandes',    'href' => route('admin.users.registrations'),    'color' => 'emerald'],
-                        ['icon' => 'o-newspaper',     'label' => 'News',          'sub' => 'Articles & actualités', 'href' => route('admin.website.articles.index'), 'color' => 'violet', 'feature' => 'website'],
-                        ['icon' => 'o-envelope',      'label' => 'Contacts',      'sub' => 'Messages reçus',        'href' => route('admin.website.contacts.index'), 'color' => 'cyan', 'feature' => 'contacts'],
-                        ['icon' => 'o-calendar-days', 'label' => 'Réunions',      'sub' => 'Comptes rendus',        'href' => route('admin.meetings.index'),         'color' => 'amber', 'feature' => 'meetings'],
-                        ['icon' => 'o-calendar',      'label' => 'Événements',    'sub' => 'Activités planifiées',  'href' => route('admin.website.events.index'),   'color' => 'orange', 'feature' => 'website'],
-                        ['icon' => 'o-cog-6-tooth',   'label' => 'Configuration', 'sub' => 'Club & paramètres',    'href' => route('admin.club-info'),              'color' => 'slate'],
+                        ['icon' => 'o-users',         'label' => 'Membres',       'sub' => 'Gestion des membres',   'href' => route('admin.users.index')],
+                        ['icon' => 'o-user-plus',     'label' => 'Inscriptions',  'sub' => 'Nouvelles demandes',    'href' => route('admin.users.registrations')],
+                        ['icon' => 'o-newspaper',     'label' => 'News',          'sub' => 'Articles & actualités', 'href' => route('admin.website.articles.index'), 'feature' => 'website'],
+                        ['icon' => 'o-envelope',      'label' => 'Contacts',      'sub' => 'Messages reçus',        'href' => route('admin.website.contacts.index'), 'feature' => 'contacts'],
+                        ['icon' => 'o-calendar-days', 'label' => 'Réunions',      'sub' => 'Comptes rendus',        'href' => route('admin.meetings.index'),         'feature' => 'meetings'],
+                        ['icon' => 'o-calendar',      'label' => 'Événements',    'sub' => 'Activités planifiées',  'href' => route('admin.website.events.index'),   'feature' => 'website'],
+                        ['icon' => 'o-cog-6-tooth',   'label' => 'Configuration', 'sub' => 'Club & paramètres',    'href' => route('admin.club-info')],
                     ];
                     $secretaryTiles = array_filter($secretaryTiles, fn (array $t): bool => ! isset($t['feature']) || \App\Domains\Shared\Enums\Feature::from($t['feature'])->enabled());
                 @endphp
                 <x-section-accordion
                     :label="__('Secretary')"
                     :count="count($secretaryTiles) . ' accès'"
-                    color="blue">
+                    color="gray">
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-2">
                         @foreach($secretaryTiles as $tile)
                             @include('clubAdmin._dashboard_tile', $tile)
@@ -79,17 +79,17 @@
                 @if($showTreasurer)
                 @php
                     $treasurerTiles = [
-                        ['icon' => 'o-banknotes',        'label' => 'Paiements',    'sub' => 'Suivi des paiements',  'href' => route('admin.treasury.payments'),     'color' => 'emerald', 'feature' => 'treasury'],
-                        ['icon' => 'o-credit-card',      'label' => 'Transactions', 'sub' => 'Relevés bancaires',    'href' => route('admin.treasury.transactions'), 'color' => 'blue', 'feature' => 'treasury'],
-                        ['icon' => 'o-building-library', 'label' => 'Caisse',       'sub' => 'Registre de caisse',   'href' => route('admin.treasury.cash'),         'color' => 'amber', 'feature' => 'cash_register'],
-                        ['icon' => 'o-calendar-days',    'label' => 'Saisons',      'sub' => 'Gestion des périodes', 'href' => route('admin.seasons.index'),         'color' => 'violet'],
+                        ['icon' => 'o-banknotes',        'label' => 'Paiements',    'sub' => 'Suivi des paiements',  'href' => route('admin.treasury.payments'),     'feature' => 'treasury'],
+                        ['icon' => 'o-credit-card',      'label' => 'Transactions', 'sub' => 'Relevés bancaires',    'href' => route('admin.treasury.transactions'), 'feature' => 'treasury'],
+                        ['icon' => 'o-building-library', 'label' => 'Caisse',       'sub' => 'Registre de caisse',   'href' => route('admin.treasury.cash'),         'feature' => 'cash_register'],
+                        ['icon' => 'o-calendar-days',    'label' => 'Saisons',      'sub' => 'Gestion des périodes', 'href' => route('admin.seasons.index')],
                     ];
                     $treasurerTiles = array_filter($treasurerTiles, fn (array $t): bool => ! isset($t['feature']) || \App\Domains\Shared\Enums\Feature::from($t['feature'])->enabled());
                 @endphp
                 <x-section-accordion
                     :label="__('Treasurer')"
                     :count="count($treasurerTiles) . ' accès'"
-                    color="amber">
+                    color="gray">
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-2">
                         @foreach($treasurerTiles as $tile)
                             @include('clubAdmin._dashboard_tile', $tile)
@@ -101,18 +101,17 @@
                 @if($showCaptain)
                 @php
                     $captainTiles = [
-                        ['icon' => 'o-trophy',                   'label' => 'Équipes',        'sub' => 'Gestion des équipes',   'href' => route('admin.interclubs.teams'),             'color' => 'rose', 'feature' => 'interclubs'],
-                        ['icon' => 'o-globe-alt',                'label' => 'Interclubs',     'sub' => 'Calendrier & matchs',   'href' => route('admin.interclubs.interclubs'),        'color' => 'blue', 'feature' => 'interclubs'],
-                        ['icon' => 'o-clipboard-document-check', 'label' => 'Sélections',     'sub' => "Compositions d'équipe", 'href' => route('admin.interclubs.captain-selection'), 'color' => 'indigo', 'feature' => 'interclubs'],
-                        ['icon' => 'o-chart-bar',                'label' => 'Résultats',      'sub' => 'Scores & classements',  'href' => route('admin.interclubs.results'),           'color' => 'amber', 'feature' => 'interclubs'],
-                        ['icon' => 'o-adjustments-horizontal',   'label' => 'Control center', 'sub' => 'Suivi en temps réel',   'href' => route('admin.interclubs.control-center'),    'color' => 'teal', 'feature' => 'interclubs'],
+                        ['icon' => 'o-trophy',                   'label' => 'Équipes',        'sub' => 'Gestion des équipes',   'href' => route('admin.interclubs.teams'),             'feature' => 'interclubs'],
+                        ['icon' => 'o-globe-alt',                'label' => 'Interclubs',     'sub' => 'Calendrier & matchs',   'href' => route('admin.interclubs.interclubs'),        'feature' => 'interclubs'],
+                        ['icon' => 'o-clipboard-document-check', 'label' => 'Sélections',     'sub' => "Compositions d'équipe", 'href' => route('admin.interclubs.captain-selection'), 'feature' => 'interclubs'],
+                        ['icon' => 'o-chart-bar',                'label' => 'Résultats',      'sub' => 'Scores & classements',  'href' => route('admin.interclubs.results'),           'feature' => 'interclubs'],
                     ];
                     $captainTiles = array_filter($captainTiles, fn (array $t): bool => ! isset($t['feature']) || \App\Domains\Shared\Enums\Feature::from($t['feature'])->enabled());
                 @endphp
                 <x-section-accordion
                     :label="__('Captain / Selector')"
                     :count="count($captainTiles) . ' accès'"
-                    color="rose">
+                    color="gray">
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-2">
                         @foreach($captainTiles as $tile)
                             @include('clubAdmin._dashboard_tile', $tile)
@@ -124,18 +123,18 @@
                 @if($showCommittee)
                 @php
                     $committeeTiles = [
-                        ['icon' => 'o-users',             'label' => 'Membres',       'sub' => 'Vue globale',             'href' => route('admin.users.index'),       'color' => 'blue'],
-                        ['icon' => 'o-building-office-2', 'label' => 'Salles',        'sub' => 'Installations sportives', 'href' => route('admin.rooms.index'),       'color' => 'emerald'],
-                        ['icon' => 'o-clock',             'label' => 'Entraînements', 'sub' => 'Séances programmées',     'href' => route('admin.trainings.index'),   'color' => 'teal', 'feature' => 'trainings'],
-                        ['icon' => 'o-calendar-days',     'label' => 'Saisons',       'sub' => 'Gestion des périodes',    'href' => route('admin.seasons.index'),     'color' => 'violet'],
-                        ['icon' => 'o-trophy',            'label' => 'Tournois',      'sub' => 'Compétitions internes',   'href' => route('admin.tournaments.index'), 'color' => 'amber', 'feature' => 'tournaments'],
+                        ['icon' => 'o-users',             'label' => 'Membres',       'sub' => 'Vue globale',             'href' => route('admin.users.index')],
+                        ['icon' => 'o-building-office-2', 'label' => 'Salles',        'sub' => 'Installations sportives', 'href' => route('admin.rooms.index')],
+                        ['icon' => 'o-clock',             'label' => 'Entraînements', 'sub' => 'Séances programmées',     'href' => route('admin.trainings.index'),   'feature' => 'trainings'],
+                        ['icon' => 'o-calendar-days',     'label' => 'Saisons',       'sub' => 'Gestion des périodes',    'href' => route('admin.seasons.index')],
+                        ['icon' => 'o-trophy',            'label' => 'Tournois',      'sub' => 'Compétitions internes',   'href' => route('admin.tournaments.index'), 'feature' => 'tournaments'],
                     ];
                     $committeeTiles = array_filter($committeeTiles, fn (array $t): bool => ! isset($t['feature']) || \App\Domains\Shared\Enums\Feature::from($t['feature'])->enabled());
                 @endphp
                 <x-section-accordion
                     :label="__('Committee')"
                     :count="count($committeeTiles) . ' accès'"
-                    color="violet">
+                    color="gray">
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-2">
                         @foreach($committeeTiles as $tile)
                             @include('clubAdmin._dashboard_tile', $tile)
@@ -151,11 +150,11 @@
 
                 <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">{{ __('Recent activity') }}</p>
 
-                <div class="bg-base-100 rounded-xl border border-base-200 shadow-sm divide-y divide-base-200">
+                <div class="bg-base-100 rounded-xl border border-base-300 shadow-sm divide-y divide-base-200">
                     @forelse($recentActivity as $item)
                     <div class="px-3 py-2.5 hover:bg-base-200/40 transition-colors">
                         <p class="text-xs font-medium text-base-content leading-snug">{{ $item['label'] }}</p>
-                        <p class="text-[10px] text-base-content/40 mt-0.5">{{ $item['time'] }}</p>
+                        <p class="text-xs text-base-content/40 mt-0.5">{{ $item['time'] }}</p>
                     </div>
                     @empty
                     <div class="px-4 py-6 text-center text-xs text-base-content/40">
@@ -172,12 +171,12 @@
                 @if(count($upcomingTrainings) > 0)
                 <div class="space-y-2 pt-1">
                     <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Entraînements</p>
-                    <div class="bg-base-100 rounded-xl border border-base-200 shadow-sm divide-y divide-base-200">
+                    <div class="bg-base-100 rounded-xl border border-base-300 shadow-sm divide-y divide-base-200">
                         @foreach($upcomingTrainings as $training)
                         <div class="px-3 py-2.5">
                             <p class="text-xs font-medium text-base-content leading-snug">{{ $training['label'] }}</p>
                             @if($training['sub'])
-                            <p class="text-[10px] text-base-content/40 mt-0.5">{{ $training['sub'] }}</p>
+                            <p class="text-xs text-base-content/40 mt-0.5">{{ $training['sub'] }}</p>
                             @endif
                         </div>
                         @endforeach
@@ -192,11 +191,11 @@
                 @if(count($upcomingMatches) > 0)
                 <div class="space-y-2 pt-1">
                     <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Interclubs</p>
-                    <div class="bg-base-100 rounded-xl border border-base-200 shadow-sm divide-y divide-base-200">
+                    <div class="bg-base-100 rounded-xl border border-base-300 shadow-sm divide-y divide-base-200">
                         @foreach($upcomingMatches as $match)
                         <div class="px-3 py-2.5">
                             <p class="text-xs font-medium text-base-content leading-snug">{{ $match['label'] }}</p>
-                            <p class="text-[10px] text-base-content/40 mt-0.5">{{ $match['sub'] }}</p>
+                            <p class="text-xs text-base-content/40 mt-0.5">{{ $match['sub'] }}</p>
                         </div>
                         @endforeach
                     </div>
@@ -210,11 +209,11 @@
                 @if(count($upcomingInternalEvents) > 0)
                 <div class="space-y-2 pt-1">
                     <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Événements</p>
-                    <div class="bg-base-100 rounded-xl border border-base-200 shadow-sm divide-y divide-base-200">
+                    <div class="bg-base-100 rounded-xl border border-base-300 shadow-sm divide-y divide-base-200">
                         @foreach($upcomingInternalEvents as $event)
                         <div class="px-3 py-2.5">
                             <p class="text-xs font-medium text-base-content leading-snug">{{ $event['label'] }}</p>
-                            <p class="text-[10px] text-base-content/40 mt-0.5">{{ $event['sub'] }}</p>
+                            <p class="text-xs text-base-content/40 mt-0.5">{{ $event['sub'] }}</p>
                         </div>
                         @endforeach
                     </div>

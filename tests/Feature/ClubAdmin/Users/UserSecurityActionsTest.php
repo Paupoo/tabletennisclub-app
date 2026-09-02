@@ -27,13 +27,13 @@ const PROFILE_COMPONENT = 'pages::club-admin.users.user-space.profile';
 // Erasure lives in account settings, not on the profile page.
 const SECURITY_SETTINGS_COMPONENT = 'pages::club-admin.users.user-space.settings';
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->create();
     actingAs($this->admin);
 });
 
-describe('admin form security actions', function () {
-    it('resends an invitation and stamps last_invited_at', function () {
+describe('admin form security actions', function (): void {
+    it('resends an invitation and stamps last_invited_at', function (): void {
         Mail::fake();
         $user = User::factory()->create(['last_invited_at' => null]);
 
@@ -44,7 +44,7 @@ describe('admin form security actions', function () {
         expect($user->fresh()->last_invited_at)->not->toBeNull();
     });
 
-    it('sends a password reset link to the member', function () {
+    it('sends a password reset link to the member', function (): void {
         Notification::fake();
         $user = User::factory()->create();
 
@@ -55,8 +55,8 @@ describe('admin form security actions', function () {
     });
 });
 
-describe('self-service erasure request', function () {
-    it('records the erasure request timestamp', function () {
+describe('self-service erasure request', function (): void {
+    it('records the erasure request timestamp', function (): void {
         $user = User::factory()->create(['gdpr_erasure_requested_at' => null]);
 
         Livewire::actingAs($user)
@@ -66,7 +66,7 @@ describe('self-service erasure request', function () {
         expect($user->fresh()->gdpr_erasure_requested_at)->not->toBeNull();
     });
 
-    it('notifies admins and the secretary but not regular members', function () {
+    it('notifies admins and the secretary but not regular members', function (): void {
         Notification::fake();
 
         $secretary = User::factory()->isCommitteeMember()->create(['committee_role' => CommitteeRolesEnum::SECRETARY]);
@@ -81,7 +81,7 @@ describe('self-service erasure request', function () {
         Notification::assertNotSentTo([$lambda, $member], GdprErasureRequestedNotification::class);
     });
 
-    it('is idempotent and keeps the original request date', function () {
+    it('is idempotent and keeps the original request date', function (): void {
         Notification::fake();
 
         $originalDate = Carbon::parse('2026-06-01 10:00:00');
@@ -95,15 +95,15 @@ describe('self-service erasure request', function () {
         expect($member->fresh()->gdpr_erasure_requested_at->equalTo($originalDate))->toBeTrue();
     });
 
-    it('renders the erasure mail with the member name', function () {
+    it('renders the erasure mail with the member name', function (): void {
         $member = User::factory()->create(['first_name' => 'Jean', 'last_name' => 'Dupont']);
 
-        $mail = (new GdprErasureRequestedNotification($member))->toMail($this->admin);
+        $mail = new GdprErasureRequestedNotification($member)->toMail($this->admin);
 
         expect((string) $mail->render())->toContain('Jean Dupont');
     });
 
-    it('detects a subscription awaiting payment', function () {
+    it('detects a subscription awaiting payment', function (): void {
         $member = User::factory()->create();
         expect($member->hasPendingPayments())->toBeFalse();
 
@@ -112,16 +112,16 @@ describe('self-service erasure request', function () {
         expect($member->fresh()->hasPendingPayments())->toBeTrue();
     });
 
-    it('flags pending payments in the erasure mail', function () {
+    it('flags pending payments in the erasure mail', function (): void {
         $member = User::factory()->create();
         Subscription::factory()->create(['user_id' => $member->id, 'status' => 'pending']);
 
-        $mail = (new GdprErasureRequestedNotification($member->fresh()))->toMail($this->admin);
+        $mail = new GdprErasureRequestedNotification($member->fresh())->toMail($this->admin);
 
         expect((string) $mail->render())->toContain('⚠️');
     });
 
-    it('drops the in-app erasure notification once the member is anonymized', function () {
+    it('drops the in-app erasure notification once the member is anonymized', function (): void {
         $member = User::factory()->create();
 
         $this->admin->notifications()->create([

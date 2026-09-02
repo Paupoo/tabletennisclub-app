@@ -6,17 +6,6 @@ parameters:
 			count: 1
 			path: app/Actions/ClubAdmin/Payments/SendPayementInvite.php
 
-		-
-			message: '#^Class App\\Actions\\ClubAdmin\\Payments\\GeneratePaymentQR constructor invoked with 1 parameter, 0 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: app/Actions/ClubAdmin/Payments/SendPayementInvite.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Trainings\\Models\\TrainingPack\:\:\$pivot\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Actions/ClubAdmin/Subscriptions/CalculatePriceAction.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:affiliated\(\)\.$#'
@@ -30,23 +19,6 @@ parameters:
 			count: 2
 			path: app/Actions/Meetings/RespondToMeetingRsvp.php
 
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$has_paid\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Actions/Tournament/ToggleHasPaidTournamentAction.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$model with type App\\Actions\\Tournament\\Illuminate\\Database\\Eloquent\\Model is not subtype of native type Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: parameter.phpDocType
-			count: 1
-			path: app/Actions/Tournament/ToggleHasPaidTournamentAction.php
-
-		-
-			message: '#^Parameter \$model of method App\\Actions\\Tournament\\ToggleHasPaidTournamentAction\:\:toggleHasPaid\(\) has invalid type App\\Actions\\Tournament\\Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Actions/Tournament/ToggleHasPaidTournamentAction.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:users\(\)\.$#'
@@ -157,12 +129,6 @@ parameters:
 			path: app/Domains/ClubAdmin/Users/Models/User.php
 
 		-
-			message: '#^PHPDoc tag @param for parameter \$query with type mixed is not subtype of native type Illuminate\\Contracts\\Database\\Query\\Builder\.$#'
-			identifier: parameter.phpDocType
-			count: 1
-			path: app/Domains/ClubAdmin/Users/Models/User.php
-
-		-
 			message: '#^PHPDoc type array\<int, string\> of property App\\Domains\\ClubAdmin\\Users\\Models\\User\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
 			identifier: property.phpDocType
 			count: 1
@@ -174,17 +140,7 @@ parameters:
 			count: 1
 			path: app/Domains/ClubAdmin/Users/Models/User.php
 
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,App\\Domains\\ClubAdmin\\Users\\Models\\User\>\:\:first\(\) expects \(callable\(App\\Domains\\ClubAdmin\\Users\\Models\\User, int\)\: bool\)\|null, Closure\(App\\Domains\\ClubAdmin\\Users\\Models\\Guardian\)\: bool given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domains/ClubAdmin/Users/Models/User.php
 
-		-
-			message: '#^Access to an undefined property App\\Domains\\ClubAdmin\\Users\\Models\\User\:\:\$pivot\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
 
 		-
 			message: '#^Access to an undefined property App\\Domains\\ClubAdmin\\Users\\Models\\User\:\:\$registration\.$#'
@@ -198,29 +154,9 @@ parameters:
 			count: 1
 			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
 
-		-
-			message: '#^Method App\\Domains\\ClubAdmin\\Users\\Services\\UserCalendarService\:\:interclubs\(\) should return Illuminate\\Support\\Collection\<int, array\<string, mixed\>\> but returns Illuminate\\Support\\Collection\<int, array\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
 
-		-
-			message: '#^Method App\\Domains\\ClubAdmin\\Users\\Services\\UserCalendarService\:\:meetings\(\) should return Illuminate\\Support\\Collection\<int, array\<string, mixed\>\> but returns Illuminate\\Support\\Collection\<int, array\{startDateTime\: mixed, title\: mixed, type\: ''meeting'', meetingId\: mixed, format\: mixed, location\: mixed, meetingLink\: mixed, registrationStatus\: mixed, \.\.\.\}\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
 
-		-
-			message: '#^Method App\\Domains\\ClubAdmin\\Users\\Services\\UserCalendarService\:\:tournaments\(\) should return Illuminate\\Support\\Collection\<int, array\<string, mixed\>\> but returns Illuminate\\Support\\Collection\<int, array\{startDateTime\: mixed, endDate\: mixed, title\: mixed, type\: ''tournament'', tournamentId\: mixed, registrationStatus\: mixed, waitlistPosition\: mixed, confirmDeadline\: mixed, \.\.\.\}\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
 
-		-
-			message: '#^Method App\\Domains\\ClubAdmin\\Users\\Services\\UserCalendarService\:\:trainingSessions\(\) should return Illuminate\\Support\\Collection\<int, array\<string, mixed\>\> but returns Illuminate\\Support\\Collection\<int, array\{startDateTime\: mixed, endTime\: mixed, title\: mixed, type\: ''training'', room\: mixed, level\: mixed, coach\: string\|null, registrationStatus\: null, \.\.\.\}\>\.$#'
-			identifier: return.type
-			count: 2
-			path: app/Domains/ClubAdmin/Users/Services/UserCalendarService.php
 
 		-
 			message: '#^Access to an undefined property App\\Domains\\ClubPosts\\Models\\EventPost\:\:\$category\.$#'
@@ -271,12 +207,6 @@ parameters:
 			path: app/Domains/Competitions/Tournament/Models/Pool.php
 
 		-
-			message: '#^PHPDoc tag @return with type void is incompatible with native type App\\Domains\\ClubAdmin\\Users\\Models\\User\.$#'
-			identifier: return.phpDocType
-			count: 1
-			path: app/Domains/Competitions/Tournament/Models/Pool.php
-
-		-
 			message: '#^PHPDoc tag @property has invalid value \(mixed \$0\)\: Unexpected token "\$0", expected variable at offset 2523 on line 58$#'
 			identifier: phpDoc.parseError
 			count: 1
@@ -295,12 +225,6 @@ parameters:
 			path: app/Domains/Competitions/Tournament/Models/TournamentPair.php
 
 		-
-			message: '#^PHPDoc tag @param for parameter \$nextMatchIds with type mixed is not subtype of native type array\|null\.$#'
-			identifier: parameter.phpDocType
-			count: 1
-			path: app/Domains/Competitions/Tournament/Services/TournamentFinalPhaseService.php
-
-		-
 			message: '#^Negated boolean expression is always false\.$#'
 			identifier: booleanNot.alwaysFalse
 			count: 4
@@ -311,12 +235,6 @@ parameters:
 			identifier: booleanOr.alwaysFalse
 			count: 3
 			path: app/Domains/Competitions/Tournament/Services/TournamentMatchService.php
-
-		-
-			message: '#^Unreachable statement \- code above always terminates\.$#'
-			identifier: deadCode.unreachable
-			count: 1
-			path: app/Domains/Competitions/Tournament/Services/TournamentPoolService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
@@ -335,12 +253,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: app/Domains/Competitions/Tournament/Services/TournamentService.php
-
-		-
-			message: '#^Match expression does not handle remaining value\: App\\Domains\\Shared\\Enums\\TournamentStatusEnum\:\:SETUP$#'
-			identifier: match.unhandled
-			count: 1
-			path: app/Domains/Competitions/Tournament/Services/TournamentStatusManager.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:tables\(\)\.$#'
@@ -372,11 +284,6 @@ parameters:
 			count: 2
 			path: app/Domains/Meetings/Models/MeetingUser.php
 
-		-
-			message: '#^Access to an undefined property App\\Domains\\Trainings\\Models\\TrainingPack\:\:\$pivot\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/Subscriptions/Notifications/SubscriptionCreatedNotification.php
 
 		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Model\>\:\:sum\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\|string\)\: float\)\|string\|null, Closure\(App\\Domains\\Trainings\\Models\\TrainingPack\)\: float given\.$#'
@@ -445,28 +352,10 @@ parameters:
 			path: app/Http/Controllers/ClubEvents/Meeting/MeetingRsvpController.php
 
 		-
-			message: '#^Strict comparison using \=\=\= between ''1''\|''2''\|''3''\|''4''\|''5''\|''6''\|''7'' and int will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: app/Http/Controllers/ClubEvents/Training/TrainingController.php
-
-		-
 			message: '#^Offset ''Beginners''\|''Elite''\|''Intermediate''\|''Kids''\|''Open''\|''Young potential'' on array\{Beginners\: ''Débutant'', Elite\: ''Compétition'', Intermediate\: ''Confirmé'', Kids\: ''Jeunes'', Open\: ''Tous niveaux'', ''Young potential''\: ''Jeunes espoirs''\} on left side of \?\? always exists and is not nullable\.$#'
 			identifier: nullCoalesce.offset
 			count: 1
 			path: app/Http/Controllers/HomeController.php
-
-		-
-			message: '#^Static method Illuminate\\Validation\\Rule\:\:when\(\) invoked with 5 parameters, 2\-3 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: app/Http/Requests/StoreInterclubRequest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Routing\\Route\:\:\$table\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Requests/StoreOrUpdateTableRequest.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user\.$#'
@@ -576,23 +465,6 @@ parameters:
 			count: 1
 			path: app/Livewire/Public/Results/ResultList.php
 
-		-
-			message: '#^Property App\\Livewire\\Public\\TournamentCard\:\:\$user \(App\\Domains\\ClubAdmin\\Users\\Models\\User\) does not accept Illuminate\\Contracts\\Auth\\Authenticatable\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Livewire/Public/TournamentCard.php
-
-		-
-			message: '#^Property App\\Livewire\\Public\\TournamentCard\:\:\$user \(App\\Domains\\ClubAdmin\\Users\\Models\\User\) does not accept Illuminate\\Contracts\\Auth\\Authenticatable\|null\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Livewire/Public/TournamentCard.php
-
-		-
-			message: '#^Method App\\Livewire\\Tournament\\PlayerRegistration\:\:IsFull\(\) is unused\.$#'
-			identifier: method.unused
-			count: 1
-			path: app/Livewire/Tournament/PlayerRegistration.php
 
 		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'

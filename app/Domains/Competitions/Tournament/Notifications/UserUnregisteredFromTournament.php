@@ -6,13 +6,14 @@ namespace App\Domains\Competitions\Tournament\Notifications;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Traits\LinksToMemberSpace;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class UserUnregisteredFromTournament extends Notification
 {
-    use Queueable;
+    use LinksToMemberSpace, Queueable;
 
     /**
      * Create a new notification instance.
@@ -32,7 +33,7 @@ class UserUnregisteredFromTournament extends Notification
         return [
             'title' => __('Registration cancelled: :name', ['name' => $this->tournament->name]),
             'body' => __('Your registration has been cancelled'),
-            'url' => route('admin.tournaments.index'),
+            'url' => $this->memberEventsUrl($notifiable),
             'category' => 'tournament',
             'icon' => 'o-trophy',
         ];

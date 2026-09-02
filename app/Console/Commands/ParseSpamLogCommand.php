@@ -60,9 +60,9 @@ final class ParseSpamLogCommand extends Command
                     $data = json_decode($json, true);
 
                     if (json_last_error() === JSON_ERROR_NONE) {
-                        preg_match('/\[(.*?)\]/', $line, $dateMatches)
-                            ? $logDate = $dateMatches[1] // "2025-08-17 20:59:51"
-                            : $logDate = now()->toDateTimeString();
+                        $logDate = preg_match('/\[(.*?)\]/', $line, $dateMatches)
+                            ? $dateMatches[1] // "2025-08-17 20:59:51"
+                            : now()->toDateTimeString();
 
                         $spam = Spam::create([
                             'ip' => $data['ip'] ?? null,

@@ -20,7 +20,7 @@ it('public and protected methods declare a return type', function (): void {
         if (! preg_match('/namespace\s+([^;\s]+)\s*;/', $contents, $nsMatch)) {
             continue;
         }
-        if (! preg_match('/class\s+([A-Za-z0-9_]+)/', $contents, $classMatch)) {
+        if (! preg_match('/class\s+(\w+)/', $contents, $classMatch)) {
             continue;
         }
 
@@ -32,7 +32,7 @@ it('public and protected methods declare a return type', function (): void {
         if (! class_exists($fqcn)) {
             try {
                 require_once $file->getPathname();
-            } catch (Throwable $e) {
+            } catch (Throwable) {
                 // skip files that cannot be loaded
                 continue;
             }
@@ -44,7 +44,7 @@ it('public and protected methods declare a return type', function (): void {
 
         try {
             $ref = new ReflectionClass($fqcn);
-        } catch (ReflectionException $e) {
+        } catch (ReflectionException) {
             continue;
         }
 
@@ -64,7 +64,7 @@ it('public and protected methods declare a return type', function (): void {
         }
     }
 
-    if (! empty($errors)) {
+    if ($errors !== []) {
         throw new AssertionFailedError("Methods without return types:\n" . implode("\n", $errors));
     }
 });

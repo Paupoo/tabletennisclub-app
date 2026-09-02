@@ -17,7 +17,7 @@
     </x-header>
 
     {{-- Stats --}}
-    <div class="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-3">
         <x-admin.shared.stat-card
             :label="__('Tables')"
             :value="$tables->count()"
@@ -36,7 +36,7 @@
             :value="$room->capacity_for_interclubs"
             :hint="__('tables')"
             icon="o-trophy"
-            class="col-span-2 lg:col-span-1" />
+            class="sm:col-span-2 lg:col-span-1" />
     </div>
 
     <div class="grid gap-6 lg:grid-cols-3">
@@ -63,7 +63,7 @@
                                 @if ($table->brand || $table->model)
                                     <span>{{ trim($table->brand . ' ' . $table->model) }}</span>
                                 @else
-                                    <span class="text-xs opacity-50">{{ __('Not specified') }}</span>
+                                    <span class="text-xs text-muted">{{ __('Not specified') }}</span>
                                 @endif
                             @endscope
 
@@ -74,18 +74,17 @@
                             @endscope
 
                             @scope('actions', $table)
-                                <x-admin.shared.row-actions>
+                                <x-admin.shared.row-menu
+                                    :label="__('Edit')"
+                                    icon="o-pencil"
+                                    link="{{ route('admin.tables.edit', $table) }}">
                                     @can('update', $table)
-                                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                            :tooltip="__('Edit')" link="{{ route('admin.tables.edit', $table) }}" />
-                                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-lock-open"
-                                            :tooltip="__('Unlink')" wire:click="confirmUnlink({{ $table->id }})" spinner />
+                                        <x-menu-item icon="o-lock-open" wire:click="confirmUnlink({{ $table->id }})" spinner :title="__('Unlink')" />
                                     @endcan
                                     @can('delete', $table)
-                                        <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                            :tooltip="__('Delete')" wire:click="confirmDelete({{ $table->id }})" />
+                                        <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $table->id }})" :title="__('Delete')" />
                                     @endcan
-                                </x-admin.shared.row-actions>
+                                </x-admin.shared.row-menu>
                             @endscope
                         </x-table>
                     </div>
@@ -109,16 +108,16 @@
                                     </div>
                                 </x-slot:sub-value>
                                 <x-slot:actions>
-                                    <x-admin.shared.row-actions>
+                                    <x-admin.shared.row-menu
+                                        :label="__('Edit')"
+                                        icon="o-pencil"
+                                        link="{{ route('admin.tables.edit', $table) }}">
                                         @can('update', $table)
-                                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                                :tooltip="__('Edit')" link="{{ route('admin.tables.edit', $table) }}" />
                                         @endcan
                                         @can('delete', $table)
-                                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                                :tooltip="__('Delete')" wire:click="confirmDelete({{ $table->id }})" />
+                                            <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $table->id }})" :title="__('Delete')" />
                                         @endcan
-                                    </x-admin.shared.row-actions>
+                                    </x-admin.shared.row-menu>
                                 </x-slot:actions>
                             </x-list-item>
                         @endforeach
@@ -164,7 +163,7 @@
                 @endphp
 
                 @if (! $hasUpcoming)
-                    <p class="text-sm italic opacity-50">{{ __('Nothing planned in the next two weeks.') }}</p>
+                    <p class="text-sm italic text-muted">{{ __('Nothing planned in the next two weeks.') }}</p>
                 @else
                     @foreach ($room->trainings as $training)
                         <x-admin.shared.compact-event-preview link="#"
@@ -179,7 +178,7 @@
 
                     @foreach ($room->tournaments as $tournament)
                         <x-admin.shared.compact-event-preview link="#" :name="$tournament->name"
-                            :startDateTime="$tournament->start_date" type="tournament" />
+                            :startDateTime="$tournament->startsAt()" type="tournament" />
                     @endforeach
                 @endif
             </x-card>
@@ -187,12 +186,12 @@
     </div>
 
     <x-confirm-modal model="unlinkModal" :title="__('Confirm unlink')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Unlink')" confirmAction="unlink">
+        :confirmLabel="__('Unlink')" confirmAction="unlink" :open="$unlinkModal">
         <p>{{ __('Are you sure you want to unlink the table from its room?') }}</p>
     </x-confirm-modal>
 
     <x-confirm-modal model="deleteModal" :title="__('Confirm deletion')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('Are you sure you want to delete this table? This action is irreversible.') }}</p>
     </x-confirm-modal>
 </div>

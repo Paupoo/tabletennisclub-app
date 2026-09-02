@@ -168,7 +168,7 @@ describe('import', function (): void {
 
         $lines = [implode(',', $header)];
         foreach ($rows as $row) {
-            $lines[] = implode(',', array_map(fn ($v) => '"' . str_replace('"', '""', (string) $v) . '"', $row));
+            $lines[] = implode(',', array_map(fn ($v): string => '"' . str_replace('"', '""', (string) $v) . '"', $row));
         }
 
         return implode("\n", $lines);

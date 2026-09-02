@@ -6,6 +6,7 @@ namespace App\Domains\Trainings\Models;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -87,6 +88,8 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
  * @method static Builder<static>|TrainingPack whereUpdatedAt($value)
  *
  * @mixin \Eloquent
+ *
+ * @property-read SubscriptionTrainingPack|null $pivot the enrolment row, when hydrated through Subscription::trainingPacks()
  */
 class TrainingPack extends Model
 {

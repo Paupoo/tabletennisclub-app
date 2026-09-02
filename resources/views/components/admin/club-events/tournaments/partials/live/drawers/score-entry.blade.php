@@ -41,17 +41,17 @@
         {{-- Match header --}}
         <div class="bg-base-200 p-4 rounded-xl mb-6 border border-base-300">
             <div class="flex justify-between items-center mb-3">
-                <span class="text-[10px] font-black uppercase tracking-widest opacity-60">
+                <span class="text-xs font-black uppercase tracking-widest opacity-60">
                     {{ $match->pool?->name ?? __('Bracket') }}
                 </span>
                 <div class="flex items-center gap-2">
                     @if ($match->referee)
-                        <span class="flex items-center gap-1 text-[10px] opacity-50">
+                        <span class="flex items-center gap-1 text-xs text-muted">
                             <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                             {{ $match->referee->full_name }}
                         </span>
                     @endif
-                    <x-badge value="{{ __('Best of') }} {{ $maxSets }}" class="badge-outline badge-xs opacity-50 font-bold" />
+                    <x-badge value="{{ __('Best of') }} {{ $maxSets }}" class="badge-outline badge-xs text-muted font-bold" />
                 </div>
             </div>
 
@@ -79,19 +79,19 @@
         {{-- Handicap info bar --}}
         @if ($tournament->has_handicap_points && ($hp1 > 0 || $hp2 > 0))
             <div class="rounded-xl border border-warning/40 bg-warning/10 p-3 mb-4">
-                <p class="text-[10px] font-bold uppercase tracking-widest text-warning-content text-center mb-2">
+                <p class="text-xs font-bold uppercase tracking-widest text-warning-content text-center mb-2">
                     {{ __('Handicap per set — starting scores') }}
                 </p>
                 <div class="flex justify-between items-center">
                     <div class="flex-1 text-center">
-                        <div class="text-[10px] font-bold opacity-60 truncate">{{ $side1Name }}</div>
+                        <div class="text-xs font-bold opacity-60 truncate">{{ $side1Name }}</div>
                         <div @class(['text-2xl font-extrabold leading-none', 'text-warning-content' => $hp1 > 0, 'text-base-content/30' => $hp1 === 0])>
                             +{{ $hp1 }}
                         </div>
                     </div>
-                    <div class="text-[10px] font-bold opacity-40 uppercase">pts</div>
+                    <div class="text-xs font-bold text-muted uppercase">pts</div>
                     <div class="flex-1 text-center">
-                        <div class="text-[10px] font-bold opacity-60 truncate">{{ $side2Name }}</div>
+                        <div class="text-xs font-bold opacity-60 truncate">{{ $side2Name }}</div>
                         <div @class(['text-2xl font-extrabold leading-none', 'text-warning-content' => $hp2 > 0, 'text-base-content/30' => $hp2 === 0])>
                             +{{ $hp2 }}
                         </div>
@@ -112,49 +112,54 @@
                     $p1      = (int)($setScores[$i]['p1'] ?? $hp1);
                     $p2      = (int)($setScores[$i]['p2'] ?? $hp2);
                     $isEmpty = ($p1 === $hp1 && $p2 === $hp2);
-                    $sMax    = max($p1, $p2);
-                    $sMin    = min($p1, $p2);
-                    $setDone = ! $isEmpty && $p1 !== $p2 && (
-                        $tournament->deuce_enabled
-                            ? (($sMin < 10 && $sMax === 11) || ($sMin >= 10 && $sMax - $sMin === 2))
-                            : ($sMax === 11)
-                    );
+
+                    /*
+                     * La règle du set appartient au modèle. Elle vivait recopiée ici en
+                     * PHP et une seconde fois en JavaScript plus bas ; les trois versions
+                     * pouvaient diverger, et seule celle-ci comptait à l'enregistrement.
+                     */
+                    $setError = $isEmpty ? null : $tournament->validateSetScore($p1, $p2, $i + 1, $hp1, $hp2);
+                    $setDone  = ! $isEmpty && $setError === null;
                 @endphp
 
-                <div class="flex items-center gap-4 p-3 rounded-xl border transition-all set-row"
-                    data-set-index="{{ $i }}"
-                    data-hp1="{{ $hp1 }}"
-                    data-hp2="{{ $hp2 }}"
-                    data-deuce="{{ $tournament->deuce_enabled ? 'true' : 'false' }}"
-                    @class([
-                        'border-success/40 bg-success/5' => $setDone,
-                        'border-base-300 bg-base-100'    => ! $setDone,
-                    ])
-                >
-                    <div @class([
-                        'flex-none w-10 h-10 rounded-lg flex flex-col items-center justify-center',
-                        'bg-success text-success-content' => $setDone,
-                        'bg-base-200 text-base-content/50' => ! $setDone,
-                    ])>
-                        <span class="text-[9px] uppercase font-bold leading-none">Set</span>
-                        <span class="text-lg font-black leading-none">{{ $i + 1 }}</span>
+                <div @class([
+                    'flex flex-col gap-2 p-3 rounded-xl border transition-all',
+                    'border-success/40 bg-success/5' => $setDone,
+                    'border-error/50 bg-error/5'     => $setError !== null,
+                    'border-base-300 bg-base-100'    => $isEmpty,
+                ])>
+                    <div class="flex items-center gap-4">
+                        <div @class([
+                            'flex-none w-10 h-10 rounded-lg flex flex-col items-center justify-center',
+                            'bg-success text-success-content' => $setDone,
+                            'bg-base-200 text-base-content/50' => ! $setDone,
+                        ])>
+                            <span class="text-xs uppercase font-bold leading-none">{{ __('Set') }}</span>
+                            <span class="text-lg font-black leading-none">{{ $i + 1 }}</span>
+                        </div>
+
+                        <div class="flex grow items-center gap-2">
+                            <x-input wire:model.live.debounce.300ms="setScores.{{ $i }}.p1"
+                                type="number" min="{{ $hp1 }}" max="30" placeholder="{{ $hp1 }}"
+                                :aria-label="__('Set :n — :player', ['n' => $i + 1, 'player' => $side1Name])"
+                                class="input-sm text-center font-mono font-bold text-lg" />
+                            <span class="opacity-30 font-bold">:</span>
+                            <x-input wire:model.live.debounce.300ms="setScores.{{ $i }}.p2"
+                                type="number" min="{{ $hp2 }}" max="30" placeholder="{{ $hp2 }}"
+                                :aria-label="__('Set :n — :player', ['n' => $i + 1, 'player' => $side2Name])"
+                                class="input-sm text-center font-mono font-bold text-lg" />
+                        </div>
+
+                        <div class="flex-none w-6 flex justify-center">
+                            @if ($setDone)
+                                <x-icon name="o-check-circle" class="w-6 h-6 text-success" />
+                            @endif
+                        </div>
                     </div>
 
-                    <div class="flex grow items-center gap-2">
-                        <x-input wire:model.debounce-300ms="setScores.{{ $i }}.p1"
-                            type="number" min="{{ $hp1 }}" max="30" placeholder="{{ $hp1 }}"
-                            class="input-sm text-center font-mono font-bold text-lg" />
-                        <span class="opacity-30 font-bold">:</span>
-                        <x-input wire:model.debounce-300ms="setScores.{{ $i }}.p2"
-                            type="number" min="{{ $hp2 }}" max="30" placeholder="{{ $hp2 }}"
-                            class="input-sm text-center font-mono font-bold text-lg" />
-                    </div>
-
-                    <div class="flex-none w-6 flex justify-center">
-                        @if ($setDone)
-                            <x-icon name="o-check-circle" class="w-6 h-6 text-success" />
-                        @endif
-                    </div>
+                    @if ($setError !== null)
+                        <p class="text-xs text-error">{{ $setError }}</p>
+                    @endif
                 </div>
             @endfor
         </div>
@@ -167,7 +172,7 @@
                 $svgQr  = substr((new \Endroid\QrCode\Writer\SvgWriter)->write($qrCode)->getString(), 22);
             @endphp
             <div class="mt-6 pt-6 border-t border-base-300 flex flex-col items-center gap-2">
-                <p class="text-[10px] uppercase font-bold opacity-40 tracking-widest">{{ __('Mobile score entry') }}</p>
+                <p class="text-xs uppercase font-bold text-muted tracking-widest">{{ __('Mobile score entry') }}</p>
                 <a href="{{ $qrUrl }}" target="_blank"
                     class="opacity-60 hover:opacity-100 transition-opacity p-2 bg-white rounded-xl inline-block shadow-sm">
                     {!! $svgQr !!}
@@ -182,7 +187,7 @@
                 <x-icon name="o-trophy" class="w-12 h-12 mx-auto text-success" />
                 @if ($winnerName)
                     <div>
-                        <p class="text-xs uppercase font-bold opacity-40 mb-1">{{ __('Winner') }}</p>
+                        <p class="text-xs uppercase font-bold text-muted mb-1">{{ __('Winner') }}</p>
                         <p class="text-xl font-black">{{ $winnerName }}</p>
                         <p class="text-3xl font-extrabold text-success mt-1">{{ $p1Sets }} — {{ $p2Sets }}</p>
                     </div>
@@ -211,69 +216,6 @@
             @endif
         </x-slot:actions>
 
-        <script>
-            function updateSetValidationDrawer() {
-                document.querySelectorAll('.set-row').forEach(setRow => {
-                    const inputs = setRow.querySelectorAll('input[type="number"]');
-                    if (inputs.length < 2) return;
-
-                    const p1Str = inputs[0].value;
-                    const p2Str = inputs[1].value;
-                    const hp1 = parseInt(setRow.dataset.hp1) || 0;
-                    const hp2 = parseInt(setRow.dataset.hp2) || 0;
-                    const deuce = setRow.dataset.deuce === 'true';
-
-                    const p1 = p1Str ? parseInt(p1Str) : hp1;
-                    const p2 = p2Str ? parseInt(p2Str) : hp2;
-
-                    // Check if set is won
-                    let isWon = false;
-                    if (p1 !== hp1 || p2 !== hp2) { // not empty
-                        if (p1 !== p2) { // not tied
-                            const max = Math.max(p1, p2);
-                            const min = Math.min(p1, p2);
-                            if (deuce) {
-                                isWon = (min < 10 && max === 11) || (min >= 10 && max - min === 2);
-                            } else {
-                                isWon = max === 11;
-                            }
-                        }
-                    }
-
-                    // Update classes
-                    if (isWon) {
-                        setRow.classList.remove('border-base-300', 'bg-base-100');
-                        setRow.classList.add('border-success/40', 'bg-success/5');
-                        const icon = setRow.querySelector('.bg-success');
-                        if (!icon) {
-                            const badge = setRow.querySelector('[class*="w-10"]');
-                            if (badge) {
-                                badge.classList.remove('bg-base-200', 'text-base-content/50');
-                                badge.classList.add('bg-success', 'text-success-content');
-                            }
-                        }
-                    } else {
-                        setRow.classList.remove('border-success/40', 'bg-success/5');
-                        setRow.classList.add('border-base-300', 'bg-base-100');
-                        const badge = setRow.querySelector('[class*="w-10"]');
-                        if (badge) {
-                            badge.classList.remove('bg-success', 'text-success-content');
-                            badge.classList.add('bg-base-200', 'text-base-content/50');
-                        }
-                    }
-                });
-            }
-
-            // Update on input
-            document.addEventListener('input', (e) => {
-                if (e.target.matches('input[type="number"]')) {
-                    updateSetValidationDrawer();
-                }
-            }, true);
-
-            // Initial check after Livewire hydration
-            setTimeout(updateSetValidationDrawer, 100);
-        </script>
     @endif
 
 </x-drawer>

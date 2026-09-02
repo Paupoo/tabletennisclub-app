@@ -10,7 +10,7 @@ use App\Domains\Trainings\Services\TrainingPackProrata;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
-final class CalculatePriceAction
+final readonly class CalculatePriceAction
 {
     private const float COMPETITIVE_PRICE = 125.0;
 
@@ -18,7 +18,7 @@ final class CalculatePriceAction
 
     private const float RECREATIVE_PRICE = 60.0;
 
-    public function __construct(private readonly TrainingPackProrata $prorata = new TrainingPackProrata) {}
+    public function __construct(private TrainingPackProrata $prorata = new TrainingPackProrata) {}
 
     public function __invoke(Subscription $subscription, int $familyMembersCount = 1): Subscription
     {

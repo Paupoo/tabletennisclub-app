@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
-use App\Domains\ClubAdmin\Users\Models\User;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
 use App\Http\Controllers\ClubAdmin\DashboardController;
@@ -16,6 +15,7 @@ use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingRsvpController;
 use App\Http\Controllers\ClubEvents\Tournament\TableScoreController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
+use App\Http\Controllers\ClubEvents\Tournament\TournamentPrintController;
 use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\ClubPosts\PublicNewsPostController;
 use App\Http\Controllers\HomeController;
@@ -116,8 +116,11 @@ Route::prefix('admin/club-admin/users/')
         Route::livewire('create', 'pages::club-admin.users.form')
             ->middleware('can:users.create')
             ->name('admin.users.create');
+        // Two duties, one screen: whoever keeps the member's data up to date, and
+        // whoever hands out their rights. Neither holds the other's permission,
+        // and the form renders only the sections the visitor may actually write.
         Route::livewire('{user}/edit', 'pages::club-admin.users.form')
-            ->middleware('can:users.update')
+            ->middleware('can.any:users.update,access.manage')
             ->name('admin.users.edit');
         // Seeding the roster from the federation listing is creating members in
         // bulk, and belongs to whoever may create them one at a time.
@@ -127,10 +130,11 @@ Route::prefix('admin/club-admin/users/')
         Route::livewire('registrations', 'pages::club-admin.users.registrations')
             ->middleware('can:subscriptions.view')
             ->name('admin.users.registrations');
-        // Who holds what: readable by whoever may edit members, since that is who
-        // hands the duties out.
+        // Who holds what: readable by whoever hands the duties out, and by whoever
+        // edits the members — the overview is where both go to check coverage.
+        // Read-only on purpose: assigning happens on the member's own form.
         Route::livewire('delegations', 'pages::club-admin.users.delegations')
-            ->middleware('can:users.update')
+            ->middleware('can.any:users.update,access.manage')
             ->name('admin.users.delegations');
         // Season roster — readable at the committee baseline, editing reserved to
         // the members délégation (guarded inside the component).
@@ -276,6 +280,23 @@ Route::prefix('admin/club-events/tournaments')
         Route::livewire('{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');
         Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
         Route::livewire('{tournament}/wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard.edit');
+        Route::get('{tournament}/print/pools', [TournamentPrintController::class, 'poolsPoster'])->name('admin.tournaments.print.pools');
+        Route::get('{tournament}/print/match-sheets', [TournamentPrintController::class, 'matchSheets'])->name('admin.tournaments.print.matches');
+    });
+
+/*
+ * La même journée par l'autre bout : le tournoi vu par un joueur.
+ *
+ * Hors du groupe ci-dessus, qui est fermé au comité. La page ne sait rien
+ * écrire — pas un score, pas une table, pas un statut — et c'est ce qui permet
+ * de l'ouvrir aux inscrits. Elle vérifie elle-même l'inscription dans mount(),
+ * parce que « être inscrit à ce tournoi-ci » n'est pas une permission mais une
+ * ligne de pivot.
+ */
+Route::prefix('admin/club-events/tournaments')
+    ->middleware(['auth', 'verified', 'feature:tournaments'])
+    ->group(function (): void {
+        Route::livewire('{tournament}/live', 'pages::club-events.tournaments.live')->name('admin.tournaments.live');
     });
 
 Route::prefix('admin/club-events/interclubs/')
@@ -283,6 +304,13 @@ Route::prefix('admin/club-events/interclubs/')
     ->group(function (): void {
         // Personal matches — self-scoped, left broad for any player for now.
         Route::livewire('my-matches', 'pages::club-events.interclubs.my-matches')->name('admin.interclubs.my-matches');
+
+        // Le centre de contrôle a fusionné avec l'écran des sélections : il en
+        // était la transposée (une journée, toutes les équipes) et dupliquait
+        // tiroir, recherche, statuts et score. L'ancienne URL redirige pour ne
+        // pas casser un signet.
+        Route::redirect('control-center', '/admin/club-events/interclubs/captain-selection')
+            ->name('admin.interclubs.control-center');
 
         // Selections & results: the permission gates the route, and each
         // component narrows it down to the teams the caller actually captains.
@@ -295,7 +323,6 @@ Route::prefix('admin/club-events/interclubs/')
 
         // Interclub configuration & control — the interclubs délégation.
         Route::middleware('can:interclubs.manage')->group(function (): void {
-            Route::livewire('control-center', 'pages::club-events.interclubs.control-center')->name('admin.interclubs.control-center');
             Route::livewire('teams', 'pages::club-events.interclubs.teams.index')->name('admin.interclubs.teams');
             Route::livewire('teams/builder', 'pages::club-events.interclubs.teams.builder')->name('admin.interclubs.teams.builder');
             Route::livewire('teams/{team}', 'pages::club-events.interclubs.teams.show')->name('admin.interclubs.teams.show');

@@ -66,7 +66,7 @@ new class extends Component
                 'endsAt' => 'nullable|date|after_or_equal:scheduledAt',
             ]);
         } else {
-            $proposals = collect($this->dateProposals)->filter(fn (array $p) => filled($p['proposed_at']));
+            $proposals = collect($this->dateProposals)->filter(fn (array $p): bool => filled($p['proposed_at']));
             if ($proposals->isEmpty()) {
                 $this->addError('dateProposals', __('At least one date proposal is required.'));
 

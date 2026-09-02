@@ -123,6 +123,18 @@ class Club extends Model
         return Cache::rememberForever('own_club', fn () => self::where('is_own_club', true)->first());
     }
 
+    /**
+     * Compose the postal address, skipping the parts that are still unknown so
+     * a missing city never leaves a dangling comma behind.
+     */
+    public function getAddressAttribute(): ?string
+    {
+        $city = trim(($this->city_code ?? '') . ' ' . ($this->city_name ?? ''));
+        $parts = array_filter([trim($this->street ?? ''), $city]);
+
+        return $parts === [] ? null : implode(', ', $parts);
+    }
+
     public function getBankAccountFormattedAttribute(): ?string
     {
         return IbanNormalizer::format($this->bank_account);
@@ -159,6 +171,7 @@ class Club extends Model
      * holds the flag. Replaces the DB-level partial unique index, which is not
      * portable across SQLite (tests) and MySQL/MariaDB (production).
      */
+    #[\Override]
     protected static function booted(): void
     {
         static::saved(function (self $club): void {

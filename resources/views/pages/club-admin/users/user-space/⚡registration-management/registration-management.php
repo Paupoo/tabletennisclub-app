@@ -45,9 +45,9 @@ new class extends Component
 
     public int $leavePackUserId = 0;
 
-    public $medicalCertificate = null;
+    public $medicalCertificate;
 
-    public $parentalConsent = null;
+    public $parentalConsent;
 
     /** @var array<string, mixed> */
     public array $paymentDetails = [];
@@ -482,7 +482,7 @@ new class extends Component
             $canReAffiliate = $hasCancelledCurrentSeason && ! $currentSub;
 
             return [$uid => [
-                'history' => $subs->map(fn ($sub) => [
+                'history' => $subs->map(fn ($sub): array => [
                     'season_name' => $sub->season?->name ?? '—',
                     'season_id' => $sub->season_id,
                     'status' => $sub->status,
@@ -490,8 +490,8 @@ new class extends Component
                     'amount_due' => $sub->amount_due,
                     'amount_paid' => $sub->amount_paid,
                     'enrolled_packs' => $sub->trainingPacks
-                        ->filter(fn ($p) => in_array($p->pivot->status, ['enrolled', 'pending'], true))
-                        ->map(fn ($p) => [
+                        ->filter(fn ($p): bool => in_array($p->pivot->status, ['enrolled', 'pending'], true))
+                        ->map(fn ($p): array => [
                             'name' => $p->name,
                             'status' => $p->pivot->status,
                             'schedule' => $p->scheduleLabel(),
@@ -501,7 +501,7 @@ new class extends Component
                     'is_current_season' => $season && $sub->season_id === $season->id,
                     'pending_payments' => $sub->payments
                         ->where('status', 'pending')
-                        ->map(fn ($p) => [
+                        ->map(fn ($p): array => [
                             'id' => $p->id,
                             'reference' => $p->reference,
                             'amount_due' => (float) $p->amount_due,

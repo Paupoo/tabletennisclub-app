@@ -7,7 +7,10 @@
             <div class="flex items-center gap-3">
                 <div class="overflow-hidden truncate">
                     <div class="truncate font-bold">{{ $user->first_name }}</div>
-                    <div class="truncate text-[10px] opacity-50">{{ $user->email }}</div>
+                    {{-- The only string here that belongs to the member rather
+                    than to the interface, so it is the only one allowed to
+                    truncate: see SidebarLabelTest. --}}
+                    <div data-user-email class="truncate text-xs text-muted">{{ $user->email }}</div>
                 </div>
             </div>
         </x-slot:title>
@@ -25,11 +28,11 @@
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" :title="__('My Calendar')" />
         <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('My season')" />
         <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" :title="__('Settings')" />
-        <x-menu-separator />
+        <li><x-menu-separator /></li>
         <livewire:actions.logout />
     </x-menu-sub>
 
-    <x-menu-separator />
+    <li><x-menu-separator /></li>
 
     <x-menu-item
         icon="o-home"
@@ -69,7 +72,7 @@
     @endfeature
 
 
-    <x-menu-separator />
+    <li><x-menu-separator /></li>
 
     @canany(['club.update', 'seasons.view', 'rooms.manage'])
     <x-menu-sub icon="o-building-office" :title="__('Club Settings')">
@@ -85,7 +88,7 @@
     </x-menu-sub>
     @endcanany
 
-    @canany(['users.view', 'subscriptions.view', 'users.update', 'training_plans.manage'])
+    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'training_plans.manage'])
     <x-menu-sub icon="o-user-group" :title="__('Members Admin')">
         @can('users.view')
             <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
@@ -93,9 +96,9 @@
         @can('subscriptions.view')
             <x-menu-item icon="o-list-bullet" link="{{ route('admin.users.registrations') }}" :title="__('Affiliations')" />
         @endcan
-        @can('users.update')
+        @canany(['users.update', 'access.manage'])
             <x-menu-item icon="o-key" link="{{ route('admin.users.delegations') }}" :title="__('Delegations')" />
-        @endcan
+        @endcanany
         @can('subscriptions.view')
             <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
         @endcan
@@ -130,7 +133,7 @@
     @endcanany
     @endfeature
 
-    <x-menu-separator />
+    <li><x-menu-separator /></li>
 
     @feature('trainings')
     @canany(['trainings.manage', 'coach_area.access'])
@@ -146,24 +149,30 @@
     @endfeature
 
     @feature('interclubs')
-    @canany(['selections.manage', 'results.manage', 'interclubs.manage'])
+    {{-- A captain is a relation (teams.captain_id), never a délégation: the
+         access-selections / access-results Gates say so, and the menu has to
+         ask the same question, or a captain reaches their own screens by URL
+         only. The season configuration below stays permission-gated. --}}
+    @if (Gate::any(['access-selections', 'access-results']) || $user->can('interclubs.manage'))
     <x-menu-sub icon="o-calendar-days" link="#" :title="__('Interclubs')">
-        @can('selections.manage')
+        @can('access-selections')
         <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" :title="__('Selections')" />
         @endcan
-        @can('results.manage')
+        @can('access-results')
         <x-menu-item icon="o-squares-2x2" link="{{ route('admin.interclubs.results') }}" :title="__('Results')" />
         @endcan
         @can('interclubs.manage')
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.interclubs.interclubs') }}" :title="__('Planning')" />
-        <x-menu-sub icon="o-cog-6-tooth" :title="__('Season configuration')">
+        {{-- Two levels of indent leave 156px for a label. "Interclubs" already
+        names the section this sits in, so the season goes without saying. --}}
+        <x-menu-sub icon="o-cog-6-tooth" :title="__('Configuration')">
             <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" :title="__('Our teams')" />
             <x-menu-item icon="o-table-cells" link="{{ route('admin.interclubs.division-setup') }}" :title="__('Opponents')" />
             <x-menu-item icon="o-building-office-2" link="{{ route('admin.interclubs.clubs') }}" :title="__('Clubs')" />
         </x-menu-sub>
         @endcan
     </x-menu-sub>
-    @endcanany
+    @endif
     @endfeature
 
     @feature('meetings', 'tournaments')
@@ -213,7 +222,7 @@
 
     @feature('supervision')
     @if($user->canViewAuditLog())
-    <x-menu-separator />
+    <li><x-menu-separator /></li>
     <x-menu-item
         icon="o-magnifying-glass"
         link="{{ route('admin.audit.index') }}"
@@ -224,10 +233,12 @@
 
     @feature('supervision')
     @can('view-queue-monitoring')
+    {{-- The full "Queue monitoring" was one pixel too wide, which cost it four
+    characters and an ellipsis. The screen keeps the long title. --}}
     <x-menu-item
         icon="o-queue-list"
         link="{{ route('admin.queue.index') }}"
-        :title="__('Queue monitoring')"
+        :title="__('Job queue')"
     />
     @endcan
     @endfeature

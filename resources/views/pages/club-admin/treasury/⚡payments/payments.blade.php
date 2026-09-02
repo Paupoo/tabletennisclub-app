@@ -41,7 +41,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -53,7 +53,8 @@
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
                     placeholder="{{ __('Search ref. or name...') }}" />
             </div>
-            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+            <button type="button" @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm"
+                aria-label="{{ __('Close the search') }}">
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
@@ -63,7 +64,7 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- Stats --}}
-    <div class="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-3">
         <x-admin.shared.stat-card
             :label="__('Pending')"
             :value="number_format($this->stats['pending_total'], 2, ',', ' ') . ' €'"
@@ -86,7 +87,7 @@
             :hint="$this->stats['to_refund_count'] . ' ' . __('refund(s) pending')"
             icon="o-arrow-uturn-left"
             :color="$this->stats['to_refund_count'] > 0 ? 'error' : 'neutral'"
-            class="col-span-2 lg:col-span-1 {{ $statusFilter === 'to_refund' ? 'ring-2 ring-primary/30' : '' }}" />
+            class="sm:col-span-2 lg:col-span-1 {{ $statusFilter === 'to_refund' ? 'ring-2 ring-primary/30' : '' }}" />
     </div>
 
     {{-- Status filter — folder tabs; the filtered table lives outside as its own card --}}
@@ -96,7 +97,84 @@
         <x-admin.shared.tab name="to_refund" :label="__('To refund')" icon="o-arrow-uturn-left" />
     </x-admin.shared.tabs>
 
-    <x-card class="bg-base-100 border-none shadow-sm rounded-t-none">
+    {{-- ── Vue mobile ─────────────────────────────────────────────────
+    The table is 724px wide and only scrolls sideways, which puts the row actions
+    688px off the right edge of a phone — reachable only by a drag nobody guesses.
+    Below lg the same rows are cards, as the members list already does. --}}
+    <div class="grid grid-cols-1 gap-3 lg:hidden" data-mobile-list>
+        @forelse ($payments as $payment)
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3" wire:key="mobile-payment-{{ $payment->id }}">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="truncate font-medium">{{ $payment->member }}</div>
+                        @if ($payment->event_name)
+                            <div class="truncate text-xs text-muted">
+                                <span class="font-medium">{{ $payment->event_type }}</span> · {{ $payment->event_name }}
+                            </div>
+                        @endif
+                    </div>
+                    <div class="shrink-0 text-right font-bold tabular-nums">
+                        @if ($this->statusFilter === 'paid')
+                            {{ number_format($payment->amount_paid, 2, ',', ' ') }} €
+                        @else
+                            {{ number_format($payment->amount_due, 2, ',', ' ') }} €
+                        @endif
+                    </div>
+                </div>
+
+                <div class="mt-1 flex flex-wrap items-baseline gap-x-2 text-xs text-muted">
+                    <span class="font-mono">{{ $payment->reference }}</span>
+                    <span>·</span>
+                    <span>{{ \Carbon\Carbon::parse($payment->created_at)->format('d/m/Y') }}</span>
+                    @if ($payment->last_reminded_at)
+                        @php $chasedDaysAgo = \Carbon\Carbon::parse($payment->last_reminded_at)->diffInDays(now()); @endphp
+                        <span @class(['text-warning font-semibold' => $chasedDaysAgo >= 15])>
+                            · {{ __('Chased :ago', ['ago' => \Carbon\Carbon::parse($payment->last_reminded_at)->diffForHumans()]) }}
+                        </span>
+                    @endif
+                </div>
+
+                <div class="mt-3">
+                    @if ($this->statusFilter === 'pending')
+                        @can('payments.reconcile')
+                            <x-admin.shared.row-menu
+                                :label="__('Reconcile')"
+                                icon="o-link"
+                                wire-click="openReconcile({{ $payment->id }})">
+                                @can('payments.remind')
+                                    <x-menu-item
+                                        icon="o-paper-airplane"
+                                        wire:click="sendReminder({{ $payment->id }})"
+                                        :title="$payment->invitation_counter > 0
+                                            ? __('Chase again (:n sent)', ['n' => $payment->invitation_counter])
+                                            : __('Send invitation')" />
+                                @endcan
+                            </x-admin.shared.row-menu>
+                        @endcan
+                    @elseif ($this->statusFilter === 'to_refund')
+                        @can('payments.refund')
+                            <x-admin.shared.row-menu
+                                :label="__('Reconcile')"
+                                icon="o-link"
+                                wire-click="openRefundReconcile({{ $payment->id }})" />
+                        @endcan
+                    @endif
+                </div>
+            </div>
+        @empty
+            <x-admin.shared.list-empty-state
+                icon="o-banknotes"
+                :filtered="filled($search) || count($filterChips) > 0"
+                :heading="__('No payments to display.')"
+                :create-label="Gate::allows('transactions.view') ? __('Import a bank statement') : null"
+                :create-href="Gate::allows('transactions.view') ? route('admin.treasury.transactions') : null" />
+        @endforelse
+
+        <div>{{ $payments->links() }}</div>
+    </div>
+
+    {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
+    <x-card class="hidden bg-base-100 shadow-sm rounded-t-none lg:block">
         <x-table :headers="$headers" :rows="$payments" :sort-by="$sortBy" wire:model.live="selected" selectable hover>
 
             @scope('cell_reference', $payment)
@@ -107,7 +185,7 @@
             <div>
                 <span class="font-medium">{{ $payment->member }}</span>
                 @if ($payment->event_name)
-                    <div class="text-[10px] opacity-50 mt-0.5">
+                    <div class="text-xs text-muted mt-0.5">
                         <span class="font-medium">{{ $payment->event_type }}</span>
                         · {{ $payment->event_name }}
                     </div>
@@ -124,7 +202,20 @@
             @endscope
 
             @scope('cell_created_at', $payment)
-            <span class="text-xs opacity-60">{{ \Carbon\Carbon::parse($payment->created_at)->format('d/m/Y') }}</span>
+            {{-- The Date column already tells when. The reminder's age belongs on the
+            same axis, and a payment never chased carries nothing: the absence is the
+            information. The count lives on the button, so it is not repeated here. --}}
+            <div class="text-xs">{{ \Carbon\Carbon::parse($payment->created_at)->format('d/m/Y') }}</div>
+            @if ($payment->last_reminded_at)
+                @php $chasedDaysAgo = \Carbon\Carbon::parse($payment->last_reminded_at)->diffInDays(now()); @endphp
+                <div @class([
+                    'text-xs mt-0.5',
+                    'text-warning font-semibold' => $chasedDaysAgo >= 15,
+                    'text-muted' => $chasedDaysAgo < 15,
+                ])>
+                    {{ __('Chased :ago', ['ago' => \Carbon\Carbon::parse($payment->last_reminded_at)->diffForHumans()]) }}
+                </div>
+            @endif
             @endscope
 
             @scope('cell_iban', $payment)
@@ -137,30 +228,29 @@
 
             @scope('actions', $payment)
             @if($this->statusFilter === 'pending')
-            <div class="flex items-center gap-2">
+            {{-- Reconcile is what the treasurer opens this tab to do, so it is the one
+            action in the row. Chasing is named in the menu, count included — it used
+            to live in a tooltip, which is nowhere at all under a thumb. --}}
+            <x-admin.shared.row-menu
+                :label="__('Reconcile')"
+                icon="o-link"
+                wire-click="openReconcile({{ $payment->id }})">
                 @can('payments.remind')
-                    <x-button
+                    <x-menu-item
                         icon="o-paper-airplane"
                         wire:click="sendReminder({{ $payment->id }})"
-                        class="btn-xs btn-ghost"
-                        tooltip="{{ $payment->invitation_counter > 0 ? __('Resend (:n sent)', ['n' => $payment->invitation_counter]) : __('Send invitation') }}"
-                        spinner />
+                        :title="$payment->invitation_counter > 0
+                            ? __('Chase again (:n sent)', ['n' => $payment->invitation_counter])
+                            : __('Send invitation')" />
                 @endcan
-                @can('payments.reconcile')
-                    <x-button
-                        :label="__('Reconcile')"
-                        icon="o-link"
-                        wire:click="openReconcile({{ $payment->id }})"
-                        class="btn-xs btn-outline" />
-                @endcan
-            </div>
+            </x-admin.shared.row-menu>
             @elseif($this->statusFilter === 'to_refund')
             @can('payments.refund')
                 <x-button
-                    :label="__('Confirm refund')"
-                    icon="o-arrow-uturn-left"
+                    :label="__('Reconcile')"
+                    icon="o-link"
                     wire:click="openRefundReconcile({{ $payment->id }})"
-                    class="btn-xs btn-error btn-outline" />
+                    class="btn-xs btn-outline" />
             @endcan
             @else
             <div class="flex items-center gap-1.5 text-success text-xs font-bold">
@@ -173,10 +263,18 @@
         </x-table>
 
         @if($payments->total() === 0)
-        <div class="flex flex-col items-center justify-center py-12 opacity-40">
-            <x-icon name="o-banknotes" class="w-12 h-12 mb-4" />
-            <p class="text-sm italic">{{ __('No payments to display.') }}</p>
-        </div>
+            {{-- A club opening its season lands here first. The shared component
+            carries the action that fills the screen; the hand-rolled block it
+            replaces stated the absence and stopped. --}}
+            {{-- The action is offered only to whoever may actually take it: the
+            read-only committee can read this screen but not the bank statements,
+            and pointing them at a 403 is worse than offering nothing. --}}
+            <x-empty-state
+                icon="o-banknotes"
+                :heading="__('No payments to display.')"
+                :message="__('Cotisations appear here once a bank statement is imported or a payment is matched.')"
+                :buttonText="Gate::allows('transactions.view') ? __('Import a bank statement') : null"
+                :href="Gate::allows('transactions.view') ? route('admin.treasury.transactions') : null" />
         @endif
 
         <div class="mt-4">
@@ -224,7 +322,7 @@
         :subtitle="__('Queue a payment reminder for each selected member.')"
         :confirm-label="__('Send')"
         confirmClass="btn-primary"
-        confirmAction="bulkSendReminder">
+        confirmAction="bulkSendReminder" :open="$bulkReminderModal">
         <p class="text-sm">
             {{ trans_choice('{1} Send :count reminder?|[2,*] Send :count reminders?', count($selected), ['count' => $selectingAllResults ? $this->getTotalMatchingCount() : count($selected)]) }}
         </p>
@@ -240,7 +338,7 @@
         :subtitle="__('Selected payments will be moved back to paid status. Payments already linked to a bank transaction will be skipped.')"
         :confirm-label="__('Confirm')"
         confirmClass="btn-warning"
-        confirmAction="bulkCancelRefund">
+        confirmAction="bulkCancelRefund" :open="$bulkCancelRefundModal">
         <p class="text-sm">
             {{ trans_choice('{1} Cancel :count refund?|[2,*] Cancel :count refunds?', count($selected), ['count' => $selectingAllResults ? $this->getTotalMatchingCount() : count($selected)]) }}
         </p>
@@ -308,7 +406,7 @@
     {{-- ========================================== --}}
     {{-- Modal : Réconciliation                     --}}
     {{-- ========================================== --}}
-    <x-modal wire:model="reconcileModal" :title="__('Reconcile Payment')" separator box-class="max-w-2xl">
+    <x-app-modal wire:model="reconcileModal" :title="__('Reconcile Payment')" separator box-class="max-w-2xl" :open="$reconcileModal">
 
         @if($currentPayment)
 
@@ -326,12 +424,12 @@
             </div>
             <div class="text-right shrink-0">
                 <div class="text-lg font-black">{{ number_format($currentPayment->amount_due, 2, ',', ' ') }} €</div>
-                <div class="text-xs opacity-50">{{ __('expected') }}</div>
+                <div class="text-xs text-muted">{{ __('expected') }}</div>
             </div>
         </div>
 
         <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
-            <div class="text-xs font-bold uppercase tracking-widest opacity-50 mb-3">
+            <div class="text-xs font-bold uppercase tracking-widest text-muted mb-3">
                 {{ __('Unreconciled bank transactions') }}
             </div>
 
@@ -340,13 +438,14 @@
                 $score = $transaction->match_score ?? 'none';
                 $isPerfect = $score === 'perfect';
             @endphp
-            <div
+            <button type="button"
                 wire:click="$set('selectedTransactionId', {{ $transaction->id }})"
+                aria-pressed="{{ $selectedTransactionId === $transaction->id ? 'true' : 'false' }}"
                 @class([
-                    'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all duration-150',
+                    'w-full text-left flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all duration-150',
                     'border-primary bg-primary/5 shadow-sm'   => $selectedTransactionId === $transaction->id,
                     'border-success/60 bg-success/5'          => $selectedTransactionId !== $transaction->id && $isPerfect,
-                    'border-base-200 hover:border-base-300 bg-base-100' => $selectedTransactionId !== $transaction->id && !$isPerfect,
+                    'border-base-300 hover:border-primary bg-base-100' => $selectedTransactionId !== $transaction->id && !$isPerfect,
                 ])>
 
                 <div @class([
@@ -363,28 +462,28 @@
                     <div class="flex items-center gap-2">
                         <span class="font-medium text-sm truncate">{{ $transaction->counterparty_name ?? '—' }}</span>
                         @if($score === 'perfect')
-                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-success bg-success/15 px-1.5 py-0.5 rounded">{{ __('Perfect match') }}</span>
+                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-success bg-success/15 px-1.5 py-0.5 rounded">{{ __('Perfect match') }}</span>
                         @elseif($score === 'reference')
-                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-info bg-info/15 px-1.5 py-0.5 rounded">{{ __('Ref. match') }}</span>
+                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-info bg-info/15 px-1.5 py-0.5 rounded">{{ __('Ref. match') }}</span>
                         @elseif($score === 'amount')
-                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-warning-content bg-warning/15 px-1.5 py-0.5 rounded">{{ __('Amount match') }}</span>
+                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-warning-content bg-warning/15 px-1.5 py-0.5 rounded">{{ __('Amount match') }}</span>
                         @endif
                     </div>
                     @if($transaction->structured_reference)
                     <div class="font-mono text-xs text-primary mt-0.5">{{ $transaction->structured_reference }}</div>
                     @elseif($transaction->free_reference)
-                    <div class="text-xs opacity-50 mt-0.5 truncate italic">{{ $transaction->free_reference }}</div>
+                    <div class="text-xs text-muted mt-0.5 truncate italic">{{ $transaction->free_reference }}</div>
                     @endif
                 </div>
 
                 <div class="text-right shrink-0">
                     <div class="font-bold tabular-nums">{{ number_format($transaction->amount, 2, ',', ' ') }} €</div>
-                    <div class="text-xs opacity-50">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</div>
+                    <div class="text-xs text-muted">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</div>
                 </div>
-            </div>
+            </button>
 
             @empty
-            <div class="flex flex-col items-center justify-center py-10 opacity-40">
+            <div class="flex flex-col items-center justify-center py-10 text-muted">
                 <x-icon name="o-inbox" class="w-10 h-10 mb-3" />
                 <p class="text-sm italic">{{ __('No unreconciled transactions. Import a bank statement first.') }}</p>
             </div>
@@ -403,13 +502,13 @@
                 :disabled="! $selectedTransactionId"
                 spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
 
     {{-- ========================================== --}}
     {{-- Modal : Batch Auto-Réconciliation          --}}
     {{-- ========================================== --}}
-    <x-modal wire:model="batchModal" :title="__('Auto-match — Confirm reconciliations')" separator box-class="max-w-2xl">
+    <x-app-modal wire:model="batchModal" :title="__('Auto-match — Confirm reconciliations')" separator box-class="max-w-2xl" :open="$batchModal">
 
         <div class="space-y-4">
             <div class="flex items-start gap-3 p-3 rounded-xl bg-success/10 border border-success/20 text-sm">
@@ -421,12 +520,12 @@
 
             <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
                 @foreach($batchMatches as $match)
-                <div class="flex items-center gap-4 p-3 rounded-xl bg-base-100 border border-base-200">
+                <div class="flex items-center gap-4 p-3 rounded-xl bg-base-100 border border-base-300">
                     <x-icon name="o-check-circle" class="w-5 h-5 text-success shrink-0" />
                     <div class="flex-1 min-w-0">
                         <div class="font-semibold text-sm">{{ $match['member'] }}</div>
                         @if (! empty($match['event_name']))
-                            <div class="text-[10px] opacity-50 mt-0.5">
+                            <div class="text-xs text-muted mt-0.5">
                                 <span class="font-medium">{{ $match['event_type'] }}</span> · {{ $match['event_name'] }}
                             </div>
                         @endif
@@ -453,13 +552,13 @@
                 wire:click="confirmBatchReconcile"
                 spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
 
     {{-- ========================================== --}}
     {{-- Modal : Réconciliation remboursement       --}}
     {{-- ========================================== --}}
-    <x-modal wire:model="refundModal" :title="__('Confirm Refund')" separator box-class="max-w-2xl">
+    <x-app-modal wire:model="refundModal" :title="__('Confirm Refund')" separator box-class="max-w-2xl" :open="$refundModal">
 
         @if($currentRefundPayment)
 
@@ -480,26 +579,27 @@
             </div>
             <div class="text-right shrink-0">
                 <div class="text-lg font-black text-error">{{ number_format($currentRefundPayment->amount_paid, 2, ',', ' ') }} €</div>
-                <div class="text-xs opacity-50">{{ __('to refund') }}</div>
+                <div class="text-xs text-muted">{{ __('to refund') }}</div>
             </div>
         </div>
 
         <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
-            <div class="text-xs font-bold uppercase tracking-widest opacity-50 mb-3">
+            <div class="text-xs font-bold uppercase tracking-widest text-muted mb-3">
                 {{ __('Outgoing bank transactions') }}
             </div>
 
             @forelse($refundTransactions as $transaction)
             @php $score = $transaction->match_score ?? 'none'; @endphp
-            <div
+            <button type="button"
                 wire:click="$set('selectedRefundTransactionId', {{ $transaction->id }})"
+                aria-pressed="{{ $selectedRefundTransactionId === $transaction->id ? 'true' : 'false' }}"
                 @class([
-                    'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all duration-150',
+                    'w-full text-left flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all duration-150',
                     'border-primary bg-primary/5 shadow-sm'                            => $selectedRefundTransactionId === $transaction->id,
                     'border-success/60 bg-success/5'                                   => $selectedRefundTransactionId !== $transaction->id && $score === 'perfect',
                     'border-info/40 bg-info/5'                                         => $selectedRefundTransactionId !== $transaction->id && $score === 'iban',
                     'border-warning/40 bg-warning/5'                                   => $selectedRefundTransactionId !== $transaction->id && $score === 'amount',
-                    'border-base-200 hover:border-base-300 bg-base-100'               => $selectedRefundTransactionId !== $transaction->id && $score === 'none',
+                    'border-base-300 hover:border-primary bg-base-100'               => $selectedRefundTransactionId !== $transaction->id && $score === 'none',
                 ])>
 
                 <div @class([
@@ -516,11 +616,11 @@
                     <div class="flex items-center gap-2">
                         <span class="font-medium text-sm truncate">{{ $transaction->counterparty_name ?? '—' }}</span>
                         @if($score === 'perfect')
-                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-success bg-success/15 px-1.5 py-0.5 rounded">{{ __('Perfect match') }}</span>
+                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-success bg-success/15 px-1.5 py-0.5 rounded">{{ __('Perfect match') }}</span>
                         @elseif($score === 'iban')
-                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-info bg-info/15 px-1.5 py-0.5 rounded">{{ __('IBAN match') }}</span>
+                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-info bg-info/15 px-1.5 py-0.5 rounded">{{ __('IBAN match') }}</span>
                         @elseif($score === 'amount')
-                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-warning-content bg-warning/15 px-1.5 py-0.5 rounded">{{ __('Amount match') }}</span>
+                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-warning-content bg-warning/15 px-1.5 py-0.5 rounded">{{ __('Amount match') }}</span>
                         @endif
                     </div>
                     @if($transaction->counterparty_bank_account)
@@ -530,12 +630,12 @@
 
                 <div class="text-right shrink-0">
                     <div class="font-bold tabular-nums text-error">{{ number_format($transaction->amount, 2, ',', ' ') }} €</div>
-                    <div class="text-xs opacity-50">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</div>
+                    <div class="text-xs text-muted">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</div>
                 </div>
-            </div>
+            </button>
 
             @empty
-            <div class="flex flex-col items-center justify-center py-10 opacity-40">
+            <div class="flex flex-col items-center justify-center py-10 text-muted">
                 <x-icon name="o-inbox" class="w-10 h-10 mb-3" />
                 <p class="text-sm italic">{{ __('No outgoing transactions found. Import a bank statement containing the refund transfer.') }}</p>
             </div>
@@ -554,13 +654,13 @@
                 :disabled="! $selectedRefundTransactionId"
                 spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
 
     {{-- ========================================== --}}
     {{-- Modal : Batch remboursements               --}}
     {{-- ========================================== --}}
-    <x-modal wire:model="refundBatchModal" :title="__('Auto-match refunds — Confirm')" separator box-class="max-w-2xl">
+    <x-app-modal wire:model="refundBatchModal" :title="__('Auto-match refunds — Confirm')" separator box-class="max-w-2xl" :open="$refundBatchModal">
 
         <div class="space-y-4">
             <div class="flex items-start gap-3 p-3 rounded-xl bg-error/10 border border-error/20 text-sm">
@@ -572,12 +672,12 @@
 
             <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
                 @foreach($refundBatchMatches as $match)
-                <div class="flex items-center gap-4 p-3 rounded-xl bg-base-100 border border-base-200">
+                <div class="flex items-center gap-4 p-3 rounded-xl bg-base-100 border border-base-300">
                     <x-icon name="o-arrow-uturn-left" class="w-5 h-5 text-error shrink-0" />
                     <div class="flex-1 min-w-0">
                         <div class="font-semibold text-sm">{{ $match['member'] }}</div>
                         @if (! empty($match['event_name']))
-                            <div class="text-[10px] opacity-50 mt-0.5">
+                            <div class="text-xs text-muted mt-0.5">
                                 <span class="font-medium">{{ $match['event_type'] }}</span> · {{ $match['event_name'] }}
                             </div>
                         @endif
@@ -606,7 +706,7 @@
                 wire:click="confirmBatchRefundReconcile"
                 spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
 
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}

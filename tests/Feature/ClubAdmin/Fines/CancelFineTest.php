@@ -74,7 +74,7 @@ it('renders the cancellation email fully in the member locale', function (): voi
     $member = User::factory()->create();
     $fine = issuePendingFine($member);
 
-    $rendered = (string) (new FineCancelledNotification($fine))->toMail($member)->render();
+    $rendered = (string) new FineCancelledNotification($fine)->toMail($member)->render();
 
     // Every key must resolve — a missing translation leaks the English source.
     expect($rendered)->toContain('Une amende a été annulée')

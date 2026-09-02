@@ -27,6 +27,16 @@ function committeeModalComponent(): string
     return 'club-admin.committee-modal';
 }
 
+/**
+ * Seating and unseating a committee member is a rights change, so it now needs
+ * an actor holding the access délégation. The rest of this file exercises the
+ * venue settings, which ask nothing of the visitor.
+ */
+function accessManager(): User
+{
+    return User::factory()->withRole(Role::ACCESS)->create();
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // MOUNT & RENDER
 // ─────────────────────────────────────────────────────────────────────────────
@@ -60,7 +70,7 @@ describe('Test Club Settings', function (): void {
 
         it('shows empty state when no committee members exist', function (): void {
             User::role(Role::COMMITTEE->value)->each(
-                fn (User $member) => $member->removeRole(Role::COMMITTEE->value)
+                fn (User $member): User => $member->removeRole(Role::COMMITTEE->value)
             );
 
             Livewire::test(clubSettingsComponent())
@@ -154,7 +164,8 @@ describe('Test Club Settings', function (): void {
         it('adds a user to the committee with a valid role', function (): void {
             $user = User::factory()->create();
 
-            Livewire::test(committeeModalComponent())
+            Livewire::actingAs(accessManager())
+                ->test(committeeModalComponent())
                 ->set('selectedMemberId', $user->id)
                 ->set('selectedRoleId', CommitteeRolesEnum::PRESIDENT->value)
                 ->call('addMember');
@@ -229,7 +240,8 @@ describe('Test Club Settings', function (): void {
                 'committee_role' => CommitteeRolesEnum::TREASURER,
             ]);
 
-            Livewire::test(clubSettingsComponent())
+            Livewire::actingAs(accessManager())
+                ->test(clubSettingsComponent())
                 ->call('removeMember', $user->id);
 
             expect($user->fresh())

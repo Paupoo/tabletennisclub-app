@@ -19,27 +19,32 @@ final class SetUpState extends AbstractTournamentState
         $tournament->save();
     }
 
+    #[\Override]
     public function canCreatePools(): bool
     {
         return true;
     }
 
+    #[\Override]
     public function canGenerateMatches(): bool
     {
         return true;
     }
 
+    #[\Override]
     public function canModifyPools(): bool
     {
         return true;
     }
 
     // Actions spécifiques selon l'état
+    #[\Override]
     public function canRegisterUsers(): bool
     {
         return false;
     }
 
+    #[\Override]
     public function canStartMatches(): bool
     {
         return false;
@@ -57,6 +62,13 @@ final class SetUpState extends AbstractTournamentState
     public function getStatus(): TournamentStatusEnum
     {
         return TournamentStatusEnum::SETUP;
+    }
+
+    #[\Override]
+    public function hasLockedContract(): bool
+    {
+        // Registrations have been taken: the contract cannot move now.
+        return true;
     }
 
     public function publish(Tournament $tournament): void

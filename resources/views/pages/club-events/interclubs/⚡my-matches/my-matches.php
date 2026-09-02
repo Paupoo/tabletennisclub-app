@@ -100,7 +100,7 @@ new class extends Component
             ->where('start_date_time', '>=', now())
             ->orderBy('start_date_time')
             ->get()
-            ->map(function (Interclub $interclub) use ($user) {
+            ->map(function (Interclub $interclub) use ($user): array {
                 $pivot = $interclub->users()
                     ->where('users.id', $user->id)
                     ->first()?->registration;

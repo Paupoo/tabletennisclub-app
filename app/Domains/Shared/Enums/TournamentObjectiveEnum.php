@@ -16,7 +16,7 @@ enum TournamentObjectiveEnum: string
     public static function toOptions(): array
     {
         return array_map(
-            fn (self $case) => [
+            fn (self $case): array => [
                 'id' => $case->value,
                 'name' => $case->label(),
                 'description' => $case->description(),

@@ -20,7 +20,7 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Season') }}
                 </p>
                 <x-select
@@ -35,11 +35,11 @@
     </x-admin.shared.filter-drawer>
 
     @if (! $seasonId)
-        <x-card class="mt-4 border-none">
+        <x-card class="mt-4">
             <p class="py-12 text-center text-sm text-gray-500">{{ __('Select a season to manage divisions.') }}</p>
         </x-card>
     @elseif ($leagues->isEmpty())
-        <x-card class="mt-4 border-none">
+        <x-card class="mt-4">
             <p class="py-12 text-center text-sm text-gray-500">{{ __('No divisions found for this season. Create your club\'s teams first.') }}</p>
         </x-card>
     @else
@@ -67,7 +67,7 @@
                     $catColor = ['MEN' => 'blue', 'VETERANS' => 'amber', 'WOMEN' => 'pink'];
                 @endphp
                 @foreach ($groupedLeagues as $category => $categoryLeagues)
-                    @php $meta = $categoryMeta[$category] ?? ['bg' => 'bg-gray-50', 'border' => 'border-gray-200', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400', 'label' => $category]; @endphp
+                    @php $meta = $categoryMeta[$category] ?? ['bg' => 'bg-gray-50', 'border' => 'border-base-300', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400', 'label' => $category]; @endphp
 
                     <x-section-accordion
                         :label="$meta['label']"
@@ -85,7 +85,7 @@
                                 @foreach ($byLevel as $level => $levelLeagues)
                                     <div class="space-y-1.5">
                                         @if ($hasMultipleLevels)
-                                            <p class="px-1 text-[10px] font-semibold uppercase tracking-widest {{ $meta['text'] }} opacity-40">
+                                            <p class="px-1 text-xs font-semibold uppercase tracking-widest {{ $meta['text'] }}">
                                                 {{ $levelLabels[$level] ?? $level }}
                                             </p>
                                         @endif
@@ -104,15 +104,15 @@
                                                 type="button"
                                                 wire:click="selectLeague({{ $league->id }})"
                                                 class="flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors
-                                                    {{ $active ? $meta['bg'] . ' ' . $meta['border'] : 'border-base-200 bg-base-100 hover:bg-base-200' }}"
+                                                    {{ $active ? $meta['bg'] . ' ' . $meta['border'] : 'border-base-300 bg-base-100 hover:bg-base-200' }}"
                                             >
                                                 <span class="h-2 w-2 shrink-0 rounded-full {{ $meta['dot'] }}"></span>
                                                 <div class="min-w-0 flex-1">
                                                     <p class="text-sm font-semibold {{ $active ? $meta['text'] : '' }}">
-                                                        <span class="mr-1 text-xs font-normal opacity-40">{{ __('Division') }}</span>{{ $league->division }}
+                                                        <span class="mr-1 text-xs font-normal text-muted">{{ __('Division') }}</span>{{ $league->division }}
                                                     </p>
                                                     @if ($ourTeamLetters)
-                                                        <p class="text-xs opacity-50">{{ __('Team') }} {{ $ourTeamLetters }}</p>
+                                                        <p class="text-xs text-muted">{{ __('Team') }} {{ $ourTeamLetters }}</p>
                                                     @endif
                                                 </div>
                                                 <span class="text-xs font-medium {{ $active ? $meta['text'] : 'text-gray-400' }}">{{ $count }}</span>
@@ -134,7 +134,7 @@
                 @else
                     @php
                         $selectedLeague = $leagues->firstWhere('id', $selectedLeagueId);
-                        $meta = $categoryMeta[$selectedLeague?->category ?? ''] ?? ['bg' => 'bg-gray-50', 'border' => 'border-gray-200', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400', 'label' => ''];
+                        $meta = $categoryMeta[$selectedLeague?->category ?? ''] ?? ['bg' => 'bg-gray-50', 'border' => 'border-base-300', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400', 'label' => ''];
                     @endphp
                     <div class="mb-4 flex items-center justify-between">
                         <div class="flex items-center gap-3">
@@ -171,15 +171,15 @@
                                         </div>
                                         <div class="min-w-0 flex-1">
                                             <p class="text-sm font-semibold">{{ $team->club?->name ?? '—' }}</p>
-                                            @if ($team->club?->street)
-                                                <p class="text-base-content/50 text-xs">{{ $team->club->street }}</p>
+                                            @if ($team->club?->address)
+                                                <p class="text-base-content/50 text-xs">{{ $team->club->address }}</p>
                                             @endif
                                         </div>
                                         <x-button
                                             class="btn-ghost btn-sm btn-circle text-error"
                                             icon="o-trash"
                                             :tooltip="__('Remove')"
-                                            wire:click="confirmDelete({{ $team->id }})" />
+                                            wire:click="confirmDelete({{ $team->id }})" :aria-label="__('Remove')" />
                                     </div>
                                 @endforeach
                             </div>
@@ -191,18 +191,55 @@
     @endif
 
     {{-- Modal add participant --}}
-    <x-modal wire:model="addModal" :title="__('Add opponent')" separator>
+    <x-app-modal wire:model="addModal" :title="__('Add opponent')" separator :open="$addModal">
         <div class="space-y-4">
-            <x-input
-                :label="__('Club name')"
-                wire:model="formClubName"
-                placeholder="ex: TT Wavre"
-                icon="o-building-office" />
-            <x-input
-                :label="__('Address (optional)')"
-                wire:model="formClubStreet"
-                placeholder="ex: Rue de la Gare 10, 1300 Wavre"
-                icon="o-map-pin" />
+            @if ($formNewClub)
+                <x-input
+                    :label="__('Club name')"
+                    wire:model="formClubName"
+                    placeholder="ex: TT Wavre"
+                    icon="o-building-office" />
+                <x-input
+                    :label="__('Street address (optional)')"
+                    wire:model="formClubStreet"
+                    placeholder="ex: Rue de la Gare 10"
+                    icon="o-map-pin" />
+                <div class="grid grid-cols-3 gap-4">
+                    <x-input
+                        :label="__('Postal code')"
+                        wire:model="formClubCityCode"
+                        placeholder="1300" />
+                    <x-input
+                        class="col-span-2"
+                        :label="__('City')"
+                        wire:model="formClubCityName"
+                        placeholder="Wavre" />
+                </div>
+                <x-button
+                    class="btn-ghost btn-sm px-0"
+                    icon="o-arrow-uturn-left"
+                    :label="__('Pick an existing club instead')"
+                    wire:click="toggleNewClub" />
+            @else
+                <x-choices
+                    :label="__('Club')"
+                    wire:model.live="formClubId"
+                    :options="$clubOptions"
+                    option-sub-label="address"
+                    :placeholder="__('Search a club...')"
+                    :no-result-text="__('No club found. Encode it as a new one.')"
+                    :hint="__('Clubs already encoded in the application.')"
+                    icon="o-building-office"
+                    debounce="250"
+                    single
+                    searchable
+                    clearable />
+                <x-button
+                    class="btn-ghost btn-sm px-0"
+                    icon="o-plus"
+                    :label="__('Club not listed? Encode a new one')"
+                    wire:click="toggleNewClub" />
+            @endif
             <x-input
                 :label="__('Team letter')"
                 wire:model="formTeamLetter"
@@ -214,11 +251,11 @@
             <x-button :label="__('Cancel')" wire:click="$set('addModal', false)" />
             <x-button class="btn-primary" :label="__('Add')" wire:click="addParticipant" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- Modal delete --}}
     <x-confirm-modal model="deleteModal" :title="__('Remove participant')" :subtitle="__('Warning!')"
-        :confirmLabel="__('Remove')" confirmAction="deleteParticipant">
+        :confirmLabel="__('Remove')" confirmAction="deleteParticipant" :open="$deleteModal">
         <p>{{ __('Are you sure you want to remove this opponent from the division?') }}</p>
     </x-confirm-modal>
 </div>

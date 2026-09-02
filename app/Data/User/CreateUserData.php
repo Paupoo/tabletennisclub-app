@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Data\User;
 
-use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 
 readonly class CreateUserData
@@ -28,22 +27,17 @@ readonly class CreateUserData
         public ?string $city_code = null,
         public ?string $city_name = null,
         public ?string $birthdate = null,
-        public bool $is_committee_member = false,
-        public bool $is_admin = false,
         public bool $has_key = false,
         public ?string $licence = null,
         public ?string $ranking = null,
-        public ?CommitteeRolesEnum $committee_role = null,
         public ?string $password = null,
         public array $guardianIds = [],
         public array $familyMemberIds = [],
         /**
-         * Délégations submitted by the form, as Role values. Null means the caller
-         * does not manage duties — the self-service profile screen, typically —
-         * and the ones already held must be left alone.
-         *
-         * @var array<int, string>|null
+         * The rights layer — délégations, committee seat, statutory title. Null
+         * means this caller does not manage rights, and the new member is created
+         * without any: only a screen that holds `access.manage` fills it in.
          */
-        public ?array $delegations = null,
+        public ?AccessData $access = null,
     ) {}
 }

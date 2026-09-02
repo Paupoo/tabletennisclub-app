@@ -93,3 +93,39 @@ describe('canManage computed', function (): void {
     });
 
 })->group('Tournament', 'Authorization');
+
+// ── Bulk cancellation answers for what it actually did ───────────────────────
+
+describe('bulkCancel', function (): void {
+    it('cancels the tournaments that can still be cancelled', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        $first = Tournament::factory()->create(['status' => TournamentStatusEnum::PUBLISHED]);
+        $second = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
+
+        indexAs($admin)
+            ->set('selected', [$first->id, $second->id])
+            ->call('bulkCancel')
+            ->assertSet('confirmBulkCancelModal', false);
+
+        expect($first->fresh()->status)->toBe(TournamentStatusEnum::CANCELLED)
+            ->and($second->fresh()->status)->toBe(TournamentStatusEnum::CANCELLED);
+    });
+
+    /*
+     * A single UPDATE used to flatten everything selected, closed tournaments
+     * included. The committee was told "2 tournaments cancelled" whatever
+     * happened.
+     */
+    it('leaves a closed tournament alone instead of flattening it', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        $open = Tournament::factory()->create(['status' => TournamentStatusEnum::PUBLISHED]);
+        $closed = Tournament::factory()->create(['status' => TournamentStatusEnum::CLOSED]);
+
+        indexAs($admin)
+            ->set('selected', [$open->id, $closed->id])
+            ->call('bulkCancel');
+
+        expect($open->fresh()->status)->toBe(TournamentStatusEnum::CANCELLED)
+            ->and($closed->fresh()->status)->toBe(TournamentStatusEnum::CLOSED);
+    });
+});

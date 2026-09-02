@@ -192,3 +192,139 @@ it('blocks deletion of a team that has matches', function (): void {
 
     expect(Team::find($oppTeam->id))->not->toBeNull();
 });
+
+it('lists already encoded opponent clubs in the picker', function (): void {
+    Club::factory()->create(['name' => 'TT Jodoigne', 'licence' => 'OPP-TTJODO', 'street' => 'Rue Neuve 4']);
+    Club::factory()->create(['name' => 'TT Perwez', 'licence' => 'OPP-TTPERW']);
+
+    $component = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->call('openAddModal');
+
+    $names = array_column($component->get('clubOptions'), 'name');
+
+    expect($names)->toContain('TT Jodoigne', 'TT Perwez')
+        ->and($names)->not->toContain($this->ourClub->name);
+
+    $component->call('search', 'Jodo');
+
+    expect(array_column($component->get('clubOptions'), 'name'))->toBe(['TT Jodoigne']);
+});
+
+it('reuses the club selected in the picker without creating a new one', function (): void {
+    $existing = Club::factory()->create(['name' => 'TT Chastre', 'licence' => 'OPP-TTCHAS']);
+    $before = Club::count();
+
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->set('seasonId', $this->season->id)
+        ->call('selectLeague', $this->league->id)
+        ->call('openAddModal')
+        ->set('formClubId', $existing->id)
+        ->set('formTeamLetter', 'C')
+        ->call('addParticipant')
+        ->assertHasNoErrors();
+
+    expect(Club::count())->toBe($before);
+    expect(
+        Team::where('club_id', $existing->id)
+            ->where('league_id', $this->league->id)
+            ->where('name', 'C')
+            ->exists()
+    )->toBeTrue();
+});
+
+it('keeps the selected club visible after a narrowing search', function (): void {
+    $existing = Club::factory()->create(['name' => 'TT Beauvechain', 'licence' => 'OPP-TTBEAU']);
+    Club::factory()->create(['name' => 'TT Tubize', 'licence' => 'OPP-TTTUBI']);
+
+    $component = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->call('openAddModal')
+        ->set('formClubId', $existing->id)
+        ->call('search', 'Tubize');
+
+    expect(array_column($component->get('clubOptions'), 'name'))
+        ->toContain('TT Beauvechain', 'TT Tubize');
+});
+
+it('switches to manual encoding and clears the picked club', function (): void {
+    $existing = Club::factory()->create(['name' => 'TT Nivelles', 'licence' => 'OPP-TTNIVE']);
+
+    $component = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->call('openAddModal')
+        ->set('formClubId', $existing->id)
+        ->call('toggleNewClub');
+
+    expect($component->get('formNewClub'))->toBeTrue()
+        ->and($component->get('formClubId'))->toBeNull();
+});
+
+it('accepts the picker being cleared', function (): void {
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->call('openAddModal')
+        ->set('formClubId', '')
+        ->assertSet('formClubId', null);
+});
+
+it('records the postal code and the city of a newly encoded club', function (): void {
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->set('seasonId', $this->season->id)
+        ->call('selectLeague', $this->league->id)
+        ->call('openAddModal')
+        ->call('toggleNewClub')
+        ->set('formClubName', 'CTT Tubize')
+        ->set('formClubStreet', 'Allée des Sports 5')
+        ->set('formClubCityCode', '1480')
+        ->set('formClubCityName', 'Tubize')
+        ->set('formTeamLetter', 'C')
+        ->call('addParticipant')
+        ->assertHasNoErrors();
+
+    $club = Club::where('name', 'CTT Tubize')->sole();
+
+    expect($club->city_code)->toBe('1480')
+        ->and($club->city_name)->toBe('Tubize')
+        ->and($club->address)->toBe('Allée des Sports 5, 1480 Tubize');
+});
+
+it('offers the full address as the picker sub-label', function (): void {
+    Club::factory()->create([
+        'name' => 'CTT Wavre',
+        'licence' => 'OPP-TTWAVR',
+        'street' => 'Rue de la Gare 10',
+        'city_code' => '1300',
+        'city_name' => 'Wavre',
+    ]);
+
+    $options = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->call('openAddModal')
+        ->get('clubOptions');
+
+    $wavre = collect($options)->firstWhere('name', 'CTT Wavre');
+
+    expect($wavre['address'])->toBe('Rue de la Gare 10, 1300 Wavre');
+});
+
+it('leaves the city empty rather than storing a blank string', function (): void {
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.division-setup')
+        ->set('seasonId', $this->season->id)
+        ->call('selectLeague', $this->league->id)
+        ->call('openAddModal')
+        ->call('toggleNewClub')
+        ->set('formClubName', 'TT Sans Adresse')
+        ->set('formTeamLetter', 'A')
+        ->call('addParticipant')
+        ->assertHasNoErrors();
+
+    $club = Club::where('name', 'TT Sans Adresse')->sole();
+
+    expect($club->city_code)->toBeNull()
+        ->and($club->city_name)->toBeNull()
+        ->and($club->address)->toBeNull();
+});

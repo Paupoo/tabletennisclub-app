@@ -17,75 +17,67 @@
         </x-slot:actions>
     </x-header>
 
-    {{-- ── Health tiles ─────────────────────────────────────────────────────── --}}
+    {{-- ── Health tiles ─────────────────────────────────────────────────────
+    Three figures, read side by side. The worker tile used to show a sentence
+    where its neighbours showed a number — and the same sentence the empty state
+    repeats 200px below. It now carries the one figure that says whether the
+    worker is running: how long the oldest job has been waiting. --}}
+    @php
+        [$waitIcon, $waitColor, $waitHint] = match ($workerStatus) {
+            'stalled' => ['o-exclamation-triangle', 'error', __('Worker probably down')],
+            'busy' => ['o-arrow-path', 'primary', __('Jobs are flowing normally')],
+            default => ['o-check-circle', 'success', __('Nothing waiting to be processed')],
+        };
+    @endphp
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-        {{-- Worker status --}}
-        <x-card class="bg-base-100 border-none shadow-sm">
-            <div class="flex items-center gap-3">
-                @if ($workerStatus === 'stalled')
-                    <div class="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center shrink-0">
-                        <x-icon name="o-exclamation-triangle" class="w-5 h-5 text-error" />
-                    </div>
-                    <div>
-                        <p class="text-sm font-semibold text-error">{{ __('Worker probably down') }}</p>
-                        <p class="text-xs text-base-content/50">{{ __('Oldest job waiting for :minutes min', ['minutes' => $oldestPendingMinutes]) }}</p>
-                    </div>
-                @elseif ($workerStatus === 'busy')
-                    <div class="w-10 h-10 rounded-full bg-info/10 flex items-center justify-center shrink-0">
-                        <x-icon name="o-arrow-path" class="w-5 h-5 text-info" />
-                    </div>
-                    <div>
-                        <p class="text-sm font-semibold text-info">{{ __('Processing') }}</p>
-                        <p class="text-xs text-base-content/50">{{ __('Jobs are flowing normally') }}</p>
-                    </div>
-                @else
-                    <div class="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                        <x-icon name="o-check-circle" class="w-5 h-5 text-success" />
-                    </div>
-                    <div>
-                        <p class="text-sm font-semibold text-success">{{ __('Queue empty') }}</p>
-                        <p class="text-xs text-base-content/50">{{ __('Nothing waiting to be processed') }}</p>
-                    </div>
-                @endif
-            </div>
-        </x-card>
+        <x-admin.shared.stat-card
+            :label="__('Oldest wait')"
+            :value="__(':minutes min', ['minutes' => $oldestPendingMinutes ?? 0])"
+            :hint="$waitHint"
+            :icon="$waitIcon"
+            :color="$waitColor" />
 
-        {{-- Pending count --}}
-        <x-card class="bg-base-100 border-none shadow-sm">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <x-icon name="o-queue-list" class="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                    <p class="text-2xl font-bold tabular-nums leading-none">{{ $pendingCount }}</p>
-                    <p class="text-xs text-base-content/50 mt-1">{{ __('Pending jobs') }}</p>
-                </div>
-            </div>
-        </x-card>
+        <x-admin.shared.stat-card
+            :label="__('Pending jobs')"
+            :value="(string) $pendingCount"
+            :hint="__('Waiting to be processed')"
+            icon="o-queue-list"
+            color="primary" />
 
-        {{-- Failed count --}}
-        <x-card class="bg-base-100 border-none shadow-sm">
-            <div class="flex items-center gap-3">
-                <div @class([
-                    'w-10 h-10 rounded-full flex items-center justify-center shrink-0',
-                    'bg-error/10' => $failedCount > 0,
-                    'bg-base-200' => $failedCount === 0,
-                ])>
-                    <x-icon name="o-x-circle" @class(['w-5 h-5', 'text-error' => $failedCount > 0, 'text-base-content/30' => $failedCount === 0]) />
-                </div>
-                <div>
-                    <p class="text-2xl font-bold tabular-nums leading-none">{{ $failedCount }}</p>
-                    <p class="text-xs text-base-content/50 mt-1">{{ __('Failed jobs') }}</p>
-                </div>
-            </div>
-        </x-card>
+        <x-admin.shared.stat-card
+            :label="__('Failed jobs')"
+            :value="(string) $failedCount"
+            :hint="__('Failed recently')"
+            icon="o-x-circle"
+            :color="$failedCount > 0 ? 'error' : 'neutral'" />
     </div>
 
     {{-- ── Pending jobs ─────────────────────────────────────────────────────── --}}
-    <x-card class="bg-base-100 border-none shadow-sm mt-6" :title="__('Pending jobs')">
+    <x-card class="bg-base-100 shadow-sm mt-6" :title="__('Pending jobs')">
         @if (count($pendingJobs) === 0)
             <x-empty-state icon="o-inbox" :heading="__('Queue empty')" :message="__('Nothing waiting to be processed')" />
         @else
+            {{-- ── Vue mobile ─────────────────────────────────────────────
+            Four columns do not fit a phone, and the table only scrolled
+            sideways. Below lg the rows are cards, as thirteen sibling lists
+            already do. --}}
+            <div class="grid grid-cols-1 gap-3 lg:hidden">
+                @foreach ($pendingJobs as $job)
+                    <div class="rounded-lg border border-base-300 bg-base-100 p-3" wire:key="mobile-pending-{{ $job['id'] }}">
+                        <div class="flex items-start justify-between gap-3">
+                            <span class="min-w-0 break-words text-sm font-medium">{{ $job['name'] }}</span>
+                            <x-badge :value="$job['queue']" class="badge-ghost badge-sm shrink-0" />
+                        </div>
+                        <div class="mt-1 flex flex-wrap items-baseline gap-x-2 text-xs text-muted">
+                            <span @class(['text-error font-semibold' => $job['is_late']])>{{ $job['age'] }}</span>
+                            <span>·</span>
+                            <span>{{ __('Attempts') }} : {{ $job['attempts'] }}</span>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="hidden lg:block">
             <x-table :headers="[
                 ['key' => 'name',     'label' => __('Job')],
                 ['key' => 'queue',    'label' => __('Queue')],
@@ -109,14 +101,44 @@
                 </span>
                 @endscope
             </x-table>
+            </div>
         @endif
     </x-card>
 
     {{-- ── Failed jobs ──────────────────────────────────────────────────────── --}}
-    <x-card class="bg-base-100 border-none shadow-sm mt-6" :title="__('Failed jobs')">
+    <x-card class="bg-base-100 shadow-sm mt-6" :title="__('Failed jobs')">
         @if (count($failedJobs) === 0)
             <x-empty-state icon="o-check-badge" :heading="__('No failures')" :message="__('No job has failed recently.')" />
         @else
+            {{-- ── Vue mobile ───────────────────────────────────────────── --}}
+            <div class="grid grid-cols-1 gap-3 lg:hidden">
+                @foreach ($failedJobs as $job)
+                    <div class="rounded-lg border border-base-300 bg-base-100 p-3" wire:key="mobile-failed-{{ $job['uuid'] }}">
+                        <div class="flex items-start justify-between gap-3">
+                            <span class="min-w-0 break-words text-sm font-medium">{{ $job['name'] }}</span>
+                            <x-badge :value="$job['queue']" class="badge-ghost badge-sm shrink-0" />
+                        </div>
+                        <div class="mt-1 text-xs tabular-nums text-muted">{{ $job['failed_at'] }}</div>
+                        <p class="mt-1 break-words font-mono text-xs text-error/80">{{ $job['error'] }}</p>
+                        <div class="mt-3 flex items-center gap-1">
+                            <x-button
+                                icon="o-arrow-path"
+                                class="btn-ghost btn-sm"
+                                :label="__('Retry')"
+                                wire:click="retry('{{ $job['uuid'] }}')"
+                                spinner />
+                            <x-button
+                                icon="o-trash"
+                                class="btn-ghost btn-sm text-error"
+                                :label="__('Delete')"
+                                wire:click="forget('{{ $job['uuid'] }}')"
+                                spinner />
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="hidden lg:block">
             <x-table :headers="[
                 ['key' => 'name',      'label' => __('Job')],
                 ['key' => 'queue',     'label' => __('Queue')],
@@ -147,18 +169,17 @@
                         class="btn-ghost btn-sm"
                         :tooltip="__('Retry')"
                         wire:click="retry('{{ $job['uuid'] }}')"
-                        spinner
-                    />
+                        spinner :aria-label="__('Retry')" />
                     <x-button
                         icon="o-trash"
                         class="btn-ghost btn-sm text-error"
                         :tooltip="__('Delete')"
                         wire:click="forget('{{ $job['uuid'] }}')"
-                        spinner
-                    />
+                        spinner :aria-label="__('Delete')" />
                 </div>
                 @endscope
             </x-table>
+            </div>
         @endif
     </x-card>
 </div>

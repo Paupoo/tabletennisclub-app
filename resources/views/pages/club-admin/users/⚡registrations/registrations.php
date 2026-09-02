@@ -36,6 +36,7 @@ use App\Livewire\Concerns\HasFilterDrawer;
 use App\Livewire\Concerns\ManagesGuardians;
 use App\Mail\PaymentInvitationEmail;
 use App\Support\Breadcrumb;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -47,11 +48,12 @@ use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasBreadcrumbs, HasFilterDrawer, ManagesGuardians, Toast;
+    use HasBreadcrumbs, HasFilterDrawer, ManagesGuardians, Toast, WithPagination;
 
     /** Résultats de recherche affichés dans le drawer ; au-delà, on annonce le reste. */
     private const int SEARCH_RESULTS_SHOWN = 5;
@@ -170,7 +172,7 @@ new class extends Component
         $subscription = Subscription::with(['user', 'season', 'trainingPacks'])->find($this->currentRequestId);
 
         $licence = filled($this->reviewLicence) ? trim($this->reviewLicence) : $subscription->user->licence;
-        $ranking = filled($this->reviewRanking) ? $this->reviewRanking : $subscription->user->ranking;
+        $ranking = filled($this->reviewRanking) ? $this->reviewRanking : $subscription->user->ranking->value;
 
         // An affiliation is what ties a member to the federation: accepting one
         // without a licence number would register someone the AFTT cannot identify.
@@ -213,7 +215,7 @@ new class extends Component
         $subscription->confirm();
 
         // Approve selected training packs (pending → enrolled)
-        if (! empty($this->approvedPackIds)) {
+        if ($this->approvedPackIds !== []) {
             (new ApproveTrainingPacksAction)($subscription, $this->approvedPackIds, $familyMembersCount);
         }
 
@@ -255,7 +257,7 @@ new class extends Component
         }
 
         $allPendingIds = $subscription->trainingPacks
-            ->filter(fn ($p) => $p->pivot->status === 'pending')
+            ->filter(fn ($p): bool => $p->pivot->status === 'pending')
             ->pluck('id')
             ->toArray();
 
@@ -297,7 +299,7 @@ new class extends Component
         }
 
         $rejectedIds = array_diff($allPendingIds, $this->approvedPackIds);
-        if (! empty($rejectedIds)) {
+        if ($rejectedIds !== []) {
             $rejectedPacks = TrainingPack::whereIn('id', $rejectedIds)->get();
             foreach ($rejectedPacks as $pack) {
                 $subscription->user->notify(new TrainingPackRejectedNotification(
@@ -395,7 +397,7 @@ new class extends Component
                     continue;
                 }
 
-                if (! array_key_exists($pack->id, $spotsLeft)) {
+                if (! array_key_exists((string) $pack->id, $spotsLeft)) {
                     $max = $pack->effectiveMaxParticipants();
 
                     $spotsLeft[$pack->id] = ($pack->is_open_enrollment || $max === 0)
@@ -929,7 +931,7 @@ new class extends Component
         $approvedPacks = TrainingPack::whereIn('id', $this->approvedPackIds)->get();
 
         $discountable = $approvedPacks->filter(fn (TrainingPack $p) => $p->allow_discount);
-        $fixed = $approvedPacks->filter(fn (TrainingPack $p) => ! $p->allow_discount);
+        $fixed = $approvedPacks->filter(fn (TrainingPack $p): bool => ! $p->allow_discount);
 
         $familyCount = $subscription->has_other_family_members ? 2 : 1;
         $applyDiscount = $discountable->count() > 1 || $familyCount > 1;
@@ -1000,12 +1002,41 @@ new class extends Component
         ];
     }
 
-    public function registrations(): Collection
+    /**
+     * Une ligne isolée, retrouvée par son identifiant.
+     *
+     * Les modales cherchaient leur ligne dans la liste affichée ; depuis qu'elle
+     * est paginée, la ligne visée peut vivre sur une autre page.
+     */
+    public function registrationRow(?int $id): ?object
     {
-        $statusOrder = ['pending' => 1, 'confirmed' => 2, 'paid' => 3, 'refunded' => 4, 'cancelled' => 5];
+        if ($id === null) {
+            return null;
+        }
 
+        $subscription = Subscription::with(['user', 'trainingPacks', 'payments'])->find($id);
+
+        return $subscription === null ? null : $this->toRow($subscription);
+    }
+
+    /**
+     * La liste affichée, paginée.
+     *
+     * Elle rendait toute la saison d'un coup — 144 lignes sur la base de dev, et
+     * l'écran n'en montre qu'une dizaine. Le tri par statut passe en SQL pour que
+     * la pagination porte sur l'ordre réel et non sur un tri fait après coup.
+     */
+    public function registrations(): LengthAwarePaginator
+    {
         return Subscription::with(['user', 'trainingPacks', 'payments'])
             ->when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId))
+            // Une affiliation annulée n'a jamais tenu : elle sort de l'effectif,
+            // sans quoi un membre rejeté puis réinscrit y figure deux fois — la
+            // ligne annulée et la nouvelle (issue #29). Le domaine le dit déjà
+            // dans {@see Subscription::scopeActive()}, la liste ne le suivait pas.
+            // Elle reste atteignable : le filtre « Annulée » la demande nommément.
+            ->unless($this->statusFilter === 'cancelled',
+                fn ($q) => $q->where('status', '!=', 'cancelled'))
             ->when($this->statusFilter, fn ($q) => $this->statusFilter === 'pending'
                 ? $q->where(fn ($sub) => $sub
                     ->where('status', 'pending')
@@ -1020,54 +1051,9 @@ new class extends Component
                 ->where('first_name', 'like', "%{$this->search}%")
                 ->orWhere('last_name', 'like', "%{$this->search}%")
             ))
-            ->get()
-            ->sortBy(fn ($sub) => $statusOrder[$sub->status] ?? 5)
-            ->map(function (Subscription $sub) {
-                $enrolledPacks = $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'enrolled');
-                $pendingPacks = $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'pending');
-                $cancelledPacks = $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'cancelled');
-                // Packs quittés : encore facturés au pro rata des mois suivis,
-                // donc toujours visibles dans le détail de la cotisation.
-                $leftPacks = $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'left');
-
-                // A voided affiliation drags its trainings down with it, so any
-                // pack still flagged pending/enrolled reads as cancelled here —
-                // this also rescues rows cancelled before the status cascade.
-                if (in_array($sub->status, ['cancelled', 'refunded'], true)) {
-                    $cancelledPacks = $cancelledPacks->concat($pendingPacks)->concat($enrolledPacks);
-                    $pendingPacks = $enrolledPacks = collect();
-                }
-
-                return (object) [
-                    'id' => $sub->id,
-                    'first_name' => $sub->user->first_name,
-                    'last_name' => $sub->user->last_name,
-                    'name' => $sub->user->first_name . ' ' . $sub->user->last_name,
-                    'type' => $sub->is_competitive ? __('Competition') : __('Recreational'),
-                    'status' => $sub->status,
-                    'amount_due' => $sub->amount_due,
-                    'total_paid' => (float) $sub->payments->whereIn('status', ['paid', 'refunded'])->sum('amount_paid'),
-                    'trainings_count' => $sub->trainings_count,
-                    'pending_packs' => $pendingPacks,
-                    'enrolled_packs' => $enrolledPacks,
-                    'cancelled_packs' => $cancelledPacks,
-                    'left_packs' => $leftPacks,
-                    'has_pending_packs' => $pendingPacks->isNotEmpty(),
-                    'subscription_price' => $sub->is_competitive ? 125.0 : 60.0,
-                    'members' => [[
-                        'first_name' => $sub->user->first_name,
-                        'last_name' => $sub->user->last_name,
-                        'trainings' => $sub->trainingPacks->pluck('name')->toArray(),
-                    ]],
-                    'total_price' => $sub->amount_due,
-                    'payments' => $sub->payments->map(fn ($p) => [
-                        'reference' => $p->reference,
-                        'amount_due' => $p->amount_due,
-                        'status' => $p->status,
-                    ])->values()->toArray(),
-                    'payment_status' => $sub->payments->sortByDesc('created_at')->first()?->status,
-                ];
-            });
+            ->orderByRaw("CASE status WHEN 'pending' THEN 1 WHEN 'confirmed' THEN 2 WHEN 'paid' THEN 3 WHEN 'refunded' THEN 4 ELSE 5 END")
+            ->paginate(20)
+            ->through(fn (Subscription $sub): object => $this->toRow($sub));
     }
 
     public function reject(): void
@@ -1097,7 +1083,7 @@ new class extends Component
             return;
         }
 
-        $pendingPacks = $subscription->trainingPacks->filter(fn ($p) => $p->pivot->status === 'pending');
+        $pendingPacks = $subscription->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'pending');
 
         foreach ($pendingPacks as $pack) {
             $subscription->user->notify(new TrainingPackRejectedNotification(
@@ -1137,7 +1123,12 @@ new class extends Component
 
     public function render(): View
     {
-        $statsBase = Subscription::when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId));
+        // Même périmètre que la liste : les quatre cartes chiffrées se somment
+        // dans « Total », ce qui cessait d'être vrai dès qu'une annulation
+        // entrait dans le compte sans avoir de carte à elle.
+        $statsBase = Subscription::query()
+            ->where('status', '!=', 'cancelled')
+            ->when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId));
 
         return $this->view([
             'headers' => $this->headers(),
@@ -1182,14 +1173,14 @@ new class extends Component
         $subscription = Subscription::with(['user', 'trainingPacks'])->find($id);
         $this->approvedPackIds = $subscription
             ?->trainingPacks
-            ->filter(fn ($p) => $p->pivot->status === 'pending')
+            ->filter(fn ($p): bool => $p->pivot->status === 'pending')
             ->pluck('id')
             ->toArray() ?? [];
 
         // Accepting an affiliation is the moment the licence number is checked
         // against the federation, so it is offered for edit right here.
         $this->reviewLicence = $subscription?->user?->licence;
-        $this->reviewRanking = $subscription?->user?->ranking;
+        $this->reviewRanking = $subscription?->user?->ranking->value;
     }
 
     /**
@@ -1229,7 +1220,7 @@ new class extends Component
         $subscription = Subscription::with(['trainingPacks'])->find($subscriptionId);
         $this->approvedPackIds = $subscription
             ?->trainingPacks
-            ->filter(fn ($p) => $p->pivot->status === 'pending')
+            ->filter(fn ($p): bool => $p->pivot->status === 'pending')
             ->pluck('id')
             ->toArray() ?? [];
     }
@@ -1367,7 +1358,7 @@ new class extends Component
                         $subscription->confirm();
 
                         // Pose `starts_on` au pro rata et remet le prix à jour.
-                        if (! empty($claimedPackIds)) {
+                        if ($claimedPackIds !== []) {
                             (new ApproveTrainingPacksAction)($subscription, $claimedPackIds, $familyMembersCount);
                         }
 
@@ -1444,7 +1435,7 @@ new class extends Component
     {
         return Season::orderBy('start_at')
             ->get()
-            ->map(fn ($s) => [
+            ->map(fn ($s): array => [
                 'id' => $s->id,
                 'name' => $s->name . ($s->is_active ? ' ✦' : ''),
             ])
@@ -1530,7 +1521,7 @@ new class extends Component
 
         return TrainingPack::where('season_id', $season->id)
             ->get()
-            ->map(fn ($pack) => ['id' => $pack->id, 'name' => $pack->name])
+            ->map(fn ($pack): array => ['id' => $pack->id, 'name' => $pack->name])
             ->toArray();
     }
 
@@ -1541,7 +1532,7 @@ new class extends Component
     #[Computed]
     public function trainingRequestEstimatedDelta(): float
     {
-        if (! $this->currentTrainingRequestId || empty($this->approvedPackIds)) {
+        if (! $this->currentTrainingRequestId || $this->approvedPackIds === []) {
             return 0.0;
         }
 
@@ -1555,7 +1546,7 @@ new class extends Component
         $allAfter = $enrolledPacks->merge($approvedPacks);
 
         $discountable = $allAfter->filter(fn (TrainingPack $p) => $p->allow_discount);
-        $fixed = $allAfter->filter(fn (TrainingPack $p) => ! $p->allow_discount);
+        $fixed = $allAfter->filter(fn (TrainingPack $p): bool => ! $p->allow_discount);
 
         $familyCount = $subscription->has_other_family_members ? 2 : 1;
         $applyDiscount = $discountable->count() > 1 || $familyCount > 1;
@@ -1598,7 +1589,7 @@ new class extends Component
         }
 
         $enrolledPacks = $subscription->trainingPacks()->wherePivot('status', 'enrolled')->get();
-        $newPacks = empty($this->approvedPackIds)
+        $newPacks = $this->approvedPackIds === []
             ? collect()
             : TrainingPack::whereIn('id', $this->approvedPackIds)->get();
 
@@ -1678,9 +1669,7 @@ new class extends Component
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
             'filterChips' => $this->filterChips,
-            'currentRequest' => $this->currentRequestId
-                ? $this->registrations()->firstWhere('id', $this->currentRequestId)
-                : null,
+            'currentRequest' => $this->registrationRow($this->currentRequestId),
             'currentTrainingRequest' => $this->currentTrainingRequestId
                 ? Subscription::with(['user', 'trainingPacks' => fn ($q) => $q->wherePivot('status', 'pending')])
                     ->find($this->currentTrainingRequestId)
@@ -1714,7 +1703,7 @@ new class extends Component
      */
     private function canBeConfirmedDirectly(User $user): bool
     {
-        if (blank($user->licence) || blank($user->ranking) || $user->ranking === Ranking::NA->name) {
+        if (blank($user->licence) || $user->ranking === Ranking::NA) {
             return false;
         }
 
@@ -1776,5 +1765,56 @@ new class extends Component
         $this->newMemberEmail = null;
         $this->newMemberGender = '';
         $this->showNewMemberForm = false;
+    }
+
+    /** @return object la forme qu'attendent la liste et les modales */
+    private function toRow(Subscription $sub): object
+    {
+        return (function (Subscription $sub) {
+            $enrolledPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'enrolled');
+            $pendingPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'pending');
+            $cancelledPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'cancelled');
+            // Packs quittés : encore facturés au pro rata des mois suivis,
+            // donc toujours visibles dans le détail de la cotisation.
+            $leftPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'left');
+
+            // A voided affiliation drags its trainings down with it, so any
+            // pack still flagged pending/enrolled reads as cancelled here —
+            // this also rescues rows cancelled before the status cascade.
+            if (in_array($sub->status, ['cancelled', 'refunded'], true)) {
+                $cancelledPacks = $cancelledPacks->concat($pendingPacks)->concat($enrolledPacks);
+                $pendingPacks = $enrolledPacks = collect();
+            }
+
+            return (object) [
+                'id' => $sub->id,
+                'first_name' => $sub->user->first_name,
+                'last_name' => $sub->user->last_name,
+                'name' => $sub->user->first_name . ' ' . $sub->user->last_name,
+                'type' => $sub->is_competitive ? __('Competition') : __('Recreational'),
+                'status' => $sub->status,
+                'amount_due' => $sub->amount_due,
+                'total_paid' => (float) $sub->payments->whereIn('status', ['paid', 'refunded'])->sum('amount_paid'),
+                'trainings_count' => $sub->trainings_count,
+                'pending_packs' => $pendingPacks,
+                'enrolled_packs' => $enrolledPacks,
+                'cancelled_packs' => $cancelledPacks,
+                'left_packs' => $leftPacks,
+                'has_pending_packs' => $pendingPacks->isNotEmpty(),
+                'subscription_price' => $sub->is_competitive ? 125.0 : 60.0,
+                'members' => [[
+                    'first_name' => $sub->user->first_name,
+                    'last_name' => $sub->user->last_name,
+                    'trainings' => $sub->trainingPacks->pluck('name')->toArray(),
+                ]],
+                'total_price' => $sub->amount_due,
+                'payments' => $sub->payments->map(fn ($p): array => [
+                    'reference' => $p->reference,
+                    'amount_due' => $p->amount_due,
+                    'status' => $p->status,
+                ])->values()->toArray(),
+                'payment_status' => $sub->payments->sortByDesc('created_at')->first()?->status,
+            ];
+        })($sub);
     }
 };

@@ -11,7 +11,7 @@ enum Gender: string
 
     public static function options(): array
     {
-        return array_map(fn (self $c) => [
+        return array_map(fn (self $c): array => [
             'id' => $c->value,
             'name' => $c->getLabel(),
         ], self::cases());

@@ -150,7 +150,7 @@ new class extends Component
         $this->scoreUs = null;
         $this->scoreThem = null;
         if ($mr->score && str_contains($mr->score, '-')) {
-            [$home, $away] = array_map('intval', explode('-', $mr->score, 2));
+            [$home, $away] = array_map(intval(...), explode('-', $mr->score, 2));
             $this->scoreUs = $this->isHome ? $home : $away;
             $this->scoreThem = $this->isHome ? $away : $home;
         }
@@ -297,9 +297,9 @@ new class extends Component
         }
 
         $teams = $teamsQuery->get()
-            ->sortBy(fn (Team $t) => $categoryOrder[$t->league?->category] ?? 99);
+            ->sortBy(fn (Team $t): int => $categoryOrder[$t->league?->category] ?? 99);
 
-        $stats = $teams->mapWithKeys(fn (Team $team) => [
+        $stats = $teams->mapWithKeys(fn (Team $team): array => [
             $team->id => $this->computeStats($team->interclubResults),
         ]);
 
@@ -346,11 +346,11 @@ new class extends Component
 
     private function computeStats(Collection $interclubResults): array
     {
-        $real = $interclubResults->where('is_bye', false)->filter(fn ($mr) => $mr->result !== null);
+        $real = $interclubResults->where('is_bye', false)->filter(fn ($mr): bool => $mr->result !== null);
         $played = $real->count();
-        $wins = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResultEnum::WIN, InterclubResultEnum::FORFEIT_WIN]))->count();
-        $losses = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResultEnum::LOSS, InterclubResultEnum::FORFEIT_LOSS]))->count();
-        $draws = $real->filter(fn ($mr) => $mr->result === InterclubResultEnum::DRAW)->count();
+        $wins = $real->filter(fn ($mr): bool => in_array($mr->result, [InterclubResultEnum::WIN, InterclubResultEnum::FORFEIT_WIN]))->count();
+        $losses = $real->filter(fn ($mr): bool => in_array($mr->result, [InterclubResultEnum::LOSS, InterclubResultEnum::FORFEIT_LOSS]))->count();
+        $draws = $real->filter(fn ($mr): bool => $mr->result === InterclubResultEnum::DRAW)->count();
 
         return [
             'played' => $played,

@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\MemberImport;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\ImportLineAction;
+use App\Domains\Shared\Enums\Ranking;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Mail;
 
@@ -33,7 +34,7 @@ describe('importing the federation listing', function (): void {
             ->and($created->first_name)->toBe('Marc')
             ->and($created->last_name)->toBe('Dupont')
             ->and($created->email)->toBe('marc@example.com')
-            ->and($created->ranking)->toBe('C2')
+            ->and($created->ranking)->toBe(Ranking::C2)
             ->and($created->federation_licence_type)->toBe('JO')
             ->and($created->member_import_id)->toBe($import->id);
 
@@ -261,6 +262,116 @@ describe('importing a family under one address', function (): void {
     });
 
     /*
+     * The address belongs to somebody the club already knows, who simply is not on
+     * this listing — they let their affiliation lapse, or the file only carries
+     * the newcomers. Recording them a second time would leave the child hanging
+     * off a guardian nothing connects to the member of the same name.
+     */
+    it('links the member who holds the address rather than recording them twice', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+
+        $father = User::factory()->create([
+            'licence' => '173945',
+            'email' => 'jpvanoud@example.com',
+            'first_name' => 'Jean-Pierre',
+            'last_name' => 'Van Oudenhove',
+            'phone_number' => '0485610204',
+            'birthdate' => '1977-08-30',
+        ]);
+
+        ImportFederationMembersAction::handle([
+            new ImportLine(
+                row: federationRow(['lineNumber' => 2, 'licence' => '173944', 'firstName' => 'Hugo', 'lastName' => 'Van Oudenhove', 'email' => 'jpvanoud@example.com', 'birthdate' => CarbonImmutable::parse('2012-06-06')]),
+                action: ImportLineAction::CREATE,
+                keepsEmail: false,
+                externalGuardian: true,
+                // Hand-typed on the review screen, typo and all: the member's own
+                // file is the better source and is what must win.
+                guardianFirstName: 'Jean-Piere',
+                guardianLastName: 'Van Oudenhove',
+                guardianEmail: 'jpvanoud@example.com',
+                guardianPhone: '485610204',
+            ),
+        ], $secretary);
+
+        $child = User::query()->where('licence', '173944')->first();
+        $guardian = $child->guardians()->first();
+
+        expect(Guardian::count())->toBe(1)
+            ->and($guardian->user_id)->toBe($father->id)
+            ->and($guardian->first_name)->toBe('Jean-Pierre')
+            ->and($guardian->phone)->toBe('0485610204');
+    });
+
+    it('reuses the guardian record the member already had', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+
+        $father = User::factory()->create([
+            'email' => 'jpvanoud@example.com',
+            'first_name' => 'Jean-Pierre',
+            'last_name' => 'Van Oudenhove',
+            'birthdate' => '1977-08-30',
+        ]);
+        $existing = Guardian::factory()->create([
+            'user_id' => $father->id,
+            'email' => 'jpvanoud@example.com',
+        ]);
+
+        ImportFederationMembersAction::handle([
+            new ImportLine(
+                row: federationRow(['lineNumber' => 2, 'licence' => '173944', 'email' => 'jpvanoud@example.com', 'birthdate' => CarbonImmutable::parse('2012-06-06')]),
+                action: ImportLineAction::CREATE,
+                keepsEmail: false,
+                externalGuardian: true,
+                guardianFirstName: 'Jean-Piere',
+                guardianLastName: 'Van Oudenhove',
+                guardianEmail: 'jpvanoud@example.com',
+            ),
+        ], $secretary);
+
+        $child = User::query()->where('licence', '173944')->first();
+
+        expect(Guardian::count())->toBe(1)
+            ->and($child->guardians()->first()->id)->toBe($existing->id);
+    });
+
+    /*
+     * An elder brother affiliated last year kept the household address as his
+     * login. He holds it, but a twelve-year-old does not answer for his sister.
+     */
+    it('does not make a minor who holds the address anybody guardian', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+
+        User::factory()->create([
+            'email' => 'famille@example.com',
+            'first_name' => 'Tom',
+            'last_name' => 'Gilbert',
+            'birthdate' => now()->subYears(12)->toDateString(),
+        ]);
+
+        ImportFederationMembersAction::handle([
+            new ImportLine(
+                row: federationRow(['lineNumber' => 2, 'licence' => '166037', 'email' => 'famille@example.com', 'birthdate' => CarbonImmutable::parse('2014-04-25')]),
+                action: ImportLineAction::CREATE,
+                keepsEmail: false,
+                externalGuardian: true,
+                guardianFirstName: 'Olivier',
+                guardianLastName: 'Gilbert',
+                guardianEmail: 'famille@example.com',
+                guardianPhone: '0475111222',
+            ),
+        ], $secretary);
+
+        $guardian = User::query()->where('licence', '166037')->first()->guardians()->first();
+
+        expect($guardian->user_id)->toBeNull()
+            ->and($guardian->first_name)->toBe('Olivier');
+    });
+
+    /*
      * The reviewer ticked "this address belongs to a guardian" without naming
      * them. Inventing an identity is out of the question, so the address is still
      * withheld — the member simply shows up as having none, which is visible and
@@ -303,7 +414,7 @@ describe('re-importing a member the club already holds', function (): void {
             new ImportLine(row: federationRow(['ranking' => 'C2']), action: ImportLineAction::UPDATE, existingUserId: $member->id),
         ], $secretary);
 
-        expect($member->fresh()->ranking)->toBe('C2');
+        expect($member->fresh()->ranking)->toBe(Ranking::C2);
     });
 
     /*
@@ -326,7 +437,7 @@ describe('re-importing a member the club already holds', function (): void {
 
         expect($restored)->not->toBeNull()
             ->and($restored->trashed())->toBeFalse()
-            ->and($restored->ranking)->toBe('C2');
+            ->and($restored->ranking)->toBe(Ranking::C2);
     });
 
     it('takes the new licence type from the federation', function (): void {

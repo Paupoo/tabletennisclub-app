@@ -68,10 +68,7 @@ class ProtectAgainstSpam
 
         // Temps minimum
         $formStart = (int) $request->input('form_start', 0);
-        if ($formStart === 0 || (time() - $formStart < 3)) {
-            return true;
-        }
 
-        return false;
+        return $formStart === 0 || (time() - $formStart < 3);
     }
 }

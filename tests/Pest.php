@@ -39,7 +39,7 @@ pest()->browser()->timeout(15_000);
 
 uses(RefusesParallelExecution::class)->in('Browser');
 
-beforeEach(function () {
+beforeEach(function (): void {
     Club::forgetOwnClub();
 });
 
@@ -54,9 +54,7 @@ beforeEach(function () {
 |
 */
 
-expect()->extend('toBeOne', function () {
-    return $this->toBe(1);
-});
+expect()->extend('toBeOne', fn () => $this->toBe(1));
 
 /*
 |--------------------------------------------------------------------------
@@ -214,6 +212,14 @@ function smokeableGetRoutes(): array
 
         // Parameterised routes are covered by dedicated binding tests.
         if ($route->parameterNames() !== []) {
+            continue;
+        }
+
+        // Route::redirect() keeps an old URL alive after a screen moves. It
+        // renders nothing by design, so a 302 here is the feature, not a
+        // failure — and skipping the category means the next move does not
+        // have to remember to come back and edit a list.
+        if (str_contains($route->getActionName(), 'RedirectController')) {
             continue;
         }
 

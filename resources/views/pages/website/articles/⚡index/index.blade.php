@@ -24,7 +24,7 @@
     </x-header>
 
     {{-- Mobile search bar --}}
-    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+    <div class="border-b border-base-300 lg:hidden" x-show="mobileSearchOpen"
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 -translate-y-1"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -36,7 +36,8 @@
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
                     placeholder="{{ __('Search...') }}" />
             </div>
-            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+            <button type="button" @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm"
+                aria-label="{{ __('Close the search') }}">
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
@@ -96,72 +97,80 @@
     {{-- ── Vue mobile ───────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($articles as $article)
-            <x-list-item :item="$article" class="bg-base-100 rounded-lg border" wire:key="mobile-article-{{ $article->id }}">
-                <x-slot:avatar>
+            {{-- L'identité prend la largeur, les actions passent dessous : sur une
+            carte de 335 px, une action nommée et son menu en prenaient 156 et le
+            titre était tranché. --}}
+            <div class="rounded-lg border border-base-300 bg-base-100 p-3"
+                wire:key="mobile-article-{{ $article->id }}">
+                <div class="flex items-start gap-3">
                     @if ($selectionModeActive)
                         <input type="checkbox"
                             class="checkbox checkbox-primary checkbox-sm"
                             value="{{ $article->id }}"
                             wire:model.live="selected" />
                     @endif
-                </x-slot:avatar>
-                <x-slot:value>
-                    <span class="font-medium">{{ $article->title }}</span>
-                </x-slot:value>
-                <x-slot:sub-value>
-                    <div class="flex items-center gap-2 mt-0.5">
-                        @php
-                            $badgeClass = match ($article->status) {
-                                \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED => 'badge-success badge-soft',
-                                \App\Domains\Shared\Enums\NewsPostStatusEnum::DRAFT     => 'badge-warning badge-soft',
-                                \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED  => 'badge-ghost',
-                            };
-                        @endphp
-                        <x-badge :value="$article->status->getLabel()" class="{{ $badgeClass }} badge-sm" />
-                        <span class="text-xs text-base-content/40">
-                            {{ $article->created_at->translatedFormat('d M Y') }}
-                        </span>
+
+                    <div class="min-w-0 flex-1">
+                        <div class="font-medium">{{ $article->title }}</div>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            @php
+                                $badgeClass = match ($article->status) {
+                                    \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED => 'badge-success badge-soft',
+                                    \App\Domains\Shared\Enums\NewsPostStatusEnum::DRAFT     => 'badge-warning badge-soft',
+                                    \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED  => 'badge-ghost',
+                                };
+                            @endphp
+                            <x-badge :value="$article->status->getLabel()" class="{{ $badgeClass }} badge-sm" />
+                            <span class="text-xs text-base-content/40">
+                                {{ $article->created_at->translatedFormat('d M Y') }}
+                            </span>
+                        </div>
                     </div>
-                </x-slot:sub-value>
-                <x-slot:actions>
+                </div>
+
+                <div class="mt-3">
                     @if (! $selectionModeActive)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                :tooltip="__('Edit')"
-                                link="{{ route('admin.website.articles.edit', $article->slug) }}" />
+                        <x-admin.shared.row-menu
+                            :label="__('Edit')"
+                            icon="o-pencil"
+                            link="{{ route('admin.website.articles.edit', $article->slug) }}">
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
-                                    :tooltip="__('Publish')"
-                                    wire:click="publish({{ $article->id }})" />
+                                <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $article->id }})" :title="__('Publish')" />
                             @endif
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
-                                    :tooltip="__('Archive')"
-                                    wire:click="archive({{ $article->id }})" />
+                                <x-menu-item icon="o-archive-box" wire:click="archive({{ $article->id }})" :title="__('Archive')" />
                             @endif
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $article->id }})" />
-                        </x-admin.shared.row-actions>
+                            <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $article->id }})" :title="__('Delete')" />
+                        </x-admin.shared.row-menu>
                     @endif
-                </x-slot:actions>
-            </x-list-item>
+                </div>
+            </div>
         @empty
-            <x-empty-state
+            <x-admin.shared.list-empty-state
                 icon="o-document-text"
+                :filtered="filled($search) || count($filterChips) > 0"
                 :heading="__('No articles found')"
-                :message="__('Try adjusting your search or filters.')" />
+                :create-label="__('Write an article')"
+                :create-href="auth()->user()->can('news_posts.manage') ? route('admin.website.articles.create') : null" />
         @endforelse
+
+        @if ($articles->hasPages())
+            <div class="mt-2">
+                {{ $articles->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
     <div class="hidden lg:block">
         <x-card>
             @if ($articles->isEmpty())
-                <x-empty-state
+                <x-admin.shared.list-empty-state
                     icon="o-document-text"
+                    :filtered="filled($search) || count($filterChips) > 0"
                     :heading="__('No articles found')"
-                    :message="__('Try adjusting your search or filters.')" />
+                    :create-label="__('Write an article')"
+                    :create-href="auth()->user()->can('news_posts.manage') ? route('admin.website.articles.create') : null" />
             @else
                 <x-table :headers="$headers" :rows="$articles" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
@@ -194,24 +203,18 @@
                         </span>
                     @endscope
                     @scope('actions', $article)
-                        <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                :tooltip="__('Edit')"
-                                link="{{ route('admin.website.articles.edit', $article->slug) }}" />
+                        <x-admin.shared.row-menu
+                            :label="__('Edit')"
+                            icon="o-pencil"
+                            link="{{ route('admin.website.articles.edit', $article->slug) }}">
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
-                                    :tooltip="__('Publish')"
-                                    wire:click="publish({{ $article->id }})" />
+                                <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $article->id }})" :title="__('Publish')" />
                             @endif
                             @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
-                                <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
-                                    :tooltip="__('Archive')"
-                                    wire:click="archive({{ $article->id }})" />
+                                <x-menu-item icon="o-archive-box" wire:click="archive({{ $article->id }})" :title="__('Archive')" />
                             @endif
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $article->id }})" />
-                        </x-admin.shared.row-actions>
+                            <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $article->id }})" :title="__('Delete')" />
+                        </x-admin.shared.row-menu>
                     @endscope
                 </x-table>
                 <div class="mt-4">
@@ -240,14 +243,14 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Category') }}
                 </p>
                 <x-select :options="$categoryOptions" :placeholder="__('All categories')"
                     wire:model.live="category" class="w-full" />
             </div>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Status') }}
                 </p>
                 <x-select :options="$statusOptions" :placeholder="__('All statuses')"
@@ -258,13 +261,13 @@
 
     {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete article?')"
-        :confirmLabel="__('Delete')" confirmAction="delete">
+        :confirmLabel="__('Delete')" confirmAction="delete" :open="$deleteModal">
         <p>{{ __('This action is irreversible.') }}</p>
     </x-confirm-modal>
 
     {{-- ── Modal archivage bulk ──────────────────────────────────────── --}}
     <x-confirm-modal model="confirmBulkArchiveModal" :title="__('Archive selected articles?')"
-        :confirmLabel="__('Archive')" confirmAction="bulkArchive">
+        :confirmLabel="__('Archive')" confirmAction="bulkArchive" :open="$confirmBulkArchiveModal">
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be archived.') }}

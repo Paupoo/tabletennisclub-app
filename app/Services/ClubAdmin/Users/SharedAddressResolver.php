@@ -82,7 +82,7 @@ class SharedAddressResolver
      */
     private function resolveCluster(array $cluster): array
     {
-        $adults = array_values(array_filter($cluster, fn (FederationRow $row): bool => $this->isAdult($row)));
+        $adults = array_values(array_filter($cluster, $this->isAdult(...)));
 
         if ($adults === []) {
             return $this->resolveWithoutAdult($cluster);

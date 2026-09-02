@@ -16,7 +16,7 @@
         {{-- ── Colonne gauche : métadonnées ──────────────────────────── --}}
         <div class="space-y-5 lg:col-span-1">
 
-            <x-card class="border-gray-200 shadow-sm" :title="__('Identity')">
+            <x-card class="shadow-sm" :title="__('Identity')">
                 <div class="space-y-4">
                     <x-input label="Titre" wire:model.live.debounce.300ms="title"
                         placeholder="Titre de l'article" />
@@ -30,7 +30,7 @@
             </x-card>
 
             {{-- Image --}}
-            <x-card class="border-gray-200 shadow-sm" :title="__('Featured image')">
+            <x-card class="shadow-sm" :title="__('Featured image')">
                 @if ($existingImage)
                     <div class="mb-3">
                         <img src="{{ Storage::url($existingImage) }}"
@@ -41,7 +41,9 @@
                             wire:click="removeImage" />
                     </div>
                 @endif
-                <x-file wire:model="image" label="{{ $existingImage ? 'Remplacer' : 'Choisir une image' }}"
+                <x-file wire:model="image"
+                    :label="$existingImage ? __('Replace the image') : __('Choose an image')"
+                    :aria-label="$existingImage ? __('Replace the image') : __('Choose an image')"
                     accept="image/*" hint="JPG, PNG, WebP — max 4 Mo" />
                 @error('image')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -50,15 +52,16 @@
         </div>
 
         {{-- ── Colonne droite : éditeur Markdown split ───────────────── --}}
-        <x-card class="border-gray-200 shadow-sm lg:col-span-2" title="Contenu">
+        <x-card class="shadow-sm lg:col-span-2" title="Contenu">
             <x-slot:subtitle>
                 <span class="text-xs text-gray-400">{{ __('Markdown — live preview') }}</span>
             </x-slot:subtitle>
 
             {{-- Guide syntaxe --}}
             <div x-data="{ open: false }" class="mb-3">
+                {{-- py-1 : même plancher de 24px que partout ailleurs. --}}
                 <button type="button"
-                    class="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800"
+                    class="flex items-center gap-1.5 py-1 text-xs text-blue-600 hover:text-blue-800"
                     @click="open = !open">
                     <x-heroicon-o-question-mark-circle class="h-3.5 w-3.5" />
                     <span x-text="open ? 'Masquer l\'aide Markdown' : 'Aide Markdown'"></span>
@@ -76,7 +79,7 @@
                         <div><span class="text-blue-700">> citation</span> → blockquote</div>
                         <div><span class="text-blue-700">`code`</span> → <code>code</code></div>
                     </div>
-                    <p class="mt-2 text-[11px] text-blue-600">{{ __('⚠️ Headings require a space after the # :') }}<code class="bg-blue-100 px-1">## Mon titre</code> et non <code class="bg-red-100 px-1">##Mon titre</code></p>
+                    <p class="mt-2 text-xs text-blue-600"><x-icon name="o-exclamation-triangle" class="mb-0.5 inline h-3.5 w-3.5" /> {{ __('Headings require a space after the # :') }}<code class="bg-blue-100 px-1">## Mon titre</code> et non <code class="bg-red-100 px-1">##Mon titre</code></p>
                 </div>
             </div>
 
@@ -86,7 +89,7 @@
                     <label class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{{ __('Edit') }}</label>
                     <textarea
                         wire:model.live.debounce.400ms="content"
-                        class="flex-1 resize-none rounded-lg border border-gray-200 bg-gray-50 p-3 font-mono text-sm text-gray-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        class="flex-1 resize-none rounded-lg border border-base-300 bg-gray-50 p-3 font-mono text-sm text-gray-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
                         placeholder="## Mon titre&#10;&#10;Rédigez votre article en Markdown…&#10;&#10;- point 1&#10;- point 2"
                         style="min-height:380px"></textarea>
                     @error('content')
@@ -97,7 +100,7 @@
                 {{-- Prévisualisation --}}
                 <div class="flex flex-col">
                     <label class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{{ __('Preview') }}</label>
-                    <div class="prose prose-sm flex-1 overflow-y-auto rounded-lg border border-gray-200 bg-white p-4 text-gray-800"
+                    <div class="prose prose-sm flex-1 overflow-y-auto rounded-lg border border-base-300 bg-white p-4 text-gray-800"
                         style="min-height:380px; max-height:580px">
                         {!! $markdownPreview !!}
                     </div>

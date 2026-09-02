@@ -32,7 +32,7 @@
 </div>
 
 {{-- Generate Pools --}}
-<x-header :title="__('Pools')" subtitle="Distribute players automatically, then adjust if needed" class="mt-8" size="md">
+<x-header :title="__('Pools')" :subtitle="__('Distribute players automatically, then adjust if needed')" class="mt-8" size="md">
     <x-slot:actions>
         <x-button label="{{ $this->poolsGenerated ? __('Regenerate Pools') : __('Generate Pools') }}"
             icon="o-user-group"
@@ -49,7 +49,7 @@
         @foreach ($this->pools as $poolId => $data)
             <x-card wire:key="pool-card-{{ $poolId }}" title="{{ $data['name'] }}" shadow compact class="border-0">
                 <div>
-                    <div class="flex justify-between font-bold border-b border-base-300 pb-1 mb-1 opacity-50 text-sm">
+                    <div class="flex justify-between font-bold border-b border-base-300 pb-1 mb-1 text-muted text-sm">
                         <span>{{ __('Player') }}</span>
                         <div class="flex gap-4">
                             <span class="w-10 text-right">{{ __('Rank.') }}</span>
@@ -60,10 +60,15 @@
                     <div x-init="initSortable($el, $wire)" data-team-id="{{ $poolId }}" class="min-h-25 space-y-1">
                         @foreach ($data['players'] as $player)
                             <div wire:key="player-{{ $player['id'] }}" data-id="{{ $player['id'] }}"
-                                @class(['flex justify-between items-center border-b border-base-300/30 py-1 group cursor-grab active:cursor-grabbing', 'text-primary underline underline-offset-4 decoration-2' => $player['id'] === auth()->id()])>
+                                @class(['flex justify-between items-center border-b border-base-300/30 py-1 group', 'text-primary underline underline-offset-4 decoration-2' => $player['id'] === auth()->id()])>
                                 <div class="flex items-center gap-2 truncate">
-                                    <x-icon name="o-bars-3"
-                                        class="w-4 h-4 opacity-20 group-hover:opacity-100 transition-opacity" />
+                                    {{-- La zone de saisie du glissement : hors d'elle, le doigt fait défiler. --}}
+                                    <span data-drag-handle
+                                        class="-m-2 flex h-8 w-8 shrink-0 cursor-grab items-center justify-center p-2 active:cursor-grabbing"
+                                        aria-label="{{ __('Move :player', ['player' => $player['name']]) }}">
+                                        <x-icon name="o-bars-3"
+                                            class="w-4 h-4 opacity-20 group-hover:opacity-100 transition-opacity" />
+                                    </span>
                                     <span class="truncate font-medium">{{ $player['name'] }}</span>
                                 </div>
                                 <div class="flex gap-5 items-center">
@@ -80,8 +85,9 @@
 
     {{-- Generate Matches --}}
     <div class="mt-6 flex justify-center">
-        <x-button :label="$this->matchesGenerated ? __('Matches ready') . ' ✓' : __('Generate Matches')"
-            icon="o-table-cells"
+        {{-- The state rides on the icon, not on a check glued to the label. --}}
+        <x-button :label="$this->matchesGenerated ? __('Matches ready') : __('Generate Matches')"
+            :icon="$this->matchesGenerated ? 'o-check' : 'o-table-cells'"
             :class="$this->matchesGenerated ? 'btn-success btn-outline' : 'btn-secondary'"
             wire:click="generateMatches"
             spinner="generateMatches"
@@ -104,9 +110,9 @@
                         <div class="space-y-1">
                             @foreach ($poolData['matches'] as $match)
                                 <div class="flex items-center gap-2 py-1 border-b border-base-300/30 text-sm">
-                                    <span class="font-mono text-xs opacity-40 w-5 text-right">{{ $match['order'] }}</span>
+                                    <span class="font-mono text-xs text-muted w-5 text-right">{{ $match['order'] }}</span>
                                     <span class="flex-1 truncate">{{ $match['p1'] }}</span>
-                                    <span class="text-xs opacity-40 font-bold">vs</span>
+                                    <span class="text-xs text-muted font-bold">vs</span>
                                     <span class="flex-1 truncate text-right">{{ $match['p2'] }}</span>
                                 </div>
                             @endforeach
@@ -117,7 +123,7 @@
         </div>
     @endif
 @else
-    <div class="flex flex-col items-center py-16 opacity-40">
+    <div class="flex flex-col items-center py-16 text-muted">
         <x-icon name="o-user-group" class="w-12 h-12 mb-3" />
         <p class="text-sm">{{ $this->registrationClosed ? __('Click "Generate Pools" to distribute players.') : __('Close registrations first.') }}</p>
     </div>

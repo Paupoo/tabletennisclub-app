@@ -447,3 +447,143 @@ describe('generateBracket startingRound selection', function (): void {
     })->group('bracket', 'round-selection');
 
 })->group('bracket');
+
+// ── Petite finale : le bloc lisait les variables de la boucle précédente ──────
+
+/*
+ * Sous le tableau, la carte de la petite finale utilisait $match, $round,
+ * $isFinal et $winnerName — quatre variables laissées par le @foreach de la
+ * finale, fermé juste au-dessus. Elle affichait donc l'arbitre et le vainqueur
+ * de la FINALE. Ces tests fixent la frontière : ce que la carte montre doit
+ * venir du match de petite finale, et de lui seul.
+ */
+describe('bronze card reads its own match', function (): void {
+
+    /** @return array{tournament: Tournament, referee: User, winner: User} */
+    function bronzeScenario(): array
+    {
+        $tournament = Tournament::factory()->create([
+            'status' => TournamentStatusEnum::PENDING,
+            'sets_to_win' => 3,
+            'has_handicap_points' => false,
+            'deuce_enabled' => false,
+        ]);
+
+        [$a, $b, $c, $d] = User::factory(4)->create()->all();
+
+        // L'arbitre n'est inscrit à rien : son nom ne peut apparaître qu'au
+        // titre de l'arbitrage, ce qui rend le comptage d'occurrences probant.
+        $referee = User::factory()->create(['first_name' => 'Zoé', 'last_name' => 'Arbitrale']);
+
+        TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => null,
+            'round' => 'final',
+            'player1_id' => $a->id,
+            'player2_id' => $b->id,
+            'winner_id' => $a->id,
+            'referee_id' => $referee->id,
+            'status' => 'completed',
+            'match_order' => 1,
+        ]);
+
+        // La petite finale n'a ni arbitre, ni vainqueur, ni résultat.
+        TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => null,
+            'round' => 'bronze',
+            'player1_id' => $c->id,
+            'player2_id' => $d->id,
+            'status' => 'scheduled',
+            'match_order' => 2,
+        ]);
+
+        return ['tournament' => $tournament, 'referee' => $referee, 'winner' => $a];
+    }
+
+    it('does not borrow the final referee', function (): void {
+        ['tournament' => $tournament, 'referee' => $referee] = bronzeScenario();
+
+        $html = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament])
+            ->html();
+
+        /*
+         * Deux fois : la carte de la finale est rendue dans les deux branches du
+         * tableau -- l'arbre connecté (desktop) et la pile par tour (écran
+         * étroit), toutes deux dans le DOM, l'une masquée en CSS. Quatre
+         * signifierait que la petite finale a repris l'arbitre du voisin.
+         */
+        expect(substr_count($html, $referee->full_name))->toBe(2);
+    });
+
+    it('does not announce a winner for a match nobody has played', function (): void {
+        ['tournament' => $tournament] = bronzeScenario();
+
+        $html = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament])
+            ->html();
+
+        /*
+         * La ligne « vainqueur » d'une rencontre terminée, visée par sa classe
+         * entière : `text-amber-500` seul ne suffit plus, le podium du
+         * classement l'emploie aussi et rend dans le même DOM.
+         *
+         * Seule la finale est terminée ; la petite finale est programmée. Deux
+         * occurrences, une par branche de rendu -- quatre signifieraient que la
+         * petite finale a repris le vainqueur de la finale.
+         */
+        expect(substr_count($html, 'pt-1 text-center text-xs font-bold text-amber-500'))->toBe(2);
+    });
+});
+
+// ── L'arbre relie enfin quelque chose ────────────────────────────────────────
+
+/*
+ * Les tours étaient rendus en colonnes flex indépendantes, chacune en
+ * justify-around : un quart de finale ne tombait jamais à la hauteur de la
+ * demie qu'il alimente, et les « connecteurs » étaient des traits de 16 px
+ * collés à droite d'une carte, qui ne reliaient rien.
+ */
+describe('bracket layout', function (): void {
+
+    it('draws a brace between each round and the next', function (): void {
+        $tournament = tournamentReadyForBracket();
+        app(TournamentFinalPhaseService::class)->configureKnockoutPhase($tournament, 'semifinal');
+
+        $html = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament->fresh()])
+            ->html();
+
+        // Le trait vertical d'une accolade, positionné en pourcentage : c'est
+        // lui qui fait tomber la rencontre d'arrivée à mi-hauteur de ses deux
+        // alimentantes. Aucun SVG, aucune mesure JavaScript.
+        expect($html)->toContain('absolute left-1/2 w-px bg-base-300');
+    });
+
+    it('stacks the rounds instead of an unreadable tree on a narrow screen', function (): void {
+        $tournament = tournamentReadyForBracket();
+        app(TournamentFinalPhaseService::class)->configureKnockoutPhase($tournament, 'semifinal');
+
+        $html = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament->fresh()])
+            ->html();
+
+        // L'arbre demande de la largeur ; un défilement horizontal de six
+        // colonnes ne se lit pas davantage sur un téléphone.
+        expect($html)->toContain('hidden lg:block')
+            ->and($html)->toContain('space-y-6 lg:hidden');
+    });
+
+    it('no longer scrolls sideways inside a 1152px cage', function (): void {
+        $tournament = tournamentReadyForBracket();
+        app(TournamentFinalPhaseService::class)->configureKnockoutPhase($tournament, 'semifinal');
+
+        $html = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament->fresh()])
+            ->html();
+
+        expect($html)->not->toContain('style="min-height: 600px;"')
+            ->and($html)->not->toContain('flex gap-8 overflow-x-auto pb-10');
+    });
+});

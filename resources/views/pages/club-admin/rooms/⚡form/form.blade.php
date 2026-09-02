@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header :title="__('Create a new room')" />
+    <x-header progress-indicator :title="__('Create a new room')" />
     <x-form wire:submit='save'>
         <div class="grid grid-cols-5 gap-6">
             <div class="col-span-2">
@@ -90,7 +90,7 @@
     </x-form>
 
     {{-- Le Modal de création de table --}}
-    <x-modal wire:model="showTableModal" :title="__('Create a new table')" separator>
+    <x-app-modal wire:model="showTableModal" :title="__('Create a new table')" separator :open="$showTableModal">
         <div class="space-y-4">
             <x-input :label="__('Table Name')" wire:model.live.debounce="newTableName"
                 placeholder="Ex: Table 16" required />
@@ -109,5 +109,5 @@
             <x-button :label="__('Cancel')" @click="$wire.showTableModal = false" />
             <x-button :label="__('Add to list')" class="btn-primary" wire:click="addTableToList" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

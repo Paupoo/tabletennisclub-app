@@ -5,14 +5,16 @@
 
     @if ($plan === null)
         {{-- ── Plan management ─────────────────────────────────────────── --}}
-        <x-header progress-indicator separator :title="__('Planning board')"
+        <x-header data-board-header progress-indicator separator :title="__('Planning board')"
             :subtitle="$season?->name" />
 
-        <div class="mx-auto w-full max-w-3xl space-y-6">
+        {{-- Full width, like every other back-office screen: the header sits
+        outside this block, so a centred max-width put the title 160px to the
+        left of everything it introduced. --}}
+        <div data-board-body class="w-full space-y-6">
             @if ($season === null)
-                <x-alert icon="o-exclamation-triangle" class="alert-warning">
-                    {{ __('No active season.') }}
-                </x-alert>
+                <x-admin.shared.missing-season-state
+                    :message="__('A plan is composed from an active season. Open one to start composing training groups.')" />
             @elseif ($canManage)
                 <x-card :title="__('Create a new plan')"
                     :subtitle="__('Starts a draft from the active season — packs and current enrolments are copied.')"
@@ -58,12 +60,12 @@
                                     @if ($canManage && $p->status->value !== 'archived')
                                         <x-button class="btn-sm btn-ghost" icon="o-archive-box"
                                             :tooltip="__('Archive')"
-                                            wire:click="confirmArchivePlan({{ $p->id }})" />
+                                            wire:click="confirmArchivePlan({{ $p->id }})" :aria-label="__('Archive')" />
                                     @endif
                                     @if ($canManage)
                                         <x-button class="btn-sm btn-ghost text-error" icon="o-trash"
                                             :tooltip="__('Delete')"
-                                            wire:click="confirmDeletePlan({{ $p->id }})" />
+                                            wire:click="confirmDeletePlan({{ $p->id }})" :aria-label="__('Delete')" />
                                     @endif
                                 </div>
                             </div>
@@ -75,12 +77,12 @@
 
         {{-- Confirm modals (project modals, no native JS confirm) --}}
         <x-confirm-modal model="confirmArchiveModal" :title="__('Archive this plan?')"
-            :confirmLabel="__('Archive')" confirmClass="btn-warning" confirmAction="archivePlan">
+            :confirmLabel="__('Archive')" confirmClass="btn-warning" confirmAction="archivePlan" :open="$confirmArchiveModal">
             <p>{{ __('The plan is hidden from the active list. You can still delete it later.') }}</p>
         </x-confirm-modal>
 
         <x-confirm-modal model="confirmDeleteModal" :title="__('Delete this plan permanently?')"
-            :subtitle="__('Warning!')" :confirmLabel="__('Delete')" confirmAction="deletePlan">
+            :subtitle="__('Warning!')" :confirmLabel="__('Delete')" confirmAction="deletePlan" :open="$confirmDeleteModal">
             <p>{{ __('This permanently deletes the plan and its layout. This action is irreversible.') }}</p>
         </x-confirm-modal>
     @else
@@ -121,9 +123,9 @@
             @foreach ($columns as $column)
                 <div wire:key="col-{{ $column['id'] }}"
                     class="flex max-h-[28rem] flex-col rounded-xl border bg-base-100
-                        {{ $column['over_capacity'] ? 'border-error/40' : 'border-base-200' }}">
+                        {{ $column['over_capacity'] ? 'border-error/40' : 'border-base-300' }}">
                     {{-- Column header (stays visible above the scroll) with capacity tension --}}
-                    <div class="flex shrink-0 items-center justify-between gap-2 rounded-t-xl border-b border-base-200 px-3 py-2
+                    <div class="flex shrink-0 items-center justify-between gap-2 rounded-t-xl border-b border-base-300 px-3 py-2
                         {{ $column['over_capacity'] ? 'bg-error/10' : 'bg-base-200/40' }}">
                         <span class="truncate text-sm font-semibold">{{ $column['name'] }}</span>
                         <div class="flex shrink-0 items-center gap-1">
@@ -141,10 +143,10 @@
                             @if ($canManage && ! $column['is_pool'])
                                 <x-button class="btn-ghost btn-xs btn-circle" icon="o-pencil-square"
                                     :tooltip="__('Edit group')"
-                                    wire:click="editPack({{ $column['pack_id'] }})" />
+                                    wire:click="editPack({{ $column['pack_id'] }})" :aria-label="__('Edit group')" />
                                 <x-button class="btn-ghost btn-xs btn-circle text-error" icon="o-trash"
                                     :tooltip="__('Remove group')"
-                                    wire:click="confirmRemovePack({{ $column['pack_id'] }})" />
+                                    wire:click="confirmRemovePack({{ $column['pack_id'] }})" :aria-label="__('Remove group')" />
                             @endif
                         </div>
                     </div>
@@ -152,7 +154,7 @@
                     {{-- Pool-only quick filters (age category + ranking series).
                          Visible to everyone; drag-drop still works on shown cards. --}}
                     @if ($column['is_pool'])
-                        <div class="flex shrink-0 items-center gap-2 border-b border-base-200 px-2 py-1.5">
+                        <div class="flex shrink-0 items-center gap-2 border-b border-base-300 px-2 py-1.5">
                             <x-select wire:model.live="poolAgeFilter"
                                 :options="$poolAgeOptions"
                                 :placeholder="__('All ages')" placeholder-value=""
@@ -174,15 +176,15 @@
                         @foreach ($column['cards'] as $card)
                             <li wire:key="card-{{ $card['id'] }}"
                                 wire:sort:item="{{ $card['id'] }}"
-                                class="rounded-md border border-base-200 bg-base-100 px-2 py-1.5 shadow-sm {{ $canManage ? 'cursor-grab active:cursor-grabbing' : '' }}">
+                                class="rounded-md border border-base-300 bg-base-100 px-2 py-1.5 shadow-sm {{ $canManage ? 'cursor-grab active:cursor-grabbing' : '' }}">
                                 <div class="flex items-center gap-1.5">
                                     <span class="grow truncate text-sm font-medium">{{ $card['name'] }}</span>
                                     @if ($card['age_label'])
-                                        <span class="shrink-0 text-[10px] font-medium uppercase tracking-wide text-base-content/40">
+                                        <span class="shrink-0 text-xs font-medium uppercase tracking-wide text-base-content/40">
                                             {{ \Illuminate\Support\Str::substr($card['age_label'], 0, 3) }}</span>
                                     @endif
                                     @if ($card['ranking'])
-                                        <span class="shrink-0 rounded bg-base-200 px-1 text-[11px] font-bold text-base-content/70">{{ $card['ranking'] }}</span>
+                                        <span class="shrink-0 rounded bg-base-200 px-1 text-xs font-bold text-base-content/70">{{ $card['ranking'] }}</span>
                                     @endif
                                 </div>
                                 @if ($card['is_competitive'] || $card['can_drive'] || $card['wants_to_be_captain'] || $card['volunteer_help'])
@@ -193,7 +195,7 @@
                                         @if ($card['can_drive'])
                                             <span class="inline-flex items-center gap-0.5 text-info" title="{{ __('Drives') }}">
                                                 <x-icon name="o-truck" class="h-3.5 w-3.5" />
-                                                @if ($card['seats_available'] !== null)<span class="text-[10px] font-semibold">{{ $card['seats_available'] }}</span>@endif
+                                                @if ($card['seats_available'] !== null)<span class="text-xs font-semibold">{{ $card['seats_available'] }}</span>@endif
                                             </span>
                                         @endif
                                         @if ($card['wants_to_be_captain'])
@@ -212,8 +214,8 @@
         </div>
 
         {{-- Add / edit hypothetical pack modal --}}
-        <x-modal wire:model="showPackModal"
-            :title="$editingPackId ? __('Edit group') : __('Add a group')" separator>
+        <x-app-modal wire:model="showPackModal"
+            :title="$editingPackId ? __('Edit group') : __('Add a group')" separator :open="$showPackModal">
             <div class="space-y-4">
                 <x-input :label="__('Group name')" wire:model="packName"
                     :placeholder="__('e.g. Tuesday Advanced')" />
@@ -240,10 +242,10 @@
                 <x-button :label="$editingPackId ? __('Save') : __('Add')" class="btn-primary"
                     wire:click="{{ $editingPackId ? 'savePack' : 'addPack' }}" spinner />
             </x-slot:actions>
-        </x-modal>
+        </x-app-modal>
 
         {{-- Import CSV modal --}}
-        <x-modal wire:model="showImportModal" :title="__('Import CSV')" separator>
+        <x-app-modal wire:model="showImportModal" :title="__('Import CSV')" separator :open="$showImportModal">
             <div class="space-y-4">
                 <p class="text-sm text-base-content/60">
                     {{ __('Upload a CSV exported from this board. Members are matched by licence, then by email.') }}
@@ -256,11 +258,11 @@
                 <x-button :label="__('Import')" class="btn-primary"
                     wire:click="import" spinner="import" />
             </x-slot:actions>
-        </x-modal>
+        </x-app-modal>
 
         {{-- Remove group confirm modal (project modal, no native JS confirm) --}}
         <x-confirm-modal model="confirmRemovePackModal" :title="__('Remove this group?')"
-            :confirmLabel="__('Remove')" confirmAction="removePack">
+            :confirmLabel="__('Remove')" confirmAction="removePack" :open="$confirmRemovePackModal">
             <p>{{ __('Its members will return to the pool.') }}</p>
         </x-confirm-modal>
     @endif

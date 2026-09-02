@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Payments;
 
-use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;

@@ -31,7 +31,7 @@
 <td align="left" style="padding: 10px 0; vertical-align: middle; border-bottom: 1px solid #f1f5f9; font-size: 15px; color: #0f172a;">
 <span style="font-weight: {{ $isRecipient ? '700' : '500' }};">{{ $player->full_name }}</span>
 @if ($player->ranking)
-<span style="margin-left: 6px; font-size: 12px; font-weight: 600; color: #64748b;">{{ $player->ranking }}</span>
+<span style="margin-left: 6px; font-size: 12px; font-weight: 600; color: #64748b;">{{ $player->ranking->getLabel() }}</span>
 @endif
 @if ($isRecipient)
 <span style="margin-left: 6px; padding: 2px 6px; border-radius: 4px; background-color: #1e40af; color: #ffffff; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">{{ __('you') }}</span>

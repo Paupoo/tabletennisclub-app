@@ -6,7 +6,7 @@
     {{-- ── Header ──────────────────────────────────────────────────────────── --}}
     @if ($selectedPackId)
         {{-- SESSION LIST HEADER --}}
-        <x-header separator
+        <x-header progress-indicator separator
             :subtitle="$selectedPack?->level?->value . ' · ' . $selectedPack?->type?->value"
             :title="$selectedPack?->name ?? __('Sessions')">
             <x-slot:actions>
@@ -15,7 +15,7 @@
         </x-header>
     @else
         {{-- PACK LIST HEADER --}}
-        <x-header separator :subtitle="$viewSeason?->name ?? __('Select a season')"
+        <x-header progress-indicator separator :subtitle="$viewSeason?->name ?? __('Select a season')"
             :title="__('Trainings')">
             <x-slot:actions>
                 <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-search="false" :show-more="false" />
@@ -26,6 +26,9 @@
             </x-slot:actions>
         </x-header>
 
+        {{-- ── Season: navigation, not a filter (DS-A) ──────────────────────── --}}
+        <x-admin.shared.season-nav model="viewSeasonId" :options="$seasonOptions" class="mt-4" />
+
         {{-- ── Active filter chips ──────────────────────────────────────────── --}}
         <x-admin.shared.filter-chips :chips="$filterChips" />
 
@@ -33,15 +36,7 @@
         <x-admin.shared.filter-drawer :title="__('Filters')">
             <x-slot:filters>
                 <div>
-                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                        {{ __('Season') }}
-                    </p>
-                    <x-select :options="$seasonOptions" wire:model.live="viewSeasonId"
-                        :placeholder="__('Season…')" class="w-full" />
-                </div>
-
-                <div>
-                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                         {{ __('Availability') }}
                     </p>
                     <label class="flex items-center gap-2 cursor-pointer">
@@ -56,8 +51,8 @@
     {{-- ── Season guard ────────────────────────────────────────────────────── --}}
     @if (! $viewSeason && ! $selectedPackId)
         @if (empty($seasonOptions))
-            <x-alert class="alert-warning" icon="o-exclamation-triangle"
-                :title="__('No seasons found. Create a season first.')" />
+            <x-admin.shared.missing-season-state
+                :message="__('Training packs belong to a season. Open one to build this year\'s offer.')" />
         @else
             <x-alert class="alert-info" icon="o-information-circle"
                 :title="__('Select a season above to view training packs.')" />
@@ -73,8 +68,8 @@
                 @endphp
                 <div @class([
                     'flex items-center justify-between rounded-xl border px-4 py-3',
-                    'bg-base-100 border-base-200' => ! $cancelled,
-                    'bg-base-200/50 border-base-200 opacity-60' => $cancelled,
+                    'bg-base-100 border-base-300' => ! $cancelled,
+                    'bg-base-200/50 border-base-300 opacity-60' => $cancelled,
                 ])>
                     <div class="flex items-center gap-4">
                         <div class="text-center">
@@ -153,7 +148,7 @@
                                 {{-- No overflow-hidden: it would clip the actions dropdown at the
                                      bottom of the card. The header rounds its own corners instead. --}}
                                 <div
-                                    class="group flex flex-col rounded-xl border border-base-200 bg-base-100">
+                                    class="group flex flex-col rounded-xl border border-base-300 bg-base-100">
                                     {{-- Card header --}}
                                     <div class="rounded-t-xl bg-primary/5 px-4 py-3">
                                         <div class="flex items-start justify-between gap-2">
@@ -189,7 +184,7 @@
 
                                     {{-- Card body --}}
                                     <div class="flex flex-1 flex-col px-4 py-3">
-                                        <div class="mb-3 space-y-1 text-[13px] text-base-content/70">
+                                        <div class="mb-3 space-y-1 text-sm text-base-content/70">
                                             <div class="flex items-center gap-2">
                                                 <x-icon class="h-4 w-4 shrink-0 opacity-40" name="o-user" />
                                                 {{ $pack->trainer?->full_name ?? __('No coach') }}
@@ -202,7 +197,7 @@
 
                                         {{-- Capacity --}}
                                         <div class="mb-3">
-                                            <div class="mb-1 flex justify-between text-[11px] text-base-content/50">
+                                            <div class="mb-1 flex justify-between text-xs text-base-content/50">
                                                 <span>{{ $enrolled }} / {{ $max ?: '∞' }} {{ __('enrolled') }}</span>
                                                 @if ($full)
                                                     <span class="font-medium text-error">{{ __('Full') }}</span>
@@ -216,7 +211,7 @@
                                         </div>
 
                                         {{-- Actions --}}
-                                        <div class="mt-auto flex flex-nowrap items-center gap-1 border-t border-base-200 pt-2">
+                                        <div class="mt-auto flex flex-nowrap items-center gap-1 border-t border-base-300 pt-2">
                                             <x-button class="btn-ghost btn-sm min-w-0 flex-1 text-xs"
                                                 icon="o-calendar-days" :label="__('Sessions')"
                                                 wire:click="viewSessions({{ $pack->id }})" />
@@ -282,7 +277,7 @@
     {{-- ================================================================
          WIZARD MODAL (3 steps)
     ================================================================ --}}
-    <x-modal :title="$packId ? __('Edit pack') : __('New training pack')" wire:model="wizardOpen" separator>
+    <x-app-modal :title="$packId ? __('Edit pack') : __('New training pack')" wire:model="wizardOpen" separator :open="$wizardOpen">
         {{-- Step indicators --}}
         <div class="mb-6 flex items-center justify-center gap-2 text-xs">
             @foreach ([1 => __('Pack'), 2 => __('Planning'), 3 => __('Price')] as $n => $label)
@@ -351,7 +346,7 @@
                         <div @class([
                             'cursor-pointer rounded-xl border-2 p-3 text-center transition',
                             'border-primary bg-primary/10' => $formRecurrenceType === 'weekly',
-                            'border-base-200' => $formRecurrenceType !== 'weekly',
+                            'border-base-300' => $formRecurrenceType !== 'weekly',
                         ]) wire:click="$set('formRecurrenceType', 'weekly')">
                             <x-icon class="mx-auto mb-1 h-5 w-5 text-primary" name="o-calendar" />
                             <p class="text-sm font-semibold">{{ __('Once a week') }}</p>
@@ -360,7 +355,7 @@
                         <div @class([
                             'cursor-pointer rounded-xl border-2 p-3 text-center transition',
                             'border-primary bg-primary/10' => $formRecurrenceType === 'specific_days',
-                            'border-base-200' => $formRecurrenceType !== 'specific_days',
+                            'border-base-300' => $formRecurrenceType !== 'specific_days',
                         ]) wire:click="$set('formRecurrenceType', 'specific_days')">
                             <x-icon class="mx-auto mb-1 h-5 w-5 text-primary" name="o-calendar-days" />
                             <p class="text-sm font-semibold">{{ __('Several days') }}</p>
@@ -381,7 +376,7 @@
                                 <label @class([
                                     'cursor-pointer select-none rounded-full border px-3 py-1 text-xs font-medium transition',
                                     'border-primary bg-primary text-primary-content' => in_array($day['id'], array_map('intval', $formSpecificDays)),
-                                    'border-base-200 text-base-content/70 hover:border-primary/50' => ! in_array($day['id'], array_map('intval', $formSpecificDays)),
+                                    'border-base-300 text-base-content/70 hover:border-primary/50' => ! in_array($day['id'], array_map('intval', $formSpecificDays)),
                                 ])>
                                     <input class="sr-only" type="checkbox" wire:model.live="formSpecificDays"
                                         value="{{ $day['id'] }}" />
@@ -437,7 +432,7 @@
                         </p>
                         <div class="flex flex-wrap gap-1.5">
                             @foreach ($previewDates as $d)
-                                <span class="group relative inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-[11px] text-primary">
+                                <span class="group relative inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary">
                                     {{ $d->translatedFormat('D d M') }}
                                     <button
                                         class="ml-0.5 rounded-full opacity-50 transition hover:opacity-100 hover:text-error"
@@ -454,14 +449,14 @@
 
                     {{-- Excluded dates (re-includable) --}}
                     @if (count($formExcludedDates) > 0)
-                        <div class="rounded-lg border border-base-200 p-3">
+                        <div class="rounded-lg border border-base-300 p-3">
                             <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-base-content/40">
                                 {{ __(':count excluded', ['count' => count($formExcludedDates)]) }}
                             </p>
                             <div class="flex flex-wrap gap-1.5">
                                 @foreach ($formExcludedDates as $excluded)
                                     <button
-                                        class="inline-flex items-center gap-1 rounded-md border border-dashed border-base-300 px-2 py-0.5 text-[11px] text-base-content/40 line-through transition hover:border-primary hover:text-primary hover:no-underline"
+                                        class="inline-flex items-center gap-1 rounded-md border border-dashed border-base-300 px-2 py-0.5 text-xs text-base-content/40 line-through transition hover:border-primary hover:text-primary hover:no-underline"
                                         :title="__('Re-include this date')"
                                         wire:click="toggleExcludeDate('{{ $excluded }}')"
                                         wire:key="exclude-{{ $excluded }}"
@@ -495,7 +490,7 @@
                     :title="__('The pack price is added to the subscription price.')" />
 
                 {{-- Summary --}}
-                <div class="rounded-xl border border-base-200 bg-base-100 p-4 text-sm">
+                <div class="rounded-xl border border-base-300 bg-base-100 p-4 text-sm">
                     <h3 class="mb-3 font-semibold">{{ __('Summary') }}</h3>
                     <div class="space-y-1 text-base-content/70">
                         <div class="flex justify-between">
@@ -553,18 +548,18 @@
                     label="{{ $packId ? __('Update') : __('Create pack') }}" wire:click="save" />
             @endif
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     {{-- ================================================================
          CANCELLATION MODAL
     ================================================================ --}}
-    <x-modal :title="__('Cancel this session')" wire:model="cancelModal" separator>
+    <x-app-modal :title="__('Cancel this session')" wire:model="cancelModal" separator :open="$cancelModal">
         <div class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div @class([
                     'cursor-pointer rounded-xl border-2 p-3 text-center transition',
                     'border-warning bg-warning/10' => $cancelType === 'FREE',
-                    'border-base-200' => $cancelType !== 'FREE',
+                    'border-base-300' => $cancelType !== 'FREE',
                 ]) wire:click="$set('cancelType', 'FREE')">
                     <x-icon class="mx-auto mb-1 h-6 w-6 text-warning-content" name="o-sun" />
                     <p class="text-sm font-semibold">{{ __('Free practice') }}</p>
@@ -573,7 +568,7 @@
                 <div @class([
                     'cursor-pointer rounded-xl border-2 p-3 text-center transition',
                     'border-error bg-error/10' => $cancelType === 'CLOSED',
-                    'border-base-200' => $cancelType !== 'CLOSED',
+                    'border-base-300' => $cancelType !== 'CLOSED',
                 ]) wire:click="$set('cancelType', 'CLOSED')">
                     <x-icon class="mx-auto mb-1 h-6 w-6 text-error" name="o-lock-closed" />
                     <p class="text-sm font-semibold">{{ __('Room closed') }}</p>
@@ -590,10 +585,10 @@
             <x-button class="btn-error" icon="o-x-circle" :label="__('Confirm cancellation')"
                 wire:click="confirmCancel" />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
     <x-confirm-modal model="withdrawPackModal" :title="__('Withdraw this pack from the offer?')"
-        :confirmLabel="__('Withdraw')" confirmClass="btn-warning" confirmAction="confirmWithdrawPack">
+        :confirmLabel="__('Withdraw')" confirmClass="btn-warning" confirmAction="confirmWithdrawPack" :open="$withdrawPackModal">
         <p>{{ __('Members will no longer be able to enrol in this pack.') }}</p>
         <p class="mt-2 text-sm opacity-70">
             {{ __('The sessions still take place and the members already enrolled keep their spot — they are not notified. Use « Stop the pack » if the training will not happen at all.') }}
@@ -603,7 +598,7 @@
         </p>
     </x-confirm-modal>
 
-    <x-modal wire:model="regenerateModal" :title="__('Rebuild the sessions?')" separator>
+    <x-app-modal wire:model="regenerateModal" :title="__('Rebuild the sessions?')" separator :open="$regenerateModal">
         <p>{{ __('You changed when or where this pack takes place. Its existing sessions do not move on their own.') }}</p>
 
         <div class="p-3 mt-3 text-sm rounded-lg bg-warning/10">
@@ -628,9 +623,9 @@
             <x-button :label="__('Cancel')" wire:click="$set('regenerateModal', false)" />
             <x-button :label="__('Rebuild the sessions')" class="btn-warning" wire:click="confirmRegeneration" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 
-    <x-modal wire:model="discontinuePackModal" :title="__('Stop this pack?')" separator>
+    <x-app-modal wire:model="discontinuePackModal" :title="__('Stop this pack?')" separator :open="$discontinuePackModal">
         <p>{{ __('The remaining sessions are cancelled and the members are told the training will not happen.') }}</p>
 
         <div class="p-3 mt-3 text-sm rounded-lg bg-error/10">
@@ -652,5 +647,5 @@
             <x-button :label="__('Cancel')" wire:click="$set('discontinuePackModal', false)" />
             <x-button :label="__('Stop the pack')" class="btn-error" wire:click="confirmDiscontinuePack" spinner />
         </x-slot:actions>
-    </x-modal>
+    </x-app-modal>
 </div>

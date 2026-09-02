@@ -104,7 +104,7 @@ class TournamentSeeder extends Seeder
 
         return Tournament::create(array_merge([
             'name' => 'Tournoi',
-            'description' => fake()->paragraph(),
+            'description' => fake()->sentence(),
             'location' => 'Centre Sportif Jean Demeester, Ottignies',
             'start_date' => $base,
             'end_date' => $base->copy()->addHours(8),

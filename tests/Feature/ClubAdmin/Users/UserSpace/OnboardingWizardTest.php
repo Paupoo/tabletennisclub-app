@@ -445,3 +445,43 @@ test('changing the details after a duplicate warning clears it', function (): vo
         ->set('guardianEmail', 'nouvelle.adresse@example.com')
         ->assertSet('duplicateGuardianId', null);
 });
+
+test('the identity step lets a minor through without a phone number', function (): void {
+    $user = incompleteUser();
+
+    Livewire::actingAs($user)
+        ->test(ONBOARDING_COMPONENT)
+        ->set('gender', Gender::MEN)
+        ->set('birthdate', now()->subYears(12)->format('Y-m-d'))
+        ->set('phone_number', '')
+        ->call('completeIdentityStep')
+        ->assertHasNoErrors()
+        ->assertSet('step', 2);
+
+    expect($user->refresh()->phone_number)->toBeNull();
+});
+
+test('the identity step still refuses an unusable phone number typed by a minor', function (): void {
+    Livewire::actingAs(incompleteUser())
+        ->test(ONBOARDING_COMPONENT)
+        ->set('gender', Gender::MEN)
+        ->set('birthdate', now()->subYears(12)->format('Y-m-d'))
+        ->set('phone_number', '04 70')
+        ->call('completeIdentityStep')
+        ->assertHasErrors('phone_number')
+        ->assertSet('step', 1);
+});
+
+test('a minor reached through their guardian resumes past the identity step', function (): void {
+    $minor = User::factory()->minor()->create([
+        'phone_number' => null,
+        'street' => null,
+        'city_code' => null,
+        'city_name' => null,
+    ]);
+    $minor->guardians()->attach(Guardian::factory()->create());
+
+    Livewire::actingAs($minor)
+        ->test(ONBOARDING_COMPONENT)
+        ->assertSet('step', 3);
+});

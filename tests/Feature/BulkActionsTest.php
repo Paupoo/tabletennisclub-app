@@ -24,7 +24,7 @@ describe('HasBulkActions', function (): void {
         $component = Livewire::actingAs($this->admin)
             ->test(USERS_COMPONENT);
 
-        $pageIds = $component->get('users')->pluck('id')->map(fn ($id) => (string) $id)->toArray();
+        $pageIds = $component->get('users')->pluck('id')->map(fn ($id): string => (string) $id)->toArray();
 
         $component->set('selectAll', true)
             ->assertSet('selected', $pageIds)

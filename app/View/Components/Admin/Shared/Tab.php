@@ -71,8 +71,12 @@ class Tab extends Component
         $fromLabel = $this->label ?: $label;
 
         if ($this->icon) {
+            // The icon steps aside below `sm`: three tabs plus their icons are
+            // 392px wide, which cuts the last label mid-word on a 390px phone
+            // with nothing to say the strip scrolls. The wrapper carries the
+            // toggle because maryUI's own `inline` on the svg outranks `hidden`.
             return Blade::render("
-                <x-icon name='{$this->icon}' class='h-4 w-4 shrink-0' />
+                <span class='hidden shrink-0 sm:block'><x-icon name='{$this->icon}' class='h-4 w-4' /></span>
                 <span class='whitespace-nowrap'>{$fromLabel}</span>
             ");
         }

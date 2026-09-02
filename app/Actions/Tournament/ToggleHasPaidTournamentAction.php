@@ -14,8 +14,6 @@ class ToggleHasPaidTournamentAction extends ToggleHasPaidAction
 {
     /**
      * Toggle "has_paid" column from tournament_user database.
-     *
-     * @param  Illuminate\Database\Eloquent\Model  $model
      */
     public function toggleHasPaid(Model $model): bool
     {
@@ -30,7 +28,7 @@ class ToggleHasPaidTournamentAction extends ToggleHasPaidAction
             throw new Exception(__('Relation not found'));
         }
 
-        DB::transaction(fn () => $pivot->has_paid = ! $pivot->has_paid);
+        DB::transaction(fn (): bool => $pivot->has_paid = ! $pivot->has_paid);
 
         return $pivot->save();
     }

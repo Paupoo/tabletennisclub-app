@@ -22,6 +22,7 @@ use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Support\AddressNormalizer;
 use App\Domains\Shared\Support\IbanNormalizer;
 use App\Domains\Shared\Traits\HasAuditLog;
@@ -34,7 +35,6 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -68,7 +68,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $street
  * @property string|null $city_code
  * @property string|null $city_name
- * @property string $ranking
+ * @property Ranking $ranking
  * @property string|null $licence
  * @property int|null $force_list
  * @property int|null $force_list_women
@@ -134,7 +134,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read Collection<int, User> $dependents
  * @property-read int|null $dependents_count
  * @property-read string $full_name
- * @property-read Collection<int, User> $guardians
+ * @property-read Collection<int, Guardian> $guardians
  * @property-read int|null $guardians_count
  * @property-read Collection<int, Meeting> $meetings
  * @property-read int|null $meetings_count
@@ -196,7 +196,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'street' => 'string',
         'city_code' => 'string',
         'city_name' => 'string',
-        'ranking' => 'string',
+        'ranking' => Ranking::class,
         'licence' => 'string',
         'force_list' => 'integer',
         'force_list_women' => 'integer',
@@ -418,7 +418,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function forceListFor(LeagueCategory|string|null $category): ?int
     {
-        return match ($this->resolveCategory($category)) {
+        return match (self::resolveCategory($category)) {
             LeagueCategory::WOMEN => $this->force_list_women,
             LeagueCategory::VETERANS => $this->force_list_veterans,
             default => $this->force_list,
@@ -503,6 +503,9 @@ class User extends Authenticatable implements MustVerifyEmail
             ->exists();
     }
 
+    /**
+     * @return BelongsToMany<Guardian, $this>
+     */
     public function guardians(): BelongsToMany
     {
         return $this->belongsToMany(Guardian::class, 'guardian_user');
@@ -514,11 +517,16 @@ class User extends Authenticatable implements MustVerifyEmail
      * (invited users get a default the wizard asks them to confirm), so it
      * cannot signal incompleteness. Incomplete profiles are redirected to
      * the onboarding wizard by the profile.complete middleware.
+     *
+     * The phone number follows the email address: a member reached through a
+     * guardian holds neither, and the guardian carries both. Requiring it here
+     * would park every such member in the onboarding wizard for good, asking
+     * for a number that is on file — under the guardian.
      */
     public function hasCompleteProfile(): bool
     {
         return $this->birthdate !== null
-            && filled($this->phone_number)
+            && (filled($this->phone_number) || $this->hasGuardian())
             && filled($this->street)
             && filled($this->city_code)
             && filled($this->city_name)
@@ -606,6 +614,30 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Meeting::class)
             ->withPivot(['status', 'invitation_sent_at', 'response_at'])
             ->withTimestamps();
+    }
+
+    /**
+     * Whose my-space a notification about this member should link to.
+     *
+     * Every my-space page is self-only (`abort_unless(Auth::user()->is($user))`),
+     * so a link is only useful to whoever can actually sign in. A managed member
+     * has no address of their own, which is exactly what says they have no login
+     * either — the mail went to a guardian, and it is the guardian's my-space
+     * that lists the ward. Same fallback as {@see self::contactEmail()}, so the
+     * link and the envelope always agree on who is being addressed.
+     *
+     * Falls back to the member when no guardian holds an account: a dead link is
+     * still better than pointing at somebody who cannot be reached either.
+     */
+    public function mySpaceOwner(): self
+    {
+        if ($this->email !== null) {
+            return $this;
+        }
+
+        return $this->guardians
+            ->map(fn (Guardian $guardian): ?self => $guardian->member)
+            ->first(fn (?self $member): bool => $member?->email !== null) ?? $this;
     }
 
     /**
@@ -782,8 +814,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * This scope allows searching for users by terms in their first or last name.
-     *
-     * @param  mixed  $query
      */
     public function scopeSearchTerms(Builder $query, string $search): void
     {
@@ -833,10 +863,18 @@ class User extends Authenticatable implements MustVerifyEmail
         return $query->whereNotNull('birthdate')->where('birthdate', '<=', $cutoff->toDateString());
     }
 
-    public function scopeWithIncompleteProfile(Builder $query): Builder
+    /**
+     * SQL counterpart of {@see self::hasCompleteProfile()}, including the
+     * exemption a guardian grants on the phone number. The two are one rule
+     * expressed twice and are tested against each other.
+     */
+    public function scopeWithIncompleteProfile(EloquentBuilder $query): EloquentBuilder
     {
-        return $query->where(fn (Builder $q) => $q
-            ->whereNull('phone_number')
+        return $query->where(fn (EloquentBuilder $q) => $q
+            ->where(fn (EloquentBuilder $missingPhone) => $missingPhone
+                ->whereNull('phone_number')
+                ->whereDoesntHave('guardians')
+            )
             ->orWhereNull('street')
             ->orWhereNull('city_code')
             ->orWhereNull('city_name')

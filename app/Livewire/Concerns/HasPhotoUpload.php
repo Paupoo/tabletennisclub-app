@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Concerns;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
@@ -16,11 +17,22 @@ trait HasPhotoUpload
 
     public int $imageKey = 0;
 
-    public $photo = null;
+    public $photo;
 
     public function deletePhoto(): void
     {
-        if (! $this->user || ! $this->user->photo) {
+        if (! $this->user) {
+            return;
+        }
+
+        // Livewire exposes every public method of the component to the client,
+        // whether or not the markup renders a trigger for it — so reaching the
+        // screen is never the same thing as being allowed to act on it. The
+        // member form is now open to whoever hands out rights as well as to
+        // whoever edits data, and only the second of those may erase a portrait.
+        Gate::authorize('updatePhoto', $this->user);
+
+        if (! $this->user->photo) {
             return;
         }
 

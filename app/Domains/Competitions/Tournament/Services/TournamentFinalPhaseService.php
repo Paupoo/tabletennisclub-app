@@ -48,7 +48,7 @@ class TournamentFinalPhaseService
         $poolPlayerIds = TournamentMatch::where('tournament_id', $tournament->id)
             ->whereNotNull('pool_id')
             ->get()
-            ->flatMap(fn (TournamentMatch $m) => [$m->player1_id, $m->player2_id])
+            ->flatMap(fn (TournamentMatch $m): array => [$m->player1_id, $m->player2_id])
             ->filter()
             ->unique()
             ->values();
@@ -58,7 +58,7 @@ class TournamentFinalPhaseService
             ->whereNotNull('round')
             ->whereNotNull('player1_id')
             ->get()
-            ->flatMap(fn (TournamentMatch $m) => [$m->player1_id, $m->player2_id])
+            ->flatMap(fn (TournamentMatch $m): array => [$m->player1_id, $m->player2_id])
             ->filter()
             ->unique()
             ->values();
@@ -96,11 +96,11 @@ class TournamentFinalPhaseService
             }
 
             $ranked = $eligible
-                ->map(fn (int $id) => ['id' => $id, 'count' => $refereeCounts[$id] ?? 0])
+                ->map(fn (int $id): array => ['id' => $id, 'count' => $refereeCounts[$id] ?? 0])
                 ->sortBy('count');
 
             $minCount = $ranked->first()['count'];
-            $pool = $ranked->filter(fn (array $c) => $c['count'] === $minCount)->values()->all();
+            $pool = $ranked->filter(fn (array $c): bool => $c['count'] === $minCount)->values()->all();
             $chosen = $pool[random_int(0, count($pool) - 1)]['id'];
             $match->update(['referee_id' => $chosen]);
             $refereeCounts[$chosen]++;
@@ -310,7 +310,7 @@ class TournamentFinalPhaseService
         ];
 
         // Sort the collection using the defined order
-        $sortedMatches = $matches->sort(function (TournamentMatch $a, TournamentMatch $b) use ($roundOrder) {
+        $sortedMatches = $matches->sort(function (TournamentMatch $a, TournamentMatch $b) use ($roundOrder): int {
             // First sort by round
             if ($roundOrder[$a->round] !== $roundOrder[$b->round]) {
                 return $roundOrder[$a->round] <=> $roundOrder[$b->round];
@@ -359,19 +359,18 @@ class TournamentFinalPhaseService
 
             foreach ($pools as $pool) {
                 $standings = $this->tournamentMatchService->calculatePoolStandings($pool);
-                for ($i = $playersPerPool; $i < count($standings); $i++) {
+                $counter = count($standings);
+                for ($i = $playersPerPool; $i < $counter; $i++) {
                     $repechageCandidates->push($this->buildQualifiedEntry($standings[$i], $pool, $i + 1));
                 }
             }
 
             // Sort by matches won, sets won, and points
-            $sortedCandidates = $repechageCandidates->sortByDesc(function (array $item) {
-                return sprintf('%06d%06d%06d',
-                    $item['stats']['matches_won'],
-                    $item['stats']['sets_won'],
-                    $item['stats']['total_points']
-                );
-            })->values();
+            $sortedCandidates = $repechageCandidates->sortByDesc(fn (array $item): string => sprintf('%06d%06d%06d',
+                $item['stats']['matches_won'],
+                $item['stats']['sets_won'],
+                $item['stats']['total_points']
+            ))->values();
 
             // Add best remaining players to fill spots
             for ($i = 0; $i < $remainingSpots && $i < count($sortedCandidates); $i++) {
@@ -384,8 +383,6 @@ class TournamentFinalPhaseService
 
     /**
      * Create matches for a specific round
-     *
-     * @param  mixed  $nextMatchIds
      */
     protected function createRoundMatches(Tournament $tournament, string $round, int $matchCount, ?array $nextMatchIds, ?int $bronzeMatchId = null): Collection
     {
@@ -427,16 +424,11 @@ class TournamentFinalPhaseService
      */
     protected function getRoundPlayerCount(string $round): int
     {
-        switch ($round) {
-            case 'round_16':
-                return 16;
-            case 'round_8':
-                return 8;
-            case 'round_4':
-                return 4;
-            default:
-                return 16;
-        }
+        return match ($round) {
+            'round_8' => 8,
+            'round_4' => 4,
+            default => 16,
+        };
     }
 
     /**
@@ -504,7 +496,7 @@ class TournamentFinalPhaseService
 
         // Append any repêchage or overflow players not yet placed
         foreach ($qualifiedPlayers as $player) {
-            if (! $seededPlayers->contains(fn (array $v) => $v['player']->id === $player['player']->id)) {
+            if (! $seededPlayers->contains(fn (array $v): bool => $v['player']->id === $player['player']->id)) {
                 $seededPlayers->push($player);
             }
         }
@@ -574,11 +566,11 @@ class TournamentFinalPhaseService
             ->toArray();
 
         $ranked = $candidates
-            ->map(fn (int $id) => ['id' => $id, 'count' => $refereeCounts[$id] ?? 0])
+            ->map(fn (int $id): array => ['id' => $id, 'count' => $refereeCounts[$id] ?? 0])
             ->sortBy('count');
 
         $minCount = $ranked->first()['count'];
-        $pool = $ranked->filter(fn (array $c) => $c['count'] === $minCount)->values()->all();
+        $pool = $ranked->filter(fn (array $c): bool => $c['count'] === $minCount)->values()->all();
         $target->update(['referee_id' => $pool[random_int(0, count($pool) - 1)]['id']]);
     }
 }

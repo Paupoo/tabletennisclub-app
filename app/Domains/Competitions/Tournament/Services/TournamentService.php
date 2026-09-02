@@ -21,7 +21,6 @@ use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConf
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistSpotOpenedNotification;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
-use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Jobs\SendDebtReminderNotification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
@@ -284,7 +283,7 @@ class TournamentService
             throw new \LogicException('This player is already registered to this tournament.');
         }
 
-        if ($tournament->status !== TournamentStatusEnum::PUBLISHED) {
+        if (! $tournament->registrationsAreOpen()) {
             throw new \LogicException('Registrations are closed for this tournament.');
         }
 

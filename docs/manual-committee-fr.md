@@ -358,7 +358,9 @@ Allez dans **Administration club → Tables**. Gérez les tables de ping-pong in
 
 ### Saisons
 
-Allez dans **Administration club → Saisons**. Créez et activez des saisons de compétition (utilisées pour les affiliations, les interclubs, les entraînements). Chaque saison a un nom, une date de début et une date de fin. Une seule saison peut être active à la fois.
+Allez dans **Paramètres du club → Saisons**. Créez et activez des saisons de compétition (utilisées pour les affiliations, les interclubs, les entraînements). Chaque saison a un nom, une date de début et une date de fin. Une seule saison peut être active à la fois.
+
+> **Ouvrir une nouvelle saison** est une procédure en plusieurs étapes — créer la saison, clôturer la précédente, rouvrir les affiliations, importer les affiliés puis le calendrier interclubs depuis la fédération. Elle a son propre manuel : [Préparer une nouvelle saison](manual-season-fr.md).
 
 ---
 

@@ -204,6 +204,7 @@ new class extends Component
         $ourTeamIds = $ourTeams->pluck('id')->toArray();
 
         $query = Interclub::with(['visitedTeam.club', 'visitedTeam.league', 'visitingTeam.club', 'visitingTeam.league', 'league'])
+            ->withoutByes()
             ->where('season_id', $this->seasonId)
             ->where(fn ($q) => $q->whereIn('visited_team_id', $ourTeamIds)->orWhereIn('visiting_team_id', $ourTeamIds))
             ->orderBy('start_date_time');

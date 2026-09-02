@@ -84,6 +84,9 @@
         "test:refactor": [
             "rector process --dry-run --no-progress-bar --clear-cache"
         ],
+        "test:contract": [
+            "@php artisan test --testsuite=Contract"
+        ],
         "test:types": [
             "phpstan analyse --memory-limit=2G"
         ],

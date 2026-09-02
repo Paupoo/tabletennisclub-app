@@ -357,7 +357,9 @@ Go to **Club admin → Tables**. Manage individual ping-pong tables:
 
 ### Seasons
 
-Go to **Club admin → Seasons**. Create and activate competition seasons (used for affiliations, interclubs, trainings). Each season has a name, start date, and end date. Only one season can be active at a time.
+Go to **Club Settings → Seasons**. Create and activate competition seasons (used for affiliations, interclubs, trainings). Each season has a name, start date, and end date. Only one season can be active at a time.
+
+> **Opening a new season** is a multi-step procedure — create the season, close the previous one, reopen affiliations, import the affiliates and then the interclub calendar from the federation. It has its own manual: [Preparing a new season](manual-season.md).
 
 ---
 

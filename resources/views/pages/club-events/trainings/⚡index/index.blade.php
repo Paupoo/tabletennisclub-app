@@ -10,6 +10,8 @@
             :subtitle="$selectedPack?->level?->value . ' · ' . $selectedPack?->type?->value"
             :title="$selectedPack?->name ?? __('Sessions')">
             <x-slot:actions>
+                <x-button class="btn-primary btn-sm" icon="o-user-plus" :label="__('Add a member')"
+                    wire:click="openAddMember" />
                 <x-button class="btn-ghost" icon="o-arrow-left" :label="__('Back')" wire:click="backToList" />
             </x-slot:actions>
         </x-header>
@@ -250,8 +252,13 @@
                                                         :aria-label="__('More actions')" />
                                                 </x-slot:trigger>
 
+                                                <x-menu-item
+                                                    :icon="$pack->enrollments_open ? 'o-lock-closed' : 'o-lock-open'"
+                                                    :title="$pack->enrollments_open ? __('Close enrolments') : __('Reopen enrolments')"
+                                                    wire:click="toggleEnrollments({{ $pack->id }})" />
+
                                                 @if ($pack->is_active)
-                                                    <x-menu-item icon="o-eye-slash"
+                                                    <x-menu-item icon="o-eye-slash" separator
                                                         :title="__('Withdraw from the offer')"
                                                         wire:click="openWithdrawPack({{ $pack->id }})" />
                                                     <x-menu-item class="text-error" icon="o-x-circle" separator
@@ -408,9 +415,18 @@
                     @if ($formType === \App\Domains\Shared\Enums\TrainingType::FREE->value)
                         <label class="flex items-center gap-2 mt-3 cursor-pointer">
                             <x-checkbox wire:model.live="formIsOpenEnrollment" />
-                            <span class="text-sm">{{ __('Unlimited enrolment (no cap, no waiting list)') }}</span>
+                            <span class="text-sm">{{ __('No participant cap (and therefore no waiting list)') }}</span>
                         </label>
                     @endif
+
+                    <label class="mt-3 flex cursor-pointer items-center gap-2">
+                        <x-checkbox wire:model.live="formEnrollmentsOpen" />
+                        <span class="text-sm">{{ __('Open to member sign-ups') }}</span>
+                    </label>
+
+                    <p class="mt-1 text-xs text-base-content/50">
+                        {{ __('Unchecked, the pack stays visible but members cannot sign up on their own. The committee can still add them.') }}
+                    </p>
                 </div>
 
                 {{-- Pack period --}}
@@ -646,6 +662,34 @@
         <x-slot:actions>
             <x-button :label="__('Cancel')" wire:click="$set('discontinuePackModal', false)" />
             <x-button :label="__('Stop the pack')" class="btn-error" wire:click="confirmDiscontinuePack" spinner />
+        </x-slot:actions>
+    </x-app-modal>
+
+    {{-- ── Add a member by hand ─────────────────────────────────────────────── --}}
+    <x-app-modal :title="__('Add a member to this pack')" wire:model="addMemberModal" separator
+        :open="$addMemberModal">
+        <p class="text-sm text-base-content/70">
+            {{ __('The spot is validated straight away — no request to approve. The member is notified and their balance is updated.') }}
+        </p>
+
+        @if ($this->addMemberOverCapacity)
+            <x-alert class="alert-warning mt-3" icon="o-exclamation-triangle">
+                {{ __('This pack is full. Adding someone takes it over its cap.') }}
+            </x-alert>
+        @endif
+
+        <x-choices-offline class="mt-4" :label="__('Member')" wire:model="addMemberUserId"
+            :options="$this->addMemberOptions" option-label="name" single searchable />
+
+        <x-input class="mt-3" type="date" :label="__('Enrolled since')" wire:model="addMemberStartsOn" />
+
+        <p class="mt-1 text-xs text-base-content/50">
+            {{ __('Leave empty to start today. Set an earlier date to bill the months already attended.') }}
+        </p>
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('addMemberModal', false)" />
+            <x-button :label="__('Add the member')" class="btn-primary" wire:click="addMemberToPack" spinner />
         </x-slot:actions>
     </x-app-modal>
 </div>

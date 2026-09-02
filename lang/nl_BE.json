@@ -4029,7 +4029,6 @@
     "the usual room": "de gebruikelijke zaal",
     "This cannot be undone: the emails go out and the refunds enter the treasury workflow.": "Dit kan niet ongedaan worden gemaakt: de e-mails vertrekken en de terugbetalingen komen in de boekhoudprocedure terecht.",
     "Training stopped — :pack": "Training stopgezet — :pack",
-    "Unlimited enrolment (no cap, no waiting list)": "Onbeperkte inschrijvingen (geen plafond, geen wachtlijst)",
     ":user removed from :pack. Nothing to refund — their balance is settled.": ":user verwijderd uit :pack. Niets terug te betalen — de rekening is vereffend.",
     "Withdraw": "Intrekken",
     "Withdraw from the offer (sessions still run)": "Uit het aanbod halen (sessies gaan door)",
@@ -4274,5 +4273,15 @@
     "No club found. Encode it as a new one.": "Geen club gevonden. Voer ze in als nieuwe club.",
     "Pick an existing club instead": "Kies liever een bestaande club",
     "Search a club...": "Zoek een club...",
-    "Street address (optional)": "Adres (optioneel)"
+    "Street address (optional)": "Adres (optioneel)",
+    "No participant cap (and therefore no waiting list)": "Geen deelnemerslimiet (dus geen wachtlijst)",
+    "Open to member sign-ups": "Open voor inschrijving door leden",
+    "Unchecked, the pack stays visible but members cannot sign up on their own. The committee can still add them.": "Niet aangevinkt blijft het pakket zichtbaar, maar leden kunnen zich niet zelf inschrijven. Het comité kan hen nog steeds toevoegen.",
+    "Close enrolments": "Inschrijvingen sluiten",
+    "Reopen enrolments": "Inschrijvingen heropenen",
+    "Enrolments are closed for this training pack.": "De inschrijvingen voor dit trainingspakket zijn gesloten.",
+    "This member has no active membership for the season.": "Dit lid heeft geen actieve aansluiting voor het seizoen.",
+    "Enrolments reopened for :pack.": "Inschrijvingen heropend voor :pack.",
+    "Enrolments closed for :pack. The committee can still add members.": "Inschrijvingen gesloten voor :pack. Het comité kan nog leden toevoegen.",
+    "Sign-ups closed": "Inschrijvingen gesloten"
 }

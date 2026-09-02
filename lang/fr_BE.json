@@ -4030,7 +4030,6 @@
     "the usual room": "la salle habituelle",
     "This cannot be undone: the emails go out and the refunds enter the treasury workflow.": "C'est irréversible : les e-mails partent et les remboursements entrent dans le circuit de la trésorerie.",
     "Training stopped — :pack": "Entraînement arrêté — :pack",
-    "Unlimited enrolment (no cap, no waiting list)": "Inscriptions illimitées (aucun plafond, aucune liste d'attente)",
     ":user removed from :pack. Nothing to refund — their balance is settled.": ":user retiré de :pack. Rien à rembourser — son compte est en ordre.",
     "Withdraw": "Retirer",
     "Withdraw from the offer (sessions still run)": "Retirer de l'offre (les séances continuent)",
@@ -4274,5 +4273,15 @@
     "No club found. Encode it as a new one.": "Aucun club trouvé. Encodez-le comme nouveau club.",
     "Pick an existing club instead": "Choisir plutôt un club existant",
     "Search a club...": "Rechercher un club...",
-    "Street address (optional)": "Adresse (optionnel)"
+    "Street address (optional)": "Adresse (optionnel)",
+    "No participant cap (and therefore no waiting list)": "Sans plafond de participants (donc sans liste d'attente)",
+    "Open to member sign-ups": "Ouvert aux inscriptions des membres",
+    "Unchecked, the pack stays visible but members cannot sign up on their own. The committee can still add them.": "Décoché, le pack reste visible mais les membres ne peuvent plus s'inscrire eux-mêmes. Le comité peut toujours les ajouter.",
+    "Close enrolments": "Fermer les inscriptions",
+    "Reopen enrolments": "Rouvrir les inscriptions",
+    "Enrolments are closed for this training pack.": "Les inscriptions sont closes pour ce pack d'entraînement.",
+    "This member has no active membership for the season.": "Ce membre n'a pas d'affiliation active pour la saison.",
+    "Enrolments reopened for :pack.": "Inscriptions rouvertes pour :pack.",
+    "Enrolments closed for :pack. The committee can still add members.": "Inscriptions closes pour :pack. Le comité peut toujours y ajouter des membres.",
+    "Sign-ups closed": "Inscriptions closes"
 }

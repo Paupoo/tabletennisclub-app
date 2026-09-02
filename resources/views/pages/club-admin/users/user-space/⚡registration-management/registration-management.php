@@ -561,6 +561,7 @@ new class extends Component
                         'schedule' => $pack->scheduleLabel(),
                         'room' => $pack->room?->name,
                         'is_open_enrollment' => $pack->is_open_enrollment,
+                        'enrollments_open' => $pack->enrollments_open,
                         'spots_remaining' => max(0, $pack->effectiveMaxParticipants() - $pack->enrolledCount()),
                         'waitlist_count' => $pack->waitlistCount(),
                         'is_full' => ! $pack->hasAvailableSpot(),

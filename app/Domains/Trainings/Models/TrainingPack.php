@@ -51,6 +51,7 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
  * @property array<array-key, mixed>|null $excluded_dates
  * @property bool $allow_discount
  * @property bool $is_open_enrollment
+ * @property bool $enrollments_open
  * @property-read EventPost|null $eventPost
  * @property-read Room $room
  * @property-read Season $season
@@ -115,6 +116,7 @@ class TrainingPack extends Model
         'max_participants' => 'integer',
         'is_active' => 'boolean',
         'is_open_enrollment' => 'boolean',
+        'enrollments_open' => 'boolean',
     ];
 
     protected $fillable = [
@@ -137,6 +139,7 @@ class TrainingPack extends Model
         'max_participants',
         'is_active',
         'is_open_enrollment',
+        'enrollments_open',
     ];
 
     /**

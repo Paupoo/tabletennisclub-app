@@ -29,6 +29,13 @@ class EnrollInTrainingPackAction
             throw new \DomainException(__('Cannot enroll with a cancelled subscription.'));
         }
 
+        // Le verrou ne vaut que pour le libre-service. Le comité passe par
+        // AddMemberToTrainingPackAction, qui l'ignore délibérément : fermer
+        // les inscriptions ferme la porte aux membres, pas au club.
+        if (! $pack->enrollments_open) {
+            throw new \DomainException(__('Enrolments are closed for this training pack.'));
+        }
+
         $existing = DB::table('subscription_training_pack')
             ->where('subscription_id', $subscription->id)
             ->where('training_pack_id', $pack->id)

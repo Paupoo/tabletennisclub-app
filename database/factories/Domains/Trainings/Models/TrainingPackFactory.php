@@ -47,7 +47,17 @@ class TrainingPackFactory extends Factory
             'trainer_id' => User::factory(),
             'room_id' => Room::factory(),
             'is_open_enrollment' => false,
+            'enrollments_open' => true,
         ];
+    }
+
+    /**
+     * Un pack retiré du libre-service : le comité peut encore y ajouter
+     * quelqu'un, les membres ne peuvent plus s'y inscrire seuls.
+     */
+    public function enrolmentsClosed(): self
+    {
+        return $this->state(fn (): array => ['enrollments_open' => false]);
     }
 
     /**

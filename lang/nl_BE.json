@@ -4295,5 +4295,10 @@
     ":count session still to record|:count sessions still to record": ":count sessie nog af te tekenen|:count sessies nog af te tekenen",
     "Tonight — to record": "Vanavond — af te tekenen",
     "Never recorded": "Nooit afgetekend",
-    "Coming up": "Binnenkort"
+    "Coming up": "Binnenkort",
+    "Show the whole season": "Het hele seizoen tonen",
+    "Rate": "Percentage",
+    "Turnout": "Opkomst",
+    "Not recorded": "Niet afgetekend",
+    "Cancelled session": "Geannuleerde sessie"
 }

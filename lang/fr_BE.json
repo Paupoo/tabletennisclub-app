@@ -4295,5 +4295,10 @@
     ":count session still to record|:count sessions still to record": ":count séance reste à pointer|:count séances restent à pointer",
     "Tonight — to record": "Ce soir — à pointer",
     "Never recorded": "Jamais pointée",
-    "Coming up": "À venir"
+    "Coming up": "À venir",
+    "Show the whole season": "Voir toute la saison",
+    "Rate": "Taux",
+    "Turnout": "Participation",
+    "Not recorded": "Non pointée",
+    "Cancelled session": "Séance annulée"
 }

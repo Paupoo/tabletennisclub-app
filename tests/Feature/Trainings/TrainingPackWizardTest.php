@@ -7,6 +7,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Services\TrainingAttendanceService;
 use Livewire\Livewire;
 
 /**
@@ -134,4 +135,51 @@ describe('training pack wizard', function (): void {
             ->and($standIn->can('recordAttendance', $session->fresh()))->toBeTrue();
     })->group('training', 'attendance');
 
+});
+
+describe('the attendance matrix on the pack screen', function (): void {
+
+    beforeEach(function (): void {
+        $this->admin = User::factory()->isAdmin()->create();
+    });
+
+    it('shows the last twelve sessions, and all of them on demand', function (): void {
+        $pack = editablePack();
+
+        foreach (range(1, 15) as $weeksAgo) {
+            Training::factory()->past($weeksAgo * 7)->for($pack, 'trainingPack')->create();
+        }
+
+        $component = Livewire::actingAs($this->admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('viewSessions', $pack->id);
+
+        expect($component->get('attendanceMatrix')['sessions'])->toHaveCount(12);
+
+        $component->set('showAllSessions', true);
+
+        expect($component->get('attendanceMatrix')['sessions'])->toHaveCount(15);
+    })->group('training', 'attendance');
+
+    it('renders the grid with its two margins', function (): void {
+        $pack = editablePack();
+        $coach = User::factory()->create();
+
+        $member = Subscription::factory()->for($pack->season, 'season')->for(User::factory(), 'user')->create();
+        $member->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+
+        $session = Training::factory()->past(7)->for($pack, 'trainingPack')->create();
+        $service = app(TrainingAttendanceService::class);
+        $service->record($session, $member->user, 'present');
+        $service->validate($session, $coach);
+
+        // La grille n'est vraiment vérifiée qu'au rendu : une erreur Blade ne
+        // se voit pas sur les données du composant.
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('viewSessions', $pack->id)
+            ->assertOk()
+            ->assertSee($member->user->last_name)
+            ->assertSee('100%');
+    })->group('training', 'attendance');
 });

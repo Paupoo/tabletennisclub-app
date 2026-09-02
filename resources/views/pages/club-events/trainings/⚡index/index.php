@@ -18,6 +18,7 @@ use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingPackScheduleChangedNotification;
 use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
+use App\Domains\Trainings\Services\TrainingAttendanceReport;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
 use App\Domains\Trainings\Services\TrainingWaitlistService;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -119,6 +120,8 @@ new class extends Component
     public ?int $selectedPackId = null;
 
     /** Show packs withdrawn from the offer, so they can be found and put back. */
+    public bool $showAllSessions = false;
+
     public bool $showInactive = false;
 
     public string $step = '1';
@@ -235,12 +238,35 @@ new class extends Component
         $this->addMemberUserId = 0;
         $this->addMemberStartsOn = '';
 
-        unset($this->packs, $this->selectedPack, $this->addMemberOptions, $this->addMemberOverCapacity);
+        unset($this->packs, $this->selectedPack, $this->addMemberOptions, $this->addMemberOverCapacity, $this->attendanceMatrix);
 
         $this->success(__(':member added to :pack.', [
             'member' => $subscription->user->first_name . ' ' . $subscription->user->last_name,
             'pack' => $pack->name,
         ]), icon: 'o-user-plus');
+    }
+
+    /**
+     * La grille membres × séances du pack consulté.
+     *
+     * Douze séances par défaut : un trimestre tient à l'écran, une saison
+     * entière demanderait un scroll horizontal que personne ne lit.
+     *
+     * @return array{sessions: list<array<string, mixed>>, members: list<array<string, mixed>>, walkIns: list<array<string, mixed>>}
+     */
+    #[Computed]
+    public function attendanceMatrix(): array
+    {
+        $pack = $this->selectedPack;
+
+        if (! $pack) {
+            return ['sessions' => [], 'members' => [], 'walkIns' => []];
+        }
+
+        return app(TrainingAttendanceReport::class)->matrix(
+            $pack,
+            $this->showAllSessions ? PHP_INT_MAX : 12,
+        );
     }
 
     public function backToList(): void
@@ -943,13 +969,18 @@ new class extends Component
             ->toArray();
     }
 
+    // ── Session drill-down ────────────────────────────────────────────────────
+
+    public function updatedShowAllSessions(): void
+    {
+        unset($this->attendanceMatrix);
+    }
+
     #[Computed]
     public function viewSeason(): ?Season
     {
         return $this->viewSeasonId ? Season::find($this->viewSeasonId) : null;
     }
-
-    // ── Session drill-down ────────────────────────────────────────────────────
 
     public function viewSessions(int $packId): void
     {

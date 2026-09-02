@@ -185,7 +185,7 @@ new class extends Component
             'value' => $role->value,
             'label' => $role->label(),
             'description' => $role->description(),
-        ], Role::delegations());
+        ], Role::delegationsInReadingOrder());
     }
 
     public function detachFamilyMember(int $userId): void

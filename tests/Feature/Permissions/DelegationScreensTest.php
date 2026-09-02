@@ -146,6 +146,26 @@ describe('assigning delegations on the member form', function (): void {
                 && in_array(Role::WEBSITE->value, $held, true));
     });
 
+    it('offers the duties in the same reading order as the overview', function (): void {
+        app()->setLocale('fr_BE');
+
+        $labels = array_column(
+            Livewire::actingAs($this->admin)
+                ->test(USER_FORM, ['user' => User::factory()->create()])
+                ->instance()
+                ->delegationOptions,
+            'label'
+        );
+
+        $alphabetical = $labels;
+        usort($alphabetical, fn (string $a, string $b): int => Str::lower(Str::ascii($a)) <=> Str::lower(Str::ascii($b)));
+
+        expect($labels)->toBe($alphabetical)
+            ->and(array_search('Réunions', $labels, true))
+            ->toBeGreaterThan(array_search("Offre d'entraînement", $labels, true))
+            ->toBeLessThan(array_search('Saisons', $labels, true));
+    });
+
     it('pre-checks the duties a statutory title usually carries', function (): void {
         Livewire::actingAs($this->admin)
             ->test(USER_FORM, ['user' => User::factory()->create()])

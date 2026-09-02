@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
@@ -21,14 +22,65 @@ use Illuminate\Support\Facades\Http;
  * were removed, so the shape under test stays real while the fixture set stays
  * small enough to read.
  */
+/**
+ * Which club-team response the fake serves.
+ *
+ * Held aside rather than passed in because Http::fake() stacks stubs and the
+ * first match wins: a second fake registered inside a test never gets a look in,
+ * which is exactly the trap that made a refused division look imported.
+ */
+function afttClubTeams(?string $fixture = null): string
+{
+    static $current = 'get-club-teams-bbw214-two-divisions.xml';
+
+    if ($fixture !== null) {
+        $current = $fixture;
+    }
+
+    return $current;
+}
+
+/**
+ * The division the federation should fail on, if any.
+ *
+ * Same reason as afttClubTeams(): one stub, swapped from the outside, because a
+ * second Http::fake() would never be consulted.
+ */
+function afttFaultOn(?int $divisionId = null, bool $reset = false): ?int
+{
+    static $current = null;
+
+    if ($reset) {
+        $current = null;
+    }
+
+    if ($divisionId !== null) {
+        $current = $divisionId;
+    }
+
+    return $current;
+}
+
 function fakeTabt(): void
 {
     Http::fake(function (Request $request): PromiseInterface {
         $body = $request->body();
 
+        $faultOn = afttFaultOn();
+
+        if ($faultOn !== null && str_contains($body, '<t:DivisionId>' . $faultOn . '</t:DivisionId>')) {
+            return Http::response(
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                . '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">'
+                . '<SOAP-ENV:Body><SOAP-ENV:Fault><faultcode>SOAP-ENV:Server</faultcode>'
+                . '<faultstring>Backend timeout</faultstring></SOAP-ENV:Fault></SOAP-ENV:Body>'
+                . '</SOAP-ENV:Envelope>'
+            );
+        }
+
         $fixture = match (true) {
             str_contains($body, 'GetSeasonsRequest') => 'get-seasons.xml',
-            str_contains($body, 'GetClubTeamsRequest') => 'get-club-teams-bbw214-two-divisions.xml',
+            str_contains($body, 'GetClubTeamsRequest') => afttClubTeams(),
             str_contains($body, '<t:DivisionId>9756</t:DivisionId>') => 'get-matches-division-9756.xml',
             str_contains($body, '<t:DivisionId>9611</t:DivisionId>') => 'get-matches-division-9611.xml',
             str_contains($body, 'GetDivisions') => 'get-divisions.xml',
@@ -36,7 +88,21 @@ function fakeTabt(): void
             default => throw new RuntimeException('No fixture for: ' . $body),
         };
 
-        return Http::response(file_get_contents(base_path('tests/Fixtures/Aftt/' . $fixture)));
+        $xml = file_get_contents(base_path('tests/Fixtures/Aftt/' . $fixture));
+
+        // A club lookup answers about the club it was asked about. Only the code
+        // is substituted; every other field stays the federation's own, which is
+        // enough for a lookup whose job is to return a name and a hall.
+        if ($fixture === 'get-clubs-bbw145.xml'
+            && preg_match('/<t:Club>([A-Z0-9]+)<\\/t:Club>/', $body, $asked) === 1) {
+            $xml = str_replace(
+                '<ns1:UniqueIndex>BBW145</ns1:UniqueIndex>',
+                '<ns1:UniqueIndex>' . $asked[1] . '</ns1:UniqueIndex>',
+                $xml,
+            );
+        }
+
+        return Http::response($xml);
     });
 }
 
@@ -47,15 +113,19 @@ function fakeTabt(): void
  * holds every opponent it plays, each keyed by its federation code. Creating a
  * club from the federation is a separate, rarer path with its own tests.
  */
-function knownOpponents(): void
+function knownOpponents(array $except = []): void
 {
-    foreach (['BBW015', 'BBW034', 'BBW118', 'BBW134', 'BBW145', 'BBW165',
-        'BBW223', 'BBW299', 'BBW319', 'BBW323', 'BBW348', 'BBW349'] as $licence) {
+    $licences = ['BBW015', 'BBW034', 'BBW118', 'BBW134', 'BBW145', 'BBW165',
+        'BBW223', 'BBW299', 'BBW319', 'BBW323', 'BBW348', 'BBW349'];
+
+    foreach (array_diff($licences, $except) as $licence) {
         Club::factory()->create(['licence' => $licence, 'is_own_club' => false]);
     }
 }
 
 beforeEach(function (): void {
+    afttClubTeams('get-club-teams-bbw214-two-divisions.xml');
+    afttFaultOn(reset: true);
     fakeTabt();
 
     $this->season = Season::factory()->create(['name' => '2026-2027']);
@@ -188,4 +258,232 @@ it('fills our own side of a bye whichever side the federation put us on', functi
     expect($away->is_bye)->toBeTrue()
         ->and($away->visited_team_id)->toBeNull()
         ->and($away->visitingTeam->name)->toBe('E');
+});
+
+it('creates a club it has never met, from its full name and its hall', function (): void {
+    knownOpponents(except: ['BBW145']);
+
+    app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214');
+
+    $created = Club::where('licence', 'BBW145')->first();
+
+    // The short name is "Muppets"; three clubs in the province answer to some
+    // variant of the same word, so the long one is what a member needs to read.
+    expect($created->name)->toBe("Muppet's TT Auderghem")
+        ->and($created->is_own_club)->toBeFalse()
+        ->and($created->street)->toBe('Chaussee de Wavre 1690')
+        ->and($created->city_code)->toBe('1160')
+        ->and($created->city_name)->toBe('Bruxelles');
+});
+
+it('never renames a club the club itself curates', function (): void {
+    knownOpponents(except: ['BBW145']);
+
+    $curated = Club::factory()->create([
+        'licence' => 'BBW145',
+        'name' => 'MUPPETS T.T. AUDERGHEM',
+        'is_own_club' => false,
+        'street' => 'Chaussée de Wavre 1690',
+        'city_code' => '1160',
+        'city_name' => 'Bruxelles',
+        'email_contact' => 'secretaire@muppets.example',
+    ]);
+
+    app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214');
+
+    expect($curated->fresh()->name)->toBe('MUPPETS T.T. AUDERGHEM')
+        ->and($curated->fresh()->street)->toBe('Chaussée de Wavre 1690')
+        ->and($curated->fresh()->email_contact)->toBe('secretaire@muppets.example');
+});
+
+it('fills in an address the club never had, without touching one it has', function (): void {
+    knownOpponents(except: ['BBW145']);
+
+    $incomplete = Club::factory()->create([
+        'licence' => 'BBW145',
+        'name' => 'MUPPETS T.T. AUDERGHEM',
+        'is_own_club' => false,
+        'street' => null,
+        'city_code' => null,
+        'city_name' => 'Auderghem',
+    ]);
+
+    app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214');
+
+    expect($incomplete->fresh()->street)->toBe('Chaussee de Wavre 1690')
+        ->and($incomplete->fresh()->city_code)->toBe('1160')
+        ->and($incomplete->fresh()->city_name)->toBe('Auderghem');
+});
+
+it('corrects a fixture in place, so what members said about it survives', function (): void {
+    knownOpponents();
+
+    app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214');
+
+    $match = Interclub::where('aftt_match_id', 'PBBWH01/113')->first();
+    $player = User::factory()->create();
+    $match->users()->attach($player->id, ['availability' => 'yes']);
+
+    // The federation moves a fixture; our row is stale until the next run.
+    $match->update(['start_date_time' => '2026-12-25 09:00:00', 'address' => 'Somewhere else']);
+
+    app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214');
+
+    $reimported = Interclub::where('aftt_match_id', 'PBBWH01/113')->first();
+
+    expect($reimported->id)->toBe($match->id)
+        ->and($reimported->start_date_time->toDateTimeString())->toBe('2026-09-18 19:45:00')
+        ->and($reimported->address)->toStartWith('Complexe Sportif Jean Demeester')
+        ->and($reimported->users()->where('users.id', $player->id)->exists())->toBeTrue();
+});
+
+it('does not multiply rows when it runs again', function (): void {
+    knownOpponents();
+
+    app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214');
+
+    $fixtures = Interclub::count();
+    $teams = Team::count();
+    $leagues = League::count();
+
+    app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214');
+
+    expect(Interclub::count())->toBe($fixtures)
+        ->and(Team::count())->toBe($teams)
+        ->and(League::count())->toBe($leagues);
+});
+
+it('drops a fixture the federation no longer lists, unless somebody answered on it', function (): void {
+    knownOpponents();
+
+    app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214');
+
+    $league = League::where('aftt_division_id', 9611)->first();
+    $ourTeam = Team::where('club_id', $this->ownClub->id)->where('league_id', $league->id)->first();
+
+    // Two fixtures the federation has since withdrawn — one nobody ever saw,
+    // one a player already answered on.
+    $forgotten = Interclub::factory()->create([
+        'aftt_match_id' => 'PBBWH99/998',
+        'season_id' => $this->season->id,
+        'league_id' => $league->id,
+        'visited_team_id' => $ourTeam->id,
+    ]);
+
+    $answered = Interclub::factory()->create([
+        'aftt_match_id' => 'PBBWH99/999',
+        'season_id' => $this->season->id,
+        'league_id' => $league->id,
+        'visited_team_id' => $ourTeam->id,
+    ]);
+    $answered->users()->attach(User::factory()->create()->id, ['availability' => 'yes']);
+
+    $report = app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214');
+
+    expect(Interclub::find($forgotten->id))->toBeNull()
+        ->and(Interclub::find($answered->id))->not->toBeNull();
+
+    expect($report->changes)->toHaveKey('kept_orphans')
+        ->and($report->changes['kept_orphans'])->toContain('PBBWH99/999');
+});
+
+it('leaves a hand-entered fixture alone, having never claimed it', function (): void {
+    knownOpponents();
+
+    $byHand = Interclub::factory()->create([
+        'aftt_match_id' => null,
+        'season_id' => $this->season->id,
+    ]);
+
+    app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214');
+
+    expect(Interclub::find($byHand->id))->not->toBeNull();
+});
+
+it('refuses a division it cannot model, by name, instead of guessing', function (): void {
+    knownOpponents();
+
+    // The federation's own youth division, attached to a team of ours. The club
+    // has no youth team today; the day it enters one, this is what happens.
+    afttClubTeams('get-club-teams-bbw214-with-youth.xml');
+
+    $report = app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214');
+
+    expect(League::where('aftt_division_id', 9824)->exists())->toBeFalse()
+        ->and($report->skipped_count)->toBe(1)
+        ->and($report->changes['refused_divisions'][0])
+        ->toContain('Jeunes');
+
+    // The two divisions it does understand are imported all the same.
+    expect(League::where('aftt_division_id', 9756)->exists())->toBeTrue()
+        ->and(League::where('aftt_division_id', 9611)->exists())->toBeTrue();
+});
+
+it('counts what it created, and names what moved on the next run', function (): void {
+    knownOpponents();
+
+    $first = app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214');
+
+    expect($first->created_count)->toBe(Interclub::count())
+        ->and($first->updated_count)->toBe(0);
+
+    Interclub::where('aftt_match_id', 'PBBWH01/113')
+        ->update(['start_date_time' => '2026-12-25 09:00:00']);
+
+    $second = app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214');
+
+    expect($second->created_count)->toBe(0)
+        ->and($second->updated_count)->toBe(1)
+        ->and($second->changes['moved'])->toContain('PBBWH01/113');
+});
+
+it('writes nothing at all when the federation fails halfway through', function (): void {
+    knownOpponents();
+
+    // One division answers, the next faults — what a federation timeout looks
+    // like from here. Nothing may reach the database.
+    afttFaultOn(9611);
+
+    expect(fn () => app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214'))
+        ->toThrow(RuntimeException::class);
+
+    expect(Interclub::count())->toBe(0)
+        ->and(League::count())->toBe(0)
+        ->and(Team::count())->toBe(0);
+});
+
+it('rebuilds the season from scratch when asked, and only that season', function (): void {
+    knownOpponents();
+
+    $otherSeason = Season::factory()->create(['name' => '2025-2026']);
+    $keptLeague = League::factory()->create(['season_id' => $otherSeason->id]);
+    $keptFixture = Interclub::factory()->create([
+        'season_id' => $otherSeason->id,
+        'league_id' => $keptLeague->id,
+    ]);
+
+    $staleLeague = League::factory()->create(['season_id' => $this->season->id]);
+    $staleTeam = Team::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $staleLeague->id,
+    ]);
+    $staleFixture = Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $staleLeague->id,
+        'visited_team_id' => $staleTeam->id,
+    ]);
+
+    $report = app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214', fresh: true);
+
+    expect(Interclub::find($staleFixture->id))->toBeNull()
+        ->and(Team::find($staleTeam->id))->toBeNull()
+        ->and(League::find($staleLeague->id))->toBeNull()
+        ->and($report->is_fresh)->toBeTrue();
+
+    // Last season is none of its business.
+    expect(Interclub::find($keptFixture->id))->not->toBeNull()
+        ->and(League::find($keptLeague->id))->not->toBeNull();
+
+    // And the season is genuinely rebuilt, not merely emptied.
+    expect(Interclub::where('season_id', $this->season->id)->count())->toBeGreaterThan(0);
 });

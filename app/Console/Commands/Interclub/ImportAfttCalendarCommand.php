@@ -14,6 +14,7 @@ use App\Domains\Competitions\Interclub\Services\AfttCalendarImporter;
 use App\Domains\Competitions\Interclub\Services\TabtClient;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Throwable;
 
 /**
@@ -37,6 +38,10 @@ class ImportAfttCalendarCommand extends Command
 
     public function handle(TabtClient $client, AfttCalendarImporter $importer): int
     {
+        if (! $this->schemaIsReady()) {
+            return self::FAILURE;
+        }
+
         $clubCode = (string) Club::query()->where('is_own_club', true)->value('licence');
 
         if ($clubCode === '') {
@@ -87,7 +92,11 @@ class ImportAfttCalendarCommand extends Command
         try {
             $report = $importer->import($season, $afttSeason, $clubCode, $fresh);
         } catch (Throwable $e) {
-            $this->error('Nothing was written. The federation failed mid-import: ' . $e->getMessage());
+            // Deliberately not blamed on the federation. Everything is fetched
+            // before the transaction opens, so a failure here is as likely to be
+            // ours as theirs, and a message that names the wrong culprit sends
+            // somebody to read federation status pages for an hour.
+            $this->error('Nothing was written; the import was rolled back. ' . $e->getMessage());
 
             return self::FAILURE;
         }
@@ -170,6 +179,30 @@ class ImportAfttCalendarCommand extends Command
         }
 
         return $this->confirm('Delete them and rebuild from the federation?', false);
+    }
+
+    /**
+     * Refuse to start against a database that has not been migrated.
+     *
+     * Checked up front rather than left to fail mid-run: without it the command
+     * announces what --fresh is about to destroy, is confirmed, opens the
+     * transaction, and only then dies on a missing column. The transaction rolls
+     * everything back and nothing is lost — but the operator has just read a
+     * warning about deleting a season's captains and rosters, followed by an
+     * error naming the federation, and has no way to tell that the two are
+     * unrelated.
+     */
+    private function schemaIsReady(): bool
+    {
+        $missing = ! Schema::hasColumn('interclubs', 'aftt_match_id')
+            || ! Schema::hasColumn('leagues', 'aftt_division_id')
+            || ! Schema::hasTable('interclub_imports');
+
+        if ($missing) {
+            $this->error('The database is missing the calendar import tables. Run `php artisan migrate` first.');
+        }
+
+        return ! $missing;
     }
 
     /**

@@ -9,6 +9,8 @@ use App\Domains\Competitions\Interclub\Models\InterclubImport;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 beforeEach(function (): void {
     afttClubTeams('get-club-teams-bbw214-two-divisions.xml');
@@ -108,4 +110,23 @@ it('stops when the federation has never heard of the season asked for', function
     $this->artisan('interclubs:import-aftt --season=2043-2044')->assertFailed();
 
     expect(InterclubImport::count())->toBe(0);
+});
+
+/**
+ * A database that has not been migrated is the likeliest way for this command to
+ * fail on a real machine, and it must not be reported as a federation problem:
+ * the message is what somebody reads at 23:00 before deciding what to go and fix.
+ */
+it('stops before touching anything when the schema is not migrated', function (): void {
+    Schema::table('interclubs', function (Blueprint $table): void {
+        $table->dropUnique('interclubs_season_aftt_match_unique');
+        $table->dropColumn('aftt_match_id');
+    });
+
+    $this->artisan('interclubs:import-aftt --fresh --force')
+        ->expectsOutputToContain('php artisan migrate')
+        ->assertFailed();
+
+    // It must refuse before the wipe, not during it.
+    expect(Season::whereKey($this->season->id)->exists())->toBeTrue();
 });

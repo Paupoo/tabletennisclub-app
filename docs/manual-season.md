@@ -4,6 +4,8 @@ This manual walks through everything needed to open a new season, in order: crea
 
 It is written for the committee member holding the **Seasons** delegation, and it crosses two others: **Members** (affiliations, listing import) and **Interclubs** (teams, divisions, calendar). For the rest of the back office, see the [Committee Manual](manual-committee.md).
 
+> **In the application**: the same two procedures exist in short form in the help centre (**Help** in the menu), as "Préparer une nouvelle saison" and "Importer le calendrier interclubs". This manual is the long version, with the technical detail.
+
 > **When?** In practice between early July and late August. The first interclub match is played in mid-September, and the federation's calendar is only complete a few weeks beforehand.
 
 ---

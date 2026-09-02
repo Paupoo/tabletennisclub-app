@@ -119,3 +119,44 @@ test('no two help tasks claim the same position', function (): void {
 
     expect($orders)->toBe(array_unique($orders));
 });
+
+test('the season runbook and the calendar import are offered to the committee', function (): void {
+    $slugs = collect(HelpLibrary::visibleTo(HelpAudience::for($this->createFakeCommitteeMember())))
+        ->pluck('slug');
+
+    expect($slugs)->toContain('preparer-une-nouvelle-saison')
+        ->and($slugs)->toContain('importer-le-calendrier-interclubs');
+});
+
+test('a plain member is not offered the season preparation tasks', function (): void {
+    $slugs = collect(HelpLibrary::visibleTo(HelpAudience::for($this->createFakeUser())))
+        ->pluck('slug');
+
+    expect($slugs)->not->toContain('preparer-une-nouvelle-saison')
+        ->and($slugs)->not->toContain('importer-le-calendrier-interclubs');
+});
+
+test('the calendar import page opens and warns that a rebuild is a one-off', function (): void {
+    $this->actingAs($this->createFakeCommitteeMember())
+        ->get(route('admin.help.show', 'importer-le-calendrier-interclubs'))
+        ->assertOk()
+        ->assertSee('une seule fois, en début de saison', escape: false);
+});
+
+/**
+ * The two pages point at each other by slug. A renamed file would leave a link
+ * that 404s, which is the kind of rot nobody notices until a committee member
+ * follows it in August.
+ */
+test('the season pages cross-link to slugs that exist', function (): void {
+    foreach (['preparer-une-nouvelle-saison', 'importer-le-calendrier-interclubs'] as $slug) {
+        $article = HelpLibrary::find($slug);
+
+        preg_match_all('/\]\(([a-z0-9-]+)\)/', $article->markdown, $matches);
+
+        foreach ($matches[1] as $target) {
+            expect(HelpLibrary::find($target))
+                ->not->toBeNull("{$slug} links to a missing help page: {$target}");
+        }
+    }
+});

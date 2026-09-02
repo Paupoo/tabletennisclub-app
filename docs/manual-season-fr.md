@@ -4,6 +4,8 @@ Ce manuel décrit, dans l'ordre, tout ce qu'il faut faire pour ouvrir une nouvel
 
 Il s'adresse au membre du comité qui porte la délégation **Saisons**, et croise deux autres délégations : **Membres** (affiliations, import du listing) et **Interclubs** (équipes, divisions, calendrier). Pour le reste du back-office, voyez le [Manuel membre du comité](manual-committee-fr.md).
 
+> **Dans l'application** : les deux mêmes procédures existent en version courte dans le centre d'aide (**Aide** dans le menu), sous « Préparer une nouvelle saison » et « Importer le calendrier interclubs ». Ce manuel-ci est la version longue, avec les détails techniques.
+
 > **Quand ?** En pratique entre début juillet et fin août. Le premier match d'interclubs se joue à la mi-septembre, et le calendrier de la fédération n'est complet que quelques semaines avant.
 
 ---

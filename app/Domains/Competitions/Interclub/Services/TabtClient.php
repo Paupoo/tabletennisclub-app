@@ -183,9 +183,17 @@ class TabtClient
     {
         $body = $this->call('GetSeasons', 'GetSeasonsRequest');
 
+        $all = [];
+
+        foreach ($body->xpath('//t:SeasonEntries') ?: [] as $entry) {
+            $entry->registerXPathNamespace('t', self::NAMESPACE);
+            $all[(int) $this->text($entry, 'Season')] = $this->text($entry, 'Name') ?? '';
+        }
+
         return new AfttSeasons(
             currentSeason: (int) $this->find($body, 'CurrentSeason'),
             currentSeasonName: $this->find($body, 'CurrentSeasonName') ?? '',
+            all: $all,
         );
     }
 

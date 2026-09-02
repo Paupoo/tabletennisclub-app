@@ -14,7 +14,10 @@ use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\TrainingPack;
 use Carbon\CarbonImmutable;
+use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 use Tests\Trait\RefusesParallelExecution;
@@ -253,4 +256,114 @@ function paymentTournament(array $overrides = []): Tournament
         'start_time' => '10:00:00',
         'location' => 'Club House',
     ], $overrides));
+}
+
+/**
+ * Serves the committed fixtures the way TabT would.
+ *
+ * The club-team response is a trimmed copy of the real one, cut down to the two
+ * divisions we hold fixtures for — 9756 (veterans) and 9611 (men, the one with
+ * the byes). Every field is the federation's own; only the seven other entries
+ * were removed, so the shape under test stays real while the fixture set stays
+ * small enough to read.
+ */
+/**
+ * Which club-team response the fake serves.
+ *
+ * Held aside rather than passed in because Http::fake() stacks stubs and the
+ * first match wins: a second fake registered inside a test never gets a look in,
+ * which is exactly the trap that made a refused division look imported.
+ */
+function afttClubTeams(?string $fixture = null): string
+{
+    static $current = 'get-club-teams-bbw214-two-divisions.xml';
+
+    if ($fixture !== null) {
+        $current = $fixture;
+    }
+
+    return $current;
+}
+
+/**
+ * The division the federation should fail on, if any.
+ *
+ * Same reason as afttClubTeams(): one stub, swapped from the outside, because a
+ * second Http::fake() would never be consulted.
+ */
+function afttFaultOn(?int $divisionId = null, bool $reset = false): ?int
+{
+    static $current = null;
+
+    if ($reset) {
+        $current = null;
+    }
+
+    if ($divisionId !== null) {
+        $current = $divisionId;
+    }
+
+    return $current;
+}
+
+function fakeTabt(): void
+{
+    Http::fake(function (Request $request): PromiseInterface {
+        $body = $request->body();
+
+        $faultOn = afttFaultOn();
+
+        if ($faultOn !== null && str_contains($body, '<t:DivisionId>' . $faultOn . '</t:DivisionId>')) {
+            return Http::response(
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                . '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">'
+                . '<SOAP-ENV:Body><SOAP-ENV:Fault><faultcode>SOAP-ENV:Server</faultcode>'
+                . '<faultstring>Backend timeout</faultstring></SOAP-ENV:Fault></SOAP-ENV:Body>'
+                . '</SOAP-ENV:Envelope>'
+            );
+        }
+
+        $fixture = match (true) {
+            str_contains($body, 'GetSeasonsRequest') => 'get-seasons.xml',
+            str_contains($body, 'GetClubTeamsRequest') => afttClubTeams(),
+            str_contains($body, '<t:DivisionId>9756</t:DivisionId>') => 'get-matches-division-9756.xml',
+            str_contains($body, '<t:DivisionId>9611</t:DivisionId>') => 'get-matches-division-9611.xml',
+            str_contains($body, 'GetDivisions') => 'get-divisions.xml',
+            str_contains($body, 'GetClubs') => 'get-clubs-bbw145.xml',
+            default => throw new RuntimeException('No fixture for: ' . $body),
+        };
+
+        $xml = file_get_contents(base_path('tests/Fixtures/Aftt/' . $fixture));
+
+        // A club lookup answers about the club it was asked about. Only the code
+        // is substituted; every other field stays the federation's own, which is
+        // enough for a lookup whose job is to return a name and a hall.
+        if ($fixture === 'get-clubs-bbw145.xml'
+            && preg_match('/<t:Club>([A-Z0-9]+)<\\/t:Club>/', $body, $asked) === 1) {
+            $xml = str_replace(
+                '<ns1:UniqueIndex>BBW145</ns1:UniqueIndex>',
+                '<ns1:UniqueIndex>' . $asked[1] . '</ns1:UniqueIndex>',
+                $xml,
+            );
+        }
+
+        return Http::response($xml);
+    });
+}
+
+/**
+ * The opponent clubs that appear in the two fixture divisions.
+ *
+ * Created up front because that is the real situation: the club's table already
+ * holds every opponent it plays, each keyed by its federation code. Creating a
+ * club from the federation is a separate, rarer path with its own tests.
+ */
+function knownOpponents(array $except = []): void
+{
+    $licences = ['BBW015', 'BBW034', 'BBW118', 'BBW134', 'BBW145', 'BBW165',
+        'BBW223', 'BBW299', 'BBW319', 'BBW323', 'BBW348', 'BBW349'];
+
+    foreach (array_diff($licences, $except) as $licence) {
+        Club::factory()->create(['licence' => $licence, 'is_own_club' => false]);
+    }
 }

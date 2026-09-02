@@ -17,8 +17,15 @@ use App\Domains\Competitions\Interclub\Models\Season;
  */
 readonly class AfttSeasons
 {
+    /**
+     * @param  array<int, string>  $all  Every season the federation publishes,
+     *                                   its index mapped to its name. Kept so a
+     *                                   season can be loaded before the
+     *                                   federation makes it the current one.
+     */
     public function __construct(
         public int $currentSeason,
         public string $currentSeasonName,
+        public array $all = [],
     ) {}
 }

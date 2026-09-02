@@ -19,6 +19,11 @@ it('reads the season the federation considers current', function (): void {
 
     expect($seasons->currentSeason)->toBe(27)
         ->and($seasons->currentSeasonName)->toBe('2026-2027');
+
+    // The whole list too, so a season can be loaded before it becomes current.
+    expect($seasons->all[26])->toBe('2025-2026')
+        ->and($seasons->all[27])->toBe('2026-2027')
+        ->and($seasons->all[1])->toBe('2000-2001');
 });
 
 it('reads the divisions our own teams play in', function (): void {

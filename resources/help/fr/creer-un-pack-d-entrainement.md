@@ -76,7 +76,7 @@ Ce que la fermeture fait, et **surtout ce qu'elle ne fait pas** :
 - elle **n'interrompt pas la liste d'attente en cours**. Les gens qui attendaient avant la fermeture gardent leur rang et continuent d'être appelés. Fermer empêche d'entrer, pas d'avancer ;
 - **le comité, lui, peut toujours ajouter quelqu'un** (section suivante). C'est tout l'intérêt de la paire.
 
-Côté membre, le pack **reste affiché**, avec *Inscriptions closes* à la place du bouton. Le faire disparaître ferait croire à une suppression.
+Côté membre, le pack **reste affiché**, avec *Pack fermé aux inscriptions* à la place du bouton. Le faire disparaître ferait croire à une suppression.
 
 ## Ajouter un membre à la main
 

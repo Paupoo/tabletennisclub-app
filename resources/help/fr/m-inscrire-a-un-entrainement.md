@@ -16,7 +16,7 @@ Cliquez sur **S'inscrire** sur le pack voulu. Deux issues, selon qu'il reste de 
 - **Il reste de la place** → votre demande part au statut **en attente**. Ce n'est pas encore une inscription : le comité doit l'approuver.
 - **Le pack est complet** → vous êtes mis en **liste d'attente**, avec votre position affichée. Vous recevez un e-mail confirmant cette position.
 
-Un pack peut aussi afficher **Inscriptions closes** à la place du bouton. Le club a fermé les inscriptions sur ce pack : ni demande, ni liste d'attente. Le pack reste affiché pour que vous sachiez qu'il existe — si vous y tenez, écrivez au club, il peut vous ajouter lui-même.
+Un pack peut aussi afficher **Pack fermé aux inscriptions** à la place du bouton. Le club a fermé les inscriptions sur ce pack : ni demande, ni liste d'attente. Le pack reste affiché pour que vous sachiez qu'il existe — si vous y tenez, écrivez au club, il peut vous ajouter lui-même.
 
 **Une demande approuvée coûte de l'argent.** L'approbation déclenche un paiement complémentaire, avec sa communication structurée. N'anticipez pas le virement : avant l'approbation, il n'y a pas encore de communication à laquelle le rattacher.
 

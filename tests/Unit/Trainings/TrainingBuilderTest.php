@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Trainings\Models\Training;
+use App\Domains\Trainings\Models\TrainingLevel;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Services\TrainingBuilder;
 use Carbon\Carbon;
@@ -17,7 +18,6 @@ uses(RefreshDatabase::class);
 function minAttrs(): array
 {
     return [
-        'level' => 'OPEN',
         'type' => 'FREE',
         'start' => '2026-06-02 09:00',
         'end' => '2026-06-02 11:00',
@@ -27,14 +27,17 @@ function minAttrs(): array
 it('sets attributes on the training model', function (): void {
     $room = Room::factory()->create();
     $season = Season::factory()->create();
+    $level = TrainingLevel::where('label', 'Compétition')->firstOrFail();
 
+    // Le niveau est une relation depuis que `training_levels` existe : le
+    // builder reçoit la clé étrangère, plus le nom de la case d'un enum.
     $training = (new TrainingBuilder)
-        ->setAttributes(array_merge(minAttrs(), ['level' => 'ELITE']))
+        ->setAttributes(array_merge(minAttrs(), ['training_level_id' => $level->id]))
         ->setRoom($room->id)
         ->setSeason($season->id)
         ->buildAndSave();
 
-    expect($training->level)->toBe('ELITE');
+    expect($training->level->label)->toBe('Compétition');
 });
 
 it('sets room relationship on the training', function (): void {

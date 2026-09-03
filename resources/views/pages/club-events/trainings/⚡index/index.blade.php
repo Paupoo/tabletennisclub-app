@@ -7,7 +7,7 @@
     @if ($selectedPackId)
         {{-- SESSION LIST HEADER --}}
         <x-header progress-indicator separator
-            :subtitle="$selectedPack?->level?->label . ' · ' . $selectedPack?->type?->value"
+            :subtitle="$selectedPack?->level?->label . ' · ' . $selectedPack?->type?->label()"
             :title="$selectedPack?->name ?? __('Sessions')">
             <x-slot:actions>
                 <x-button class="btn-primary btn-sm" icon="o-user-plus" :label="__('Add a member')"
@@ -282,7 +282,7 @@
                                                     {{ $pack->name }}
                                                 </p>
                                                 <p class="mt-0.5 text-xs text-primary/60">
-                                                    {{ $pack->type?->value }}
+                                                    {{ $pack->type?->label() }}
                                                     @if ($pack->day_of_week)
                                                         · {{ ['', __('Mon'), __('Tue'), __('Wed'), __('Thu'), __('Fri'), __('Sat'), __('Sun')][$pack->day_of_week] }}
                                                         {{ $pack->start_time ? \Carbon\Carbon::parse($pack->start_time)->format('H:i') : '' }}

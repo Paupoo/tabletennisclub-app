@@ -1074,7 +1074,7 @@ new class extends Component
     public function typeOptions(): array
     {
         return collect(TrainingType::cases())
-            ->map(fn ($e): array => ['id' => $e->value, 'name' => $e->value])
+            ->map(fn (TrainingType $type): array => ['id' => $type->value, 'name' => $type->label()])
             ->toArray();
     }
 

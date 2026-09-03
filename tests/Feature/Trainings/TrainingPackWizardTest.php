@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\Training;
+use App\Domains\Trainings\Models\TrainingLevel;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Services\TrainingAttendanceService;
 use Livewire\Livewire;
@@ -182,4 +184,38 @@ describe('the attendance matrix on the pack screen', function (): void {
             ->assertSee($member->user->last_name)
             ->assertSee('100%');
     })->group('training', 'attendance');
+});
+
+describe('the pack list', function (): void {
+
+    beforeEach(function (): void {
+        $this->admin = User::factory()->isAdmin()->create();
+    });
+
+    it('renders the season list, grouped by level in the delegation order', function (): void {
+        $elite = TrainingLevel::where('label', 'Compétition')->firstOrFail();
+        $beginners = TrainingLevel::where('label', 'Débutant')->firstOrFail();
+
+        // Une seule saison pour les deux : TrainingPackFactory en crée une par
+        // pack, et l'écran ne liste qu'une saison à la fois.
+        $season = Season::factory()->create();
+
+        editablePack(['season_id' => $season->id, 'name' => 'Alpha Compétition', 'training_level_id' => $elite->id]);
+        editablePack(['season_id' => $season->id, 'name' => 'Zulu Débutant', 'training_level_id' => $beginners->id]);
+
+        // L'écran d'accueil des entraînements n'était rendu par aucun test :
+        // tous entraient par le drill-down d'un pack, qui prend l'autre branche
+        // du Blade. Un tri sur une colonne supprimée y a donc survécu.
+        $names = Livewire::actingAs($this->admin)
+            ->test('pages::club-events.trainings.index')
+            ->set('viewSeasonId', $season->id)
+            ->assertOk()
+            ->get('packs')
+            ->pluck('name');
+
+        // Les noms sont choisis pour que l'ordre alphabétique dise l'inverse de
+        // l'ordre des niveaux : sans tri sur la position, l'assertion tombe.
+        // Débutant est en position 2, Compétition en 5.
+        expect($names->search('Zulu Débutant'))->toBeLessThan($names->search('Alpha Compétition'));
+    })->group('training', 'pack');
 });

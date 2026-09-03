@@ -623,12 +623,18 @@ new class extends Component
             return new Collection;
         }
 
+        // Le tri porte sur la position du niveau, pas sur son libellé : la
+        // délégation décide de l'ordre (du plus jeune au plus fort), et le
+        // renommer ne doit pas réordonner l'écran. Jointure à gauche pour que
+        // les packs sans niveau restent listés.
         return TrainingPack::with(['room', 'trainer', 'eventPost', 'level'])
-            ->where('season_id', $this->viewSeason->id)
-            ->when(! $this->showInactive, fn (Builder $q) => $q->where('is_active', true))
-            ->orderBy('is_active', 'desc')
-            ->orderBy('level')
-            ->orderBy('name')
+            ->select('training_packs.*')
+            ->leftJoin('training_levels', 'training_levels.id', '=', 'training_packs.training_level_id')
+            ->where('training_packs.season_id', $this->viewSeason->id)
+            ->when(! $this->showInactive, fn (Builder $q) => $q->where('training_packs.is_active', true))
+            ->orderBy('training_packs.is_active', 'desc')
+            ->orderBy('training_levels.position')
+            ->orderBy('training_packs.name')
             ->get();
     }
 

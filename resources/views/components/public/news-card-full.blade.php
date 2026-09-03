@@ -4,7 +4,8 @@
          style="transition-delay: {{ $index * 0.1 }}s;">
     <div class="aspect-video bg-gray-100 overflow-hidden">
         <img src="{{ Storage::url($article->image) }}" alt="{{ $article->title }}"
-             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+             style="object-position: {{ $article->image_position }}">
     </div>
     <div class="p-6">
         <div class="flex items-center justify-between mb-3">

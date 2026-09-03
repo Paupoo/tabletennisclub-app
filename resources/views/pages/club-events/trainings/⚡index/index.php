@@ -12,9 +12,9 @@ use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Recurrence;
 use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TrainingCancellationType;
-use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\Training;
+use App\Domains\Trainings\Models\TrainingLevel;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingPackScheduleChangedNotification;
 use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
@@ -76,7 +76,7 @@ new class extends Component
 
     public bool $formIsOpenEnrollment = false;
 
-    public string $formLevel = '';
+    public int $formLevel = 0;
 
     /** Empty string = inherit the room's training capacity. */
     public string $formMaxParticipants = '';
@@ -107,6 +107,13 @@ new class extends Component
 
     public string $formType = '';
 
+    /** Show packs withdrawn from the offer, so they can be found and put back. */
+    // ── Gestion des niveaux ───────────────────────────────────────────────────
+    public bool $levelDrawer = false;
+
+    /** @var array{id?: int|null, label: string, color: string} */
+    public array $levelForm = ['id' => null, 'label' => '', 'color' => 'primary'];
+
     /** Ticked by default: forgetting to warn members is worse than one extra mail. */
     public bool $notifyMembersOfChange = true;
 
@@ -119,7 +126,6 @@ new class extends Component
     // ── Session drill-down ────────────────────────────────────────────────────
     public ?int $selectedPackId = null;
 
-    /** Show packs withdrawn from the offer, so they can be found and put back. */
     public bool $showAllSessions = false;
 
     public bool $showInactive = false;
@@ -374,6 +380,32 @@ new class extends Component
     }
 
     /**
+     * Supprime un niveau que rien ne référence.
+     *
+     * Un niveau porté par un pack ou une séance ne se supprime jamais : le
+     * désactiver le retire des listes sans réécrire l'histoire des saisons
+     * passées.
+     */
+    public function deleteLevel(int $levelId): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        $level = TrainingLevel::findOrFail($levelId);
+
+        if ($level->isInUse()) {
+            $this->error(__('This level is still used by a pack or a session. Retire it instead of deleting it.'));
+
+            return;
+        }
+
+        $level->delete();
+
+        unset($this->levelOptions, $this->levels);
+
+        $this->success(__('Level deleted.'), icon: 'o-trash');
+    }
+
+    /**
      * How much of the club this would touch, shown before the committee confirms.
      *
      * Deliberately no euro figure: the refund owed to each member depends on the
@@ -399,6 +431,17 @@ new class extends Component
                 ->where('status', 'scheduled')
                 ->where('start', '>=', Carbon::now())
                 ->count(),
+        ];
+    }
+
+    public function editLevel(int $levelId): void
+    {
+        $level = TrainingLevel::findOrFail($levelId);
+
+        $this->levelForm = [
+            'id' => $level->id,
+            'label' => $level->label,
+            'color' => $level->color,
         ];
     }
 
@@ -436,14 +479,27 @@ new class extends Component
     #[Computed]
     public function levelOptions(): array
     {
-        return collect(TrainingLevel::cases())
-            ->map(fn ($e): array => ['id' => $e->value, 'name' => $e->value])
+        return TrainingLevel::active()
+            ->get()
+            ->map(fn (TrainingLevel $level): array => ['id' => $level->id, 'name' => $level->label])
             ->toArray();
+    }
+
+    /** @return Collection<int, TrainingLevel> */
+    #[Computed]
+    public function levels(): Collection
+    {
+        return TrainingLevel::ordered()->get();
     }
 
     public function mount(): void
     {
         $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
+    }
+
+    public function newLevel(): void
+    {
+        $this->levelForm = ['id' => null, 'label' => '', 'color' => 'primary'];
     }
 
     public function nextStep(): void
@@ -452,7 +508,7 @@ new class extends Component
             $rules = [
                 'formSeasonId' => 'required|integer|min:1',
                 'formName' => 'required|min:2|max:255',
-                'formLevel' => 'required',
+                'formLevel' => 'required|integer|min:1',
                 'formType' => 'required',
                 'formRoomId' => 'required|integer|min:1',
             ];
@@ -530,7 +586,7 @@ new class extends Component
         $this->packId = $pack->id;
         $this->formSeasonId = $pack->season_id;
         $this->formName = $pack->name;
-        $this->formLevel = $pack->level->value;
+        $this->formLevel = $pack->training_level_id ?? 0;
         $this->formType = $pack->type->value;
         $this->formTrainerId = $pack->trainer_id ?? 0;
         $this->formRoomId = $pack->room_id;
@@ -567,7 +623,7 @@ new class extends Component
             return new Collection;
         }
 
-        return TrainingPack::with(['room', 'trainer', 'eventPost'])
+        return TrainingPack::with(['room', 'trainer', 'eventPost', 'level'])
             ->where('season_id', $this->viewSeason->id)
             ->when(! $this->showInactive, fn (Builder $q) => $q->where('is_active', true))
             ->orderBy('is_active', 'desc')
@@ -782,7 +838,7 @@ new class extends Component
         $data = [
             'season_id' => $season->id,
             'name' => $this->formName,
-            'level' => $this->formLevel,
+            'training_level_id' => $this->formLevel ?: null,
             'type' => $this->formType,
             'trainer_id' => $this->formTrainerId ?: null,
             'room_id' => $this->formRoomId,
@@ -839,6 +895,42 @@ new class extends Component
         unset($this->packs);
         $this->wizardOpen = false;
         $this->resetWizardFields();
+    }
+
+    /**
+     * Crée ou met à jour un niveau.
+     *
+     * Un niveau neuf se place en fin de liste : l'ordre est une décision de la
+     * délégation, pas un effet de bord de la date de création.
+     */
+    public function saveLevel(): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        $this->validate([
+            'levelForm.label' => 'required|string|min:2|max:60',
+            'levelForm.color' => 'required|string|max:30',
+        ]);
+
+        $attributes = [
+            'label' => $this->levelForm['label'],
+            'color' => $this->levelForm['color'],
+        ];
+
+        if (! empty($this->levelForm['id'])) {
+            TrainingLevel::findOrFail($this->levelForm['id'])->update($attributes);
+        } else {
+            TrainingLevel::create($attributes + [
+                'position' => (int) TrainingLevel::max('position') + 1,
+                'is_active' => true,
+            ]);
+        }
+
+        $this->newLevel();
+
+        unset($this->levelOptions, $this->levels);
+
+        $this->success(__('Level saved.'), icon: 'o-check-circle');
     }
 
     /**
@@ -902,7 +994,7 @@ new class extends Component
     public function selectedPack(): ?TrainingPack
     {
         return $this->selectedPackId
-            ? TrainingPack::with(['room', 'trainer'])->find($this->selectedPackId)
+            ? TrainingPack::with(['room', 'trainer', 'level'])->find($this->selectedPackId)
             : null;
     }
 
@@ -949,6 +1041,17 @@ new class extends Component
         }
 
         unset($this->previewDates);
+    }
+
+    /** Retire un niveau des listes sans toucher aux packs qui le portent. */
+    public function toggleLevel(int $levelId): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        $level = TrainingLevel::findOrFail($levelId);
+        $level->update(['is_active' => ! $level->is_active]);
+
+        unset($this->levelOptions, $this->levels);
     }
 
     #[Computed]
@@ -1100,7 +1203,7 @@ new class extends Component
         $this->step = '1';
         $this->formSeasonId = $this->activeSeason?->id ?? 0;
         $this->formName = '';
-        $this->formLevel = '';
+        $this->formLevel = 0;
         $this->formType = '';
         $this->formTrainerId = 0;
         $this->formRoomId = 0;

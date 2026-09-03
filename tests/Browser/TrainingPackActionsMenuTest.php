@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\TrainingPack;
 
@@ -28,7 +27,7 @@ it('opens the pack actions menu without clipping it', function (): void {
             'season_id' => $season->id,
             'room_id' => $room->id,
             'trainer_id' => $coach->id,
-            'level' => TrainingLevel::BEGINNERS->value,
+            'training_level_id' => trainingLevelId('Débutant'),
             'type' => TrainingType::DIRECTED->value,
             'day_of_week' => $i + 1,
             'start_time' => '15:00:00',

@@ -269,7 +269,7 @@
                                         </p>
                                     </div>
                                 </div>
-                                <x-badge value="{{ $session->trainingPack?->level?->value }}"
+                                <x-badge value="{{ $session->trainingPack?->level?->label }}"
                                     class="badge-primary badge-soft badge-sm" />
                             </div>
                         @endforeach

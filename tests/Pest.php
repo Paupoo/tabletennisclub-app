@@ -10,8 +10,8 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
-use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
+use App\Domains\Trainings\Models\TrainingLevel;
 use App\Domains\Trainings\Models\TrainingPack;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -123,11 +123,23 @@ function federationRow(array $overrides = []): FederationRow
     );
 }
 
+/**
+ * L'id d'un niveau semé par la migration `create_training_levels_table`.
+ *
+ * Les tests ciblent le libellé, jamais l'id : celui-ci dépend de l'ordre des
+ * insertions et changerait au moindre ajout de niveau.
+ */
+function trainingLevelId(string $label): int
+{
+    return TrainingLevel::where('label', $label)->value('id')
+        ?? TrainingLevel::factory()->create(['label' => $label])->id;
+}
+
 function makeTrainingPack(Season $season, array $overrides = []): TrainingPack
 {
     return TrainingPack::factory()->create(array_merge([
         'season_id' => $season->id,
-        'level' => TrainingLevel::INTERMEDIATE->value,
+        'training_level_id' => trainingLevelId('Confirmé'),
         'type' => TrainingType::DIRECTED->value,
         'day_of_week' => 2,
         'start_time' => '18:00:00',

@@ -55,6 +55,7 @@ class SeedTrainingPlanService
         $position = 0;
 
         $packs = TrainingPack::query()
+            ->with('level')
             ->where('season_id', $season->id)
             ->where('is_active', true)
             ->orderBy('id')
@@ -65,7 +66,7 @@ class SeedTrainingPlanService
                 'training_plan_id' => $plan->id,
                 'source_training_pack_id' => $pack->id,
                 'name' => $pack->name,
-                'level' => $pack->level?->value,
+                'level' => $pack->level?->label,
                 'day_of_week' => $pack->day_of_week,
                 'max_participants' => $pack->max_participants,
                 'position' => $position++,

@@ -7,9 +7,9 @@ namespace Database\Factories\Domains\Trainings\Models;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
-use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\Training;
+use App\Domains\Trainings\Models\TrainingLevel;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -41,17 +41,15 @@ class TrainingFactory extends Factory
     /**
      * Une séance à venir, non annulée, non pointée.
      *
-     * `level` stocke le *nom* de la case (`BEGINNERS`) et non sa valeur : la
-     * colonne SQL est un enum construit sur `array_column(..., 'name')`, à
-     * l'inverse de `training_packs.level`. Incohérence historique, à corriger
-     * quand les niveaux passeront en table (lot 4).
+     * Le niveau est celui du pack quand la séance en a un ; les tests qui
+     * ciblent un libellé précis le passent explicitement.
      */
     public function definition(): array
     {
         $start = CarbonImmutable::tomorrow()->setTime(18, 0);
 
         return [
-            'level' => $this->faker->randomElement(TrainingLevel::cases())->name,
+            'training_level_id' => TrainingLevel::ordered()->value('id') ?? TrainingLevel::factory(),
             'type' => $this->faker->randomElement(TrainingType::cases())->value,
             'start' => $start,
             'end' => $start->addMinutes(90),

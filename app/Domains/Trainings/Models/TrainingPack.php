@@ -11,7 +11,6 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Recurrence;
-use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Services\TrainingBuilder;
@@ -35,7 +34,8 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
  * @property float $price
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property TrainingLevel $level
+ * @property-read TrainingLevel|null $level
+ * @property int|null $training_level_id
  * @property TrainingType $type
  * @property int $room_id
  * @property int|null $trainer_id
@@ -103,7 +103,6 @@ class TrainingPack extends Model
         'season_id' => 'integer',
         'price' => 'integer',
         'allow_discount' => 'boolean',
-        'level' => TrainingLevel::class,
         'type' => TrainingType::class,
         'trainer_id' => 'integer',
         'room_id' => 'integer',
@@ -124,7 +123,7 @@ class TrainingPack extends Model
         'name',
         'price',
         'allow_discount',
-        'level',
+        'training_level_id',
         'type',
         'trainer_id',
         'room_id',
@@ -267,7 +266,7 @@ class TrainingPack extends Model
                 }
 
                 $builder
-                    ->setAttributes(['level' => $this->level->value, 'type' => $this->type->value])
+                    ->setAttributes(['training_level_id' => $this->training_level_id, 'type' => $this->type->value])
                     ->mergeDateAndTime($date, $this->start_time, $endTime)
                     ->setRoom($this->room_id)
                     ->setSeason($season->id)
@@ -287,6 +286,11 @@ class TrainingPack extends Model
         $max = $this->effectiveMaxParticipants();
 
         return $max === 0 || $this->committedCount() < $max;
+    }
+
+    public function level(): BelongsTo
+    {
+        return $this->belongsTo(TrainingLevel::class, 'training_level_id');
     }
 
     public function price(): Attribute

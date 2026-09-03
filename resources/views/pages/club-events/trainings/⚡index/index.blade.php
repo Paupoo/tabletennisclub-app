@@ -7,7 +7,7 @@
     @if ($selectedPackId)
         {{-- SESSION LIST HEADER --}}
         <x-header progress-indicator separator
-            :subtitle="$selectedPack?->level?->value . ' · ' . $selectedPack?->type?->value"
+            :subtitle="$selectedPack?->level?->label . ' · ' . $selectedPack?->type?->value"
             :title="$selectedPack?->name ?? __('Sessions')">
             <x-slot:actions>
                 <x-button class="btn-primary btn-sm" icon="o-user-plus" :label="__('Add a member')"
@@ -24,6 +24,8 @@
                 <div class="hidden items-center gap-2 lg:flex">
                     <x-admin.shared.filters-button :count="count($filterChips)" />
                 </div>
+                <x-button class="btn-ghost btn-sm" icon="o-swatch" :label="__('Levels')"
+                    wire:click="$set('levelDrawer', true)" />
                 <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New pack')" wire:click="openCreate" />
             </x-slot:actions>
         </x-header>
@@ -236,7 +238,7 @@
              PACK LIST — grouped by level
         ================================================================ --}}
         @php
-            $grouped = $packs->groupBy(fn ($p) => $p->level?->value ?? 'Other');
+            $grouped = $packs->groupBy(fn ($p) => $p->level?->label ?? __('No level'));
             $levelColor = [
                 'Beginners'       => 'emerald',
                 'Elite'           => 'violet',
@@ -813,4 +815,56 @@
             <x-button :label="__('Add the member')" class="btn-primary" wire:click="addMemberToPack" spinner />
         </x-slot:actions>
     </x-app-modal>
+
+    {{-- ── Training levels ──────────────────────────────────────────────────── --}}
+    <x-drawer wire:model="levelDrawer" :title="__('Training levels')" right separator with-close-button
+        class="w-11/12 lg:w-1/3">
+        <p class="mb-4 text-sm text-base-content/60">
+            {{ __('A level used by a pack or a session cannot be deleted — retire it instead, and the packs that carry it keep their label.') }}
+        </p>
+
+        @foreach ($this->levels as $level)
+            <div class="mb-2 flex items-center gap-3 rounded-xl border border-base-300 px-3 py-2">
+                <span class="h-3 w-3 shrink-0 rounded-full bg-{{ $level->color }}"></span>
+
+                <span @class(['flex-1 text-sm', 'text-base-content/40 line-through' => ! $level->is_active])>
+                    {{ $level->label }}
+                </span>
+
+                <x-button class="btn-ghost btn-xs" icon="o-pencil" :aria-label="__('Rename')"
+                    wire:click="editLevel({{ $level->id }})" />
+
+                <x-button class="btn-ghost btn-xs"
+                    :icon="$level->is_active ? 'o-eye-slash' : 'o-eye'"
+                    :aria-label="$level->is_active ? __('Retire') : __('Bring back')"
+                    wire:click="toggleLevel({{ $level->id }})" />
+
+                <x-button class="btn-ghost btn-xs text-error" icon="o-trash" :aria-label="__('Delete')"
+                    wire:click="deleteLevel({{ $level->id }})" />
+            </div>
+        @endforeach
+
+        <div class="mt-6 rounded-xl border border-base-300 p-4">
+            <p class="mb-3 text-xs font-bold uppercase tracking-wide text-base-content/50">
+                {{ ($levelForm['id'] ?? null) ? __('Rename the level') : __('New level') }}
+            </p>
+
+            <x-input :label="__('Label')" wire:model="levelForm.label" :placeholder="__('E.g. Veterans')" />
+
+            <x-select class="mt-3" :label="__('Colour')" wire:model="levelForm.color" :options="[
+                ['id' => 'primary', 'name' => __('Blue')],
+                ['id' => 'success', 'name' => __('Green')],
+                ['id' => 'warning', 'name' => __('Amber')],
+                ['id' => 'error', 'name' => __('Red')],
+                ['id' => 'info', 'name' => __('Sky')],
+            ]" />
+
+            <div class="mt-4 flex gap-2">
+                <x-button class="btn-primary btn-sm" :label="__('Save')" wire:click="saveLevel" spinner />
+                @if ($levelForm['id'] ?? null)
+                    <x-button class="btn-ghost btn-sm" :label="__('Cancel')" wire:click="newLevel" />
+                @endif
+            </div>
+        </div>
+    </x-drawer>
 </div>

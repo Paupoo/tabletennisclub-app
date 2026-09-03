@@ -12,7 +12,6 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
-use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Services\TrainingPackProrata;
@@ -516,7 +515,7 @@ new class extends Component
         // Available training packs for current season with per-user enrollment
         $availablePacks = [];
         if ($season) {
-            $availablePacks = TrainingPack::with(['trainer', 'room'])
+            $availablePacks = TrainingPack::with(['trainer', 'room', 'level'])
                 ->where('season_id', $season->id)
                 ->where('is_active', true)
                 ->get()
@@ -547,14 +546,10 @@ new class extends Component
                         'price' => (float) $pack->price,
                         'allow_discount' => $pack->allow_discount,
                         'trainer_id' => $pack->trainer_id,
-                        'level' => $pack->level->value,
-                        'dot_color' => match ($pack->level) {
-                            TrainingLevel::ELITE, TrainingLevel::INTERMEDIATE => 'bg-error',
-                            TrainingLevel::YOUNG_POTENTIAL => 'bg-info',
-                            TrainingLevel::KIDS => 'bg-warning',
-                            TrainingLevel::BEGINNERS => 'bg-success',
-                            default => 'bg-primary',
-                        },
+                        'level' => $pack->level?->label ?? '—',
+                        // La couleur vient de la table : un niveau ajouté par la
+                        // délégation en a une sans qu'on touche à cette vue.
+                        'dot_color' => 'bg-' . ($pack->level?->color ?? 'primary'),
                         'coach' => $pack->trainer
                             ? $pack->trainer->first_name . ' ' . $pack->trainer->last_name
                             : null,

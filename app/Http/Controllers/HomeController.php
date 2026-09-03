@@ -31,15 +31,6 @@ class HomeController extends Controller
 
         $dayNames = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
         $dayOrder = ['Lundi' => 1, 'Mardi' => 2, 'Mercredi' => 3, 'Jeudi' => 4, 'Vendredi' => 5, 'Samedi' => 6, 'Dimanche' => 7];
-        $levelLabels = [
-            'Beginners' => 'Débutant',
-            'Elite' => 'Compétition',
-            'Intermediate' => 'Confirmé',
-            'Kids' => 'Jeunes',
-            'Open' => 'Tous niveaux',
-            'Young potential' => 'Jeunes espoirs',
-        ];
-
         $schedules = [];
 
         /** @var array{type: string, season_name: string, season_start: Carbon|null}|null */
@@ -50,7 +41,7 @@ class HomeController extends Controller
         if ($season !== null) {
             $scheduleContext = $this->buildScheduleContext($season);
 
-            TrainingPack::with(['trainer', 'room'])
+            TrainingPack::with(['trainer', 'room', 'level'])
                 ->where('season_id', $season->id)
                 ->where('is_active', true)
                 ->whereNotNull('day_of_week')
@@ -58,7 +49,7 @@ class HomeController extends Controller
                 ->orderBy('day_of_week')
                 ->orderBy('start_time')
                 ->get()
-                ->each(function (TrainingPack $pack) use (&$schedules, $dayNames, $levelLabels): void {
+                ->each(function (TrainingPack $pack) use (&$schedules, $dayNames): void {
                     $start = Carbon::parse($pack->start_time);
                     $end = $start->copy()->addMinutes($pack->duration_minutes);
 
@@ -70,7 +61,7 @@ class HomeController extends Controller
                         'time' => $start->format('G\hi') . ' – ' . $end->format('G\hi'),
                         'activity' => $activity,
                         'location' => $pack->room->name,
-                        'level' => $levelLabels[$pack->level->value] ?? $pack->level->value,
+                        'level' => $pack->level?->label ?? '—',
                         'coach' => $pack->trainer ? $pack->trainer->first_name . ' ' . $pack->trainer->last_name : null,
                         'capacity' => $pack->max_participants,
                         'description' => $pack->description,

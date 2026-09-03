@@ -19,7 +19,8 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
- * @property string $level
+ * @property-read TrainingLevel|null $level
+ * @property int|null $training_level_id
  * @property string $type
  * @property Carbon $start
  * @property Carbon $end
@@ -72,6 +73,7 @@ class Training extends Model
         'start' => 'datetime',
         'end' => 'datetime',
         'cancelled_at' => 'datetime',
+        'training_level_id' => 'integer',
         'attendance_taken_at' => 'datetime',
         'attendance_taken_by' => 'integer',
         'training_pack_id' => 'integer',
@@ -81,7 +83,7 @@ class Training extends Model
     ];
 
     protected $fillable = [
-        'level',
+        'training_level_id',
         'type',
         'start',
         'end',
@@ -108,6 +110,11 @@ class Training extends Model
     public function isCancelled(): bool
     {
         return $this->status !== 'scheduled';
+    }
+
+    public function level(): BelongsTo
+    {
+        return $this->belongsTo(TrainingLevel::class, 'training_level_id');
     }
 
     public function room(): BelongsTo

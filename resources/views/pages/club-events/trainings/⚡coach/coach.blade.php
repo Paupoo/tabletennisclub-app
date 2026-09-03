@@ -34,7 +34,7 @@
                         </div>
                         <div class="flex items-center gap-2">
                             <x-icon class="h-4 w-4 opacity-40" name="o-academic-cap" />
-                            {{ $selectedSession->trainingPack?->level?->value }} ·
+                            {{ $selectedSession->trainingPack?->level?->label }} ·
                             {{ $selectedSession->trainingPack?->type?->value }}
                         </div>
                         <div class="flex items-center gap-2">
@@ -240,7 +240,7 @@
                             · {{ $session->room?->name }}
                         </p>
                         <p class="mt-0.5 text-xs text-base-content/40">
-                            {{ $session->trainingPack?->level?->value }}
+                            {{ $session->trainingPack?->level?->label }}
                         </p>
                     </div>
                 </div>

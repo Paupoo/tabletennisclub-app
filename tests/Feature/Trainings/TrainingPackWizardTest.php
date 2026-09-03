@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -217,5 +218,52 @@ describe('the pack list', function (): void {
         // l'ordre des niveaux : sans tri sur la position, l'assertion tombe.
         // Débutant est en position 2, Compétition en 5.
         expect($names->search('Zulu Débutant'))->toBeLessThan($names->search('Alpha Compétition'));
+    })->group('training', 'pack');
+});
+
+describe('the capacity counter on a pack card', function (): void {
+
+    beforeEach(function (): void {
+        $this->admin = User::factory()->isAdmin()->create();
+    });
+
+    it('counts places only when the pack caps them', function (): void {
+        $season = Season::factory()->create();
+        $capped = editablePack(['season_id' => $season->id, 'name' => 'Mardi Élite', 'max_participants' => 8]);
+
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.trainings.index')
+            ->set('viewSeasonId', $season->id)
+            ->assertOk()
+            ->assertSee('0 / 8');
+    })->group('training', 'pack');
+
+    it('says nothing about places on a pack that has no cap', function (): void {
+        $season = Season::factory()->create();
+        $room = Room::factory()->create(['capacity_for_trainings' => 20]);
+
+        // Sans plafond propre, effectiveMaxParticipants() retombe sur la salle :
+        // la carte annonçait « 0 / 20 » et une barre de progression pour une
+        // limite que hasAvailableSpot() n'applique jamais.
+        editablePack([
+            'season_id' => $season->id,
+            'name' => 'Lundi Libre',
+            'type' => TrainingType::FREE->value,
+            'trainer_id' => null,
+            'room_id' => $room->id,
+            'max_participants' => null,
+            'is_open_enrollment' => true,
+        ]);
+
+        $html = Livewire::actingAs($this->admin)
+            ->test('pages::club-events.trainings.index')
+            ->set('viewSeasonId', $season->id)
+            ->assertOk()
+            ->assertDontSee('/ 20')
+            ->html();
+
+        // La barre de capacité se reconnaît à son plafond ; `progress-primary`
+        // seul appartient aussi à l'indicateur de chargement de l'en-tête.
+        expect($html)->not->toContain('max="20"');
     })->group('training', 'pack');
 });

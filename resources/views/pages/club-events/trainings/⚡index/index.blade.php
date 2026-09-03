@@ -266,6 +266,9 @@
                         <div class="grid gap-4 pb-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             @foreach ($items as $pack)
                                 @php
+                                    // Un pack sans plafond n'a pas de places à compter : ni
+                                    // celui du pack, ni celui de la salle, que le libre-service ignore.
+                                    $capped = ! $pack->is_open_enrollment && $pack->effectiveMaxParticipants() > 0;
                                     $enrolled = $pack->enrolledCount();
                                     $max = $pack->effectiveMaxParticipants();
                                     $full = $max > 0 && $enrolled >= $max;
@@ -320,20 +323,23 @@
                                             </div>
                                         </div>
 
-                                        {{-- Capacity --}}
-                                        <div class="mb-3">
-                                            <div class="mb-1 flex justify-between text-xs text-base-content/50">
-                                                <span>{{ $enrolled }} / {{ $max ?: '∞' }} {{ __('enrolled') }}</span>
-                                                @if ($full)
-                                                    <span class="font-medium text-error">{{ __('Full') }}</span>
-                                                @endif
-                                            </div>
-                                            @if ($max > 0)
+                                        {{-- Capacity — only where there is a cap to count against.
+                                             effectiveMaxParticipants() falls back to the room, so an
+                                             open-enrolment pack was showing a limit hasAvailableSpot()
+                                             never applies. --}}
+                                        @if ($capped)
+                                            <div class="mb-3">
+                                                <div class="mb-1 flex justify-between text-xs text-base-content/50">
+                                                    <span>{{ $enrolled }} / {{ $max }} {{ __('enrolled') }}</span>
+                                                    @if ($full)
+                                                        <span class="font-medium text-error">{{ __('Full') }}</span>
+                                                    @endif
+                                                </div>
                                                 <progress
                                                     class="progress {{ $full ? 'progress-error' : 'progress-primary' }} h-1"
                                                     max="{{ $max }}" value="{{ $enrolled }}"></progress>
-                                            @endif
-                                        </div>
+                                            </div>
+                                        @endif
 
                                         {{-- Actions --}}
                                         <div class="mt-auto flex flex-nowrap items-center gap-1 border-t border-base-300 pt-2">

@@ -15,6 +15,10 @@
                     wire:click="backToList" />
                 <x-button class="btn-error btn-soft" icon="o-x-circle" :label="__('Cancel session')"
                     wire:click="openCancel" />
+                @if (! $selectedSession->attendance_taken_at)
+                    <x-button class="btn-primary" icon="o-check-circle" :label="__('Save attendance')"
+                        wire:click="validateAttendance" spinner />
+                @endif
             </x-slot:actions>
         </x-header>
 
@@ -30,8 +34,8 @@
                         </div>
                         <div class="flex items-center gap-2">
                             <x-icon class="h-4 w-4 opacity-40" name="o-academic-cap" />
-                            {{ $selectedSession->trainingPack?->level?->value }} ·
-                            {{ $selectedSession->trainingPack?->type?->value }}
+                            {{ $selectedSession->trainingPack?->level?->label }} ·
+                            {{ $selectedSession->trainingPack?->type?->label() }}
                         </div>
                         <div class="flex items-center gap-2">
                             <x-icon class="h-4 w-4 opacity-40" name="o-users" />
@@ -64,8 +68,15 @@
                 <x-card :title="__('Members')">
                     @forelse ($enrolledMembers as $member)
                         @php
-                            $isMinor = $member->birthdate && \Carbon\Carbon::parse($member->birthdate)->age < 18;
-                            $guardian = $isMinor ? $member->guardians->first() : null;
+                            // On n'exige pas une date de naissance : un compte géré
+                            // se reconnaît au lien tuteur, et une naissance non
+                            // renseignée cachait le seul moyen de joindre la famille.
+                            $guardian = $member->guardians->first();
+                            // Le numéro du tuteur vit à deux endroits, et le plus
+                            // rempli des deux est le champ porté par la fiche du
+                            // membre — la majorité des mineurs n'a aucun Guardian lié.
+                            $guardianName = $guardian ? trim($guardian->first_name . ' ' . $guardian->last_name) : null;
+                            $guardianPhone = $guardian?->phone ?: $member->guardian_phone_number;
                             $currentStatus = $attendanceStatus[$member->id] ?? 'enrolled';
                             $presenceRate = $this->presenceRate($member->id);
                             $interclubDivisions = $member->teams->map(fn ($t) => $t->league?->name ?? null)->filter()->unique()->implode(', ');
@@ -83,7 +94,7 @@
                                                 <span>{{ $member->ranking->getLabel() }}</span>
                                             @endif
 
-                                            @if ($presenceRate > 0)
+                                            @if ($presenceRate !== null)
                                                 <span
                                                     @class([
                                                         'text-success' => $presenceRate >= 70,
@@ -102,10 +113,17 @@
                                                 <span>{{ $member->phone_number }}</span>
                                             @endif
 
-                                            @if ($isMinor && $guardian)
+                                            @if ($guardianName || $guardianPhone)
+                                                {{-- Les colonnes sont first_name / last_name / phone :
+                                                     l'écran lisait deux attributs qui n'existent pas
+                                                     sur Guardian et n'affichait donc rien. --}}
                                                 <span class="text-warning-content">
-                                                    {{ __('Guardian') }}:
-                                                    {{ $guardian->guardian_phone_number ?? $guardian->phone_number }}
+                                                    {{ __('Guardian') }}&nbsp;:
+                                                    {{ $guardianName }}
+                                                    @if ($guardianName && $guardianPhone)
+                                                        ·
+                                                    @endif
+                                                    {{ $guardianPhone }}
                                                 </span>
                                             @endif
                                         </div>
@@ -148,6 +166,30 @@
                         </div>
                     @endforelse
                 </x-card>
+
+                {{-- Came without being enrolled --}}
+                <x-card class="mt-4" :title="__('Came without being enrolled')">
+                    <p class="mb-3 text-xs text-base-content/50">
+                        {{ __('Adding someone here records their presence only. It enrols nobody and bills nothing.') }}
+                    </p>
+
+                    @foreach ($walkIns as $walkIn)
+                        <div class="mb-2 flex items-center justify-between rounded-lg border border-warning/30 bg-warning/5 px-3 py-2">
+                            <div class="flex items-center gap-2">
+                                <span class="font-medium">{{ $walkIn->first_name }} {{ $walkIn->last_name }}</span>
+                                <x-badge class="badge-warning badge-soft badge-sm" :value="__('not enrolled')" />
+                            </div>
+                            <x-badge class="badge-success badge-soft badge-sm" :value="__('Present')" />
+                        </div>
+                    @endforeach
+
+                    <x-choices-offline class="mt-2" :label="__('Add a member to this session')"
+                        wire:model="attendeeToAdd" :options="$attendeeOptions" option-label="name"
+                        single searchable />
+
+                    <x-button class="btn-outline btn-sm mt-2" icon="o-user-plus" :label="__('Add')"
+                        wire:click="addAttendee" spinner />
+                </x-card>
             </div>
         </div>
 
@@ -156,6 +198,42 @@
              PLANNING — upcoming sessions list
         ================================================================ --}}
         <x-header progress-indicator separator :subtitle="__('Your upcoming sessions')" :title="__('My sessions')" />
+
+        @if ($sessionsToRecord->isNotEmpty())
+            <x-alert class="alert-warning mb-4" icon="o-exclamation-triangle">
+                {{ trans_choice(':count session still to record|:count sessions still to record', $sessionsToRecord->count(), ['count' => $sessionsToRecord->count()]) }}
+            </x-alert>
+
+            @foreach ($sessionsToRecord as $session)
+                <button type="button" wire:click="viewSession({{ $session->id }})"
+                    class="mb-3 flex w-full cursor-pointer items-center justify-between rounded-xl border-2 border-warning/40 bg-warning/5 px-4 py-3 text-left transition hover:border-warning">
+                    <div class="flex items-center gap-4">
+                        <div class="text-center">
+                            <div class="text-xs font-bold uppercase text-base-content/50">
+                                {{ $session->start->translatedFormat('M') }}
+                            </div>
+                            <div class="text-2xl font-bold leading-none">{{ $session->start->format('d') }}</div>
+                            <div class="text-xs text-base-content/50">{{ $session->start->translatedFormat('D') }}</div>
+                        </div>
+                        <div>
+                            <p class="font-medium">{{ $session->trainingPack?->name }}</p>
+                            <p class="text-xs text-base-content/60">
+                                {{ $session->start->format('H:i') }} – {{ $session->end->format('H:i') }}
+                                · {{ $session->room?->name }}
+                            </p>
+                            <p class="mt-0.5 text-xs font-semibold text-warning-content">
+                                {{ $session->start->isToday() ? __('Tonight — to record') : __('Never recorded') }}
+                            </p>
+                        </div>
+                    </div>
+                    <x-icon class="h-5 w-5 text-warning" name="o-pencil-square" />
+                </button>
+            @endforeach
+
+            <div class="mb-4 mt-6 text-xs font-bold uppercase tracking-wide text-base-content/40">
+                {{ __('Coming up') }}
+            </div>
+        @endif
 
         @forelse ($upcomingSessions as $session)
             <button type="button" wire:click="viewSession({{ $session->id }})"
@@ -176,7 +254,7 @@
                             · {{ $session->room?->name }}
                         </p>
                         <p class="mt-0.5 text-xs text-base-content/40">
-                            {{ $session->trainingPack?->level?->value }}
+                            {{ $session->trainingPack?->level?->label }}
                         </p>
                     </div>
                 </div>

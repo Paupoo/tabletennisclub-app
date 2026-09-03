@@ -250,7 +250,7 @@ new class extends Component
             'label' => $role->label(),
             'description' => $role->description(),
             'locked' => $role->isReservedToAdministrators() && ! $mayHandOutReserved,
-        ], Role::delegations());
+        ], Role::delegationsInReadingOrder());
     }
 
     public function detachFamilyMember(int $userId): void

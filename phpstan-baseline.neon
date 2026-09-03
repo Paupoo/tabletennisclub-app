@@ -351,11 +351,6 @@ parameters:
 			count: 1
 			path: app/Http/Controllers/ClubEvents/Meeting/MeetingRsvpController.php
 
-		-
-			message: '#^Offset ''Beginners''\|''Elite''\|''Intermediate''\|''Kids''\|''Open''\|''Young potential'' on array\{Beginners\: ''Débutant'', Elite\: ''Compétition'', Intermediate\: ''Confirmé'', Kids\: ''Jeunes'', Open\: ''Tous niveaux'', ''Young potential''\: ''Jeunes espoirs''\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
-			path: app/Http/Controllers/HomeController.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user\.$#'

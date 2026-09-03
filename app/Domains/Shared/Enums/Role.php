@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Shared\Enums;
 
 use Database\Seeders\RoleSeeder;
+use Illuminate\Support\Str;
 
 /**
  * The Spatie roles, and the permissions each one bundles.
@@ -59,6 +60,39 @@ enum Role: string
             self::cases(),
             static fn (self $role): bool => $role->isDelegation(),
         ));
+    }
+
+    /**
+     * The délégations in reading order.
+     *
+     * Declaration order is alphabetical on the English case names, which says
+     * nothing once the labels are translated: a French reader scanning for
+     * « Réunions » should not have to know it was declared as MEETINGS.
+     *
+     * @return array<int, self>
+     */
+    public static function delegationsInReadingOrder(): array
+    {
+        return self::sortedByLabel(self::delegations());
+    }
+
+    /**
+     * Sort roles alphabetically on their translated label, accents folded so
+     * that « Accès » lands under A and « Réunions » under R rather than after Z.
+     *
+     * @param  iterable<int, self>  $roles
+     * @return array<int, self>
+     */
+    public static function sortedByLabel(iterable $roles): array
+    {
+        $sorted = is_array($roles) ? array_values($roles) : iterator_to_array($roles, false);
+
+        usort(
+            $sorted,
+            static fn (self $a, self $b): int => Str::lower(Str::ascii($a->label())) <=> Str::lower(Str::ascii($b->label())),
+        );
+
+        return $sorted;
     }
 
     /**

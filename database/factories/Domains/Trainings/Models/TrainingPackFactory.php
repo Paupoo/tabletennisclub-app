@@ -7,8 +7,8 @@ namespace Database\Factories\Domains\Trainings\Models;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
-use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
+use App\Domains\Trainings\Models\TrainingLevel;
 use App\Domains\Trainings\Models\TrainingPack;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -42,12 +42,25 @@ class TrainingPackFactory extends Factory
             // 'description' => fake()->sentence(),
             'price' => fake()->numberBetween(50, 200),
             'allow_discount' => true,
-            'level' => fake()->randomElement(TrainingLevel::cases())->value,
+            // Le premier niveau en place plutôt qu'un tirage : les six sont semés
+            // par la migration, et tirer au hasard rendrait flaky tout test qui
+            // assert un libellé (cf. SubscriptionFactory).
+            'training_level_id' => TrainingLevel::ordered()->value('id') ?? TrainingLevel::factory(),
             'type' => fake()->randomElement(TrainingType::cases())->value,
             'trainer_id' => User::factory(),
             'room_id' => Room::factory(),
             'is_open_enrollment' => false,
+            'enrollments_open' => true,
         ];
+    }
+
+    /**
+     * Un pack retiré du libre-service : le comité peut encore y ajouter
+     * quelqu'un, les membres ne peuvent plus s'y inscrire seuls.
+     */
+    public function enrolmentsClosed(): self
+    {
+        return $this->state(fn (): array => ['enrollments_open' => false]);
     }
 
     /**

@@ -258,7 +258,7 @@ class UserCalendarService
             'title' => $session->trainingPack?->name ?? __('Training'),
             'type' => 'training',
             'room' => $session->room?->name,
-            'level' => $session->trainingPack?->level?->value,
+            'level' => $session->trainingPack?->level?->label,
             'coach' => $session->trainer
                 ? trim($session->trainer->first_name . ' ' . $session->trainer->last_name)
                 : null,

@@ -11,7 +11,6 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Recurrence;
-use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Services\TrainingBuilder;
@@ -35,7 +34,8 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
  * @property float $price
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property TrainingLevel $level
+ * @property-read TrainingLevel|null $level
+ * @property int|null $training_level_id
  * @property TrainingType $type
  * @property int $room_id
  * @property int|null $trainer_id
@@ -51,6 +51,7 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
  * @property array<array-key, mixed>|null $excluded_dates
  * @property bool $allow_discount
  * @property bool $is_open_enrollment
+ * @property bool $enrollments_open
  * @property-read EventPost|null $eventPost
  * @property-read Room $room
  * @property-read Season $season
@@ -102,7 +103,6 @@ class TrainingPack extends Model
         'season_id' => 'integer',
         'price' => 'integer',
         'allow_discount' => 'boolean',
-        'level' => TrainingLevel::class,
         'type' => TrainingType::class,
         'trainer_id' => 'integer',
         'room_id' => 'integer',
@@ -115,6 +115,7 @@ class TrainingPack extends Model
         'max_participants' => 'integer',
         'is_active' => 'boolean',
         'is_open_enrollment' => 'boolean',
+        'enrollments_open' => 'boolean',
     ];
 
     protected $fillable = [
@@ -122,7 +123,7 @@ class TrainingPack extends Model
         'name',
         'price',
         'allow_discount',
-        'level',
+        'training_level_id',
         'type',
         'trainer_id',
         'room_id',
@@ -137,6 +138,7 @@ class TrainingPack extends Model
         'max_participants',
         'is_active',
         'is_open_enrollment',
+        'enrollments_open',
     ];
 
     /**
@@ -167,12 +169,17 @@ class TrainingPack extends Model
      * On filtre sur affiliated() et non active() : un membre en attente de
      * validation qui a réservé une place la conserve, sinon la place serait
      * attribuée deux fois. Seuls les états terminaux libèrent la place.
+     *
+     * `offered` compte au même titre : une place promise pour 48 h est retenue.
+     * L'exclure laisserait un nouvel arrivant prendre la place qu'on vient
+     * d'offrir à quelqu'un de la file, et {@see TrainingWaitlistService} en
+     * offrirait autant de fois qu'il reste de gens à appeler.
      */
     public function committedCount(): int
     {
         return $this->subscriptions()
             ->affiliated()
-            ->wherePivotIn('status', ['enrolled', 'pending'])
+            ->wherePivotIn('status', ['enrolled', 'pending', 'offered'])
             ->count();
     }
 
@@ -259,7 +266,7 @@ class TrainingPack extends Model
                 }
 
                 $builder
-                    ->setAttributes(['level' => $this->level->value, 'type' => $this->type->value])
+                    ->setAttributes(['training_level_id' => $this->training_level_id, 'type' => $this->type->value])
                     ->mergeDateAndTime($date, $this->start_time, $endTime)
                     ->setRoom($this->room_id)
                     ->setSeason($season->id)
@@ -279,6 +286,11 @@ class TrainingPack extends Model
         $max = $this->effectiveMaxParticipants();
 
         return $max === 0 || $this->committedCount() < $max;
+    }
+
+    public function level(): BelongsTo
+    {
+        return $this->belongsTo(TrainingLevel::class, 'training_level_id');
     }
 
     public function price(): Attribute

@@ -457,6 +457,13 @@
                                                                     class="btn-ghost btn-sm"
                                                                     wire:click="confirmLeaveTrainingPack({{ $pack['id'] }}, {{ $userId }}, 'decline')"
                                                                     spinner />
+                                                            @elseif(!$pack['enrollments_open'])
+                                                                {{-- Le pack reste affiché : le masquer ferait croire à une
+                                                                     suppression. Seul le bouton disparaît. --}}
+                                                                <span class="flex items-center gap-1.5 text-xs font-semibold text-base-content/50">
+                                                                    <x-icon class="h-3.5 w-3.5" name="o-lock-closed" />
+                                                                    {{ __('Sign-ups closed') }}
+                                                                </span>
                                                             @else
                                                                 @if($pack['is_full'])
                                                                     <x-button

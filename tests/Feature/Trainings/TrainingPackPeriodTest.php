@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Database\QueryException;
@@ -23,7 +22,7 @@ function fillPackWizard(User $admin, int $seasonId, int $roomId): Testable
         ->call('openCreate')
         ->set('formSeasonId', $seasonId)
         ->set('formName', 'Mardi — Perfectionnement')
-        ->set('formLevel', TrainingLevel::INTERMEDIATE->value)
+        ->set('formLevel', trainingLevelId('Confirmé'))
         ->set('formType', TrainingType::DIRECTED->value)
         ->set('formRoomId', $roomId)
         ->set('formTrainerId', User::factory()->create()->id)

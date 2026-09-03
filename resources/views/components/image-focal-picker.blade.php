@@ -68,7 +68,7 @@
                     <img :src="previewUrl ?? '{{ $preview }}'" alt=""
                         class="h-full w-full object-cover" :style="`object-position: ${position}`" />
                 </div>
-                <figcaption class="mt-1 flex items-center gap-1 text-[11px] text-gray-400">
+                <figcaption class="mt-1 flex items-center gap-1 text-xs text-gray-400">
                     <x-icon name="o-computer-desktop" class="h-3 w-3" />{{ __('Desktop') }}
                 </figcaption>
             </figure>
@@ -77,7 +77,7 @@
                     <img :src="previewUrl ?? '{{ $preview }}'" alt=""
                         class="h-full w-full object-cover" :style="`object-position: ${position}`" />
                 </div>
-                <figcaption class="mt-1 flex items-center gap-1 text-[11px] text-gray-400">
+                <figcaption class="mt-1 flex items-center gap-1 text-xs text-gray-400">
                     <x-icon name="o-device-phone-mobile" class="h-3 w-3" />{{ __('Mobile') }}
                 </figcaption>
             </figure>

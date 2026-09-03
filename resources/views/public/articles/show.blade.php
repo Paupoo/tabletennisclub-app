@@ -26,7 +26,8 @@
     @if($article->image)
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
             <div class="h-72 md:h-96 rounded-2xl overflow-hidden shadow-sm">
-                <img src="{{ Storage::url($article->image) }}" alt="{{ $article->title ?? 'Image de l\'article' }}" class="w-full h-full object-cover">
+                <img src="{{ Storage::url($article->image) }}" alt="{{ $article->title ?? 'Image de l\'article' }}"
+                     class="w-full h-full object-cover" style="object-position: {{ $article->image_position }}">
             </div>
         </div>
     @endif

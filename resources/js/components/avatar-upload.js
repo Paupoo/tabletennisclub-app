@@ -1,3 +1,5 @@
+import { downscaleToDataUrl } from "../utils/downscale-image";
+
 /**
  * Mobile-first avatar cropper.
  *
@@ -144,35 +146,7 @@ export default function avatarCropper({
 
         /** Downscale to `workingMax` on the longest edge and return a JPEG data URL. */
         downscale(file) {
-            return new Promise((resolve, reject) => {
-                const image = new Image();
-                const objectUrl = URL.createObjectURL(file);
-
-                image.onload = () => {
-                    URL.revokeObjectURL(objectUrl);
-
-                    const scale = Math.min(
-                        1,
-                        this.workingMax / Math.max(image.width, image.height),
-                    );
-                    const width = Math.round(image.width * scale);
-                    const height = Math.round(image.height * scale);
-
-                    const canvas = document.createElement("canvas");
-                    canvas.width = width;
-                    canvas.height = height;
-                    canvas.getContext("2d").drawImage(image, 0, 0, width, height);
-
-                    resolve(canvas.toDataURL("image/jpeg", 0.92));
-                };
-
-                image.onerror = () => {
-                    URL.revokeObjectURL(objectUrl);
-                    reject(new Error("Could not read the image."));
-                };
-
-                image.src = objectUrl;
-            });
+            return downscaleToDataUrl(file, { maxEdge: this.workingMax, quality: 0.92 });
         },
     };
 }

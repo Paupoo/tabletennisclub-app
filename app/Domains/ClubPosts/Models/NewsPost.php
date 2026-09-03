@@ -9,6 +9,7 @@ use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,6 +24,9 @@ use Illuminate\Support\Carbon;
  * @property int|null $reading_time
  * @property NewsPostCategoryEnum $category
  * @property string|null $image
+ * @property int $image_focal_x
+ * @property int $image_focal_y
+ * @property-read string $image_position
  * @property int $user_id
  * @property NewsPostStatusEnum $status
  * @property Carbon|null $deleted_at
@@ -57,6 +61,20 @@ class NewsPost extends Model
     use HasAuditLog;
     use HasFactory, SoftDeletes;
 
+    /**
+     * Centre the focal point until an author moves it.
+     *
+     * The column carries the same default, but a model built in PHP never
+     * reads it back — without this, a freshly created post would compose
+     * `object-position: % %` and every browser would ignore it.
+     *
+     * @var array<string, int>
+     */
+    protected $attributes = [
+        'image_focal_x' => 50,
+        'image_focal_y' => 50,
+    ];
+
     protected $casts = [
         'title' => 'string',
         'slug' => 'string',
@@ -64,6 +82,8 @@ class NewsPost extends Model
         'reading_time' => 'integer',
         'category' => NewsPostCategoryEnum::class,
         'image' => 'string',
+        'image_focal_x' => 'integer',
+        'image_focal_y' => 'integer',
         'status' => NewsPostStatusEnum::class,
         'user_id' => 'integer',
     ];
@@ -75,6 +95,8 @@ class NewsPost extends Model
         'reading_time',
         'category',
         'image',
+        'image_focal_x',
+        'image_focal_y',
         'status',
         'user_id',
     ];
@@ -116,5 +138,17 @@ class NewsPost extends Model
             $words = str_word_count(strip_tags($post->content ?? ''));
             $post->reading_time = (int) ceil($words / 225);
         });
+    }
+
+    /**
+     * The `object-position` value that keeps the subject in frame.
+     *
+     * The featured image is cropped by `object-cover` in four different
+     * container ratios, so the crop is decided at render time. This point is
+     * what every one of them keeps visible.
+     */
+    protected function imagePosition(): Attribute
+    {
+        return Attribute::get(fn (): string => "{$this->image_focal_x}% {$this->image_focal_y}%");
     }
 }

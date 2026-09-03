@@ -1,6 +1,6 @@
 ---
 title: Traiter les demandes d'entraînement
-summary: Approuver ou refuser pack par pack, comprendre le montant réclamé, et rembourser un membre qu'on retire d'un entraînement.
+summary: Approuver ou refuser pack par pack, comprendre le montant réclamé, inscrire un membre à la main, et rembourser celui qu'on retire d'un entraînement.
 audience: committee, secretary, treasurer
 order: 16
 ---
@@ -19,7 +19,7 @@ Avant de valider, l'application affiche **le détail du calcul**. Lisez-le, parc
 
 Le montant réclamé est donc **la différence** entre ce que le membre devait avant et ce qu'il doit après. À la validation, l'application génère le paiement complémentaire, avec sa communication structurée et son QR code.
 
-**Les packs que vous n'avez pas cochés sont refusés** et le membre en est prévenu, dans le même geste.
+**Les packs que vous n'avez pas cochés sont refusés** et le membre en est prévenu, dans le même geste. La place qu'il occupait redevient libre : si le pack était complet, **la première personne en liste d'attente est appelée aussitôt**. Une demande en attente occupe une vraie place — la refuser en rend une.
 
 ## Refuser
 
@@ -47,12 +47,26 @@ Trois situations, et l'application les distingue :
 
 Le message de confirmation vous rappelle **l'IBAN du membre**. S'il n'en a pas, l'application vous prévient que le remboursement devra être traité à la main — c'est le moment de le lui demander, pas trois semaines plus tard.
 
-Si la place libérée était une place confirmée, **la première personne en liste d'attente reçoit aussitôt la proposition**, avec 48 heures pour la confirmer.
+**Toute sortie rend une place**, et la liste d'attente est appelée dans la foulée : un membre inscrit qui part, une demande en attente refusée ou retirée, une proposition expirée. La première personne de la file reçoit la proposition, avec 48 heures pour la confirmer.
+
+Cela vaut aussi quand **vous relevez le plafond** d'un pack complet : passer de 12 à 16 places envoie **quatre** propositions d'un coup, pas une. Vous n'avez rien à déclencher.
+
+## Inscrire un membre à la main
+
+Depuis **Entraînements**, ouvrez **Séances** sur le pack, puis **Ajouter un membre**. C'est le pendant de la fermeture des inscriptions : les membres ne peuvent plus entrer seuls, vous si.
+
+La place **arrive validée** — vous n'allez pas approuver votre propre décision — et le membre reçoit un e-mail lui disant que le club l'a inscrit, avec le montant désormais dû. Le calcul est le même que ci-dessus, remises comprises.
+
+**La date d'entrée se choisit.** Vide, la facturation part d'aujourd'hui. Antérieure, elle régularise quelqu'un qui venait déjà sans être inscrit — le cas que la grille de présences fait apparaître. Sans cette date, vous lui offririez les mois déjà consommés.
+
+Le plafond peut être franchi avec un avertissement, et une **affiliation en cours** est exigée.
 
 ## La liste d'attente tourne toute seule
 
 Vous n'avez rien à faire : l'application vérifie **toutes les heures** les propositions non confirmées. À l'expiration, la place passe automatiquement à la personne suivante, et celle qui n'a pas répondu est prévenue qu'elle a perdu sa place.
 
-Une place proposée **n'est pas une place occupée** : tant que la personne n'a pas confirmé, elle ne compte pas comme inscrite et n'a rien à payer.
+Une place proposée **n'est pas une place occupée** au sens du paiement : tant que la personne n'a pas confirmé, elle n'a rien à payer. Elle est en revanche **réservée** : le pack ne la remet pas en vente pendant les 48 heures, sinon la proposition ne vaudrait rien.
 
-Voir [Créer et gérer un pack d'entraînement](creer-un-pack-d-entrainement) pour créer les packs et [Rapprocher les paiements avec la banque](rapprocher-les-paiements) pour la suite du parcours en trésorerie.
+Une proposition expirée **laisse une trace** sur la fiche du membre. Elle ne lui interdit pas de redemander le pack plus tard — il repart alors en fin de file, comme une demande neuve.
+
+Voir [Créer et gérer un pack d'entraînement](creer-un-pack-d-entrainement) pour créer les packs, fermer les inscriptions et lire la grille de présences, et [Rapprocher les paiements avec la banque](rapprocher-les-paiements) pour la suite du parcours en trésorerie.

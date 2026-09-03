@@ -68,8 +68,15 @@
                 <x-card :title="__('Members')">
                     @forelse ($enrolledMembers as $member)
                         @php
-                            $isMinor = $member->birthdate && \Carbon\Carbon::parse($member->birthdate)->age < 18;
-                            $guardian = $isMinor ? $member->guardians->first() : null;
+                            // On n'exige pas une date de naissance : un compte géré
+                            // se reconnaît au lien tuteur, et une naissance non
+                            // renseignée cachait le seul moyen de joindre la famille.
+                            $guardian = $member->guardians->first();
+                            // Le numéro du tuteur vit à deux endroits, et le plus
+                            // rempli des deux est le champ porté par la fiche du
+                            // membre — la majorité des mineurs n'a aucun Guardian lié.
+                            $guardianName = $guardian ? trim($guardian->first_name . ' ' . $guardian->last_name) : null;
+                            $guardianPhone = $guardian?->phone ?: $member->guardian_phone_number;
                             $currentStatus = $attendanceStatus[$member->id] ?? 'enrolled';
                             $presenceRate = $this->presenceRate($member->id);
                             $interclubDivisions = $member->teams->map(fn ($t) => $t->league?->name ?? null)->filter()->unique()->implode(', ');
@@ -106,10 +113,17 @@
                                                 <span>{{ $member->phone_number }}</span>
                                             @endif
 
-                                            @if ($isMinor && $guardian)
+                                            @if ($guardianName || $guardianPhone)
+                                                {{-- Les colonnes sont first_name / last_name / phone :
+                                                     l'écran lisait deux attributs qui n'existent pas
+                                                     sur Guardian et n'affichait donc rien. --}}
                                                 <span class="text-warning-content">
-                                                    {{ __('Guardian') }}:
-                                                    {{ $guardian->guardian_phone_number ?? $guardian->phone_number }}
+                                                    {{ __('Guardian') }}&nbsp;:
+                                                    {{ $guardianName }}
+                                                    @if ($guardianName && $guardianPhone)
+                                                        ·
+                                                    @endif
+                                                    {{ $guardianPhone }}
                                                 </span>
                                             @endif
                                         </div>

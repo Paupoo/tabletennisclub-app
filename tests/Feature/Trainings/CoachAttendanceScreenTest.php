@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
@@ -149,5 +150,61 @@ describe('someone who came without being enrolled', function (): void {
             ->call('setAttendance', $subscription->user_id, 'present');
 
         expect(collect($component->get('walkIns'))->pluck('id'))->not->toContain($subscription->user_id);
+    })->group('training', 'attendance');
+});
+
+describe('reaching a child through their guardian', function (): void {
+    it('shows the coach the guardian name and phone', function (): void {
+        $coach = User::factory()->isCoach()->create();
+        $pack = TrainingPack::factory()->create(['max_participants' => 5, 'price' => 90]);
+        $session = Training::factory()->past()->for($pack, 'trainingPack')->for($coach, 'trainer')->create();
+
+        $child = Subscription::factory()
+            ->for($pack->season, 'season')
+            ->for(User::factory()->state(['birthdate' => now()->subYears(11)]), 'user')
+            ->create();
+        $child->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+
+        $guardian = Guardian::factory()->create([
+            'first_name' => 'Isabelle',
+            'last_name' => 'Vandenberghe',
+            'phone' => '0475112233',
+        ]);
+        $child->user->guardians()->attach($guardian->id);
+
+        // L'écran lisait `guardian_phone_number` et `phone_number`, deux
+        // attributs qui n'existent pas sur Guardian : il affichait « Tuteur : »
+        // suivi de rien, et jamais le nom. C'est pourtant le seul moyen de
+        // joindre la famille d'un mineur depuis le bord de la table.
+        Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('viewSession', $session->id)
+            ->assertOk()
+            ->assertSee('Isabelle Vandenberghe')
+            ->assertSee('0475112233');
+    })->group('training', 'attendance');
+
+    it('falls back to the phone recorded on the member when no guardian is linked', function (): void {
+        $coach = User::factory()->isCoach()->create();
+        $pack = TrainingPack::factory()->create(['max_participants' => 5, 'price' => 90]);
+        $session = Training::factory()->past()->for($pack, 'trainingPack')->for($coach, 'trainer')->create();
+
+        // Le cas majoritaire en base : le numéro du tuteur est saisi sur la
+        // fiche du membre, sans qu'aucun Guardian ne soit lié. Ne lire que la
+        // relation laisserait la plupart des enfants injoignables.
+        $child = Subscription::factory()
+            ->for($pack->season, 'season')
+            ->for(User::factory()->state([
+                'birthdate' => now()->subYears(10),
+                'guardian_phone_number' => '0498776655',
+            ]), 'user')
+            ->create();
+        $child->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+
+        Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('viewSession', $session->id)
+            ->assertOk()
+            ->assertSee('0498776655');
     })->group('training', 'attendance');
 });

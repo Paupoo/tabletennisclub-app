@@ -25,6 +25,7 @@ class TrainingPackAddedByClubNotification extends Notification
     public function __construct(
         public readonly TrainingPack $pack,
         public readonly Subscription $subscription,
+        public readonly ?string $paymentReference = null,
     ) {}
 
     /** @return array<string, mixed> */
@@ -51,6 +52,12 @@ class TrainingPackAddedByClubNotification extends Notification
             ->line(__('The amount now due for your membership is **:amount €**.', [
                 'amount' => number_format((float) $this->subscription->amount_due, 2),
             ]))
+            ->when(
+                $this->paymentReference !== null,
+                fn (MailMessage $mail): MailMessage => $mail->line(__('Please quote the structured reference :reference with your transfer.', [
+                    'reference' => $this->paymentReference,
+                ])),
+            )
             ->line(__('If this enrolment is a mistake, contact the club secretariat and we will undo it.'));
     }
 

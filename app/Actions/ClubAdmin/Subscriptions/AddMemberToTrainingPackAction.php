@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Subscriptions;
 
+use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingPackAddedByClubNotification;
@@ -62,14 +63,35 @@ class AddMemberToTrainingPackAction
             $subscription->trainingPacks()->attach($pack->id, $attributes);
         }
 
+        // Ce que le membre devait avant : le complément est la différence, pas
+        // le prix du pack — l'ajout peut faire jouer la remise multi-packs et
+        // faire baisser un pack déjà facturé.
+        $amountDueBefore = (float) $subscription->amount_due;
+
+        // Facturer un membre à qui rien n'a encore été réclamé ferait payer
+        // deux fois : sa cotisation initiale couvrira déjà ce pack.
+        $alreadyInvoiced = $subscription->payments()->exists();
+
         (new CalculatePriceAction)($subscription, $familyMembersCount);
 
         // Le montant annoncé au membre doit être celui d'après recalcul, pas
         // celui d'avant : c'est la seule chose qui l'intéresse dans ce mail.
         $subscription->refresh();
 
+        $complement = round((float) $subscription->amount_due - $amountDueBefore, 2);
+        $payment = null;
+
+        if ($alreadyInvoiced && $complement > 0) {
+            $payment = $subscription->payments()->create([
+                'reference' => (new GeneratePaymentReference)(),
+                'amount_due' => $complement,
+                'amount_paid' => 0,
+                'status' => 'pending',
+            ]);
+        }
+
         $subscription->user->notify(
-            new TrainingPackAddedByClubNotification($pack, $subscription)
+            new TrainingPackAddedByClubNotification($pack, $subscription, $payment?->reference)
         );
     }
 }

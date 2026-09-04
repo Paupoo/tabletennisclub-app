@@ -169,11 +169,19 @@ class UserCalendarService
     }
 
     /**
+     * The meetings on the member's calendar.
+     *
+     * `visibleTo()` matters most in "all club events" mode: browsing the club's
+     * whole calendar must not turn the committee's agenda into public reading,
+     * so a member who may not see meetings gets general assemblies and the
+     * meetings they were invited to, nothing else.
+     *
      * @return Collection<int, array<string, mixed>>
      */
     private function meetings(User $user, bool $showAllEvents, CarbonInterface $from, ?CarbonInterface $to): Collection
     {
         $meetingsQuery = Meeting::whereIn('status', [MeetingStatusEnum::CONFIRMED->value])
+            ->visibleTo($user)
             ->where('scheduled_at', '>=', $from)
             ->when($to, fn ($q) => $q->where('scheduled_at', '<=', $to));
 

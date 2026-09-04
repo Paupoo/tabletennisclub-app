@@ -51,7 +51,7 @@ it('shows past events of the displayed month', function (): void {
     makeActiveSeason();
     $user = User::factory()->create();
 
-    $meeting = Meeting::factory()->confirmed()->create([
+    $meeting = Meeting::factory()->generalAssembly()->confirmed()->create([
         'scheduled_at' => Carbon::parse('2026-07-05 20:00'),
         'ends_at' => Carbon::parse('2026-07-05 22:00'),
     ]);
@@ -91,7 +91,7 @@ it('lists the events of the selected day in the side panel and ignores invalid d
     makeActiveSeason();
     $user = User::factory()->create();
 
-    Meeting::factory()->confirmed()->create([
+    Meeting::factory()->generalAssembly()->confirmed()->create([
         'scheduled_at' => Carbon::parse('2026-07-09 20:00'),
         'ends_at' => Carbon::parse('2026-07-09 22:00'),
     ]);
@@ -194,7 +194,7 @@ it('applies category filters to the grid', function (): void {
     makeActiveSeason();
     $user = User::factory()->create();
 
-    Meeting::factory()->confirmed()->create([
+    Meeting::factory()->generalAssembly()->confirmed()->create([
         'scheduled_at' => Carbon::parse('2026-07-20 20:00'),
         'ends_at' => Carbon::parse('2026-07-20 22:00'),
     ]);

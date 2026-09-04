@@ -163,19 +163,26 @@ class AgendaBlockBuilder
     }
 
     /**
-     * The committee's next meetings.
+     * The next meetings this reader is entitled to see.
      *
      * Guarded in content, not merely in its link: this used to share the
      * "Événements" card with the tournaments above, which put the committee's
      * agenda in front of every member of the club.
+     *
+     * The gate is {@see Meeting::scopeVisibleTo()} rather than a plain
+     * permission check on the block: a general assembly is convened for the
+     * whole club, so it belongs on every member's dashboard, while a committee
+     * meeting stays with the committee. A member with no assembly in sight gets
+     * no rows, hence no block at all.
      */
     private function meetings(User $user): ?AgendaBlock
     {
-        if (! Feature::Meetings->enabled() || ! $user->can(Permission::MeetingsView->value)) {
+        if (! Feature::Meetings->enabled()) {
             return null;
         }
 
         $rows = Meeting::query()
+            ->visibleTo($user)
             ->where('scheduled_at', '>', now())
             ->whereNotIn('status', [MeetingStatusEnum::CANCELLED])
             ->orderBy('scheduled_at')

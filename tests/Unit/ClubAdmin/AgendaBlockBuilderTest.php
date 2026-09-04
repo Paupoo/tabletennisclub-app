@@ -94,8 +94,8 @@ describe('AgendaBlockBuilder', function (): void {
             ->and($block->seeAllRoute)->toBeNull();
     });
 
-    it('keeps the meetings block for whoever may see meetings', function (): void {
-        Meeting::factory()->count(2)->create([
+    it('keeps committee meetings for whoever may see meetings', function (): void {
+        Meeting::factory()->committee()->count(2)->create([
             'status' => MeetingStatusEnum::CONFIRMED,
             'scheduled_at' => now()->addWeek(),
         ]);
@@ -107,6 +107,47 @@ describe('AgendaBlockBuilder', function (): void {
             ->and($delegate->firstWhere('key', 'meetings'))->not->toBeNull()
             ->and($delegate->firstWhere('key', 'meetings')->rows)->toHaveCount(2)
             ->and($delegate->firstWhere('key', 'meetings')->seeAllRoute)->toBe(route('admin.meetings.index'));
+    });
+
+    it('shows the general assembly to every member, without the management link', function (): void {
+        Meeting::factory()->generalAssembly()->create([
+            'title' => 'Assemblée générale',
+            'status' => MeetingStatusEnum::CONFIRMED,
+            'scheduled_at' => now()->addWeek(),
+        ]);
+        Meeting::factory()->committee()->create([
+            'title' => 'Comité de rentrée',
+            'status' => MeetingStatusEnum::CONFIRMED,
+            'scheduled_at' => now()->addDays(2),
+        ]);
+
+        $block = collect(app(AgendaBlockBuilder::class)->for(User::factory()->create()))->firstWhere('key', 'meetings');
+
+        expect($block)->not->toBeNull()
+            ->and($block->rows)->toHaveCount(1)
+            ->and($block->rows[0]->label)->toBe('Assemblée générale')
+            ->and($block->seeAllRoute)->toBeNull();
+    });
+
+    it('shows a member the committee meeting they were invited to', function (): void {
+        $member = User::factory()->create();
+
+        $meeting = Meeting::factory()->committee()->create([
+            'title' => 'Comité élargi',
+            'status' => MeetingStatusEnum::CONFIRMED,
+            'scheduled_at' => now()->addWeek(),
+        ]);
+        $meeting->users()->attach($member);
+
+        Meeting::factory()->committee()->create([
+            'status' => MeetingStatusEnum::CONFIRMED,
+            'scheduled_at' => now()->addDays(2),
+        ]);
+
+        $block = collect(app(AgendaBlockBuilder::class)->for($member))->firstWhere('key', 'meetings');
+
+        expect($block->rows)->toHaveCount(1)
+            ->and($block->rows[0]->label)->toBe('Comité élargi');
     });
 
     it('keeps the messages block for whoever may see the inbox', function (): void {
@@ -139,7 +180,7 @@ describe('AgendaBlockBuilder', function (): void {
         Training::factory()->count(2)->create();
         Tournament::factory()->count(2)->create(['start_date' => now()->addWeek()]);
         Contact::factory()->count(2)->create();
-        Meeting::factory()->count(2)->create(['status' => MeetingStatusEnum::CONFIRMED, 'scheduled_at' => now()->addWeek()]);
+        Meeting::factory()->committee()->count(2)->create(['status' => MeetingStatusEnum::CONFIRMED, 'scheduled_at' => now()->addWeek()]);
         Interclub::factory()->count(2)->create([
             'start_date_time' => now()->addWeek(),
             'is_bye' => false,

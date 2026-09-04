@@ -6,19 +6,19 @@ namespace App\Services;
 
 use App\Data\PublicAgenda\AgendaDay;
 use App\Data\PublicAgenda\AgendaEntry;
-use App\Data\PublicAgenda\InterclubRhythm;
 use App\Data\PublicAgenda\PublicAgenda;
-use App\Data\PublicAgenda\RhythmDay;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Enums\AgendaFamily;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\TrainingCancellationType;
-use App\Domains\Shared\Models\AppSetting;
+use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\Training;
-use App\Domains\Trainings\Models\TrainingPack;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 
 /**
  * Builds the dated agenda the public homepage shows.
@@ -34,8 +34,16 @@ class PublicAgendaService
     /** Shortest run of consecutive days that reads as a camp rather than a habit. */
     private const int CAMP_MIN_DAYS = 3;
 
-    /** How far ahead the homepage looks. */
-    private const int WINDOW_DAYS = 14;
+    /**
+     * How many whole weeks the grid draws, starting on the Monday of the
+     * current week.
+     *
+     * Five rows is what makes the rhythm visible: four near-identical lines
+     * prove the club runs every week, where a fortnight only shows it twice.
+     * The window rolls rather than following calendar months, so it is never
+     * mostly behind us — a strict month read on the 28th would be spent.
+     */
+    private const int WINDOW_WEEKS = 5;
 
     /**
      * @param  Season|null  $scheduleSeason  The season whose rhythm is described,
@@ -44,38 +52,37 @@ class PublicAgendaService
      */
     public function forHomepage(?Season $scheduleSeason = null): PublicAgenda
     {
-        $from = CarbonImmutable::now();
-        $days = $this->groupByDay($this->between($from, $from->addDays(self::WINDOW_DAYS)->endOfDay()));
+        $from = CarbonImmutable::now()->startOfWeek();
+        $to = $from->addWeeks(self::WINDOW_WEEKS)->subDay()->endOfDay();
 
-        if ($days !== []) {
-            return new PublicAgenda(
-                days: $days,
-                exceptions: $this->exceptionsIn($days),
-                rhythm: $this->rhythm($scheduleSeason),
-                interclubRhythm: $this->interclubRhythm($scheduleSeason),
-            );
-        }
-
-        // Out of season, or over the school holidays, the fortnight holds
-        // nothing at all. A visitor is better served by "next up: summer camp,
-        // 6-10 July" than by an empty box, so the window reaches forward until
-        // it finds something — or stays empty when the club has nothing planned.
-        $nextDays = $this->groupByDay($this->between($from, null));
-
-        if ($nextDays === []) {
-            return new PublicAgenda(
-                days: [],
-                rhythm: $this->rhythm($scheduleSeason),
-                interclubRhythm: $this->interclubRhythm($scheduleSeason),
-            );
-        }
+        $days = $this->fillGrid($from, $to, $this->groupEntriesByDate($this->between($from, $to)));
 
         return new PublicAgenda(
-            days: [$nextDays[0]],
-            exceptions: $this->exceptionsIn([$nextDays[0]]),
-            rhythm: $this->rhythm($scheduleSeason),
-            interclubRhythm: $this->interclubRhythm($scheduleSeason),
-            isExtended: true,
+            days: $days,
+            exceptions: $this->exceptionsIn($days),
+        );
+    }
+
+    /**
+     * The pack's name as a visitor should read it.
+     *
+     * The club names its packs "Lundi — Entraînement supervisé", which reads
+     * fine in an admin list sorted by nothing in particular. In a calendar the
+     * square already says LUNDI 07, so the prefix states the day a second time
+     * on every single line.
+     */
+    private function activityName(Training $training): string
+    {
+        $name = $training->trainingPack?->name;
+
+        if ($name === null || $name === '') {
+            return __('Training');
+        }
+
+        return (string) preg_replace(
+            '/^(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+[—–-]\s+/iu',
+            '',
+            $name,
         );
     }
 
@@ -90,6 +97,7 @@ class PublicAgendaService
             ...$this->trainings($from, $to),
             ...$this->homeInterclubs($from, $to),
             ...$this->generalAssemblies($from, $to),
+            ...$this->tournaments($from, $to),
         ];
     }
 
@@ -141,6 +149,29 @@ class PublicAgendaService
     }
 
     /**
+     * One AgendaDay per calendar day of the window, empty squares included.
+     *
+     * @param  array<string, list<AgendaEntry>>  $byDate
+     * @return list<AgendaDay>
+     */
+    private function fillGrid(CarbonImmutable $from, CarbonImmutable $to, array $byDate): array
+    {
+        $today = CarbonImmutable::now()->startOfDay();
+        $days = [];
+
+        for ($date = $from; $date->lte($to); $date = $date->addDay()) {
+            $days[] = new AgendaDay(
+                date: $date->startOfDay(),
+                entries: $byDate[$date->toDateString()] ?? [],
+                isToday: $date->isSameDay($today),
+                isPast: $date->startOfDay()->lt($today),
+            );
+        }
+
+        return $days;
+    }
+
+    /**
      * Turn one run into either a single spanning entry or one entry per day.
      *
      * Three days is the threshold because no weekly pack can produce three days
@@ -167,7 +198,8 @@ class PublicAgendaService
         return [new AgendaEntry(
             startsAt: CarbonImmutable::parse($first->start),
             endsAt: CarbonImmutable::parse($first->end),
-            title: $first->trainingPack?->name ?? __('Training'),
+            family: AgendaFamily::TRAINING,
+            title: $this->activityName($first),
             location: $first->room?->name,
             spanEndsOn: CarbonImmutable::parse($last->start)->startOfDay(),
             spanExceptions: $exceptions,
@@ -195,6 +227,7 @@ class PublicAgendaService
             ->map(fn (Meeting $meeting): AgendaEntry => new AgendaEntry(
                 startsAt: CarbonImmutable::parse($meeting->scheduled_at),
                 endsAt: $meeting->ends_at ? CarbonImmutable::parse($meeting->ends_at) : null,
+                family: AgendaFamily::CLUB_LIFE,
                 title: $meeting->title,
                 location: $meeting->location,
             ))
@@ -203,26 +236,19 @@ class PublicAgendaService
 
     /**
      * @param  list<AgendaEntry>  $entries
-     * @return list<AgendaDay>
+     * @return array<string, list<AgendaEntry>>
      */
-    private function groupByDay(array $entries): array
+    private function groupEntriesByDate(array $entries): array
     {
         usort($entries, fn (AgendaEntry $a, AgendaEntry $b): int => $a->startsAt <=> $b->startsAt);
 
-        $days = [];
+        $byDate = [];
 
         foreach ($entries as $entry) {
-            $days[$entry->startsAt->toDateString()][] = $entry;
+            $byDate[$entry->startsAt->toDateString()][] = $entry;
         }
 
-        return array_map(
-            fn (string $date, array $dayEntries): AgendaDay => new AgendaDay(
-                date: CarbonImmutable::parse($date)->startOfDay(),
-                entries: $dayEntries,
-            ),
-            array_keys($days),
-            $days,
-        );
+        return $byDate;
     }
 
     /**
@@ -237,100 +263,72 @@ class PublicAgendaService
      */
     private function homeInterclubs(CarbonImmutable $from, ?CarbonImmutable $to): array
     {
-        return Interclub::with(['visitedTeam', 'visitingTeam.club'])
+        $matches = Interclub::with(['visitedTeam', 'visitingTeam.club'])
             ->withoutByes()
             ->where('start_date_time', '>=', $from)
             ->when($to, fn ($query) => $query->where('start_date_time', '<=', $to))
             ->whereHas('visitedTeam.club', fn ($query) => $query->where('is_own_club', true))
             ->orderBy('start_date_time')
-            ->get()
-            ->map(fn (Interclub $match): AgendaEntry => new AgendaEntry(
-                startsAt: CarbonImmutable::parse($match->start_date_time),
+            ->get();
+
+        $entries = [];
+
+        // Nine teams share one hall: two or three of them receiving on the same
+        // Saturday is the ordinary case, not the exception. Listed one by one
+        // they fill the square and crowd out everything else, so a busy day
+        // becomes a single entry that says how many.
+        foreach ($matches->groupBy(fn (Interclub $match): string => $match->start_date_time->toDateString()) as $sameDay) {
+            $first = $sameDay->first();
+
+            $entries[] = new AgendaEntry(
+                startsAt: CarbonImmutable::parse($first->start_date_time),
                 endsAt: null,
-                title: __('Interclubs: team :team hosts :opponent', [
-                    'team' => $match->visitedTeam?->name ?? '',
-                    'opponent' => trim(($match->visitingTeam?->club?->name ?? '') . ' ' . ($match->visitingTeam?->name ?? '')),
-                ]),
-                location: $match->address,
-            ))
-            ->all();
-    }
-
-    /**
-     * The advertised interclub evening, or null when there is none to advertise.
-     *
-     * Silent without a season for the same reason the training rhythm is: the
-     * whole "usual rhythm" line describes one season, and a club with no season
-     * on the books has no habit to state.
-     */
-    private function interclubRhythm(?Season $season): ?InterclubRhythm
-    {
-        if ($season === null) {
-            return null;
-        }
-
-        // Read in one go: AppSetting::get() costs a query per key, and four of
-        // them for a single line of text is four too many on the busiest page
-        // of the site.
-        $settings = AppSetting::whereIn('key', [
-            'interclub_schedule_enabled',
-            'interclub_schedule_day',
-            'interclub_schedule_time_start',
-            'interclub_schedule_time_end',
-        ])->pluck('value', 'key');
-
-        if ($settings->get('interclub_schedule_enabled', '1') !== '1') {
-            return null;
-        }
-
-        return new InterclubRhythm(
-            day: (string) $settings->get('interclub_schedule_day', 'Vendredi'),
-            startsAt: (string) $settings->get('interclub_schedule_time_start', '19:00'),
-            endsAt: (string) $settings->get('interclub_schedule_time_end', '23:30'),
-        );
-    }
-
-    /**
-     * The club's usual week, merged one line per weekday.
-     *
-     * Only packs that actually recur weekly count: a camp runs on consecutive
-     * days once a year and describes no habit, so it carries `days_of_week`
-     * rather than a `day_of_week` and is left out here.
-     *
-     * Scoped to the season the banner above the block talks about, or the whole
-     * catalogue when no season could be resolved. Without that scope a finished
-     * season's packs would keep describing a rhythm the club no longer runs.
-     *
-     * @return list<RhythmDay>
-     */
-    private function rhythm(?Season $season): array
-    {
-        $packs = TrainingPack::query()
-            ->where('is_active', true)
-            ->whereNotNull('day_of_week')
-            ->whereNotNull('start_time')
-            ->whereNotNull('duration_minutes')
-            ->when($season, fn ($query) => $query->where('season_id', $season->id))
-            ->where(fn ($query) => $query->whereNull('pack_end_date')->orWhere('pack_end_date', '>=', today()))
-            ->get()
-            ->groupBy('day_of_week');
-
-        $rhythm = [];
-
-        foreach ($packs as $dayOfWeek => $dayPacks) {
-            $starts = $dayPacks->map(fn (TrainingPack $pack): CarbonImmutable => CarbonImmutable::parse($pack->start_time));
-            $ends = $dayPacks->map(fn (TrainingPack $pack): CarbonImmutable => CarbonImmutable::parse($pack->start_time)->addMinutes((int) $pack->duration_minutes));
-
-            $rhythm[] = new RhythmDay(
-                dayOfWeek: (int) $dayOfWeek,
-                startsAt: $starts->min()->format('H:i'),
-                endsAt: $ends->max()->format('H:i'),
+                family: AgendaFamily::COMPETITION,
+                title: $sameDay->count() === 1
+                    ? __('Interclubs · :team v. :opponent', [
+                        'team' => $first->visitedTeam?->name ?? '',
+                        'opponent' => $first->visitingTeam?->club?->name ?? '',
+                    ])
+                    : __('Interclubs · :count home matches', ['count' => $sameDay->count()]),
+                location: $first->address,
             );
         }
 
-        usort($rhythm, fn (RhythmDay $a, RhythmDay $b): int => $a->dayOfWeek <=> $b->dayOfWeek);
+        return $entries;
+    }
 
-        return $rhythm;
+    /**
+     * One "entrée libre" per day, however many rooms are open.
+     *
+     * The club opens two rooms on a Monday evening and models them as two
+     * packs. That is right in the back office — they have their own capacity —
+     * but on the public grid it reads as two different offers, half an hour
+     * apart, with the same name. One line says it better.
+     *
+     * @param  Collection<int, Training>  $freePlay
+     * @return list<AgendaEntry>
+     */
+    private function mergedFreePlay(Collection $freePlay): array
+    {
+        $entries = [];
+
+        foreach ($freePlay->groupBy(fn (Training $training): string => $training->start->toDateString()) as $sameDay) {
+            $earliest = $sameDay->sortBy('start')->first();
+
+            $entries[] = $sameDay->count() === 1
+                ? $this->sessionEntry($earliest)
+                : new AgendaEntry(
+                    startsAt: CarbonImmutable::parse($earliest->start),
+                    endsAt: CarbonImmutable::parse($sameDay->max('end')),
+                    family: AgendaFamily::TRAINING,
+                    title: __('Free play'),
+                    location: null,
+                    cancellation: $this->cancellationOf($earliest),
+                    cancellationNote: $earliest->cancellation_note,
+                );
+        }
+
+        return $entries;
     }
 
     /**
@@ -371,11 +369,39 @@ class PublicAgendaService
         return new AgendaEntry(
             startsAt: CarbonImmutable::parse($training->start),
             endsAt: CarbonImmutable::parse($training->end),
-            title: $training->trainingPack?->name ?? __('Training'),
+            family: AgendaFamily::TRAINING,
+            title: $this->activityName($training),
             location: $training->room?->name,
             cancellation: $this->cancellationOf($training),
             cancellationNote: $training->cancellation_note,
         );
+    }
+
+    /**
+     * The tournaments the club has actually announced.
+     *
+     * `onTheCalendar()` is the club's own answer to "is this happening": it
+     * already excludes drafts, which nobody has been told about, and
+     * cancellations, which are precisely not happening.
+     *
+     * @return list<AgendaEntry>
+     */
+    private function tournaments(CarbonImmutable $from, ?CarbonImmutable $to): array
+    {
+        return Tournament::onTheCalendar()
+            ->whereNotNull('start_date')
+            ->where('start_date', '>=', $from->toDateString())
+            ->when($to, fn ($query) => $query->where('start_date', '<=', $to->toDateString()))
+            ->orderBy('start_date')
+            ->get()
+            ->map(fn (Tournament $tournament): AgendaEntry => new AgendaEntry(
+                startsAt: CarbonImmutable::parse($tournament->startsAt()),
+                endsAt: $tournament->end_date ? CarbonImmutable::parse($tournament->end_date) : null,
+                family: AgendaFamily::COMPETITION,
+                title: $tournament->name,
+                location: $tournament->location,
+            ))
+            ->all();
     }
 
     /**
@@ -390,6 +416,12 @@ class PublicAgendaService
             ->get();
 
         $entries = [];
+
+        [$freePlay, $sessions] = $sessions->partition(
+            fn (Training $training): bool => $training->type === TrainingType::FREE->value,
+        );
+
+        $entries = $this->mergedFreePlay($freePlay);
 
         foreach ($sessions->groupBy('training_pack_id') as $packId => $packSessions) {
             // A session with no pack behind it is a one-off: nothing to fold.

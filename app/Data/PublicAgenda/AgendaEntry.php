@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data\PublicAgenda;
 
+use App\Domains\Shared\Enums\AgendaFamily;
 use App\Domains\Shared\Enums\TrainingCancellationType;
 use Carbon\CarbonImmutable;
 
@@ -19,6 +20,7 @@ readonly class AgendaEntry
     /**
      * @param  CarbonImmutable  $startsAt  When it begins.
      * @param  CarbonImmutable|null  $endsAt  When it ends, when the source knows.
+     * @param  AgendaFamily  $family  Which of the three colours the square wears.
      * @param  string  $title  What it is, in a visitor's words.
      * @param  string|null  $location  Where to go — the room a visitor must find.
      * @param  TrainingCancellationType|null  $cancellation  Null while the activity holds.
@@ -29,6 +31,7 @@ readonly class AgendaEntry
     public function __construct(
         public CarbonImmutable $startsAt,
         public ?CarbonImmutable $endsAt,
+        public AgendaFamily $family,
         public string $title,
         public ?string $location = null,
         public ?TrainingCancellationType $cancellation = null,

@@ -6,6 +6,19 @@ use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Trainings\Models\TrainingPack;
 
+/**
+ * La résolution de saison et ses bandeaux.
+ *
+ * Ces cas s'appuyaient sur le nom du pack comme révélateur : la page affichait
+ * un horaire type construit depuis les TrainingPack, donc voir « Pack Futur
+ * Mercredi » prouvait qu'on avait retenu la bonne saison. La page affiche
+ * désormais un agenda daté, et le motif hebdomadaire ne subsiste que dans la
+ * ligne « notre rythme habituel » — c'est donc elle, et la plage horaire
+ * qu'elle porte, qui joue ce rôle de révélateur.
+ *
+ * La plage est préférée au nom du jour : elle ne dépend pas de la locale.
+ */
+
 // ── Setup : la homepage nécessite un Club correspondant à ourClub() ───────────
 beforeEach(function (): void {
     Club::factory()->ownClub()->create();
@@ -46,7 +59,7 @@ describe('aucune saison', function (): void {
 // ── Cas 2 : Saison future ─────────────────────────────────────────────────────
 
 describe('saison future (is_active=false, start_at dans le futur)', function (): void {
-    it('affiche le pack et le bandeau "dès le"', function (): void {
+    it('décrit le rythme du pack et affiche le bandeau "dès le"', function (): void {
         $startAt = now()->addMonths(2)->startOfMonth();
 
         seasonWithActivePack([
@@ -60,7 +73,7 @@ describe('saison future (is_active=false, start_at dans le futur)', function ():
         $response = $this->get('/');
 
         $response->assertOk()
-            ->assertSee('Pack Futur Mercredi')
+            ->assertSee('19h00–20h30')
             ->assertSee('Ces horaires entrent en vigueur');
     });
 });
@@ -68,7 +81,7 @@ describe('saison future (is_active=false, start_at dans le futur)', function ():
 // ── Cas 3 : Saison active, start_at dans le passé ────────────────────────────
 
 describe('saison active avec start_at dans le passé', function (): void {
-    it('affiche le pack sans bandeau', function (): void {
+    it('décrit le rythme sans bandeau', function (): void {
         $startAt = now()->subMonths(2)->startOfMonth();
 
         seasonWithActivePack([
@@ -82,7 +95,7 @@ describe('saison active avec start_at dans le passé', function (): void {
         $response = $this->get('/');
 
         $response->assertOk()
-            ->assertSee('Pack Actif Passé')
+            ->assertSee('19h00–20h30')
             ->assertDontSee('Ces horaires entrent en vigueur')
             ->assertDontSee('Saison terminée');
     });
@@ -91,7 +104,7 @@ describe('saison active avec start_at dans le passé', function (): void {
 // ── Cas 4 : Saison active, start_at dans le futur ────────────────────────────
 
 describe('saison active avec start_at dans le futur', function (): void {
-    it('affiche le pack et le bandeau "dès le"', function (): void {
+    it('décrit le rythme et affiche le bandeau "dès le"', function (): void {
         $startAt = now()->addMonths(3)->startOfMonth();
 
         seasonWithActivePack([
@@ -105,7 +118,7 @@ describe('saison active avec start_at dans le futur', function (): void {
         $response = $this->get('/');
 
         $response->assertOk()
-            ->assertSee('Pack Actif Futur')
+            ->assertSee('19h00–20h30')
             ->assertSee('Ces horaires entrent en vigueur');
     });
 });
@@ -113,7 +126,7 @@ describe('saison active avec start_at dans le futur', function (): void {
 // ── Cas 5 : Aucune saison active, saison passée avec packs ───────────────────
 
 describe('aucune saison active, saison passée avec packs', function (): void {
-    it('affiche le pack avec le bandeau "Saison terminée"', function (): void {
+    it('décrit le rythme avec le bandeau "Saison terminée"', function (): void {
         $startAt = now()->subYears(2)->startOfMonth();
 
         seasonWithActivePack([
@@ -127,7 +140,7 @@ describe('aucune saison active, saison passée avec packs', function (): void {
         $response = $this->get('/');
 
         $response->assertOk()
-            ->assertSee('Pack Saison Passée')
+            ->assertSee('19h00–20h30')
             ->assertSee('Saison terminée');
     });
 });
@@ -135,7 +148,7 @@ describe('aucune saison active, saison passée avec packs', function (): void {
 // ── Cas 6 & 7 : Filtrage par pack_end_date ───────────────────────────────────
 
 describe('filtrage par pack_end_date', function (): void {
-    it('exclut un pack dont pack_end_date est hier', function (): void {
+    it('exclut du rythme un pack dont pack_end_date est hier', function (): void {
         $startAt = now()->subMonths(2)->startOfMonth();
 
         seasonWithActivePack([
@@ -147,10 +160,10 @@ describe('filtrage par pack_end_date', function (): void {
             'pack_end_date' => today()->subDay()->toDateString(),
         ]);
 
-        $this->get('/')->assertOk()->assertDontSee('Pack Expiré Hier');
+        $this->get('/')->assertOk()->assertDontSee('19h00–20h30');
     });
 
-    it("inclut un pack dont pack_end_date est aujourd'hui", function (): void {
+    it("inclut dans le rythme un pack dont pack_end_date est aujourd'hui", function (): void {
         $startAt = now()->subMonths(2)->startOfMonth();
 
         seasonWithActivePack([
@@ -162,14 +175,14 @@ describe('filtrage par pack_end_date', function (): void {
             'pack_end_date' => today()->toDateString(),
         ]);
 
-        $this->get('/')->assertOk()->assertSee('Pack Expire Aujd');
+        $this->get('/')->assertOk()->assertSee('19h00–20h30');
     });
 });
 
 // ── Cas 8 : Pack sans day_of_week ────────────────────────────────────────────
 
 describe('pack sans day_of_week', function (): void {
-    it('exclut un pack sans day_of_week du calendrier', function (): void {
+    it('exclut du rythme un pack sans day_of_week', function (): void {
         $startAt = now()->subMonths(2)->startOfMonth();
 
         $season = Season::factory()->create([
@@ -187,15 +200,15 @@ describe('pack sans day_of_week', function (): void {
             'duration_minutes' => 90,
         ]);
 
-        $this->get('/')->assertOk()->assertDontSee('Pack Sans Jour');
+        $this->get('/')->assertOk()->assertDontSee('19h00–20h30');
     });
 });
 
 // ── Cas 9 : Priorité future > passée ─────────────────────────────────────────
 
 describe('priorité de saison', function (): void {
-    it('affiche la saison future plutôt que la saison passée quand les deux existent', function (): void {
-        // Saison passée avec pack
+    it('décrit la saison future plutôt que la saison passée quand les deux existent', function (): void {
+        // Saison passée avec pack — horaire distinct pour pouvoir la reconnaître.
         $pastStart = now()->subYears(2)->startOfMonth();
         seasonWithActivePack([
             'is_active' => false,
@@ -203,6 +216,7 @@ describe('priorité de saison', function (): void {
             'end_at' => $pastStart->copy()->addMonths(10),
         ], [
             'name' => 'Pack Saison Passée Priority',
+            'start_time' => '17:00:00',
         ]);
 
         // Saison future avec pack
@@ -218,8 +232,8 @@ describe('priorité de saison', function (): void {
         $response = $this->get('/');
 
         $response->assertOk()
-            ->assertSee('Pack Saison Future Priority')
-            ->assertDontSee('Pack Saison Passée Priority')
+            ->assertSee('19h00–20h30')
+            ->assertDontSee('17h00–18h30')
             ->assertSee('Ces horaires entrent en vigueur');
     });
 });

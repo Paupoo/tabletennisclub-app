@@ -1,4 +1,4 @@
-@props(['schedules' => [], 'scheduleContext' => null])
+@props(['agenda', 'scheduleContext' => null])
 
 <section id="schedule" class="py-20 bg-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,20 +25,7 @@
             </div>
         @endif
 
-        <!-- Affiché uniquement sur les smartphones -->
-        <div class="block md:hidden">
-            <x-public.schedule-mini-overview :schedules="$schedules ?? []" :compact="false" />
-        </div>
-
-        <!-- Affiché uniquement sur les tablettes (iPad par ex.) -->
-        <div class="hidden md:block lg:hidden">
-            <x-public.schedule-week-overview :schedules="$schedules ?? []" />
-        </div>
-
-        <!-- Affiché uniquement sur les ordinateurs -->
-        <div class="hidden lg:block">
-            <x-public.schedule-calendar-view :schedules="$schedules ?? []" />
-        </div>
+        <x-public.agenda :agenda="$agenda" />
 
         <!-- Call to Action -->
         <div class="text-center mt-12 animate-on-scroll">

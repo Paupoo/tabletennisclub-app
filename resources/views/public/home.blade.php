@@ -22,7 +22,7 @@
     @endif
 
     <section id="schedules">
-        <x-public.schedule-section :schedules="$schedules ?? []" :schedule-context="$scheduleContext ?? null"/>
+        <x-public.schedule-section :agenda="$agenda" :schedule-context="$scheduleContext ?? null"/>
     </section>
     
     <section id="contact">

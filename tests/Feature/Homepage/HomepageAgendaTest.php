@@ -50,9 +50,9 @@ it('affiche une séance datée avec son horaire et sa salle', function (): void 
 
     $this->get('/')
         ->assertOk()
-        ->assertSee('Lundi — Entraînement supervisé', false)
-        ->assertSee('18h00')
-        ->assertSee('Demeester -1');
+        ->assertSee('Entraînement supervisé')
+        ->assertDontSee('Lundi — Entraînement supervisé', false)
+        ->assertSee('18h00');
 });
 
 it('annonce une séance annulée, son badge et son motif', function (): void {
@@ -97,19 +97,20 @@ it('garde les réunions de comité hors de la page publique', function (): void 
     $this->get('/')->assertOk()->assertDontSee('Réunion de comité — septembre', false);
 });
 
-it('rend la deuxième semaine dans le HTML plutôt que de l’omettre', function (): void {
+it('rend les cinq semaines de la grille, pas seulement les jours proches', function (): void {
     $pack = TrainingPack::factory()->create([
         'season_id' => $this->season->id, 'room_id' => $this->room->id, 'is_active' => true,
         'name' => 'Mardi — Perfectionnement', 'day_of_week' => 2,
         'start_time' => '20:30:00', 'duration_minutes' => 90,
     ]);
 
-    // La première tombe dans la semaine ouverte, la seconde dans la semaine repliée.
-    foreach (['09-08', '09-15'] as $day) {
+    // La première est dans la semaine en cours, la seconde à trois semaines.
+    foreach (['09-08', '09-29'] as $day) {
         Training::factory()->create([
             'season_id' => $this->season->id,
             'room_id' => $this->room->id,
             'training_pack_id' => $pack->id,
+            'type' => 'Directed',
             'start' => "2026-{$day} 20:30:00",
             'end' => "2026-{$day} 22:00:00",
         ]);
@@ -117,12 +118,14 @@ it('rend la deuxième semaine dans le HTML plutôt que de l’omettre', function
 
     $response = $this->get('/')->assertOk();
 
-    expect(substr_count($response->getContent(), 'Mardi — Perfectionnement'))->toBe(2);
+    // Une fois dans la grille, une fois dans la liste mobile pour la plus proche.
+    expect(substr_count($response->getContent(), 'Perfectionnement'))->toBeGreaterThanOrEqual(3);
 
-    $response->assertSee('Voir les jours suivants');
+    $response->assertSee('29');
 });
 
-it('n’offre pas de pli quand tout tient dans la première semaine', function (): void {
+it('dessine les sept jours de la semaine en en-tête de grille', function (): void {
+    // La grille ne se dessine que si le club a quelque chose à annoncer.
     Training::factory()->create([
         'season_id' => $this->season->id,
         'room_id' => $this->room->id,
@@ -130,5 +133,8 @@ it('n’offre pas de pli quand tout tient dans la première semaine', function (
         'end' => '2026-09-07 20:00:00',
     ]);
 
-    $this->get('/')->assertOk()->assertDontSee('Voir les jours suivants');
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('lundi')
+        ->assertSee('dimanche');
 });

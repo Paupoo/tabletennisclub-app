@@ -27,8 +27,14 @@
     $tag = $isLink ? 'a' : 'div';
 @endphp
 
+{{--
+    La carte vit aussi dans des colonnes étroites (panneau du jour du calendrier,
+    ~350 px). Ligne unique tant que les deux blocs tiennent, sinon les actions
+    passent à la ligne : sans ça, une pile de badges (« Dom. » + division +
+    « Pas de réponse ») écrasait le titre à un mot par ligne.
+--}}
 <{{ $tag }} {{ $attributes->merge([
-    'class' => "group relative isolate overflow-hidden my-4 flex flex-col gap-2 border-l-4 $borderClass pl-3 py-2 transition-all hover:rounded-r-lg hover:shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4",
+    'class' => "group relative isolate overflow-hidden my-4 flex flex-col gap-2 border-l-4 $borderClass pl-3 py-2 transition-all hover:rounded-r-lg hover:shadow-sm sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-4 sm:gap-y-2",
 ]) }}
     @if ($isLink) href="{{ $link }}" @endif>
 
@@ -38,7 +44,7 @@
     </div>
 
     {{-- Contenu principal (Gauche) --}}
-    <div class="relative z-10 flex min-w-0 items-center gap-4">
+    <div class="relative z-10 flex min-w-0 items-center gap-4 sm:flex-1 sm:basis-56">
         <div class="min-w-[45px] text-center">
             <span class="block text-xl font-bold leading-none">{{ $date->format('d') }}</span>
             <span class="text-xs uppercase">{{ __($date->translatedFormat('M')) }}.</span>
@@ -74,7 +80,7 @@
 
     {{-- Actions (Droite en desktop, dessous en mobile) --}}
     @if (isset($actions))
-        <div class="relative z-10 flex flex-wrap items-center gap-2 pl-16 sm:shrink-0 sm:justify-end sm:pl-0 sm:pr-3">
+        <div class="relative z-10 flex flex-wrap items-center gap-2 pl-16 sm:grow sm:shrink-0 sm:basis-auto sm:justify-end sm:pl-0 sm:pr-3">
             {{ $actions }}
         </div>
     @endif

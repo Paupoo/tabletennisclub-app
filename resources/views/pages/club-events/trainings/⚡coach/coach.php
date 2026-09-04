@@ -107,7 +107,7 @@ new class extends Component
 
     public function confirmCancel(): void
     {
-        $training = Training::with(['trainingPack'])->findOrFail($this->selectedSessionId);
+        $training = Training::with(['trainingPack.level'])->findOrFail($this->selectedSessionId);
 
         Gate::authorize('recordAttendance', $training);
 
@@ -193,7 +193,7 @@ new class extends Component
         /** @var User $coach */
         $coach = auth()->user();
 
-        return Training::with(['trainingPack', 'room'])
+        return Training::with(['trainingPack.level', 'room'])
             ->where('trainer_id', $coach->id)
             ->where('start', '<', Carbon::now())
             ->where('status', 'scheduled')
@@ -229,7 +229,7 @@ new class extends Component
         /** @var User $coach */
         $coach = auth()->user();
 
-        return Training::with(['trainingPack', 'room'])
+        return Training::with(['trainingPack.level', 'room'])
             ->where('trainer_id', $coach->id)
             ->where('start', '>=', Carbon::now())
             ->where('status', 'scheduled')

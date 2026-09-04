@@ -230,4 +230,34 @@ describe('DashboardController', function (): void {
         $response->assertDontSee(route('admin.trainings.index'));
     });
 
+    it('lays the agenda blocks two-up between the phone and the sidebar', function (): void {
+        Training::factory()->count(2)->create();
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('sm:grid-cols-2 lg:grid-cols-1', false);
+    });
+
+    it('leaves only Mon espace open below the sidebar breakpoint', function (): void {
+        $response = $this->actingAs(User::factory()->isAdmin()->create())
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        // Read off the sections themselves rather than counted across the page:
+        // the layout runs a matchMedia of its own for the colour scheme, and the
+        // breakpoint shows up in the stylesheet too.
+        preg_match_all('/<section x-data="([^"]*)"/', (string) $response->getContent(), $sections);
+        $collapsed = array_filter(
+            $sections[1],
+            fn (string $state): bool => str_contains($state, 'min-width: 1024px'),
+        );
+
+        // Four of the five accordions an administrator gets: Mon espace stays
+        // open, so the page still lands on something.
+        expect($sections[1])->toHaveCount(5)
+            ->and($collapsed)->toHaveCount(4)
+            ->and($sections[1][0])->not->toContain('min-width: 1024px');
+    });
+
 });

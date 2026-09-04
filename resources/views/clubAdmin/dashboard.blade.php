@@ -66,6 +66,7 @@
                 @endphp
                 <x-section-accordion
                     :label="__('Secretary')"
+                    :open-on-mobile="false"
                     :count="count($secretaryTiles) . ' accès'"
                     color="gray">
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-2">
@@ -88,6 +89,7 @@
                 @endphp
                 <x-section-accordion
                     :label="__('Treasurer')"
+                    :open-on-mobile="false"
                     :count="count($treasurerTiles) . ' accès'"
                     color="gray">
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-2">
@@ -110,6 +112,7 @@
                 @endphp
                 <x-section-accordion
                     :label="__('Captain / Selector')"
+                    :open-on-mobile="false"
                     :count="count($captainTiles) . ' accès'"
                     color="gray">
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-2">
@@ -133,6 +136,7 @@
                 @endphp
                 <x-section-accordion
                     :label="__('Committee')"
+                    :open-on-mobile="false"
                     :count="count($committeeTiles) . ' accès'"
                     color="gray">
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-2">
@@ -149,7 +153,11 @@
                  The builder decided what this reader may see and where they may
                  go, so nothing here asks a permission: a block that arrived is a
                  block to render, and a null seeAllRoute is a screen out of reach. --}}
-            <div class="lg:col-span-1 space-y-4">
+            {{-- Two-up from 640px to the sidebar breakpoint: below `lg` this column
+                 lands under the accordions, and stacked full-width cards made a
+                 tablet scroll through a metre of page to reach the last one.
+                 items-start so a short card does not stretch to its neighbour. --}}
+            <div class="lg:col-span-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 items-start">
 
                 @foreach($agendaBlocks as $block)
                 <div class="space-y-2" data-agenda-block="{{ $block->key }}">

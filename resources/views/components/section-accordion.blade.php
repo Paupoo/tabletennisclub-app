@@ -4,6 +4,10 @@
     'color'     => 'blue',
     'open'      => true,
     'uppercase' => true,
+    // Opt-in, so the ten views already using this component keep the behaviour
+    // they were written against: pass false and the section arrives folded on
+    // anything narrower than the sidebar breakpoint.
+    'openOnMobile' => true,
 ])
 
 @php
@@ -17,9 +21,16 @@
         'gray'    => ['pill_bg' => 'bg-base-200  dark:bg-base-300/20',   'pill_border' => 'border-base-300',                          'pill_text' => 'text-base-content/60',                  'dot' => 'bg-base-content/30','sep' => 'border-base-200'],
     ];
     $c = $colors[$color] ?? $colors['gray'];
+
+    /* Read once, when Alpine initialises the section: rotating a tablet does not
+       refold what the reader has since opened, which is the behaviour we want —
+       a resize is not a reason to take a panel away from someone reading it. */
+    $initialState = $open && ! $openOnMobile
+        ? "{ open: window.matchMedia('(min-width: 1024px)').matches }"
+        : json_encode(['open' => $open]);
 @endphp
 
-<section x-data="{{ json_encode(['open' => $open]) }}" {{ $attributes }}>
+<section x-data="{{ $initialState }}" {{ $attributes }}>
 
     <button type="button"
         class="mb-3 flex w-full items-center gap-3 text-left"

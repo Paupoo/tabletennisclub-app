@@ -9,6 +9,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
+use App\Domains\Trainings\Models\Training;
 
 describe('DashboardController', function (): void {
 
@@ -188,14 +189,45 @@ describe('DashboardController', function (): void {
         expect($labels)->toContain('Disponibilités')->toContain('Mes matchs');
     });
 
-    it('returns recent activity feed', function (): void {
-        $admin = User::factory()->isAdmin()->create();
+    it('gives an administrator every agenda block', function (): void {
+        Training::factory()->count(2)->create();
+        Contact::factory()->count(2)->create();
 
-        $response = $this->actingAs($admin)
+        $response = $this->actingAs(User::factory()->isAdmin()->create())
             ->get(route('dashboard'))
             ->assertOk();
 
-        expect($response->viewData('recentActivity'))->toBeArray();
+        $keys = array_map(fn ($block): string => $block->key, $response->viewData('agendaBlocks'));
+
+        expect($keys)->toContain('trainings')->toContain('messages')->toContain('new_members');
+    });
+
+    it('hides the management blocks from a member without a role', function (): void {
+        Training::factory()->count(2)->create();
+        Contact::factory()->count(2)->create();
+
+        $response = $this->actingAs(User::factory()->create())
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $keys = array_map(fn ($block): string => $block->key, $response->viewData('agendaBlocks'));
+
+        expect($keys)->toContain('trainings')
+            ->not->toContain('messages')
+            ->not->toContain('new_members');
+    });
+
+    it('offers a member no link towards a screen they would be refused', function (): void {
+        Training::factory()->count(2)->create();
+
+        $response = $this->actingAs(User::factory()->create())
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $routes = array_map(fn ($block): ?string => $block->seeAllRoute, $response->viewData('agendaBlocks'));
+
+        expect(array_filter($routes))->toBeEmpty();
+        $response->assertDontSee(route('admin.trainings.index'));
     });
 
 });

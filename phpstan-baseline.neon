@@ -334,12 +334,6 @@ parameters:
 			path: app/Domains/Trainings/Services/TrainingDateGenerator.php
 
 		-
-			message: '#^Expression on left side of \?\? is not nullable\.$#'
-			identifier: nullCoalesce.expr
-			count: 1
-			path: app/Http/Controllers/ClubAdmin/DashboardController.php
-
-		-
 			message: '#^Called ''Model\:\:make\(\)'' which performs unnecessary work, use ''new Model\(\)''\.$#'
 			identifier: larastan.noModelMake
 			count: 1

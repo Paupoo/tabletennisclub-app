@@ -145,80 +145,60 @@
 
             </div>
 
-            {{-- RIGHT: Activity feed --}}
-            <div class="lg:col-span-1 space-y-3">
+            {{-- RIGHT: Agenda — one card per kind of object, already filtered.
+                 The builder decided what this reader may see and where they may
+                 go, so nothing here asks a permission: a block that arrived is a
+                 block to render, and a null seeAllRoute is a screen out of reach. --}}
+            <div class="lg:col-span-1 space-y-4">
 
-                <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">{{ __('Recent activity') }}</p>
+                @foreach($agendaBlocks as $block)
+                <div class="space-y-2" data-agenda-block="{{ $block->key }}">
 
-                <div class="bg-base-100 rounded-xl border border-base-300 shadow-sm divide-y divide-base-200">
-                    @forelse($recentActivity as $item)
-                    <div class="px-3 py-2.5 hover:bg-base-200/40 transition-colors">
-                        <p class="text-xs font-medium text-base-content leading-snug">{{ $item['label'] }}</p>
-                        <p class="text-xs text-base-content/40 mt-0.5">{{ $item['time'] }}</p>
-                    </div>
-                    @empty
-                    <div class="px-4 py-6 text-center text-xs text-base-content/40">
-                        Aucune activité récente
-                    </div>
-                    @endforelse
-                </div>
+                    <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">{{ $block->label }}</p>
 
-                <a href="{{ route('admin.users.index') }}" class="block text-xs text-center text-base-content/40 hover:text-base-content/70 transition-colors py-1">
-                    Voir tout →
-                </a>
-
-                {{-- PROCHAINS ENTRAÎNEMENTS --}}
-                @if(count($upcomingTrainings) > 0)
-                <div class="space-y-2 pt-1">
-                    <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Entraînements</p>
                     <div class="bg-base-100 rounded-xl border border-base-300 shadow-sm divide-y divide-base-200">
-                        @foreach($upcomingTrainings as $training)
-                        <div class="px-3 py-2.5">
-                            <p class="text-xs font-medium text-base-content leading-snug">{{ $training['label'] }}</p>
-                            @if($training['sub'])
-                            <p class="text-xs text-base-content/40 mt-0.5">{{ $training['sub'] }}</p>
+
+                        {{-- A block looks forward; its lead line looks back. The
+                             tinted ground, not merely the divider, is what keeps a
+                             played match from reading as one still to come. --}}
+                        @if($block->lead)
+                        <div class="px-3 py-2.5 flex items-start justify-between gap-2 bg-base-200/50">
+                            <div class="min-w-0">
+                                <p class="text-xs font-medium text-base-content leading-snug">{{ $block->lead->label }}</p>
+                                @if($block->lead->sub)
+                                <p class="text-xs text-base-content/40 mt-0.5">{{ $block->lead->sub }}</p>
+                                @endif
+                            </div>
+                            @if($block->lead->badge)
+                            <span class="shrink-0 rounded-full border border-base-300 bg-base-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-base-content/70">{{ $block->lead->badge }}</span>
+                            @endif
+                        </div>
+                        @endif
+
+                        @foreach($block->rows as $row)
+                        <div class="px-3 py-2.5 flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <p class="text-xs font-medium text-base-content leading-snug">{{ $row->label }}</p>
+                                @if($row->sub)
+                                <p class="text-xs text-base-content/40 mt-0.5">{{ $row->sub }}</p>
+                                @endif
+                            </div>
+                            @if($row->badge)
+                            <span class="shrink-0 rounded-full border border-base-300 px-2 py-0.5 text-xs font-medium text-base-content/50">{{ $row->badge }}</span>
                             @endif
                         </div>
                         @endforeach
-                    </div>
-                    <a href="{{ route('admin.trainings.index') }}" class="block text-xs text-center text-base-content/40 hover:text-base-content/70 transition-colors py-1">
-                        Voir tout →
-                    </a>
-                </div>
-                @endif
 
-                {{-- PROCHAINS INTERCLUBS --}}
-                @if(count($upcomingMatches) > 0)
-                <div class="space-y-2 pt-1">
-                    <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Interclubs</p>
-                    <div class="bg-base-100 rounded-xl border border-base-300 shadow-sm divide-y divide-base-200">
-                        @foreach($upcomingMatches as $match)
-                        <div class="px-3 py-2.5">
-                            <p class="text-xs font-medium text-base-content leading-snug">{{ $match['label'] }}</p>
-                            <p class="text-xs text-base-content/40 mt-0.5">{{ $match['sub'] }}</p>
-                        </div>
-                        @endforeach
                     </div>
-                    <a href="{{ route('admin.interclubs.interclubs') }}" class="block text-xs text-center text-base-content/40 hover:text-base-content/70 transition-colors py-1">
-                        Voir tout →
-                    </a>
-                </div>
-                @endif
 
-                {{-- TOURNOIS & RÉUNIONS --}}
-                @if(count($upcomingInternalEvents) > 0)
-                <div class="space-y-2 pt-1">
-                    <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Événements</p>
-                    <div class="bg-base-100 rounded-xl border border-base-300 shadow-sm divide-y divide-base-200">
-                        @foreach($upcomingInternalEvents as $event)
-                        <div class="px-3 py-2.5">
-                            <p class="text-xs font-medium text-base-content leading-snug">{{ $event['label'] }}</p>
-                            <p class="text-xs text-base-content/40 mt-0.5">{{ $event['sub'] }}</p>
-                        </div>
-                        @endforeach
-                    </div>
+                    @if($block->seeAllRoute)
+                    <a href="{{ $block->seeAllRoute }}" class="block text-xs text-center text-base-content/40 hover:text-base-content/70 transition-colors py-1">
+                        {{ __('See all') }} →
+                    </a>
+                    @endif
+
                 </div>
-                @endif
+                @endforeach
 
             </div>
 

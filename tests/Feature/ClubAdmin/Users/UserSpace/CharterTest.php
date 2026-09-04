@@ -40,14 +40,6 @@ it('closes on the three values of the club', function (): void {
         ->assertSee(__('Solidarity'));
 });
 
-it('sends the bar chapter to the live price list rather than repeating prices', function (): void {
-    $user = User::factory()->create();
-
-    Livewire::actingAs($user)
-        ->test(CHARTER_COMPONENT, ['user' => $user])
-        ->assertSee(route('bar.index'));
-});
-
 it('redirects a guest to login', function (): void {
     $user = User::factory()->create();
 

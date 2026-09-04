@@ -13,6 +13,25 @@
         the two are deliberately kept apart so nobody mistakes one for the other.
     --}}
 
+    @if ($signature)
+        {{-- The engagement, given back to the member who took it --}}
+        <div class="mb-6 flex items-start gap-4 rounded-2xl border border-success/30 bg-success/10 p-5">
+            <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-success/20 text-success">
+                <x-icon name="o-check-badge" class="size-6" />
+            </span>
+            <div>
+                <p class="font-bold">
+                    {{ __('You signed this charter on :date', ['date' => $signature->signed_at->translatedFormat('j F Y')]) }}
+                </p>
+                @if ($signature->signed_by_user_id !== $user->id)
+                    <p class="mt-1 text-sm text-base-content/70">
+                        {{ __('Signed on your behalf by :name, who handles your affiliation.', ['name' => $signature->signedBy->first_name]) }}
+                    </p>
+                @endif
+            </div>
+        </div>
+    @endif
+
     {{-- Intro — why the charter exists at all --}}
     <div class="rounded-2xl border border-base-300 bg-primary/5 p-6 md:p-8">
         <div class="flex items-start gap-4">
@@ -31,85 +50,5 @@
         </div>
     </div>
 
-    {{-- Table of contents --}}
-    <nav class="mt-6 flex flex-wrap gap-2" aria-label="{{ __('Chapters') }}">
-        @foreach ($chapters as $chapter)
-            <a href="#{{ $chapter['anchor'] }}" class="btn btn-sm btn-ghost border border-base-300">
-                <x-icon :name="$chapter['icon']" class="size-4" />
-                {{ $chapter['title'] }}
-            </a>
-        @endforeach
-    </nav>
-
-    <div class="mt-6 space-y-5">
-        @foreach ($chapters as $index => $chapter)
-            <section id="{{ $chapter['anchor'] }}" class="scroll-mt-24 rounded-xl border border-base-300 bg-base-100 p-6">
-                <div class="flex items-center gap-3">
-                    <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        <x-icon :name="$chapter['icon']" class="size-5" />
-                    </span>
-                    <div>
-                        <p class="text-xs font-bold uppercase tracking-widest text-base-content/50">
-                            {{ __('Chapter :number', ['number' => $index + 1]) }}
-                        </p>
-                        <h2 class="text-xl font-bold">{{ $chapter['title'] }}</h2>
-                    </div>
-                </div>
-
-                {{-- The reason the chapter exists, set apart by the left accent bar --}}
-                <div class="mt-4 rounded-lg bg-base-200 p-4">
-                    <p class="text-xs font-bold uppercase tracking-wider text-base-content/60">
-                        {{ __('Why it matters') }}
-                    </p>
-                    <p class="mt-1 text-sm leading-relaxed text-base-content/80">{{ $chapter['why'] }}</p>
-                </div>
-
-                <div class="mt-5 grid gap-x-10 gap-y-5 md:grid-cols-2">
-                    @foreach ($chapter['groups'] as $group)
-                        <div>
-                            <h3 class="text-sm font-bold">{{ $group['title'] }}</h3>
-                            <ul class="mt-2 space-y-2 text-sm text-base-content/80">
-                                @foreach ($group['items'] as $item)
-                                    <li class="flex gap-2">
-                                        <x-icon name="o-check-circle" class="mt-0.5 size-4 shrink-0 text-primary" />
-                                        <span>{{ $item }}</span>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endforeach
-                </div>
-
-                @if (isset($chapter['action']))
-                    <x-button :label="$chapter['action']['label']" icon-right="o-arrow-right"
-                        :link="route($chapter['action']['route'])" class="btn-sm btn-outline mt-5" />
-                @endif
-            </section>
-        @endforeach
-    </div>
-
-    {{-- Closing statement — the three values the chapters all come back to --}}
-    <section class="mt-6 overflow-hidden rounded-2xl border border-base-300 bg-base-100">
-        <div class="h-1 bg-secondary"></div>
-        <div class="p-6 md:p-8">
-            <p class="text-xs font-bold uppercase tracking-widest text-base-content/50">{{ __('In summary') }}</p>
-            <h2 class="mt-1 text-xl font-bold">{{ __('This charter rests on three values') }}</h2>
-
-            <div class="mt-5 grid gap-4 sm:grid-cols-3">
-                @foreach ($values as $value)
-                    <div class="rounded-xl border border-base-300 p-5 text-center">
-                        <span class="mx-auto flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-                            <x-icon :name="$value['icon']" class="size-6" />
-                        </span>
-                        <h3 class="mt-3 font-bold">{{ $value['title'] }}</h3>
-                        <p class="mt-1 text-sm text-base-content/70">{{ $value['description'] }}</p>
-                    </div>
-                @endforeach
-            </div>
-
-            <p class="mt-6 text-center text-sm leading-relaxed text-base-content/70">
-                {{ __('Together, we create a place where it feels good to play, to train and to share our passion for table tennis.') }}
-            </p>
-        </div>
-    </section>
+    <x-club-charter :chapters="$chapters" :values="$values" />
 </div>

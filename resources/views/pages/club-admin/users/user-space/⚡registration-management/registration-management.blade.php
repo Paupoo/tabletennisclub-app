@@ -590,10 +590,37 @@
                                                 :label="__('I am willing to help as a volunteer')" />
                                         </div>
 
+                                        {{-- The charter gate. Read once per season: a
+                                             guardian does not re-read it for each child. --}}
+                                        @if ($charterAccepted)
+                                            <div class="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm">
+                                                <x-icon name="o-check-badge" class="size-5 shrink-0 text-success" />
+                                                <span>{{ __('You have signed the club charter.') }}</span>
+                                            </div>
+                                        @else
+                                            <div class="rounded-lg border border-base-300 bg-base-200 p-4">
+                                                <div class="flex items-start gap-3">
+                                                    <x-icon name="o-hand-raised" class="mt-0.5 size-5 shrink-0 text-primary" />
+                                                    <div>
+                                                        <p class="text-sm font-bold">{{ __('Before affiliating, read the club charter') }}</p>
+                                                        <p class="mt-1 text-sm text-base-content/70">
+                                                            {{ __('It is what we commit to towards one another. Signing it is part of joining the season.') }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <x-button
+                                                    :label="__('Read and sign the charter')"
+                                                    icon="o-book-open"
+                                                    class="btn-primary btn-sm mt-4"
+                                                    wire:click="$set('charterModal', true)" />
+                                            </div>
+                                        @endif
+
                                         <x-button
                                             :label="__('Submit my affiliation')"
                                             icon="o-paper-airplane"
                                             class="btn-primary"
+                                            :disabled="! $charterAccepted"
                                             wire:click="confirmAffiliation({{ $userId }})"
                                             spinner />
                                     </div>
@@ -801,6 +828,37 @@
         <x-slot:actions>
             <x-button :label="__('Cancel')" wire:click="$set('leavePackModal', false)" />
             <x-button class="btn-error" :label="__('Confirm')" spinner wire:click="leaveTrainingPackConfirmed" />
+        </x-slot:actions>
+    </x-app-modal>
+
+    {{--
+        The charter, in full, at the moment of committing to it.
+
+        No scroll lock on the checkbox: it sits at the end of the text, so
+        reaching it means scrolling past the six chapters. Disabling it until the
+        bottom is touched is fragile (dynamic heights, zoom, screen readers) and
+        punishes fast readers — friction, not a gate.
+    --}}
+    <x-app-modal wire:model="charterModal" :open="$charterModal" :title="__('Club charter')"
+        :subtitle="__('Read it, then commit to it')">
+        <div class="max-h-[60vh] overflow-y-auto pr-2">
+            <x-club-charter :chapters="$charterChapters" :values="$charterValues" :toc="false" />
+
+            <div class="mt-6 rounded-xl border border-primary/30 bg-primary/5 p-5">
+                <label class="flex cursor-pointer items-start gap-3">
+                    <input type="checkbox" wire:model.live="charterChecked"
+                        class="checkbox checkbox-primary mt-0.5 shrink-0" />
+                    <span class="text-sm font-bold">
+                        {{ __('I have read the club charter and I commit to its content.') }}
+                    </span>
+                </label>
+            </div>
+        </div>
+
+        <x-slot:actions>
+            <x-button :label="__('Close')" wire:click="closeCharterModal" />
+            <x-button class="btn-primary" :label="__('I sign')" icon="o-check"
+                :disabled="! $charterChecked" wire:click="signCharter" spinner />
         </x-slot:actions>
     </x-app-modal>
 

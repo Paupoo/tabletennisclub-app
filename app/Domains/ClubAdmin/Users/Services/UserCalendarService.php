@@ -297,7 +297,7 @@ class UserCalendarService
         }
 
         if ($showAllEvents) {
-            return Training::with(['trainingPack', 'room', 'trainer'])
+            return Training::with(['trainingPack.level', 'room', 'trainer'])
                 ->where('status', 'scheduled')
                 ->where('start', '>=', $from)
                 ->when($to, fn ($q) => $q->where('start', '<=', $to))
@@ -365,7 +365,7 @@ class UserCalendarService
             return collect();
         }
 
-        return Training::with(['trainingPack', 'room', 'trainer'])
+        return Training::with(['trainingPack.level', 'room', 'trainer'])
             ->whereIn('id', $sessionIds->unique())
             ->orderBy('start')
             ->get()

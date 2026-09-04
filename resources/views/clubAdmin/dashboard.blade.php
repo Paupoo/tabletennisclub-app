@@ -178,7 +178,7 @@
                                 @endif
                             </div>
                             @if($block->lead->badge)
-                            <span class="shrink-0 rounded-full border border-base-300 bg-base-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-base-content/70">{{ $block->lead->badge }}</span>
+                            <span class="shrink-0 rounded-full bg-base-200 px-2 py-0.5 text-xs font-semibold tabular-nums text-base-content/70">{{ $block->lead->badge }}</span>
                             @endif
                         </div>
                         @endif
@@ -192,7 +192,7 @@
                                 @endif
                             </div>
                             @if($row->badge)
-                            <span class="shrink-0 rounded-full border border-base-300 px-2 py-0.5 text-xs font-medium text-base-content/50">{{ $row->badge }}</span>
+                            <span class="shrink-0 text-xs text-base-content/40">{{ $row->badge }}</span>
                             @endif
                         </div>
                         @endforeach

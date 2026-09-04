@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Models\AppSetting;
 use App\Domains\Trainings\Models\TrainingPack;
 use Livewire\Livewire;
@@ -43,82 +45,68 @@ function activeSeasonForInterclub(array $seasonOverrides = []): Season
     return $season;
 }
 
-// ── Cas 1 : Interclub enabled + saison active ────────────────────────────────
+// ── Les interclubs sur la page publique ─────────────────────────────────────
 
 /*
- * La page d'accueil ne rend plus la ligne interclubs figée que ces cas
- * visaient : l'agenda daté annonce désormais chaque match à domicile par son
- * adversaire et sa date. Les réglages AppSetting ne survivent que pour une
- * chose — la mention « interclubs à domicile le vendredi » de la ligne « notre
- * rythme habituel ». C'est donc elle que ces cas vérifient.
+ * La page d'accueil n'affiche plus de ligne interclubs figée. Elle annonce les
+ * vrais matches à domicile, à leur date, dans la grille des activités.
  *
- * Deux réglages ne sont plus lus par la page publique : la description et le
- * lieu. Ils restent éditables depuis l'admin (cas 6 et 7 ci-dessous) et n'ont
- * plus d'assertion côté site.
+ * Les six réglages `interclub_schedule_*` n'ont donc plus aucun effet public :
+ * ils restent éditables depuis l'admin (cas 6 et 7 ci-dessous) mais ne
+ * pilotent plus rien sur le site. Les cas qui les vérifiaient côté public ont
+ * disparu avec leur sujet.
  */
 
-describe('interclub activé avec une saison active', function (): void {
-    it('mentionne les interclubs dans le rythme habituel', function (): void {
-        activeSeasonForInterclub();
+describe('interclubs sur la page publique', function (): void {
+    it('annonce un match à domicile à sa date', function (): void {
+        $season = activeSeasonForInterclub();
 
-        // defaults (no AppSetting rows) → enabled by default
-        $this->get('/')
-            ->assertOk()
-            ->assertSee('interclubs à domicile le vendredi');
+        $rival = Club::factory()->create(['is_own_club' => false, 'name' => 'Arc-en-Ciel CTT']);
+        $ourTeam = Team::factory()->create([
+            'club_id' => Club::ourClub()->value('id'), 'season_id' => $season->id, 'name' => 'A',
+        ]);
+        $theirTeam = Team::factory()->create([
+            'club_id' => $rival->id, 'season_id' => $season->id, 'name' => 'F',
+        ]);
+
+        Interclub::factory()->create([
+            'season_id' => $season->id,
+            'visited_team_id' => $ourTeam->id,
+            'visiting_team_id' => $theirTeam->id,
+            'start_date_time' => now()->addDays(3)->setTime(20, 0),
+            'is_bye' => false,
+        ]);
+
+        $this->get('/')->assertOk()->assertSee('Arc-en-Ciel');
     });
-});
 
-// ── Cas 2 : Interclub disabled ────────────────────────────────────────────────
+    it('tait un match joué à l\'extérieur', function (): void {
+        $season = activeSeasonForInterclub();
 
-describe('interclub désactivé', function (): void {
-    it("ne mentionne pas les interclubs quand la clé est '0'", function (): void {
-        activeSeasonForInterclub();
-        AppSetting::set('interclub_schedule_enabled', '0');
+        $rival = Club::factory()->create(['is_own_club' => false, 'name' => 'Nivelloise']);
+        $ourTeam = Team::factory()->create([
+            'club_id' => Club::ourClub()->value('id'), 'season_id' => $season->id, 'name' => 'A',
+        ]);
+        $theirTeam = Team::factory()->create([
+            'club_id' => $rival->id, 'season_id' => $season->id, 'name' => 'D',
+        ]);
 
-        $this->get('/')
-            ->assertOk()
-            ->assertDontSee('interclubs à domicile');
+        Interclub::factory()->create([
+            'season_id' => $season->id,
+            'visited_team_id' => $theirTeam->id,
+            'visiting_team_id' => $ourTeam->id,
+            'start_date_time' => now()->addDays(3)->setTime(20, 0),
+            'is_bye' => false,
+        ]);
+
+        $this->get('/')->assertOk()->assertDontSee('Nivelloise');
     });
-});
 
-// ── Cas 3 : Interclub enabled mais aucune saison ──────────────────────────────
-
-describe('interclub activé mais aucune saison', function (): void {
-    it("ne mentionne pas les interclubs quand il n'y a pas de saison", function (): void {
-        AppSetting::set('interclub_schedule_enabled', '1');
-
-        $this->get('/')
-            ->assertOk()
-            ->assertDontSee('interclubs à domicile');
-    });
-});
-
-// ── Cas 4 : Jour personnalisé ─────────────────────────────────────────────────
-
-describe('jour personnalisé', function (): void {
-    it('reprend un jour personnalisé "Samedi" dans le rythme', function (): void {
+    it('ne laisse plus les réglages interclubs peser sur la page publique', function (): void {
         activeSeasonForInterclub();
-        AppSetting::set('interclub_schedule_enabled', '1');
-        AppSetting::set('interclub_schedule_day', 'Samedi');
+        AppSetting::set('interclub_schedule_description', 'Matches de compétition à domicile');
 
-        $this->get('/')
-            ->assertOk()
-            ->assertSee('interclubs à domicile le samedi')
-            ->assertDontSee('interclubs à domicile le vendredi');
-    });
-});
-
-// ── Cas 5 : Heure personnalisée ───────────────────────────────────────────────
-
-describe('heure personnalisée', function (): void {
-    it("reprend l'heure de début personnalisée dans le rythme", function (): void {
-        activeSeasonForInterclub();
-        AppSetting::set('interclub_schedule_enabled', '1');
-        AppSetting::set('interclub_schedule_time_start', '18:00');
-
-        $this->get('/')
-            ->assertOk()
-            ->assertSee('18h00');
+        $this->get('/')->assertOk()->assertDontSee('Matches de compétition à domicile');
     });
 });
 

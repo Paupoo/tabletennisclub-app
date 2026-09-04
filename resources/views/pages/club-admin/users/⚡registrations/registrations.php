@@ -18,6 +18,7 @@ use App\Data\User\CreateUserData;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Subscriptions\Services\FamilyDiscount;
+use App\Domains\ClubAdmin\Users\Models\CharterSignature;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
@@ -842,6 +843,7 @@ new class extends Component
             ['key' => 'type', 'label' => __('Licence'), 'class' => 'hidden md:table-cell'],
             ['key' => 'trainings_count', 'label' => __('Training'), 'sortable' => false],
             ['key' => 'amount_due', 'label' => __('Amount'), 'sortable' => false],
+            ['key' => 'charter', 'label' => __('Charter'), 'sortable' => false, 'class' => 'hidden lg:table-cell'],
             ['key' => 'status', 'label' => __('Status')],
         ];
     }
@@ -1489,6 +1491,27 @@ new class extends Component
         $this->success(__('Payment invitation sent to :email.', ['email' => $recipient]));
     }
 
+    /**
+     * Members who signed the charter for the season being listed.
+     *
+     * Read once per render and reused by every row: a per-row lookup would be a
+     * query per member, and the roster is the longest table in the back office.
+     *
+     * @return array<int, int>
+     */
+    #[Computed]
+    public function signedUserIds(): array
+    {
+        if ($this->selectedSeasonId === null) {
+            return [];
+        }
+
+        return CharterSignature::query()
+            ->where('season_id', $this->selectedSeasonId)
+            ->pluck('user_id')
+            ->all();
+    }
+
     #[Computed]
     public function subscriptionToCancel(): ?Subscription
     {
@@ -1823,6 +1846,9 @@ new class extends Component
                     'status' => $p->status,
                 ])->values()->toArray(),
                 'payment_status' => $sub->payments->sortByDesc('created_at')->first()?->status,
+                // Affiliations created here, or through the legacy endpoint, carry
+                // no signature: the member was not at the screen to give one.
+                'charter_signed' => in_array($sub->user_id, $this->signedUserIds, true),
             ];
         })($sub);
     }

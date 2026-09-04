@@ -63,6 +63,12 @@
         :title="__('Rules & regulations')"
     />
 
+    <x-menu-item
+        icon="o-hand-raised"
+        link="{{ route('admin.user.charter', auth()->user()) }}"
+        :title="__('Club charter')"
+    />
+
     @feature('help_centre')
     <x-menu-item
         icon="o-question-mark-circle"

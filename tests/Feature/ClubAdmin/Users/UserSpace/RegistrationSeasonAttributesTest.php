@@ -26,6 +26,8 @@ describe('Registration management — season attributes', function (): void {
 
         Livewire::actingAs($user)
             ->test('pages::club-admin.users.user-space.registration-management', ['user' => $user])
+            ->set('charterChecked', true)
+            ->call('signCharter')
             ->set("registrations.{$user->id}.formula", 'competitive')
             ->set("registrations.{$user->id}.can_drive", true)
             ->set("registrations.{$user->id}.seats_available", 3)
@@ -54,6 +56,8 @@ describe('Registration management — season attributes', function (): void {
 
         Livewire::actingAs($user)
             ->test('pages::club-admin.users.user-space.registration-management', ['user' => $user])
+            ->set('charterChecked', true)
+            ->call('signCharter')
             ->call('confirmAffiliation', $user->id);
 
         $subscription = Subscription::where('user_id', $user->id)
@@ -75,6 +79,8 @@ describe('Registration management — season attributes', function (): void {
 
         Livewire::actingAs($user)
             ->test('pages::club-admin.users.user-space.registration-management', ['user' => $user])
+            ->set('charterChecked', true)
+            ->call('signCharter')
             ->set("registrations.{$user->id}.can_drive", true)
             ->set("registrations.{$user->id}.seats_available", 4)
             ->set("registrations.{$user->id}.can_drive", false)

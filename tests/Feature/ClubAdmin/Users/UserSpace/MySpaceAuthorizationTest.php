@@ -29,6 +29,7 @@ $mySpaceRoutes = [
     'admin.user.event-subscription',
     'admin.user.registration-management',
     'admin.user.reglement',
+    'admin.user.charter',
     'admin.user.directory',
     'admin.user.payments',
 ];

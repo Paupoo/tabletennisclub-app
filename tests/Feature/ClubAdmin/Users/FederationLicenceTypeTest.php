@@ -63,6 +63,8 @@ describe('what the federation says a member plays', function (): void {
 
         Livewire::actingAs($member)
             ->test('pages::club-admin.users.user-space.registration-management', ['user' => $member])
+            ->set('charterChecked', true)
+            ->call('signCharter')
             ->set("registrations.{$member->id}.formula", 'recreative')
             ->call('confirmAffiliation', $member->id);
 

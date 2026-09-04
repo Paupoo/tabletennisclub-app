@@ -9,6 +9,7 @@ use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Actions\User\StoreUserDocumentAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\CharterSignature;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -17,6 +18,7 @@ use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Services\TrainingPackProrata;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use App\Support\ClubCharter;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -31,6 +33,25 @@ new class extends Component
     public bool $cancelAffiliationModal = false;
 
     public int $cancelAffiliationUserId = 0;
+
+    /**
+     * Whether the signed-in account has committed to the charter this season.
+     *
+     * One signature covers every member of the family group they affiliate: the
+     * modal is read once, not once per child. Seeded from an existing signature
+     * so a member who already signed is never asked twice.
+     */
+    public bool $charterAccepted = false;
+
+    /**
+     * The checkbox inside the modal, kept apart from `$charterAccepted`.
+     *
+     * Ticking a box is not signing: the commitment is only taken when the member
+     * presses the button, and closing the modal half-way undoes the tick.
+     */
+    public bool $charterChecked = false;
+
+    public bool $charterModal = false;
 
     /** @var array<int, array<string, mixed>> */
     public array $existingSubscriptions = [];
@@ -156,6 +177,23 @@ new class extends Component
         $this->warning(__('Your affiliation request has been cancelled.'));
     }
 
+    /**
+     * Take the commitment, from the modal that showed the whole text.
+     *
+     * Nothing is written yet: the signature rows are created member by member as
+     * each affiliation is submitted, so a charter read but never followed by an
+     * affiliation leaves no trace of an engagement that was never taken.
+     */
+    /**
+     * Leaving without signing undoes the tick: a half-read charter must not look
+     * signed the next time the modal opens.
+     */
+    public function closeCharterModal(): void
+    {
+        $this->charterModal = false;
+        $this->charterChecked = $this->charterAccepted;
+    }
+
     // ──────────────────────────────────────────────────────────────────────────
     // Affiliation
     // ──────────────────────────────────────────────────────────────────────────
@@ -176,6 +214,14 @@ new class extends Component
 
         $reg = $this->registrations[$userId] ?? null;
         if (! $reg) {
+            return;
+        }
+
+        // The gate lives here and not only in the blade: a disabled button is a
+        // hint, not a rule.
+        if (! $this->charterAccepted) {
+            $this->error(__('Please read and sign the club charter first.'));
+
             return;
         }
 
@@ -210,6 +256,10 @@ new class extends Component
 
             $subscription->trainingPacks()->attach($attachData);
         }
+
+        // Recorded per affiliated member, but signed by whoever ticked the box:
+        // a guardian's single reading covers the family group they affiliate.
+        CharterSignature::sign($user, $season, $this->user);
 
         $subscription->load('season');
         $user->notify(new SubscriptionCreatedNotification($subscription));
@@ -374,6 +424,13 @@ new class extends Component
         }
 
         $this->selectedTab = 'tab-' . $this->user->id;
+
+        $season = Season::current();
+        $this->charterAccepted = $season instanceof Season && CharterSignature::query()
+            ->where('user_id', $this->user->id)
+            ->where('season_id', $season->id)
+            ->exists();
+        $this->charterChecked = $this->charterAccepted;
     }
 
     public function openPaymentModal(int $userId, int $paymentId): void
@@ -396,6 +453,18 @@ new class extends Component
             'qr_code' => (new GeneratePaymentQR)($payment),
         ];
         $this->paymentModal = true;
+    }
+
+    public function signCharter(): void
+    {
+        if (! $this->charterChecked) {
+            return;
+        }
+
+        $this->charterAccepted = true;
+        $this->charterModal = false;
+
+        $this->success(__('Thank you. Your commitment will be recorded with your affiliation.'));
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -572,6 +641,8 @@ new class extends Component
             'subscriptionHistory' => $subscriptionHistory,
             'availablePacks' => $availablePacks,
             'breadcrumbs' => $this->getBreadcrumbs(),
+            'charterChapters' => ClubCharter::chapters(),
+            'charterValues' => ClubCharter::values(),
         ];
     }
 

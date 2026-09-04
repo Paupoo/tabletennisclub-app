@@ -8,14 +8,15 @@ use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
-use App\Domains\Shared\Models\AppSetting;
-use App\Domains\Trainings\Models\TrainingPack;
+use App\Services\PublicAgendaService;
 use App\Support\Captcha;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 
 class HomeController extends Controller
 {
+    public function __construct(private readonly PublicAgendaService $agenda) {}
+
     public function index(): View
     {
         $sponsors = [
@@ -29,10 +30,6 @@ class HomeController extends Controller
             ->take(3)
             ->get();
 
-        $dayNames = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
-        $dayOrder = ['Lundi' => 1, 'Mardi' => 2, 'Mercredi' => 3, 'Jeudi' => 4, 'Vendredi' => 5, 'Samedi' => 6, 'Dimanche' => 7];
-        $schedules = [];
-
         /** @var array{type: string, season_name: string, season_start: Carbon|null}|null */
         $scheduleContext = null;
 
@@ -40,59 +37,9 @@ class HomeController extends Controller
 
         if ($season !== null) {
             $scheduleContext = $this->buildScheduleContext($season);
-
-            TrainingPack::with(['trainer', 'room', 'level'])
-                ->where('season_id', $season->id)
-                ->where('is_active', true)
-                ->whereNotNull('day_of_week')
-                ->where(fn ($q) => $q->whereNull('pack_end_date')->orWhere('pack_end_date', '>=', today()))
-                ->orderBy('day_of_week')
-                ->orderBy('start_time')
-                ->get()
-                ->each(function (TrainingPack $pack) use (&$schedules, $dayNames): void {
-                    $start = Carbon::parse($pack->start_time);
-                    $end = $start->copy()->addMinutes($pack->duration_minutes);
-
-                    // Strip day prefix ("Lundi — ") from pack name for display
-                    $activity = preg_replace('/^(Lundi|Mardi|Mercredi|Jeudi|Vendredi|Samedi|Dimanche)\s+—\s+/', '', $pack->name);
-
-                    $schedules[] = [
-                        'day' => $dayNames[$pack->day_of_week],
-                        'time' => $start->format('G\hi') . ' – ' . $end->format('G\hi'),
-                        'activity' => $activity,
-                        'location' => $pack->room->name,
-                        'level' => $pack->level?->label ?? '—',
-                        'coach' => $pack->trainer ? $pack->trainer->first_name . ' ' . $pack->trainer->last_name : null,
-                        'capacity' => $pack->max_participants,
-                        'description' => $pack->description,
-                        'price' => (float) $pack->price,
-                        'is_open_enrollment' => $pack->is_open_enrollment,
-                        'type' => $pack->type->value,
-                    ];
-                });
         }
 
-        if ($season !== null && AppSetting::get('interclub_schedule_enabled', '1') === '1') {
-            $day = AppSetting::get('interclub_schedule_day', 'Vendredi');
-            $timeStart = AppSetting::get('interclub_schedule_time_start', '19:00');
-            $timeEnd = AppSetting::get('interclub_schedule_time_end', '23:30');
-
-            $schedules[] = [
-                'day' => $day,
-                'time' => $timeStart . ' – ' . $timeEnd,
-                'activity' => 'Interclubs',
-                'location' => AppSetting::get('interclub_schedule_location', 'Demeester (0 et -1)'),
-                'level' => null,
-                'coach' => null,
-                'capacity' => null,
-                'description' => AppSetting::get('interclub_schedule_description', 'Matches de compétition à domicile. Venez nous supporter !'),
-                'price' => null,
-                'is_open_enrollment' => true,
-                'type' => 'match',
-            ];
-        }
-
-        usort($schedules, fn (array $a, array $b): int => $dayOrder[$a['day']] <=> $dayOrder[$b['day']]);
+        $agenda = $this->agenda->forHomepage($season);
 
         // Clean d'un éventuel ancien captcha en session pour éviter un brute force sur le captcha
         session()->forget(['captcha', 'captcha_created_at']);
@@ -111,7 +58,7 @@ class HomeController extends Controller
             ->orderBy('event_date')
             ->get();
 
-        return view('public.home', compact('sponsors', 'articles', 'schedules', 'scheduleContext', 'club', 'featuredEvents'));
+        return view('public.home', compact('sponsors', 'articles', 'agenda', 'scheduleContext', 'club', 'featuredEvents'));
     }
 
     /**

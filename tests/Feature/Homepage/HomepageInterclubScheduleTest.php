@@ -45,79 +45,80 @@ function activeSeasonForInterclub(array $seasonOverrides = []): Season
 
 // ── Cas 1 : Interclub enabled + saison active ────────────────────────────────
 
+/*
+ * La page d'accueil ne rend plus la ligne interclubs figée que ces cas
+ * visaient : l'agenda daté annonce désormais chaque match à domicile par son
+ * adversaire et sa date. Les réglages AppSetting ne survivent que pour une
+ * chose — la mention « interclubs à domicile le vendredi » de la ligne « notre
+ * rythme habituel ». C'est donc elle que ces cas vérifient.
+ *
+ * Deux réglages ne sont plus lus par la page publique : la description et le
+ * lieu. Ils restent éditables depuis l'admin (cas 6 et 7 ci-dessous) et n'ont
+ * plus d'assertion côté site.
+ */
+
 describe('interclub activé avec une saison active', function (): void {
-    it('affiche la description des Interclubs dans le calendrier', function (): void {
+    it('mentionne les interclubs dans le rythme habituel', function (): void {
         activeSeasonForInterclub();
 
         // defaults (no AppSetting rows) → enabled by default
         $this->get('/')
             ->assertOk()
-            ->assertSee('Matches de compétition à domicile');
-    });
-
-    it('affiche le jour par défaut "Vendredi" avec la description interclub', function (): void {
-        activeSeasonForInterclub();
-
-        // The default schedule entry for Interclubs should be on Vendredi
-        // Checking description is more specific than the activity label (which also appears in legend)
-        $this->get('/')
-            ->assertOk()
-            ->assertSee('Matches de compétition à domicile');
+            ->assertSee('interclubs à domicile le vendredi');
     });
 });
 
 // ── Cas 2 : Interclub disabled ────────────────────────────────────────────────
 
 describe('interclub désactivé', function (): void {
-    it("n'affiche pas la description des Interclubs quand la clé est '0'", function (): void {
+    it("ne mentionne pas les interclubs quand la clé est '0'", function (): void {
         activeSeasonForInterclub();
         AppSetting::set('interclub_schedule_enabled', '0');
 
         $this->get('/')
             ->assertOk()
-            ->assertDontSee('Matches de compétition à domicile');
+            ->assertDontSee('interclubs à domicile');
     });
 });
 
 // ── Cas 3 : Interclub enabled mais aucune saison ──────────────────────────────
 
 describe('interclub activé mais aucune saison', function (): void {
-    it("n'affiche pas la description des Interclubs quand il n'y a pas de saison", function (): void {
+    it("ne mentionne pas les interclubs quand il n'y a pas de saison", function (): void {
         AppSetting::set('interclub_schedule_enabled', '1');
 
         $this->get('/')
             ->assertOk()
-            ->assertDontSee('Matches de compétition à domicile');
+            ->assertDontSee('interclubs à domicile');
     });
 });
 
 // ── Cas 4 : Jour personnalisé ─────────────────────────────────────────────────
 
 describe('jour personnalisé', function (): void {
-    it('affiche la description interclub avec un jour personnalisé "Samedi"', function (): void {
+    it('reprend un jour personnalisé "Samedi" dans le rythme', function (): void {
         activeSeasonForInterclub();
         AppSetting::set('interclub_schedule_enabled', '1');
         AppSetting::set('interclub_schedule_day', 'Samedi');
-        AppSetting::set('interclub_schedule_description', 'Matches interclubs le samedi');
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Matches interclubs le samedi');
+            ->assertSee('interclubs à domicile le samedi')
+            ->assertDontSee('interclubs à domicile le vendredi');
     });
 });
 
 // ── Cas 5 : Heure personnalisée ───────────────────────────────────────────────
 
 describe('heure personnalisée', function (): void {
-    it('affiche les heures personnalisées dans le schedule', function (): void {
+    it("reprend l'heure de début personnalisée dans le rythme", function (): void {
         activeSeasonForInterclub();
         AppSetting::set('interclub_schedule_enabled', '1');
         AppSetting::set('interclub_schedule_time_start', '18:00');
-        AppSetting::set('interclub_schedule_time_end', '22:00');
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('18:00 – 22:00');
+            ->assertSee('18h00');
     });
 });
 

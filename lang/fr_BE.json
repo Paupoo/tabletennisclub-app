@@ -4456,5 +4456,17 @@
     "I sign": "Je signe",
     "Charter": "Charte",
     "Signed": "Signée",
-    "Not signed": "Non signée"
+    "Not signed": "Non signée",
+    "Already up to date": "Déjà à jour",
+    "Update anyway": "Mettre à jour quand même",
+    "Will be updated": "Sera mis à jour",
+    "Ignore the :count undecided line(s)": "Ignorer les :count ligne(s) indécise(s)",
+    "Ignore them all": "Tout ignorer",
+    "Restore the proposed actions": "Rétablir les actions proposées",
+    "Update them all": "Tout mettre à jour",
+    "Write nothing": "Ne rien écrire",
+    "Leave alone": "Laisser tel quel",
+    "Postcode": "Code postal",
+    "Locality": "Localité",
+    "Left as it is, the address is not written and the club keeps the one it holds.": "Laissée telle quelle, l'adresse n'est pas écrite et le club garde celle qu'il détient."
 }

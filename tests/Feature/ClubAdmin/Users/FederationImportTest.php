@@ -690,3 +690,91 @@ describe('re-importing a member the club already holds', function (): void {
         expect($member->fresh()->member_import_id)->toBeNull();
     });
 });
+
+/*
+ * Two silences that used to be counted as one. A club that was already up to date
+ * and a secretary who set a hundred and fifty people aside read the same in the
+ * roster and not at all the same in a history that outlives the file.
+ */
+describe('the lines the listing had nothing to say about', function (): void {
+
+    it('writes nothing at all, not even a date', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+
+        $member = User::factory()->create([
+            'licence' => '166036',
+            'ranking' => Ranking::C2,
+            'federation_licence_type' => 'JO',
+            'federation_synced_at' => CarbonImmutable::parse('2025-08-14 10:00:00'),
+        ]);
+
+        $before = $member->fresh();
+
+        $import = ImportFederationMembersAction::handle([
+            new ImportLine(
+                row: federationRow(),
+                action: ImportLineAction::UNCHANGED,
+                existingUserId: $member->id,
+            ),
+        ], $secretary);
+
+        $after = $member->fresh();
+
+        expect($after->updated_at->format('Y-m-d H:i:s'))->toBe($before->updated_at->format('Y-m-d H:i:s'))
+            ->and($after->federation_synced_at->format('Y-m-d H:i:s'))->toBe('2025-08-14 10:00:00')
+            ->and($after->member_import_id)->toBe($before->member_import_id)
+            ->and($import->unchanged_count)->toBe(1)
+            ->and($import->updated_count)->toBe(0);
+    });
+
+    it('counts an affiliate left alone apart from one set aside', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+
+        $member = User::factory()->create(['licence' => '166036']);
+
+        $import = ImportFederationMembersAction::handle([
+            new ImportLine(
+                row: federationRow(['lineNumber' => 2]),
+                action: ImportLineAction::UNCHANGED,
+                existingUserId: $member->id,
+            ),
+            new ImportLine(
+                row: federationRow(['lineNumber' => 3, 'licence' => '166037', 'email' => 'other@example.com']),
+                action: ImportLineAction::SKIP,
+            ),
+        ], $secretary);
+
+        expect($import->unchanged_count)->toBe(1)
+            ->and($import->skipped_count)->toBe(1)
+            ->and($import->new_count)->toBe(0)
+            ->and($import->updated_count)->toBe(0);
+    });
+
+    /*
+     * A member left alone is not a member the run brought in: the guardian wiring
+     * runs over every line, and an unchanged one has no member to hang anything on.
+     */
+    it('leaves the guardians it did not touch exactly as they were', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+
+        $member = User::factory()->create(['licence' => '166036']);
+
+        ImportFederationMembersAction::handle([
+            new ImportLine(
+                row: federationRow(['birthdate' => CarbonImmutable::parse('2014-02-08')]),
+                action: ImportLineAction::UNCHANGED,
+                existingUserId: $member->id,
+                externalGuardian: true,
+                guardianFirstName: 'Olivier',
+                guardianLastName: 'Cartiaux',
+                guardianEmail: 'olivier.cartiaux@example.com',
+            ),
+        ], $secretary);
+
+        expect(Guardian::query()->count())->toBe(0)
+            ->and($member->fresh()->guardians()->count())->toBe(0);
+    });
+});

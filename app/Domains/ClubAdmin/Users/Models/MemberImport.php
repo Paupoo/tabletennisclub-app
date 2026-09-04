@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property int $new_count
  * @property int $updated_count
+ * @property int $unchanged_count
  * @property int $skipped_count
  * @property int $error_count
  * @property array<int, array{line: int, reason: string}>|null $failed_rows
@@ -43,6 +44,7 @@ class MemberImport extends Model
         'user_id',
         'new_count',
         'updated_count',
+        'unchanged_count',
         'skipped_count',
         'error_count',
         'failed_rows',

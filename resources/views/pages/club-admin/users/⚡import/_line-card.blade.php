@@ -33,9 +33,27 @@
                 @endif
             </p>
             <p class="truncate opacity-70">{{ $row['email'] ?? __('No address') }}</p>
-            <p class="truncate text-xs text-muted">
-                {{ collect([$row['street'], $row['cityCode'], $row['cityName']])->filter()->join(' · ') }}
-            </p>
+            {{-- Read-only until the parser doubts it. A badge saying "check the
+                 address" over a line nobody can act on is a dead end, and the
+                 shifted export is precisely the case where the club's own
+                 address is the better one. --}}
+            @if ($row['needsAddressReview'])
+                <div class="flex flex-col gap-1 sm:flex-row">
+                    <x-input wire:model.live.blur="rows.{{ $line }}.street" class="input-xs"
+                        :label="__('Street')" />
+                    <x-input wire:model.live.blur="rows.{{ $line }}.cityCode" class="input-xs"
+                        :label="__('Postcode')" />
+                    <x-input wire:model.live.blur="rows.{{ $line }}.cityName" class="input-xs"
+                        :label="__('Locality')" />
+                </div>
+                <p class="text-xs text-warning">
+                    {{ __('Left as it is, the address is not written and the club keeps the one it holds.') }}
+                </p>
+            @else
+                <p class="truncate text-xs text-muted">
+                    {{ collect([$row['street'], $row['cityCode'], $row['cityName']])->filter()->join(' · ') }}
+                </p>
+            @endif
         </div>
 
         {{-- What the roster answered --}}

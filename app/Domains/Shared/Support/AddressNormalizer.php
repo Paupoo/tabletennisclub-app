@@ -54,6 +54,29 @@ class AddressNormalizer
      * Idempotent: the review screen shows the result before it is written, and
      * the model mutator casts the same value again on the way in.
      */
+    /**
+     * Whether these three fields look like they were shifted by a dropped cell.
+     *
+     * The postal code is the tell: Belgian codes are four digits, so a town name
+     * sitting in that column means the address columns moved one to the left. A
+     * missing locality on a line that does carry a street says the same thing.
+     *
+     * Asked twice about the same address: once of the export, and again of
+     * whatever the reviewer typed in its place — a correction is only a
+     * correction if it satisfies the rule that rejected the original.
+     */
+    public static function looksShifted(?string $street, ?string $cityCode, ?string $cityName): bool
+    {
+        if ($street === null || trim($street) === '') {
+            return false;
+        }
+
+        return $cityCode === null
+            || preg_match('/^\d{4}$/', trim($cityCode)) !== 1
+            || $cityName === null
+            || trim($cityName) === '';
+    }
+
     public static function titleCase(?string $value): ?string
     {
         if ($value === null) {

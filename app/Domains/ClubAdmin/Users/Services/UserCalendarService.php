@@ -22,6 +22,15 @@ use Illuminate\Support\Collection;
  * Aggregates every upcoming club activity relevant to a member (tournaments,
  * training sessions, meetings, interclub matches) into one normalized event
  * list. Feeds both the "My calendar" page and the personal ICS feed.
+ *
+ * Three keys exist for the ICS feed rather than for the page:
+ *
+ * - `sourceId`   id of the row the event comes from. The feed builds its UID on
+ *                it, so an event keeps its identity when it moves or is renamed.
+ * - `updatedAt`  feeds SEQUENCE and LAST-MODIFIED: how a subscriber's agenda
+ *                tells an update from a brand new event.
+ * - `endDateTime` real end, when the source knows one. Without it the feed can
+ *                only guess a duration.
  */
 class UserCalendarService
 {
@@ -75,6 +84,8 @@ class UserCalendarService
             'startDateTime' => $ic->start_date_time->format('Y-m-d H:i:s'),
             'title' => ($ourTeam?->name ?? '') . ' vs ' . $opponent,
             'type' => 'interclub',
+            'sourceId' => $ic->id,
+            'updatedAt' => $ic->updated_at?->format('Y-m-d H:i:s'),
             'isHome' => $isHome,
             'opponent' => $opponent,
             'teamName' => $ourTeam?->name ?? '—',
@@ -143,9 +154,12 @@ class UserCalendarService
     {
         return [
             'startDateTime' => $meeting->scheduled_at->format('Y-m-d H:i:s'),
+            'endDateTime' => $meeting->ends_at?->format('Y-m-d H:i:s'),
             'title' => $meeting->title,
             'type' => 'meeting',
             'meetingId' => $meeting->id,
+            'sourceId' => $meeting->id,
+            'updatedAt' => $meeting->updated_at?->format('Y-m-d H:i:s'),
             'format' => $meeting->format->value,
             'location' => $meeting->location,
             'meetingLink' => $meeting->meeting_link,
@@ -189,9 +203,12 @@ class UserCalendarService
         return [
             'startDateTime' => $tournament->startsAt()?->format('Y-m-d H:i:s'),
             'endDate' => $tournament->end_date?->format('Y-m-d'),
+            'endDateTime' => $tournament->end_date?->format('Y-m-d H:i:s'),
             'title' => $tournament->name,
             'type' => 'tournament',
             'tournamentId' => $tournament->id,
+            'sourceId' => $tournament->id,
+            'updatedAt' => $tournament->updated_at?->format('Y-m-d H:i:s'),
             'registrationStatus' => $registration?->registration_status,
             'waitlistPosition' => $registration?->waitlist_position,
             'confirmDeadline' => $registration?->confirmation_deadline?->format('Y-m-d H:i:s'),
@@ -255,8 +272,11 @@ class UserCalendarService
         $row = [
             'startDateTime' => $session->start->format('Y-m-d H:i:s'),
             'endTime' => $session->end?->format('H:i'),
+            'endDateTime' => $session->end?->format('Y-m-d H:i:s'),
             'title' => $session->trainingPack?->name ?? __('Training'),
             'type' => 'training',
+            'sourceId' => $session->id,
+            'updatedAt' => $session->updated_at?->format('Y-m-d H:i:s'),
             'room' => $session->room?->name,
             'level' => $session->trainingPack?->level?->label,
             'coach' => $session->trainer

@@ -8,7 +8,6 @@ use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
 use App\Http\Controllers\ClubAdmin\DashboardController;
-use App\Http\Controllers\ClubAdmin\Users\UserCalendarFeedController;
 use App\Http\Controllers\ClubAdmin\Users\UserDocumentController;
 use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
@@ -69,11 +68,9 @@ Route::post('/contact', [ContactController::class, 'store'])
 |
 */
 
-// Personal ICS feed — no session auth: Google/Apple Calendar poll it server-side.
-// The permanent signature in the URL is the secret; 'signed' rejects any tampering.
-Route::get('admin/my-space/{user}/calendar.ics', UserCalendarFeedController::class)
-    ->middleware('signed')
-    ->name('admin.user.calendar.ics');
+// Le flux ICS personnel (admin.user.calendar.ics) est déclaré dans
+// bootstrap/app.php : il vit hors du groupe `web`, parce qu'un fichier lu par
+// une machine n'a besoin ni de session, ni de cookie, ni de jeton CSRF.
 
 Route::prefix('admin/my-space/')
     ->middleware(['auth', 'verified'])

@@ -1757,6 +1757,7 @@
     "Add this personal link to Google Calendar or Apple Calendar to see all your club activities (matches, trainings, tournaments, meetings) update automatically.": "Ajoutez ce lien personnel à Google Calendar ou Apple Calendar pour voir toutes vos activités du club (matchs, entraînements, tournois, réunions) se mettre à jour automatiquement.",
     "Settings → Add calendar → From URL, then paste the link.": "Paramètres → Ajouter un agenda → À partir d'une URL, puis collez le lien.",
     "File → New Calendar Subscription, then paste the link.": "Fichier → Nouvel abonnement à un calendrier, puis collez le lien.",
+    "Changes can take up to 24 h to appear in your calendar.": "Les modifications peuvent prendre jusqu’à 24 h avant d’apparaître dans votre agenda.",
     "Keep this link private: anyone who has it can read your club schedule.": "Gardez ce lien privé : toute personne qui le possède peut consulter votre agenda du club.",
     "CTT Ottignies-Blocry — :name": "CTT Ottignies-Blocry — :name",
     ":count available|:count available": ":count disponible|:count disponibles",

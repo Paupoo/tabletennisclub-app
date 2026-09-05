@@ -126,6 +126,6 @@ class BarController extends Controller
 
     private function sanitizedCart(): array
     {
-        return array_filter(array_map('intval', session()->get('cart', [])), fn (int $qty): bool => $qty > 0);
+        return array_filter(array_map(intval(...), session()->get('cart', [])), fn (int $qty): bool => $qty > 0);
     }
 }

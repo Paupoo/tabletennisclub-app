@@ -20,7 +20,7 @@ Trois familles cohabitent, et une seule décide :
 
 Accès sans restriction à toute l'application.
 
-Détient les 60 permissions. Accordées explicitement plutôt que
+Détient les 65 permissions. Accordées explicitement plutôt que
 par un court-circuit `Gate::before`, car certaines policies encodent des règles qui
 doivent survivre à un administrateur — il ne peut toujours pas supprimer son propre
 compte.
@@ -58,9 +58,16 @@ Attribue les délégations et le siège au comité. N'ouvre pas la fiche du memb
 Gérer le bar : produits, stock, commandes et feuille de caisse.
 
 - `bar.access`
-- `bar.products.manage`
+
+### Barman — `barman`
+
+Servir les boissons et collations, fermer les commandes et reprendre celles d'autres.
+
+- `bar.access`
 - `bar.orders.manage`
-- `bar.cash_sheet.send`
+- `bar.orders.close`
+- `bar.orders.pay`
+- `bar.orders.takeover`
 
 ### Caisse — `caisse`
 
@@ -147,6 +154,15 @@ Composer les sélections (un capitaine, uniquement pour ses équipes).
 - `interclubs.view`
 - `selections.manage`
 
+### Magasinier — `storekeeper`
+
+Gérer le stock, les produits et les catégories.
+
+- `bar.access`
+- `bar.categories.manage`
+- `bar.products.manage`
+- `bar.stock.manage`
+
 ### Supervision technique — `supervision`
 
 Consulter le journal d'audit, surveiller la file d'attente, modifier les réglages du club.
@@ -213,6 +229,7 @@ est une situation légitime.
 
 Aucune délégation ne les porte : elles ne peuvent pas être confiées.
 
+- `bar.cash_sheet.send`
 - `users.anonymize`
 - `users.delete`
 

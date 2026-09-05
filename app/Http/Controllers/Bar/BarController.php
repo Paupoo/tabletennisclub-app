@@ -15,11 +15,6 @@ use Illuminate\View\View;
 
 class BarController extends Controller
 {
-    /**
-     * Must stay in sync with the front-end limit used in bar/index.blade.php.
-     */
-    // private const MAX_QTY_PER_PRODUCT = 20;
-
     public function add(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -27,9 +22,7 @@ class BarController extends Controller
         ]);
 
         $id = $validated['product_id'];
-
         $product = BarProduct::findOrFail($id);
-
         if (! $product->is_available) {
             return back()->with('error', 'Produit indisponible.');
         }
@@ -45,10 +38,6 @@ class BarController extends Controller
             return back()->with('error', 'Stock maximum atteint pour ce produit.');
         }
 
-        // if($currentQty >= self::MAX_QTY_PER_PRODUCT) {
-        //     return back()->with('error', 'Quantité maximale atteinte pour ce produit.');
-        // }
-
         $cart[$id] = $currentQty + 1;
 
         session()->put('cart', $cart);
@@ -58,12 +47,9 @@ class BarController extends Controller
 
     public function index(): View
     {
-        // lighter query (no stockMovements)
         $categories = BarCategory::with(['products' => function ($q): void {
             $q->orderBy('name');
-        }])
-            ->orderBy('name')
-            ->get();
+        }])->orderBy('name')->get();
 
         $cart = $this->sanitizedCart();
         $cartCount = array_sum($cart);
@@ -96,8 +82,8 @@ class BarController extends Controller
 
         $favorites = BarProduct::whereIn('id', $favoriteProductIds)
             ->get()
-            ->filter(fn(BarProduct $product): bool => (bool) $product->is_available && (int) $product->stock > 0)
-            ->sortBy(fn(BarProduct $product): int => $favoriteRank[$product->id] ?? PHP_INT_MAX)
+            ->filter(fn (BarProduct $product): bool => (bool) $product->is_available && (int) $product->stock > 0)
+            ->sortBy(fn (BarProduct $product): int => $favoriteRank[$product->id] ?? PHP_INT_MAX)
             ->values();
 
         return view('bar.index', compact(
@@ -116,7 +102,6 @@ class BarController extends Controller
         ]);
 
         $id = $validated['product_id'];
-
         $cart = $this->sanitizedCart();
 
         if (isset($cart[$id])) {
@@ -139,17 +124,8 @@ class BarController extends Controller
         return view('bar.cart');
     }
 
-    /**
-     * Cart as stored in session, cleaned of non-positive / non-integer
-     * quantities. Centralized here so add()/remove()/index() can't drift.
-     *
-     * @return array<int, int>
-     */
     private function sanitizedCart(): array
     {
-        return array_filter(
-            array_map(intval(...), session()->get('cart', [])),
-            fn (int $qty): bool => $qty > 0
-        );
+        return array_filter(array_map('intval', session()->get('cart', [])), fn (int $qty): bool => $qty > 0);
     }
 }

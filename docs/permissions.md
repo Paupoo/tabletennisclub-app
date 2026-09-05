@@ -69,15 +69,6 @@ Servir les boissons et collations, fermer les commandes et reprendre celles d'au
 - `bar.orders.pay`
 - `bar.orders.takeover`
 
-### Magasinier — `storekeeper`
-
-Gérer le stock, les produits et les catégories.
-
-- `bar.access`
-- `bar.categories.manage`
-- `bar.products.manage`
-- `bar.stock.manage`
-
 ### Caisse — `caisse`
 
 Détenir la caisse, l'équilibrer et enregistrer les mouvements.
@@ -162,6 +153,15 @@ Composer les sélections (un capitaine, uniquement pour ses équipes).
 
 - `interclubs.view`
 - `selections.manage`
+
+### Magasinier — `storekeeper`
+
+Gérer le stock, les produits et les catégories.
+
+- `bar.access`
+- `bar.categories.manage`
+- `bar.products.manage`
+- `bar.stock.manage`
 
 ### Supervision technique — `supervision`
 

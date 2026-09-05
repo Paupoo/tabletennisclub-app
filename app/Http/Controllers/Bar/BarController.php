@@ -59,7 +59,7 @@ class BarController extends Controller
     public function index(): View
     {
         // lighter query (no stockMovements)
-        $categories = BarCategory::with(['products' => function ($q) {
+        $categories = BarCategory::with(['products' => function ($q): void {
             $q->orderBy('name');
         }])
             ->orderBy('name')
@@ -96,12 +96,8 @@ class BarController extends Controller
 
         $favorites = BarProduct::whereIn('id', $favoriteProductIds)
             ->get()
-            ->filter(function (BarProduct $product): bool {
-                return (bool) $product->is_available && (int) $product->stock > 0;
-            })
-            ->sortBy(function (BarProduct $product) use ($favoriteRank): int {
-                return $favoriteRank[$product->id] ?? PHP_INT_MAX;
-            })
+            ->filter(fn(BarProduct $product): bool => (bool) $product->is_available && (int) $product->stock > 0)
+            ->sortBy(fn(BarProduct $product): int => $favoriteRank[$product->id] ?? PHP_INT_MAX)
             ->values();
 
         return view('bar.index', compact(
@@ -152,8 +148,8 @@ class BarController extends Controller
     private function sanitizedCart(): array
     {
         return array_filter(
-            array_map('intval', session()->get('cart', [])),
-            fn ($qty) => $qty > 0
+            array_map(intval(...), session()->get('cart', [])),
+            fn (int $qty): bool => $qty > 0
         );
     }
 }

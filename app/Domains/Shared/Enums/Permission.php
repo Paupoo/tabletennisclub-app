@@ -29,16 +29,16 @@ enum Permission: string
     // Bar
     case BarAccess = 'bar.access';
     case BarCashSheetSend = 'bar.cash_sheet.send';
+    case BarCategoriesManage = 'bar.categories.manage';
+    case BarOrdersClose = 'bar.orders.close';
     case BarOrdersManage = 'bar.orders.manage';
+    case BarOrdersPay = 'bar.orders.pay';
+    case BarOrdersTakeover = 'bar.orders.takeover';
     case BarProductsManage = 'bar.products.manage';
+    case BarStockManage = 'bar.stock.manage';
     case CashRegisterEntryCreate = 'cash_register.entry.create';
     case CashRegisterHolderChange = 'cash_register.holder.change';
     case CashRegisterManage = 'cash_register.manage';
-    case BarCategoriesManage = 'bar.categories.manage';
-    case BarOrdersClose = 'bar.orders.close';
-    case BarOrdersPay = 'bar.orders.pay';
-    case BarOrdersTakeover = 'bar.orders.takeover';
-    case BarStockManage = 'bar.stock.manage';
 
     // Caisse
     case CashRegisterView = 'cash_register.view';

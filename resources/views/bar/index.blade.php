@@ -86,7 +86,9 @@
         <div class="accordion-body">
             <div class="products-grid">
                 @foreach($favorites as $product)
-                    @php($meta = $resolveProductMeta($product))
+                    @php
+                        $meta = $resolveProductMeta($product)
+                    @endphp
 
                     <div class="product-card">
                         <div class="product-card-top">
@@ -124,7 +126,9 @@
         <div class="accordion-body">
 
             @forelse ($category->products as $product)
-                @php($meta = $resolveProductMeta($product))
+                @php
+                    $meta = $resolveProductMeta($product)
+                @endphp
 
                 <div @class(['product-row', 'product-row--unavailable' => $meta->isUnavailable])>
 

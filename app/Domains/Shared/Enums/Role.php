@@ -30,7 +30,6 @@ enum Role: string
     case ADMINISTRATOR = 'administrateur';
     case BAR = 'bar';
     case BARMAN = 'barman';
-    case STORE_KEEPER = 'storekeeper';
     case CASH_REGISTER = 'caisse';
     case COACH = 'coach';
     case COMMITTEE = 'comite';
@@ -42,6 +41,7 @@ enum Role: string
     case MEMBERS = 'membres';
     case SEASONS = 'saisons';
     case SELECTIONS = 'selections';
+    case STORE_KEEPER = 'storekeeper';
     case SUPERVISION = 'supervision';
     case TOURNAMENTS = 'tournois';
     case TRAININGS = 'entrainements';

@@ -16,15 +16,18 @@ class BarCartService
 
     private const string ACTION_VALIDATE = 'validate';
 
-    public function __construct(
-        private readonly StockService $stockService,
-    ) {}
+    private readonly StockService $stockService;
+
+    public function __construct(StockService $stockService)
+    {
+        $this->stockService = $stockService;
+    }
 
     public function addProductToSessionCart(int $productId): array
     {
         $product = BarProduct::query()->findOrFail($productId);
 
-        if (! $product->is_available) {
+        if(! $product->is_available) {
             return [
                 'status' => 'error',
                 'message' => 'Ce produit n\'est plus disponible.',
@@ -34,7 +37,7 @@ class BarCartService
         $cart = $this->getSanitizedCart();
         $currentQty = (int) ($cart[$productId] ?? 0);
 
-        if ($currentQty >= (int) $product->stock) {
+        if($currentQty >= (int) $product->stock) {
             return [
                 'status' => 'error',
                 'message' => sprintf('Stock insuffisant pour %s.', $product->name),
@@ -52,19 +55,19 @@ class BarCartService
 
     public function checkoutFromSessionCart(string $action): BarOrder
     {
-        if (! in_array($action, [self::ACTION_VALIDATE, self::ACTION_PAY_NOW], true)) {
+        if(! in_array($action, [self::ACTION_VALIDATE, self::ACTION_PAY_NOW], true)) {
             throw new \RuntimeException('Action de validation invalide.');
         }
 
         $cart = $this->getSanitizedCart();
 
-        if ($cart === []) {
+        if($cart === []) {
             throw new \RuntimeException('Le panier est vide.');
         }
 
         $userId = auth()->id();
 
-        if (! is_int($userId)) {
+        if(! is_int($userId)) {
             throw new \RuntimeException('Utilisateur non authentifié.');
         }
 
@@ -83,7 +86,7 @@ class BarCartService
             foreach ($cart as $productId => $qty) {
                 $product = $products->get($productId);
 
-                if (! $product instanceof BarProduct) {
+                if(! $product instanceof BarProduct) {
                     throw new \RuntimeException(sprintf('Produit introuvable (ID %d).', $productId));
                 }
 
@@ -161,13 +164,13 @@ class BarCartService
     {
         $cart = $this->getSanitizedCart();
 
-        if (! isset($cart[$productId])) {
+        if(! isset($cart[$productId])) {
             return;
         }
 
         $cart[$productId]--;
 
-        if ($cart[$productId] <= 0) {
+        if($cart[$productId] <= 0) {
             unset($cart[$productId]);
         }
 
@@ -184,20 +187,20 @@ class BarCartService
 
     private function validateProductStock(BarProduct $product, int $qty): void
     {
-        if (! $product->is_available) {
+        if(! $product->is_available) {
             throw new \RuntimeException(sprintf('Le produit %s n\'est plus disponible.', $product->name));
         }
 
         $availableStock = max(0, (int) $product->stock);
 
-        if ($qty > $availableStock) {
+        if($qty > $availableStock) {
             throw new \RuntimeException(sprintf('Stock insuffisant pour %s.', $product->name));
         }
     }
 
     private function loadOrCreateDraftOrder($orderId, int $userId): BarOrder
     {
-        if (! $orderId) {
+        if(! $orderId) {
             return BarOrder::query()->create([
                 'total_price' => 0,
                 'created_by' => $userId,
@@ -210,15 +213,15 @@ class BarCartService
             ->lockForUpdate()
             ->find($orderId);
 
-        if (! $order instanceof BarOrder) {
+        if(! $order instanceof BarOrder) {
             throw new \RuntimeException('La commande à modifier est introuvable.');
         }
 
-        if ((int) $order->created_by !== $userId) {
+        if((int) $order->created_by !== $userId) {
             throw new \RuntimeException("Vous n'êtes pas autorisé à modifier cette commande.");
         }
 
-        if ((bool) $order->is_paid) {
+        if((bool) $order->is_paid) {
             throw new \RuntimeException('Impossible de modifier une commande déjà payée.');
         }
 

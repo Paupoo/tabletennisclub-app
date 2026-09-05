@@ -30,7 +30,7 @@ class BarController extends Controller
 
         $product = BarProduct::findOrFail($id);
 
-        if (! $product->is_available) {
+        if(! $product->is_available) {
             return back()->with('error', 'Produit indisponible.');
         }
 
@@ -41,11 +41,11 @@ class BarController extends Controller
         // Server-side enforcement of the same limits the UI disables the
         // "+" button for. The UI state can be bypassed, so this must not
         // rely on the button being disabled.
-        if ($currentQty >= $stock) {
+        if($currentQty >= $stock) {
             return back()->with('error', 'Stock maximum atteint pour ce produit.');
         }
 
-        // if ($currentQty >= self::MAX_QTY_PER_PRODUCT) {
+        // if($currentQty >= self::MAX_QTY_PER_PRODUCT) {
         //     return back()->with('error', 'Quantité maximale atteinte pour ce produit.');
         // }
 
@@ -122,10 +122,10 @@ class BarController extends Controller
 
         $cart = $this->sanitizedCart();
 
-        if (isset($cart[$id])) {
+        if(isset($cart[$id])) {
             $cart[$id]--;
 
-            if ($cart[$id] <= 0) {
+            if($cart[$id] <= 0) {
                 unset($cart[$id]);
             }
 

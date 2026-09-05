@@ -296,14 +296,13 @@ enum Role: string
                 Permission::BarOrdersClose,
                 Permission::BarOrdersPay,
                 Permission::BarOrdersTakeover,
-                ],
+            ],
             self::STORE_KEEPER => [
                 Permission::BarAccess,
                 Permission::BarCategoriesManage,
                 Permission::BarProductsManage,
                 Permission::BarStockManage,
-                ],
-
+            ],
             self::FACILITIES => [
                 Permission::RoomsManage,
                 Permission::TablesManage,

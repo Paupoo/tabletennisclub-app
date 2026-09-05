@@ -152,7 +152,7 @@ class BarController extends Controller
     {
         return array_filter(
             array_map('intval', session()->get('cart', [])),
-            fn ($qty) => $qty > 0
+            fn($qty) => $qty > 0
         );
     }
 }

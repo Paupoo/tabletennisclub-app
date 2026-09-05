@@ -34,7 +34,6 @@ enum Permission: string
     case CashRegisterEntryCreate = 'cash_register.entry.create';
     case CashRegisterHolderChange = 'cash_register.holder.change';
     case CashRegisterManage = 'cash_register.manage';
-    
     case BarCategoriesManage = 'bar.categories.manage';
     case BarOrdersClose = 'bar.orders.close';
     case BarOrdersPay = 'bar.orders.pay';

@@ -17,7 +17,7 @@ class BarCartService
     private const string ACTION_VALIDATE = 'validate';
 
     public function __construct(
-        private readonly StockService $stockService
+        private readonly StockService $stockService,
     ) {}
 
     public function addProductToSessionCart(int $productId): array

@@ -18,6 +18,17 @@ class MeetingFactory extends Factory
 {
     protected $model = Meeting::class;
 
+    public function cancelled(): static
+    {
+        $scheduledAt = fake()->dateTimeBetween('+1 week', '+3 months');
+
+        return $this->state([
+            'status' => MeetingStatusEnum::CANCELLED,
+            'scheduled_at' => $scheduledAt,
+            'ends_at' => (clone $scheduledAt)->modify('+2 hours'),
+        ]);
+    }
+
     public function committee(): static
     {
         return $this->state(['type' => MeetingTypeEnum::COMMITTEE]);

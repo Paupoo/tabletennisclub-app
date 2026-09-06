@@ -1,4 +1,10 @@
 @props([
+    // Une seule chaîne dit à la fois « annulé » et « pourquoi » : la carte n'a
+    // jamais à afficher l'un sans l'autre, et un booléen séparé se serait
+    // désynchronisé du texte. Le ton distingue ce qui reste possible (la salle
+    // ouverte en jeu libre) de ce qui ne l'est plus (la salle fermée).
+    'cancellationReason' => null,
+    'cancellationTone' => 'error',
     'endTime' => null,
     'link' => '#',
     'location',
@@ -21,6 +27,8 @@
     ];
 
     $borderClass = $colors[$type] ?? 'border-base-300';
+
+    $isCancelled = filled($cancellationReason);
 
     // Un événement sans page de détail reste un simple bloc : pas de lien mort.
     $isLink = filled($link) && $link !== '#';
@@ -51,11 +59,11 @@
         </div>
 
         <div class="min-w-0">
-            <p class="text-sm font-semibold leading-tight">{{ $name }}</p>
+            <p @class(['text-sm font-semibold leading-tight', 'line-through opacity-60' => $isCancelled])>{{ $name }}</p>
             <p class="flex flex-wrap items-center gap-1 text-xs opacity-60">
                 {{-- On affiche toujours l'heure --}}
                 <x-icon class="h-3 w-3" name="o-clock" />
-                    {{ $date->format('H:i') }}{{ $endTime ? '–' . $endTime : '' }}
+                    <span @class(['line-through' => $isCancelled])>{{ $date->format('H:i') }}{{ $endTime ? '–' . $endTime : '' }}</span>
 
                 {{-- On ajoute le lieu s'il existe --}}
                 @isset($location)
@@ -75,6 +83,21 @@
                     <x-icon class="h-3 w-3" name="o-users" /> {{ $remainingSlots }} {{ __('slots left') }}
                 @endisset
             </p>
+
+            {{--
+                La raison passe sous le titre, pas dans les actions : c'est ce
+                qui remplace la séance, pas une commande à son sujet. Un membre
+                qui balaie son panneau du jour doit la lire sans la chercher.
+            --}}
+            @if ($isCancelled)
+                <p @class([
+                    'mt-0.5 text-xs font-semibold',
+                    'text-warning' => $cancellationTone === 'warning',
+                    'text-error' => $cancellationTone !== 'warning',
+                ])>
+                    {{ $cancellationReason }}
+                </p>
+            @endif
         </div>
     </div>
 

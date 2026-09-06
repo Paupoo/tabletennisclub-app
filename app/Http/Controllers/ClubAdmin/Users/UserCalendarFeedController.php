@@ -54,6 +54,18 @@ class UserCalendarFeedController extends Controller
             $lines[] = 'SUMMARY:' . $this->escape($event['title']);
             $lines[] = 'CATEGORIES:' . $this->escape(strtoupper($event['type']));
 
+            // A cancelled activity used to vanish from the feed, which a
+            // subscribed agenda reads as a deletion: the member's phone showed
+            // nothing at all, with no reason and no trace. STATUS:CANCELLED is
+            // what RFC 5545 has for this. Be aware that Google and Apple hide
+            // such events in a subscription, so for most members the visible
+            // result is unchanged — the fix that reaches their eyes is the
+            // calendar screen. What this buys is a feed that stops lying:
+            // "cancelled" instead of "never existed".
+            if (! empty($event['isCancelled'])) {
+                $lines[] = 'STATUS:CANCELLED';
+            }
+
             if ($location) {
                 $lines[] = 'LOCATION:' . $this->escape($location);
             }

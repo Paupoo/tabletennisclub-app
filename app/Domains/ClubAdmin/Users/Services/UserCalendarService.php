@@ -13,6 +13,7 @@ use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
+use App\Domains\Shared\Enums\TrainingCancellationType;
 use App\Domains\Trainings\Models\Training;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -164,12 +165,19 @@ class UserCalendarService
             'location' => $meeting->location,
             'meetingLink' => $meeting->meeting_link,
             'registrationStatus' => $meeting->users->first()?->registration?->status?->value,
+            'isCancelled' => $meeting->status === MeetingStatusEnum::CANCELLED,
+            'cancellationNote' => $meeting->cancellation_note,
             'monthKey' => $meeting->scheduled_at->translatedFormat('F Y'),
         ];
     }
 
     /**
-     * The meetings on the member's calendar.
+     * The meetings on the member's calendar, cancellations included.
+     *
+     * A cancelled meeting stays listed for the same reason a cancelled session
+     * does: removing it hides the news instead of delivering it. The other
+     * statuses stay out — `planning` has not been announced, `completed` is
+     * over, and a `postponed` meeting comes back with its new date.
      *
      * `visibleTo()` matters most in "all club events" mode: browsing the club's
      * whole calendar must not turn the committee's agenda into public reading,
@@ -180,7 +188,10 @@ class UserCalendarService
      */
     private function meetings(User $user, bool $showAllEvents, CarbonInterface $from, ?CarbonInterface $to): Collection
     {
-        $meetingsQuery = Meeting::whereIn('status', [MeetingStatusEnum::CONFIRMED->value])
+        $meetingsQuery = Meeting::whereIn('status', [
+            MeetingStatusEnum::CONFIRMED->value,
+            MeetingStatusEnum::CANCELLED->value,
+        ])
             ->visibleTo($user)
             ->where('scheduled_at', '>=', $from)
             ->when($to, fn ($q) => $q->where('scheduled_at', '<=', $to));
@@ -291,6 +302,14 @@ class UserCalendarService
                 ? trim($session->trainer->first_name . ' ' . $session->trainer->last_name)
                 : null,
             'registrationStatus' => null,
+            // `isCancelled` is the key every event type answers, so the view
+            // asks one question; `roomStaysOpen` carries the nuance only a
+            // training has — the room staying open is not the room being shut.
+            // The view gets a boolean rather than the enum: it has no business
+            // knowing how a cancellation is spelled in the database.
+            'isCancelled' => $session->isCancelled(),
+            'roomStaysOpen' => $session->cancellationType() === TrainingCancellationType::FREE,
+            'cancellationNote' => $session->cancellation_note,
         ];
 
         // `monthKey` reste la dernière clé des deux formes, comme avant
@@ -314,6 +333,14 @@ class UserCalendarService
     }
 
     /**
+     * The training sessions on the member's calendar, cancellations included.
+     *
+     * The four queries below used to filter on `status = 'scheduled'`, so a
+     * session called off left no trace: it did not show up struck through, it
+     * simply stopped existing. The member was told by mail — unless they had
+     * turned mail off — and their calendar, the thing they actually check,
+     * said nothing. They travelled to an empty room.
+     *
      * @return Collection<int, array<string, mixed>>
      */
     private function trainingSessions(User $user, bool $showAllEvents, CarbonInterface $from, ?CarbonInterface $to): Collection
@@ -326,7 +353,6 @@ class UserCalendarService
 
         if ($showAllEvents) {
             return Training::with(['trainingPack.level', 'room', 'trainer'])
-                ->where('status', 'scheduled')
                 ->where('start', '>=', $from)
                 ->when($to, fn ($q) => $q->where('start', '<=', $to))
                 ->orderBy('start')
@@ -366,7 +392,6 @@ class UserCalendarService
         if ($enrolledPackIds->isNotEmpty()) {
             $sessionIds = $sessionIds->merge(
                 Training::whereIn('training_pack_id', $enrolledPackIds)
-                    ->where('status', 'scheduled')
                     ->where('start', '>=', $from)
                     ->when($to, fn ($q) => $q->where('start', '<=', $to))
                     ->pluck('id')
@@ -375,7 +400,6 @@ class UserCalendarService
 
         $sessionIds = $sessionIds->merge(
             Training::where('trainer_id', $user->id)
-                ->where('status', 'scheduled')
                 ->where('start', '>=', $from)
                 ->when($to, fn ($q) => $q->where('start', '<=', $to))
                 ->pluck('id')
@@ -383,7 +407,6 @@ class UserCalendarService
 
         $sessionIds = $sessionIds->merge(
             $user->trainings()
-                ->where('trainings.status', 'scheduled')
                 ->where('trainings.start', '>=', $from)
                 ->when($to, fn ($q) => $q->where('trainings.start', '<=', $to))
                 ->pluck('trainings.id')

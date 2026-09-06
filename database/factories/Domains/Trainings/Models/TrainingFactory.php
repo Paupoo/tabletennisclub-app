@@ -20,6 +20,15 @@ class TrainingFactory extends Factory
 {
     protected $model = Training::class;
 
+    /** Séance annulée, salle inaccessible. */
+    public function cancelledClosed(): self
+    {
+        return $this->state(fn (): array => [
+            'status' => 'cancelled_closed',
+            'cancelled_at' => CarbonImmutable::now(),
+        ]);
+    }
+
     /** Séance annulée, salle laissée ouverte en libre. */
     public function cancelledFree(): self
     {

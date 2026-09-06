@@ -1,131 +1,129 @@
-@extends('bar.layout')
+@php
+    use App\Support\Breadcrumb;
 
-@section('content')
+    $trail = Breadcrumb::make()->home()->bar()->current('Historique')->toArray();
+@endphp
 
-<div class="page-header">
-    <h1>📜 Historique des commandes</h1>
-</div>
+<x-app-layout>
+    <x-slot:breadcrumbs>
+        <x-breadcrumbs :items="$trail" separator="o-slash" />
+    </x-slot:breadcrumbs>
 
-{{-- FILTERS --}}
+    <div class="space-y-4">
 
-<div class="panel" style="margin:14px;">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight">Historique</h1>
+            <p class="text-muted mt-1">Toutes les commandes, filtrées par période et par statut.</p>
+        </div>
 
-    {{-- PERIOD --}}
-    <div>
-        <strong>Période :</strong>
+        {{-- Filtres --}}
+        <x-card class="shadow-sm">
+            <div class="space-y-2.5">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-muted w-16 text-xs font-bold uppercase tracking-widest">Période</span>
+                    @foreach ($periodLabels as $key => $label)
+                        <a href="{{ route('bar.orders.history', ['period' => $key, 'status' => $status ?? 'all']) }}"
+                            @class([
+                                'btn btn-sm rounded-full tap-min',
+                                'btn-primary' => (string) $key === (string) ($period ?? 'today'),
+                                'btn-outline' => (string) $key !== (string) ($period ?? 'today'),
+                            ])>
+                            {{ $label }}
+                        </a>
+                    @endforeach
+                </div>
 
-        @foreach ($periodLabels as $k => $label)
-            <a href="{{ route('bar.orders.history', ['period' => $k, 'status' => $status ?? 'all']) }}"
-               class="chip {{ (string)$k === (string)($period ?? 'today') ? 'chip--active' : '' }}">
-                {{ $label }}
-            </a>
-        @endforeach
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-muted w-16 text-xs font-bold uppercase tracking-widest">Statut</span>
+                    @foreach ($statusLabels as $key => $label)
+                        <a href="{{ route('bar.orders.history', ['period' => $period ?? 'today', 'status' => $key]) }}"
+                            @class([
+                                'btn btn-sm rounded-full tap-min',
+                                'btn-primary' => $key === ($status ?? 'all'),
+                                'btn-outline' => $key !== ($status ?? 'all'),
+                            ])>
+                            {{ $label }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        </x-card>
+
+        {{-- Chiffres de la période --}}
+        <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <x-admin.shared.stat-card label="Commandes" :value="$orderCount" icon="o-archive-box" color="primary" />
+            <x-admin.shared.stat-card label="Encaissé" :value="euros($totalRevenue)" icon="o-banknotes" color="success" />
+            <x-admin.shared.stat-card label="Impayé" :value="euros($totalRevenueUnpaid)" icon="o-exclamation-triangle" color="warning" />
+            <x-admin.shared.stat-card label="Offert" :value="euros($totalRevenueOffered)" icon="o-gift" />
+        </div>
+
+        {{-- Détail --}}
+        <x-card class="shadow-sm">
+            <h2 class="text-muted mb-3 text-xs font-bold uppercase tracking-widest">Détail des commandes</h2>
+
+            @if (empty($orders) || $orders->isEmpty())
+                <p class="text-muted py-6 text-center text-sm">Aucune commande pour les filtres sélectionnés.</p>
+            @else
+                <div class="overflow-x-auto">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Commande</th>
+                                <th>Articles</th>
+                                <th class="text-end">Total</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach ($orders as $order)
+                                <tr>
+                                    <td class="align-top">
+                                        <span class="font-bold tabular-nums">#{{ $order->id }}</span>
+                                        <p class="text-subtle text-xs tabular-nums">{{ $order->created_at->format('d/m/Y') }}</p>
+                                    </td>
+
+                                    <td class="align-top">
+                                        @forelse ($order->items as $item)
+                                            <div class="text-xs">{{ $item->product->name }} × {{ $item->quantity }}</div>
+                                        @empty
+                                            <span class="text-subtle text-xs">Aucun article</span>
+                                        @endforelse
+                                    </td>
+
+                                    <td class="text-end align-top font-bold tabular-nums">{{ euros($order->total_price) }}</td>
+
+                                    <td class="align-top">
+                                        @if ($order->payment_method === 'offered')
+                                            <span class="badge badge-sm badge-ghost font-bold">Offert</span>
+                                            @if ($order->reason)
+                                                <p class="text-subtle mt-1 text-xs">{{ $order->reason }}</p>
+                                            @endif
+                                        @elseif ($order->is_paid)
+                                            <span class="badge badge-sm badge-success badge-soft font-bold">
+                                                Payé{{ $order->payment_method ? ' · ' . $order->payment_method : '' }}
+                                            </span>
+                                        @else
+                                            <span class="badge badge-sm badge-error badge-soft font-bold">Non payé</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+
+                        <tfoot>
+                            <tr class="bg-base-200">
+                                <td colspan="2" class="font-bold">Total de la période</td>
+                                <td class="text-end font-black tabular-nums">
+                                    {{ euros($totalRevenue + $totalRevenueUnpaid) }}
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            @endif
+        </x-card>
+
     </div>
-
-    {{-- STATUS --}}
-    <div style="margin-top:10px;">
-        <strong>Statut :</strong>
-
-        @foreach ($statusLabels as $k => $label)
-            <a href="{{ route('bar.orders.history', ['period' => $period ?? '7', 'status' => $k]) }}"
-               class="chip {{ $k === ($status ?? 'all') ? 'chip--active' : '' }}">
-                {{ $label }}
-            </a>
-        @endforeach
-    </div>
-
-</div>
-<div class="kpis">
-    <div class="kpi-card">
-        <div class="kpi-label">📦 Commandes :</div>
-        <div class="kpi-value">{{ $orderCount }}</div>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-label">💰 Payés :</div>
-        <div class="kpi-value">{{ euros($totalRevenue) }}</div>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-label">🚫 Non payés :</div>
-        <div class="kpi-value">{{ euros($totalRevenueUnpaid) }}</div>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-label">🎁 Offerts :</div>
-        <div class="kpi-value">{{ euros($totalRevenueOffered) }}</div>
-    </div>
-</div>
-{{-- ORDERS LIST --}}
-<section class="panel" style="margin: 14px;">
-
-    <div class="table-title">Historique des commandes</div>
-
-    @if(empty($orders) || $orders->isEmpty())
-        <p class="muted">Aucune commande pour les filtres sélectionnés.</p>
-    @else
-    <div class="table-wrap">
-        <table class="hist-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Articles</th>
-                    <th>Total</th>
-                    <th>Payé</th>
-                    <th>Raison</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                @foreach($orders as $order)
-                    <tr>
-                        <td class="col-id">#{{ $order->id }}
-                            <p class="muted" style="font-size:0.9em;">
-                                {{ $order->created_at->format('d/m/Y') }}
-                            </p>
-                        </td>
-
-                        <td class="col-items">
-                            @if($order->items->isEmpty())
-                                (Aucun article)
-                            @else
-                                    @foreach($order->items as $item)
-                                        <div class="itemline">
-                                            {{ $item->product->name }}
-                                            x {{ $item->quantity }}
-                                        </div>
-                                    @endforeach
-                            @endif
-                        </td>
-
-                        <td class="col-total"><b>{{ euros($order->total_price) }}</b></td>
-
-                        <td class="col-flag">
-                            @if($order->payment_method === 'offered')
-                                <span class="flag flag--neutral">🎁 Offert</span>
-                            @elseif($order->is_paid)
-                                <span class="flag flag--ok">💳 Payé</span>
-                            @else
-                                <span class="flag flag--warn">❌ Non payé</span>
-                            @endif
-                        </td>
-                        <td class="col-reason">
-                            @if($order->payment_method === 'offered' && $order->reason)
-                            🎁 {{ $order->reason }}
-                            @else
-                            -
-                            @endif
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-            <tfoot style="background-color: black;">
-                <tr>
-                    <td colspan="2"><strong>Total</strong></td>
-                    <td><strong>{{ euros($totalRevenue + $totalRevenueUnpaid) }}</strong></td>
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
-        @endif
-    </div>
-</section>
-
-@endsection
+</x-app-layout>

@@ -72,6 +72,15 @@
             'interclub'  => 'bg-primary',
             'meeting'    => 'bg-warning',
         ];
+        // Pastille d'un événement annulé : un anneau de la couleur du type, pas
+        // un fond. Deux utilitaires `bg-*` sur la même pastille se départageraient
+        // par l'ordre du CSS compilé, pas par celui écrit ici.
+        $typeRingClasses = [
+            'training'   => 'ring-accent',
+            'tournament' => 'ring-secondary',
+            'interclub'  => 'ring-primary',
+            'meeting'    => 'ring-warning',
+        ];
         $typeChipClasses = [
             'training'   => 'border-accent bg-accent/10',
             'tournament' => 'border-secondary bg-secondary/20',
@@ -205,9 +214,16 @@
                                 {{-- Mobile : pastilles --}}
                                 <span class="flex h-3 items-center justify-center gap-0.5 lg:hidden">
                                     @foreach (array_slice($day['events'], 0, 3) as $event)
+                                        {{--
+                                            Une pastille de 6 px ne peut pas être barrée : l'annulation
+                                            se lit au creux. La couleur du type est conservée, en anneau
+                                            plutôt qu'en fond, pour que le jour reste identifiable.
+                                        --}}
                                         <span @class([
                                             'h-1.5 w-1.5 rounded-full',
-                                            $typeDotClasses[$event['type']] ?? 'bg-base-300',
+                                            ($event['isCancelled'] ?? false)
+                                                ? 'ring-1 ' . ($typeRingClasses[$event['type']] ?? 'ring-base-300')
+                                                : ($typeDotClasses[$event['type']] ?? 'bg-base-300'),
                                             'text-muted' => $day['isPast'],
                                         ])></span>
                                     @endforeach
@@ -222,6 +238,7 @@
                                         <span @class([
                                             'block truncate rounded border-l-[3px] px-1 py-0.5 text-left text-xs font-medium leading-tight',
                                             $typeChipClasses[$event['type']] ?? 'border-base-300 bg-base-200',
+                                            'line-through opacity-50' => $event['isCancelled'] ?? false,
                                             'text-muted' => $day['isPast'],
                                         ])>
                                             @if (($event['dayIndex'] ?? 1) > 1)
@@ -288,6 +305,17 @@
                             $isWaiting     = $regStatus === 'waiting';
                             $isTraining    = $event['type'] === 'training';
                             $isInterclub   = $event['type'] === 'interclub';
+                            $isCancelled   = $event['isCancelled'] ?? false;
+                            // Mêmes mots que l'agenda public : le membre lit la
+                            // même phrase sur le site et dans son espace.
+                            $roomStaysOpen = $event['roomStaysOpen'] ?? false;
+                            $cancellationReason = match (true) {
+                                ! $isCancelled => null,
+                                $isTraining => ($roomStaysOpen ? __('Room open for free play') : __('Room closed'))
+                                    . ($event['cancellationNote'] ?? null ? ' · ' . $event['cancellationNote'] : ''),
+                                default => __('Cancelled')
+                                    . ($event['cancellationNote'] ?? null ? ' · ' . $event['cancellationNote'] : ''),
+                            };
                             // Un tournoi auquel on est inscrit mène à sa page joueur :
                             // le jour J, c'est par le calendrier qu'on le cherche.
                             $myTournament  = $event['type'] === 'tournament'
@@ -307,6 +335,8 @@
                             }"
                             :location="$isInterclub ? $event['address'] : ($event['room'] ?? '')"
                             :organizer="$isTraining && ! empty($event['coach']) ? $event['coach'] : null"
+                            :cancellationReason="$cancellationReason"
+                            :cancellationTone="$roomStaysOpen ? 'warning' : 'error'"
                         >
                             <x-slot:actions>
                                 @if (($event['dayIndex'] ?? 1) > 1)
@@ -372,7 +402,9 @@
                                     <x-admin.shared.status-badge status="registered" />
                                 @elseif ($isWaiting)
                                     <x-admin.shared.status-badge status="waiting" :detail="$event['waitlistPosition'] ?? null" />
-                                @else
+                                @elseif (! $isCancelled)
+                                    {{-- Proposer de s'inscrire à ce qui vient d'être annulé serait la
+                                         seule chose pire que de le cacher. --}}
                                     <a class="btn btn-primary btn-outline btn-xs"
                                         href="{{ route('admin.user.event-subscription', $user) }}">
                                         {{ __('Register') }}

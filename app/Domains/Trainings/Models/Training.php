@@ -107,6 +107,23 @@ class Training extends Model
         ]);
     }
 
+    /**
+     * How the session was called off, or null while it holds.
+     *
+     * The inverse of {@see self::cancel()}: it reads back the enum that was
+     * written as a status string. Every screen that shows a cancellation needs
+     * the distinction — the room staying open is not the same news as the room
+     * being shut — so the mapping belongs here rather than once per reader.
+     */
+    public function cancellationType(): ?TrainingCancellationType
+    {
+        return match ($this->status) {
+            'cancelled_free' => TrainingCancellationType::FREE,
+            'cancelled_closed' => TrainingCancellationType::CLOSED,
+            default => null,
+        };
+    }
+
     public function isCancelled(): bool
     {
         return $this->status !== 'scheduled';

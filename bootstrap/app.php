@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Http\Controllers\ClubAdmin\Users\UserCalendarFeedController;
 use App\Http\Middleware\CommitteeMemberMiddelware;
 use App\Http\Middleware\EnsureAnyPermission;
 use App\Http\Middleware\EnsureFeatureIsEnabled;
@@ -18,6 +19,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Exceptions\InvalidSignatureException;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -41,6 +43,17 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->prefix('bar')
                 ->name('bar.')
                 ->group(base_path('routes/bar.php'));
+
+            /*
+             * Flux ICS personnel du membre. Sondé par les agendas, jamais par
+             * un navigateur connecté : il ne prend du groupe `web` que la
+             * résolution du `{user}`, et laisse tomber session, cookies et
+             * CSRF. La signature permanente de l'URL est le secret, et le
+             * débit est borné parce que l'URL est publique.
+             */
+            Route::middleware(['signed', SubstituteBindings::class, 'throttle:60,1'])
+                ->get('admin/my-space/{user}/calendar.ics', UserCalendarFeedController::class)
+                ->name('admin.user.calendar.ics');
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {

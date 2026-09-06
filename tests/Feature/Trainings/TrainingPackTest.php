@@ -6,7 +6,6 @@ use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
-use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
@@ -298,7 +297,7 @@ describe('capacity', function (): void {
             ->call('openCreate')
             ->set('formSeasonId', $season->id)
             ->set('formName', 'Jeunes mardi')
-            ->set('formLevel', TrainingLevel::KIDS->value)
+            ->set('formLevel', trainingLevelId('Jeunes'))
             ->set('formType', TrainingType::DIRECTED->value)
             ->set('formRoomId', $room->id)
             ->set('formTrainerId', $coach->id)
@@ -320,7 +319,7 @@ describe('capacity', function (): void {
             ->call('openCreate')
             ->set('formSeasonId', $season->id)
             ->set('formName', 'Sans plafond explicite')
-            ->set('formLevel', TrainingLevel::KIDS->value)
+            ->set('formLevel', trainingLevelId('Jeunes'))
             ->set('formType', TrainingType::DIRECTED->value)
             ->set('formRoomId', $room->id)
             ->set('formTrainerId', $coach->id)
@@ -344,7 +343,7 @@ describe('capacity', function (): void {
             ->call('openCreate')
             ->set('formSeasonId', $season->id)
             ->set('formName', 'Dirige sans limite')
-            ->set('formLevel', TrainingLevel::KIDS->value)
+            ->set('formLevel', trainingLevelId('Jeunes'))
             ->set('formType', TrainingType::DIRECTED->value)
             ->set('formRoomId', $room->id)
             ->set('formTrainerId', $coach->id)
@@ -368,7 +367,7 @@ describe('capacity', function (): void {
             ->call('openCreate')
             ->set('formSeasonId', $season->id)
             ->set('formName', 'Libre du vendredi')
-            ->set('formLevel', TrainingLevel::OPEN->value)
+            ->set('formLevel', trainingLevelId('Tous niveaux'))
             ->set('formType', TrainingType::FREE->value)
             ->set('formRoomId', $room->id)
             ->set('formDayOfWeek', 5)

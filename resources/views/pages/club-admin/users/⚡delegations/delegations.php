@@ -58,7 +58,7 @@ new class extends Component
         return array_map(static fn (Role $role): array => [
             'id' => $role->value,
             'name' => $role->label(),
-        ], Role::delegations());
+        ], Role::delegationsInReadingOrder());
     }
 
     /**
@@ -72,7 +72,7 @@ new class extends Component
     {
         $holders = $this->holdersByRole();
 
-        return collect(Role::delegations())
+        return collect(Role::delegationsInReadingOrder())
             ->filter(fn (Role $role): bool => $this->delegationFilter === '' || $this->delegationFilter === $role->value)
             ->map(fn (Role $role): array => [
                 'role' => $role,
@@ -113,11 +113,11 @@ new class extends Component
         return $this->membersWithRoles()
             ->map(fn (User $user): array => [
                 'user' => $user,
-                'roles' => $user->roles
-                    ->map(fn ($role): ?Role => Role::tryFrom($role->name))
-                    ->filter(fn (?Role $role): bool => $role?->isDelegation() ?? false)
-                    ->sortBy(fn (Role $role): string => $role->label())
-                    ->values(),
+                'roles' => collect(Role::sortedByLabel(
+                    $user->roles
+                        ->map(fn ($role): ?Role => Role::tryFrom($role->name))
+                        ->filter(fn (?Role $role): bool => $role?->isDelegation() ?? false)
+                )),
             ])
             ->filter(fn (array $row): bool => $row['roles']->isNotEmpty())
             ->values();
@@ -143,7 +143,7 @@ new class extends Component
     {
         $holders = $this->holdersByRole();
 
-        return collect(Role::delegations())
+        return collect(Role::delegationsInReadingOrder())
             ->filter(fn (Role $role): bool => $holders->get($role->value, collect())->isEmpty())
             ->values();
     }

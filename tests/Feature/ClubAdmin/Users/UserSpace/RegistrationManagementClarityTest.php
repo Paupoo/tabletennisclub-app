@@ -7,7 +7,6 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\FamilyGroup;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
-use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -53,7 +52,7 @@ it('shows the pack schedule, room, level and labelled trainer name', function ()
         'name' => 'Perfectionnement',
         'trainer_id' => $trainer->id,
         'room_id' => $room->id,
-        'level' => TrainingLevel::ELITE->value,
+        'training_level_id' => trainingLevelId('Compétition'),
         'day_of_week' => 2,
         'start_time' => '20:30:00',
         'duration_minutes' => 90,

@@ -34,16 +34,8 @@ class UserCalendarFeedController extends Controller
 
         foreach ($events as $event) {
             $start = Carbon::parse($event['startDateTime'], config('app.timezone'));
-
-            // Trainings expose their real end time; other events get a
-            // reasonable default duration so agendas can display a block.
-            $end = isset($event['endTime']) && $event['endTime']
-                ? $start->copy()->setTimeFromTimeString($event['endTime'])
-                : $start->copy()->addHours(2);
-
-            if ($end->lessThanOrEqualTo($start)) {
-                $end = $start->copy()->addHours(2);
-            }
+            $end = $this->endOf($event, $start);
+            $modified = $this->modifiedAt($event);
 
             $location = $event['address'] ?? $event['room'] ?? $event['location'] ?? null;
             if ($location === '—') {
@@ -51,8 +43,12 @@ class UserCalendarFeedController extends Controller
             }
 
             $lines[] = 'BEGIN:VEVENT';
-            $lines[] = 'UID:' . hash('sha256', $event['type'] . '|' . $event['title'] . '|' . $event['startDateTime']) . '@ctt-ottignies-blocry';
-            $lines[] = 'DTSTAMP:' . now()->utc()->format('Ymd\THis\Z');
+            $lines[] = 'UID:' . $event['type'] . '-' . ($event['sourceId'] ?? 0) . '@ctt-ottignies-blocry';
+            // SEQUENCE must grow on every edit for an agenda to accept the new
+            // version; the modification timestamp is monotonic by construction.
+            $lines[] = 'SEQUENCE:' . $modified->getTimestamp();
+            $lines[] = 'DTSTAMP:' . $modified->utc()->format('Ymd\THis\Z');
+            $lines[] = 'LAST-MODIFIED:' . $modified->utc()->format('Ymd\THis\Z');
             $lines[] = 'DTSTART:' . $start->copy()->utc()->format('Ymd\THis\Z');
             $lines[] = 'DTEND:' . $end->copy()->utc()->format('Ymd\THis\Z');
             $lines[] = 'SUMMARY:' . $this->escape($event['title']);
@@ -67,10 +63,29 @@ class UserCalendarFeedController extends Controller
 
         $lines[] = 'END:VCALENDAR';
 
+        // No Content-Disposition: agendas subscribe to this URL, they do not
+        // download it, and `attachment` makes some clients treat it as a file.
         return response(implode("\r\n", $lines), 200, [
             'Content-Type' => 'text/calendar; charset=utf-8',
-            'Content-Disposition' => 'attachment; filename="ctt-ottignies-blocry.ics"',
         ]);
+    }
+
+    /**
+     * End of the block the subscriber sees.
+     *
+     * A source that knows its end wins. Interclub matches have no end column —
+     * a tie of sixteen matches runs about three hours, and a two-hour block
+     * would show the member free while they are still playing.
+     *
+     * @param  array<string, mixed>  $event
+     */
+    private function endOf(array $event, Carbon $start): Carbon
+    {
+        $end = ! empty($event['endDateTime'])
+            ? Carbon::parse($event['endDateTime'], config('app.timezone'))
+            : $start->copy()->addHours($event['type'] === 'interclub' ? 3 : 2);
+
+        return $end->greaterThan($start) ? $end : $start->copy()->addHours(2);
     }
 
     /**
@@ -83,5 +98,20 @@ class UserCalendarFeedController extends Controller
             ['\\\\', '\;', '\,', '\n', '\n'],
             $text
         );
+    }
+
+    /**
+     * When the event last changed, for SEQUENCE and LAST-MODIFIED.
+     *
+     * Deliberately not `now()`: a timestamp that moves on every read makes the
+     * whole feed look modified at each poll, and rules out any future ETag.
+     *
+     * @param  array<string, mixed>  $event
+     */
+    private function modifiedAt(array $event): Carbon
+    {
+        return ! empty($event['updatedAt'])
+            ? Carbon::parse($event['updatedAt'], config('app.timezone'))
+            : Carbon::parse($event['startDateTime'], config('app.timezone'));
     }
 }

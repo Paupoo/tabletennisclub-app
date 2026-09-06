@@ -13,6 +13,14 @@ use Illuminate\Support\Facades\DB;
 
 class EnrollInTrainingPackAction
 {
+    /**
+     * Statuts qui racontent un passage terminé, et non un engagement en cours :
+     * ils n'interdisent pas de se réinscrire.
+     *
+     * @var list<string>
+     */
+    private const array SPENT_STATUSES = ['left', 'expired'];
+
     public function __construct(private readonly TrainingPackProrata $prorata = new TrainingPackProrata) {}
 
     public function __invoke(Subscription $subscription, TrainingPack $pack, int $familyMembersCount = 1): string
@@ -21,14 +29,21 @@ class EnrollInTrainingPackAction
             throw new \DomainException(__('Cannot enroll with a cancelled subscription.'));
         }
 
+        // Le verrou ne vaut que pour le libre-service. Le comité passe par
+        // AddMemberToTrainingPackAction, qui l'ignore délibérément : fermer
+        // les inscriptions ferme la porte aux membres, pas au club.
+        if (! $pack->enrollments_open) {
+            throw new \DomainException(__('Enrolments are closed for this training pack.'));
+        }
+
         $existing = DB::table('subscription_training_pack')
             ->where('subscription_id', $subscription->id)
             ->where('training_pack_id', $pack->id)
             ->first();
 
-        // Already enrolled or waitlisted. A `left` line is history, not a
-        // commitment: it must not lock the member out of coming back.
-        if ($existing && $existing->status !== 'left') {
+        // Already enrolled or waitlisted. A `left` or `expired` line is history,
+        // not a commitment: it must not lock the member out of coming back.
+        if ($existing && ! in_array($existing->status, self::SPENT_STATUSES, true)) {
             throw new \DomainException(__('Already enrolled or waitlisted for this training pack.'));
         }
 

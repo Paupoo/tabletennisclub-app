@@ -26,6 +26,63 @@ use Illuminate\Support\Facades\DB;
 class ImportFederationMembersAction
 {
     /**
+     * Lay the listing's values over a member, without writing anything. The
+     * caller decides whether any of it is worth saving.
+     *
+     * The federation overwrites what it owns; the club keeps everything a human
+     * may have touched.
+     *
+     * The licence number and the postal address are the federation's: it issues
+     * one and takes the affiliation out on the other, so whatever the club typed
+     * in gives way. That is the point of importing the listing rather than
+     * reading it — a club-side number that contradicts the file is a club-side
+     * mistake, and the reviewer already saw the difference reported before
+     * choosing to update.
+     *
+     * Names and gender are never rewritten: the reviewer corrected them by hand,
+     * and next year's file holds the same raw string. The email address and the
+     * phone number are only filled when the club has none — an address is a
+     * login, the listing still shows a parent's against a child years after the
+     * club gave that child one of their own, and overwriting would merge back
+     * the two accounts that were just separated. The address goes through
+     * {@see loginAddress()} exactly as it does on creation: an update is not a
+     * way around the one-address-one-login rule.
+     *
+     * A contradicting birthdate is not settled here at all: the matcher reports
+     * it, a human decides, because it can just as well mean this line was
+     * matched to the wrong person.
+     *
+     * Split out of {@see update()} so that the review screen can ask what an
+     * update *would* change without a second implementation of the answer. A
+     * diff written alongside this method would agree with it exactly once — the
+     * day it was written — and every divergence afterwards would be silent: a
+     * line wrongly called unchanged is simply not written, with no error and no
+     * trace. There is one body, and both callers run it.
+     */
+    public static function apply(ImportLine $line, User $member): User
+    {
+        $row = $line->row;
+        $minor = self::isMinor($row);
+
+        $member->fill([
+            'ranking' => $row->ranking,
+            'federation_licence_type' => $row->federationLicenceType,
+            'federation_synced_at' => now(),
+        ]);
+
+        self::overwrite($member, 'licence', self::unlessTaken('licence', $row->licence === '' ? null : $row->licence, $member));
+        self::overwrite($member, 'street', $row->street);
+        self::overwrite($member, 'city_code', $row->cityCode);
+        self::overwrite($member, 'city_name', $row->cityName);
+
+        self::fillIfMissing($member, 'email', self::loginAddress($line, $member));
+        self::fillIfMissing($member, 'birthdate', $row->birthdate);
+        self::fillIfMissing($member, $minor ? 'guardian_phone_number' : 'phone_number', $row->phone);
+
+        return $member;
+    }
+
+    /**
      * @param  array<int, ImportLine>  $lines
      * @param  array<int, array{line: int, reason: string}>  $failures  Lines the parser could not read.
      */
@@ -40,6 +97,7 @@ class ImportFederationMembersAction
 
             $new = 0;
             $updated = 0;
+            $unchanged = 0;
             $skipped = 0;
 
             /** @var array<int, User> $byLine Members written by this run, by listing line. */
@@ -48,10 +106,21 @@ class ImportFederationMembersAction
             // Without events: UserObserver rebuilds the force lists on every
             // ranking, gender or birthdate change, and a listing of sixty members
             // would rebuild them sixty times. They are rebuilt once, at the end.
-            User::withoutEvents(function () use ($lines, $import, &$new, &$updated, &$skipped, &$byLine): void {
+            User::withoutEvents(function () use ($lines, $import, &$new, &$updated, &$unchanged, &$skipped, &$byLine): void {
                 foreach ($lines as $line) {
                     if ($line->action === ImportLineAction::SKIP) {
                         $skipped++;
+
+                        continue;
+                    }
+
+                    // Counted, and nothing else. The listing carried this member
+                    // and said nothing the club did not already hold, so there is
+                    // no write to make — not even a date. Their guardian is left
+                    // alone too: it is the one already on file that made the line
+                    // unchanged in the first place.
+                    if ($line->action === ImportLineAction::UNCHANGED) {
+                        $unchanged++;
 
                         continue;
                     }
@@ -81,6 +150,7 @@ class ImportFederationMembersAction
             $import->update([
                 'new_count' => $new,
                 'updated_count' => $updated,
+                'unchanged_count' => $unchanged,
                 'skipped_count' => $skipped,
             ]);
 
@@ -88,6 +158,32 @@ class ImportFederationMembersAction
 
             return $import->refresh();
         });
+    }
+
+    /**
+     * What an update would actually change on this member, if anything.
+     *
+     * The comparison is Eloquent's own: the values are laid over a copy of the
+     * member and the dirty attributes are read back. Casts, dates and nulls are
+     * therefore settled the way they will be on write, not the way a hand-rolled
+     * comparison would guess.
+     *
+     * `federation_synced_at` is left out because it always changes and never
+     * means anything on its own — it dates the reading, not the member.
+     *
+     * The member is copied rather than filled in place: the caller holds it from
+     * the roster the matcher is still comparing other lines against, and a
+     * member quietly carrying the file's values would answer for them.
+     *
+     * @return array<string, mixed> Attribute names to the values that would be written.
+     */
+    public static function pendingChanges(ImportLine $line, User $member): array
+    {
+        $changes = self::apply($line, clone $member)->getDirty();
+
+        unset($changes['federation_synced_at']);
+
+        return $changes;
     }
 
     private static function create(ImportLine $line, MemberImport $import): User
@@ -323,28 +419,7 @@ class ImportFederationMembersAction
     }
 
     /**
-     * The federation overwrites what it owns; the club keeps everything a human
-     * may have touched.
-     *
-     * The licence number and the postal address are the federation's: it issues
-     * one and takes the affiliation out on the other, so whatever the club typed
-     * in gives way. That is the point of importing the listing rather than
-     * reading it — a club-side number that contradicts the file is a club-side
-     * mistake, and the reviewer already saw the difference reported before
-     * choosing to update.
-     *
-     * Names and gender are never rewritten: the reviewer corrected them by hand,
-     * and next year's file holds the same raw string. The email address and the
-     * phone number are only filled when the club has none — an address is a
-     * login, the listing still shows a parent's against a child years after the
-     * club gave that child one of their own, and overwriting would merge back
-     * the two accounts that were just separated. The address goes through
-     * {@see loginAddress()} exactly as it does on creation: an update is not a
-     * way around the one-address-one-login rule.
-     *
-     * A contradicting birthdate is not settled here at all: the matcher reports
-     * it, a human decides, because it can just as well mean this line was
-     * matched to the wrong person.
+     * Write the reviewed line onto the member it was matched to.
      */
     private static function update(ImportLine $line): ?User
     {
@@ -354,25 +429,7 @@ class ImportFederationMembersAction
             return null;
         }
 
-        $row = $line->row;
-        $minor = self::isMinor($row);
-
-        $member->fill([
-            'ranking' => $row->ranking,
-            'federation_licence_type' => $row->federationLicenceType,
-            'federation_synced_at' => now(),
-        ]);
-
-        self::overwrite($member, 'licence', self::unlessTaken('licence', $row->licence === '' ? null : $row->licence, $member));
-        self::overwrite($member, 'street', $row->street);
-        self::overwrite($member, 'city_code', $row->cityCode);
-        self::overwrite($member, 'city_name', $row->cityName);
-
-        self::fillIfMissing($member, 'email', self::loginAddress($line, $member));
-        self::fillIfMissing($member, 'birthdate', $row->birthdate);
-        self::fillIfMissing($member, $minor ? 'guardian_phone_number' : 'phone_number', $row->phone);
-
-        $member->save();
+        self::apply($line, $member)->save();
 
         // An archived member listed as affiliated again has come back. The review
         // screen never proposes this on its own — an archived file is one of the

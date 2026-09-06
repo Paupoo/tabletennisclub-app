@@ -15,8 +15,8 @@ use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Enums\Role;
-use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
+use App\Domains\Trainings\Models\TrainingLevel;
 use App\Domains\Trainings\Models\TrainingPack;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
@@ -29,6 +29,10 @@ class TrainingPackSeeder extends Seeder
         $password = Hash::make('password');
         $ourClub = Club::own();
         $season = Season::where('is_active', true)->first();
+
+        // Les niveaux sont semés par la migration ; on les adresse par libellé
+        // plutôt que par id, qui dépend de l'ordre des insertions.
+        $levels = TrainingLevel::pluck('id', 'label');
 
         if (! $season) {
             $this->command->warn('No active season found — skipping TrainingPackSeeder.');
@@ -135,7 +139,7 @@ class TrainingPackSeeder extends Seeder
                 'start_time' => '18:00:00',
                 'duration_minutes' => 120,
                 'room_id' => $blocry?->id,
-                'level' => TrainingLevel::OPEN,
+                'training_level_id' => $levels['Tous niveaux'],
                 'type' => TrainingType::SUPERVISED,
                 'trainer_id' => $randomCoach?->id,
                 'max_participants' => 10,
@@ -149,7 +153,7 @@ class TrainingPackSeeder extends Seeder
                 'start_time' => '20:00:00',
                 'duration_minutes' => 150,
                 'room_id' => $dem0?->id,
-                'level' => TrainingLevel::OPEN,
+                'training_level_id' => $levels['Tous niveaux'],
                 'type' => TrainingType::FREE,
                 'trainer_id' => null,
                 'max_participants' => null,
@@ -163,7 +167,7 @@ class TrainingPackSeeder extends Seeder
                 'start_time' => '20:30:00',
                 'duration_minutes' => 90,
                 'room_id' => $demMoins1?->id,
-                'level' => TrainingLevel::OPEN,
+                'training_level_id' => $levels['Tous niveaux'],
                 'type' => TrainingType::FREE,
                 'trainer_id' => null,
                 'max_participants' => null,
@@ -177,7 +181,7 @@ class TrainingPackSeeder extends Seeder
                 'start_time' => '20:30:00',
                 'duration_minutes' => 90,
                 'room_id' => $demMoins1?->id,
-                'level' => TrainingLevel::INTERMEDIATE,
+                'training_level_id' => $levels['Confirmé'],
                 'type' => TrainingType::DIRECTED,
                 'trainer_id' => $aloise->id,
                 'max_participants' => 10,
@@ -191,7 +195,7 @@ class TrainingPackSeeder extends Seeder
                 'start_time' => '15:00:00',
                 'duration_minutes' => 90,
                 'room_id' => $demMoins1?->id,
-                'level' => TrainingLevel::BEGINNERS,
+                'training_level_id' => $levels['Débutant'],
                 'type' => TrainingType::DIRECTED,
                 'trainer_id' => $eric->id,
                 'max_participants' => 8,
@@ -205,7 +209,7 @@ class TrainingPackSeeder extends Seeder
                 'start_time' => '16:30:00',
                 'duration_minutes' => 90,
                 'room_id' => $demMoins1?->id,
-                'level' => TrainingLevel::INTERMEDIATE,
+                'training_level_id' => $levels['Confirmé'],
                 'type' => TrainingType::DIRECTED,
                 'trainer_id' => $eric->id,
                 'max_participants' => 8,
@@ -219,7 +223,7 @@ class TrainingPackSeeder extends Seeder
                 'start_time' => '09:00:00',
                 'duration_minutes' => 90,
                 'room_id' => $demMoins1?->id,
-                'level' => TrainingLevel::BEGINNERS,
+                'training_level_id' => $levels['Débutant'],
                 'type' => TrainingType::DIRECTED,
                 'trainer_id' => $jeanPierre->id,
                 'max_participants' => 8,
@@ -233,7 +237,7 @@ class TrainingPackSeeder extends Seeder
                 'start_time' => '10:30:00',
                 'duration_minutes' => 90,
                 'room_id' => $demMoins1?->id,
-                'level' => TrainingLevel::INTERMEDIATE,
+                'training_level_id' => $levels['Confirmé'],
                 'type' => TrainingType::DIRECTED,
                 'trainer_id' => $jeanPierre->id,
                 'max_participants' => 8,
@@ -249,7 +253,7 @@ class TrainingPackSeeder extends Seeder
                 'start_time' => '09:00:00',
                 'duration_minutes' => 420,
                 'room_id' => $blocry?->id,
-                'level' => TrainingLevel::OPEN,
+                'training_level_id' => $levels['Tous niveaux'],
                 'type' => TrainingType::DIRECTED,
                 'trainer_id' => $aurelien?->id,
                 'max_participants' => null,

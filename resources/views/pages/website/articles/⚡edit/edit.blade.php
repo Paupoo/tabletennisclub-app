@@ -31,21 +31,25 @@
 
             {{-- Image --}}
             <x-card class="shadow-sm" :title="__('Featured image')">
-                @if ($existingImage)
-                    <div class="mb-3">
-                        <img src="{{ Storage::url($existingImage) }}"
-                            alt="Image actuelle"
-                            class="w-full rounded-lg object-cover" style="max-height:180px" />
-                        <x-button class="btn-ghost btn-sm mt-2 text-error w-full"
-                            icon="o-trash" label="Supprimer l'image"
-                            wire:click="removeImage" />
-                    </div>
-                @endif
-                <x-file wire:model="image"
-                    :label="$existingImage ? __('Replace the image') : __('Choose an image')"
-                    :aria-label="$existingImage ? __('Replace the image') : __('Choose an image')"
-                    accept="image/*" hint="JPG, PNG, WebP — max 4 Mo" />
+                {{-- Re-key on the stored path so removing the image resets the picker. --}}
+                <div wire:key="featured-image-{{ $existingImage ?? 'none' }}">
+                    <x-image-focal-picker
+                        :preview="($image && $image->isPreviewable() ? $image->temporaryUrl() : null)
+                            ?? ($existingImage ? Storage::url($existingImage) : null)"
+                        :focal-x="$imageFocalX" :focal-y="$imageFocalY">
+                        <x-slot:delete>
+                            @if ($existingImage)
+                                <x-button class="btn-ghost btn-sm text-error"
+                                    icon="o-trash" :label="__('Delete the image')"
+                                    wire:click="removeImage" />
+                            @endif
+                        </x-slot:delete>
+                    </x-image-focal-picker>
+                </div>
                 @error('image')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+                @error('imageFocalY')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
             </x-card>

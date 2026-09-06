@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Subscriptions\ApproveTrainingPacksAction;
 use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
-use App\Actions\ClubAdmin\Subscriptions\PromoteFromTrainingWaitlistAction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingWaitlistJoinedNotification;
 use App\Domains\Trainings\Notifications\TrainingWaitlistSpotOfferedNotification;
+use App\Domains\Trainings\Services\TrainingWaitlistService;
 use Illuminate\Support\Facades\Notification;
 
 describe('Training Enrollment', function (): void {
@@ -125,22 +126,25 @@ describe('Training Enrollment', function (): void {
         expect($waiter->trainingPacks()->where('training_pack_id', $pack->id)->exists())->toBeFalse();
     })->group('training', 'enrollment', 'waitlist');
 
-    // ── PromoteFromTrainingWaitlistAction ───────────────────────────────────
+    // ── TrainingWaitlistService ─────────────────────────────────────────────
 
     test('promote renumbers remaining waitlist positions', function (): void {
         Notification::fake();
 
-        $pack = TrainingPack::factory()->create(['max_participants' => 1, 'price' => 90]);
+        // Le pack a deux places et une seule prise : il en reste donc une à
+        // offrir. L'ancienne action promouvait sans regarder la capacité et
+        // pouvait sur-remplir un pack complet ; le service compte d'abord.
+        $pack = TrainingPack::factory()->create(['max_participants' => 2, 'price' => 90]);
 
         $enrolled = Subscription::factory()->create();
         $enrolled->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
 
         $waiter1 = Subscription::factory()->for($enrolled->season, 'season')->create();
         $waiter2 = Subscription::factory()->for($enrolled->season, 'season')->create();
-        (new EnrollInTrainingPackAction)($waiter1, $pack); // → waiting #1
-        (new EnrollInTrainingPackAction)($waiter2, $pack); // → waiting #2
+        $waiter1->trainingPacks()->attach($pack->id, ['status' => 'waiting', 'waitlist_position' => 1]);
+        $waiter2->trainingPacks()->attach($pack->id, ['status' => 'waiting', 'waitlist_position' => 2]);
 
-        (new PromoteFromTrainingWaitlistAction)($pack);
+        app(TrainingWaitlistService::class)->releaseSpot($pack);
 
         $pivot1 = $waiter1->fresh()->trainingPacks()->wherePivot('training_pack_id', $pack->id)->first();
         $pivot2 = $waiter2->fresh()->trainingPacks()->wherePivot('training_pack_id', $pack->id)->first();
@@ -312,5 +316,73 @@ describe('Training Enrollment', function (): void {
         expect($first)->toBe(70.0)
             ->and($second)->toBe(90.0);
     })->group('training', 'enrollment', 'refund');
+
+    test('lets a member whose offer expired sign up again', function (): void {
+        Notification::fake();
+
+        $subscription = Subscription::factory()->create();
+        $pack = TrainingPack::factory()->create(['max_participants' => 5, 'price' => 90]);
+
+        // Une offre non confirmée à temps laisse une ligne `expired`. Elle est
+        // là pour l'historique, pas pour interdire le pack à vie : le membre
+        // qui n'a pas vu le mail doit pouvoir se réinscrire normalement.
+        $subscription->trainingPacks()->attach($pack->id, [
+            'status' => 'expired',
+            'waitlist_position' => null,
+            'confirmation_deadline' => null,
+        ]);
+
+        $status = (new EnrollInTrainingPackAction)($subscription, $pack);
+
+        expect($status)->toBe('pending')
+            ->and($subscription->trainingPacks()->where('training_pack_id', $pack->id)->count())->toBe(1);
+    })->group('training', 'waitlist');
+
+    test('calls the waiting list when the committee turns a request down', function (): void {
+        Notification::fake();
+
+        $pack = TrainingPack::factory()->create(['max_participants' => 1, 'price' => 90]);
+
+        // Une demande `pending` occupe la place : c'est ce que compte
+        // committedCount(). La refuser la libère — et personne ne prévenait
+        // la file jusqu'ici.
+        $requester = Subscription::factory()->create();
+        $requester->trainingPacks()->attach($pack->id, ['status' => 'pending']);
+
+        $waiting = Subscription::factory()->create();
+        $waiting->trainingPacks()->attach($pack->id, [
+            'status' => 'waiting',
+            'waitlist_position' => 1,
+        ]);
+
+        (new ApproveTrainingPacksAction)($requester, approvedPackIds: []);
+
+        expect($waiting->trainingPacks()->where('training_pack_id', $pack->id)->first()->pivot->status)
+            ->toBe('offered');
+
+        Notification::assertSentTo($waiting->user, TrainingWaitlistSpotOfferedNotification::class);
+    })->group('training', 'waitlist');
+
+    test('calls the waiting list when a pending request is withdrawn', function (): void {
+        Notification::fake();
+
+        $pack = TrainingPack::factory()->create(['max_participants' => 1, 'price' => 90]);
+
+        // `pending` compte dans committedCount() au même titre qu'`enrolled` :
+        // le retrait d'une demande non validée libère donc une vraie place.
+        $requester = Subscription::factory()->create();
+        $requester->trainingPacks()->attach($pack->id, ['status' => 'pending']);
+
+        $waiting = Subscription::factory()->create();
+        $waiting->trainingPacks()->attach($pack->id, [
+            'status' => 'waiting',
+            'waitlist_position' => 1,
+        ]);
+
+        (new LeaveTrainingPackAction)($requester, $pack);
+
+        expect($waiting->trainingPacks()->where('training_pack_id', $pack->id)->first()->pivot->status)
+            ->toBe('offered');
+    })->group('training', 'waitlist');
 
 });

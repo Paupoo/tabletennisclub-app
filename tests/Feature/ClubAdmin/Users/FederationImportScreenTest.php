@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Users\Models\MemberImport;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Enums\Role;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
@@ -22,6 +23,14 @@ pest()->group('club-admin', 'users', 'import');
 const IMPORT_COMPONENT = 'pages::club-admin.users.import';
 
 const IMPORT_HEADER = 'Licence;Nom;DATE NAISSANCE;CH;CD;LFM;CONF;SA;Statut;Date 1ere affiliation;Email;Tel;GSM;Adresse;Numéro;CP;Localité';
+
+/**
+ * A row the export shifted by one: the street landed where the house number
+ * belongs, and the locality where the postcode belongs. `users.city_code` is ten
+ * characters wide, so LOUVAIN-LA-NEUVE written there aborts an entire import
+ * under a strict MySQL.
+ */
+const SHIFTED_LINE = '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;LOUVAIN-LA-NEUVE;';
 
 /**
  * A listing as the federation hands it over: Windows-1252 bytes, CRLF endings.
@@ -539,5 +548,355 @@ describe('importing a child whose guardian is already a member', function (): vo
             ->and($louis->email)->toBeNull();
 
         expect($marie->fresh()->licence)->toBe('111111');
+    });
+});
+
+/*
+ * The listing is exported once a season and the club barely moves between two of
+ * them: most of what it carries is a member the club already holds, in the state
+ * the club already holds them. Those lines used to be laid out card by card,
+ * every minor among them demanding an answer that had been given the year before.
+ * They are now recognised, folded away, and written off.
+ */
+describe('the affiliates the listing has nothing new to say about', function (): void {
+
+    /*
+     * The scenario in one test: the same file, twice. Whatever the first run
+     * wrote, the second must find nothing left to do — which is also the only
+     * honest way to build a member identical to a row, mutators and casts
+     * included.
+     */
+    it('asks nothing of the file it has just written', function (): void {
+        $line = '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE';
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->call('import')
+            ->assertSet('step', 3);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->assertSet('rows.2.unchanged', true)
+            ->assertSet('rows.2.needsReview', false)
+            ->assertSet('rows.2.action', 'unchanged')
+            ->assertSet('tally.unchanged', 1)
+            ->assertSet('tally.update', 0);
+    });
+
+    /*
+     * A ranking moves every season, and that alone is an import. The point of the
+     * fold is to hide what has nothing to say, never to swallow something that has.
+     */
+    it('takes a line back out of the fold when a single field moves', function (): void {
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->call('import');
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166036;DUPONT MARC;1990-06-05;B6;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSet('rows.2.unchanged', false)
+            ->assertSet('rows.2.action', 'update')
+            ->assertSet('tally.unchanged', 0);
+    });
+
+    /*
+     * Whose address is this? — the question every minor raises, and the one that
+     * made the screen unusable: twenty-two children re-asked every August. It is a
+     * question only until it has been answered, and the answer is on file.
+     */
+    it('stops asking about a child once a guardian answers for them', function (): void {
+        $line = '166042;CARTIAUX PAUL;2014-02-08;NC;NC;N;N;PO;LR;2025-09-01;olivier.cartiaux@example.com;;0470445566;RUE DU TEST;42;1348;LOUVAIN-LA-NEUVE';
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->set('rows.2.guardianAddress', true)
+            ->call('import')
+            ->assertSet('step', 3);
+
+        expect(User::query()->where('licence', '166042')->first()->guardians()->exists())->toBeTrue();
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->assertSet('rows.2.isMinor', true)
+            ->assertSet('rows.2.unchanged', true)
+            ->assertSet('rows.2.needsReview', false);
+    });
+
+    /*
+     * The other half of the same rule. A child nobody answers for is a loose end,
+     * and folding them away would bury it for good.
+     */
+    it('keeps asking about a child no guardian answers for', function (): void {
+        $line = '166042;CARTIAUX PAUL;2014-02-08;NC;NC;N;N;PO;LR;2025-09-01;olivier.cartiaux@example.com;;0470445566;RUE DU TEST;42;1348;LOUVAIN-LA-NEUVE';
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->call('import')
+            ->assertSet('step', 3);
+
+        expect(User::query()->where('licence', '166042')->first()->guardians()->exists())->toBeFalse();
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->assertSet('rows.2.unchanged', false)
+            ->assertSet('rows.2.needsReview', true);
+    });
+
+    /*
+     * The whole point of the fold. Alpine's version keeps the cards in the page
+     * and only hides them, which on a listing of two hundred is two hundred cards
+     * rebuilt every time an action is picked elsewhere. Closed, these are not
+     * rendered at all.
+     */
+    it('does not build the folded cards until they are asked for', function (): void {
+        $line = '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE';
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->call('import');
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->assertSee(__('Already up to date'))
+            ->assertDontSeeHtml('unchanged-2')
+            ->call('toggleUnchanged')
+            ->assertSeeHtml('unchanged-2')
+            ->assertSee('Dupont');
+    });
+
+    /*
+     * "Nothing changed" is a claim about the file. The secretary may know
+     * something the file does not, so the way out stays open — and the line does
+     * not move when they take it, because a section that reshuffles itself hands
+     * the next click to the wrong affiliate.
+     */
+    it('lets the reviewer write a line the file called unchanged', function (): void {
+        $line = '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE';
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->call('import');
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->call('forceUpdate', 2)
+            ->assertSet('rows.2.action', 'update')
+            ->assertSet('rows.2.unchanged', true)
+            ->assertSet('tally.update', 1)
+            ->assertSet('tally.unchanged', 0)
+            ->call('import')
+            ->assertSet('step', 3);
+
+        expect(MemberImport::query()->latest('id')->first()->updated_count)->toBe(1);
+    });
+});
+
+/*
+ * Fifty-eight affiliates answered one select at a time is the other half of what
+ * made the screen unusable. The sections are what a bulk action applies to — and
+ * the line the screen refuses to cross is that none of them ever writes a line
+ * the matcher would not commit to.
+ */
+describe('answering a whole section at once', function (): void {
+
+    /*
+     * A namesake with a different birthdate, next to an affiliate nobody knows.
+     * The first holds the import back; the second is not the bulk action's
+     * business.
+     */
+    it('sets the undecided lines aside without touching the settled ones', function (): void {
+        User::factory()->create([
+            'first_name' => 'Marc',
+            'last_name' => 'Dupont',
+            'birthdate' => '1980-01-01',
+            'email' => 'autre@example.com',
+            'licence' => null,
+        ]);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
+                '166037;LEGRAND ANNE;1985-03-02;D4;D4;N;N;SE;LR;2021-09-01;anne@example.com;;0475987654;RUE DU TEST;15;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSet('rows.2.outcome', 'suspect')
+            ->assertSet('rows.2.action', '')
+            ->assertSet('tally.undecided', 1)
+            ->call('skipUndecided')
+            ->assertSet('rows.2.action', 'skip')
+            ->assertSet('rows.3.action', 'create')
+            ->assertSet('tally.undecided', 0)
+            ->call('import')
+            ->assertSet('step', 3);
+
+        // The namesake was set aside, never written over.
+        expect(User::query()->where('licence', '166036')->exists())->toBeFalse()
+            ->and(User::query()->where('licence', '166037')->exists())->toBeTrue();
+    });
+
+    it('sets aside every line it was ready to write, and takes it back', function (): void {
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
+                '166037;LEGRAND ANNE;1985-03-02;D4;D4;N;N;SE;LR;2021-09-01;anne@example.com;;0475987654;RUE DU TEST;15;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSet('tally.create', 2)
+            ->call('skipReady')
+            ->assertSet('tally.create', 0)
+            ->assertSet('tally.skip', 2)
+            ->call('restoreReady')
+            ->assertSet('tally.create', 2)
+            ->assertSet('tally.skip', 0);
+    });
+
+    /*
+     * Safe by construction: these lines were filed as unchanged because nothing
+     * would move, so forcing them writes the date the federation was last read
+     * and nothing else. It is how the club says "the listing still carries them".
+     */
+    it('writes the already up to date lines when asked, and only their sync date', function (): void {
+        $line = '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE';
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->call('import');
+
+        $member = User::query()->where('licence', '166036')->first();
+        $member->forceFill(['federation_synced_at' => CarbonImmutable::parse('2025-08-14 10:00:00')])->save();
+        $before = $member->fresh();
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->assertSet('tally.unchanged', 1)
+            ->call('updateUnchanged')
+            ->assertSet('tally.update', 1)
+            ->assertSet('tally.unchanged', 0)
+            ->call('releaseUnchanged')
+            ->assertSet('tally.unchanged', 1)
+            ->call('updateUnchanged')
+            ->call('import')
+            ->assertSet('step', 3);
+
+        $after = $member->fresh();
+
+        expect($after->federation_synced_at->greaterThan($before->federation_synced_at))->toBeTrue()
+            ->and($after->ranking)->toBe($before->ranking)
+            ->and($after->email)->toBe($before->email)
+            ->and($after->street)->toBe($before->street)
+            ->and(MemberImport::query()->latest('id')->first()->updated_count)->toBe(1);
+    });
+});
+
+/*
+ * Some exports drop a cell mid-row and every column after it moves one to the
+ * left: the locality lands in the postcode column. The screen used to flag it and
+ * offer nothing to do about it — and `users.city_code` is ten characters wide
+ * under a strict MySQL, so a sixteen-letter commune written there does not fail
+ * that line, it aborts the whole run.
+ */
+describe('the addresses the export shifted', function (): void {
+
+    it('offers the address for correction rather than only flagging it', function (): void {
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([SHIFTED_LINE]))
+            ->call('parse')
+            ->assertSet('rows.2.needsAddressReview', true)
+            ->assertSeeHtml('rows.2.street')
+            ->assertSeeHtml('rows.2.cityCode')
+            ->assertSeeHtml('rows.2.cityName');
+    });
+
+    it('leaves the club its own address rather than laying a shifted one over it', function (): void {
+        $member = User::factory()->create([
+            'licence' => '166036',
+            'first_name' => 'Marc',
+            'last_name' => 'Dupont',
+            'street' => 'Rue Réelle 4',
+            'city_code' => '1348',
+            'city_name' => 'Louvain-la-Neuve',
+            'ranking' => Ranking::D6,
+        ]);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([SHIFTED_LINE]))
+            ->call('parse')
+            ->set('rows.2.action', 'update')
+            ->call('import')
+            ->assertSet('step', 3);
+
+        $after = $member->fresh();
+
+        // The address is untouched, and the rest of the line went in as usual.
+        expect($after->street)->toBe('Rue Réelle 4')
+            ->and($after->city_code)->toBe('1348')
+            ->and($after->city_name)->toBe('Louvain-la-Neuve')
+            ->and($after->ranking)->toBe(Ranking::C2);
+    });
+
+    it('writes the address once the reviewer has put it right', function (): void {
+        $member = User::factory()->create([
+            'licence' => '166036',
+            'first_name' => 'Marc',
+            'last_name' => 'Dupont',
+            'street' => 'Rue Réelle 4',
+            'city_code' => '1348',
+            'city_name' => 'Louvain-la-Neuve',
+        ]);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([SHIFTED_LINE]))
+            ->call('parse')
+            ->set('rows.2.cityCode', '1450')
+            ->set('rows.2.cityName', 'Chastre')
+            // The warning follows the correction: the rule that rejected the
+            // export is the rule the reviewer has to satisfy.
+            ->assertSet('rows.2.needsAddressReview', false)
+            ->set('rows.2.action', 'update')
+            ->call('import')
+            ->assertSet('step', 3);
+
+        $after = $member->fresh();
+
+        expect($after->city_code)->toBe('1450')
+            ->and($after->city_name)->toBe('Chastre')
+            ->and($after->street)->toBe('Rue du Test 13');
+    });
+
+    /*
+     * The failure this whole rule exists to prevent. SQLite ignores column
+     * widths, so the assertion is on what reaches the model, not on an exception
+     * the test database would never raise.
+     */
+    it('never hands the database a locality to store as a postcode', function (): void {
+        User::factory()->create(['licence' => '166036', 'first_name' => 'Marc', 'last_name' => 'Dupont']);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([SHIFTED_LINE]))
+            ->call('parse')
+            ->set('rows.2.action', 'update')
+            ->call('import');
+
+        $stored = User::query()->where('licence', '166036')->first()->city_code;
+
+        expect($stored === null || mb_strlen($stored) <= 10)->toBeTrue();
     });
 });

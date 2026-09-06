@@ -19,6 +19,7 @@ import contactForm from './components/contact-form';
 import eventFilters from './components/event-filters';
 import navigation from './components/navigation';
 import avatarCropper from './components/avatar-upload';
+import imageFocalPicker from './components/image-focal-picker';
 import { initMap } from './components/map';
 
 // Enregistrement Alpine
@@ -30,6 +31,7 @@ document.addEventListener('alpine:init', () => {
     Alpine.data("eventFilters", eventFilters);
     Alpine.data("navigation", navigation);
     Alpine.data("avatarCropper", avatarCropper);
+    Alpine.data("imageFocalPicker", imageFocalPicker);
     initMap();
 });
 

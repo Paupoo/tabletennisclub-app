@@ -149,24 +149,20 @@ class FederationListingParser
     /**
      * Whether the address looks like it was shifted by a dropped cell.
      *
-     * The postal code is the tell: Belgian codes are four digits, so a town name
-     * sitting in that column means every address column moved one to the left.
      * The row is still importable — only the address is suspect — so this reports
-     * a doubt rather than a rejection.
+     * a doubt rather than a rejection. The rule itself lives in
+     * {@see AddressNormalizer::looksShifted()} because the review screen asks it
+     * again, of whatever the reviewer typed instead.
      *
      * @param  array<string, ?string>  $cells
      */
     private function looksShifted(array $cells): bool
     {
-        if (($cells['street'] ?? null) === null) {
-            return false;
-        }
-
-        $cityCode = $cells['city_code'] ?? null;
-
-        return $cityCode === null
-            || preg_match('/^\d{4}$/', $cityCode) !== 1
-            || ($cells['city_name'] ?? null) === null;
+        return AddressNormalizer::looksShifted(
+            $this->street($cells),
+            $cells['city_code'] ?? null,
+            $cells['city_name'] ?? null,
+        );
     }
 
     private function normalizeLabel(string $label): string

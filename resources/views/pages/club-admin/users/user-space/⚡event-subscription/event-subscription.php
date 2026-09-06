@@ -412,7 +412,7 @@ new class extends Component
             return new Collection;
         }
 
-        return Training::with(['trainingPack', 'room'])
+        return Training::with(['trainingPack.level', 'room'])
             ->whereIn('training_pack_id', $packIds)
             ->where('status', 'scheduled')
             ->where('start', '>=', Carbon::now())

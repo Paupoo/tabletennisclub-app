@@ -4,7 +4,18 @@
     'color'     => 'blue',
     'open'      => true,
     'uppercase' => true,
+    // Opt-in, so the ten views already using this component keep the behaviour
+    // they were written against: pass false and the section arrives folded on
+    // anything narrower than the sidebar breakpoint.
+    'openOnMobile' => true,
+    'wireToggle'   => null,
 ])
+
+{{-- Folding is Alpine's business by default: it costs nothing and the content
+     is in the page either way. `wireToggle` is for the sections where that is
+     the problem — a couple of hundred cards nobody asked to see, rebuilt on
+     every render. Given one, the server owns the fold: the slot is not rendered
+     at all while closed, and the button asks Livewire rather than Alpine. --}}
 
 @php
     $colors = [
@@ -17,14 +28,26 @@
         'gray'    => ['pill_bg' => 'bg-base-200  dark:bg-base-300/20',   'pill_border' => 'border-base-300',                          'pill_text' => 'text-base-content/60',                  'dot' => 'bg-base-content/30','sep' => 'border-base-200'],
     ];
     $c = $colors[$color] ?? $colors['gray'];
+
+    /* Read once, when Alpine initialises the section: rotating a tablet does not
+       refold what the reader has since opened, which is the behaviour we want —
+       a resize is not a reason to take a panel away from someone reading it. */
+    $initialState = $open && ! $openOnMobile
+        ? "{ open: window.matchMedia('(min-width: 1024px)').matches }"
+        : json_encode(['open' => $open]);
 @endphp
 
-<section x-data="{{ json_encode(['open' => $open]) }}" {{ $attributes }}>
+<section @if ($wireToggle === null)x-data="{{ $initialState }}" @endif{{ $attributes }}>
 
     <button type="button"
         class="mb-3 flex w-full items-center gap-3 text-left"
-        :aria-expanded="open ? 'true' : 'false'"
-        @click="open = !open">
+        @if ($wireToggle === null)
+            :aria-expanded="open ? 'true' : 'false'"
+            @click="open = !open"
+        @else
+            aria-expanded="{{ $open ? 'true' : 'false' }}"
+            wire:click="{{ $wireToggle }}"
+        @endif>
 
         <span class="inline-flex shrink-0 items-center gap-2 rounded-full {{ $c['pill_bg'] }} {{ $c['pill_border'] }} border px-4 py-1.5">
             <span class="h-2 w-2 rounded-full {{ $c['dot'] }}"></span>
@@ -40,14 +63,29 @@
 
         <div class="flex-1 border-t {{ $c['sep'] }}"></div>
 
-        <x-icon name="o-chevron-down"
-            class="h-4 w-4 text-base-content/30 transition-transform duration-200"
-            ::class="open ? '' : '-rotate-90'" />
+        {{-- Two tags rather than one carrying a conditional attribute: Blade
+             compiles a component by matching its tag, and a @if between its
+             attributes leaves it uncompiled — the icon would render as its own
+             source text. --}}
+        @if ($wireToggle === null)
+            <x-icon name="o-chevron-down"
+                class="h-4 w-4 text-base-content/30 transition-transform duration-200"
+                ::class="open ? '' : '-rotate-90'" />
+        @else
+            <x-icon name="o-chevron-down" @class([
+                'h-4 w-4 text-base-content/30 transition-transform duration-200',
+                '-rotate-90' => ! $open,
+            ]) />
+        @endif
 
     </button>
 
-    <div x-show="open" x-collapse>
-        {{ $slot }}
-    </div>
+    @if ($wireToggle === null)
+        <div x-show="open" x-collapse>
+            {{ $slot }}
+        </div>
+    @elseif ($open)
+        <div>{{ $slot }}</div>
+    @endif
 
 </section>

@@ -84,12 +84,14 @@ class Interclub extends Model
 
     protected $fillable = [
         'address',
+        'aftt_match_id',
         'is_bye',
         'league_id',
         'result',
         'score',
         'season_id',
         'start_date_time',
+        'round_number',
         'total_players',
         'visited_team_id',
         'visiting_team_id',
@@ -171,6 +173,22 @@ class Interclub extends Model
     public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class);
+    }
+
+    /**
+     * Fixtures that are actually played.
+     *
+     * A bye is a round in which a team has no opponent. It is imported so the
+     * results screens can show it — they already render "Bye" rather than a date
+     * — but everywhere else it would appear as a dated match against nobody.
+     *
+     * A named scope rather than a global one: excluding rows by default is
+     * invisible at the call site, and a year from now the question "why is this
+     * fixture missing" should be answerable by reading the query.
+     */
+    public function scopeWithoutByes(Builder $query): void
+    {
+        $query->where('is_bye', false);
     }
 
     public function season(): BelongsTo

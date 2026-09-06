@@ -12,9 +12,11 @@ use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\Meetings\Models\MeetingFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -324,6 +326,32 @@ class Meeting extends Model
         }
 
         return min(100.0, round($this->confirmedCount() / $this->quorum * 100, 1));
+    }
+
+    /**
+     * The meetings a member is entitled to find outside the back office — their
+     * own calendar, the dashboard agenda.
+     *
+     * A general assembly is the whole club's business: it is convened publicly,
+     * so it stays visible to everyone. Every other meeting belongs to the
+     * committee, and only shows to a reader who may see meetings — or to
+     * somebody invited to that one in person, the single case where a member
+     * has a reason to find a committee meeting in their own agenda.
+     *
+     * A named scope rather than a global one: the two screens that show
+     * meetings to a member must ask for the rule explicitly, and the back
+     * office, which is already behind its own permission, must not silently
+     * lose rows.
+     */
+    public function scopeVisibleTo(EloquentBuilder $query, User $user): void
+    {
+        if ($user->can(Permission::MeetingsView->value)) {
+            return;
+        }
+
+        $query->where(fn (EloquentBuilder $meeting) => $meeting
+            ->where('type', MeetingTypeEnum::GENERAL_ASSEMBLY)
+            ->orWhereHas('users', fn (EloquentBuilder $invitee) => $invitee->where('users.id', $user->id)));
     }
 
     /** Restore the meeting to the active list and republish a previously archived web post. */

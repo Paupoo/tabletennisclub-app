@@ -35,6 +35,23 @@ class TrainingPolicy
     }
 
     /**
+     * Qui peut pointer, corriger ou annuler *cette* séance.
+     *
+     * `coach_area.access` n'ouvre que l'écran : il ne dit rien de la séance
+     * qu'on y manipule. Sans cette distinction, n'importe quel coach pouvait
+     * pointer — et annuler, avec les mails aux inscrits — la séance d'un
+     * collègue en appelant la méthode Livewire directement.
+     *
+     * La délégation garde la main partout : elle doit pouvoir couvrir un
+     * remplacement improvisé et corriger un pointage après coup.
+     */
+    public function recordAttendance(User $user, Training $training): bool
+    {
+        return $user->can(Permission::TrainingsManage->value)
+            || $training->trainer_id === $user->id;
+    }
+
+    /**
      * Determine whether the user can restore the model.
      */
     public function restore(User $user, Training $training): bool

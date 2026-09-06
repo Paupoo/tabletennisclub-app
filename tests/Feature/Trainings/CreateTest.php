@@ -8,7 +8,6 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\Shared\Enums\Recurrence;
-use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\Training;
 use Tests\Trait\CreateUser;
@@ -27,7 +26,7 @@ beforeEach(function (): void {
     $this->valid_request_only_one_training = [
         'end_date' => $date_in_the_future,
         'end_time' => '22:00',
-        'level' => TrainingLevel::BEGINNERS->name,
+        'level' => 'BEGINNERS',
         'recurrence' => Recurrence::NONE->name,
         'room_id' => '1',
         'start_date' => $date_in_the_future,
@@ -40,7 +39,7 @@ beforeEach(function (): void {
     $this->valid_request_5_daily_trainings = [
         'end_date' => $today_plus_5_days,
         'end_time' => '22:00',
-        'level' => TrainingLevel::BEGINNERS->name,
+        'level' => 'BEGINNERS',
         'recurrence' => Recurrence::DAILY->name,
         'room_id' => '1',
         'start_date' => $today,
@@ -53,7 +52,7 @@ beforeEach(function (): void {
     $this->valid_request_4_weekly_trainings = [
         'end_date' => $today_plus_34_days,
         'end_time' => '22:00',
-        'level' => TrainingLevel::BEGINNERS->name,
+        'level' => 'BEGINNERS',
         'recurrence' => Recurrence::WEEKLY->name,
         'room_id' => '1',
         'start_date' => $today,
@@ -66,7 +65,7 @@ beforeEach(function (): void {
     $this->valid_request_4_biweekly_trainings = [
         'end_date' => $today_plus_69_days,
         'end_time' => '22:00',
-        'level' => TrainingLevel::BEGINNERS->name,
+        'level' => 'BEGINNERS',
         'recurrence' => Recurrence::BIWEEKLY->name,
         'room_id' => '1',
         'start_date' => $today,
@@ -79,7 +78,7 @@ beforeEach(function (): void {
     $this->invalid_request_training_starting_in_the_past = [
         'end_date' => $date_in_the_future,
         'end_time' => '22:00',
-        'level' => TrainingLevel::BEGINNERS->name,
+        'level' => 'BEGINNERS',
         'recurrence' => Recurrence::NONE->name,
         'room_id' => '1',
         'start_date' => $date_in_the_past,
@@ -92,7 +91,7 @@ beforeEach(function (): void {
     $this->invalid_request_training_ending_in_the_past = [
         'end_date' => $date_in_the_past,
         'end_time' => '22:00',
-        'level' => TrainingLevel::BEGINNERS->name,
+        'level' => 'BEGINNERS',
         'recurrence' => Recurrence::NONE->name,
         'room_id' => '1',
         'start_date' => $date_in_the_future,
@@ -105,7 +104,7 @@ beforeEach(function (): void {
     $this->invalid_request_training_date_starting_after_end = [
         'end_date' => $date_in_the_future,
         'end_time' => '22:00',
-        'level' => TrainingLevel::BEGINNERS->name,
+        'level' => 'BEGINNERS',
         'recurrence' => Recurrence::NONE->name,
         'room_id' => '1',
         'start_date' => $date_in_the_future_plus_69_days,
@@ -118,7 +117,7 @@ beforeEach(function (): void {
     $this->invalid_request_training_time_starting_after_end = [
         'end_date' => $date_in_the_future,
         'end_time' => '21:29',
-        'level' => TrainingLevel::BEGINNERS->name,
+        'level' => 'BEGINNERS',
         'recurrence' => Recurrence::NONE->name,
         'room_id' => '1',
         'start_date' => $date_in_the_future,
@@ -131,7 +130,7 @@ beforeEach(function (): void {
     $this->invalid_request_directed_training_without_trainer = [
         'end_date' => $date_in_the_future,
         'end_time' => '21:29',
-        'level' => TrainingLevel::BEGINNERS->name,
+        'level' => 'BEGINNERS',
         'recurrence' => Recurrence::NONE->name,
         'room_id' => '1',
         'start_date' => $date_in_the_future,
@@ -143,7 +142,7 @@ beforeEach(function (): void {
     $this->invalid_request_supervised_training_without_trainer = [
         'end_date' => $date_in_the_future,
         'end_time' => '21:29',
-        'level' => TrainingLevel::BEGINNERS->name,
+        'level' => 'BEGINNERS',
         'recurrence' => Recurrence::NONE->name,
         'room_id' => '1',
         'start_date' => $date_in_the_future,
@@ -215,7 +214,7 @@ test('newly created trainings are publish into public site', function (): void {
 
     $room = Room::find(1);
     $this->get('/')
-        ->assertSee(TrainingLevel::BEGINNERS->value)
+        ->assertSee('Beginners')
         ->assertSee(TrainingType::DIRECTED->value)
         ->assertSee('21:30 - 22:00')
         ->assertSee($room->name);

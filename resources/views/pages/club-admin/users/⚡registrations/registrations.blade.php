@@ -227,6 +227,20 @@
                         @endif
                     @endscope
 
+                    @scope('cell_charter', $req)
+                        @if ($req->charter_signed)
+                            <span class="inline-flex items-center gap-1 text-xs text-success">
+                                <x-icon name="o-check-badge" class="size-4" />
+                                {{ __('Signed') }}
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1 text-xs text-base-content/40">
+                                <x-icon name="o-minus-circle" class="size-4" />
+                                {{ __('Not signed') }}
+                            </span>
+                        @endif
+                    @endscope
+
                     @scope('cell_status', $req)
                         @php
                             $s = match ($req->status) {

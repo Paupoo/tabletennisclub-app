@@ -14,7 +14,7 @@ describe('training:process-deadlines', function (): void {
         $this->artisan('training:process-deadlines')->assertSuccessful();
     });
 
-    it('tells the member their offer expired before dropping them', function (): void {
+    it('tells the member their offer expired, and keeps the trace of it', function (): void {
         Notification::fake();
 
         $pack = TrainingPack::factory()->create(['max_participants' => 1, 'price' => 90]);
@@ -28,7 +28,19 @@ describe('training:process-deadlines', function (): void {
         $this->artisan('training:process-deadlines')->assertSuccessful();
 
         Notification::assertSentTo($latecomer->user, TrainingWaitlistOfferExpiredNotification::class);
-        expect($latecomer->trainingPacks()->where('training_pack_id', $pack->id)->exists())->toBeFalse();
+
+        // La ligne survit en `expired`. La supprimer effacerait le fait que la
+        // place avait été offerte, et le membre qui réclame n'aurait rien à
+        // opposer — c'est ce que fait déjà le tournoi avec `cancelled`.
+        $pivot = DB::table('subscription_training_pack')
+            ->where('subscription_id', $latecomer->id)
+            ->where('training_pack_id', $pack->id)
+            ->first();
+
+        expect($pivot)->not->toBeNull()
+            ->and($pivot->status)->toBe('expired')
+            ->and($pivot->confirmation_deadline)->toBeNull()
+            ->and($pivot->waitlist_position)->toBeNull();
     })->group('training', 'waitlist');
 
     it('leaves an offer that has not expired yet alone', function (): void {

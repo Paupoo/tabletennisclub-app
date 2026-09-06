@@ -2,26 +2,33 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Subscriptions\AddMemberToTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\DiscontinueTrainingPackAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Recurrence;
 use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TrainingCancellationType;
-use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\Training;
+use App\Domains\Trainings\Models\TrainingLevel;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingPackScheduleChangedNotification;
 use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
+use App\Domains\Trainings\Services\TrainingAttendanceReport;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
+use App\Domains\Trainings\Services\TrainingWaitlistService;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Mary\Traits\Toast;
@@ -31,6 +38,13 @@ new class extends Component
     use HasBreadcrumbs;
     use HasFilterDrawer;
     use Toast;
+
+    // ── Ajout manuel d'un membre par le comité ────────────────────────────────
+    public bool $addMemberModal = false;
+
+    public string $addMemberStartsOn = '';
+
+    public int $addMemberUserId = 0;
 
     // ── Cancellation modal ────────────────────────────────────────────────────
     public bool $cancelModal = false;
@@ -55,12 +69,14 @@ new class extends Component
 
     public int $formDurationMinutes = 90;
 
+    public bool $formEnrollmentsOpen = true;
+
     /** @var array<int, string> */
     public array $formExcludedDates = [];
 
     public bool $formIsOpenEnrollment = false;
 
-    public string $formLevel = '';
+    public int $formLevel = 0;
 
     /** Empty string = inherit the room's training capacity. */
     public string $formMaxParticipants = '';
@@ -91,6 +107,13 @@ new class extends Component
 
     public string $formType = '';
 
+    /** Show packs withdrawn from the offer, so they can be found and put back. */
+    // ── Gestion des niveaux ───────────────────────────────────────────────────
+    public bool $levelDrawer = false;
+
+    /** @var array{id?: int|null, label: string, color: string} */
+    public array $levelForm = ['id' => null, 'label' => '', 'color' => 'primary'];
+
     /** Ticked by default: forgetting to warn members is worse than one extra mail. */
     public bool $notifyMembersOfChange = true;
 
@@ -103,7 +126,8 @@ new class extends Component
     // ── Session drill-down ────────────────────────────────────────────────────
     public ?int $selectedPackId = null;
 
-    /** Show packs withdrawn from the offer, so they can be found and put back. */
+    public bool $showAllSessions = false;
+
     public bool $showInactive = false;
 
     public string $step = '1';
@@ -124,6 +148,131 @@ new class extends Component
     public function activeSeason(): ?Season
     {
         return Season::where('is_active', true)->first();
+    }
+
+    /**
+     * Membres affiliés à la saison du pack et pas encore dedans.
+     *
+     * @return array<int, array{id: int, name: string}>
+     */
+    #[Computed]
+    public function addMemberOptions(): array
+    {
+        $pack = $this->selectedPack;
+
+        if (! $pack) {
+            return [];
+        }
+
+        $alreadyIn = DB::table('subscription_training_pack')
+            ->join('subscriptions', 'subscriptions.id', '=', 'subscription_training_pack.subscription_id')
+            ->where('subscription_training_pack.training_pack_id', $pack->id)
+            ->whereIn('subscription_training_pack.status', ['enrolled', 'pending', 'offered'])
+            ->pluck('subscriptions.user_id');
+
+        return User::query()
+            ->whereHas('subscriptions', fn (Builder $q) => $q
+                ->where('season_id', $pack->season_id)
+                ->whereIn('status', ['pending', 'confirmed', 'paid'])
+            )
+            ->whereNotIn('id', $alreadyIn)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get()
+            ->map(fn (User $user): array => [
+                'id' => $user->id,
+                'name' => $user->last_name . ' ' . $user->first_name,
+            ])
+            ->toArray();
+    }
+
+    /**
+     * Le pack déborderait-il si on ajoutait quelqu'un maintenant ?
+     *
+     * Sert à afficher l'avertissement, pas à interdire : le comité franchit le
+     * plafond en connaissance de cause (décision #10).
+     */
+    #[Computed]
+    public function addMemberOverCapacity(): bool
+    {
+        $pack = $this->selectedPack;
+
+        return $pack !== null && ! $pack->hasAvailableSpot();
+    }
+
+    /**
+     * Inscrit un membre dans le pack ouvert, sur décision du comité.
+     *
+     * Court-circuite volontairement le verrou et le plafond : c'est le pendant
+     * de « inscriptions closes », et le moyen de régulariser quelqu'un que la
+     * feuille de présence montre là depuis des mois.
+     */
+    public function addMemberToPack(): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        $pack = $this->selectedPack;
+
+        if (! $pack || $this->addMemberUserId === 0) {
+            return;
+        }
+
+        $subscription = Subscription::where('user_id', $this->addMemberUserId)
+            ->where('season_id', $pack->season_id)
+            ->first();
+
+        if (! $subscription) {
+            $this->error(__('This member has no membership for the season. Affiliate them first.'));
+
+            return;
+        }
+
+        try {
+            (new AddMemberToTrainingPackAction)(
+                $subscription,
+                $pack,
+                $this->addMemberStartsOn ?: null,
+                $subscription->has_other_family_members ? 2 : 1,
+            );
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->addMemberModal = false;
+        $this->addMemberUserId = 0;
+        $this->addMemberStartsOn = '';
+
+        unset($this->packs, $this->selectedPack, $this->addMemberOptions, $this->addMemberOverCapacity, $this->attendanceMatrix);
+
+        $this->success(__(':member added to :pack.', [
+            'member' => $subscription->user->first_name . ' ' . $subscription->user->last_name,
+            'pack' => $pack->name,
+        ]), icon: 'o-user-plus');
+    }
+
+    /**
+     * La grille membres × séances du pack consulté.
+     *
+     * Douze séances par défaut : un trimestre tient à l'écran, une saison
+     * entière demanderait un scroll horizontal que personne ne lit.
+     *
+     * @return array{sessions: list<array<string, mixed>>, members: list<array<string, mixed>>, walkIns: list<array<string, mixed>>}
+     */
+    #[Computed]
+    public function attendanceMatrix(): array
+    {
+        $pack = $this->selectedPack;
+
+        if (! $pack) {
+            return ['sessions' => [], 'members' => [], 'walkIns' => []];
+        }
+
+        return app(TrainingAttendanceReport::class)->matrix(
+            $pack,
+            $this->showAllSessions ? PHP_INT_MAX : 12,
+        );
     }
 
     public function backToList(): void
@@ -231,6 +380,32 @@ new class extends Component
     }
 
     /**
+     * Supprime un niveau que rien ne référence.
+     *
+     * Un niveau porté par un pack ou une séance ne se supprime jamais : le
+     * désactiver le retire des listes sans réécrire l'histoire des saisons
+     * passées.
+     */
+    public function deleteLevel(int $levelId): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        $level = TrainingLevel::findOrFail($levelId);
+
+        if ($level->isInUse()) {
+            $this->error(__('This level is still used by a pack or a session. Retire it instead of deleting it.'));
+
+            return;
+        }
+
+        $level->delete();
+
+        unset($this->levelOptions, $this->levels);
+
+        $this->success(__('Level deleted.'), icon: 'o-trash');
+    }
+
+    /**
      * How much of the club this would touch, shown before the committee confirms.
      *
      * Deliberately no euro figure: the refund owed to each member depends on the
@@ -256,6 +431,17 @@ new class extends Component
                 ->where('status', 'scheduled')
                 ->where('start', '>=', Carbon::now())
                 ->count(),
+        ];
+    }
+
+    public function editLevel(int $levelId): void
+    {
+        $level = TrainingLevel::findOrFail($levelId);
+
+        $this->levelForm = [
+            'id' => $level->id,
+            'label' => $level->label,
+            'color' => $level->color,
         ];
     }
 
@@ -293,14 +479,27 @@ new class extends Component
     #[Computed]
     public function levelOptions(): array
     {
-        return collect(TrainingLevel::cases())
-            ->map(fn ($e): array => ['id' => $e->value, 'name' => $e->value])
+        return TrainingLevel::active()
+            ->get()
+            ->map(fn (TrainingLevel $level): array => ['id' => $level->id, 'name' => $level->label])
             ->toArray();
+    }
+
+    /** @return Collection<int, TrainingLevel> */
+    #[Computed]
+    public function levels(): Collection
+    {
+        return TrainingLevel::ordered()->get();
     }
 
     public function mount(): void
     {
         $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
+    }
+
+    public function newLevel(): void
+    {
+        $this->levelForm = ['id' => null, 'label' => '', 'color' => 'primary'];
     }
 
     public function nextStep(): void
@@ -309,7 +508,7 @@ new class extends Component
             $rules = [
                 'formSeasonId' => 'required|integer|min:1',
                 'formName' => 'required|min:2|max:255',
-                'formLevel' => 'required',
+                'formLevel' => 'required|integer|min:1',
                 'formType' => 'required',
                 'formRoomId' => 'required|integer|min:1',
             ];
@@ -345,6 +544,15 @@ new class extends Component
         $this->step = (string) ((int) $this->step + 1);
     }
 
+    public function openAddMember(): void
+    {
+        $this->addMemberUserId = 0;
+        $this->addMemberStartsOn = '';
+        $this->addMemberModal = true;
+
+        unset($this->addMemberOptions, $this->addMemberOverCapacity);
+    }
+
     // ── Cancellation ──────────────────────────────────────────────────────────
 
     public function openCancel(int $trainingId): void
@@ -378,7 +586,7 @@ new class extends Component
         $this->packId = $pack->id;
         $this->formSeasonId = $pack->season_id;
         $this->formName = $pack->name;
-        $this->formLevel = $pack->level->value;
+        $this->formLevel = $pack->training_level_id ?? 0;
         $this->formType = $pack->type->value;
         $this->formTrainerId = $pack->trainer_id ?? 0;
         $this->formRoomId = $pack->room_id;
@@ -395,6 +603,7 @@ new class extends Component
         $this->formAllowDiscount = $pack->allow_discount;
         $this->formMaxParticipants = (string) ($pack->max_participants ?? '');
         $this->formIsOpenEnrollment = $pack->is_open_enrollment;
+        $this->formEnrollmentsOpen = $pack->enrollments_open;
 
         $this->wizardOpen = true;
         $this->step = '1';
@@ -414,12 +623,18 @@ new class extends Component
             return new Collection;
         }
 
-        return TrainingPack::with(['room', 'trainer', 'eventPost'])
-            ->where('season_id', $this->viewSeason->id)
-            ->when(! $this->showInactive, fn (Builder $q) => $q->where('is_active', true))
-            ->orderBy('is_active', 'desc')
-            ->orderBy('level')
-            ->orderBy('name')
+        // Le tri porte sur la position du niveau, pas sur son libellé : la
+        // délégation décide de l'ordre (du plus jeune au plus fort), et le
+        // renommer ne doit pas réordonner l'écran. Jointure à gauche pour que
+        // les packs sans niveau restent listés.
+        return TrainingPack::with(['room', 'trainer', 'eventPost', 'level'])
+            ->select('training_packs.*')
+            ->leftJoin('training_levels', 'training_levels.id', '=', 'training_packs.training_level_id')
+            ->where('training_packs.season_id', $this->viewSeason->id)
+            ->when(! $this->showInactive, fn (Builder $q) => $q->where('training_packs.is_active', true))
+            ->orderBy('training_packs.is_active', 'desc')
+            ->orderBy('training_levels.position')
+            ->orderBy('training_packs.name')
             ->get();
     }
 
@@ -489,6 +704,33 @@ new class extends Component
         if ((int) $this->step > 1) {
             $this->step = (string) ((int) $this->step - 1);
         }
+    }
+
+    /**
+     * Confie une séance à un autre coach que celui du pack.
+     *
+     * Le remplacement improvisé — titulaire malade le mardi soir, un collègue
+     * prend la salle — laissait sinon la séance non pointée à vie : le
+     * remplaçant n'y avait pas accès et le titulaire n'y était pas.
+     *
+     * Ne touche que cette séance : le coach du pack reste inchangé pour toutes
+     * les autres.
+     */
+    public function reassignSessionCoach(int $trainingId, int $userId): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        $session = Training::findOrFail($trainingId);
+        $coach = User::findOrFail($userId);
+
+        $session->update(['trainer_id' => $coach->id]);
+
+        unset($this->sessions);
+
+        $this->success(__(':session handed over to :coach.', [
+            'session' => $session->start->translatedFormat('D d/m'),
+            'coach' => $coach->first_name . ' ' . $coach->last_name,
+        ]), icon: 'o-arrow-path');
     }
 
     public function refreshPacks(): void
@@ -602,7 +844,7 @@ new class extends Component
         $data = [
             'season_id' => $season->id,
             'name' => $this->formName,
-            'level' => $this->formLevel,
+            'training_level_id' => $this->formLevel ?: null,
             'type' => $this->formType,
             'trainer_id' => $this->formTrainerId ?: null,
             'room_id' => $this->formRoomId,
@@ -618,14 +860,23 @@ new class extends Component
                 ? null
                 : (int) $this->formMaxParticipants,
             'is_open_enrollment' => $isOpenEnrollment,
-            'is_active' => true,
+            'enrollments_open' => $this->formEnrollmentsOpen,
             'price' => $this->formPrice,
             'allow_discount' => $this->formAllowDiscount,
         ];
 
+        // `is_active` n'appartient pas au formulaire : il est piloté par
+        // « Retirer de l'offre » / « Remettre dans l'offre ». L'écrire ici
+        // remettait en ligne, à chaque enregistrement, un pack qu'on venait de
+        // retirer — y compris pour une simple correction de prix.
         $pack = $this->packId
             ? tap(TrainingPack::findOrFail($this->packId))->update($data)
-            : TrainingPack::create($data);
+            : TrainingPack::create($data + ['is_active' => true]);
+
+        // Relever le plafond ouvre des places pour de bon : la file doit être
+        // appelée, sinon les places se remplissent au premier arrivé pendant
+        // que ceux qui attendaient gardent leur rang pour rien.
+        app(TrainingWaitlistService::class)->releaseSpot($pack);
 
         if (! $this->packId) {
             $pack->generateSessions($season);
@@ -650,6 +901,42 @@ new class extends Component
         unset($this->packs);
         $this->wizardOpen = false;
         $this->resetWizardFields();
+    }
+
+    /**
+     * Crée ou met à jour un niveau.
+     *
+     * Un niveau neuf se place en fin de liste : l'ordre est une décision de la
+     * délégation, pas un effet de bord de la date de création.
+     */
+    public function saveLevel(): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        $this->validate([
+            'levelForm.label' => 'required|string|min:2|max:60',
+            'levelForm.color' => 'required|string|max:30',
+        ]);
+
+        $attributes = [
+            'label' => $this->levelForm['label'],
+            'color' => $this->levelForm['color'],
+        ];
+
+        if (! empty($this->levelForm['id'])) {
+            TrainingLevel::findOrFail($this->levelForm['id'])->update($attributes);
+        } else {
+            TrainingLevel::create($attributes + [
+                'position' => (int) TrainingLevel::max('position') + 1,
+                'is_active' => true,
+            ]);
+        }
+
+        $this->newLevel();
+
+        unset($this->levelOptions, $this->levels);
+
+        $this->success(__('Level saved.'), icon: 'o-check-circle');
     }
 
     /**
@@ -713,7 +1000,7 @@ new class extends Component
     public function selectedPack(): ?TrainingPack
     {
         return $this->selectedPackId
-            ? TrainingPack::with(['room', 'trainer'])->find($this->selectedPackId)
+            ? TrainingPack::with(['room', 'trainer', 'level'])->find($this->selectedPackId)
             : null;
     }
 
@@ -729,6 +1016,26 @@ new class extends Component
             : new Collection;
     }
 
+    /**
+     * Ouvre ou ferme le libre-service sur un pack.
+     *
+     * Indépendant de « Retirer de l'offre » : un pack peut rester affiché sur
+     * le site, complet, avec ses inscriptions closes. Les offres de liste
+     * d'attente déjà envoyées ne sont pas rappelées — fermer empêche d'entrer,
+     * pas d'avancer.
+     */
+    public function toggleEnrollments(int $packId): void
+    {
+        $pack = TrainingPack::findOrFail($packId);
+        $pack->update(['enrollments_open' => ! $pack->enrollments_open]);
+
+        unset($this->packs);
+
+        $pack->enrollments_open
+            ? $this->success(__('Enrolments reopened for :pack.', ['pack' => $pack->name]), icon: 'o-lock-open')
+            : $this->warning(__('Enrolments closed for :pack. The committee can still add members.', ['pack' => $pack->name]), icon: 'o-lock-closed');
+    }
+
     public function toggleExcludeDate(string $date): void
     {
         if (in_array($date, $this->formExcludedDates, true)) {
@@ -740,6 +1047,17 @@ new class extends Component
         }
 
         unset($this->previewDates);
+    }
+
+    /** Retire un niveau des listes sans toucher aux packs qui le portent. */
+    public function toggleLevel(int $levelId): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        $level = TrainingLevel::findOrFail($levelId);
+        $level->update(['is_active' => ! $level->is_active]);
+
+        unset($this->levelOptions, $this->levels);
     }
 
     #[Computed]
@@ -756,8 +1074,15 @@ new class extends Component
     public function typeOptions(): array
     {
         return collect(TrainingType::cases())
-            ->map(fn ($e): array => ['id' => $e->value, 'name' => $e->value])
+            ->map(fn (TrainingType $type): array => ['id' => $type->value, 'name' => $type->label()])
             ->toArray();
+    }
+
+    // ── Session drill-down ────────────────────────────────────────────────────
+
+    public function updatedShowAllSessions(): void
+    {
+        unset($this->attendanceMatrix);
     }
 
     #[Computed]
@@ -765,8 +1090,6 @@ new class extends Component
     {
         return $this->viewSeasonId ? Season::find($this->viewSeasonId) : null;
     }
-
-    // ── Session drill-down ────────────────────────────────────────────────────
 
     public function viewSessions(int $packId): void
     {
@@ -886,7 +1209,7 @@ new class extends Component
         $this->step = '1';
         $this->formSeasonId = $this->activeSeason?->id ?? 0;
         $this->formName = '';
-        $this->formLevel = '';
+        $this->formLevel = 0;
         $this->formType = '';
         $this->formTrainerId = 0;
         $this->formRoomId = 0;
@@ -902,6 +1225,7 @@ new class extends Component
         $this->formAllowDiscount = true;
         $this->formMaxParticipants = '';
         $this->formIsOpenEnrollment = false;
+        $this->formEnrollmentsOpen = true;
         $this->regenerationConfirmed = false;
         $this->notifyMembersOfChange = true;
     }

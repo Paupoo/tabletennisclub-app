@@ -56,6 +56,7 @@
             <div class="rounded-lg border border-base-300 bg-base-200/40 p-3 text-xs text-base-content/60 space-y-1.5">
                 <p><strong>Google Calendar</strong> — {{ __('Settings → Add calendar → From URL, then paste the link.') }}</p>
                 <p><strong>Apple Calendar</strong> — {{ __('File → New Calendar Subscription, then paste the link.') }}</p>
+                <p>{{ __('Changes can take up to 24 h to appear in your calendar.') }}</p>
                 <p>{{ __('Keep this link private: anyone who has it can read your club schedule.') }}</p>
             </div>
         </div>

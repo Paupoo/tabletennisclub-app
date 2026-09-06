@@ -7,9 +7,11 @@
     @if ($selectedPackId)
         {{-- SESSION LIST HEADER --}}
         <x-header progress-indicator separator
-            :subtitle="$selectedPack?->level?->value . ' · ' . $selectedPack?->type?->value"
+            :subtitle="$selectedPack?->level?->label . ' · ' . $selectedPack?->type?->label()"
             :title="$selectedPack?->name ?? __('Sessions')">
             <x-slot:actions>
+                <x-button class="btn-primary btn-sm" icon="o-user-plus" :label="__('Add a member')"
+                    wire:click="openAddMember" />
                 <x-button class="btn-ghost" icon="o-arrow-left" :label="__('Back')" wire:click="backToList" />
             </x-slot:actions>
         </x-header>
@@ -22,6 +24,8 @@
                 <div class="hidden items-center gap-2 lg:flex">
                     <x-admin.shared.filters-button :count="count($filterChips)" />
                 </div>
+                <x-button class="btn-ghost btn-sm" icon="o-swatch" :label="__('Levels')"
+                    wire:click="$set('levelDrawer', true)" />
                 <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New pack')" wire:click="openCreate" />
             </x-slot:actions>
         </x-header>
@@ -108,12 +112,133 @@
                 </div>
             @endforelse
         </div>
+
+        {{-- ================================================================
+             ATTENDANCE MATRIX — one grid answers both questions:
+             a hollow column is a session nobody came to, a hollow row is a
+             member who pays and never shows up.
+        ================================================================ --}}
+        @php
+            $matrix = $this->attendanceMatrix;
+            $rateTone = fn (?int $rate) => match (true) {
+                $rate === null => 'text-base-content/30',
+                $rate >= 70 => 'text-success',
+                $rate >= 40 => 'text-warning',
+                default => 'text-error',
+            };
+        @endphp
+
+        @if (! empty($matrix['sessions']))
+            <div class="mt-8">
+                <div class="mb-3 flex items-center justify-between">
+                    <p class="text-xs font-bold uppercase tracking-wide text-base-content/50">
+                        {{ __('Attendance') }}
+                    </p>
+
+                    <label class="flex cursor-pointer items-center gap-2 text-xs text-base-content/60">
+                        <x-checkbox wire:model.live="showAllSessions" />
+                        {{ __('Show the whole season') }}
+                    </label>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-base-300 bg-base-100">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th class="sticky left-0 z-10 bg-base-100">{{ __('Member') }}</th>
+                                @foreach ($matrix['sessions'] as $column)
+                                    <th @class([
+                                        'text-center text-xs font-medium',
+                                        'text-base-content/30 line-through' => $column['cancelled'],
+                                    ])>
+                                        {{ \Carbon\Carbon::parse($column['date'])->format('d/m') }}
+                                    </th>
+                                @endforeach
+                                <th class="text-center">{{ __('Rate') }}</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (array_merge($matrix['members'], $matrix['walkIns']) as $index => $row)
+                                @php $isWalkIn = $index >= count($matrix['members']); @endphp
+                                <tr @class(['border-t-2 border-warning/40' => $isWalkIn && $index === count($matrix['members'])])>
+                                    <td class="sticky left-0 z-10 whitespace-nowrap bg-base-100">
+                                        {{ $row['name'] }}
+                                        @if ($isWalkIn)
+                                            <x-badge class="badge-warning badge-soft badge-xs ml-1"
+                                                :value="__('not enrolled')" />
+                                        @endif
+                                    </td>
+
+                                    @foreach ($matrix['sessions'] as $column)
+                                        @php $cell = $row['cells'][$column['id']] ?? null; @endphp
+                                        <td class="text-center">
+                                            @if ($column['cancelled'])
+                                                <span class="text-base-content/20">—</span>
+                                            @elseif (! $column['counted'])
+                                                {{-- Hachuré : « pas pointé », à ne pas confondre avec « absent ». --}}
+                                                <span class="inline-block h-3 w-3 rounded-sm bg-base-300/60"
+                                                    title="{{ __('Not recorded') }}"></span>
+                                            @elseif ($cell === 'present')
+                                                <x-icon class="h-4 w-4 text-success" name="o-check" />
+                                            @elseif ($cell === 'excused')
+                                                <x-icon class="h-4 w-4 text-warning" name="o-minus" />
+                                            @elseif ($cell === 'absent')
+                                                <x-icon class="h-4 w-4 text-error" name="o-x-mark" />
+                                            @else
+                                                <span class="text-base-content/20">·</span>
+                                            @endif
+                                        </td>
+                                    @endforeach
+
+                                    <td @class(['text-center text-sm font-bold', $rateTone($row['rate'] ?? null)])>
+                                        {{ isset($row['rate']) ? $row['rate'] . '%' : '—' }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+
+                        <tfoot>
+                            <tr>
+                                <th class="sticky left-0 z-10 bg-base-100 text-xs font-bold uppercase tracking-wide text-base-content/50">
+                                    {{ __('Turnout') }}
+                                </th>
+                                @foreach ($matrix['sessions'] as $column)
+                                    <th @class(['text-center text-xs font-bold', $rateTone($column['rate'])])>
+                                        {{ $column['rate'] !== null ? $column['rate'] . '%' : '—' }}
+                                    </th>
+                                @endforeach
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="mt-2 flex flex-wrap items-center gap-4 text-xs text-base-content/50">
+                    <span class="flex items-center gap-1">
+                        <x-icon class="h-3.5 w-3.5 text-success" name="o-check" /> {{ __('Present') }}
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <x-icon class="h-3.5 w-3.5 text-warning" name="o-minus" /> {{ __('Excused') }}
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <x-icon class="h-3.5 w-3.5 text-error" name="o-x-mark" /> {{ __('Absent') }}
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span class="inline-block h-3 w-3 rounded-sm bg-base-300/60"></span> {{ __('Not recorded') }}
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span class="text-base-content/20">—</span> {{ __('Cancelled session') }}
+                    </span>
+                </div>
+            </div>
+        @endif
     @else
         {{-- ================================================================
              PACK LIST — grouped by level
         ================================================================ --}}
         @php
-            $grouped = $packs->groupBy(fn ($p) => $p->level?->value ?? 'Other');
+            $grouped = $packs->groupBy(fn ($p) => $p->level?->label ?? __('No level'));
             $levelColor = [
                 'Beginners'       => 'emerald',
                 'Elite'           => 'violet',
@@ -141,6 +266,9 @@
                         <div class="grid gap-4 pb-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             @foreach ($items as $pack)
                                 @php
+                                    // Un pack sans plafond n'a pas de places à compter : ni
+                                    // celui du pack, ni celui de la salle, que le libre-service ignore.
+                                    $capped = ! $pack->is_open_enrollment && $pack->effectiveMaxParticipants() > 0;
                                     $enrolled = $pack->enrolledCount();
                                     $max = $pack->effectiveMaxParticipants();
                                     $full = $max > 0 && $enrolled >= $max;
@@ -157,7 +285,7 @@
                                                     {{ $pack->name }}
                                                 </p>
                                                 <p class="mt-0.5 text-xs text-primary/60">
-                                                    {{ $pack->type?->value }}
+                                                    {{ $pack->type?->label() }}
                                                     @if ($pack->day_of_week)
                                                         · {{ ['', __('Mon'), __('Tue'), __('Wed'), __('Thu'), __('Fri'), __('Sat'), __('Sun')][$pack->day_of_week] }}
                                                         {{ $pack->start_time ? \Carbon\Carbon::parse($pack->start_time)->format('H:i') : '' }}
@@ -195,20 +323,23 @@
                                             </div>
                                         </div>
 
-                                        {{-- Capacity --}}
-                                        <div class="mb-3">
-                                            <div class="mb-1 flex justify-between text-xs text-base-content/50">
-                                                <span>{{ $enrolled }} / {{ $max ?: '∞' }} {{ __('enrolled') }}</span>
-                                                @if ($full)
-                                                    <span class="font-medium text-error">{{ __('Full') }}</span>
-                                                @endif
-                                            </div>
-                                            @if ($max > 0)
+                                        {{-- Capacity — only where there is a cap to count against.
+                                             effectiveMaxParticipants() falls back to the room, so an
+                                             open-enrolment pack was showing a limit hasAvailableSpot()
+                                             never applies. --}}
+                                        @if ($capped)
+                                            <div class="mb-3">
+                                                <div class="mb-1 flex justify-between text-xs text-base-content/50">
+                                                    <span>{{ $enrolled }} / {{ $max }} {{ __('enrolled') }}</span>
+                                                    @if ($full)
+                                                        <span class="font-medium text-error">{{ __('Full') }}</span>
+                                                    @endif
+                                                </div>
                                                 <progress
                                                     class="progress {{ $full ? 'progress-error' : 'progress-primary' }} h-1"
                                                     max="{{ $max }}" value="{{ $enrolled }}"></progress>
-                                            @endif
-                                        </div>
+                                            </div>
+                                        @endif
 
                                         {{-- Actions --}}
                                         <div class="mt-auto flex flex-nowrap items-center gap-1 border-t border-base-300 pt-2">
@@ -250,8 +381,13 @@
                                                         :aria-label="__('More actions')" />
                                                 </x-slot:trigger>
 
+                                                <x-menu-item
+                                                    :icon="$pack->enrollments_open ? 'o-lock-closed' : 'o-lock-open'"
+                                                    :title="$pack->enrollments_open ? __('Close enrolments') : __('Reopen enrolments')"
+                                                    wire:click="toggleEnrollments({{ $pack->id }})" />
+
                                                 @if ($pack->is_active)
-                                                    <x-menu-item icon="o-eye-slash"
+                                                    <x-menu-item icon="o-eye-slash" separator
                                                         :title="__('Withdraw from the offer')"
                                                         wire:click="openWithdrawPack({{ $pack->id }})" />
                                                     <x-menu-item class="text-error" icon="o-x-circle" separator
@@ -408,9 +544,18 @@
                     @if ($formType === \App\Domains\Shared\Enums\TrainingType::FREE->value)
                         <label class="flex items-center gap-2 mt-3 cursor-pointer">
                             <x-checkbox wire:model.live="formIsOpenEnrollment" />
-                            <span class="text-sm">{{ __('Unlimited enrolment (no cap, no waiting list)') }}</span>
+                            <span class="text-sm">{{ __('No participant cap (and therefore no waiting list)') }}</span>
                         </label>
                     @endif
+
+                    <label class="mt-3 flex cursor-pointer items-center gap-2">
+                        <x-checkbox wire:model.live="formEnrollmentsOpen" />
+                        <span class="text-sm">{{ __('Open to member sign-ups') }}</span>
+                    </label>
+
+                    <p class="mt-1 text-xs text-base-content/50">
+                        {{ __('Unchecked, the pack stays visible but members cannot sign up on their own. The committee can still add them.') }}
+                    </p>
                 </div>
 
                 {{-- Pack period --}}
@@ -648,4 +793,84 @@
             <x-button :label="__('Stop the pack')" class="btn-error" wire:click="confirmDiscontinuePack" spinner />
         </x-slot:actions>
     </x-app-modal>
+
+    {{-- ── Add a member by hand ─────────────────────────────────────────────── --}}
+    <x-app-modal :title="__('Add a member to this pack')" wire:model="addMemberModal" separator
+        :open="$addMemberModal">
+        <p class="text-sm text-base-content/70">
+            {{ __('The spot is validated straight away — no request to approve. The member is notified and their balance is updated.') }}
+        </p>
+
+        @if ($this->addMemberOverCapacity)
+            <x-alert class="alert-warning mt-3" icon="o-exclamation-triangle">
+                {{ __('This pack is full. Adding someone takes it over its cap.') }}
+            </x-alert>
+        @endif
+
+        <x-choices-offline class="mt-4" :label="__('Member')" wire:model="addMemberUserId"
+            :options="$this->addMemberOptions" option-label="name" single searchable />
+
+        <x-input class="mt-3" type="date" :label="__('Enrolled since')" wire:model="addMemberStartsOn" />
+
+        <p class="mt-1 text-xs text-base-content/50">
+            {{ __('Leave empty to start today. Set an earlier date to bill the months already attended.') }}
+        </p>
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('addMemberModal', false)" />
+            <x-button :label="__('Add the member')" class="btn-primary" wire:click="addMemberToPack" spinner />
+        </x-slot:actions>
+    </x-app-modal>
+
+    {{-- ── Training levels ──────────────────────────────────────────────────── --}}
+    <x-drawer wire:model="levelDrawer" :title="__('Training levels')" right separator with-close-button
+        class="w-11/12 lg:w-1/3">
+        <p class="mb-4 text-sm text-base-content/60">
+            {{ __('A level used by a pack or a session cannot be deleted — retire it instead, and the packs that carry it keep their label.') }}
+        </p>
+
+        @foreach ($this->levels as $level)
+            <div class="mb-2 flex items-center gap-3 rounded-xl border border-base-300 px-3 py-2">
+                <span class="h-3 w-3 shrink-0 rounded-full bg-{{ $level->color }}"></span>
+
+                <span @class(['flex-1 text-sm', 'text-base-content/40 line-through' => ! $level->is_active])>
+                    {{ $level->label }}
+                </span>
+
+                <x-button class="btn-ghost btn-xs" icon="o-pencil" :aria-label="__('Rename')"
+                    wire:click="editLevel({{ $level->id }})" />
+
+                <x-button class="btn-ghost btn-xs"
+                    :icon="$level->is_active ? 'o-eye-slash' : 'o-eye'"
+                    :aria-label="$level->is_active ? __('Retire') : __('Bring back')"
+                    wire:click="toggleLevel({{ $level->id }})" />
+
+                <x-button class="btn-ghost btn-xs text-error" icon="o-trash" :aria-label="__('Delete')"
+                    wire:click="deleteLevel({{ $level->id }})" />
+            </div>
+        @endforeach
+
+        <div class="mt-6 rounded-xl border border-base-300 p-4">
+            <p class="mb-3 text-xs font-bold uppercase tracking-wide text-base-content/50">
+                {{ ($levelForm['id'] ?? null) ? __('Rename the level') : __('New level') }}
+            </p>
+
+            <x-input :label="__('Label')" wire:model="levelForm.label" :placeholder="__('E.g. Veterans')" />
+
+            <x-select class="mt-3" :label="__('Colour')" wire:model="levelForm.color" :options="[
+                ['id' => 'primary', 'name' => __('Blue')],
+                ['id' => 'success', 'name' => __('Green')],
+                ['id' => 'warning', 'name' => __('Amber')],
+                ['id' => 'error', 'name' => __('Red')],
+                ['id' => 'info', 'name' => __('Sky')],
+            ]" />
+
+            <div class="mt-4 flex gap-2">
+                <x-button class="btn-primary btn-sm" :label="__('Save')" wire:click="saveLevel" spinner />
+                @if ($levelForm['id'] ?? null)
+                    <x-button class="btn-ghost btn-sm" :label="__('Cancel')" wire:click="newLevel" />
+                @endif
+            </div>
+        </div>
+    </x-drawer>
 </div>

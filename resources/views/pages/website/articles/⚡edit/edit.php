@@ -34,6 +34,10 @@ new class extends Component
 
     public mixed $image = null;
 
+    public int $imageFocalX = 50;
+
+    public int $imageFocalY = 50;
+
     #[Locked]
     public ?int $newsPostId = null;
 
@@ -55,15 +59,27 @@ new class extends Component
             $this->category = $newsPost->category?->value ?? '';
             $this->status = $newsPost->status?->value ?? 'draft';
             $this->existingImage = $newsPost->image;
+            $this->imageFocalX = $newsPost->image_focal_x;
+            $this->imageFocalY = $newsPost->image_focal_y;
         }
     }
 
+    /**
+     * Drop the featured image, and the framing that went with it.
+     *
+     * A focal point set for the old photo would otherwise be applied silently
+     * to whatever replaces it, cropping the new image around a subject that
+     * is no longer there.
+     */
     public function removeImage(): void
     {
         if ($this->existingImage) {
             Storage::disk('public')->delete($this->existingImage);
             $this->existingImage = null;
         }
+
+        $this->imageFocalX = 50;
+        $this->imageFocalY = 50;
     }
 
     public function render(): View
@@ -82,6 +98,8 @@ new class extends Component
             'category' => ['required', Rule::in(NewsPostCategoryEnum::values())],
             'status' => ['required', Rule::in(NewsPostStatusEnum::values())],
             'image' => ['nullable', 'image', 'max:4096'],
+            'imageFocalX' => ['required', 'integer', 'between:0,100'],
+            'imageFocalY' => ['required', 'integer', 'between:0,100'],
         ]);
 
         $imagePath = $this->existingImage;
@@ -100,6 +118,8 @@ new class extends Component
             'category' => $this->category,
             'status' => NewsPostStatusEnum::from($this->status),
             'image' => $imagePath,
+            'image_focal_x' => $this->imageFocalX,
+            'image_focal_y' => $this->imageFocalY,
             'user_id' => Auth::id(),
         ];
 

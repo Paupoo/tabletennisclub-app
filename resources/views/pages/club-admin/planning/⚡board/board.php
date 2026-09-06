@@ -260,6 +260,8 @@ new class extends Component
 
         $this->editingPackId = $pack->id;
         $this->packName = $pack->name;
+        // TrainingPlanPack::$level est une colonne string : un instantané du
+        // plan, volontairement découplé de la table des niveaux.
         $this->packLevel = $pack->level;
         $this->packDayOfWeek = $pack->day_of_week;
         $this->packMaxParticipants = $pack->max_participants;

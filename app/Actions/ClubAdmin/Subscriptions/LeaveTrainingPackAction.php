@@ -7,6 +7,7 @@ namespace App\Actions\ClubAdmin\Subscriptions;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingPackCancelledNotification;
+use App\Domains\Trainings\Services\TrainingWaitlistService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -71,10 +72,10 @@ class LeaveTrainingPackAction
 
         (new CalculatePriceAction)($subscription, $familyMembersCount);
 
-        // Promote next waitlisted user only if a confirmed spot was freed
-        if ($wasEnrolled && $pack->waitlistCount() > 0) {
-            (new PromoteFromTrainingWaitlistAction)($pack);
-        }
+        // Toute sortie rend une place, `pending` comprise : c'est un statut que
+        // committedCount() retient. Le service décide seul s'il y a quelqu'un à
+        // appeler et combien — l'appelant n'a pas à le savoir.
+        app(TrainingWaitlistService::class)->releaseSpot($pack);
 
         $subscription->refresh();
 

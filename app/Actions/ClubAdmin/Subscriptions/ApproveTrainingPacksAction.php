@@ -7,6 +7,7 @@ namespace App\Actions\ClubAdmin\Subscriptions;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Services\TrainingPackProrata;
+use App\Domains\Trainings\Services\TrainingWaitlistService;
 use Illuminate\Support\Facades\DB;
 
 class ApproveTrainingPacksAction
@@ -25,9 +26,12 @@ class ApproveTrainingPacksAction
 
         $packs = TrainingPack::whereIn('id', $pendingRows->pluck('training_pack_id'))->get()->keyBy('id');
 
+        $released = [];
+
         foreach ($pendingRows as $row) {
             if (! in_array($row->training_pack_id, $approvedPackIds, true)) {
                 $subscription->trainingPacks()->detach($row->training_pack_id);
+                $released[] = $row->training_pack_id;
 
                 continue;
             }
@@ -46,5 +50,13 @@ class ApproveTrainingPacksAction
         }
 
         (new CalculatePriceAction)($subscription, $familyMembersCount);
+
+        // Une demande refusée rend sa place : la file doit être appelée, sinon
+        // le pack reste affiché complet pendant que la place dort.
+        $waitlist = app(TrainingWaitlistService::class);
+
+        foreach ($packs->only($released) as $releasedPack) {
+            $waitlist->releaseSpot($releasedPack);
+        }
     }
 }

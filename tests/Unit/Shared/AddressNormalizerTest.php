@@ -89,3 +89,39 @@ it('returns null for nothing to normalise', function (): void {
         ->and(AddressNormalizer::titleCase(''))->toBeNull()
         ->and(AddressNormalizer::titleCase('   '))->toBeNull();
 });
+
+/*
+ * The same rule is asked twice: of the export, when the file is read, and of
+ * whatever the reviewer typed in its place. A correction is only a correction if
+ * it satisfies the rule that rejected the original.
+ */
+describe('spotting an address the export shifted', function (): void {
+
+    it('accepts a complete Belgian address', function (): void {
+        expect(AddressNormalizer::looksShifted('Rue du Test 13', '1348', 'Louvain-la-Neuve'))->toBeFalse();
+    });
+
+    it('spots a locality standing where the postcode belongs', function (): void {
+        expect(AddressNormalizer::looksShifted('Rue du Test 13', 'Louvain-la-Neuve', null))->toBeTrue();
+    });
+
+    it('spots a postcode that is not four digits', function (): void {
+        expect(AddressNormalizer::looksShifted('Rue du Test 13', '134', 'Louvain-la-Neuve'))->toBeTrue()
+            ->and(AddressNormalizer::looksShifted('Rue du Test 13', '13480', 'Louvain-la-Neuve'))->toBeTrue();
+    });
+
+    it('spots a street left without a locality', function (): void {
+        expect(AddressNormalizer::looksShifted('Rue du Test 13', '1348', null))->toBeTrue()
+            ->and(AddressNormalizer::looksShifted('Rue du Test 13', '1348', '  '))->toBeTrue();
+    });
+
+    /*
+     * No street, no address: an affiliate the export carries nothing for is not
+     * an affiliate whose address was shifted, and flagging them would send every
+     * such line to a reviewer with nothing to review.
+     */
+    it('says nothing about an address the export never carried', function (): void {
+        expect(AddressNormalizer::looksShifted(null, null, null))->toBeFalse()
+            ->and(AddressNormalizer::looksShifted('', 'Louvain-la-Neuve', null))->toBeFalse();
+    });
+});

@@ -20,6 +20,14 @@
         <testsuite name="Browser">
             <directory>tests/Browser</directory>
         </testsuite>
+        <!--
+            Calls api.aftt.be for real. Deliberately absent from the suites
+            `composer test` runs: it is the canary for a federation API change
+            that the committed fixtures cannot see, and it is run on purpose.
+        -->
+        <testsuite name="Contract">
+            <directory>tests/Contract</directory>
+        </testsuite>
     </testsuites>
 
     <source>

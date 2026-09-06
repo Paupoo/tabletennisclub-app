@@ -39,11 +39,25 @@ function refusedLivewireRequest(array $payload = [], array $headers = []): Reque
 }
 
 /**
- * Attache une session vivante à la requête, sous l'id donné.
+ * Attache une session à la requête, en la démarrant sur un vrai handler.
+ *
+ * `$stored` est ce que le serveur retrouve sous cet id : un tableau vide
+ * reproduit une session expirée ou balayée. On passe par le handler plutôt que
+ * de peupler le Store à la main, parce que c'est justement le chemin de lecture
+ * qui est en cause — Store::readFromHandler() rend un tableau vide sans
+ * toucher à l'id, si bien qu'une session morte porte l'id du navigateur.
+ *
+ * @param  array<string, mixed>  $stored
  */
-function bindSession(Request $request, string $id): Store
+function bindSession(Request $request, string $id, array $stored = []): Store
 {
-    $session = new Store((string) config('session.cookie'), new ArraySessionHandler(120), $id);
+    $handler = new ArraySessionHandler(120);
+
+    if ($stored !== []) {
+        $handler->write($id, serialize($stored));
+    }
+
+    $session = new Store((string) config('session.cookie'), $handler, $id);
     $session->start();
     $request->setLaravelSession($session);
 
@@ -69,23 +83,28 @@ describe('empreintes d\'un 419', function (): void {
             ->and(PageExpiredReport::context($present)['cookie'])->toBe('present');
     });
 
-    it('distingue une session encore là d\'une session remplacée', function (): void {
+    it('distingue une session vivante d\'une session que le serveur n\'a plus', function (): void {
         $cookie = (string) config('session.cookie');
+        $id = str_repeat('a', 40);
 
-        $matched = refusedLivewireRequest();
-        $matched->cookies->set($cookie, str_repeat('a', 40));
-        bindSession($matched, str_repeat('a', 40));
+        $alive = refusedLivewireRequest();
+        $alive->cookies->set($cookie, $id);
+        bindSession($alive, $id, ['login_web_abc' => 7]);
 
-        // Le navigateur a nommé une session, le serveur lui en a rendu une
-        // neuve : session expirée, fichier balayé, ou second conteneur.
-        $replaced = refusedLivewireRequest();
-        $replaced->cookies->set($cookie, str_repeat('b', 40));
-        bindSession($replaced, str_repeat('c', 40));
+        // Le cœur du diagnostic : le cookie nomme une session, le serveur ne
+        // lit rien sous cet id — expirée, balayée, ou sur un autre conteneur.
+        // L'id, lui, est identique : le comparer dirait « vivante ».
+        $expired = refusedLivewireRequest();
+        $expired->cookies->set($cookie, $id);
+        $swept = bindSession($expired, $id);
 
         $none = refusedLivewireRequest();
 
-        expect(PageExpiredReport::context($matched)['session'])->toBe('matched')
-            ->and(PageExpiredReport::context($replaced)['session'])->toBe('replaced')
+        expect($swept->getId())->toBe($id, 'une session balayée garde l\'id du cookie')
+            ->and(PageExpiredReport::context($alive)['session'])->toBe('alive')
+            ->and(PageExpiredReport::context($alive)['session_keys'])->toBe(1)
+            ->and(PageExpiredReport::context($expired)['session'])->toBe('empty')
+            ->and(PageExpiredReport::context($expired)['session_keys'])->toBe(0)
             ->and(PageExpiredReport::context($none)['session'])->toBe('none');
     });
 
@@ -111,7 +130,7 @@ describe('empreintes d\'un 419', function (): void {
 
         $request = refusedLivewireRequest(['_token' => 'the-secret-token']);
         $request->cookies->set($cookie, str_repeat('e', 40));
-        bindSession($request, str_repeat('e', 40));
+        bindSession($request, str_repeat('e', 40), ['login_web_abc' => 7]);
 
         $serialised = json_encode(PageExpiredReport::context($request), JSON_THROW_ON_ERROR);
 

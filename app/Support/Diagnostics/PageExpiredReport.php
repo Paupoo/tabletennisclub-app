@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Diagnostics;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Throwable;
 
 /**
@@ -20,8 +21,8 @@ use Throwable;
  * The three candidate causes leave different fingerprints, and the point of
  * this class is to tell them apart on the next occurrence:
  *
- * - the session simply expired while the modal sat open — the browser sends no
- *   session cookie at all, or sends one the server no longer has a session for;
+ * - the session simply expired while the modal sat open — the cookie arrives,
+ *   and the server reads nothing back under that id;
  * - a reverse proxy or cookie setting drops the cookie — nothing arrives even
  *   though the page was just rendered;
  * - a deployment rotated APP_KEY under the open page — the cookie arrives and
@@ -51,6 +52,7 @@ final class PageExpiredReport
                 'method' => $request->method(),
                 'cookie' => self::cookieState($request),
                 'session' => self::sessionState($request),
+                'session_keys' => $request->hasSession() ? self::carriedKeys($request) : null,
                 'token' => self::tokenState($request),
                 'body_bytes' => strlen($request->getContent()),
                 'content_length' => $request->header('Content-Length'),
@@ -63,6 +65,19 @@ final class PageExpiredReport
         } catch (Throwable $e) {
             return ['diagnostic_failed' => $e->getMessage()];
         }
+    }
+
+    /**
+     * How much the session held, ignoring the framework's own bookkeeping.
+     *
+     * `_token` is regenerated on every start, so a session read back as
+     * nothing still has one; counting it would make every dead session look
+     * alive. `_previous` and `_flash` are written on the way out, not read on
+     * the way in, but they are excluded for the same reason.
+     */
+    private static function carriedKeys(Request $request): int
+    {
+        return count(Arr::except($request->session()->all(), ['_token', '_previous', '_flash']));
     }
 
     /**
@@ -107,11 +122,18 @@ final class PageExpiredReport
     /**
      * Whether the server still held the session the cookie pointed at.
      *
-     * `replaced` is the telling one: the browser named a session and got a
-     * brand new one back, which is what an expired session, a swept session
-     * file, or a second application container all look like from here.
-     * `matched` means the session was alive and the token itself was wrong —
-     * a stale page, a duplicate submit, a cached snapshot.
+     * `empty` is the telling one, and it is why this cannot be answered by
+     * comparing ids. StartSession does `setId($cookieValue)` before starting,
+     * and Store::readFromHandler() returns an empty array for a session file
+     * that expired or was swept — *without touching the id*. So a dead session
+     * comes back wearing the browser's own id, and an id comparison would call
+     * it alive. What actually distinguishes the two is whether anything was
+     * read back.
+     *
+     * `alive` therefore means the session carried real data and the token
+     * itself was wrong — a stale page, a duplicate submit, a cached snapshot.
+     * `empty` means the browser named a session the server no longer had:
+     * expired, garbage-collected, or living on another application instance.
      */
     private static function sessionState(Request $request): string
     {
@@ -122,10 +144,10 @@ final class PageExpiredReport
         $fromCookie = $request->cookies->get((string) config('session.cookie'));
 
         if (! is_string($fromCookie) || $fromCookie === '') {
-            return 'started_without_cookie';
+            return 'no_cookie';
         }
 
-        return $fromCookie === $request->session()->getId() ? 'matched' : 'replaced';
+        return self::carriedKeys($request) === 0 ? 'empty' : 'alive';
     }
 
     /**

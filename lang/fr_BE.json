@@ -4478,5 +4478,10 @@
     "Each of them gets 48 hours to confirm. The emails go out as soon as you save.": "Chacune a 48 h pour confirmer. Les mails partent dès l'enregistrement.",
     "Save and send the offers": "Enregistrer et envoyer les offres",
     "No limit": "Aucune limite",
-    ":count active registrations for :max spots: the tournament stays over capacity. Nobody is unregistered.": ":count inscrits actifs pour :max places : le tournoi reste en surcapacité. Personne n'est désinscrit."
+    ":count active registrations for :max spots: the tournament stays over capacity. Nobody is unregistered.": ":count inscrits actifs pour :max places : le tournoi reste en surcapacité. Personne n'est désinscrit.",
+    "New order": "Nouvelle commande",
+    "To cash in": "À encaisser",
+    "Products": "Produits",
+    "Categories": "Catégories",
+    "Cash sheet": "Feuille de caisse"
 }

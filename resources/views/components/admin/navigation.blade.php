@@ -139,6 +139,47 @@
     @endcanany
     @endfeature
 
+    {{--
+        Le Bar. Ses six écrans vivaient dans une application à part, avec son
+        propre en-tête de navigation ; ils sont ici au même rang que Trésorerie.
+
+        Les libellés disent ce que fait l'écran plutôt que ce qu'il s'appelait :
+        « Commande » et « Commandes » côte à côte dans une barre latérale ne se
+        distinguent pas, et la seconde liste ne contient que les commandes
+        impayées — c'est une file d'encaissement, pas un historique.
+
+        Chaque entrée reprend le verrou de sa route (routes/bar.php) : sans ça,
+        un barman voit trois liens qui mènent à un 403.
+    --}}
+    @feature('bar')
+    @can('bar.access')
+    @php
+        // Panier de session : un simple array_sum, aucune requête. Le cast en
+        // array est une assurance, pas une coquetterie — ce menu est rendu sur
+        // toutes les pages du back-office, et une session malformée y ferait
+        // un 500 global au lieu d'une page du Bar en erreur.
+        $barCartCount = array_sum(array_map(intval(...), (array) session('cart', [])));
+    @endphp
+    <x-menu-sub icon="o-shopping-bag" :title="__('Bar')">
+        <x-menu-item
+            icon="o-shopping-bag"
+            link="{{ route('bar.index') }}"
+            :title="__('New order')"
+            :badge="$barCartCount > 0 ? (string) $barCartCount : null"
+            badge-classes="badge-primary" />
+        <x-menu-item icon="o-banknotes" link="{{ route('bar.orders.index') }}" :title="__('To cash in')" />
+        <x-menu-item icon="o-clock" link="{{ route('bar.orders.history') }}" :title="__('History')" />
+        @can('bar.products.manage')
+        <x-menu-item icon="o-cube" link="{{ route('bar.products.index') }}" :title="__('Products')" />
+        <x-menu-item icon="o-tag" link="{{ route('bar.categories.index') }}" :title="__('Categories')" />
+        @endcan
+        @can('bar.cash_sheet.send')
+        <x-menu-item icon="o-document-chart-bar" link="{{ route('bar.cashSheet.index') }}" :title="__('Cash sheet')" />
+        @endcan
+    </x-menu-sub>
+    @endcan
+    @endfeature
+
     <li><x-menu-separator /></li>
 
     @feature('trainings')

@@ -28,6 +28,11 @@ final class Breadcrumb
         return $this->add(__('Articles'), $url ?: route('admin.website.articles.index'));
     }
 
+    public function bar(?string $url = null): Breadcrumb
+    {
+        return $this->add(__('Bar'), $url ?: route('bar.index'));
+    }
+
     public function contacts(?string $url = null): Breadcrumb
     {
         return $this->add(__('Contacts'), $url ?: route('admin.website.contacts.index'));

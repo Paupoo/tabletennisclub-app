@@ -146,6 +146,21 @@
                     <x-button :label="__('Follow the structure again')" class="btn-ghost btn-xs mt-1"
                         icon="o-arrow-path" wire:click="resetMaxUsersToStructure" />
                 @endif
+
+                {{-- Abaisser le plafond ne désinscrit personne : le tournoi reste
+                     simplement en surcapacité. Rien à confirmer, mais rien non
+                     plus à découvrir le jour du tournoi. --}}
+                @if ($this->pendingOverCapacity > 0)
+                    <p class="mt-2 flex items-start gap-1.5 text-xs font-medium text-warning">
+                        <x-icon name="o-exclamation-triangle" class="mt-px h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            {{ __(':count active registrations for :max spots: the tournament stays over capacity. Nobody is unregistered.', [
+                                'count' => $this->pendingOverCapacity + $maxUsers,
+                                'max' => $maxUsers,
+                            ]) }}
+                        </span>
+                    </p>
+                @endif
             </div>
 
         </x-admin.shared.form-section>

@@ -12,6 +12,7 @@ use App\Http\Middleware\EnsureSetupComplete;
 use App\Http\Middleware\EnsureSetupNotComplete;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\SecurityHeaders;
+use App\Support\Diagnostics\PageExpiredReport;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,7 +21,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Exceptions\InvalidSignatureException;
 use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     /*
@@ -118,6 +121,36 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn (): string => route('login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        /*
+         * « Cette page a expiré » en production et nulle part ailleurs
+         * (issue #36). Le framework classe TokenMismatchException dans
+         * $internalDontReport, si bien qu'un 419 ne laisse aucune trace : on
+         * n'a jamais eu que la capture d'écran du secrétaire.
+         *
+         * Ce n'est pas un correctif, c'est la mesure qui permettra d'en écrire
+         * un. `render` plutôt que `report` parce que les rapports sont
+         * justement supprimés pour cette exception ; renvoyer null laisse la
+         * page 419 habituelle se rendre derrière.
+         *
+         * Et sur HttpException plutôt que sur TokenMismatchException, qui
+         * paraîtrait pourtant le type juste : Handler::render() appelle
+         * prepareException() *avant* de consulter les callbacks, si bien que
+         * le jeton invalide est déjà devenu un HttpException(419) quand ils
+         * passent. Un renderer typé sur l'exception d'origine ne se déclenche
+         * jamais — silencieusement.
+         *
+         * À retirer une fois la cause établie.
+         */
+        $exceptions->render(function (HttpException $e, Request $request): ?Response {
+            if ($e->getStatusCode() !== 419) {
+                return null;
+            }
+
+            Log::warning('Page expired (419)', PageExpiredReport::context($request));
+
+            return null;
+        });
+
         /*
          * Un lien d'invitation périmé est un cas ordinaire, pas une erreur : le
          * membre reçoit une page qui le lui dit et, s'il n'a jamais validé son

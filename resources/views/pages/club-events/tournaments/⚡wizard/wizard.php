@@ -29,6 +29,7 @@ use App\Jobs\SendTournamentInvitationJob;
 use App\Jobs\SendTournamentUpdateJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasEventPostForm;
+use App\Livewire\Concerns\KeepsNumericPropertiesTyped;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -44,7 +45,7 @@ use Mary\Traits\Toast;
 new class extends Component
 {
     use HasBreadcrumbs;
-    use HasEventPostForm, Toast, WithFileUploads;
+    use HasEventPostForm, KeepsNumericPropertiesTyped, Toast, WithFileUploads;
 
     public bool $bulkCancelModal = false;
 

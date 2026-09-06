@@ -4468,5 +4468,11 @@
     "Leave alone": "Laisser tel quel",
     "Postcode": "Code postal",
     "Locality": "Localité",
-    "Left as it is, the address is not written and the club keeps the one it holds.": "Laissée telle quelle, l'adresse n'est pas écrite et le club garde celle qu'il détient."
+    "Left as it is, the address is not written and the club keeps the one it holds.": "Laissée telle quelle, l'adresse n'est pas écrite et le club garde celle qu'il détient.",
+    "Call the waiting list?": "Appeler la liste d'attente ?",
+    ":count people on the waiting list will be offered a spot.": ":count personnes en attente vont recevoir une offre.",
+    "Each of them gets 48 hours to confirm. The emails go out as soon as you save.": "Chacune a 48 h pour confirmer. Les mails partent dès l'enregistrement.",
+    "Save and send the offers": "Enregistrer et envoyer les offres",
+    "No limit": "Aucune limite",
+    ":count active registrations for :max spots: the tournament stays over capacity. Nobody is unregistered.": ":count inscrits actifs pour :max places : le tournoi reste en surcapacité. Personne n'est désinscrit."
 }

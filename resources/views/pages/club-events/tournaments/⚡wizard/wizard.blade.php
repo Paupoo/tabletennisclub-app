@@ -168,6 +168,28 @@
         </x-slot:actions>
     </x-app-modal>
 
+    {{-- Plafond relevé : les offres partent à l'enregistrement, et
+         `suggestMaxUsers()` peut relever le plafond sans que le champ ait été
+         touché. Un simple avertissement sous le champ ne suffirait pas. --}}
+    <x-app-modal wire:model="capacityModal" :title="__('Call the waiting list?')" class="backdrop-blur"
+        :open="$capacityModal">
+        <div class="space-y-4">
+            <x-alert
+                :title="__(':count people on the waiting list will be offered a spot.', ['count' => $this->pendingWaitlistOffers])"
+                :description="__('Each of them gets 48 hours to confirm. The emails go out as soon as you save.')"
+                icon="o-envelope"
+                class="alert-warning alert-soft" />
+            <p class="text-sm text-base-content/70">
+                {{ __('Maximum number of players') }} : {{ $maxUsers > 0 ? $maxUsers : __('No limit') }}
+            </p>
+        </div>
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('capacityModal', false)" />
+            <x-button :label="__('Save and send the offers')" icon="o-paper-airplane" class="btn-primary"
+                wire:click="confirmCapacityChange" spinner="confirmCapacityChange" />
+        </x-slot:actions>
+    </x-app-modal>
+
     {{-- Cancel confirmation modal --}}
     <x-app-modal wire:model="showCancelModal" :title="__('Cancel tournament')" class="backdrop-blur" :open="$showCancelModal">
         <div class="space-y-4">

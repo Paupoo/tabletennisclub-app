@@ -7,7 +7,6 @@ namespace App\Domains\Bar\Services;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\Bar\Models\BarOrderItem;
 use App\Domains\Bar\Models\BarProduct;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class BarCartService
@@ -16,18 +15,13 @@ class BarCartService
 
     private const string ACTION_VALIDATE = 'validate';
 
-    private const int MAX_QTY_PER_PRODUCT = 20;
-
     public function __construct(private readonly StockService $stockService) {}
 
-    /**
-     * @return array{status:string,message:string}
-     */
     public function addProductToSessionCart(int $productId): array
     {
         $product = BarProduct::query()->findOrFail($productId);
 
-        if (! (bool) $product->is_available) {
+        if (! $product->is_available) {
             return [
                 'status' => 'error',
                 'message' => 'Ce produit n\'est plus disponible.',
@@ -36,19 +30,11 @@ class BarCartService
 
         $cart = $this->getSanitizedCart();
         $currentQty = (int) ($cart[$productId] ?? 0);
-        $stock = max(0, (int) $product->stock);
 
-        if ($currentQty >= $stock) {
+        if ($currentQty >= (int) $product->stock) {
             return [
                 'status' => 'error',
                 'message' => sprintf('Stock insuffisant pour %s.', $product->name),
-            ];
-        }
-
-        if ($currentQty >= self::MAX_QTY_PER_PRODUCT) {
-            return [
-                'status' => 'error',
-                'message' => sprintf('Quantité maximale atteinte pour %s.', $product->name),
             ];
         }
 
@@ -79,7 +65,6 @@ class BarCartService
             throw new \RuntimeException('Utilisateur non authentifié.');
         }
 
-        /** @var BarOrder $order */
         $order = DB::transaction(function () use ($cart, $userId): BarOrder {
             $orderId = session()->get('editing_order_id');
             $order = $this->loadOrCreateDraftOrder($orderId, $userId);
@@ -93,26 +78,13 @@ class BarCartService
             $totalPrice = 0;
 
             foreach ($cart as $productId => $qty) {
-                $qty = (int) $qty;
-                $product = $products->get((int) $productId);
+                $product = $products->get($productId);
 
                 if (! $product instanceof BarProduct) {
-                    throw new \RuntimeException(sprintf('Produit introuvable (ID %d).', (int) $productId));
+                    throw new \RuntimeException(sprintf('Produit introuvable (ID %d).', $productId));
                 }
 
-                if (! (bool) $product->is_available) {
-                    throw new \RuntimeException(sprintf('Le produit %s n\'est plus disponible.', $product->name));
-                }
-
-                $availableStock = max(0, (int) $product->stock);
-
-                if ($qty > $availableStock) {
-                    throw new \RuntimeException(sprintf('Stock insuffisant pour %s.', $product->name));
-                }
-
-                if ($qty > self::MAX_QTY_PER_PRODUCT) {
-                    throw new \RuntimeException(sprintf('Quantité maximale atteinte pour %s.', $product->name));
-                }
+                $this->validateProductStock($product, $qty);
 
                 $unitPrice = (int) $product->sale_price;
                 $lineTotal = $unitPrice * $qty;
@@ -145,8 +117,7 @@ class BarCartService
             return $order->fresh(['items.product']);
         });
 
-        session()->forget('cart');
-        session()->forget('editing_order_id');
+        $this->clearSessionCart();
 
         return $order;
     }
@@ -157,9 +128,6 @@ class BarCartService
         session()->forget('editing_order_id');
     }
 
-    /**
-     * @return array{items:Collection,totalPrice:int,cartCount:int}
-     */
     public function getCartViewData(): array
     {
         $cart = $this->getSanitizedCart();
@@ -194,7 +162,7 @@ class BarCartService
             return;
         }
 
-        $cart[$productId] = max(0, $cart[$productId] - 1);
+        $cart[$productId]--;
 
         if ($cart[$productId] <= 0) {
             unset($cart[$productId]);
@@ -203,9 +171,6 @@ class BarCartService
         session()->put('cart', $cart);
     }
 
-    /**
-     * @return array<int, int>
-     */
     private function getSanitizedCart(): array
     {
         return collect(session()->get('cart', []))
@@ -214,9 +179,6 @@ class BarCartService
             ->toArray();
     }
 
-    /**
-     * @param  int|string|null  $orderId
-     */
     private function loadOrCreateDraftOrder($orderId, int $userId): BarOrder
     {
         if (! $orderId) {
@@ -251,5 +213,18 @@ class BarCartService
         $order->items()->delete();
 
         return $order;
+    }
+
+    private function validateProductStock(BarProduct $product, int $qty): void
+    {
+        if (! $product->is_available) {
+            throw new \RuntimeException(sprintf('Le produit %s n\'est plus disponible.', $product->name));
+        }
+
+        $availableStock = max(0, (int) $product->stock);
+
+        if ($qty > $availableStock) {
+            throw new \RuntimeException(sprintf('Stock insuffisant pour %s.', $product->name));
+        }
     }
 }

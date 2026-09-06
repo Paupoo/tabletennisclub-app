@@ -14,7 +14,6 @@ use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\AgendaFamily;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
-use App\Domains\Shared\Enums\TrainingCancellationType;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\Training;
 use Carbon\CarbonImmutable;
@@ -102,21 +101,6 @@ class PublicAgendaService
     }
 
     /**
-     * How a session was called off, or null while it holds.
-     *
-     * The two cancelled statuses map onto the enum the club already uses when
-     * calling a session off, so the public side never invents a third notion.
-     */
-    private function cancellationOf(Training $training): ?TrainingCancellationType
-    {
-        return match ($training->status) {
-            'cancelled_free' => TrainingCancellationType::FREE,
-            'cancelled_closed' => TrainingCancellationType::CLOSED,
-            default => null,
-        };
-    }
-
-    /**
      * Every cancellation in the window, lifted clear of the days that hold it.
      *
      * On a phone only the first week is unfolded, and an exception in the
@@ -192,7 +176,7 @@ class PublicAgendaService
 
         $exceptions = array_values(array_map(
             $this->sessionEntry(...),
-            array_filter($run, fn (Training $t): bool => $this->cancellationOf($t) !== null),
+            array_filter($run, fn (Training $t): bool => $t->cancellationType() !== null),
         ));
 
         return [new AgendaEntry(
@@ -323,7 +307,7 @@ class PublicAgendaService
                     family: AgendaFamily::TRAINING,
                     title: __('Free play'),
                     location: null,
-                    cancellation: $this->cancellationOf($earliest),
+                    cancellation: $earliest->cancellationType(),
                     cancellationNote: $earliest->cancellation_note,
                 );
         }
@@ -372,7 +356,7 @@ class PublicAgendaService
             family: AgendaFamily::TRAINING,
             title: $this->activityName($training),
             location: $training->room?->name,
-            cancellation: $this->cancellationOf($training),
+            cancellation: $training->cancellationType(),
             cancellationNote: $training->cancellation_note,
         );
     }

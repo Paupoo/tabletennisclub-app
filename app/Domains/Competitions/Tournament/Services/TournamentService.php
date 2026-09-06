@@ -21,6 +21,7 @@ use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConf
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistSpotOpenedNotification;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
+use App\Domains\Trainings\Services\TrainingWaitlistService;
 use App\Jobs\SendDebtReminderNotification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
@@ -181,8 +182,11 @@ class TournamentService
     /**
      * Promote the next waiting-list person to 'registered' and send the 48-hour confirmation email.
      * Recalculates waitlist positions for remaining members after the promotion.
+     *
+     * @return bool whether somebody was actually promoted — what lets
+     *              {@see self::releaseSpots()} know when the queue is empty.
      */
-    public function openSpot(Tournament $tournament): void
+    public function openSpot(Tournament $tournament): bool
     {
         $next = TournamentRegistration::where('tournament_id', $tournament->id)
             ->where('registration_status', 'waiting')
@@ -190,7 +194,7 @@ class TournamentService
             ->first();
 
         if ($next === null) {
-            return;
+            return false;
         }
 
         $deadline = now()->addHours(48);
@@ -214,6 +218,8 @@ class TournamentService
                 deadline: $deadline,
             ));
         }
+
+        return true;
     }
 
     /**
@@ -352,6 +358,45 @@ class TournamentService
         }
 
         $this->countRegisteredUsers($tournament);
+    }
+
+    /**
+     * Offer every free spot to the people waiting, in order.
+     *
+     * The counterpart of {@see TrainingWaitlistService::releaseSpot()}
+     * on the tournament side, and it exists for the same reason: raising the
+     * cap opens spots for real, and nothing was calling the queue. `isFull()`
+     * started answering false, the tournament reopened to newcomers, and the
+     * people who had been waiting kept their rank while first-come took the
+     * seats — the exact opposite of what a waiting list promises.
+     *
+     * Recomputes what is free on every turn, so a caller never has to know how
+     * many spots it opened. A cap of 0 means no limit, so `isFull()` never
+     * holds and the whole queue is called: a tournament with no limit has no
+     * reason left to make anyone wait, and no departure would ever "free" a
+     * seat on it. The loop terminates because each promotion moves one person
+     * out of `waiting` and into the active count.
+     *
+     * Registrations being open is a condition here and not inside `openSpot()`:
+     * its three existing callers all react to a departure, which is a different
+     * contract — a seat freed on the day of a tournament still belongs to
+     * whoever was next in line.
+     *
+     * @return int how many offers went out
+     */
+    public function releaseSpots(Tournament $tournament): int
+    {
+        if (! $tournament->registrationsAreOpen()) {
+            return 0;
+        }
+
+        $offers = 0;
+
+        while (! $this->isFull($tournament) && $this->openSpot($tournament)) {
+            $offers++;
+        }
+
+        return $offers;
     }
 
     /**

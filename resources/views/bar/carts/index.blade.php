@@ -17,7 +17,6 @@
         @else
 
             @foreach($items as $item)
-
                 @php
                     $product = $item['product'];
                     $qty = $item['quantity'];
@@ -25,10 +24,8 @@
                     $unitPrice = $product->sale_price;
                     $realStock = (int) $product->stock;
                     $availableStock = max(0, $realStock);
-                    $maxQty = 20;
                     $isStockLimit = $qty >= $realStock;
-                    $isMaxLimit = $qty >= $maxQty;
-                    $disablePlus = $isStockLimit || $isMaxLimit;
+                    $disablePlus = $isStockLimit;
                 @endphp
 
                 <div class="order-line">
@@ -41,8 +38,6 @@
                         </div>
                         @if ($isStockLimit)
                             <div class="text-warning small" style="display: flex;">Stock maximum atteint pour ce produit.</div>
-                        @elseif ($isMaxLimit)
-                            <div class="text-warning small" style="display: flex;">Quantité maximale autorisée atteinte.</div>
                         @endif
                     </div>
 
@@ -65,7 +60,7 @@
                             <form method="POST" action="{{ route('bar.cart.add') }}" style="margin:0;">
                                 @csrf
                                 @php
-                                    $disablePlus = $qty >= $realStock || $qty >= 20;
+                                    $disablePlus = $qty >= $realStock;
                                 @endphp
 
                                 <input type="hidden" name="product_id" value="{{ $product->id }}">

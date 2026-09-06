@@ -26,7 +26,21 @@ pest()->group('club-admin', 'registrations');
 beforeEach(function (): void {
     Club::factory()->ownClub()->create();
     $this->season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
-    actingAs(User::factory()->isAdmin()->create());
+
+    /*
+     * Identité fixée plutôt que tirée au sort. La recherche du tiroir regarde
+     * aussi la colonne `email` (User::scopeSearchName), et la liste de noms
+     * belges de Faker contient « Van den Bossche », dont `safeEmail()` retire
+     * les espaces : environ un email sur 285 ressemble à
+     * `gvandenbossche@example.org`. L'admin connecté n'est pas affilié, donc
+     * rien ne l'écarte des résultats, et il venait s'ajouter aux homonymes que
+     * ces tests comptent — une CI rouge sans rapport, invisible en local.
+     */
+    actingAs(User::factory()->isAdmin()->create([
+        'first_name' => 'Permanence',
+        'last_name' => 'Secretariat',
+        'email' => 'permanence@example.test',
+    ]));
 });
 
 /**
@@ -573,6 +587,11 @@ it('says how many matching members the drawer is not showing', function (): void
 
     $component = Livewire::test('pages::club-admin.users.registrations')
         ->set('searchMember', 'Vandenbossche');
+
+    // L'invariant que le hasard cassait : sept homonymes et personne d'autre.
+    // Assené ici pour qu'un huitième dormant se dise à l'endroit où il naît,
+    // plutôt que sous la forme d'un débordement qui ne tombe pas juste.
+    expect(User::searchName('Vandenbossche')->count())->toBe(7);
 
     // Sans ce compte, l'admin croit avoir vu toute la famille et affine à l'aveugle.
     expect($component->viewData('membersFound'))->toHaveCount(5)

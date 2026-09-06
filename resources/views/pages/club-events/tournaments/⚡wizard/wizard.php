@@ -29,6 +29,7 @@ use App\Jobs\SendTournamentInvitationJob;
 use App\Jobs\SendTournamentUpdateJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasEventPostForm;
+use App\Livewire\Concerns\KeepsNumericPropertiesTyped;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -44,11 +45,16 @@ use Mary\Traits\Toast;
 new class extends Component
 {
     use HasBreadcrumbs;
-    use HasEventPostForm, Toast, WithFileUploads;
+    use HasEventPostForm, KeepsNumericPropertiesTyped, Toast, WithFileUploads;
 
     public bool $bulkCancelModal = false;
 
     public bool $bulkDrawer = false;
+
+    /** Le relèvement du plafond a été confirmé : `save()` ne redemande pas. */
+    public bool $capacityConfirmed = false;
+
+    public bool $capacityModal = false;
 
     public string $description = '';
 
@@ -377,6 +383,17 @@ new class extends Component
         $count = count($this->selectedPeople);
         $this->resetPostAction();
         $this->success("{$count} " . __('presences confirmed.'));
+    }
+
+    /**
+     * Confirmation d'un plafond relevé sur un tournoi qui a une liste d'attente.
+     */
+    public function confirmCapacityChange(): void
+    {
+        $this->capacityConfirmed = true;
+        $this->capacityModal = false;
+
+        $this->save();
     }
 
     public function confirmCashPayment(): void
@@ -979,6 +996,59 @@ new class extends Component
             ->toArray();
     }
 
+    /**
+     * De combien d'inscrits actifs le tournoi dépasserait le plafond saisi.
+     *
+     * Personne n'est désinscrit : abaisser le plafond ne touche à rien en base.
+     * L'organisateur qui réduit la structure doit seulement savoir qu'il laisse
+     * le tournoi en surcapacité, plutôt que de le découvrir le jour même.
+     */
+    #[Computed]
+    public function pendingOverCapacity(): int
+    {
+        $tournament = $this->currentTournament;
+
+        if (! $tournament instanceof Tournament || $this->maxUsers <= 0) {
+            return 0;
+        }
+
+        return max(0, $tournament->activeRegistrationsCount() - $this->maxUsers);
+    }
+
+    /**
+     * Combien de personnes en attente recevraient une offre si on enregistrait.
+     *
+     * Lu avant l'écriture : `maxUsers` est la valeur du formulaire, pas encore
+     * celle du tournoi. C'est ce qui permet de prévenir avant que les mails
+     * partent — d'autant que `suggestMaxUsers()` relève le plafond tout seul
+     * dès qu'on touche à la structure des poules, sans que personne n'ait saisi
+     * le champ.
+     */
+    #[Computed]
+    public function pendingWaitlistOffers(): int
+    {
+        $tournament = $this->currentTournament;
+
+        if (! $tournament instanceof Tournament || ! $tournament->registrationsAreOpen()) {
+            return 0;
+        }
+
+        $waiting = $tournament->users()
+            ->wherePivot('registration_status', 'waiting')
+            ->count();
+
+        if ($waiting === 0) {
+            return 0;
+        }
+
+        // Un plafond à 0 vaut « illimité » : plus rien ne justifie une file.
+        if ($this->maxUsers <= 0) {
+            return $waiting;
+        }
+
+        return min($waiting, max(0, $this->maxUsers - $tournament->activeRegistrationsCount()));
+    }
+
     // ── Computed: pools from DB
 
     #[Computed]
@@ -1274,6 +1344,16 @@ new class extends Component
             'description' => 'nullable|string|max:2000',
         ]);
 
+        // Relever le plafond envoie des offres, tout de suite et sans retour
+        // possible. On le dit avant, pas après — et seulement si des offres
+        // partiraient réellement, si bien qu'un tournoi qu'on crée ou qui n'a
+        // personne en attente ne voit jamais ce modal.
+        if ($this->tournamentId && ! $this->capacityConfirmed && $this->pendingWaitlistOffers > 0) {
+            $this->capacityModal = true;
+
+            return;
+        }
+
         // Snapshot logistical values before saving so we can detect changes.
         $logisticsChanged = [];
         if ($this->tournamentId) {
@@ -1324,6 +1404,15 @@ new class extends Component
 
         $this->tournamentId = $tournament->id;
 
+        // Relever le plafond ouvre des places pour de bon : la file doit être
+        // appelée, sinon elles se remplissent au premier arrivé pendant que
+        // ceux qui attendaient gardent leur rang pour rien. Appel
+        // inconditionnel, comme côté packs d'entraînement : c'est le service
+        // qui recalcule s'il y a quelque chose à offrir.
+        app(TournamentService::class)->releaseSpots($tournament);
+
+        $this->capacityConfirmed = false;
+
         // Notify registered players when logistical details changed.
         if ($logisticsChanged !== [] && $this->hasRegisteredUsers) {
             unset($this->hasRegisteredUsers);
@@ -1342,7 +1431,15 @@ new class extends Component
             }
         }
 
-        unset($this->isContractLocked, $this->hasRegisteredUsers, $this->currentTournament);
+        unset(
+            $this->isContractLocked,
+            $this->hasRegisteredUsers,
+            $this->currentTournament,
+            $this->pendingWaitlistOffers,
+            $this->pendingOverCapacity,
+            $this->waitlist,
+            $this->registrations,
+        );
 
         if ($this->step === '1') {
             $this->step = '2';

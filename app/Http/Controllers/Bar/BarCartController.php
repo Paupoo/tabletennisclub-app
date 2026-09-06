@@ -25,7 +25,7 @@ class BarCartController extends Controller
     public function add(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'product_id' => ['required', 'integer', 'exists:bar_products,id'],
+            'product_id' => ['required', 'integer', 'min:1', 'exists:bar_products,id'],
         ]);
 
         $result = $this->cartService->addProductToSessionCart((int) $validated['product_id']);
@@ -43,7 +43,7 @@ class BarCartController extends Controller
     public function remove(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'product_id' => ['required', 'integer', 'exists:bar_products,id'],
+            'product_id' => ['required', 'integer', 'min:1', 'exists:bar_products,id'],
         ]);
 
         $this->cartService->removeProductFromSessionCart((int) $validated['product_id']);

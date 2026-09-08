@@ -1,8 +1,8 @@
-<footer class="bg-gray-900 text-white py-12">
+<footer class="bg-footer text-white py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid md:grid-cols-3 gap-8">
             <div>
-                <h3 class="text-2xl font-bold mb-4">🏓 {{ config('club.name') }}</h3>
+                <h3 class="text-2xl font-bold mb-4 text-club-yellow">🏓 {{ config('club.name') }}</h3>
                 <p class="text-white/70 mb-4">
                     Votre destination de choix pour le tennis de table à Ottignies et environs. Rejoignez notre
                     communauté dès aujourd'hui !
@@ -10,7 +10,7 @@
             </div>
 
             <div>
-                <h4 class="text-lg font-semibold mb-4">Liens Rapides</h4>
+                <h4 class="text-lg font-semibold mb-4 text-club-yellow">Liens Rapides</h4>
                 <ul class="space-y-2">
                     <li><a href="{{ route('home') }}" class="text-white/70 hover:text-white transition-colors">Accueil</a>
                     </li>
@@ -28,7 +28,7 @@
                  announce. --}}
             @if($club)
             <div>
-                <h4 class="text-lg font-semibold mb-4">Informations de contact</h4>
+                <h4 class="text-lg font-semibold mb-4 text-club-yellow">Informations de contact</h4>
                 <div class="space-y-2 text-white/70">
                     <div class="flex gap-4 items-start">
                         <p>
@@ -67,7 +67,7 @@
             @endif
         </div>
 
-        <div class="border-t border-gray-800 mt-8 pt-8 text-center text-white/70">
+        <div class="border-t border-white/20 mt-8 pt-8 text-center text-white/70">
             <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
                 <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm">
                     <p class="flex items-center">
@@ -76,13 +76,16 @@
                         by <span class="font-medium text-white ml-1">Aurélien Paulus</span>
                     </p>
                     <span class="hidden sm:inline text-white/40">•</span>
+                    {{-- Ces quatre couleurs sont celles des marques citées, elles ne suivent donc
+                    aucun thème. Le pied de page, lui, s'éclaircit en mode sombre : au cran 400
+                    elles y tombaient à 4,4:1. Le cran 300 tient sur les deux surfaces. --}}
                     <p class="text-xs">
                         Powered by
-                        <span class="text-blue-400 font-medium"><a
+                        <span class="text-blue-300 font-medium"><a
                                 href="https://tailwindcss.com/">TailwindCSS</a></span> •
-                        <span class="text-pink-400 font-medium"><a href="https://alpinejs.dev/">AlpineJS</a></span> •
-                        <span class="text-red-400 font-medium"><a href="https://laravel.com/">Laravel</a></span> •
-                        <span class="text-purple-400 font-medium"><a
+                        <span class="text-pink-300 font-medium"><a href="https://alpinejs.dev/">AlpineJS</a></span> •
+                        <span class="text-red-300 font-medium"><a href="https://laravel.com/">Laravel</a></span> •
+                        <span class="text-purple-300 font-medium"><a
                                 href="https://livewire.laravel.com/">Livewire</a></span>
                     </p>
                 </div>
@@ -115,18 +118,16 @@
             x-transition:leave="transition ease-in duration-300"
             x-transition:leave-start="opacity-100 transform translate-y-0"
             x-transition:leave-end="opacity-0 transform translate-y-full"
-            class="fixed bottom-0 left-0 w-full bg-club-yellow-light opacity-95 backdrop-filter backdrop-blur-lg shadow-lg rounded-t-lg p-6 z-50 md:flex md:items-center md:justify-between"
+            class="fixed bottom-0 left-0 w-full bg-base-100/95 border-t-2 border-club-yellow backdrop-filter backdrop-blur-lg shadow-lg rounded-t-lg p-6 z-50 md:flex md:items-center md:justify-between"
         >
-            <p class="text-sm text-gray-800 md:w-3/4">
+            <p class="text-sm text-base-content md:w-3/4">
                 Ce site utilise des cookies uniquement pour la gestion de la connexion. En continuant à utiliser ce site, vous acceptez cette utilisation. Pour plus d'informations, consultez notre
-                {{-- Le bandeau cookies est jaune dans les deux thèmes : son encre ne peut donc pas
-                suivre `primary`, qui devient jaune elle aussi en mode sombre. --}}
-                <button class="underline text-club-blue font-semibold" @click="showPrivacyPolicy()">{{ __('privacy policy') }}</button>.
+                <button class="underline text-primary font-semibold" @click="showPrivacyPolicy()">{{ __('privacy policy') }}</button>.
             </p>
             <div class="mt-4 md:mt-0 md:w-1/4 md:text-right">
                 <button
                     @click="document.cookie = 'cookie_consent=true; expires=' + new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toUTCString() + '; path=/; SameSite=Strict'; show = false"
-                    class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 font-bold"
+                    class="w-full md:w-auto px-6 py-3 bg-primary text-primary-content rounded-lg hover:opacity-90 font-bold"
                 >
                     J'ai compris
                 </button>

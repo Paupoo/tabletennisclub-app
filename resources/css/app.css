@@ -32,6 +32,19 @@
   --color-club-yellow-light: #fcd34d;
   --color-club-blue-dark: #1a3691;
   --color-club-yellow-dark: #f0ad15;
+
+  /*
+    Le pied de page ne se distingue pas comme le reste : en thème clair il tranche
+    par l'assombrissement (gris 900 sur blanc, 17,7:1), et cette recette ne survit
+    pas à une page déjà sombre — mesuré à 0,99 point d'écart de clarté perçue, soit
+    la même couleur que la page. Sur fond sombre il faut donc l'éclaircir, pas
+    l'assombrir : c'est la convention du mode sombre, où ce qui émerge est plus
+    clair. À oklch(32%) l'écart remonte à 12,1 points, contre 5,2 pour la marche
+    page/carte de daisyUI que personne ne conteste.
+
+    Le fond du thème clair, lui, ne bouge pas d'un pixel.
+  */
+  --color-footer: #111827;
 }
 
 /*
@@ -143,6 +156,16 @@
   --radius-box: 0.75rem; /* On garde la même cohérence que le light */
 }
 
+
+[data-theme='dark'] {
+  --color-footer: oklch(32% 0 0);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-footer: oklch(32% 0 0);
+  }
+}
 
 /* =============================================================================
    Design System — Semantic token layer (Phase 1)

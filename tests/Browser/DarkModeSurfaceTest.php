@@ -101,6 +101,30 @@ function slabFailures(mixed $result): array
 }
 
 /*
+ * A probe that reports nothing is indistinguishable from a page that is clean,
+ * and every other assertion in this file trusts it. So it is checked against a
+ * slab painted at run time — no class, no stylesheet, nothing the build could
+ * purge — before any of them is believed.
+ */
+it('reports a light slab when there is one', function () use ($slabProbe): void {
+    $page = visit(route('login'))->inDarkMode()->wait(1);
+
+    $page->script(<<<'JS'
+    (() => {
+      const d = document.createElement('div');
+      d.style.cssText = 'position:fixed;inset:0;width:100%;height:60%;background:rgb(255,255,255);z-index:9999';
+      d.id = 'probe-selftest';
+      document.body.appendChild(d);
+    })()
+    JS);
+
+    $offenders = slabFailures($page->script($slabProbe));
+
+    expect($offenders)->not->toBe([], 'The probe missed a full-width white slab: every other assertion in this file is worthless.');
+    expect(implode("\n", $offenders))->toContain('probe-selftest');
+});
+
+/*
  * The screens below already answer to the dark theme today — the authentication
  * tunnel, the signed meeting pages and the error pages were built with theme
  * tokens throughout. They are the half that works, and this test is what keeps
@@ -141,6 +165,50 @@ it('paints no light slab in dark mode on a dense back-office screen', function (
  * for the migration, not a report on it — enable them with the lot that lands
  * the fix, one route at a time if that helps the review.
  */
+/*
+ * The two footer overlays are the only full-screen surfaces a visitor can summon
+ * with a click, and they were the brightest thing on the site: a white sheet over
+ * a night page, carrying the link a member follows to exercise their GDPR rights
+ * at 1.16:1. Nothing on page load can measure them, because they start hidden.
+ */
+it('paints no light slab in dark mode once a footer overlay is opened', function (string $opener) use ($slabProbe): void {
+    Club::factory()->ownClub()->create();
+
+    $page = visit(route('home'))->inDarkMode()->wait(1);
+    $page->script("window.{$opener}()");
+    $page->wait(1);
+
+    /*
+     * The overlay is opened by the bundle, and a probe that measures a sheet
+     * which never opened reports success without looking at anything. Assert it
+     * is actually on screen before trusting the measurement below.
+     */
+    $opened = $page->script(<<<JS
+    (() => {
+      const m = document.getElementById('{$opener}' === 'showPrivacyPolicy' ? 'privacyModal' : 'licenseModal');
+      if (!m) return 'overlay not in the document';
+      const card = m.querySelector('div');
+      const r = card ? card.getBoundingClientRect() : null;
+      if (getComputedStyle(m).display === 'none') return 'overlay still hidden — did the bundle load?';
+      if (!r || r.width < 2 || r.height < 2) return 'overlay open but has no box';
+      return 'ok';
+    })()
+    JS);
+    $state = is_array($opened[0] ?? null) ? $opened[0] : $opened;
+    expect($state)->toBe('ok', "Cannot measure {$opener}: {$state}");
+
+    $offenders = slabFailures($page->script($slabProbe));
+
+    expect($offenders)->toBe([], sprintf(
+        "Light surfaces served in dark mode with %s open:\n%s",
+        $opener,
+        implode("\n", $offenders),
+    ));
+})->with([
+    'showPrivacyPolicy',
+    'showLicense',
+]);
+
 it('paints no light slab in dark mode on the public site', function (string $route) use ($slabProbe): void {
     Club::factory()->ownClub()->create();
 

@@ -285,18 +285,24 @@ class ResultList extends Component
 
     private function positionClass(?string $position): string
     {
+        /*
+         * Une teinte sémantique plutôt qu'un aplat fixe : `bg-X-100` reste clair quand
+         * la page passe en sombre, alors qu'une teinte à 15 % se mélange à la surface
+         * et suit donc le thème. La couleur porte toujours le sens ; le texte, lui,
+         * prend le contraste de la surface au lieu de le deviner.
+         */
         if (! $position) {
-            return 'bg-gray-100 text-gray-800';
+            return 'bg-base-300 text-base-content';
         }
 
         if (str_contains($position, '1')) {
-            return 'bg-yellow-100 text-yellow-800';
+            return 'bg-warning/15 text-base-content';
         }
 
         if (str_contains($position, '2') || str_contains($position, '3')) {
-            return 'bg-orange-100 text-orange-800';
+            return 'bg-info/15 text-base-content';
         }
 
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-base-300 text-base-content';
     }
 }

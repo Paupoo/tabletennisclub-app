@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
+<html data-db-theme="{{ Auth::user()?->theme ?? 'auto' }}" lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 
 <head>
     <meta charset="utf-8">
@@ -11,6 +11,8 @@
     @if(!empty($description ?? null))
         <meta name="description" content="{{ $description }}">
     @endif
+    <x-theme-boot />
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     @if(app()->environment('production'))

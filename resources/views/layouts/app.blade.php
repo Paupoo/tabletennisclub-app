@@ -15,6 +15,8 @@
     <title>{{ isset($title) ? config('club.name') . ' - ' . $title : config('club.name') }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-club.svg') }}">
 
+    <x-theme-boot />
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     @if(app()->environment('production'))
@@ -26,13 +28,10 @@
 {{-- overflow-x-hidden: any page content wider than the screen must clip, not create
 horizontal scroll — otherwise Firefox mobile widens the layout viewport and every
 position:fixed overlay (notification sheet, drawers) gets cropped on the right. --}}
+{{-- Le thème initial est posé par <x-theme-boot /> dans le <head>, avant le premier
+rendu. Ce composant ne garde que le changement en cours de session, déclenché depuis
+les réglages : appliquer le thème ici aussi le ferait une seconde fois, après coup. --}}
 <body class="bg-base-200 min-h-screen overflow-x-hidden font-sans antialiased" x-data="{
-    dbTheme: '{{ $user->theme ?? 'auto' }}',
-    init() {
-        let currentTheme = localStorage.getItem('theme') || this.dbTheme;
-        this.updateTheme(currentTheme);
-    },
-
     updateTheme(theme) {
         if (theme === 'auto') {
             localStorage.removeItem('theme');

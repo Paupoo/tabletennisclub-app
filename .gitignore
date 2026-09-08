@@ -31,6 +31,8 @@ yarn.lock
 /public/storage
 /storage/*.key
 /storage/debugbar/
+# Caches déposés par le serveur de langage dans storage/framework/.
+/storage/framework/lsp-*.php
 /bootstrap/cache/*.php
 !/bootstrap/cache/.gitkeep
 

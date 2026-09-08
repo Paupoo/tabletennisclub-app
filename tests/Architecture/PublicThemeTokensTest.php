@@ -128,8 +128,8 @@ it('keeps the public views speaking the theme vocabulary', function () use ($for
         $root . '/app/Domains/ClubPosts',
     ];
 
-    $dirs = array_values(array_filter($scopes, 'is_dir'));
-    $singles = array_values(array_filter($scopes, 'is_file'));
+    $dirs = array_values(array_filter($scopes, is_dir(...)));
+    $singles = array_values(array_filter($scopes, is_file(...)));
 
     $files = [];
     if ($dirs !== []) {

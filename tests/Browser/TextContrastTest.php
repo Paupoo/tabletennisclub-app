@@ -315,3 +315,69 @@ it('keeps text readable on the dark surfaces of the public site', function (stri
     ['results', 'footer'],
     ['home', '[data-sponsor-tile]'],
 ]);
+
+/*
+ * Everything above measures the light theme, because until now that was the only
+ * theme the application was ever asked about: `inDarkMode` appeared nowhere in
+ * the suite, which is how a page could serve 1.02:1 with a green run.
+ *
+ * The dark theme is not a variant of the light one here — the greys the markup
+ * asks for are clamped towards a colour computed from `base-content`, so they
+ * MOVE when the theme flips, while any hard-coded surface underneath them does
+ * not. That is a different failure mode, and it needs its own sweep.
+ *
+ * The authentication screens are deliberately absent: `layouts/login` paints its
+ * page with a gradient, and a gradient has no `backgroundColor` for the probe to
+ * walk, so it would fall back to assuming white and report failures nobody can
+ * see. Their dark theme is guarded by DarkModeSurfaceTest instead, which reads
+ * solid fills only and is immune to that blind spot.
+ */
+it('keeps text readable on the dark surfaces of the public site in dark mode', function (string $route, string $surface) use ($probe): void {
+    Club::factory()->ownClub()->create();
+
+    $page = visit(route($route))->inDarkMode()->wait(1);
+
+    $result = $page->script($probe($surface));
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold on %s in dark mode, inside %s:\n%s",
+        $route,
+        $surface,
+        implode("\n", $failures),
+    ));
+})->with([
+    ['home', 'footer'],
+    ['results', 'footer'],
+    ['home', '[data-sponsor-tile]'],
+]);
+
+/*
+ * The back office already answers to the dark theme, and the next lot rewrites
+ * three of its global clamps — `.text-error`, `.badge-soft` and the dark value
+ * of `--color-base-300`, which today is darker than the card it borders. These
+ * two screens carry the densest badges and the most inline error text in the
+ * application, so they are where a mistake in those clamps would surface first.
+ */
+it('keeps body text above the AA threshold on the dense back-office screens in dark mode', function (string $route, Role $role) use ($probe): void {
+    $this->actingAs(User::factory()->withRole($role)->create());
+
+    $page = visit(route($route))->inDarkMode()->wait(1);
+
+    $result = $page->script($probe());
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold on %s in dark mode:\n%s",
+        $route,
+        implode("\n", $failures),
+    ));
+})->with([
+    ['admin.treasury.payments', Role::TREASURY],
+    ['admin.users.delegations', Role::MEMBERS],
+])->skip(
+    'Acceptance test for the dark clamps. It already found two defects nobody had seen, both in '
+    . 'the shared sidebar: "Déconnexion" at 2.95:1, which is `.text-error` mixed towards black on a '
+    . 'dark ground, and "Trésorerie" at 3.38:1, a dimmed label with no contrast floor. Enable it '
+    . 'with the lot that makes those clamps theme-aware.'
+);

@@ -58,6 +58,64 @@ $allowed = [
     ],
 ];
 
+/*
+ * Un `border` sans classe de couleur ne dessine pas « la bordure par défaut » :
+ * `app.css` fixe `border-color: var(--color-gray-200)` sur tout élément, un gris
+ * clair qui ne bouge dans aucun thème. Sur une page sombre, cela donne un filet
+ * lumineux — celui qui traversait la largeur du site juste au-dessus du pied de
+ * page, et quatre autres ailleurs.
+ *
+ * La bordure est donc soit nommée, soit absente ; il n'y a pas de troisième cas.
+ */
+it('never draws a border without saying which colour', function (): void {
+    $root = dirname(__DIR__, 2);
+
+    $files = (new Finder)
+        ->files()
+        ->in([
+            $root . '/resources/views/components/public',
+            $root . '/resources/views/public',
+            $root . '/resources/views/livewire/public',
+        ])
+        ->name('*.blade.php');
+
+    $bare = '/\bborder(?:-[tbrlxy])?(?![-\w])/';
+    $coloured = '/\bborder-(base|primary|secondary|info|warning|error|success|club|white|black|gray|slate|neutral|zinc|blue|red|amber|green|purple|orange|emerald|indigo|pink|teal|transparent|current|inherit|\[)/';
+
+    $offenders = [];
+
+    foreach ($files as $file) {
+        $lines = explode("\n", (string) file_get_contents($file->getPathname()));
+
+        foreach ($lines as $index => $line) {
+            if (preg_match($bare, $line) !== 1 || preg_match($coloured, $line) === 1) {
+                continue;
+            }
+
+            // Une couleur passée par variable est nommée ailleurs, en PHP.
+            if (str_contains($line, '$style[') || str_contains($line, "['border']")) {
+                continue;
+            }
+
+            $offenders[] = sprintf(
+                '%s:%d  %s',
+                str_replace($root . '/resources/views/', '', $file->getPathname()),
+                $index + 1,
+                trim($line),
+            );
+        }
+    }
+
+    sort($offenders);
+
+    expect($offenders)->toBe([], sprintf(
+        "Ces bordures ne disent pas leur couleur, elles héritent donc du gris clair que\n"
+        . "pose le reset — un filet lumineux sur une page sombre. Nomme-la (border-base-300)\n"
+        . "ou retire la bordure :\n\n%s\n",
+        implode("\n", $offenders),
+    ));
+});
+
 it('keeps the public views speaking the theme vocabulary', function () use ($forbidden, $allowed): void {
     $root = dirname(__DIR__, 2);
 

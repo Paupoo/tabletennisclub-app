@@ -133,7 +133,7 @@
                 </div>
             </div>
 
-            <div class="border-t pt-3">
+            <div class="border-t border-base-300 pt-3">
                 <div class="flex justify-between items-center">
                     <span class="text-xl font-bold text-primary">Total annuel</span>
                     <span class="text-2xl font-bold text-primary" x-text="calculateTotal() + '€'"></span>

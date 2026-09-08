@@ -1,7 +1,7 @@
 @props(['team'])
 
 <div class="mb-12">
-    <div class="bg-base-100 rounded-lg shadow-xs border p-6">
+    <div class="bg-base-100 rounded-lg shadow-xs border border-base-300 p-6">
         <div class="flex items-center justify-between mb-6">
             <h3 class="text-2xl font-bold text-primary">{{ $team['name'] }}</h3>
             <div class="{{ $team['position_class'] ?? 'bg-green-100 text-green-800' }} px-3 py-1 rounded-full text-sm font-medium text-center">

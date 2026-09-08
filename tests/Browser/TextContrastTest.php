@@ -375,9 +375,4 @@ it('keeps body text above the AA threshold on the dense back-office screens in d
 })->with([
     ['admin.treasury.payments', Role::TREASURY],
     ['admin.users.delegations', Role::MEMBERS],
-])->skip(
-    'Acceptance test for the dark clamps. It already found two defects nobody had seen, both in '
-    . 'the shared sidebar: "Déconnexion" at 2.95:1, which is `.text-error` mixed towards black on a '
-    . 'dark ground, and "Trésorerie" at 3.38:1, a dimmed label with no contrast floor. Enable it '
-    . 'with the lot that makes those clamps theme-aware.'
-);
+]);

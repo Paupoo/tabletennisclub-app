@@ -80,11 +80,6 @@
     </div>
 
     <style>
-        /* Amélioration des focus states pour l'accessibilité */
-        .focus-visible\:ring-club-blue:focus-visible {
-            --tw-ring-color: theme('colors.club.blue');
-        }
-
         /* Animation d'entrée subtile */
         @keyframes fadeInUp {
             from {

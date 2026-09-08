@@ -131,6 +131,14 @@
   --color-base-100: oklch(25% 0 0);
   --color-base-200: oklch(20% 0 0);
   --color-base-content: oklch(95% 0 0); /* Texte clair sur fond sombre */
+  /*
+    daisyUI computes a dark base-300 from base-200, which lands at oklch(21%) —
+    DARKER than the base-100 card it is asked to border. Every card outline in
+    the application measured 1.10:1 against the surface it was drawn on, which
+    is to say it was not drawn at all. One step lighter than the card restores
+    the hairline without turning it into a rule.
+  */
+  --color-base-300: oklch(38% 0 0);
   --color-warning-content: oklch(82% 0.189 84.429); /* Texte lisible sur fond sombre (sinon trop proche de base-100) */
   --radius-box: 0.75rem; /* On garde la même cohérence que le light */
 }
@@ -303,12 +311,22 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Amélioration des focus states */
-input:focus,
-textarea:focus,
-select:focus {
-  outline: none;
-  box-shadow: var(--shadow-focus);
+/*
+  The focus ring used to be `--shadow-focus`, a club blue at 10% opacity: it
+  measured 1.10:1 on white and 1.08:1 on the dark surfaces, where WCAG 2.4.13
+  asks 3:1 of the indicator itself. It was decoration standing in for an
+  indicator, and it replaced the browser's own — which at least was visible.
+
+  `--color-primary` carries it now, so the ring follows the theme: club blue on
+  the light ground (8.72:1), club yellow on the dark one (9.53:1). `:focus-visible`
+  rather than `:focus` keeps it for keyboard users without ringing every mouse
+  click — text fields match it on click anyway, which is the behaviour we want.
+*/
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 /*
   Secondary text used to be dimmed with alpha — text-base-content/40 and friends.
@@ -334,8 +352,20 @@ select:focus {
   member cannot read is not a status.
 */
 .badge-soft {
-  color: color-mix(in oklab, currentColor 100%, black 34%);
   font-weight: 600;
+}
+
+/*
+  ...but only on the light ground it was measured against. In the dark theme the
+  soft badge is already a light foreground on a dark tint — the primary badge
+  reads 8.20:1 untouched, and mixing it towards black drops it to 2.82:1. The
+  clamp fixed one theme by breaking the other; it now applies to the one it was
+  written for. `:not([data-theme="dark"])` rather than `[data-theme="light"]`
+  because the attribute only lands once the bundle boots, and the default theme
+  before that is light.
+*/
+:root:not([data-theme='dark']) .badge-soft {
+  color: color-mix(in oklab, currentColor 100%, black 34%);
 }
 
 /*
@@ -343,8 +373,12 @@ select:focus {
   but measures 2.68:1 as text on base-100 — the logout entry and every inline
   error label failed on it. Darkening the text form keeps the semantic meaning
   and leaves fills, borders and icons untouched.
+
+  On the dark ground the same darkening is the defect: the token reads 6.29:1
+  untouched there and 2.89:1 once mixed towards black, which is how the logout
+  entry came to measure 2.95:1 in dark mode. Scoped to the light theme.
 */
-.text-error {
+:root:not([data-theme='dark']) .text-error {
   color: color-mix(in oklab, var(--color-error) 72%, black);
 }
 

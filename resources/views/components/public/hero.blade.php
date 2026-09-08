@@ -19,7 +19,7 @@
                 <a href="#join" class="bg-club-yellow text-club-blue px-8 py-4 rounded-lg text-lg font-semibold hover:bg-club-yellow-light transition-colors transform hover:scale-105 shadow-lg">
                     Rejoindre le Club
                 </a>
-                <a href="#about" class="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-club-blue transition-colors backdrop-blur-sm">
+                <a href="#about" class="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-base-100 hover:text-primary transition-colors backdrop-blur-sm">
                     En Savoir Plus
                 </a>
             </div>

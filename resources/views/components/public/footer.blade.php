@@ -1,8 +1,8 @@
-<footer class="bg-gray-900 text-white py-12">
+<footer class="bg-footer text-white py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid md:grid-cols-3 gap-8">
             <div>
-                <h3 class="text-2xl font-bold mb-4">🏓 {{ config('club.name') }}</h3>
+                <h3 class="text-2xl font-bold mb-4 text-club-yellow">🏓 {{ config('club.name') }}</h3>
                 <p class="text-white/70 mb-4">
                     Votre destination de choix pour le tennis de table à Ottignies et environs. Rejoignez notre
                     communauté dès aujourd'hui !
@@ -10,7 +10,7 @@
             </div>
 
             <div>
-                <h4 class="text-lg font-semibold mb-4">Liens Rapides</h4>
+                <h4 class="text-lg font-semibold mb-4 text-club-yellow">Liens Rapides</h4>
                 <ul class="space-y-2">
                     <li><a href="{{ route('home') }}" class="text-white/70 hover:text-white transition-colors">Accueil</a>
                     </li>
@@ -28,7 +28,7 @@
                  announce. --}}
             @if($club)
             <div>
-                <h4 class="text-lg font-semibold mb-4">Informations de contact</h4>
+                <h4 class="text-lg font-semibold mb-4 text-club-yellow">Informations de contact</h4>
                 <div class="space-y-2 text-white/70">
                     <div class="flex gap-4 items-start">
                         <p>
@@ -67,7 +67,7 @@
             @endif
         </div>
 
-        <div class="border-t border-gray-800 mt-8 pt-8 text-center text-white/70">
+        <div class="border-t border-white/20 mt-8 pt-8 text-center text-white/70">
             <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
                 <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm">
                     <p class="flex items-center">
@@ -76,13 +76,16 @@
                         by <span class="font-medium text-white ml-1">Aurélien Paulus</span>
                     </p>
                     <span class="hidden sm:inline text-white/40">•</span>
+                    {{-- Ces quatre couleurs sont celles des marques citées, elles ne suivent donc
+                    aucun thème. Le pied de page, lui, s'éclaircit en mode sombre : au cran 400
+                    elles y tombaient à 4,4:1. Le cran 300 tient sur les deux surfaces. --}}
                     <p class="text-xs">
                         Powered by
-                        <span class="text-blue-400 font-medium"><a
+                        <span class="text-blue-300 font-medium"><a
                                 href="https://tailwindcss.com/">TailwindCSS</a></span> •
-                        <span class="text-pink-400 font-medium"><a href="https://alpinejs.dev/">AlpineJS</a></span> •
-                        <span class="text-red-400 font-medium"><a href="https://laravel.com/">Laravel</a></span> •
-                        <span class="text-purple-400 font-medium"><a
+                        <span class="text-pink-300 font-medium"><a href="https://alpinejs.dev/">AlpineJS</a></span> •
+                        <span class="text-red-300 font-medium"><a href="https://laravel.com/">Laravel</a></span> •
+                        <span class="text-purple-300 font-medium"><a
                                 href="https://livewire.laravel.com/">Livewire</a></span>
                     </p>
                 </div>
@@ -115,16 +118,16 @@
             x-transition:leave="transition ease-in duration-300"
             x-transition:leave-start="opacity-100 transform translate-y-0"
             x-transition:leave-end="opacity-0 transform translate-y-full"
-            class="fixed bottom-0 left-0 w-full bg-club-yellow-light opacity-95 backdrop-filter backdrop-blur-lg shadow-lg rounded-t-lg p-6 z-50 md:flex md:items-center md:justify-between"
+            class="fixed bottom-0 left-0 w-full bg-base-100/95 border-t-2 border-club-yellow backdrop-filter backdrop-blur-lg shadow-lg rounded-t-lg p-6 z-50 md:flex md:items-center md:justify-between"
         >
-            <p class="text-sm text-gray-800 md:w-3/4">
+            <p class="text-sm text-base-content md:w-3/4">
                 Ce site utilise des cookies uniquement pour la gestion de la connexion. En continuant à utiliser ce site, vous acceptez cette utilisation. Pour plus d'informations, consultez notre
-                <button class="underline text-club-blue font-semibold" @click="showPrivacyPolicy()">{{ __('privacy policy') }}</button>.
+                <button class="underline text-primary font-semibold" @click="showPrivacyPolicy()">{{ __('privacy policy') }}</button>.
             </p>
             <div class="mt-4 md:mt-0 md:w-1/4 md:text-right">
                 <button
                     @click="document.cookie = 'cookie_consent=true; expires=' + new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toUTCString() + '; path=/; SameSite=Strict'; show = false"
-                    class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 font-bold"
+                    class="w-full md:w-auto px-6 py-3 bg-primary text-primary-content rounded-lg hover:opacity-90 font-bold"
                 >
                     J'ai compris
                 </button>
@@ -133,17 +136,17 @@
 
         <!-- Modal MIT licence -->
         <div id="licenseModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
-            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="bg-base-100 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl text-decoration-line font-bold text-gray-900">Licence MIT</h3>
-                        <button onclick="hideLicense()" class="text-gray-400 hover:text-gray-600">
+                        <h3 class="text-xl text-decoration-line font-bold text-base-content">Licence MIT</h3>
+                        <button onclick="hideLicense()" class="text-subtle hover:text-muted">
                             <x-icon name="o-x-mark" class="w-6 h-6" />
                         </button>
                     </div>
                     <div class="prose prose-sm max-w-none">
-                        <p class="text-gray-600 mb-4">Copyright (c) {{ date('Y') }} Aurélien Paulus</p>
-                        <p class="text-gray-700 text-sm leading-relaxed">
+                        <p class="text-muted mb-4">Copyright (c) {{ date('Y') }} Aurélien Paulus</p>
+                        <p class="text-muted text-sm leading-relaxed">
                             Permission is hereby granted, free of charge, to any person obtaining a copy
                             of this software and associated documentation files (the "Software"), to deal
                             in the Software without restriction, including without limitation the rights
@@ -151,11 +154,11 @@
                             copies of the Software, and to permit persons to whom the Software is
                             furnished to do so, subject to the following conditions:
                         </p>
-                        <p class="text-gray-700 text-sm leading-relaxed mt-4">
+                        <p class="text-muted text-sm leading-relaxed mt-4">
                             The above copyright notice and this permission notice shall be included in all
                             copies or substantial portions of the Software.
                         </p>
-                        <p class="text-gray-700 text-sm leading-relaxed mt-4">
+                        <p class="text-muted text-sm leading-relaxed mt-4">
                             THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
                             IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
                             FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -177,17 +180,17 @@
 
         <!-- Modal Privacy Policy -->
         <div id="privacyModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
-            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="bg-base-100 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-gray-900">{{ __('Privacy Policy') }}</h3>
-                        <button onclick="hidePrivacyPolicy()" class="text-gray-400 hover:text-gray-600">
+                        <h3 class="text-xl font-bold text-base-content">{{ __('Privacy Policy') }}</h3>
+                        <button onclick="hidePrivacyPolicy()" class="text-subtle hover:text-muted">
                             <x-icon name="o-x-mark" class="w-6 h-6" />
                         </button>
                     </div>
                     <div class="prose prose-sm max-w-none">
-                        <p class="text-gray-600 mb-4">{{ __('Dernière mise à jour: ') }} {{ date('d/m/Y') }}</p>
-                        <div class="text-gray-700 text-sm leading-relaxed space-y-4">
+                        <p class="text-muted mb-4">{{ __('Dernière mise à jour: ') }} {{ date('d/m/Y') }}</p>
+                        <div class="text-muted text-sm leading-relaxed space-y-4">
                             <p>
                                 Nous utilisons uniquement des cookies essentiels au bon fonctionnement de notre site.
                                 Ils nous permettent de :

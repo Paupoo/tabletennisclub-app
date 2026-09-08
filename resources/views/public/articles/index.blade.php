@@ -20,15 +20,15 @@
         <livewire:public.articles.article-list />
 
         <!-- Newsletter Signup -->
-        <div class="bg-gray-50 py-16">
+        <div class="bg-base-200 py-16">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h2 class="text-3xl font-bold text-gray-900 mb-4">{{ __('Stay Informed') }}</h2>
-                <p class="text-xl text-gray-600 mb-8">
+                <h2 class="text-3xl font-bold text-base-content mb-4">{{ __('Stay Informed') }}</h2>
+                <p class="text-xl text-muted mb-8">
                     Recevez les dernières actualités du club directement dans votre boîte mail
                 </p>
                 <form class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
                     <input type="email" placeholder="Votre adresse email" 
-                           class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                           class="flex-1 px-4 py-3 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                     <button type="submit" 
                             class="bg-club-blue text-white px-6 py-3 rounded-lg hover:bg-club-blue-light transition-colors font-semibold">
                         S'abonner

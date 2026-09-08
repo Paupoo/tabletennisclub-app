@@ -3,7 +3,7 @@
         <x-public.filter-bar :count="trans_choice(':count article found|:count articles found', $articles->total())">
             <x-slot:filters>
                 <div class="flex items-center gap-2">
-                    <label for="season" class="text-sm font-medium text-gray-600">{{ __('Season:') }}</label>
+                    <label for="season" class="text-sm font-medium text-muted">{{ __('Season:') }}</label>
                     <x-public.filter-select wire:model.live="seasonId" id="season">
                         <option value="0">{{ __('All seasons') }}</option>
                         @foreach($seasons as $season)
@@ -13,7 +13,7 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <label for="category" class="text-sm font-medium text-gray-600">{{ __('Category:') }}</label>
+                    <label for="category" class="text-sm font-medium text-muted">{{ __('Category:') }}</label>
                     <x-public.filter-select wire:model.live="category" id="category">
                         <option value="">{{ __('All categories') }}</option>
                         @foreach($categories as $categoryOption)
@@ -33,7 +33,7 @@
             @if($activeFiltersCount > 0)
                 <x-slot:chips>
                     <div class="mt-3 flex flex-wrap items-center gap-2">
-                        <span class="text-sm text-gray-600">{{ __('Active filters:') }}</span>
+                        <span class="text-sm text-muted">{{ __('Active filters:') }}</span>
 
                         @if($seasonId !== $defaultSeasonId && $seasons->firstWhere('id', $seasonId))
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-club-blue text-white">
@@ -49,7 +49,7 @@
                             </span>
                         @endif
 
-                        <button wire:click="clearAllFilters" class="text-xs text-club-blue hover:text-club-blue-light font-medium">
+                        <button wire:click="clearAllFilters" class="text-xs text-primary hover:text-primary font-medium">
                             {{ __('Clear all filters') }}
                         </button>
                     </div>
@@ -71,28 +71,28 @@
                 {{ $articles->links() }}
             </div>
         @elseif($activeFiltersCount > 0)
-            <div class="flex flex-col items-center justify-center gap-6 rounded-2xl bg-gray-50 px-6 py-20 text-center">
+            <div class="flex flex-col items-center justify-center gap-6 rounded-2xl bg-base-200 px-6 py-20 text-center">
                 <span class="text-6xl">🔍</span>
                 <div class="max-w-md">
-                    <h3 class="mb-2 text-xl font-semibold text-gray-900">{{ __('No articles found') }}</h3>
-                    <p class="text-gray-500">{{ __('Try adjusting your search criteria or browse all news.') }}</p>
+                    <h3 class="mb-2 text-xl font-semibold text-base-content">{{ __('No articles found') }}</h3>
+                    <p class="text-subtle">{{ __('Try adjusting your search criteria or browse all news.') }}</p>
                 </div>
                 <button wire:click="clearAllFilters" class="rounded-lg bg-club-blue px-8 py-3 font-semibold text-white transition-colors hover:bg-club-blue-light">
                     {{ __('View all news') }}
                 </button>
             </div>
         @else
-            <div class="flex flex-col items-center justify-center gap-6 rounded-2xl bg-gray-50 px-6 py-20 text-center">
+            <div class="flex flex-col items-center justify-center gap-6 rounded-2xl bg-base-200 px-6 py-20 text-center">
                 <span class="text-6xl">📰</span>
                 <div class="max-w-md">
-                    <h2 class="mb-2 text-2xl font-bold text-gray-900">{{ __('No articles published yet') }}</h2>
-                    <p class="text-gray-500">{{ __("Club news coming soon — check back, there's always something happening!") }}</p>
+                    <h2 class="mb-2 text-2xl font-bold text-base-content">{{ __('No articles published yet') }}</h2>
+                    <p class="text-subtle">{{ __("Club news coming soon — check back, there's always something happening!") }}</p>
                 </div>
                 <div class="flex flex-col gap-3 sm:flex-row">
                     <a href="{{ route('home') }}#join" class="rounded-lg bg-club-yellow px-8 py-3 font-semibold text-club-blue transition-colors hover:bg-club-yellow-light">
                         {{ __('Become a member') }}
                     </a>
-                    <a href="{{ route('home') }}#contact" class="rounded-lg border-2 border-club-blue px-8 py-3 font-semibold text-club-blue transition-colors hover:bg-club-blue hover:text-white">
+                    <a href="{{ route('home') }}#contact" class="rounded-lg border-2 border-primary px-8 py-3 font-semibold text-primary transition-colors hover:bg-club-blue hover:text-white">
                         {{ __('Contact us') }}
                     </a>
                 </div>

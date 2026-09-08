@@ -1,6 +1,6 @@
 <x-guest-layout :title="$tournament->name . ' — ' . __('Registration')">
 
-    <div class="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-24">
+    <div class="min-h-screen bg-base-200 flex flex-col items-center justify-center px-4 py-24">
         <div class="max-w-lg w-full">
 
             @if (session('error'))
@@ -12,21 +12,21 @@
                                 d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </div>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ __('Registration failed') }}</h1>
-                    <p class="text-gray-500">{{ session('error') }}</p>
+                    <h1 class="text-3xl font-bold text-base-content mb-2">{{ __('Registration failed') }}</h1>
+                    <p class="text-subtle">{{ session('error') }}</p>
                 </div>
 
             @elseif ($registrationStatus === 'left_waitlist')
                 {{-- ── Left waitlist state ────────────────────────────────── --}}
                 <div class="text-center mb-8">
-                    <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-6">
-                        <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-base-200 mb-6">
+                        <svg class="w-10 h-10 text-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ __('You\'ve been removed from the waitlist') }}</h1>
-                    <p class="text-gray-500">{{ __('Your spot has been offered to the next person. We hope to see you at another tournament!') }}</p>
+                    <h1 class="text-3xl font-bold text-base-content mb-2">{{ __('You\'ve been removed from the waitlist') }}</h1>
+                    <p class="text-subtle">{{ __('Your spot has been offered to the next person. We hope to see you at another tournament!') }}</p>
                 </div>
 
             @elseif ($registrationStatus === 'waiting')
@@ -39,11 +39,11 @@
                         </svg>
                     </div>
                     @if (session('already_on_list'))
-                        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ __('You\'re already on the waitlist') }}</h1>
-                        <p class="text-gray-500 mb-4">{{ __('You are already registered on the waiting list for this tournament.') }}</p>
+                        <h1 class="text-3xl font-bold text-base-content mb-2">{{ __('You\'re already on the waitlist') }}</h1>
+                        <p class="text-subtle mb-4">{{ __('You are already registered on the waiting list for this tournament.') }}</p>
                     @else
-                        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ __('You\'re on the waitlist') }}</h1>
-                        <p class="text-gray-500 mb-4">{{ __('The tournament is currently full, but your name has been added to the waiting list.') }}</p>
+                        <h1 class="text-3xl font-bold text-base-content mb-2">{{ __('You\'re on the waitlist') }}</h1>
+                        <p class="text-subtle mb-4">{{ __('The tournament is currently full, but your name has been added to the waiting list.') }}</p>
                     @endif
 
                     @if ($waitlistPosition)
@@ -58,7 +58,7 @@
                 </div>
 
                 {{-- Waitlist info box --}}
-                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6 text-sm text-amber-900 space-y-3">
+                <div class="bg-warning/10 border border-warning/40 rounded-2xl p-5 mb-6 text-sm text-base-content space-y-3">
                     <div class="flex items-start gap-3">
                         <svg class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -85,17 +85,17 @@
                         </svg>
                     </div>
                     @if (session('already_on_list'))
-                        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ __('You\'re already registered!') }}</h1>
-                        <p class="text-gray-500">{{ __('You\'re all set — your spot for this tournament is confirmed.') }}</p>
+                        <h1 class="text-3xl font-bold text-base-content mb-2">{{ __('You\'re already registered!') }}</h1>
+                        <p class="text-subtle">{{ __('You\'re all set — your spot for this tournament is confirmed.') }}</p>
                     @else
-                        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ __('Spot confirmed!') }}</h1>
-                        <p class="text-gray-500">{{ __('Your participation has been confirmed. See you on the court!') }}</p>
+                        <h1 class="text-3xl font-bold text-base-content mb-2">{{ __('Spot confirmed!') }}</h1>
+                        <p class="text-subtle">{{ __('Your participation has been confirmed. See you on the court!') }}</p>
                     @endif
                 </div>
 
                 {{-- Unsubscribe hint --}}
-                <div class="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-6 text-sm text-gray-600 flex items-start gap-3">
-                    <svg class="w-5 h-5 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-base-200 border border-base-300 rounded-2xl p-5 mb-6 text-sm text-muted flex items-start gap-3">
+                    <svg class="w-5 h-5 text-subtle shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                     </svg>
@@ -104,7 +104,7 @@
             @endif
 
             {{-- ── Tournament card ────────────────────────────────────────── --}}
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-300 overflow-hidden mb-8">
                 @if ($tournament->image)
                     <img src="{{ Storage::url($tournament->image) }}" alt="{{ $tournament->name }}"
                         class="w-full h-40 object-cover">
@@ -118,12 +118,12 @@
                 @endif
 
                 <div class="p-6 space-y-4">
-                    <h2 class="text-xl font-bold text-gray-900">{{ $tournament->name }}</h2>
+                    <h2 class="text-xl font-bold text-base-content">{{ $tournament->name }}</h2>
 
-                    <div class="space-y-3 text-sm text-gray-600">
+                    <div class="space-y-3 text-sm text-muted">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 rounded-lg bg-club-blue/10 flex items-center justify-center shrink-0">
-                                <svg class="w-4 h-4 text-club-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
@@ -138,7 +138,7 @@
                         @if ($tournament->location)
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-lg bg-club-blue/10 flex items-center justify-center shrink-0">
-                                    <svg class="w-4 h-4 text-club-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -151,7 +151,7 @@
 
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 rounded-lg bg-club-blue/10 flex items-center justify-center shrink-0">
-                                <svg class="w-4 h-4 text-club-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
@@ -171,7 +171,7 @@
             @if (! session('error') && ! in_array($registrationStatus, ['waiting', 'left_waitlist']))
                 <div class="mb-8 text-center">
                     <a href="{{ route('tournament.calendar.ical', $tournament) }}"
-                        class="inline-flex items-center gap-2 border border-gray-200 text-gray-600 text-sm px-5 py-2.5 rounded-xl font-medium hover:bg-gray-50 transition-colors">
+                        class="inline-flex items-center gap-2 border border-base-300 text-muted text-sm px-5 py-2.5 rounded-xl font-medium hover:bg-base-200 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />

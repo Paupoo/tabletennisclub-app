@@ -119,6 +119,8 @@
         >
             <p class="text-sm text-gray-800 md:w-3/4">
                 Ce site utilise des cookies uniquement pour la gestion de la connexion. En continuant à utiliser ce site, vous acceptez cette utilisation. Pour plus d'informations, consultez notre
+                {{-- Le bandeau cookies est jaune dans les deux thèmes : son encre ne peut donc pas
+                suivre `primary`, qui devient jaune elle aussi en mode sombre. --}}
                 <button class="underline text-club-blue font-semibold" @click="showPrivacyPolicy()">{{ __('privacy policy') }}</button>.
             </p>
             <div class="mt-4 md:mt-0 md:w-1/4 md:text-right">
@@ -133,17 +135,17 @@
 
         <!-- Modal MIT licence -->
         <div id="licenseModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
-            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="bg-base-100 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl text-decoration-line font-bold text-gray-900">Licence MIT</h3>
-                        <button onclick="hideLicense()" class="text-gray-400 hover:text-gray-600">
+                        <h3 class="text-xl text-decoration-line font-bold text-base-content">Licence MIT</h3>
+                        <button onclick="hideLicense()" class="text-subtle hover:text-muted">
                             <x-icon name="o-x-mark" class="w-6 h-6" />
                         </button>
                     </div>
                     <div class="prose prose-sm max-w-none">
-                        <p class="text-gray-600 mb-4">Copyright (c) {{ date('Y') }} Aurélien Paulus</p>
-                        <p class="text-gray-700 text-sm leading-relaxed">
+                        <p class="text-muted mb-4">Copyright (c) {{ date('Y') }} Aurélien Paulus</p>
+                        <p class="text-muted text-sm leading-relaxed">
                             Permission is hereby granted, free of charge, to any person obtaining a copy
                             of this software and associated documentation files (the "Software"), to deal
                             in the Software without restriction, including without limitation the rights
@@ -151,11 +153,11 @@
                             copies of the Software, and to permit persons to whom the Software is
                             furnished to do so, subject to the following conditions:
                         </p>
-                        <p class="text-gray-700 text-sm leading-relaxed mt-4">
+                        <p class="text-muted text-sm leading-relaxed mt-4">
                             The above copyright notice and this permission notice shall be included in all
                             copies or substantial portions of the Software.
                         </p>
-                        <p class="text-gray-700 text-sm leading-relaxed mt-4">
+                        <p class="text-muted text-sm leading-relaxed mt-4">
                             THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
                             IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
                             FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -177,17 +179,17 @@
 
         <!-- Modal Privacy Policy -->
         <div id="privacyModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
-            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="bg-base-100 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-gray-900">{{ __('Privacy Policy') }}</h3>
-                        <button onclick="hidePrivacyPolicy()" class="text-gray-400 hover:text-gray-600">
+                        <h3 class="text-xl font-bold text-base-content">{{ __('Privacy Policy') }}</h3>
+                        <button onclick="hidePrivacyPolicy()" class="text-subtle hover:text-muted">
                             <x-icon name="o-x-mark" class="w-6 h-6" />
                         </button>
                     </div>
                     <div class="prose prose-sm max-w-none">
-                        <p class="text-gray-600 mb-4">{{ __('Dernière mise à jour: ') }} {{ date('d/m/Y') }}</p>
-                        <div class="text-gray-700 text-sm leading-relaxed space-y-4">
+                        <p class="text-muted mb-4">{{ __('Dernière mise à jour: ') }} {{ date('d/m/Y') }}</p>
+                        <div class="text-muted text-sm leading-relaxed space-y-4">
                             <p>
                                 Nous utilisons uniquement des cookies essentiels au bon fonctionnement de notre site.
                                 Ils nous permettent de :

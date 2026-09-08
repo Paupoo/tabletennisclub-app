@@ -4,19 +4,19 @@
 >
 
     {{-- Header --}}
-    <div class="bg-white border-b border-gray-100">
+    <div class="bg-base-100 border-b border-base-300">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
 
             {{-- Breadcrumb --}}
-            <nav class="flex items-center gap-2 text-sm text-gray-400 mb-6">
-                <a href="{{ route('home') }}" class="hover:text-gray-600 transition-colors">Accueil</a>
+            <nav class="flex items-center gap-2 text-sm text-subtle mb-6">
+                <a href="{{ route('home') }}" class="hover:text-muted transition-colors">Accueil</a>
                 <span>/</span>
-                <a href="{{ route('public.clubPosts.index') }}" class="hover:text-gray-600 transition-colors">{{ __('News') }}</a>
+                <a href="{{ route('public.clubPosts.index') }}" class="hover:text-muted transition-colors">{{ __('News') }}</a>
                 <span>/</span>
-                <span class="text-gray-600 truncate">{{ Str::words($article->title ?? 'Article', 6, '[...]') }}</span>
+                <span class="text-muted truncate">{{ Str::words($article->title ?? 'Article', 6, '[...]') }}</span>
             </nav>
 
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight max-w-4xl">
+            <h1 class="text-4xl md:text-5xl font-bold text-base-content leading-tight max-w-4xl">
                 {{ $article->title ?? 'Titre de l\'article' }}
             </h1>
         </div>
@@ -39,29 +39,29 @@
             {{-- Meta card: first on mobile, right column row 1 on desktop --}}
             <div class="lg:col-start-3 lg:row-start-1 lg:self-start mb-8 lg:mb-0">
                 <div class="sticky lg:top-8">
-                    <div class="bg-gray-50 rounded-2xl p-6 space-y-4">
-                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">À propos</h3>
+                    <div class="bg-base-200 rounded-2xl p-6 space-y-4">
+                        <h3 class="text-xs font-bold text-subtle uppercase tracking-widest">À propos</h3>
 
-                        <div class="space-y-3 text-sm text-gray-600">
+                        <div class="space-y-3 text-sm text-muted">
                             @if($article->category)
                                 <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                                    <svg class="w-4 h-4 text-subtle shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
                                     <span>{{ $article->category->getLabel() }}</span>
                                 </div>
                             @endif
                             <div class="flex items-center gap-3">
-                                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <svg class="w-4 h-4 text-subtle shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                 <span>{{ $article->created_at?->translatedFormat('d F Y') ?? date('d F Y') }}</span>
                             </div>
                             @if($article->user)
                                 <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                    <svg class="w-4 h-4 text-subtle shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                     <span>{{ $article->user->fullName }}</span>
                                 </div>
                             @endif
                             @if($article->reading_time)
                                 <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <svg class="w-4 h-4 text-subtle shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     <span>{{ $article->reading_time }} min de lecture</span>
                                 </div>
                             @endif
@@ -73,11 +73,11 @@
             {{-- Main content: second on mobile, left 2 columns on desktop --}}
             <div class="lg:col-span-2 lg:col-start-1 lg:row-start-1 lg:row-span-2">
                 <div class="prose prose-lg max-w-none
-                    prose-headings:font-bold prose-headings:text-gray-900
-                    prose-p:text-gray-700 prose-p:leading-relaxed
-                    prose-blockquote:border-club-blue prose-blockquote:text-gray-600
-                    prose-li:text-gray-700
-                    prose-a:text-club-blue">
+                    prose-headings:font-bold prose-headings:text-base-content
+                    prose-p:text-muted prose-p:leading-relaxed
+                    prose-blockquote:border-primary prose-blockquote:text-muted
+                    prose-li:text-muted
+                    prose-a:text-primary">
                     {!! $renderedContent ?? '<p>Contenu de l\'article à venir...</p>' !!}
                 </div>
             </div>
@@ -87,8 +87,8 @@
                 <div class="sticky lg:top-8 space-y-6">
 
                     {{-- Share card --}}
-                    <div x-data="{ copied: false }" class="bg-gray-50 rounded-2xl p-6">
-                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Partager</h3>
+                    <div x-data="{ copied: false }" class="bg-base-200 rounded-2xl p-6">
+                        <h3 class="text-xs font-bold text-subtle uppercase tracking-widest mb-4">Partager</h3>
                         <div class="flex flex-col gap-2">
                             <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(request()->fullUrl()) }}"
                                 target="_blank" rel="noopener"
@@ -103,7 +103,7 @@
                                 Partager sur WhatsApp
                             </a>
                             <button @click="navigator.clipboard.writeText(window.location.href); copied = true; setTimeout(() => copied = false, 2000)"
-                                class="flex items-center gap-3 bg-white border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-gray-100 transition">
+                                class="flex items-center gap-3 bg-base-100 border border-base-300 text-muted text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-base-200 transition">
                                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                                 <span x-text="copied ? 'Lien copié !' : 'Copier le lien'"></span>
                             </button>
@@ -116,13 +116,13 @@
                         <svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                         <div>
                             <div class="font-semibold">Rejoindre notre groupe</div>
-                            <div class="text-xs text-gray-400">{{ config('club.name') }} sur Facebook</div>
+                            <div class="text-xs text-subtle">{{ config('club.name') }} sur Facebook</div>
                         </div>
                     </a>
 
                     {{-- Back to news --}}
                     <a href="{{ route('public.clubPosts.index') }}"
-                        class="flex items-center gap-2 text-sm text-gray-500 hover:text-club-blue transition">
+                        class="flex items-center gap-2 text-sm text-subtle hover:text-primary transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                         Retour aux articles
                     </a>
@@ -134,9 +134,9 @@
 
     {{-- Related Articles --}}
     @if(isset($relatedArticles) && count($relatedArticles) > 0)
-        <div class="bg-gray-50 py-16 mt-8">
+        <div class="bg-base-200 py-16 mt-8">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">Articles Similaires</h2>
+                <h2 class="text-3xl font-bold text-base-content mb-8 text-center">Articles Similaires</h2>
                 <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                     @foreach($relatedArticles as $relatedArticle)
                         <x-public.news-card :article="$relatedArticle" />

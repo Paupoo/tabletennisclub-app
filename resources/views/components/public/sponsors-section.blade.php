@@ -1,8 +1,8 @@
-<section class="py-20 bg-white border-t">
+<section class="py-20 bg-base-100 border-t">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12 animate-on-scroll">
-            <h2 class="text-3xl font-bold text-gray-900 mb-4">Nos Sponsors</h2>
-            <p class="text-lg text-gray-600">
+            <h2 class="text-3xl font-bold text-base-content mb-4">Nos Sponsors</h2>
+            <p class="text-lg text-muted">
                 Merci à nos incroyables sponsors qui rendent notre club possible
             </p>
         </div>
@@ -38,8 +38,8 @@
         @endif
         
         <div class="text-center mt-8 animate-on-scroll">
-            <p class="text-gray-600 mb-4">{{ __('Interested in sponsoring our club?') }}</p>
-            <a href="#contact" target="_self" class="text-club-blue hover:text-club-blue-light font-semibold">{{ __('Contact us for partnership opportunities') }}</a>
+            <p class="text-muted mb-4">{{ __('Interested in sponsoring our club?') }}</p>
+            <a href="#contact" target="_self" class="text-primary hover:text-primary font-semibold">{{ __('Contact us for partnership opportunities') }}</a>
         </div>
     </div>
 </section>

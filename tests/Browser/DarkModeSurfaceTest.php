@@ -158,4 +158,4 @@ it('paints no light slab in dark mode on the public site', function (string $rou
     'results',
     'eventPosts',
     'public.clubPosts.index',
-])->skip('Acceptance test for the public dark mode migration — enable it with the lot that tokenises the guest layout.');
+]);

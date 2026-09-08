@@ -28,28 +28,37 @@
      * ne serait jamais générée.
      */
     $pillClasses = function (\App\Data\PublicAgenda\AgendaEntry $entry): string {
+        /*
+         * Une teinte sémantique, pas un aplat fixe. `bg-blue-50` mesurait
+         * rgb(239,246,255) dans les DEUX thèmes : la grille passait en sombre et
+         * les pastilles restaient claires, en mur de rectangles pâles. Une teinte
+         * à 15 % se mélange à la surface, donc elle suit le thème — ce que la
+         * famille « vie du club » faisait déjà, seule des trois.
+         */
         if ($entry->isCancelled()) {
             return $entry->roomStaysOpen()
-                ? 'bg-amber-50 text-amber-800 ring-1 ring-amber-300'
-                : 'bg-red-50 text-red-800 ring-1 ring-red-300';
+                ? 'bg-warning/15 text-base-content ring-1 ring-warning/50'
+                : 'bg-error/15 text-base-content ring-1 ring-error/50';
         }
 
         return match ($entry->family) {
-            AgendaFamily::TRAINING => 'bg-blue-50 text-blue-900',
-            AgendaFamily::COMPETITION => 'bg-red-50/70 text-red-900',
+            AgendaFamily::TRAINING => 'bg-info/15 text-base-content',
+            AgendaFamily::COMPETITION => 'bg-error/15 text-base-content',
             AgendaFamily::CLUB_LIFE => 'bg-base-200 text-muted',
         };
     };
 
     $dotClasses = function (\App\Data\PublicAgenda\AgendaEntry $entry): string {
         if ($entry->isCancelled()) {
-            return $entry->roomStaysOpen() ? 'bg-amber-500' : 'bg-red-600';
+            return $entry->roomStaysOpen() ? 'bg-warning' : 'bg-error';
         }
 
+        // Le bleu club mesure 1,83:1 sur une surface sombre : la pastille de
+        // famille y disparaitrait le jour où la sienne cesse d'etre claire.
         return match ($entry->family) {
-            AgendaFamily::TRAINING => 'bg-club-blue',
-            AgendaFamily::COMPETITION => 'bg-red-500',
-            AgendaFamily::CLUB_LIFE => 'bg-gray-400',
+            AgendaFamily::TRAINING => 'bg-info',
+            AgendaFamily::COMPETITION => 'bg-error',
+            AgendaFamily::CLUB_LIFE => 'bg-base-content/50',
         };
     };
 
@@ -152,9 +161,9 @@
         </div>
 
         <div class="flex flex-wrap gap-x-5 gap-y-2 border-t border-base-300 bg-base-200 px-5 py-3 text-xs text-muted">
-            <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-club-blue"></span>{{ __('Training') }}</span>
-            <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-red-500"></span>{{ __('Competition') }}</span>
-            <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-gray-400"></span>{{ __('Club life') }}</span>
+            <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-info"></span>{{ __('Training') }}</span>
+            <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-error"></span>{{ __('Competition') }}</span>
+            <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-base-content/50"></span>{{ __('Club life') }}</span>
         </div>
     @endif
 </div>

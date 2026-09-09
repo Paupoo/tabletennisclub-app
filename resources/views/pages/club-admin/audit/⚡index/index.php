@@ -152,6 +152,7 @@ new class extends Component
             'League' => __('League'),
             'Club' => __('Club'),
             'Team' => __('Team'),
+            'TeamUser' => __('Team membership'),
             'Interclub' => __('Interclub'),
             'InterclubResult' => __('Interclub result'),
             'Tournament' => __('Tournament'),

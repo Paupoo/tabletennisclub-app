@@ -670,6 +670,22 @@ class User extends Authenticatable implements MustVerifyEmail
             ->all();
     }
 
+    /**
+     * Whether the member has an interclub life to look at: « Mes matchs » is
+     * scoped to the teams the member belongs to, so team membership is what
+     * makes the screen worth reaching — not the competitive licence alone.
+     *
+     * The two are meant to coincide (interclub ⊂ compétiteur), but a captain
+     * can field a player whose licence has not been recorded as competitive
+     * yet, and the availability and selection notifications deep-link straight
+     * here. Gating the entry points on is_competitor alone left those players
+     * with a notification and no way back to the page.
+     */
+    public function playsInterclub(): bool
+    {
+        return $this->is_competitor || $this->teams()->exists();
+    }
+
     public function pools(): BelongsToMany
     {
         return $this->belongsToMany(Pool::class, 'pool_user');

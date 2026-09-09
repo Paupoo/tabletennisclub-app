@@ -229,7 +229,7 @@ class DashboardController extends Controller
             ['icon' => 'o-bell',                     'label' => 'Notifications',  'sub' => 'Infos & tâches',                          'href' => route('notifications.index')],
         ];
 
-        if ($user->is_competitor && Feature::Interclubs->enabled()) {
+        if ($user->playsInterclub() && Feature::Interclubs->enabled()) {
             $tiles[] = ['icon' => 'o-calendar-days', 'label' => 'Disponibilités', 'sub' => 'Interclubs', 'href' => route('admin.user.calendar', $user)];
             $tiles[] = ['icon' => 'o-globe-alt',     'label' => 'Mes matchs',     'sub' => 'Interclubs', 'href' => route('admin.interclubs.my-matches')];
         }

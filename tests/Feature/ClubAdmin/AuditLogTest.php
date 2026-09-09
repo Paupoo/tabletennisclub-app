@@ -378,12 +378,19 @@ it('renders a rights change like any other entry, named and with its diff', func
         $admin,
     );
 
-    Livewire::actingAs($admin)
+    $component = Livewire::actingAs($admin)
         ->test('pages::club-admin.audit.index')
         ->assertSee(__('Rights changed'))
-        ->assertDontSee('roles_changed')
         ->assertSee(Role::BAR->value)
         ->assertSee(Role::WEBSITE->value);
+
+    // The raw event name has one legitimate home on this page: the value of its
+    // own <option> in the action filter, which reads the log to know what to
+    // offer. Asserted on everything but the selects, because « nowhere on the
+    // page » would now fail on the filter that makes the entry findable.
+    $outsideTheFilters = preg_replace('/<select\b.*?<\/select>/s', '', $component->html());
+
+    expect($outsideTheFilters)->not->toContain('roles_changed');
 });
 
 /*

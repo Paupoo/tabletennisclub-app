@@ -16,6 +16,7 @@ use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Mail\PaymentInvitationEmail;
 use App\Support\Breadcrumb;
+use App\Support\LocaleSort;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -635,15 +636,19 @@ new class extends Component
             return;
         }
 
-        $this->usersSearchList = User::where(fn ($q) => $q
+        $matches = User::where(fn ($q) => $q
             ->where('first_name', 'like', "%{$value}%")
             ->orWhere('last_name', 'like', "%{$value}%")
         )
+            // Which ten, decided in the database on a stable key; how they are
+            // then shown, decided on the label — « Prénom Nom » — because a list
+            // ordered on a surname it never displays reads as unordered.
             ->orderBy('last_name')
             ->limit(10)
             ->get(['id', 'first_name', 'last_name'])
-            ->map(fn ($u): array => ['id' => $u->id, 'name' => $u->full_name])
-            ->toArray();
+            ->map(fn ($u): array => ['id' => $u->id, 'name' => $u->full_name]);
+
+        $this->usersSearchList = LocaleSort::byKey($matches, 'name')->all();
     }
 
     // ==================== Actions ====================

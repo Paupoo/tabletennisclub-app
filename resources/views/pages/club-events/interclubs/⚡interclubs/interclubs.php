@@ -12,6 +12,7 @@ use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
+use App\Support\LocaleSort;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
@@ -242,10 +243,10 @@ new class extends Component
             'filterChips' => $this->filterChips,
             'seasons' => Season::orderBy('start_at')->get(),
             'ourTeams' => $ourTeams,
-            'ourTeamOptions' => $ourTeams->map(fn (Team $t): array => [
+            'ourTeamOptions' => LocaleSort::byKey($ourTeams->map(fn (Team $t): array => [
                 'id' => $t->id,
                 'name' => trim(($t->club?->name ?? '') . ' ' . $t->name),
-            ])->values()->toArray(),
+            ]), 'name')->toArray(),
             'opponentTeams' => $opponentTeams->toArray(),
             'grouped' => $grouped,
             'total' => $interclubs->count(),

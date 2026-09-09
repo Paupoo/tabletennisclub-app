@@ -19,6 +19,7 @@ use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
+use App\Support\LocaleSort;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -571,14 +572,15 @@ new class extends Component
     #[Computed]
     public function teams(): Collection
     {
-        return Team::with('captain')
-            ->orderBy('name')
+        $teams = Team::with('captain')
             ->get()
             ->map(fn (Team $team): array => [
                 'id' => $team->id,
                 'name' => __('Team') . ' ' . $team->name,
                 'avatar' => $team->captain->photo ?? '/images/empty-user.jpg',
             ]);
+
+        return LocaleSort::byKey($teams, 'name');
     }
 
     // ── Pagination hooks ──────────────────────────────────────────────────────

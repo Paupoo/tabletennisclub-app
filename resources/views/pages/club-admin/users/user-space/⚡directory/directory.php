@@ -10,6 +10,7 @@ use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
+use App\Support\LocaleSort;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Support\Collection;
@@ -153,10 +154,9 @@ new class extends Component
     #[Computed]
     public function teamsForFilter(): Collection
     {
-        return Team::query()
+        $teams = Team::query()
             ->when($this->seasonFilter, fn (EloquentBuilder $q) => $q->where('season_id', $this->seasonFilter))
             ->with('league:id,category')
-            ->orderBy('name')
             ->get(['id', 'name', 'league_id'])
             ->map(fn (Team $team): array => [
                 'id' => $team->id,
@@ -164,6 +164,11 @@ new class extends Component
                     ? $team->name . ' · ' . $category->label()
                     : $team->name,
             ]);
+
+        // On the built label rather than on `name` alone: two teams share a
+        // letter across categories, and the category decided their order by
+        // accident of insertion.
+        return LocaleSort::byKey($teams, 'name');
     }
 
     public function updated(string $property): void

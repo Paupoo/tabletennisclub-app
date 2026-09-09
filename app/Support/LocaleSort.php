@@ -23,6 +23,24 @@ use Illuminate\Support\Collection;
 final class LocaleSort
 {
     /**
+     * Sort anything on the label it will be shown under.
+     *
+     * @template TValue
+     *
+     * @param  Collection<array-key, TValue>  $items
+     * @param  callable(TValue): string  $label
+     * @return Collection<int, TValue>
+     */
+    public static function by(Collection $items, callable $label): Collection
+    {
+        $collator = self::collator();
+
+        return $items
+            ->sort(fn (mixed $a, mixed $b): int => (int) $collator->compare($label($a), $label($b)))
+            ->values();
+    }
+
+    /**
      * Sort option rows on the label the dropdown actually shows.
      *
      * @param  Collection<array-key, array<string, mixed>>  $rows
@@ -30,11 +48,7 @@ final class LocaleSort
      */
     public static function byKey(Collection $rows, string $key): Collection
     {
-        $collator = self::collator();
-
-        return $rows
-            ->sort(fn (array $a, array $b): int => (int) $collator->compare((string) $a[$key], (string) $b[$key]))
-            ->values();
+        return self::by($rows, static fn (array $row): string => (string) $row[$key]);
     }
 
     public static function collator(): Collator

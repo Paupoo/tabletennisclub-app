@@ -598,17 +598,18 @@ new class extends Component
             'headers' => $this->headers(),
             'payments' => $payments,
             'filterChips' => $this->getFilterChips(),
-            'paymentMethodOptions' => [
+            // Both lists were in the order someone happened to type them.
+            'paymentMethodOptions' => LocaleSort::byKey(collect([
                 ['id' => 'Cash',    'name' => 'Cash'],
                 ['id' => 'Wire',    'name' => 'Wire'],
                 ['id' => 'QRCode',  'name' => 'QRCode'],
                 ['id' => 'Offered', 'name' => 'Offered'],
-            ],
-            'eventTypeOptions' => [
+            ]), 'name')->all(),
+            'eventTypeOptions' => LocaleSort::byKey(collect([
                 ['id' => Subscription::class,           'name' => __('Subscription')],
                 ['id' => TournamentRegistration::class, 'name' => __('Tournament')],
                 ['id' => MeetingUser::class,            'name' => __('Meeting')],
-            ],
+            ]), 'name')->all(),
             'pendingTransactions' => $this->reconcileModal ? $this->pendingTransactions() : collect(),
             'currentPayment' => $this->reconcilePaymentId
                 ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])->find($this->reconcilePaymentId)

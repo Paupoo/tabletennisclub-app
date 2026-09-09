@@ -7,6 +7,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
@@ -149,4 +150,46 @@ it('orders our teams in the fixtures filter, accents in their place', function (
     )->pluck('name');
 
     expect($names->all())->toBe(['CTT Ottignies-Blocry É', 'CTT Ottignies-Blocry F']);
+});
+
+/*
+ * Three lists whose order was simply the order someone typed them in. The
+ * lists that keep their own order — experience, age, invitation state, match
+ * type — are covered by the fact that nothing here touches them.
+ */
+it('orders the treasury payment methods', function (): void {
+    $treasurer = User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create();
+
+    $names = collect(
+        Livewire::actingAs($treasurer)
+            ->test('pages::club-admin.treasury.payments')
+            ->viewData('paymentMethodOptions')
+    )->pluck('name');
+
+    expect($names->all())->toBe(['Cash', 'Offered', 'QRCode', 'Wire']);
+});
+
+it('orders the treasury event types', function (): void {
+    $treasurer = User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create();
+
+    $names = collect(
+        Livewire::actingAs($treasurer)
+            ->test('pages::club-admin.treasury.payments')
+            ->viewData('eventTypeOptions')
+    )->pluck('name');
+
+    expect($names->all())->toBe([__('Subscription'), __('Meeting'), __('Tournament')]);
+});
+
+it('orders the contact reasons', function (): void {
+    $reasons = collect(
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::website.contacts.index')
+            ->viewData('interestOptions')
+    )->pluck('name');
+
+    expect($reasons->all())->toBe($reasons->sort(
+        fn (string $a, string $b): int => (int) new Collator('fr_BE')->compare($a, $b)
+    )->values()->all())
+        ->and($reasons)->toHaveCount(count(ContactReasonEnum::cases()));
 });

@@ -24,7 +24,7 @@ class MeetingMinutesNotification extends Notification implements ShouldQueue
         return [
             'title' => __('Minutes: :title', ['title' => $this->meeting->title]),
             'body' => __('The minutes of the :date meeting are available', ['date' => $this->meeting->scheduled_at?->translatedFormat('d M Y') ?? __('TBD')]),
-            'url' => $this->meetingUrl($notifiable, $this->meeting),
+            'url' => $this->meetingMinutesUrl($notifiable, $this->meeting),
             'category' => 'meeting',
             'icon' => 'o-calendar-days',
         ];
@@ -58,7 +58,7 @@ class MeetingMinutesNotification extends Notification implements ShouldQueue
         }
 
         return $mail
-            ->action(__('View full minutes'), $this->meetingUrl($notifiable, $meeting))
+            ->action(__('View full minutes'), $this->meetingMinutesUrl($notifiable, $meeting))
             ->salutation(__('Regards,'));
     }
 

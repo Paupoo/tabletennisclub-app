@@ -13,6 +13,7 @@ use App\Domains\Meetings\Models\MeetingUser;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
+use App\Support\LocaleSort;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Collection;
@@ -109,10 +110,13 @@ new class extends Component
     #[Computed]
     public function payableUsers(): Collection
     {
-        return User::query()
+        $payable = User::query()
             ->whereIn('id', $this->user->payableUserIds())
-            ->orderBy('first_name')
             ->get(['id', 'first_name', 'last_name']);
+
+        // Ordered on « Prénom Nom » as shown, not on a column: the database
+        // compares byte by byte, so « Émile » would file after « Zoé ».
+        return LocaleSort::by($payable, fn (User $user): string => $user->full_name);
     }
 
     /**

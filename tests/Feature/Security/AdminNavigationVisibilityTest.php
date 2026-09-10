@@ -115,3 +115,24 @@ it('keeps the interclubs menu hidden from a member who captains nothing', functi
         ->not->toContain(route('admin.interclubs.captain-selection'))
         ->not->toContain(route('admin.interclubs.results'));
 });
+
+/*
+ * « Mes matchs » is scoped to the teams the member belongs to, so team
+ * membership — not the competitive licence — is what makes the page reachable.
+ * A captain can field a player whose licence has not been recorded as
+ * competitive yet, and the availability notifications deep-link straight here.
+ */
+it('shows my matches to a team member whose licence is not competitive', function (): void {
+    $season = Season::factory()->create(['is_active' => true]);
+    $player = User::factory()->create();
+
+    Team::factory()->create(['season_id' => $season->id])->users()->attach($player->id);
+
+    expect($player->is_competitor)->toBeFalse()
+        ->and(renderAdminNavigation($player))->toContain(route('admin.interclubs.my-matches'));
+});
+
+it('keeps my matches hidden from a member who plays in no team', function (): void {
+    expect(renderAdminNavigation(User::factory()->create()))
+        ->not->toContain(route('admin.interclubs.my-matches'));
+});

@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
+use App\Support\LocaleSort;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -152,6 +153,7 @@ new class extends Component
             'League' => __('League'),
             'Club' => __('Club'),
             'Team' => __('Team'),
+            'TeamUser' => __('Team membership'),
             'Interclub' => __('Interclub'),
             'InterclubResult' => __('Interclub result'),
             'Tournament' => __('Tournament'),
@@ -294,23 +296,37 @@ new class extends Component
             ->pluck('causer_id');
 
         /** @var EloquentCollection<int, User> $users */
-        $users = User::whereIn('id', $ids)->orderBy('last_name')->get();
+        $users = User::whereIn('id', $ids)->get();
 
-        return $users
-            ->map(fn (User $user): array => ['id' => $user->id, 'name' => "{$user->first_name} {$user->last_name}"])
-            ->all();
+        // Sorted on the label the dropdown shows — « Prénom Nom » — rather than on
+        // last_name in the database: ordered by a surname it does not display, the
+        // list simply looked unsorted.
+        $authors = $users
+            ->map(fn (User $user): array => ['id' => $user->id, 'name' => "{$user->first_name} {$user->last_name}"]);
+
+        return LocaleSort::byKey($authors, 'name')->all();
     }
 
     /**
+     * Actions present in the log, as select options.
+     *
+     * Read from the log rather than listed by hand, the way modelOptions() reads
+     * the item types: the hand-written list stopped at created/updated/deleted,
+     * so `roles_changed` and `training_pack_reconciled` had a label in
+     * eventLabel() and no way to be filtered on. A list kept by hand is a list
+     * that goes stale at the next bespoke event.
+     *
      * @return array<int, array{id: string, name: string}>
      */
     protected function eventOptions(): array
     {
-        return [
-            ['id' => 'created', 'name' => __('Created')],
-            ['id' => 'updated', 'name' => __('Modified')],
-            ['id' => 'deleted', 'name' => __('Deleted')],
-        ];
+        $events = Activity::query()
+            ->whereNotNull('event')
+            ->distinct()
+            ->pluck('event')
+            ->map(fn (string $event): array => ['id' => $event, 'name' => $this->eventLabel($event)]);
+
+        return LocaleSort::byKey($events, 'name')->all();
     }
 
     /**
@@ -337,11 +353,10 @@ new class extends Component
      */
     protected function modelOptions(): array
     {
-        return collect($this->subjectLabels())
-            ->map(fn (string $label, string $type): array => ['id' => $type, 'name' => $label])
-            ->sortBy('name')
-            ->values()
-            ->all();
+        $types = collect($this->subjectLabels())
+            ->map(fn (string $label, string $type): array => ['id' => $type, 'name' => $label]);
+
+        return LocaleSort::byKey($types, 'name')->all();
     }
 
     /**

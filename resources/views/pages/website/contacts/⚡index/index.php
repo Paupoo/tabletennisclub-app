@@ -17,6 +17,7 @@ use App\Livewire\Concerns\HasFilterDrawer;
 use App\Services\ClubAdmin\Contact\ContactEmailService;
 use App\Services\ClubAdmin\Contact\EmailTemplateRenderer;
 use App\Support\Breadcrumb;
+use App\Support\LocaleSort;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -479,8 +480,13 @@ new class extends Component
             Contact::STATUSES,
         );
 
-        $interestOptions = collect(ContactReasonEnum::cases())
-            ->map(fn ($r): array => ['id' => $r->value, 'name' => $r->getLabel()]);
+        // The reasons carry no order of their own — unlike the experience and age
+        // lists just below, whose progression is written by hand on purpose.
+        $interestOptions = LocaleSort::byKey(
+            collect(ContactReasonEnum::cases())
+                ->map(fn ($r): array => ['id' => $r->value, 'name' => $r->getLabel()]),
+            'name'
+        );
 
         // Explicit child → teen → adult order (Pint sorts enum cases alphabetically).
         $ageCategoryOptions = collect([

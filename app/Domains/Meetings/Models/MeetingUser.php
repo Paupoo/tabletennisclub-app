@@ -59,6 +59,23 @@ class MeetingUser extends Pivot implements DescribesPayment
         'meal_responded_at' => 'datetime',
     ];
 
+    /**
+     * Spelled out rather than left to Pivot's empty $guarded: the audit trait
+     * logs fillable attributes, and a pivot has none by default — so this model
+     * sat in the audited scope without ever recording a thing.
+     *
+     * @var list<string>
+     */
+    protected $fillable = [
+        'meeting_id',
+        'user_id',
+        'status',
+        'invitation_sent_at',
+        'response_at',
+        'meal_reserved',
+        'meal_responded_at',
+    ];
+
     protected $table = 'meeting_user';
 
     public function getPayerName(): string

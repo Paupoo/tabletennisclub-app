@@ -18,7 +18,9 @@
         <x-menu-item icon="o-user" link="{{ route('admin.user.profile', $user) }}"
             :title="__('My profile')" />
         @feature('interclubs')
-        @if($user->is_competitor)
+        {{-- Team membership, not the competitive licence alone: see
+             User::playsInterclub(). --}}
+        @if($user->playsInterclub())
             <x-menu-item icon="o-calendar" link="{{ route('admin.interclubs.my-matches') }}" :title="__('My matches')" />
         @endif
         @endfeature

@@ -7,6 +7,7 @@ use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
 use App\Domains\Trainings\Models\Training;
@@ -187,6 +188,33 @@ describe('DashboardController', function (): void {
 
         $labels = array_column($response->viewData('memberTiles'), 'label');
         expect($labels)->toContain('Disponibilités')->toContain('Mes matchs');
+    });
+
+    it('adds interclub tiles for a team member whose licence is not competitive', function (): void {
+        $season = Season::factory()->create(['is_active' => true]);
+        $user = User::factory()->create();
+        Team::factory()->create(['season_id' => $season->id])->users()->attach($user->id);
+
+        expect($user->is_competitor)->toBeFalse();
+
+        $response = $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $labels = array_column($response->viewData('memberTiles'), 'label');
+        expect($labels)->toContain('Disponibilités')->toContain('Mes matchs');
+    });
+
+    it('keeps the interclub tiles away from a member who plays in no team', function (): void {
+        Season::factory()->create(['is_active' => true]);
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $labels = array_column($response->viewData('memberTiles'), 'label');
+        expect($labels)->not->toContain('Disponibilités')->not->toContain('Mes matchs');
     });
 
     it('gives an administrator every agenda block', function (): void {

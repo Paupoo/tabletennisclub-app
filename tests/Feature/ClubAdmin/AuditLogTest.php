@@ -31,6 +31,7 @@ use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Competitions\Interclub\Models\TeamUser;
 use App\Domains\Competitions\Tournament\Models\MatchSet;
 use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\TableTournament;
@@ -77,6 +78,7 @@ function auditedModels(): array
         League::class,
         Club::class,
         Team::class,
+        TeamUser::class,
         Interclub::class,
         InterclubResult::class,
         Tournament::class,
@@ -202,9 +204,21 @@ it('never bulk-deletes an audited model via whereIn()->delete(), which bypasses 
     );
 });
 
+/*
+ * Carrying the trait is not the same as logging. A pivot model inherits
+ * `$guarded = []` and declares no `$fillable`, and the trait logs fillable
+ * attributes — so the list comes back empty, `dontLogEmptyChanges()` drops the
+ * entry, and the model sits in the audited scope recording nothing at all,
+ * with its test green. MeetingUser did exactly that until it was given a
+ * `$fillable`. The second expectation is what makes the first one mean
+ * something.
+ */
 it('applies the audit trait to every model in the agreed scope', function (string $modelClass): void {
     expect(in_array(HasAuditLog::class, class_uses_recursive($modelClass), true))
         ->toBeTrue("{$modelClass} should use HasAuditLog");
+
+    expect((new $modelClass)->attributesToBeLogged())
+        ->not->toBeEmpty("{$modelClass} uses HasAuditLog but logs no attribute, so it writes nothing");
 })->with(auditedModels());
 
 it('forbids the audit log page to users without access', function (): void {
@@ -364,12 +378,19 @@ it('renders a rights change like any other entry, named and with its diff', func
         $admin,
     );
 
-    Livewire::actingAs($admin)
+    $component = Livewire::actingAs($admin)
         ->test('pages::club-admin.audit.index')
         ->assertSee(__('Rights changed'))
-        ->assertDontSee('roles_changed')
         ->assertSee(Role::BAR->value)
         ->assertSee(Role::WEBSITE->value);
+
+    // The raw event name has one legitimate home on this page: the value of its
+    // own <option> in the action filter, which reads the log to know what to
+    // offer. Asserted on everything but the selects, because « nowhere on the
+    // page » would now fail on the filter that makes the entry findable.
+    $outsideTheFilters = preg_replace('/<select\b.*?<\/select>/s', '', $component->html());
+
+    expect($outsideTheFilters)->not->toContain('roles_changed');
 });
 
 /*

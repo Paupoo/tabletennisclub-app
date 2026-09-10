@@ -50,6 +50,8 @@
             @php
                 $event = $activity->event ?? $activity->description;
                 $changes = $activity->attribute_changes;
+                $shown = $changes['attributes'] ?? $changes['old'] ?? null;
+                $isSnapshot = $event === 'created' || ! isset($changes['attributes']);
                 $subjectName = $subjectLabels[$activity->subject_type] ?? \Illuminate\Support\Str::afterLast($activity->subject_type, '\\');
                 $formatValue = fn ($value) => \Illuminate\Support\Str::limit(is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : (string) $value, 60);
             @endphp
@@ -80,8 +82,12 @@
                     @endif
                 </div>
 
-                @if ($changes && isset($changes['attributes']))
-                    <div x-data="{ open: {{ $event === 'created' ? 'false' : 'true' }} }" class="mt-3 border-t border-base-300 pt-2">
+                {{-- Une suppression n'a pas d'avant/après : le paquet range son contenu sous
+                     `old` et retire `attributes`. La colonne ne lisait que `attributes`,
+                     si bien que TOUTE ligne « Supprimé » affichait un tiret. On la rend
+                     comme une création : un instantané de ce qui a disparu. --}}
+                @if ($shown)
+                    <div x-data="{ open: {{ $isSnapshot ? 'false' : 'true' }} }" class="mt-3 border-t border-base-300 pt-2">
                         {{-- py-1.5 : le bouton ne faisait que la hauteur de son texte,
                         sous le plancher de 24px du WCAG 2.2. --}}
                         <button type="button" @click="open = !open"
@@ -89,15 +95,15 @@
                             <span class="flex items-center gap-1.5">
                                 <x-icon name="o-pencil-square" class="h-3.5 w-3.5 opacity-60" />
                                 {{ __('Details') }}
-                                <x-badge value="{{ count($changes['attributes']) }}" class="badge-ghost badge-xs" />
+                                <x-badge value="{{ count($shown) }}" class="badge-ghost badge-xs" />
                             </span>
                             <x-icon name="o-chevron-down" class="h-4 w-4 transition-transform" x-bind:class="open && 'rotate-180'" />
                         </button>
-                        <div x-show="open" x-transition style="{{ $event === 'created' ? 'display:none' : '' }}" class="mt-2 space-y-1">
-                            @foreach ($changes['attributes'] as $field => $newValue)
+                        <div x-show="open" x-transition style="{{ $isSnapshot ? 'display:none' : '' }}" class="mt-2 space-y-1">
+                            @foreach ($shown as $field => $newValue)
                                 <div class="text-xs">
                                     <span class="font-semibold opacity-70">{{ $field }}:</span>
-                                    @if ($event !== 'created' && isset($changes['old'][$field]) && $changes['old'][$field] !== null && $changes['old'][$field] !== '')
+                                    @if (! $isSnapshot && isset($changes['old'][$field]) && $changes['old'][$field] !== null && $changes['old'][$field] !== '')
                                         <span class="text-error/70 line-through">{{ $formatValue($changes['old'][$field]) }}</span>
                                         <span class="text-muted">→</span>
                                     @endif
@@ -161,19 +167,26 @@
             @scope('cell_changes', $activity)
             @php $changes = $activity->attribute_changes; @endphp
             @php $event = $activity->event ?? $activity->description; @endphp
+            @php $shown = $changes['attributes'] ?? $changes['old'] ?? null; @endphp
+            @php $isSnapshot = $event === 'created' || ! isset($changes['attributes']); @endphp
             @php $formatValue = fn ($value) => \Illuminate\Support\Str::limit(is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : (string) $value, 40); @endphp
-            @if ($changes && isset($changes['attributes']))
-                @if ($event === 'created')
-                {{-- Création : repliée par défaut (sinon mur de champs) --}}
+            @if ($shown)
+                @if ($isSnapshot)
+                {{-- Création, et suppression : repliées par défaut (sinon mur de champs).
+                Une suppression n'a pas d'avant/après — le paquet range son contenu sous
+                `old` et retire `attributes`. La colonne ne lisait que `attributes`, si
+                bien que TOUTE ligne « Supprimé » affichait un tiret. --}}
                 <div x-data="{ open: false }" class="text-xs">
                     <button type="button" @click="open = !open"
                         class="inline-flex items-center gap-1 text-primary hover:underline">
                         <x-icon name="o-eye" class="h-3.5 w-3.5" />
-                        <span x-show="!open">{{ trans_choice('{1} :count field set|[2,*] :count fields set', count($changes['attributes']), ['count' => count($changes['attributes'])]) }}</span>
+                        <span x-show="!open">{{ $event === 'created'
+                            ? trans_choice('{1} :count field set|[2,*] :count fields set', count($shown), ['count' => count($shown)])
+                            : trans_choice('{1} :count field removed|[2,*] :count fields removed', count($shown), ['count' => count($shown)]) }}</span>
                         <span x-show="open" style="display:none">{{ __('Hide details') }}</span>
                     </button>
                     <div x-show="open" x-transition style="display:none" class="mt-1 space-y-0.5">
-                        @foreach ($changes['attributes'] as $field => $newValue)
+                        @foreach ($shown as $field => $newValue)
                         <div>
                             <span class="font-semibold opacity-70">{{ $field }}:</span>
                             <span class="text-success/80">{{ $formatValue($newValue) ?: '—' }}</span>
@@ -187,18 +200,18 @@
                 création juste au-dessus : une modification de masse déversait
                 jusqu'à 649 caractères dans une cellule, qui étirait la ligne et
                 repoussait le reste du tableau hors de l'écran. --}}
-                @php $isLongDiff = count($changes['attributes']) > 3; @endphp
+                @php $isLongDiff = count($shown) > 3; @endphp
                 <div @if ($isLongDiff) x-data="{ open: false }" @endif class="space-y-0.5">
                     @if ($isLongDiff)
                     <button type="button" @click="open = !open"
                         class="inline-flex items-center gap-1 py-1 text-xs text-primary hover:underline">
                         <x-icon name="o-eye" class="h-3.5 w-3.5" />
-                        <span x-show="!open">{{ trans_choice('{1} :count field changed|[2,*] :count fields changed', count($changes['attributes']), ['count' => count($changes['attributes'])]) }}</span>
+                        <span x-show="!open">{{ trans_choice('{1} :count field changed|[2,*] :count fields changed', count($shown), ['count' => count($shown)]) }}</span>
                         <span x-show="open" style="display:none">{{ __('Hide details') }}</span>
                     </button>
                     @endif
                     <div @if ($isLongDiff) x-show="open" x-transition style="display:none" @endif class="space-y-0.5">
-                        @foreach ($changes['attributes'] as $field => $newValue)
+                        @foreach ($shown as $field => $newValue)
                         <div class="text-xs">
                             <span class="font-semibold opacity-70">{{ $field }}:</span>
                             @if (isset($changes['old'][$field]) && $changes['old'][$field] !== null && $changes['old'][$field] !== '')

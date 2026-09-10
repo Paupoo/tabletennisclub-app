@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * @property int $id
@@ -48,6 +49,21 @@ class Registration extends Model implements PayableInterface
 
     /** @use HasFactory<RegistrationFactory> */
     use HasFactory;
+
+    /**
+     * Named columns rather than the trait's logFillable(): this model declares
+     * no $fillable, so Eloquent's default guard left the logged list empty and
+     * nothing was ever recorded — an amount and a payment status changing hands
+     * with no trace. Listed here instead of adding a $fillable, which would open
+     * mass assignment as a side effect of an audit fix.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['event_post_id', 'user_id', 'amount_due', 'amount_paid', 'status'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
+    }
 
     public function getAmountDue(): int|float
     {

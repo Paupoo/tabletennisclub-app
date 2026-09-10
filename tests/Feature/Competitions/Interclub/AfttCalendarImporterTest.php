@@ -8,7 +8,9 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Competitions\Interclub\Models\TeamUser;
 use App\Domains\Competitions\Interclub\Services\AfttCalendarImporter;
+use Spatie\Activitylog\Models\Activity;
 
 beforeEach(function (): void {
     afttClubTeams('get-club-teams-bbw214-two-divisions.xml');
@@ -360,7 +362,25 @@ it('rebuilds the season from scratch when asked, and only that season', function
         'visited_team_id' => $staleTeam->id,
     ]);
 
+    $player = User::factory()->create();
+    $staleTeam->users()->attach($player->id);
+
     $report = app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214', fresh: true);
+
+    /*
+     * The command warns that it is about to destroy N roster entries, so the
+     * teams go one at a time, through Eloquent: a mass delete would take the
+     * rosters out by foreign-key cascade and leave no trace of who was in them.
+     */
+    $removal = Activity::query()
+        ->where('subject_type', TeamUser::class)
+        ->where('event', 'deleted')
+        ->latest('id')
+        ->first();
+
+    expect($removal)->not->toBeNull()
+        ->and($removal->attribute_changes['old']['user_id'])->toBe($player->id)
+        ->and($removal->attribute_changes['old']['team_id'])->toBe($staleTeam->id);
 
     expect(Interclub::find($staleFixture->id))->toBeNull()
         ->and(Team::find($staleTeam->id))->toBeNull()

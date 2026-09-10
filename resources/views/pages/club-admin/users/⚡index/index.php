@@ -667,7 +667,7 @@ new class extends Component
             ->when($this->incompleteProfile, fn ($q) => $q->withIncompleteProfile())
             ->when($this->adultWithoutAddress, fn ($q) => $q->adultWithoutOwnAddress())
             ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
-            ->when($this->hasKey, fn ($q) => $q->where('has_key', true))
+            ->when($this->hasKey, fn ($q) => $q->whereHas('keyRings'))
             ->when($this->hasCashRegister, fn ($q) => $q->whereHas('heldCashRegisters'))
             ->tap(function ($query) use ($sortColumns): void {
                 foreach ($sortColumns as $column) {

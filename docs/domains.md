@@ -17,7 +17,7 @@ Trois familles cohabitent, et **une seule décide** :
 - **Délégation** (rôle Spatie) — une charge opérationnelle. Cumulable, et
   attribuable à n'importe quel membre, qu'il siège au comité ou non. C'est elle
   qui décide.
-- **Équipement confié** (`users.has_key`, caisses détenues) — un objet remis, qui
+- **Équipement confié** (`key_rings`, caisses détenues) — un objet remis, qui
   se rend. Se trace, ne donne rien.
 
 Deux rôles forment le socle : `administrateur` détient tout, `comite` donne un

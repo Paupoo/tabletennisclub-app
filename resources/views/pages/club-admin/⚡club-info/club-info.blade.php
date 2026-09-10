@@ -133,12 +133,18 @@
                 {{-- Key holders --}}
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-widest text-muted mb-3">
-                        {{ __('Key holders') }}
+                        {{ __('Key rings') }}
                     </p>
-                    @forelse($keyHolders as $holder)
+                    @forelse($keyRings as $keyRing)
                         <div class="flex items-center gap-2 py-1">
                             <x-icon name="o-key" class="w-4 h-4 text-base-content/40 shrink-0" />
-                            <span class="text-sm">{{ $holder->first_name }} {{ $holder->last_name }}</span>
+                            <span class="text-sm font-medium">{{ $keyRing->label() }}</span>
+                            <span class="text-sm text-base-content/50">→</span>
+                            @if($keyRing->heldBy)
+                                <span class="text-sm">{{ $keyRing->heldBy->first_name }} {{ $keyRing->heldBy->last_name }}</span>
+                            @else
+                                <span class="text-sm italic text-base-content/60">{{ __('In the drawer') }}</span>
+                            @endif
                         </div>
                     @empty
                         <p class="text-sm italic text-base-content/40">{{ __('None') }}</p>

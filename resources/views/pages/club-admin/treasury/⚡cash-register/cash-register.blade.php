@@ -16,6 +16,15 @@
                 icon="o-plus"
                 class="btn-primary btn-sm"
                 wire:click="openManualEntry" />
+            @can('cash_register.manage')
+            @unless($this->register->trashed())
+            <x-button
+                :label="__('Retire')"
+                icon="o-archive-box-x-mark"
+                class="btn-ghost btn-sm text-error"
+                wire:click="openRetireRegister" />
+            @endunless
+            @endcan
             @endif
         </x-slot:actions>
     </x-header>
@@ -28,13 +37,22 @@
     @else
 
     {{-- Register selector (if multiple) --}}
-    @if($this->registers->count() > 1)
-    <div class="flex gap-2 mb-6">
+    @if($this->registers->count() > 1 || $showRetired)
+    <div class="mb-6 flex flex-wrap items-center gap-2">
         @foreach($this->registers as $reg)
         <x-button
-            :label="$reg->name"
+            :label="$reg->trashed() ? $reg->name . ' — ' . __('Retired') : $reg->name"
             wire:click="$set('selectedRegisterId', {{ $reg->id }})"
-            @class(['btn-sm', 'btn-primary' => $selectedRegisterId === $reg->id, 'btn-outline' => $selectedRegisterId !== $reg->id]) />
+            @class(['btn-sm', 'btn-primary' => $selectedRegisterId === $reg->id, 'btn-outline' => $selectedRegisterId !== $reg->id, 'opacity-60' => $reg->trashed()]) />
+        @if($reg->trashed())
+        @can('cash_register.manage')
+        <x-button
+            :label="__('Put back in service')"
+            icon="o-arrow-path"
+            class="btn-ghost btn-sm"
+            wire:click="restoreRegister({{ $reg->id }})" />
+        @endcan
+        @endif
         @endforeach
     </div>
     @endif
@@ -142,17 +160,35 @@
     @endif
     @endif
 
+    @can('cash_register.manage')
+    <div class="mb-4 flex justify-end">
+        <x-checkbox :label="__('Show retired registers')" wire:model.live="showRetired" class="text-sm" />
+    </div>
+    @endcan
+
+    {{-- Modal: Retire register --}}
+    <x-app-modal wire:model="retireRegisterModal" :title="__('Retire this cash register')" separator
+        :open="$retireRegisterModal">
+        <p class="text-sm">
+            {{ __('It leaves the list but keeps every movement it recorded. You can put it back in service later.') }}
+        </p>
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" @click="$wire.retireRegisterModal = false" class="btn-ghost" />
+            <x-button :label="__('Retire')" icon="o-archive-box-x-mark" class="btn-error" wire:click="retireRegister"
+                spinner />
+        </x-slot:actions>
+    </x-app-modal>
+
     {{-- Modal: Create register --}}
     <x-app-modal wire:model="createRegisterModal" :title="__('Create Cash Register')" separator :open="$createRegisterModal">
         <div class="space-y-4">
             <x-input :label="__('Register name')" wire:model="newRegisterName" autofocus />
-            <x-select
+            <x-choices
                 :label="__('Holder')"
                 :options="$users"
-                option-label="name"
-                :placeholder="__('Select a holder...')"
+                :placeholder="__('Search for a member...')"
                 wire:model="newRegisterHolderUserId"
-                clearable />
+                single searchable clearable />
         </div>
         <x-slot:actions>
             <x-button :label="__('Cancel')" @click="$wire.createRegisterModal = false" class="btn-ghost" />
@@ -162,13 +198,12 @@
 
     {{-- Modal: Change holder --}}
     <x-app-modal wire:model="changeHolderModal" :title="__('Change holder')" separator :open="$changeHolderModal">
-        <x-select
+        <x-choices
             :label="__('Holder')"
             :options="$users"
-            option-label="name"
-            :placeholder="__('Select a holder...')"
+            :placeholder="__('Search for a member...')"
             wire:model="newHolderUserId"
-            clearable />
+            single searchable clearable />
         <x-slot:actions>
             <x-button :label="__('Cancel')" @click="$wire.changeHolderModal = false" class="btn-ghost" />
             <x-button :label="__('Save')" icon="o-check" class="btn-primary" wire:click="confirmChangeHolder" spinner />

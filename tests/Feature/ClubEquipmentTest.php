@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Club\Models\KeyRing;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
+use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
@@ -31,10 +33,18 @@ describe('User has_key', function (): void {
         expect($user->has_key)->toBeFalse();
     });
 
-    it('can be set to true', function (): void {
-        $user = User::factory()->create(['has_key' => true]);
+    it('is true once the member holds a key ring', function (): void {
+        $user = User::factory()->create();
+        KeyRing::factory()->heldBy($user)->create();
 
-        expect($user->has_key)->toBeTrue();
+        expect($user->fresh()->has_key)->toBeTrue();
+    });
+
+    it('ignores a key ring that has been retired', function (): void {
+        $user = User::factory()->create();
+        KeyRing::factory()->heldBy($user)->create()->delete();
+
+        expect($user->fresh()->has_key)->toBeFalse();
     });
 });
 
@@ -57,33 +67,36 @@ describe('CashRegister heldBy', function (): void {
     });
 });
 
-// ── User form has_key ─────────────────────────────────────────────────────────
+// ── User form: entrusted equipment is read-only ───────────────────────────────
 
-describe('User form has_key toggle', function (): void {
-    it('admin can enable has_key for a user', function (): void {
+describe('User form entrusted equipment', function (): void {
+    it('lists the key rings the member holds', function (): void {
         $admin = User::factory()->isAdmin()->create();
-        $target = User::factory()->isNotCompetitor()->create(['has_key' => false]);
+        $target = User::factory()->isNotCompetitor()->create();
+        KeyRing::factory()->heldBy($target)->create(['number' => 7]);
 
         Livewire::actingAs($admin)
             ->test('pages::club-admin.users.form', ['user' => $target])
-            ->set('has_key', true)
-            ->call('save')
-            ->assertHasNoErrors();
-
-        expect($target->fresh()->has_key)->toBeTrue();
+            ->assertSee(__('Held key rings'))
+            ->assertSee(__('Key ring #:number', ['number' => 7]));
     });
 
-    it('admin can disable has_key for a user', function (): void {
+    it('says so when no key ring is entrusted', function (): void {
         $admin = User::factory()->isAdmin()->create();
-        $target = User::factory()->isNotCompetitor()->create(['has_key' => true]);
+        $target = User::factory()->isNotCompetitor()->create();
 
         Livewire::actingAs($admin)
             ->test('pages::club-admin.users.form', ['user' => $target])
-            ->set('has_key', false)
-            ->call('save')
-            ->assertHasNoErrors();
+            ->assertSee(__('No key ring entrusted.'));
+    });
 
-        expect($target->fresh()->has_key)->toBeFalse();
+    it('offers no way to hand a key ring over from here', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        $target = User::factory()->isNotCompetitor()->create();
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-admin.users.form', ['user' => $target])
+            ->assertDontSee(__('Has a key'));
     });
 });
 
@@ -190,8 +203,9 @@ describe('Cash register creation with holder', function (): void {
 describe('User list filters', function (): void {
     it('hasKey filter returns only key holders', function (): void {
         $admin = User::factory()->isAdmin()->create();
-        $keyHolder = User::factory()->create(['has_key' => true]);
-        User::factory()->create(['has_key' => false]);
+        $keyHolder = User::factory()->create();
+        KeyRing::factory()->heldBy($keyHolder)->create();
+        User::factory()->create();
 
         $component = Livewire::actingAs($admin)
             ->test('pages::club-admin.users.index')
@@ -215,5 +229,81 @@ describe('User list filters', function (): void {
         $ids = $component->viewData('users')->pluck('id')->toArray();
         expect($ids)->toContain($holder->id);
         expect($ids)->not->toContain($other->id);
+    });
+});
+
+// ── Club information overview ────────────────────────────────────────────────
+
+describe('Club information equipment overview', function (): void {
+    it('lists every key ring, including the ones nobody holds', function (): void {
+        $holder = User::factory()->create(['first_name' => 'Alice', 'last_name' => 'Dupont']);
+        KeyRing::factory()->heldBy($holder)->create(['number' => 1]);
+        KeyRing::factory()->create(['number' => 2]);
+
+        $component = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-admin.club-info');
+
+        expect($component->viewData('keyRings')->pluck('number')->all())->toBe([1, 2]);
+
+        $component->assertSee(__('Key ring #:number', ['number' => 2]))
+            ->assertSee(__('In the drawer'));
+    });
+
+    it('leaves retired key rings out of the overview', function (): void {
+        KeyRing::factory()->retired()->create(['number' => 9]);
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-admin.club-info')
+            ->assertDontSee(__('Key ring #:number', ['number' => 9]));
+    });
+});
+
+// ── Retiring a cash register ─────────────────────────────────────────────────
+
+describe('Retiring a cash register', function (): void {
+    it('hides the register without touching its ledger', function (): void {
+        $register = makeRegisterWithHolder();
+        CashRegisterEntry::create([
+            'cash_register_id' => $register->id,
+            'amount' => 12_50,
+            'reason' => 'manual',
+            'recorded_by_id' => $register->held_by_user_id,
+        ]);
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-admin.treasury.cash-register')
+            ->set('selectedRegisterId', $register->id)
+            ->call('retireRegister')
+            ->assertHasNoErrors();
+
+        expect(CashRegister::find($register->id))->toBeNull();
+        expect(CashRegisterEntry::where('cash_register_id', $register->id)->count())->toBe(1);
+    });
+
+    it('puts a retired register back in service', function (): void {
+        $register = makeRegisterWithHolder();
+        $register->delete();
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-admin.treasury.cash-register')
+            ->set('showRetired', true)
+            ->call('restoreRegister', $register->id)
+            ->assertHasNoErrors();
+
+        expect(CashRegister::find($register->id))->not->toBeNull();
+    });
+
+    it('is closed to a committee member without the cash register delegation', function (): void {
+        $register = makeRegisterWithHolder();
+
+        Livewire::actingAs(User::factory()->isCommitteeMember()->create([
+            'committee_role' => CommitteeRolesEnum::SECRETARY,
+        ]))
+            ->test('pages::club-admin.treasury.cash-register')
+            ->set('selectedRegisterId', $register->id)
+            ->call('retireRegister')
+            ->assertForbidden();
+
+        expect(CashRegister::find($register->id))->not->toBeNull();
     });
 });

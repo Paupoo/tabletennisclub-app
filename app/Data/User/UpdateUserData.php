@@ -28,7 +28,6 @@ readonly class UpdateUserData
         public ?string $birthdate = null,
         public ?string $guardian_phone_number = null,
         public ?string $iban = null,
-        public bool $has_key = false,
         public ?string $licence = null,
         public ?string $ranking = null,
         public ?string $password = null,

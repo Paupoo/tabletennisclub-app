@@ -96,11 +96,6 @@ new class extends Component
     #[Rule('required')]
     public ?Gender $gender = Gender::MEN;
 
-    // Club equipment
-
-    #[Rule('required|boolean')]
-    public bool $has_key = false;
-
     #[Rule(['nullable', new ValidIban])]
     public ?string $iban = null;
 
@@ -389,7 +384,6 @@ new class extends Component
             $this->ranking = $user->ranking->value;
             $this->is_committee_member = $user->hasRole(Role::COMMITTEE->value);
             $this->is_admin = $user->hasRole(Role::ADMINISTRATOR->value);
-            $this->has_key = (bool) ($user->has_key ?? false);
             $this->committee_role = $user->committee_role?->value;
             $this->delegations = $user->roles
                 ->pluck('name')
@@ -608,7 +602,6 @@ new class extends Component
                     birthdate: $this->birthdate,
                     guardian_phone_number: $this->user->guardian_phone_number,
                     iban: $this->iban,
-                    has_key: $this->has_key,
                     licence: $licence,
                     ranking: $ranking,
                     password: $this->password !== '' ? $this->password : null,
@@ -638,7 +631,6 @@ new class extends Component
                     city_code: $this->city_code,
                     city_name: $this->city_name,
                     birthdate: $this->birthdate,
-                    has_key: $this->has_key,
                     licence: $licence,
                     ranking: $ranking,
                     password: $this->password !== '' ? $this->password : null,

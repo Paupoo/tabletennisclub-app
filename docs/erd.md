@@ -11,6 +11,7 @@ erDiagram
     BarStockMovement
 
     %% ClubAdmin/Club
+    KeyRing
     Room
     Table
 
@@ -31,10 +32,13 @@ erDiagram
     %% ClubAdmin/Subscriptions
     Registration
     Subscription
+    SubscriptionTrainingPack
 
     %% ClubAdmin/Users
+    CharterSignature
     FamilyGroup
     Guardian
+    MemberImport
     User
 
     %% ClubPosts
@@ -44,10 +48,12 @@ erDiagram
     %% Competitions/Interclub
     Club
     Interclub
+    InterclubImport
     InterclubResult
     League
     Season
     Team
+    TeamUser
 
     %% Competitions/Tournament
     MatchSet
@@ -72,6 +78,7 @@ erDiagram
 
     %% Trainings
     Training
+    TrainingLevel
     TrainingPack
     TrainingPlan
     TrainingPlanAssignment
@@ -98,11 +105,13 @@ erDiagram
     Subscription }o--o{ TrainingPack : "trainingPacks"
     FamilyGroup }o--o{ User : "users"
     Guardian }o--o{ User : "users"
+    MemberImport ||--o{ User : "members"
     User ||--o{ NewsPost : "articles"
     User ||--o| Team : "captainOf"
     User }o--o{ FamilyGroup : "familyGroups"
     User }o--o{ Guardian : "guardians"
     User ||--o{ CashRegister : "heldCashRegisters"
+    User ||--o{ KeyRing : "keyRings"
     User }o--o{ Interclub : "interclubs"
     User }o--o{ Meeting : "meetings"
     User }o--o{ Pool : "pools"
@@ -151,6 +160,8 @@ erDiagram
     MeetingDateProposal ||--o{ MeetingDateVote : "votes"
     MeetingUser ||--o| Payment : "payment"
     Training }o--o{ User : "trainees"
+    TrainingLevel ||--o{ TrainingPack : "packs"
+    TrainingLevel ||--o{ Training : "sessions"
     TrainingPack ||--o| EventPost : "eventPost"
     TrainingPack }o--o{ Subscription : "subscriptions"
     TrainingPack ||--o{ Training : "trainings"

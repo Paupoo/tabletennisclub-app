@@ -33,7 +33,6 @@ class UserFactory extends Factory
         $uniqueEmail = $this->uniqueEmail();
 
         return [
-            'has_key' => false,
             'email' => $uniqueEmail,
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),

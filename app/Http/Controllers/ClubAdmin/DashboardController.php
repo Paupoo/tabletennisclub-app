@@ -222,17 +222,18 @@ class DashboardController extends Controller
     private function buildMemberTiles(User $user): array
     {
         $tiles = [
-            ['icon' => 'o-user',                     'label' => 'Mon profil',     'sub' => 'Données personnelles',                    'href' => route('admin.user.profile', $user)],
-            ['icon' => 'o-clipboard-document-list',  'label' => 'Cotisations',    'sub' => 'Gérer ma cotisation et mes entraînements', 'href' => route('admin.user.registration-management', $user)],
-            ['icon' => 'o-banknotes',                'label' => 'Mes paiements',  'sub' => 'Suivi & historique',                      'href' => route('admin.user.registration-management', $user)],
-            ['icon' => 'o-calendar',                 'label' => 'Événements',     'sub' => 'Agenda du club',                          'href' => route('admin.user.calendar', $user)],
-            ['icon' => 'o-bell',                     'label' => 'Notifications',  'sub' => 'Infos & tâches',                          'href' => route('notifications.index')],
+            ['icon' => 'o-user',          'label' => 'Mon profil', 'sub' => 'Données personnelles',                       'href' => route('admin.user.profile', $user)],
+            // Same wording and icon as the "Ma saison" entry of the member menu:
+            // one screen, one name, wherever the member meets it.
+            ['icon' => 'o-academic-cap',  'label' => 'Ma saison',  'sub' => 'Gérer mon affiliation et mes entraînements', 'href' => route('admin.user.registration-management', $user)],
         ];
 
         if ($user->playsInterclub() && Feature::Interclubs->enabled()) {
-            $tiles[] = ['icon' => 'o-calendar-days', 'label' => 'Disponibilités', 'sub' => 'Interclubs', 'href' => route('admin.user.calendar', $user)];
-            $tiles[] = ['icon' => 'o-globe-alt',     'label' => 'Mes matchs',     'sub' => 'Interclubs', 'href' => route('admin.interclubs.my-matches')];
+            $tiles[] = ['icon' => 'o-globe-alt', 'label' => 'Mes matchs', 'sub' => 'Interclubs', 'href' => route('admin.interclubs.my-matches')];
         }
+
+        $tiles[] = ['icon' => 'o-calendar',  'label' => 'Événements',    'sub' => 'Agenda du club',     'href' => route('admin.user.calendar', $user)];
+        $tiles[] = ['icon' => 'o-banknotes', 'label' => 'Mes paiements', 'sub' => 'Suivi & historique', 'href' => route('admin.user.payments', $user)];
 
         return $tiles;
     }

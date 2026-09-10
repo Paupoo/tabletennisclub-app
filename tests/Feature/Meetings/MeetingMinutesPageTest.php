@@ -290,3 +290,60 @@ describe('Minutes page — publish & send', function (): void {
         );
     });
 });
+
+describe('Minutes page — a free pen never loses a draft to the poll', function (): void {
+    test('a row added but not yet typed into survives the poll tick', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->call('addAnnouncement')
+            ->call('addDecision')
+            ->call('addActionItem')
+            ->call('syncDraft')
+            ->assertCount('announcements', 1)
+            ->assertCount('decisions', 1)
+            ->assertCount('actionItems', 1);
+    });
+
+    test('adding a row claims the pen so other members go read-only', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->call('addAnnouncement');
+
+        expect($meeting->fresh()->minutes_editor_id)->toBe($admin->id);
+    });
+
+    test('a read-only member cannot add a row to the holder draft', function (): void {
+        $holder = minutesAdmin();
+        $other = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $holder->id]);
+        $meeting->acquireMinutesLock($holder);
+
+        Livewire::actingAs($other)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->call('addAnnouncement')
+            ->assertCount('announcements', 0);
+
+        expect($meeting->fresh()->minutes_editor_id)->toBe($holder->id);
+    });
+
+    test('a draft typed while nobody holds the pen is not rolled back by the poll', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+        $meeting->minutes()->create(['announcements' => ['Annonce publiée']]);
+
+        // A stale pen is nobody's pen: the poll must leave the local draft alone.
+        $meeting->update(['minutes_editor_id' => minutesAdmin()->id, 'minutes_editor_at' => now()->subMinutes(20)]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->call('addAnnouncement')
+            ->call('syncDraft')
+            ->assertCount('announcements', 2);
+    });
+});

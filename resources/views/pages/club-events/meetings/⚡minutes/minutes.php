@@ -40,6 +40,10 @@ new class extends Component
 
     public function addActionItem(): void
     {
+        if (! $this->claimPen()) {
+            return;
+        }
+
         $this->actionItems[] = [
             'title' => '', 'description' => '',
             'assigned_to_id' => '', 'due_date' => '', 'is_completed' => false,
@@ -48,11 +52,19 @@ new class extends Component
 
     public function addAnnouncement(): void
     {
+        if (! $this->claimPen()) {
+            return;
+        }
+
         $this->announcements[] = '';
     }
 
     public function addDecision(): void
     {
+        if (! $this->claimPen()) {
+            return;
+        }
+
         $this->decisions[] = '';
     }
 
@@ -192,10 +204,15 @@ new class extends Component
         unset($this->meeting);
     }
 
-    /** Poll target for read-only viewers: pull the note taker's latest draft from the database. */
+    /**
+     * Poll target for read-only viewers: pull the note taker's latest draft from the
+     * database. Only a live holder other than us has anything to give; with a free or
+     * stale pen there is no other writer, so hydrating could only roll back the local
+     * draft — an empty row just added, or text typed but not yet blurred.
+     */
     public function syncDraft(): void
     {
-        if ($this->holdsLock) {
+        if ($this->holdsLock || ! $this->lockHolder instanceof User) {
             return;
         }
 

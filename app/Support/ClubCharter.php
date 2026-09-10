@@ -18,8 +18,13 @@ class ClubCharter
      * never for a typo. Signatures record the version they were given, so an
      * edit mid-season leaves them standing rather than asking the whole club to
      * sign again.
+     *
+     * v2 (2026-09-11): arrival moved from 30 to 45 minutes before the match, the
+     * setup duty now says what it is for — letting visitors warm up — and the bar
+     * rota follows playing at home rather than a six-week turn, with the home
+     * captains answerable for the service, the till and the payments.
      */
-    public const VERSION = 1;
+    public const VERSION = 2;
 
     /**
      * The six chapters of the charter, in reading order.
@@ -78,8 +83,8 @@ class ClubCharter
                     [
                         'title' => __('Getting ready before the competition'),
                         'items' => [
-                            __('Arrival time: at least 30 minutes before the official start of the match.'),
-                            __('Setup: put up the tables, the surrounds and the match balls.'),
+                            __('Arrival time: at least 45 minutes before the official start of the match.'),
+                            __('Setup: put up the tables, the surrounds and the match balls, so that visitors can always warm up 30 minutes before the match starts.'),
                             __('Cleaning and tidying: clean or tidy the hall if something unexpected happens.'),
                         ],
                     ],
@@ -107,8 +112,8 @@ class ClubCharter
                         'title' => __('Staff rotation (interclubs)'),
                         'items' => [
                             __('When: during interclubs only.'),
-                            __('Who runs the bar: each team delegates one member in turn, once every six weeks.'),
-                            __('Assignment: the captain appoints the bartender.'),
+                            __('Who runs the bar: each team delegates one member in turn when it plays at home.'),
+                            __('Responsibility: the captains of the home teams are jointly answerable for the bar service and for the till and the payments.'),
                         ],
                     ],
                     [

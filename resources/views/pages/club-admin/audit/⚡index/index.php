@@ -143,6 +143,7 @@ new class extends Component
             'Transaction' => __('Transaction'),
             'CashRegister' => __('Cash register'),
             'CashRegisterEntry' => __('Cash register entry'),
+            'KeyRing' => __('Key ring'),
             'BankImport' => __('Bank import'),
             'Contact' => __('Contact'),
             'EmailTemplate' => __('Email template'),

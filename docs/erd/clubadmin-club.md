@@ -2,6 +2,12 @@
 
 ```mermaid
 erDiagram
+    KeyRing {
+        int id PK
+        int number
+        int held_by_user_id FK "nullable"
+        string notes "nullable"
+    }
     Room {
         int id PK
         string name

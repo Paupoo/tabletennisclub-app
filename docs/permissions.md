@@ -10,7 +10,7 @@ Trois familles cohabitent, et une seule décide :
 |---|---|---|---|
 | Titre statutaire | mandat AG, un par personne | `users.committee_role` | **s'affiche** |
 | Délégation | charge opérationnelle, cumulable, attribuable à n'importe qui | rôles Spatie | **décide** |
-| Équipement confié | objet remis, se rend | `users.has_key`, caisses détenues | **se trace** |
+| Équipement confié | objet remis, se rend | trousseaux, caisses détenues | **se trace** |
 
 ---
 

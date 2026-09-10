@@ -29,6 +29,8 @@ erDiagram
         int reading_time "nullable"
         NewsPostCategoryEnum category
         string image "nullable"
+        int image_focal_x
+        int image_focal_y
         int user_id FK
         NewsPostStatusEnum status
     }

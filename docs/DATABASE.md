@@ -265,6 +265,10 @@ erDiagram
 #### `app_settings`
 - `key` (config values), `value`
 
+#### `key_rings`
+- `id`, `number` (auto, jamais réutilisé), `held_by_user_id` (nullable), `notes`
+- `deleted_at` — un trousseau se retire du service, il ne s'efface pas
+
 #### `spams`
 - `ip`, `user_agent`, `inputs`, `is_blocked`
 

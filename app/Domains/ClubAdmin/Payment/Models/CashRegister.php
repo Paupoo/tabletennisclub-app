@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -21,13 +22,16 @@ use Illuminate\Support\Carbon;
  * @property int|null $held_by_user_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  * @property-read Collection<int, CashRegisterEntry> $entries
  * @property-read int|null $entries_count
  * @property-read User|null $heldBy
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CashRegister newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CashRegister newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CashRegister onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CashRegister query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CashRegister withTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CashRegister whereBalance($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CashRegister whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CashRegister whereId($value)
@@ -41,6 +45,7 @@ class CashRegister extends Model
 {
     use HasAuditLog;
     use HasFactory;
+    use SoftDeletes;
 
     protected $casts = [
         'balance' => 'integer',

@@ -7,6 +7,7 @@ namespace Database\Seeders;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 use App\Actions\User\RecalculateForceListAction;
+use App\Domains\ClubAdmin\Club\Models\KeyRing;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
@@ -196,7 +197,6 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' => Ranking::D6->name,
             'licence' => '154856',
-            'has_key' => true,
             'committee_role' => CommitteeRolesEnum::ADMINISTRATOR,
         ])->club()->associate(Club::own())->save();
 
@@ -214,7 +214,6 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' => Ranking::D4->name,
             'licence' => '852364',
-            'has_key' => true,
             'committee_role' => CommitteeRolesEnum::SECRETARY,
         ])->club()->associate(Club::first())->save();
 
@@ -232,7 +231,6 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' => Ranking::B6->name,
             'licence' => '852398',
-            'has_key' => true,
             'committee_role' => CommitteeRolesEnum::PRESIDENT,
         ])->club()->associate(Club::first())->save();
 
@@ -250,7 +248,6 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' => Ranking::D2->name,
             'licence' => '768398',
-            'has_key' => true,
             'committee_role' => CommitteeRolesEnum::TREASURER,
         ])->club()->associate(Club::first())->save();
 
@@ -279,6 +276,19 @@ class DatabaseSeeder extends Seeder
             'name' => 'Caisse du club',
             'held_by_user_id' => $gilles?->id,
         ]);
+
+        // Key rings — the four committee members who open the venue, plus one
+        // spare in the drawer so the inventory shows an unassigned ring too.
+        User::whereIn('email', [
+            'thomas.regnier@test.com',
+            'manon.patigny@test.com',
+            'olivier.pauwels@test.com',
+            'gilles.herpigny@test.com',
+        ])->orderBy('id')->get()->each(function (User $holder): void {
+            KeyRing::create(['held_by_user_id' => $holder->id]);
+        });
+
+        KeyRing::create(['notes' => 'Trousseau de secours, au coffre']);
 
         User::factory()->isNotCompetitor()->count(5)->create();
 

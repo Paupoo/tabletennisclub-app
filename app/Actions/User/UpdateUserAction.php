@@ -26,7 +26,6 @@ class UpdateUserAction
             'birthdate' => $data->birthdate,
             'guardian_phone_number' => $data->guardian_phone_number,
             'iban' => $data->iban,
-            'has_key' => $data->has_key,
             'licence' => $data->licence,
             'ranking' => $data->ranking ?? 'NA',
             // committee_role is deliberately absent: the statutory title is a

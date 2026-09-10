@@ -6,6 +6,7 @@ namespace App\Domains\ClubAdmin\Users\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Domains\ClubAdmin\Club\Models\KeyRing;
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
@@ -36,6 +37,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -183,7 +185,6 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var array<string, string>
      */
     protected $casts = [
-        'has_key' => 'boolean',
         'email' => 'string',
         'password' => 'hashed',
         'first_name' => 'string',
@@ -241,7 +242,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'force_list',
         'force_list_women',
         'force_list_veterans',
-        'has_key',
         'medical_certificate_path',
         'parental_consent_path',
         'updated_by',
@@ -539,10 +539,6 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->guardians()->exists();
     }
 
-    /**
-     * Whether the member still has a subscription awaiting payment.
-     * Signals the committee to reconcile finances before anonymizing.
-     */
     public function hasPendingPayments(): bool
     {
         return $this->subscriptions()->pendingPayment()->exists();
@@ -608,6 +604,11 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return $this->birthdate <= $season->end_at->copy()->subYears(self::VETERAN_AGE);
+    }
+
+    public function keyRings(): HasMany
+    {
+        return $this->hasMany(KeyRing::class, 'held_by_user_id');
     }
 
     public function meetings(): BelongsToMany
@@ -1025,6 +1026,26 @@ class User extends Authenticatable implements MustVerifyEmail
     public function wantsNotification(string $preference): bool
     {
         return (bool) ($this->notification_preferences[$preference] ?? true);
+    }
+
+    /**
+     * Whether the member still has a subscription awaiting payment.
+     * Signals the committee to reconcile finances before anonymizing.
+     */
+    /**
+     * Whether the member currently holds at least one key ring.
+     *
+     * Derived, never stored: the `has_key` column was dropped when key rings
+     * became objects of their own. Retired rings do not count — the member gave
+     * the ring back, or it was written off.
+     *
+     * @return Attribute<bool, never>
+     */
+    protected function hasKey(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): bool => $this->keyRings()->exists(),
+        );
     }
 
     /**

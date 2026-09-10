@@ -199,6 +199,15 @@ Route::prefix('admin/club-admin/seasons/')
         Route::livewire('list', 'pages::club-admin.seasons.index')->name('admin.seasons.index');
     });
 
+// Key rings — the club's entrusted equipment. Gated by the délégation that the
+// permissions doc already names for it: holding a ring opens a door, never a
+// screen, so the duty to hand one over is what the gate checks.
+Route::prefix('admin/club-admin/key-rings/')
+    ->middleware(['auth', 'verified', 'can:equipment.holder.update'])
+    ->group(function (): void {
+        Route::livewire('list', 'pages::club-admin.key-rings.index')->name('admin.key-rings.index');
+    });
+
 Route::prefix('admin/club-admin/rooms/')
     ->middleware(['auth', 'verified', 'can:rooms.manage'])
     ->group(function (): void {

@@ -4,22 +4,26 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Services\InterclubService;
 use App\Domains\Shared\Enums\Feature;
 use App\Domains\Trainings\Services\TrainingBuilder;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
+use App\Support\AccountProxy;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Spatie\Activitylog\Support\CauserResolver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,6 +36,26 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment() !== 'production') {
             Model::preventLazyLoading();
         }
+
+        /*
+         * A guardian acting for a ward *is* the ward as far as the application
+         * is concerned — that is the whole point of AccountProxy. The audit log
+         * is the one place that must see through it, so it asks the session who
+         * really signed in. One hook, rather than a causer passed by hand at
+         * every write.
+         */
+        $this->app->make(CauserResolver::class)->resolveUsing(
+            function (Model|int|string|null $subject = null): ?Model {
+                // An action that names its own causer — SyncUserAccessAction and
+                // friends — has already answered the question; the proxy only
+                // speaks when the causer is being inferred from the session.
+                if ($subject !== null) {
+                    return $subject instanceof Model ? $subject : User::find($subject);
+                }
+
+                return Auth::check() ? AccountProxy::origin() ?? Auth::user() : null;
+            },
+        );
 
         // One password policy for every form. The haveibeenpwned check needs
         // network access, so it only runs in production.

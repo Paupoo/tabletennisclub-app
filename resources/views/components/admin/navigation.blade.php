@@ -31,6 +31,9 @@
         <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('My season')" />
         <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" :title="__('Settings')" />
         <li><x-menu-separator /></li>
+        {{-- The proxy a guardian holds over the accounts of their wards: see
+             App\Support\AccountProxy. Renders nothing for a member with none. --}}
+        <livewire:actions.act-for />
         <livewire:actions.logout />
     </x-menu-sub>
 

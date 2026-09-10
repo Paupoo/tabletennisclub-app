@@ -4520,5 +4520,14 @@
     "Each of them gets 48 hours to confirm. The emails go out as soon as you save.": "Chacune a 48 h pour confirmer. Les mails partent dès l'enregistrement.",
     "Save and send the offers": "Enregistrer et envoyer les offres",
     "No limit": "Aucune limite",
-    ":count active registrations for :max spots: the tournament stays over capacity. Nobody is unregistered.": ":count inscrits actifs pour :max places : le tournoi reste en surcapacité. Personne n'est désinscrit."
+    ":count active registrations for :max spots: the tournament stays over capacity. Nobody is unregistered.": ":count inscrits actifs pour :max places : le tournoi reste en surcapacité. Personne n'est désinscrit.",
+    "Back to my account (:name)": "Revenir à mon compte (:name)",
+    "I am acting for": "J'agis pour",
+    "You are acting for :ward.": "Vous agissez pour :ward.",
+    "Signed in as :name.": "Connecté en tant que :name.",
+    "This cannot be done on behalf of another member.": "Cette action ne peut pas être faite au nom d'un autre membre.",
+    ":name has no address of their own: :guardian answers for them and manages their account.": ":name n'a pas d'adresse propre : :guardian répond pour lui et gère son compte.",
+    ":name has no address of their own, and no guardian with an account to act for them.": ":name n'a pas d'adresse propre, et aucun tuteur disposant d'un compte pour agir en son nom.",
+    ":count member(s) are managed by a guardian and have no login of their own to be handed.": ":count membre(s) sont gérés par un tuteur et n'ont pas d'identifiant propre à recevoir.",
+    "Acting for :ward": "J'agis pour :ward"
 }

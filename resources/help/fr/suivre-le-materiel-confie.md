@@ -18,7 +18,7 @@ Le numéro est attribué automatiquement et **n'est jamais réutilisé**. Retire
 Trois gestes, tous sur la ligne du trousseau :
 
 - **Créer** — le numéro se remplit seul ; le détenteur et la note sont facultatifs.
-- **Déplacer** — recherchez le nouveau détenteur par son nom. Seuls les **membres actifs** sont proposés : un trousseau ne se confie pas à quelqu'un qui a quitté le club. Laissez vide pour le remettre au tiroir.
+- **Déplacer** — la fenêtre rappelle qui le détient, puis vous recherchez le nouveau détenteur par son nom. Seuls les **membres actifs** sont proposés : un trousseau ne se confie pas à quelqu'un qui a quitté le club. Laissez vide pour le remettre au tiroir.
 - **Retirer** — le trousseau quitte la liste sans être effacé. Il garde son numéro **et son dernier détenteur**, ce qui vous dit de la poche de qui un trousseau perdu a disparu. Cochez **Afficher les trousseaux retirés** pour le retrouver et le remettre en service.
 
 > **Qui peut le faire :** les titulaires de la délégation **Installations** et les **administrateurs**. Ce n'est plus le comité entier : confier un objet du club est une charge, elle s'attribue.

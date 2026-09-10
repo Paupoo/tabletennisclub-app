@@ -73,13 +73,17 @@ new class extends Component
     // ── Computed ──────────────────────────────────────────────────────────────
 
     /**
-     * Active members, plus whoever currently holds a ring so a stale holder
-     * never silently vanishes from the list they appear in.
+     * Everyone a ring may be handed to, filtered in the browser.
+     *
+     * Active members and nobody else. Listing the current holder too was tried
+     * and was worse: a holder who has left the club would be offered and then
+     * refused on submit, which is a door that answers 403. The move modal shows
+     * who holds the ring as plain text instead.
      *
      * @return array<int, array{id: int, name: string}>
      */
     #[Computed]
-    public function eligibleHolders(): array
+    public function holderOptions(): array
     {
         return User::active()
             ->orderBy('last_name')
@@ -140,7 +144,8 @@ new class extends Component
         Gate::authorize(Permission::EquipmentHolderUpdate->value);
 
         $this->selectedKeyRingId = $keyRingId;
-        $this->targetHolderUserId = KeyRing::findOrFail($keyRingId)->held_by_user_id;
+        $this->targetHolderUserId = null;
+        unset($this->selectedKeyRing);
         $this->moveModal = true;
     }
 
@@ -157,7 +162,8 @@ new class extends Component
         return $this->view([
             'breadcrumbs' => $this->getBreadcrumbs(),
             'keyRings' => $this->keyRings,
-            'eligibleHolders' => $this->eligibleHolders,
+            'holderOptions' => $this->holderOptions,
+            'selectedKeyRing' => $this->selectedKeyRing,
         ]);
     }
 
@@ -192,6 +198,15 @@ new class extends Component
         $this->success(__(':ring has been retired.', ['ring' => $keyRing->label()]));
     }
 
+    /** The ring the move or retire modal is about. */
+    #[Computed]
+    public function selectedKeyRing(): ?KeyRing
+    {
+        return $this->selectedKeyRingId
+            ? KeyRing::with('heldBy')->find($this->selectedKeyRingId)
+            : null;
+    }
+
     // ── Render ────────────────────────────────────────────────────────────────
 
     protected function breadcrumbChain(): Breadcrumb
@@ -201,8 +216,13 @@ new class extends Component
             ->current(__('Key rings'));
     }
 
+    /**
+     * Asks the database, never the picker: the option list is capped at ten
+     * rows, so checking against it would reject perfectly eligible members who
+     * simply were not on screen.
+     */
     private function isEligibleHolder(int $userId): bool
     {
-        return collect($this->eligibleHolders)->contains('id', $userId);
+        return User::active()->whereKey($userId)->exists();
     }
 };

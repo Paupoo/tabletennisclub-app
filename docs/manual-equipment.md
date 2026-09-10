@@ -33,12 +33,13 @@ The screen lists one ring per row: its number, its holder (or "In the drawer" wh
 ### Moving a key ring
 
 1. On the ring's row, click **Move**.
-2. Search for the new holder by name.
-3. Click **Move**.
+2. The dialog reminds you who holds it today.
+3. Search for the new holder by name.
+4. Click **Move**.
 
 Only **active members** appear in the search: an entrusted object does not go to someone who has left the club. Leave the field empty to put the ring back in the drawer.
 
-If the current holder is no longer active, they stay shown on the row — which is precisely the ring to collect.
+If the current holder is no longer active, they stay shown on the row and in the dialog — which is precisely the ring to collect — but they are not offered as a destination.
 
 ### Retiring a key ring
 

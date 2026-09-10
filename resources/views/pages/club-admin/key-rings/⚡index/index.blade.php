@@ -69,7 +69,7 @@
     <x-app-modal wire:model="createModal" :title="__('Create a key ring')"
         :subtitle="__('The number is assigned automatically and never reused.')" separator :open="$createModal">
         <x-form wire:submit="createKeyRing">
-            <x-choices wire:model="newHolderUserId" :label="__('Holder')" :options="$eligibleHolders" single
+            <x-choices-offline wire:model="newHolderUserId" :label="__('Holder')" :options="$holderOptions" single
                 searchable clearable :placeholder="__('Leave empty to keep it in the drawer')" />
             <x-textarea wire:model="newNotes" :label="__('Notes')"
                 :hint="__('What this ring opens, where it is kept — optional.')" rows="2" />
@@ -86,7 +86,19 @@
         :subtitle="__('Handing it over records who holds it. It opens nothing new by itself.')" separator
         :open="$moveModal">
         <x-form wire:submit="moveKeyRing">
-            <x-choices wire:model="targetHolderUserId" :label="__('New holder')" :options="$eligibleHolders" single
+            @if ($selectedKeyRing)
+                <p class="text-sm text-base-content/60">
+                    {{ __('Currently held by:') }}
+                    <span class="font-bold text-base-content">
+                        @if ($selectedKeyRing->heldBy)
+                            {{ $selectedKeyRing->heldBy->first_name }} {{ $selectedKeyRing->heldBy->last_name }}
+                        @else
+                            {{ __('In the drawer') }}
+                        @endif
+                    </span>
+                </p>
+            @endif
+            <x-choices-offline wire:model="targetHolderUserId" :label="__('New holder')" :options="$holderOptions" single
                 searchable clearable :placeholder="__('Leave empty to put it back in the drawer')" />
 
             <x-slot:actions>

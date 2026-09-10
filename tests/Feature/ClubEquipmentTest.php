@@ -307,3 +307,29 @@ describe('Retiring a cash register', function (): void {
         expect(CashRegister::find($register->id))->not->toBeNull();
     });
 });
+
+// ── The cash register holder picker ──────────────────────────────────────────
+
+describe('The cash register holder picker', function (): void {
+    it('offers the active members', function (): void {
+        $season = makeActiveSeason();
+        activeMember($season, ['first_name' => 'Alice', 'last_name' => 'Dupont']);
+
+        $component = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-admin.treasury.cash-register');
+
+        expect(collect($component->viewData('users'))->pluck('name'))->toContain('Alice Dupont');
+    });
+
+    it('never offers a member who has left the club', function (): void {
+        $season = makeActiveSeason();
+        activeMember($season);
+        $formerMember = User::factory()->create(['first_name' => 'Ancien', 'last_name' => 'Membre']);
+        makeRegisterWithHolder($formerMember);
+
+        $component = Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-admin.treasury.cash-register');
+
+        expect(collect($component->viewData('users'))->pluck('id'))->not->toContain($formerMember->id);
+    });
+});

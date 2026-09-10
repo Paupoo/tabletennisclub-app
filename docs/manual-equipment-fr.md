@@ -33,12 +33,13 @@ L'écran liste un trousseau par ligne : son numéro, son détenteur (ou « Au ti
 ### Déplacer un trousseau
 
 1. Sur la ligne du trousseau, cliquez sur **Déplacer**.
-2. Recherchez le nouveau détenteur par son nom.
-3. Cliquez sur **Déplacer**.
+2. La fenêtre rappelle qui le détient aujourd'hui.
+3. Recherchez le nouveau détenteur par son nom.
+4. Cliquez sur **Déplacer**.
 
 Seuls les **membres actifs** apparaissent dans la recherche : un trousseau ne se confie pas à quelqu'un qui n'est plus au club. Laissez le champ vide pour remettre le trousseau au tiroir.
 
-Si le détenteur actuel n'est plus actif, il reste affiché sur sa ligne — c'est justement le trousseau à récupérer.
+Si le détenteur actuel n'est plus actif, il reste affiché sur sa ligne et dans la fenêtre — c'est justement le trousseau à récupérer — mais il n'est pas proposé comme destination.
 
 ### Retirer un trousseau du service
 

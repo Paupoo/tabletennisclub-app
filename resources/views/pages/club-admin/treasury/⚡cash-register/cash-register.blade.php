@@ -183,7 +183,7 @@
     <x-app-modal wire:model="createRegisterModal" :title="__('Create Cash Register')" separator :open="$createRegisterModal">
         <div class="space-y-4">
             <x-input :label="__('Register name')" wire:model="newRegisterName" autofocus />
-            <x-choices
+            <x-choices-offline
                 :label="__('Holder')"
                 :options="$users"
                 :placeholder="__('Search for a member...')"
@@ -198,7 +198,7 @@
 
     {{-- Modal: Change holder --}}
     <x-app-modal wire:model="changeHolderModal" :title="__('Change holder')" separator :open="$changeHolderModal">
-        <x-choices
+        <x-choices-offline
             :label="__('Holder')"
             :options="$users"
             :placeholder="__('Search for a member...')"

@@ -207,3 +207,64 @@ describe('Key ring inventory authorization', function (): void {
             ->assertForbidden();
     });
 });
+
+// ── The member picker ─────────────────────────────────────────────────────────
+
+/*
+ | The picker filters in the browser over a list rendered with the page, so what
+ | it can offer is decided here. maryUI's server-side <x-choices> was tried first
+ | and threw MethodNotFoundException on the first click: nothing in a Livewire
+ | feature test calls the method the browser calls, so the screen shipped green
+ | and broken. These assert the list itself, which a test can actually see.
+ */
+describe('The key ring member picker', function (): void {
+    it('offers the active members', function (): void {
+        $season = makeActiveSeason();
+        activeMember($season, ['first_name' => 'Alice', 'last_name' => 'Dupont']);
+
+        $component = Livewire::actingAs(facilitiesManager())
+            ->test('pages::club-admin.key-rings.index');
+
+        expect(collect($component->viewData('holderOptions'))->pluck('name'))
+            ->toContain('Alice Dupont');
+    });
+
+    it('offers nobody who has left the club', function (): void {
+        $season = makeActiveSeason();
+        activeMember($season);
+        User::factory()->create(['first_name' => 'Ancien', 'last_name' => 'Membre']);
+
+        $component = Livewire::actingAs(facilitiesManager())
+            ->test('pages::club-admin.key-rings.index');
+
+        expect(collect($component->viewData('holderOptions'))->pluck('name'))
+            ->not->toContain('Ancien Membre');
+    });
+
+    it('never offers someone it would then refuse', function (): void {
+        // A holder who has left the club was listed once, because they held a
+        // ring — and rejected on submit. Offering a choice that cannot be made
+        // is a door that answers 403.
+        $season = makeActiveSeason();
+        activeMember($season);
+        $formerMember = User::factory()->create(['first_name' => 'Ancien', 'last_name' => 'Membre']);
+        KeyRing::factory()->heldBy($formerMember)->create();
+
+        $component = Livewire::actingAs(facilitiesManager())
+            ->test('pages::club-admin.key-rings.index');
+
+        $offered = collect($component->viewData('holderOptions'))->pluck('id');
+        expect($offered)->not->toContain($formerMember->id);
+    });
+
+    it('names the current holder in the move modal, active or not', function (): void {
+        $formerMember = User::factory()->create(['first_name' => 'Ancien', 'last_name' => 'Membre']);
+        $ring = KeyRing::factory()->heldBy($formerMember)->create();
+
+        Livewire::actingAs(facilitiesManager())
+            ->test('pages::club-admin.key-rings.index')
+            ->call('openMove', $ring->id)
+            ->assertSee(__('Currently held by:'))
+            ->assertSee('Ancien Membre');
+    });
+});

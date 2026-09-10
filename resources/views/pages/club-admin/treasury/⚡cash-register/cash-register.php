@@ -216,6 +216,15 @@ new class extends Component
         $this->success(__('Entry recorded.'));
     }
 
+    /**
+     * Everyone a register may be handed to, filtered in the browser.
+     *
+     * Active members only. The current holder is already shown above the
+     * button that opens this picker, so there is nothing to lose by leaving a
+     * departed member out of the list they can no longer be chosen from.
+     *
+     * @return Collection<int, array{id: int, name: string}>
+     */
     #[Computed]
     public function users(): Collection
     {

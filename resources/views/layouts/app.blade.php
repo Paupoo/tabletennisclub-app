@@ -45,6 +45,19 @@ les réglages : appliquer le thème ici aussi le ferait une seconde fois, après
 }"
     x-on:set-theme.window="updateTheme($event.detail.theme)">
 
+    {{-- Acting for a ward is a borrowed identity: it says so, on every screen,
+         until it is given back. See App\Support\AccountProxy. --}}
+    @if (\App\Support\AccountProxy::isActing())
+        <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 bg-warning px-4 py-2 text-center text-sm text-warning-content">
+            <span>
+                {{ __('You are acting for :ward.', ['ward' => $user->full_name]) }}
+            </span>
+            <span class="opacity-80">
+                {{ __('Signed in as :name.', ['name' => \App\Support\AccountProxy::origin()?->full_name]) }}
+            </span>
+        </div>
+    @endif
+
     {{-- NAVBAR mobile only --}}
     <x-nav class="lg:hidden" sticky>
         <x-slot:brand>

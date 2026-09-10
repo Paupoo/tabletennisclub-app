@@ -23,6 +23,25 @@ use App\Domains\Shared\Enums\Permission;
 trait LinksToMemberSpace
 {
     /**
+     * The minutes of a meeting, seen from whichever side the reader stands on.
+     *
+     * The minutes page is the note taker's desk: every one of its actions writes,
+     * so it aborts on anything short of `meetings.manage`. The committee holds
+     * `meetings.view` alone, and the meeting page already renders the published
+     * announcements, decisions and notes inline for them — so that is where their
+     * button keeps pointing, rather than at a 403. {@see meetingUrl()}.
+     */
+    protected function meetingMinutesUrl(object $notifiable, Meeting $meeting): string
+    {
+        $canManageMeetings = $notifiable instanceof User
+            && $notifiable->can(Permission::MeetingsManage->value);
+
+        return $canManageMeetings
+            ? route('admin.meetings.minutes', $meeting)
+            : $this->meetingUrl($notifiable, $meeting);
+    }
+
+    /**
      * A meeting, seen from whichever side the reader stands on.
      *
      * A general assembly is convened to every active member, and the back-office

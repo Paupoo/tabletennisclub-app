@@ -9,6 +9,7 @@ use App\Actions\User\RestoreUserAction;
 use App\Actions\User\SendInvitationAction;
 use App\Actions\User\SoftDeleteUserAction;
 use App\Data\User\CreateUserData;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
@@ -530,10 +531,12 @@ new class extends Component
     {
         Gate::authorize('sendEmail', User::class);
 
-        $user = User::findOrFail($userId);
+        // Guardians eager-loaded: the refusal message names who answers for the
+        // member, and lazy loading is off outside production.
+        $user = User::with('guardians.member')->findOrFail($userId);
 
         if (! SendInvitationAction::handle($user)) {
-            $this->error(__('This member has no address of their own yet, so they cannot be invited.'));
+            $this->error($this->whyNotInvitable($user));
 
             return;
         }
@@ -743,7 +746,7 @@ new class extends Component
         $message = __(':count invitation(s) on their way.', ['count' => $targets->count()]);
 
         if ($unreachable->isNotEmpty()) {
-            $message .= ' ' . __(':count member(s) have no address of their own and were not invited.', ['count' => $unreachable->count()]);
+            $message .= ' ' . __(':count member(s) are managed by a guardian and have no login of their own to be handed.', ['count' => $unreachable->count()]);
         }
 
         if ($registered->isNotEmpty()) {
@@ -751,5 +754,31 @@ new class extends Component
         }
 
         $this->success($message);
+    }
+
+    /**
+     * Why this member cannot be handed a login, in words the office can act on.
+     *
+     * An account with no address of its own is not an oversight: it is the
+     * managed account of issue #56, and a guardian holding a proxy over it
+     * already does everything an invitation
+     * would have enabled — see the AccountProxy support class. The only real
+     * dead end is a ward whose guardian has no account either: there, somebody
+     * has to be given one.
+     */
+    private function whyNotInvitable(User $user): string
+    {
+        $guardian = $user->guardians->first(fn (Guardian $g): bool => $g->member !== null);
+
+        if ($guardian?->member !== null) {
+            return __(':name has no address of their own: :guardian answers for them and manages their account.', [
+                'name' => $user->first_name,
+                'guardian' => $guardian->member->full_name,
+            ]);
+        }
+
+        return __(':name has no address of their own, and no guardian with an account to act for them.', [
+            'name' => $user->first_name,
+        ]);
     }
 };

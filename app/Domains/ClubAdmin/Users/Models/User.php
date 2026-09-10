@@ -544,6 +544,20 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->subscriptions()->pendingPayment()->exists();
     }
 
+    /**
+     * A managed account has no address, so it has nothing to verify.
+     *
+     * Every my-space route sits behind `verified`; without this a guardian
+     * taking a ward's seat would be bounced to a verification notice for an
+     * address that does not exist. The column itself is untouched, so
+     * {@see self::invitationStatus()} still reads such an account as awaiting
+     * activation — which it is, for as long as it stays managed.
+     */
+    public function hasVerifiedEmail(): bool
+    {
+        return $this->email === null || parent::hasVerifiedEmail();
+    }
+
     public function heldCashRegisters(): HasMany
     {
         return $this->hasMany(CashRegister::class, 'held_by_user_id');
@@ -609,6 +623,36 @@ class User extends Authenticatable implements MustVerifyEmail
     public function keyRings(): HasMany
     {
         return $this->hasMany(KeyRing::class, 'held_by_user_id');
+    }
+
+    /**
+     * The managed accounts this member holds a proxy over.
+     *
+     * A ward is an account with no address of its own — no login, therefore
+     * somebody must act for it — linked to a guardian record that names this
+     * member. Filling the ward's own email is what ends the proxy: the account
+     * becomes autonomous and drops out of this list on its own, with no expiry
+     * date to maintain and no birthday to watch.
+     *
+     * @return Collection<int, self>
+     */
+    public function managedAccounts(): Collection
+    {
+        return self::query()
+            ->whereNull('email')
+            ->whereHas('guardians', fn (EloquentBuilder $query) => $query->where('guardians.user_id', $this->id))
+            ->orderBy('first_name')
+            ->get();
+    }
+
+    /** Whether this member may take the seat of the given managed account. */
+    public function mayActFor(self $ward): bool
+    {
+        if ($ward->email !== null || $ward->is($this)) {
+            return false;
+        }
+
+        return $ward->guardians()->where('guardians.user_id', $this->id)->exists();
     }
 
     public function meetings(): BelongsToMany

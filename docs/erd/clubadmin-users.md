@@ -2,13 +2,30 @@
 
 ```mermaid
 erDiagram
+    CharterSignature {
+        int id PK
+        int user_id FK
+        int season_id FK
+        int signed_by_user_id FK
+        int version
+        datetime signed_at
+    }
     FamilyGroup {
     }
     Guardian {
     }
+    MemberImport {
+        int id PK
+        int user_id FK
+        int new_count
+        int updated_count
+        int unchanged_count
+        int skipped_count
+        int error_count
+    }
     User {
         int id PK
-        string email
+        string email "nullable"
         string email_verified_at "nullable"
         string password
         string remember_token "nullable"
@@ -21,7 +38,7 @@ erDiagram
         string street "nullable"
         string city_code "nullable"
         string city_name "nullable"
-        string ranking
+        Ranking ranking
         string licence "nullable"
         int force_list "nullable"
         int force_list_women "nullable"
@@ -40,11 +57,13 @@ erDiagram
 
     FamilyGroup }o--o{ User : "users"
     Guardian }o--o{ User : "users"
+    MemberImport ||--o{ User : "members"
     User ||--o{ NewsPost : "articles"
     User ||--o| Team : "captainOf"
     User }o--o{ FamilyGroup : "familyGroups"
     User }o--o{ Guardian : "guardians"
     User ||--o{ CashRegister : "heldCashRegisters"
+    User ||--o{ KeyRing : "keyRings"
     User }o--o{ Interclub : "interclubs"
     User }o--o{ Meeting : "meetings"
     User }o--o{ Pool : "pools"

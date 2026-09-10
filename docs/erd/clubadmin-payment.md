@@ -36,6 +36,7 @@ erDiagram
         string payable_type
         int payable_id FK
         int invitation_counter
+        datetime last_reminded_at "nullable"
         int refund_transaction_id FK "nullable"
         string payment_method
     }

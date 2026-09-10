@@ -34,6 +34,17 @@ erDiagram
         int league_id FK "nullable"
         int season_id FK "nullable"
     }
+    InterclubImport {
+        int id PK
+        int user_id FK "nullable"
+        int season_id FK
+        bool is_fresh
+        int created_count
+        int updated_count
+        int unchanged_count
+        int deleted_count
+        int skipped_count
+    }
     InterclubResult {
         int id PK
         int interclub_id FK "nullable"
@@ -60,7 +71,7 @@ erDiagram
         datetime start_at
         datetime end_at
         bool is_active
-        bool registrations_open
+        bool affiliations_open
     }
     Team {
         int id PK
@@ -70,6 +81,11 @@ erDiagram
         int captain_id FK "nullable"
         int season_id FK
         string final_position "nullable"
+    }
+    TeamUser {
+        int id PK
+        int team_id FK
+        int user_id FK
     }
 
     Club }o--o{ Room : "rooms"

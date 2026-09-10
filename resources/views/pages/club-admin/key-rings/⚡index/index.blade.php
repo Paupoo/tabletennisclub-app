@@ -50,7 +50,7 @@
                 <div class="ml-auto flex items-center gap-2">
                     @if ($keyRing->trashed())
                         <x-button :label="__('Put back in service')" icon="o-arrow-path" class="btn-ghost btn-sm"
-                            wire:click="restoreKeyRing({{ $keyRing->id }})" />
+                            wire:click="openMove({{ $keyRing->id }})" />
                     @else
                         <x-button :label="__('Move')" icon="o-arrows-right-left" class="btn-ghost btn-sm"
                             wire:click="openMove({{ $keyRing->id }})" />
@@ -82,13 +82,18 @@
     </x-app-modal>
 
     {{-- Move --}}
-    <x-app-modal wire:model="moveModal" :title="__('Move this key ring')"
-        :subtitle="__('Handing it over records who holds it. It opens nothing new by itself.')" separator
-        :open="$moveModal">
+    {{-- One modal for both: putting a ring back in service is the same question
+         as moving one — who holds it now? --}}
+    <x-app-modal wire:model="moveModal"
+        :title="$isComingBack ? __('Put this key ring back in service') : __('Move this key ring')"
+        :subtitle="$isComingBack
+            ? __('It returns to the inventory. Choose who takes it, or leave it in the drawer.')
+            : __('Handing it over records who holds it. It opens nothing new by itself.')"
+        separator :open="$moveModal">
         <x-form wire:submit="moveKeyRing">
             @if ($selectedKeyRing)
                 <p class="text-sm text-base-content/60">
-                    {{ __('Currently held by:') }}
+                    {{ $isComingBack ? __('Last held by:') : __('Currently held by:') }}
                     <span class="font-bold text-base-content">
                         @if ($selectedKeyRing->heldBy)
                             {{ $selectedKeyRing->heldBy->first_name }} {{ $selectedKeyRing->heldBy->last_name }}
@@ -103,7 +108,8 @@
 
             <x-slot:actions>
                 <x-button :label="__('Cancel')" @click="$wire.moveModal = false" />
-                <x-button :label="__('Move')" class="btn-primary" type="submit" spinner="moveKeyRing" />
+                <x-button :label="$isComingBack ? __('Put back in service') : __('Move')" class="btn-primary"
+                    type="submit" spinner="moveKeyRing" />
             </x-slot:actions>
         </x-form>
     </x-app-modal>

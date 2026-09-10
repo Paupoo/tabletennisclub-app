@@ -19,7 +19,8 @@ Trois gestes, tous sur la ligne du trousseau :
 
 - **Créer** — le numéro se remplit seul ; le détenteur et la note sont facultatifs.
 - **Déplacer** — la fenêtre rappelle qui le détient, puis vous recherchez le nouveau détenteur par son nom. Seuls les **membres actifs** sont proposés : un trousseau ne se confie pas à quelqu'un qui a quitté le club. Laissez vide pour le remettre au tiroir.
-- **Retirer** — le trousseau quitte la liste sans être effacé. Il garde son numéro **et son dernier détenteur**, ce qui vous dit de la poche de qui un trousseau perdu a disparu. Cochez **Afficher les trousseaux retirés** pour le retrouver et le remettre en service.
+- **Retirer** — le trousseau quitte la liste sans être effacé. Il garde son numéro **et son dernier détenteur**, ce qui vous dit de la poche de qui un trousseau perdu a disparu.
+- **Remettre en service** — cochez **Afficher les trousseaux retirés**, puis le bouton sur la ligne grisée. La même fenêtre que **Déplacer** s'ouvre : elle rappelle qui l'avait en dernier et vous demande qui le prend maintenant. Le champ démarre **vide**, parce qu'un trousseau ne retourne pas chez la personne qui l'avait — soit il est perdu et ne revient jamais, soit il a été rendu et attend au tiroir qu'on le confie à quelqu'un d'autre.
 
 > **Qui peut le faire :** les titulaires de la délégation **Installations** et les **administrateurs**. Ce n'est plus le comité entier : confier un objet du club est une charge, elle s'attribue.
 

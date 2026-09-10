@@ -149,16 +149,55 @@ describe('Retiring a key ring', function (): void {
         expect($component->viewData('keyRings')->pluck('id')->all())->toContain($ring->id);
     });
 
-    it('puts a retired ring back in service', function (): void {
-        $ring = KeyRing::factory()->retired()->create();
+    it('puts a retired ring back in service, in the hands of whoever is chosen', function (): void {
+        $season = makeActiveSeason();
+        $newHolder = activeMember($season);
+        $ring = KeyRing::factory()->heldBy(User::factory()->create())->retired()->create();
 
         Livewire::actingAs(facilitiesManager())
             ->test('pages::club-admin.key-rings.index')
             ->set('showRetired', true)
-            ->call('restoreKeyRing', $ring->id)
+            ->call('openMove', $ring->id)
+            ->set('targetHolderUserId', $newHolder->id)
+            ->call('moveKeyRing')
             ->assertHasNoErrors();
 
-        expect(KeyRing::find($ring->id))->not->toBeNull();
+        $ring = KeyRing::find($ring->id);
+        expect($ring)->not->toBeNull();
+        expect($ring->held_by_user_id)->toBe($newHolder->id);
+    });
+
+    it('never hands a returning ring back to the member who had it', function (): void {
+        // The two real cases are a ring lost for good and a ring handed in.
+        // Neither ends with the previous holder, so the picker starts empty and
+        // an untouched form puts the ring in the drawer.
+        $previousHolder = User::factory()->create();
+        $ring = KeyRing::factory()->heldBy($previousHolder)->retired()->create();
+
+        $component = Livewire::actingAs(facilitiesManager())
+            ->test('pages::club-admin.key-rings.index')
+            ->set('showRetired', true)
+            ->call('openMove', $ring->id);
+
+        expect($component->get('targetHolderUserId'))->toBeNull();
+
+        $component->call('moveKeyRing')->assertHasNoErrors();
+
+        expect(KeyRing::find($ring->id)->held_by_user_id)->toBeNull();
+    });
+
+    it('names the last holder when a ring comes back', function (): void {
+        $previousHolder = User::factory()->create(['first_name' => 'Ancien', 'last_name' => 'Membre']);
+        $ring = KeyRing::factory()->heldBy($previousHolder)->retired()->create();
+
+        Livewire::actingAs(facilitiesManager())
+            ->test('pages::club-admin.key-rings.index')
+            ->set('showRetired', true)
+            ->call('openMove', $ring->id)
+            ->assertSee(__('Last held by:'))
+            ->assertSee('Ancien Membre')
+            ->assertSee(__('Put this key ring back in service'))
+            ->assertDontSee(__('Move this key ring'));
     });
 });
 

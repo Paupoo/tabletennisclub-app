@@ -52,6 +52,10 @@ The ring leaves the list but is **not erased**: it keeps its number and its last
 
 1. Tick **Show retired key rings** above the list.
 2. On the greyed-out row, click **Put back in service**.
+3. The dialog reminds you who held it last, then you choose who takes it.
+4. Click **Put back in service**.
+
+The field starts **empty**: a ring never finds its own way back to the person who had it. The two situations that actually happen are a ring lost for good, which does not come back at all, and a ring handed in, which waits in the drawer until somebody else needs it. Leave the field empty for that second case.
 
 ---
 

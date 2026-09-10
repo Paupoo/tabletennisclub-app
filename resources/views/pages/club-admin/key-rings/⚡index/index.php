@@ -106,13 +106,22 @@ new class extends Component
             ->get();
     }
 
+    /**
+     * Hand the ring to someone — including a ring coming back into service.
+     *
+     * Putting a ring back is the same question as moving one: who has it now?
+     * The two cases that actually happen are a ring lost for good, which never
+     * comes back at all, and a ring handed in, which sits in the drawer until
+     * somebody else needs it. Neither ends up with the person who had it, so
+     * the picker starts empty rather than offering them again.
+     */
     public function moveKeyRing(): void
     {
         Gate::authorize(Permission::EquipmentHolderUpdate->value);
 
         $this->validateOnly('targetHolderUserId');
 
-        $keyRing = KeyRing::findOrFail($this->selectedKeyRingId);
+        $keyRing = KeyRing::withTrashed()->findOrFail($this->selectedKeyRingId);
 
         // Eligibility mirrors the cash register screen: an entrusted object goes
         // to someone who is still a member. Handing it back to the drawer is
@@ -123,12 +132,20 @@ new class extends Component
             return;
         }
 
+        $wasRetired = $keyRing->trashed();
+
+        if ($wasRetired) {
+            $keyRing->restore();
+        }
+
         $keyRing->update(['held_by_user_id' => $this->targetHolderUserId]);
 
         $this->reset(['targetHolderUserId', 'selectedKeyRingId', 'moveModal']);
-        unset($this->keyRings);
+        unset($this->keyRings, $this->selectedKeyRing);
 
-        $this->success(__(':ring has been moved.', ['ring' => $keyRing->label()]));
+        $this->success($wasRetired
+            ? __(':ring is back in service.', ['ring' => $keyRing->label()])
+            : __(':ring has been moved.', ['ring' => $keyRing->label()]));
     }
 
     public function openCreate(): void
@@ -139,12 +156,19 @@ new class extends Component
         $this->createModal = true;
     }
 
+    /**
+     * Opens the holder picker, for a ring in service or one coming back.
+     *
+     * The target always starts empty: a ring is moved because the person who
+     * had it should not have it any more.
+     */
     public function openMove(int $keyRingId): void
     {
         Gate::authorize(Permission::EquipmentHolderUpdate->value);
 
         $this->selectedKeyRingId = $keyRingId;
         $this->targetHolderUserId = null;
+        $this->resetErrorBag();
         unset($this->selectedKeyRing);
         $this->moveModal = true;
     }
@@ -164,19 +188,8 @@ new class extends Component
             'keyRings' => $this->keyRings,
             'holderOptions' => $this->holderOptions,
             'selectedKeyRing' => $this->selectedKeyRing,
+            'isComingBack' => $this->selectedKeyRing?->trashed() ?? false,
         ]);
-    }
-
-    public function restoreKeyRing(int $keyRingId): void
-    {
-        Gate::authorize(Permission::EquipmentHolderUpdate->value);
-
-        $keyRing = KeyRing::onlyTrashed()->findOrFail($keyRingId);
-        $keyRing->restore();
-
-        unset($this->keyRings);
-
-        $this->success(__(':ring is back in service.', ['ring' => $keyRing->label()]));
     }
 
     /**
@@ -203,7 +216,7 @@ new class extends Component
     public function selectedKeyRing(): ?KeyRing
     {
         return $this->selectedKeyRingId
-            ? KeyRing::with('heldBy')->find($this->selectedKeyRingId)
+            ? KeyRing::withTrashed()->with('heldBy')->find($this->selectedKeyRingId)
             : null;
     }
 

@@ -52,6 +52,10 @@ Le trousseau quitte la liste mais **n'est pas effacé** : il conserve son numér
 
 1. Cochez **Afficher les trousseaux retirés** au-dessus de la liste.
 2. Sur la ligne grisée, cliquez sur **Remettre en service**.
+3. La fenêtre rappelle qui le détenait en dernier, puis vous choisissez qui le prend.
+4. Cliquez sur **Remettre en service**.
+
+Le champ démarre **vide** : le trousseau ne retourne jamais tout seul chez la personne qui l'avait. Les deux situations réelles sont un trousseau perdu, qui ne revient pas du tout, et un trousseau rendu, qui attend au tiroir qu'on le confie à quelqu'un d'autre. Laissez le champ vide pour ce second cas.
 
 ---
 

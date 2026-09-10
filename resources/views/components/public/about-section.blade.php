@@ -1,8 +1,8 @@
-<section id="about" class="h-auto py-20 bg-gray-50 flex items-center">
+<section id="about" class="h-auto py-20 bg-base-200 flex items-center">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16 animate-on-scroll">
-            <h2 class="text-4xl font-bold text-gray-900 mb-4">Pourquoi choisir le {{ config('club.name') }}&nbsp;?</h2>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            <h2 class="text-4xl font-bold text-base-content mb-4">Pourquoi choisir le {{ config('club.name') }}&nbsp;?</h2>
+            <p class="text-xl text-muted max-w-3xl mx-auto">
                 Nous sommes plus qu'un simple club – nous sommes une communauté dédiée au sport que nous aimons.
             </p>
         </div>
@@ -13,7 +13,7 @@
                     <span class="text-2xl">🏆</span>
                 </div>
                 <h3 class="text-xl font-semibold mb-2">{{ __('Competitive Excellence') }}</h3>
-                <p class="text-gray-600">{{ __('Participate in local and regional tournaments with our competitive teams.') }}</p>
+                <p class="text-muted">{{ __('Participate in local and regional tournaments with our competitive teams.') }}</p>
             </div>
             
             <div class="text-center p-6 animate-on-scroll" style="transition-delay: 0.2s;">
@@ -21,7 +21,7 @@
                     <span class="text-2xl">👥</span>
                 </div>
                 <h3 class="text-xl font-semibold mb-2">{{ __('Welcoming Community') }}</h3>
-                <p class="text-gray-600">Rejoignez des joueurs de tous niveaux dans un environnement amical et solidaire.</p>
+                <p class="text-muted">Rejoignez des joueurs de tous niveaux dans un environnement amical et solidaire.</p>
             </div>
             
             <div class="text-center p-6 animate-on-scroll" style="transition-delay: 0.3s;">
@@ -29,7 +29,7 @@
                     <span class="text-2xl">🎯</span>
                 </div>
                 <h3 class="text-xl font-semibold mb-2">Coaching Professionnel</h3>
-                <p class="text-gray-600">{{ __('Learn with experienced coaches and improve your game with structured training.') }}</p>
+                <p class="text-muted">{{ __('Learn with experienced coaches and improve your game with structured training.') }}</p>
             </div>
         </div>
     </div>

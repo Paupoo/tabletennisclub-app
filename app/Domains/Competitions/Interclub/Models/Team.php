@@ -6,6 +6,8 @@ namespace App\Domains\Competitions\Interclub\Models;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Traits\HasAuditLog;
+use App\Observers\TeamObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -54,6 +56,7 @@ use Illuminate\Support\Carbon;
  *
  * @mixin \Eloquent
  */
+#[ObservedBy(TeamObserver::class)]
 class Team extends Model
 {
     use HasAuditLog;
@@ -119,6 +122,6 @@ class Team extends Model
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class);
+        return $this->belongsToMany(User::class)->using(TeamUser::class);
     }
 }

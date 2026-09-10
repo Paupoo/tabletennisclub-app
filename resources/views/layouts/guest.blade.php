@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
+<html data-db-theme="{{ Auth::user()?->theme ?? 'auto' }}" lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 
 <head>
     <meta charset="utf-8">
@@ -11,6 +11,8 @@
     @if(!empty($description ?? null))
         <meta name="description" content="{{ $description }}">
     @endif
+    <x-theme-boot />
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     @if(app()->environment('production'))
@@ -19,7 +21,11 @@
     @endif
 </head>
 
-<body class="bg-white text-gray-900 relative" x-data="{ mobileMenuOpen: false }">
+{{-- Les deux couleurs de cette ligne ont longtemps décidé du site entier : posées en
+dur, elles restaient claires alors que le document se déclarait sombre, et tout ce qui
+n'a pas de couleur propre en héritait — le titre de la feuille de score en est mort à 1,02:1.
+Les jetons suivent le thème, comme le fait déjà le back-office. --}}
+<body class="bg-base-200 text-base-content relative" x-data="{ mobileMenuOpen: false }">
 
     <div x-data="scrollAnimations">
 

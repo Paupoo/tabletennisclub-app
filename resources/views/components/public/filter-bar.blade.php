@@ -9,7 +9,7 @@
     </div>
 </div>
 
-<div class="bg-white border-b sticky top-16 z-40">
+<div class="bg-base-100 border-b border-base-300 sticky top-16 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             {{-- Filter dropdowns --}}
@@ -20,7 +20,7 @@
             {{-- Count + optional sort --}}
             <div class="flex items-center gap-4">
                 @if($count !== null)
-                    <span class="text-sm text-gray-500">{{ $count }}</span>
+                    <span class="text-sm text-subtle">{{ $count }}</span>
                 @endif
                 @isset($sort)
                     {{ $sort }}

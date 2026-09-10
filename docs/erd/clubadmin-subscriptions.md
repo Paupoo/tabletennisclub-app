@@ -27,6 +27,19 @@ erDiagram
         float training_unit_price
         float amount_due
         float amount_paid
+        float family_credit
+    }
+    SubscriptionTrainingPack {
+        int id PK
+        int subscription_id FK
+        int training_pack_id FK
+        string status
+        int waitlist_position "nullable"
+        string confirmation_deadline "nullable"
+        string starts_on "nullable"
+        string ends_on "nullable"
+        int|string override_amount "nullable"
+        string override_reason "nullable"
     }
 
     Registration ||--o{ Payment : "payments"

@@ -1,13 +1,13 @@
 @props(['agenda', 'scheduleContext' => null])
 
-<section id="schedule" class="py-12 bg-white">
+<section id="schedule" class="py-12 bg-base-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-10 animate-on-scroll">
-            <h2 class="text-4xl font-bold text-gray-900">{{ __('Schedule and activities') }}</h2>
+            <h2 class="text-4xl font-bold text-base-content">{{ __('Schedule and activities') }}</h2>
         </div>
 
         @if ($scheduleContext !== null && in_array($scheduleContext['type'], ['future', 'upcoming'], true))
-            <div class="mb-8 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 text-blue-800 animate-on-scroll">
+            <div class="mb-8 flex items-start gap-3 rounded-xl border border-info/40 bg-info/10 px-5 py-4 text-blue-800 animate-on-scroll">
                 <x-icon name="o-information-circle" class="mt-0.5 h-5 w-5 shrink-0" />
                 <p class="text-sm font-medium">
                     Ces horaires entrent en vigueur dès le {{ \Carbon\Carbon::parse($scheduleContext['season_start'])->translatedFormat('d F Y') }}.

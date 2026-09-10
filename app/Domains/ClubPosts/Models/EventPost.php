@@ -143,11 +143,17 @@ class EventPost extends Model
 
     public function getCategoryBadgeClasses(): string
     {
+        /*
+         * Une teinte sémantique plutôt qu'un aplat fixe : `bg-X-100` reste clair quand
+         * la page passe en sombre, alors qu'une teinte à 15 % se mélange à la surface
+         * et suit donc le thème. La couleur porte toujours le sens ; le texte, lui,
+         * prend le contraste de la surface au lieu de le deviner.
+         */
         return match ($this->category) {
-            'club-life' => 'bg-blue-100 text-blue-800',
-            'tournament' => 'bg-orange-100 text-orange-800',
-            'training' => 'bg-purple-100 text-purple-800',
-            default => 'bg-gray-100 text-gray-800'
+            'club-life' => 'bg-info/15 text-base-content',
+            'tournament' => 'bg-warning/15 text-base-content',
+            'training' => 'bg-primary/15 text-base-content',
+            default => 'bg-base-300 text-base-content'
         };
     }
 
@@ -205,10 +211,16 @@ class EventPost extends Model
 
     public function getStatusBadgeClasses(): string
     {
+        /*
+         * Une teinte sémantique plutôt qu'un aplat fixe : `bg-X-100` reste clair quand
+         * la page passe en sombre, alors qu'une teinte à 15 % se mélange à la surface
+         * et suit donc le thème. La couleur porte toujours le sens ; le texte, lui,
+         * prend le contraste de la surface au lieu de le deviner.
+         */
         return match ($this->status) {
-            EventPostStatusEnum::PUBLISHED => 'bg-green-100 text-green-800',
-            EventPostStatusEnum::ARCHIVED => 'bg-red-100 text-red-800',
-            default => 'bg-gray-100 text-gray-800',
+            EventPostStatusEnum::PUBLISHED => 'bg-success/15 text-base-content',
+            EventPostStatusEnum::ARCHIVED => 'bg-error/15 text-base-content',
+            default => 'bg-base-300 text-base-content',
         };
     }
 

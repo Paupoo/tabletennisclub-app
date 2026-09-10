@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\Bar\Models\BarOrder;
+use App\Domains\ClubAdmin\Club\Models\KeyRing;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -45,19 +46,20 @@ it('renders user edit', function (): void {
     smokeGet('admin.users.edit', $user)->assertOk();
 });
 
-it('user edit form mounts without TypeError when has_key attribute is missing (regression)', function (): void {
-    // Reproduces the TypeError that occurs when the has_key migration has not run yet:
-    // the attribute is absent from the model → getAttribute() returns null →
-    // assigning null to a typed bool Livewire property throws TypeError.
-    $user = User::factory()->isNotCompetitor()->create();
+it('user edit form mounts whatever entrusted equipment the member holds (regression)', function (): void {
+    // The equipment section used to bind a typed bool Livewire property to the
+    // `has_key` column, and mounting blew up with a TypeError whenever that
+    // column was absent. The section reads a relation now, so the shape that
+    // used to break it is a member holding none, and one holding several.
+    $withNothing = User::factory()->isNotCompetitor()->create();
+    $withSeveral = User::factory()->isNotCompetitor()->create();
+    KeyRing::factory()->heldBy($withSeveral)->count(2)->create();
 
-    $attrs = $user->getAttributes();
-    unset($attrs['has_key']);
-    $user->setRawAttributes($attrs, true);
-
-    Livewire::actingAs(test()->admin)
-        ->test('pages::club-admin.users.form', ['user' => $user])
-        ->assertOk();
+    foreach ([$withNothing, $withSeveral] as $user) {
+        Livewire::actingAs(test()->admin)
+            ->test('pages::club-admin.users.form', ['user' => $user])
+            ->assertOk();
+    }
 });
 
 it('renders my-space pages for the user', function (string $routeName): void {

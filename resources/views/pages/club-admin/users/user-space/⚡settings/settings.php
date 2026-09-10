@@ -7,6 +7,7 @@ use App\Domains\ClubAdmin\Users\Notifications\GdprErasureRequestedNotification;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Support\AccountProxy;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
@@ -58,6 +59,7 @@ new #[Title('My settings')] class extends Component
     public function requestErasure(): void
     {
         abort_unless(Auth::user()->is($this->user), 403);
+        AccountProxy::denyWhenActing();
 
         // Idempotent: one request = one notification, keep the original request date.
         if ($this->user->gdpr_erasure_requested_at) {
@@ -131,6 +133,7 @@ new #[Title('My settings')] class extends Component
     public function updatePassword(): void
     {
         abort_unless(Auth::user()->is($this->user), 403);
+        AccountProxy::denyWhenActing();
 
         $validated = $this->validate();
 

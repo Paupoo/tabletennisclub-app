@@ -27,7 +27,6 @@ readonly class CreateUserData
         public ?string $city_code = null,
         public ?string $city_name = null,
         public ?string $birthdate = null,
-        public bool $has_key = false,
         public ?string $licence = null,
         public ?string $ranking = null,
         public ?string $password = null,

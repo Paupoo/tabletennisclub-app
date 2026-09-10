@@ -259,7 +259,6 @@ describe('state 3 — rights only, the access manager', function (): void {
             ->set('first_name', 'Falsifie')
             ->set('licence', '999999')
             ->set('iban', 'BE68539007547034')
-            ->set('has_key', true)
             ->set('delegations', [Role::BAR->value])
             ->call('save');
 
@@ -267,7 +266,6 @@ describe('state 3 — rights only, the access manager', function (): void {
             ->first_name->toBe('Origine')
             ->licence->toBe('123456')
             ->iban->toBeNull()
-            ->has_key->toBeFalse()
             ->hasRole(Role::BAR->value)->toBeTrue();
     });
 

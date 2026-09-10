@@ -1,6 +1,16 @@
 import "./bootstrap";
 import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
+import { French } from "flatpickr/dist/l10n/fr.js";
+import { Dutch } from "flatpickr/dist/l10n/nl.js";
+
+// Flatpickr ships English first, so every date picker opened on a Sunday column.
+// Belgium starts its weeks on a Monday whatever the language, hence the fallback.
+const flatpickrLocales = { fr: French, nl: Dutch };
+const documentLanguage = (document.documentElement.lang || "fr").slice(0, 2).toLowerCase();
+
+flatpickr.localize(flatpickrLocales[documentLanguage] ?? { firstDayOfWeek: 1 });
+
 window.flatpickr = flatpickr;
 import { initTheme } from './components/theme';
 import { setupPlugins } from './plugins/setup';

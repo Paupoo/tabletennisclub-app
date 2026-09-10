@@ -102,13 +102,19 @@
 
                 @if($showCaptain)
                 @php
+                    /* Composing a lineup and running the season are two duties: a
+                       captain is a relation (teams.captain_id), the calendar and the
+                       roster belong to the interclubs délégation. The two screens
+                       that délégation owns are gated here the way the sidebar gates
+                       them, so a captain is never offered a door that answers 403. */
                     $captainTiles = [
-                        ['icon' => 'o-trophy',                   'label' => 'Équipes',        'sub' => 'Gestion des équipes',   'href' => route('admin.interclubs.teams'),             'feature' => 'interclubs'],
-                        ['icon' => 'o-globe-alt',                'label' => 'Interclubs',     'sub' => 'Calendrier & matchs',   'href' => route('admin.interclubs.interclubs'),        'feature' => 'interclubs'],
+                        ['icon' => 'o-trophy',                   'label' => 'Équipes',        'sub' => 'Gestion des équipes',   'href' => route('admin.interclubs.teams'),             'feature' => 'interclubs', 'can' => 'interclubs.manage'],
+                        ['icon' => 'o-globe-alt',                'label' => 'Interclubs',     'sub' => 'Calendrier & matchs',   'href' => route('admin.interclubs.interclubs'),        'feature' => 'interclubs', 'can' => 'interclubs.manage'],
                         ['icon' => 'o-clipboard-document-check', 'label' => 'Sélections',     'sub' => "Compositions d'équipe", 'href' => route('admin.interclubs.captain-selection'), 'feature' => 'interclubs'],
                         ['icon' => 'o-chart-bar',                'label' => 'Résultats',      'sub' => 'Scores & classements',  'href' => route('admin.interclubs.results'),           'feature' => 'interclubs'],
                     ];
-                    $captainTiles = array_filter($captainTiles, fn (array $t): bool => ! isset($t['feature']) || \App\Domains\Shared\Enums\Feature::from($t['feature'])->enabled());
+                    $captainTiles = array_filter($captainTiles, fn (array $t): bool => (! isset($t['feature']) || \App\Domains\Shared\Enums\Feature::from($t['feature'])->enabled())
+                        && (! isset($t['can']) || Auth::user()->can($t['can'])));
                 @endphp
                 <x-section-accordion
                     :label="__('Captain / Selector')"

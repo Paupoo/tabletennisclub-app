@@ -24,7 +24,6 @@ class CreateUserAction
             'city_code' => $data->city_code,
             'city_name' => $data->city_name,
             'birthdate' => $data->birthdate,
-            'has_key' => $data->has_key,
             'licence' => $data->licence,
             'ranking' => $data->ranking ?? 'NA',
             // committee_role is deliberately absent: see UpdateUserAction.

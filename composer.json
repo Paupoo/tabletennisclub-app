@@ -9,6 +9,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.5",
+        "ext-intl": "*",
         "codeat3/blade-eos-icons": "^1.15",
         "endroid/qr-code": "^6.0",
         "guzzlehttp/guzzle": "^7.2",

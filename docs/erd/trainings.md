@@ -4,7 +4,7 @@
 erDiagram
     Training {
         int id PK
-        string level
+        int training_level_id FK "nullable"
         string type
         datetime start
         datetime end
@@ -15,13 +15,24 @@ erDiagram
         string status
         string cancellation_note "nullable"
         datetime cancelled_at "nullable"
+        datetime attendance_taken_at "nullable"
+        int attendance_taken_by "nullable"
+    }
+    TrainingLevel {
+        int id PK
+        string label
+        string color
+        int position
+        bool is_active
+        string legacy_name "nullable"
+        string legacy_value "nullable"
     }
     TrainingPack {
         int id PK
         string name
         int season_id FK
         float price
-        TrainingLevel level
+        int training_level_id FK "nullable"
         TrainingType type
         int room_id FK
         int trainer_id FK "nullable"
@@ -35,6 +46,7 @@ erDiagram
         datetime pack_end_date "nullable"
         bool allow_discount
         bool is_open_enrollment
+        bool enrollments_open
     }
     TrainingPlan {
         int id PK
@@ -62,6 +74,8 @@ erDiagram
     }
 
     Training }o--o{ User : "trainees"
+    TrainingLevel ||--o{ TrainingPack : "packs"
+    TrainingLevel ||--o{ Training : "sessions"
     TrainingPack ||--o| EventPost : "eventPost"
     TrainingPack }o--o{ Subscription : "subscriptions"
     TrainingPack ||--o{ Training : "trainings"

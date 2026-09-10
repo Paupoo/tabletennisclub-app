@@ -519,8 +519,24 @@
                     :title="__('Entrusted equipment')" />
             </div>
             <div class="col-span-6 md:col-span-4">
-                <x-checkbox :hint="__('Member holds a key to open and close the venue')"
-                    :label="__('Has a key')" wire:model="has_key" />
+                {{-- Read-only on both counts: a key ring is moved from the
+                     inventory, a cash register from the treasury, so each stays
+                     a single audited place. --}}
+                @if ($user && $user->keyRings->isNotEmpty())
+                    <div>
+                        <p class="text-sm font-semibold mb-2">{{ __('Held key rings') }}</p>
+                        <ul class="space-y-1">
+                            @foreach ($user->keyRings as $keyRing)
+                                <li class="flex items-center gap-2 text-sm">
+                                    <x-icon name="o-key" class="w-4 h-4 text-base-content/40" />
+                                    {{ $keyRing->label() }}
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @else
+                    <p class="text-sm text-base-content/60">{{ __('No key ring entrusted.') }}</p>
+                @endif
                 @if ($user && $user->heldCashRegisters->isNotEmpty())
                     <div class="mt-4">
                         <p class="text-sm font-semibold mb-2">{{ __('Held cash registers') }}</p>

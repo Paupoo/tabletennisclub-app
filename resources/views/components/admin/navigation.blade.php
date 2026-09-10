@@ -18,7 +18,9 @@
         <x-menu-item icon="o-user" link="{{ route('admin.user.profile', $user) }}"
             :title="__('My profile')" />
         @feature('interclubs')
-        @if($user->is_competitor)
+        {{-- Team membership, not the competitive licence alone: see
+             User::playsInterclub(). --}}
+        @if($user->playsInterclub())
             <x-menu-item icon="o-calendar" link="{{ route('admin.interclubs.my-matches') }}" :title="__('My matches')" />
         @endif
         @endfeature
@@ -29,6 +31,9 @@
         <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('My season')" />
         <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" :title="__('Settings')" />
         <li><x-menu-separator /></li>
+        {{-- The proxy a guardian holds over the accounts of their wards: see
+             App\Support\AccountProxy. Renders nothing for a member with none. --}}
+        <livewire:actions.act-for />
         <livewire:actions.logout />
     </x-menu-sub>
 
@@ -80,7 +85,7 @@
 
     <li><x-menu-separator /></li>
 
-    @canany(['club.update', 'seasons.view', 'rooms.manage'])
+    @canany(['club.update', 'seasons.view', 'rooms.manage', 'equipment.holder.update'])
     <x-menu-sub icon="o-building-office" :title="__('Club Settings')">
         @can('club.update')
         <x-menu-item icon="o-identification" link="{{ route('admin.club-info') }}" :title="__('Informations')" />
@@ -90,6 +95,9 @@
         @endcan
         @can('rooms.manage')
         <x-menu-item icon="o-building-office-2" link="{{ route('admin.rooms.index') }}" :title="__('Rooms')" />
+        @endcan
+        @can('equipment.holder.update')
+        <x-menu-item icon="o-key" link="{{ route('admin.key-rings.index') }}" :title="__('Key rings')" />
         @endcan
     </x-menu-sub>
     @endcanany

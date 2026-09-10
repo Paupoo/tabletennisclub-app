@@ -574,17 +574,19 @@ class AfttCalendarImporter
     /**
      * Empty one season of everything the federation is about to restate.
      *
-     * Only ever reached through the command's --fresh, which refuses to run when
-     * anything in the season carries member data. What goes with the teams is the
-     * club's own work — captains and rosters — so this is deliberately not the
-     * default and deliberately not silent.
+     * Only ever reached through the command's --fresh, which announces what it
+     * is about to destroy and refuses without --force once availability answers
+     * or recorded results exist. Rosters are not part of that refusal: they are
+     * counted, named in the warning, and removed on confirmation — so they are
+     * deleted one team at a time, through Eloquent, to leave an audit trail of
+     * who was in each team.
      *
      * Scoped to the season, because last season's results are read all year.
      */
     private function wipe(Season $season): void
     {
         Interclub::where('season_id', $season->id)->get()->each->delete();
-        Team::where('season_id', $season->id)->delete();
+        Team::where('season_id', $season->id)->get()->each->delete();
         League::where('season_id', $season->id)->delete();
     }
 }

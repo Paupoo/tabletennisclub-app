@@ -43,7 +43,12 @@ new class extends Component
     public bool $drawer = false;
 
     // Contact
-    public string $email = '';
+    /**
+     * Null for a managed account: it has no address of its own, which is exactly
+     * what says it has no login either. A guardian opening their ward's profile
+     * must not be met with a type error — see the AccountProxy support class.
+     */
+    public ?string $email = null;
 
     // Identity
     #[Rule('required|string|max:255')]
@@ -126,7 +131,10 @@ new class extends Component
     {
         return [
             'email' => [
-                'required',
+                // A member reached through a guardian holds no address, and the
+                // guardian carries it — same rule as the phone number, which the
+                // profile has never required either.
+                $this->user->guardians()->exists() ? 'nullable' : 'required',
                 'email',
                 ValidationRule::unique('users', 'email')->ignore($this->user->id),
             ],

@@ -45,7 +45,12 @@ new class extends Component
     #[Rule('required|string|max:100')]
     public string $newRegisterName = 'Caisse principale';
 
+    public bool $retireRegisterModal = false;
+
     public ?int $selectedRegisterId = null;
+
+    /** Retired registers stay out of the way until you ask for them. */
+    public bool $showRetired = false;
 
     #[Computed]
     public function balance(): int
@@ -106,6 +111,13 @@ new class extends Component
         $this->manualEntryModal = true;
     }
 
+    public function openRetireRegister(): void
+    {
+        Gate::authorize(Permission::CashRegisterManage->value);
+
+        $this->retireRegisterModal = true;
+    }
+
     public function reasonOptions(): array
     {
         return [
@@ -128,7 +140,10 @@ new class extends Component
     #[Computed]
     public function registers(): Illuminate\Database\Eloquent\Collection
     {
-        return CashRegister::orderBy('name')->get();
+        return CashRegister::query()
+            ->when($this->showRetired, fn ($query) => $query->withTrashed())
+            ->orderBy('name')
+            ->get();
     }
 
     public function render(): View
@@ -138,6 +153,39 @@ new class extends Component
             'reasonOptions' => $this->reasonOptions(),
             'users' => $this->users,
         ]);
+    }
+
+    public function restoreRegister(int $registerId): void
+    {
+        Gate::authorize(Permission::CashRegisterManage->value);
+
+        $register = CashRegister::onlyTrashed()->findOrFail($registerId);
+        $register->restore();
+
+        unset($this->register, $this->registers);
+
+        $this->success(__('The cash register :name is back in service.', ['name' => $register->name]));
+    }
+
+    /**
+     * Take a register out of service without erasing its books.
+     *
+     * `cash_register_entries` cascades on delete, so a real DELETE would take
+     * the whole ledger with it. Retiring keeps every movement and lets the
+     * register come back.
+     */
+    public function retireRegister(): void
+    {
+        Gate::authorize(Permission::CashRegisterManage->value);
+
+        $register = CashRegister::findOrFail($this->selectedRegisterId);
+        $register->delete();
+
+        $this->reset(['retireRegisterModal']);
+        $this->selectedRegisterId = CashRegister::value('id');
+        unset($this->register, $this->registers);
+
+        $this->success(__('The cash register :name has been retired.', ['name' => $register->name]));
     }
 
     public function saveManualEntry(): void
@@ -168,6 +216,15 @@ new class extends Component
         $this->success(__('Entry recorded.'));
     }
 
+    /**
+     * Everyone a register may be handed to, filtered in the browser.
+     *
+     * Active members only. The current holder is already shown above the
+     * button that opens this picker, so there is nothing to lose by leaving a
+     * departed member out of the list they can no longer be chosen from.
+     *
+     * @return Collection<int, array{id: int, name: string}>
+     */
     #[Computed]
     public function users(): Collection
     {

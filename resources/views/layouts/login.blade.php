@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html data-db-theme="{{ Auth::user()?->theme ?? 'auto' }}" lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
     <meta charset="utf-8">
@@ -7,6 +7,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Connexion - {{ config('club.name') }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-club.svg') }}">
+    <x-theme-boot />
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @if(app()->environment('production'))
     <script defer src="https://stats.cttottigniesblocry.be/umami-script" data-website-id="9d9befdc-3f9d-4ece-aab7-dc2858457005"></script>
@@ -80,11 +82,6 @@
     </div>
 
     <style>
-        /* Amélioration des focus states pour l'accessibilité */
-        .focus-visible\:ring-club-blue:focus-visible {
-            --tw-ring-color: theme('colors.club.blue');
-        }
-
         /* Animation d'entrée subtile */
         @keyframes fadeInUp {
             from {

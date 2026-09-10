@@ -6,6 +6,7 @@ namespace App\Domains\ClubAdmin\Users\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Domains\ClubAdmin\Club\Models\KeyRing;
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
@@ -14,6 +15,7 @@ use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Competitions\Interclub\Models\TeamUser;
 use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Meetings\Models\Meeting;
@@ -35,6 +37,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -182,7 +185,6 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var array<string, string>
      */
     protected $casts = [
-        'has_key' => 'boolean',
         'email' => 'string',
         'password' => 'hashed',
         'first_name' => 'string',
@@ -240,7 +242,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'force_list',
         'force_list_women',
         'force_list_veterans',
-        'has_key',
         'medical_certificate_path',
         'parental_consent_path',
         'updated_by',
@@ -538,13 +539,23 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->guardians()->exists();
     }
 
-    /**
-     * Whether the member still has a subscription awaiting payment.
-     * Signals the committee to reconcile finances before anonymizing.
-     */
     public function hasPendingPayments(): bool
     {
         return $this->subscriptions()->pendingPayment()->exists();
+    }
+
+    /**
+     * A managed account has no address, so it has nothing to verify.
+     *
+     * Every my-space route sits behind `verified`; without this a guardian
+     * taking a ward's seat would be bounced to a verification notice for an
+     * address that does not exist. The column itself is untouched, so
+     * {@see self::invitationStatus()} still reads such an account as awaiting
+     * activation — which it is, for as long as it stays managed.
+     */
+    public function hasVerifiedEmail(): bool
+    {
+        return $this->email === null || parent::hasVerifiedEmail();
     }
 
     public function heldCashRegisters(): HasMany
@@ -609,6 +620,41 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->birthdate <= $season->end_at->copy()->subYears(self::VETERAN_AGE);
     }
 
+    public function keyRings(): HasMany
+    {
+        return $this->hasMany(KeyRing::class, 'held_by_user_id');
+    }
+
+    /**
+     * The managed accounts this member holds a proxy over.
+     *
+     * A ward is an account with no address of its own — no login, therefore
+     * somebody must act for it — linked to a guardian record that names this
+     * member. Filling the ward's own email is what ends the proxy: the account
+     * becomes autonomous and drops out of this list on its own, with no expiry
+     * date to maintain and no birthday to watch.
+     *
+     * @return Collection<int, self>
+     */
+    public function managedAccounts(): Collection
+    {
+        return self::query()
+            ->whereNull('email')
+            ->whereHas('guardians', fn (EloquentBuilder $query) => $query->where('guardians.user_id', $this->id))
+            ->orderBy('first_name')
+            ->get();
+    }
+
+    /** Whether this member may take the seat of the given managed account. */
+    public function mayActFor(self $ward): bool
+    {
+        if ($ward->email !== null || $ward->is($this)) {
+            return false;
+        }
+
+        return $ward->guardians()->where('guardians.user_id', $this->id)->exists();
+    }
+
     public function meetings(): BelongsToMany
     {
         return $this->belongsToMany(Meeting::class)
@@ -668,6 +714,22 @@ class User extends Authenticatable implements MustVerifyEmail
             ->unique()
             ->values()
             ->all();
+    }
+
+    /**
+     * Whether the member has an interclub life to look at: « Mes matchs » is
+     * scoped to the teams the member belongs to, so team membership is what
+     * makes the screen worth reaching — not the competitive licence alone.
+     *
+     * The two are meant to coincide (interclub ⊂ compétiteur), but a captain
+     * can field a player whose licence has not been recorded as competitive
+     * yet, and the availability and selection notifications deep-link straight
+     * here. Gating the entry points on is_competitor alone left those players
+     * with a notification and no way back to the page.
+     */
+    public function playsInterclub(): bool
+    {
+        return $this->is_competitor || $this->teams()->exists();
     }
 
     public function pools(): BelongsToMany
@@ -986,7 +1048,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function teams(): BelongsToMany
     {
-        return $this->belongsToMany(Team::class);
+        return $this->belongsToMany(Team::class)->using(TeamUser::class);
     }
 
     public function tournaments(): BelongsToMany
@@ -1008,6 +1070,26 @@ class User extends Authenticatable implements MustVerifyEmail
     public function wantsNotification(string $preference): bool
     {
         return (bool) ($this->notification_preferences[$preference] ?? true);
+    }
+
+    /**
+     * Whether the member still has a subscription awaiting payment.
+     * Signals the committee to reconcile finances before anonymizing.
+     */
+    /**
+     * Whether the member currently holds at least one key ring.
+     *
+     * Derived, never stored: the `has_key` column was dropped when key rings
+     * became objects of their own. Retired rings do not count — the member gave
+     * the ring back, or it was written off.
+     *
+     * @return Attribute<bool, never>
+     */
+    protected function hasKey(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): bool => $this->keyRings()->exists(),
+        );
     }
 
     /**

@@ -6,7 +6,7 @@
     <x-public.filter-bar>
         <x-slot:filters>
             <div class="flex items-center gap-2">
-                <label for="seasonId" class="text-sm font-medium text-gray-600">{{ __('Season:') }}</label>
+                <label for="seasonId" class="text-sm font-medium text-muted">{{ __('Season:') }}</label>
                 <x-public.filter-select wire:model.live="seasonId" id="seasonId">
                     @foreach($seasons as $season)
                         <option value="{{ $season->id }}">{{ $season->name }}</option>
@@ -16,7 +16,7 @@
 
             @if($availableCategories->isNotEmpty())
                 <div class="flex items-center gap-2">
-                    <label for="category" class="text-sm font-medium text-gray-600">{{ __('Category:') }}</label>
+                    <label for="category" class="text-sm font-medium text-muted">{{ __('Category:') }}</label>
                     <x-public.filter-select wire:model.live="category" id="category">
                         <option value="">{{ __('All') }}</option>
                         @foreach($availableCategories as $cat)
@@ -28,7 +28,7 @@
 
             @if($availableDivisions->isNotEmpty())
                 <div class="flex items-center gap-2">
-                    <label for="division" class="text-sm font-medium text-gray-600">{{ __('Division:') }}</label>
+                    <label for="division" class="text-sm font-medium text-muted">{{ __('Division:') }}</label>
                     <x-public.filter-select wire:model.live="division" id="division">
                         <option value="">{{ __('All') }}</option>
                         @foreach($availableDivisions as $div)
@@ -40,7 +40,7 @@
 
             @if($availableTeams->isNotEmpty())
                 <div class="flex items-center gap-2">
-                    <label for="teamId" class="text-sm font-medium text-gray-600">{{ __('Team:') }}</label>
+                    <label for="teamId" class="text-sm font-medium text-muted">{{ __('Team:') }}</label>
                     <x-public.filter-select wire:model.live="teamId" id="teamId">
                         <option value="0">{{ __('All') }}</option>
                         @foreach($availableTeams as $team)
@@ -54,7 +54,7 @@
         @if($activeFiltersCount > 0)
             <x-slot:chips>
                 <div class="mt-3 flex flex-wrap items-center gap-2">
-                    <span class="text-sm text-gray-600">{{ __('Active filters:') }}</span>
+                    <span class="text-sm text-muted">{{ __('Active filters:') }}</span>
 
                     @if($seasonId !== $defaultSeasonId && $seasons->firstWhere('id', $seasonId))
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-club-blue text-white">
@@ -88,7 +88,7 @@
                         @endif
                     @endif
 
-                    <button wire:click="clearAllFilters" class="text-xs text-club-blue hover:text-club-blue-light font-medium">
+                    <button wire:click="clearAllFilters" class="text-xs text-primary hover:text-primary font-medium">
                         {{ __('Clear all filters') }}
                     </button>
                 </div>
@@ -121,16 +121,16 @@
                 <x-public.team-results :team="$team" />
             @endforeach
         @empty
-            <div class="text-center py-12 bg-gray-50 rounded-lg">
+            <div class="text-center py-12 bg-base-200 rounded-lg">
                 @if($activeFiltersCount > 0)
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('No results match your filters') }}</h3>
-                    <p class="text-gray-600 mb-4">{{ __('Try adjusting your filters.') }}</p>
+                    <h3 class="text-lg font-medium text-base-content mb-2">{{ __('No results match your filters') }}</h3>
+                    <p class="text-muted mb-4">{{ __('Try adjusting your filters.') }}</p>
                     <button wire:click="clearAllFilters" class="rounded-lg bg-club-blue px-6 py-2 text-sm font-semibold text-white transition-colors hover:bg-club-blue-light">
                         {{ __('Clear all filters') }}
                     </button>
                 @else
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('No results available') }}</h3>
-                    <p class="text-gray-600">{{ __('Results will be published after the first competitions.') }}</p>
+                    <h3 class="text-lg font-medium text-base-content mb-2">{{ __('No results available') }}</h3>
+                    <p class="text-muted">{{ __('Results will be published after the first competitions.') }}</p>
                 @endif
             </div>
         @endforelse

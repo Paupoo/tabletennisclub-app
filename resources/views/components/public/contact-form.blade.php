@@ -5,36 +5,36 @@
     
     <div class="grid md:grid-cols-2 gap-6 mb-6">
         <div>
-            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">{{ __('First name *') }}</label>
+            <label for="first_name" class="block text-sm font-medium text-muted mb-2">{{ __('First name *') }}</label>
             <input type="text" id="first_name" name="first_name" required value="{{ old('first_name') }}"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors"
+                class="w-full px-4 py-3 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
                 placeholder="{{ __('Your full name') }}">
             @error('first_name')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
             @enderror
         </div>
         <div>
-            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">Nom de famille *</label>
+            <label for="last_name" class="block text-sm font-medium text-muted mb-2">Nom de famille *</label>
             <input type="text" id="last_name" name="last_name" required value="{{ old('last_name') }}"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors"
+                class="w-full px-4 py-3 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
                 placeholder="Votre nom de famille">
             @error('last_name')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
             @enderror
         </div>
         <div>
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Adresse Email *</label>
+            <label for="email" class="block text-sm font-medium text-muted mb-2">Adresse Email *</label>
             <input type="email" id="email" name="email" required value="{{ old('email') }}"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors"
+                class="w-full px-4 py-3 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
                 placeholder="votre@email.com">
             @error('email')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
             @enderror
         </div>
         <div class="mb-6">
-            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">{{ __('Phone Number') }}</label>
+            <label for="phone" class="block text-sm font-medium text-muted mb-2">{{ __('Phone Number') }}</label>
             <input type="tel" id="phone" name="phone" value="{{ old('phone') }}"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors"
+                class="w-full px-4 py-3 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
                 placeholder="06 12 34 56 78">
             @error('phone')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -43,9 +43,9 @@
     </div>
 
     <div class="mb-6" x-data="{ selectedInterest: '{{ old('interest') }}' }">
-        <label for="interest" class="block text-sm font-medium text-gray-700 mb-2">{{ __('I am interested in *') }}</label>
+        <label for="interest" class="block text-sm font-medium text-muted mb-2">{{ __('I am interested in *') }}</label>
         <select id="interest" name="interest" required @change="onRequestTypeChange" x-model="selectedInterest"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors">
+            class="w-full px-4 py-3 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors">
             <option value="">{{ __('Select an option') }}</option>
             @foreach (\App\Domains\Shared\Enums\ContactReasonEnum::cases() as $contactReason)
             <option value="{{ $contactReason->name }}" {{ old('interest') == $contactReason->name ? 'selected' : '' }}>{{ $contactReason->getLabel() }}</option>    
@@ -57,17 +57,17 @@
     </div>
 
     <div x-show="showMembershipFields" x-transition
-        class="mb-6 bg-blue-50 p-6 rounded-lg space-y-4 border border-blue-200">
-        <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <x-icon name="o-clipboard-document-list" class="w-5 h-5 mr-2 text-club-blue" />
+        class="mb-6 bg-info/10 p-6 rounded-lg space-y-4 border border-info/40">
+        <h4 class="text-lg font-semibold text-base-content mb-4 flex items-center">
+            <x-icon name="o-clipboard-document-list" class="w-5 h-5 mr-2 text-primary" />
             Informations sur votre adhésion
         </h4>
 
         <!-- Nombre de membres -->
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Nombre de membres de la famille</label>
+            <label class="block text-sm font-medium text-muted mb-2">Nombre de membres de la famille</label>
             <select x-model="familyMembers" @change="validateCompetitors()" name="membership_family_members"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                class="w-full px-4 py-3 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                 <option value="1">1 personne</option>
                 <option value="2">2 personnes</option>
                 <option value="3">3 personnes</option>
@@ -78,29 +78,29 @@
 
         <!-- Nombre de compétiteurs -->
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label class="block text-sm font-medium text-muted mb-2">
                 Nombre de membres souhaitant participer aux compétitions
             </label>
             <select x-model="competitors" name="membership_competitors"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                class="w-full px-4 py-3 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                 <template x-for="i in parseInt(familyMembers) + 1" :key="i - 1">
                     <option :value="i - 1"
                         x-text="i-1 === 0 ? 'Aucun compétiteur' : (i-1) + ' compétiteur' + (i-1 > 1 ? 's' : '')">
                     </option>
                 </template>
             </select>
-            <p class="text-xs text-gray-500 mt-1">
+            <p class="text-xs text-subtle mt-1">
                 Licence récréative : 60€ | Licence compétition : 125€
             </p>
         </div>
 
         <!-- Séances d'entraînement -->
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label class="block text-sm font-medium text-muted mb-2">
                 Nombre de séances d'entraînement souhaitées
             </label>
             <select x-model="trainingSessions" name="membership_training_sessions"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                class="w-full px-4 py-3 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                 <option value="0">{{ __('No training sessions') }}</option>
                 <option value="1">{{ __('1 session per week') }}</option>
                 <option value="2">{{ __('2 sessions per week') }}</option>
@@ -109,13 +109,13 @@
         </div>
 
         <!-- CONSERVATION TOTALE DU CALCULATEUR DE COÛT -->
-        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-            <h5 class="font-semibold text-gray-900 mb-3 flex items-center">
+        <div class="bg-base-100 p-4 rounded-lg border border-base-300 shadow-sm">
+            <h5 class="font-semibold text-base-content mb-3 flex items-center">
                 Estimation du coût annuel
             </h5>
 
             <!-- Détail des coûts -->
-            <div class="space-y-2 mb-3 text-sm text-gray-600">
+            <div class="space-y-2 mb-3 text-sm text-muted">
                 <div x-show="getRecreationalMembers() > 0" class="flex justify-between">
                     <span>Licence récréative (<span x-text="getRecreationalMembers()"></span> membre<span
                             x-show="getRecreationalMembers() > 1">s</span>)</span>
@@ -133,19 +133,19 @@
                 </div>
             </div>
 
-            <div class="border-t pt-3">
+            <div class="border-t border-base-300 pt-3">
                 <div class="flex justify-between items-center">
-                    <span class="text-xl font-bold text-club-blue">Total annuel</span>
-                    <span class="text-2xl font-bold text-club-blue" x-text="calculateTotal() + '€'"></span>
+                    <span class="text-xl font-bold text-primary">Total annuel</span>
+                    <span class="text-2xl font-bold text-primary" x-text="calculateTotal() + '€'"></span>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="mb-6">
-        <label for="message" class="block text-sm font-medium text-gray-700 mb-2">Message *</label>
+        <label for="message" class="block text-sm font-medium text-muted mb-2">Message *</label>
         <textarea id="message" name="message" rows="4" required
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors resize-none"
+            class="w-full px-4 py-3 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors resize-none"
             placeholder="{{ __('Tell us about your table tennis experience or any questions you have...') }}">{{ old('message') }}</textarea>
         @error('message')
             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -153,9 +153,9 @@
     </div>
 
     <div class="mb-6">
-        <label for="captcha" class="block text-sm font-medium text-gray-700 mb-2">Combien font {{ session('captcha.a') }} {{ session('captcha.operation') }} {{ session('captcha.b') }} ? *</label>
+        <label for="captcha" class="block text-sm font-medium text-muted mb-2">Combien font {{ session('captcha.a') }} {{ session('captcha.operation') }} {{ session('captcha.b') }} ? *</label>
         <input type="number" id="captcha" name="captcha" required
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors"
+            class="w-full px-4 py-3 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
             placeholder="{{ __('Enter the result') }}">
         @error('captcha')
             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -165,8 +165,8 @@
     <div class="mb-6">
         <label class="flex items-start">
             <input type="checkbox" name="consent" required {{ old('consent') ? 'checked' : '' }}
-                class="mt-1 mr-3 h-4 w-4 text-club-blue focus:ring-club-blue border-gray-300 rounded-sm">
-            <span class="text-sm text-gray-600">
+                class="mt-1 mr-3 h-4 w-4 text-primary focus:ring-primary border-base-300 rounded-sm">
+            <span class="text-sm text-muted">
                 J'accepte que mes données soient utilisées pour me recontacter concernant ma demande. *
             </span>
         </label>
@@ -187,7 +187,7 @@
         </span>
     </button>
 
-    <p class="text-xs text-gray-500 mt-4 text-center">
+    <p class="text-xs text-subtle mt-4 text-center">
         * Champs obligatoires
     </p>
 </form>

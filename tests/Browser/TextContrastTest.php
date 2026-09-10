@@ -3,12 +3,14 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Domains\Shared\Enums\Role;
 use Database\Seeders\InterclubResultsSeeder;
 use Database\Seeders\InterclubScheduleSeeder;
@@ -100,7 +102,10 @@ $contrastProbe = <<<'JS'
 
   const targets = new Set();
   for (const root of roots) {
-    for (const el of root.querySelectorAll('p, span, div, td, th, li, label, small, a, button')) targets.add(el);
+    // strong/b/em/code carry the words a reader is meant to notice, and prose
+    // drives them from their own theme variables — the article body failed on
+    // exactly those while the paragraph around them measured fine.
+    for (const el of root.querySelectorAll('p, span, div, td, th, li, label, small, a, button, strong, b, em, i, code, dt, dd')) targets.add(el);
   }
 
   const failures = [];
@@ -315,3 +320,108 @@ it('keeps text readable on the dark surfaces of the public site', function (stri
     ['results', 'footer'],
     ['home', '[data-sponsor-tile]'],
 ]);
+
+/*
+ * Everything above measures the light theme, because until now that was the only
+ * theme the application was ever asked about: `inDarkMode` appeared nowhere in
+ * the suite, which is how a page could serve 1.02:1 with a green run.
+ *
+ * The dark theme is not a variant of the light one here — the greys the markup
+ * asks for are clamped towards a colour computed from `base-content`, so they
+ * MOVE when the theme flips, while any hard-coded surface underneath them does
+ * not. That is a different failure mode, and it needs its own sweep.
+ *
+ * The authentication screens are deliberately absent: `layouts/login` paints its
+ * page with a gradient, and a gradient has no `backgroundColor` for the probe to
+ * walk, so it would fall back to assuming white and report failures nobody can
+ * see. Their dark theme is guarded by DarkModeSurfaceTest instead, which reads
+ * solid fills only and is immune to that blind spot.
+ */
+it('keeps text readable on the dark surfaces of the public site in dark mode', function (string $route, string $surface) use ($probe): void {
+    Club::factory()->ownClub()->create();
+
+    $page = visit(route($route))->inDarkMode()->wait(1);
+
+    $result = $page->script($probe($surface));
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold on %s in dark mode, inside %s:\n%s",
+        $route,
+        $surface,
+        implode("\n", $failures),
+    ));
+})->with([
+    ['home', 'footer'],
+    ['results', 'footer'],
+    ['home', '[data-sponsor-tile]'],
+]);
+
+/*
+ * The back office already answers to the dark theme, and the next lot rewrites
+ * three of its global clamps — `.text-error`, `.badge-soft` and the dark value
+ * of `--color-base-300`, which today is darker than the card it borders. These
+ * two screens carry the densest badges and the most inline error text in the
+ * application, so they are where a mistake in those clamps would surface first.
+ */
+it('keeps body text above the AA threshold on the dense back-office screens in dark mode', function (string $route, Role $role) use ($probe): void {
+    $this->actingAs(User::factory()->withRole($role)->create());
+
+    $page = visit(route($route))->inDarkMode()->wait(1);
+
+    $result = $page->script($probe());
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold on %s in dark mode:\n%s",
+        $route,
+        implode("\n", $failures),
+    ));
+})->with([
+    ['admin.treasury.payments', Role::TREASURY],
+    ['admin.users.delegations', Role::MEMBERS],
+]);
+
+/*
+ * The article body is where the dark theme did its worst damage, and where no
+ * assertion reached. `articles/show.blade.php` pins paragraphs, headings and
+ * list items through `prose-*` overrides, but says nothing about `strong`, `td`
+ * or `th` — daisyUI drives those from `--tw-prose-bold`, which follows the
+ * theme. Half the body followed the theme and half did not, so a convocation's
+ * date and venue — carried by the `<strong>` precisely because they matter —
+ * measured 1.12:1 while the paragraph around them read fine.
+ *
+ * The content below is not decorative: it reproduces that exact shape, a table
+ * and emphasised text inside a paragraph, because a fixture without them proves
+ * nothing about the pairing that failed.
+ */
+it('keeps the article body readable in both themes', function (string $theme) use ($probe): void {
+    Club::factory()->ownClub()->create();
+
+    $article = NewsPost::factory()->create([
+        'slug' => 'convocation-assemblee-generale',
+        'status' => NewsPostStatusEnum::PUBLISHED,
+        'content' => <<<'HTML'
+            <p>Les membres sont convoqués à l'<strong>assemblée générale de fin de saison</strong>.</p>
+            <table>
+              <thead><tr><th>Date</th><th>Lieu</th></tr></thead>
+              <tbody><tr><td>Jeudi 12 juin</td><td>Centre sportif J. Demeester</td></tr></tbody>
+            </table>
+            <ul><li>Rapport moral</li><li>Élection du comité</li></ul>
+            <blockquote>La présence de chaque membre compte.</blockquote>
+            HTML,
+    ]);
+
+    $page = visit(route('public.clubPosts.show', $article->slug));
+    $page = $theme === 'dark' ? $page->inDarkMode() : $page->inLightMode();
+    $page->wait(1);
+
+    $result = $page->script($probe('.prose'));
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold in the article body (%s theme):\n%s",
+        $theme,
+        implode("\n", $failures),
+    ));
+})->with(['light', 'dark']);

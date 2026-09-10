@@ -1,10 +1,10 @@
 @props(['articles' => collect([])])
 
-<section id="news" class="py-20 bg-gray-50">
+<section id="news" class="py-20 bg-base-200">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16 animate-on-scroll">
-            <h2 class="text-4xl font-bold text-gray-900 mb-4">{{ __('Club News') }}</h2>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            <h2 class="text-4xl font-bold text-base-content mb-4">{{ __('Club News') }}</h2>
+            <p class="text-xl text-muted max-w-3xl mx-auto">
                 Restez informé des dernières nouvelles, événements et réussites de notre communauté
             </p>
         </div>

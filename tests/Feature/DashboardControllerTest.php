@@ -7,6 +7,7 @@ use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
 use App\Domains\Trainings\Models\Training;
@@ -177,7 +178,53 @@ describe('DashboardController', function (): void {
         expect($response->viewData('memberTiles'))->toBeArray()->not->toBeEmpty();
     });
 
-    it('adds interclub tiles for competitors', function (): void {
+    it('lays the member tiles out in the order a member reads them', function (): void {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $labels = array_column($response->viewData('memberTiles'), 'label');
+        expect($labels)->toBe(['Mon profil', 'Ma saison', 'Événements', 'Mes paiements']);
+    });
+
+    it('slots the interclub tile between the season and the agenda', function (): void {
+        $season = Season::factory()->create(['is_active' => true]);
+        $user = User::factory()->create();
+        Team::factory()->create(['season_id' => $season->id])->users()->attach($user->id);
+
+        $response = $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $labels = array_column($response->viewData('memberTiles'), 'label');
+        expect($labels)->toBe(['Mon profil', 'Ma saison', 'Mes matchs', 'Événements', 'Mes paiements']);
+    });
+
+    it('drops the notifications tile from the member section', function (): void {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $labels = array_column($response->viewData('memberTiles'), 'label');
+        expect($labels)->not->toContain('Notifications');
+    });
+
+    it('sends the payments tile to the member payments screen', function (): void {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $tiles = collect($response->viewData('memberTiles'))->keyBy('label');
+        expect($tiles['Mes paiements']['href'])->toBe(route('admin.user.payments', $user));
+    });
+
+    it('adds the interclub tile for competitors', function (): void {
         Season::factory()->create(['is_active' => true]);
         $user = User::factory()->isCompetitor()->create();
 
@@ -186,7 +233,63 @@ describe('DashboardController', function (): void {
             ->assertOk();
 
         $labels = array_column($response->viewData('memberTiles'), 'label');
-        expect($labels)->toContain('Disponibilités')->toContain('Mes matchs');
+        expect($labels)->toContain('Mes matchs');
+    });
+
+    it('adds the interclub tile for a team member whose licence is not competitive', function (): void {
+        $season = Season::factory()->create(['is_active' => true]);
+        $user = User::factory()->create();
+        Team::factory()->create(['season_id' => $season->id])->users()->attach($user->id);
+
+        expect($user->is_competitor)->toBeFalse();
+
+        $response = $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $labels = array_column($response->viewData('memberTiles'), 'label');
+        expect($labels)->toContain('Mes matchs');
+    });
+
+    it('keeps the interclub tile away from a member who plays in no team', function (): void {
+        Season::factory()->create(['is_active' => true]);
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $labels = array_column($response->viewData('memberTiles'), 'label');
+        expect($labels)->not->toContain('Mes matchs');
+    });
+
+    it('offers a plain captain only the screens a captain may open', function (): void {
+        $season = Season::factory()->create(['is_active' => true]);
+        $captain = User::factory()->create();
+        Team::factory()->create(['season_id' => $season->id, 'captain_id' => $captain->id]);
+
+        $response = $this->actingAs($captain)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertViewHas('showCaptain', true);
+
+        $response->assertSee(route('admin.interclubs.captain-selection'));
+        $response->assertSee(route('admin.interclubs.results'));
+        $response->assertDontSee(route('admin.interclubs.teams'));
+        $response->assertDontSee(route('admin.interclubs.interclubs'));
+    });
+
+    it('keeps the season screens for whoever holds the interclubs duty', function (): void {
+        $season = Season::factory()->create(['is_active' => true]);
+        $delegate = User::factory()->withRole(Role::INTERCLUBS)->create();
+        Team::factory()->create(['season_id' => $season->id, 'captain_id' => $delegate->id]);
+
+        $response = $this->actingAs($delegate)
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $response->assertSee(route('admin.interclubs.teams'));
+        $response->assertSee(route('admin.interclubs.interclubs'));
     });
 
     it('gives an administrator every agenda block', function (): void {

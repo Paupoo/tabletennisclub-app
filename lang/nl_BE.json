@@ -4520,5 +4520,14 @@
     "Each of them gets 48 hours to confirm. The emails go out as soon as you save.": "Elk van hen heeft 48 uur om te bevestigen. De e-mails vertrekken zodra u opslaat.",
     "Save and send the offers": "Opslaan en de aanbiedingen versturen",
     "No limit": "Geen limiet",
-    ":count active registrations for :max spots: the tournament stays over capacity. Nobody is unregistered.": ":count actieve inschrijvingen voor :max plaatsen: het toernooi blijft overboekt. Niemand wordt uitgeschreven."
+    ":count active registrations for :max spots: the tournament stays over capacity. Nobody is unregistered.": ":count actieve inschrijvingen voor :max plaatsen: het toernooi blijft overboekt. Niemand wordt uitgeschreven.",
+    "Back to my account (:name)": "Terug naar mijn account (:name)",
+    "I am acting for": "Ik handel voor",
+    "You are acting for :ward.": "U handelt voor :ward.",
+    "Signed in as :name.": "Aangemeld als :name.",
+    "This cannot be done on behalf of another member.": "Deze actie kan niet namens een ander lid worden uitgevoerd.",
+    ":name has no address of their own: :guardian answers for them and manages their account.": ":name heeft geen eigen adres: :guardian antwoordt voor hem en beheert zijn account.",
+    ":name has no address of their own, and no guardian with an account to act for them.": ":name heeft geen eigen adres en geen voogd met een account om namens hem te handelen.",
+    ":count member(s) are managed by a guardian and have no login of their own to be handed.": ":count lid/leden worden beheerd door een voogd en hebben geen eigen login om te ontvangen.",
+    "Acting for :ward": "Handelt voor :ward"
 }

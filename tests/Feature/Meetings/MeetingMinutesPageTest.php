@@ -347,3 +347,39 @@ describe('Minutes page — a free pen never loses a draft to the poll', function
             ->assertCount('announcements', 2);
     });
 });
+
+describe('Minutes page — the poll leaves the date picker alone', function (): void {
+    test('a poll tick with nothing to sync does not re-render the page', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+
+        $component = Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->call('addActionItem');
+
+        // Mary keys its date picker on rand(), so a re-render hands the morph a new
+        // key and the field — flatpickr instance, open calendar and all — is rebuilt
+        // from scratch. A stable key across a tick means no morph happened at all.
+        preg_match('/datepicker-\d+/', $component->html(), $beforeTick);
+        $component->call('syncDraft');
+        preg_match('/datepicker-\d+/', $component->html(), $afterTick);
+
+        expect($beforeTick)->not->toBeEmpty()
+            ->and($afterTick[0])->toBe($beforeTick[0]);
+    });
+
+    test('a read-only viewer still gets the note taker updates on a tick', function (): void {
+        $holder = minutesAdmin();
+        $viewer = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $holder->id]);
+        $meeting->acquireMinutesLock($holder);
+        $meeting->minutes()->create(['notes' => 'première version']);
+
+        $component = Livewire::actingAs($viewer)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting]);
+
+        $meeting->minutes->update(['notes' => 'version en direct']);
+
+        $component->call('syncDraft')->assertSet('notes', 'version en direct');
+    });
+});

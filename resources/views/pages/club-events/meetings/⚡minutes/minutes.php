@@ -213,6 +213,11 @@ new class extends Component
     public function syncDraft(): void
     {
         if ($this->holdsLock || ! $this->lockHolder instanceof User) {
+            // Nothing to show either, so skip the render entirely: Mary keys its date
+            // picker on rand(), so any morph rebuilds the field from scratch and closes
+            // the calendar the note taker is picking a due date from.
+            $this->skipRender();
+
             return;
         }
 

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
@@ -352,6 +353,85 @@ describe('sorting', function (): void {
             ->set('sortBy', ['column' => 'not_a_column', 'direction' => 'asc'])
             ->assertStatus(200)
             ->get('users');
+    });
+
+    /*
+     * The whitelist guarded the column and left the direction open, so the same
+     * tampered URL reached orderBy() through the other half and threw.
+     */
+    it('falls back to a safe default when the sort direction is unknown', function (): void {
+        User::factory()->count(3)->create();
+
+        Livewire::test(USER_INDEX_COMPONENT)
+            ->set('sortBy', ['column' => 'name', 'direction' => 'nonsense'])
+            ->assertStatus(200)
+            ->get('users');
+    });
+
+    /*
+     * The "Licence" header is keyed `is_competitive`, but no such column exists
+     * on `users`: holding a competitive licence is a fact of the subscription for
+     * the current season. Clicking the header used to reach MySQL as an unknown
+     * column — and passed under SQLite, which is why it shipped.
+     */
+    it('sorts by competitive licence without reaching for a column of that name', function (): void {
+        $season = Season::current();
+
+        $competitor = User::factory()->create(['last_name' => 'Zulu']);
+        $recreational = User::factory()->create(['last_name' => 'Alpha']);
+
+        Subscription::factory()->create([
+            'user_id' => $competitor->id,
+            'season_id' => $season->id,
+            'is_competitive' => true,
+            'status' => 'confirmed',
+        ]);
+        Subscription::factory()->create([
+            'user_id' => $recreational->id,
+            'season_id' => $season->id,
+            'is_competitive' => false,
+            'status' => 'confirmed',
+        ]);
+
+        $ids = Livewire::test(USER_INDEX_COMPONENT)
+            ->set('sortBy', ['column' => 'is_competitive', 'direction' => 'desc'])
+            ->assertStatus(200)
+            ->get('users')
+            ->pluck('id')
+            ->all();
+
+        expect(array_search($competitor->id, $ids, true))
+            ->toBeLessThan(array_search($recreational->id, $ids, true));
+    });
+
+    /*
+     * A member is a competitor through their *active* subscription: a cancelled
+     * one must not order them with the competitors.
+     */
+    it('ignores a cancelled competitive subscription when ordering', function (): void {
+        $cancelled = User::factory()->create();
+        $competitor = User::factory()->create();
+
+        Subscription::factory()->cancelled()->create([
+            'user_id' => $cancelled->id,
+            'season_id' => Season::current()->id,
+            'is_competitive' => true,
+        ]);
+        Subscription::factory()->create([
+            'user_id' => $competitor->id,
+            'season_id' => Season::current()->id,
+            'is_competitive' => true,
+            'status' => 'confirmed',
+        ]);
+
+        $ids = Livewire::test(USER_INDEX_COMPONENT)
+            ->set('sortBy', ['column' => 'is_competitive', 'direction' => 'desc'])
+            ->get('users')
+            ->pluck('id')
+            ->all();
+
+        expect(array_search($competitor->id, $ids, true))
+            ->toBeLessThan(array_search($cancelled->id, $ids, true));
     });
 });
 

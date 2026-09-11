@@ -15,9 +15,26 @@ use Endroid\QrCode\Writer\PngWriter;
 class GeneratePaymentQR
 {
     /**
+     * The QR as a `data:` URI, for a browser.
+     *
+     * Not for an email: Gmail strips `data:` sources from `<img>`, so a message
+     * built this way shows its alt text and nothing else — which is exactly what
+     * it did in production while Mailpit rendered it fine in development. Mail
+     * views embed {@see self::png()} instead.
+     *
      * @throws ValidationException
      */
     public function __invoke(Payment $payment): string
+    {
+        return 'data:image/png;base64,' . base64_encode($this->png($payment));
+    }
+
+    /**
+     * The QR as raw PNG bytes, to be embedded in a message.
+     *
+     * @throws ValidationException
+     */
+    public function png(Payment $payment): string
     {
         $BIC = Club::ourClub()->first()->bic;
         $IBAN = Club::ourClub()->first()->bank_account;
@@ -39,7 +56,6 @@ class GeneratePaymentQR
 
         $result = $builder->build();
 
-        // $result->saveToFile(path: __DIR__ . '/bancontact_qr.png');
-        return 'data:image/png;base64,' . base64_encode($result->getString());
+        return $result->getString();
     }
 }

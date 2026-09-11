@@ -6,6 +6,7 @@ use App\Actions\User\AnonymizeUserAction;
 use App\Actions\User\CreateUserAction;
 use App\Actions\User\RecalculateForceListAction;
 use App\Actions\User\RestoreUserAction;
+use App\Actions\User\SendGuardianInvitationAction;
 use App\Actions\User\SendInvitationAction;
 use App\Actions\User\SoftDeleteUserAction;
 use App\Data\User\CreateUserData;
@@ -15,6 +16,7 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Permission;
+use App\Jobs\SendGuardianInvitationJob;
 use App\Jobs\SendMemberInvitationJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
@@ -62,6 +64,9 @@ new class extends Component
 
     // ── Modals ───────────────────────────────────────────────────────────────
     public bool $deleteModal = false;
+
+    /** How many parents the selection is about to write to on a ward's behalf. */
+    public int $guardiansToInvite = 0;
 
     #[Url]
     public bool $hasCashRegister = false;
@@ -127,13 +132,18 @@ new class extends Component
      * not listed here — including a tampered `sortBy` URL value — falls back to a
      * safe default instead of reaching `orderBy()` with a raw, unknown column.
      *
+     * `is_competitive` is deliberately absent: the "Licence" header is keyed on
+     * that name, but no such column exists on `users` — holding a competitive
+     * licence is a fact of the subscription for the current season. Listing it
+     * here is what let a header click reach MySQL as an unknown column; it is
+     * ordered by {@see User::scopeOrderByCompetitiveStatus()} instead.
+     *
      * @var array<string, array<int, string>>
      */
     protected array $sortableColumns = [
         'name' => ['first_name', 'last_name'],
         'last_name' => ['last_name', 'first_name'],
         'email' => ['email'],
-        'is_competitive' => ['is_competitive'],
         'ranking' => ['ranking'],
     ];
 
@@ -189,7 +199,7 @@ new class extends Component
     {
         Gate::authorize('sendEmail', User::class);
 
-        $this->dispatchInvitations(includeWaiting: false);
+        $this->dispatchInvitations(confirmed: false);
     }
 
     public function bulkSubscribe(): void
@@ -256,7 +266,7 @@ new class extends Component
     {
         Gate::authorize('sendEmail', User::class);
 
-        $this->dispatchInvitations(includeWaiting: true);
+        $this->dispatchInvitations(confirmed: true);
     }
 
     /**
@@ -335,6 +345,10 @@ new class extends Component
                     'not_invited' => __('Not invited'),
                     'pending' => __('Pending'),
                     'expired' => __('Expired'),
+                    'guardian_to_invite' => __('Guardian to invite'),
+                    'guardian_invited' => __('Guardian invited'),
+                    'managed' => __('Managed by a guardian'),
+                    'guardian_unreachable' => __('No reachable guardian'),
                     default => __('Account created'),
                 },
             ];
@@ -398,17 +412,26 @@ new class extends Component
      * it. "Not invited" is the one that matters after an import: those are the
      * members the club recorded and has not written to yet.
      *
+     * The second half is the same journey for a member with no address of their
+     * own, who travels it through a guardian. They are in the same radio because
+     * the question is the same one; they are separate entries because the
+     * gesture that moves them along writes to somebody else.
+     *
      * @return array<int, array{id: string, name: string}>
      */
     #[Computed]
     public function invitationStates(): array
     {
         return [
-            ['id' => '',            'name' => __('All')],
-            ['id' => 'not_invited', 'name' => __('Not invited')],
-            ['id' => 'pending',     'name' => __('Pending')],
-            ['id' => 'expired',     'name' => __('Expired')],
-            ['id' => 'active',      'name' => __('Account created')],
+            ['id' => '',                     'name' => __('All')],
+            ['id' => 'not_invited',          'name' => __('Not invited')],
+            ['id' => 'pending',              'name' => __('Pending')],
+            ['id' => 'expired',              'name' => __('Expired')],
+            ['id' => 'active',               'name' => __('Account created')],
+            ['id' => 'guardian_to_invite',   'name' => __('Guardian to invite')],
+            ['id' => 'guardian_invited',     'name' => __('Guardian invited')],
+            ['id' => 'managed',              'name' => __('Managed by a guardian')],
+            ['id' => 'guardian_unreachable', 'name' => __('No reachable guardian')],
         ];
     }
 
@@ -527,6 +550,40 @@ new class extends Component
         $this->success(__('User restored.'));
     }
 
+    /**
+     * Invite the people who answer for a member with no address of their own.
+     *
+     * All of them, not the first: separated parents are both on the file and a
+     * proxy is not exclusive, so the office is not made to choose between them.
+     */
+    public function sendGuardianInvitation(int $userId): void
+    {
+        Gate::authorize('sendEmail', User::class);
+
+        $user = User::with('guardians.member')->findOrFail($userId);
+        $guardians = $user->invitableGuardians();
+
+        if ($guardians->isEmpty()) {
+            $this->error($this->whyNotInvitable($user));
+
+            return;
+        }
+
+        $sent = $guardians->filter(
+            fn (Guardian $guardian): bool => SendGuardianInvitationAction::handle($guardian)
+        );
+
+        if ($sent->isEmpty()) {
+            $this->error($this->whyNotInvitable($user->refresh()->load('guardians.member')));
+
+            return;
+        }
+
+        $this->success(__('Invitation sent to :names.', [
+            'names' => $sent->pluck('full_name')->join(', ', ' ' . __('and') . ' '),
+        ]));
+    }
+
     public function sendInvitation(int $userId): void
     {
         Gate::authorize('sendEmail', User::class);
@@ -637,7 +694,15 @@ new class extends Component
 
         $sortColumns = $this->sortableColumns[$this->sortBy['column']] ?? ['first_name', 'last_name'];
 
+        // The whitelist guarded the column and left the direction open, where a
+        // tampered value reaches `orderBy()` and throws rather than falling back.
+        $direction = $this->sortBy['direction'] === 'desc' ? 'desc' : 'asc';
+
         return $query
+            // Guardians carry the account state of every managed member on the
+            // page — see {@see User::guardianshipStatus()} — so the badge, the
+            // note and the row menu would each lazy load without this.
+            ->with('guardians.member')
             ->when($this->search, fn ($q) => $q->searchName($this->search))
             ->when(
                 ! $this->showArchived && $this->selectedLicenceType === 'competitive',
@@ -672,11 +737,15 @@ new class extends Component
             ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
             ->when($this->hasKey, fn ($q) => $q->whereHas('keyRings'))
             ->when($this->hasCashRegister, fn ($q) => $q->whereHas('heldCashRegisters'))
-            ->tap(function ($query) use ($sortColumns): void {
-                foreach ($sortColumns as $column) {
-                    $query->orderBy($column, $this->sortBy['direction']);
-                }
-            })
+            ->when(
+                $this->sortBy['column'] === 'is_competitive',
+                fn ($q) => $q->orderByCompetitiveStatus($direction),
+                fn ($q) => $q->tap(function ($query) use ($sortColumns, $direction): void {
+                    foreach ($sortColumns as $column) {
+                        $query->orderBy($column, $direction);
+                    }
+                })
+            )
             ->paginate(15);
     }
 
@@ -703,23 +772,37 @@ new class extends Component
      * Queue the invitations the selection actually calls for, and say out loud
      * who was left out.
      *
-     * Three kinds of member are not invited by a bulk send. One who already has
-     * an account has nothing to accept. One with no address of their own has
-     * nowhere to receive a login — the link would land in a guardian's mailbox
-     * and set a password on somebody else's account. And one still holding a
-     * valid invitation is only sent a second one on purpose: the new link
-     * invalidates the one they may be about to click.
+     * A member who already has an account has nothing to accept. One with no
+     * address of their own has nowhere to receive a login — the link would land
+     * in a guardian's mailbox and set a password on somebody else's account — so
+     * the send is routed to their guardians instead, who create an account of
+     * their own and gain the proxy over them. And one still holding a valid
+     * invitation is only sent a second one on purpose: the new link invalidates
+     * the one they may be about to click.
+     *
+     * Because of that routing, one click can now write to people who are not in
+     * the selection. That is worth a confirmation carrying both counts, which is
+     * what `$confirmed` gates — the same gesture that owns the re-invitation.
      */
-    private function dispatchInvitations(bool $includeWaiting): void
+    private function dispatchInvitations(bool $confirmed): void
     {
-        $members = User::query()->whereIn('id', $this->selected)->get();
+        $members = User::query()->with('guardians.member')->whereIn('id', $this->selected)->get();
 
         $registered = $members->filter(fn (User $member): bool => $member->invitationStatus() === 'active');
-        $unreachable = $members->filter(fn (User $member): bool => $member->invitationStatus() !== 'active' && $member->email === null);
+        $managed = $members->filter(fn (User $member): bool => $member->email === null)->diff($registered);
         $waiting = $members->filter(fn (User $member): bool => $member->invitationStatus() === 'pending' && $member->email !== null);
 
-        if (! $includeWaiting && $waiting->isNotEmpty()) {
+        // A parent answering for two selected children is written to once.
+        $guardians = $managed
+            ->flatMap(fn (User $ward): Collection => $ward->invitableGuardians())
+            ->unique('id')
+            ->values();
+
+        $unreachable = $managed->filter(fn (User $ward): bool => $ward->invitableGuardians()->isEmpty());
+
+        if (! $confirmed && ($waiting->isNotEmpty() || $guardians->isNotEmpty())) {
             $this->waitingOnInvitation = $waiting->count();
+            $this->guardiansToInvite = $guardians->count();
             $this->confirmReinviteModal = true;
 
             return;
@@ -727,26 +810,35 @@ new class extends Component
 
         $targets = $members
             ->diff($registered)
-            ->diff($unreachable)
-            ->when(! $includeWaiting, fn (Collection $ready): Collection => $ready->diff($waiting));
+            ->diff($managed)
+            ->when(! $confirmed, fn (Collection $ready): Collection => $ready->diff($waiting));
 
         $this->confirmReinviteModal = false;
+        $this->waitingOnInvitation = 0;
+        $this->guardiansToInvite = 0;
         $this->clearSelection();
 
-        if ($targets->isEmpty()) {
+        if ($targets->isEmpty() && $guardians->isEmpty()) {
             $this->warning(__('Nobody in this selection can be invited.'));
 
             return;
         }
 
         Bus::batch(
-            $targets->map(fn (User $member): SendMemberInvitationJob => new SendMemberInvitationJob($member->id))->all()
+            $targets
+                ->map(fn (User $member): SendMemberInvitationJob => new SendMemberInvitationJob($member->id))
+                ->concat($guardians->map(fn (Guardian $guardian): SendGuardianInvitationJob => new SendGuardianInvitationJob($guardian->id)))
+                ->all()
         )->name('invitations')->dispatch();
 
         $message = __(':count invitation(s) on their way.', ['count' => $targets->count()]);
 
+        if ($guardians->isNotEmpty()) {
+            $message .= ' ' . __(':count guardian(s) are being invited to manage the members who have no address of their own.', ['count' => $guardians->count()]);
+        }
+
         if ($unreachable->isNotEmpty()) {
-            $message .= ' ' . __(':count member(s) are managed by a guardian and have no login of their own to be handed.', ['count' => $unreachable->count()]);
+            $message .= ' ' . __(':count member(s) have neither an address nor a guardian the club can write to.', ['count' => $unreachable->count()]);
         }
 
         if ($registered->isNotEmpty()) {
@@ -768,17 +860,18 @@ new class extends Component
      */
     private function whyNotInvitable(User $user): string
     {
-        $guardian = $user->guardians->first(fn (Guardian $g): bool => $g->member !== null);
-
-        if ($guardian?->member !== null) {
-            return __(':name has no address of their own: :guardian answers for them and manages their account.', [
+        return match ($user->guardianshipStatus()) {
+            'guardian_invited' => __(':name is reached through :guardians, who have already been invited and have not answered yet.', [
                 'name' => $user->first_name,
-                'guardian' => $guardian->member->full_name,
-            ]);
-        }
-
-        return __(':name has no address of their own, and no guardian with an account to act for them.', [
-            'name' => $user->first_name,
-        ]);
+                'guardians' => $user->guardianNamesAt('waiting'),
+            ]),
+            'managed' => __(':name has no address of their own: :guardians answers for them and manages their account.', [
+                'name' => $user->first_name,
+                'guardians' => $user->guardianNamesAt('ready'),
+            ]),
+            default => __(':name has no address of their own, and no guardian the club can write to.', [
+                'name' => $user->first_name,
+            ]),
+        };
     }
 };

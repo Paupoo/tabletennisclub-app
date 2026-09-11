@@ -6,6 +6,7 @@ use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
+use App\Http\Controllers\ClubAdmin\Contact\GuardianInvitationController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
 use App\Http\Controllers\ClubAdmin\DashboardController;
 use App\Http\Controllers\ClubAdmin\Users\UserDocumentController;
@@ -359,6 +360,19 @@ Route::post('/invitation/accept/{user}', [InvitationController::class, 'store'])
 Route::post('/invitation/resend/{user}', [InvitationController::class, 'resend'])
     ->name('invitation.resend')
     ->middleware('throttle:3,60');
+
+/**
+ * Guardian invitations
+ *
+ * A member with no address of their own is reached through their guardian, who
+ * creates an account here and gains the proxy over them.
+ */
+Route::get('/invitation/guardian/{guardian}', [GuardianInvitationController::class, 'showForm'])
+    ->name('guardian-invitation.accept')
+    ->middleware(['signed', 'throttle:6,1']);
+Route::post('/invitation/guardian/{guardian}', [GuardianInvitationController::class, 'store'])
+    ->name('guardian-invitation.store')
+    ->middleware(['signed', 'throttle:6,1']);
 
 /*
 |--------------------------------------------------------------------------

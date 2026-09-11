@@ -132,13 +132,18 @@ new class extends Component
      * not listed here — including a tampered `sortBy` URL value — falls back to a
      * safe default instead of reaching `orderBy()` with a raw, unknown column.
      *
+     * `is_competitive` is deliberately absent: the "Licence" header is keyed on
+     * that name, but no such column exists on `users` — holding a competitive
+     * licence is a fact of the subscription for the current season. Listing it
+     * here is what let a header click reach MySQL as an unknown column; it is
+     * ordered by {@see User::scopeOrderByCompetitiveStatus()} instead.
+     *
      * @var array<string, array<int, string>>
      */
     protected array $sortableColumns = [
         'name' => ['first_name', 'last_name'],
         'last_name' => ['last_name', 'first_name'],
         'email' => ['email'],
-        'is_competitive' => ['is_competitive'],
         'ranking' => ['ranking'],
     ];
 
@@ -689,6 +694,10 @@ new class extends Component
 
         $sortColumns = $this->sortableColumns[$this->sortBy['column']] ?? ['first_name', 'last_name'];
 
+        // The whitelist guarded the column and left the direction open, where a
+        // tampered value reaches `orderBy()` and throws rather than falling back.
+        $direction = $this->sortBy['direction'] === 'desc' ? 'desc' : 'asc';
+
         return $query
             // Guardians carry the account state of every managed member on the
             // page — see {@see User::guardianshipStatus()} — so the badge, the
@@ -728,11 +737,15 @@ new class extends Component
             ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
             ->when($this->hasKey, fn ($q) => $q->whereHas('keyRings'))
             ->when($this->hasCashRegister, fn ($q) => $q->whereHas('heldCashRegisters'))
-            ->tap(function ($query) use ($sortColumns): void {
-                foreach ($sortColumns as $column) {
-                    $query->orderBy($column, $this->sortBy['direction']);
-                }
-            })
+            ->when(
+                $this->sortBy['column'] === 'is_competitive',
+                fn ($q) => $q->orderByCompetitiveStatus($direction),
+                fn ($q) => $q->tap(function ($query) use ($sortColumns, $direction): void {
+                    foreach ($sortColumns as $column) {
+                        $query->orderBy($column, $direction);
+                    }
+                })
+            )
             ->paginate(15);
     }
 

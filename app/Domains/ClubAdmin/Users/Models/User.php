@@ -941,6 +941,33 @@ class User extends Authenticatable implements MustVerifyEmail
         return $query->competitor()->where('ranking', '!=', 'NA');
     }
 
+    /**
+     * Order the members by whether they hold a competitive licence this season.
+     *
+     * There is no `users.is_competitive` to sort on, and there never was: what
+     * makes a member a competitor lives on their subscription for the current
+     * season, which is also why {@see self::scopeCompetitor()} has to join. The
+     * list's "Licence" header is keyed on that name all the same, and handing it
+     * to `orderBy()` reached MySQL as an unknown column.
+     *
+     * `withExists()` carries the same predicate as {@see self::scopeCompetitor()}
+     * — one rule, written once — and keeps the ordering in a single query with
+     * one row per member: a join would multiply members by their subscriptions
+     * and paginate fifteen rows that are not fifteen people.
+     */
+    public function scopeOrderByCompetitiveStatus(EloquentBuilder $query, string $direction): EloquentBuilder
+    {
+        $seasonId = Season::current()?->id;
+
+        return $query
+            ->withExists(['subscriptions as holds_competitive_licence' => fn (EloquentBuilder $subscription) => $subscription
+                ->where('season_id', $seasonId)
+                ->whereIn('status', ['confirmed', 'paid'])
+                ->where('is_competitive', true),
+            ])
+            ->orderBy('holds_competitive_licence', $direction);
+    }
+
     public function scopePaid(EloquentBuilder $query): EloquentBuilder
     {
         $seasonId = Season::current()?->id;

@@ -18,7 +18,11 @@ Pour finaliser votre inscription, veuillez effectuer le virement de **{{ number_
 
 **QR code de paiement :**
 
-<img src="{{ $qrCode }}" alt="QR code de paiement" style="max-width: 160px; display: block;" />
+{{-- Référencée par son nom : Symfony retrouve la pièce jointe qui le porte,
+     réécrit le cid et la bascule en inline. Une « data: » URI serait plus
+     courte, et Gmail la retirerait — le message n'a longtemps montré que
+     son texte alternatif en production. --}}
+<img src="cid:qr-paiement.png" alt="{{ __('Payment QR code') }}" style="max-width: 160px; display: block;" />
 
 *Sans paiement au terme de ce délai, votre inscription sera annulée et la place proposée au suivant sur la liste d'attente.*
 

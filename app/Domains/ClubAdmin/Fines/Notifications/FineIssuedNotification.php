@@ -36,15 +36,28 @@ class FineIssuedNotification extends Notification implements ShouldQueue
         $payment = $this->fine->payment;
         $club = Club::ourClub()->first();
 
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject(__('A fine has been issued'))
             ->markdown('mail.fine-issued', [
                 'fine' => $this->fine,
                 'member' => $this->fine->user,
                 'payment' => $payment,
-                'qrCode' => $payment ? (new GeneratePaymentQR)($payment) : null,
                 'club' => $club,
             ]);
+
+        // Attached by name, and referenced as `cid:qr-paiement.png` in the view:
+        // Gmail drops a `data:` source from an <img>, and embedding from the view
+        // would attach a second copy, since a notification renders its text part
+        // through the same Blade without the guard a mailable gets.
+        if ($payment) {
+            $mail->attachData(
+                (new GeneratePaymentQR)->png($payment),
+                'qr-paiement.png',
+                ['mime' => 'image/png'],
+            );
+        }
+
+        return $mail;
     }
 
     /** @return array<int, string> */

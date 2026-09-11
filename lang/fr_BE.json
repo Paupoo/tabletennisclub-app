@@ -4567,5 +4567,6 @@
     "You are creating the account that lets you manage the membership of :names.": "Vous créez le compte qui vous permettra de gérer l'affiliation de :names.",
     "Please check your details before confirming.": "Vérifiez vos données avant de confirmer.",
     "Welcome! You are now managing :name's account.": "Bienvenue ! Vous gérez à présent le compte de :name.",
-    "Welcome! Choose from the menu the account you wish to manage.": "Bienvenue ! Choisissez dans le menu le compte que vous souhaitez gérer."
+    "Welcome! Choose from the menu the account you wish to manage.": "Bienvenue ! Choisissez dans le menu le compte que vous souhaitez gérer.",
+    "Payment QR code": "QR code de paiement"
 }

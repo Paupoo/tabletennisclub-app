@@ -4567,5 +4567,6 @@
     "You are creating the account that lets you manage the membership of :names.": "U maakt het account aan waarmee u de aansluiting van :names kunt beheren.",
     "Please check your details before confirming.": "Controleer uw gegevens voor u bevestigt.",
     "Welcome! You are now managing :name's account.": "Welkom! U beheert nu het account van :name.",
-    "Welcome! Choose from the menu the account you wish to manage.": "Welkom! Kies in het menu het account dat u wilt beheren."
+    "Welcome! Choose from the menu the account you wish to manage.": "Welkom! Kies in het menu het account dat u wilt beheren.",
+    "Payment QR code": "QR-code voor betaling"
 }

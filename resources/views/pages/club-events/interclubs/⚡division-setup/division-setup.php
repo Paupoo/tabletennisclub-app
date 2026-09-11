@@ -92,12 +92,22 @@ new class extends Component
             return;
         }
 
-        Team::create([
-            'name' => strtoupper($this->formTeamLetter),
-            'season_id' => $this->seasonId,
-            'league_id' => $this->selectedLeagueId,
-            'club_id' => $club->id,
-        ]);
+        // Le contrôle ci-dessus porte sur (lettre, saison, division, club), qui
+        // suffit pour un club adverse. Nos propres équipes répondent à une clé
+        // plus stricte — une lettre par catégorie — tenue par le modèle : on la
+        // traduit ici plutôt que de laisser l'écran tomber.
+        try {
+            Team::create([
+                'name' => strtoupper($this->formTeamLetter),
+                'season_id' => $this->seasonId,
+                'league_id' => $this->selectedLeagueId,
+                'club_id' => $club->id,
+            ]);
+        } catch (\DomainException $exception) {
+            $this->error($exception->getMessage());
+
+            return;
+        }
 
         $this->addModal = false;
         $this->success(__('Participant added.'));

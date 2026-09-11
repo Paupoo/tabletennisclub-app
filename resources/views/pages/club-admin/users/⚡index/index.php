@@ -170,31 +170,27 @@ new class extends Component
 
         $selfIncluded = in_array((string) Auth::id(), array_map(strval(...), $this->selected));
 
-        User::whereIn('id', $this->selected)
+        $freedTeams = User::whereIn('id', $this->selected)
             ->where('id', '!=', Auth::id())
             ->get()
             // Members with an unresolved subscription for the active season are
             // skipped: archiving them would silently orphan a live subscription.
             ->filter(fn (User $user): bool => ! $user->isAffiliatedForCurrentSeason())
-            ->each(fn (User $user) => SoftDeleteUserAction::handle($user));
+            ->flatMap(fn (User $user): array => SoftDeleteUserAction::handle($user))
+            ->unique()
+            ->values()
+            ->all();
 
         $this->confirmArchiveModal = false;
         $this->clearSelection();
 
         if ($selfIncluded) {
-            $this->warning(__('Users archived. Your own account was excluded from the selection.'));
+            $this->warning(__('Users archived. Your own account was excluded from the selection.') . $this->freedTeamsNotice($freedTeams));
         } else {
-            $this->success(__('Selected users archived.'));
+            $this->success(__('Selected users archived.') . $this->freedTeamsNotice($freedTeams));
         }
     }
 
-    /**
-     * Hand a whole selection of members their login.
-     *
-     * The gesture the import deliberately does not make. It comes after it, by
-     * a human, on a selection they filtered themselves — usually the members a
-     * listing brought in, sitting under "not invited".
-     */
     public function bulkInvite(): void
     {
         Gate::authorize('sendEmail', User::class);
@@ -298,14 +294,17 @@ new class extends Component
         $this->authorize('delete', $user);
 
         try {
-            SoftDeleteUserAction::handle($user);
+            $freedTeams = SoftDeleteUserAction::handle($user);
         } catch (DomainException $e) {
             $this->error($e->getMessage());
 
             return;
         }
 
-        $this->success(__('User archived.'));
+        // Une équipe qui perd son capitaine doit l'apprendre de nous : la relation
+        // traverse SoftDeletes, donc l'écran des équipes afficherait simplement
+        // « Non défini » sans que personne ne sache depuis quand ni pourquoi.
+        $this->success(__('User archived.') . $this->freedTeamsNotice($freedTeams));
     }
 
     /** @return array<int, array{key: string, label: string}> */
@@ -846,6 +845,29 @@ new class extends Component
         }
 
         $this->success($message);
+    }
+
+    /**
+     * Hand a whole selection of members their login.
+     *
+     * The gesture the import deliberately does not make. It comes after it, by
+     * a human, on a selection they filtered themselves — usually the members a
+     * listing brought in, sitting under "not invited".
+     */
+    /**
+     * La phrase qui nomme les équipes devenues sans capitaine, ou rien du tout.
+     *
+     * @param  array<int, string>  $freedTeams
+     */
+    private function freedTeamsNotice(array $freedTeams): string
+    {
+        if ($freedTeams === []) {
+            return '';
+        }
+
+        sort($freedTeams);
+
+        return ' ' . __('Teams left without a captain: :teams', ['teams' => implode(', ', $freedTeams)]);
     }
 
     /**

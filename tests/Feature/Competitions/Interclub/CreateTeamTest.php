@@ -165,3 +165,77 @@ test('member cant call createTeam via Livewire', function (): void {
         ->call('createTeam')
         ->assertStatus(403);
 });
+
+/**
+ * Une lettre identifie une équipe dans sa catégorie, pas dans sa division. Deux
+ * équipes hommes « A » en 3B et en 4C ne correspondent à rien au club.
+ *
+ * La garde vit sur le modèle pour qu'aucun appelant ne puisse l'oublier — mais un
+ * écran ne doit pas la laisser remonter en page blanche : ici elle se lit.
+ */
+describe('a letter belongs to one team per category', function (): void {
+    beforeEach(function (): void {
+        $this->activeSeason = makeActiveSeason();
+        Club::factory()->ownClub()->create();
+
+        $this->men3B = League::factory()->create([
+            'season_id' => $this->activeSeason->id,
+            'division' => '3B', 'level' => 'PROVINCIAL_BW', 'category' => 'MEN',
+        ]);
+        $this->men4C = League::factory()->create([
+            'season_id' => $this->activeSeason->id,
+            'division' => '4C', 'level' => 'PROVINCIAL_BW', 'category' => 'MEN',
+        ]);
+    });
+
+    it('tells the operator instead of blowing up', function (): void {
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.interclubs.teams.index')
+            ->set('newTeamName', 'A')
+            ->set('newLeagueId', $this->men3B->id)
+            ->call('createTeam')
+            ->assertHasNoErrors();
+
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.interclubs.teams.index')
+            ->set('newTeamName', 'A')
+            ->set('newLeagueId', $this->men4C->id)
+            ->call('createTeam')
+            ->assertHasErrors(['newTeamName']);
+
+        expect(Team::count())->toBe(1);
+    });
+
+    it('renders the refusal rather than only raising it', function (): void {
+        Team::create([
+            'name' => 'A', 'season_id' => $this->activeSeason->id,
+            'league_id' => $this->men3B->id, 'club_id' => Club::own()?->id,
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.interclubs.teams.index')
+            ->set('createModal', true)
+            ->set('newTeamName', 'A')
+            ->set('newLeagueId', $this->men4C->id)
+            ->call('createTeam')
+            ->assertSee(__('Team :name already exists in this category for this season.', ['name' => 'A']));
+    });
+
+    it('still allows the same letter in another category', function (): void {
+        $women = League::factory()->create([
+            'season_id' => $this->activeSeason->id,
+            'division' => '2A', 'level' => 'PROVINCIAL_BW', 'category' => 'WOMEN',
+        ]);
+
+        foreach ([$this->men3B->id, $women->id] as $leagueId) {
+            Livewire::actingAs($this->admin)
+                ->test('pages::club-events.interclubs.teams.index')
+                ->set('newTeamName', 'A')
+                ->set('newLeagueId', $leagueId)
+                ->call('createTeam')
+                ->assertHasNoErrors();
+        }
+
+        expect(Team::count())->toBe(2);
+    });
+});

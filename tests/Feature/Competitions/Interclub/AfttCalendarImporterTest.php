@@ -394,3 +394,50 @@ it('rebuilds the season from scratch when asked, and only that season', function
     // And the season is genuinely rebuilt, not merely emptied.
     expect(Interclub::where('season_id', $this->season->id)->count())->toBeGreaterThan(0);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Une équipe à nous que la fédération place ailleurs
+|--------------------------------------------------------------------------
+|
+| L'importateur retrouve nos équipes par (saison, club, division, lettre). Quand
+| la division encodée à la main ne correspond pas à celle que publie la AFTT — et
+| la convention a changé entre deux saisons, « 5H » d'un côté, « P5B » de l'autre
+| — il n'en trouve aucune et en crée une seconde, même lettre, même catégorie.
+|
+| La garde d'identité l'en empêche. Elle ne doit pas pour autant emporter
+| l'import : celui-ci tourne dans une transaction, une exception ferait perdre
+| tout le calendrier pour une équipe. On rapporte, comme pour une division
+| refusée, et le reste passe.
+*/
+
+it('reports a team of ours it cannot reconcile, and imports the rest', function (): void {
+    knownOpponents();
+
+    // Notre équipe E existe déjà, encodée dans une autre division hommes que
+    // celle que la fédération publie pour elle.
+    $handEncoded = League::factory()->create([
+        'season_id' => $this->season->id,
+        'category' => 'MEN',
+        'level' => 'PROVINCIAL_BW',
+        'division' => '5B',
+    ]);
+    Team::create([
+        'name' => 'E',
+        'season_id' => $this->season->id,
+        'league_id' => $handEncoded->id,
+        'club_id' => $this->ownClub->id,
+    ]);
+
+    $import = app(AfttCalendarImporter::class)->import($this->season, 27, 'BBW214');
+
+    expect($import->changes['refused_teams'] ?? [])->not->toBeEmpty()
+        ->and($import->skipped_count)->toBeGreaterThan(0);
+
+    // Le reste du calendrier est bien arrivé : la catégorie vétérans n'a rien à
+    // voir avec le conflit et ne doit pas en souffrir.
+    $veterans = League::where('aftt_division_id', 9756)->first();
+
+    expect($veterans)->not->toBeNull()
+        ->and(Team::where('league_id', $veterans->id)->where('club_id', $this->ownClub->id)->exists())->toBeTrue();
+});

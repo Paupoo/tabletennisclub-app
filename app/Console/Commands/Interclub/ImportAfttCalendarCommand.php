@@ -220,6 +220,13 @@ class ImportAfttCalendarCommand extends Command
             $this->warn('Refused, category or level we do not model: ' . $division);
         }
 
+        // Une équipe à nous que la clé d'identité refuse : la division encodée ne
+        // correspond pas à celle publiée. Ça se corrige à la main, et il faut
+        // savoir laquelle — l'import, lui, a continué.
+        foreach ($changes['refused_teams'] ?? [] as $team) {
+            $this->warn('Refused, a team of ours we cannot place: ' . $team);
+        }
+
         foreach ($changes['moved'] ?? [] as $matchId) {
             $this->line('Moved: ' . $matchId);
         }

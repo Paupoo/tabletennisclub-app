@@ -6,6 +6,8 @@ namespace App\Domains\Competitions\Interclub\Models;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Traits\HasAuditLog;
+use App\Observers\TeamUserObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Carbon;
@@ -34,6 +36,7 @@ use Illuminate\Support\Carbon;
  *
  * @mixin \Eloquent
  */
+#[ObservedBy(TeamUserObserver::class)]
 class TeamUser extends Pivot
 {
     use HasAuditLog;

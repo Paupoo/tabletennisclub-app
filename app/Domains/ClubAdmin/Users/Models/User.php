@@ -505,11 +505,80 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * The guardians of this member standing at a given stage, named for a
+     * sentence: "Cristina Decreton", or "Cristina and Jean-Pierre Decreton".
+     *
+     * Lives here rather than in the list component because the same names are
+     * needed in three places — the row note, the refusal toast and the tests —
+     * and reading them off the model keeps all three saying the same thing.
+     *
+     * @param  'actionable'|'waiting'|'ready'|'unreachable'  $stage
+     */
+    public function guardianNamesAt(string $stage): string
+    {
+        return $this->guardiansAt($stage)->pluck('full_name')->join(', ', ' ' . __('and') . ' ');
+    }
+
+    /**
+     * The guardian sheet this account *is*, when the account was created by
+     * accepting a guardian invitation.
+     *
+     * The mirror image of {@see self::guardians()}: that one lists the people
+     * who answer for this member, this one is the record of this member
+     * answering for somebody else.
+     *
+     * @return HasOne<Guardian, $this>
+     */
+    public function guardianRecord(): HasOne
+    {
+        return $this->hasOne(Guardian::class, 'user_id');
+    }
+
+    /**
      * @return BelongsToMany<Guardian, $this>
      */
     public function guardians(): BelongsToMany
     {
         return $this->belongsToMany(Guardian::class, 'guardian_user');
+    }
+
+    /**
+     * @param  'actionable'|'waiting'|'ready'|'unreachable'  $stage
+     * @return Collection<int, Guardian>
+     */
+    public function guardiansAt(string $stage): Collection
+    {
+        return $this->guardians
+            ->filter(fn (Guardian $guardian): bool => $guardian->invitationStage() === $stage)
+            ->values();
+    }
+
+    /**
+     * How far this managed account is from having somebody who can act for it.
+     *
+     * Null for anyone holding an address of their own: they are invited on their
+     * own name and {@see self::invitationStatus()} is the whole story. For a
+     * managed account that status would read "not invited" forever — nobody will
+     * ever hand a login to an account with nowhere to send it — so the list
+     * reports the guardians' progress instead. The most actionable stage wins,
+     * because the badge answers "is there anything left to do on this line?".
+     *
+     * @return 'guardian_to_invite'|'guardian_invited'|'managed'|'guardian_unreachable'|null
+     */
+    public function guardianshipStatus(): ?string
+    {
+        if ($this->email !== null) {
+            return null;
+        }
+
+        $stages = $this->guardians->map(fn (Guardian $guardian): string => $guardian->invitationStage());
+
+        return match (true) {
+            $stages->contains('actionable') => 'guardian_to_invite',
+            $stages->contains('waiting') => 'guardian_invited',
+            $stages->contains('ready') => 'managed',
+            default => 'guardian_unreachable',
+        };
     }
 
     /**
@@ -523,9 +592,19 @@ class User extends Authenticatable implements MustVerifyEmail
      * guardian holds neither, and the guardian carries both. Requiring it here
      * would park every such member in the onboarding wizard for good, asking
      * for a number that is on file — under the guardian.
+     *
+     * A guardian-only account is exempt outright. The wizard exists so that a
+     * *player's* file is complete; a parent who joined to manage their child has
+     * no licence and no subscription, so there is nothing for it to validate —
+     * and the alternative is a parent who followed an invitation to their child's
+     * account being asked for their own date of birth before reaching it.
      */
     public function hasCompleteProfile(): bool
     {
+        if ($this->isGuardianOnlyAccount()) {
+            return true;
+        }
+
         return $this->birthdate !== null
             && (filled($this->phone_number) || $this->hasGuardian())
             && filled($this->street)
@@ -571,6 +650,20 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withTimestamps();
     }
 
+    /**
+     * The guardians of this member who still have something to receive.
+     *
+     * Every one of them, not the first: separated parents are both on the file,
+     * a proxy is not exclusive, and choosing between two of them is not a
+     * decision the secretary should be made to arbitrate.
+     *
+     * @return Collection<int, Guardian>
+     */
+    public function invitableGuardians(): Collection
+    {
+        return $this->guardiansAt('actionable');
+    }
+
     public function invitationStatus(): string
     {
         if ($this->email_verified_at !== null) {
@@ -597,6 +690,24 @@ class User extends Authenticatable implements MustVerifyEmail
             ->where('season_id', $season->id)
             ->whereIn('status', ['pending', 'confirmed', 'paid'])
             ->exists();
+    }
+
+    /**
+     * Whether this account exists only so that a parent can act for their child.
+     *
+     * Derived rather than stored: an account is a parent's when it answers for
+     * somebody and has never signed up for anything itself. Nothing has to be
+     * kept in sync, and the day such a parent registers as a player they simply
+     * stop matching — which is the right moment for the onboarding wizard, and
+     * for the member counts, to start applying to them.
+     */
+    public function isGuardianOnlyAccount(): bool
+    {
+        if ($this->subscriptions()->exists()) {
+            return false;
+        }
+
+        return $this->guardianRecord()->whereHas('users')->exists();
     }
 
     public function isMinor(): bool
@@ -926,22 +1037,104 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * SQL counterpart of {@see self::guardianshipStatus()}.
+     *
+     * The same four stages, expressed once per row for the badge and once in SQL
+     * for the filter, and tested against each other. The precedence is what the
+     * `whereDoesntHave` chain encodes: a ward with anything left to send is
+     * reported as such even when another of their guardians is already set up.
+     *
+     * @param  'guardian_to_invite'|'guardian_invited'|'managed'|'guardian_unreachable'  $state
+     */
+    public function scopeWithGuardianshipState(EloquentBuilder $query, string $state): EloquentBuilder
+    {
+        $cutoff = now()->subDays(self::INVITATION_LINK_VALIDITY_DAYS);
+
+        $actionable = function (EloquentBuilder $guardian) use ($cutoff): void {
+            $guardian->where(fn (EloquentBuilder $q) => $q
+                ->where(fn (EloquentBuilder $noAccount) => $noAccount
+                    ->whereNull('guardians.user_id')
+                    ->whereNotNull('guardians.email')
+                    ->where(fn (EloquentBuilder $stale) => $stale
+                        ->whereNull('guardians.last_invited_at')
+                        ->orWhere('guardians.last_invited_at', '<=', $cutoff)
+                    )
+                )
+                ->orWhere(fn (EloquentBuilder $account) => $account
+                    ->whereNotNull('guardians.user_id')
+                    ->whereHas('member', fn (EloquentBuilder $member) => $member
+                        ->whereNull('email_verified_at')
+                        ->where(fn (EloquentBuilder $stale) => $stale
+                            ->whereNull('last_invited_at')
+                            ->orWhere('last_invited_at', '<=', $cutoff)
+                        )
+                    )
+                )
+            );
+        };
+
+        $waiting = function (EloquentBuilder $guardian) use ($cutoff): void {
+            $guardian->where(fn (EloquentBuilder $q) => $q
+                ->where(fn (EloquentBuilder $noAccount) => $noAccount
+                    ->whereNull('guardians.user_id')
+                    ->where('guardians.last_invited_at', '>', $cutoff)
+                )
+                ->orWhere(fn (EloquentBuilder $account) => $account
+                    ->whereNotNull('guardians.user_id')
+                    ->whereHas('member', fn (EloquentBuilder $member) => $member
+                        ->whereNull('email_verified_at')
+                        ->where('last_invited_at', '>', $cutoff)
+                    )
+                )
+            );
+        };
+
+        $ready = function (EloquentBuilder $guardian): void {
+            $guardian
+                ->whereNotNull('guardians.user_id')
+                ->whereHas('member', fn (EloquentBuilder $member) => $member->whereNotNull('email_verified_at'));
+        };
+
+        $query->whereNull('users.email');
+
+        return match ($state) {
+            'guardian_to_invite' => $query->whereHas('guardians', $actionable),
+            'guardian_invited' => $query
+                ->whereDoesntHave('guardians', $actionable)
+                ->whereHas('guardians', $waiting),
+            'managed' => $query
+                ->whereDoesntHave('guardians', $actionable)
+                ->whereDoesntHave('guardians', $waiting)
+                ->whereHas('guardians', $ready),
+            default => $query
+                ->whereDoesntHave('guardians', $actionable)
+                ->whereDoesntHave('guardians', $waiting)
+                ->whereDoesntHave('guardians', $ready),
+        };
+    }
+
+    /**
      * SQL counterpart of {@see self::hasCompleteProfile()}, including the
      * exemption a guardian grants on the phone number. The two are one rule
      * expressed twice and are tested against each other.
      */
     public function scopeWithIncompleteProfile(EloquentBuilder $query): EloquentBuilder
     {
-        return $query->where(fn (EloquentBuilder $q) => $q
-            ->where(fn (EloquentBuilder $missingPhone) => $missingPhone
-                ->whereNull('phone_number')
-                ->whereDoesntHave('guardians')
+        return $query
+            ->whereNot(fn (EloquentBuilder $guardianOnly) => $guardianOnly
+                ->whereDoesntHave('subscriptions')
+                ->whereHas('guardianRecord', fn (EloquentBuilder $record) => $record->whereHas('users'))
             )
-            ->orWhereNull('street')
-            ->orWhereNull('city_code')
-            ->orWhereNull('city_name')
-            ->orWhereNull('birthdate')
-        );
+            ->where(fn (EloquentBuilder $q) => $q
+                ->where(fn (EloquentBuilder $missingPhone) => $missingPhone
+                    ->whereNull('phone_number')
+                    ->whereDoesntHave('guardians')
+                )
+                ->orWhereNull('street')
+                ->orWhereNull('city_code')
+                ->orWhereNull('city_name')
+                ->orWhereNull('birthdate')
+            );
     }
 
     /**
@@ -952,15 +1145,28 @@ class User extends Authenticatable implements MustVerifyEmail
      * stored: "imported but never written to" is simply `not_invited`, which is
      * how the secretary finds the members an import brought in.
      *
-     * @param  'not_invited'|'pending'|'expired'|'active'  $state
+     * The guardianship states are delegated to {@see self::scopeWithGuardianshipState()}:
+     * they sit in the same radio because they answer the same question — where
+     * does this member stand on the way to an account — but a managed account
+     * gets there through somebody else. That is also why "not invited" excludes
+     * them: their own row would sit there for good, whatever the office sent.
+     *
+     * @param  'not_invited'|'pending'|'expired'|'active'|'guardian_to_invite'|'guardian_invited'|'managed'|'guardian_unreachable'  $state
      */
-    public function scopeWithInvitationState(Builder $query, string $state): Builder
+    public function scopeWithInvitationState(EloquentBuilder $query, string $state): EloquentBuilder
     {
         $cutoff = now()->subDays(self::INVITATION_LINK_VALIDITY_DAYS);
 
+        if (in_array($state, ['guardian_to_invite', 'guardian_invited', 'managed', 'guardian_unreachable'], true)) {
+            return $this->scopeWithGuardianshipState($query, $state);
+        }
+
         return match ($state) {
             'active' => $query->whereNotNull('email_verified_at'),
-            'not_invited' => $query->whereNull('email_verified_at')->whereNull('last_invited_at'),
+            'not_invited' => $query
+                ->whereNotNull('users.email')
+                ->whereNull('email_verified_at')
+                ->whereNull('last_invited_at'),
             'pending' => $query->whereNull('email_verified_at')
                 ->whereNotNull('last_invited_at')
                 ->where('last_invited_at', '>', $cutoff),

@@ -30,7 +30,7 @@ test('a member who cannot be invited is told why, not shown a dead control', fun
         ->test('pages::club-admin.users.index')
         ->html();
 
-    $reason = e(__('This member has no address of their own yet, so they cannot be invited.'));
+    $reason = e(__('This member has no address of their own, and no guardian the club can write to.'));
 
     // Blade escapes apostrophes, so the copy must be compared in its rendered form.
     // The discriminating part is where the reason lives: it used to be the aria-label

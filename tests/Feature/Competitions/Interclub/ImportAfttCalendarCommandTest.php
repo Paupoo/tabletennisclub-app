@@ -130,3 +130,24 @@ it('stops before touching anything when the schema is not migrated', function ()
     // It must refuse before the wipe, not during it.
     expect(Season::whereKey($this->season->id)->exists())->toBeTrue();
 });
+
+it('names the team it had to refuse, rather than failing the whole run', function (): void {
+    // Notre équipe E, encodée à la main dans une autre division hommes que celle
+    // que publie la fédération : la clé d'identité refuse le doublon.
+    $handEncoded = League::factory()->create([
+        'season_id' => $this->season->id,
+        'category' => 'MEN',
+        'level' => 'PROVINCIAL_BW',
+        'division' => '5B',
+    ]);
+    Team::create([
+        'name' => 'E',
+        'season_id' => $this->season->id,
+        'league_id' => $handEncoded->id,
+        'club_id' => $this->ownClub->id,
+    ]);
+
+    $this->artisan('interclubs:import-aftt')
+        ->expectsOutputToContain('Refused, a team of ours we cannot place')
+        ->assertSuccessful();
+});

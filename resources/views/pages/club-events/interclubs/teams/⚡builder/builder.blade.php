@@ -46,6 +46,12 @@
                                 </button>
                             @endforeach
                         </div>
+
+                        {{-- Une catégorie déjà composée se refuse ici, avant le calcul :
+                             relancer le compositeur doublerait les équipes. --}}
+                        @error('teamCategory')
+                            <p class="mt-2 text-sm text-error">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     @if ($missingBirthdateCount > 0)

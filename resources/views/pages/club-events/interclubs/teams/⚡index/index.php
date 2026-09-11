@@ -123,12 +123,21 @@ new class extends Component
             ])
             : League::findOrFail($this->newLeagueId);
 
-        Team::create([
-            'name' => $this->newTeamName,
-            'season_id' => $season->id,
-            'league_id' => $league->id,
-            'club_id' => $ourClub?->id,
-        ]);
+        // La garde d'identité vit sur le modèle, pour qu'aucun appelant ne puisse
+        // l'oublier. Un écran, lui, doit la traduire : une lettre déjà prise est
+        // une correction à faire dans le champ, pas une page blanche.
+        try {
+            Team::create([
+                'name' => $this->newTeamName,
+                'season_id' => $season->id,
+                'league_id' => $league->id,
+                'club_id' => $ourClub?->id,
+            ]);
+        } catch (\DomainException $exception) {
+            $this->addError('newTeamName', $exception->getMessage());
+
+            return;
+        }
 
         $this->reset('newTeamName', 'newCategory', 'newLevel', 'newDivision', 'newLeagueId', 'newDivisionMode');
         $this->createModal = false;

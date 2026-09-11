@@ -305,3 +305,112 @@ describe('creating a division from the edit form', function (): void {
         expect($this->team->fresh()->league_id)->toBe($originalLeagueId);
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| Un noyau par catégorie
+|--------------------------------------------------------------------------
+|
+| Ajouter quelqu'un qui tient déjà un noyau de la catégorie n'est pas une
+| erreur, c'est une intention mal exprimée : on ne veut pas qu'il soit dans les
+| deux, on veut qu'il change d'équipe. L'écran propose donc le déplacement.
+|
+| Le déplacement n'est écrit qu'au `save()` : confirmer détache l'ancienne
+| équipe côté formulaire, pas côté base, sinon « Annuler » laisserait le joueur
+| sans aucune équipe.
+*/
+
+function rivalTeamOf(Team $team, string $name = 'Y'): Team
+{
+    return Team::create([
+        'name' => $name,
+        'season_id' => $team->season_id,
+        'league_id' => $team->league_id,
+        'captain_id' => null,
+    ]);
+}
+
+test('picking a player held elsewhere in the category asks before moving them', function (): void {
+    $rival = rivalTeamOf($this->team);
+    $shared = User::factory()->create();
+    $rival->users()->attach($shared->id);
+
+    $component = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
+        ->call('toggleMember', $shared->id);
+
+    expect($component->get('memberIds'))->not->toContain($shared->id)
+        ->and($component->get('pendingMove'))->toMatchArray([
+            'userId' => $shared->id,
+            'teamName' => 'Y',
+        ]);
+});
+
+test('confirming the move does not touch the database until the form is saved', function (): void {
+    $rival = rivalTeamOf($this->team);
+    $shared = User::factory()->create();
+    $rival->users()->attach($shared->id);
+
+    $component = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
+        ->call('toggleMember', $shared->id)
+        ->call('confirmMove');
+
+    expect($component->get('memberIds'))->toContain($shared->id)
+        ->and($rival->users()->pluck('users.id')->all())->toBe([$shared->id]);
+});
+
+test('saving a confirmed move hands the player over', function (): void {
+    $rival = rivalTeamOf($this->team);
+    $shared = User::factory()->create();
+    $rival->users()->attach($shared->id);
+
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
+        ->call('toggleMember', $shared->id)
+        ->call('confirmMove')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($rival->users()->pluck('users.id')->all())->toBe([])
+        ->and($this->team->users()->pluck('users.id')->all())->toContain($shared->id);
+});
+
+test('declining the move leaves both teams alone', function (): void {
+    $rival = rivalTeamOf($this->team);
+    $shared = User::factory()->create();
+    $rival->users()->attach($shared->id);
+
+    $component = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
+        ->call('toggleMember', $shared->id)
+        ->call('cancelMove')
+        ->call('save');
+
+    expect($component->get('memberIds'))->not->toContain($shared->id)
+        ->and($rival->users()->pluck('users.id')->all())->toBe([$shared->id]);
+});
+
+test('a player of another category is added without any question', function (): void {
+    $otherLeague = League::create([
+        'division' => '2B',
+        'level' => 'NATIONAL',
+        'category' => 'WOMEN',
+        'season_id' => $this->team->season_id,
+    ]);
+    $ladies = Team::create([
+        'name' => 'W',
+        'season_id' => $this->team->season_id,
+        'league_id' => $otherLeague->id,
+        'captain_id' => null,
+    ]);
+    $shared = User::factory()->create();
+    $ladies->users()->attach($shared->id);
+
+    $component = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
+        ->call('toggleMember', $shared->id);
+
+    expect($component->get('memberIds'))->toContain($shared->id)
+        ->and($component->get('pendingMove'))->toBeNull();
+});

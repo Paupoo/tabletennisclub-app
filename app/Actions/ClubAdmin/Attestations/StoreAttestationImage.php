@@ -39,7 +39,7 @@ final readonly class StoreAttestationImage
         // PDF renderer alike cache by path, and a replaced seal that kept its
         // name would go on printing the old one.
         $relative = 'attestation-marks/' . $kind . '-' . Str::ulid() . '.png';
-        Storage::disk('local')->put($relative, (string) file_get_contents($file->getRealPath()));
+        Storage::disk('local')->put($relative, $this->trimmed($file->getRealPath()));
 
         $settings->update([$column => Storage::disk('local')->path($relative)]);
 
@@ -50,6 +50,39 @@ final readonly class StoreAttestationImage
         }
 
         return $settings->refresh();
+    }
+
+    /**
+     * The rectangle the visible ink occupies.
+     *
+     * @return array{0: int, 1: int, 2: int, 3: int}|null Null when nothing is visible.
+     */
+    private function inkBox(\GdImage $image): ?array
+    {
+        $width = imagesx($image);
+        $height = imagesy($image);
+
+        $left = $width;
+        $top = $height;
+        $right = -1;
+        $bottom = -1;
+
+        for ($y = 0; $y < $height; $y++) {
+            for ($x = 0; $x < $width; $x++) {
+                // GD alpha runs 0 (opaque) to 127 (invisible). Anything past
+                // three quarters transparent is scanner haze, not ink.
+                if (((imagecolorat($image, $x, $y) >> 24) & 0x7F) > 100) {
+                    continue;
+                }
+
+                $left = min($left, $x);
+                $right = max($right, $x);
+                $top = min($top, $y);
+                $bottom = max($bottom, $y);
+            }
+        }
+
+        return $right < 0 ? null : [$left, $top, $right, $bottom];
     }
 
     /**
@@ -76,5 +109,51 @@ final readonly class StoreAttestationImage
                 'upload' => __('This image has no transparency. A seal on a solid background would hide the form underneath it — scan it again with a transparent background.'),
             ]);
         }
+    }
+
+    /**
+     * Crops away the transparent margin around the mark.
+     *
+     * Scans and stock images carry a lot of empty canvas — the seal that
+     * prompted this was 248 px of ink inside a 680 px image, so asking for
+     * 30 mm produced an 11 mm stamp and the setting meant nothing. Trimming
+     * first is what makes a millimetre a millimetre.
+     *
+     * A hairline of padding is kept so the ink never sits flush against the
+     * edge of what is drawn.
+     */
+    private function trimmed(string $path): string
+    {
+        $image = @imagecreatefrompng($path);
+
+        if ($image === false) {
+            return (string) file_get_contents($path);
+        }
+
+        imagealphablending($image, false);
+        imagesavealpha($image, true);
+
+        $box = $this->inkBox($image);
+
+        if ($box === null) {
+            return (string) file_get_contents($path);
+        }
+
+        [$left, $top, $right, $bottom] = $box;
+
+        $padding = (int) max(1, round(max($right - $left, $bottom - $top) * 0.02));
+        $width = $right - $left + 1 + 2 * $padding;
+        $height = $bottom - $top + 1 + 2 * $padding;
+
+        $cropped = imagecreatetruecolor($width, $height);
+        imagealphablending($cropped, false);
+        imagesavealpha($cropped, true);
+        imagefill($cropped, 0, 0, imagecolorallocatealpha($cropped, 0, 0, 0, 127));
+        imagecopy($cropped, $image, $padding, $padding, $left, $top, $right - $left + 1, $bottom - $top + 1);
+
+        ob_start();
+        imagepng($cropped);
+
+        return (string) ob_get_clean();
     }
 }

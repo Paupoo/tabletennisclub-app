@@ -61,7 +61,7 @@ final readonly class AnchorMaps
             // club's. The club is last in both cases.
             'issued_on' => new Anchor('Date', occurrence: 3, dx: 3),
             'signature' => new Anchor('Signature', occurrence: 2, dx: 4, dy: -3),
-            'seal' => new Anchor('Cachet', placement: Place::Below, dy: 0, scale: 0.9),
+            'seal' => new Anchor('Cachet', placement: Place::Below, dx: 2, dy: 0, scale: 0.6),
         ];
     }
 
@@ -78,18 +78,23 @@ final readonly class AnchorMaps
             'member_email' => new Anchor('Adresse e-mail', dx: 6),
             'period_from' => new Anchor('en date du', dx: 3),
             // The form welds its own rule to the word: « de__________________ euros ».
-            // Naming both words is what makes this « de » the right one.
-            'amount' => new Anchor('de euros', placement: Place::At, dx: 2),
-            'season_year_1' => new Anchor("pour l'année sportive", dx: 2),
-            'season_year_2' => new Anchor("pour l'année sportive", dx: 14),
+            // Naming both words is what makes this « de » the right one, and the
+            // offset clears the printed « de » before the rule begins.
+            'amount' => new Anchor('de euros', placement: Place::At, dx: 6),
+            // « sportive____- _____.et » — two rules welded to the words around
+            // them, so both years are placed from the label that precedes them.
+            'season_year_1' => new Anchor("pour l'année", dx: 13),
+            'season_year_2' => new Anchor("pour l'année", dx: 22),
             'mark_affiliation' => new Anchor('est inscrite dans notre club pour le sport', placement: Place::At, dx: -4),
             'discipline' => new Anchor('est inscrite dans notre club pour le sport', dx: 3),
-            'club_name' => new Anchor('Nom, adresse et/ou cachet du club de sport', placement: Place::Below, dy: 1),
             // The first "date" belongs to « en date du », which is the payment
             // date, not the signing date.
             'issued_on' => new Anchor('Date', occurrence: 2, dx: 3),
             'signature' => new Anchor('Signature du responsable', dx: 4, dy: -3),
-            'seal' => new Anchor('Nom, adresse et/ou cachet du club de sport', placement: Place::Below, dy: 7, scale: 0.75),
+            // The frame reads « Nom, adresse **et/ou** cachet » — the seal alone
+            // answers it, so the club's name is not printed a second time over
+            // the frame's own wording. It goes in the empty right-hand cell.
+            'seal' => new Anchor('Nom, adresse et/ou cachet du club de sport', dx: 31, dy: -5.5, scale: 0.53),
         ];
     }
 
@@ -124,7 +129,7 @@ final readonly class AnchorMaps
             // caption. Both marks go beside the caption rather than under it,
             // and shrink, so nothing spills onto the statutory text below.
             'seal' => new Anchor('Cachet et signature du club', dx: 4, dy: -6, scale: 0.35),
-            'signature' => new Anchor('Cachet et signature du club', dx: 16, dy: -4, scale: 0.42),
+            'signature' => new Anchor('Cachet et signature du club', dx: 14, dy: -4, scale: 0.38),
         ];
     }
 
@@ -165,10 +170,10 @@ final readonly class AnchorMaps
             'member_full_name' => new Anchor('Nom et prénom du/de la bénéficiaire du service', dx: 3),
             'amount' => new Anchor("Certifie sur l'honneur que la somme de", dx: 3),
             'period_from' => new Anchor('pour la période du', dx: 2),
-            'period_to' => new Anchor('pour la période du', dx: 30),
+            'period_to' => new Anchor('pour la période du', dx: 34),
             'discipline' => new Anchor('pour la pratique du sport suivant', dx: 3),
             'issued_on' => new Anchor('Date', occurrence: 1, dx: 3),
-            'seal' => new Anchor('Signature et cachet', placement: Place::Below, dy: 0, scale: 0.7),
+            'seal' => new Anchor('Signature et cachet', placement: Place::Below, dy: -1, scale: 0.45),
             'signature' => new Anchor('Signature et cachet', placement: Place::Below, dx: 22, dy: 1, scale: 0.7),
         ];
     }

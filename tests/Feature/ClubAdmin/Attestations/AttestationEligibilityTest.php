@@ -105,7 +105,17 @@ it('ignores debts that are not the affiliation', function (): void {
 
 it('does not count an affiliation held for another season', function (): void {
     $season = makeActiveSeason();
-    $lastSeason = Season::factory()->create(['is_active' => false]);
+
+    // Dated explicitly rather than left to the factory, which picks a year at
+    // random between 2024 and 2034. makeActiveSeason() spans the whole current
+    // calendar year, so two of those eleven draws overlap it — and the season
+    // model refuses overlapping dates. The test failed about one run in five.
+    $lastSeason = Season::factory()->create([
+        'name' => '2019-2020',
+        'start_at' => '2019-09-01',
+        'end_at' => '2020-06-30',
+        'is_active' => false,
+    ]);
     $subscription = affiliationInOrder($lastSeason);
 
     $verdict = app(AttestationEligibility::class)->for($subscription->user, $season);

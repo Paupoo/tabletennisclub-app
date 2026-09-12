@@ -436,9 +436,13 @@ it('keeps the article body readable in both themes', function (string $theme) us
  * screen its team headings. The inversion is what makes it easy to miss — the
  * addresses and dates read perfectly on the same screenshot.
  *
- * The detail page is included by object rather than by name: it is the screen
- * where the failure was worst, and a route without its team renders nothing to
- * measure.
+ * The same views also painted their own surfaces in the light palette: the
+ * edit screen drew its empty checkboxes in bg-white and its hovered row in
+ * bg-gray-50, so a white square sat on every line and the row under the cursor
+ * turned into a white band.
+ *
+ * The two screens that take a team are given one: a route without it renders
+ * nothing to measure.
  */
 it('keeps the interclubs screens above the AA threshold in dark mode', function (string $key) use ($probe): void {
     Club::firstOrCreate(
@@ -454,7 +458,7 @@ it('keeps the interclubs screens above the AA threshold in dark mode', function 
         ->whereHas('club', fn ($q) => $q->where('is_own_club', true))
         ->firstOrFail();
 
-    $url = $key === 'admin.interclubs.teams.show'
+    $url = in_array($key, ['admin.interclubs.teams.show', 'admin.interclubs.teams.edit'], true)
         ? route($key, $team->id)
         : route($key);
 
@@ -471,6 +475,7 @@ it('keeps the interclubs screens above the AA threshold in dark mode', function 
 })->with([
     'admin.interclubs.teams',
     'admin.interclubs.teams.show',
+    'admin.interclubs.teams.edit',
     'admin.interclubs.results',
 ]);
 

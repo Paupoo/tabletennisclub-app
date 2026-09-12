@@ -36,8 +36,15 @@ final readonly class AttestationEligibility
             return AttestationVerdict::refuse(AttestationRefusal::NoAffiliation);
         }
 
+        // The money, never the status. An affiliation can sit at `paid` while
+        // the payment behind it came up short — the club certifies what reached
+        // the bank, so that gap has to block, and has to be named.
         if (! $affiliation->isFullyPaid()) {
-            return AttestationVerdict::refuse(AttestationRefusal::BalanceDue, $affiliation);
+            return AttestationVerdict::refuse(
+                AttestationRefusal::BalanceDue,
+                $affiliation,
+                $affiliation->balanceDue(),
+            );
         }
 
         return AttestationVerdict::allow($affiliation);

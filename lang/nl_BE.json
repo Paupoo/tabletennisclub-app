@@ -4666,5 +4666,7 @@
     "The document stops being valid and its file is deleted. The member may then ask for a new one.": "Het document is niet langer geldig en het bestand wordt verwijderd. Het lid kan daarna een nieuw attest aanvragen.",
     "Wrong mutual insurer, amount changed, …": "Verkeerde mutualiteit, bedrag gewijzigd, …",
     "The seal and the signature must be PNG files.": "De stempel en de handtekening moeten PNG-bestanden zijn.",
-    "This image has no transparency. A seal on a solid background would hide the form underneath it — scan it again with a transparent background.": "Deze afbeelding heeft geen transparantie. Een stempel op een volle achtergrond zou het formulier eronder verbergen — scan hem opnieuw met een transparante achtergrond."
+    "This image has no transparency. A seal on a solid background would hide the form underneath it — scan it again with a transparent background.": "Deze afbeelding heeft geen transparantie. Een stempel op een volle achtergrond zou het formulier eronder verbergen — scan hem opnieuw met een transparante achtergrond.",
+    "There is still :amount € outstanding on your affiliation.": "Er staat nog :amount € open op uw aansluiting.",
+    "Saved as soon as you pick it.": "Bewaard zodra u het kiest."
 }

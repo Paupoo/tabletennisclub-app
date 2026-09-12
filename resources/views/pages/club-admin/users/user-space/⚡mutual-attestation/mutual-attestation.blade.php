@@ -12,7 +12,15 @@
         </x-alert>
     @elseif (! $verdict->allowed && $verdict->refusal !== \App\Domains\Shared\Enums\AttestationRefusal::AlreadyIssued)
         <x-alert icon="o-exclamation-triangle" class="alert-warning">
-            {{ $verdict->refusal->message() }}
+            <div>
+                <p>{{ $verdict->refusal->message() }}</p>
+                @if ($verdict->balanceDue > 0)
+                    <p class="mt-1">
+                        {{ __('There is still :amount € outstanding on your affiliation.', ['amount' => number_format($verdict->balanceDue, 2, ',', ' ')]) }}
+                        <a class="link" href="{{ route('admin.user.payments', $user) }}">{{ __('My payments') }}</a>
+                    </p>
+                @endif
+            </div>
         </x-alert>
     @else
         <x-card>

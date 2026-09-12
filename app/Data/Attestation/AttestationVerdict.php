@@ -20,6 +20,15 @@ final readonly class AttestationVerdict
         public bool $allowed,
         public ?AttestationRefusal $refusal,
         public ?Subscription $affiliation,
+        /**
+         * What is still owed, when that is the reason for the refusal.
+         *
+         * Carried rather than recomputed by the screen: « votre cotisation
+         * n'est pas entièrement payée » in front of an affiliation the office
+         * has already marked *paid* reads as a bug. Naming the five euros is
+         * what turns it into something the member can act on.
+         */
+        public float $balanceDue = 0.0,
     ) {}
 
     public static function allow(Subscription $affiliation): self
@@ -27,8 +36,11 @@ final readonly class AttestationVerdict
         return new self(true, null, $affiliation);
     }
 
-    public static function refuse(AttestationRefusal $refusal, ?Subscription $affiliation = null): self
-    {
-        return new self(false, $refusal, $affiliation);
+    public static function refuse(
+        AttestationRefusal $refusal,
+        ?Subscription $affiliation = null,
+        float $balanceDue = 0.0,
+    ): self {
+        return new self(false, $refusal, $affiliation, $balanceDue);
     }
 }

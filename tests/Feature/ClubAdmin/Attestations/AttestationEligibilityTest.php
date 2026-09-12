@@ -112,3 +112,28 @@ it('does not count an affiliation held for another season', function (): void {
 
     expect($verdict->refusal)->toBe(AttestationRefusal::NoAffiliation);
 });
+
+it('names the gap when an affiliation marked paid came up short', function (): void {
+    // The exact shape found in production data: the payment is marked paid, the
+    // affiliation follows, and five euros never arrived.
+    $season = makeActiveSeason();
+    $subscription = Subscription::factory()->for(User::factory())->create([
+        'season_id' => $season->id,
+        'status' => 'paid',
+        'amount_due' => 125,
+    ]);
+
+    Payment::factory()->create([
+        'payable_type' => Subscription::class,
+        'payable_id' => $subscription->id,
+        'amount_due' => 125,
+        'amount_paid' => 120,
+        'status' => 'paid',
+    ]);
+
+    $verdict = app(AttestationEligibility::class)->for($subscription->user, $season);
+
+    expect($verdict->allowed)->toBeFalse()
+        ->and($verdict->refusal)->toBe(AttestationRefusal::BalanceDue)
+        ->and($verdict->balanceDue)->toBe(5.0);
+});

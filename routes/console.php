@@ -73,7 +73,8 @@ Schedule::command('payment:send-refund-reminder')
  * goes and only the record stays.
  */
 Schedule::command('attestations:purge')
-    ->dailyAt('03:20');
+    ->dailyAt('03:20')
+    ->withoutOverlapping();
 
 Schedule::command('season:provision')
     ->yearlyOn(7, 1, '06:00')

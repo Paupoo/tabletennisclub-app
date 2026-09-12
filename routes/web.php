@@ -156,6 +156,19 @@ Route::prefix('admin/club-admin/users/')
         Route::get('payments', fn () => redirect()->route('admin.treasury.payments'))->name('admin.users.payments');
     });
 // Season planning board — visible to the whole committee, mutations reserved to managers (decision #18).
+/*
+ * Mutual attestations — the attestations délégation, and nobody else.
+ *
+ * Deliberately not the members duty: whoever reaches this screen holds the club
+ * seal and the secretary's signature, and can produce a stamped document in the
+ * club's name.
+ */
+Route::prefix('admin/club-admin/attestations/')
+    ->middleware(['auth', 'verified', 'can:attestations.view', 'feature:attestations'])
+    ->group(function (): void {
+        Route::livewire('/', 'pages::club-admin.attestations.index')->name('admin.attestations.index');
+    });
+
 Route::prefix('admin/club-admin/planning/')
     ->middleware(['auth', 'verified', 'can:training_plans.manage', 'feature:training_planning'])
     ->group(function (): void {

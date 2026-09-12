@@ -34,6 +34,20 @@ class AttestationSetting extends Model
 {
     use HasAuditLog;
 
+    /**
+     * Defaults the model knows about, not only the table.
+     *
+     * `firstOrCreate([])` inserts an empty row and hands back an instance that
+     * has never seen the column defaults the database filled in — a screen
+     * reading a width straight after creating the row would read null.
+     */
+    protected $attributes = [
+        'seal_width_mm' => 30,
+        'signature_width_mm' => 42,
+        'federation_name' => 'AFTT',
+        'discipline' => 'Tennis de table',
+    ];
+
     protected $casts = [
         'seal_width_mm' => 'integer',
         'signature_width_mm' => 'integer',

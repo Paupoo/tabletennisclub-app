@@ -53,9 +53,9 @@ Attribue les délégations et le siège au comité. N'ouvre pas la fiche du memb
 - `users.view`
 - `access.manage`
 
-### Mutual attestations — `attestations`
+### Attestations mutuelle — `attestations`
 
-Issue the mutual-insurer attestations, and hold the club seal and the signature they carry.
+Délivrer les attestations mutuelle, et détenir le cachet du club et la signature qu'elles portent.
 
 - `users.view`
 - `attestations.view`
@@ -253,6 +253,7 @@ calendrier public.
 
 | Domaine | Clé `.env` |
 |---|---|
+| Attestations mutuelle | `FEATURE_ATTESTATIONS` |
 | Bar | `FEATURE_BAR` |
 | Caisse | `FEATURE_CASH_REGISTER` |
 | Contacts | `FEATURE_CONTACTS` |

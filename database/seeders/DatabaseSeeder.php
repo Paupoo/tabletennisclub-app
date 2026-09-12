@@ -384,6 +384,10 @@ class DatabaseSeeder extends Seeder
 
         $this->call(SpamSeeder::class);
 
+        // Development only. It installs a seal and a signature watermarked
+        // SPECIMEN — NE PAS UTILISER; they must never reach a production seed.
+        $this->call(AttestationDemoSeeder::class);
+
         // En dernier : la force list se calcule sur la population définitive,
         // et InterclubSeeder crée encore des compétiteurs.
         RecalculateForceListAction::handle();

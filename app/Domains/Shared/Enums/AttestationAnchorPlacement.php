@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf;
+namespace App\Domains\Shared\Enums;
 
 /**
  * Where a value sits relative to the label that names it.
  */
-enum AnchorPlacement: string
+enum AttestationAnchorPlacement: string
 {
     /** On the same line, starting just after the label ends. */
     case After = 'after';

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\ClubAdmin\Subscriptions\Attestations\Templates;
 
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\Anchor;
-use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\AnchorPlacement as Place;
+use App\Domains\Shared\Enums\AttestationAnchorPlacement as Place;
 use App\Domains\Shared\Enums\Mutuality;
 
 /**
@@ -50,7 +50,10 @@ final readonly class AnchorMaps
             'discipline' => new Anchor("Activité pratiquée par l'affilié ou nom de l'événement sportif", dx: 3),
             'signatory_name' => new Anchor("Nom du responsable de l'activité", dx: 3),
             'member_full_name' => new Anchor("Certifie sur l'honneur que", dx: 3),
-            'amount' => new Anchor('a bien payé la somme de', dx: 3),
+            // The form draws « [euros] , [cents] € », so one string would
+            // straddle the comma it prints itself.
+            'amount_euros' => new Anchor('a bien payé la somme de', dx: 5),
+            'amount_cents' => new Anchor('a bien payé la somme de', dx: 28),
             'period_from' => new Anchor('abonnement couvrant la période du', dx: 2),
             'period_to' => new Anchor('abonnement couvrant la période du', dx: 40),
             // Three "Date" on this form: the member's date of birth, the date
@@ -58,7 +61,7 @@ final readonly class AnchorMaps
             // club's. The club is last in both cases.
             'issued_on' => new Anchor('Date', occurrence: 3, dx: 3),
             'signature' => new Anchor('Signature', occurrence: 2, dx: 4, dy: -3),
-            'seal' => new Anchor('Cachet', placement: Place::Below, dy: 1),
+            'seal' => new Anchor('Cachet', placement: Place::Below, dy: 0, scale: 0.9),
         ];
     }
 
@@ -79,13 +82,14 @@ final readonly class AnchorMaps
             'amount' => new Anchor('de euros', placement: Place::At, dx: 2),
             'season_year_1' => new Anchor("pour l'année sportive", dx: 2),
             'season_year_2' => new Anchor("pour l'année sportive", dx: 14),
+            'mark_affiliation' => new Anchor('est inscrite dans notre club pour le sport', placement: Place::At, dx: -4),
             'discipline' => new Anchor('est inscrite dans notre club pour le sport', dx: 3),
             'club_name' => new Anchor('Nom, adresse et/ou cachet du club de sport', placement: Place::Below, dy: 1),
             // The first "date" belongs to « en date du », which is the payment
             // date, not the signing date.
             'issued_on' => new Anchor('Date', occurrence: 2, dx: 3),
             'signature' => new Anchor('Signature du responsable', dx: 4, dy: -3),
-            'seal' => new Anchor('Nom, adresse et/ou cachet du club de sport', placement: Place::Below, dy: 10),
+            'seal' => new Anchor('Nom, adresse et/ou cachet du club de sport', placement: Place::Below, dy: 7, scale: 0.75),
         ];
     }
 
@@ -106,14 +110,21 @@ final readonly class AnchorMaps
             'club_name' => new Anchor("représentant autorisé de (nom de l'organisation)", dx: 3),
             'club_address' => new Anchor("situé(e) à (adresse de l'organisation)", dx: 3),
             'member_full_name' => new Anchor('(nom et prénom du participant)', dx: 3),
+            'mark_affiliation' => new Anchor('une affiliation au club sportif', placement: Place::At, dx: -4),
             'discipline' => new Anchor('avec comme discipline', dx: 3),
             'amount' => new Anchor('le montant de', dx: 3),
             'validated_on' => new Anchor('en date du', dx: 3),
+            'mark_transfer' => new Anchor('virement', placement: Place::At, dx: -4),
+            'mark_cash' => new Anchor('en espèce', placement: Place::At, dx: -4),
+            'mark_other' => new Anchor('autre (précisez)', placement: Place::At, dx: -4),
             'period_from' => new Anchor('Période couverte par le paiement : du', dx: 2),
             'period_to' => new Anchor('Période couverte par le paiement : du', dx: 32),
             'issued_on' => new Anchor('Date de signature', dx: 3),
-            'seal' => new Anchor('Cachet et signature du club', placement: Place::Below, dy: 2),
-            'signature' => new Anchor('Cachet et signature du club', placement: Place::Below, dx: 30, dy: 6),
+            // The shallowest frame of the five — barely a centimetre under its
+            // caption. Both marks go beside the caption rather than under it,
+            // and shrink, so nothing spills onto the statutory text below.
+            'seal' => new Anchor('Cachet et signature du club', dx: 4, dy: -6, scale: 0.35),
+            'signature' => new Anchor('Cachet et signature du club', dx: 16, dy: -4, scale: 0.42),
         ];
     }
 
@@ -126,11 +137,15 @@ final readonly class AnchorMaps
             'club_name' => new Anchor('La direction du club sportif', dx: 3),
             'federation' => new Anchor('affilié à la Fédération/Ligue', dx: 3),
             'member_full_name' => new Anchor('certifie que (nom et prénom)', dx: 3),
-            'period_from' => new Anchor('est affiliée à partir du', dx: 3),
+            // Three boxed cells with printed separators between them.
+            'period_from_day' => new Anchor('est affiliée à partir du', dx: 4.5),
+            'period_from_month' => new Anchor('est affiliée à partir du', dx: 16.5),
+            'period_from_year' => new Anchor('est affiliée à partir du', dx: 30.5),
             'discipline' => new Anchor('Sport pratiqué', dx: 3),
-            'amount' => new Anchor('Montant payé', dx: 3),
-            'seal' => new Anchor('Cachet du club sportif', placement: Place::Below, dy: 2),
-            'signature' => new Anchor('Signature du responsable du club', placement: Place::Below, dy: 2),
+            'amount_euros' => new Anchor('Montant payé', dx: 8),
+            'amount_cents' => new Anchor('Montant payé', dx: 31),
+            'seal' => new Anchor('Cachet du club sportif', placement: Place::Below, dy: -1, scale: 0.8),
+            'signature' => new Anchor('Signature du responsable du club', placement: Place::Below, dy: -1, scale: 0.9),
         ];
     }
 
@@ -153,8 +168,8 @@ final readonly class AnchorMaps
             'period_to' => new Anchor('pour la période du', dx: 30),
             'discipline' => new Anchor('pour la pratique du sport suivant', dx: 3),
             'issued_on' => new Anchor('Date', occurrence: 1, dx: 3),
-            'seal' => new Anchor('Signature et cachet', placement: Place::Below, dy: 2),
-            'signature' => new Anchor('Signature et cachet', placement: Place::Below, dx: 30, dy: 6),
+            'seal' => new Anchor('Signature et cachet', placement: Place::Below, dy: 0, scale: 0.7),
+            'signature' => new Anchor('Signature et cachet', placement: Place::Below, dx: 22, dy: 1, scale: 0.7),
         ];
     }
 }

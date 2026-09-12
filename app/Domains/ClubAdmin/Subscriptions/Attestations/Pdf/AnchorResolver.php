@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf;
 
+use App\Domains\Shared\Enums\AttestationAnchorPlacement;
+
 /**
  * Turns "next to these words" into a spot on the page.
  *
@@ -16,6 +18,16 @@ final readonly class AnchorResolver
     /** How far below a label its own next line sits, when nothing says otherwise. */
     private const float DEFAULT_LINE_HEIGHT = 4.5;
 
+    /**
+     * Share of a line's height that hangs below the baseline.
+     *
+     * poppler reports the ink extent of a line, descenders included, while mPDF
+     * draws from the baseline. Written straight, every value would sit about a
+     * millimetre under the rule it belongs on. A fifth of the line box is the
+     * usual descent for the text faces these forms are set in.
+     */
+    private const float DESCENDER_SHARE = 0.22;
+
     public function resolve(PdfTextLayout $layout, Anchor $anchor): ?Point
     {
         $box = $this->locate($layout, $anchor);
@@ -24,16 +36,23 @@ final readonly class AnchorResolver
             return null;
         }
 
-        [$left, $top, $right, $bottom] = $box;
+        [$left, $top, $right, $bottom, $lineTop] = $box;
 
+        $baseline = $bottom - (($bottom - $lineTop) * self::DESCENDER_SHARE);
+
+        // The line's own bottom, not the word's: a value must sit on the same
+        // rule as the label that names it, and a label ending in « que » has a
+        // descender that would drag its value a millimetre lower than the one
+        // next to it.
+        // Below is for images, and hands back the top-left of where they go.
         return match ($anchor->placement) {
-            AnchorPlacement::After => new Point($right + $anchor->dx, $top + $anchor->dy, $anchor->page),
-            AnchorPlacement::Below => new Point(
+            AttestationAnchorPlacement::After => new Point($right + $anchor->dx, $baseline + $anchor->dy, $anchor->page),
+            AttestationAnchorPlacement::Below => new Point(
                 $left + $anchor->dx,
                 $bottom + self::DEFAULT_LINE_HEIGHT + $anchor->dy,
                 $anchor->page,
             ),
-            AnchorPlacement::At => new Point($left + $anchor->dx, $top + $anchor->dy, $anchor->page),
+            AttestationAnchorPlacement::At => new Point($left + $anchor->dx, $baseline + $anchor->dy, $anchor->page),
         };
     }
 
@@ -63,7 +82,7 @@ final readonly class AnchorResolver
      * of common words ("Nom et prénom") lands on the place it actually reads,
      * not on the first stray "Nom" three paragraphs above.
      *
-     * @return array{0: float, 1: float, 2: float, 3: float}|null
+     * @return array{0: float, 1: float, 2: float, 3: float, 4: float}|null
      */
     private function locate(PdfTextLayout $layout, Anchor $anchor): ?array
     {
@@ -93,11 +112,19 @@ final readonly class AnchorResolver
                 continue;
             }
 
+            // A label long enough to wrap is measured on the line it *ends* on:
+            // « représentant autorisé de (nom de l'organisation) » breaks across
+            // two lines on the Mutualité Neutre form, and taking the widest line
+            // put the club's name in the right margin, off the page.
+            $last = $run[$length - 1];
+            $first = $run[0];
+
             return [
-                min(array_map(static fn (PdfWord $word): float => $word->left, $run)),
-                min(array_map(static fn (PdfWord $word): float => $word->top, $run)),
-                max(array_map(static fn (PdfWord $word): float => $word->right, $run)),
-                max(array_map(static fn (PdfWord $word): float => $word->bottom, $run)),
+                $first->left,
+                $first->top,
+                $last->right,
+                $last->lineBottom,
+                $last->lineTop,
             ];
         }
 

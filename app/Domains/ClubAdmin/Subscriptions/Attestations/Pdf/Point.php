@@ -10,6 +10,9 @@ namespace App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf;
  * Millimetres and top-left because that is mPDF's own coordinate system: the
  * conversion from poppler's points happens once, in {@see PdfTextExtractor},
  * rather than at every call site where it could be forgotten.
+ *
+ * For a text placement `y` is the baseline to write on; for an image it is the
+ * top edge of where the image goes.
  */
 final readonly class Point
 {

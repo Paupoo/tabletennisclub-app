@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\Anchor;
-use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\AnchorPlacement;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\AnchorResolver;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\PdfTextExtractor;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Templates\AnchorMaps;
+use App\Domains\Shared\Enums\AttestationAnchorPlacement;
 use App\Domains\Shared\Enums\Mutuality;
 
 /*
@@ -67,7 +67,7 @@ it('reports the label it cannot find rather than guessing a spot', function (): 
 
     $point = app(AnchorResolver::class)->resolve(
         $layout,
-        new Anchor(phrase: 'Numéro de compte bancaire', placement: AnchorPlacement::After),
+        new Anchor(phrase: 'Numéro de compte bancaire', placement: AttestationAnchorPlacement::After),
     );
 
     expect($point)->toBeNull();

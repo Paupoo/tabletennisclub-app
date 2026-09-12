@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Http\Controllers\Attestations\AttestationVerificationController;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\GuardianInvitationController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
@@ -360,6 +361,18 @@ Route::post('/invitation/accept/{user}', [InvitationController::class, 'store'])
 Route::post('/invitation/resend/{user}', [InvitationController::class, 'resend'])
     ->name('invitation.resend')
     ->middleware('throttle:3,60');
+
+/**
+ * Attestation verification
+ *
+ * Public on purpose: the person checking works at a mutual insurer's desk and
+ * has no account here. The address is an unguessable token printed on the
+ * document, so reaching this page means already holding it — what the page
+ * adds is whether the certificate still stands.
+ */
+Route::get('/attestation/verifier/{token}', [AttestationVerificationController::class, 'show'])
+    ->name('attestations.verify')
+    ->middleware('throttle:30,1');
 
 /**
  * Guardian invitations

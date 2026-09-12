@@ -97,27 +97,34 @@ final readonly class PdfTextExtractor
                 'height' => $this->toMillimetres((float) $page['height']),
             ];
 
-            foreach ($page->xpath('.//word') ?: [] as $word) {
-                $text = trim((string) $word);
-                $normalised = self::normalise($text);
+            foreach ($page->xpath('.//line') ?: [] as $line) {
+                $lineBottom = $this->toMillimetres((float) $line['yMax']);
+                $lineTop = $this->toMillimetres((float) $line['yMin']);
 
-                // A lone « : », or a dotted rule the form draws with characters,
-                // carries nothing to anchor on — and left in place it would sit
-                // in the middle of a phrase and break the run of words that
-                // spells a label.
-                if ($normalised === '') {
-                    continue;
+                foreach ($line->word as $word) {
+                    $text = trim((string) $word);
+                    $normalised = self::normalise($text);
+
+                    // A lone « : », or a dotted rule the form draws with
+                    // characters, carries nothing to anchor on — and left in
+                    // place it would sit in the middle of a phrase and break
+                    // the run of words that spells a label.
+                    if ($normalised === '') {
+                        continue;
+                    }
+
+                    $words[] = new PdfWord(
+                        text: $text,
+                        normalised: $normalised,
+                        left: $this->toMillimetres((float) $word['xMin']),
+                        top: $this->toMillimetres((float) $word['yMin']),
+                        right: $this->toMillimetres((float) $word['xMax']),
+                        bottom: $this->toMillimetres((float) $word['yMax']),
+                        lineBottom: $lineBottom,
+                        lineTop: $lineTop,
+                        page: $number,
+                    );
                 }
-
-                $words[] = new PdfWord(
-                    text: $text,
-                    normalised: $normalised,
-                    left: $this->toMillimetres((float) $word['xMin']),
-                    top: $this->toMillimetres((float) $word['yMin']),
-                    right: $this->toMillimetres((float) $word['xMax']),
-                    bottom: $this->toMillimetres((float) $word['yMax']),
-                    page: $number,
-                );
             }
         }
 

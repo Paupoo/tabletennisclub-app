@@ -48,6 +48,8 @@ final readonly class BuildAttestationData
             memberLastName: (string) $member->last_name,
             memberBirthdate: $member->birthdate,
             memberAddress: $this->address($member->street, $member->city_code, $member->city_name),
+            memberStreet: (string) $member->street,
+            memberCity: $this->city($member->city_code, $member->city_name),
             memberEmail: $member->email,
             memberPhone: $member->phone_number,
             periodFrom: Carbon::parse($affiliation->confirmed_at ?? $affiliation->created_at),
@@ -61,6 +63,8 @@ final readonly class BuildAttestationData
             discipline: $settings->discipline,
             clubName: (string) $club->name,
             clubAddress: $this->address($club->street, $club->city_code, $club->city_name),
+            clubStreet: (string) $club->street,
+            clubCity: $this->city($club->city_code, $club->city_name),
             clubPhone: $club->phone_contact,
             clubLicence: (string) $club->licence,
             federation: $settings->federation_name,
@@ -71,9 +75,14 @@ final readonly class BuildAttestationData
 
     private function address(?string $street, ?string $cityCode, ?string $cityName): string
     {
-        $city = trim(implode(' ', array_filter([$cityCode, $cityName])));
+        $city = $this->city($cityCode, $cityName);
 
         return trim(implode(', ', array_filter([$street, $city === '' ? null : $city])));
+    }
+
+    private function city(?string $cityCode, ?string $cityName): string
+    {
+        return trim(implode(' ', array_filter([$cityCode, $cityName])));
     }
 
     /**

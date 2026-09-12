@@ -32,9 +32,9 @@ return new class extends Migration
             $table->foreignId('signatory_user_id')->nullable()->constrained('users')->nullOnDelete();
 
             $table->string('seal_path')->nullable();
-            $table->unsignedSmallInteger('seal_width_mm')->default(35);
+            $table->unsignedSmallInteger('seal_width_mm')->default(30);
             $table->string('signature_path')->nullable();
-            $table->unsignedSmallInteger('signature_width_mm')->default(45);
+            $table->unsignedSmallInteger('signature_width_mm')->default(42);
 
             // Partenamut asks which federation the club belongs to; every form
             // asks which sport is practised. Both are stable, both are editable

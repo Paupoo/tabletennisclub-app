@@ -113,17 +113,17 @@
         @can('subscriptions.view')
             <x-menu-item icon="o-list-bullet" link="{{ route('admin.users.registrations') }}" :title="__('Affiliations')" />
         @endcan
+        @feature('attestations')
+        @can('attestations.view')
+            <x-menu-item icon="o-document-check" link="{{ route('admin.attestations.index') }}" :title="__('Mutual attestations')" />
+        @endcan
+        @endfeature
         @canany(['users.update', 'access.manage'])
             <x-menu-item icon="o-key" link="{{ route('admin.users.delegations') }}" :title="__('Delegations')" />
         @endcanany
         @can('subscriptions.view')
             <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
         @endcan
-        @feature('attestations')
-        @can('attestations.view')
-            <x-menu-item icon="o-document-check" link="{{ route('admin.attestations.index') }}" :title="__('Mutual attestations')" />
-        @endcan
-        @endfeature
         @feature('training_planning')
         @can('training_plans.manage')
         <x-menu-item icon="o-view-columns" link="{{ route('admin.planning.board') }}" :title="__('Planning board')" />

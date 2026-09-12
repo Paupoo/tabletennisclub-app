@@ -6,6 +6,7 @@ namespace App\Domains\Competitions\Interclub\Models;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Traits\HasAuditLog;
+use App\Livewire\Concerns\ComposesInterclubLineup;
 use App\Observers\TeamObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
@@ -74,6 +75,34 @@ class Team extends Model
         'name',
         'season_id',
     ];
+
+    /**
+     * The team whose core this player already holds for a season and a category,
+     * if any — the one thing both the guard and the screens need to know.
+     *
+     * A team without a division has no category, and `NULL` is a bucket of its
+     * own rather than a wildcard: two division-less teams clash with each other
+     * and with nobody else. Same reading as the weekly lineup rule, which spells
+     * it out in {@see ComposesInterclubLineup}.
+     *
+     * The left join covers both ways a category can be missing — no division at
+     * all, or a division that carries none.
+     */
+    public static function coreHeldBy(int $userId, int $seasonId, ?string $category, ?int $exceptTeamId = null): ?self
+    {
+        return self::query()
+            ->select('teams.*')
+            ->leftJoin('leagues', 'leagues.id', '=', 'teams.league_id')
+            ->where('teams.season_id', $seasonId)
+            ->when(
+                $category === null,
+                fn (Builder $query) => $query->whereNull('leagues.category'),
+                fn (Builder $query) => $query->where('leagues.category', $category),
+            )
+            ->when($exceptTeamId, fn (Builder $query) => $query->whereKeyNot($exceptTeamId))
+            ->whereHas('users', fn (Builder $query) => $query->whereKey($userId))
+            ->first();
+    }
 
     public function captain(): BelongsTo
     {

@@ -27,13 +27,13 @@
                 <input id="remember_me" type="checkbox"
                     class="rounded-sm dark:bg-gray-900 border-base-300 text-primary shadow-xs focus:ring-primary"
                     name="remember">
-                <span class="ms-2 text-sm text-gray-600 dark:text-gray-400">{{ __('Remember me') }}</span>
+                <span class="ms-2 text-sm text-muted">{{ __('Remember me') }}</span>
             </label>
         </div>
 
         <div class="flex items-center justify-end mt-4">
             @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                <a class="underline text-sm text-muted hover:text-base-content rounded-md focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                     href="{{ route('password.request') }}">
                     {{ __('Forgot your password?') }}
                 </a>

@@ -126,7 +126,8 @@ class AfttCalendarImporter
                 'unchanged_count' => max(0, count($this->seen)
                     - count($this->changes['created'] ?? [])
                     - count($this->changes['moved'] ?? [])),
-                'skipped_count' => count($this->changes['refused_divisions'] ?? []),
+                'skipped_count' => count($this->changes['refused_divisions'] ?? [])
+                    + count($this->changes['refused_teams'] ?? []),
                 'changes' => $this->changes,
             ]);
         });
@@ -547,12 +548,24 @@ class AfttCalendarImporter
         $words = preg_split('/\s+/', trim($teamName)) ?: [];
         $letter = (string) end($words);
 
-        return Team::firstOrCreate([
-            'season_id' => $season->id,
-            'league_id' => $league->id,
-            'club_id' => $club->id,
-            'name' => $letter,
-        ]);
+        // Nos propres équipes portent une lettre unique par catégorie, et la garde
+        // du modèle le fait respecter. Quand la division encodée à la main ne
+        // correspond pas à celle que publie la fédération, `firstOrCreate` ne
+        // retrouve rien et tente un doublon : on le rapporte, on ne le laisse pas
+        // emporter l'import — tout ceci tourne dans une transaction.
+        try {
+            return Team::firstOrCreate([
+                'season_id' => $season->id,
+                'league_id' => $league->id,
+                'club_id' => $club->id,
+                'name' => $letter,
+            ]);
+        } catch (\DomainException $exception) {
+            $this->changes['refused_teams'][] = trim($club->name . ' ' . $letter)
+                . ' — ' . $exception->getMessage();
+
+            return null;
+        }
     }
 
     /**

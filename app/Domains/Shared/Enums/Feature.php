@@ -26,6 +26,7 @@ use App\Domains\Trainings\Models\TrainingPack;
  */
 enum Feature: string
 {
+    case Attestations = 'attestations';
     case Bar = 'bar';
     case CashRegister = 'cash_register';
     case Contacts = 'contacts';
@@ -80,6 +81,7 @@ enum Feature: string
     public function label(): string
     {
         return match ($this) {
+            self::Attestations => __('Mutual attestations'),
             self::Bar => __('Bar'),
             self::CashRegister => __('Cash register'),
             self::Contacts => __('Contacts'),

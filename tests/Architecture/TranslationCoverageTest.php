@@ -27,14 +27,26 @@ function extractTranslationKeysFromCodebase(): array
                 continue;
             }
 
-            // Match __('key') and __('key', [...]) — with or without replacement parameters.
+            // Match __('key') and __('key', [...]) — with or without replacement
+            // parameters, and with escaped quotes inside the key.
+            //
+            // `[^']*` stopped at the backslash of « form\'s », so every key
+            // containing an apostrophe was read as a shorter string that happened
+            // to be in the translation file, and the real one was never checked.
+            // One shipped untranslated before this was noticed.
             preg_match_all(
-                "/__\(\s*'([^']*)'\s*[,)]|__\(\s*\"([^\"]*)\"\s*[,)]/",
+                '/__\(\s*\'((?:\\\\.|[^\'\\\\])*)\'\s*[,)]|__\(\s*"((?:\\\\.|[^"\\\\])*)"\s*[,)]/s',
                 file_get_contents($file->getPathname()),
                 $matches,
             );
 
-            array_push($keys, ...array_filter(array_merge($matches[1], $matches[2])));
+            // The key as PHP will see it, not as it is written in the source.
+            $found = array_map(
+                static fn (string $key): string => str_replace(["\\'", '\\"', '\\\\'], ["'", '"', '\\'], $key),
+                array_filter(array_merge($matches[1], $matches[2])),
+            );
+
+            array_push($keys, ...$found);
         }
     }
 

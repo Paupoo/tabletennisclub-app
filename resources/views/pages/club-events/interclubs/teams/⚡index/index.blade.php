@@ -97,6 +97,12 @@
             <x-select label="Lettre" :options="$teamNameOptions" wire:model="newTeamName"
                 placeholder="Choisir A – Z" />
 
+            {{-- La lettre déjà prise se corrige ici : le refus doit se lire dans le
+                 formulaire, pas seulement exister dans le sac d'erreurs. --}}
+            @error('newTeamName')
+                <p class="text-sm text-error">{{ $message }}</p>
+            @enderror
+
             @if ($newDivisionMode)
                 <x-select :label="__('Category')" :options="$categoryOptions" wire:model="newCategory"
                     placeholder="Sélectionner..." />

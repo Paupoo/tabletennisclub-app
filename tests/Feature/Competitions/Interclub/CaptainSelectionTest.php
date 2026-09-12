@@ -826,8 +826,11 @@ it('blocks a player already lined up in another team of the same category that w
         'club_id' => $this->ownClub->id,
         'name' => 'ZZ',
     ]);
-    $sameCategoryTeam->users()->attach($this->player1->id);
 
+    // Le joueur n'est PAS du noyau de cette équipe — il ne peut plus l'être, un
+    // joueur tient un seul noyau par catégorie. Il y est aligné comme remplaçant,
+    // ce qui est justement le cas que la règle de la semaine doit attraper : le
+    // blocage lit la sélection de la rencontre, pas le noyau de l'équipe.
     $clash = Interclub::factory()->create([
         'season_id' => $this->season->id,
         'league_id' => $this->league->id,

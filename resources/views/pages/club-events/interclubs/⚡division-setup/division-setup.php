@@ -92,12 +92,22 @@ new class extends Component
             return;
         }
 
-        Team::create([
-            'name' => strtoupper($this->formTeamLetter),
-            'season_id' => $this->seasonId,
-            'league_id' => $this->selectedLeagueId,
-            'club_id' => $club->id,
-        ]);
+        // Le contrôle ci-dessus porte sur (lettre, saison, division, club), qui
+        // suffit pour un club adverse. Nos propres équipes répondent à une clé
+        // plus stricte — une lettre par catégorie — tenue par le modèle : on la
+        // traduit ici plutôt que de laisser l'écran tomber.
+        try {
+            Team::create([
+                'name' => strtoupper($this->formTeamLetter),
+                'season_id' => $this->seasonId,
+                'league_id' => $this->selectedLeagueId,
+                'club_id' => $club->id,
+            ]);
+        } catch (\DomainException $exception) {
+            $this->error($exception->getMessage());
+
+            return;
+        }
 
         $this->addModal = false;
         $this->success(__('Participant added.'));
@@ -265,9 +275,9 @@ new class extends Component
             : collect();
 
         $categoryMeta = [
-            'MEN' => ['label' => 'Hommes',   'bg' => 'bg-blue-50',  'border' => 'border-blue-200',  'text' => 'text-blue-700',  'dot' => 'bg-blue-500'],
-            'VETERANS' => ['label' => 'Vétérans', 'bg' => 'bg-amber-50', 'border' => 'border-amber-200', 'text' => 'text-amber-700', 'dot' => 'bg-amber-500'],
-            'WOMEN' => ['label' => 'Dames',    'bg' => 'bg-pink-50',  'border' => 'border-pink-200',  'text' => 'text-pink-700',  'dot' => 'bg-pink-500'],
+            'MEN' => ['label' => 'Hommes',   'bg' => 'bg-blue-50 dark:bg-blue-900/25',   'border' => 'border-blue-200 dark:border-blue-900/50',   'text' => 'text-blue-700 dark:text-blue-300',   'dot' => 'bg-blue-500'],
+            'VETERANS' => ['label' => 'Vétérans', 'bg' => 'bg-amber-50 dark:bg-amber-900/25', 'border' => 'border-amber-200 dark:border-amber-900/50', 'text' => 'text-amber-700 dark:text-amber-300', 'dot' => 'bg-amber-500'],
+            'WOMEN' => ['label' => 'Dames',    'bg' => 'bg-pink-50 dark:bg-pink-900/25',   'border' => 'border-pink-200 dark:border-pink-900/50',   'text' => 'text-pink-700 dark:text-pink-300',   'dot' => 'bg-pink-500'],
         ];
 
         return [

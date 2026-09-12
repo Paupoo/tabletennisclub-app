@@ -88,12 +88,7 @@
         @forelse ($users as $user)
             @php
                 $invStatus = $user->invitationStatus();
-                $invBadge = match($invStatus) {
-                    'active'     => ['label' => __('Account created'),     'class' => 'badge-success badge-soft badge-xs'],
-                    'pending'    => ['label' => __('Pending'),    'class' => 'badge-warning badge-soft badge-xs'],
-                    'expired'    => ['label' => __('Expired'),    'class' => 'badge-error badge-soft badge-xs'],
-                    default      => ['label' => __('Not invited'),'class' => 'badge-ghost badge-xs'],
-                };
+                $invitableGuardians = $user->invitableGuardians();
             @endphp
             {{-- <x-list-item> pose l'identité et les actions sur une même ligne. Depuis
             que chaque ligne porte une action nommée, « Modifier » et « Plus » prennent
@@ -121,7 +116,7 @@
                             @else
                                 <x-badge :value="__('Recreational')" class="badge-ghost badge-sm" />
                             @endif
-                            <x-badge :value="$invBadge['label']" class="{{ $invBadge['class'] }}" />
+                            <x-admin.users.account-status-badge :user="$user" size="badge-xs" />
                             @if ($user->has_paid)
                                 <x-badge :value="__('Paid')" class="badge-success badge-soft badge-xs" />
                             @else
@@ -141,10 +136,18 @@
                                 @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
                                     {{-- An invitation hands over a login, so it only goes to the
                                     member's own address: sent to a guardian, it would set a
-                                    password on somebody else's account. --}}
+                                    password on somebody else's account. A member who has none is
+                                    reached through their guardians instead, who create an account of
+                                    their own and gain the proxy over them. --}}
                                     @if ($user->email !== null)
                                         <x-menu-item icon="o-envelope" :title="__('Resend invitation')"
                                             wire:click="sendInvitation({{ $user->id }})" />
+                                    @elseif ($invitableGuardians->isNotEmpty())
+                                        <x-menu-item icon="o-envelope"
+                                            :title="$invitableGuardians->count() === 1
+                                                ? __('Invite the guardian — :name', ['name' => $invitableGuardians->first()->full_name])
+                                                : __('Invite the guardians (:count)', ['count' => $invitableGuardians->count()])"
+                                            wire:click="sendGuardianInvitation({{ $user->id }})" />
                                     @endif
                                 @endcan
                             @endif
@@ -162,7 +165,19 @@
 
                             @if ($invStatus !== 'active' && $user->email === null)
                                 <x-slot:note>
-                                    {{ __('This member has no address of their own yet, so they cannot be invited.') }}
+                                    @switch ($user->guardianshipStatus())
+                                        @case ('guardian_to_invite')
+                                            {{ __('This member has no address of their own: the invitation goes to :names, who will manage their account.', ['names' => $user->guardianNamesAt('actionable')]) }}
+                                            @break
+                                        @case ('guardian_invited')
+                                            {{ __(':names have been invited and have not answered yet.', ['names' => $user->guardianNamesAt('waiting')]) }}
+                                            @break
+                                        @case ('managed')
+                                            {{ __(':names answers for this member and manages their account.', ['names' => $user->guardianNamesAt('ready')]) }}
+                                            @break
+                                        @default
+                                            {{ __('This member has no address of their own, and no guardian the club can write to.') }}
+                                    @endswitch
                                 </x-slot:note>
                             @endif
                         </x-admin.shared.row-menu>
@@ -227,19 +242,8 @@
                          was clipped on every row: a cell sized for controls is not sized
                          for prose. --}}
                     @scope('cell_status', $user)
-                        @php
-                            $invBadge = match($user->invitationStatus()) {
-                                'active'  => ['label' => __('Account created'), 'class' => 'badge-success badge-soft badge-sm'],
-                                'pending' => ['label' => __('Pending'),         'class' => 'badge-warning badge-soft badge-sm'],
-                                'expired' => ['label' => __('Expired'),         'class' => 'badge-error badge-soft badge-sm'],
-                                default   => ['label' => __('Not invited'),     'class' => 'badge-ghost badge-sm'],
-                            };
-                        @endphp
-                        {{-- shrink-0 is what keeps the label whole: inside a flex row the
-                             badge is squeezed under its own text width, and a badge has a
-                             fixed height, so the second line is clipped rather than shown. --}}
                         <div class="flex flex-wrap items-center gap-1.5">
-                            <x-badge :value="$invBadge['label']" class="shrink-0 whitespace-nowrap {{ $invBadge['class'] }}" />
+                            <x-admin.users.account-status-badge :user="$user" />
                             @if ($user->has_paid)
                                 <x-badge :value="__('Paid')" class="badge-success badge-soft badge-sm shrink-0 whitespace-nowrap" />
                             @else
@@ -250,6 +254,7 @@
                     @scope('actions', $user)
                         @php
                             $invStatus = $user->invitationStatus();
+                            $invitableGuardians = $user->invitableGuardians();
                         @endphp
                         <div class="flex items-center justify-end gap-2">
                             <x-admin.shared.row-menu
@@ -260,10 +265,18 @@
                                         @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
                                             {{-- An invitation hands over a login, so it only goes to the
                                             member's own address: sent to a guardian, it would set a
-                                            password on somebody else's account. --}}
+                                            password on somebody else's account. A member who has none is
+                                            reached through their guardians instead, who create an account of
+                                            their own and gain the proxy over them. --}}
                                             @if ($user->email !== null)
                                                 <x-menu-item icon="o-envelope" :title="__('Resend invitation')"
                                                     wire:click="sendInvitation({{ $user->id }})" />
+                                            @elseif ($invitableGuardians->isNotEmpty())
+                                                <x-menu-item icon="o-envelope"
+                                                    :title="$invitableGuardians->count() === 1
+                                                        ? __('Invite the guardian — :name', ['name' => $invitableGuardians->first()->full_name])
+                                                        : __('Invite the guardians (:count)', ['count' => $invitableGuardians->count()])"
+                                                    wire:click="sendGuardianInvitation({{ $user->id }})" />
                                             @endif
                                         @endcan
                                     @endif
@@ -281,7 +294,19 @@
 
                                     @if ($invStatus !== 'active' && $user->email === null)
                                         <x-slot:note>
-                                            {{ __('This member has no address of their own yet, so they cannot be invited.') }}
+                                            @switch ($user->guardianshipStatus())
+                                                @case ('guardian_to_invite')
+                                                    {{ __('This member has no address of their own: the invitation goes to :names, who will manage their account.', ['names' => $user->guardianNamesAt('actionable')]) }}
+                                                    @break
+                                                @case ('guardian_invited')
+                                                    {{ __(':names have been invited and have not answered yet.', ['names' => $user->guardianNamesAt('waiting')]) }}
+                                                    @break
+                                                @case ('managed')
+                                                    {{ __(':names answers for this member and manages their account.', ['names' => $user->guardianNamesAt('ready')]) }}
+                                                    @break
+                                                @default
+                                                    {{ __('This member has no address of their own, and no guardian the club can write to.') }}
+                                            @endswitch
                                         </x-slot:note>
                                     @endif
                             </x-admin.shared.row-menu>
@@ -397,12 +422,24 @@
         </x-confirm-modal>
     @endcan
 
-    {{-- Sending again invalidates the link the member may be about to click --}}
+    {{-- Deux raisons de demander confirmation avant un envoi groupé : renvoyer
+         invalide le lien que le membre est peut-être en train de cliquer, et
+         inviter un tuteur écrit à quelqu'un qui n'est pas dans la sélection. --}}
     @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
-        <x-confirm-modal model="confirmReinviteModal" :title="__('Send a second invitation?')"
-            :confirmLabel="__('Send again')" confirmAction="confirmBulkInvite" :open="$confirmReinviteModal">
-            <p>{{ __(':count selected member(s) were already invited and have not accepted yet.', ['count' => $waitingOnInvitation]) }}</p>
-            <p class="mt-2 opacity-70">{{ __('A new invitation invalidates the link they were sent. The others in the selection are invited either way.') }}</p>
+        <x-confirm-modal model="confirmReinviteModal"
+            :title="$waitingOnInvitation > 0 ? __('Send a second invitation?') : __('Send these invitations?')"
+            :confirmLabel="$waitingOnInvitation > 0 ? __('Send again') : __('Send')"
+            confirmAction="confirmBulkInvite" :open="$confirmReinviteModal">
+            @if ($waitingOnInvitation > 0)
+                <p>{{ __(':count selected member(s) were already invited and have not accepted yet.', ['count' => $waitingOnInvitation]) }}</p>
+                <p class="mt-2 opacity-70">{{ __('A new invitation invalidates the link they were sent. The others in the selection are invited either way.') }}</p>
+            @endif
+            @if ($guardiansToInvite > 0)
+                <p @class(['mt-2' => $waitingOnInvitation > 0])>
+                    {{ __(':count guardian(s) will also be written to, for the selected members who have no address of their own.', ['count' => $guardiansToInvite]) }}
+                </p>
+                <p class="mt-2 opacity-70">{{ __('They create an account of their own and manage the member from it.') }}</p>
+            @endif
         </x-confirm-modal>
     @endcan
 

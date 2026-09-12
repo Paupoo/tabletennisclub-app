@@ -29,6 +29,9 @@
         <x-menu-item icon="o-credit-card" link="{{ route('admin.user.payments', $user) }}" :title="__('My payments')" />
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" :title="__('My Calendar')" />
         <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('My season')" />
+        @feature('attestations')
+        <x-menu-item icon="o-document-check" link="{{ route('admin.user.attestation', $user) }}" :title="__('Mutual attestation')" />
+        @endfeature
         <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" :title="__('Settings')" />
         <li><x-menu-separator /></li>
         {{-- The proxy a guardian holds over the accounts of their wards: see
@@ -110,6 +113,11 @@
         @can('subscriptions.view')
             <x-menu-item icon="o-list-bullet" link="{{ route('admin.users.registrations') }}" :title="__('Affiliations')" />
         @endcan
+        @feature('attestations')
+        @can('attestations.view')
+            <x-menu-item icon="o-document-check" link="{{ route('admin.attestations.index') }}" :title="__('Mutual attestations')" />
+        @endcan
+        @endfeature
         @canany(['users.update', 'access.manage'])
             <x-menu-item icon="o-key" link="{{ route('admin.users.delegations') }}" :title="__('Delegations')" />
         @endcanany

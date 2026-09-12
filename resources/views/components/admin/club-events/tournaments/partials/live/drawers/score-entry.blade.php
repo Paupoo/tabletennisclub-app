@@ -173,6 +173,10 @@
             @endphp
             <div class="mt-6 pt-6 border-t border-base-300 flex flex-col items-center gap-2">
                 <p class="text-xs uppercase font-bold text-muted tracking-widest">{{ __('Mobile score entry') }}</p>
+                {{-- bg-white, et pas un jeton de thème : un QR se lit par le contraste
+                     entre ses modules sombres et sa zone de repos claire. Sur une
+                     surface sombre il cesse d'être scannable, ce qui est le seul
+                     usage de ce bloc. La surface énonce donc sa couleur elle-même. --}}
                 <a href="{{ $qrUrl }}" target="_blank"
                     class="opacity-60 hover:opacity-100 transition-opacity p-2 bg-white rounded-xl inline-block shadow-sm">
                     {!! $svgQr !!}

@@ -20,6 +20,7 @@ declare(strict_types=1);
 */
 
 return [
+    'attestations' => env('FEATURE_ATTESTATIONS', true),
     'bar' => env('FEATURE_BAR', true),
     'cash_register' => env('FEATURE_CASH_REGISTER', true),
     'contacts' => env('FEATURE_CONTACTS', true),

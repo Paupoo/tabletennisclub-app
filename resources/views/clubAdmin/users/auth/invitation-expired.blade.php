@@ -1,5 +1,5 @@
 <x-login-layout>
-    <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+    <div class="mb-4 text-sm text-muted">
         <p class="font-medium">{{ __('This invitation link has expired.') }}</p>
         <p class="mt-2">{{ __('Invitation links are valid for :days days.', ['days' => \App\Domains\ClubAdmin\Users\Models\User::INVITATION_LINK_VALIDITY_DAYS]) }}</p>
     </div>
@@ -16,7 +16,7 @@
             </div>
         </form>
     @else
-        <div class="text-sm text-gray-600 dark:text-gray-400">
+        <div class="text-sm text-muted">
             {{ __('Please contact the club to receive a new invitation.') }}
         </div>
     @endif

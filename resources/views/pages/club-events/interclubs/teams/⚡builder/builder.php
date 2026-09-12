@@ -217,6 +217,26 @@ new class extends Component
             'nucleusSize.min' => 'Le noyau minimum est de 5 joueurs.',
         ]);
 
+        // Le compositeur découpe la liste de force entière et renomme à partir de
+        // « A » : relancé sur une catégorie déjà composée, il ne complète pas, il
+        // double. Le refus tombe ici plutôt qu'au `save()` — sinon on fait calculer
+        // une répartition et déplacer des joueurs pour la jeter ensuite.
+        //
+        // Recomposer reste possible : supprimer les équipes est une action à part,
+        // délibérée, avec sa modale, dans la liste des équipes.
+        $alreadyComposed = Team::inClub()
+            ->where('teams.season_id', $this->seasonId)
+            ->whereHas('league', fn (Builder $query) => $query->where('category', $this->teamCategory))
+            ->count();
+
+        if ($alreadyComposed > 0) {
+            $this->addError('teamCategory', __('This season already has :count team(s) in this category. Edit them from the teams list instead.', [
+                'count' => $alreadyComposed,
+            ]));
+
+            return;
+        }
+
         $this->showComputingModal = true;
         $this->js('$wire.computeDistribution()');
     }

@@ -227,3 +227,58 @@ it('paints no light slab in dark mode on the public site', function (string $rou
     'eventPosts',
     'public.clubPosts.index',
 ]);
+
+/*
+ * Logging out is the one transition that crosses layouts: the back office runs
+ * on `layouts/app`, the login screen on `layouts/guest`, and the two <html>
+ * tags do not carry the same attributes. Livewire's `navigate` syncs them onto
+ * the fetched document, which has no `data-theme` — the attribute is set at
+ * runtime, never rendered — so the login screen arrived with no theme at all
+ * and fell back to the system setting. A member who had asked for dark met a
+ * white screen, and only a reload put it right.
+ *
+ * The assertion is on the attribute rather than on a colour: losing it is the
+ * failure, and its absence only *looks* harmless when the system happens to
+ * agree with the choice.
+ *
+ * The menu is opened and the entry fired from script rather than clicked. The
+ * logout entry lives inside a collapsed <details>, and this suite does not fail
+ * on an element it cannot reach — it waits for it, for as long as it is given.
+ */
+it('keeps the theme through the logout redirect', function (): void {
+    // script() hands back the value itself for a single script, an array of
+    // values for several; older shapes wrap it. Normalise before comparing.
+    $value = fn (mixed $result): mixed => is_array($result) ? ($result[0] ?? null) : $result;
+
+    $this->actingAs(User::factory()->create(['theme' => 'dark']));
+
+    $page = visit(route('dashboard'))->inDarkMode()->wait(1);
+
+    expect($value($page->script('document.documentElement.getAttribute("data-theme")')))->toBe('dark');
+
+    $opened = $page->script(<<<'JS'
+        (() => {
+          const entry = [...document.querySelectorAll('*')]
+            .find((el) => el.getAttribute('wire:click') === 'logout');
+          if (! entry) return 'no logout entry in the page';
+          const panel = entry.closest('details');
+          if (panel) panel.open = true;
+          return 'ok';
+        })()
+    JS);
+
+    expect($value($opened))->toBe('ok');
+
+    $page->script(<<<'JS'
+        [...document.querySelectorAll('*')]
+          .find((el) => el.getAttribute('wire:click') === 'logout')
+          .click()
+    JS);
+
+    $page->wait(3);
+
+    expect($value($page->script('location.pathname')))->toBe('/login');
+
+    expect($value($page->script('document.documentElement.getAttribute("data-theme")')))
+        ->toBe('dark', 'the login screen lost its theme on the way out of the back office');
+});

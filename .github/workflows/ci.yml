@@ -84,6 +84,9 @@ jobs:
 
       # Not optional: nothing calls withoutVite(), public/build is gitignored,
       # and every page-rendering test throws ViteException without a manifest.
+      - name: Install PDF tooling
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ghostscript poppler-utils
+
       - name: Install JS dependencies
         run: npm ci
 
@@ -119,6 +122,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+
+      - name: Install PDF tooling
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ghostscript poppler-utils
 
       - name: Install JS dependencies
         run: npm ci

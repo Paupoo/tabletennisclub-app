@@ -146,3 +146,84 @@ test('a member cannot open the teams builder', function (): void {
         ->get(route('admin.interclubs.teams.builder'))
         ->assertForbidden();
 });
+
+/*
+|--------------------------------------------------------------------------
+| Une saison ne se compose qu'une fois par catégorie
+|--------------------------------------------------------------------------
+|
+| Le compositeur découpe la liste de force entière en tranches et renomme à
+| partir de « A ». Le relancer sur une catégorie déjà composée ne produit pas un
+| complément : il produit une seconde équipe A, une seconde B, et réinscrit tout
+| le monde. C'était l'autre porte par laquelle un joueur se retrouvait dans deux
+| noyaux, sans que personne n'ait touché à l'écran d'édition.
+|
+| Le refus tombe à l'étape 1 : inutile de faire calculer une répartition et
+| déplacer des joueurs pendant dix minutes pour la jeter ensuite.
+*/
+
+test('the builder refuses a category the season already has teams in', function (): void {
+    $league = League::factory()->create([
+        'season_id' => $this->season->id,
+        'category' => 'MEN',
+    ]);
+    Team::create([
+        'name' => 'A',
+        'season_id' => $this->season->id,
+        'league_id' => $league->id,
+        'club_id' => Club::own()?->id,
+    ]);
+
+    collect(range(1, 6))->each(fn (int $i) => eligibleCompetitor(Ranking::D2, 'Joueur' . $i));
+
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.teams.builder')
+        ->set('teamCategory', 'MEN')
+        ->set('nucleusSize', 6)
+        ->call('startComputing')
+        ->assertHasErrors('teamCategory')
+        ->assertSet('step', 1);
+
+    expect(Team::count())->toBe(1);
+});
+
+test('the builder still opens for a category nobody has composed yet', function (): void {
+    $league = League::factory()->create([
+        'season_id' => $this->season->id,
+        'category' => 'MEN',
+    ]);
+    Team::create([
+        'name' => 'A',
+        'season_id' => $this->season->id,
+        'league_id' => $league->id,
+        'club_id' => Club::own()?->id,
+    ]);
+
+    collect(range(1, 6))->each(fn (int $i) => eligibleCompetitor(Ranking::D2, 'Joueuse' . $i));
+
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.teams.builder')
+        ->set('teamCategory', 'VETERANS')
+        ->set('nucleusSize', 6)
+        ->call('startComputing')
+        ->assertHasNoErrors();
+});
+
+test('the refusal is rendered, not just raised', function (): void {
+    $league = League::factory()->create([
+        'season_id' => $this->season->id,
+        'category' => 'MEN',
+    ]);
+    Team::create([
+        'name' => 'A',
+        'season_id' => $this->season->id,
+        'league_id' => $league->id,
+        'club_id' => Club::own()?->id,
+    ]);
+
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.teams.builder')
+        ->set('teamCategory', 'MEN')
+        ->call('startComputing')
+        ->assertSee(__('This season already has :count team(s) in this category. Edit them from the teams list instead.', ['count' => 1]));
+});

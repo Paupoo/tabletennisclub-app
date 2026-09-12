@@ -204,3 +204,24 @@ En cas de problème :
 - Demandez au comité lors du prochain entraînement
 
 Il n'existe pas de chat d'aide intégré à l'application pour le moment.
+
+---
+
+## 12. Attestation mutuelle
+
+Votre mutualité rembourse une partie de votre cotisation de club sportif. **Mon espace → Attestation mutuelle** produit le document, déjà rempli, cachetté et signé par le club.
+
+**Conditions.** Deux, et seulement deux : votre affiliation de la saison est validée par le comité, et elle est payée en totalité (cotisation et entraînements). Une amende, une inscription à un tournoi ou un repas impayés ne bloquent pas la demande.
+
+**Les trois étapes.**
+1. Choisir sa mutualité. Si elle n'est pas listée, prendre *Une autre mutualité* : le club produit alors sa propre attestation.
+2. Vérifier ce qui sera certifié, et saisir son **numéro de registre national**. Le club ne le connaît pas et ne le conserve pas : il part directement sur le document.
+3. Télécharger le PDF et l'envoyer à sa mutualité.
+
+**Ce que le club atteste.** La période court du jour de validation de l'affiliation jusqu'à la fin de la saison — pas depuis le 1er septembre si l'inscription date de janvier. Le montant est ce qui a réellement été versé, remise famille déduite.
+
+**Une seule par saison**, mais retéléchargeable autant de fois que nécessaire. En cas d'erreur (mauvaise mutualité, montant modifié en cours de saison), le secrétariat peut la révoquer et en délivrer une nouvelle.
+
+**Pour vos enfants.** Connectez-vous en tant que votre pupille et suivez les mêmes étapes ; le numéro de registre national demandé est celui de l'enfant.
+
+Chaque attestation porte une référence et un QR code renvoyant vers une page publique qui confirme qu'elle a bien été délivrée par le club, et si elle est toujours valable.

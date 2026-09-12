@@ -42,23 +42,31 @@ class MeetingRsvpConfirmationNotification extends Notification implements Should
         $meeting = $this->meeting;
         $meeting->loadMissing('agendaItems');
 
-        $qrCode = null;
-        if ($this->payment) {
-            $qrCode = (new GeneratePaymentQR)($this->payment);
-        }
-
         $ics = app(IcsGenerator::class)->forMeeting($meeting);
 
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->markdown('mail.meeting-rsvp-confirmation', [
                 'user' => $notifiable,
                 'meeting' => $meeting,
                 'payment' => $this->payment,
-                'qrCode' => $qrCode,
                 'club' => Club::ourClub()->first(),
             ])
             ->subject(__('Attendance confirmed: :title', ['title' => $meeting->title]))
             ->attachData($ics, 'meeting.ics', ['mime' => 'text/calendar']);
+
+        // Attached by name, and referenced as `cid:qr-paiement.png` in the view:
+        // Gmail drops a `data:` source from an <img>, and embedding from the view
+        // would attach a second copy, since a notification renders its text part
+        // through the same Blade without the guard a mailable gets.
+        if ($this->payment) {
+            $mail->attachData(
+                (new GeneratePaymentQR)->png($this->payment),
+                'qr-paiement.png',
+                ['mime' => 'image/png'],
+            );
+        }
+
+        return $mail;
     }
 
     /** @return array<int, string> */

@@ -23,6 +23,11 @@ enum Permission: string
     // Accès et droits
     case AccessManage = 'access.manage';
 
+    // Attestations mutuelles
+    case AttestationsConfigure = 'attestations.configure';
+    case AttestationsIssue = 'attestations.issue';
+    case AttestationsView = 'attestations.view';
+
     // Supervision technique
     case AuditLogView = 'audit_log.view';
 

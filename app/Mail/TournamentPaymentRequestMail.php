@@ -13,6 +13,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -27,16 +28,34 @@ class TournamentPaymentRequestMail extends Mailable implements ShouldQueue
 
     public string $IBAN;
 
-    public string $qrCode;
-
     public function __construct(
         public Tournament $tournament,
         public Payment $payment,
         public Carbon $deadline,
     ) {
-        $this->qrCode = (new GeneratePaymentQR)($payment);
         $this->BIC = Club::ourClub()->first()->bic;
         $this->IBAN = Club::ourClub()->first()->bank_account_formatted;
+    }
+
+    /**
+     * The payment QR travels as a named attachment, which the view references as
+     * `cid:qr-paiement.png`.
+     *
+     * Two reasons, both learned the hard way. Gmail drops a `data:` source from
+     * an `<img>`, so the message showed its alt text and nothing else in
+     * production while Mailpit rendered it fine in development. And this mailable
+     * is queued: raw PNG bytes held in a property would be put through
+     * `json_encode` with the job payload, where they fail as malformed UTF-8 —
+     * building them here keeps them off the queue entirely.
+     *
+     * @return array<int, Attachment>
+     */
+    public function attachments(): array
+    {
+        return [
+            Attachment::fromData(fn (): string => (new GeneratePaymentQR)->png($this->payment), 'qr-paiement.png')
+                ->withMime('image/png'),
+        ];
     }
 
     public function content(): Content

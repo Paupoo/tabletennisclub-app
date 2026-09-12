@@ -29,6 +29,7 @@ enum Role: string
     // isDelegation(), not by the ordering here.
     case ACCESS = 'acces';
     case ADMINISTRATOR = 'administrateur';
+    case ATTESTATIONS = 'attestations';
     case BAR = 'bar';
     case BARMAN = 'barman';
     case CASH_REGISTER = 'caisse';
@@ -111,7 +112,7 @@ enum Role: string
             CommitteeRolesEnum::PRESIDENT => [self::MEMBERS, self::CONTACTS, self::MEETINGS, self::SEASONS, self::SUPERVISION],
             CommitteeRolesEnum::VICE_PRESIDENT => [self::MEMBERS, self::CONTACTS, self::MEETINGS],
             CommitteeRolesEnum::TREASURER => [self::TREASURY, self::CASH_REGISTER, self::FINES],
-            CommitteeRolesEnum::SECRETARY => [self::MEMBERS, self::CONTACTS, self::MEETINGS, self::WEBSITE],
+            CommitteeRolesEnum::SECRETARY => [self::MEMBERS, self::CONTACTS, self::MEETINGS, self::WEBSITE, self::ATTESTATIONS],
             CommitteeRolesEnum::ADMINISTRATOR => [self::SUPERVISION],
         };
     }
@@ -121,6 +122,7 @@ enum Role: string
         return match ($this) {
             self::ACCESS => __('Hand out the délégations and the committee seat. Does not open the member file itself.'),
             self::ADMINISTRATOR => __('Unrestricted access to the whole application.'),
+            self::ATTESTATIONS => __('Issue the mutual-insurer attestations, and hold the club seal and the signature they carry.'),
             self::COMMITTEE => __('Baseline back-office access: consult the club data without managing it.'),
             self::TREASURY => __('Reconcile payments, import bank statements, handle refunds.'),
             self::CASH_REGISTER => __('Hold and balance the cash register, record movements.'),
@@ -167,6 +169,7 @@ enum Role: string
         return match ($this) {
             self::ACCESS => __('Access rights'),
             self::ADMINISTRATOR => __('Administrator'),
+            self::ATTESTATIONS => __('Mutual attestations'),
             self::COMMITTEE => __('Committee member'),
             self::TREASURY => __('Treasury'),
             self::CASH_REGISTER => __('Cash register'),
@@ -210,6 +213,24 @@ enum Role: string
             self::ACCESS => [
                 Permission::UsersView,
                 Permission::AccessManage,
+            ],
+
+            // Deliberately not folded into MEMBERS: this délégation hands out the
+            // club seal and the secretary's signature, and whoever holds it can
+            // produce a stamped document in the club's name. Editing a member's
+            // address and signing a certificate are not the same duty, the same
+            // way ACCESS is kept apart from UsersUpdate just above.
+            //
+            // ClubUpdate rides along because the forms print the club's phone
+            // number and seat, which live on the club record. It is the whole
+            // club form, bank account included — a deliberate call, taken with
+            // that cost stated.
+            self::ATTESTATIONS => [
+                Permission::UsersView,
+                Permission::AttestationsView,
+                Permission::AttestationsIssue,
+                Permission::AttestationsConfigure,
+                Permission::ClubUpdate,
             ],
 
             self::COMMITTEE => [

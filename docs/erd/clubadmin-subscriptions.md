@@ -15,6 +15,7 @@ erDiagram
         int season_id FK
         int user_id FK
         string status
+        datetime confirmed_at "nullable"
         bool is_competitive
         bool has_other_family_members
         int trainings_count

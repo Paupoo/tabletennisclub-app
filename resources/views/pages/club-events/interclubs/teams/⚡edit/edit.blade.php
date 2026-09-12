@@ -46,8 +46,8 @@
                                 wire:click="$set('newDivisionMode', true)" />
                         @endif
                     @else
-                        <div class="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
-                            <p class="font-medium text-gray-800">{{ __('Division') }}</p>
+                        <div class="rounded-lg bg-base-200 p-3 text-sm text-muted">
+                            <p class="font-medium text-base-content">{{ __('Division') }}</p>
                             <p class="mt-1">{{ $division }}</p>
                             <p class="mt-2 flex items-start gap-1.5 text-xs text-gray-500">
                                 <x-icon name="o-lock-closed" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -57,7 +57,7 @@
                     @endif
 
                     <div class="text-xs text-gray-400">
-                        Saison : <span class="font-medium text-gray-600">{{ $team->season?->name ?? '—' }}</span>
+                        Saison : <span class="font-medium text-muted">{{ $team->season?->name ?? '—' }}</span>
                     </div>
                 </div>
             </x-card>
@@ -65,17 +65,16 @@
             {{-- Capitaine --}}
             <x-card class="shadow-sm" :title="__('Captain')">
                 @if ($captainId)
-                    @php $captain = $competitors->find($captainId) ?? $team->captain; @endphp
-                    <div class="mb-4 flex items-center gap-3 rounded-lg bg-yellow-50 p-3">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-yellow-200 text-sm font-bold text-yellow-800">
-                            {{ mb_strtoupper(substr($captain?->first_name ?? '?', 0, 1)) }}{{ strtoupper(substr($captain?->last_name ?? '', 0, 1)) }}
+                    <div class="mb-4 flex items-center gap-3 rounded-lg bg-yellow-50 p-3 dark:bg-yellow-900/25">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-yellow-200 text-sm font-bold text-yellow-800 dark:bg-yellow-900/45 dark:text-yellow-300">
+                            {{ mb_strtoupper(substr($captainUser?->first_name ?? '?', 0, 1)) }}{{ strtoupper(substr($captainUser?->last_name ?? '', 0, 1)) }}
                         </div>
                         <div class="flex-1">
-                            <p class="text-sm font-semibold text-gray-900">
-                                {{ $captain?->first_name }} {{ $captain?->last_name }}
+                            <p class="text-sm font-semibold text-base-content">
+                                {{ $captainUser?->first_name }} {{ $captainUser?->last_name }}
                             </p>
-                            @if ($captain?->ranking)
-                                <p class="text-xs text-gray-500">{{ $captain->ranking->getLabel() }}</p>
+                            @if ($captainUser?->ranking)
+                                <p class="text-xs text-gray-500">{{ $captainUser->ranking->getLabel() }}</p>
                             @endif
                         </div>
                         <x-button class="btn-ghost btn-xs text-gray-400 hover:text-red-500"
@@ -85,28 +84,24 @@
                     <p class="mb-4 text-sm text-gray-400 italic">{{ __('No captain designated.') }}</p>
                 @endif
 
-                <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Désigner parmi le noyau
-                </p>
-                <div class="max-h-48 space-y-1 overflow-y-auto">
-                    @foreach ($teamMembers as $member)
-                        <button
-                            wire:click="setCaptain({{ $member->id }})"
-                            wire:key="cap-{{ $member->id }}"
-                            class="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition hover:bg-gray-50
-                                {{ $captainId === $member->id ? 'bg-yellow-50 font-semibold text-yellow-800' : 'text-gray-700' }}">
-                            <span>{{ $member->first_name }} {{ $member->last_name }}</span>
-                            @if ($member->ranking)
-                                <span class="ml-auto rounded bg-gray-100 px-1 py-0.5 text-xs font-semibold text-gray-500">
-                                    {{ $member->ranking->getLabel() }}
-                                </span>
-                            @endif
-                            @if ($captainId === $member->id)
-                                <x-heroicon-s-star class="h-3.5 w-3.5 text-yellow-500" />
-                            @endif
-                        </button>
-                    @endforeach
-                </div>
+                @if ($captainNeedsEmailConfirmation || $captainNeedsProfile)
+                    <div class="mb-4 space-y-1 rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs text-warning-content">
+                        @if ($captainNeedsEmailConfirmation)
+                            <p>{{ __('This captain has not confirmed their email address yet.') }}</p>
+                        @endif
+                        @if ($captainNeedsProfile)
+                            <p>{{ __('This captain must complete their profile before they can compose a lineup.') }}</p>
+                        @endif
+                    </div>
+                @endif
+
+                {{-- Le vivier, c'est le club entier : un bénévole non affilié capitaine
+                     aussi bien qu'un joueur du noyau. À 318 membres, une liste à plat
+                     ne tient plus — recherche vide, le noyau remonte en tête. --}}
+                <x-choices wire:model.live="captainId" :label="__('Designate a captain')"
+                    single searchable :options="$captainOptions"
+                    :placeholder="__('Search a member…')" />
+
             </x-card>
         </div>
 
@@ -129,19 +124,39 @@
                 <p class="mb-4 text-sm text-error">{{ $message }}</p>
             @enderror
 
-            <div class="divide-y divide-gray-100">
+            {{-- Le noyau reste sous les yeux : paginer les candidats sans le
+                 rappeler reviendrait à cacher sa propre sélection. --}}
+            @if ($teamMembers->isNotEmpty())
+                <div class="mb-4 rounded-lg border border-base-300 bg-base-200/40 p-3">
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-base-content/50">
+                        {{ __('Current core') }}
+                    </p>
+                    <div class="flex flex-wrap gap-1.5">
+                        @foreach ($teamMembers as $member)
+                            <button type="button" wire:key="core-{{ $member->id }}"
+                                wire:click="toggleMember({{ $member->id }})"
+                                class="badge badge-primary badge-soft gap-1 cursor-pointer">
+                                {{ $member->first_name }} {{ $member->last_name }}
+                                <x-heroicon-s-x-mark class="h-3 w-3" />
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            <div class="divide-y divide-base-300">
                 @forelse ($competitors as $user)
                     @php $selected = in_array($user->id, $memberIds); @endphp
                     <button type="button"
                         wire:key="competitor-{{ $user->id }}"
                         aria-pressed="{{ $selected ? 'true' : 'false' }}"
                         class="flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-2.5 text-left transition
-                            {{ $selected ? 'bg-blue-50' : 'hover:bg-gray-50' }}"
+                            {{ $selected ? 'bg-blue-50 dark:bg-blue-900/25' : 'hover:bg-base-200' }}"
                         wire:click="toggleMember({{ $user->id }})">
 
                         {{-- Checkbox visuel --}}
                         <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition
-                            {{ $selected ? 'border-blue-500 bg-blue-500' : 'border-base-300 bg-white' }}">
+                            {{ $selected ? 'border-blue-500 bg-blue-500' : 'border-base-300 bg-base-100' }}">
                             @if ($selected)
                                 <x-heroicon-s-check class="h-3 w-3 text-white" />
                             @endif
@@ -149,26 +164,59 @@
 
                         <div class="flex flex-1 items-center justify-between">
                             <div>
-                                <span class="text-sm font-medium text-gray-900">
+                                <span class="text-sm font-medium text-base-content">
                                     {{ $user->first_name }} {{ $user->last_name }}
                                 </span>
                                 @if ($captainId === $user->id)
-                                    <span class="ml-1.5 rounded bg-yellow-100 px-1.5 py-0.5 text-xs font-semibold text-yellow-700">Cap.</span>
+                                    <span class="ml-1.5 rounded bg-yellow-100 px-1.5 py-0.5 text-xs font-semibold text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300">Cap.</span>
                                 @endif
                             </div>
-                            @if ($user->ranking)
-                                <span class="rounded bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500">
-                                    {{ $user->ranking->getLabel() }}
-                                </span>
-                            @endif
+                            <div class="flex items-center gap-2">
+                                {{-- Déjà pris dans la catégorie : on le dit, on ne le cache pas.
+                                     Un candidat qui disparaît passe pour inéligible. --}}
+                                @if (! $selected && isset($heldElsewhere[$user->id]))
+                                    <span class="badge badge-warning badge-soft badge-sm whitespace-nowrap">
+                                        {{ __('In team :team', ['team' => $heldElsewhere[$user->id]]) }}
+                                    </span>
+                                @endif
+
+                                @if ($user->ranking)
+                                    <span class="rounded bg-base-200 px-2 py-0.5 text-xs font-semibold text-muted">
+                                        {{ $user->ranking->getLabel() }}
+                                    </span>
+                                @endif
+                            </div>
                         </div>
                     </button>
                 @empty
                     <p class="py-6 text-center text-sm text-gray-400 italic">{{ __('No results.') }}</p>
                 @endforelse
             </div>
+
+            <div class="mt-4">
+                {{ $competitors->links() }}
+            </div>
         </x-card>
     </div>
+
+    {{-- Le déplacement nomme l'équipe dépossédée : c'est l'opérateur qui porte
+         la décision, il n'y a pas de notification derrière. --}}
+    <x-confirm-modal model="showMoveModal" :title="__('Move this player?')"
+        :confirmLabel="__('Move')" confirmClass="btn-warning"
+        confirmAction="confirmMove" cancelAction="cancelMove" :open="$showMoveModal">
+        @if ($pendingMove)
+            <p>
+                {{ __(':player currently holds a place in team :from. Move them to team :to?', [
+                    'player' => $pendingMove['playerName'],
+                    'from' => $pendingMove['teamName'],
+                    'to' => $team->name,
+                ]) }}
+            </p>
+            <p class="mt-2 text-sm text-gray-500">
+                {{ __('Team :from will lose the player when you save this form.', ['from' => $pendingMove['teamName']]) }}
+            </p>
+        @endif
+    </x-confirm-modal>
 
     {{-- ── Actions ──────────────────────────────────────────────────────── --}}
     <div class="mt-6 flex justify-end gap-3">

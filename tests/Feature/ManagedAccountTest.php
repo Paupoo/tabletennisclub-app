@@ -188,7 +188,7 @@ describe('offering to invite a member', function (): void {
         Livewire::actingAs(User::factory()->withRole(Role::MEMBERS)->create())
             ->test('pages::club-admin.users.index')
             ->assertDontSee("sendInvitation({$managed->id})", escape: false)
-            ->assertSee(__('This member has no address of their own yet, so they cannot be invited.'));
+            ->assertSee(__('This member has no address of their own, and no guardian the club can write to.'));
     });
 
     it('offers it to a member who has one', function (): void {

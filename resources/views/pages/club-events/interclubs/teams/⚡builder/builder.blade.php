@@ -24,7 +24,7 @@
 
                     {{-- Sélecteur de catégorie --}}
                     <div>
-                        <p class="mb-2 text-sm font-medium text-gray-700">{{ __('Category') }}</p>
+                        <p class="mb-2 text-sm font-medium text-base-content/80">{{ __('Category') }}</p>
                         @php
                             $cats = [
                                 'MEN'      => ['label' => 'Hommes',   'desc' => __('All competitors'), 'icon' => 'o-user-group'],
@@ -38,18 +38,24 @@
                                     wire:click="$set('teamCategory', '{{ $value }}')"
                                     @class([
                                         'flex flex-col items-center gap-1 rounded-lg border-2 px-3 py-3 text-center text-sm transition-all',
-                                        'border-blue-500 bg-blue-50 text-blue-800 shadow-sm' => $teamCategory === $value,
-                                        'border-base-300 bg-white text-gray-600 hover:border-primary hover:bg-gray-50' => $teamCategory !== $value,
+                                        'border-blue-500 bg-blue-50 text-blue-800 shadow-sm dark:bg-blue-900/25 dark:text-blue-300' => $teamCategory === $value,
+                                        'border-base-300 bg-base-100 text-muted hover:border-primary hover:bg-base-200' => $teamCategory !== $value,
                                     ])>
                                     <span class="font-semibold leading-tight">{{ $cat['label'] }}</span>
-                                    <span class="text-xs leading-tight opacity-60">{{ $cat['desc'] }}</span>
+                                    <span class="text-xs leading-tight">{{ $cat['desc'] }}</span>
                                 </button>
                             @endforeach
                         </div>
+
+                        {{-- Une catégorie déjà composée se refuse ici, avant le calcul :
+                             relancer le compositeur doublerait les équipes. --}}
+                        @error('teamCategory')
+                            <p class="mt-2 text-sm text-error">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     @if ($missingBirthdateCount > 0)
-                        <div class="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                        <div class="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/25 dark:text-amber-300">
                             <x-heroicon-o-exclamation-triangle class="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                             <span>
                                 <strong>{{ $missingBirthdateCount }} compétiteur{{ $missingBirthdateCount > 1 ? 's' : '' }}</strong>
@@ -71,8 +77,8 @@
 
                     <div @class([
                         'rounded-lg p-4 text-sm',
-                        'bg-blue-50 text-blue-800'   => $eligibleCount > 0,
-                        'bg-amber-50 text-amber-800' => $eligibleCount === 0,
+                        'bg-blue-50 text-blue-800 dark:bg-blue-900/25 dark:text-blue-300'   => $eligibleCount > 0,
+                        'bg-amber-50 text-amber-800 dark:bg-amber-900/25 dark:text-amber-300' => $eligibleCount === 0,
                     ])>
                         @php $teamsPreview = ($nucleusSize > 0 && $eligibleCount > 0) ? intdiv($eligibleCount, $nucleusSize) : 0; @endphp
                         <p class="font-semibold">{{ __('Estimated result') }}</p>
@@ -82,11 +88,11 @@
                             <p class="mt-1">
                                 <span class="text-2xl font-bold">{{ $teamsPreview }}</span> équipe{{ $teamsPreview > 1 ? 's' : '' }}
                                 de <span class="font-semibold">{{ $nucleusSize }}</span> joueurs
-                                <span class="opacity-70">
+                                <span>
                                     ({{ $eligibleCount - ($teamsPreview * $nucleusSize) }} non assigné{{ $eligibleCount - ($teamsPreview * $nucleusSize) > 1 ? 's' : '' }})
                                 </span>
                             </p>
-                            <p class="mt-1 text-xs opacity-60">{{ $eligibleCount }} compétiteur{{ $eligibleCount > 1 ? 's' : '' }} éligible{{ $eligibleCount > 1 ? 's' : '' }}</p>
+                            <p class="mt-1 text-xs">{{ $eligibleCount }} compétiteur{{ $eligibleCount > 1 ? 's' : '' }} éligible{{ $eligibleCount > 1 ? 's' : '' }}</p>
                         @endif
                     </div>
                 </div>
@@ -115,19 +121,19 @@
                     {{-- Zone de dépôt : équipe --}}
                     <div
                         wire:key="team-card-{{ $index }}"
-                        class="rounded-xl border bg-white shadow-sm transition-all"
+                        class="rounded-xl border bg-base-100 shadow-sm transition-all"
                         :class="over === {{ $index }} ? 'border-blue-400 ring-2 ring-blue-200' : 'border-base-300'"
                         @dragover.prevent="over = {{ $index }}"
                         @dragleave="over === {{ $index }} && (over = null)"
                         @drop.prevent="$wire.movePlayerToTeam(dragging, {{ $index }}); dragging = null; over = null">
 
                         {{-- En-tête --}}
-                        <div class="flex items-center justify-between rounded-t-xl bg-gray-50 px-4 py-3">
+                        <div class="flex items-center justify-between rounded-t-xl bg-base-200 px-4 py-3">
                             <div class="flex items-center gap-2">
-                                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-800">
+                                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-800 dark:bg-blue-900/45 dark:text-blue-300">
                                     {{ $teamData['letter'] }}
                                 </span>
-                                <span class="font-medium text-gray-900">Équipe {{ $teamData['letter'] }}</span>
+                                <span class="font-medium text-base-content">Équipe {{ $teamData['letter'] }}</span>
                                 @if (($teamData['captainId'] ?? null) !== null)
                                     @php $cap = $competitors[$teamData['captainId']] ?? null; @endphp
                                     @if ($cap)
@@ -142,7 +148,7 @@
                         </div>
 
                         {{-- Liste des joueurs --}}
-                        <div class="min-h-[3rem] divide-y divide-gray-100 px-4">
+                        <div class="min-h-[3rem] divide-y divide-base-300 px-4">
                             @forelse ($teamData['players'] as $playerId)
                                 @php
                                     $player    = $competitors[$playerId] ?? null;
@@ -153,19 +159,19 @@
                                         wire:key="player-{{ $playerId }}"
                                         draggable="true"
                                         class="flex cursor-grab items-center gap-2 py-2 active:cursor-grabbing"
-                                        :class="dragging === {{ $playerId }} ? 'opacity-40' : 'hover:bg-gray-50'"
+                                        :class="dragging === {{ $playerId }} ? 'opacity-40' : 'hover:bg-base-200'"
                                         @dragstart="dragging = {{ $playerId }}; $event.dataTransfer.effectAllowed = 'move'"
                                         @dragend="dragging = null; over = null">
 
                                         {{-- Grip --}}
                                         <x-heroicon-o-bars-2 class="h-3.5 w-3.5 shrink-0 text-gray-300" />
 
-                                        <span class="flex-1 text-sm font-medium text-gray-900">
+                                        <span class="flex-1 text-sm font-medium text-base-content">
                                             {{ $player->first_name }} {{ $player->last_name }}
                                         </span>
 
                                         @if ($player->ranking)
-                                            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-600">
+                                            <span class="rounded bg-base-200 px-1.5 py-0.5 text-xs font-semibold text-muted">
                                                 {{ $player->ranking->getLabel() }}
                                             </span>
                                         @endif
@@ -191,7 +197,7 @@
                         </div>
 
                         {{-- Infos de ligue --}}
-                        <div class="border-t border-base-300 bg-gray-50 px-4 pb-3 pt-2">
+                        <div class="border-t border-base-300 bg-base-200 px-4 pb-3 pt-2">
                             <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Ligue</p>
                             <div class="grid grid-cols-3 gap-2">
                                 <x-select
@@ -216,7 +222,7 @@
                 {{-- Zone dépôt : non assignés --}}
                 @if (count($unassigned) > 0 || true)
                     <div
-                        class="rounded-xl border bg-white shadow-sm transition-all"
+                        class="rounded-xl border bg-base-100 shadow-sm transition-all"
                         :class="over === 'unassigned'
                             ? 'border-orange-400 ring-2 ring-orange-200'
                             : ({{ count($unassigned) > 0 ? 'true' : 'false' }} ? 'border-dashed border-base-300' : 'border-dashed border-base-300 opacity-60')"
@@ -224,17 +230,17 @@
                         @dragleave="over === 'unassigned' && (over = null)"
                         @drop.prevent="$wire.movePlayerToUnassigned(dragging); dragging = null; over = null">
 
-                        <div class="flex items-center gap-2 rounded-t-xl bg-orange-50 px-4 py-3">
+                        <div class="flex items-center gap-2 rounded-t-xl bg-orange-50 px-4 py-3 dark:bg-orange-900/25">
                             <x-heroicon-o-user-minus class="h-5 w-5 text-orange-400" />
-                            <span class="font-medium text-orange-800">{{ __('Unassigned') }}</span>
+                            <span class="font-medium text-orange-800 dark:text-orange-300">{{ __('Unassigned') }}</span>
                             @if (count($unassigned) > 0)
-                                <span class="ml-auto text-xs text-orange-500">
+                                <span class="ml-auto text-xs text-orange-700 dark:text-orange-300">
                                     {{ count($unassigned) }} joueur{{ count($unassigned) > 1 ? 's' : '' }}
                                 </span>
                             @endif
                         </div>
 
-                        <div class="min-h-[3rem] divide-y divide-gray-100 px-4">
+                        <div class="min-h-[3rem] divide-y divide-base-300 px-4">
                             @forelse ($unassigned as $playerId)
                                 @php $player = $competitors[$playerId] ?? null; @endphp
                                 @if ($player)
@@ -242,15 +248,15 @@
                                         wire:key="unassigned-{{ $playerId }}"
                                         draggable="true"
                                         class="flex cursor-grab items-center gap-2 py-2 active:cursor-grabbing"
-                                        :class="dragging === {{ $playerId }} ? 'opacity-40' : 'hover:bg-gray-50'"
+                                        :class="dragging === {{ $playerId }} ? 'opacity-40' : 'hover:bg-base-200'"
                                         @dragstart="dragging = {{ $playerId }}; $event.dataTransfer.effectAllowed = 'move'"
                                         @dragend="dragging = null; over = null">
                                         <x-heroicon-o-bars-2 class="h-3.5 w-3.5 shrink-0 text-gray-300" />
-                                        <span class="flex-1 text-sm font-medium text-gray-700">
+                                        <span class="flex-1 text-sm font-medium text-base-content/80">
                                             {{ $player->first_name }} {{ $player->last_name }}
                                         </span>
                                         @if ($player->ranking)
-                                            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-600">
+                                            <span class="rounded bg-base-200 px-1.5 py-0.5 text-xs font-semibold text-muted">
                                                 {{ $player->ranking->getLabel() }}
                                             </span>
                                         @endif
@@ -292,7 +298,7 @@
             <h3 class="animate-pulse text-xl font-black uppercase italic tracking-widest">
                 {{ __('Calculating distribution...') }}
             </h3>
-            <p class="mx-auto mt-4 max-w-xs text-sm opacity-60">
+            <p class="mx-auto mt-4 max-w-xs text-sm text-muted">
                 {{ __('Recalculating the force list and distributing players across teams.') }}
             </p>
         </div>

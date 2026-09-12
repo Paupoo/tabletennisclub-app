@@ -113,9 +113,16 @@ it('marks all future interclubs as unavailable in bulk', function (): void {
 });
 
 it('updates matches across multiple teams the player belongs to', function (): void {
+    // Deux équipes, mais deux catégories : un joueur tient un seul noyau par
+    // catégorie. Cumuler hommes et vétérans est précisément le cas où il a
+    // plusieurs calendriers à répondre d'un coup.
+    $veteransLeague = League::factory()->create([
+        'season_id' => $this->season->id,
+        'category' => 'VETERANS',
+    ]);
     $team2 = Team::factory()->create([
         'season_id' => $this->season->id,
-        'league_id' => $this->league->id,
+        'league_id' => $veteransLeague->id,
     ]);
     $team2->users()->attach($this->player->id);
 
@@ -128,7 +135,7 @@ it('updates matches across multiple teams the player belongs to', function (): v
 
     $matchTeam2 = Interclub::factory()->create([
         'season_id' => $this->season->id,
-        'league_id' => $this->league->id,
+        'league_id' => $veteransLeague->id,
         'visited_team_id' => $team2->id,
         'start_date_time' => now()->addDays(7),
     ]);

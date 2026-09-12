@@ -383,6 +383,33 @@ it('keeps body text above the AA threshold on the dense back-office screens in d
 ]);
 
 /*
+ * The article editor shows a live preview of what will be published, and it
+ * drew that preview on bg-white with text-gray-800 — a sheet of paper on a
+ * dark page, and a preview that no longer matched the article. It now carries
+ * the same `prose-*` settings as the public page, so the two agree in both
+ * themes. The Markdown help panel beside it was a light blue card with
+ * text-gray-700 on it.
+ */
+it('keeps the article editor readable in dark mode', function () use ($probe): void {
+    $article = NewsPost::factory()->create([
+        'status' => NewsPostStatusEnum::PUBLISHED,
+        'content' => "## Titre\n\nUn paragraphe avec du **gras** et un [lien](https://example.test).\n\n- point 1\n- point 2",
+    ]);
+
+    $this->actingAs(User::factory()->withRole(Role::WEBSITE)->create());
+
+    $page = visit(route('admin.website.articles.edit', $article))->inDarkMode()->wait(1);
+
+    $result = $page->script($probe());
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold in the article editor:\n%s",
+        implode("\n", $failures),
+    ));
+});
+
+/*
  * The article body is where the dark theme did its worst damage, and where no
  * assertion reached. `articles/show.blade.php` pins paragraphs, headings and
  * list items through `prose-*` overrides, but says nothing about `strong`, `td`
@@ -425,3 +452,85 @@ it('keeps the article body readable in both themes', function (string $theme) us
         implode("\n", $failures),
     ));
 })->with(['light', 'dark']);
+
+/*
+ * The interclubs screens were written entirely in the light half of Tailwind's
+ * neutral scale — `text-gray-900` for every team name, opponent and score. The
+ * global clamp in app.css catches `text-gray-300/400/500` and routes them to a
+ * theme-aware token, so the *supporting* text followed the dark theme while the
+ * emphasis text stayed dark grey on a dark ground: the team detail page rendered
+ * its player names, divisions and opponents at around 1.3:1, and the results
+ * screen its team headings. The inversion is what makes it easy to miss — the
+ * addresses and dates read perfectly on the same screenshot.
+ *
+ * The same views also painted their own surfaces in the light palette: the
+ * edit screen drew its empty checkboxes in bg-white and its hovered row in
+ * bg-gray-50, so a white square sat on every line and the row under the cursor
+ * turned into a white band.
+ *
+ * The two screens that take a team are given one: a route without it renders
+ * nothing to measure.
+ */
+it('keeps the interclubs screens above the AA threshold in dark mode', function (string $key) use ($probe): void {
+    Club::firstOrCreate(
+        ['licence' => 'BBW214'],
+        ['name' => 'C.T.T Ottignies-Blocry', 'is_own_club' => true, 'city_code' => '1340', 'city_name' => 'Ottignies'],
+    );
+    $this->seed(InterclubScheduleSeeder::class);
+    $this->seed(InterclubResultsSeeder::class);
+
+    $this->actingAs(User::factory()->withRole(Role::INTERCLUBS)->create());
+
+    $team = Team::query()
+        ->whereHas('club', fn ($q) => $q->where('is_own_club', true))
+        ->firstOrFail();
+
+    $url = in_array($key, ['admin.interclubs.teams.show', 'admin.interclubs.teams.edit'], true)
+        ? route($key, $team->id)
+        : route($key);
+
+    $page = visit($url)->inDarkMode()->wait(1);
+
+    $result = $page->script($probe());
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold on %s in dark mode:\n%s",
+        $key,
+        implode("\n", $failures),
+    ));
+})->with([
+    'admin.interclubs.teams',
+    'admin.interclubs.teams.show',
+    'admin.interclubs.teams.edit',
+    'admin.interclubs.results',
+    'admin.interclubs.division-setup',
+    'admin.interclubs.teams.builder',
+]);
+
+/*
+ * `--color-warning-content` is the foreground that reads *on* the warning fill,
+ * and the dark theme redefines it to the warning colour itself — which paints
+ * every solid warning yellow on yellow, 1.00:1. The banner below is the one a
+ * secretary meets first: it lists what the club still has to provide before
+ * members can ask for an attestation, and it was unreadable in dark mode. The
+ * screen is left in its default state on purpose, because that is the only
+ * state in which the banner renders at all.
+ */
+it('keeps the warning banner readable in dark mode', function () use ($probe): void {
+    Club::factory()->ownClub()->create();
+
+    $this->actingAs(User::factory()->withRole(Role::ATTESTATIONS)->create());
+
+    $page = visit(route('admin.attestations.index'))->inDarkMode()->wait(1);
+
+    $page->assertSee(__('the club seal'));
+
+    $result = $page->script($probe('.alert-warning'));
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold in the warning banner:\n%s",
+        implode("\n", $failures),
+    ));
+});

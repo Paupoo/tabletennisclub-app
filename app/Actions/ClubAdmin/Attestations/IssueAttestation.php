@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Attestations;
 
+use App\Data\Attestation\AttestationData;
 use App\Data\Attestation\MemberIdentifiers;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationSetting;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationTemplate;
@@ -119,7 +120,7 @@ final readonly class IssueAttestation
 
     private function renderFor(
         Mutuality $mutuality,
-        $data,
+        AttestationData $data,
         MemberIdentifiers $identifiers,
         AttestationSetting $settings,
         string $reference,

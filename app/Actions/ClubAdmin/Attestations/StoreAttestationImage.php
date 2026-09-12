@@ -68,7 +68,7 @@ final readonly class StoreAttestationImage
         // Colour type 4 (greyscale + alpha) and 6 (truecolour + alpha) carry a
         // channel; type 3 (palette) can carry a tRNS chunk instead.
         $header = (string) file_get_contents($file->getRealPath(), false, null, 0, 33);
-        $colourType = ord($header[25] ?? "\0");
+        $colourType = ord(($header[25] ?? "\0")[0]);
         $hasPalette = $colourType === 3 && str_contains((string) file_get_contents($file->getRealPath()), 'tRNS');
 
         if (! in_array($colourType, [4, 6], true) && ! $hasPalette) {

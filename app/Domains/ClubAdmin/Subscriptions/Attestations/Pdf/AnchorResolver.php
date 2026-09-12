@@ -98,8 +98,9 @@ final readonly class AnchorResolver
         $words = $layout->wordsOnPage($anchor->page);
         $length = count($needle);
         $seen = 0;
+        $counter = count($words);
 
-        for ($start = 0; $start + $length <= count($words); $start++) {
+        for ($start = 0; $start + $length <= $counter; $start++) {
             $run = array_slice($words, $start, $length);
 
             foreach ($needle as $index => $part) {

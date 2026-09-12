@@ -34,31 +34,31 @@ new class extends Component
 {
     use HasBreadcrumbs, WithFileUploads;
 
+    public string $clubPhone = '';
+
     public string $discipline = '';
 
     public string $federationName = '';
-
-    public string $clubPhone = '';
 
     public ?string $revocationReason = null;
 
     public ?int $revoking = null;
 
-    public int $sealWidth = 30;
-
     public $sealUpload;
+
+    public int $sealWidth = 30;
 
     public ?int $signatoryUserId = null;
 
-    public int $signatureWidth = 42;
-
     public $signatureUpload;
+
+    public int $signatureWidth = 42;
 
     public string $tab = 'settings';
 
-    public $templateUpload;
-
     public string $templateFor = '';
+
+    public $templateUpload;
 
     #[Computed]
     public function availability(): AttestationAvailability

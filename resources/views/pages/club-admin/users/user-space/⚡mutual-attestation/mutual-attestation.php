@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Attestations\IssueAttestation;
+use App\Data\Attestation\AttestationVerdict;
 use App\Data\Attestation\MemberIdentifiers;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\MutualAttestation;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\AttestationAvailability;
@@ -10,6 +11,7 @@ use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\AttestationEligibi
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\BuildAttestationData;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\AttestationRefusal;
 use App\Domains\Shared\Enums\Mutuality;
 use App\Exceptions\AttestationNotAllowed;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -36,9 +38,9 @@ new class extends Component
 
     public ?int $issuedId = null;
 
-    public ?string $mutualMembershipNumber = null;
-
     public string $mutuality = '';
+
+    public ?string $mutualMembershipNumber = null;
 
     public ?string $nationalRegisterNumber = null;
 
@@ -50,6 +52,11 @@ new class extends Component
     public function availability(): AttestationAvailability
     {
         return app(AttestationAvailability::class);
+    }
+
+    public function back(): void
+    {
+        $this->step = max(1, $this->step - 1);
     }
 
     public function chooseMutuality(): void
@@ -145,13 +152,8 @@ new class extends Component
         $season = $this->season();
 
         return $season === null
-            ? \App\Data\Attestation\AttestationVerdict::refuse(\App\Domains\Shared\Enums\AttestationRefusal::NoAffiliation)
+            ? AttestationVerdict::refuse(AttestationRefusal::NoAffiliation)
             : app(AttestationEligibility::class)->for($this->user, $season);
-    }
-
-    public function back(): void
-    {
-        $this->step = max(1, $this->step - 1);
     }
 
     public function with(): array
@@ -177,4 +179,4 @@ new class extends Component
     {
         return Mutuality::tryFrom($this->mutuality);
     }
-}
+};

@@ -74,14 +74,14 @@ final readonly class ClubAttestationRenderer
 
     private function qr(string $url): string
     {
-        $result = (new Builder(
+        $result = new Builder(
             writer: new PngWriter,
             data: $url,
             encoding: new Encoding('UTF-8'),
             errorCorrectionLevel: ErrorCorrectionLevel::Medium,
             size: 300,
             margin: 4,
-        ))->build();
+        )->build();
 
         return 'data:image/png;base64,' . base64_encode($result->getString());
     }

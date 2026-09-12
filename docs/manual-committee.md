@@ -456,3 +456,19 @@ As a committee member, the following emails are sent automatically — you do no
 - **Archived users**: use the Archived tab to restore a member who left and rejoined
 - **GDPR requests**: process anonymization requests promptly. The request comes from the member's profile (Danger zone). As admin, open the user and click Anonymize
 - **Contact onboarding**: process JOIN_US contacts promptly — they're waiting to hear from you
+
+---
+
+## 14. Mutual Insurer Attestations
+
+The **Mutual attestations** screen carries three things: how the club signs them, the insurers' forms, and the record of what has been issued. It requires the **Attestations** délégation, deliberately kept apart from *Members*: whoever reaches it holds the club seal and the signatory's mark.
+
+**Bringing it into service.** Until the signing officer, the seal and the signature are provided, members see nothing. The seal and the signature must be **transparent** PNGs — a scan on a white background is refused, because it would hide the printed text underneath. Also fill in the club's phone number (Solidaris form) and the federation (Partenamut form).
+
+**Forms.** Upload the form as the insurer publishes it. The application converts it, then works out where each value goes from the form's own printed labels — so a revised form usually just works. When it does not, the labels that could not be found are listed in red and that insurer **drops out of the list offered to members**. MC and Mutualité Neutre accept a club-written attestation in writing, so they stay on offer even with no form uploaded.
+
+**Revoking.** A member may ask once per season. A reason is required. The file is deleted, the record stays, and the public verification page starts reporting that the document no longer stands. The member may then ask for a new one.
+
+**Issuing on a member's behalf.** Possible from the member's file, with the same checks — useful for a phone call or a managed account.
+
+**Retention.** PDFs are deleted automatically after twelve months, because they carry a national register number. The record is kept.

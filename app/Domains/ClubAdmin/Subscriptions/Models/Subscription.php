@@ -36,6 +36,7 @@ use Illuminate\Support\Carbon;
  * @property int $season_id
  * @property int $user_id
  * @property string $status
+ * @property Carbon|null $confirmed_at
  * @property bool $is_competitive
  * @property bool $has_other_family_members
  * @property int $trainings_count
@@ -103,6 +104,7 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     use HasFactory, SoftDeletes;
 
     protected $casts = [
+        'confirmed_at' => 'datetime',
         'is_competitive' => 'boolean',
         'has_other_family_members' => 'boolean',
         'trainings_count' => 'integer',
@@ -140,6 +142,21 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     #[\Override]
     public static function booted(): void
     {
+        // Dated here rather than in the state classes: the club certifies this
+        // date to the mutual insurers, so it has to hold whatever route put the
+        // affiliation into a validated status — a committee click, a federation
+        // import creating it already confirmed, a seeder. Hooking one caller
+        // would have left the others silently undated.
+        //
+        // Written once and never rewritten: an affiliation unconfirmed and
+        // confirmed again was still taken on the first time, and that is the
+        // day the attested period starts from.
+        static::saving(function (self $subscription): void {
+            if ($subscription->confirmed_at === null && in_array($subscription->status, ['confirmed', 'paid'], true)) {
+                $subscription->confirmed_at = now();
+            }
+        });
+
         static::deleting(function (self $subscription): void {
             $subscription->payments()->delete();
         });

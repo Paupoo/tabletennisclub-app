@@ -34,6 +34,11 @@ erDiagram
     Subscription
     SubscriptionTrainingPack
 
+    %% ClubAdmin/Subscriptions/Attestations
+    AttestationSetting
+    AttestationTemplate
+    MutualAttestation
+
     %% ClubAdmin/Users
     CharterSignature
     FamilyGroup
@@ -109,10 +114,11 @@ erDiagram
     User ||--o{ NewsPost : "articles"
     User ||--o| Team : "captainOf"
     User }o--o{ FamilyGroup : "familyGroups"
+    User ||--o| Guardian : "guardianRecord"
     User }o--o{ Guardian : "guardians"
     User ||--o{ CashRegister : "heldCashRegisters"
-    User ||--o{ KeyRing : "keyRings"
     User }o--o{ Interclub : "interclubs"
+    User ||--o{ KeyRing : "keyRings"
     User }o--o{ Meeting : "meetings"
     User }o--o{ Pool : "pools"
     User }o--o{ Season : "seasons"

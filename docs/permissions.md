@@ -20,7 +20,7 @@ Trois familles cohabitent, et une seule décide :
 
 Accès sans restriction à toute l'application.
 
-Détient les 65 permissions. Accordées explicitement plutôt que
+Détient les 68 permissions. Accordées explicitement plutôt que
 par un court-circuit `Gate::before`, car certaines policies encodent des règles qui
 doivent survivre à un administrateur — il ne peut toujours pas supprimer son propre
 compte.
@@ -52,6 +52,16 @@ Attribue les délégations et le siège au comité. N'ouvre pas la fiche du memb
 
 - `users.view`
 - `access.manage`
+
+### Attestations mutuelle — `attestations`
+
+Délivrer les attestations mutuelle, et détenir le cachet du club et la signature qu'elles portent.
+
+- `users.view`
+- `attestations.view`
+- `attestations.issue`
+- `attestations.configure`
+- `club.update`
 
 ### Bar — `bar`
 
@@ -219,7 +229,7 @@ est une situation légitime.
 |---|---|
 | Administrateur | `supervision` |
 | Président | `membres`, `contacts`, `reunions`, `saisons`, `supervision` |
-| Secrétaire | `membres`, `contacts`, `reunions`, `site-web` |
+| Secrétaire | `membres`, `contacts`, `reunions`, `site-web`, `attestations` |
 | Trésorier | `tresorerie`, `caisse`, `amendes` |
 | Vice-Président | `membres`, `contacts`, `reunions` |
 
@@ -243,6 +253,7 @@ calendrier public.
 
 | Domaine | Clé `.env` |
 |---|---|
+| Attestations mutuelle | `FEATURE_ATTESTATIONS` |
 | Bar | `FEATURE_BAR` |
 | Caisse | `FEATURE_CASH_REGISTER` |
 | Contacts | `FEATURE_CONTACTS` |

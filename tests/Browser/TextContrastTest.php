@@ -383,6 +383,33 @@ it('keeps body text above the AA threshold on the dense back-office screens in d
 ]);
 
 /*
+ * The article editor shows a live preview of what will be published, and it
+ * drew that preview on bg-white with text-gray-800 — a sheet of paper on a
+ * dark page, and a preview that no longer matched the article. It now carries
+ * the same `prose-*` settings as the public page, so the two agree in both
+ * themes. The Markdown help panel beside it was a light blue card with
+ * text-gray-700 on it.
+ */
+it('keeps the article editor readable in dark mode', function () use ($probe): void {
+    $article = NewsPost::factory()->create([
+        'status' => NewsPostStatusEnum::PUBLISHED,
+        'content' => "## Titre\n\nUn paragraphe avec du **gras** et un [lien](https://example.test).\n\n- point 1\n- point 2",
+    ]);
+
+    $this->actingAs(User::factory()->withRole(Role::WEBSITE)->create());
+
+    $page = visit(route('admin.website.articles.edit', $article))->inDarkMode()->wait(1);
+
+    $result = $page->script($probe());
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold in the article editor:\n%s",
+        implode("\n", $failures),
+    ));
+});
+
+/*
  * The article body is where the dark theme did its worst damage, and where no
  * assertion reached. `articles/show.blade.php` pins paragraphs, headings and
  * list items through `prose-*` overrides, but says nothing about `strong`, `td`
@@ -477,6 +504,8 @@ it('keeps the interclubs screens above the AA threshold in dark mode', function 
     'admin.interclubs.teams.show',
     'admin.interclubs.teams.edit',
     'admin.interclubs.results',
+    'admin.interclubs.division-setup',
+    'admin.interclubs.teams.builder',
 ]);
 
 /*

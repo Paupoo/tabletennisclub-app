@@ -65,25 +65,25 @@
             <div x-data="{ open: false }" class="mb-3">
                 {{-- py-1 : même plancher de 24px que partout ailleurs. --}}
                 <button type="button"
-                    class="flex items-center gap-1.5 py-1 text-xs text-blue-600 hover:text-blue-800"
+                    class="flex items-center gap-1.5 py-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200"
                     @click="open = !open">
                     <x-heroicon-o-question-mark-circle class="h-3.5 w-3.5" />
                     <span x-text="open ? 'Masquer l\'aide Markdown' : 'Aide Markdown'"></span>
                 </button>
-                <div x-show="open" x-transition class="mt-2 rounded-lg border border-blue-100 bg-blue-50 p-3">
-                    <div class="grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-xs text-gray-700">
-                        <div><span class="text-blue-700"># Titre 1</span> <span class="text-gray-400">← espace obligatoire</span></div>
-                        <div><span class="text-blue-700">**gras**</span> → <strong>gras</strong></div>
-                        <div><span class="text-blue-700">## Titre 2</span></div>
-                        <div><span class="text-blue-700">*italique*</span> → <em>italique</em></div>
-                        <div><span class="text-blue-700">### Titre 3</span></div>
-                        <div><span class="text-blue-700">[lien](https://…)</span></div>
-                        <div><span class="text-blue-700">- item</span>{{ __('→ bullet list') }}</div>
-                        <div><span class="text-blue-700">1. item</span>{{ __('→ numbered list') }}</div>
-                        <div><span class="text-blue-700">> citation</span> → blockquote</div>
-                        <div><span class="text-blue-700">`code`</span> → <code>code</code></div>
+                <div x-show="open" x-transition class="mt-2 rounded-lg border border-blue-100 bg-blue-50 p-3 dark:border-blue-900/50 dark:bg-blue-900/25">
+                    <div class="grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-xs text-base-content/80">
+                        <div><span class="text-blue-700 dark:text-blue-300"># Titre 1</span> <span class="text-gray-400">← espace obligatoire</span></div>
+                        <div><span class="text-blue-700 dark:text-blue-300">**gras**</span> → <strong>gras</strong></div>
+                        <div><span class="text-blue-700 dark:text-blue-300">## Titre 2</span></div>
+                        <div><span class="text-blue-700 dark:text-blue-300">*italique*</span> → <em>italique</em></div>
+                        <div><span class="text-blue-700 dark:text-blue-300">### Titre 3</span></div>
+                        <div><span class="text-blue-700 dark:text-blue-300">[lien](https://…)</span></div>
+                        <div><span class="text-blue-700 dark:text-blue-300">- item</span>{{ __('→ bullet list') }}</div>
+                        <div><span class="text-blue-700 dark:text-blue-300">1. item</span>{{ __('→ numbered list') }}</div>
+                        <div><span class="text-blue-700 dark:text-blue-300">> citation</span> → blockquote</div>
+                        <div><span class="text-blue-700 dark:text-blue-300">`code`</span> → <code>code</code></div>
                     </div>
-                    <p class="mt-2 text-xs text-blue-600"><x-icon name="o-exclamation-triangle" class="mb-0.5 inline h-3.5 w-3.5" /> {{ __('Headings require a space after the # :') }}<code class="bg-blue-100 px-1">## Mon titre</code> et non <code class="bg-red-100 px-1">##Mon titre</code></p>
+                    <p class="mt-2 text-xs text-blue-600 dark:text-blue-300"><x-icon name="o-exclamation-triangle" class="mb-0.5 inline h-3.5 w-3.5" /> {{ __('Headings require a space after the # :') }}<code class="bg-blue-100 px-1 dark:bg-blue-900/40">## Mon titre</code> et non <code class="bg-red-100 px-1 dark:bg-red-900/40">##Mon titre</code></p>
                 </div>
             </div>
 
@@ -93,7 +93,7 @@
                     <label class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{{ __('Edit') }}</label>
                     <textarea
                         wire:model.live.debounce.400ms="content"
-                        class="flex-1 resize-none rounded-lg border border-base-300 bg-gray-50 p-3 font-mono text-sm text-gray-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        class="flex-1 resize-none rounded-lg border border-base-300 bg-base-200/50 p-3 font-mono text-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
                         placeholder="## Mon titre&#10;&#10;Rédigez votre article en Markdown…&#10;&#10;- point 1&#10;- point 2"
                         style="min-height:380px"></textarea>
                     @error('content')
@@ -104,7 +104,9 @@
                 {{-- Prévisualisation --}}
                 <div class="flex flex-col">
                     <label class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{{ __('Preview') }}</label>
-                    <div class="prose prose-sm flex-1 overflow-y-auto rounded-lg border border-base-300 bg-white p-4 text-gray-800"
+                    <div class="prose prose-sm flex-1 overflow-y-auto rounded-lg border border-base-300 bg-base-100 p-4
+                        prose-headings:text-base-content prose-p:text-muted prose-li:text-muted
+                        prose-strong:text-base-content prose-blockquote:text-muted prose-a:text-primary"
                         style="min-height:380px; max-height:580px">
                         {!! $markdownPreview !!}
                     </div>

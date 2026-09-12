@@ -454,7 +454,7 @@
                     'border-base-300'           => $selectedTransactionId !== $transaction->id,
                 ])>
                     @if($selectedTransactionId === $transaction->id)
-                    <div class="w-2 h-2 rounded-full bg-white"></div>
+                    <div class="w-2 h-2 rounded-full bg-primary-content"></div>
                     @endif
                 </div>
 
@@ -608,7 +608,7 @@
                     'border-base-300'           => $selectedRefundTransactionId !== $transaction->id,
                 ])>
                     @if($selectedRefundTransactionId === $transaction->id)
-                    <div class="w-2 h-2 rounded-full bg-white"></div>
+                    <div class="w-2 h-2 rounded-full bg-primary-content"></div>
                     @endif
                 </div>
 

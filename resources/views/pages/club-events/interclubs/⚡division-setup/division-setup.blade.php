@@ -67,7 +67,7 @@
                     $catColor = ['MEN' => 'blue', 'VETERANS' => 'amber', 'WOMEN' => 'pink'];
                 @endphp
                 @foreach ($groupedLeagues as $category => $categoryLeagues)
-                    @php $meta = $categoryMeta[$category] ?? ['bg' => 'bg-gray-50', 'border' => 'border-base-300', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400', 'label' => $category]; @endphp
+                    @php $meta = $categoryMeta[$category] ?? ['bg' => 'bg-base-200', 'border' => 'border-base-300', 'text' => 'text-base-content/80', 'dot' => 'bg-base-content/40', 'label' => $category]; @endphp
 
                     <x-section-accordion
                         :label="$meta['label']"
@@ -134,7 +134,7 @@
                 @else
                     @php
                         $selectedLeague = $leagues->firstWhere('id', $selectedLeagueId);
-                        $meta = $categoryMeta[$selectedLeague?->category ?? ''] ?? ['bg' => 'bg-gray-50', 'border' => 'border-base-300', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400', 'label' => ''];
+                        $meta = $categoryMeta[$selectedLeague?->category ?? ''] ?? ['bg' => 'bg-base-200', 'border' => 'border-base-300', 'text' => 'text-base-content/80', 'dot' => 'bg-base-content/40', 'label' => ''];
                     @endphp
                     <div class="mb-4 flex items-center justify-between">
                         <div class="flex items-center gap-3">

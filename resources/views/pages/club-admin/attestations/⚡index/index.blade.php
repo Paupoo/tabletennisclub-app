@@ -35,16 +35,14 @@
                             <x-alert icon="o-photo" class="alert-info mb-3">{{ __('No seal uploaded yet.') }}</x-alert>
                         @endif
 
-                        <x-file wire:model="sealUpload" accept="image/png" :label="__('Upload a transparent PNG')" />
+                        <x-file wire:model="sealUpload" accept="image/png"
+                            :label="__('Upload a transparent PNG')"
+                            :hint="__('Saved as soon as you pick it.')" />
                         @error('sealUpload') <p class="mt-2 text-sm text-error">{{ $message }}</p> @enderror
 
                         <x-input class="mt-3" type="number" :label="__('Width on the document (mm)')"
                             wire:model="sealWidth" min="10" max="80" />
 
-                        <x-slot:actions>
-                            <x-button class="btn-sm" icon="o-arrow-up-tray" :label="__('Replace the seal')"
-                                wire:click="uploadMark('seal')" spinner />
-                        </x-slot:actions>
                     </x-card>
 
                     <x-card :title="__('Signature')" shadow separator>
@@ -55,16 +53,14 @@
                             <x-alert icon="o-photo" class="alert-info mb-3">{{ __('No signature uploaded yet.') }}</x-alert>
                         @endif
 
-                        <x-file wire:model="signatureUpload" accept="image/png" :label="__('Upload a transparent PNG')" />
+                        <x-file wire:model="signatureUpload" accept="image/png"
+                            :label="__('Upload a transparent PNG')"
+                            :hint="__('Saved as soon as you pick it.')" />
                         @error('signatureUpload') <p class="mt-2 text-sm text-error">{{ $message }}</p> @enderror
 
                         <x-input class="mt-3" type="number" :label="__('Width on the document (mm)')"
                             wire:model="signatureWidth" min="10" max="90" />
 
-                        <x-slot:actions>
-                            <x-button class="btn-sm" icon="o-arrow-up-tray" :label="__('Replace the signature')"
-                                wire:click="uploadMark('signature')" spinner />
-                        </x-slot:actions>
                     </x-card>
                 </div>
 

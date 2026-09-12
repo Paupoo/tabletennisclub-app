@@ -122,25 +122,22 @@ new class extends Component
         $this->dispatch('toast', message: __('Settings saved.'));
     }
 
-    public function uploadMark(StoreAttestationImage $store, string $kind): void
+    /**
+     * Store the seal the moment it is picked.
+     *
+     * Livewire has already carried the file to its temporary area by the time
+     * this fires; asking for a second click on a button labelled "replace"
+     * only looked like a way to pick a different file, and the upload sat in
+     * the buffer while the screen went on saying the seal was missing.
+     */
+    public function updatedSealUpload(): void
     {
-        $this->authorize(Permission::AttestationsConfigure->value);
+        $this->storeMark(StoreAttestationImage::SEAL);
+    }
 
-        $file = $kind === StoreAttestationImage::SEAL ? $this->sealUpload : $this->signatureUpload;
-
-        if ($file === null) {
-            return;
-        }
-
-        try {
-            $store($file, $kind);
-        } catch (ValidationException $refused) {
-            $this->addError($kind . 'Upload', $refused->getMessage());
-
-            return;
-        }
-
-        $this->reset([$kind . 'Upload']);
+    public function updatedSignatureUpload(): void
+    {
+        $this->storeMark(StoreAttestationImage::SIGNATURE);
     }
 
     public function uploadTemplate(InstallAttestationTemplate $install): void
@@ -176,6 +173,28 @@ new class extends Component
             'signatories' => User::query()->orderBy('last_name')->get(['id', 'first_name', 'last_name']),
             'templates' => AttestationTemplate::all()->keyBy(fn (AttestationTemplate $t): string => $t->mutuality->value),
         ];
+    }
+
+    private function storeMark(string $kind): void
+    {
+        $this->authorize(Permission::AttestationsConfigure->value);
+
+        $property = $kind . 'Upload';
+        $file = $this->{$property};
+
+        if ($file === null) {
+            return;
+        }
+
+        $this->resetErrorBag($property);
+
+        try {
+            app(StoreAttestationImage::class)($file, $kind);
+        } catch (ValidationException $refused) {
+            $this->addError($property, $refused->getMessage());
+        }
+
+        $this->reset([$property]);
     }
 
     protected function breadcrumbChain(): Breadcrumb

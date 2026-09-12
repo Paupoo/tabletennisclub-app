@@ -74,7 +74,7 @@
                                         <x-slot:title>
                                             <div class="flex w-full items-center gap-2">
                                                 <div class="flex flex-1 flex-wrap items-center gap-2">
-                                                    <span class="font-bold text-gray-900">
+                                                    <span class="font-bold text-base-content">
                                                         {{ __('Team') }} {{ $team->name }}
                                                         @if ($division)
                                                             <span class="ml-1 text-sm font-normal text-gray-500">— Div. {{ $division }}</span>
@@ -83,12 +83,12 @@
 
                                                     {{-- Stats badges --}}
                                                     @if ($teamStats['played'] > 0)
-                                                        <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">{{ $teamStats['wins'] }}V</span>
-                                                        <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">{{ $teamStats['losses'] }}D</span>
+                                                        <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-900/40 dark:text-green-300">{{ $teamStats['wins'] }}V</span>
+                                                        <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/40 dark:text-red-300">{{ $teamStats['losses'] }}D</span>
                                                         @if ($teamStats['draws'] > 0)
-                                                            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">{{ $teamStats['draws'] }}N</span>
+                                                            <span class="rounded-full bg-base-200 px-2 py-0.5 text-xs font-semibold text-muted">{{ $teamStats['draws'] }}N</span>
                                                         @endif
-                                                        <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">{{ $teamStats['win_rate'] }}%</span>
+                                                        <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">{{ $teamStats['win_rate'] }}%</span>
                                                     @endif
                                                 </div>
                                                 <button type="button" @click="open = !open" class="rounded p-1 hover:bg-base-200 transition-colors"
@@ -137,14 +137,14 @@
                                                                 <th class="pb-2"></th>
                                                             </tr>
                                                         </thead>
-                                                        <tbody class="divide-y divide-gray-50">
+                                                        <tbody class="divide-y divide-base-300">
                                                             @foreach ($team->interclubResults->sortBy('match_date') as $mr)
                                                                 <tr wire:key="mr-{{ $mr->id }}"
                                                                     @class(['text-gray-300' => $mr->is_bye, 'italic text-gray-400' => ! $mr->is_bye && $mr->result === null])>
                                                                     <td class="hidden py-2 pr-4 text-xs text-gray-400 sm:table-cell">
                                                                         {{ $mr->week_number ? 'S' . ($matchDayMap[$mr->week_number] ?? $mr->week_number) : '—' }}
                                                                     </td>
-                                                                    <td class="py-2 pr-4 text-gray-700">
+                                                                    <td class="py-2 pr-4 text-base-content/80">
                                                                         @if ($mr->is_bye)
                                                                             <span class="italic text-gray-300">Bye</span>
                                                                         @elseif ($mr->match_date)
@@ -154,42 +154,42 @@
                                                                             —
                                                                         @endif
                                                                     </td>
-                                                                    <td class="py-2 pr-4 font-medium text-gray-800">
+                                                                    <td class="py-2 pr-4 font-medium text-base-content">
                                                                         {{ $mr->opponent_name ?? '—' }}
                                                                     </td>
                                                                     <td class="hidden py-2 pr-4 sm:table-cell">
                                                                         @if (! $mr->is_bye && $mr->opponent_name)
                                                                             <span @class([
                                                                                 'rounded px-1.5 py-0.5 text-xs font-semibold',
-                                                                                'bg-blue-50 text-blue-700'  => $mr->is_home,
-                                                                                'bg-gray-100 text-gray-600' => ! $mr->is_home,
+                                                                                'bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'  => $mr->is_home,
+                                                                                'bg-base-200 text-muted' => ! $mr->is_home,
                                                                             ])>
                                                                                 {{ $mr->is_home ? __('Home') : __('Away') }}
                                                                             </span>
                                                                         @endif
                                                                     </td>
-                                                                    <td class="py-2 pr-4 font-mono text-xs text-gray-700">
+                                                                    <td class="py-2 pr-4 font-mono text-xs text-base-content/80">
                                                                         {{ $mr->score ?? '—' }}
                                                                     </td>
                                                                     <td class="py-2 pr-4">
                                                                         @if ($mr->is_bye)
-                                                                            <span class="rounded bg-gray-50 px-1.5 py-0.5 text-xs font-semibold text-gray-400">Bye</span>
+                                                                            <span class="rounded bg-base-200 px-1.5 py-0.5 text-xs font-semibold text-muted">Bye</span>
                                                                         @elseif ($mr->result === null)
                                                                             <span class="text-xs italic text-gray-300">{{ __('Pending') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::WIN)
-                                                                            <span class="rounded bg-green-100 px-1.5 py-0.5 text-xs font-semibold text-green-800">{{ __('Win') }}</span>
+                                                                            <span class="rounded bg-green-100 px-1.5 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-900/40 dark:text-green-300">{{ __('Win') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::LOSS)
-                                                                            <span class="rounded bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-700">{{ __('Loss') }}</span>
+                                                                            <span class="rounded bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/40 dark:text-red-300">{{ __('Loss') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::DRAW)
-                                                                            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-600">{{ __('Draw') }}</span>
+                                                                            <span class="rounded bg-base-200 px-1.5 py-0.5 text-xs font-semibold text-muted">{{ __('Draw') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::FORFEIT_WIN)
-                                                                            <span class="rounded bg-green-50 px-1.5 py-0.5 text-xs font-semibold text-green-800">{{ __('Forfait adv.') }}</span>
+                                                                            <span class="rounded bg-green-50 px-1.5 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-900/30 dark:text-green-300">{{ __('Forfait adv.') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::FORFEIT_LOSS)
-                                                                            <span class="rounded bg-red-50 px-1.5 py-0.5 text-xs font-semibold text-red-400">{{ __('Forfait') }}</span>
+                                                                            <span class="rounded bg-red-50 px-1.5 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-300">{{ __('Forfait') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::WITHDRAWAL_OPPONENT)
-                                                                            <span class="rounded bg-orange-50 px-1.5 py-0.5 text-xs font-semibold text-orange-700">{{ __('Opp. gen. forfeit') }}</span>
+                                                                            <span class="rounded bg-orange-50 px-1.5 py-0.5 text-xs font-semibold text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">{{ __('Opp. gen. forfeit') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::WITHDRAWAL)
-                                                                            <span class="rounded bg-orange-100 px-1.5 py-0.5 text-xs font-semibold text-orange-700">{{ __('Gen. forfeit') }}</span>
+                                                                            <span class="rounded bg-orange-100 px-1.5 py-0.5 text-xs font-semibold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">{{ __('Gen. forfeit') }}</span>
                                                                         @endif
                                                                     </td>
                                                                     <td class="py-2 text-right">
@@ -232,7 +232,7 @@
                 @endif
                 <span @class([
                     'rounded px-2 py-0.5 text-xs font-semibold',
-                    'bg-blue-100 text-blue-700' => $isHome,
+                    'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' => $isHome,
                     'bg-base-300 text-base-content/60' => ! $isHome,
                 ])>
                     {{ $isHome ? __('Home') : __('Away') }}

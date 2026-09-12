@@ -425,3 +425,78 @@ it('keeps the article body readable in both themes', function (string $theme) us
         implode("\n", $failures),
     ));
 })->with(['light', 'dark']);
+
+/*
+ * The interclubs screens were written entirely in the light half of Tailwind's
+ * neutral scale — `text-gray-900` for every team name, opponent and score. The
+ * global clamp in app.css catches `text-gray-300/400/500` and routes them to a
+ * theme-aware token, so the *supporting* text followed the dark theme while the
+ * emphasis text stayed dark grey on a dark ground: the team detail page rendered
+ * its player names, divisions and opponents at around 1.3:1, and the results
+ * screen its team headings. The inversion is what makes it easy to miss — the
+ * addresses and dates read perfectly on the same screenshot.
+ *
+ * The detail page is included by object rather than by name: it is the screen
+ * where the failure was worst, and a route without its team renders nothing to
+ * measure.
+ */
+it('keeps the interclubs screens above the AA threshold in dark mode', function (string $key) use ($probe): void {
+    Club::firstOrCreate(
+        ['licence' => 'BBW214'],
+        ['name' => 'C.T.T Ottignies-Blocry', 'is_own_club' => true, 'city_code' => '1340', 'city_name' => 'Ottignies'],
+    );
+    $this->seed(InterclubScheduleSeeder::class);
+    $this->seed(InterclubResultsSeeder::class);
+
+    $this->actingAs(User::factory()->withRole(Role::INTERCLUBS)->create());
+
+    $team = Team::query()
+        ->whereHas('club', fn ($q) => $q->where('is_own_club', true))
+        ->firstOrFail();
+
+    $url = $key === 'admin.interclubs.teams.show'
+        ? route($key, $team->id)
+        : route($key);
+
+    $page = visit($url)->inDarkMode()->wait(1);
+
+    $result = $page->script($probe());
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold on %s in dark mode:\n%s",
+        $key,
+        implode("\n", $failures),
+    ));
+})->with([
+    'admin.interclubs.teams',
+    'admin.interclubs.teams.show',
+    'admin.interclubs.results',
+]);
+
+/*
+ * `--color-warning-content` is the foreground that reads *on* the warning fill,
+ * and the dark theme redefines it to the warning colour itself — which paints
+ * every solid warning yellow on yellow, 1.00:1. The banner below is the one a
+ * secretary meets first: it lists what the club still has to provide before
+ * members can ask for an attestation, and it was unreadable in dark mode. The
+ * screen is left in its default state on purpose, because that is the only
+ * state in which the banner renders at all.
+ */
+it('keeps the warning banner readable in dark mode', function () use ($probe): void {
+    Club::factory()->ownClub()->create();
+
+    $this->actingAs(User::factory()->withRole(Role::ATTESTATIONS)->create());
+
+    $page = visit(route('admin.attestations.index'))->inDarkMode()->wait(1);
+
+    $page->assertSee(__('the club seal'));
+
+    $result = $page->script($probe('.alert-warning'));
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold in the warning banner:\n%s",
+        implode("\n", $failures),
+    ));
+});

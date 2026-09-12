@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Attestations\InstallAttestationTemplate;
 use App\Actions\ClubAdmin\Attestations\IssueAttestation;
+use App\Actions\ClubAdmin\Attestations\RevokeAttestation;
 use App\Data\Attestation\MemberIdentifiers;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationSetting;
@@ -236,4 +237,30 @@ it('falls back to its own certificate when a form has lost a label', function ()
     expect(readPdf(Storage::disk('local')->path($attestation->path)))
         ->toContain('C.T.T Ottignies-Blocry')
         ->toContain($attestation->reference);
+});
+
+it('lets the office issue again once the first one is withdrawn', function (): void {
+    $affiliation = certifiableMember($this->season);
+    $secretary = User::factory()->create();
+
+    $first = app(IssueAttestation::class)($affiliation->user, $this->season, Mutuality::Other);
+    app(RevokeAttestation::class)($first, 'Mutuelle erronée', $secretary);
+
+    $second = app(IssueAttestation::class)($affiliation->user, $this->season, Mutuality::Other, issuedBy: $secretary);
+
+    expect($second->id)->not->toBe($first->id)
+        ->and($second->reference)->toBe('ATT-2627-00002')
+        ->and($second->issued_by_user_id)->toBe($secretary->id)
+        ->and($first->fresh()->isRevoked())->toBeTrue();
+});
+
+it('certifies another member of the same season without complaint', function (): void {
+    $one = certifiableMember($this->season);
+    $two = certifiableMember($this->season);
+
+    app(IssueAttestation::class)($one->user, $this->season, Mutuality::Other);
+    $second = app(IssueAttestation::class)($two->user, $this->season, Mutuality::Other);
+
+    expect(MutualAttestation::count())->toBe(2)
+        ->and($second->user_id)->toBe($two->user_id);
 });

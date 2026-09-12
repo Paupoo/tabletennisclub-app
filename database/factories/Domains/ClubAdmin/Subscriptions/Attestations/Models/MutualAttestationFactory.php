@@ -6,6 +6,7 @@ namespace Database\Factories\Domains\ClubAdmin\Subscriptions\Attestations\Models
 
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\MutualAttestation;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Mutuality;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -25,7 +26,12 @@ class MutualAttestationFactory extends Factory
         // Built from one affiliation rather than three loose foreign keys: a
         // certificate that named a member who never affiliated would pass every
         // test and describe nothing.
-        $affiliation = Subscription::factory()->create();
+        //
+        // The member is created here rather than left to SubscriptionFactory,
+        // which picks an existing one at random: two certificates could then
+        // name the same person, and a test about whose document is whose would
+        // pass or fail on a coin toss.
+        $affiliation = Subscription::factory()->for(User::factory())->create();
 
         return [
             'user_id' => $affiliation->user_id,

@@ -1,16 +1,16 @@
 <x-guest-layout :title="__('Verify an attestation')">
     <div class="mx-auto max-w-2xl px-4 py-16">
         @if ($attestation->isRevoked())
-            <x-mary-alert icon="o-x-circle" class="alert-error mb-6">
+            <x-alert icon="o-x-circle" class="alert-error mb-6">
                 {{ __('This attestation has been revoked and is no longer valid.') }}
-            </x-mary-alert>
+            </x-alert>
         @else
-            <x-mary-alert icon="o-check-circle" class="alert-success mb-6">
+            <x-alert icon="o-check-circle" class="alert-success mb-6">
                 {{ __('This attestation was issued by the club and is valid.') }}
-            </x-mary-alert>
+            </x-alert>
         @endif
 
-        <x-mary-card>
+        <x-card>
             <x-slot:title>{{ $attestation->reference }}</x-slot:title>
 
             <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
@@ -45,6 +45,6 @@
                     <dd class="font-medium">{{ $attestation->signatory_name }}</dd>
                 </div>
             </dl>
-        </x-mary-card>
+        </x-card>
     </div>
 </x-guest-layout>

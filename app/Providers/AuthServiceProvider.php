@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Contact\Models\Contact;
+use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\MutualAttestation;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -28,6 +29,7 @@ use App\Policies\ClubPolicy;
 use App\Policies\ContactPolicy;
 use App\Policies\GuardianPolicy;
 use App\Policies\InterclubPolicy;
+use App\Policies\MutualAttestationPolicy;
 use App\Policies\RoomPolicy;
 use App\Policies\SeasonPolicy;
 use App\Policies\SubscriptionPolicy;
@@ -60,6 +62,7 @@ class AuthServiceProvider extends ServiceProvider
         NewsPost::class => NewsPostPolicy::class,
         Room::class => RoomPolicy::class,
         Season::class => SeasonPolicy::class,
+        MutualAttestation::class => MutualAttestationPolicy::class,
         Subscription::class => SubscriptionPolicy::class,
         Table::class => TablePolicy::class,
         Team::class => TeamPolicy::class,

@@ -14,27 +14,44 @@
     d'écouter les changements de réglage système en cours de session : les deux
     doivent appliquer la MÊME priorité — choix explicite, puis préférence du
     compte, puis réglage du système — sinon la page bascule deux fois.
+
+    Il réapplique aussi le thème après chaque navigation Livewire. `data-theme`
+    n'est jamais rendu par Blade : il est posé ici, à l'exécution. Or `navigate`
+    aligne les attributs de <html> sur ceux du document reçu, et l'attribut
+    disparaît donc dès que les deux gabarits n'ont pas le même jeu d'attributs —
+    `layouts/app` et `layouts/guest` diffèrent par `class="scroll-smooth"`. Une
+    navigation entre deux pages du back-office conservait le thème ; la
+    déconnexion, qui redirige vers `login` avec `navigate: true`, le perdait, et
+    la page repartait sur le réglage du système jusqu'au prochain F5.
 --}}
 <script>
     (function () {
-        var root = document.documentElement;
-        var theme = null;
+        function applyTheme() {
+            var root = document.documentElement;
+            var theme = null;
 
-        // Navigation privée et réglages qui bloquent le stockage : l'accès lui-même lève.
-        try {
-            theme = localStorage.getItem('theme');
-        } catch (e) {
-            theme = null;
+            // Navigation privée et réglages qui bloquent le stockage : l'accès lui-même lève.
+            try {
+                theme = localStorage.getItem('theme');
+            } catch (e) {
+                theme = null;
+            }
+
+            if (!theme || theme === 'auto') {
+                theme = root.dataset.dbTheme || null;
+            }
+
+            if (!theme || theme === 'auto') {
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+
+            root.setAttribute('data-theme', theme);
         }
 
-        if (!theme || theme === 'auto') {
-            theme = root.dataset.dbTheme || null;
-        }
+        applyTheme();
 
-        if (!theme || theme === 'auto') {
-            theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        }
-
-        root.setAttribute('data-theme', theme);
+        // Reposer le même calcul après un échange `navigate` : il est idempotent,
+        // donc il ne coûte rien quand l'attribut a survécu à la navigation.
+        document.addEventListener('livewire:navigated', applyTheme);
     })();
 </script>

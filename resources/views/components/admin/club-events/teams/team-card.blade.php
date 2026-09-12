@@ -1,16 +1,20 @@
 @props(['team'])
 
 @php
+    /* Même échelle que <x-section-accordion> : en sombre les aplats sont ancrés
+       sur la nuance -900, le bandeau en /25 et la pastille en /45. Le jeu
+       précédent (-900/40 et -800/60) portait trois à quatre fois la chroma de
+       son équivalent clair — un pavé de couleur au lieu d'une teinte. */
     $colorMap = [
-        'Hommes'   => ['bg' => 'bg-blue-50  dark:bg-blue-900/40',  'text' => 'text-blue-700  dark:text-blue-300',  'dot' => 'bg-blue-100  dark:bg-blue-800/60'],
-        'Vétérans' => ['bg' => 'bg-amber-50 dark:bg-amber-900/40', 'text' => 'text-amber-700 dark:text-amber-300', 'dot' => 'bg-amber-100 dark:bg-amber-800/60'],
-        'Dames'    => ['bg' => 'bg-pink-50  dark:bg-pink-900/40',  'text' => 'text-pink-700  dark:text-pink-300',  'dot' => 'bg-pink-100  dark:bg-pink-800/60'],
+        'Hommes'   => ['bg' => 'bg-blue-50 dark:bg-blue-900/25',  'text' => 'text-blue-700  dark:text-blue-300',  'dot' => 'bg-blue-100 dark:bg-blue-900/45'],
+        'Vétérans' => ['bg' => 'bg-amber-50 dark:bg-amber-900/25', 'text' => 'text-amber-700 dark:text-amber-300', 'dot' => 'bg-amber-100 dark:bg-amber-900/45'],
+        'Dames'    => ['bg' => 'bg-pink-50 dark:bg-pink-900/25',  'text' => 'text-pink-700  dark:text-pink-300',  'dot' => 'bg-pink-100 dark:bg-pink-900/45'],
     ];
 
     $c = $colorMap[$team->category] ?? [
-        'bg'   => 'bg-base-200/60',
+        'bg'   => 'bg-base-200/60 dark:bg-base-300/25',
         'text' => 'text-base-content/70',
-        'dot'  => 'bg-base-300',
+        'dot'  => 'bg-base-300 dark:bg-base-300/45',
     ];
 
     $hasCapitain = $team->captain_name !== '—';

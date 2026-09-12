@@ -58,6 +58,24 @@ it('hands the account preference to the public layouts', function (string $route
     'dashboard',
 ]);
 
+/*
+ * `data-theme` is never rendered by Blade; the inline script puts it there at
+ * runtime. Livewire's `navigate` aligns the <html> attributes on those of the
+ * document it fetched, so the attribute is dropped the moment two layouts do
+ * not carry the same attribute set — `layouts/app` and `layouts/guest` differ
+ * by `class="scroll-smooth"`. Navigating inside the back office kept the theme;
+ * logging out, which redirects to `login` with `navigate: true`, lost it, and
+ * the page fell back to the system setting until the next reload.
+ */
+it('reapplies the theme after a Livewire navigation', function (string $route): void {
+    $head = headOf($this->get(route($route))->assertOk()->getContent());
+
+    expect($head)->toContain("addEventListener('livewire:navigated'");
+})->with([
+    'home',
+    'login',
+]);
+
 beforeEach(function (): void {
     Club::factory()->ownClub()->create();
 });

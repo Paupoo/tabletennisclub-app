@@ -406,6 +406,25 @@ select:focus-visible {
 }
 
 /*
+  `--color-warning-content` names the foreground that reads *on* the warning
+  fill. The dark theme block above redefines it to the warning colour itself,
+  which was written for the twenty-odd views that use `text-warning-content` as
+  standalone text on a dark ground — and which makes every actual fill paint
+  yellow on yellow: 1.00:1. It is why the attestations banner and the
+  "acting for a ward" ribbon were unreadable in dark mode.
+
+  Rather than relitigate the token (the standalone uses would all break), the
+  semantic value is restored where a warning fill is actually painted. amber-950
+  measures 8.51:1 on the fill. The variable, not the `color` property, so
+  daisyUI's own internals (button foreground, icons, nested content) resolve
+  with it.
+*/
+[data-theme='dark'] :is(.alert-warning, .badge-warning, .btn-warning, .bg-warning):not(.badge-soft, .btn-soft, .btn-outline, .alert-soft) {
+  --color-warning-content: oklch(27.9% 0.077 45.635);
+  color: var(--color-warning-content);
+}
+
+/*
   WCAG 2.5.8 puts the floor for a pointer target at 24x24 CSS pixels; the Apple
   HIG asks 44x44 for anything used one-handed. Both are about the *hit area*, not
   the drawing, so these grow the box with padding and leave the icon alone.

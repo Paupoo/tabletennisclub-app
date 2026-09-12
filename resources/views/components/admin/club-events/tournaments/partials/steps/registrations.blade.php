@@ -355,7 +355,7 @@
 
         @php $waitlistCount = collect($this->waitlist ?? [])->count(); @endphp
         @if ($waitlistCount > 0)
-            <p class="text-sm text-gray-600">
+            <p class="text-sm text-muted">
                 {{ trans_choice('1 person will be removed from the waitlist.|:count people will be removed from the waitlist.', $waitlistCount, ['count' => $waitlistCount]) }}
             </p>
         @else

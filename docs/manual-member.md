@@ -204,3 +204,24 @@ If you have a problem:
 - Ask the committee at the next training session
 
 There is no in-app help chat at this time.
+
+---
+
+## 12. Mutual Insurer Attestation
+
+Your Belgian mutual insurer reimburses part of your club cotisation. **My space → Mutual attestation** produces the document, already filled in, stamped and signed by the club.
+
+**Conditions.** Two, and only two: your affiliation for the season is validated by the committee, and it is paid in full (cotisation and training packs). An unpaid fine, tournament entry or meal does not block the request.
+
+**The three steps.**
+1. Choose your mutual insurer. If yours is not listed, pick *Another mutual insurer*: the club then writes its own attestation.
+2. Check what will be certified, and type your **national register number**. The club does not know it and does not keep it — it goes straight onto the document.
+3. Download the PDF and send it to your insurer.
+
+**What the club certifies.** The period runs from the day the committee validated your affiliation to the end of the season — not from 1 September if you joined in January. The amount is what you actually paid, family discount deducted.
+
+**One per season**, but downloadable again as often as you need. If something is wrong (wrong insurer, amount changed mid-season), the office can revoke it and issue a new one.
+
+**For your children.** Sign in as your ward and follow the same steps; the national register number asked for is the child's.
+
+Every attestation carries a reference and a QR code pointing at a public page that confirms the club issued it, and whether it still stands.

@@ -66,6 +66,16 @@ Schedule::command('payment:send-refund-reminder')
 
 // Le 1er juillet, provisionne les deux saisons à venir (+1 et +2).
 // Rejouable à tout moment — idempotent, ne crée que ce qui manque.
+/*
+ * An attestation carries the member's national register number, the one
+ * identifier this application refuses to store in a column. Twelve months
+ * covers the season and a wide margin for a lost envelope; after that the file
+ * goes and only the record stays.
+ */
+Schedule::command('attestations:purge')
+    ->dailyAt('03:20')
+    ->withoutOverlapping();
+
 Schedule::command('season:provision')
     ->yearlyOn(7, 1, '06:00')
     ->withoutOverlapping();

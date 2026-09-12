@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Http\Controllers\Attestations\AttestationDownloadController;
+use App\Http\Controllers\Attestations\AttestationVerificationController;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\GuardianInvitationController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
@@ -88,6 +90,16 @@ Route::prefix('admin/my-space/')
         Route::livewire('{user}/charte', 'pages::club-admin.users.user-space.charter')->name('admin.user.charter');
         Route::livewire('{user}/directory', 'pages::club-admin.users.user-space.directory')->name('admin.user.directory');
         Route::livewire('{user}/payments', 'pages::club-admin.users.user-space.payments')->name('admin.user.payments');
+        // Mutual-insurer attestation — behind its own feature flag, and the
+        // download is authorised in the controller (the member it names, or the
+        // office), never by the my-space binding alone.
+        Route::livewire('{user}/attestation-mutuelle', 'pages::club-admin.users.user-space.mutual-attestation')
+            ->name('admin.user.attestation')
+            ->middleware('feature:attestations');
+        Route::get('attestation/{attestation}/telecharger', [AttestationDownloadController::class, 'download'])
+            ->name('admin.user.attestation.download')
+            ->middleware('feature:attestations');
+
         // Private member documents — authorization handled in the controller
         // (self, admin, committee, guardians), not limited to the my-space owner.
         Route::get('{user}/documents/{type}', [UserDocumentController::class, 'download'])->name('admin.user.documents.download');
@@ -144,6 +156,19 @@ Route::prefix('admin/club-admin/users/')
         Route::get('payments', fn () => redirect()->route('admin.treasury.payments'))->name('admin.users.payments');
     });
 // Season planning board — visible to the whole committee, mutations reserved to managers (decision #18).
+/*
+ * Mutual attestations — the attestations délégation, and nobody else.
+ *
+ * Deliberately not the members duty: whoever reaches this screen holds the club
+ * seal and the secretary's signature, and can produce a stamped document in the
+ * club's name.
+ */
+Route::prefix('admin/club-admin/attestations/')
+    ->middleware(['auth', 'verified', 'can:attestations.view', 'feature:attestations'])
+    ->group(function (): void {
+        Route::livewire('/', 'pages::club-admin.attestations.index')->name('admin.attestations.index');
+    });
+
 Route::prefix('admin/club-admin/planning/')
     ->middleware(['auth', 'verified', 'can:training_plans.manage', 'feature:training_planning'])
     ->group(function (): void {
@@ -360,6 +385,18 @@ Route::post('/invitation/accept/{user}', [InvitationController::class, 'store'])
 Route::post('/invitation/resend/{user}', [InvitationController::class, 'resend'])
     ->name('invitation.resend')
     ->middleware('throttle:3,60');
+
+/**
+ * Attestation verification
+ *
+ * Public on purpose: the person checking works at a mutual insurer's desk and
+ * has no account here. The address is an unguessable token printed on the
+ * document, so reaching this page means already holding it — what the page
+ * adds is whether the certificate still stands.
+ */
+Route::get('/attestation/verifier/{token}', [AttestationVerificationController::class, 'show'])
+    ->name('attestations.verify')
+    ->middleware('throttle:30,1');
 
 /**
  * Guardian invitations

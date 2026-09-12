@@ -457,3 +457,19 @@ En tant que membre du comité, les emails suivants sont envoyés automatiquement
 - **Membres archivés** : utilisez l'onglet Archivés pour restaurer un membre qui est parti et revenu
 - **Demandes RGPD** : traitez les demandes d'anonymisation rapidement. La demande provient du profil du membre (Zone de danger). En tant qu'admin, ouvrez le membre et cliquez sur Anonymiser
 - **Intégration des contacts** : traitez rapidement les contacts **Nous rejoindre** — ils attendent de vos nouvelles
+
+---
+
+## 14. Attestations mutuelle
+
+L'écran **Attestations mutuelle** porte trois choses : la façon dont le club signe, les formulaires des mutualités, et l'historique de ce qui a été délivré. Il demande la délégation **Attestations**, volontairement distincte de *Membres* : quiconque y accède détient le cachet du club et le paraphe du signataire.
+
+**Mise en service.** Tant que le signataire, le cachet et la signature ne sont pas renseignés, les membres ne voient rien. Cachet et paraphe doivent être des PNG **transparents** — un scan sur fond blanc est refusé, car il masquerait le texte du formulaire en dessous. Renseigner aussi le téléphone du club (formulaire Solidaris) et la fédération (formulaire Partenamut).
+
+**Formulaires.** Téléverser le formulaire tel que la mutualité le publie. L'application le convertit puis retrouve seule l'emplacement de chaque valeur à partir des intitulés imprimés — une révision du formulaire fonctionne donc en général sans rien changer. Sinon, les étiquettes introuvables sont listées en rouge et la mutualité **disparaît de la liste proposée aux membres**. MC et Mutualité Neutre acceptent par écrit une attestation rédigée par le club : elles restent proposées même sans formulaire.
+
+**Révocation.** Un membre ne peut demander qu'une attestation par saison. Le motif de révocation est obligatoire. Le fichier est supprimé, la ligne d'historique reste, et la page publique de vérification indique désormais que le document n'est plus valable. Le membre peut alors en demander une nouvelle.
+
+**Délivrance à la place d'un membre.** Possible depuis la fiche du membre, avec les mêmes contrôles — utile pour un appel téléphonique ou un compte géré.
+
+**Rétention.** Les PDF sont supprimés automatiquement après douze mois, parce qu'ils portent un numéro de registre national. L'historique est conservé.

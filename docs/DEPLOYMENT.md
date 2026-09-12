@@ -15,6 +15,10 @@ Procédure de mise en production sur un serveur classique (VPS / hébergement), 
 | Node / npm | pour compiler les assets (build sur le serveur ou artefact déposé) |
 | Base de données | MySQL / MariaDB |
 | Accès | SSH avec les droits d'écriture sur le répertoire applicatif |
+| `ghostscript` | Convertit les formulaires mutuelle publiés en PDF 1.7 vers 1.4, seule version que sait lire le moteur de remplissage |
+| `poppler-utils` | Fournit `pdftotext`, qui localise les champs d'un formulaire à partir de ses intitulés |
+
+Les deux derniers ne servent qu'aux attestations mutuelle. Sans eux, la fonctionnalité échoue au moment où un membre clique, pas au téléversement du formulaire — installez-les avant d'allumer `FEATURE_ATTESTATIONS`.
 
 Trois éléments doivent tourner **en permanence**, en plus du serveur web :
 

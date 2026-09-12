@@ -4614,5 +4614,21 @@
     "You have no validated affiliation for the current season.": "U hebt geen goedgekeurde aansluiting voor het huidige seizoen.",
     ":adults € per year for adults, :children € for children": ":adults € per jaar voor volwassenen, :children € voor kinderen",
     ":amount € per calendar year": ":amount € per kalenderjaar",
-    "Another mutual insurer": "Een andere mutualiteit"
+    "Another mutual insurer": "Een andere mutualiteit",
+    "Mutual attestation": "Mutualiteitsattest",
+    "Choose your mutual insurer to continue.": "Kies uw mutualiteit om verder te gaan.",
+    "Mutual membership number": "Aansluitingsnummer mutualiteit",
+    "Your club certifies your affiliation so your mutual insurer can reimburse part of it.": "Uw club bevestigt uw aansluiting zodat uw mutualiteit een deel kan terugbetalen.",
+    "The club is still setting this up. Come back shortly, or contact the secretary.": "De club is dit nog aan het opzetten. Kom binnenkort terug, of neem contact op met het secretariaat.",
+    "Choose your mutual insurer. The club fills in everything it knows; you complete the rest.": "Kies uw mutualiteit. De club vult in wat ze weet; u vult de rest aan.",
+    "My mutual insurer": "Mijn mutualiteit",
+    "Continue": "Verdergaan",
+    "What the club will certify": "Wat de club zal bevestigen",
+    "Your national register number goes straight onto the document. The club does not keep it.": "Uw rijksregisternummer gaat rechtstreeks op het document. De club bewaart het niet.",
+    "Generate my attestation": "Mijn attest aanmaken",
+    "Your attestation is ready. Reference :reference.": "Uw attest is klaar. Referentie :reference.",
+    "Send it to :insurer, by post or through their app. One attestation is issued per season — you can download this one again whenever you need it.": "Stuur het naar :insurer, per post of via hun app. Er wordt één attest per seizoen afgeleverd — u kunt dit altijd opnieuw downloaden.",
+    "No longer available": "Niet meer beschikbaar",
+    "A reason is required to revoke an attestation.": "Een reden is verplicht om een attest in te trekken.",
+    "Optional — on your mutual insurer's card.": "Optioneel — staat op uw mutualiteitskaart."
 }

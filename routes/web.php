@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Http\Controllers\Attestations\AttestationDownloadController;
 use App\Http\Controllers\Attestations\AttestationVerificationController;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\GuardianInvitationController;
@@ -89,6 +90,16 @@ Route::prefix('admin/my-space/')
         Route::livewire('{user}/charte', 'pages::club-admin.users.user-space.charter')->name('admin.user.charter');
         Route::livewire('{user}/directory', 'pages::club-admin.users.user-space.directory')->name('admin.user.directory');
         Route::livewire('{user}/payments', 'pages::club-admin.users.user-space.payments')->name('admin.user.payments');
+        // Mutual-insurer attestation — behind its own feature flag, and the
+        // download is authorised in the controller (the member it names, or the
+        // office), never by the my-space binding alone.
+        Route::livewire('{user}/attestation-mutuelle', 'pages::club-admin.users.user-space.mutual-attestation')
+            ->name('admin.user.attestation')
+            ->middleware('feature:attestations');
+        Route::get('attestation/{attestation}/telecharger', [AttestationDownloadController::class, 'download'])
+            ->name('admin.user.attestation.download')
+            ->middleware('feature:attestations');
+
         // Private member documents — authorization handled in the controller
         // (self, admin, committee, guardians), not limited to the my-space owner.
         Route::get('{user}/documents/{type}', [UserDocumentController::class, 'download'])->name('admin.user.documents.download');

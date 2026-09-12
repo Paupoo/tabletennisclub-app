@@ -4614,5 +4614,21 @@
     "You have no validated affiliation for the current season.": "Vous n'avez pas d'affiliation validée pour la saison en cours.",
     ":adults € per year for adults, :children € for children": ":adults € par an pour les adultes, :children € pour les enfants",
     ":amount € per calendar year": ":amount € par année civile",
-    "Another mutual insurer": "Une autre mutualité"
+    "Another mutual insurer": "Une autre mutualité",
+    "Mutual attestation": "Attestation mutuelle",
+    "Choose your mutual insurer to continue.": "Choisissez votre mutualité pour continuer.",
+    "Mutual membership number": "Numéro d'affiliation mutualité",
+    "Your club certifies your affiliation so your mutual insurer can reimburse part of it.": "Votre club atteste votre affiliation pour que votre mutualité puisse vous en rembourser une partie.",
+    "The club is still setting this up. Come back shortly, or contact the secretary.": "Le club est en train de mettre cela en place. Revenez d'ici peu, ou contactez le secrétariat.",
+    "Choose your mutual insurer. The club fills in everything it knows; you complete the rest.": "Choisissez votre mutualité. Le club remplit tout ce qu'il sait ; vous complétez le reste.",
+    "My mutual insurer": "Ma mutualité",
+    "Continue": "Continuer",
+    "What the club will certify": "Ce que le club va attester",
+    "Your national register number goes straight onto the document. The club does not keep it.": "Votre numéro de registre national part directement sur le document. Le club ne le conserve pas.",
+    "Generate my attestation": "Générer mon attestation",
+    "Your attestation is ready. Reference :reference.": "Votre attestation est prête. Référence :reference.",
+    "Send it to :insurer, by post or through their app. One attestation is issued per season — you can download this one again whenever you need it.": "Envoyez-la à :insurer, par courrier ou via son application. Une seule attestation est délivrée par saison — vous pouvez retélécharger celle-ci quand vous voulez.",
+    "No longer available": "Plus disponible",
+    "A reason is required to revoke an attestation.": "Un motif est obligatoire pour révoquer une attestation.",
+    "Optional — on your mutual insurer's card.": "Facultatif — figure sur votre carte de mutualité."
 }

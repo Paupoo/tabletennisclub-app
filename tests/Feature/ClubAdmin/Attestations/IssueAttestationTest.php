@@ -39,7 +39,21 @@ function readPdf(string $path): string
     $process = new Process(['pdftotext', '-layout', $path, '-']);
     $process->run();
 
-    return $process->getOutput();
+    return stripFillRules($process->getOutput());
+}
+
+/**
+ * Strips the fill rules a form draws with characters.
+ *
+ * poppler decides how to interleave a drawn value with the dotted rule it sits
+ * on, and that decision differs between versions: « Marc Dupont » comes back
+ * whole on one machine and as « Marc ......... Dupont » on another. The rules
+ * are the form's furniture, not its content, so they go before anything is
+ * compared — otherwise these tests pass or fail on the runner's poppler.
+ */
+function stripFillRules(string $text): string
+{
+    return (string) preg_replace('/\s+/u', ' ', (string) preg_replace('/[._\x{2026}]{2,}/u', ' ', $text));
 }
 
 function certifiableMember(Season $season): Subscription
@@ -117,7 +131,7 @@ it('prints every field its map declares, on every insurer form', function (Mutua
 
     // Whitespace collapsed: the layout puts a value in a box that lines up with
     // other text, and the reader pads between them.
-    $text = (string) preg_replace('/\s+/u', ' ', readPdf(Storage::disk('local')->path($attestation->path)));
+    $text = readPdf(Storage::disk('local')->path($attestation->path));
 
     $values = app(AttestationFieldValues::class)->for(
         app(BuildAttestationData::class)->for($affiliation),
@@ -154,7 +168,7 @@ it('names the member, the sum and the day it starts on every form', function (Mu
     );
 
     $attestation = app(IssueAttestation::class)($affiliation->user, $this->season, $mutuality);
-    $text = (string) preg_replace('/\s+/u', ' ', readPdf(Storage::disk('local')->path($attestation->path)));
+    $text = readPdf(Storage::disk('local')->path($attestation->path));
 
     // Squeezed as well: Partenamut draws the amount and the date as
     // single-character cells, so neither survives as a contiguous string.

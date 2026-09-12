@@ -29,7 +29,13 @@ function readPdfBytes(string $pdf): string
     $process = new Process(['pdftotext', '-layout', $path, '-']);
     $process->run();
 
-    return (string) preg_replace('/\s+/u', ' ', $process->getOutput());
+    // The fill rules a form draws with characters are removed first: poppler
+    // decides how to interleave a value with the dotted rule it sits on, and
+    // that decision differs between versions — « Aurélien Paulus » comes back
+    // whole on one machine and split by a rule on another.
+    $text = (string) preg_replace('/[._\x{2026}]{2,}/u', ' ', $process->getOutput());
+
+    return (string) preg_replace('/\s+/u', ' ', $text);
 }
 
 /**

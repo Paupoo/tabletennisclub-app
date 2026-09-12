@@ -9,6 +9,7 @@ use App\Data\Attestation\MemberIdentifiers;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationSetting;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\MutualAttestation;
+use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\OfficialFormRenderer;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\AttestationFieldValues;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\BuildAttestationData;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Templates\AnchorMaps;
@@ -263,4 +264,33 @@ it('certifies another member of the same season without complaint', function ():
 
     expect(MutualAttestation::count())->toBe(2)
         ->and($second->user_id)->toBe($two->user_id);
+});
+
+/*
+| mPDF embeds a subset of the font, built from the characters it has seen. The
+| only call that positions on a baseline — which an overlay needs — is also the
+| only one that never registers what it draws, so every accent came out as an
+| empty box: « Aurélien » printed as « Aur□lien » on a document the club signs.
+|
+| pdftotext reads the accent back correctly either way, because the text layer
+| was never wrong — the glyph was missing. What does move is the embedded font:
+| the é adds a few hundred bytes of outline. A render that gains nothing over
+| its unaccented twin is a render whose accents are boxes.
+*/
+it('embeds the glyphs for the accents it prints, not empty boxes', function (): void {
+    app(InstallAttestationTemplate::class)(
+        Mutuality::MC,
+        base_path('database/seeders/Data/attestation-templates/mc.pdf'),
+        'mc.pdf',
+    );
+
+    $renderer = app(OfficialFormRenderer::class);
+    $template = Storage::disk('local')->path('attestation-templates/mc.pdf');
+    $settings = AttestationSetting::current();
+    $common = ['club_name' => 'Club', 'discipline' => 'Tennis', 'amount_euros' => '125'];
+
+    $plain = $renderer->render($template, Mutuality::MC, $common + ['member_full_name' => 'Aurelien Paulus'], $settings);
+    $accented = $renderer->render($template, Mutuality::MC, $common + ['member_full_name' => 'Aurélien Paulus'], $settings);
+
+    expect(strlen($accented) - strlen($plain))->toBeGreaterThan(100);
 });

@@ -122,6 +122,15 @@ final readonly class OfficialFormRenderer
             return;
         }
 
+        // mPDF embeds a subset of the font, built from the characters seen by
+        // Write()/Cell(). Text() is the only call that positions on a baseline,
+        // which is what an overlay needs — and the only one that never registers
+        // what it draws. Every accent therefore came out as an empty box:
+        // « Aurélien » printed as « Aur□lien » on a document the club signs.
+        //
+        // Declaring the characters first is what puts them in the subset.
+        $mpdf->UTF8StringToArray($text, true);
+
         $mpdf->Text($point->x, $point->y, $text);
     }
 }

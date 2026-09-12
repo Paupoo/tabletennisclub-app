@@ -59,22 +59,6 @@ new class extends Component
         $this->step = max(1, $this->step - 1);
     }
 
-    #[Computed]
-    public function needsMutualNumber(): bool
-    {
-        $chosen = $this->chosen();
-
-        return $chosen instanceof Mutuality && $this->availability()->asksForMutualNumber($chosen);
-    }
-
-    #[Computed]
-    public function needsNationalRegisterNumber(): bool
-    {
-        $chosen = $this->chosen();
-
-        return $chosen instanceof Mutuality && $this->availability()->asksForNationalRegisterNumber($chosen);
-    }
-
     public function chooseMutuality(): void
     {
         $this->validate(
@@ -147,6 +131,22 @@ new class extends Component
             $this->issuedId = $this->held()->id;
             $this->step = 3;
         }
+    }
+
+    #[Computed]
+    public function needsMutualNumber(): bool
+    {
+        $chosen = $this->chosen();
+
+        return $chosen instanceof Mutuality && $this->availability()->asksForMutualNumber($chosen);
+    }
+
+    #[Computed]
+    public function needsNationalRegisterNumber(): bool
+    {
+        $chosen = $this->chosen();
+
+        return $chosen instanceof Mutuality && $this->availability()->asksForNationalRegisterNumber($chosen);
     }
 
     /**

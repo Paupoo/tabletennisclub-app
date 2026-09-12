@@ -20,8 +20,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Livewire\WithFileUploads;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * The office's side of the attestations: how they are signed, what they are
@@ -198,6 +198,13 @@ new class extends Component
         ];
     }
 
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Mutual attestations'));
+    }
+
     private function storeMark(string $kind): void
     {
         $this->authorize(Permission::AttestationsConfigure->value);
@@ -218,12 +225,5 @@ new class extends Component
         }
 
         $this->reset([$property]);
-    }
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__('Mutual attestations'));
     }
 };

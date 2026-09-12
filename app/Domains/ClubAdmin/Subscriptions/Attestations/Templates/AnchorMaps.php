@@ -92,10 +92,11 @@ final readonly class AnchorMaps
             'discipline' => new Anchor("Activité pratiquée par l'affilié ou nom de l'événement sportif", dx: 3),
             'signatory_name' => new Anchor("Nom du responsable de l'activité", dx: 3),
             'member_full_name_club' => new Anchor("Certifie sur l'honneur que", dx: 3),
-            // The form draws « [euros] , [cents] € », so one string would
-            // straddle the comma it prints itself.
-            'amount_euros' => new Anchor('a bien payé la somme de', dx: 5),
-            'amount_cents' => new Anchor('a bien payé la somme de', dx: 28),
+            // One box from 159,3 to 198,8 mm, with the form's own comma at 181,5
+            // and its € at 193. Split across those two halves the figure read as
+            // « 125 » and « 00 » with a finger of white between them, so it is
+            // written whole at the head of the box instead.
+            'amount' => new Anchor('a bien payé la somme de', column: 161.5),
             'period_from' => new Anchor('abonnement couvrant la période du', dx: 2),
             'period_to' => new Anchor('abonnement couvrant la période du', dx: 40),
             // Three "Date" on this form: the member's date of birth, the date
@@ -167,8 +168,16 @@ final readonly class AnchorMaps
             'mark_transfer' => new Anchor('virement', placement: Place::At, dx: -4),
             'mark_cash' => new Anchor('en espèce', placement: Place::At, dx: -4),
             'mark_other' => new Anchor('autre (précisez)', placement: Place::At, dx: -4),
-            'period_from' => new Anchor('Période couverte par le paiement : du', dx: 2),
-            'period_to' => new Anchor('Période couverte par le paiement : du', dx: 32),
+            // « du ......./......./............ au ......./......./............ ».
+            // The dots and the slashes are one word each, so a whole date lands
+            // across the slashes the form printed. The columns below are the
+            // three gaps between them, measured from the character pitch.
+            'period_from_day' => new Anchor('Période couverte par le paiement : du', column: 85),
+            'period_from_month' => new Anchor('Période couverte par le paiement : du', column: 93),
+            'period_from_year' => new Anchor('Période couverte par le paiement : du', column: 101),
+            'period_to_day' => new Anchor('Période couverte par le paiement : du', column: 118.3),
+            'period_to_month' => new Anchor('Période couverte par le paiement : du', column: 126),
+            'period_to_year' => new Anchor('Période couverte par le paiement : du', column: 133.5),
             'issued_on' => new Anchor('Date de signature', dx: 3),
             // The shallowest frame of the five — barely a centimetre under its
             // caption. Both marks go beside the caption rather than under it,

@@ -6,6 +6,7 @@ namespace App\Domains\ClubAdmin\Subscriptions\Attestations\Services;
 
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationSetting;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationTemplate;
+use App\Domains\ClubAdmin\Subscriptions\Attestations\Templates\AnchorMaps;
 use App\Domains\Shared\Enums\Mutuality;
 
 /**
@@ -22,6 +23,35 @@ use App\Domains\Shared\Enums\Mutuality;
  */
 final readonly class AttestationAvailability
 {
+    /**
+     * Whether this insurer's form has a box for the mutual membership number.
+     *
+     * Only Partenamut asks for it. Showing the field to everybody made members
+     * hunt for a number five documents out of six will never print, and marking
+     * it optional on the one form that needs it sent it out blank.
+     */
+    public function asksForMutualNumber(Mutuality $mutuality): bool
+    {
+        return in_array('member_mutual_number', $this->printedFields($mutuality), true);
+    }
+
+    /**
+     * Whether the document will state the national register number.
+     *
+     * Every form but Partenamut has a place for it, and so does the club's own
+     * attestation — which is what an insurer with no usable form falls back to.
+     */
+    public function asksForNationalRegisterNumber(Mutuality $mutuality): bool
+    {
+        $fields = $this->printedFields($mutuality);
+
+        if ($fields === []) {
+            return true;
+        }
+
+        return array_any($fields, fn ($field): bool => str_starts_with($field, 'member_nrn'));
+    }
+
     /** Whether the club has provided everything a stamped document needs. */
     public function isReady(): bool
     {
@@ -57,5 +87,34 @@ final readonly class AttestationAvailability
             fn (Mutuality $mutuality): bool => $mutuality->acceptsClubAttestation()
                 || in_array($mutuality, $usable, true),
         ));
+    }
+
+    /**
+     * The insurer's own form, when the club holds one it can still fill.
+     *
+     * The single place that decides between an official form and the club's own
+     * attestation: the wizard asks for what the document will print, and the
+     * action prints it. Two copies of this rule would eventually disagree, and
+     * a member would be asked for a number that never reaches the paper.
+     */
+    public function officialFormFor(Mutuality $mutuality): ?AttestationTemplate
+    {
+        if ($mutuality === Mutuality::Other) {
+            return null;
+        }
+
+        $template = AttestationTemplate::where('mutuality', $mutuality->value)->first();
+
+        return $template instanceof AttestationTemplate && $template->isUsable() ? $template : null;
+    }
+
+    /**
+     * @return array<int, string> Empty when the club's own attestation is used.
+     */
+    public function printedFields(Mutuality $mutuality): array
+    {
+        return $this->officialFormFor($mutuality) instanceof AttestationTemplate
+            ? array_keys(AnchorMaps::for($mutuality))
+            : [];
     }
 }

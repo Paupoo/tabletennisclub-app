@@ -59,6 +59,22 @@ new class extends Component
         $this->step = max(1, $this->step - 1);
     }
 
+    #[Computed]
+    public function needsMutualNumber(): bool
+    {
+        $chosen = $this->chosen();
+
+        return $chosen instanceof Mutuality && $this->availability()->asksForMutualNumber($chosen);
+    }
+
+    #[Computed]
+    public function needsNationalRegisterNumber(): bool
+    {
+        $chosen = $this->chosen();
+
+        return $chosen instanceof Mutuality && $this->availability()->asksForNationalRegisterNumber($chosen);
+    }
+
     public function chooseMutuality(): void
     {
         $this->validate(
@@ -68,14 +84,23 @@ new class extends Component
 
         abort_unless($this->chosen() instanceof Mutuality, 422);
 
+        // A number carried over from a previous choice would be validated
+        // against the new form's needs and printed on a document that has no
+        // box for it.
+        $this->reset(['nationalRegisterNumber', 'mutualMembershipNumber']);
+
         $this->step = 2;
     }
 
     public function generate(IssueAttestation $issue): void
     {
+        // Asked for only where the chosen document has a box for it, and
+        // required wherever it does: an optional field on the one form that
+        // prints it went out blank, and a field shown on the five that do not
+        // sent members hunting for a number nobody would ever read.
         $this->validate([
-            'nationalRegisterNumber' => ['required', 'string', 'max:20'],
-            'mutualMembershipNumber' => ['nullable', 'string', 'max:40'],
+            'nationalRegisterNumber' => [$this->needsNationalRegisterNumber() ? 'required' : 'nullable', 'string', 'max:20'],
+            'mutualMembershipNumber' => [$this->needsMutualNumber() ? 'required' : 'nullable', 'string', 'max:40'],
         ], [], [
             'nationalRegisterNumber' => __('National register number'),
             'mutualMembershipNumber' => __('Mutual membership number'),
@@ -163,6 +188,8 @@ new class extends Component
             'attestation' => $this->held(),
             'offered' => $this->offered(),
             'preview' => $this->preview(),
+            'needsMutualNumber' => $this->needsMutualNumber(),
+            'needsNationalRegisterNumber' => $this->needsNationalRegisterNumber(),
             'ready' => $this->availability()->isReady(),
             'verdict' => $this->verdict(),
         ];

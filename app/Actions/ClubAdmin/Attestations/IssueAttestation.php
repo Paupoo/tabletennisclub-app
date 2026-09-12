@@ -11,6 +11,7 @@ use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationTemplate;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\MutualAttestation;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\ClubAttestationRenderer;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\OfficialFormRenderer;
+use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\AttestationAvailability;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\AttestationEligibility;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\AttestationFieldValues;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\BuildAttestationData;
@@ -38,6 +39,7 @@ use Illuminate\Support\Str;
 final readonly class IssueAttestation
 {
     public function __construct(
+        private AttestationAvailability $availability,
         private AttestationEligibility $eligibility,
         private BuildAttestationData $builder,
         private AttestationFieldValues $values,
@@ -126,12 +128,13 @@ final readonly class IssueAttestation
         string $reference,
         string $url,
     ): string {
-        $template = AttestationTemplate::where('mutuality', $mutuality->value)->first();
-
         // The club's own certificate whenever there is no usable form to fill:
         // an insurer we hold nothing for, one whose form lost a label, and the
-        // two that accept it outright.
-        if ($mutuality === Mutuality::Other || ! $template instanceof AttestationTemplate || ! $template->isUsable()) {
+        // two that accept it outright. The rule lives in one place, because the
+        // wizard asks the member for exactly what this will print.
+        $template = $this->availability->officialFormFor($mutuality);
+
+        if (! $template instanceof AttestationTemplate) {
             return $this->clubAttestation->render($data, $identifiers, $settings, $reference, $url);
         }
 

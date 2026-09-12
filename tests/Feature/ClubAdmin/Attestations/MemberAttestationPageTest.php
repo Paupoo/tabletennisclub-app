@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Attestations\InstallAttestationTemplate;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationSetting;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\MutualAttestation;
@@ -189,4 +190,69 @@ it('answers not-found once the file has been purged', function (): void {
     $this->actingAs($member)
         ->get(route('admin.user.attestation.download', $held))
         ->assertNotFound();
+});
+
+/*
+| Only Partenamut has a box for the mutual membership number, and only
+| Partenamut has none for the national register number. Asking for both every
+| time sent members hunting for a number that would never be printed; marking
+| either optional sent the one form that needs it out blank.
+*/
+function holdForm(Mutuality $mutuality): void
+{
+    app(InstallAttestationTemplate::class)(
+        $mutuality,
+        base_path('database/seeders/Data/attestation-templates/' . $mutuality->value . '.pdf'),
+        $mutuality->value . '.pdf',
+    );
+}
+
+it('asks only for the numbers the chosen document will print', function (Mutuality $mutuality, bool $nrn, bool $mutual): void {
+    if ($mutuality !== Mutuality::Other) {
+        holdForm($mutuality);
+    }
+
+    $member = certifiable($this->season)->user;
+
+    Livewire::actingAs($member)
+        ->test(ATTESTATION_PAGE, ['user' => $member])
+        ->set('mutuality', $mutuality->value)
+        ->call('chooseMutuality')
+        ->assertSet('needsNationalRegisterNumber', $nrn)
+        ->assertSet('needsMutualNumber', $mutual);
+})->with([
+    'MC' => [Mutuality::MC, true, false],
+    'Partenamut' => [Mutuality::Partenamut, false, true],
+    'Solidaris' => [Mutuality::Solidaris, true, false],
+    'club attestation' => [Mutuality::Other, true, false],
+]);
+
+it('requires the mutual number on the one form that prints it', function (): void {
+    holdForm(Mutuality::Partenamut);
+    $member = certifiable($this->season)->user;
+
+    Livewire::actingAs($member)
+        ->test(ATTESTATION_PAGE, ['user' => $member])
+        ->set('mutuality', Mutuality::Partenamut->value)
+        ->call('chooseMutuality')
+        ->call('generate')
+        ->assertHasErrors(['mutualMembershipNumber'])
+        ->assertHasNoErrors(['nationalRegisterNumber']);
+
+    expect(MutualAttestation::count())->toBe(0);
+});
+
+it('forgets a number typed for a mutual insurer the member then changed', function (): void {
+    holdForm(Mutuality::Partenamut);
+    $member = certifiable($this->season)->user;
+
+    Livewire::actingAs($member)
+        ->test(ATTESTATION_PAGE, ['user' => $member])
+        ->set('mutuality', Mutuality::Partenamut->value)
+        ->call('chooseMutuality')
+        ->set('mutualMembershipNumber', 'P-4471902')
+        ->call('back')
+        ->set('mutuality', Mutuality::Other->value)
+        ->call('chooseMutuality')
+        ->assertSet('mutualMembershipNumber', null);
 });

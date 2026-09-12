@@ -10,6 +10,7 @@ use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationSetting;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationTemplate;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\ClubAttestationRenderer;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\OfficialFormRenderer;
+use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\AttestationAvailability;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\AttestationEligibility;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\AttestationFieldValues;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\BuildAttestationData;
@@ -38,6 +39,7 @@ use RuntimeException;
 final readonly class PreviewAttestation
 {
     public function __construct(
+        private AttestationAvailability $availability,
         private AttestationEligibility $eligibility,
         private BuildAttestationData $builder,
         private AttestationFieldValues $values,
@@ -64,9 +66,9 @@ final readonly class PreviewAttestation
         $reference = 'SPÉCIMEN';
         $identifiers = new MemberIdentifiers('00.00.00-000.00');
 
-        $template = AttestationTemplate::where('mutuality', $mutuality->value)->first();
+        $template = $this->availability->officialFormFor($mutuality);
 
-        if ($mutuality === Mutuality::Other || ! $template instanceof AttestationTemplate || ! $template->isUsable()) {
+        if (! $template instanceof AttestationTemplate) {
             return $this->clubAttestation->render(
                 $data,
                 $identifiers,

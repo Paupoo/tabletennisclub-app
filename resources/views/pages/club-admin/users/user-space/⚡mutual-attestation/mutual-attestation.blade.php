@@ -71,16 +71,25 @@
                         </div>
                     </dl>
 
-                    <x-alert icon="o-shield-check" class="alert-info mb-4">
-                        {{ __('Your national register number goes straight onto the document. The club does not keep it.') }}
-                    </x-alert>
+                    @if ($needsNationalRegisterNumber || $needsMutualNumber)
+                        <x-alert icon="o-shield-check" class="alert-info mb-4">
+                            {{ __('What you type here goes straight onto the document. The club does not keep it.') }}
+                        </x-alert>
 
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <x-input :label="__('National register number')" wire:model.blur="nationalRegisterNumber"
-                            placeholder="00.00.00-000.00" />
-                        <x-input :label="__('Mutual membership number')" wire:model.blur="mutualMembershipNumber"
-                            :hint="__('Optional — on your mutual insurer\'s card.')" />
-                    </div>
+                        {{-- Each number is shown only where the chosen document
+                             has a box for it, and required wherever it does. --}}
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            @if ($needsNationalRegisterNumber)
+                                <x-input :label="__('National register number')" wire:model.blur="nationalRegisterNumber"
+                                    placeholder="00.00.00-000.00" required />
+                            @endif
+
+                            @if ($needsMutualNumber)
+                                <x-input :label="__('Mutual membership number')" wire:model.blur="mutualMembershipNumber"
+                                    :hint="__('On your mutual insurer\'s card.')" required />
+                            @endif
+                        </div>
+                    @endif
 
                     <x-slot:actions>
                         <x-button class="btn-ghost" icon="o-arrow-left" :label="__('Back')" wire:click="back" />

@@ -18,15 +18,23 @@
      at all while closed, and the button asks Livewire rather than Alpine. --}}
 
 @php
+    /* Les deux thèmes portent le même poids perçu, pas la même valeur.
+       En clair la pastille tient par sa bordure (ΔL 8,5 sur le fond) et son
+       aplat ne pèse rien (ΔL 0,03) ; le premier jet sombre gardait ce rôle mais
+       en doublait tout — bordure -800 à ΔL 21,2 et chroma 0,19, soit une bague
+       saturée là où le clair pose un liseré. Les valeurs sombres sont donc
+       calées sur le poids du clair, toutes ancrées sur la nuance -900 :
+       aplat /15 (ΔL ≈ 2,5), bordure /50 (ΔL ≈ 9), filet /25 (ΔL ≈ 4). */
     $colors = [
-        'blue'    => ['pill_bg' => 'bg-blue-50   dark:bg-blue-950/40',   'pill_border' => 'border-blue-200   dark:border-blue-800',   'pill_text' => 'text-blue-700   dark:text-blue-300',   'dot' => 'bg-blue-500',   'sep' => 'border-blue-100   dark:border-blue-900/50'],
-        'amber'   => ['pill_bg' => 'bg-amber-50  dark:bg-amber-950/40',  'pill_border' => 'border-amber-200  dark:border-amber-800',  'pill_text' => 'text-amber-700  dark:text-amber-300',  'dot' => 'bg-amber-500',  'sep' => 'border-amber-100  dark:border-amber-900/50'],
-        'rose'    => ['pill_bg' => 'bg-rose-50   dark:bg-rose-950/40',   'pill_border' => 'border-rose-200   dark:border-rose-800',   'pill_text' => 'text-rose-700   dark:text-rose-300',   'dot' => 'bg-rose-500',   'sep' => 'border-rose-100   dark:border-rose-900/50'],
-        'violet'  => ['pill_bg' => 'bg-violet-50 dark:bg-violet-950/40', 'pill_border' => 'border-violet-200 dark:border-violet-800', 'pill_text' => 'text-violet-700 dark:text-violet-300', 'dot' => 'bg-violet-500', 'sep' => 'border-violet-100 dark:border-violet-900/50'],
-        'emerald' => ['pill_bg' => 'bg-emerald-50 dark:bg-emerald-950/40','pill_border' => 'border-emerald-200 dark:border-emerald-800','pill_text' => 'text-emerald-700 dark:text-emerald-300','dot' => 'bg-emerald-500','sep' => 'border-emerald-100 dark:border-emerald-900/50'],
-        'pink'    => ['pill_bg' => 'bg-pink-50   dark:bg-pink-950/40',   'pill_border' => 'border-pink-200   dark:border-pink-800',   'pill_text' => 'text-pink-700   dark:text-pink-300',   'dot' => 'bg-pink-500',   'sep' => 'border-pink-100   dark:border-pink-900/50'],
-        'gray'    => ['pill_bg' => 'bg-base-200  dark:bg-base-300/20',   'pill_border' => 'border-base-300',                          'pill_text' => 'text-base-content/60',                  'dot' => 'bg-base-content/30','sep' => 'border-base-200'],
+        'blue'    => ['pill_bg' => 'bg-blue-50 dark:bg-blue-900/15', 'pill_border' => 'border-blue-200 dark:border-blue-900/50', 'pill_text' => 'text-blue-700 dark:text-blue-300', 'dot' => 'bg-blue-500', 'sep' => 'border-blue-100 dark:border-blue-900/25'],
+        'amber'   => ['pill_bg' => 'bg-amber-50 dark:bg-amber-900/15', 'pill_border' => 'border-amber-200 dark:border-amber-900/50', 'pill_text' => 'text-amber-700 dark:text-amber-300', 'dot' => 'bg-amber-500', 'sep' => 'border-amber-100 dark:border-amber-900/25'],
+        'rose'    => ['pill_bg' => 'bg-rose-50 dark:bg-rose-900/15', 'pill_border' => 'border-rose-200 dark:border-rose-900/50', 'pill_text' => 'text-rose-700 dark:text-rose-300', 'dot' => 'bg-rose-500', 'sep' => 'border-rose-100 dark:border-rose-900/25'],
+        'violet'  => ['pill_bg' => 'bg-violet-50 dark:bg-violet-900/15', 'pill_border' => 'border-violet-200 dark:border-violet-900/50', 'pill_text' => 'text-violet-700 dark:text-violet-300', 'dot' => 'bg-violet-500', 'sep' => 'border-violet-100 dark:border-violet-900/25'],
+        'emerald' => ['pill_bg' => 'bg-emerald-50 dark:bg-emerald-900/15', 'pill_border' => 'border-emerald-200 dark:border-emerald-900/50', 'pill_text' => 'text-emerald-700 dark:text-emerald-300', 'dot' => 'bg-emerald-500', 'sep' => 'border-emerald-100 dark:border-emerald-900/25'],
+        'pink'    => ['pill_bg' => 'bg-pink-50 dark:bg-pink-900/15', 'pill_border' => 'border-pink-200 dark:border-pink-900/50', 'pill_text' => 'text-pink-700 dark:text-pink-300', 'dot' => 'bg-pink-500', 'sep' => 'border-pink-100 dark:border-pink-900/25'],
+        'gray'    => ['pill_bg' => 'bg-base-200 dark:bg-base-300/20', 'pill_border' => 'border-base-300 dark:border-base-300/50', 'pill_text' => 'text-base-content/60', 'dot' => 'bg-base-content/30', 'sep' => 'border-base-200 dark:border-base-300/25'],
     ];
+
     $c = $colors[$color] ?? $colors['gray'];
 
     /* Read once, when Alpine initialises the section: rotating a tablet does not

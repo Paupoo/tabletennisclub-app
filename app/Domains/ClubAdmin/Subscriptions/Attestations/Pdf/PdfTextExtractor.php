@@ -17,6 +17,9 @@ use Symfony\Component\Process\Process;
  */
 final readonly class PdfTextExtractor
 {
+    /** How much taller than its neighbours a glyph may be and still count. */
+    private const float OUTLIER_HEIGHT = 1.6;
+
     private const float POINTS_TO_MM = 25.4 / 72.0;
 
     /**
@@ -98,8 +101,7 @@ final readonly class PdfTextExtractor
             ];
 
             foreach ($page->xpath('.//line') ?: [] as $line) {
-                $lineBottom = $this->toMillimetres((float) $line['yMax']);
-                $lineTop = $this->toMillimetres((float) $line['yMin']);
+                [$lineTop, $lineBottom] = $this->textBandOf($line);
 
                 foreach ($line->word as $word) {
                     $text = trim((string) $word);
@@ -129,6 +131,54 @@ final readonly class PdfTextExtractor
         }
 
         return new PdfTextLayout($words, $pages);
+    }
+
+    /**
+     * The band the ordinary text of a line occupies, outliers excluded.
+     *
+     * poppler reports a line box that stretches around everything on it, and a
+     * form is full of glyphs far taller than its prose — the MutPlus tick boxes
+     * are 8 mm against 3 mm of text. Taken whole, that box drags the baseline a
+     * millimetre below the rule the value belongs on, and the tick lands under
+     * its own box.
+     *
+     * Anything much taller than the median word is therefore left out of the
+     * measurement. A descender is nowhere near that threshold, so the words
+     * this was built for — a label ending in « que » — still count.
+     *
+     * @return array{0: float, 1: float}
+     */
+    private function textBandOf(SimpleXMLElement $line): array
+    {
+        $boxes = [];
+
+        foreach ($line->word as $word) {
+            $top = $this->toMillimetres((float) $word['yMin']);
+            $bottom = $this->toMillimetres((float) $word['yMax']);
+            $boxes[] = ['top' => $top, 'bottom' => $bottom, 'height' => $bottom - $top];
+        }
+
+        if ($boxes === []) {
+            return [
+                $this->toMillimetres((float) $line['yMin']),
+                $this->toMillimetres((float) $line['yMax']),
+            ];
+        }
+
+        $heights = array_column($boxes, 'height');
+        sort($heights);
+        $median = $heights[intdiv(count($heights), 2)];
+
+        $ordinary = array_filter(
+            $boxes,
+            static fn (array $box): bool => $median <= 0.0 || $box['height'] <= $median * self::OUTLIER_HEIGHT,
+        );
+
+        if ($ordinary === []) {
+            $ordinary = $boxes;
+        }
+
+        return [min(array_column($ordinary, 'top')), max(array_column($ordinary, 'bottom'))];
     }
 
     private function toMillimetres(float $points): float

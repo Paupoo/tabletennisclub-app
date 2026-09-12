@@ -156,10 +156,14 @@ it('names the member, the sum and the day it starts on every form', function (Mu
     $attestation = app(IssueAttestation::class)($affiliation->user, $this->season, $mutuality);
     $text = (string) preg_replace('/\s+/u', ' ', readPdf(Storage::disk('local')->path($attestation->path)));
 
+    // Squeezed as well: Partenamut draws the amount and the date as
+    // single-character cells, so neither survives as a contiguous string.
+    $squeezed = (string) preg_replace('/\s+/u', '', $text);
+
     expect($text)->toContain('Marc Dupont')
         ->and($text)->toContain('Tennis de table')
-        ->and($text)->toContain('205')
-        ->and($text)->toContain('2026');
+        ->and($squeezed)->toContain('205')
+        ->and($squeezed)->toContain('2026');
 })->with(Mutuality::withOfficialForm());
 
 it('writes its own certificate for an insurer it holds no form for', function (): void {

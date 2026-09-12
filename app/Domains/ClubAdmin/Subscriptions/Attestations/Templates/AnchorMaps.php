@@ -40,6 +40,29 @@ final readonly class AnchorMaps
     }
 
     /**
+     * One anchor per cell of a field a form drew as separate boxes.
+     *
+     * @param  array<int, float>  $columns  Cell centres, in millimetres.
+     * @return array<string, Anchor>
+     */
+    private static function cells(string $field, string $phrase, array $columns, int $occurrence = 1): array
+    {
+        $anchors = [];
+
+        foreach ($columns as $index => $column) {
+            // A digit at 9 pt is about 2,2 mm wide, so half of that back from
+            // the centre puts it in the middle of its box.
+            $anchors[$field . '_' . ($index + 1)] = new Anchor(
+                $phrase,
+                column: $column - 1.1,
+                occurrence: $occurrence,
+            );
+        }
+
+        return $anchors;
+    }
+
+    /**
      * @return array<string, Anchor>
      */
     private static function mc(): array
@@ -105,8 +128,8 @@ final readonly class AnchorMaps
             'amount' => new Anchor('de euros', placement: Place::At, dx: 6),
             // « sportive____- _____.et » — two rules welded to the words around
             // them, so both years are placed from the label that precedes them.
-            'season_year_1' => new Anchor("pour l'année", dx: 13),
-            'season_year_2' => new Anchor("pour l'année", dx: 22),
+            'season_year_1' => new Anchor("pour l'année", dx: 14.2),
+            'season_year_2' => new Anchor("pour l'année", dx: 22.7),
             'mark_affiliation' => new Anchor('est inscrite dans notre club pour le sport', placement: Place::At, dx: -4),
             'discipline' => new Anchor('est inscrite dans notre club pour le sport', dx: 3),
             // The first "date" belongs to « en date du », which is the payment
@@ -164,22 +187,28 @@ final readonly class AnchorMaps
             // « Coordonnées du client ». The form carries AcroForm fields for
             // exactly this block and they are unusable — importing a page
             // through FPDI flattens them away — so it is overlaid like the rest.
-            'member_mutual_number' => new Anchor("N° d'affiliation", dx: 3),
-            'member_last_name' => new Anchor('Nom', occurrence: 1, dx: 3),
-            'member_first_name' => new Anchor('Prénom', dx: 3),
-            'member_address' => new Anchor('Adresse', dx: 3),
-            'member_city' => new Anchor('CP et Localité', dx: 3),
+            // The form's own AcroForm widget for this block starts at 46,3 mm,
+            // which is where its rules begin. Measuring from the end of each
+            // label instead left the short ones short of the line.
+            'member_mutual_number' => new Anchor("N° d'affiliation", column: 46.5),
+            'member_last_name' => new Anchor('Nom', occurrence: 1, column: 46.5),
+            'member_first_name' => new Anchor('Prénom', column: 46.5),
+            'member_address' => new Anchor('Adresse', column: 46.5),
+            'member_city' => new Anchor('CP et Localité', column: 46.5),
 
             'club_name' => new Anchor('La direction du club sportif', dx: 3),
             'federation' => new Anchor('affilié à la Fédération/Ligue', dx: 3),
             'member_full_name' => new Anchor('certifie que (nom et prénom)', dx: 3),
-            // Three boxed cells with printed separators between them.
-            'period_from_day' => new Anchor('est affiliée à partir du', dx: 4.5),
-            'period_from_month' => new Anchor('est affiliée à partir du', dx: 16.5),
-            'period_from_year' => new Anchor('est affiliée à partir du', dx: 30.5),
+            // The date is eight single-character cells — DD MM YYYY — with the
+            // form's own separators between the groups. A two-digit string
+            // straddles a border; one digit per cell does not. The columns are
+            // the cell centres, measured off the printed rules.
+            ...self::cells('period_from_day', 'est affiliée à partir du', [117.2, 122.1]),
+            ...self::cells('period_from_month', 'est affiliée à partir du', [130.1, 135.1]),
+            ...self::cells('period_from_year', 'est affiliée à partir du', [143.1, 148.1, 153.1, 158.1]),
             'discipline' => new Anchor('Sport pratiqué', dx: 3),
-            'amount_euros' => new Anchor('Montant payé', dx: 8),
-            'amount_cents' => new Anchor('Montant payé', dx: 31),
+            ...self::cells('amount_euros', 'Montant payé', [47.2, 52.2, 57.1, 62.1]),
+            ...self::cells('amount_cents', 'Montant payé', [70.1, 75.1]),
             'seal' => new Anchor('Cachet du club sportif', placement: Place::Below, dy: -1, scale: 0.8),
             'signature' => new Anchor('Signature du responsable du club', placement: Place::Below, dy: -1, scale: 0.9),
         ];
@@ -207,9 +236,9 @@ final readonly class AnchorMaps
             // for the member to write.
             'member_full_name' => new Anchor('Nom et Prénom', dx: 3),
             ...$nrnCells,
-            'issued_day' => new Anchor('Fait le', dx: 2),
-            'issued_month' => new Anchor('Fait le', dx: 11.5),
-            'issued_year' => new Anchor('Fait le', dx: 23),
+            'member_signed_day' => new Anchor('Fait le', column: 35.5),
+            'member_signed_month' => new Anchor('Fait le', column: 45),
+            'member_signed_year' => new Anchor('Fait le', column: 56),
             // The town is asked for on a line that reads « à .......... » and
             // nothing else — « à » is far too common to anchor on, and the first
             // one is up in the covering sentence. Hung off « Fait le » instead,
@@ -225,10 +254,19 @@ final readonly class AnchorMaps
             'club_phone' => new Anchor('N° de téléphone', dx: 3),
             'member_full_name_club' => new Anchor('Nom et prénom du/de la bénéficiaire du service', dx: 3),
             'amount' => new Anchor("Certifie sur l'honneur que la somme de", dx: 3),
-            'period_from' => new Anchor('pour la période du', dx: 2),
-            'period_to' => new Anchor('pour la période du', dx: 34),
+            // « du ..... / ..... / ..... au ..... / ..... / ..... » — six dotted
+            // groups, each with the form's own slash after it. One date written
+            // whole ran straight over those slashes.
+            'period_from_day' => new Anchor('pour la période du', column: 56),
+            'period_from_month' => new Anchor('pour la période du', column: 67),
+            'period_from_year' => new Anchor('pour la période du', column: 77.5),
+            'period_to_day' => new Anchor('pour la période du', column: 92),
+            'period_to_month' => new Anchor('pour la période du', column: 102.5),
+            'period_to_year' => new Anchor('pour la période du', column: 113),
             'discipline' => new Anchor('pour la pratique du sport suivant', dx: 3),
-            'issued_on' => new Anchor('Date', occurrence: 1, dx: 3),
+            'issued_day' => new Anchor('Date', occurrence: 1, column: 34.5),
+            'issued_month' => new Anchor('Date', occurrence: 1, column: 45.5),
+            'issued_year' => new Anchor('Date', occurrence: 1, column: 56.5),
             'seal' => new Anchor('Signature et cachet', placement: Place::Below, dy: -1, scale: 0.45),
             'signature' => new Anchor('Signature et cachet', placement: Place::Below, dx: 22, dy: 1, scale: 0.7),
         ];

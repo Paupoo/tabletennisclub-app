@@ -69,17 +69,32 @@ final readonly class AttestationFieldValues
             // their own comma between them, so the one string will not do.
             'amount_euros' => number_format(floor($data->amountPaid), 0, ',', ' '),
             'amount_cents' => str_pad((string) (int) round(fmod($data->amountPaid, 1) * 100), 2, '0', STR_PAD_LEFT),
+            // Partenamut draws the amount and the date as single-character
+            // cells, so each digit needs a key and a place of its own.
+            ...$this->digitCells('amount_euros', (string) (int) floor($data->amountPaid), 4, rightAlign: true),
+            ...$this->digitCells('amount_cents', str_pad((string) (int) round(fmod($data->amountPaid, 1) * 100), 2, '0', STR_PAD_LEFT), 2),
+            ...$this->digitCells('period_from_day', $data->periodFrom->format('d'), 2),
+            ...$this->digitCells('period_from_month', $data->periodFrom->format('m'), 2),
+            ...$this->digitCells('period_from_year', $data->periodFrom->format('Y'), 4),
             'period_from' => $data->periodFrom->format('d/m/Y'),
             'period_from_day' => $data->periodFrom->format('d'),
             'period_from_month' => $data->periodFrom->format('m'),
             'period_from_year' => $data->periodFrom->format('Y'),
             'period_to' => $data->periodTo->format('d/m/Y'),
+            'period_to_day' => $data->periodTo->format('d'),
+            'period_to_month' => $data->periodTo->format('m'),
+            'period_to_year' => $data->periodTo->format('Y'),
             'validated_on' => $data->periodFrom->format('d/m/Y'),
             'season_label' => $data->seasonLabel,
             'season_year_1' => (string) $data->periodFrom->year,
             'season_year_2' => (string) $data->periodTo->year,
             'issued_on' => $data->issuedOn->format('d/m/Y'),
             'issued_day' => $data->issuedOn->format('d'),
+            // The same day, where a form asks the member to date their own
+            // declaration as well as the club to date its statement.
+            'member_signed_day' => $data->issuedOn->format('d'),
+            'member_signed_month' => $data->issuedOn->format('m'),
+            'member_signed_year' => $data->issuedOn->format('Y'),
             'issued_month' => $data->issuedOn->format('m'),
             'issued_year' => $data->issuedOn->format('Y'),
             'payment_method' => $this->paymentMethod($data->paymentMethod),
@@ -102,9 +117,13 @@ final readonly class AttestationFieldValues
      */
     private function canonicalMethod(?string $method): ?string
     {
-        return match ($method) {
-            null, '' => null,
-            'transfer', 'bank_transfer', 'sepa', 'bank' => 'transfer',
+        // The treasury writes these as free strings, not an enum, and the
+        // spellings in use are « Wire », « Cash » and « electronic ». Reading
+        // them literally ticked « autre » on every transfer the club ever
+        // received — which is nearly all of them.
+        return match (mb_strtolower(trim((string) $method))) {
+            '' => null,
+            'wire', 'transfer', 'bank_transfer', 'bank', 'sepa', 'electronic' => 'transfer',
             'cash' => 'cash',
             default => 'other',
         };
@@ -119,11 +138,13 @@ final readonly class AttestationFieldValues
      *
      * @return array<string, string>
      */
-    private function digitCells(string $prefix, string $value, int $count): array
+    private function digitCells(string $prefix, string $value, int $count, bool $rightAlign = false): array
     {
         $digits = str_split(str_pad(
             mb_substr((string) preg_replace('/\D/', '', $value), 0, $count),
             $count,
+            ' ',
+            $rightAlign ? STR_PAD_LEFT : STR_PAD_RIGHT,
         ));
 
         $cells = [];

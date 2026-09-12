@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
+use App\Data\Attestation\MemberIdentifiers;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationSetting;
+use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\AttestationFieldValues;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\BuildAttestationData;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Mutuality;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function (): void {
@@ -114,3 +117,47 @@ it('falls back to the creation date for an affiliation that predates the column'
     expect(app(BuildAttestationData::class)->for($affiliation->refresh())->periodFrom->toDateString())
         ->toBe('2026-08-01');
 });
+
+/*
+| The treasury writes the payment method as a free string, and the spellings in
+| use are « Wire », « Cash » and « electronic ». Read literally, every transfer
+| the club ever received ticked « autre » on the Mutualité Neutre form — which
+| is nearly all of them.
+*/
+it('reads the payment methods the treasury actually writes', function (string $stored, string $expected): void {
+    $season = makeActiveSeason();
+    $affiliation = Subscription::factory()->for(User::factory())->create([
+        'season_id' => $season->id,
+        'status' => 'paid',
+        'subscription_price' => 125,
+        'amount_due' => 125,
+    ]);
+
+    Payment::factory()->create([
+        'payable_type' => Subscription::class,
+        'payable_id' => $affiliation->id,
+        'amount_due' => 125,
+        'amount_paid' => 125,
+        'status' => 'paid',
+        'payment_method' => $stored,
+    ]);
+
+    $values = app(AttestationFieldValues::class)->for(
+        app(BuildAttestationData::class)->for($affiliation->refresh()),
+        Mutuality::Neutral,
+        new MemberIdentifiers,
+        'ATT-TEST',
+    );
+
+    expect($values['mark_' . $expected])->toBe('X');
+
+    foreach (['transfer', 'cash', 'other'] as $box) {
+        if ($box !== $expected) {
+            expect($values['mark_' . $box])->toBe('');
+        }
+    }
+})->with([
+    'Wire' => ['Wire', 'transfer'],
+    'electronic' => ['electronic', 'transfer'],
+    'Cash' => ['Cash', 'cash'],
+]);

@@ -137,3 +137,54 @@ it('is closed to somebody without the délégation', function (): void {
         ->call('preview', Mutuality::Other->value)
         ->assertForbidden();
 });
+
+/*
+| The member's own block is the club's to fill too: it holds the name, the
+| birth date, the address, the phone and the e-mail, and the member types only
+| the national register number. Leaving those blank sent people back to a pen
+| for facts the club already had. Only the signature stays theirs.
+*/
+it('fills the member block the club already holds, on every form that has one', function (Mutuality $mutuality, array $expected): void {
+    app(InstallAttestationTemplate::class)(
+        $mutuality,
+        base_path('database/seeders/Data/attestation-templates/' . $mutuality->value . '.pdf'),
+        $mutuality->value . '.pdf',
+    );
+
+    $member = User::factory()->create([
+        'first_name' => 'Aurélien',
+        'last_name' => 'Paulus',
+        'birthdate' => '1988-08-17',
+        'street' => 'Rue de la Chapelle 30',
+        'city_code' => '1340',
+        'city_name' => 'Ottignies',
+        'phone_number' => '0479577502',
+        'email' => 'membre@example.org',
+    ]);
+    $member->assignRole(Role::ATTESTATIONS->value);
+
+    $text = readPdfBytes(app(PreviewAttestation::class)($member, $mutuality));
+
+    foreach ($expected as $fact) {
+        expect($text)->toContain($fact);
+    }
+})->with([
+    'MC' => [Mutuality::MC, ['Aurélien Paulus', '17', '08', '1988', 'Rue de la Chapelle 30', '1340 Ottignies', '0479577502', 'membre@example.org']],
+    'Partenamut' => [Mutuality::Partenamut, ['Paulus', 'Aurélien', 'Rue de la Chapelle 30', '1340 Ottignies']],
+    'Solidaris' => [Mutuality::Solidaris, ['Aurélien Paulus', 'Ottignies']],
+    'MutPlus' => [Mutuality::MutPlus, ['Aurélien Paulus', 'Rue de la Chapelle 30', 'membre@example.org']],
+    'Neutre' => [Mutuality::Neutral, ['Paulus', 'Aurélien', 'Rue de la Chapelle 30', 'membre@example.org']],
+]);
+
+it('leaves the member their own signature to write', function (): void {
+    // Everything the club can state is printed; the signature never is.
+    app(InstallAttestationTemplate::class)(
+        Mutuality::MC,
+        base_path('database/seeders/Data/attestation-templates/mc.pdf'),
+        'mc.pdf',
+    );
+
+    $text = readPdfBytes(app(PreviewAttestation::class)($this->office, Mutuality::MC));
+
+    expect($text)->toContain('Signature');
+});

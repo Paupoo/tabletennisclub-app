@@ -45,6 +45,11 @@ final readonly class AnchorResolver
         // descender that would drag its value a millimetre lower than the one
         // next to it.
         // Below is for images, and hands back the top-left of where they go.
+        // A value in a table column keeps the label's line and nothing else.
+        if ($anchor->column !== null) {
+            return new Point($anchor->column + $anchor->dx, $baseline + $anchor->dy, $anchor->page);
+        }
+
         return match ($anchor->placement) {
             AttestationAnchorPlacement::After => new Point($right + $anchor->dx, $baseline + $anchor->dy, $anchor->page),
             AttestationAnchorPlacement::Below => new Point(

@@ -45,11 +45,30 @@ final readonly class AnchorMaps
     private static function mc(): array
     {
         return [
+            // « À compléter par le bénéficiaire ». The club holds every one of
+            // these except the national register number, which the member types
+            // at the moment of the request and which is never stored. Only the
+            // signature is left blank — that one is theirs to write.
+            'member_full_name' => new Anchor('Nom et prénom', dx: 3),
+            'member_birthdate_day' => new Anchor('Date de naissance', dx: 2.5),
+            'member_birthdate_month' => new Anchor('Date de naissance', dx: 13),
+            'member_birthdate_year' => new Anchor('Date de naissance', dx: 24),
+            'member_nrn' => new Anchor('Numéro de registre national', dx: 3),
+            'member_address' => new Anchor('Rue et n°', dx: 3),
+            'member_city' => new Anchor('CP et localité', dx: 3),
+            'member_phone' => new Anchor('Tél.', dx: 3),
+            'member_email' => new Anchor('E-mail', dx: 3),
+            // The beneficiary's own date, three boxes. « Date » appears three
+            // times on this form: the birth date, this one, and the club's.
+            'issued_day' => new Anchor('Date', occurrence: 2, dx: 3),
+            'issued_month' => new Anchor('Date', occurrence: 2, dx: 15.5),
+            'issued_year' => new Anchor('Date', occurrence: 2, dx: 27.5),
+
             'club_name' => new Anchor("Nom du club, de l'infrastructure ou de l'association", dx: 3),
             'club_address' => new Anchor('Adresse du siège', dx: 3),
             'discipline' => new Anchor("Activité pratiquée par l'affilié ou nom de l'événement sportif", dx: 3),
             'signatory_name' => new Anchor("Nom du responsable de l'activité", dx: 3),
-            'member_full_name' => new Anchor("Certifie sur l'honneur que", dx: 3),
+            'member_full_name_club' => new Anchor("Certifie sur l'honneur que", dx: 3),
             // The form draws « [euros] , [cents] € », so one string would
             // straddle the comma it prints itself.
             'amount_euros' => new Anchor('a bien payé la somme de', dx: 5),
@@ -72,10 +91,13 @@ final readonly class AnchorMaps
     {
         return [
             'signatory_name' => new Anchor('Je soussigné', dx: 3),
-            'member_full_name' => new Anchor('Nom et prénom', placement: Place::After, dx: 6),
-            'member_address' => new Anchor('Adresse', occurrence: 1, dx: 6),
-            'member_nrn' => new Anchor('Numéro de registre national', dx: 6),
-            'member_email' => new Anchor('Adresse e-mail', dx: 6),
+
+            // « Vos données » is a two-column table: the labels run from 34,9 to
+            // 67,1 mm, and every value belongs in the same column past them.
+            'member_full_name' => new Anchor('Nom et prénom', column: 72.5),
+            'member_address' => new Anchor('Adresse', occurrence: 1, column: 72.5),
+            'member_nrn' => new Anchor('Numéro de registre national', column: 72.5),
+            'member_email' => new Anchor('Adresse e-mail', column: 72.5),
             'period_from' => new Anchor('en date du', dx: 3),
             // The form welds its own rule to the word: « de__________________ euros ».
             // Naming both words is what makes this « de » the right one, and the
@@ -139,6 +161,15 @@ final readonly class AnchorMaps
     private static function partenamut(): array
     {
         return [
+            // « Coordonnées du client ». The form carries AcroForm fields for
+            // exactly this block and they are unusable — importing a page
+            // through FPDI flattens them away — so it is overlaid like the rest.
+            'member_mutual_number' => new Anchor("N° d'affiliation", dx: 3),
+            'member_last_name' => new Anchor('Nom', occurrence: 1, dx: 3),
+            'member_first_name' => new Anchor('Prénom', dx: 3),
+            'member_address' => new Anchor('Adresse', dx: 3),
+            'member_city' => new Anchor('CP et Localité', dx: 3),
+
             'club_name' => new Anchor('La direction du club sportif', dx: 3),
             'federation' => new Anchor('affilié à la Fédération/Ligue', dx: 3),
             'member_full_name' => new Anchor('certifie que (nom et prénom)', dx: 3),
@@ -159,7 +190,32 @@ final readonly class AnchorMaps
      */
     private static function solidaris(): array
     {
+        // The national register number is drawn as eleven single-character
+        // cells, evenly spaced after their label. One digit per anchor, or the
+        // number runs across every border on the line.
+        $nrnCells = [];
+
+        for ($cell = 1; $cell <= 11; $cell++) {
+            $nrnCells['member_nrn_' . $cell] = new Anchor(
+                "N° d'identification du Registre National",
+                dx: 6.3 + 7.6 * ($cell - 1),
+            );
+        }
+
         return [
+            // « À compléter par le bénéficiaire ». Only the signature is left
+            // for the member to write.
+            'member_full_name' => new Anchor('Nom et Prénom', dx: 3),
+            ...$nrnCells,
+            'issued_day' => new Anchor('Fait le', dx: 2),
+            'issued_month' => new Anchor('Fait le', dx: 11.5),
+            'issued_year' => new Anchor('Fait le', dx: 23),
+            // The town is asked for on a line that reads « à .......... » and
+            // nothing else — « à » is far too common to anchor on, and the first
+            // one is up in the covering sentence. Hung off « Fait le » instead,
+            // which is unique and sits one line above it.
+            'member_town' => new Anchor('Fait le', column: 29, dy: 7.8),
+
             'signatory_name' => new Anchor('Je soussigné.e', dx: 3),
             // « Nom » three times: the beneficiary's block, the association's,
             // then the beneficiary again inside the club's declaration.
@@ -167,7 +223,7 @@ final readonly class AnchorMaps
             'club_address' => new Anchor('Adresse', occurrence: 1, dx: 3),
             'club_city' => new Anchor('Code postal et localité', dx: 3),
             'club_phone' => new Anchor('N° de téléphone', dx: 3),
-            'member_full_name' => new Anchor('Nom et prénom du/de la bénéficiaire du service', dx: 3),
+            'member_full_name_club' => new Anchor('Nom et prénom du/de la bénéficiaire du service', dx: 3),
             'amount' => new Anchor("Certifie sur l'honneur que la somme de", dx: 3),
             'period_from' => new Anchor('pour la période du', dx: 2),
             'period_to' => new Anchor('pour la période du', dx: 34),

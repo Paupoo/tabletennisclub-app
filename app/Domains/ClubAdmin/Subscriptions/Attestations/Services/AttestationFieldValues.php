@@ -34,14 +34,25 @@ final readonly class AttestationFieldValues
 
         return [
             'member_full_name' => $data->memberFullName,
+            // MC prints the member's name twice: once in their own block, once
+            // inside the club's sworn statement. Two anchors, one value.
+            'member_full_name_club' => $data->memberFullName,
             'member_first_name' => $data->memberFirstName,
             'member_last_name' => $data->memberLastName,
             'member_address' => $data->memberStreet,
             'member_city' => $data->memberCity,
+            // « Fait à … » wants the town on its own; the postcode belongs on
+            // the address line, not after a preposition.
+            'member_town' => trim((string) preg_replace('/^\d+\s*/', '', $data->memberCity)),
             'member_birthdate' => $data->memberBirthdate?->format('d/m/Y') ?? '',
+            // Several forms draw a date as three boxes with their own slashes.
+            'member_birthdate_day' => $data->memberBirthdate?->format('d') ?? '',
+            'member_birthdate_month' => $data->memberBirthdate?->format('m') ?? '',
+            'member_birthdate_year' => $data->memberBirthdate?->format('Y') ?? '',
             'member_email' => (string) $data->memberEmail,
             'member_phone' => (string) $data->memberPhone,
             'member_nrn' => (string) $identifiers->nationalRegisterNumber,
+            ...$this->digitCells('member_nrn', (string) $identifiers->nationalRegisterNumber, 11),
             'member_mutual_number' => (string) $identifiers->mutualMembershipNumber,
 
             'club_name' => $data->clubName,
@@ -68,6 +79,9 @@ final readonly class AttestationFieldValues
             'season_year_1' => (string) $data->periodFrom->year,
             'season_year_2' => (string) $data->periodTo->year,
             'issued_on' => $data->issuedOn->format('d/m/Y'),
+            'issued_day' => $data->issuedOn->format('d'),
+            'issued_month' => $data->issuedOn->format('m'),
+            'issued_year' => $data->issuedOn->format('Y'),
             'payment_method' => $this->paymentMethod($data->paymentMethod),
 
             'reference' => $reference,
@@ -94,6 +108,31 @@ final readonly class AttestationFieldValues
             'cash' => 'cash',
             default => 'other',
         };
+    }
+
+    /**
+     * One digit per key, for a form that draws a number as separate boxes.
+     *
+     * Solidaris prints the national register number as eleven single-character
+     * cells. Written as one string it would run across every border on the
+     * line; written a digit at a time it lands in the boxes the form drew.
+     *
+     * @return array<string, string>
+     */
+    private function digitCells(string $prefix, string $value, int $count): array
+    {
+        $digits = str_split(str_pad(
+            mb_substr((string) preg_replace('/\D/', '', $value), 0, $count),
+            $count,
+        ));
+
+        $cells = [];
+
+        foreach ($digits as $index => $digit) {
+            $cells[$prefix . '_' . ($index + 1)] = trim($digit);
+        }
+
+        return $cells;
     }
 
     /**

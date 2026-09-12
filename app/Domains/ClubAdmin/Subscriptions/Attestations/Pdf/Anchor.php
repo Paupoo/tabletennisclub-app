@@ -35,5 +35,17 @@ final readonly class Anchor
          * document the club signed.
          */
         public float $scale = 1.0,
+        /**
+         * An absolute column to write in, in millimetres from the left edge.
+         *
+         * A form laid out as a two-column table puts every value at the same x,
+         * whatever the width of the label naming it. Measuring from the end of
+         * each label instead drops the short ones back into the label column —
+         * which is exactly where « Nom et prénom » landed on the MutPlus form.
+         *
+         * The label still decides the line; only the horizontal position is
+         * taken from the table rather than from the words.
+         */
+        public ?float $column = null,
     ) {}
 }

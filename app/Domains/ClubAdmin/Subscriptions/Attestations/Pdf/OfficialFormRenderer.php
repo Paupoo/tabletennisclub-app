@@ -32,14 +32,20 @@ final readonly class OfficialFormRenderer
     public function __construct(
         private PdfTextExtractor $extractor,
         private AnchorResolver $resolver,
+        private SpecimenWatermark $watermark,
     ) {}
 
     /**
      * @param  array<string, string>  $values
      * @return string The finished PDF.
      */
-    public function render(string $templatePath, Mutuality $mutuality, array $values, AttestationSetting $settings): string
-    {
+    public function render(
+        string $templatePath,
+        Mutuality $mutuality,
+        array $values,
+        AttestationSetting $settings,
+        bool $specimen = false,
+    ): string {
         if (! is_file($templatePath)) {
             throw new RuntimeException("Missing attestation template: {$templatePath}");
         }
@@ -68,6 +74,10 @@ final readonly class OfficialFormRenderer
             $mpdf->useImportedPage($imported, 0, 0, $pageSize['width'], $pageSize['height']);
 
             $this->drawPage($mpdf, $layout, $anchors, $values, $settings, $page);
+
+            if ($specimen) {
+                $this->watermark->stamp($mpdf, $pageSize['width'], $pageSize['height']);
+            }
         }
 
         return (string) $mpdf->Output('', 'S');

@@ -76,6 +76,17 @@
                 {{ __('Field positions are worked out from each form\'s own wording, so a revised form usually just works. Any label that could not be found is listed below — an insurer with one is not offered to members.') }}
             </x-alert>
 
+            {{-- The office cannot judge a seal it has never seen on a page.
+                 A rehearsal carries your own details, issues nothing, and is
+                 watermarked so it can never pass for a real attestation. --}}
+            <div class="mb-4 flex flex-wrap items-center gap-3">
+                <p class="text-sm text-base-content/70">
+                    {{ __('Not sure how it will look? Print a specimen with your own details — nothing is issued or saved.') }}
+                </p>
+                <x-button class="btn-sm" icon="o-eye" :label="__('Specimen: club attestation')"
+                    wire:click="preview('other')" spinner />
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="table">
                     <thead>
@@ -84,6 +95,7 @@
                             <th>{{ __('Form held') }}</th>
                             <th>{{ __('Unresolved labels') }}</th>
                             <th>{{ __('Offered to members') }}</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -116,6 +128,11 @@
                                     @else
                                         <x-icon name="o-x-circle" class="h-5 w-5 text-base-content/40" />
                                     @endif
+                                </td>
+                                <td class="text-right">
+                                    <x-button class="btn-ghost btn-sm" icon="o-eye"
+                                        :label="__('See the result')"
+                                        wire:click="preview('{{ $mutuality->value }}')" spinner />
                                 </td>
                             </tr>
                         @endforeach

@@ -24,12 +24,15 @@ use Mpdf\Mpdf;
  */
 final readonly class ClubAttestationRenderer
 {
+    public function __construct(private SpecimenWatermark $watermark) {}
+
     public function render(
         AttestationData $data,
         MemberIdentifiers $identifiers,
         AttestationSetting $settings,
         string $reference,
         string $verificationUrl,
+        bool $specimen = false,
     ): string {
         $html = View::make('attestations.club-attestation', [
             'data' => $data,
@@ -55,6 +58,10 @@ final readonly class ClubAttestationRenderer
 
         $mpdf->SetTitle(__('Attestation of sporting affiliation'));
         $mpdf->WriteHTML($html);
+
+        if ($specimen) {
+            $this->watermark->stamp($mpdf, 210.0, 297.0);
+        }
 
         return (string) $mpdf->Output('', 'S');
     }

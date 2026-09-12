@@ -4668,5 +4668,9 @@
     "The seal and the signature must be PNG files.": "De stempel en de handtekening moeten PNG-bestanden zijn.",
     "This image has no transparency. A seal on a solid background would hide the form underneath it — scan it again with a transparent background.": "Deze afbeelding heeft geen transparantie. Een stempel op een volle achtergrond zou het formulier eronder verbergen — scan hem opnieuw met een transparante achtergrond.",
     "There is still :amount € outstanding on your affiliation.": "Er staat nog :amount € open op uw aansluiting.",
-    "Saved as soon as you pick it.": "Bewaard zodra u het kiest."
+    "Saved as soon as you pick it.": "Bewaard zodra u het kiest.",
+    "No season is open, so there is nothing to certify.": "Er is geen seizoen open, er valt dus niets te bevestigen.",
+    "Not sure how it will look? Print a specimen with your own details — nothing is issued or saved.": "Twijfelt u over het resultaat? Maak een specimen met uw eigen gegevens — er wordt niets afgeleverd of bewaard.",
+    "See the result": "Het resultaat bekijken",
+    "Specimen: club attestation": "Specimen: clubattest"
 }

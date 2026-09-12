@@ -52,7 +52,7 @@ final readonly class AttestationAvailability
             ->map(fn (AttestationTemplate $template): Mutuality => $template->mutuality)
             ->all();
 
-        return array_values(array_filter(
+        return Mutuality::inReadingOrder(array_filter(
             Mutuality::cases(),
             fn (Mutuality $mutuality): bool => $mutuality->acceptsClubAttestation()
                 || in_array($mutuality, $usable, true),

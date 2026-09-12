@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\Shared\Enums;
 
+use Illuminate\Support\Str;
+
 /**
  * The Belgian mutual insurers the club issues attestations for.
  *
@@ -24,6 +26,36 @@ enum Mutuality: string
     case Other = 'other';
     case Partenamut = 'partenamut';
     case Solidaris = 'solidaris';
+
+    /**
+     * Reading order for a member: alphabetical, « une autre mutualité » last.
+     *
+     * Declaration order is alphabetical on the case names, which says nothing
+     * to a reader: it puts MutPlus before Neutre because of how they are spelt
+     * in code, and drops "Other" in the middle of the list. Accents are folded
+     * so that « Mutualité Neutre » sorts under M rather than after Z.
+     *
+     * Mirrors Role::sortedByLabel(), for the same reason.
+     *
+     * @param  iterable<int, self>  $mutualities
+     * @return array<int, self>
+     */
+    public static function inReadingOrder(iterable $mutualities): array
+    {
+        $sorted = is_array($mutualities) ? array_values($mutualities) : iterator_to_array($mutualities, false);
+
+        usort($sorted, static function (self $a, self $b): int {
+            // The catch-all belongs at the end whatever it is called: it is not
+            // an insurer, it is what a member picks when theirs is not listed.
+            if ($a === self::Other || $b === self::Other) {
+                return ($a === self::Other ? 1 : 0) <=> ($b === self::Other ? 1 : 0);
+            }
+
+            return Str::lower(Str::ascii($a->label())) <=> Str::lower(Str::ascii($b->label()));
+        });
+
+        return $sorted;
+    }
 
     /**
      * Those the member can be handed a form for.

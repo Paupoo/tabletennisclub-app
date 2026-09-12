@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Attestations\InstallAttestationTemplate;
+use App\Actions\ClubAdmin\Attestations\PreviewAttestation;
 use App\Actions\ClubAdmin\Attestations\RevokeAttestation;
 use App\Actions\ClubAdmin\Attestations\StoreAttestationImage;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationSetting;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Livewire\WithFileUploads;
 
 /**
@@ -76,6 +78,27 @@ new class extends Component
         $this->federationName = $settings->federation_name;
         $this->discipline = $settings->discipline;
         $this->clubPhone = (string) Club::ourClub()->first()?->phone_contact;
+    }
+
+    /**
+     * Hand back the form as it will print, issuing nothing.
+     *
+     * Streamed rather than stored: a rehearsal has no reference, no row and no
+     * file, so there is nothing to clean up afterwards and nothing that could
+     * later be mistaken for a certificate the club stands behind.
+     */
+    public function preview(PreviewAttestation $preview, string $mutuality): StreamedResponse
+    {
+        $this->authorize(Permission::AttestationsView->value);
+
+        $chosen = Mutuality::from($mutuality);
+        $pdf = $preview(Auth::user(), $chosen);
+
+        return response()->streamDownload(
+            fn (): int => print $pdf,
+            'specimen-' . $chosen->value . '.pdf',
+            ['Content-Type' => 'application/pdf'],
+        );
     }
 
     public function revoke(RevokeAttestation $revoke): void

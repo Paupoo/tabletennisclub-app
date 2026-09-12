@@ -69,3 +69,25 @@ it('offers nothing at all while the club is not ready', function (): void {
 
     expect(app(AttestationAvailability::class)->offered())->toBe([]);
 });
+
+it('lists the insurers alphabetically, with the catch-all last', function (): void {
+    readyToStamp();
+
+    foreach (Mutuality::withOfficialForm() as $mutuality) {
+        holdTemplate($mutuality);
+    }
+
+    $labels = array_map(
+        fn (Mutuality $m): string => $m->label(),
+        app(AttestationAvailability::class)->offered(),
+    );
+
+    expect($labels)->toBe([
+        'Mutualité chrétienne (MC)',
+        'Mutualité Libérale — MutPlus.be',
+        'Mutualité Neutre',
+        'Partenamut',
+        'Solidaris Wallonie',
+        __('Another mutual insurer'),
+    ]);
+});

@@ -41,7 +41,7 @@ JS_WRAP;
 /** Cibles tactiles du compteur de quantité. */
 const BAR_STEPPERS = <<<'JS_WRAP'
 (() => {
-  const all = [...document.querySelectorAll('main form button[aria-label]')]
+  const all = [...document.querySelectorAll('main button[aria-label]')]
     .filter(el => el.getClientRects().length > 0);
 
   const small = all
@@ -97,8 +97,15 @@ it('keeps the receipt to a readable measure on a wide screen', function (): void
 });
 
 it('never scrolls sideways on a phone', function (string $route): void {
+    // Les huit écrans, pas six : la feuille de caisse et l'écran de paiement
+    // manquaient au jeu de données, et ce sont les deux qui portent le plus de
+    // chiffres côte à côte — donc les deux qui débordent le plus volontiers.
+    $url = $route === 'bar.payment.show'
+        ? route($route, $this->order)
+        : route($route);
+
     $layout = json_decode(
-        (string) visit(route($route))->resize(390, 844)->script(BAR_LAYOUT),
+        (string) visit($url)->resize(390, 844)->script(BAR_LAYOUT),
         true,
     );
 
@@ -110,11 +117,92 @@ it('never scrolls sideways on a phone', function (string $route): void {
     'historique' => 'bar.orders.history',
     'produits' => 'bar.products.index',
     'catégories' => 'bar.categories.index',
+    'feuille de caisse' => 'bar.cashSheet.index',
+    'paiement' => 'bar.payment.show',
 ]);
 
+/**
+ * Défilement latéral confiné dans un conteneur, et cibles tactiles.
+ *
+ * Le débordement de la page ne suffit pas à décrire l'écran de stock : `<x-table>`
+ * enveloppe sa table dans un `overflow-x-auto`, si bien qu'un tableau trop large ne
+ * pousse rien — il se défile en silence à l'intérieur de sa carte. C'est ce qui
+ * rendait l'inventaire pénible sur téléphone sans qu'aucune sonde ne le voie.
+ */
+const BAR_TABLE_BOX = <<<'JS_WRAP'
+(() => {
+  const table = document.querySelector('main table');
+  if (! table) return JSON.stringify({seen: 0});
+
+  const box = table.parentElement;
+  const sel = 'a[href], button, input:not([type=hidden]), select, textarea, [role=button], summary';
+
+  const small = [...document.querySelectorAll('main ' + sel)]
+    .filter(el => {
+      const cs = getComputedStyle(el);
+      return cs.visibility !== 'hidden' && cs.display !== 'none' && el.getBoundingClientRect().width >= 1;
+    })
+    .map(el => el.getBoundingClientRect())
+    .filter(r => Math.min(Math.round(r.width), Math.round(r.height)) < 24)
+    .map(r => Math.round(r.width) + 'x' + Math.round(r.height));
+
+  return JSON.stringify({
+    seen: 1,
+    sideways: box.scrollWidth - box.clientWidth,
+    tableWidth: Math.round(table.getBoundingClientRect().width),
+    boxWidth: box.clientWidth,
+    small,
+  });
+})()
+JS_WRAP;
+
+it('fits the stock table inside its card on a phone, without sideways scrolling', function (): void {
+    // Mesuré avant correction : la table réclamait 376 px pour une boîte de 308, soit
+    // 68 px de défilement latéral à chaque ligne lue. 82 px des 390 de l'écran
+    // partaient en rembourrage — celui de la zone de contenu plus celui de la carte —
+    // et l'en-tête « Disponible » réservait 106 px pour une bascule de 40.
+    $box = json_decode(
+        (string) visit(route('bar.products.index'))->resize(390, 844)->script(BAR_TABLE_BOX),
+        true,
+    );
+
+    expect($box['seen'])->toBe(1, 'aucune table mesurée : le sélecteur ne trouve plus rien');
+    expect($box['sideways'])->toBeLessThanOrEqual(0, sprintf(
+        'le tableau de stock déborde de sa carte : %d px pour %d px disponibles',
+        $box['tableWidth'] ?? 0,
+        $box['boxWidth'] ?? 0,
+    ));
+});
+
+it('keeps every control of the stock table above the 24px floor', function (): void {
+    // WCAG 2.5.8. `toggle-sm` mesurait 33×20 : la zone cliquable du label l'englobait
+    // bien, mais la sonde du projet mesure le contrôle lui-même, et un dessin de 20 px
+    // de haut se rate au doigt quoi qu'en dise son enveloppe.
+    $box = json_decode(
+        (string) visit(route('bar.products.index'))->resize(390, 844)->script(BAR_TABLE_BOX),
+        true,
+    );
+
+    expect($box['small'])->toBe([], sprintf(
+        "Contrôles sous le plancher de 24×24 :\n%s",
+        implode("\n", $box['small'] ?? []),
+    ));
+});
+
 it('keeps every quantity control under the thumb', function (): void {
+    // Une ardoise en session : depuis que le comptoir demande d'abord pour qui on
+    // sert, /bar montre l'écran de choix tant qu'aucune n'est ouverte — et il n'y a
+    // alors aucun compteur à mesurer. C'est l'assertion sur `seen` qui l'a dit, et
+    // c'est pour ça qu'elle est là.
+    session()->put('bar_tab_name', 'Alpa A');
+
     // Les « + » et « − » sont les commandes les plus utilisées du point de
     // vente, et les seules manipulées d'une main debout derrière un comptoir.
+    //
+    // Le sélecteur vise `main button[aria-label]` et non `main form button[…]` :
+    // depuis le passage en Livewire, les compteurs sont des `wire:click` et ne
+    // vivent plus dans un formulaire. L'ancien sélecteur ne trouverait plus rien —
+    // et la sonde passerait à vide, ce que l'assertion sur `seen` interdit.
     $steppers = json_decode(
         (string) visit(route('bar.index'))->resize(390, 844)->script(BAR_STEPPERS),
         true,

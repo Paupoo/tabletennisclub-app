@@ -40,14 +40,17 @@ class BarCategoryController extends Controller
 
         $name = trim(preg_replace('/\s+/', ' ', $validated['category_name']));
 
-        $category = BarCategory::create([
+        BarCategory::create([
             'name' => $name,
         ]);
 
-        return redirect()
-            ->route('bar.products.index')
-            ->with('selected_category_id', $category->id)
-            ->with('open_product_panel', true);
+        // Retour sur l'écran des catégories, et pas sur celui des produits : on a
+        // demandé « crée une catégorie », pas « montre-moi les produits ». La
+        // redirection servait un détour — venir de l'écran produits pour créer la
+        // catégorie manquante — que la modale du tableau a rendu inutile, et qui
+        // désorientait quiconque arrivait par le menu : la catégorie créée ne
+        // s'affichait jamais dans sa propre liste, sans un mot de confirmation.
+        return back()->with('success', __('Category created.'));
     }
 
     public function update(Request $request, BarCategory $category): RedirectResponse

@@ -10,6 +10,7 @@ use App\Domains\Bar\Models\BarStockMovement;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\Role;
+use Livewire\Livewire;
 
 /*
 |--------------------------------------------------------------------------
@@ -149,11 +150,24 @@ it('hides the nav entries a barman has no permission for', function (): void {
 });
 
 it('shows the stock state of each product on the order screen', function (): void {
+    // Une ardoise en session : sans elle, /bar demande d'abord pour qui on sert, et
+    // le catalogue n'est pas encore à l'écran.
     $this->actingAs($this->manager)
+        ->withSession(['bar_tab_name' => 'Alpa A'])
         ->get(route('bar.index'))
         ->assertOk()
         ->assertSee('24 en stock')
         ->assertSee('Rupture de stock');
+});
+
+it('asks who the round is for before showing the catalogue', function (): void {
+    // Servir à l'aveugle produisait des commandes qu'on ne savait plus rattacher à
+    // personne une heure plus tard — le défaut que le nommage répare.
+    $this->actingAs($this->manager)
+        ->get(route('bar.index'))
+        ->assertOk()
+        ->assertSee(__('Who is this round for?'))
+        ->assertDontSee('24 en stock');
 });
 
 it('serves the bar through the application stylesheet built by vite', function (): void {
@@ -166,14 +180,34 @@ it('serves the bar through the application stylesheet built by vite', function (
         ->assertSee('build/assets/app-', escape: false);
 });
 
-it('keeps the delete confirmation wired on a product card', function (): void {
-    // <x-card> fusionne les attributs de l'appelant sur sa div racine. Si Mary
-    // cessait de le faire, le x-data disparaîtrait et la confirmation de
-    // suppression ne s'ouvrirait plus — sans la moindre erreur.
-    $this->actingAs($this->manager)
-        ->get(route('bar.products.index'))
-        ->assertOk()
-        ->assertSee('confirming: false', escape: false);
+it('keeps a product deletion behind a confirmation, and says why it can be refused', function (): void {
+    // L'écran produits était une grille de tuiles, chacune portant son repli de
+    // confirmation Alpine (`x-data="{ confirming: false }"` fusionné par <x-card>).
+    // Il est devenu un tableau de saisie, et la suppression vit dans le tiroir
+    // d'édition : ce test garde la même intention — la suppression n'est jamais à
+    // un seul clic, et la condition qui peut la refuser est écrite en clair plutôt
+    // que cachée dans l'attribut `title` d'un bouton grisé.
+    Livewire::actingAs($this->manager)
+        ->test('pages::bar.products')
+        ->call('openProduct', $this->inStock->id)
+        ->assertSeeHtml('wire:confirm')
+        // Par `__()` et non en dur : la chaîne est traduite, et l'assertion doit
+        // suivre la langue de l'application plutôt que figer l'anglais source.
+        ->assertSee(__('Only a product at zero stock can be deleted. To take one off the menu, switch Available off.'));
+});
+
+it('refuses to delete a product that is still in stock', function (): void {
+    // Le garde-fou lui-même, et pas seulement sa mention : un produit encore en
+    // rayon laisserait des mouvements orphelins et une caisse qui ne tombe pas juste.
+    // Le tiroir reste ouvert : un refus qui referme l'écran laisserait le lecteur
+    // sans le message qui explique pourquoi.
+    Livewire::actingAs($this->manager)
+        ->test('pages::bar.products')
+        ->call('openProduct', $this->inStock->id)
+        ->call('delete')
+        ->assertSet('drawer', true);
+
+    expect(BarProduct::query()->whereKey($this->inStock->id)->exists())->toBeTrue();
 });
 
 /*
@@ -234,14 +268,19 @@ it('badges the menu entry with the number of items in the cart', function (): vo
 });
 
 it('floats the cart pill only once the cart holds something', function (): void {
-    $empty = $this->actingAs($this->manager)->get(route('bar.index'))->assertOk();
-    expect($empty->getContent())->not->toContain('Voir la commande');
+    $empty = $this->actingAs($this->manager)
+        ->withSession(['bar_tab_name' => 'Alpa A'])
+        ->get(route('bar.index'))->assertOk();
+    expect($empty->getContent())->not->toContain(__('Review the tab'));
 
     $this->actingAs($this->manager)
-        ->withSession(['cart' => [$this->inStock->id => 2]])
+        ->withSession(['bar_tab_name' => 'Alpa A', 'cart' => [$this->inStock->id => 2]])
         ->get(route('bar.index'))
         ->assertOk()
-        ->assertSee('Voir la commande')
+        ->assertSee(__('Review the tab'))
+        // Le nom de l'ardoise voyage avec la pilule : c'est ce qui dit où l'on sert
+        // quand on a la tête dans le catalogue.
+        ->assertSee('Alpa A')
         // Le total prouve que $totalPrice arrive jusqu'à la pilule : 2 × 1,80 €.
         ->assertSee(euros(360));
 });
@@ -253,6 +292,8 @@ it('puts the secondary order actions behind a named menu', function (): void {
         'created_by' => $this->manager->id,
         'total_price' => 180,
         'is_paid' => false,
+        'name' => 'Alpa A',
+        'open_name_key' => BarOrder::normaliseName('Alpa A'),
     ]);
 
     $response = $this->actingAs($this->manager)
@@ -260,8 +301,10 @@ it('puts the secondary order actions behind a named menu', function (): void {
         ->assertOk();
 
     $response->assertSee('Encaisser');
-    $response->assertSee('Modifier la commande');
+    $response->assertSee('Ajouter ou corriger des consommations');
     $response->assertSee('Supprimer la commande');
+    // Le nom porte la ligne ; le numéro reste, en second.
+    $response->assertSee('Alpa A');
     $response->assertSee('data-row-menu-trigger', escape: false);
     $response->assertSee(route('bar.payment.show', $order), escape: false);
 });

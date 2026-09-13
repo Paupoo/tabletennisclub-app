@@ -3,7 +3,7 @@
 
     $trail = Breadcrumb::make()->home()->bar()
         ->add('À encaisser', route('bar.orders.index'))
-        ->current('Commande #' . $order->id)->toArray();
+        ->current($order->name ?? 'Commande #' . $order->id)->toArray();
 @endphp
 
 <x-app-layout>
@@ -21,9 +21,26 @@
                 Retour aux commandes
             </a>
             <h1 class="text-2xl font-bold tracking-tight">
-                Encaisser la commande <span class="tabular-nums">#{{ $order->id }}</span>
+                @if ($order->name)
+                    Encaisser <span class="break-words">{{ $order->name }}</span>
+                @else
+                    Encaisser la commande <span class="tabular-nums">#{{ $order->id }}</span>
+                @endif
             </h1>
-            <p class="text-muted mt-1">Choisissez le mode de paiement.</p>
+            {{--
+                Qui a servi, en toutes lettres : depuis que `bar.orders.takeover` est
+                vérifiée, on encaisse couramment le travail d'un collègue, et rien ne
+                le disait. La mention n'apparaît que quand ce n'est pas la sienne —
+                se voir soi-même nommé à chaque encaissement n'apprendrait rien.
+            --}}
+            @if ($order->createdBy && (int) $order->created_by !== (int) auth()->id())
+                <p class="text-muted mt-1">
+                    Servie par {{ $order->createdBy->first_name }} {{ $order->createdBy->last_name }}
+                    <span class="text-subtle">· {{ $order->created_at->format('H:i') }}</span>
+                </p>
+            @else
+                <p class="text-muted mt-1">Choisissez le mode de paiement.</p>
+            @endif
         </div>
 
         {{-- Détail de la commande --}}
@@ -85,7 +102,7 @@
                 moindre — mais gardé bordé : un btn-ghost n'a aucune bordure au
                 repos et se lit comme du texte, pas comme un bouton.
             --}}
-            <div class="border-base-200 mt-3 border-t pt-3">
+            <div class="border-base-300 mt-3 border-t pt-3">
                 <button type="button" class="btn btn-outline btn-sm text-muted tap-comfort gap-2"
                     @click="offered = ! offered" :aria-expanded="offered">
                     <x-icon name="o-gift" class="h-4 w-4" />
@@ -144,7 +161,7 @@
             <x-app-modal
                 id="bar-qr-modal"
                 title="Payer par QR code"
-                :subtitle="'Commande #' . $order->id"
+                :subtitle="$order->name ?? 'Commande #' . $order->id"
                 :open="true"
                 separator
                 x-data="{ open: true }"

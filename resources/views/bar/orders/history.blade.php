@@ -68,7 +68,7 @@
                     <table class="table table-sm">
                         <thead>
                             <tr>
-                                <th>Commande</th>
+                                <th>Ardoise</th>
                                 <th>Articles</th>
                                 <th class="text-end">Total</th>
                                 <th>Statut</th>
@@ -79,8 +79,16 @@
                             @foreach ($orders as $order)
                                 <tr>
                                     <td class="align-top">
-                                        <span class="font-bold tabular-nums">#{{ $order->id }}</span>
-                                        <p class="text-subtle text-xs tabular-nums">{{ $order->created_at->format('d/m/Y') }}</p>
+                                        {{-- Le nom d'abord : c'est sous celui-là qu'on
+                                        cherche une tournée après coup. Une commande réglée
+                                        sur-le-champ n'en a pas, et garde son numéro. --}}
+                                        <span class="font-bold">{{ $order->name ?? '#' . $order->id }}</span>
+                                        <p class="text-subtle text-xs tabular-nums">
+                                            {{ $order->created_at->format('d/m/Y') }}
+                                            @if ($order->name)
+                                                · #{{ $order->id }}
+                                            @endif
+                                        </p>
                                     </td>
 
                                     <td class="align-top">

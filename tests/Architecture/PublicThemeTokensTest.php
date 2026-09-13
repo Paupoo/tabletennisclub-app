@@ -97,6 +97,20 @@ it('never draws a border without saying which colour', function (): void {
                 continue;
             }
 
+            /*
+             * Une déclaration CSS porte sa couleur sur la ligne et n'hérite de
+             * rien : `border: 1px solid var(--night-line)` n'est pas la classe
+             * utilitaire nue que cette règle traque. Les pages autonomes de la
+             * carte du bar — écran casté, feuille à imprimer — sont écrites en
+             * CSS parce qu'un téléviseur n'a pas de chaîne de compilation.
+             *
+             * La couleur reste obligatoire : `border: 1px solid;` continue de
+             * tomber, comme la classe nue.
+             */
+            if (preg_match('/\bborder[\w-]*\s*:[^;]*(#[0-9a-f]{3,8}|rgba?\(|hsla?\(|var\(--|currentcolor|transparent)/i', $line) === 1) {
+                continue;
+            }
+
             $offenders[] = sprintf(
                 '%s:%d  %s',
                 str_replace($root . '/resources/views/', '', $file->getPathname()),

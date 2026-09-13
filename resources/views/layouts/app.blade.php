@@ -105,13 +105,33 @@ les réglages : appliquer le thème ici aussi le ferait une seconde fois, après
     <x-toast position="toast-bottom toast-start" />
 
     {{-- Session flash → Mary toast bridge: controllers redirecting with
-         ->with('success'|'error', …) surface as the same toasts Livewire uses. --}}
-    @if (session('success') || session('error'))
+         ->with('success'|'error'|'warning'|'info', …) surface as the same toasts
+         Livewire uses.
+
+         Les quatre niveaux, pas seulement deux. Le pont ne relayait que `success` et
+         `error` : un `->with('warning', …)` partait donc dans le vide, sans que rien
+         ne le signale ni côté serveur ni à l'écran. La feuille de caisse du bar
+         annonçait ainsi l'échec de son envoi à personne — le barman rangeait la
+         caisse en croyant le trésorier servi. La visibilité d'un message ne peut pas
+         dépendre du mot que l'appelant a choisi. --}}
+    @php
+        $flashLevel = collect(['success', 'error', 'warning', 'info'])
+            ->first(fn (string $level): bool => session()->has($level));
+    @endphp
+
+    @if ($flashLevel !== null)
         @php
+            $flashIcon = match ($flashLevel) {
+                'success' => 'heroicon-o-check-circle',
+                'error' => 'heroicon-o-x-circle',
+                'warning' => 'heroicon-o-exclamation-triangle',
+                default => 'heroicon-o-information-circle',
+            };
+
             $flashToast = Illuminate\Support\Js::from(['toast' => [
-                'title' => session('success') ?? session('error'),
-                'css' => session()->has('success') ? 'alert-success' : 'alert-error',
-                'icon' => svg(session()->has('success') ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle', 'w-7 h-7')->toHtml(),
+                'title' => session($flashLevel),
+                'css' => 'alert-' . $flashLevel,
+                'icon' => svg($flashIcon, 'w-7 h-7')->toHtml(),
                 'timeout' => 3000,
                 'position' => 'toast-bottom toast-start',
             ]]);

@@ -16,8 +16,9 @@ use Symfony\Component\Finder\Finder;
  * du chrome d'admin : c'est une donnée stockée puis affichée sur le site public,
  * là où le design system les autorise. Le motif `icon="…"` est donc réservé.
  *
- * Le bar est hors périmètre : layout autonome, CSS écrite à la main, aucun
- * composant ni classe partagés avec l'application.
+ * Le bar est dans le périmètre depuis que ses vues ont rejoint le design system :
+ * elles vivent sous `views/bar/`, que ce Finder ne visitait pas. Règle DS-D — un
+ * écran qui entre dans le design system entre dans ses tests.
  */
 it('draws the back office with icons, never with emoji', function (): void {
     $viewsPath = dirname(__DIR__, 2) . '/resources/views';
@@ -33,7 +34,7 @@ it('draws the back office with icons, never with emoji', function (): void {
 
     $files = (new Finder)
         ->files()
-        ->in([$viewsPath . '/components/admin', $viewsPath . '/pages'])
+        ->in([$viewsPath . '/components/admin', $viewsPath . '/pages', $viewsPath . '/bar'])
         ->name('*.blade.php');
 
     foreach ($files as $file) {

@@ -16,8 +16,13 @@ use Symfony\Component\Finder\Finder;
  * typographique ni un éventuel réglage global. Et sous 12 px, un chiffre lu
  * vite se devine plutôt qu'il ne se lit.
  *
- * Le bar est hors périmètre : layout autonome, CSS écrite à la main, aucun
- * composant ni classe partagés avec l'application.
+ * Le bar est dans le périmètre depuis que ses vues ont rejoint le design system
+ * (`refactor(bar): rebuild the bar's views on the club design system`) : plus de
+ * layout autonome, plus de `public/assets/bar/bar.css`, et des composants
+ * partagés partout. L'exclusion qui vivait ici lui donnait un régime de faveur
+ * qu'aucune de ses vues ne demandait plus — règle DS-D : un test de design
+ * system énumère ce qu'il inclut, et une exclusion porte la condition de sa
+ * levée.
  */
 it('never sizes text below the 12px floor, nor off the scale', function (): void {
     $viewsPath = dirname(__DIR__, 2) . '/resources/views';
@@ -27,7 +32,6 @@ it('never sizes text below the 12px floor, nor off the scale', function (): void
     $files = (new Finder)
         ->files()
         ->in($viewsPath)
-        ->exclude('bar')
         ->name('*.blade.php');
 
     foreach ($files as $file) {

@@ -57,7 +57,17 @@ function openingTag(string $contents, int $from): string
 /** @return array<int, string> */
 function pageViews(): array
 {
-    return collect(File::allFiles(resource_path('views/pages')))
+    // `views/bar` est dans le périmètre bien qu'aucune de ses vues ne porte encore
+    // de <x-header> : la boucle ignore les fichiers qui n'en ont pas, donc c'est
+    // vert à vide aujourd'hui et ça garde le bar dès le premier en-tête qu'il
+    // adoptera. Règle DS-D — on n'attend pas la violation pour ouvrir le périmètre.
+    $roots = [
+        resource_path('views/pages'),
+        resource_path('views/bar'),
+    ];
+
+    return collect($roots)
+        ->flatMap(fn (string $root): array => File::allFiles($root))
         ->filter(fn ($file): bool => str_ends_with($file->getFilename(), '.blade.php'))
         ->map(fn ($file): string => $file->getPathname())
         ->values()
@@ -80,7 +90,7 @@ it('tells the reader something is loading on every page header', function (): vo
         $tag = openingTag($contents, $position);
 
         if (! str_contains($tag, 'progress-indicator')) {
-            $offenders[] = str_replace(resource_path('views/pages/'), '', $path);
+            $offenders[] = str_replace(resource_path('views/'), '', $path);
         }
     }
 

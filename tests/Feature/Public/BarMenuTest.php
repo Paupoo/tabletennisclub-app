@@ -5,10 +5,12 @@ declare(strict_types=1);
 use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Models\BarStockMovement;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Support\Facades\DB;
 
 /*
@@ -226,4 +228,25 @@ it('prints a sheet carrying the QR and the address in plain sight', function ():
     $response->assertOk();
     $response->assertSee('data:image/png;base64,', false);
     $response->assertSee(route('public.bar.menu'), false);
+});
+
+/*
+ * Les trois surfaces ne servent à rien si le barman ne sait pas les ouvrir. Le
+ * back-office du bar porte donc les liens : l'écran à caster, la page que les
+ * clients scannent, et la feuille à imprimer.
+ */
+it('hands the barman the links to set the room up', function (): void {
+    $barman = User::factory()->withRole(Role::BARMAN)->create();
+
+    test()->actingAs($barman);
+    $html = (string) test()->blade('<x-admin.navigation :user="$user" />', ['user' => $barman]);
+
+    expect($html)
+        ->toContain(route('public.bar.screen'))
+        ->toContain(route('public.bar.menu'))
+        ->toContain(route('public.bar.flyer'));
+
+    // Dans un nouvel onglet : caster le back-office à la place de la carte
+    // laisserait le barman sans caisse, devant une salle qui attend.
+    expect($html)->toMatch('/href="' . preg_quote(route('public.bar.screen'), '/') . '"[^>]*target="_blank"/');
 });

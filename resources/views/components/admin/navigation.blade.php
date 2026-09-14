@@ -210,6 +210,20 @@
         @can('bar.cash_sheet.send')
         <x-menu-item icon="o-document-chart-bar" link="{{ route('bar.cashSheet.index') }}" :title="__('Cash sheet')" />
         @endcan
+        {{--
+            De quoi installer la salle avant le service : l'écran à caster derrière
+            le comptoir, la page que les clients ouvrent en scannant, et la feuille
+            à poser sur les tables.
+
+            Trois liens et non un écran de plus : ces pages sont publiques, elles
+            n'ont rien à administrer. `external` les ouvre dans un nouvel onglet —
+            caster le back-office à la place de la carte laisserait le barman sans
+            caisse, devant une salle qui attend.
+        --}}
+        <x-menu-separator :title="__('Menu')" />
+        <x-menu-item icon="o-tv" link="{{ route('public.bar.screen') }}" :title="__('Cast the menu')" external />
+        <x-menu-item icon="o-device-phone-mobile" link="{{ route('public.bar.menu') }}" :title="__('Menu on a phone')" external exact />
+        <x-menu-item icon="o-printer" link="{{ route('public.bar.flyer') }}" :title="__('Print the QR sheets')" external />
     </x-menu-sub>
     @endcan
     @endfeature

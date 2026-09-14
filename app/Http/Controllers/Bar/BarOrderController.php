@@ -7,7 +7,9 @@ namespace App\Http\Controllers\Bar;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\Bar\Models\BarOrderItem;
 use App\Domains\Bar\Services\StockService;
+use App\Domains\Shared\Enums\Permission;
 use App\Http\Controllers\Controller;
+use App\Support\LocaleSort;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,19 +22,14 @@ class BarOrderController extends Controller
         $this->middleware('auth');
     }
 
-    public function cancelEdit(): RedirectResponse
-    {
-        session()->forget('cart');
-        session()->forget('editing_order_id');
-
-        return redirect()->route('bar.index')
-            ->with('success', 'Modification annulée.');
-    }
-
     public function destroy(BarOrder $order): RedirectResponse
     {
+        // La suppression reste à son auteur, elle : elle est irréversible — elle
+        // restitue le stock et détruit les lignes — et `bar.orders.manage` la garde
+        // déjà côté route. La reprise sert à encaisser et à compléter, pas à effacer
+        // le travail d'un autre.
         if ((int) $order->created_by !== (int) auth()->id()) {
-            return back()->with('error', "Vous n'êtes pas autorisé à modifier cette commande.");
+            return back()->with('error', "Vous n'êtes pas autorisé à supprimer cette commande.");
         }
 
         if ($order->is_paid) {
@@ -133,10 +130,18 @@ class BarOrderController extends Controller
      */
     public function index(): View
     {
-        $orders = BarOrder::with('items.product', 'createdBy')
-            ->where('is_paid', 0)
-            ->orderByDesc('id')
-            ->get();
+        // Triée par nom, et non par numéro : celui qui vient régler dit « c'est pour
+        // Alpa A », jamais « c'est la 47 ». L'ordre chronologique n'aide à rien pour
+        // retrouver une ardoise — c'est un ordre que le client ne connaît pas.
+        //
+        // Par LocaleSort et non en SQL : un tri octet par octet classerait « Vétérans »
+        // après « Zoé ».
+        $orders = LocaleSort::by(
+            BarOrder::with('items.product', 'createdBy')
+                ->where('is_paid', 0)
+                ->get(),
+            fn (BarOrder $order): string => (string) ($order->name ?? '')
+        );
 
         return view('bar.orders.index', compact('orders'));
     }
@@ -149,7 +154,11 @@ class BarOrderController extends Controller
      */
     public function modify(BarOrder $order): RedirectResponse
     {
-        if ((int) $order->created_by !== (int) auth()->id()) {
+        // `bar.orders.takeover` : un bar tourne en équipe, et celui qui encaisse n'est
+        // presque jamais celui qui a servi. La permission existait, elle est accordée
+        // au rôle BARMAN, et personne ne la vérifiait.
+        if ((int) $order->created_by !== (int) auth()->id()
+            && auth()->user()?->can(Permission::BarOrdersTakeover->value) !== true) {
             return back()->with('error', "Vous n'êtes pas autorisé à modifier cette commande.");
         }
 
@@ -165,8 +174,47 @@ class BarOrderController extends Controller
 
         session()->put('cart', $cart);
         session()->put('editing_order_id', $order->id);
+        session()->put('bar_tab_name', $order->name);
 
         return redirect()->route('bar.index')
             ->with('success', 'Commande chargée dans le panier pour modification.');
+    }
+
+    /**
+     * Renommer une ardoise.
+     *
+     * Attendu rare — on nomme à l'ouverture — mais pas impossible : une faute de
+     * frappe, ou un nom donné avant de savoir qui c'était vraiment. Passe par la même
+     * normalisation et la même règle d'unicité que l'ouverture, sinon le renommage
+     * serait la porte dérobée par laquelle deux homonymes rentrent.
+     */
+    public function rename(Request $request, BarOrder $order): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:64'],
+        ]);
+
+        if ($order->is_paid) {
+            return back()->with('error', 'Une commande réglée ne se renomme plus.');
+        }
+
+        $key = BarOrder::normaliseName($validated['name']);
+
+        if ($key === '') {
+            return back()->with('error', 'Donnez un nom à cette ardoise.');
+        }
+
+        $clash = BarOrder::openTabNamed($validated['name']);
+
+        if ($clash instanceof BarOrder && $clash->id !== $order->id) {
+            return back()->with('error', sprintf(
+                'Une ardoise « %s » est déjà ouverte. Encaissez-la ou choisissez un autre nom.',
+                $clash->name
+            ));
+        }
+
+        $order->update(['name' => trim($validated['name']), 'open_name_key' => $key]);
+
+        return back()->with('success', sprintf('Ardoise renommée « %s ».', $order->name));
     }
 }

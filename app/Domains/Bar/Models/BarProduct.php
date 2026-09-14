@@ -6,6 +6,7 @@ namespace App\Domains\Bar\Models;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Traits\HasAuditLog;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property int $sale_price
  * @property int $is_available
+ * @property int|null $low_stock_threshold
  * @property int|null $created_by
  * @property int|null $modified_by
  * @property Carbon|null $created_at
@@ -25,6 +27,10 @@ use Illuminate\Support\Carbon;
  * @property-read BarCategory $category
  * @property-read User|null $createdBy
  * @property-read int $stock
+ * @property-read int $effective_low_stock_threshold
+ * @property-read bool $is_low_stock
+ * @property-read int|null $stock_movements_sum_in
+ * @property-read int|null $stock_movements_sum_out
  * @property-read User|null $modifiedBy
  * @property-read Collection<int, BarStockMovement> $stockMovements
  * @property-read int|null $stock_movements_count
@@ -37,6 +43,7 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereCreatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereIsAvailable($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereLowStockThreshold($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereModifiedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereSalePrice($value)
@@ -48,10 +55,20 @@ class BarProduct extends Model
 {
     use HasAuditLog;
 
+    /**
+     * Le seuil d'alerte du bar, quand un produit n'en déclare pas.
+     *
+     * Il vivait en dur dans deux vues (`$realStock <= 3`), qui pouvaient donc
+     * diverger sans que rien ne le dise. Une seule écriture, lue par l'écran de
+     * vente, par le tableau de stock et par son tri de criticité.
+     */
+    public const int LOW_STOCK_THRESHOLD = 3;
+
     protected $fillable = [
         'name',
         'sale_price',
         'is_available',
+        'low_stock_threshold',
         'category_id',
     ];
 
@@ -68,18 +85,39 @@ class BarProduct extends Model
     }
 
     /**
+     * Le seuil qui s'applique vraiment à ce produit : le sien, ou celui du bar.
+     *
+     * Un seuil absent veut dire « prends le défaut », pas « pas d'alerte » : un
+     * produit créé sans y penser reste surveillé. Zéro est donc une valeur
+     * significative et distincte de null — on le respecte.
+     */
+    public function getEffectiveLowStockThresholdAttribute(): int
+    {
+        return $this->low_stock_threshold ?? self::LOW_STOCK_THRESHOLD;
+    }
+
+    public function getIsLowStockAttribute(): bool
+    {
+        return $this->stock <= $this->effective_low_stock_threshold;
+    }
+
+    /**
      * Computed stock (FIFO-ready): SUM(IN) - SUM(OUT).
-     * Falls back to a physical `stock` column if present and no movements exist.
+     *
+     * Deux requêtes par lecture quand le produit arrive seul — mesuré : 20 requêtes
+     * pour 9 produits sur l'écran de vente, donc une centaine sur un vrai
+     * catalogue, à chaque affichage. Une liste doit donc être chargée par
+     * {@see self::scopeWithStock()}, qui agrège les deux sommes en une requête ;
+     * cet accesseur s'en sert dès qu'elles sont présentes.
      */
     public function getStockAttribute(): int
     {
-        $in = (int) $this->stockMovements()->where('movement_type', 'IN')->sum('quantity');
-        $out = (int) $this->stockMovements()->where('movement_type', 'OUT')->sum('quantity');
-
-        // Backward compatibility: if there are no movements, use physical column if it exists.
-        if ($in === 0 && $out === 0 && array_key_exists('stock', $this->attributes)) {
-            return (int) ($this->attributes['stock'] ?? 0);
+        if (array_key_exists('stock_in', $this->attributes)) {
+            return max(0, (int) $this->attributes['stock_in'] - (int) ($this->attributes['stock_out'] ?? 0));
         }
+
+        $in = (int) $this->stockMovements()->where('movement_type', BarStockMovement::TYPE_IN)->sum('quantity');
+        $out = (int) $this->stockMovements()->where('movement_type', BarStockMovement::TYPE_OUT)->sum('quantity');
 
         return max(0, $in - $out);
     }
@@ -87,6 +125,26 @@ class BarProduct extends Model
     public function modifiedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'modified_by');
+    }
+
+    /**
+     * Charge le stock de chaque produit sans une requête par produit.
+     *
+     * `withSum` produit une sous-requête corrélée par colonne, donc deux pour
+     * toute la liste au lieu de deux par ligne. Les alias `stock_in` / `stock_out`
+     * sont ceux que {@see self::getStockAttribute()} cherche.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeWithStock(Builder $query): void
+    {
+        $query->withSum(
+            ['stockMovements as stock_in' => fn ($q) => $q->where('movement_type', BarStockMovement::TYPE_IN)],
+            'quantity'
+        )->withSum(
+            ['stockMovements as stock_out' => fn ($q) => $q->where('movement_type', BarStockMovement::TYPE_OUT)],
+            'quantity'
+        );
     }
 
     public function stockMovements(): HasMany

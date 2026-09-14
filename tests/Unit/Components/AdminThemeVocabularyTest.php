@@ -29,10 +29,12 @@ pest()->group('components', 'designSystem');
 /** @return array<int, string> */
 function themeVocabularyBladeFiles(): array
 {
+    // `views/bar` depuis que le bar rend dans le shell du back-office. Voir DS-D.
     $roots = [
         resource_path('views/pages'),
         resource_path('views/components/admin'),
         resource_path('views/clubAdmin'),
+        resource_path('views/bar'),
     ];
 
     return collect($roots)

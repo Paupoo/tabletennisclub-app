@@ -155,6 +155,79 @@
     @endcanany
     @endfeature
 
+    {{--
+        Le Bar. Ses six écrans vivaient dans une application à part, avec son
+        propre en-tête de navigation ; ils sont ici au même rang que Trésorerie.
+
+        Les libellés disent ce que fait l'écran plutôt que ce qu'il s'appelait :
+        « Commande » et « Commandes » côte à côte dans une barre latérale ne se
+        distinguent pas, et la seconde liste ne contient que les commandes
+        impayées — c'est une file d'encaissement, pas un historique.
+
+        Chaque entrée reprend le verrou de sa route (routes/bar.php) : sans ça,
+        un barman voit trois liens qui mènent à un 403.
+    --}}
+    @feature('bar')
+    @can('bar.access')
+    @php
+        // Panier de session : un simple array_sum, aucune requête. Le cast en
+        // array est une assurance, pas une coquetterie — ce menu est rendu sur
+        // toutes les pages du back-office, et une session malformée y ferait
+        // un 500 global au lieu d'une page du Bar en erreur.
+        $barCartCount = array_sum(array_map(intval(...), (array) session('cart', [])));
+    @endphp
+    {{--
+        `exact` sur les entrées dont le chemin en préfixe une autre : maryUI allume
+        une entrée dès que l'URL courante COMMENCE par son lien, et les chemins du
+        bar s'emboîtent (`/bar`, `/bar/orders`, `/bar/orders/history`). Trois
+        entrées s'allumaient ensemble sur l'historique, et « Nouvelle commande »
+        sur toutes les pages du bar — un menu qui désigne trois écrans à la fois
+        n'en désigne aucun.
+
+        Les sous-écrans gardent allumée la liste d'où l'on vient : encaisser ou
+        modifier une commande, c'est encore être dans la file d'encaissement.
+    --}}
+    <x-menu-sub icon="o-shopping-bag" :title="__('Bar')">
+        <x-menu-item
+            icon="o-shopping-bag"
+            link="{{ route('bar.index') }}"
+            :title="__('New order')"
+            :badge="$barCartCount > 0 ? (string) $barCartCount : null"
+            badge-classes="badge-primary"
+            exact
+            :active="request()->routeIs('bar.cart.show')" />
+        <x-menu-item
+            icon="o-banknotes"
+            link="{{ route('bar.orders.index') }}"
+            :title="__('To cash in')"
+            exact
+            :active="request()->routeIs('bar.payment.*', 'bar.orders.modify')" />
+        <x-menu-item icon="o-clock" link="{{ route('bar.orders.history') }}" :title="__('History')" />
+        @can('bar.products.manage')
+        <x-menu-item icon="o-cube" link="{{ route('bar.products.index') }}" :title="__('Products')" />
+        <x-menu-item icon="o-tag" link="{{ route('bar.categories.index') }}" :title="__('Categories')" />
+        @endcan
+        @can('bar.cash_sheet.send')
+        <x-menu-item icon="o-document-chart-bar" link="{{ route('bar.cashSheet.index') }}" :title="__('Cash sheet')" />
+        @endcan
+        {{--
+            De quoi installer la salle avant le service : l'écran à caster derrière
+            le comptoir, la page que les clients ouvrent en scannant, et la feuille
+            à poser sur les tables.
+
+            Trois liens et non un écran de plus : ces pages sont publiques, elles
+            n'ont rien à administrer. `external` les ouvre dans un nouvel onglet —
+            caster le back-office à la place de la carte laisserait le barman sans
+            caisse, devant une salle qui attend.
+        --}}
+        <x-menu-separator :title="__('Menu')" />
+        <x-menu-item icon="o-tv" link="{{ route('public.bar.screen') }}" :title="__('Cast the menu')" external />
+        <x-menu-item icon="o-device-phone-mobile" link="{{ route('public.bar.menu') }}" :title="__('Menu on a phone')" external exact />
+        <x-menu-item icon="o-printer" link="{{ route('public.bar.flyer') }}" :title="__('Print the QR sheets')" external />
+    </x-menu-sub>
+    @endcan
+    @endfeature
+
     <li><x-menu-separator /></li>
 
     @feature('trainings')

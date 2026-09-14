@@ -26,12 +26,11 @@ class BarCashSheetController extends Controller
         ]);
         $date = $validated['date'] ?? now()->toDateString();
 
-        [$summary, $rows, $csv] = $this->cashSheetService->build($date);
+        [$summary] = $this->cashSheetService->build($date);
 
         return view('bar.cashSheet.index', [
             'date' => $date,
             'summary' => $summary,
-            'rows' => $rows,
             'defaultTo' => $this->cashSheetService->getDefaultEmail(),
         ]);
     }
@@ -52,7 +51,7 @@ class BarCashSheetController extends Controller
             $this->cashSheetService->saveDefaultEmail($to);
         }
 
-        [$summary, $rows, $csv] = $this->cashSheetService->build($date);
+        [$summary, , $csv] = $this->cashSheetService->build($date);
 
         $subject = "Feuille de caisse — {$date}";
         $body = "Bonjour,\n\nVeuillez trouver en pièce jointe la feuille de caisse du {$date}.\n\n";
@@ -68,8 +67,13 @@ class BarCashSheetController extends Controller
         $body .= '- Offert: ' . euros((int) ($summary['by_method_cents']['offered'] ?? 0)) . "\n\n";
         $body .= "Cordialement.\n";
 
-        if (empty($csv)) {
-            return back()->with('warning', 'Aucune donnée à envoyer.');
+        // Le garde portait sur le CSV, qui n'est jamais vide : buildCsv() écrit
+        // toujours sa ligne d'en-tête. Une journée sans vente partait donc au
+        // trésorier sous la forme d'un fichier à trois colonnes et zéro ligne,
+        // annoncé « Email envoyé avec succès ». C'est le nombre de commandes qui
+        // dit s'il y a quelque chose à envoyer.
+        if ((int) $summary['orders_total'] === 0) {
+            return back()->with('error', 'Aucune donnée à envoyer.');
         }
 
         $ok = $this->cashSheetService->sendCsv($to, $subject, $body, $date, $csv);
@@ -77,7 +81,7 @@ class BarCashSheetController extends Controller
         return redirect()
             ->route('bar.cashSheet.index', ['date' => $date])
             ->with(
-                $ok ? 'success' : 'warning',
+                $ok ? 'success' : 'error',
                 $ok ? 'Email envoyé avec succès.' : 'Échec de l’envoi email.'
             );
     }

@@ -36,6 +36,48 @@ class StockService
     }
 
     /**
+     * Aligner le stock d'un produit sur un comptage.
+     *
+     * C'est le geste de l'inventaire : on ne saisit pas un mouvement, on saisit ce
+     * qu'on a compté sur l'étagère, et l'écart devient une entrée ou une sortie.
+     * La règle vivait dans BarProductController::update ; l'écran de stock en a
+     * besoin lui aussi, et deux copies de la même arithmétique auraient fini par
+     * se contredire.
+     *
+     * Ne fait rien si le compte tombe juste : un inventaire où trente produits
+     * sur quarante sont corrects ne doit pas écrire trente mouvements nuls.
+     *
+     * @return bool si un mouvement a été écrit
+     */
+    public function adjustStockTo(
+        int $productId,
+        int $countedStock,
+        int $currentStock,
+        ?string $reason = null,
+        ?int $userId = null
+    ): bool {
+        if ($countedStock < 0) {
+            throw new RuntimeException('Un stock compté ne peut pas être négatif.');
+        }
+
+        $delta = $countedStock - $currentStock;
+
+        if ($delta === 0) {
+            return false;
+        }
+
+        if ($delta > 0) {
+            $this->addIncomingStock($productId, $delta, $reason, $userId, $userId);
+
+            return true;
+        }
+
+        $this->consumeFIFO($productId, abs($delta), $reason, $userId, $userId);
+
+        return true;
+    }
+
+    /**
      * Consume stock using FIFO:
      * - oldest IN movements first
      * - decrement remaining_quantity on IN lots

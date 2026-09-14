@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Bar;
 
+use App\Actions\Bar\RecordBarOrderPayment;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\Shared\Enums\Permission;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +16,7 @@ use Illuminate\View\View;
 
 class BarPaymentController extends Controller
 {
-    public function pay(Request $request, BarOrder $order): RedirectResponse
+    public function pay(Request $request, BarOrder $order, RecordBarOrderPayment $recordPayment): RedirectResponse
     {
         $validated = $request->validate([
             'method' => 'required|in:cash,offered,qr',
@@ -36,7 +38,15 @@ class BarPaymentController extends Controller
             'paid_at' => now(),
             'payment_method' => $validated['method'],
             'reason' => $validated['method'] === 'offered' ? $validated['reason'] : null,
+            // L'ardoise est réglée : son nom se libère pour la prochaine tournée, sans
+            // que l'historique le perde — `name` reste, seule la clé d'unicité part.
+            'open_name_key' => null,
         ]);
+
+        // Le QR a une contrepartie sur le compte du club : la commande entre dans
+        // la liste à rapprocher du trésorier, en attente jusqu'à ce que le
+        // virement apparaisse sur le relevé. Le cash et l'offert n'y vont pas.
+        $recordPayment($order);
 
         return redirect()
             ->route('bar.orders.index')
@@ -45,7 +55,11 @@ class BarPaymentController extends Controller
 
     public function show(Request $request, BarOrder $order, GeneratePaymentQR $generatePaymentQR): View
     {
-        if ((int) $order->created_by !== (int) auth()->id()) {
+        // `bar.orders.takeover` : un bar tourne en équipe, et celui qui encaisse n'est
+        // presque jamais celui qui a servi. La permission existait, elle est accordée
+        // au rôle BARMAN, et personne ne la vérifiait.
+        if ((int) $order->created_by !== (int) auth()->id()
+            && $request->user()?->can(Permission::BarOrdersTakeover->value) !== true) {
             abort(403);
         }
         // load items + product for display

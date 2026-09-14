@@ -19,10 +19,14 @@ pest()->group('components', 'designSystem');
  */
 function adminBladeFiles(): array
 {
+    // `views/bar` depuis que le bar rend avec les composants partagés : il se
+    // dessinait auparavant dans sa propre feuille de style, hors de portée de
+    // cette règle. Voir DS-D.
     $roots = [
         resource_path('views/pages'),
         resource_path('views/components/admin'),
         resource_path('views/clubAdmin'),
+        resource_path('views/bar'),
     ];
 
     return collect($roots)

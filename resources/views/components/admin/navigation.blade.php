@@ -176,14 +176,32 @@
         // un 500 global au lieu d'une page du Bar en erreur.
         $barCartCount = array_sum(array_map(intval(...), (array) session('cart', [])));
     @endphp
+    {{--
+        `exact` sur les entrées dont le chemin en préfixe une autre : maryUI allume
+        une entrée dès que l'URL courante COMMENCE par son lien, et les chemins du
+        bar s'emboîtent (`/bar`, `/bar/orders`, `/bar/orders/history`). Trois
+        entrées s'allumaient ensemble sur l'historique, et « Nouvelle commande »
+        sur toutes les pages du bar — un menu qui désigne trois écrans à la fois
+        n'en désigne aucun.
+
+        Les sous-écrans gardent allumée la liste d'où l'on vient : encaisser ou
+        modifier une commande, c'est encore être dans la file d'encaissement.
+    --}}
     <x-menu-sub icon="o-shopping-bag" :title="__('Bar')">
         <x-menu-item
             icon="o-shopping-bag"
             link="{{ route('bar.index') }}"
             :title="__('New order')"
             :badge="$barCartCount > 0 ? (string) $barCartCount : null"
-            badge-classes="badge-primary" />
-        <x-menu-item icon="o-banknotes" link="{{ route('bar.orders.index') }}" :title="__('To cash in')" />
+            badge-classes="badge-primary"
+            exact
+            :active="request()->routeIs('bar.cart.show')" />
+        <x-menu-item
+            icon="o-banknotes"
+            link="{{ route('bar.orders.index') }}"
+            :title="__('To cash in')"
+            exact
+            :active="request()->routeIs('bar.payment.*', 'bar.orders.modify')" />
         <x-menu-item icon="o-clock" link="{{ route('bar.orders.history') }}" :title="__('History')" />
         @can('bar.products.manage')
         <x-menu-item icon="o-cube" link="{{ route('bar.products.index') }}" :title="__('Products')" />

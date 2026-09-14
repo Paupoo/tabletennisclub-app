@@ -99,6 +99,9 @@ new class extends Component
      */
     private array $accessibleTeamsCache = [];
 
+    /** Resolved lazily, once per render. */
+    private ?InterclubPreparationService $preparation = null;
+
     public function boot(): void
     {
         $this->currentUserId = Auth::id();
@@ -976,10 +979,15 @@ new class extends Component
             || $ic->visiting_team_id === $teamId)->values();
     }
 
-    /** The rule lives in InterclubPreparationService; this page only reads it. */
+    /**
+     * The rule lives in InterclubPreparationService; this page only reads it.
+     * Resolved once per render rather than once per fixture — this runs for
+     * every fixture of every team, on every click.
+     */
     private function fixtureStatus(Interclub $interclub): string
     {
-        return app(InterclubPreparationService::class)->fixtureStatus($interclub);
+        return ($this->preparation ??= app(InterclubPreparationService::class))
+            ->fixtureStatus($interclub);
     }
 
     /**

@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Domains\Bar\Models;
 
+use App\Contracts\DescribesPayment;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -46,7 +49,7 @@ use Illuminate\Support\Str;
  *
  * @mixin \Eloquent
  */
-class BarOrder extends Model
+class BarOrder extends Model implements DescribesPayment
 {
     use HasAuditLog;
 
@@ -117,8 +120,53 @@ class BarOrder extends Model
     /**
      * ✅ An order has many items
      */
+    /**
+     * Ce que le trésorier lit dans la colonne « membre ».
+     *
+     * Le bar ne sait pas qui a payé : un client de passage n'a pas de compte, et
+     * le `created_by` est le barman qui a encaissé, pas le payeur. Le nom de
+     * l'ardoise est donc tout ce qu'on a — le dire plutôt que d'afficher le nom
+     * d'un bénévole en face d'un montant qu'il n'a pas versé.
+     */
+    public function getPayerName(): string
+    {
+        return $this->name ?? "Commande #{$this->id}";
+    }
+
+    /**
+     * La soirée à laquelle la commande appartient.
+     *
+     * C'est par la date que le trésorier retrouve la ligne correspondante sur le
+     * relevé : le numéro de commande, lui, est déjà dans la communication.
+     */
+    public function getPaymentLabel(): array
+    {
+        return [
+            'type' => __('Bar'),
+            'name' => Carbon::parse($this->paid_at ?? $this->created_at)->translatedFormat('j F Y'),
+        ];
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(BarOrderItem::class, 'order_id');
+    }
+
+    /**
+     * Le paiement du club correspondant, quand la commande en a un.
+     *
+     * Seules les commandes réglées par QR en portent un : elles ont une
+     * contrepartie sur le compte du club, que le trésorier doit rapprocher de sa
+     * transaction bancaire. Le cash et l'offert n'en ont pas.
+     *
+     * Rien de ce qui arrive à ce paiement ne revient sur la commande : `is_paid`
+     * dit « le client est quitte avec le barman », le paiement dit « l'argent est
+     * arrivé sur le compte ». Les deux sont vrais séparément.
+     *
+     * @return MorphOne<Payment, $this>
+     */
+    public function payment(): MorphOne
+    {
+        return $this->morphOne(Payment::class, 'payable');
     }
 }

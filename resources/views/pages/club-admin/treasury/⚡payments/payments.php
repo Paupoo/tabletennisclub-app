@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Contracts\DescribesPayment;
+use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
@@ -355,9 +356,17 @@ new class extends Component
             ->where('status', $this->statusFilter)
             ->when($this->search, fn ($q) => $q
                 ->where('reference', 'like', "%{$this->search}%")
-                ->orWhereHas('payable.user', fn ($u) => $u
-                    ->where('first_name', 'like', "%{$this->search}%")
-                    ->orWhere('last_name', 'like', "%{$this->search}%")
+                // `payable.user` suppose que tout payable a un membre. Une commande
+                // de bar n'en a pas — le bar ne sait pas qui a payé — et la
+                // recherche tombait alors en BadMethodCallException pour tout le
+                // monde, y compris pour chercher une affiliation.
+                ->orWhereHasMorph(
+                    'payable',
+                    $this->payableTypesWithUser(),
+                    fn ($q) => $q->whereHas('user', fn ($u) => $u
+                        ->where('first_name', 'like', "%{$this->search}%")
+                        ->orWhere('last_name', 'like', "%{$this->search}%")
+                    )
                 )
             )
             ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
@@ -553,7 +562,7 @@ new class extends Component
     #[Computed]
     public function refundTransactions(): Collection
     {
-        $payment = $this->refundPaymentId ? Payment::with(['payable.user'])->find($this->refundPaymentId) : null;
+        $payment = $this->refundPaymentId ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])->find($this->refundPaymentId) : null;
         $user = $payment?->payable?->user;
 
         $normalizedIban = $this->normalizeIban($user?->iban ?? '');
@@ -609,6 +618,7 @@ new class extends Component
                 ['id' => Subscription::class,           'name' => __('Subscription')],
                 ['id' => TournamentRegistration::class, 'name' => __('Tournament')],
                 ['id' => MeetingUser::class,            'name' => __('Meeting')],
+                ['id' => BarOrder::class,               'name' => __('Bar')],
             ]), 'name')->all(),
             'pendingTransactions' => $this->reconcileModal ? $this->pendingTransactions() : collect(),
             'currentPayment' => $this->reconcilePaymentId
@@ -658,7 +668,7 @@ new class extends Component
     {
         Gate::authorize(Permission::PaymentsRemind->value);
 
-        $payment = Payment::with(['payable.user'])->find($paymentId);
+        $payment = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])->find($paymentId);
 
         if (! $payment?->payable?->user) {
             $this->error(__('Could not find user for this payment.'));
@@ -771,9 +781,17 @@ new class extends Component
         return Payment::where('status', $this->statusFilter)
             ->when($this->search, fn ($q) => $q
                 ->where('reference', 'like', "%{$this->search}%")
-                ->orWhereHas('payable.user', fn ($u) => $u
-                    ->where('first_name', 'like', "%{$this->search}%")
-                    ->orWhere('last_name', 'like', "%{$this->search}%")
+                // `payable.user` suppose que tout payable a un membre. Une commande
+                // de bar n'en a pas — le bar ne sait pas qui a payé — et la
+                // recherche tombait alors en BadMethodCallException pour tout le
+                // monde, y compris pour chercher une affiliation.
+                ->orWhereHasMorph(
+                    'payable',
+                    $this->payableTypesWithUser(),
+                    fn ($q) => $q->whereHas('user', fn ($u) => $u
+                        ->where('first_name', 'like', "%{$this->search}%")
+                        ->orWhere('last_name', 'like', "%{$this->search}%")
+                    )
                 )
             )
             ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
@@ -825,9 +843,6 @@ new class extends Component
         return preg_replace('/[^0-9]/', '', $ref) ?? '';
     }
 
-    /**
-     * @return array<class-string, array<int, string>>
-     */
     private function payableEagerLoads(): array
     {
         return [
@@ -835,6 +850,23 @@ new class extends Component
             MeetingUser::class => ['user', 'meeting'],
             Subscription::class => ['user', 'season'],
         ];
+    }
+
+    /**
+     * @return array<class-string, array<int, string>>
+     */
+    /**
+     * Les payables qui désignent un membre.
+     *
+     * Tous ne le font pas : une commande de bar n'a pas de payeur identifié, et
+     * toute requête qui traverse `payable.user` sans borner les types tombe dès
+     * qu'une telle ligne existe.
+     *
+     * @return list<class-string>
+     */
+    private function payableTypesWithUser(): array
+    {
+        return array_keys($this->payableEagerLoads());
     }
 
     private function reconcileSubscription(Subscription $subscription, float $amount): void

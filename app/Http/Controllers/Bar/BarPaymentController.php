@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Bar;
 
+use App\Actions\Bar\RecordBarOrderPayment;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
@@ -15,7 +16,7 @@ use Illuminate\View\View;
 
 class BarPaymentController extends Controller
 {
-    public function pay(Request $request, BarOrder $order): RedirectResponse
+    public function pay(Request $request, BarOrder $order, RecordBarOrderPayment $recordPayment): RedirectResponse
     {
         $validated = $request->validate([
             'method' => 'required|in:cash,offered,qr',
@@ -41,6 +42,11 @@ class BarPaymentController extends Controller
             // que l'historique le perde — `name` reste, seule la clé d'unicité part.
             'open_name_key' => null,
         ]);
+
+        // Le QR a une contrepartie sur le compte du club : la commande entre dans
+        // la liste à rapprocher du trésorier, en attente jusqu'à ce que le
+        // virement apparaisse sur le relevé. Le cash et l'offert n'y vont pas.
+        $recordPayment($order);
 
         return redirect()
             ->route('bar.orders.index')

@@ -91,6 +91,7 @@ erDiagram
 
     BarCategory ||--o{ BarProduct : "products"
     BarOrder ||--o{ BarOrderItem : "items"
+    BarOrder ||--o| Payment : "payment"
     BarProduct ||--o{ BarStockMovement : "stockMovements"
     Room }o--o{ Club : "clubs"
     Room ||--o{ Interclub : "interclubs"

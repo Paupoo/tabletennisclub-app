@@ -10,6 +10,8 @@ erDiagram
     }
     BarOrder {
         int id PK
+        string name "nullable"
+        string open_name_key "nullable"
         int total_price
         int is_paid
         string paid_at "nullable"
@@ -35,6 +37,7 @@ erDiagram
         string name
         int sale_price
         int is_available
+        int low_stock_threshold "nullable"
         int created_by "nullable"
         int modified_by "nullable"
     }
@@ -51,5 +54,6 @@ erDiagram
 
     BarCategory ||--o{ BarProduct : "products"
     BarOrder ||--o{ BarOrderItem : "items"
+    BarOrder ||--o| Payment : "payment"
     BarProduct ||--o{ BarStockMovement : "stockMovements"
 ```

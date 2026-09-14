@@ -420,7 +420,24 @@ public function headers(): array
 </x-table>
 ```
 
-**Mobile fallback** — every index page with a table has a mobile card list above it:
+**Mobile fallback** — every index page with a table has a mobile card list above it.
+
+> **One sanctioned exception: an entry grid.** The rule exists because a row carrying
+> *named actions* pushes them off a phone's right edge — 724 px of table puts the row
+> menu 688 px out of reach. A table whose rows carry no named action, only compact
+> controls, does not have that problem, and cards would destroy the very density the
+> screen exists for: one card per product is what `bar/products` was before, and
+> counting a shelf of forty references meant one screenful per two products.
+>
+> Such a grid keeps its table at every width and folds its columns instead — the ones
+> a thumb does not need (price, alert threshold on `bar/products`) get
+> `hidden lg:table-cell` and stay reachable from the row's drawer.
+>
+> The exception is narrow, and the test for it is the reason above, not the shape: if a
+> row grows a named action, it needs the card twin again. Live at
+> `resources/views/pages/bar/⚡products/`, asserted by
+> `tests/Feature/Bar/BarStockTableTest.php` ("drops the columns a thumb does not need").
+
 
 ```blade
 {{-- Mobile: cards --}}
@@ -684,8 +701,47 @@ Use `<x-badge>` with daisyUI modifiers. Never use hand-crafted `<span class="rou
 
 ## Architecture Tests
 
-`tests/Feature/ComponentsArchTest.php` enforces:
+`tests/Feature/Shared/ComponentsArchTest.php` enforces:
 - No legacy button components in views (`x-primary-button`, `x-danger-button`, etc.)
 - No legacy button component files on disk
 
 Run: `php artisan test --compact --filter=ComponentsArchTest`
+
+### DS-D — Enforcement perimeter (validated 2026-09-13)
+
+**A design-system test lists the directories it *includes*, never the ones it excludes.
+Every exclusion carries, in a comment, the condition for lifting it. A screen that joins
+the design system joins its tests in the same commit.**
+
+An exclusion is written for a good reason and outlives it in silence. The bar is the case
+that produced the rule: `TextSizeFloorTest` and `AdminIconographyTest` skipped it because
+it had "a layout of its own, hand-written CSS, no shared component" — true when it was
+written, false the day the bar moved onto `<x-app-layout>` and the shared components. The
+measurable cost, on the day the perimeter was reopened: **six `border-base-200`** in
+`views/bar/`, against **zero** in the three directories the tests did look at. The rule was
+honoured everywhere it was checked and broken six times exactly where it was not.
+
+So an exclusion that no longer describes reality is a defect of the same rank as a broken
+rule — it just never fails.
+
+Current perimeters, for the record:
+
+| Test | Roots |
+|---|---|
+| `AdminThemeVocabularyTest` | `views/pages`, `views/components/admin`, `views/clubAdmin`, `views/bar` |
+| `AdminBorderTokenTest` | same four |
+| `BrandPaletteTest` | `views/components`, `views/pages`, `views/clubAdmin`, `views/bar`, `Http/Controllers/ClubAdmin` |
+| `AdminIconographyTest` | `views/components/admin`, `views/pages`, `views/bar` |
+| `PageHeaderFeedbackTest` | `views/pages`, `views/bar` (green by default on a view with no `<x-header>`) |
+| `TextSizeFloorTest` | all of `views/` (no exclusion) |
+| `ClickableElementsTest`, `RowActionsTest`, `ModalAccessibleNameTest`, `ModalBodyTest`, `BladeConventionsTest` | all of `views/` |
+
+Browser probes carry their own route datasets, so a new screen is added to them one at a
+time, as it comes into conformance — adding eight red tests at once teaches nothing.
+
+An exclusion that must stay is written like this:
+
+```php
+// Exclu tant que <condition vérifiable> ; à lever dès que ce n'est plus vrai.
+->exclude('…')
+```

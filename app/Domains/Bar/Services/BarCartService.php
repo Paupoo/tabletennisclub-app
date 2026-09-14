@@ -7,6 +7,7 @@ namespace App\Domains\Bar\Services;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\Bar\Models\BarOrderItem;
 use App\Domains\Bar\Models\BarProduct;
+use App\Domains\Shared\Enums\Permission;
 use Illuminate\Support\Facades\DB;
 
 class BarCartService
@@ -65,9 +66,18 @@ class BarCartService
             throw new \RuntimeException('Utilisateur non authentifié.');
         }
 
-        $order = DB::transaction(function () use ($cart, $userId): BarOrder {
+        $tabName = $this->currentTabName();
+
+        // Une commande qu'on laisse ouverte doit pouvoir être retrouvée : c'est tout
+        // l'objet du nom. Celle qu'on règle sur-le-champ n'entre jamais dans la file,
+        // donc elle n'a rien à nommer.
+        if ($action === self::ACTION_VALIDATE && $tabName === null) {
+            throw new \RuntimeException('Donnez un nom à cette ardoise avant de la laisser ouverte.');
+        }
+
+        $order = DB::transaction(function () use ($cart, $userId, $tabName): BarOrder {
             $orderId = session()->get('editing_order_id');
-            $order = $this->loadOrCreateDraftOrder($orderId, $userId);
+            $order = $this->loadOrCreateDraftOrder($orderId, $userId, $tabName);
 
             $products = BarProduct::query()
                 ->whereIn('id', array_keys($cart))
@@ -126,6 +136,15 @@ class BarCartService
     {
         session()->forget('cart');
         session()->forget('editing_order_id');
+        session()->forget('bar_tab_name');
+        session()->forget('bar_walk_in');
+    }
+
+    public function currentTabName(): ?string
+    {
+        $name = session()->get('bar_tab_name');
+
+        return is_string($name) && $name !== '' ? $name : null;
     }
 
     public function getCartViewData(): array
@@ -133,6 +152,7 @@ class BarCartService
         $cart = $this->getSanitizedCart();
 
         $products = BarProduct::query()
+            ->withStock()
             ->whereIn('id', array_keys($cart))
             ->orderBy('name')
             ->get();
@@ -151,7 +171,74 @@ class BarCartService
             'items' => $items,
             'totalPrice' => (int) $items->sum('total_price'),
             'cartCount' => array_sum($cart),
+            'tabName' => $this->currentTabName(),
         ];
+    }
+
+    /**
+     * Choisir l'ardoise sur laquelle on va servir.
+     *
+     * Un nom qui correspond à une ardoise ouverte la **rejoint** : le panier est
+     * préchargé avec ce qu'elle porte déjà, et la validation la réécrira. C'est le
+     * geste que le barman a en tête — « remets-leur la même » — et c'est aussi ce qui
+     * rend deux ardoises homonymes impossibles sans avoir à refuser quoi que ce soit.
+     *
+     * Précharger, et non ajouter par-dessus : `loadOrCreateDraftOrder` restitue le
+     * stock des lignes existantes puis les supprime avant de reconstruire depuis le
+     * panier. Un panier qui ne contiendrait que les nouvelles consommations effacerait
+     * donc tout le reste de l'ardoise. Le bénéfice, au passage, c'est qu'un `−` corrige
+     * enfin une consommation servie par erreur.
+     *
+     * @return array{status: string, message: string, joined: bool}
+     */
+    public function openTab(string $name): array
+    {
+        $key = BarOrder::normaliseName($name);
+
+        if ($key === '') {
+            return ['status' => 'error', 'message' => 'Donnez un nom à cette ardoise.', 'joined' => false];
+        }
+
+        $existing = BarOrder::openTabNamed($name);
+
+        if (! $existing instanceof BarOrder) {
+            session()->forget('editing_order_id');
+            session()->forget('bar_walk_in');
+            session()->put('bar_tab_name', trim($name));
+            session()->put('cart', []);
+
+            return ['status' => 'success', 'message' => sprintf('Ardoise « %s » ouverte.', trim($name)), 'joined' => false];
+        }
+
+        $existing->load('items');
+
+        session()->forget('bar_walk_in');
+        session()->put('bar_tab_name', $existing->name);
+        session()->put('editing_order_id', $existing->id);
+        session()->put('cart', $existing->items
+            ->mapWithKeys(fn (BarOrderItem $item): array => [$item->product_id => (int) $item->quantity])
+            ->toArray());
+
+        return [
+            'status' => 'success',
+            'message' => sprintf('Ardoise « %s » rejointe — %s déjà.', $existing->name, euros((int) $existing->total_price)),
+            'joined' => true,
+        ];
+    }
+
+    /**
+     * Le client de passage : il commande, il paie, il part.
+     *
+     * Aucun nom, parce qu'il n'y a rien à retrouver — une commande réglée sur-le-champ
+     * n'entre jamais dans la file. Exiger un nom ici mettrait une saisie clavier sur
+     * le geste le plus fréquent du bar, et le barman taperait « x ».
+     */
+    public function openWalkIn(): void
+    {
+        session()->forget('editing_order_id');
+        session()->forget('bar_tab_name');
+        session()->put('bar_walk_in', true);
+        session()->put('cart', []);
     }
 
     public function removeProductFromSessionCart(int $productId): void
@@ -179,13 +266,18 @@ class BarCartService
             ->toArray();
     }
 
-    private function loadOrCreateDraftOrder($orderId, int $userId): BarOrder
+    private function loadOrCreateDraftOrder($orderId, int $userId, ?string $tabName = null): BarOrder
     {
         if (! $orderId) {
             return BarOrder::query()->create([
                 'total_price' => 0,
                 'created_by' => $userId,
                 'is_paid' => 0,
+                'name' => $tabName,
+                // La clé ne vit que tant que l'ardoise est ouverte. Elle porte
+                // l'unicité, et le paiement la libère pour que le même nom serve de
+                // nouveau le même soir.
+                'open_name_key' => $tabName === null ? null : BarOrder::normaliseName($tabName),
             ]);
         }
 
@@ -198,7 +290,13 @@ class BarCartService
             throw new \RuntimeException('La commande à modifier est introuvable.');
         }
 
-        if ((int) $order->created_by !== $userId) {
+        // La propriété ne décrit pas un bar : on s'y relaie derrière le comptoir, et
+        // celui qui encaisse n'est presque jamais celui qui a servi. `bar.orders.takeover`
+        // existait déjà dans l'enum, était accordée au rôle BARMAN, et n'était vérifiée
+        // nulle part — ce verrou-ci est le quatrième, et le plus discret : il empêchait
+        // même d'ajouter une consommation à l'ardoise d'un collègue.
+        if ((int) $order->created_by !== $userId
+            && auth()->user()?->can(Permission::BarOrdersTakeover->value) !== true) {
             throw new \RuntimeException("Vous n'êtes pas autorisé à modifier cette commande.");
         }
 

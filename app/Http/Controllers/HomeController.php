@@ -10,6 +10,7 @@ use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Services\PublicAgendaService;
 use App\Support\Captcha;
+use App\Support\Sponsors;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 
@@ -19,10 +20,7 @@ class HomeController extends Controller
 
     public function index(): View
     {
-        $sponsors = [
-            ['name' => 'La maison de Malou', 'logo' => asset('images/sponsors/sponsor_1_v2.jpg'), 'url' => 'https://www.lamaisondemalou.be/'],
-            ['name' => 'Chatisfait', 'logo' => asset('images/sponsors/sponsor_2_v2.png'), 'url' => 'https://www.chatisfait.be/'],
-        ];
+        $sponsors = Sponsors::all();
 
         $articles = NewsPost::published()
             ->latest()

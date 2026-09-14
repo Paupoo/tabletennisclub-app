@@ -7,6 +7,7 @@ use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Http\Controllers\Attestations\AttestationDownloadController;
 use App\Http\Controllers\Attestations\AttestationVerificationController;
+use App\Http\Controllers\Bar\PublicBarMenuController;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\GuardianInvitationController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
@@ -59,6 +60,22 @@ Route::get('/clubPosts/{slug}', [PublicNewsPostController::class, 'show'])
 Route::post('/contact', [ContactController::class, 'store'])
     ->middleware(ProtectAgainstSpam::class, 'throttle:10,1')
     ->name('contact.store');
+
+/*
+ * La carte du bar : publique, mais délibérément absente du menu du site.
+ *
+ * On y arrive en scannant le QR posé sur les tables, ou par l'écran casté
+ * derrière le comptoir. Sous `/la-carte` et non sous `/bar`, qui est déjà le
+ * préfixe de la caisse et de tout son back-office.
+ */
+Route::prefix('la-carte')->name('public.bar.')->group(function (): void {
+    Route::get('/', [PublicBarMenuController::class, 'index'])
+        ->name('menu');
+    Route::get('/ecran', [PublicBarMenuController::class, 'screen'])
+        ->name('screen');
+    Route::get('/flyer', [PublicBarMenuController::class, 'flyer'])
+        ->name('flyer');
+});
 
 /*
 |--------------------------------------------------------------------------

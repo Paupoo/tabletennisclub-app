@@ -240,6 +240,7 @@
         :selected-ids="$selectedPlayerIds"
         :max-players="$maxPlayers"
         :week-number="$drawerInterclub?->week_number"
+        :fixture-id="$drawerInterclub?->id"
         :can-search-substitute="$canSearchSubstitute"
         :search-results="$searchResults"
         :search-note="$searchNote"

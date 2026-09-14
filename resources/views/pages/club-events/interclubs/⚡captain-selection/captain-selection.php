@@ -448,6 +448,19 @@ new class extends Component
     }
 
     /**
+     * A composition the captain walked away from is not a composition. It used
+     * to survive the closing of the drawer and turn up in the next summary.
+     */
+    public function updatedDrawerSelection(bool $open): void
+    {
+        if (! $open) {
+            $this->selectedInterclubId = null;
+            $this->selectedPlayerIds = [];
+            $this->search = '';
+        }
+    }
+
+    /**
      * The cross, the backdrop and Escape all close the modal without passing
      * through skipSending(), and used to leave the target armed and the diff
      * of the previous fixture behind. Dismissing is an answer too.

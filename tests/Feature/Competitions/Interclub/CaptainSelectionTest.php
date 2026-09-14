@@ -1128,3 +1128,68 @@ it('lists in the modal the players it is about to notify', function (): void {
         ->assertSee($this->player1->last_name)
         ->assertSee($this->player2->last_name);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Lot « correctifs » — la coche reste où le capitaine l'a mise
+|--------------------------------------------------------------------------
+|
+| The browser flips a checkbox's `checked` *property*; Livewire re-renders its
+| `checked` *attribute*. When the server refuses a tick, the attribute does not
+| move, morphdom sees no difference and leaves the box where the click put it —
+| so the box and the ring around the row show two different truths. The row had
+| no wire:key at all either, while the roster is re-sorted by rank and
+| substitutes are concatenated at the end.
+|
+*/
+it('keys every roster row on the fixture, the player and its state', function (): void {
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->assertSeeHtml('wire:key="roster-' . $this->interclub->id . '-' . $this->player1->id . '-0"')
+        ->call('togglePlayer', $this->player1->id)
+        ->assertSeeHtml('wire:key="roster-' . $this->interclub->id . '-' . $this->player1->id . '-1"');
+});
+
+it('stops offering a tick it is going to refuse once the lineup is full', function (): void {
+    $this->interclub->update(['total_players' => 1]);
+
+    $html = Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->html();
+
+    $unpicked = str($html)->after('wire:key="roster-' . $this->interclub->id . '-' . $this->player2->id . '-0"')
+        ->before('wire:key="roster-')
+        ->toString();
+
+    expect($unpicked)->toContain('disabled="disabled"');
+});
+
+it('keeps offering a tick to the players already on the sheet', function (): void {
+    $this->interclub->update(['total_players' => 1]);
+
+    $html = Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->html();
+
+    $picked = str($html)->after('wire:key="roster-' . $this->interclub->id . '-' . $this->player1->id . '-1"')
+        ->before('wire:key="roster-')
+        ->toString();
+
+    expect($picked)->not->toContain('disabled="disabled"');
+});
+
+it('forgets an abandoned composition when the drawer is closed', function (): void {
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->assertSet('selectedPlayerIds', [$this->player1->id])
+        ->set('drawerSelection', false)
+        ->assertSet('selectedPlayerIds', [])
+        ->assertSet('selectedInterclubId', null);
+});

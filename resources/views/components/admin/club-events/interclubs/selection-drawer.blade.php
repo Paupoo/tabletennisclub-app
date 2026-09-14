@@ -30,6 +30,7 @@
     'selectedIds' => [],
     'maxPlayers' => 4,
     'weekNumber' => null,
+    'fixtureId' => null,
     'canSearchSubstitute' => false,
     'searchResults' => [],
     'searchNote' => null,
@@ -43,6 +44,7 @@
     $title ??= __('Selection');
     $saveLabel ??= __('Save selection');
     $selectedCount = count($selectedIds);
+    $isFull = $selectedCount >= $maxPlayers;
 @endphp
 
 <x-drawer class="w-11/12 lg:w-2/5" right separator
@@ -73,6 +75,11 @@
         {{-- Roster --}}
         <div>
             <div class="mb-3 text-xs font-bold uppercase tracking-widest opacity-60">{{ __('Team roster') }}</div>
+            @if ($isFull)
+                <p class="mb-3 text-xs text-base-content/70">
+                    {{ __('Lineup full. Untick a player to free a spot.') }}
+                </p>
+            @endif
             <div class="space-y-1.5">
                 @foreach ($roster as $player)
                     @php
@@ -81,6 +88,9 @@
                         $isUnavail   = $avail === \App\Domains\Shared\Enums\InterclubAvailability::UNAVAILABLE;
                         $isBlocked   = $player['is_blocked'] ?? false;
                         $blockedTeam = $player['blocked_team'] ?? null;
+                        // Une compo pleine ne refuse plus un geste : elle cesse
+                        // de le proposer. Décocher reste toujours possible.
+                        $isRefused   = $isFull && ! $isSelected;
                     @endphp
                     {{-- La ligne porte les numéros de téléphone et l'e-mail du joueur :
                          ni un <button> ni un <label> ne peuvent envelopper des liens. La
@@ -88,10 +98,18 @@
                          vraie cible de 44 px (règle KB-1 : pas de commande souris-seule sur
                          un <div>). Le curseur ne promet plus une ligne cliquable qu'il
                          n'était pas. --}}
+                    {{-- La clé porte l'état, pas seulement l'identité : le
+                         navigateur bascule la *propriété* `checked`, Livewire
+                         rend l'*attribut*. Quand les deux coïncident, morphdom
+                         ne touche à rien et la case garde la valeur du clic
+                         même si le serveur a dit non. Une clé qui change force
+                         le remplacement du nœud. --}}
                     <div
+                        wire:key="roster-{{ $fixtureId }}-{{ $player['id'] }}-{{ $isSelected ? 1 : 0 }}"
                         @class([
                             'flex items-center gap-3 rounded-xl border p-3 transition-all',
                             'cursor-not-allowed' => $isBlocked,
+                            'opacity-60' => $isRefused,
                             'border-primary bg-primary/5 ring-1 ring-primary/40' => $isSelected && ! $isBlocked,
                             'border-base-300 bg-base-50 opacity-60' => $isBlocked,
                             'border-base-300 hover:border-primary/40 bg-base-100' => ! $isSelected && ! $isBlocked,
@@ -169,6 +187,7 @@
                                     class="checkbox checkbox-primary checkbox-sm h-6 w-6"
                                     aria-label="{{ __('Select :player', ['player' => $player['name']]) }}"
                                     @checked($isSelected)
+                                    @if ($isRefused) disabled="disabled" @endif
                                     wire:loading.attr="disabled"
                                     wire:target="togglePlayer({{ $player['id'] }})"
                                     wire:click="togglePlayer({{ $player['id'] }})" />

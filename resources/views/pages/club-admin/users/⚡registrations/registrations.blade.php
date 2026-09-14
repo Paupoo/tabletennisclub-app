@@ -192,7 +192,7 @@
                     :heading="__('No affiliations yet')"
                     :filtered="count($filterChips) > 0 || filled($search)" />
             @else
-                <x-table :headers="$headers" :rows="$registrations" hover>
+                <x-table :headers="$headers" :rows="$registrations" :sort-by="$sortBy" hover>
                     @scope('cell_name', $req)
                         <div>
                             <span class="font-bold text-base-content">{{ $req->name }}</span>

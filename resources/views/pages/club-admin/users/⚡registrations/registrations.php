@@ -135,9 +135,35 @@ new class extends Component
 
     public bool $showNewMemberForm = false;
 
+    /**
+     * L'en-tête qui ordonne la liste. `status` par défaut : l'ordre de travail
+     * — à traiter d'abord — était déjà le sien avant qu'elle ne se trie.
+     *
+     * @var array{column: string, direction: string}
+     */
+    public array $sortBy = ['column' => 'status', 'direction' => 'asc'];
+
     public string $statusFilter = '';
 
     public bool $trainingRequestModal = false;
+
+    /**
+     * Les en-têtes triables, chacun vers les colonnes réelles qui l'ordonnent.
+     * Toute autre clé — un `sortBy` trafiqué compris — retombe sur `status`
+     * plutôt que d'atteindre `orderBy()` avec une colonne inconnue.
+     *
+     * `status` ne porte aucune colonne : il se trie par l'ordre du flux de
+     * travail {@see registrations()}, pas par l'alphabet de l'enum.
+     *
+     * @var array<string, array<int, string>>
+     */
+    protected array $sortableColumns = [
+        'name' => ['users.last_name', 'users.first_name'],
+        'type' => ['subscriptions.is_competitive'],
+        'trainings_count' => ['subscriptions.trainings_count'],
+        'amount_due' => ['subscriptions.amount_due'],
+        'status' => [],
+    ];
 
     public function addToBasket($userId): void
     {
@@ -841,8 +867,10 @@ new class extends Component
         return [
             ['key' => 'name', 'label' => __('Member')],
             ['key' => 'type', 'label' => __('Licence'), 'class' => 'hidden md:table-cell'],
-            ['key' => 'trainings_count', 'label' => __('Training'), 'sortable' => false],
-            ['key' => 'amount_due', 'label' => __('Amount'), 'sortable' => false],
+            ['key' => 'trainings_count', 'label' => __('Training')],
+            ['key' => 'amount_due', 'label' => __('Amount')],
+            // La signature de la charte vit dans une autre table, sans colonne
+            // à trier ici : l'en-tête reste inerte.
             ['key' => 'charter', 'label' => __('Charter'), 'sortable' => false, 'class' => 'hidden lg:table-cell'],
             ['key' => 'status', 'label' => __('Status')],
         ];
@@ -1028,10 +1056,27 @@ new class extends Component
      * Elle rendait toute la saison d'un coup — 144 lignes sur la base de dev, et
      * l'écran n'en montre qu'une dizaine. Le tri par statut passe en SQL pour que
      * la pagination porte sur l'ordre réel et non sur un tri fait après coup.
+     *
+     * Le statut ne départage pas deux lignes du même statut : cent affiliations
+     * confirmées sortaient dans l'ordre où MySQL les trouvait, et cet ordre n'est
+     * pas garanti d'une requête à l'autre. Vingt lignes par page découpées dans
+     * un ordre instable, c'est une ligne qui n'apparaît sur aucune page pendant
+     * qu'une autre s'affiche deux fois — le membre restait introuvable à la
+     * liste alors que la recherche le trouvait. Le nom puis l'`id` referment
+     * l'ordre, qui devient total.
      */
     public function registrations(): LengthAwarePaginator
     {
-        return Subscription::with(['user', 'trainingPacks', 'payments'])
+        $column = array_key_exists($this->sortBy['column'], $this->sortableColumns)
+            ? $this->sortBy['column']
+            : 'status';
+        $direction = $this->sortBy['direction'] === 'desc' ? 'desc' : 'asc';
+
+        $query = Subscription::with(['user', 'trainingPacks', 'payments'])
+            // Trier sur le nom demande la table des membres ; la jointure la
+            // rend disponible à tous les tris, le nom servant de départage.
+            ->join('users', 'users.id', '=', 'subscriptions.user_id')
+            ->select('subscriptions.*')
             ->when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId))
             // Une affiliation annulée n'a jamais tenu : elle sort de l'effectif,
             // sans quoi un membre rejeté puis réinscrit y figure deux fois — la
@@ -1050,11 +1095,25 @@ new class extends Component
                 )
                 : $q->where('status', $this->statusFilter)
             )
-            ->when($this->search, fn ($q) => $q->whereHas('user', fn ($u) => $u
-                ->where('first_name', 'like', "%{$this->search}%")
-                ->orWhere('last_name', 'like', "%{$this->search}%")
-            ))
-            ->orderByRaw("CASE status WHEN 'pending' THEN 1 WHEN 'confirmed' THEN 2 WHEN 'paid' THEN 3 WHEN 'refunded' THEN 4 ELSE 5 END")
+            // « eric godart » ne ramenait rien : un seul terme était comparé au
+            // prénom puis au nom. Le scope du domaine exige chaque terme dans
+            // l'un des deux, comme partout ailleurs dans le back-office.
+            ->when($this->search, fn ($q) => $q->whereHas('user', fn ($u) => $u->searchName($this->search)));
+
+        if ($column === 'status') {
+            $query->orderByRaw("CASE subscriptions.status WHEN 'pending' THEN 1 WHEN 'confirmed' THEN 2 WHEN 'paid' THEN 3 WHEN 'refunded' THEN 4 ELSE 5 END " . $direction);
+        } else {
+            foreach ($this->sortableColumns[$column] as $sortColumn) {
+                $query->orderBy($sortColumn, $direction);
+            }
+        }
+
+        if ($column !== 'name') {
+            $query->orderBy('users.last_name')->orderBy('users.first_name');
+        }
+
+        return $query
+            ->orderBy('subscriptions.id')
             ->paginate(20)
             ->through(fn (Subscription $sub): object => $this->toRow($sub));
     }
@@ -1676,6 +1735,31 @@ new class extends Component
                 ->orWhere('last_name', 'like', "%{$this->search}%")
             ))
             ->get();
+    }
+
+    /**
+     * Toute coupe change le nombre de pages : rester sur la page 4 d'une liste
+     * qui n'en a plus que deux affiche un écran vide, et le membre cherché
+     * paraît absent.
+     */
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSelectedSeasonId(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSortBy(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStatusFilter(): void
+    {
+        $this->resetPage();
     }
 
     public function with(): array

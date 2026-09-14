@@ -14,9 +14,14 @@ use App\Domains\Competitions\Interclub\Notifications\InterclubPlayerRemovedNotif
 use App\Domains\Competitions\Interclub\Notifications\InterclubSelectionNotification;
 use App\Domains\Competitions\Interclub\Services\InterclubAvailabilityService;
 use App\Domains\Shared\Enums\InterclubAvailability;
+use App\Jobs\SendInterclubAvailabilityRequestJob;
+use App\Jobs\SendInterclubLineupBroadcastJob;
+use App\Jobs\SendInterclubPlayerRemovedJob;
+use App\Jobs\SendInterclubSelectionJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Mail\Markdown;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
 
@@ -348,4 +353,37 @@ it('sends the availability request to our own team when we play away', function 
     Notification::assertSentTo($this->player1, InterclubAvailabilityRequestNotification::class);
     Notification::assertSentTo($this->player2, InterclubAvailabilityRequestNotification::class);
     Notification::assertSentTo($this->player3, InterclubAvailabilityRequestNotification::class);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Sending leaves the request
+|--------------------------------------------------------------------------
+|
+| A lineup is twelve recipients. Sent inline, that is twelve blocking SMTP
+| round trips inside the Livewire request — the screen froze for fifteen
+| seconds with nothing to say for itself, and captains clicked again.
+|
+*/
+it('queues one job per recipient instead of mailing inside the request', function (): void {
+    Queue::fake();
+
+    $this->interclub->select($this->player1);
+    $this->interclub->select($this->player2);
+
+    $this->service->confirmSelection($this->interclub, 'Départ à 18h45.');
+
+    Queue::assertPushed(SendInterclubSelectionJob::class, 2);
+    Queue::assertPushed(SendInterclubLineupBroadcastJob::class, 2);
+});
+
+it('queues the removal notice and the availability request too', function (): void {
+    Queue::fake();
+
+    $this->interclub->select($this->player1);
+    $this->service->notifySelectionChange($this->interclub, [], [$this->player1->id]);
+    $this->service->requestAvailability($this->interclub);
+
+    Queue::assertPushed(SendInterclubPlayerRemovedJob::class, 1);
+    Queue::assertPushed(SendInterclubAvailabilityRequestJob::class, 4);
 });

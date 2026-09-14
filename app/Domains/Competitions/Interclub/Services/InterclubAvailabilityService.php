@@ -6,12 +6,21 @@ namespace App\Domains\Competitions\Interclub\Services;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
-use App\Domains\Competitions\Interclub\Notifications\InterclubAvailabilityRequestNotification;
-use App\Domains\Competitions\Interclub\Notifications\InterclubLineupBroadcastNotification;
-use App\Domains\Competitions\Interclub\Notifications\InterclubPlayerRemovedNotification;
-use App\Domains\Competitions\Interclub\Notifications\InterclubSelectionNotification;
-use Illuminate\Support\Facades\Notification;
+use App\Jobs\SendInterclubAvailabilityRequestJob;
+use App\Jobs\SendInterclubLineupBroadcastJob;
+use App\Jobs\SendInterclubPlayerRemovedJob;
+use App\Jobs\SendInterclubSelectionJob;
 
+/**
+ * Everything this screen mails leaves through the queue.
+ *
+ * It used to notify inline: a lineup is a dozen recipients, each with an ICS
+ * attachment built on the spot, so confirming a team meant a dozen blocking
+ * SMTP round trips in the middle of a Livewire request. The screen froze for
+ * ten to twenty seconds with no indication it was working, and captains
+ * clicked again. The jobs carry the `convocations` limiter, like every other
+ * club mailing that announces a date.
+ */
 class InterclubAvailabilityService
 {
     /**
@@ -22,20 +31,23 @@ class InterclubAvailabilityService
     {
         $interclub->loadMissing(['visitedTeam', 'visitingTeam', 'visitedTeam.club', 'visitingTeam.club']);
 
-        $ourTeam = $interclub->visitedTeam?->club?->is_own_club
-            ? $interclub->visitedTeam
-            : $interclub->visitingTeam;
+        $ourTeam = $interclub->ourTeam();
 
         $selectedPlayers = $interclub->getSelectedPlayers();
         $selectedIds = $selectedPlayers->pluck('id');
 
         foreach ($selectedPlayers as $player) {
-            $player->notify(new InterclubSelectionNotification($interclub, $captainMessage));
+            SendInterclubSelectionJob::dispatch($interclub->id, $player->id, $captainMessage);
         }
 
         $nonSelected = $ourTeam?->users()->whereNotIn('users.id', $selectedIds)->get() ?? collect();
         foreach ($nonSelected as $player) {
-            $player->notify(new InterclubLineupBroadcastNotification($interclub, $selectedPlayers, $captainMessage));
+            SendInterclubLineupBroadcastJob::dispatch(
+                $interclub->id,
+                $player->id,
+                $selectedIds->all(),
+                $captainMessage,
+            );
         }
 
         $interclub->users()
@@ -60,13 +72,8 @@ class InterclubAvailabilityService
         $interclub->loadMissing(['visitedTeam', 'visitingTeam', 'visitedTeam.club', 'visitingTeam.club']);
 
         if ($removedUserIds !== []) {
-            $removedPlayers = User::whereIn('id', $removedUserIds)->get();
-
-            foreach ($removedPlayers as $player) {
-                $player->notify(new InterclubPlayerRemovedNotification($interclub));
-            }
-
             foreach ($removedUserIds as $userId) {
+                SendInterclubPlayerRemovedJob::dispatch($interclub->id, $userId);
                 $interclub->users()->updateExistingPivot($userId, ['selection_confirmed_at' => null]);
             }
         }
@@ -75,16 +82,14 @@ class InterclubAvailabilityService
             return;
         }
 
-        $ourTeam = $interclub->visitedTeam?->club?->is_own_club
-            ? $interclub->visitedTeam
-            : $interclub->visitingTeam;
+        $ourTeam = $interclub->ourTeam();
 
         $selectedPlayers = $interclub->getSelectedPlayers();
         $selectedIds = $selectedPlayers->pluck('id');
 
         if ($addedUserIds !== []) {
             foreach ($selectedPlayers->whereIn('id', $addedUserIds) as $player) {
-                $player->notify(new InterclubSelectionNotification($interclub, $captainMessage));
+                SendInterclubSelectionJob::dispatch($interclub->id, $player->id, $captainMessage);
             }
 
             foreach ($addedUserIds as $userId) {
@@ -94,7 +99,13 @@ class InterclubAvailabilityService
 
         $nonSelected = $ourTeam?->users()->whereNotIn('users.id', $selectedIds)->get() ?? collect();
         foreach ($nonSelected as $player) {
-            $player->notify(new InterclubLineupBroadcastNotification($interclub, $selectedPlayers, $captainMessage, isUpdate: true));
+            SendInterclubLineupBroadcastJob::dispatch(
+                $interclub->id,
+                $player->id,
+                $selectedIds->all(),
+                $captainMessage,
+                isUpdate: true,
+            );
         }
     }
 
@@ -116,6 +127,8 @@ class InterclubAvailabilityService
         $respondedUserIds = $interclub->users()->wherePivotNotNull('availability')->pluck('users.id');
         $pendingPlayers = $team->users()->whereNotIn('users.id', $respondedUserIds)->get();
 
-        Notification::send($pendingPlayers, new InterclubAvailabilityRequestNotification($interclub));
+        foreach ($pendingPlayers as $player) {
+            SendInterclubAvailabilityRequestJob::dispatch($interclub->id, $player->id);
+        }
     }
 }

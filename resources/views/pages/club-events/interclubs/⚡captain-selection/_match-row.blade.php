@@ -10,7 +10,6 @@
 --}}
 @php
     $isPast = $ic['is_past'];
-    $maxP = $ic['max_players'];
     $avCount = $ic['available_count'];
 
     [$statusBarColor, $statusLabel] = match ($ic['status']) {
@@ -60,8 +59,13 @@
                     @endif
                     <span class="truncate text-sm font-bold">{{ $ic['opponent'] }}</span>
                 </div>
-                {{-- Le statut en phrase : « 3 dispo sur 4 » se lit, « 3/4 dispo »
-                     en marge droite se déchiffre. --}}
+                {{-- Le statut en phrase, pas en marge droite : « 3/4 dispo » se
+                     déchiffre là où une phrase se lit.
+                     Le dénominateur est l'effectif du noyau, pas les joueurs à
+                     aligner : « 3 dispo sur 4 » se lisait « 3 de tes 4 gars ont
+                     répondu dispo », ce qui n'est pas ce que ça disait. Le
+                     sondage et la capacité à composer sont deux questions, donc
+                     deux nombres. --}}
                 <div class="mt-1 text-sm text-base-content/70">
                     <span class="tabular-nums">{{ $ic['time'] }}</span>
                     @if ($mode === 'day')
@@ -72,7 +76,11 @@
                         <span aria-hidden="true">·</span>
                         <span @class(['font-semibold text-error' => $ic['status'] === 'urgent'])>{{ $statusLabel }}</span>
                         <span aria-hidden="true">·</span>
-                        {{ __(':available available out of :max', ['available' => $avCount, 'max' => $maxP]) }}
+                        {{ __(':responded of :total answered, :available available', [
+                            'responded' => $ic['responded_count'],
+                            'total' => $ic['team_member_count'],
+                            'available' => $avCount,
+                        ]) }}
                         @if ($ic['selected_count'] > 0)
                             <span aria-hidden="true">·</span>
                             {{ trans_choice(':count selected|:count selected', $ic['selected_count'], ['count' => $ic['selected_count']]) }}

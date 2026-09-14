@@ -36,6 +36,7 @@
     "5E": "5E",
     "6 digits": "6 chiffres",
     ":available available out of :max": ":available dispo sur :max",
+    ":responded of :total answered, :available available": ":responded r\u00e9ponses sur :total, dont :available dispo",
     ":count affiliate(s) read from the file.": ":count affilié(s) lus dans le fichier.",
     ":count already have an account.": ":count ont déjà un compte.",
     ":count article found|:count articles found": ":count article trouvé|:count articles trouvés",

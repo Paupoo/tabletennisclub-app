@@ -36,6 +36,7 @@
     "5E": "5E",
     "6 digits": "6 cijfers",
     ":available available out of :max": ":available beschikbaar op :max",
+    ":responded of :total answered, :available available": ":responded antwoorden op :total, waarvan :available beschikbaar",
     ":count affiliate(s) read from the file.": ":count aangeslotene(n) uit het bestand gelezen.",
     ":count already have an account.": ":count hebben al een account.",
     ":count article found|:count articles found": ":count artikel gevonden|:count artikelen gevonden",

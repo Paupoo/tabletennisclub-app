@@ -884,6 +884,11 @@ new class extends Component
                 'is_past' => $isPast,
                 'days_until' => $daysUntil,
                 'available_count' => $availableCount,
+                // Le sondage et la capacité à aligner une équipe sont deux
+                // questions différentes : « 3 dispo sur 4 » n'en répondait
+                // clairement à aucune des deux.
+                'responded_count' => $respondedCount,
+                'team_member_count' => $teamMemberCount,
                 'maybe_count' => $maybeCount,
                 'unavail_count' => $unavailCount,
                 'pending_count' => $pendingCount,

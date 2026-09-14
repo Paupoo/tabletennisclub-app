@@ -1256,3 +1256,30 @@ it('keeps promising a full send while the lineup is complete', function (): void
         ->assertSee(__('Send to team'))
         ->assertDontSee(trans_choice('Notify the removed player|Notify the :count removed players', 1, ['count' => 1]));
 });
+
+/*
+|--------------------------------------------------------------------------
+| Lot « correctifs » — la ligne compte des réponses
+|--------------------------------------------------------------------------
+|
+| "3 dispo sur 4" put an availability count over the number of players to line
+| up. It reads as "3 of your 4 players answered available", which is not what
+| it says, and a captain reading it next to a red "Unavailable" badge in the
+| drawer concluded the unavailable one had been counted. The count was right;
+| the sentence was not.
+|
+*/
+it('counts answers against the roster, and names the available separately', function (): void {
+    $this->interclub->markAvailability($this->player1, InterclubAvailability::AVAILABLE);
+    $this->interclub->markAvailability($this->player2, InterclubAvailability::UNAVAILABLE);
+
+    // Roster of three: captain, player1, player2. Two answered, one is available.
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->assertSee(__(':responded of :total answered, :available available', [
+            'responded' => 2,
+            'total' => 3,
+            'available' => 1,
+        ]))
+        ->assertDontSee(__(':available available out of :max', ['available' => 1, 'max' => 4]));
+});

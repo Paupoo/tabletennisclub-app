@@ -62,6 +62,18 @@ new class extends Component
     #[Locked]
     public ?int $selectedInterclubId = null;
 
+    /**
+     * Which fixture the "notify the team" modal will mail.
+     *
+     * Deliberately not selectedInterclubId, which is where the *drawer* is. The
+     * two used to be one property, so the send stayed armed on the last fixture
+     * opened long after the drawer had moved on — and nothing disarmed it, not
+     * sending, not skipping, and above all not closing the modal by the cross.
+     * A navigation and a committed intent do not share a variable.
+     */
+    #[Locked]
+    public ?int $sendTargetId = null;
+
     public ?int $selectedMatchDay = null;
 
     /** @var array<int, int> */
@@ -278,13 +290,21 @@ new class extends Component
         });
 
         $this->drawerSelection = false;
+        $this->sendTargetId = $interclub->id;
 
         if ($previouslyConfirmedIds === []) {
             if ($interclub->isSelectionComplete()) {
                 $this->isUpdateMode = false;
                 $this->modalMessage = true;
             } else {
-                $this->success(__('Selection saved.'), position: 'toast-bottom toast-end');
+                $this->sendTargetId = null;
+                $this->success(
+                    __('Selection saved — :n of :max players.', [
+                        'n' => count($this->selectedPlayerIds),
+                        'max' => $maxPlayers,
+                    ]),
+                    position: 'toast-bottom toast-end'
+                );
             }
 
             return;
@@ -294,6 +314,7 @@ new class extends Component
         $removed = array_values(array_diff($previouslyConfirmedIds, $this->selectedPlayerIds));
 
         if ($added === [] && $removed === []) {
+            $this->sendTargetId = null;
             $this->success(__('Selection saved.'), position: 'toast-bottom toast-end');
 
             return;
@@ -339,7 +360,7 @@ new class extends Component
 
     public function sendLineupToTeam(InterclubAvailabilityService $service): void
     {
-        $interclub = $this->selectedInterclub();
+        $interclub = $this->sendTarget();
 
         if (! $interclub) {
             return;
@@ -423,6 +444,18 @@ new class extends Component
     {
         if (! $open) {
             $this->availabilityRequestId = null;
+        }
+    }
+
+    /**
+     * The cross, the backdrop and Escape all close the modal without passing
+     * through skipSending(), and used to leave the target armed and the diff
+     * of the previous fixture behind. Dismissing is an answer too.
+     */
+    public function updatedModalMessage(bool $open): void
+    {
+        if (! $open) {
+            $this->resetSendModal();
         }
     }
 
@@ -549,17 +582,41 @@ new class extends Component
             }
         }
 
-        // Modal data: pending change summary for the "Notify the team" modal
+        // ── La modale d'envoi lit sa propre cible ────────────────────────
+        // Elle lisait $roster, que with() ne construit que si le *tiroir* est
+        // ouvert — or saveSelection() vient de le fermer. Elle annonçait donc
+        // « Compo sélectionnée (4/4) » sans un seul nom, à chaque fois. La
+        // compo qui part est celle qui est en base, pas celle qui reste en
+        // mémoire : c'est elle qu'on affiche.
         $pendingAddedNames = [];
         $pendingRemovedNames = [];
         $modalIsComplete = true;
+        $sendLineupNames = [];
+        $sendMaxPlayers = $maxPlayers;
+        $sendTargetLabel = '';
 
-        if ($this->modalMessage && $this->selectedInterclubId) {
-            $modalInterclub = $drawerInterclub ?? Interclub::find($this->selectedInterclubId);
+        if ($this->modalMessage && $this->sendTargetId) {
+            $modalInterclub = Interclub::with(['visitedTeam.club', 'visitingTeam.club'])
+                ->find($this->sendTargetId);
 
             if ($modalInterclub) {
-                $maxPlayers = $modalInterclub->total_players;
+                $sendMaxPlayers = $modalInterclub->total_players;
                 $modalIsComplete = $modalInterclub->isSelectionComplete();
+
+                // Une action qui engage douze e-mails nomme sa cible : une
+                // cible erronée doit se voir avant le clic, pas après.
+                $sendTargetLabel = trim(sprintf(
+                    'vs %s — %s',
+                    $this->opponentNameOf($modalInterclub),
+                    $modalInterclub->start_date_time->format('d/m/Y'),
+                ));
+
+                $sendLineupNames = $modalInterclub->users()
+                    ->wherePivot('is_selected', true)
+                    ->get()
+                    ->map(fn (User $u): string => $u->last_name . ' ' . $u->first_name)
+                    ->values()
+                    ->all();
             }
 
             if ($this->isUpdateMode) {
@@ -664,6 +721,9 @@ new class extends Component
             'canSearchSubstitute' => $canSearchSubstitute,
             'matchDayMap' => $matchDayMap,
             'filterChips' => $this->getFilterChips(),
+            'sendLineupNames' => $sendLineupNames,
+            'sendMaxPlayers' => $sendMaxPlayers,
+            'sendTargetLabel' => $sendTargetLabel,
             'pendingAddedNames' => $pendingAddedNames,
             'pendingRemovedNames' => $pendingRemovedNames,
             'modalIsComplete' => $modalIsComplete,
@@ -991,11 +1051,27 @@ new class extends Component
 
     private function resetSendModal(): void
     {
+        $this->sendTargetId = null;
         $this->modalMessage = false;
         $this->captainMeetupInfo = '';
         $this->isUpdateMode = false;
         $this->pendingAddedIds = [];
         $this->pendingRemovedIds = [];
+    }
+
+    private function sendTarget(): ?Interclub
+    {
+        if (! $this->sendTargetId) {
+            return null;
+        }
+
+        $interclub = Interclub::find($this->sendTargetId);
+
+        if ($interclub) {
+            $this->authorizeInterclub($interclub);
+        }
+
+        return $interclub;
     }
 
     private function selectedInterclub(): ?Interclub

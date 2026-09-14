@@ -12,6 +12,7 @@ use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Domains\Shared\Enums\Ranking;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
 
@@ -1025,4 +1026,105 @@ it('disables the availability request while it is being sent', function (): void
         ->test('pages::club-events.interclubs.captain-selection')
         ->call('confirmAvailabilityRequest', $this->interclub->id)
         ->assertSeeHtml('wire:target="requestAvailability"');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Lot « correctifs » — l'envoi porte sa propre cible
+|--------------------------------------------------------------------------
+|
+| selectedInterclubId held two jobs at once: which fixture the drawer is
+| composing (navigation, disposable) and which fixture the modal will mail
+| (a committed intent). Because it was one variable, the send stayed armed on
+| the last fixture opened, and nothing disarmed it — not sending, not skipping,
+| and above all not closing the modal by the cross.
+|
+*/
+it('disarms the send target once the lineup has been sent', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->assertSet('sendTargetId', $this->interclub->id)
+        ->call('sendLineupToTeam')
+        ->assertSet('sendTargetId', null);
+});
+
+it('disarms the send target when the modal is dismissed rather than answered', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->assertSet('sendTargetId', $this->interclub->id)
+        ->set('modalMessage', false)
+        ->assertSet('sendTargetId', null)
+        ->assertSet('isUpdateMode', false)
+        ->assertSet('pendingAddedIds', [])
+        ->assertSet('pendingRemovedIds', []);
+});
+
+it('sends nothing when the modal is answered with no target armed', function (): void {
+    Queue::fake();
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('sendLineupToTeam');
+
+    Queue::assertNothingPushed();
+});
+
+it('composing another fixture never re-arms the previous one', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    $other = Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $this->team->id,
+        'total_players' => 2,
+        'start_date_time' => now()->addDays(14),
+    ]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->set('modalMessage', false)
+        ->call('openSelection', $other->id)
+        ->assertSet('sendTargetId', null);
+});
+
+it('names the fixture the modal is about to notify', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->assertSee($this->interclub->start_date_time->format('d/m/Y'));
+});
+
+it('lists in the modal the players it is about to notify', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->assertSee($this->player1->last_name)
+        ->assertSee($this->player2->last_name);
 });

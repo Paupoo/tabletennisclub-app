@@ -93,11 +93,15 @@
                         $isRefused   = $isFull && ! $isSelected;
                     @endphp
                     {{-- La ligne porte les numéros de téléphone et l'e-mail du joueur :
-                         ni un <button> ni un <label> ne peuvent envelopper des liens. La
-                         case à cocher reste donc l'unique commande — et elle porte une
-                         vraie cible de 44 px (règle KB-1 : pas de commande souris-seule sur
-                         un <div>). Le curseur ne promet plus une ligne cliquable qu'il
-                         n'était pas. --}}
+                         ni un <button> ni un <label> ne peuvent envelopper des liens. Elle
+                         restait donc un <div> avec la seule case à cocher pour commande,
+                         tout en s'allumant au survol comme si elle était cliquable : elle
+                         promettait un geste qu'elle ne tenait pas, et sur 375 px la cible
+                         était un carré au bout d'une ligne encombrée.
+                         D'où le recouvrement : la commande reste le <label> de la case
+                         (règle KB-1, focus et clavier inchangés), mais son ::before
+                         s'étend sur toute la carte. Les deux liens de contact repassent
+                         au-dessus en z-10, donc ils composent et écrivent toujours. --}}
                     {{-- La clé porte l'état, pas seulement l'identité : le
                          navigateur bascule la *propriété* `checked`, Livewire
                          rend l'*attribut*. Quand les deux coïncident, morphdom
@@ -105,9 +109,10 @@
                          même si le serveur a dit non. Une clé qui change force
                          le remplacement du nœud. --}}
                     <div
+                        data-roster-row
                         wire:key="roster-{{ $fixtureId }}-{{ $player['id'] }}-{{ $isSelected ? 1 : 0 }}"
                         @class([
-                            'flex items-center gap-3 rounded-xl border p-3 transition-all',
+                            'relative flex items-center gap-3 rounded-xl border p-3 transition-all',
                             'cursor-not-allowed' => $isBlocked,
                             'opacity-60' => $isRefused,
                             'border-primary bg-primary/5 ring-1 ring-primary/40' => $isSelected && ! $isBlocked,
@@ -149,13 +154,15 @@
                                 <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                                     @if (! empty($player['phone_number']))
                                         <a href="tel:{{ $player['phone_number'] }}" @click.stop
-                                            class="inline-flex items-center gap-1 text-xs font-semibold text-base-content/60 hover:text-primary">
+                                            data-roster-contact
+                                            class="relative z-10 inline-flex items-center gap-1 text-xs font-semibold text-base-content/60 hover:text-primary">
                                             <x-icon name="o-phone" class="h-2.5 w-2.5" />{{ $player['phone_number'] }}
                                         </a>
                                     @endif
                                     @if (! empty($player['email']))
                                         <a href="mailto:{{ $player['email'] }}" @click.stop
-                                            class="inline-flex items-center gap-1 truncate text-xs font-semibold text-base-content/60 hover:text-primary">
+                                            data-roster-contact
+                                            class="relative z-10 inline-flex items-center gap-1 truncate text-xs font-semibold text-base-content/60 hover:text-primary">
                                             <x-icon name="o-envelope" class="h-2.5 w-2.5 shrink-0" />{{ $player['email'] }}
                                         </a>
                                     @endif
@@ -180,9 +187,17 @@
                         @if ($isBlocked)
                             <x-icon name="o-lock-closed" class="h-4 w-4 shrink-0 text-error/50" />
                         @else
-                            {{-- 44 px est la cible de confort de l'Apple HIG ; la case elle-même
-                                 en fait 24, l'étiquette autour lui donne le reste. --}}
-                            <label class="-m-2 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center">
+                            {{-- 44 px reste la cible de confort de l'Apple HIG pour la case
+                                 elle-même ; le ::before étend la même commande à toute la
+                                 carte, sans déplacer un pixel de ce qui est peint. --}}
+                            <label
+                                data-roster-toggle
+                                @class([
+                                    '-m-2 flex h-11 w-11 shrink-0 items-center justify-center',
+                                    "before:absolute before:inset-0 before:content-['']" => ! $isRefused,
+                                    'cursor-pointer' => ! $isRefused,
+                                    'cursor-not-allowed' => $isRefused,
+                                ])>
                                 <input type="checkbox"
                                     class="checkbox checkbox-primary checkbox-sm h-6 w-6"
                                     aria-label="{{ __('Select :player', ['player' => $player['name']]) }}"

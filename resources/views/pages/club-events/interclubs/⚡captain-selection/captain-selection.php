@@ -366,6 +366,15 @@ new class extends Component
             return;
         }
 
+        // Ce que l'envoi va réellement faire, décidé avant que resetSendModal()
+        // n'efface le diff. Une compo déjà envoyée puis ramenée sous le complet
+        // ne prévient que les joueurs écartés : notifySelectionChange() sort
+        // avant le reste, et c'est le bon comportement. Ce qui ne l'était pas,
+        // c'est le compte rendu — « toute l'équipe a été notifiée », qui était
+        // faux, sur le seul écran qui dise au capitaine ce qui est parti.
+        $removedCount = count($this->pendingRemovedIds);
+        $onlyRemovedAreNotified = $this->isUpdateMode && ! $interclub->isSelectionComplete();
+
         if ($this->isUpdateMode) {
             $service->notifySelectionChange($interclub, $this->pendingAddedIds, $this->pendingRemovedIds, $this->captainMeetupInfo);
         } else {
@@ -373,6 +382,16 @@ new class extends Component
         }
 
         $this->resetSendModal();
+
+        if ($onlyRemovedAreNotified) {
+            $this->success(
+                trans_choice('Notified the removed player.|Notified the :count removed players.', $removedCount, ['count' => $removedCount]),
+                __('The rest of the team will be told once the lineup is complete again.'),
+                icon: 'o-paper-airplane'
+            );
+
+            return;
+        }
 
         $this->success(
             __('Lineup sent to the whole team!'),

@@ -338,8 +338,18 @@
         </div>
 
         <x-slot:actions>
+            {{-- Le bouton dit ce qu'il fait. Sur une compo redevenue incomplète,
+                 seuls les joueurs écartés sont prévenus — l'encart l'expliquait
+                 en `text-xs` pendant que le bouton juste dessous promettait le
+                 contraire. --}}
+            @php
+                $onlyRemoved = $isUpdateMode && ! $modalIsComplete;
+                $sendLabel = $onlyRemoved
+                    ? trans_choice('Notify the removed player|Notify the :count removed players', count($pendingRemovedNames), ['count' => count($pendingRemovedNames)])
+                    : __('Send to team');
+            @endphp
             <x-button class="btn-ghost" :label="__('Skip')" spinner="skipSending" wire:click="skipSending" />
-            <x-button class="btn-primary" icon="o-paper-airplane" :label="__('Send to team')"
+            <x-button class="btn-primary" icon="o-paper-airplane" :label="$sendLabel"
                 spinner="sendLineupToTeam" wire:click="sendLineupToTeam" />
         </x-slot:actions>
     </x-app-modal>

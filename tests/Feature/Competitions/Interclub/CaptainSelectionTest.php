@@ -11,8 +11,12 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Domains\Shared\Enums\Ranking;
+use App\Jobs\SendInterclubLineupBroadcastJob;
+use App\Jobs\SendInterclubPlayerRemovedJob;
+use App\Jobs\SendInterclubSelectionJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use Livewire\Features\SupportTesting\Testable;
 
 uses(RefreshDatabase::class);
 
@@ -1192,4 +1196,63 @@ it('forgets an abandoned composition when the drawer is closed', function (): vo
         ->set('drawerSelection', false)
         ->assertSet('selectedPlayerIds', [])
         ->assertSet('selectedInterclubId', null);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Lot « correctifs » — l'écran dit ce qu'il a réellement envoyé
+|--------------------------------------------------------------------------
+|
+| Taking a player off a lineup that was already sent leaves it incomplete.
+| notifySelectionChange() then mails the removed players and returns before
+| anyone else is told — which is the right behaviour. But the button said
+| "Send to team" and the toast that followed said "Lineup sent to the whole
+| team! All team members have been notified." Both were false.
+|
+*/
+function armIncompleteUpdate(): Testable
+{
+    test()->interclub->update(['total_players' => 2]);
+    test()->interclub->select(test()->player1);
+    test()->interclub->select(test()->player2);
+    test()->interclub->users()->updateExistingPivot(test()->player1->id, ['selection_confirmed_at' => now()]);
+    test()->interclub->users()->updateExistingPivot(test()->player2->id, ['selection_confirmed_at' => now()]);
+
+    return Livewire::actingAs(test()->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', test()->interclub->id)
+        ->call('togglePlayer', test()->player1->id)
+        ->call('saveSelection');
+}
+
+it('labels the action for what it will actually do on an incomplete update', function (): void {
+    armIncompleteUpdate()
+        ->assertSet('isUpdateMode', true)
+        ->assertSee(trans_choice('Notify the removed player|Notify the :count removed players', 1, ['count' => 1]))
+        ->assertDontSee(__('Send to team'));
+});
+
+it('notifies nobody but the removed player on an incomplete update', function (): void {
+    Queue::fake();
+
+    armIncompleteUpdate()->call('sendLineupToTeam');
+
+    // The claim the old toast made — "all team members have been notified" —
+    // stated as what the queue actually carries.
+    Queue::assertPushed(SendInterclubPlayerRemovedJob::class, 1);
+    Queue::assertNotPushed(SendInterclubLineupBroadcastJob::class);
+    Queue::assertNotPushed(SendInterclubSelectionJob::class);
+});
+
+it('keeps promising a full send while the lineup is complete', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->assertSee(__('Send to team'))
+        ->assertDontSee(trans_choice('Notify the removed player|Notify the :count removed players', 1, ['count' => 1]));
 });

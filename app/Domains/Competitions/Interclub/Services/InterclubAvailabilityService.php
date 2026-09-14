@@ -103,7 +103,11 @@ class InterclubAvailabilityService
      */
     public function requestAvailability(Interclub $interclub): void
     {
-        $team = $interclub->visitedTeam ?? $interclub->visitingTeam;
+        // Our side of the fixture, never the home side: on an away match the
+        // home team is the opponent's, whose roster lives in their club and not
+        // in ours — the request then went to nobody, in silence, on half the
+        // calendar. Same rule as confirmSelection() and notifySelectionChange().
+        $team = $interclub->ourTeam();
 
         if (! $team) {
             return;

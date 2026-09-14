@@ -325,3 +325,27 @@ it('falls back to a dash and drops the force column when nobody is ranked in the
         ->toContain($this->player1->full_name)
         ->not->toContain('Liste de force');
 });
+
+it('sends the availability request to our own team when we play away', function (): void {
+    $opponentClub = Club::factory()->create(['is_own_club' => false]);
+    $opponentTeam = Team::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'club_id' => $opponentClub->id,
+    ]);
+
+    $away = Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $opponentTeam->id,
+        'visiting_team_id' => $this->team->id,
+        'total_players' => 4,
+        'start_date_time' => now()->addDays(7),
+    ]);
+
+    $this->service->requestAvailability($away);
+
+    Notification::assertSentTo($this->player1, InterclubAvailabilityRequestNotification::class);
+    Notification::assertSentTo($this->player2, InterclubAvailabilityRequestNotification::class);
+    Notification::assertSentTo($this->player3, InterclubAvailabilityRequestNotification::class);
+});

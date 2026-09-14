@@ -659,6 +659,15 @@ it('asks for confirmation before mailing the team', function (): void {
         ->assertSet('availabilityRequestId', $this->interclub->id);
 });
 
+it('disarms the availability request when the confirmation is dismissed', function (): void {
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('confirmAvailabilityRequest', $this->interclub->id)
+        ->assertSet('availabilityRequestId', $this->interclub->id)
+        ->set('availabilityRequestModal', false)
+        ->assertSet('availabilityRequestId', null);
+});
+
 it('refuses to arm the confirmation for a fixture the user cannot reach', function (): void {
     $foreignTeam = Team::factory()->create([
         'season_id' => $this->season->id,

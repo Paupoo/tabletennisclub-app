@@ -413,6 +413,19 @@ new class extends Component
         $this->selectedPlayerIds[] = $userId;
     }
 
+    /**
+     * Closing the confirmation by the cross, the backdrop or Escape never goes
+     * through requestAvailability(), so the armed fixture used to survive the
+     * dismissal. Same disease as the send modal: an outgoing action that keeps
+     * its target after the window that justified it is gone.
+     */
+    public function updatedAvailabilityRequestModal(bool $open): void
+    {
+        if (! $open) {
+            $this->availabilityRequestId = null;
+        }
+    }
+
     public function updatedSelectedSeasonId(): void
     {
         $user = Auth::user();

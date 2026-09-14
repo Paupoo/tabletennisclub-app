@@ -334,9 +334,9 @@
         </div>
 
         <x-slot:actions>
-            <x-button class="btn-ghost" :label="__('Skip')" wire:click="skipSending" />
+            <x-button class="btn-ghost" :label="__('Skip')" spinner="skipSending" wire:click="skipSending" />
             <x-button class="btn-primary" icon="o-paper-airplane" :label="__('Send to team')"
-                wire:click="sendLineupToTeam" />
+                spinner="sendLineupToTeam" wire:click="sendLineupToTeam" />
         </x-slot:actions>
     </x-app-modal>
 </div>

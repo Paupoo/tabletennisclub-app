@@ -988,3 +988,41 @@ it('lands on the soonest match day needing attention, not the lowest numbered', 
         ->call('setViewMode', 'day')
         ->assertSet('selectedMatchDay', $soon->week_number);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Lot « correctifs » — l'écran dit quand il travaille
+|--------------------------------------------------------------------------
+|
+| Sending a lineup is a dozen mails; composing one is a full re-render. Neither
+| button said anything while it worked, and the only indicator on the page is
+| the 2px bar under the header — behind the drawer's own backdrop. So captains
+| clicked again.
+|
+*/
+it('disables the save button while the selection is being written', function (): void {
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->assertSeeHtml('wire:target="saveSelection"')
+        ->assertSeeHtml('wire:loading.attr="disabled"');
+});
+
+it('disables the send button while the team is being notified', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->assertSeeHtml('wire:target="sendLineupToTeam"');
+});
+
+it('disables the availability request while it is being sent', function (): void {
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('confirmAvailabilityRequest', $this->interclub->id)
+        ->assertSeeHtml('wire:target="requestAvailability"');
+});

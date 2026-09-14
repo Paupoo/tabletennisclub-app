@@ -169,6 +169,8 @@
                                     class="checkbox checkbox-primary checkbox-sm h-6 w-6"
                                     aria-label="{{ __('Select :player', ['player' => $player['name']]) }}"
                                     @checked($isSelected)
+                                    wire:loading.attr="disabled"
+                                    wire:target="togglePlayer({{ $player['id'] }})"
                                     wire:click="togglePlayer({{ $player['id'] }})" />
                             </label>
                         @endif
@@ -223,11 +225,15 @@
 
     <x-slot:actions>
         <x-button x-on:click="$wire.set('{{ $model }}', false)" class="btn-ghost" :label="__('Cancel')" />
+        {{-- `spinner` ne fait pas qu'afficher une roue : il pose aussi
+             `wire:loading.attr="disabled"`, donc il répond au deuxième clic
+             autant qu'au silence du premier. --}}
         <x-button
             :disabled="$selectedCount === 0"
             class="btn-primary"
             icon="o-check"
             :label="$saveLabel"
+            spinner="{{ $saveAction }}"
             wire:click="{{ $saveAction }}" />
     </x-slot:actions>
 </x-drawer>

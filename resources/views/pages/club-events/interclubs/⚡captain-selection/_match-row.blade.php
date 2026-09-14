@@ -94,6 +94,7 @@
                 <x-admin.shared.row-menu
                     :label="__('Compose')"
                     icon="o-pencil-square"
+                    spinner
                     wire-click="openSelection({{ $ic['id'] }})">
                     <x-menu-item
                         icon="o-envelope"

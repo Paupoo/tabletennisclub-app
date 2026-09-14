@@ -1,10 +1,14 @@
 {{--
-    La feuille à poser sur les tables : quatre A6 sur une A4 ordinaire.
+    Le flyer à poser sur les tables : deux A5 sur une A4 ordinaire.
+
+    A5 paysage plutôt que portrait, pour que la feuille sorte d'une A4 portrait
+    sans que personne n'ait à trouver le réglage « paysage » de l'imprimante du
+    club un samedi soir. La carte se lit donc en deux colonnes : l'identité à
+    gauche, le QR à droite, à la taille où on le scanne sans se pencher.
 
     Le logo, le nom du club, le QR, le lien en clair. Pas de prix : une carte
     imprimée périme au premier changement, et c'est précisément ce que le QR
-    évite. La page appelle la boîte d'impression toute seule, et se relit à
-    l'écran si on annule.
+    évite.
 --}}
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -24,33 +28,36 @@
             margin: 12px auto;
             background: var(--paper);
             display: grid;
-            grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr;
             box-shadow: 0 1px 3px rgb(0 0 0 / .15);
         }
 
+        /* Une A5 paysage : la moitié d'une A4 portrait, trait de coupe compris. */
         .card {
             container-type: size;
             border: 1px dashed #d4d4d8;
-            padding: 7cqw 6cqw;
+            padding: 6cqw 7cqw;
             display: grid;
-            grid-template-rows: auto 1fr auto;
-            text-align: center;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 6cqw;
         }
 
-        .card__top { display: flex; flex-direction: column; align-items: center; gap: 2cqw; }
-        .card__top img { width: 13cqw; height: 13cqw; }
-        .card__club { font-size: 3.2cqw; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--blue); }
+        .card__left { display: flex; flex-direction: column; gap: 4cqw; min-width: 0; }
+        .card__brand { display: flex; align-items: center; gap: 2cqw; }
+        .card__brand img { width: 9cqw; height: 9cqw; flex: none; }
+        .card__club { font-size: 2.5cqw; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--blue); }
 
-        .card__mid { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3.4cqw; }
-        .card__title { font-size: 9cqw; font-weight: 700; letter-spacing: -.02em; line-height: 1.05; }
-        .card__serif { font-family: var(--font-serif); font-style: italic; font-size: 5cqw; color: var(--ink-2); }
-        .card__qr { width: 44cqw; height: 44cqw; display: block; }
+        .card__title { font-size: 9.4cqw; font-weight: 700; letter-spacing: -.02em; line-height: 1.02; text-wrap: balance; }
+        .card__serif { font-family: var(--font-serif); font-style: italic; font-size: 4.4cqw; color: var(--ink-2); }
+        .card__foot { font-size: 2.7cqw; color: var(--muted); line-height: 1.45; margin: 0; text-wrap: balance; }
+
+        .card__right { display: flex; flex-direction: column; align-items: center; gap: 2.4cqw; }
+        .card__qr { width: 40cqw; height: 40cqw; display: block; }
         .card__url {
-            font-size: 3.7cqw; font-weight: 700; color: var(--blue);
-            border-bottom: 1px solid rgba(30, 64, 175, .3); padding-bottom: .6cqw; word-break: break-all;
+            font-size: 2.9cqw; font-weight: 700; color: var(--blue); text-align: center;
+            border-top: 1px solid rgba(30, 64, 175, .3); padding-top: 1.6cqw; max-width: 38cqw;
         }
-        .card__foot { font-size: 3.2cqw; color: var(--muted); line-height: 1.4; margin: 0; }
 
         .hint {
             max-width: 210mm; margin: 0 auto 16px; padding: 10px 14px;
@@ -67,26 +74,29 @@
     </style>
 </head>
 <body>
-    <p class="hint">Imprimez sans marges, puis coupez en quatre. Le QR mène à {{ $url }} — si l'adresse du site change, réimprimez cette page : le code suit.</p>
+    <p class="hint">Imprimez sans marges, puis coupez en deux. Le QR mène à {{ $url }} — si l'adresse du site change, réimprimez cette page : le code suit.</p>
 
     <div class="sheet">
-        @for ($i = 0; $i < 4; $i++)
+        @for ($i = 0; $i < 2; $i++)
             <div class="card">
-                <div class="card__top">
-                    <img src="{{ asset('images/logo-club.svg') }}" alt="">
-                    <span class="card__club">{{ config('club.name') }}</span>
+                <div class="card__left">
+                    <div class="card__brand">
+                        <img src="{{ asset('images/logo-club.svg') }}" alt="">
+                        <span class="card__club">{{ config('club.name') }}</span>
+                    </div>
+
+                    <div>
+                        <div class="card__title">La carte du bar</div>
+                        <div class="card__serif">À votre santé</div>
+                    </div>
+
+                    <p class="card__foot">Scannez le code pour voir ce qu'on sert et les prix.<br>Bon match&nbsp;!</p>
                 </div>
 
-                <div class="card__mid">
-                    <div>
-                        <div class="card__title">La carte<br>du bar</div>
-                        <div class="card__serif">en ligne, toujours à jour</div>
-                    </div>
+                <div class="card__right">
                     <img class="card__qr" src="{{ $qr }}" alt="QR code vers la carte du bar">
                     <span class="card__url">{{ Str::after($url, '://') }}</span>
                 </div>
-
-                <p class="card__foot">Scannez pour voir ce qu'on sert<br>et les prix. Bon match&nbsp;! 🏓</p>
             </div>
         @endfor
     </div>

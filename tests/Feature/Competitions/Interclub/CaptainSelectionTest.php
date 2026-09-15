@@ -14,6 +14,7 @@ use App\Domains\Shared\Enums\Ranking;
 use App\Jobs\SendInterclubLineupBroadcastJob;
 use App\Jobs\SendInterclubPlayerRemovedJob;
 use App\Jobs\SendInterclubSelectionJob;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Features\SupportTesting\Testable;
@@ -1282,4 +1283,38 @@ it('counts answers against the roster, and names the available separately', func
             'available' => 1,
         ]))
         ->assertDontSee(__(':available available out of :max', ['available' => 1, 'max' => 4]));
+});
+
+/*
+|--------------------------------------------------------------------------
+| Lot « correctifs » — une seule ligne de roster par joueur
+|--------------------------------------------------------------------------
+|
+| markAvailability(), select() and the selection screen's save all write this
+| pivot with a read-then-attach, and nothing in the schema held them to it. Two
+| requests arriving together both find no row and both attach; from then on the
+| player is counted twice in every availability tally.
+|
+*/
+it('refuses a second roster row for the same player on the same fixture', function (): void {
+    $this->interclub->users()->attach($this->player1->id, ['is_selected' => true]);
+
+    expect(fn () => $this->interclub->users()->attach($this->player1->id, ['is_selected' => true]))
+        ->toThrow(UniqueConstraintViolationException::class);
+});
+
+it('still lets the same player be on the roster of two different fixtures', function (): void {
+    $other = Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $this->team->id,
+        'total_players' => 4,
+        'start_date_time' => now()->addDays(21),
+    ]);
+
+    $this->interclub->users()->attach($this->player1->id);
+    $other->users()->attach($this->player1->id);
+
+    expect($this->interclub->users()->count())->toBe(1)
+        ->and($other->users()->count())->toBe(1);
 });

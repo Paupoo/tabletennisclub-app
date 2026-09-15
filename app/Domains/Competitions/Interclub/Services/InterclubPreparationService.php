@@ -262,14 +262,26 @@ class InterclubPreparationService
     {
         $matrix = [];
 
+        // Une cellule est une équipe et une semaine : weekStatus() n'avait rien
+        // à agréger, et re-filtrait pourtant toute la collection des rencontres
+        // à chaque case — 16 équipes × 28 journées, soit 448 balayages de 164
+        // rencontres pour un tableau qui tient dans une seule passe. Sur cet
+        // écran, cela se payait à chaque clic de case à cocher.
+        //
+        // Pour une équipe seule, weekStatus() se réduit exactement à
+        // fixtureStatus() de sa rencontre : 'past' ressort tel quel, et
+        // worstOf('confirmed', $s) vaut $s puisque 'confirmed' est le rang 0.
+        // Les rencontres arrivent dans l'ordre des coups d'envoi, donc
+        // firstWhere() garde l'invariant : une équipe qui joue deux fois la
+        // même semaine est jugée sur sa rencontre la plus proche.
         foreach ($teams as $team) {
             $teamFixtures = $this->fixturesForTeam($fixtures, $team->id);
             $matrix[$team->id] = [];
 
             foreach ($weekNumbers as $wk) {
-                $matrix[$team->id][$wk] = $teamFixtures->firstWhere('week_number', $wk)
-                    ? $this->weekStatus($wk, Team::newModelInstance()->newCollection([$team]), $fixtures)
-                    : null;
+                $fixture = $teamFixtures->firstWhere('week_number', $wk);
+
+                $matrix[$team->id][$wk] = $fixture ? $this->fixtureStatus($fixture) : null;
             }
         }
 

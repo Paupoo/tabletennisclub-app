@@ -240,6 +240,7 @@
         :selected-ids="$selectedPlayerIds"
         :max-players="$maxPlayers"
         :week-number="$drawerInterclub?->week_number"
+        :fixture-id="$drawerInterclub?->id"
         :can-search-substitute="$canSearchSubstitute"
         :search-results="$searchResults"
         :search-note="$searchNote"
@@ -254,7 +255,12 @@
     </x-confirm-modal>
 
     {{-- ── MODAL LINEUP / MESSAGE ─────────────────────────────────────── --}}
-    <x-app-modal separator :title="$isUpdateMode ? __('Update the team') : __('Notify the team')" wire:model="modalMessage" :open="$modalMessage">
+    {{-- Le titre nomme la rencontre : une action qui engage une douzaine
+         d'e-mails ne laisse pas deviner qui elle vise. --}}
+    <x-app-modal separator
+        :title="$isUpdateMode ? __('Update the team') : __('Notify the team')"
+        :subtitle="$sendTargetLabel"
+        wire:model="modalMessage" :open="$modalMessage">
         <div class="space-y-4">
             @if ($isUpdateMode)
                 {{-- Diff summary: only added/removed players are notified --}}
@@ -301,18 +307,16 @@
                     wire:model="captainMeetupInfo" />
             @else
                 {{-- Selected lineup summary --}}
-                @php
-                    $selCount = count($selectedPlayerIds);
-                    $maxP = $maxPlayers;
-                @endphp
-
+                {{-- Les noms viennent de la compo enregistrée, pas de $roster :
+                     $roster n'existe que si le tiroir est ouvert, et saveSelection()
+                     vient de le fermer. Le bloc annonçait « 4/4 » sans un nom. --}}
                 <div class="bg-base-200/50 rounded-xl p-3">
                     <div class="mb-2 text-xs font-bold uppercase tracking-widest opacity-60">
-                        {{ __('Selected lineup (:n/:max)', ['n' => $selCount, 'max' => $maxP]) }}
+                        {{ __('Selected lineup (:n/:max)', ['n' => count($sendLineupNames), 'max' => $sendMaxPlayers]) }}
                     </div>
                     <div class="flex flex-wrap gap-1.5">
-                        @foreach ($roster->filter(fn ($p) => in_array($p['id'], $selectedPlayerIds)) as $p)
-                            <x-badge class="badge-primary badge-soft badge-sm font-bold" :value="$p['name']" />
+                        @foreach ($sendLineupNames as $name)
+                            <x-badge class="badge-primary badge-soft badge-sm font-bold" :value="$name" />
                         @endforeach
                     </div>
                 </div>
@@ -334,9 +338,19 @@
         </div>
 
         <x-slot:actions>
-            <x-button class="btn-ghost" :label="__('Skip')" wire:click="skipSending" />
-            <x-button class="btn-primary" icon="o-paper-airplane" :label="__('Send to team')"
-                wire:click="sendLineupToTeam" />
+            {{-- Le bouton dit ce qu'il fait. Sur une compo redevenue incomplète,
+                 seuls les joueurs écartés sont prévenus — l'encart l'expliquait
+                 en `text-xs` pendant que le bouton juste dessous promettait le
+                 contraire. --}}
+            @php
+                $onlyRemoved = $isUpdateMode && ! $modalIsComplete;
+                $sendLabel = $onlyRemoved
+                    ? trans_choice('Notify the removed player|Notify the :count removed players', count($pendingRemovedNames), ['count' => count($pendingRemovedNames)])
+                    : __('Send to team');
+            @endphp
+            <x-button class="btn-ghost" :label="__('Skip')" spinner="skipSending" wire:click="skipSending" />
+            <x-button class="btn-primary" icon="o-paper-airplane" :label="$sendLabel"
+                spinner="sendLineupToTeam" wire:click="sendLineupToTeam" />
         </x-slot:actions>
     </x-app-modal>
 </div>

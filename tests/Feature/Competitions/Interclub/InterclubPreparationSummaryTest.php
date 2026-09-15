@@ -449,3 +449,33 @@ it('dates every match day and counts the teams still to compose', function (): v
         ->and($urgent['to_compose'])->toBe(2)
         ->and($rows->firstWhere('wk', 1)['is_past'])->toBeTrue();
 });
+
+/**
+ * A team playing twice in one week is rated on its earliest fixture — the
+ * invariant the per-cell computation documented and the single-pass one has to
+ * keep. Fixtures are loaded in kick-off order precisely so this holds; before
+ * that, the query had no ORDER BY and rated whichever row the engine returned.
+ */
+it('rates a team playing twice in one week on its earliest fixture', function (): void {
+    $a = $this->teams['A'];
+
+    // The earlier fixture needs attention; the later one is already settled.
+    // If the cell were rated on the wrong one it would read 'confirmed'.
+    scheduleMatch($a, 9, '2026-01-20 19:45:00');
+    selectPlayers(scheduleMatch($a, 9, '2026-01-23 19:45:00'), $a, 4, confirmed: true);
+
+    $summary = summaryFor($this->admin);
+
+    expect($summary['matrix'][$a->id][9])->toBe('urgent');
+});
+
+it('rates that same week as settled when the earliest fixture is the settled one', function (): void {
+    $a = $this->teams['A'];
+
+    selectPlayers(scheduleMatch($a, 9, '2026-01-20 19:45:00'), $a, 4, confirmed: true);
+    scheduleMatch($a, 9, '2026-01-23 19:45:00');
+
+    $summary = summaryFor($this->admin);
+
+    expect($summary['matrix'][$a->id][9])->toBe('confirmed');
+});

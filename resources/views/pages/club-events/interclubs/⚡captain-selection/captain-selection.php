@@ -72,6 +72,18 @@ new class extends Component
     public ?int $selectedTeamId = null;
 
     /**
+     * Which fixture the "notify the team" modal will mail.
+     *
+     * Deliberately not selectedInterclubId, which is where the *drawer* is. The
+     * two used to be one property, so the send stayed armed on the last fixture
+     * opened long after the drawer had moved on — and nothing disarmed it, not
+     * sending, not skipping, and above all not closing the modal by the cross.
+     * A navigation and a committed intent do not share a variable.
+     */
+    #[Locked]
+    public ?int $sendTargetId = null;
+
+    /**
      * A season is a matrix of teams × match days. 'team' reads one row — a team,
      * all its days. 'day' reads one column — a day, all the teams. The control
      * center was that column on a page of its own, and duplicated everything
@@ -86,6 +98,9 @@ new class extends Component
      * @var array<string, \Illuminate\Database\Eloquent\Collection<int, Team>>
      */
     private array $accessibleTeamsCache = [];
+
+    /** Resolved lazily, once per render. */
+    private ?InterclubPreparationService $preparation = null;
 
     public function boot(): void
     {
@@ -278,13 +293,21 @@ new class extends Component
         });
 
         $this->drawerSelection = false;
+        $this->sendTargetId = $interclub->id;
 
         if ($previouslyConfirmedIds === []) {
             if ($interclub->isSelectionComplete()) {
                 $this->isUpdateMode = false;
                 $this->modalMessage = true;
             } else {
-                $this->success(__('Selection saved.'), position: 'toast-bottom toast-end');
+                $this->sendTargetId = null;
+                $this->success(
+                    __('Selection saved — :n of :max players.', [
+                        'n' => count($this->selectedPlayerIds),
+                        'max' => $maxPlayers,
+                    ]),
+                    position: 'toast-bottom toast-end'
+                );
             }
 
             return;
@@ -294,6 +317,7 @@ new class extends Component
         $removed = array_values(array_diff($previouslyConfirmedIds, $this->selectedPlayerIds));
 
         if ($added === [] && $removed === []) {
+            $this->sendTargetId = null;
             $this->success(__('Selection saved.'), position: 'toast-bottom toast-end');
 
             return;
@@ -339,11 +363,20 @@ new class extends Component
 
     public function sendLineupToTeam(InterclubAvailabilityService $service): void
     {
-        $interclub = $this->selectedInterclub();
+        $interclub = $this->sendTarget();
 
         if (! $interclub) {
             return;
         }
+
+        // Ce que l'envoi va réellement faire, décidé avant que resetSendModal()
+        // n'efface le diff. Une compo déjà envoyée puis ramenée sous le complet
+        // ne prévient que les joueurs écartés : notifySelectionChange() sort
+        // avant le reste, et c'est le bon comportement. Ce qui ne l'était pas,
+        // c'est le compte rendu — « toute l'équipe a été notifiée », qui était
+        // faux, sur le seul écran qui dise au capitaine ce qui est parti.
+        $removedCount = count($this->pendingRemovedIds);
+        $onlyRemovedAreNotified = $this->isUpdateMode && ! $interclub->isSelectionComplete();
 
         if ($this->isUpdateMode) {
             $service->notifySelectionChange($interclub, $this->pendingAddedIds, $this->pendingRemovedIds, $this->captainMeetupInfo);
@@ -352,6 +385,16 @@ new class extends Component
         }
 
         $this->resetSendModal();
+
+        if ($onlyRemovedAreNotified) {
+            $this->success(
+                trans_choice('Notified the removed player.|Notified the :count removed players.', $removedCount, ['count' => $removedCount]),
+                __('The rest of the team will be told once the lineup is complete again.'),
+                icon: 'o-paper-airplane'
+            );
+
+            return;
+        }
 
         $this->success(
             __('Lineup sent to the whole team!'),
@@ -411,6 +454,44 @@ new class extends Component
         }
 
         $this->selectedPlayerIds[] = $userId;
+    }
+
+    /**
+     * Closing the confirmation by the cross, the backdrop or Escape never goes
+     * through requestAvailability(), so the armed fixture used to survive the
+     * dismissal. Same disease as the send modal: an outgoing action that keeps
+     * its target after the window that justified it is gone.
+     */
+    public function updatedAvailabilityRequestModal(bool $open): void
+    {
+        if (! $open) {
+            $this->availabilityRequestId = null;
+        }
+    }
+
+    /**
+     * A composition the captain walked away from is not a composition. It used
+     * to survive the closing of the drawer and turn up in the next summary.
+     */
+    public function updatedDrawerSelection(bool $open): void
+    {
+        if (! $open) {
+            $this->selectedInterclubId = null;
+            $this->selectedPlayerIds = [];
+            $this->search = '';
+        }
+    }
+
+    /**
+     * The cross, the backdrop and Escape all close the modal without passing
+     * through skipSending(), and used to leave the target armed and the diff
+     * of the previous fixture behind. Dismissing is an answer too.
+     */
+    public function updatedModalMessage(bool $open): void
+    {
+        if (! $open) {
+            $this->resetSendModal();
+        }
     }
 
     public function updatedSelectedSeasonId(): void
@@ -536,17 +617,41 @@ new class extends Component
             }
         }
 
-        // Modal data: pending change summary for the "Notify the team" modal
+        // ── La modale d'envoi lit sa propre cible ────────────────────────
+        // Elle lisait $roster, que with() ne construit que si le *tiroir* est
+        // ouvert — or saveSelection() vient de le fermer. Elle annonçait donc
+        // « Compo sélectionnée (4/4) » sans un seul nom, à chaque fois. La
+        // compo qui part est celle qui est en base, pas celle qui reste en
+        // mémoire : c'est elle qu'on affiche.
         $pendingAddedNames = [];
         $pendingRemovedNames = [];
         $modalIsComplete = true;
+        $sendLineupNames = [];
+        $sendMaxPlayers = $maxPlayers;
+        $sendTargetLabel = '';
 
-        if ($this->modalMessage && $this->selectedInterclubId) {
-            $modalInterclub = $drawerInterclub ?? Interclub::find($this->selectedInterclubId);
+        if ($this->modalMessage && $this->sendTargetId) {
+            $modalInterclub = Interclub::with(['visitedTeam.club', 'visitingTeam.club'])
+                ->find($this->sendTargetId);
 
             if ($modalInterclub) {
-                $maxPlayers = $modalInterclub->total_players;
+                $sendMaxPlayers = $modalInterclub->total_players;
                 $modalIsComplete = $modalInterclub->isSelectionComplete();
+
+                // Une action qui engage douze e-mails nomme sa cible : une
+                // cible erronée doit se voir avant le clic, pas après.
+                $sendTargetLabel = trim(sprintf(
+                    'vs %s — %s',
+                    $this->opponentNameOf($modalInterclub),
+                    $modalInterclub->start_date_time->format('d/m/Y'),
+                ));
+
+                $sendLineupNames = $modalInterclub->users()
+                    ->wherePivot('is_selected', true)
+                    ->get()
+                    ->map(fn (User $u): string => $u->last_name . ' ' . $u->first_name)
+                    ->values()
+                    ->all();
             }
 
             if ($this->isUpdateMode) {
@@ -651,6 +756,9 @@ new class extends Component
             'canSearchSubstitute' => $canSearchSubstitute,
             'matchDayMap' => $matchDayMap,
             'filterChips' => $this->getFilterChips(),
+            'sendLineupNames' => $sendLineupNames,
+            'sendMaxPlayers' => $sendMaxPlayers,
+            'sendTargetLabel' => $sendTargetLabel,
             'pendingAddedNames' => $pendingAddedNames,
             'pendingRemovedNames' => $pendingRemovedNames,
             'modalIsComplete' => $modalIsComplete,
@@ -779,6 +887,11 @@ new class extends Component
                 'is_past' => $isPast,
                 'days_until' => $daysUntil,
                 'available_count' => $availableCount,
+                // Le sondage et la capacité à aligner une équipe sont deux
+                // questions différentes : « 3 dispo sur 4 » n'en répondait
+                // clairement à aucune des deux.
+                'responded_count' => $respondedCount,
+                'team_member_count' => $teamMemberCount,
                 'maybe_count' => $maybeCount,
                 'unavail_count' => $unavailCount,
                 'pending_count' => $pendingCount,
@@ -866,10 +979,15 @@ new class extends Component
             || $ic->visiting_team_id === $teamId)->values();
     }
 
-    /** The rule lives in InterclubPreparationService; this page only reads it. */
+    /**
+     * The rule lives in InterclubPreparationService; this page only reads it.
+     * Resolved once per render rather than once per fixture — this runs for
+     * every fixture of every team, on every click.
+     */
     private function fixtureStatus(Interclub $interclub): string
     {
-        return app(InterclubPreparationService::class)->fixtureStatus($interclub);
+        return ($this->preparation ??= app(InterclubPreparationService::class))
+            ->fixtureStatus($interclub);
     }
 
     /**
@@ -978,6 +1096,7 @@ new class extends Component
 
     private function resetSendModal(): void
     {
+        $this->sendTargetId = null;
         $this->modalMessage = false;
         $this->captainMeetupInfo = '';
         $this->isUpdateMode = false;
@@ -992,6 +1111,21 @@ new class extends Component
         }
 
         $interclub = Interclub::find($this->selectedInterclubId);
+
+        if ($interclub) {
+            $this->authorizeInterclub($interclub);
+        }
+
+        return $interclub;
+    }
+
+    private function sendTarget(): ?Interclub
+    {
+        if (! $this->sendTargetId) {
+            return null;
+        }
+
+        $interclub = Interclub::find($this->sendTargetId);
 
         if ($interclub) {
             $this->authorizeInterclub($interclub);

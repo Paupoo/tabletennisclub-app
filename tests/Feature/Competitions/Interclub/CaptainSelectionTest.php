@@ -11,7 +11,13 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Domains\Shared\Enums\Ranking;
+use App\Jobs\SendInterclubLineupBroadcastJob;
+use App\Jobs\SendInterclubPlayerRemovedJob;
+use App\Jobs\SendInterclubSelectionJob;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
+use Livewire\Features\SupportTesting\Testable;
 
 uses(RefreshDatabase::class);
 
@@ -659,6 +665,15 @@ it('asks for confirmation before mailing the team', function (): void {
         ->assertSet('availabilityRequestId', $this->interclub->id);
 });
 
+it('disarms the availability request when the confirmation is dismissed', function (): void {
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('confirmAvailabilityRequest', $this->interclub->id)
+        ->assertSet('availabilityRequestId', $this->interclub->id)
+        ->set('availabilityRequestModal', false)
+        ->assertSet('availabilityRequestId', null);
+});
+
 it('refuses to arm the confirmation for a fixture the user cannot reach', function (): void {
     $foreignTeam = Team::factory()->create([
         'season_id' => $this->season->id,
@@ -978,4 +993,328 @@ it('lands on the soonest match day needing attention, not the lowest numbered', 
         ->test('pages::club-events.interclubs.captain-selection')
         ->call('setViewMode', 'day')
         ->assertSet('selectedMatchDay', $soon->week_number);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Lot « correctifs » — l'écran dit quand il travaille
+|--------------------------------------------------------------------------
+|
+| Sending a lineup is a dozen mails; composing one is a full re-render. Neither
+| button said anything while it worked, and the only indicator on the page is
+| the 2px bar under the header — behind the drawer's own backdrop. So captains
+| clicked again.
+|
+*/
+it('disables the save button while the selection is being written', function (): void {
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->assertSeeHtml('wire:target="saveSelection"')
+        ->assertSeeHtml('wire:loading.attr="disabled"');
+});
+
+it('disables the send button while the team is being notified', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->assertSeeHtml('wire:target="sendLineupToTeam"');
+});
+
+it('disables the availability request while it is being sent', function (): void {
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('confirmAvailabilityRequest', $this->interclub->id)
+        ->assertSeeHtml('wire:target="requestAvailability"');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Lot « correctifs » — l'envoi porte sa propre cible
+|--------------------------------------------------------------------------
+|
+| selectedInterclubId held two jobs at once: which fixture the drawer is
+| composing (navigation, disposable) and which fixture the modal will mail
+| (a committed intent). Because it was one variable, the send stayed armed on
+| the last fixture opened, and nothing disarmed it — not sending, not skipping,
+| and above all not closing the modal by the cross.
+|
+*/
+it('disarms the send target once the lineup has been sent', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->assertSet('sendTargetId', $this->interclub->id)
+        ->call('sendLineupToTeam')
+        ->assertSet('sendTargetId', null);
+});
+
+it('disarms the send target when the modal is dismissed rather than answered', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->assertSet('sendTargetId', $this->interclub->id)
+        ->set('modalMessage', false)
+        ->assertSet('sendTargetId', null)
+        ->assertSet('isUpdateMode', false)
+        ->assertSet('pendingAddedIds', [])
+        ->assertSet('pendingRemovedIds', []);
+});
+
+it('sends nothing when the modal is answered with no target armed', function (): void {
+    Queue::fake();
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('sendLineupToTeam');
+
+    Queue::assertNothingPushed();
+});
+
+it('composing another fixture never re-arms the previous one', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    $other = Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $this->team->id,
+        'total_players' => 2,
+        'start_date_time' => now()->addDays(14),
+    ]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->set('modalMessage', false)
+        ->call('openSelection', $other->id)
+        ->assertSet('sendTargetId', null);
+});
+
+it('names the fixture the modal is about to notify', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->assertSee($this->interclub->start_date_time->format('d/m/Y'));
+});
+
+it('lists in the modal the players it is about to notify', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->assertSee($this->player1->last_name)
+        ->assertSee($this->player2->last_name);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Lot « correctifs » — la coche reste où le capitaine l'a mise
+|--------------------------------------------------------------------------
+|
+| The browser flips a checkbox's `checked` *property*; Livewire re-renders its
+| `checked` *attribute*. When the server refuses a tick, the attribute does not
+| move, morphdom sees no difference and leaves the box where the click put it —
+| so the box and the ring around the row show two different truths. The row had
+| no wire:key at all either, while the roster is re-sorted by rank and
+| substitutes are concatenated at the end.
+|
+*/
+it('keys every roster row on the fixture, the player and its state', function (): void {
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->assertSeeHtml('wire:key="roster-' . $this->interclub->id . '-' . $this->player1->id . '-0"')
+        ->call('togglePlayer', $this->player1->id)
+        ->assertSeeHtml('wire:key="roster-' . $this->interclub->id . '-' . $this->player1->id . '-1"');
+});
+
+it('stops offering a tick it is going to refuse once the lineup is full', function (): void {
+    $this->interclub->update(['total_players' => 1]);
+
+    $html = Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->html();
+
+    $unpicked = str($html)->after('wire:key="roster-' . $this->interclub->id . '-' . $this->player2->id . '-0"')
+        ->before('wire:key="roster-')
+        ->toString();
+
+    expect($unpicked)->toContain('disabled="disabled"');
+});
+
+it('keeps offering a tick to the players already on the sheet', function (): void {
+    $this->interclub->update(['total_players' => 1]);
+
+    $html = Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->html();
+
+    $picked = str($html)->after('wire:key="roster-' . $this->interclub->id . '-' . $this->player1->id . '-1"')
+        ->before('wire:key="roster-')
+        ->toString();
+
+    expect($picked)->not->toContain('disabled="disabled"');
+});
+
+it('forgets an abandoned composition when the drawer is closed', function (): void {
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->assertSet('selectedPlayerIds', [$this->player1->id])
+        ->set('drawerSelection', false)
+        ->assertSet('selectedPlayerIds', [])
+        ->assertSet('selectedInterclubId', null);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Lot « correctifs » — l'écran dit ce qu'il a réellement envoyé
+|--------------------------------------------------------------------------
+|
+| Taking a player off a lineup that was already sent leaves it incomplete.
+| notifySelectionChange() then mails the removed players and returns before
+| anyone else is told — which is the right behaviour. But the button said
+| "Send to team" and the toast that followed said "Lineup sent to the whole
+| team! All team members have been notified." Both were false.
+|
+*/
+function armIncompleteUpdate(): Testable
+{
+    test()->interclub->update(['total_players' => 2]);
+    test()->interclub->select(test()->player1);
+    test()->interclub->select(test()->player2);
+    test()->interclub->users()->updateExistingPivot(test()->player1->id, ['selection_confirmed_at' => now()]);
+    test()->interclub->users()->updateExistingPivot(test()->player2->id, ['selection_confirmed_at' => now()]);
+
+    return Livewire::actingAs(test()->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', test()->interclub->id)
+        ->call('togglePlayer', test()->player1->id)
+        ->call('saveSelection');
+}
+
+it('labels the action for what it will actually do on an incomplete update', function (): void {
+    armIncompleteUpdate()
+        ->assertSet('isUpdateMode', true)
+        ->assertSee(trans_choice('Notify the removed player|Notify the :count removed players', 1, ['count' => 1]))
+        ->assertDontSee(__('Send to team'));
+});
+
+it('notifies nobody but the removed player on an incomplete update', function (): void {
+    Queue::fake();
+
+    armIncompleteUpdate()->call('sendLineupToTeam');
+
+    // The claim the old toast made — "all team members have been notified" —
+    // stated as what the queue actually carries.
+    Queue::assertPushed(SendInterclubPlayerRemovedJob::class, 1);
+    Queue::assertNotPushed(SendInterclubLineupBroadcastJob::class);
+    Queue::assertNotPushed(SendInterclubSelectionJob::class);
+});
+
+it('keeps promising a full send while the lineup is complete', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->assertSee(__('Send to team'))
+        ->assertDontSee(trans_choice('Notify the removed player|Notify the :count removed players', 1, ['count' => 1]));
+});
+
+/*
+|--------------------------------------------------------------------------
+| Lot « correctifs » — la ligne compte des réponses
+|--------------------------------------------------------------------------
+|
+| "3 dispo sur 4" put an availability count over the number of players to line
+| up. It reads as "3 of your 4 players answered available", which is not what
+| it says, and a captain reading it next to a red "Unavailable" badge in the
+| drawer concluded the unavailable one had been counted. The count was right;
+| the sentence was not.
+|
+*/
+it('counts answers against the roster, and names the available separately', function (): void {
+    $this->interclub->markAvailability($this->player1, InterclubAvailability::AVAILABLE);
+    $this->interclub->markAvailability($this->player2, InterclubAvailability::UNAVAILABLE);
+
+    // Roster of three: captain, player1, player2. Two answered, one is available.
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->assertSee(__(':responded of :total answered, :available available', [
+            'responded' => 2,
+            'total' => 3,
+            'available' => 1,
+        ]))
+        ->assertDontSee(__(':available available out of :max', ['available' => 1, 'max' => 4]));
+});
+
+/*
+|--------------------------------------------------------------------------
+| Lot « correctifs » — une seule ligne de roster par joueur
+|--------------------------------------------------------------------------
+|
+| markAvailability(), select() and the selection screen's save all write this
+| pivot with a read-then-attach, and nothing in the schema held them to it. Two
+| requests arriving together both find no row and both attach; from then on the
+| player is counted twice in every availability tally.
+|
+*/
+it('refuses a second roster row for the same player on the same fixture', function (): void {
+    $this->interclub->users()->attach($this->player1->id, ['is_selected' => true]);
+
+    expect(fn () => $this->interclub->users()->attach($this->player1->id, ['is_selected' => true]))
+        ->toThrow(UniqueConstraintViolationException::class);
+});
+
+it('still lets the same player be on the roster of two different fixtures', function (): void {
+    $other = Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $this->team->id,
+        'total_players' => 4,
+        'start_date_time' => now()->addDays(21),
+    ]);
+
+    $this->interclub->users()->attach($this->player1->id);
+    $other->users()->attach($this->player1->id);
+
+    expect($this->interclub->users()->count())->toBe(1)
+        ->and($other->users()->count())->toBe(1);
 });

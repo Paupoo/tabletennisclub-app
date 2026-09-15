@@ -149,6 +149,9 @@ class Team extends Model
         return $this->belongsTo(Season::class);
     }
 
+    /**
+     * @return BelongsToMany<User, $this, TeamUser, 'pivot'>
+     */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)->using(TeamUser::class);

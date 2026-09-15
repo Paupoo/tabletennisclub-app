@@ -62,6 +62,15 @@ new class extends Component
     #[Locked]
     public ?int $selectedInterclubId = null;
 
+    public ?int $selectedMatchDay = null;
+
+    /** @var array<int, int> */
+    public array $selectedPlayerIds = [];
+
+    public ?int $selectedSeasonId = null;
+
+    public ?int $selectedTeamId = null;
+
     /**
      * Which fixture the "notify the team" modal will mail.
      *
@@ -73,15 +82,6 @@ new class extends Component
      */
     #[Locked]
     public ?int $sendTargetId = null;
-
-    public ?int $selectedMatchDay = null;
-
-    /** @var array<int, int> */
-    public array $selectedPlayerIds = [];
-
-    public ?int $selectedSeasonId = null;
-
-    public ?int $selectedTeamId = null;
 
     /**
      * A season is a matrix of teams × match days. 'team' reads one row — a team,
@@ -1104,13 +1104,13 @@ new class extends Component
         $this->pendingRemovedIds = [];
     }
 
-    private function sendTarget(): ?Interclub
+    private function selectedInterclub(): ?Interclub
     {
-        if (! $this->sendTargetId) {
+        if (! $this->selectedInterclubId) {
             return null;
         }
 
-        $interclub = Interclub::find($this->sendTargetId);
+        $interclub = Interclub::find($this->selectedInterclubId);
 
         if ($interclub) {
             $this->authorizeInterclub($interclub);
@@ -1119,13 +1119,13 @@ new class extends Component
         return $interclub;
     }
 
-    private function selectedInterclub(): ?Interclub
+    private function sendTarget(): ?Interclub
     {
-        if (! $this->selectedInterclubId) {
+        if (! $this->sendTargetId) {
             return null;
         }
 
-        $interclub = Interclub::find($this->selectedInterclubId);
+        $interclub = Interclub::find($this->sendTargetId);
 
         if ($interclub) {
             $this->authorizeInterclub($interclub);

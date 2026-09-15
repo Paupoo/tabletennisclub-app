@@ -71,11 +71,9 @@ class InterclubAvailabilityService
     {
         $interclub->loadMissing(['visitedTeam', 'visitingTeam', 'visitedTeam.club', 'visitingTeam.club']);
 
-        if ($removedUserIds !== []) {
-            foreach ($removedUserIds as $userId) {
-                SendInterclubPlayerRemovedJob::dispatch($interclub->id, $userId);
-                $interclub->users()->updateExistingPivot($userId, ['selection_confirmed_at' => null]);
-            }
+        foreach ($removedUserIds as $userId) {
+            SendInterclubPlayerRemovedJob::dispatch($interclub->id, $userId);
+            $interclub->users()->updateExistingPivot($userId, ['selection_confirmed_at' => null]);
         }
 
         if (! $interclub->isSelectionComplete()) {

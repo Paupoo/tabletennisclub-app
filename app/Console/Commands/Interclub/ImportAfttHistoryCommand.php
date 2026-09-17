@@ -318,7 +318,7 @@ class ImportAfttHistoryCommand extends Command
             $this->line(sprintf(
                 '    #%d %s — %s vs %s',
                 $fixture->id,
-                $fixture->start_date_time?->format('d/m/Y') ?? '?',
+                $fixture->start_date_time->format('d/m/Y'),
                 $fixture->visitedTeam?->fullName() ?? '?',
                 $fixture->visitingTeam?->fullName() ?? '?',
             ));

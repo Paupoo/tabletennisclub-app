@@ -35,7 +35,13 @@ use Throwable;
  */
 class AfttResultsImporter
 {
-    /** @var array<string, array<int, string>> */
+    /**
+     * Two lists that are not the same shape: divisions are named once each,
+     * while a missing licence is keyed by itself so the same absent member
+     * cannot be reported once per tie they played.
+     *
+     * @var array{divisions_failed: array<int, string>, unknown_licences: array<string, string>}
+     */
     private array $report = [
         'divisions_failed' => [],
         'unknown_licences' => [],

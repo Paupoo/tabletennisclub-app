@@ -292,7 +292,10 @@ class ResultList extends Component
                 fn (Builder $q) => $q->where('start_at', '<', $currentSeason->start_at),
                 fn (Builder $q) => $q->where('start_at', '<', now())
             )
-            ->whereHas('teams', fn (Builder $q) => $q->inClub())
+            ->whereHas('teams', function (Builder $query): void {
+                /** @var Builder<Team> $query */
+                $query->inClub();
+            })
             ->get()
             ->when($currentSeason, fn (Collection $coll) => $coll->prepend($currentSeason));
     }

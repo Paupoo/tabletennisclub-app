@@ -38,6 +38,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int|null $season_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read InterclubResult|null $interclubResult
  * @property-read League|null $league
  * @property-read Room|null $room
  * @property-read Season|null $season
@@ -124,6 +125,9 @@ class Interclub extends Model
         return $this->hasMany(InterclubIndividualMatch::class);
     }
 
+    /**
+     * @return HasOne<InterclubResult, $this>
+     */
     public function interclubResult(): HasOne
     {
         return $this->hasOne(InterclubResult::class);

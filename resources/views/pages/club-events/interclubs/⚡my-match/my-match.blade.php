@@ -223,6 +223,10 @@
                         </div>
                     @endforeach
                 </div>
+            @elseif ($isPast && $tally->isNotEmpty())
+                {{-- Rien ici : les résultats individuels juste en dessous nomment
+                ceux qui ont joué. Annoncer qu'aucune composition n'a été
+                enregistrée au-dessus de la liste des joueurs se contredit. --}}
             @elseif ($isPast)
                 {{-- « pas encore » ne veut rien dire d'une rencontre de l'an dernier,
                 et le décompte des réponses n'intéresse plus personne. --}}
@@ -250,7 +254,37 @@
                 </div>
             @endif
 
-            @if ($isPast && $players->isNotEmpty())
+            {{-- Le relevé de la fédération quand il est arrivé, sinon les noms
+            que le club connaît. --}}
+            @if ($isPast && $tally->isNotEmpty())
+                {{-- Le filet ne se justifie que s'il sépare de quelque chose :
+                sans composition au-dessus, il doublait celui de la carte. --}}
+                <div @class(['mt-5 border-t border-base-300 pt-4' => $lineupPublished])>
+                    <p class="mb-3 text-xs font-bold uppercase tracking-wide text-base-content/50">
+                        {{ __('Individual results') }}
+                    </p>
+
+                    <div class="divide-y divide-base-200">
+                        @foreach ($tally as $row)
+                            <div class="flex items-center gap-3 py-2" wire:key="tally-{{ $loop->index }}">
+                                <span @class([
+                                    'min-w-0 flex-1 truncate text-sm',
+                                    'font-bold text-base-content' => $row['is_me'],
+                                    'text-base-content' => ! $row['is_me'],
+                                ])>{{ $row['label'] }}</span>
+
+                                @if ($row['is_me'])
+                                    <x-badge class="badge-primary badge-xs font-bold" :value="__('You')" />
+                                @endif
+
+                                <span class="shrink-0 text-sm font-bold tabular-nums text-base-content">
+                                    {{ $row['wins'] }}<span class="font-normal text-base-content/40">/{{ $row['played'] }}</span>
+                                </span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @elseif ($isPast && $players->isNotEmpty())
                 <div class="mt-5 border-t border-base-300 pt-4">
                     <p class="mb-2 text-xs font-bold uppercase tracking-wide text-base-content/50">
                         {{ __('Played that day') }}
@@ -298,6 +332,76 @@
             @endif
         </x-card>
     </div>
+
+    {{-- ── Feuille de match ───────────────────────────────────────────────── --}}
+    @if ($sheet->isNotEmpty())
+        <div class="mt-6" x-data="{ open: false }">
+            <button type="button"
+                class="flex w-full items-center gap-3 rounded-xl border border-base-300 bg-base-100 px-4 py-3 text-left transition-colors hover:bg-base-200/50"
+                @click="open = !open">
+                <x-icon name="o-table-cells" class="h-4 w-4 shrink-0 opacity-40" />
+                <span class="flex-1 text-sm font-bold">{{ __('Match sheet') }}</span>
+                <span class="text-xs opacity-40">{{ trans_choice(':count match|:count matches', $sheet->count()) }}</span>
+                <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200"
+                    ::class="open ? '' : '-rotate-90'" />
+            </button>
+
+            <div x-show="open" x-collapse>
+                {{-- Le seul tableau de la page : il déborde plutôt que de comprimer
+                les noms sur un téléphone. --}}
+                <div class="mt-3 overflow-x-auto rounded-xl border border-base-300">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th class="w-10">#</th>
+                                <th>{{ __('Our player') }}</th>
+                                <th>{{ __('Opponent') }}</th>
+                                <th class="text-right">{{ __('Sets') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($sheet as $line)
+                                <tr wire:key="sheet-{{ $line->id }}" @class(['bg-primary/5' => $line->user_id === auth()->id()])>
+                                    <td class="tabular-nums opacity-50">{{ $line->position }}</td>
+                                    <td>
+                                        @if ($line->is_double)
+                                            <span class="italic opacity-60">{{ __('Doubles') }}</span>
+                                        @else
+                                            <span @class(['font-bold' => $line->user_id === auth()->id()])>
+                                                {{ $line->user?->full_name ?? $line->our_player_name ?? '—' }}
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($line->is_double)
+                                            <span class="opacity-40">—</span>
+                                        @else
+                                            {{ $line->opponent_name ?? '—' }}
+                                            @if ($line->opponent_ranking)
+                                                <span class="opacity-50">({{ $line->opponent_ranking }})</span>
+                                            @endif
+                                        @endif
+                                    </td>
+                                    <td class="whitespace-nowrap text-right tabular-nums">
+                                        @if ($line->is_forfeit)
+                                            <span class="text-xs italic opacity-60">{{ __('Forfeit') }}</span>
+                                        @else
+                                            {{ $line->setScore() ?? '—' }}
+                                        @endif
+                                        <x-icon :name="$line->we_won ? 'o-check' : 'o-x-mark'" @class([
+                                            'ml-1 inline h-4 w-4 align-text-bottom',
+                                            'text-success' => $line->we_won,
+                                            'text-error' => ! $line->we_won,
+                                        ]) />
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- ── Note de disponibilité ──────────────────────────────────────────── --}}
     <x-app-modal wire:model="noteModal" :title="__('Add a note for your captain')" :open="$noteModal" separator>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
 use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -262,4 +263,89 @@ it('lists played matches on the personal match list, which only held future ones
     expect($played_ids)->toBe([$played->id])
         ->and($played_ids)->not->toContain($upcoming->id)
         ->and($component->viewData('played')->first()['score'])->toBe('9-7');
+});
+
+it('counts wins from the sheet, with the double on its own line', function (): void {
+    $match = aMatch(-7);
+    $mate = User::factory()->create();
+    $this->team->users()->attach($mate->id);
+
+    // Nine singles and a double, as a veterans tie is played.
+    foreach ([1, 2, 3] as $position) {
+        InterclubIndividualMatch::factory()->create([
+            'interclub_id' => $match->id, 'position' => $position,
+            'user_id' => $this->player->id, 'we_won' => true,
+        ]);
+    }
+    foreach ([4, 5, 6] as $position) {
+        InterclubIndividualMatch::factory()->create([
+            'interclub_id' => $match->id, 'position' => $position,
+            'user_id' => $mate->id, 'we_won' => $position !== 4,
+        ]);
+    }
+    InterclubIndividualMatch::factory()->double()->create([
+        'interclub_id' => $match->id, 'we_won' => true,
+    ]);
+
+    $tally = Livewire::actingAs($this->player)
+        ->test('pages::club-events.interclubs.my-match', ['interclub' => $match])
+        ->viewData('tally');
+
+    expect($tally)->toHaveCount(3);
+
+    $mine = $tally->firstWhere('is_me', true);
+    expect($mine['wins'])->toBe(3)
+        ->and($mine['played'])->toBe(3);
+
+    $double = $tally->last();
+    expect($double['label'])->toBe(__('Doubles'))
+        ->and($double['wins'])->toBe(1);
+
+    // The column has to add up to the team score, which is why the double is there.
+    expect($tally->sum('wins'))->toBe(6);
+});
+
+it('keeps an unmatched player visible in the tally under their federation name', function (): void {
+    $match = aMatch(-7);
+    InterclubIndividualMatch::factory()->unmatchedPlayer()->create([
+        'interclub_id' => $match->id, 'position' => 1,
+        'our_player_name' => 'JEAN INCONNU', 'we_won' => true,
+    ]);
+
+    $tally = Livewire::actingAs($this->player)
+        ->test('pages::club-events.interclubs.my-match', ['interclub' => $match])
+        ->viewData('tally');
+
+    expect($tally->pluck('label')->all())->toContain('JEAN INCONNU');
+});
+
+it('shows the full sheet with opponents and rankings', function (): void {
+    $match = aMatch(-7);
+    InterclubIndividualMatch::factory()->create([
+        'interclub_id' => $match->id, 'position' => 1,
+        'user_id' => $this->player->id,
+        'opponent_name' => 'GILLES WAUTHOZ', 'opponent_ranking' => 'C4',
+        'our_sets' => 3, 'their_sets' => 1, 'we_won' => true,
+    ]);
+
+    Livewire::actingAs($this->player)
+        ->test('pages::club-events.interclubs.my-match', ['interclub' => $match])
+        ->assertSee(__('Match sheet'))
+        ->assertSee('GILLES WAUTHOZ')
+        ->assertSee('C4')
+        ->assertSee('3-1');
+});
+
+it('falls back to who played when no sheet has been imported', function (): void {
+    $match = aMatch(-7);
+    $match->users()->attach($this->player->id, ['is_selected' => true, 'has_played' => true]);
+
+    $component = Livewire::actingAs($this->player)
+        ->test('pages::club-events.interclubs.my-match', ['interclub' => $match]);
+
+    expect($component->viewData('tally'))->toBeEmpty()
+        ->and($component->viewData('sheet'))->toBeEmpty();
+
+    $component->assertSee(__('Played that day'))
+        ->assertDontSee(__('Match sheet'));
 });

@@ -4803,5 +4803,8 @@
     "Loss by forfeit": "Verlies door forfait",
     "Away match": "Wedstrijd op verplaatsing",
     "Line-up: :players": "Opstelling: :players",
-    "No line-up was recorded for this match.": "Er werd geen opstelling geregistreerd voor deze wedstrijd."
+    "No line-up was recorded for this match.": "Er werd geen opstelling geregistreerd voor deze wedstrijd.",
+    "Individual results": "Individuele uitslagen",
+    "Our player": "Onze speler",
+    ":count match|:count matches": ":count wedstrijd|:count wedstrijden"
 }

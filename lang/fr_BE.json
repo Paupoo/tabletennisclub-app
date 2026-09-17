@@ -4803,5 +4803,8 @@
     "Loss by forfeit": "Défaite par forfait",
     "Away match": "Match en déplacement",
     "Line-up: :players": "Composition : :players",
-    "No line-up was recorded for this match.": "Aucune composition n'a été enregistrée pour cette rencontre."
+    "No line-up was recorded for this match.": "Aucune composition n'a été enregistrée pour cette rencontre.",
+    "Individual results": "Résultats individuels",
+    "Our player": "Notre joueur",
+    ":count match|:count matches": ":count rencontre|:count rencontres"
 }

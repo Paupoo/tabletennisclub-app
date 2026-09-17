@@ -6,6 +6,7 @@ namespace Resources\views\Pages\ClubEvents\Interclubs\MyMatch;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
 use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubAvailability;
@@ -143,6 +144,8 @@ new class extends Component
             'myNote' => $registration?->availability_note,
             'opponent' => $opponent,
             'players' => $isPast ? $this->playersWhoPlayed($interclub) : collect(),
+            'sheet' => $isPast ? $this->matchSheet($interclub) : collect(),
+            'tally' => $isPast ? $this->winTally($interclub) : collect(),
             'result' => $result,
             'resultLabel' => $this->resultLabel($result),
             'score' => $this->scoreFromOurSide($result, $isHome),
@@ -227,14 +230,6 @@ new class extends Component
         ])->findOrFail($this->interclubId);
     }
 
-    private function myRegistration(): ?object
-    {
-        return $this->interclub()
-            ->users()
-            ->where('users.id', Auth::id())
-            ->first()?->registration;
-    }
-
     /**
      * Who actually turned out, once a result has been recorded.
      *
@@ -244,6 +239,27 @@ new class extends Component
      *
      * @return Collection<int, User>
      */
+    /**
+     * Every line of the federation's sheet, ours first, in playing order.
+     *
+     * @return Collection<int, InterclubIndividualMatch>
+     */
+    private function matchSheet(Interclub $interclub): Collection
+    {
+        return InterclubIndividualMatch::with('user')
+            ->where('interclub_id', $interclub->id)
+            ->orderBy('position')
+            ->get();
+    }
+
+    private function myRegistration(): ?object
+    {
+        return $this->interclub()
+            ->users()
+            ->where('users.id', Auth::id())
+            ->first()?->registration;
+    }
+
     private function playersWhoPlayed(Interclub $interclub): Collection
     {
         $played = $interclub->users()->wherePivot('has_played', true)->get();
@@ -280,5 +296,55 @@ new class extends Component
         [$home, $away] = array_map(intval(...), explode('-', $result->score, 2));
 
         return $isHome ? "{$home}-{$away}" : "{$away}-{$home}";
+    }
+
+    /**
+     * How many each of our players won, plus the lines no player owns.
+     *
+     * Counted from the sheet rather than read from the federation's own
+     * per-player total, which leaves out the double and is simply absent for a
+     * player who forfeited — three names adding up to 8 under a 9-1 scoreline
+     * is the kind of arithmetic a reader checks and stops trusting.
+     *
+     * The double and any forfeited line therefore get a row of their own, so
+     * the column adds up to the team score.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function winTally(Interclub $interclub): Collection
+    {
+        $lines = $this->matchSheet($interclub);
+
+        if ($lines->isEmpty()) {
+            return collect();
+        }
+
+        $named = $lines
+            ->filter(fn (InterclubIndividualMatch $line): bool => ! $line->is_double
+                && ($line->user_id !== null || $line->our_player_name !== null))
+            ->groupBy(fn (InterclubIndividualMatch $line): string => $line->user_id
+                ? 'u' . $line->user_id
+                : 'x' . $line->our_player_licence)
+            ->map(fn (Collection $group): array => [
+                'is_me' => $group->first()->user_id === Auth::id(),
+                'label' => $group->first()->user?->full_name ?? $group->first()->our_player_name,
+                'played' => $group->count(),
+                'wins' => $group->where('we_won', true)->count(),
+            ])
+            ->sortByDesc('wins')
+            ->values();
+
+        $doubleWins = $lines->where('is_double', true)->where('we_won', true)->count();
+
+        if ($lines->contains('is_double', true)) {
+            $named->push([
+                'is_me' => false,
+                'label' => __('Doubles'),
+                'played' => $lines->where('is_double', true)->count(),
+                'wins' => $doubleWins,
+            ]);
+        }
+
+        return $named;
     }
 };

@@ -146,3 +146,33 @@ it('finds a member through compound-name search', function (): void {
         ->assertSee('Van Oudenhove')
         ->assertDontSee('Martin');
 });
+
+it('lists the members surname first, in alphabetical order', function (): void {
+    $viewer = activeMember($this->season, ['first_name' => 'Ana', 'last_name' => 'Aardvark']);
+    activeMember($this->season, ['first_name' => 'Zoe', 'last_name' => 'Bernard']);
+    activeMember($this->season, ['first_name' => 'Bob', 'last_name' => 'Zorro']);
+    activeMember($this->season, ['first_name' => 'Yves', 'last_name' => 'Martin']);
+
+    // Le tri portait déjà sur le nom, mais la carte affichait « Prénom Nom » :
+    // l'annuaire se lisait comme une liste au hasard. L'ordre des noms de
+    // famille doit être visible dans le rendu, pas seulement dans la requête.
+    Livewire::actingAs($viewer)
+        ->test(DIRECTORY_COMPONENT, ['user' => $viewer])
+        ->assertSeeInOrder(['Aardvark', 'Ana', 'Bernard', 'Zoe', 'Martin', 'Yves', 'Zorro', 'Bob']);
+});
+
+it('keeps two members of the same name on a stable page', function (): void {
+    $viewer = activeMember($this->season);
+
+    // Sans départage par id, MySQL est libre de renvoyer deux homonymes dans un
+    // ordre différent d'une page à l'autre : l'un se dédouble, l'autre disparaît.
+    foreach (range(1, 3) as $ignored) {
+        activeMember($this->season, ['first_name' => 'Loïc', 'last_name' => 'Goossens']);
+    }
+
+    $component = Livewire::actingAs($viewer)->test(DIRECTORY_COMPONENT, ['user' => $viewer]);
+
+    expect($component->get('members')->pluck('id')->all())
+        ->toBe($component->get('members')->sortBy(['last_name', 'first_name', 'id'])->pluck('id')->all());
+});
+

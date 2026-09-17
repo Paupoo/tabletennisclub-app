@@ -38,7 +38,11 @@
                     <div class="flex items-center gap-3">
                         <x-avatar :image="$member->photo ?? '/images/empty-user.jpg'" class="!w-11 !rounded-full" />
                         <div class="min-w-0">
-                            <p class="truncate font-semibold">{{ $member->first_name }} {{ $member->last_name }}</p>
+                            {{-- Surname first, so the alphabetical order of the grid reads at a glance. --}}
+                            <p class="truncate">
+                                <span class="font-semibold">{{ $member->last_name }}</span>
+                                <span class="text-base-content/70">{{ $member->first_name }}</span>
+                            </p>
                             <div class="mt-0.5 flex items-center gap-2 text-xs text-base-content/60">
                                 <span class="font-mono">{{ $member->ranking->getLabel() }}</span>
                                 @if ($member->force_list)
@@ -94,6 +98,7 @@
                             {{ __('No shared contact details') }}
                         </p>
                     @endif
+
                 </div>
             @endforeach
         </div>

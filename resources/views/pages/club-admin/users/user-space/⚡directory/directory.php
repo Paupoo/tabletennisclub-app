@@ -67,8 +67,10 @@ new class extends Component
     }
 
     /**
-     * Active members of the current season (competitive + recreational), ordered
-     * by name. Contact fields are filtered per member in the view via
+     * Active members of the current season (competitive + recreational), in the
+     * alphabetical order the cards read in: surname, then first name, with the
+     * id closing the sort so homonyms cannot swap places between two pages.
+     * Contact fields are filtered per member in the view via
      * {@see User::contactVisibleTo()} — never queried out here.
      *
      * @return LengthAwarePaginator<int, User>
@@ -86,6 +88,7 @@ new class extends Component
             ->with(['teams:id,name,league_id', 'teams.league:id,category'])
             ->orderBy('last_name')
             ->orderBy('first_name')
+            ->orderBy('users.id')
             ->paginate(24);
     }
 

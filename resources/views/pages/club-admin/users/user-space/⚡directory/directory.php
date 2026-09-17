@@ -71,7 +71,8 @@ new class extends Component
      * alphabetical order the cards read in: surname, then first name, with the
      * id closing the sort so homonyms cannot swap places between two pages.
      * Contact fields are filtered per member in the view via
-     * {@see User::contactVisibleTo()} — never queried out here.
+     * {@see User::contactVisibleTo()} — never queried out here, and that includes
+     * the guardian details standing in for a minor's own.
      *
      * @return LengthAwarePaginator<int, User>
      */
@@ -85,7 +86,9 @@ new class extends Component
                 'teams',
                 fn (EloquentBuilder $t) => $t->where('teams.id', $this->teamFilter)
             ))
-            ->with(['teams:id,name,league_id', 'teams.league:id,category'])
+            // `guardians` est lu par la carte de chaque mineur : sans eager loading,
+            // le mode strict lève une LazyLoadingViolation dès la deuxième ligne.
+            ->with(['teams:id,name,league_id', 'teams.league:id,category', 'guardians'])
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->orderBy('users.id')

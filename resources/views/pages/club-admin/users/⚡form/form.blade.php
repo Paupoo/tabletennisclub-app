@@ -70,7 +70,7 @@
 
             <!-- Section Guardian / Legal representatives -->
             <div class="col-span-6 md:col-span-2">
-                <x-header :subtitle="__('Required for minors (under 18)')" :title="__('Legal guardians')" />
+                <x-header :subtitle="__('Required for minors (under 18)')" :title="__('Responsible adults')" />
             </div>
             <div class="col-span-6 md:col-span-4 space-y-4">
 

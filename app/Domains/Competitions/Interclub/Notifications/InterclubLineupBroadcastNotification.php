@@ -29,7 +29,7 @@ class InterclubLineupBroadcastNotification extends Notification
         return [
             'title' => __('Line-up published'),
             'body' => __('See the match details'),
-            'url' => route('admin.interclubs.my-matches'),
+            'url' => route('admin.interclubs.my-match', $this->interclub),
             'category' => 'interclub',
             'icon' => 'o-user-group',
         ];
@@ -73,6 +73,7 @@ class InterclubLineupBroadcastNotification extends Notification
                 'category' => $category,
                 'captainMessage' => $this->captainMessage,
                 'isUpdate' => $this->isUpdate,
+                'url' => route('admin.interclubs.my-match', $interclub),
             ]);
     }
 

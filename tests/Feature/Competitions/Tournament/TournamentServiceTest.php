@@ -14,7 +14,6 @@ use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConf
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistSpotOpenedNotification;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 
@@ -103,16 +102,19 @@ describe('registerUser', function (): void {
     it('sets the payment deadline to the registration-close date for a normal sign-up', function (): void {
         Notification::fake();
         Event::fake();
+        // Dates relatives, comme les cas voisins : figées au 15/09/2026, elles
+        // sont passées depuis le 16 et le test bascule alors sur la règle de
+        // l'inscription tardive — il ne vérifiait plus ce qu'il annonce.
         $tournament = paymentTournament([
             'price' => 10,
-            'registration_deadline' => Carbon::create(2026, 9, 15, 12),
-            'start_date' => Carbon::create(2026, 9, 20, 10),
+            'registration_deadline' => now()->addDays(5)->setTime(12, 0),
+            'start_date' => now()->addDays(10)->setTime(10, 0),
         ]);
 
         (new TournamentService)->registerUser($tournament, User::factory()->create());
 
         expect(TournamentRegistration::first()->payment_deadline->format('Y-m-d H:i:s'))
-            ->toBe('2026-09-15 23:59:59');
+            ->toBe(now()->addDays(5)->format('Y-m-d') . ' 23:59:59');
     });
 
     it('gives a late sign-up 3 days to pay, not the past registration date', function (): void {

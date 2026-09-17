@@ -113,6 +113,13 @@ it('reads the pack levels on the member event page without a lazy load', functio
 })->group('training');
 
 it('reads the pack levels on the coach screen without a lazy load', function (): void {
+    // Les séances doivent être à venir : le niveau n'est rendu que par la liste
+    // « À venir », jamais par celle des séances à pointer. Ancrées au 15 du mois
+    // pour la grille du calendrier, elles basculaient dans le passé à partir du
+    // 16 et l'assertion tombait — un test qui ne passait que la moitié du mois.
+    Training::whereIn('training_pack_id', [$this->packA->id, $this->packB->id])
+        ->update(['start' => now()->addDays(3)->setTime(18, 0), 'end' => now()->addDays(3)->setTime(19, 30)]);
+
     Livewire::actingAs($this->coach)
         ->test('pages::club-events.trainings.coach')
         ->assertOk()

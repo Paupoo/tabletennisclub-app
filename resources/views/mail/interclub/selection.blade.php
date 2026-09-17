@@ -32,5 +32,9 @@
 </div>
 @endif
 
+<x-mail::button :url="$url">
+{{ __('See the match') }}
+</x-mail::button>
+
 {{ __('See you on the court!') }}
 </x-mail::message>

@@ -6,6 +6,7 @@ namespace App\Policies;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
 use App\Domains\Shared\Enums\Permission;
 
 /**
@@ -65,5 +66,53 @@ class InterclubPolicy
     public function viewAny(User $user): bool
     {
         return $user->can(Permission::InterclubsView->value);
+    }
+
+    /**
+     * Opening one fixture's own page.
+     *
+     * Wider than {@see view()}, which gates the club-wide fixture management
+     * screens behind a délégation. This page is where a player lands from
+     * "you are selected", so the roster has to grant it — and the id is in the
+     * URL, so something has to refuse it. Three groups may look: whoever plays
+     * for either side, whoever captains either side, and the délégations that
+     * already see every fixture elsewhere.
+     *
+     * Roster membership *or* a row on the fixture: a member who answered and
+     * then left the team still has an answer on this match, and reading their
+     * own page back should not 403.
+     */
+    public function viewMatchPage(User $user, Interclub $interclub): bool
+    {
+        if ($user->canAny([
+            Permission::InterclubsManage->value,
+            Permission::SelectionsManage->value,
+            Permission::ResultsManage->value,
+        ])) {
+            return true;
+        }
+
+        if ($interclub->isCaptainedBy($user)) {
+            return true;
+        }
+
+        $teamIds = array_filter([$interclub->visited_team_id, $interclub->visiting_team_id]);
+
+        $playsForEitherSide = $teamIds !== [] && $user->teams()
+            ->whereIn('teams.id', $teamIds)
+            ->exists();
+
+        if ($playsForEitherSide) {
+            return true;
+        }
+
+        // Having played it is the strongest claim of all, and the only one a
+        // member keeps on a season imported from the federation: those team
+        // rows arrive empty, because the federation publishes its own teams and
+        // never our roster. The match sheet, which it does publish, names them.
+        return $interclub->users()->where('users.id', $user->id)->exists()
+            || InterclubIndividualMatch::where('interclub_id', $interclub->id)
+                ->where('user_id', $user->id)
+                ->exists();
     }
 }

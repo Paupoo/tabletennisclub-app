@@ -38,7 +38,11 @@
                     <div class="flex items-center gap-3">
                         <x-avatar :image="$member->photo ?? '/images/empty-user.jpg'" class="!w-11 !rounded-full" />
                         <div class="min-w-0">
-                            <p class="truncate font-semibold">{{ $member->first_name }} {{ $member->last_name }}</p>
+                            {{-- Surname first, so the alphabetical order of the grid reads at a glance. --}}
+                            <p class="truncate">
+                                <span class="font-semibold">{{ $member->last_name }}</span>
+                                <span class="text-base-content/70">{{ $member->first_name }}</span>
+                            </p>
                             <div class="mt-0.5 flex items-center gap-2 text-xs text-base-content/60">
                                 <span class="font-mono">{{ $member->ranking->getLabel() }}</span>
                                 @if ($member->force_list)
@@ -66,6 +70,24 @@
                     @php $showEmail = $member->email && $member->contactVisibleTo($viewer, 'email'); @endphp
                     @php $showAddress = filled($member->street) && $member->contactVisibleTo($viewer, 'address'); @endphp
 
+                    @php
+                        // Un mineur se joint par son tuteur : c'est souvent la seule
+                        // coordonnée qui existe, l'enfant n'ayant ni ligne ni boîte mail.
+                        $guardian = $member->isMinor() ? $member->guardians->first() : null;
+                        $guardianName = $guardian ? trim($guardian->first_name . ' ' . $guardian->last_name) : null;
+                        // Le numéro vit à deux endroits et la plupart des mineurs n'ont
+                        // aucun Guardian lié : la colonne portée par la fiche du membre
+                        // fait le reste (même lecture que l'écran coach).
+                        $guardianPhone = $member->isMinor() ? ($guardian?->phone ?: $member->guardian_phone_number) : null;
+                        $guardianEmail = $guardian?->email;
+                        // C'est le consentement du pupille qui commande : les coordonnées
+                        // du tuteur tiennent lieu des siennes, et les publier plus
+                        // largement que les siennes exposerait un tiers qui n'a rien coché.
+                        $showGuardianPhone = $guardianPhone && $member->contactVisibleTo($viewer, 'phone');
+                        $showGuardianEmail = $guardianEmail && $member->contactVisibleTo($viewer, 'email');
+                        $showGuardian = $showGuardianPhone || $showGuardianEmail;
+                    @endphp
+
                     @if ($showPhone || $showEmail || $showAddress)
                         <div class="mt-1 space-y-1.5 border-t border-base-300 pt-3 text-sm">
                             @if ($showPhone)
@@ -89,10 +111,38 @@
                                 </p>
                             @endif
                         </div>
-                    @else
+                    @elseif (! $showGuardian)
                         <p class="mt-1 border-t border-base-300 pt-3 text-xs text-base-content/40">
                             {{ __('No shared contact details') }}
                         </p>
+                    @endif
+
+                    {{-- Responsible adult — for a minor this is who the club actually calls. --}}
+                    @if ($showGuardian)
+                        <div class="mt-1 rounded-lg bg-base-200/60 p-3 text-sm">
+                            <p class="text-xs font-bold uppercase tracking-widest text-muted">
+                                {{ __('Responsible adult') }}
+                            </p>
+                            @if ($guardianName)
+                                <p class="mt-1 truncate font-medium">{{ $guardianName }}</p>
+                            @endif
+                            <div class="mt-1 space-y-1.5">
+                                @if ($showGuardianPhone)
+                                    <a href="tel:{{ $guardianPhone }}"
+                                        class="flex items-center gap-2 text-base-content/80 hover:text-primary">
+                                        <x-icon name="o-phone" class="size-4 shrink-0 text-base-content/40" />
+                                        <span class="truncate">{{ $guardianPhone }}</span>
+                                    </a>
+                                @endif
+                                @if ($showGuardianEmail)
+                                    <a href="mailto:{{ $guardianEmail }}"
+                                        class="flex items-center gap-2 text-base-content/80 hover:text-primary">
+                                        <x-icon name="o-envelope" class="size-4 shrink-0 text-base-content/40" />
+                                        <span class="truncate">{{ $guardianEmail }}</span>
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
                     @endif
                 </div>
             @endforeach

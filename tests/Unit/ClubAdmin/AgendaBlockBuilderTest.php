@@ -7,6 +7,7 @@ use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Meetings\Models\Meeting;
@@ -73,7 +74,14 @@ describe('AgendaBlockBuilder', function (): void {
         ];
 
         Interclub::factory()->count(2)->create([...$fixture, 'start_date_time' => now()->addWeek()]);
-        Interclub::factory()->create([...$fixture, 'start_date_time' => now()->subWeek(), 'result' => InterclubResultEnum::WIN->value, 'score' => '9-7']);
+        $played = Interclub::factory()->create([...$fixture, 'start_date_time' => now()->subWeek()]);
+
+        // Through the row the results screen actually writes. This used to set
+        // `interclubs.result` and `interclubs.score` on the fixture itself —
+        // columns nothing in the application has ever written — so the test
+        // passed while the block it covers never appeared for a single user.
+        InterclubResult::where('interclub_id', $played->id)
+            ->update(['result' => InterclubResultEnum::WIN->value, 'score' => '9-7']);
 
         $block = collect(app(AgendaBlockBuilder::class)->for(User::factory()->create()))->firstWhere('key', 'interclubs');
 

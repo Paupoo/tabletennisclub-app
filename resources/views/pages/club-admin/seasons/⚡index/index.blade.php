@@ -21,10 +21,16 @@
 
     {{-- ── Season list ─────────────────────────────────────────────────────── --}}
     <div class="mt-2 space-y-3">
+        {{-- Dessiné comme un bouton, pas comme une légende. Tant que le club
+        n'avait qu'une saison passée, ce texte gris centré ne cachait rien ;
+        depuis que l'archive de la fédération s'importe il en cache une dizaine,
+        et c'est le seul chemin vers elles. --}}
         @if (! $showAllPastSeasons && $hiddenPastCount > 0)
-            <button class="w-full py-2 text-center text-sm text-base-content/40 transition hover:text-base-content/70"
+            <button type="button"
+                class="flex w-full items-center justify-center gap-2 rounded-xl border border-base-300 bg-base-100 py-2.5 text-sm font-semibold text-base-content/70 transition-colors hover:border-primary hover:text-primary"
                 wire:click="$set('showAllPastSeasons', true)">
-                {{ __(':count older seasons hidden — click to show all', ['count' => $hiddenPastCount]) }}
+                <x-icon name="o-chevron-up" class="h-4 w-4" />
+                {{ trans_choice(':count older season hidden — show it|:count older seasons hidden — show them', $hiddenPastCount, ['count' => $hiddenPastCount]) }}
             </button>
         @endif
 
@@ -95,8 +101,10 @@
         @endforelse
 
         @if ($showAllPastSeasons && $pastCount > 1)
-            <button class="w-full py-2 text-center text-sm text-base-content/40 transition hover:text-base-content/70"
+            <button type="button"
+                class="flex w-full items-center justify-center gap-2 rounded-xl border border-base-300 bg-base-100 py-2.5 text-sm font-semibold text-base-content/70 transition-colors hover:border-primary hover:text-primary"
                 wire:click="$set('showAllPastSeasons', false)">
+                <x-icon name="o-chevron-down" class="h-4 w-4" />
                 {{ __('Collapse past seasons') }}
             </button>
         @endif

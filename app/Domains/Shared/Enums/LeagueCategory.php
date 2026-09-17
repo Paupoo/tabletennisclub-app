@@ -11,6 +11,24 @@ enum LeagueCategory: string
     case WOMEN = 'Women';
 
     /**
+     * The federation's own category code, as TabT numbers divisions.
+     *
+     * Lives here rather than in the importer because two different callers now
+     * need it: the calendar import, which decides whether a division concerns
+     * us at all, and the fixture matcher, which has only a category to tell
+     * apart an "A" team in men from an "A" team in veterans.
+     */
+    public static function fromFederationCategory(int $code): ?self
+    {
+        return match ($code) {
+            37 => self::MEN,
+            3 => self::VETERANS,
+            38 => self::WOMEN,
+            default => null,
+        };
+    }
+
+    /**
      * Resolve a raw database value: leagues store the case *name*
      * ('MEN', 'VETERANS', 'WOMEN'), not the backed value.
      */

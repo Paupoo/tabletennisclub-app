@@ -111,7 +111,7 @@ describe('training pack wizard', function (): void {
         // le comité à gonfler max_participants, ce qui casserait la file pour de bon.
         Livewire::actingAs($this->admin)
             ->test('pages::club-events.trainings.index')
-            ->call('viewSessions', $pack->id)
+            ->call('openPack', $pack->id)
             ->set('addMemberUserId', $latecomer->user_id)
             ->call('addMemberToPack');
 
@@ -131,7 +131,7 @@ describe('training pack wizard', function (): void {
         // accès et le titulaire n'y était pas.
         Livewire::actingAs($this->admin)
             ->test('pages::club-events.trainings.index')
-            ->call('viewSessions', $pack->id)
+            ->call('openPack', $pack->id)
             ->call('reassignSessionCoach', $session->id, $standIn->id);
 
         expect($session->fresh()->trainer_id)->toBe($standIn->id)
@@ -155,7 +155,7 @@ describe('the attendance matrix on the pack screen', function (): void {
 
         $component = Livewire::actingAs($this->admin)
             ->test('pages::club-events.trainings.index')
-            ->call('viewSessions', $pack->id);
+            ->call('openPack', $pack->id);
 
         expect($component->get('attendanceMatrix')['sessions'])->toHaveCount(12);
 
@@ -180,7 +180,7 @@ describe('the attendance matrix on the pack screen', function (): void {
         // se voit pas sur les données du composant.
         Livewire::actingAs($this->admin)
             ->test('pages::club-events.trainings.index')
-            ->call('viewSessions', $pack->id)
+            ->call('openPack', $pack->id)
             ->assertOk()
             ->assertSee($member->user->last_name)
             ->assertSee('100%');

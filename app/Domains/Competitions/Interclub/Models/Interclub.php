@@ -27,11 +27,10 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 /**
  * @property int $id
  * @property string $address
+ * @property string|null $captain_message
  * @property \Illuminate\Support\Carbon $start_date_time
  * @property int|null $week_number
  * @property int $total_players
- * @property string|null $score
- * @property string|null $result
  * @property int|null $visited_team_id
  * @property int|null $visiting_team_id
  * @property int|null $room_id
@@ -39,9 +38,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int|null $season_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read InterclubResult|null $interclubResult
  * @property-read League|null $league
  * @property-read Room|null $room
  * @property-read Season|null $season
+ * @property-read Collection<int, InterclubIndividualMatch> $individualMatches
  * @property-read Collection<int, Team> $teams
  * @property-read int|null $teams_count
  * @property-read Collection<int, User> $users
@@ -54,12 +55,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @method static Builder<static>|Interclub newQuery()
  * @method static Builder<static>|Interclub query()
  * @method static Builder<static>|Interclub whereAddress($value)
+ * @method static Builder<static>|Interclub whereCaptainMessage($value)
  * @method static Builder<static>|Interclub whereCreatedAt($value)
  * @method static Builder<static>|Interclub whereId($value)
  * @method static Builder<static>|Interclub whereLeagueId($value)
- * @method static Builder<static>|Interclub whereResult($value)
  * @method static Builder<static>|Interclub whereRoomId($value)
- * @method static Builder<static>|Interclub whereScore($value)
  * @method static Builder<static>|Interclub whereSeasonId($value)
  * @method static Builder<static>|Interclub whereStartDateTime($value)
  * @method static Builder<static>|Interclub whereTotalPlayers($value)
@@ -85,10 +85,9 @@ class Interclub extends Model
     protected $fillable = [
         'address',
         'aftt_match_id',
+        'captain_message',
         'is_bye',
         'league_id',
-        'result',
-        'score',
         'season_id',
         'start_date_time',
         'round_number',
@@ -121,6 +120,14 @@ class Interclub extends Model
             ->toArray();
     }
 
+    public function individualMatches(): HasMany
+    {
+        return $this->hasMany(InterclubIndividualMatch::class);
+    }
+
+    /**
+     * @return HasOne<InterclubResult, $this>
+     */
     public function interclubResult(): HasOne
     {
         return $this->hasOne(InterclubResult::class);
@@ -151,6 +158,23 @@ class Interclub extends Model
         return (bool) $this->visitedTeam?->club?->is_own_club;
     }
 
+    /**
+     * Whether the captain has published a lineup for this fixture.
+     *
+     * Not `is_selected`, which the selection screen writes the moment a captain
+     * drags a name in and which therefore describes a draft nobody has been
+     * told about. `selection_confirmed_at` is stamped by the service that sends
+     * the mails, so it is the only column that means "the team knows".
+     *
+     * Asked of the fixture rather than of one player: a player dropped from a
+     * published lineup has their own stamp cleared, and the lineup is still
+     * published for everyone else.
+     */
+    public function isLineupPublished(): bool
+    {
+        return $this->users()->wherePivotNotNull('selection_confirmed_at')->exists();
+    }
+
     public function league(): BelongsTo
     {
         return $this->belongsTo(League::class);
@@ -168,6 +192,28 @@ class Interclub extends Model
         $this->loadMissing(['visitedTeam.club', 'visitingTeam.club']);
 
         return $this->isHome() ? $this->visitedTeam : $this->visitingTeam;
+    }
+
+    /**
+     * The side of this fixture the given member plays on.
+     *
+     * Deliberately not {@see ourTeam()}, which answers "which side is the
+     * club's" and has no opinion when both are. Two of our teams meeting in the
+     * same division is rare but legal, and on that day `ourTeam()` names the
+     * home one for everybody — telling half the players they are at home when
+     * they are the visitors. The roster is what settles it.
+     */
+    public function playerTeam(User $user): ?Team
+    {
+        $this->loadMissing(['visitedTeam.users', 'visitingTeam.users']);
+
+        foreach ([$this->visitedTeam, $this->visitingTeam] as $team) {
+            if ($team?->users->contains('id', $user->id)) {
+                return $team;
+            }
+        }
+
+        return null;
     }
 
     public function room(): BelongsTo

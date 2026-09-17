@@ -6,6 +6,7 @@ namespace App\Domains\Competitions\Interclub\Notifications;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Services\IcsGenerator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -25,7 +26,7 @@ class InterclubSelectionNotification extends Notification
         return [
             'title' => __('You are selected'),
             'body' => __('See the match details'),
-            'url' => route('admin.interclubs.my-matches'),
+            'url' => route('admin.interclubs.my-match', $this->interclub),
             'category' => 'interclub',
             'icon' => 'o-user-group',
         ];
@@ -45,7 +46,7 @@ class InterclubSelectionNotification extends Notification
         $address = $interclub->room?->address ?? $interclub->address ?? '—';
         $selectedPlayers = $interclub->getSelectedPlayers();
 
-        $ics = $this->buildIcs($interclub, $opponent, $ourTeamName, $interclub->room?->address ?? $interclub->address ?? '');
+        $ics = app(IcsGenerator::class)->forInterclub($interclub, $notifiable instanceof User ? $notifiable : null);
 
         return (new MailMessage)
             ->subject(__('Interclub — You are selected for :team on :date', [
@@ -62,6 +63,7 @@ class InterclubSelectionNotification extends Notification
                 'selectedPlayers' => $selectedPlayers,
                 'category' => $category,
                 'captainMessage' => $this->captainMessage,
+                'url' => route('admin.interclubs.my-match', $interclub),
             ])
             ->attachData($ics, 'interclub.ics', ['mime' => 'text/calendar']);
     }
@@ -75,56 +77,5 @@ class InterclubSelectionNotification extends Notification
         }
 
         return ['mail', 'database'];
-    }
-
-    private function buildIcs(Interclub $interclub, string $opponent, string $teamName, string $address = ''): string
-    {
-        $tz = 'Europe/Brussels';
-        $dtStart = 'DTSTART;TZID=' . $tz . ':' . $interclub->start_date_time->format('Ymd\THis');
-        $dtEnd = 'DTEND;TZID=' . $tz . ':' . $interclub->start_date_time->addHours(3)->format('Ymd\THis');
-        $stamp = now()->utc()->format('Ymd\THis\Z');
-        $summary = $this->icalEscape($teamName . ' vs ' . $opponent);
-        $location = $this->icalEscape($address);
-
-        $properties = [
-            'BEGIN:VCALENDAR',
-            'VERSION:2.0',
-            'PRODID:-//CTT Ottignies Blocry//Interclub//FR',
-            'CALSCALE:GREGORIAN',
-            'METHOD:PUBLISH',
-            'BEGIN:VEVENT',
-            'UID:interclub-' . $interclub->id . '@cttottigniesblocry.be',
-            'DTSTAMP:' . $stamp,
-            $dtStart,
-            $dtEnd,
-            'SUMMARY:' . $summary,
-            'LOCATION:' . $location,
-            'END:VEVENT',
-            'END:VCALENDAR',
-        ];
-
-        $lines = array_map($this->icalFold(...), $properties);
-
-        return implode("\r\n", $lines) . "\r\n";
-    }
-
-    private function icalEscape(string $value): string
-    {
-        return str_replace(["\r\n", "\n", "\r", ',', ';', '\\'], ['\\n', '\\n', '\\n', '\\,', '\\;', '\\\\'], $value);
-    }
-
-    private function icalFold(string $line): string
-    {
-        if (strlen($line) <= 75) {
-            return $line;
-        }
-
-        $folded = '';
-        while (strlen($line) > 75) {
-            $folded .= mb_substr($line, 0, 75) . "\r\n ";
-            $line = mb_substr($line, 75);
-        }
-
-        return $folded . $line;
     }
 }

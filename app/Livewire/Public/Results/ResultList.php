@@ -268,6 +268,20 @@ class ResultList extends Component
         };
     }
 
+    /**
+     * The running season, then every past one that has something to show.
+     *
+     * There used to be a flat limit of five, which cost nothing while the club
+     * only ever had the season it was playing. Now that the federation's
+     * archive can be imported, that limit would quietly hide the older half of
+     * the club's own history.
+     *
+     * What replaces it is fielding a team, not having results. A season whose
+     * scores are still being entered would vanish under a results test, and a
+     * club looking at its own current table and finding the year missing would
+     * reasonably conclude the page was broken. Seasons provisioned years ahead
+     * are already excluded by the date.
+     */
     private function loadSeasons(): Collection
     {
         $currentSeason = Season::current();
@@ -278,7 +292,10 @@ class ResultList extends Component
                 fn (Builder $q) => $q->where('start_at', '<', $currentSeason->start_at),
                 fn (Builder $q) => $q->where('start_at', '<', now())
             )
-            ->limit(5)
+            ->whereHas('teams', function (Builder $query): void {
+                /** @var Builder<Team> $query */
+                $query->inClub();
+            })
             ->get()
             ->when($currentSeason, fn (Collection $coll) => $coll->prepend($currentSeason));
     }

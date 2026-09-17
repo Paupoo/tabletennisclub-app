@@ -47,6 +47,13 @@ class AfttFixtureMatcher
      */
     public function link(Season $season, int $afttSeason, string $clubCode, TabtClient $client, bool $dryRun = false): array
     {
+        // The history command resolves this class once and walks a dozen
+        // seasons with it. Without this, each season inherited the one before:
+        // the counts grew as it went and 2025-2026 was reported with the
+        // fixtures of 2024-2025 under it.
+        $this->linkedIds = [];
+        $this->report = ['ambiguous' => [], 'unmatched' => []];
+
         foreach ($this->divisionsOf($clubCode, $afttSeason, $client) as $divisionId) {
             foreach ($client->divisionMatches($divisionId, $afttSeason) as $match) {
                 if ($match->isBye || ! $this->involvesUs($match, $clubCode)) {

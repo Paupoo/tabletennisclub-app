@@ -273,6 +273,22 @@ class AfttCalendarImporter
             return $club;
         }
 
+        /*
+         * Never file a club under a licence nobody asked about.
+         *
+         * `GetClubs` does not always honour its own filter: handed the bye
+         * marker "-" it answers with the first entry of the federation's whole
+         * list, and the import cheerfully created "Individueel Antwerpen" —
+         * twice in the same run, which is how the whole season came to roll
+         * back on a duplicate key. Byes no longer reach this method, but a
+         * reply that does not answer the question is not a reply.
+         */
+        if ($published->licence !== $licence) {
+            $this->changes['refused_clubs'][] = $licence . ' — the federation answered with ' . $published->licence;
+
+            return $club;
+        }
+
         [$cityCode, $cityName] = $this->splitTown($published->venue?->town);
 
         if (! $known) {
@@ -398,17 +414,50 @@ class AfttCalendarImporter
             return null;
         }
 
-        return League::updateOrCreate(
-            [
-                'season_id' => $season->id,
+        $code = $this->divisionCode($division->name);
+
+        $league = League::where('season_id', $season->id)
+            ->where('aftt_division_id', $division->id)
+            ->first();
+
+        /*
+         * Adopt the division the club typed in rather than building a twin.
+         *
+         * Keying only on the federation id meant a season recorded before the
+         * club ever spoke to TabT got a second set of leagues: "MEN 2C" typed
+         * by hand and "MEN 2C" carrying the federation id, side by side. Our
+         * teams stayed in the first, the import looked for them in the second,
+         * and every single one was refused as a duplicate letter — the import
+         * ran to completion and wrote no fixture at all.
+         *
+         * Matched on what identifies a division within a season: its category
+         * and its code. Only a league that carries no federation id yet can be
+         * adopted, so two divisions already claimed cannot be confused.
+         */
+        $league ??= League::where('season_id', $season->id)
+            ->whereNull('aftt_division_id')
+            ->where('category', $category->name)
+            ->where('division', $code)
+            ->first();
+
+        if ($league instanceof League) {
+            $league->update([
                 'aftt_division_id' => $division->id,
-            ],
-            [
-                'division' => $this->divisionCode($division->name),
+                'division' => $code,
                 'category' => $category->name,
                 'level' => $level->name,
-            ],
-        );
+            ]);
+
+            return $league;
+        }
+
+        return League::create([
+            'season_id' => $season->id,
+            'aftt_division_id' => $division->id,
+            'division' => $code,
+            'category' => $category->name,
+            'level' => $level->name,
+        ]);
     }
 
     /**

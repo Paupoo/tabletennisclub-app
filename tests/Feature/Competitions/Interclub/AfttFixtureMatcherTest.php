@@ -16,11 +16,17 @@ uses(RefreshDatabase::class);
 
 function fakeDivision9611(): void
 {
-    // clubTeams first, then divisionMatches — the order the matcher calls them.
+    $teams = file_get_contents(base_path('tests/Fixtures/Aftt/get-club-teams-bbw214-division-9611.xml'));
+    $matches = file_get_contents(base_path('tests/Fixtures/Aftt/get-matches-division-9611.xml'));
+
+    // clubTeams first, then divisionMatches — the order the matcher calls them,
+    // laid out twice so a test can run the matcher a second time. `Http::fake()`
+    // merges rather than replaces, so a later call cannot extend this sequence:
+    // it has to be long enough here.
     Http::fake([
         'api.aftt.be/*' => Http::sequence()
-            ->push(file_get_contents(base_path('tests/Fixtures/Aftt/get-club-teams-bbw214-division-9611.xml')))
-            ->push(file_get_contents(base_path('tests/Fixtures/Aftt/get-matches-division-9611.xml'))),
+            ->push($teams)->push($matches)
+            ->push($teams)->push($matches),
     ]);
 }
 
@@ -167,4 +173,18 @@ it('ignores a team of the same letter in another category', function (): void {
     ['linked' => $linked] = runMatcher();
 
     expect($linked)->toBe(0);
+});
+
+it('starts each season from a clean report', function (): void {
+    // The history command walks a dozen seasons with one instance of this
+    // class. Without a reset the counts accumulated, and a season was reported
+    // with the fixtures of the one before it under its heading.
+    $matcher = app(AfttFixtureMatcher::class);
+    $client = app(TabtClient::class);
+
+    ['report' => $first] = $matcher->link($this->season, 27, 'BBW214', $client);
+    ['report' => $second] = $matcher->link($this->season, 27, 'BBW214', $client);
+
+    expect($second['unmatched'])->toHaveCount(count($first['unmatched']))
+        ->toHaveCount(16);
 });

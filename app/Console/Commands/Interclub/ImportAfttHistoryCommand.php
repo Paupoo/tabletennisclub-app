@@ -110,11 +110,13 @@ class ImportAfttHistoryCommand extends Command
             return null;
         }
 
-        $this->line(sprintf('  Season %s does not exist yet — creating it.', $name));
-
         if ($dryRun) {
+            $this->line(sprintf('  Season %s does not exist yet — it would be created.', $name));
+
             return null;
         }
+
+        $this->line(sprintf('  Season %s does not exist yet — creating it.', $name));
 
         return Season::create([
             'name' => $name,

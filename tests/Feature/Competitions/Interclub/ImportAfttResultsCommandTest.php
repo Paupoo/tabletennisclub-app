@@ -83,3 +83,13 @@ it('refuses a season the federation does not publish', function (): void {
     $this->artisan('interclubs:import-results', ['--season' => '2019-2020'])
         ->assertFailed();
 });
+
+it('says so when no division of the season carries a federation id', function (): void {
+    // Four zeroes and a success used to be the whole story: a season whose
+    // calendar was never imported looked exactly like one with nothing to do.
+    $this->league->update(['aftt_division_id' => null]);
+
+    $this->artisan('interclubs:import-results')
+        ->expectsOutputToContain('nothing to ask for')
+        ->assertFailed();
+});

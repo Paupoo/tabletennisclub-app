@@ -43,6 +43,7 @@ class AfttResultsImporter
 
     /** @var array<string, int> */
     private array $tally = [
+        'divisions_read' => 0,
         'fixtures_updated' => 0,
         'individual_matches' => 0,
         'positions_written' => 0,
@@ -74,6 +75,8 @@ class AfttResultsImporter
 
                 continue;
             }
+
+            $this->tally['divisions_read']++;
 
             foreach ($sheets as $sheet) {
                 $this->importSheet($sheet);

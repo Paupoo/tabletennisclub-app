@@ -67,12 +67,29 @@ class ImportAfttResultsCommand extends Command
 
         ['tally' => $tally, 'report' => $report] = $importer->import($season, $afttSeason, $client);
 
+        /*
+         * A run that read nothing looked exactly like a run that found nothing
+         * to do: four zeroes and no explanation. The divisions of a season only
+         * carry a federation id once the calendar has been imported, so a
+         * season that never was reports success while doing nothing at all.
+         */
+        if ($tally['divisions_read'] === 0) {
+            $this->warn(sprintf(
+                'No division of %s carries a federation id, so there was nothing to ask for.',
+                $season->name,
+            ));
+            $this->line('Run `interclubs:import-aftt --season=' . $season->name . '` first.');
+
+            return self::FAILURE;
+        }
+
         $this->table(['', ''], [
             ['Fixtures updated', $tally['fixtures_updated']],
             ['Individual matches written', $tally['individual_matches']],
             ['Sheets not encoded yet', $tally['sheets_pending']],
             ['Sheets with no fixture of ours', $tally['sheets_unknown']],
             ['Final positions written', $tally['positions_written']],
+            ['Divisions read', $tally['divisions_read']],
         ]);
 
         /*

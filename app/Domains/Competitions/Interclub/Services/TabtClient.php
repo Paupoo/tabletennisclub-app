@@ -36,7 +36,8 @@ class TabtClient
 {
     /**
      * How TabT names the absent opponent. Trimmed on the way in, because the
-     * federation writes it with a trailing space.
+     * federation writes it with a trailing space — and numbered when a division
+     * has more than one, which is why the name alone cannot be trusted.
      */
     private const string BYE = 'Bye';
 
@@ -44,6 +45,17 @@ class TabtClient
      * TabT's own namespace, unchanged since the API was published.
      */
     private const string NAMESPACE = 'http://api.frenoy.net/TabTAPI';
+
+    /**
+     * The club code the federation puts opposite a bye: there is no club.
+     *
+     * This, not the team name, is what marks a round without an opponent. A
+     * division with two byes calls them "Bye 1" and "Bye 2", which an equality
+     * test on "Bye" lets through as an ordinary fixture — and the import then
+     * asks the federation about a club named "-", gets handed the first entry
+     * of its whole list, and files a match against a club in Antwerp.
+     */
+    private const string NO_CLUB = '-';
 
     /**
      * One club and its first hall, or null when the federation has no such club.
@@ -126,6 +138,8 @@ class TabtClient
             $entry->registerXPathNamespace('t', self::NAMESPACE);
 
             $date = $this->text($entry, 'Date');
+            $homeClub = $this->text($entry, 'HomeClub') ?? '';
+            $awayClub = $this->text($entry, 'AwayClub') ?? '';
             $homeTeam = $this->text($entry, 'HomeTeam') ?? '';
             $awayTeam = $this->text($entry, 'AwayTeam') ?? '';
 
@@ -134,15 +148,18 @@ class TabtClient
                 weekName: $this->text($entry, 'WeekName') ?? '',
                 date: $date === null || $date === '' ? null : CarbonImmutable::parse($date),
                 time: $this->text($entry, 'Time') ?: null,
-                homeClub: $this->text($entry, 'HomeClub') ?? '',
+                homeClub: $homeClub,
                 homeTeam: $homeTeam,
-                awayClub: $this->text($entry, 'AwayClub') ?? '',
+                awayClub: $awayClub,
                 awayTeam: $awayTeam,
                 divisionId: (int) $this->text($entry, 'DivisionId'),
                 divisionName: $this->text($entry, 'DivisionName') ?? '',
                 divisionCategory: (int) $this->text($entry, 'DivisionCategory'),
                 venue: $this->venue($entry),
-                isBye: $homeTeam === self::BYE || $awayTeam === self::BYE,
+                isBye: $homeClub === self::NO_CLUB
+                    || $awayClub === self::NO_CLUB
+                    || str_starts_with($homeTeam, self::BYE)
+                    || str_starts_with($awayTeam, self::BYE),
             );
         }
 

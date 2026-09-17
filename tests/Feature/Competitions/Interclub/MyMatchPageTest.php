@@ -349,3 +349,41 @@ it('falls back to who played when no sheet has been imported', function (): void
     $component->assertSee(__('Played that day'))
         ->assertDontSee(__('Match sheet'));
 });
+
+it('lets a member open a match they played for a team that has no roster', function (): void {
+    // What an imported season looks like: the federation publishes its teams,
+    // never ours, so nobody is on the roster — but the sheet names who played.
+    $match = aMatch(-7);
+    $veteran = User::factory()->create();
+
+    Livewire::actingAs($veteran)
+        ->test('pages::club-events.interclubs.my-match', ['interclub' => $match])
+        ->assertForbidden();
+
+    InterclubIndividualMatch::factory()->create([
+        'interclub_id' => $match->id, 'position' => 1,
+        'user_id' => $veteran->id, 'we_won' => true,
+    ]);
+
+    Livewire::actingAs($veteran)
+        ->test('pages::club-events.interclubs.my-match', ['interclub' => $match])
+        ->assertOk();
+});
+
+it('lists a match in "played" on the strength of the sheet alone', function (): void {
+    $match = aMatch(-7);
+    $veteran = User::factory()->create();
+
+    InterclubIndividualMatch::factory()->create([
+        'interclub_id' => $match->id, 'position' => 1,
+        'user_id' => $veteran->id, 'we_won' => true,
+    ]);
+
+    $played = Livewire::actingAs($veteran)
+        ->test('pages::club-events.interclubs.my-matches')
+        ->viewData('played');
+
+    expect($played->pluck('id')->all())->toBe([$match->id])
+        // Our club hosts this one, and the reader played for our club.
+        ->and($played->first()['is_home'])->toBeTrue();
+});

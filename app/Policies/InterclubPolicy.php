@@ -6,6 +6,7 @@ namespace App\Policies;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
 use App\Domains\Shared\Enums\Permission;
 
 /**
@@ -101,7 +102,17 @@ class InterclubPolicy
             ->whereIn('teams.id', $teamIds)
             ->exists();
 
-        return $playsForEitherSide
-            || $interclub->users()->where('users.id', $user->id)->exists();
+        if ($playsForEitherSide) {
+            return true;
+        }
+
+        // Having played it is the strongest claim of all, and the only one a
+        // member keeps on a season imported from the federation: those team
+        // rows arrive empty, because the federation publishes its own teams and
+        // never our roster. The match sheet, which it does publish, names them.
+        return $interclub->users()->where('users.id', $user->id)->exists()
+            || InterclubIndividualMatch::where('interclub_id', $interclub->id)
+                ->where('user_id', $user->id)
+                ->exists();
     }
 }

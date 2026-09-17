@@ -46,12 +46,6 @@ class AfttCalendarImporter
      * by name in the report, which is the correct way to learn the club just
      * entered one.
      */
-    private const array CATEGORIES = [
-        37 => LeagueCategory::MEN,
-        3 => LeagueCategory::VETERANS,
-        38 => LeagueCategory::WOMEN,
-    ];
-
     /**
      * The federation's level codes, mapped to ours.
      *
@@ -226,7 +220,7 @@ class AfttCalendarImporter
      */
     private function canModel(AfttDivision $division): bool
     {
-        return isset(self::CATEGORIES[$division->category])
+        return LeagueCategory::fromFederationCategory($division->category) instanceof LeagueCategory
             && isset(self::LEVELS[$division->level]);
     }
 
@@ -397,7 +391,7 @@ class AfttCalendarImporter
 
     private function league(Season $season, AfttDivision $division): ?League
     {
-        $category = self::CATEGORIES[$division->category] ?? null;
+        $category = LeagueCategory::fromFederationCategory($division->category);
         $level = self::LEVELS[$division->level] ?? null;
 
         if (! $category instanceof LeagueCategory || ! $level instanceof LeagueLevel) {
@@ -578,7 +572,7 @@ class AfttCalendarImporter
      */
     private function totalPlayers(AfttDivision $division): int
     {
-        return match (self::CATEGORIES[$division->category] ?? null) {
+        return match (LeagueCategory::fromFederationCategory($division->category)) {
             LeagueCategory::MEN => 4,
             default => 3,
         };

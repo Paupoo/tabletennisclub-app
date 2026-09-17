@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Resources\views\Pages\ClubEvents\Interclubs\MyMatches;
 
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubAvailability;
@@ -206,14 +207,28 @@ new class extends Component
             'visitingTeam.club',
         ])
             ->withoutByes()
+            // Roster membership, or a line on the federation's sheet. A season
+            // imported from the federation brings teams with nobody in them —
+            // it publishes its own teams and never our roster — so on that
+            // history the sheet is the only thing tying a member to a match
+            // they actually played.
             ->where(fn ($q) => $q->whereIn('visited_team_id', $teamIds)
-                ->orWhereIn('visiting_team_id', $teamIds))
+                ->orWhereIn('visiting_team_id', $teamIds)
+                ->orWhereIn('id', InterclubIndividualMatch::query()
+                    ->where('user_id', Auth::id())
+                    ->select('interclub_id')))
             ->where('start_date_time', '<', now())
             ->orderByDesc('start_date_time')
             ->orderByDesc('interclubs.id')
             ->get()
             ->map(function (Interclub $interclub) use ($teamIds): array {
-                $isHome = $teamIds->contains($interclub->visited_team_id);
+                $isHome = match (true) {
+                    $teamIds->contains($interclub->visited_team_id) => true,
+                    $teamIds->contains($interclub->visiting_team_id) => false,
+                    // Reached through the sheet rather than a roster: the club's
+                    // own side is the side the member played for.
+                    default => $interclub->isHome(),
+                };
                 $opponent = $isHome ? $interclub->visitingTeam : $interclub->visitedTeam;
                 $matchResult = $interclub->interclubResult;
 

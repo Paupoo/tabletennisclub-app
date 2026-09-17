@@ -114,7 +114,7 @@
                                             <x-badge :class="$match['availability']->color() . ' badge-sm font-bold'"
                                                 :value="$match['availability']->label()" />
                                         @else
-                                            <a href="{{ route('admin.interclubs.my-matches') }}"
+                                            <a href="{{ route('admin.interclubs.my-match', $match['id']) }}"
                                                 class="btn btn-outline btn-xs">
                                                 {{ __('Set availability') }}
                                             </a>

@@ -8,9 +8,11 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubAvailability;
+use App\Domains\Shared\Enums\InterclubResultEnum;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -150,6 +152,7 @@ new class extends Component
         $matchDayMap = $season ? Interclub::matchDayMap($season->id) : [];
 
         return [
+            'played' => $this->playedMatches($teamIds),
             'breadcrumbs' => Breadcrumb::make()
                 ->home()
                 ->add(__('Interclubs'), route('admin.interclubs.captain-selection'))
@@ -182,5 +185,61 @@ new class extends Component
         }
 
         return null;
+    }
+
+    /**
+     * This season's matches already played, most recent first.
+     *
+     * The list above filters on `start_date_time >= now()`, which is right for
+     * answering availability and wrong for everything else: it left the member
+     * with no screen anywhere naming a match they had played. A notification
+     * about a result therefore led to a page that did not contain it.
+     *
+     * @param  Collection<int, int>  $teamIds
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function playedMatches($teamIds)
+    {
+        return Interclub::with([
+            'interclubResult',
+            'visitedTeam.club',
+            'visitingTeam.club',
+        ])
+            ->withoutByes()
+            ->where(fn ($q) => $q->whereIn('visited_team_id', $teamIds)
+                ->orWhereIn('visiting_team_id', $teamIds))
+            ->where('start_date_time', '<', now())
+            ->orderByDesc('start_date_time')
+            ->orderByDesc('interclubs.id')
+            ->get()
+            ->map(function (Interclub $interclub) use ($teamIds): array {
+                $isHome = $teamIds->contains($interclub->visited_team_id);
+                $opponent = $isHome ? $interclub->visitingTeam : $interclub->visitedTeam;
+                $matchResult = $interclub->interclubResult;
+
+                // Stored home-first: an away 4-12 is filed as 12-4.
+                $score = null;
+                if ($matchResult?->score && str_contains($matchResult->score, '-')) {
+                    [$home, $away] = array_map(intval(...), explode('-', $matchResult->score, 2));
+                    $score = $isHome ? "{$home}-{$away}" : "{$away}-{$home}";
+                }
+
+                [$letter, $tone] = match ($matchResult?->result) {
+                    InterclubResultEnum::WIN, InterclubResultEnum::FORFEIT_WIN, InterclubResultEnum::WITHDRAWAL_OPPONENT => ['V', 'bg-success/15 text-success'],
+                    InterclubResultEnum::DRAW => ['P', 'bg-base-200 text-muted'],
+                    InterclubResultEnum::LOSS, InterclubResultEnum::FORFEIT_LOSS, InterclubResultEnum::WITHDRAWAL => ['D', 'bg-error/15 text-error'],
+                    default => [null, ''],
+                };
+
+                return [
+                    'date' => $interclub->start_date_time,
+                    'id' => $interclub->id,
+                    'is_home' => $isHome,
+                    'letter' => $letter,
+                    'opponent' => $opponent?->fullName() ?? '—',
+                    'score' => $score,
+                    'tone' => $tone,
+                ];
+            });
     }
 };

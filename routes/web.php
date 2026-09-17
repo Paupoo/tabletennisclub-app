@@ -13,6 +13,7 @@ use App\Http\Controllers\ClubAdmin\Contact\GuardianInvitationController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
 use App\Http\Controllers\ClubAdmin\DashboardController;
 use App\Http\Controllers\ClubAdmin\Users\UserDocumentController;
+use App\Http\Controllers\ClubEvents\Interclub\InterclubIcsController;
 use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingRsvpController;
@@ -354,6 +355,19 @@ Route::prefix('admin/club-events/interclubs/')
     ->group(function (): void {
         // Personal matches — self-scoped, left broad for any player for now.
         Route::livewire('my-matches', 'pages::club-events.interclubs.my-matches')->name('admin.interclubs.my-matches');
+
+        /*
+         * One fixture, seen from the inside.
+         *
+         * Every notification about a match used to land on the list above,
+         * which knew nothing of which match was meant and — filtering on
+         * `start_date_time >= now()` — did not even contain a played one. The
+         * id is in the URL, so the page checks `viewMatchPage` itself: the
+         * roster has to grant it (a player holds no délégation) and something
+         * has to refuse it.
+         */
+        Route::livewire('my-match/{interclub}', 'pages::club-events.interclubs.my-match')->name('admin.interclubs.my-match');
+        Route::get('my-match/{interclub}/calendar.ics', InterclubIcsController::class)->name('admin.interclubs.my-match.ics');
 
         // Le centre de contrôle a fusionné avec l'écran des sélections : il en
         // était la transposée (une journée, toutes les équipes) et dupliquait

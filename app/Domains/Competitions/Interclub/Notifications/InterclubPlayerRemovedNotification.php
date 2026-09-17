@@ -23,7 +23,7 @@ class InterclubPlayerRemovedNotification extends Notification
         return [
             'title' => __('You are no longer selected'),
             'body' => __('See the match details'),
-            'url' => route('admin.interclubs.my-matches'),
+            'url' => route('admin.interclubs.my-match', $this->interclub),
             'category' => 'interclub',
             'icon' => 'o-user-group',
         ];
@@ -53,6 +53,7 @@ class InterclubPlayerRemovedNotification extends Notification
                 'dateStr' => $dateStr,
                 'address' => $address,
                 'venue' => $venue,
+                'url' => route('admin.interclubs.my-match', $interclub),
             ]);
     }
 

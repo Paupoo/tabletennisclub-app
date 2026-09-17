@@ -80,10 +80,12 @@
                                     {{-- Info match --}}
                                     <div class="flex min-w-0 flex-1 items-center gap-4">
                                         {{-- Numéro semaine --}}
-                                        <div class="bg-base-200 flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl">
+                                        <a href="{{ route('admin.interclubs.my-match', $match['id']) }}"
+                                            class="bg-base-200 hover:bg-base-300 flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl transition-colors"
+                                            title="{{ __('See the match') }}">
                                             <div class="text-xs font-semibold uppercase opacity-60">S</div>
                                             <div class="text-sm font-bold leading-none">{{ $matchDayMap[$match['week_number']] ?? $match['week_number'] }}</div>
-                                        </div>
+                                        </a>
 
                                         <div class="min-w-0">
                                             <div class="flex flex-wrap items-center gap-2">
@@ -167,6 +169,15 @@
                                                 :title="__('Add a note')"
                                                 icon="o-pencil-square" />
                                         </x-dropdown>
+
+                                        {{-- Zone dédiée : la ligne porte des actions,
+                                        la rendre cliquable entière volerait leurs clics. --}}
+                                        <a href="{{ route('admin.interclubs.my-match', $match['id']) }}"
+                                            class="btn btn-ghost btn-sm btn-square"
+                                            title="{{ __('See the match') }}"
+                                            aria-label="{{ __('See the match') }}">
+                                            <x-icon name="o-chevron-right" class="h-4 w-4 opacity-50" />
+                                        </a>
                                     </div>
                                 </div>
 
@@ -195,6 +206,57 @@
                 </section>
             @endforeach
         </div>
+    @endif
+
+    {{-- ── Rencontres jouées ──────────────────────────────────────────────── --}}
+    @if ($played->isNotEmpty())
+        <section class="mt-12" x-data="{ open: false }">
+            <button type="button" class="mb-4 flex w-full items-center gap-3 text-left" @click="open = !open">
+                <span class="text-sm font-bold uppercase tracking-wide opacity-60">{{ __('Played matches') }}</span>
+                <span class="text-xs opacity-40">{{ $played->count() }}</span>
+                <div class="flex-1 border-t border-base-300"></div>
+                <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200"
+                    ::class="open ? '' : '-rotate-90'" />
+            </button>
+
+            <div x-show="open" x-collapse>
+                <div class="divide-base-200 border-base-300 divide-y overflow-hidden rounded-2xl border">
+                    @foreach ($played as $match)
+                        <a href="{{ route('admin.interclubs.my-match', $match['id']) }}"
+                            class="bg-base-100 hover:bg-base-200/50 flex items-center gap-4 p-4 transition-colors"
+                            wire:key="played-{{ $match['id'] }}">
+                            @if ($match['letter'])
+                                <span class="w-7 shrink-0 rounded py-1 text-center text-xs font-bold {{ $match['tone'] }}">
+                                    {{ $match['letter'] }}
+                                </span>
+                            @else
+                                <span class="w-7 shrink-0"></span>
+                            @endif
+
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="truncate font-semibold">vs {{ $match['opponent'] }}</span>
+                                    @if ($match['is_home'])
+                                        <x-badge class="badge-neutral badge-xs font-bold" :value="__('Home')" />
+                                    @else
+                                        <x-badge class="badge-ghost badge-xs border border-base-300 font-bold" :value="__('Away')" />
+                                    @endif
+                                </div>
+                                <div class="text-base-content/50 mt-0.5 text-xs">
+                                    {{ $match['date']->translatedFormat('D d/m/Y') }}
+                                </div>
+                            </div>
+
+                            <div class="shrink-0 text-right">
+                                <p class="text-sm font-bold">{{ $match['score'] ?? __('Pending') }}</p>
+                            </div>
+
+                            <x-icon name="o-chevron-right" class="h-4 w-4 shrink-0 opacity-30" />
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        </section>
     @endif
 
     <x-confirm-modal model="bulkUnavailableModal" :title="__('Mark all as unavailable?')"

@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\League;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
@@ -145,4 +147,125 @@ it('finds a member through compound-name search', function (): void {
         ->set('search', 'Jean Van')
         ->assertSee('Van Oudenhove')
         ->assertDontSee('Martin');
+});
+
+it('lists the members surname first, in alphabetical order', function (): void {
+    $viewer = activeMember($this->season, ['first_name' => 'Ana', 'last_name' => 'Aardvark']);
+    activeMember($this->season, ['first_name' => 'Zoe', 'last_name' => 'Bernard']);
+    activeMember($this->season, ['first_name' => 'Bob', 'last_name' => 'Zorro']);
+    activeMember($this->season, ['first_name' => 'Yves', 'last_name' => 'Martin']);
+
+    // Le tri portait déjà sur le nom, mais la carte affichait « Prénom Nom » :
+    // l'annuaire se lisait comme une liste au hasard. L'ordre des noms de
+    // famille doit être visible dans le rendu, pas seulement dans la requête.
+    Livewire::actingAs($viewer)
+        ->test(DIRECTORY_COMPONENT, ['user' => $viewer])
+        ->assertSeeInOrder(['Aardvark', 'Ana', 'Bernard', 'Zoe', 'Martin', 'Yves', 'Zorro', 'Bob']);
+});
+
+it('keeps two members of the same name on a stable page', function (): void {
+    $viewer = activeMember($this->season);
+
+    // Sans départage par id, MySQL est libre de renvoyer deux homonymes dans un
+    // ordre différent d'une page à l'autre : l'un se dédouble, l'autre disparaît.
+    foreach (range(1, 3) as $ignored) {
+        activeMember($this->season, ['first_name' => 'Loïc', 'last_name' => 'Goossens']);
+    }
+
+    $component = Livewire::actingAs($viewer)->test(DIRECTORY_COMPONENT, ['user' => $viewer]);
+
+    expect($component->get('members')->pluck('id')->all())
+        ->toBe($component->get('members')->sortBy(['last_name', 'first_name', 'id'])->pluck('id')->all());
+});
+
+/**
+ * Un mineur affilié dont les coordonnées passent par un adulte responsable.
+ */
+function wardWithGuardian(Season $season, array $guardianAttributes = [], array $userAttributes = []): User
+{
+    $ward = activeMember($season, array_merge([
+        'birthdate' => now()->subYears(12),
+        'contact_visibility' => ['phone' => true, 'email' => true],
+    ], $userAttributes));
+
+    $ward->guardians()->attach(Guardian::factory()->create(array_merge([
+        'first_name' => 'Isabelle',
+        'last_name' => 'Legrand',
+        'phone' => '0470999888',
+        'email' => 'isabelle.legrand@example.be',
+    ], $guardianAttributes))->id);
+
+    return $ward;
+}
+
+it('shows the legal guardian of a minor', function (): void {
+    $viewer = activeMember($this->season);
+    wardWithGuardian($this->season);
+
+    // Un enfant de douze ans n'a ni ligne ni boîte mail : l'adulte responsable est le
+    // seule façon de le joindre, et l'annuaire ne le disait nulle part.
+    Livewire::actingAs($viewer)
+        ->test(DIRECTORY_COMPONENT, ['user' => $viewer])
+        ->assertSee(__('Responsible adult'))
+        ->assertSee('Isabelle Legrand')
+        ->assertSee('0470999888')
+        ->assertSee('isabelle.legrand@example.be');
+});
+
+it('hides the guardian of a minor who shares nothing', function (): void {
+    $viewer = activeMember($this->season);
+    wardWithGuardian($this->season, userAttributes: ['contact_visibility' => []]);
+
+    // Le consentement du pupille commande : publier le numéro du parent plus
+    // largement que le sien exposerait un tiers qui n'a rien coché.
+    Livewire::actingAs($viewer)
+        ->test(DIRECTORY_COMPONENT, ['user' => $viewer])
+        ->assertDontSee('Isabelle Legrand')
+        ->assertDontSee('0470999888');
+});
+
+it('shows the guardian of a minor to a committee member whatever the ward shares', function (): void {
+    $committee = activeMember($this->season);
+    $committee->assignRole(Role::COMMITTEE->value);
+    wardWithGuardian($this->season, userAttributes: ['contact_visibility' => []]);
+
+    Livewire::actingAs($committee)
+        ->test(DIRECTORY_COMPONENT, ['user' => $committee])
+        ->assertSee('Isabelle Legrand')
+        ->assertSee('0470999888');
+});
+
+it('falls back to the guardian number carried on the member file', function (): void {
+    $viewer = activeMember($this->season);
+
+    // La plupart des mineurs n'ont aucun Guardian lié : le numéro ne vit que
+    // dans `users.guardian_phone_number`, et c'est celui-là qu'il faut lire.
+    activeMember($this->season, [
+        'birthdate' => now()->subYears(10),
+        'guardian_phone_number' => '0471222333',
+        'contact_visibility' => ['phone' => true],
+    ]);
+
+    Livewire::actingAs($viewer)
+        ->test(DIRECTORY_COMPONENT, ['user' => $viewer])
+        ->assertSee(__('Responsible adult'))
+        ->assertSee('0471222333');
+});
+
+it('shows no guardian block for an adult who has one on file', function (): void {
+    $viewer = activeMember($this->season);
+
+    // Un adulte reste joint directement, même si une fiche d'adulte responsable traîne de
+    // l'époque où il était mineur.
+    $grownUp = activeMember($this->season, [
+        'birthdate' => now()->subYears(30),
+        'guardian_phone_number' => '0471222333',
+        'contact_visibility' => ['phone' => true],
+    ]);
+    $grownUp->guardians()->attach(Guardian::factory()->create(['phone' => '0470999888'])->id);
+
+    Livewire::actingAs($viewer)
+        ->test(DIRECTORY_COMPONENT, ['user' => $viewer])
+        ->assertDontSee(__('Responsible adult'))
+        ->assertDontSee('0471222333');
 });

@@ -17,5 +17,9 @@
 
 </x-mail::panel>
 
+<x-mail::button :url="$url">
+{{ __('See the match') }}
+</x-mail::button>
+
 {{ __('Contact your captain if you have any questions.') }}
 </x-mail::message>

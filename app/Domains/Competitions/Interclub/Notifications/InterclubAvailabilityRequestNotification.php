@@ -24,7 +24,7 @@ class InterclubAvailabilityRequestNotification extends Notification
         return [
             'title' => __('Availability request'),
             'body' => __('See the match details'),
-            'url' => route('admin.interclubs.my-matches'),
+            'url' => route('admin.interclubs.my-match', $this->interclub),
             'category' => 'interclub',
             'icon' => 'o-user-group',
         ];
@@ -41,7 +41,7 @@ class InterclubAvailabilityRequestNotification extends Notification
         $venue = $interclub->isHome() ? __('Home') : __('Away');
         $dateStr = $interclub->start_date_time->format('d/m/Y') . ' ' . __('at') . ' ' . $interclub->start_date_time->format('H:i');
         $address = $interclub->room?->address ?? $interclub->address ?? '—';
-        $url = route('admin.interclubs.my-matches');
+        $url = route('admin.interclubs.my-match', $this->interclub);
 
         return (new MailMessage)
             ->subject(__('Your availability needed — :team vs :opponent on :date', [

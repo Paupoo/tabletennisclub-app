@@ -130,70 +130,58 @@
         </x-card>
     @endif
 
-    {{-- ── Résultats (mock) ─────────────────────────────────────────────── --}}
+    {{-- ── Résultats ────────────────────────────────────────────────────── --}}
+    {{--
+        Lisait `interclubs.score` et comparait `interclubs.result` à 'W'/'D'/'L'.
+        La colonne n'est écrite par rien et l'enum vaut Win/Loss/Draw : la carte
+        n'aurait jamais rien affiché, même remplie. Le score vit sur
+        `interclub_results`, écrit par l'écran des résultats.
+    --}}
     <x-card class="shadow-sm" :title="__('Results')">
-        <x-slot:subtitle>
-            <span class="text-xs text-orange-500">{{ __('Results module coming soon — simulated data') }}</span>
-        </x-slot:subtitle>
-
         @if ($pastInterclubs->isEmpty())
-            {{-- Pas encore de matchs joués → résultats mock pur --}}
-            @php
-                $mockResults = [
-                    ['date' => now()->subDays(7),  'opponent' => 'Perwez A',        'home' => true,  'score' => '6 – 2', 'result' => 'W'],
-                    ['date' => now()->subDays(14), 'opponent' => 'Wavre C',         'home' => false, 'score' => '4 – 4', 'result' => 'D'],
-                    ['date' => now()->subDays(21), 'opponent' => 'Logis J',         'home' => true,  'score' => '7 – 1', 'result' => 'W'],
-                    ['date' => now()->subDays(28), 'opponent' => 'Auderghem E',     'home' => false, 'score' => '2 – 6', 'result' => 'L'],
-                    ['date' => now()->subDays(35), 'opponent' => "Champ d'en Haut", 'home' => true,  'score' => '5 – 3', 'result' => 'W'],
-                ];
-            @endphp
-            <div class="divide-y divide-base-300">
-                @foreach ($mockResults as $r)
-                    <div class="flex items-center justify-between py-3">
-                        <div class="flex items-center gap-3">
-                            <span class="w-6 rounded text-center text-xs font-bold
-                                {{ $r['result'] === 'W' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : ($r['result'] === 'D' ? 'bg-base-200 text-muted' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300') }}">
-                                {{ $r['result'] }}
-                            </span>
-                            <div>
-                                <p class="text-sm font-medium text-base-content">{{ $r['opponent'] }}</p>
-                                <p class="text-xs text-gray-400">{{ $r['home'] ? 'Domicile' : 'Extérieur' }}</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-sm font-semibold text-base-content">{{ $r['score'] }}</p>
-                            <p class="text-xs text-gray-400">{{ \Carbon\Carbon::parse($r['date'])->translatedFormat('d M') }}</p>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
+            <x-empty-state icon="o-trophy" :heading="__('No match played yet this season.')" />
         @else
-            {{-- Vrais matchs joués --}}
             <div class="divide-y divide-base-300">
                 @foreach ($pastInterclubs as $ic)
                     @php
-                        $isHome   = $ic->visited_team_id === $team->id;
+                        $isHome = $ic->visited_team_id === $team->id;
                         $opponent = $isHome ? $ic->visitingTeam : $ic->visitedTeam;
+                        $matchResult = $ic->interclubResult;
+
+                        // Le score est stocké domicile en premier : à l'extérieur
+                        // il se lit à l'envers pour l'équipe concernée.
+                        $score = null;
+                        if ($matchResult?->score && str_contains($matchResult->score, '-')) {
+                            [$h, $a] = array_map(intval(...), explode('-', $matchResult->score, 2));
+                            $score = $isHome ? "{$h}-{$a}" : "{$a}-{$h}";
+                        }
+
+                        [$letter, $tone] = match ($matchResult?->result?->value) {
+                            'Win', 'ForfeitWin', 'WithdrawalOpponent' => ['V', 'bg-success/15 text-success'],
+                            'Draw' => ['P', 'bg-base-200 text-muted'],
+                            'Loss', 'ForfeitLoss', 'Withdrawal' => ['D', 'bg-error/15 text-error'],
+                            default => [null, ''],
+                        };
                     @endphp
                     <div class="flex items-center justify-between py-3" wire:key="result-{{ $ic->id }}">
-                        <div class="flex items-center gap-3">
-                            @if ($ic->result)
-                                <span class="w-6 rounded text-center text-xs font-bold
-                                    {{ $ic->result === 'W' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : ($ic->result === 'D' ? 'bg-base-200 text-muted' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300') }}">
-                                    {{ $ic->result }}
-                                </span>
+                        <div class="flex min-w-0 items-center gap-3">
+                            @if ($letter)
+                                <span class="w-6 shrink-0 rounded text-center text-xs font-bold {{ $tone }}">{{ $letter }}</span>
+                            @else
+                                <span class="w-6 shrink-0"></span>
                             @endif
-                            <div>
-                                <p class="text-sm font-medium text-base-content">
-                                    {{ $opponent?->club?->name ?? 'Adversaire' }} {{ $opponent?->name ?? '' }}
-                                </p>
-                                <p class="text-xs text-gray-400">{{ $isHome ? 'Domicile' : 'Extérieur' }}</p>
+                            <div class="min-w-0">
+                                <a href="{{ route('admin.interclubs.my-match', $ic) }}"
+                                    class="link link-hover truncate text-sm font-medium text-base-content">
+                                    {{ $opponent?->club?->name ?? __('Opponent') }} {{ $opponent?->name ?? '' }}
+                                </a>
+                                <p class="text-xs text-base-content/50">{{ $isHome ? __('Home') : __('Away') }}</p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <p class="text-sm font-semibold text-base-content">{{ $ic->score ?? '—' }}</p>
-                            <p class="text-xs text-gray-400">
-                                {{ \Carbon\Carbon::parse($ic->start_date_time)->translatedFormat('d M') }}
+                        <div class="shrink-0 text-right">
+                            <p class="text-sm font-semibold text-base-content">{{ $score ?? '—' }}</p>
+                            <p class="text-xs text-base-content/50">
+                                {{ $ic->start_date_time->translatedFormat('d M') }}
                             </p>
                         </div>
                     </div>

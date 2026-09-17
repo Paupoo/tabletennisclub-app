@@ -31,6 +31,8 @@ class InterclubAvailabilityService
     {
         $interclub->loadMissing(['visitedTeam', 'visitingTeam', 'visitedTeam.club', 'visitingTeam.club']);
 
+        $this->rememberCaptainMessage($interclub, $captainMessage);
+
         $ourTeam = $interclub->ourTeam();
 
         $selectedPlayers = $interclub->getSelectedPlayers();
@@ -70,6 +72,8 @@ class InterclubAvailabilityService
     public function notifySelectionChange(Interclub $interclub, array $addedUserIds, array $removedUserIds, string $captainMessage = ''): void
     {
         $interclub->loadMissing(['visitedTeam', 'visitingTeam', 'visitedTeam.club', 'visitingTeam.club']);
+
+        $this->rememberCaptainMessage($interclub, $captainMessage);
 
         foreach ($removedUserIds as $userId) {
             SendInterclubPlayerRemovedJob::dispatch($interclub->id, $userId);
@@ -128,5 +132,26 @@ class InterclubAvailabilityService
         foreach ($pendingPlayers as $player) {
             SendInterclubAvailabilityRequestJob::dispatch($interclub->id, $player->id);
         }
+    }
+
+    /**
+     * Keep the captain's meet-up instructions on the fixture.
+     *
+     * "RDV 19h au club, maillot rouge" used to exist only inside a sent mail:
+     * the screen's property was handed to the jobs and then reset, so the match
+     * page could show everything about the evening except the one sentence a
+     * player actually needed on the night.
+     *
+     * An empty message never erases a stored one. A captain who re-sends a
+     * lineup without retyping their instructions means "same as before", not
+     * "forget what I said".
+     */
+    private function rememberCaptainMessage(Interclub $interclub, string $captainMessage): void
+    {
+        if (trim($captainMessage) === '') {
+            return;
+        }
+
+        $interclub->update(['captain_message' => $captainMessage]);
     }
 }

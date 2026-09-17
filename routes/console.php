@@ -76,6 +76,20 @@ Schedule::command('attestations:purge')
     ->dailyAt('03:20')
     ->withoutOverlapping();
 
+/*
+ * Les feuilles de match de la fédération : le score officiel de chaque
+ * rencontre et le détail joueur par joueur.
+ *
+ * Tôt le matin plutôt qu'en soirée — les rencontres se jouent le vendredi soir
+ * et le week-end, et les clubs encodent dans les heures ou les jours qui
+ * suivent. Rejouable sans dommage : une feuille non encodée est ignorée, une
+ * feuille déjà importée est corrigée sur place.
+ */
+Schedule::command('interclubs:import-results')
+    ->dailyAt('05:40')
+    ->withoutOverlapping()
+    ->when(Feature::Interclubs->enabled(...));
+
 Schedule::command('season:provision')
     ->yearlyOn(7, 1, '06:00')
     ->withoutOverlapping();

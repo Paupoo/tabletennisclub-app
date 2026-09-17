@@ -13,6 +13,7 @@ use App\Http\Controllers\ClubAdmin\Contact\GuardianInvitationController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
 use App\Http\Controllers\ClubAdmin\DashboardController;
 use App\Http\Controllers\ClubAdmin\Users\UserDocumentController;
+use App\Http\Controllers\ClubEvents\Interclub\InterclubIcsController;
 use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingRsvpController;
@@ -100,6 +101,12 @@ Route::prefix('admin/my-space/')
         Route::livewire('{user}/profile', 'pages::club-admin.users.user-space.profile')->name('admin.user.profile');
         Route::livewire('{user}/settings', 'pages::club-admin.users.user-space.settings')->name('admin.user.settings');
         Route::livewire('{user}/teams', 'pages::club-admin.users.user-space.user-teams')->name('admin.user.teams');
+        /*
+         * Tout ce qu'un membre a joué en interclub, feuille de match par feuille
+         * de match. Hors du groupe `feature:interclubs` comme le reste de
+         * l'espace membre : la page se vide d'elle-même quand il n'y a rien.
+         */
+        Route::livewire('{user}/interclub-record', 'pages::club-admin.users.user-space.interclub-record')->name('admin.user.interclub-record');
         Route::livewire('{user}/calendar', 'pages::club-admin.users.user-space.calendar')->name('admin.user.calendar');
         Route::livewire('{user}/event-subscription', 'pages::club-admin.users.user-space.event-subscription')->name('admin.user.event-subscription');
         Route::livewire('{user}/registration-management', 'pages::club-admin.users.user-space.registration-management')->name('admin.user.registration-management');
@@ -354,6 +361,19 @@ Route::prefix('admin/club-events/interclubs/')
     ->group(function (): void {
         // Personal matches — self-scoped, left broad for any player for now.
         Route::livewire('my-matches', 'pages::club-events.interclubs.my-matches')->name('admin.interclubs.my-matches');
+
+        /*
+         * One fixture, seen from the inside.
+         *
+         * Every notification about a match used to land on the list above,
+         * which knew nothing of which match was meant and — filtering on
+         * `start_date_time >= now()` — did not even contain a played one. The
+         * id is in the URL, so the page checks `viewMatchPage` itself: the
+         * roster has to grant it (a player holds no délégation) and something
+         * has to refuse it.
+         */
+        Route::livewire('my-match/{interclub}', 'pages::club-events.interclubs.my-match')->name('admin.interclubs.my-match');
+        Route::get('my-match/{interclub}/calendar.ics', InterclubIcsController::class)->name('admin.interclubs.my-match.ics');
 
         // Le centre de contrôle a fusionné avec l'écran des sélections : il en
         // était la transposée (une journée, toutes les équipes) et dupliquait

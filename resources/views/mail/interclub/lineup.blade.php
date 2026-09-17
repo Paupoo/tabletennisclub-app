@@ -40,5 +40,9 @@
 </div>
 @endif
 
+<x-mail::button :url="$url">
+{{ __('See the match') }}
+</x-mail::button>
+
 {{ __('See you at the match!') }}
 </x-mail::message>

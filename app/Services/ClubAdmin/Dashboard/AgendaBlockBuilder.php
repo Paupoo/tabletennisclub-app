@@ -16,6 +16,7 @@ use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\Training;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Builds the dashboard's agenda column, one block per kind of object.
@@ -147,18 +148,21 @@ class AgendaBlockBuilder
      */
     private function lastResult(): ?AgendaRow
     {
+        // A score lives on `interclub_results`, which the results screen writes.
+        // This used to read `interclubs.score`, a column nothing has ever
+        // written: the query matched no row, so the block it feeds never once
+        // appeared on the dashboard.
         $match = Interclub::query()
-            ->whereNotNull('result')
-            ->whereNotNull('score')
+            ->whereHas('interclubResult', fn (Builder $query) => $query->whereNotNull('score'))
             ->withoutByes()
             ->orderByDesc('start_date_time')
-            ->with(['visitedTeam.club', 'visitingTeam.club'])
+            ->with(['visitedTeam.club', 'visitingTeam.club', 'interclubResult'])
             ->first();
 
         return $match === null ? null : new AgendaRow(
             label: $this->fixtureLabel($match),
             sub: $match->start_date_time->translatedFormat('D j M'),
-            badge: $match->score,
+            badge: $match->interclubResult?->score,
         );
     }
 

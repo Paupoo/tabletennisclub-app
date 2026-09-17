@@ -8,6 +8,7 @@ use App\Data\User\UpdateUserData;
 use App\Domains\ClubAdmin\Fines\Models\Fine;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Rules\ValidIban;
@@ -90,6 +91,46 @@ new class extends Component
             ->where('user_id', $this->user->id)
             ->latest()
             ->get();
+    }
+
+    /**
+     * What the member has done in interclub, in four numbers and a recent form.
+     *
+     * Counted from the federation's match sheets, so it reaches back as far as
+     * the club has imported — further than any roster goes. Empty for anyone
+     * who has never been on a sheet, which is what keeps the card off the
+     * profile of a member who does not play.
+     *
+     * @return array<string, mixed>
+     */
+    #[Computed]
+    public function interclubRecord(): array
+    {
+        $lines = InterclubIndividualMatch::query()
+            ->join('interclubs', 'interclubs.id', '=', 'interclub_individual_matches.interclub_id')
+            ->where('interclub_individual_matches.user_id', $this->user->id)
+            ->orderByDesc('interclubs.start_date_time')
+            // A tie is one evening: without a second key the five most recent
+            // lines come back in whatever order the engine feels like.
+            ->orderByDesc('interclub_individual_matches.id')
+            ->select('interclub_individual_matches.*')
+            ->get();
+
+        $played = $lines->count();
+
+        if ($played === 0) {
+            return ['played' => 0];
+        }
+
+        $won = $lines->where('we_won', true)->count();
+
+        return [
+            'played' => $played,
+            'rate' => (int) round($won / $played * 100),
+            // Oldest first, so the row reads left to right like a calendar.
+            'recent' => $lines->take(5)->reverse()->values(),
+            'won' => $won,
+        ];
     }
 
     /**

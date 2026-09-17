@@ -7,7 +7,11 @@ namespace App\Domains\Competitions\Interclub\Services;
 use App\Data\Interclub\AfttClub;
 use App\Data\Interclub\AfttDivision;
 use App\Data\Interclub\AfttMatch;
+use App\Data\Interclub\AfttMatchSheet;
+use App\Data\Interclub\AfttRanking;
 use App\Data\Interclub\AfttSeasons;
+use App\Data\Interclub\AfttSheetPlayer;
+use App\Data\Interclub\AfttSheetResult;
 use App\Data\Interclub\AfttTeam;
 use App\Data\Interclub\AfttVenue;
 use Carbon\CarbonImmutable;
@@ -32,7 +36,8 @@ class TabtClient
 {
     /**
      * How TabT names the absent opponent. Trimmed on the way in, because the
-     * federation writes it with a trailing space.
+     * federation writes it with a trailing space — and numbered when a division
+     * has more than one, which is why the name alone cannot be trusted.
      */
     private const string BYE = 'Bye';
 
@@ -40,6 +45,17 @@ class TabtClient
      * TabT's own namespace, unchanged since the API was published.
      */
     private const string NAMESPACE = 'http://api.frenoy.net/TabTAPI';
+
+    /**
+     * The club code the federation puts opposite a bye: there is no club.
+     *
+     * This, not the team name, is what marks a round without an opponent. A
+     * division with two byes calls them "Bye 1" and "Bye 2", which an equality
+     * test on "Bye" lets through as an ordinary fixture — and the import then
+     * asks the federation about a club named "-", gets handed the first entry
+     * of its whole list, and files a match against a club in Antwerp.
+     */
+    private const string NO_CLUB = '-';
 
     /**
      * One club and its first hall, or null when the federation has no such club.
@@ -122,6 +138,8 @@ class TabtClient
             $entry->registerXPathNamespace('t', self::NAMESPACE);
 
             $date = $this->text($entry, 'Date');
+            $homeClub = $this->text($entry, 'HomeClub') ?? '';
+            $awayClub = $this->text($entry, 'AwayClub') ?? '';
             $homeTeam = $this->text($entry, 'HomeTeam') ?? '';
             $awayTeam = $this->text($entry, 'AwayTeam') ?? '';
 
@@ -130,19 +148,107 @@ class TabtClient
                 weekName: $this->text($entry, 'WeekName') ?? '',
                 date: $date === null || $date === '' ? null : CarbonImmutable::parse($date),
                 time: $this->text($entry, 'Time') ?: null,
-                homeClub: $this->text($entry, 'HomeClub') ?? '',
+                homeClub: $homeClub,
                 homeTeam: $homeTeam,
-                awayClub: $this->text($entry, 'AwayClub') ?? '',
+                awayClub: $awayClub,
                 awayTeam: $awayTeam,
                 divisionId: (int) $this->text($entry, 'DivisionId'),
                 divisionName: $this->text($entry, 'DivisionName') ?? '',
                 divisionCategory: (int) $this->text($entry, 'DivisionCategory'),
                 venue: $this->venue($entry),
-                isBye: $homeTeam === self::BYE || $awayTeam === self::BYE,
+                isBye: $homeClub === self::NO_CLUB
+                    || $awayClub === self::NO_CLUB
+                    || str_starts_with($homeTeam, self::BYE)
+                    || str_starts_with($awayTeam, self::BYE),
             );
         }
 
         return $matches;
+    }
+
+    /**
+     * The match sheets of one division: who played, against whom, and how it
+     * ended, line by line.
+     *
+     * A separate call from {@see divisionMatches()} rather than a flag on it.
+     * `WithDetails` multiplies the payload by roughly eight — 109 kB became
+     * 896 kB on the division measured — and the calendar import, which runs over
+     * every division of the season and wants nothing but dates and venues, has
+     * no reason to pay for it.
+     *
+     * Returns every fixture, encoded or not; `detailsCreated` is what separates
+     * a tie that has been played and reported from one that merely has a date.
+     *
+     * @return array<int, AfttMatchSheet>
+     */
+    public function divisionMatchSheets(int $divisionId, int $season): array
+    {
+        $body = $this->call('GetMatches', 'GetMatchesRequest', [
+            'DivisionId' => $divisionId,
+            'Season' => $season,
+            'WithDetails' => 1,
+        ]);
+
+        $sheets = [];
+
+        foreach ($body->xpath('//t:TeamMatchesEntries') ?: [] as $entry) {
+            $entry->registerXPathNamespace('t', self::NAMESPACE);
+
+            $details = $entry->xpath('./t:MatchDetails');
+            $detail = $details === [] || $details === null ? null : $details[0];
+            $detail?->registerXPathNamespace('t', self::NAMESPACE);
+
+            $sheets[] = new AfttMatchSheet(
+                matchId: $this->text($entry, 'MatchId') ?? '',
+                detailsCreated: $detail !== null && $this->text($detail, 'DetailsCreated') === 'true',
+                score: $this->text($entry, 'Score') ?: null,
+                matchSystem: $detail === null ? null : ((int) $this->text($detail, 'MatchSystem') ?: null),
+                isHomeForfeited: $this->text($entry, 'IsHomeForfeited') === 'true',
+                isAwayForfeited: $this->text($entry, 'IsAwayForfeited') === 'true',
+                homePlayers: $detail === null ? [] : $this->sheetPlayers($detail, 'HomePlayers'),
+                awayPlayers: $detail === null ? [] : $this->sheetPlayers($detail, 'AwayPlayers'),
+                results: $detail === null ? [] : $this->sheetResults($detail),
+            );
+        }
+
+        return $sheets;
+    }
+
+    /**
+     * The final table of one division.
+     *
+     * Where a team finished is a fact the federation keeps and the club has to
+     * type in by hand — for the running season a captain will, for the ten
+     * behind us nobody ever will. Six kilobytes a division, so it costs
+     * nothing to ask.
+     *
+     * @return array<int, AfttRanking>
+     */
+    public function divisionRanking(int $divisionId, int $season): array
+    {
+        $body = $this->call('GetDivisionRanking', 'GetDivisionRankingRequest', [
+            'DivisionId' => $divisionId,
+            'Season' => $season,
+        ]);
+
+        $entries = [];
+
+        foreach ($body->xpath('//t:RankingEntries') ?: [] as $entry) {
+            $entry->registerXPathNamespace('t', self::NAMESPACE);
+
+            $entries[] = new AfttRanking(
+                position: (int) $this->text($entry, 'Position'),
+                team: $this->text($entry, 'Team') ?? '',
+                teamClub: $this->text($entry, 'TeamClub') ?? '',
+                gamesPlayed: (int) $this->text($entry, 'GamesPlayed'),
+                gamesWon: (int) $this->text($entry, 'GamesWon'),
+                gamesLost: (int) $this->text($entry, 'GamesLost'),
+                gamesDraw: (int) $this->text($entry, 'GamesDraw'),
+                points: (int) $this->text($entry, 'Points'),
+            );
+        }
+
+        return $entries;
     }
 
     /**
@@ -246,13 +352,6 @@ class TabtClient
             . '</soap:Envelope>';
     }
 
-    /**
-     * First matching element anywhere below this one, as a trimmed string.
-     *
-     * For reaching into a response envelope, never for reading an entry: a
-     * descendant search from a match entry would happily return the venue's name
-     * when asked for the team's.
-     */
     private function find(SimpleXMLElement $xml, string $name): ?string
     {
         return $this->firstText($xml, './/t:' . $name);
@@ -267,6 +366,91 @@ class TabtClient
         }
 
         return trim((string) $found[0]);
+    }
+
+    private function licenceOrNull(?string $value): ?string
+    {
+        return in_array($value, [null, '', '0'], true) ? null : $value;
+    }
+
+    /**
+     * First matching element anywhere below this one, as a trimmed string.
+     *
+     * For reaching into a response envelope, never for reading an entry: a
+     * descendant search from a match entry would happily return the venue's name
+     * when asked for the team's.
+     */
+    /**
+     * The players of one side, in the order the sheet lists them.
+     *
+     * @return array<int, AfttSheetPlayer>
+     */
+    private function sheetPlayers(SimpleXMLElement $detail, string $side): array
+    {
+        $blocks = $detail->xpath('./t:' . $side);
+
+        if ($blocks === [] || $blocks === null) {
+            return [];
+        }
+
+        $blocks[0]->registerXPathNamespace('t', self::NAMESPACE);
+        $players = [];
+
+        foreach ($blocks[0]->xpath('./t:Players') ?: [] as $node) {
+            $node->registerXPathNamespace('t', self::NAMESPACE);
+
+            $index = $this->text($node, 'UniqueIndex');
+
+            if (in_array($index, [null, '', '0'], true)) {
+                continue;
+            }
+
+            $victories = $this->text($node, 'VictoryCount');
+
+            $players[] = new AfttSheetPlayer(
+                position: (int) $this->text($node, 'Position'),
+                uniqueIndex: $index,
+                firstName: $this->text($node, 'FirstName') ?? '',
+                lastName: $this->text($node, 'LastName') ?? '',
+                ranking: $this->text($node, 'Ranking') ?: null,
+                victoryCount: $victories === null || $victories === '' ? null : (int) $victories,
+            );
+        }
+
+        return $players;
+    }
+
+    /**
+     * The individual matches of one tie.
+     *
+     * A player index of `0` means "nobody named here", which is how the
+     * federation writes the double. It becomes null rather than "0" so that no
+     * caller can ever join it against a licence.
+     *
+     * @return array<int, AfttSheetResult>
+     */
+    private function sheetResults(SimpleXMLElement $detail): array
+    {
+        $results = [];
+
+        foreach ($detail->xpath('./t:IndividualMatchResults') ?: [] as $node) {
+            $node->registerXPathNamespace('t', self::NAMESPACE);
+
+            $home = $this->text($node, 'HomeSetCount');
+            $away = $this->text($node, 'AwaySetCount');
+
+            $results[] = new AfttSheetResult(
+                position: (int) $this->text($node, 'Position'),
+                homeUniqueIndex: $this->licenceOrNull($this->text($node, 'HomePlayerUniqueIndex')),
+                awayUniqueIndex: $this->licenceOrNull($this->text($node, 'AwayPlayerUniqueIndex')),
+                homeSetCount: $home === null || $home === '' ? null : (int) $home,
+                awaySetCount: $away === null || $away === '' ? null : (int) $away,
+                isHomeForfeited: $this->text($node, 'IsHomeForfeited') === 'true',
+                isAwayForfeited: $this->text($node, 'IsAwayForfeited') === 'true',
+            );
+        }
+
+        return $results;
     }
 
     /**

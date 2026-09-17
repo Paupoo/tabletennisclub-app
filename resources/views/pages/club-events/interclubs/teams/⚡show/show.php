@@ -46,14 +46,16 @@ new class extends Component
         $levelLabel = $levelLabels[$team->league?->level] ?? $team->league?->level;
         $division = implode(' – ', array_filter([$levelLabel, $team->league?->division]));
 
-        // Matchs passés (résultats mock tant que le module résultats n'est pas codé)
+        // `interclubResult` porte le score : sans lui la carte lève une
+        // LazyLoadingViolation dès la deuxième rencontre.
         $pastInterclubs = Interclub::where(fn ($q) => $q
             ->where('visited_team_id', $team->id)
             ->orWhere('visiting_team_id', $team->id)
         )
+            ->withoutByes()
             ->where('start_date_time', '<', now())
             ->orderByDesc('start_date_time')
-            ->with(['visitedTeam.club', 'visitingTeam.club'])
+            ->with(['visitedTeam.club', 'visitingTeam.club', 'interclubResult'])
             ->get();
 
         // Matchs à venir

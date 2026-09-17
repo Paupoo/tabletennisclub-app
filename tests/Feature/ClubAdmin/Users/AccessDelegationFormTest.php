@@ -250,7 +250,7 @@ describe('state 3 — rights only, the access manager', function (): void {
             ->assertSee(__('Delegations'))
             ->assertDontSee(__('Secure your account'))
             ->assertDontSee(__('Personal information'))
-            ->assertDontSee(__('Legal guardians'));
+            ->assertDontSee(__('Responsible adults'));
     });
 
     it('refuses every forged data field in the payload', function (): void {

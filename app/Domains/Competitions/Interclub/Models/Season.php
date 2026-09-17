@@ -109,6 +109,11 @@ class Season extends Model
         Cache::forget('season.current');
     }
 
+    public function interclubResults(): HasMany
+    {
+        return $this->hasMany(InterclubResult::class);
+    }
+
     // Relationships
 
     public function interclubs(): HasMany

@@ -4806,5 +4806,16 @@
     "No line-up was recorded for this match.": "Er werd geen opstelling geregistreerd voor deze wedstrijd.",
     "Individual results": "Individuele uitslagen",
     "Our player": "Onze speler",
-    ":count match|:count matches": ":count wedstrijd|:count wedstrijden"
+    ":count match|:count matches": ":count wedstrijd|:count wedstrijden",
+    "My interclub record": "Mijn interclubparcours",
+    "Every individual match the federation has you on": "Elke individuele wedstrijd waarop de federatie u vermeldt",
+    "No interclub match recorded yet": "Nog geen interclubwedstrijd geregistreerd",
+    "Individual results appear here once the federation has published the match sheet.": "Individuele uitslagen verschijnen hier zodra de federatie het wedstrijdblad publiceert.",
+    "Matches played": "Gespeelde wedstrijden",
+    "Matches won": "Gewonnen wedstrijden",
+    "Ties": "Ontmoetingen",
+    "Recent form": "Recente vorm",
+    "See everything": "Alles bekijken",
+    "L": "V",
+    ":count tie|:count ties": ":count ontmoeting|:count ontmoetingen"
 }

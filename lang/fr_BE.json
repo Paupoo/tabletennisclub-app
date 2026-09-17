@@ -4806,5 +4806,16 @@
     "No line-up was recorded for this match.": "Aucune composition n'a été enregistrée pour cette rencontre.",
     "Individual results": "Résultats individuels",
     "Our player": "Notre joueur",
-    ":count match|:count matches": ":count rencontre|:count rencontres"
+    ":count match|:count matches": ":count rencontre|:count rencontres",
+    "My interclub record": "Mon parcours interclub",
+    "Every individual match the federation has you on": "Chaque match individuel où la fédération vous a inscrit",
+    "No interclub match recorded yet": "Aucun match interclub enregistré",
+    "Individual results appear here once the federation has published the match sheet.": "Les résultats individuels apparaissent ici dès que la fédération publie la feuille de match.",
+    "Matches played": "Matchs joués",
+    "Matches won": "Matchs gagnés",
+    "Ties": "Rencontres",
+    "Recent form": "Forme récente",
+    "See everything": "Voir tout",
+    "L": "D",
+    ":count tie|:count ties": ":count rencontre|:count rencontres"
 }

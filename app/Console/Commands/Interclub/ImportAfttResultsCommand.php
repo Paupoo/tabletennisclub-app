@@ -72,6 +72,7 @@ class ImportAfttResultsCommand extends Command
             ['Individual matches written', $tally['individual_matches']],
             ['Sheets not encoded yet', $tally['sheets_pending']],
             ['Sheets with no fixture of ours', $tally['sheets_unknown']],
+            ['Final positions written', $tally['positions_written']],
         ]);
 
         /*

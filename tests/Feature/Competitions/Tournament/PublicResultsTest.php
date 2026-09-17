@@ -56,7 +56,12 @@ test('shows current active season by default', function (): void {
         ->assertSee($currentSeason->name);
 });
 
-test('shows no more than 5 past seasons plus the current one in dropdown', function (): void {
+test('lists every past season the club fielded a team in, however far back', function (): void {
+    // The dropdown used to stop after five. It was harmless while the club only
+    // had the season it was playing; with the federation's archive imported it
+    // would hide the older half of the club's own history.
+    $ourClub = Club::factory()->ownClub()->create();
+
     Season::factory()->create([
         'name' => '2025-2026',
         'is_active' => true,
@@ -66,20 +71,46 @@ test('shows no more than 5 past seasons plus the current one in dropdown', funct
 
     for ($i = 1; $i <= 7; $i++) {
         $year = 2025 - $i;
-        Season::factory()->create([
+        $season = Season::factory()->create([
             'name' => "{$year}-" . ($year + 1),
             'is_active' => false,
             'start_at' => "{$year}-09-01",
             'end_at' => ($year + 1) . '-06-30',
         ]);
+
+        $league = League::factory()->create(['season_id' => $season->id, 'category' => 'MEN', 'division' => '2A']);
+        Team::factory()->create([
+            'season_id' => $season->id,
+            'league_id' => $league->id,
+            'club_id' => $ourClub->id,
+        ]);
     }
 
     $response = $this->get(route('results'))->assertOk();
 
-    $response->assertSee('2025-2026');   // current
-    $response->assertSee('2024-2025');   // 1st past
-    $response->assertSee('2020-2021');   // 5th past
-    $response->assertDontSee('2019-2020'); // 6th past — must be hidden
+    $response->assertSee('2025-2026')    // current
+        ->assertSee('2024-2025')         // 1st past
+        ->assertSee('2020-2021')         // 5th past, the old boundary
+        ->assertSee('2018-2019');        // 7th past, which used to be hidden
+});
+
+test('leaves out a past season the club never fielded a team in', function (): void {
+    // A year provisioned and never played is not a year to scroll past.
+    Season::factory()->create([
+        'name' => '2025-2026',
+        'is_active' => true,
+        'start_at' => '2025-09-01',
+        'end_at' => '2026-06-30',
+    ]);
+
+    Season::factory()->create([
+        'name' => '2016-2017',
+        'is_active' => false,
+        'start_at' => '2016-09-01',
+        'end_at' => '2017-06-30',
+    ]);
+
+    $this->get(route('results'))->assertOk()->assertDontSee('2016-2017');
 });
 
 test('future seasons do not appear in the dropdown', function (): void {

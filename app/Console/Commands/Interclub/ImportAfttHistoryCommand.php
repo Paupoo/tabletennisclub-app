@@ -203,6 +203,7 @@ class ImportAfttHistoryCommand extends Command
             $tally['sheets_pending'],
             $tally['sheets_unknown'],
         ));
+        $this->line(sprintf('  Final positions written: %d', $tally['positions_written']));
 
         $unknown = array_unique($report['unknown_licences']);
 

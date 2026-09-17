@@ -8,6 +8,7 @@ use App\Data\Interclub\AfttClub;
 use App\Data\Interclub\AfttDivision;
 use App\Data\Interclub\AfttMatch;
 use App\Data\Interclub\AfttMatchSheet;
+use App\Data\Interclub\AfttRanking;
 use App\Data\Interclub\AfttSeasons;
 use App\Data\Interclub\AfttSheetPlayer;
 use App\Data\Interclub\AfttSheetResult;
@@ -194,6 +195,43 @@ class TabtClient
         }
 
         return $sheets;
+    }
+
+    /**
+     * The final table of one division.
+     *
+     * Where a team finished is a fact the federation keeps and the club has to
+     * type in by hand — for the running season a captain will, for the ten
+     * behind us nobody ever will. Six kilobytes a division, so it costs
+     * nothing to ask.
+     *
+     * @return array<int, AfttRanking>
+     */
+    public function divisionRanking(int $divisionId, int $season): array
+    {
+        $body = $this->call('GetDivisionRanking', 'GetDivisionRankingRequest', [
+            'DivisionId' => $divisionId,
+            'Season' => $season,
+        ]);
+
+        $entries = [];
+
+        foreach ($body->xpath('//t:RankingEntries') ?: [] as $entry) {
+            $entry->registerXPathNamespace('t', self::NAMESPACE);
+
+            $entries[] = new AfttRanking(
+                position: (int) $this->text($entry, 'Position'),
+                team: $this->text($entry, 'Team') ?? '',
+                teamClub: $this->text($entry, 'TeamClub') ?? '',
+                gamesPlayed: (int) $this->text($entry, 'GamesPlayed'),
+                gamesWon: (int) $this->text($entry, 'GamesWon'),
+                gamesLost: (int) $this->text($entry, 'GamesLost'),
+                gamesDraw: (int) $this->text($entry, 'GamesDraw'),
+                points: (int) $this->text($entry, 'Points'),
+            );
+        }
+
+        return $entries;
     }
 
     /**

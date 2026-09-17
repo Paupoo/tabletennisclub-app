@@ -175,6 +175,45 @@
                 @endif
             </x-card>
 
+            {{-- Parcours interclub — absent pour qui n'a jamais figuré sur une feuille --}}
+            @php $record = $this->interclubRecord; @endphp
+            @if ($record['played'] > 0)
+                <x-card :title="__('My interclub record')" icon="o-trophy" separator>
+                    <x-slot:menu>
+                        <x-button :label="__('See everything')" icon-right="o-arrow-right" class="btn-ghost btn-sm"
+                            link="{{ route('admin.user.interclub-record', $user) }}" />
+                    </x-slot:menu>
+
+                    <div class="grid grid-cols-3 gap-4">
+                        @foreach ([
+                            ['value' => $record['played'], 'label' => __('Matches played')],
+                            ['value' => $record['won'], 'label' => __('Matches won')],
+                            ['value' => $record['rate'] . '%', 'label' => __('Win rate')],
+                        ] as $stat)
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-base-content">{{ $stat['value'] }}</div>
+                                <div class="mt-0.5 text-xs font-semibold uppercase tracking-wide text-base-content/50">
+                                    {{ $stat['label'] }}
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="mt-5 flex flex-wrap items-center gap-2 border-t border-base-300 pt-4">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-base-content/50">
+                            {{ __('Recent form') }}
+                        </span>
+                        @foreach ($record['recent'] as $line)
+                            <span @class([
+                                'inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold',
+                                'bg-success/15 text-success' => $line->we_won,
+                                'bg-error/15 text-error' => ! $line->we_won,
+                            ])>{{ $line->we_won ? __('W') : __('L') }}</span>
+                        @endforeach
+                    </div>
+                </x-card>
+            @endif
+
             {{-- Amendes — n'apparaît que si le membre en a (quasiment jamais) --}}
             @if ($this->fines->isNotEmpty())
                 @php $finesDue = $this->fines->filter(fn ($f) => $f->payment?->status === 'pending'); @endphp

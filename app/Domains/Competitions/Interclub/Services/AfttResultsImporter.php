@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace App\Domains\Competitions\Interclub\Services;
 
 use App\Data\Interclub\AfttMatchSheet;
+use App\Data\Interclub\AfttRanking;
 use App\Data\Interclub\AfttSheetPlayer;
 use App\Data\Interclub\AfttSheetResult;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
 use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubResultEnum;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -42,6 +45,7 @@ class AfttResultsImporter
     private array $tally = [
         'fixtures_updated' => 0,
         'individual_matches' => 0,
+        'positions_written' => 0,
         'sheets_pending' => 0,
         'sheets_unknown' => 0,
     ];
@@ -74,6 +78,8 @@ class AfttResultsImporter
             foreach ($sheets as $sheet) {
                 $this->importSheet($sheet);
             }
+
+            $this->importRanking($season, (int) $divisionId, $afttSeason, $client);
         }
 
         return ['tally' => $this->tally, 'report' => $this->report];
@@ -94,6 +100,38 @@ class AfttResultsImporter
         }
 
         return $byIndex;
+    }
+
+    /**
+     * Where our teams finished in this division.
+     *
+     * Writes the same `teams.final_position` the results screen writes, in the
+     * same words a captain would use — this is not a second pipeline, it is the
+     * federation filling in a field nobody is going to type for ten past
+     * seasons. Like the score, the federation overrules what was typed: its
+     * table is the official one.
+     *
+     * A division the federation will not rank is not a failure worth stopping
+     * for. The scores are already in by this point, and a missing final
+     * position leaves the column exactly as it was.
+     */
+    private function importRanking(Season $season, int $divisionId, int $afttSeason, TabtClient $client): void
+    {
+        try {
+            $ranking = $client->divisionRanking($divisionId, $afttSeason);
+        } catch (Throwable) {
+            return;
+        }
+
+        $ourClub = Club::query()->where('is_own_club', true)->value('licence');
+
+        foreach ($ranking as $entry) {
+            if ($entry->teamClub !== $ourClub) {
+                continue;
+            }
+
+            $this->writeFinalPosition($season, $divisionId, $entry);
+        }
     }
 
     private function importSheet(AfttMatchSheet $sheet): void
@@ -126,12 +164,21 @@ class AfttResultsImporter
         $this->tally['fixtures_updated']++;
     }
 
-    /**
-     * The member holding this licence, if the club roster knows it.
-     */
     private function memberFor(?string $licence): ?User
     {
         return $licence === null ? null : User::where('licence', $licence)->first();
+    }
+
+    /**
+     * The member holding this licence, if the club roster knows it.
+     */
+    /**
+     * The club's own wording, so an imported position is indistinguishable from
+     * a typed one: "1ère place", "3ème place".
+     */
+    private function positionLabel(int $position): string
+    {
+        return $position === 1 ? '1ère place' : $position . 'ème place';
     }
 
     /**
@@ -207,6 +254,28 @@ class AfttResultsImporter
             'user_id' => $member?->id,
             'we_won' => $weAreHome ? $homeWon : ! $homeWon,
         ];
+    }
+
+    private function writeFinalPosition(Season $season, int $divisionId, AfttRanking $entry): void
+    {
+        $team = Team::where('teams.season_id', $season->id)
+            ->where('teams.name', $entry->letter())
+            ->whereHas('club', fn ($query) => $query->where('is_own_club', true))
+            ->whereHas('league', fn ($query) => $query->where('aftt_division_id', $divisionId))
+            ->first();
+
+        if (! $team instanceof Team) {
+            return;
+        }
+
+        $label = $this->positionLabel($entry->position);
+
+        if ($team->final_position === $label) {
+            return;
+        }
+
+        $team->update(['final_position' => $label]);
+        $this->tally['positions_written']++;
     }
 
     private function writeIndividualMatches(Interclub $interclub, AfttMatchSheet $sheet, bool $weAreHome): void

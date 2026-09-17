@@ -19,10 +19,16 @@ use Illuminate\Support\Facades\Http;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
+    // L'ordre réel des appels de l'importeur, division par division : les
+    // feuilles, puis le classement. `Http::fake()` fusionne les stubs au lieu
+    // de les remplacer, donc un second appel dans un test ne corrigerait rien —
+    // la séquence se pose ici, une fois.
     Http::fake([
-        'api.aftt.be/*' => Http::response(
-            file_get_contents(base_path('tests/Fixtures/Aftt/get-matches-with-details.xml'))
-        ),
+        'api.aftt.be/*' => Http::sequence()
+            ->push(file_get_contents(base_path('tests/Fixtures/Aftt/get-matches-with-details.xml')))
+            ->whenEmpty(Http::response(
+                file_get_contents(base_path('tests/Fixtures/Aftt/get-division-ranking-8860.xml'))
+            )),
     ]);
 
     $this->season = Season::factory()->create(['is_active' => true]);
@@ -32,8 +38,10 @@ beforeEach(function (): void {
         'aftt_division_id' => 8860,
     ]);
 
-    $this->ourClub = Club::factory()->create(['is_own_club' => true]);
-    $this->theirClub = Club::factory()->create(['is_own_club' => false]);
+    // The licence is what a ranking line is claimed by, so it has to be the
+    // one the fixture names.
+    $this->ourClub = Club::factory()->create(['is_own_club' => true, 'licence' => 'BBW214']);
+    $this->theirClub = Club::factory()->create(['is_own_club' => false, 'licence' => 'BBW350']);
 });
 
 /**
@@ -206,4 +214,50 @@ it('corrects a sheet in place when run twice', function (): void {
     expect(InterclubIndividualMatch::where('interclub_id', $match->id)->count())
         ->toBe($firstPass)
         ->toBe(16);
+});
+
+it('writes where our teams finished, in the words the club already uses', function (): void {
+    $this->league->update(['aftt_division_id' => 8860]);
+
+    $a = Team::factory()->create([
+        'club_id' => $this->ourClub->id, 'league_id' => $this->league->id,
+        'season_id' => $this->season->id, 'name' => 'A',
+    ]);
+    $b = Team::factory()->create([
+        'club_id' => $this->ourClub->id, 'league_id' => $this->league->id,
+        'season_id' => $this->season->id, 'name' => 'B',
+    ]);
+
+    ['tally' => $tally] = runImport();
+    expect($a->fresh()->final_position)->toBe('1ère place')
+        ->and($b->fresh()->final_position)->toBe('3ème place')
+        ->and($tally['positions_written'])->toBe(2);
+});
+
+it('leaves another club alone, however it finished', function (): void {
+    $this->league->update(['aftt_division_id' => 8860]);
+
+    // "CTT Tourinnes A" sits second in the same table, and shares our letter.
+    $theirs = Team::factory()->create([
+        'club_id' => $this->theirClub->id, 'league_id' => $this->league->id,
+        'season_id' => $this->season->id, 'name' => 'A',
+    ]);
+
+    runImport();
+
+    expect($theirs->fresh()->final_position)->toBeNull();
+});
+
+it('counts nothing when the position has not moved', function (): void {
+    $this->league->update(['aftt_division_id' => 8860]);
+
+    Team::factory()->create([
+        'club_id' => $this->ourClub->id, 'league_id' => $this->league->id,
+        'season_id' => $this->season->id, 'name' => 'A',
+        'final_position' => '1ère place',
+    ]);
+
+    ['tally' => $tally] = runImport();
+
+    expect($tally['positions_written'])->toBe(0);
 });

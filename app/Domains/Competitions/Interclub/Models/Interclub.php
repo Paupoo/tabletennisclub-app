@@ -41,6 +41,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property-read League|null $league
  * @property-read Room|null $room
  * @property-read Season|null $season
+ * @property-read Collection<int, InterclubIndividualMatch> $individualMatches
  * @property-read Collection<int, Team> $teams
  * @property-read int|null $teams_count
  * @property-read Collection<int, User> $users
@@ -116,6 +117,11 @@ class Interclub extends Model
             ->flip()
             ->map(fn (int $i): int => $i + 1)
             ->toArray();
+    }
+
+    public function individualMatches(): HasMany
+    {
+        return $this->hasMany(InterclubIndividualMatch::class);
     }
 
     public function interclubResult(): HasOne

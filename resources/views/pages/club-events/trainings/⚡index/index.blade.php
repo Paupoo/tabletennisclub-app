@@ -5,13 +5,16 @@
 <div>
     {{-- ── Header ──────────────────────────────────────────────────────────── --}}
     @if ($selectedPackId)
-        {{-- SESSION LIST HEADER --}}
+        {{-- PACK SHEET HEADER — the subtitle is assembled from what exists: a
+             pack without a level was showing a leading separator. --}}
         <x-header progress-indicator separator
-            :subtitle="$selectedPack?->level?->label . ' · ' . $selectedPack?->type?->label()"
-            :title="$selectedPack?->name ?? __('Sessions')">
+            :subtitle="implode(' · ', array_filter([$selectedPack?->level?->label, $selectedPack?->type?->label(), $selectedPack?->season?->name]))"
+            :title="$selectedPack?->name ?? __('Training pack')">
             <x-slot:actions>
                 <x-button class="btn-primary btn-sm" icon="o-user-plus" :label="__('Add a member')"
                     wire:click="openAddMember" />
+                <x-button class="btn-ghost btn-sm" icon="o-pencil" :label="__('Edit')"
+                    wire:click="openEdit({{ $selectedPackId }})" />
                 <x-button class="btn-ghost" icon="o-arrow-left" :label="__('Back')" wire:click="backToList" />
             </x-slot:actions>
         </x-header>
@@ -63,63 +66,14 @@
         @endif
     @elseif ($selectedPackId)
         {{-- ================================================================
-             SESSION DRILL-DOWN
-        ================================================================ --}}
-        <div class="space-y-3">
-            @forelse ($sessions as $session)
-                @php
-                    $cancelled = $session->isCancelled();
-                @endphp
-                <div @class([
-                    'flex items-center justify-between rounded-xl border px-4 py-3',
-                    'bg-base-100 border-base-300' => ! $cancelled,
-                    'bg-base-200/50 border-base-300 opacity-60' => $cancelled,
-                ])>
-                    <div class="flex items-center gap-4">
-                        <div class="text-center">
-                            <div class="text-xs font-bold uppercase text-base-content/50">
-                                {{ $session->start->translatedFormat('M') }}
-                            </div>
-                            <div class="text-2xl font-bold leading-none">{{ $session->start->format('d') }}</div>
-                            <div class="text-xs text-base-content/50">{{ $session->start->translatedFormat('D') }}
-                            </div>
-                        </div>
-                        <div>
-                            <div class="font-medium">
-                                {{ $session->start->format('H:i') }}
-                                – {{ $session->end->format('H:i') }}
-                            </div>
-                            <div class="text-xs text-base-content/60">{{ $session->room?->name }}</div>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-3">
-                        @if ($cancelled)
-                            <x-badge
-                                value="{{ $session->status === 'cancelled_free' ? __('Free practice') : __('Closed') }}"
-                                class="badge-error badge-soft" />
-                        @else
-                            <x-badge value="{{ __('Scheduled') }}" class="badge-success badge-soft" />
-                            <x-button class="btn-ghost btn-sm text-error" icon="o-x-circle"
-                                :label="__('Cancel')" wire:click="openCancel({{ $session->id }})" />
-                        @endif
-                    </div>
-                </div>
-            @empty
-                <div class="rounded-xl border border-dashed border-base-300 py-16 text-center text-base-content/40">
-                    <x-icon class="mx-auto mb-2 h-10 w-10" name="o-calendar" />
-                    <p>{{ __('No sessions generated yet.') }}</p>
-                </div>
-            @endforelse
-        </div>
-
-        {{-- ================================================================
-             ATTENDANCE MATRIX — one grid answers both questions:
-             a hollow column is a session nobody came to, a hollow row is a
-             member who pays and never shows up.
+             PACK SHEET — one screen answers "who is in it, and is it working?"
+             The sessions were the only thing this drill-down showed, so the
+             roster was readable nowhere: the committee went member by member
+             through the affiliations screen to rebuild a list the pack knows.
         ================================================================ --}}
         @php
-            $matrix = $this->attendanceMatrix;
+            $summary = $this->packSummary;
+            $roster = $this->packRoster;
             $rateTone = fn (?int $rate) => match (true) {
                 $rate === null => 'text-base-content/30',
                 $rate >= 70 => 'text-success',
@@ -128,111 +82,388 @@
             };
         @endphp
 
-        @if (! empty($matrix['sessions']))
-            <div class="mt-8">
-                <div class="mb-3 flex items-center justify-between">
-                    <p class="text-xs font-bold uppercase tracking-wide text-base-content/50">
-                        {{ __('Attendance') }}
-                    </p>
+        {{-- ── Identity — until now these facts were only legible in the edit form. --}}
+        <div class="rounded-xl border border-base-300 bg-base-100 p-4">
+            <div class="flex flex-wrap items-center gap-2">
+                @unless ($selectedPack?->is_active)
+                    <x-badge :value="__('Withdrawn')" class="badge-warning badge-soft" icon="o-eye-slash" />
+                @endunless
+                <x-badge :value="$selectedPack?->enrollments_open ? __('Enrolments open') : __('Enrolments closed')"
+                    class="{{ $selectedPack?->enrollments_open ? 'badge-success' : 'badge-neutral' }} badge-soft"
+                    :icon="$selectedPack?->enrollments_open ? 'o-lock-open' : 'o-lock-closed'" />
+                @if ($selectedPack?->is_open_enrollment)
+                    <x-badge :value="__('Self-service')" class="badge-info badge-soft" icon="o-hand-raised" />
+                @endif
+                @if ($selectedPack?->eventPost?->status->value === 'PUBLISHED')
+                    <x-badge :value="__('On website')" class="badge-success badge-soft" icon="o-globe-alt" />
+                @endif
+            </div>
 
-                    <label class="flex cursor-pointer items-center gap-2 text-xs text-base-content/60">
-                        <x-checkbox wire:model.live="showAllSessions" />
-                        {{ __('Show the whole season') }}
-                    </label>
+            <dl class="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                    <dt class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Coach') }}</dt>
+                    <dd class="mt-0.5 text-sm">{{ $selectedPack?->trainer?->full_name ?? __('No coach') }}</dd>
                 </div>
+                <div>
+                    <dt class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Room') }}</dt>
+                    <dd class="mt-0.5 text-sm">{{ $selectedPack?->room?->name ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Schedule') }}</dt>
+                    <dd class="mt-0.5 text-sm">{{ $selectedPack?->scheduleLabel() ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Price') }}</dt>
+                    <dd class="mt-0.5 text-sm tabular-nums">
+                        {{ number_format((float) $selectedPack?->price, 2, ',', ' ') }} €
+                        @unless ($selectedPack?->allow_discount)
+                            <span class="text-xs text-subtle">· {{ __('no family discount') }}</span>
+                        @endunless
+                    </dd>
+                </div>
+            </dl>
 
-                <div class="overflow-x-auto rounded-xl border border-base-300 bg-base-100">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th class="sticky left-0 z-10 bg-base-100">{{ __('Member') }}</th>
-                                @foreach ($matrix['sessions'] as $column)
-                                    <th @class([
-                                        'text-center text-xs font-medium',
-                                        'text-base-content/30 line-through' => $column['cancelled'],
-                                    ])>
-                                        {{ \Carbon\Carbon::parse($column['date'])->format('d/m') }}
-                                    </th>
-                                @endforeach
-                                <th class="text-center">{{ __('Rate') }}</th>
-                            </tr>
-                        </thead>
+            @if (filled($selectedPack?->description))
+                <p class="mt-4 border-t border-base-300 pt-3 text-sm text-base-content/70">
+                    {{ $selectedPack->description }}
+                </p>
+            @endif
+        </div>
 
-                        <tbody>
-                            @foreach (array_merge($matrix['members'], $matrix['walkIns']) as $index => $row)
-                                @php $isWalkIn = $index >= count($matrix['members']); @endphp
-                                <tr @class(['border-t-2 border-warning/40' => $isWalkIn && $index === count($matrix['members'])])>
-                                    <td class="sticky left-0 z-10 whitespace-nowrap bg-base-100">
-                                        {{ $row['name'] }}
-                                        @if ($isWalkIn)
-                                            <x-badge class="badge-warning badge-soft badge-xs ml-1"
-                                                :value="__('not enrolled')" />
-                                        @endif
-                                    </td>
+        {{-- ── The four numbers the committee asks for, in the shared stat card. --}}
+        <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <x-admin.shared.stat-card
+                :label="__('Enrolled')"
+                :value="$summary['capped'] ? $summary['enrolled'] . ' / ' . $summary['max'] : (string) $summary['enrolled']"
+                :hint="$summary['capped']
+                    ? trans_choice(':n spot left|:n spots left', $summary['spotsLeft'], ['n' => $summary['spotsLeft']])
+                    : __('No cap on this pack')"
+                icon="o-users"
+                color="primary" />
+            <x-admin.shared.stat-card
+                :label="__('Waiting list')"
+                :value="(string) $summary['waiting']"
+                :hint="$summary['pending'] > 0
+                    ? trans_choice('{1}:count request to approve|[2,*]:count requests to approve', $summary['pending'], ['count' => $summary['pending']])
+                    : __('Nothing to approve')"
+                icon="o-queue-list"
+                :color="$summary['pending'] > 0 ? 'warning' : 'neutral'" />
+            <x-admin.shared.stat-card
+                :label="__('Sessions')"
+                :value="(string) $summary['sessions']"
+                :hint="__(':held held · :upcoming to come · :cancelled cancelled', [
+                    'held' => $summary['held'],
+                    'upcoming' => $summary['upcoming'],
+                    'cancelled' => $summary['cancelled'],
+                ])"
+                icon="o-calendar-days" />
+            <x-admin.shared.stat-card
+                :label="__('Turnout')"
+                :value="$summary['turnout'] !== null ? $summary['turnout'] . '%' : '—'"
+                :hint="$summary['turnout'] !== null
+                    ? __('Of the enrolled members, over the recorded sessions')
+                    : __('No session recorded yet')"
+                icon="o-chart-bar"
+                :color="match (true) {
+                    $summary['turnout'] === null => 'neutral',
+                    $summary['turnout'] >= 70 => 'success',
+                    $summary['turnout'] >= 40 => 'warning',
+                    default => 'error',
+                }" />
+        </div>
 
+        <x-tabs wire:model="packTab" class="mt-6">
+            {{-- ── Roster — the reason this sheet exists. ───────────────────── --}}
+            <x-tab name="roster" :label="__('Members')" icon="o-user-group">
+                @php
+                    // Four lists, not one status column: the committee does not ask
+                    // the same question of an enrolled member, a request to approve,
+                    // a queue and someone who left.
+                    // La classe est écrite en entier, jamais assemblée : Tailwind lit
+                    // les fichiers comme du texte, et un `badge-{$tone}` ne génère rien.
+                    $groups = [
+                        ['key' => 'pending', 'label' => __('Requests to approve'), 'badge' => 'badge-warning badge-soft badge-sm', 'always' => false],
+                        ['key' => 'enrolled', 'label' => __('Enrolled'), 'badge' => 'badge-success badge-soft badge-sm', 'always' => true],
+                        ['key' => 'waiting', 'label' => __('Waiting list'), 'badge' => 'badge-info badge-soft badge-sm', 'always' => false],
+                        ['key' => 'past', 'label' => __('Left the pack'), 'badge' => 'badge-neutral badge-soft badge-sm', 'always' => false],
+                    ];
+                @endphp
+
+                <div class="space-y-6">
+                    @foreach ($groups as $group)
+                        @continue(! $group['always'] && empty($roster[$group['key']]))
+
+                        <div>
+                            <div class="mb-2 flex items-center gap-2">
+                                <p class="text-xs font-bold uppercase tracking-widest text-muted">
+                                    {{ $group['label'] }}
+                                </p>
+                                <x-badge :value="count($roster[$group['key']])" :class="$group['badge']" />
+                            </div>
+
+                            @if (empty($roster[$group['key']]))
+                                <div class="rounded-xl border border-dashed border-base-300 py-10 text-center text-base-content/40">
+                                    <x-icon class="mx-auto mb-2 h-8 w-8" name="o-user-group" />
+                                    <p>{{ __('Nobody is enrolled in this pack yet.') }}</p>
+                                    <x-button class="btn-primary btn-sm mt-4" icon="o-user-plus"
+                                        :label="__('Add a member')" wire:click="openAddMember" />
+                                </div>
+                            @else
+                                <div class="overflow-x-auto rounded-xl border border-base-300 bg-base-100">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                @if ($group['key'] === 'waiting')
+                                                    <th class="w-12 text-center">#</th>
+                                                @endif
+                                                <th>{{ __('Member') }}</th>
+                                                <th>{{ __('Ranking') }}</th>
+                                                <th>
+                                                    @if ($group['key'] === 'waiting')
+                                                        {{ __('Confirm before') }}
+                                                    @elseif ($group['key'] === 'past')
+                                                        {{ __('Left on') }}
+                                                    @else
+                                                        {{ __('Since') }}
+                                                    @endif
+                                                </th>
+                                                @if ($group['key'] === 'enrolled')
+                                                    <th class="text-center">{{ __('Attendance') }}</th>
+                                                @endif
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($roster[$group['key']] as $row)
+                                                <tr wire:key="roster-{{ $group['key'] }}-{{ $row['id'] }}">
+                                                    @if ($group['key'] === 'waiting')
+                                                        <td class="text-center text-sm font-bold tabular-nums text-base-content/50">
+                                                            {{ $row['position'] ?? '—' }}
+                                                        </td>
+                                                    @endif
+
+                                                    <td class="whitespace-nowrap">
+                                                        {{ $row['name'] }}
+                                                        @if ($row['status'] === 'offered')
+                                                            <x-badge class="badge-info badge-soft badge-xs ml-1"
+                                                                :value="__('spot offered')" />
+                                                        @endif
+                                                        @if ($row['unpaid'])
+                                                            {{-- The pack is booked against a membership nobody has
+                                                                 validated yet: the spot is held, the money is not. --}}
+                                                            <x-badge class="badge-warning badge-soft badge-xs ml-1"
+                                                                :value="__('membership pending')" />
+                                                        @endif
+                                                        @if ($row['overrideAmount'] !== null)
+                                                            <x-badge class="badge-ghost badge-xs ml-1"
+                                                                :value="__('price set by hand: :amount €', ['amount' => number_format($row['overrideAmount'], 2, ',', ' ')])"
+                                                                :title="$row['overrideReason']" />
+                                                        @endif
+                                                    </td>
+
+                                                    <td class="font-mono text-xs text-base-content/60">
+                                                        {{ $row['ranking'] ?? '—' }}
+                                                    </td>
+
+                                                    <td class="whitespace-nowrap text-sm text-base-content/70">
+                                                        @php
+                                                            $date = match ($group['key']) {
+                                                                'waiting' => $row['deadline'],
+                                                                'past' => $row['endsOn'],
+                                                                default => $row['startsOn'],
+                                                            };
+                                                        @endphp
+                                                        @if ($date)
+                                                            {{ \Carbon\Carbon::parse($date)->translatedFormat('d/m/Y') }}
+                                                        @elseif ($group['key'] === 'enrolled' || $group['key'] === 'pending')
+                                                            {{-- No date on the pivot means the member has been in
+                                                                 since day one: that is what "the whole pack" is. --}}
+                                                            <span class="text-base-content/40">{{ __('Since the start') }}</span>
+                                                        @else
+                                                            <span class="text-base-content/30">—</span>
+                                                        @endif
+                                                    </td>
+
+                                                    @if ($group['key'] === 'enrolled')
+                                                        <td @class(['text-center text-sm font-bold tabular-nums', $rateTone($row['rate'])])>
+                                                            {{ $row['rate'] !== null ? $row['rate'] . '%' : '—' }}
+                                                        </td>
+                                                    @endif
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </x-tab>
+
+            {{-- ── Sessions ─────────────────────────────────────────────────── --}}
+            <x-tab name="sessions" :label="__('Sessions')" icon="o-calendar-days">
+                <div class="space-y-3">
+                    @forelse ($sessions as $session)
+                        @php
+                            $cancelled = $session->isCancelled();
+                        @endphp
+                        <div @class([
+                            'flex items-center justify-between rounded-xl border px-4 py-3',
+                            'bg-base-100 border-base-300' => ! $cancelled,
+                            'bg-base-200/50 border-base-300 opacity-60' => $cancelled,
+                        ])>
+                            <div class="flex items-center gap-4">
+                                <div class="text-center">
+                                    <div class="text-xs font-bold uppercase text-base-content/50">
+                                        {{ $session->start->translatedFormat('M') }}
+                                    </div>
+                                    <div class="text-2xl font-bold leading-none">{{ $session->start->format('d') }}</div>
+                                    <div class="text-xs text-base-content/50">{{ $session->start->translatedFormat('D') }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="font-medium">
+                                        {{ $session->start->format('H:i') }}
+                                        – {{ $session->end->format('H:i') }}
+                                    </div>
+                                    <div class="text-xs text-base-content/60">{{ $session->room?->name }}</div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                @if ($cancelled)
+                                    <x-badge
+                                        value="{{ $session->status === 'cancelled_free' ? __('Free practice') : __('Closed') }}"
+                                        class="badge-error badge-soft" />
+                                @else
+                                    <x-badge value="{{ __('Scheduled') }}" class="badge-success badge-soft" />
+                                    <x-button class="btn-ghost btn-sm text-error" icon="o-x-circle"
+                                        :label="__('Cancel')" wire:click="openCancel({{ $session->id }})" />
+                                @endif
+                            </div>
+                        </div>
+                    @empty
+                        <div class="rounded-xl border border-dashed border-base-300 py-16 text-center text-base-content/40">
+                            <x-icon class="mx-auto mb-2 h-10 w-10" name="o-calendar" />
+                            <p>{{ __('No sessions generated yet.') }}</p>
+                        </div>
+                    @endforelse
+                </div>
+            </x-tab>
+
+            {{-- ================================================================
+                 ATTENDANCE MATRIX — one grid answers both questions:
+                 a hollow column is a session nobody came to, a hollow row is a
+                 member who pays and never shows up.
+            ================================================================ --}}
+            <x-tab name="attendance" :label="__('Attendance')" icon="o-check-circle">
+                @php $matrix = $this->attendanceMatrix; @endphp
+
+                @if (empty($matrix['sessions']))
+                    <div class="rounded-xl border border-dashed border-base-300 py-16 text-center text-base-content/40">
+                        <x-icon class="mx-auto mb-2 h-10 w-10" name="o-check-circle" />
+                        <p>{{ __('No attendance recorded yet.') }}</p>
+                    </div>
+                @else
+                    <div class="mb-3 flex items-center justify-end">
+                        <label class="flex cursor-pointer items-center gap-2 text-xs text-base-content/60">
+                            <x-checkbox wire:model.live="showAllSessions" />
+                            {{ __('Show the whole season') }}
+                        </label>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-base-300 bg-base-100">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th class="sticky left-0 z-10 bg-base-100">{{ __('Member') }}</th>
                                     @foreach ($matrix['sessions'] as $column)
-                                        @php $cell = $row['cells'][$column['id']] ?? null; @endphp
-                                        <td class="text-center">
-                                            @if ($column['cancelled'])
-                                                <span class="text-base-content/20">—</span>
-                                            @elseif (! $column['counted'])
-                                                {{-- Hachuré : « pas pointé », à ne pas confondre avec « absent ». --}}
-                                                <span class="inline-block h-3 w-3 rounded-sm bg-base-300/60"
-                                                    title="{{ __('Not recorded') }}"></span>
-                                            @elseif ($cell === 'present')
-                                                <x-icon class="h-4 w-4 text-success" name="o-check" />
-                                            @elseif ($cell === 'excused')
-                                                <x-icon class="h-4 w-4 text-warning" name="o-minus" />
-                                            @elseif ($cell === 'absent')
-                                                <x-icon class="h-4 w-4 text-error" name="o-x-mark" />
-                                            @else
-                                                <span class="text-base-content/20">·</span>
+                                        <th @class([
+                                            'text-center text-xs font-medium',
+                                            'text-base-content/30 line-through' => $column['cancelled'],
+                                        ])>
+                                            {{ \Carbon\Carbon::parse($column['date'])->format('d/m') }}
+                                        </th>
+                                    @endforeach
+                                    <th class="text-center">{{ __('Rate') }}</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach (array_merge($matrix['members'], $matrix['walkIns']) as $index => $row)
+                                    @php $isWalkIn = $index >= count($matrix['members']); @endphp
+                                    <tr @class(['border-t-2 border-warning/40' => $isWalkIn && $index === count($matrix['members'])])>
+                                        <td class="sticky left-0 z-10 whitespace-nowrap bg-base-100">
+                                            {{ $row['name'] }}
+                                            @if ($isWalkIn)
+                                                <x-badge class="badge-warning badge-soft badge-xs ml-1"
+                                                    :value="__('not enrolled')" />
                                             @endif
                                         </td>
-                                    @endforeach
 
-                                    <td @class(['text-center text-sm font-bold', $rateTone($row['rate'] ?? null)])>
-                                        {{ isset($row['rate']) ? $row['rate'] . '%' : '—' }}
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
+                                        @foreach ($matrix['sessions'] as $column)
+                                            @php $cell = $row['cells'][$column['id']] ?? null; @endphp
+                                            <td class="text-center">
+                                                @if ($column['cancelled'])
+                                                    <span class="text-base-content/20">—</span>
+                                                @elseif (! $column['counted'])
+                                                    {{-- Hachuré : « pas pointé », à ne pas confondre avec « absent ». --}}
+                                                    <span class="inline-block h-3 w-3 rounded-sm bg-base-300/60"
+                                                        title="{{ __('Not recorded') }}"></span>
+                                                @elseif ($cell === 'present')
+                                                    <x-icon class="h-4 w-4 text-success" name="o-check" />
+                                                @elseif ($cell === 'excused')
+                                                    <x-icon class="h-4 w-4 text-warning" name="o-minus" />
+                                                @elseif ($cell === 'absent')
+                                                    <x-icon class="h-4 w-4 text-error" name="o-x-mark" />
+                                                @else
+                                                    <span class="text-base-content/20">·</span>
+                                                @endif
+                                            </td>
+                                        @endforeach
 
-                        <tfoot>
-                            <tr>
-                                <th class="sticky left-0 z-10 bg-base-100 text-xs font-bold uppercase tracking-wide text-base-content/50">
-                                    {{ __('Turnout') }}
-                                </th>
-                                @foreach ($matrix['sessions'] as $column)
-                                    <th @class(['text-center text-xs font-bold', $rateTone($column['rate'])])>
-                                        {{ $column['rate'] !== null ? $column['rate'] . '%' : '—' }}
-                                    </th>
+                                        <td @class(['text-center text-sm font-bold', $rateTone($row['rate'] ?? null)])>
+                                            {{ isset($row['rate']) ? $row['rate'] . '%' : '—' }}
+                                        </td>
+                                    </tr>
                                 @endforeach
-                                <th></th>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
+                            </tbody>
 
-                <div class="mt-2 flex flex-wrap items-center gap-4 text-xs text-base-content/50">
-                    <span class="flex items-center gap-1">
-                        <x-icon class="h-3.5 w-3.5 text-success" name="o-check" /> {{ __('Present') }}
-                    </span>
-                    <span class="flex items-center gap-1">
-                        <x-icon class="h-3.5 w-3.5 text-warning" name="o-minus" /> {{ __('Excused') }}
-                    </span>
-                    <span class="flex items-center gap-1">
-                        <x-icon class="h-3.5 w-3.5 text-error" name="o-x-mark" /> {{ __('Absent') }}
-                    </span>
-                    <span class="flex items-center gap-1">
-                        <span class="inline-block h-3 w-3 rounded-sm bg-base-300/60"></span> {{ __('Not recorded') }}
-                    </span>
-                    <span class="flex items-center gap-1">
-                        <span class="text-base-content/20">—</span> {{ __('Cancelled session') }}
-                    </span>
-                </div>
-            </div>
-        @endif
+                            <tfoot>
+                                <tr>
+                                    <th class="sticky left-0 z-10 bg-base-100 text-xs font-bold uppercase tracking-wide text-base-content/50">
+                                        {{ __('Turnout') }}
+                                    </th>
+                                    @foreach ($matrix['sessions'] as $column)
+                                        <th @class(['text-center text-xs font-bold', $rateTone($column['rate'])])>
+                                            {{ $column['rate'] !== null ? $column['rate'] . '%' : '—' }}
+                                        </th>
+                                    @endforeach
+                                    <th></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="mt-2 flex flex-wrap items-center gap-4 text-xs text-base-content/50">
+                        <span class="flex items-center gap-1">
+                            <x-icon class="h-3.5 w-3.5 text-success" name="o-check" /> {{ __('Present') }}
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <x-icon class="h-3.5 w-3.5 text-warning" name="o-minus" /> {{ __('Excused') }}
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <x-icon class="h-3.5 w-3.5 text-error" name="o-x-mark" /> {{ __('Absent') }}
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <span class="inline-block h-3 w-3 rounded-sm bg-base-300/60"></span> {{ __('Not recorded') }}
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <span class="text-base-content/20">—</span> {{ __('Cancelled session') }}
+                        </span>
+                    </div>
+                @endif
+            </x-tab>
+        </x-tabs>
     @else
         {{-- ================================================================
              PACK LIST — grouped by level
@@ -344,8 +575,8 @@
                                         {{-- Actions --}}
                                         <div class="mt-auto flex flex-nowrap items-center gap-1 border-t border-base-300 pt-2">
                                             <x-button class="btn-ghost btn-sm min-w-0 flex-1 text-xs"
-                                                icon="o-calendar-days" :label="__('Sessions')"
-                                                wire:click="viewSessions({{ $pack->id }})" />
+                                                icon="o-arrow-top-right-on-square" :label="__('Open')"
+                                                wire:click="openPack({{ $pack->id }})" />
                                             <x-button class="btn-ghost btn-sm shrink-0 text-xs" icon="o-pencil"
                                                 :aria-label="__('Edit')"
                                                 wire:click="openEdit({{ $pack->id }})" />

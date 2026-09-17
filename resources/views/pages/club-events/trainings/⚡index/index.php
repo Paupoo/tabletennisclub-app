@@ -24,6 +24,7 @@ use App\Domains\Trainings\Services\TrainingWaitlistService;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
+use App\Support\LocaleSort;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -119,11 +120,13 @@ new class extends Component
 
     public ?int $packId = null;
 
+    // ── Pack drill-down ───────────────────────────────────────────────────────
+    public string $packTab = 'roster';
+
     public bool $regenerateModal = false;
 
     public bool $regenerationConfirmed = false;
 
-    // ── Session drill-down ────────────────────────────────────────────────────
     public ?int $selectedPackId = null;
 
     public bool $showAllSessions = false;
@@ -244,7 +247,7 @@ new class extends Component
         $this->addMemberUserId = 0;
         $this->addMemberStartsOn = '';
 
-        unset($this->packs, $this->selectedPack, $this->addMemberOptions, $this->addMemberOverCapacity, $this->attendanceMatrix);
+        unset($this->packs, $this->selectedPack, $this->addMemberOptions, $this->addMemberOverCapacity, $this->attendanceMatrix, $this->packRoster, $this->packSummary, $this->packAttendance);
 
         $this->success(__(':member added to :pack.', [
             'member' => $subscription->user->first_name . ' ' . $subscription->user->last_name,
@@ -313,7 +316,7 @@ new class extends Component
                 ->each->notify(new TrainingSessionCancelledNotification($training, $type, $this->cancelNote ?: null));
         }
 
-        unset($this->sessions);
+        unset($this->sessions, $this->packSummary, $this->attendanceMatrix);
         $this->cancelModal = false;
         $this->warning(__('Session cancelled. Members have been notified.'), icon: 'o-x-circle');
     }
@@ -609,10 +612,144 @@ new class extends Component
         $this->step = '1';
     }
 
+    public function openPack(int $packId): void
+    {
+        $this->selectedPackId = $packId;
+        $this->packTab = 'roster';
+        unset($this->selectedPack, $this->sessions, $this->packRoster, $this->packSummary, $this->packAttendance);
+    }
+
     public function openWithdrawPack(int $packId): void
     {
         $this->withdrawingPackId = $packId;
         $this->withdrawPackModal = true;
+    }
+
+    /**
+     * Le pointage d'un pack, ramené à ce qu'une fiche a besoin d'afficher.
+     *
+     * Deux requêtes, pas deux par membre : {@see TrainingAttendanceReport::memberRate()}
+     * en fait deux à chaque appel, et la fiche l'appellerait une fois par ligne.
+     *
+     * Le dénominateur est le nombre de séances **pointées** du pack, le même pour
+     * tout le monde — c'est la définition du domaine, et la seule qui permette de
+     * comparer deux lignes entre elles. Un membre sans aucune ligne de pointage
+     * est donc à 0 %, ce qui est exact : il n'est venu à aucune séance pointée.
+     *
+     * @return array{counted: int, present: array<int, int>}
+     */
+    #[Computed]
+    public function packAttendance(): array
+    {
+        $pack = $this->selectedPack;
+
+        if (! $pack) {
+            return ['counted' => 0, 'present' => []];
+        }
+
+        $counted = Training::query()
+            ->where('training_pack_id', $pack->id)
+            ->where('status', 'scheduled')
+            ->whereNotNull('attendance_taken_at')
+            ->count();
+
+        if ($counted === 0) {
+            return ['counted' => 0, 'present' => []];
+        }
+
+        $present = DB::table('training_user')
+            ->join('trainings', 'trainings.id', '=', 'training_user.training_id')
+            ->where('trainings.training_pack_id', $pack->id)
+            ->where('trainings.status', 'scheduled')
+            ->whereNotNull('trainings.attendance_taken_at')
+            ->where('training_user.status', 'present')
+            ->groupBy('training_user.user_id')
+            ->pluck(DB::raw('COUNT(*)'), 'training_user.user_id')
+            ->map(intval(...))
+            ->all();
+
+        return ['counted' => $counted, 'present' => $present];
+    }
+
+    /**
+     * Qui est dans le pack, et à quel titre.
+     *
+     * Quatre listes plutôt qu'une colonne « statut » : le comité ne se pose pas
+     * la même question devant un inscrit, une demande à valider, une file
+     * d'attente et quelqu'un qui est parti. Les mélanger obligeait à trier des
+     * yeux la seule ligne qu'on cherchait.
+     *
+     * Les inscriptions non affiliées sont écartées comme ailleurs
+     * ({@see TrainingPack::committedCount()}) : une affiliation annulée gardait
+     * son nom dans la liste d'un pack qu'elle ne suit plus.
+     *
+     * @return array{enrolled: list<array<string, mixed>>, pending: list<array<string, mixed>>, waiting: list<array<string, mixed>>, past: list<array<string, mixed>>}
+     */
+    #[Computed]
+    public function packRoster(): array
+    {
+        $pack = $this->selectedPack;
+
+        if (! $pack) {
+            return ['enrolled' => [], 'pending' => [], 'waiting' => [], 'past' => []];
+        }
+
+        $attendance = $this->packAttendance;
+
+        $rows = $pack->subscriptions()
+            ->withPivot([
+                'status',
+                'waitlist_position',
+                'confirmation_deadline',
+                'starts_on',
+                'ends_on',
+                'override_amount',
+                'override_reason',
+            ])
+            ->affiliated()
+            ->with('user')
+            ->get()
+            ->map(function (Subscription $subscription) use ($attendance): array {
+                $user = $subscription->user;
+                $pivot = $subscription->pivot;
+
+                return [
+                    'id' => $user->id,
+                    'name' => $user->last_name . ' ' . $user->first_name,
+                    'ranking' => $user->ranking?->getLabel(),
+                    'status' => $pivot->status,
+                    'position' => $pivot->waitlist_position,
+                    'deadline' => $pivot->confirmation_deadline,
+                    'startsOn' => $pivot->starts_on,
+                    'endsOn' => $pivot->ends_on,
+                    'overrideAmount' => $pivot->override_amount !== null ? (int) $pivot->override_amount / 100 : null,
+                    'overrideReason' => $pivot->override_reason,
+                    'unpaid' => $subscription->status === 'pending',
+                    'rate' => $attendance['counted'] === 0
+                        ? null
+                        : (int) round((($attendance['present'][$user->id] ?? 0) / $attendance['counted']) * 100),
+                ];
+            });
+
+        // Collection de base, pas celle d'Eloquent : `map()` sur des tableaux la
+        // dégrade, et le typage ci-dessous est ce qui l'a révélé.
+        $byName = fn (Illuminate\Support\Collection $group): array => LocaleSort::byKey($group, 'name')->all();
+
+        $waiting = $rows->whereIn('status', ['waiting', 'offered'])
+            ->sortBy([
+                // Une offre en cours passe devant : elle a une échéance, la file non.
+                fn (array $a, array $b): int => ($b['status'] === 'offered' ? 1 : 0) <=> ($a['status'] === 'offered' ? 1 : 0),
+                fn (array $a, array $b): int => ($a['position'] ?? PHP_INT_MAX) <=> ($b['position'] ?? PHP_INT_MAX),
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'enrolled' => $byName($rows->where('status', 'enrolled')),
+            'pending' => $byName($rows->where('status', 'pending')),
+            'waiting' => $waiting,
+            'past' => $byName($rows->whereIn('status', ['left', 'cancelled'])),
+        ];
     }
 
     /** @return Collection<int, TrainingPack> */
@@ -636,6 +773,60 @@ new class extends Component
             ->orderBy('training_levels.position')
             ->orderBy('training_packs.name')
             ->get();
+    }
+
+    /**
+     * Les chiffres de tête de la fiche d'un pack.
+     *
+     * Les séances se comptent sur la collection déjà chargée pour l'onglet
+     * « Séances » : les recompter en base ferait trois requêtes pour un total
+     * que l'écran tient déjà en mémoire.
+     *
+     * @return array{enrolled: int, waiting: int, pending: int, max: int, capped: bool, spotsLeft: int|null, sessions: int, held: int, cancelled: int, upcoming: int, turnout: int|null}
+     */
+    #[Computed]
+    public function packSummary(): array
+    {
+        $pack = $this->selectedPack;
+
+        if (! $pack) {
+            return ['enrolled' => 0, 'waiting' => 0, 'pending' => 0, 'max' => 0, 'capped' => false,
+                'spotsLeft' => null, 'sessions' => 0, 'held' => 0, 'cancelled' => 0, 'upcoming' => 0, 'turnout' => null];
+        }
+
+        $roster = $this->packRoster;
+        $attendance = $this->packAttendance;
+        $sessions = $this->sessions;
+
+        $cancelled = $sessions->filter(fn (Training $session): bool => $session->isCancelled())->count();
+        $held = $sessions->filter(fn (Training $session): bool => ! $session->isCancelled() && $session->start->isPast())->count();
+
+        $enrolled = count($roster['enrolled']);
+        $max = $pack->effectiveMaxParticipants();
+        // Un pack en libre-service n'a pas de places à compter : le plafond hérité
+        // de la salle ne s'y applique pas (même règle que la carte de la liste).
+        $capped = ! $pack->is_open_enrollment && $max > 0;
+
+        $presentAmongEnrolled = array_sum(array_map(
+            fn (array $row): int => $attendance['present'][$row['id']] ?? 0,
+            $roster['enrolled'],
+        ));
+
+        return [
+            'enrolled' => $enrolled,
+            'waiting' => count($roster['waiting']),
+            'pending' => count($roster['pending']),
+            'max' => $max,
+            'capped' => $capped,
+            'spotsLeft' => $capped ? max(0, $max - $pack->committedCount()) : null,
+            'sessions' => $sessions->count(),
+            'held' => $held,
+            'cancelled' => $cancelled,
+            'upcoming' => $sessions->count() - $cancelled - $held,
+            'turnout' => ($attendance['counted'] === 0 || $enrolled === 0)
+                ? null
+                : (int) round(($presentAmongEnrolled / ($attendance['counted'] * $enrolled)) * 100),
+        ];
     }
 
     /** @return array<int, Carbon> */
@@ -999,8 +1190,10 @@ new class extends Component
     #[Computed]
     public function selectedPack(): ?TrainingPack
     {
+        // `season` et `eventPost` sont lus par l'en-tête et les pastilles de la
+        // fiche : sans eager loading, strict mode lève une LazyLoadingViolation.
         return $this->selectedPackId
-            ? TrainingPack::with(['room', 'trainer', 'level'])->find($this->selectedPackId)
+            ? TrainingPack::with(['room', 'trainer', 'level', 'season', 'eventPost'])->find($this->selectedPackId)
             : null;
     }
 
@@ -1029,7 +1222,7 @@ new class extends Component
         $pack = TrainingPack::findOrFail($packId);
         $pack->update(['enrollments_open' => ! $pack->enrollments_open]);
 
-        unset($this->packs);
+        unset($this->packs, $this->selectedPack);
 
         $pack->enrollments_open
             ? $this->success(__('Enrolments reopened for :pack.', ['pack' => $pack->name]), icon: 'o-lock-open')
@@ -1089,12 +1282,6 @@ new class extends Component
     public function viewSeason(): ?Season
     {
         return $this->viewSeasonId ? Season::find($this->viewSeasonId) : null;
-    }
-
-    public function viewSessions(int $packId): void
-    {
-        $this->selectedPackId = $packId;
-        unset($this->selectedPack, $this->sessions);
     }
 
     // ── Render ────────────────────────────────────────────────────────────────

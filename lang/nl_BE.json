@@ -4817,5 +4817,6 @@
     "Recent form": "Recente vorm",
     "See everything": "Alles bekijken",
     "L": "V",
-    ":count tie|:count ties": ":count ontmoeting|:count ontmoetingen"
+    ":count tie|:count ties": ":count ontmoeting|:count ontmoetingen",
+    ":count older season hidden — show it|:count older seasons hidden — show them": ":count ouder seizoen verborgen — tonen|:count oudere seizoenen verborgen — tonen"
 }

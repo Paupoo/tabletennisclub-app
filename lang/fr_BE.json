@@ -4817,5 +4817,6 @@
     "Recent form": "Forme récente",
     "See everything": "Voir tout",
     "L": "D",
-    ":count tie|:count ties": ":count rencontre|:count rencontres"
+    ":count tie|:count ties": ":count rencontre|:count rencontres",
+    ":count older season hidden — show it|:count older seasons hidden — show them": ":count saison plus ancienne masquée — l'afficher|:count saisons plus anciennes masquées — les afficher"
 }

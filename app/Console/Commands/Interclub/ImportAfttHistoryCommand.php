@@ -207,13 +207,13 @@ class ImportAfttHistoryCommand extends Command
         ));
         $this->line(sprintf('  Final positions written: %d', $tally['positions_written']));
 
-        $unknown = array_unique($report['unknown_licences']);
+        $unknown = $report['unknown_licences'];
 
         if ($unknown !== []) {
             $this->warn(sprintf('  %d licence(s) on our side match no member:', count($unknown)));
 
-            foreach (array_slice($unknown, 0, 10) as $line) {
-                $this->line('    ' . $line);
+            foreach (array_slice($unknown, 0, 10, preserve_keys: true) as $licence => $name) {
+                $this->line(sprintf('    %s — %s', $licence, $name));
             }
 
             if (count($unknown) > 10) {

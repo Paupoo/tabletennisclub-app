@@ -54,7 +54,7 @@ class AfttResultsImporter
     /**
      * Import every sheet of every division our club plays in this season.
      *
-     * @return array{tally: array<string, int>, report: array<string, array<int, string>>}
+     * @return array{tally: array<string, int>, report: array{divisions_failed: array<int, string>, unknown_licences: array<string, string>}}
      */
     public function import(Season $season, int $afttSeason, TabtClient $client): array
     {
@@ -79,7 +79,7 @@ class AfttResultsImporter
             $this->tally['divisions_read']++;
 
             foreach ($sheets as $sheet) {
-                $this->importSheet($sheet);
+                $this->importSheet($season, $sheet);
             }
 
             $this->importRanking($season, (int) $divisionId, $afttSeason, $client);
@@ -137,9 +137,15 @@ class AfttResultsImporter
         }
     }
 
-    private function importSheet(AfttMatchSheet $sheet): void
+    private function importSheet(Season $season, AfttMatchSheet $sheet): void
     {
+        // Scoped to the season, because the unique index is on the pair. The
+        // federation's identifiers carry a division and a round, both of which
+        // it renumbers from year to year, so the same string can name a fixture
+        // in two seasons — and an unscoped lookup would file last year's sheet
+        // against this year's evening.
         $interclub = Interclub::with(['visitedTeam.club', 'visitingTeam.club'])
+            ->where('season_id', $season->id)
             ->where('aftt_match_id', $sheet->matchId)
             ->first();
 
@@ -187,17 +193,34 @@ class AfttResultsImporter
     /**
      * The verdict our side earned, from the score our side reads.
      */
-    private function resultFrom(?int $us, ?int $them, AfttMatchSheet $sheet, bool $weAreHome): ?InterclubResultEnum
+    /**
+     * The verdict our side earned, from the score our side reads.
+     *
+     * Which side failed to turn up comes from the sheet's own flags, never from
+     * the score's suffix: the flags are unambiguous and the suffix is not. What
+     * the suffix does carry, and the flags do not, is the difference between
+     * forfeiting one tie ("ff") and withdrawing from the division outright
+     * ("fg") — two different cases the club's own enum has always had.
+     *
+     * A general forfeit flags both sides, so ours is tested first: we are one of
+     * the two, and it is our record being written.
+     */
+    private function resultFrom(?int $us, ?int $them, AfttMatchSheet $sheet, bool $weAreHome, string $marker = ''): ?InterclubResultEnum
     {
         $weForfeited = $weAreHome ? $sheet->isHomeForfeited : $sheet->isAwayForfeited;
         $theyForfeited = $weAreHome ? $sheet->isAwayForfeited : $sheet->isHomeForfeited;
+        $isWithdrawal = str_contains($marker, 'fg');
 
         if ($weForfeited) {
-            return InterclubResultEnum::FORFEIT_LOSS;
+            return $isWithdrawal
+                ? InterclubResultEnum::WITHDRAWAL
+                : InterclubResultEnum::FORFEIT_LOSS;
         }
 
         if ($theyForfeited) {
-            return InterclubResultEnum::FORFEIT_WIN;
+            return $isWithdrawal
+                ? InterclubResultEnum::WITHDRAWAL_OPPONENT
+                : InterclubResultEnum::FORFEIT_WIN;
         }
 
         if ($us === null || $them === null) {
@@ -239,9 +262,10 @@ class AfttResultsImporter
         $member = $this->memberFor($ourIndex);
 
         if ($ourIndex !== null && $member === null) {
-            $this->report['unknown_licences'][] = $ourIndex
-                . ' — ' . ($ourPlayer?->fullName() ?? '?')
-                . ' (' . $sheet->matchId . ')';
+            // Keyed by licence: the same missing member turns up in every tie
+            // they played, and a list of four hundred lines naming forty people
+            // is a list nobody reads to the end.
+            $this->report['unknown_licences'][$ourIndex] = $ourPlayer?->fullName() ?? '?';
         }
 
         return [
@@ -257,6 +281,30 @@ class AfttResultsImporter
             'user_id' => $member?->id,
             'we_won' => $weAreHome ? $homeWon : ! $homeWon,
         ];
+    }
+
+    /**
+     * The federation's score, split into the pair and whatever it wrote after it.
+     *
+     * TabT decorates a score that was not simply played: "16-0 ff" for a tie
+     * forfeited, "0-0 fg (fg)" for a withdrawal, "3-13 sm" for a result it has
+     * adjusted. Eleven characters where the column holds ten, which is how a
+     * whole season's import died on a truncation — but the length was the small
+     * half of the problem. Every reader of this column, the captain's screen and
+     * the match page included, splits it on "-" and casts both halves to int:
+     * they would have read "0 fg (fg)" as zero and written the marker back out
+     * as nothing. It is kept out of the column, and what it means that the flags
+     * do not say is passed to the verdict instead.
+     *
+     * @return array{0: string|null, 1: string}
+     */
+    private function splitScore(?string $score): array
+    {
+        if ($score === null || ! preg_match('/^\s*(\d+)\s*-\s*(\d+)\s*(.*)$/', $score, $matches)) {
+            return [null, ''];
+        }
+
+        return [$matches[1] . '-' . $matches[2], trim($matches[3])];
     }
 
     private function writeFinalPosition(Season $season, int $divisionId, AfttRanking $entry): void
@@ -314,17 +362,20 @@ class AfttResultsImporter
             return;
         }
 
+        [$score, $marker] = $this->splitScore($sheet->score);
+
         $us = $them = null;
 
-        if ($sheet->score !== null && str_contains($sheet->score, '-')) {
-            [$home, $away] = array_map(intval(...), explode('-', $sheet->score, 2));
+        if ($score !== null) {
+            [$home, $away] = array_map(intval(...), explode('-', $score, 2));
             [$us, $them] = $weAreHome ? [$home, $away] : [$away, $home];
         }
 
         $matchResult->update([
-            // Stored home-first, like everything else that reads this column.
-            'score' => $sheet->score,
-            'result' => $this->resultFrom($us, $them, $sheet, $weAreHome)?->value,
+            // Stored home-first and numeric, like everything else that reads
+            // this column.
+            'score' => $score,
+            'result' => $this->resultFrom($us, $them, $sheet, $weAreHome, $marker)?->value,
         ]);
     }
 }

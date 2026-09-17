@@ -98,7 +98,7 @@ class ImportAfttResultsCommand extends Command
          * against nobody: the tie reads correctly, and the player's own history
          * silently loses a match. Naming them is the only way anyone finds out.
          */
-        $unknown = array_unique($report['unknown_licences']);
+        $unknown = $report['unknown_licences'];
 
         if ($unknown !== []) {
             $this->newLine();
@@ -107,8 +107,8 @@ class ImportAfttResultsCommand extends Command
                 count($unknown),
             ));
 
-            foreach ($unknown as $line) {
-                $this->line('  ' . $line);
+            foreach ($unknown as $licence => $name) {
+                $this->line(sprintf('  %s — %s', $licence, $name));
             }
 
             $this->line('Fix the licence on the member record, then run this command again.');

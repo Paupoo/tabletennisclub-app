@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Data\Interclub\AfttMatchSheet;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
@@ -260,4 +261,85 @@ it('counts nothing when the position has not moved', function (): void {
     ['tally' => $tally] = runImport();
 
     expect($tally['positions_written'])->toBe(0);
+});
+
+/**
+ * The federation decorates a score it did not simply record as played.
+ *
+ * Eleven characters into a column of ten is how a whole season's import died;
+ * the marker also had to stay out of a column every reader splits on "-" and
+ * casts to int.
+ */
+dataset('decorated scores', [
+    // 16-0 to the home side is the federation saying the visitors did not come:
+    // the flag sits on them, not on the side that collected the points.
+    'tie forfeited by them' => ['16-0 ff', false, true, '16-0', InterclubResultEnum::FORFEIT_WIN],
+    'tie forfeited by us' => ['0-16 ff', true, false, '0-16', InterclubResultEnum::FORFEIT_LOSS],
+    'withdrawal, both flagged' => ['0-0 fg (fg)', true, true, '0-0', InterclubResultEnum::WITHDRAWAL],
+    'adjusted result, nobody forfeited' => ['3-13 sm', false, false, '3-13', InterclubResultEnum::LOSS],
+]);
+
+it('keeps the pair and drops the marker', function (string $raw, bool $homeFf, bool $awayFf, string $stored, InterclubResultEnum $verdict): void {
+    $match = localFixture('PBBWH01/021');
+
+    $sheet = new AfttMatchSheet(
+        matchId: 'PBBWH01/021',
+        detailsCreated: true,
+        score: $raw,
+        matchSystem: 2,
+        isHomeForfeited: $homeFf,
+        isAwayForfeited: $awayFf,
+    );
+
+    Http::fake(['api.aftt.be/*' => Http::response(
+        file_get_contents(base_path('tests/Fixtures/Aftt/get-division-ranking-8860.xml'))
+    )]);
+
+    $importer = new ReflectionClass(AfttResultsImporter::class);
+    $instance = app(AfttResultsImporter::class);
+    $write = $importer->getMethod('writeTeamScore');
+    $write->invoke($instance, $match, $sheet, true);
+
+    $result = InterclubResult::where('interclub_id', $match->id)->first();
+
+    expect($result->score)->toBe($stored)
+        ->and($result->result)->toBe($verdict);
+})->with('decorated scores');
+
+it('never files a sheet against another season carrying the same identifier', function (): void {
+    // The unique index is on the pair, so the federation reusing an identifier
+    // from one year to the next is legal — and an unscoped lookup would file
+    // last season's sheet against this season's evening.
+    $ours = Team::factory()->create([
+        'club_id' => $this->ourClub->id, 'league_id' => $this->league->id, 'season_id' => $this->season->id,
+    ]);
+    $theirs = Team::factory()->create([
+        'club_id' => $this->theirClub->id, 'league_id' => $this->league->id, 'season_id' => $this->season->id,
+    ]);
+
+    $otherSeason = Season::factory()->create(['is_active' => false]);
+    $otherLeague = League::factory()->create(['season_id' => $otherSeason->id, 'category' => 'MEN']);
+
+    $decoy = Interclub::factory()->create([
+        'aftt_match_id' => 'PBBWH01/021',
+        'season_id' => $otherSeason->id,
+        'league_id' => $otherLeague->id,
+        'visited_team_id' => Team::factory()->create(['club_id' => $this->ourClub->id, 'league_id' => $otherLeague->id, 'season_id' => $otherSeason->id])->id,
+        'visiting_team_id' => Team::factory()->create(['club_id' => $this->theirClub->id, 'league_id' => $otherLeague->id, 'season_id' => $otherSeason->id])->id,
+        'start_date_time' => now()->subYears(2),
+    ]);
+
+    $ours = Interclub::factory()->create([
+        'aftt_match_id' => 'PBBWH01/021',
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $ours->id,
+        'visiting_team_id' => $theirs->id,
+        'start_date_time' => now()->subDays(3),
+    ]);
+
+    runImport();
+
+    expect(InterclubIndividualMatch::where('interclub_id', $ours->id)->count())->toBe(16)
+        ->and(InterclubIndividualMatch::where('interclub_id', $decoy->id)->count())->toBe(0);
 });

@@ -3,7 +3,7 @@
         $wizardSteps = [1 => ['label' => __('Identity'), 'icon' => 'o-user-circle']];
 
         if ($this->isMinor) {
-            $wizardSteps[2] = ['label' => __('Legal guardian'), 'icon' => 'o-shield-check'];
+            $wizardSteps[2] = ['label' => __('Responsible adult'), 'icon' => 'o-shield-check'];
         }
 
         $wizardSteps[3] = ['label' => __('Address'), 'icon' => 'o-map-pin'];
@@ -73,7 +73,7 @@
     {{-- STEP 2 — Legal guardian (minors only) --}}
     @if ($step === 2)
         <div class="animate-in fade-in duration-500">
-            <h2 class="text-lg font-semibold text-base-content mb-1">{{ __('Legal guardian') }}</h2>
+            <h2 class="text-lg font-semibold text-base-content mb-1">{{ __('Responsible adult') }}</h2>
             <p class="text-sm text-base-content/60 mb-4">{{ __('Who is responsible for you') }}</p>
 
             {{-- Why the club asks --}}

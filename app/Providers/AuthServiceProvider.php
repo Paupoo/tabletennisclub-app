@@ -105,7 +105,21 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('view-audit-log', fn (User $user): bool => $user->canViewAuditLog());
         Gate::define('view-queue-monitoring', fn (User $user): bool => $user->can(Permission::QueueView->value));
 
-        // Coach area (personal training sessions) — the coach délégation.
-        Gate::define('access-coach-area', fn (User $user): bool => $user->can(Permission::CoachAreaAccess->value));
+        /*
+         * Coach area (personal training sessions).
+         *
+         * Coaching is a relation, not only a délégation — exactly like being a
+         * captain, two Gates above. TrainingPolicy::recordAttendance() already
+         * says so: it authorises on `$training->trainer_id === $user->id`. This
+         * Gate was the one place that did not, and it 403'd three of the club's
+         * five coaches out of the screen where attendance is recorded.
+         *
+         * The screen itself is scoped to `trainings.trainer_id = auth()->id()`,
+         * so someone who no longer coaches lands on an empty list rather than
+         * on someone else's sessions.
+         */
+        Gate::define('access-coach-area', fn (User $user): bool => $user->can(Permission::CoachAreaAccess->value)
+            || $user->coachOf()->exists()
+            || $user->coachOfSession()->exists());
     }
 }

@@ -55,7 +55,7 @@
                                 </div>
                                 <div class="flex shrink-0 flex-wrap items-center gap-1">
                                     <x-button class="btn-sm btn-primary btn-soft" icon="o-arrow-right"
-                                        :label="__('Open')"
+                                        :label="__('Open the plan')"
                                         wire:click="selectPlan({{ $p->id }})" />
                                     @if ($canManage && $p->status->value !== 'archived')
                                         <x-button class="btn-sm btn-ghost" icon="o-archive-box"

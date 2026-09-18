@@ -575,7 +575,7 @@
                                         {{-- Actions --}}
                                         <div class="mt-auto flex flex-nowrap items-center gap-1 border-t border-base-300 pt-2">
                                             <x-button class="btn-ghost btn-sm min-w-0 flex-1 text-xs"
-                                                icon="o-arrow-top-right-on-square" :label="__('Open')"
+                                                icon="o-eye" :label="__('Details')"
                                                 wire:click="openPack({{ $pack->id }})" />
                                             <x-button class="btn-ghost btn-sm shrink-0 text-xs" icon="o-pencil"
                                                 :aria-label="__('Edit')"

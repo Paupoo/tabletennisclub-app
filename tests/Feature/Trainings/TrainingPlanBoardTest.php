@@ -53,6 +53,25 @@ describe('plan management', function (): void {
             ->assertDontSee('Scenario Beta');
     });
 
+    /*
+     * `Open` se traduit « Ouvert », l'adjectif dont vivent deux badges d'état.
+     * Sur ce bouton il décrivait le plan au lieu de nommer ce qu'on en fait.
+     * Partout ailleurs la clé verbale nomme son objet — « Ouvrir la régie »,
+     * « Ouvrir le compte rendu » ; celle-ci manquait, et le bouton avait pris
+     * l'adjectif par défaut. La clé d'état redevient ainsi purement un état.
+     */
+    it('names what the button does with a plan, not the state of the plan', function (): void {
+        TrainingPlan::factory()->create([
+            'season_id' => $this->season->id,
+            'name' => 'Scenario Alpha',
+        ]);
+
+        Livewire::actingAs($this->manager)
+            ->test(BOARD)
+            ->assertSee(__('Open the plan'))
+            ->assertDontSee(__('Open'));
+    });
+
     it('creates a plan by seeding from the season', function (): void {
         $member = User::factory()->create();
         Subscription::factory()->create([

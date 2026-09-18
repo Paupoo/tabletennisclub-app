@@ -56,7 +56,12 @@ it('opens the roster row actions without the table clipping them', function (): 
 
     // Un rectangle suffisait à certifier un panneau invisible : getBoundingClientRect
     // renvoie les mêmes coordonnées qu'il soit rogné ou non. On demande donc au
-    // navigateur ce qu'il y a vraiment sous le centre du panneau.
+    // navigateur ce qu'il y a vraiment sous le panneau.
+    //
+    // Et on vise le **bas**, pas le haut : une première version échantillonnait
+    // à 20px du sommet, c'est-à-dire la seule bande qu'un conteneur trop court
+    // laisse dépasser. Elle est passée au vert sur un panneau coupé en deux.
+    // La dernière entrée du menu est celle qu'il faut pouvoir cliquer.
     $probe = $page->script(<<<'JS'
         (() => {
           const panel = [...document.querySelectorAll('[data-row-menu-panel]')]
@@ -64,12 +69,26 @@ it('opens the roster row actions without the table clipping them', function (): 
           if (!panel) return { found: false };
           const r = panel.getBoundingClientRect();
           const x = Math.round(r.left + r.width / 2);
-          const y = Math.round(r.top + Math.min(r.height / 2, 20));
-          const hit = document.elementFromPoint(x, y);
+          const hit = (y) => {
+            const e = document.elementFromPoint(x, Math.round(y));
+            return e !== null && panel.contains(e);
+          };
+
+          // Tout ancêtre qui rogne, quel qu'il soit : c'est la cause, le point
+          // manqué n'en est que le symptôme.
+          const clippers = [];
+          for (let el = panel.parentElement; el && el !== document.documentElement; el = el.parentElement) {
+            const cs = getComputedStyle(el);
+            if (cs.overflowX !== 'visible' || cs.overflowY !== 'visible') {
+              clippers.push(el.tagName.toLowerCase() + '.' + (el.className || '').toString().slice(0, 60));
+            }
+          }
+
           return {
             found: true,
             onScreen: r.right <= window.innerWidth && r.bottom <= window.innerHeight && r.top >= 0,
-            reachable: hit !== null && panel.contains(hit),
+            reachable: hit(r.top + 8) && hit(r.top + r.height / 2) && hit(r.bottom - 8),
+            clippers: clippers.filter((c) => ! c.startsWith('body.')),
           };
         })()
     JS);
@@ -77,6 +96,7 @@ it('opens the roster row actions without the table clipping them', function (): 
     $p = $probe[0] ?? $probe;
 
     expect($p['found'])->toBeTrue('la ligne doit proposer ses actions');
-    expect($p['reachable'])->toBeTrue('le panneau est rogné par le conteneur de défilement de la table');
+    expect($p['clippers'])->toBe([], 'un ancêtre du panneau rogne : ' . implode(', ', $p['clippers']));
+    expect($p['reachable'])->toBeTrue('le panneau est rogné — son bas n\'est pas cliquable');
     expect($p['onScreen'])->toBeTrue('le panneau doit tenir dans la fenêtre');
 })->group('training');

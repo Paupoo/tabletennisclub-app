@@ -1133,12 +1133,18 @@
     {{-- ── Move an enrolled member to another pack ──────────────────────────── --}}
     <x-app-modal :title="__('Move :member to another pack', ['member' => $moveMemberName])"
         wire:model="moveMemberModal" separator :open="$moveMemberModal">
-        <p class="text-sm text-base-content/70">
+        {{-- Le champ d'abord, les explications ensuite. La liste de Mary bascule
+             au-dessus du champ quand elle ne tient pas dessous, et elle débordait
+             alors par le haut de la modale, rognée. Un paragraphe posé avant le
+             champ le pousse vers le bas et lui retire précisément la place dont
+             la liste a besoin. `height` plafonne la liste en second rideau. --}}
+        <x-choices-offline :label="__('Destination pack')" wire:model="moveTargetPackId"
+            :options="$this->moveTargetOptions" option-label="name" single searchable
+            height="max-h-52" />
+
+        <p class="mt-4 text-sm text-base-content/70">
             {{ __('The pack left behind stays billed up to today, and the new one starts billing next month — so this month is never paid twice. At equal price, moving costs nothing.') }}
         </p>
-
-        <x-choices-offline class="mt-4" :label="__('Destination pack')" wire:model="moveTargetPackId"
-            :options="$this->moveTargetOptions" option-label="name" single searchable />
 
         <p class="mt-1 text-xs text-base-content/50">
             {{ __('Packs withdrawn from the offer are not listed. A full pack still is — marked, and yours to override.') }}

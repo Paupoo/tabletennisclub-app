@@ -129,6 +129,30 @@ it('moves a confirmed spot to the pack that was picked', function (): void {
         ->and($subscription->trainingPacks()->where('training_pack_id', $to->id)->first()->pivot->status)->toBe('enrolled');
 })->group('training', 'enrollment', 'money');
 
+it('builds the destination list without going back for each pack', function (): void {
+    Notification::fake();
+
+    $from = makeTrainingPack($this->season);
+
+    // La forme réelle : plafond non renseigné, donc `effectiveMaxParticipants()`
+    // retombe sur la capacité de la salle — et `hasAvailableSpot()`, qui compose
+    // le libellé de chaque option, va la chercher. Deux packs, pas un : un seul
+    // candidat rendrait ce test complaisant.
+    makeTrainingPack($this->season, ['name' => 'Mardi', 'max_participants' => null]);
+    makeTrainingPack($this->season, ['name' => 'Jeudi', 'max_participants' => null]);
+
+    $member = activeMember($this->season);
+    $subscription = Subscription::where('user_id', $member->id)->where('season_id', $this->season->id)->firstOrFail();
+    (new AddMemberToTrainingPackAction)($subscription, $from);
+
+    $component = Livewire::actingAs($this->manager)
+        ->test(TRAINING_ROSTER_COMPONENT)
+        ->call('openPack', $from->id)
+        ->call('openMoveMember', $member->id);
+
+    expect($component->instance()->moveTargetOptions())->toHaveCount(2);
+})->group('training', 'enrollment');
+
 it('never offers the pack the member is standing in as a destination', function (): void {
     Notification::fake();
 

@@ -704,7 +704,12 @@ new class extends Component
             ->where('is_active', true)
             ->whereKeyNot($pack->id)
             ->whereNotIn('id', $held)
-            ->with('level')
+            // `room` autant que `level` : sans plafond propre,
+            // effectiveMaxParticipants() retombe sur la capacité de la salle, et
+            // hasAvailableSpot() — qui compose le libellé de chaque option — va
+            // la chercher. Le chargement paresseux est interdit hors production,
+            // donc l'oubli ne dégrade pas la page : il la casse.
+            ->with(['level', 'room'])
             ->get()
             ->map(fn (TrainingPack $candidate): array => [
                 'id' => $candidate->id,

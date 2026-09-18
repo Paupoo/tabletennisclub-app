@@ -1,7 +1,6 @@
 {
     " slots remaining": " plaatsen over",
     "'Template not managed' : {$template}": "'Template niet beheerd' : {$template}",
-    "(discount may apply)": "(korting mogelijk)",
     "(you)": "(u)",
     "**Amount to refund: :amount €**": "**Terug te storten bedrag: :amount €**",
     "**Date:** :date at :time": "**Datum:** :date om :time",

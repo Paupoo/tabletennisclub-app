@@ -1,7 +1,6 @@
 {
     " slots remaining": " places restantes",
     "'Template not managed' : {$template}": "'Template non géré' : {$template}",
-    "(discount may apply)": "(réduction possible)",
     "(you)": "(vous)",
     "**Amount to refund: :amount €**": "**Montant à rembourser : :amount €**",
     "**Date:** :date at :time": "**Date :** :date à :time",

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Subscriptions\AddMemberToTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\DiscontinueTrainingPackAction;
+use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
+use App\Actions\ClubAdmin\Subscriptions\MoveMemberBetweenTrainingPacksAction;
+use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -108,12 +111,27 @@ new class extends Component
 
     public string $formType = '';
 
+    // ── Actions sur le roster ─────────────────────────────────────────────────
+    public bool $leaveMemberModal = false;
+
+    public string $leaveMemberName = '';
+
+    public int $leaveMemberUserId = 0;
+
     /** Show packs withdrawn from the offer, so they can be found and put back. */
     // ── Gestion des niveaux ───────────────────────────────────────────────────
     public bool $levelDrawer = false;
 
     /** @var array{id?: int|null, label: string, color: string} */
     public array $levelForm = ['id' => null, 'label' => '', 'color' => 'primary'];
+
+    public bool $moveMemberModal = false;
+
+    public string $moveMemberName = '';
+
+    public int $moveMemberUserId = 0;
+
+    public int $moveTargetPackId = 0;
 
     /** Ticked by default: forgetting to warn members is worse than one extra mail. */
     public bool $notifyMembersOfChange = true;
@@ -350,6 +368,156 @@ new class extends Component
         );
     }
 
+    // ── Render ────────────────────────────────────────────────────────────────
+
+    // ── Actions sur le roster ─────────────────────────────────────────────────
+    //
+    // Les quatre gestes sont gardés par SubscriptionsManage, pas par
+    // TrainingsManage qui ouvre l'écran : sortir quelqu'un d'un pack touche à
+    // l'argent d'une affiliation, et c'est la même serrure que l'écran
+    // Affiliations, d'où ce parcours est copié.
+
+    /**
+     * Retire une place validée et ouvre le remboursement qu'elle libère.
+     *
+     * Le montant remboursable n'est pas le prix du pack : quitter un pack peut
+     * faire perdre la remise multi-packs, donc renchérir ceux qu'on garde.
+     * {@see LeaveTrainingPackAction} calcule la vraie baisse du dû, plafonnée à
+     * ce qui est effectivement rentré.
+     */
+    public function confirmLeaveMember(): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $pack = $this->selectedPack;
+        $subscription = $this->rosterSubscription($this->leaveMemberUserId);
+
+        if (! $pack || ! $subscription) {
+            return;
+        }
+
+        $pivot = $subscription->trainingPacks()->where('training_pack_id', $pack->id)->first();
+
+        if ($pivot?->pivot->status !== 'enrolled') {
+            $this->error(__('This pack is not enrolled and cannot be refunded this way.'));
+
+            return;
+        }
+
+        $refundable = (new LeaveTrainingPackAction)(
+            $subscription,
+            $pack,
+            $subscription->has_other_family_members ? 2 : 1,
+            notifyUser: false,
+        );
+
+        $userName = $subscription->user->first_name . ' ' . $subscription->user->last_name;
+
+        $this->leaveMemberModal = false;
+        $this->leaveMemberUserId = 0;
+        $this->forgetRoster();
+
+        if ($refundable <= 0.0) {
+            $this->success(__(':user removed from :pack. Nothing to refund — their balance is settled.', [
+                'user' => $userName,
+                'pack' => $pack->name,
+            ]));
+
+            return;
+        }
+
+        (new RequestSubscriptionRefundAction)($subscription, $refundable, __(':member has been removed from :pack after having paid.', [
+            'member' => $userName,
+            'pack' => $pack->name,
+        ]));
+
+        $iban = $subscription->user->iban;
+
+        if ($iban) {
+            $this->success(__(':user removed from :pack. Refund of :amount€ to be issued to :iban.', [
+                'user' => $userName,
+                'pack' => $pack->name,
+                'amount' => number_format($refundable, 2),
+                'iban' => $iban,
+            ]));
+
+            return;
+        }
+
+        $this->warning(__(':user removed from :pack. Refund of :amount€ required — no IBAN on file, please handle manually.', [
+            'user' => $userName,
+            'pack' => $pack->name,
+            'amount' => number_format($refundable, 2),
+        ]));
+    }
+
+    /** Déplace une place validée vers un autre pack de la même saison. */
+    public function confirmMoveMember(): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $pack = $this->selectedPack;
+        $subscription = $this->rosterSubscription($this->moveMemberUserId);
+        $target = $this->moveTargetPackId === 0 ? null : TrainingPack::find($this->moveTargetPackId);
+
+        if (! $pack || ! $subscription || ! $target) {
+            return;
+        }
+
+        try {
+            $refundable = (new MoveMemberBetweenTrainingPacksAction)(
+                $subscription,
+                $pack,
+                $target,
+                $subscription->has_other_family_members ? 2 : 1,
+            );
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $userName = $subscription->user->first_name . ' ' . $subscription->user->last_name;
+
+        $this->moveMemberModal = false;
+        $this->moveMemberUserId = 0;
+        $this->moveTargetPackId = 0;
+        $this->forgetRoster();
+
+        if ($refundable <= 0.0) {
+            $this->success(__(':user moved to :pack.', [
+                'user' => $userName,
+                'pack' => $target->name,
+            ]), icon: 'o-arrows-right-left');
+
+            return;
+        }
+
+        (new RequestSubscriptionRefundAction)($subscription, $refundable, __(':member has been moved to :pack, which costs less.', [
+            'member' => $userName,
+            'pack' => $target->name,
+        ]));
+
+        $iban = $subscription->user->iban;
+
+        if ($iban) {
+            $this->success(__(':user moved to :pack. Refund of :amount€ to be issued to :iban.', [
+                'user' => $userName,
+                'pack' => $target->name,
+                'amount' => number_format($refundable, 2),
+                'iban' => $iban,
+            ]));
+
+            return;
+        }
+
+        $this->warning(__(':user moved to :pack. Refund of :amount€ required — no IBAN on file, please handle manually.', [
+            'user' => $userName,
+            'pack' => $target->name,
+            'amount' => number_format($refundable, 2),
+        ]));
+    }
+
     /**
      * Confirmation step for a slot change on a pack that already has sessions.
      */
@@ -500,6 +668,56 @@ new class extends Component
         $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
     }
 
+    /**
+     * Les packs vers lesquels ce membre peut être déplacé.
+     *
+     * On ne propose pas les packs retirés de l'offre : y déplacer quelqu'un
+     * l'inscrirait à un entraînement que le club a cessé de proposer. Les packs
+     * complets ou aux inscriptions closes, eux, restent proposés et marqués —
+     * même politique que l'ajout manuel, où le comité franchit le plafond en
+     * connaissance de cause.
+     *
+     * @return list<array{id: int, name: string}>
+     */
+    #[Computed]
+    public function moveTargetOptions(): array
+    {
+        $pack = $this->selectedPack;
+
+        if (! $pack || $this->moveMemberUserId === 0) {
+            return [];
+        }
+
+        $subscription = $this->rosterSubscription($this->moveMemberUserId);
+
+        if (! $subscription) {
+            return [];
+        }
+
+        $held = DB::table('subscription_training_pack')
+            ->where('subscription_id', $subscription->id)
+            ->whereIn('status', ['enrolled', 'pending', 'offered'])
+            ->pluck('training_pack_id');
+
+        $options = TrainingPack::query()
+            ->where('season_id', $pack->season_id)
+            ->where('is_active', true)
+            ->whereKeyNot($pack->id)
+            ->whereNotIn('id', $held)
+            ->with('level')
+            ->get()
+            ->map(fn (TrainingPack $candidate): array => [
+                'id' => $candidate->id,
+                'packName' => $candidate->name,
+                'name' => $candidate->name
+                    . ' · ' . ($candidate->level?->label ?? '—')
+                    . ' · ' . number_format((float) $candidate->price, 2, ',', ' ') . ' €'
+                    . ($candidate->hasAvailableSpot() ? '' : ' · ' . __('Full')),
+            ]);
+
+        return LocaleSort::byKey($options, 'packName')->values()->all();
+    }
+
     public function newLevel(): void
     {
         $this->levelForm = ['id' => null, 'label' => '', 'color' => 'primary'];
@@ -610,6 +828,30 @@ new class extends Component
 
         $this->wizardOpen = true;
         $this->step = '1';
+    }
+
+    /** Ouvre la confirmation de sortie d'une place validée. */
+    public function openLeaveMember(int $userId): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $this->leaveMemberUserId = $userId;
+        // Le nom est relu ici, jamais passé dans le wire:click : une apostrophe
+        // dans « D'Hondt » clôturerait la chaîne de l'attribut.
+        $this->leaveMemberName = (string) $this->rosterSubscription($userId)?->user->full_name;
+        $this->leaveMemberModal = true;
+    }
+
+    /** Ouvre le choix du pack de destination. */
+    public function openMoveMember(int $userId): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $this->moveMemberUserId = $userId;
+        $this->moveMemberName = (string) $this->rosterSubscription($userId)?->user->full_name;
+        $this->moveTargetPackId = 0;
+        $this->moveMemberModal = true;
+        unset($this->moveTargetOptions);
     }
 
     public function openPack(int $packId): void
@@ -960,6 +1202,45 @@ new class extends Component
         $this->reset([$key]);
     }
 
+    /**
+     * Écarte une demande, ou retire quelqu'un de la file d'attente.
+     *
+     * Sans confirmation, et c'est voulu : {@see LeaveTrainingPackAction} détache
+     * purement et simplement tout ce qui n'est pas `enrolled` — aucune date de
+     * sortie, aucun euro, aucune trace. Une place validée, elle, passe par la
+     * modale, parce qu'elle peut rendre de l'argent.
+     */
+    public function removeFromRoster(int $userId): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $pack = $this->selectedPack;
+        $subscription = $this->rosterSubscription($userId);
+
+        if (! $pack || ! $subscription) {
+            return;
+        }
+
+        $pivot = $subscription->trainingPacks()->where('training_pack_id', $pack->id)->first();
+
+        if ($pivot === null || $pivot->pivot->status === 'enrolled') {
+            return;
+        }
+
+        (new LeaveTrainingPackAction)(
+            $subscription,
+            $pack,
+            $subscription->has_other_family_members ? 2 : 1,
+        );
+
+        $this->forgetRoster();
+
+        $this->success(__(':member removed from :pack.', [
+            'member' => $subscription->user->first_name . ' ' . $subscription->user->last_name,
+            'pack' => $pack->name,
+        ]));
+    }
+
     public function restorePack(int $packId): void
     {
         TrainingPack::findOrFail($packId)->update(['is_active' => true]);
@@ -1284,8 +1565,6 @@ new class extends Component
         return $this->viewSeasonId ? Season::find($this->viewSeasonId) : null;
     }
 
-    // ── Render ────────────────────────────────────────────────────────────────
-
     public function with(): array
     {
         return [
@@ -1334,6 +1613,22 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Trainings'));
+    }
+
+    /** Le roster et tout ce qui en dérive, à relire après une écriture. */
+    private function forgetRoster(): void
+    {
+        unset(
+            $this->packs,
+            $this->selectedPack,
+            $this->addMemberOptions,
+            $this->addMemberOverCapacity,
+            $this->attendanceMatrix,
+            $this->moveTargetOptions,
+            $this->packRoster,
+            $this->packSummary,
+            $this->packAttendance,
+        );
     }
 
     /**
@@ -1415,5 +1710,20 @@ new class extends Component
         $this->formEnrollmentsOpen = true;
         $this->regenerationConfirmed = false;
         $this->notifyMembersOfChange = true;
+    }
+
+    /** L'affiliation de ce membre pour la saison du pack consulté. */
+    private function rosterSubscription(int $userId): ?Subscription
+    {
+        $pack = $this->selectedPack;
+
+        if (! $pack || $userId === 0) {
+            return null;
+        }
+
+        return Subscription::with(['user', 'season', 'trainingPacks', 'payments'])
+            ->where('user_id', $userId)
+            ->where('season_id', $pack->season_id)
+            ->first();
     }
 };

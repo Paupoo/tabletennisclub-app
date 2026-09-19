@@ -9,7 +9,15 @@
         <x-breadcrumbs :items="$trail" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <div class="space-y-4">
+    {{-- Page servie en GET par un contrôleur : aucun composant Livewire, donc
+         pas de wire:model pour piloter une confirmation. L'état vit dans Alpine,
+         et une seule boîte sert toutes les lignes — elle reçoit le nom et
+         l'action de celle qu'on vise.
+
+         L'état s'appelle `open` et pas autrement : maryUI émet `x-trap="open"`
+         et `x-bind:inert="!open"` quoi qu'il arrive, et il les lit dans cette
+         portée-ci. --}}
+    <div class="space-y-4" x-data="{ open: false, name: '', action: '' }">
 
         <div>
             <h1 class="text-2xl font-bold tracking-tight">Catégories</h1>
@@ -90,17 +98,15 @@
                                 {{ $category->products_count }} produit{{ $category->products_count > 1 ? 's' : '' }}
                             </span>
 
-                            <form method="POST" action="{{ route('bar.categories.destroy', $category) }}"
-                                onsubmit="return confirm('Supprimer la catégorie « {{ $category->name }} » ?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-outline btn-error btn-sm tap-comfort shrink-0 px-3"
-                                    @disabled($isInUse)
-                                    title="{{ $isInUse ? 'Des produits utilisent cette catégorie' : 'Supprimer' }}"
-                                    aria-label="Supprimer {{ $category->name }}">
-                                    <x-icon name="o-trash" class="h-4 w-4" />
-                                </button>
-                            </form>
+                            {{-- json_encode et pas de guillemets à la main : « L'Étoile »
+                                 fermerait la chaîne Alpine au milieu du nom. --}}
+                            <button type="button" class="btn btn-outline btn-error btn-sm tap-comfort shrink-0 px-3"
+                                @disabled($isInUse)
+                                @click="name = {{ json_encode($category->name) }}; action = {{ json_encode(route('bar.categories.destroy', $category)) }}; open = true"
+                                title="{{ $isInUse ? 'Des produits utilisent cette catégorie' : 'Supprimer' }}"
+                                aria-label="Supprimer {{ $category->name }}">
+                                <x-icon name="o-trash" class="h-4 w-4" />
+                            </button>
                         </div>
                     @endforeach
                 </div>
@@ -111,6 +117,32 @@
                 </p>
             @endif
         </x-card>
+
+        {{-- showModal() plutôt que l'attribut open : le drawer du layout porte un
+             transform, qui devient le bloc conteneur de tout descendant fixe et
+             pose la boîte des milliers de pixels plus bas. Le top layer y échappe,
+             et rend le voile, le piège de focus et Échap par-dessus le marché. --}}
+        {{-- `id` est ce qui fait sauter à maryUI sa branche Livewire : sans lui,
+             le composant génère un `entangle()` et la page tombe en 500, faute
+             de composant Livewire autour. --}}
+        <x-app-modal id="bar-category-delete" x-ref="confirmBox"
+            x-effect="open ? $refs.confirmBox.showModal() : $refs.confirmBox.close()"
+            @close="open = false"
+            title="Supprimer cette catégorie ?">
+            <p x-text="name" class="font-semibold"></p>
+            <p class="mt-2 text-sm opacity-70">
+                Les produits qui l'utilisent la perdraient : une catégorie encore employée ne se supprime pas.
+            </p>
+
+            <x-slot:actions>
+                <x-button label="Annuler" @click="open = false" />
+                <form method="POST" :action="action" data-confirm-form>
+                    @csrf
+                    @method('DELETE')
+                    <x-button label="Supprimer" type="submit" class="btn-error" />
+                </form>
+            </x-slot:actions>
+        </x-app-modal>
 
     </div>
 </x-app-layout>

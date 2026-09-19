@@ -50,6 +50,8 @@ new class extends Component
 
     public ?int $categoryId = null;
 
+    public bool $deleteModal = false;
+
     public bool $drawer = false;
 
     /** Produit ouvert dans le tiroir ; null = création. */
@@ -69,8 +71,6 @@ new class extends Component
     public string $order = 'category';
 
     public string $price = '';
-
-    public bool $deleteModal = false;
 
     public function delete(): void
     {

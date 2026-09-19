@@ -71,6 +71,16 @@ new class extends Component
 
     public ?int $cancelSubscriptionId = null;
 
+    /**
+     * Switches an affiliation between the recreative and the competitive formula.
+     *
+     * The formula belongs to the affiliation, never to the member record: this is
+     * the only place it can be changed, and it can never be changed for free —
+     * the price follows, and so does the money still owed either way.
+     */
+    /** Ouverte depuis les deux boutons « Changer de formule » de l'écran. */
+    public bool $changeFormulaModal = false;
+
     public ?int $currentRequestId = null;
 
     public ?int $currentTrainingRequestId = null;
@@ -513,16 +523,6 @@ new class extends Component
 
         return $quote;
     }
-
-    /**
-     * Switches an affiliation between the recreative and the competitive formula.
-     *
-     * The formula belongs to the affiliation, never to the member record: this is
-     * the only place it can be changed, and it can never be changed for free —
-     * the price follows, and so does the money still owed either way.
-     */
-    /** Ouverte depuis les deux boutons « Changer de formule » de l'écran. */
-    public bool $changeFormulaModal = false;
 
     public function changeFormula(): void
     {

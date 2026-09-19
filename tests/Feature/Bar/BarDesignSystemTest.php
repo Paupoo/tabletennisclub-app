@@ -160,6 +160,15 @@ it('shows the stock state of each product on the order screen', function (): voi
         ->assertSee('Rupture de stock');
 });
 
+it('searches products on the order screen', function (): void {
+    Livewire::actingAs($this->manager)
+        ->withSession(['bar_tab_name' => 'Alpa A'])
+        ->test('pages::bar.counter')
+        ->set('search', 'jupiler')
+        ->assertSee('Jupiler 25 cl')
+        ->assertDontSee('Chimay bleue');
+});
+
 it('asks who the round is for before showing the catalogue', function (): void {
     // Servir à l'aveugle produisait des commandes qu'on ne savait plus rattacher à
     // personne une heure plus tard — le défaut que le nommage répare.

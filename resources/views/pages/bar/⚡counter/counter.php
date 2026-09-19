@@ -6,14 +6,12 @@ namespace Resources\views\Pages\Bar\Counter;
 
 use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarOrder;
-use App\Domains\Bar\Models\BarOrderItem;
 use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Services\BarCartService;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use App\Support\LocaleSort;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -50,6 +48,8 @@ new class extends Component
 {
     use HasBreadcrumbs, Toast;
 
+    public string $search = '';
+
     public string $tabNameInput = '';
 
     public function add(int $productId, BarCartService $cartService): void
@@ -62,7 +62,7 @@ new class extends Component
             $this->error($result['message']);
         }
 
-        unset($this->cart, $this->catalogue, $this->favourites);
+        unset($this->cart, $this->catalogue);
     }
 
     #[Computed]
@@ -86,39 +86,20 @@ new class extends Component
     #[Computed]
     public function catalogue(): Collection
     {
+        $search = trim($this->search);
+
         return BarCategory::query()
-            ->with(['products' => fn ($q) => $q->withStock()->orderBy('name')])
+            ->when($search !== '', fn ($query) => $query->whereHas(
+                'products',
+                fn ($productQuery) => $productQuery
+                    ->where('name', 'like', "%{$search}%")
+            ))
+            ->with(['products' => fn ($q) => $q
+                ->withStock()
+                ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"))
+                ->orderBy('name')])
             ->orderBy('name')
             ->get();
-    }
-
-    /**
-     * Les dix produits les plus vendus, toujours à portée de pouce.
-     *
-     * @return Collection<int, BarProduct>
-     */
-    #[Computed]
-    public function favourites(): Collection
-    {
-        $ranked = BarOrderItem::query()
-            ->select('bar_order_items.product_id', DB::raw('SUM(bar_order_items.quantity) as total_quantity'))
-            ->join('bar_orders', 'bar_orders.id', '=', 'bar_order_items.order_id')
-            ->where('bar_orders.is_paid', 1)
-            ->groupBy('bar_order_items.product_id')
-            ->orderByDesc('total_quantity')
-            ->limit(10)
-            ->pluck('bar_order_items.product_id')
-            ->all();
-
-        $rank = array_flip($ranked);
-
-        return BarProduct::query()
-            ->withStock()
-            ->whereIn('id', $ranked)
-            ->get()
-            ->filter(fn (BarProduct $p): bool => (bool) $p->is_available && $p->stock > 0)
-            ->sortBy(fn (BarProduct $p): int => $rank[$p->id] ?? PHP_INT_MAX)
-            ->values();
     }
 
     public function leaveTab(BarCartService $cartService): void
@@ -173,7 +154,12 @@ new class extends Component
     {
         $cartService->removeProductFromSessionCart($productId);
 
-        unset($this->cart, $this->catalogue, $this->favourites);
+        unset($this->cart, $this->catalogue);
+    }
+
+    public function updatedSearch(): void
+    {
+        unset($this->catalogue);
     }
 
     public function render(): View

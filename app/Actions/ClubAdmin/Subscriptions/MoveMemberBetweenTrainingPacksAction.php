@@ -157,10 +157,15 @@ class MoveMemberBetweenTrainingPacksAction
             new TrainingPackMovedNotification($from, $to, $subscription, $payment?->reference)
         );
 
-        // Même plafond que {@see LeaveTrainingPackAction} : on ne rend jamais un
+        if ($delta >= 0) {
+            return 0.0;
+        }
+
+        // Le dû a baissé : on réclame moins d'abord. Même plafond que
+        // {@see LeaveTrainingPackAction} sur ce qui reste — on ne rend jamais un
         // euro qui n'est pas rentré.
-        return $delta < 0
-            ? round(min(-$delta, $subscription->netAmountPaid()), 2)
-            : 0.0;
+        $overpaid = (new ReduceOutstandingInvoiceAction)($subscription);
+
+        return round(min($overpaid, $subscription->netAmountPaid()), 2);
     }
 }

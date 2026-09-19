@@ -151,6 +151,26 @@ describe('MoveMemberBetweenTrainingPacksAction', function (): void {
         expect($refundable)->toBe(0.0);
     })->group('training', 'enrollment', 'money');
 
+    it('claims less, rather than refunding, when the new pack costs less', function (): void {
+        Notification::fake();
+
+        [$from, $to] = twinPacks(40.0);
+        $subscription = movedSubscription($from);
+        (new AddMemberToTrainingPackAction)($subscription, $from);
+        $subscription->refresh();
+
+        (new MoveMemberBetweenTrainingPacksAction)($subscription, $from, $to);
+        $subscription->refresh();
+
+        $claimed = round($subscription->payments
+            ->filter(fn ($payment): bool => $payment->payment_method !== 'refund' && $payment->status !== 'cancelled')
+            ->sum(fn ($payment): float => (float) $payment->amount_due), 2);
+
+        // Le pendant du complément créé quand le dû monte : ce qu'on réclame
+        // suit le dû dans les deux sens.
+        expect($claimed)->toBe(round((float) $subscription->amount_due, 2));
+    })->group('training', 'enrollment', 'money');
+
     it('tells the member once, not twice', function (): void {
         Notification::fake();
 

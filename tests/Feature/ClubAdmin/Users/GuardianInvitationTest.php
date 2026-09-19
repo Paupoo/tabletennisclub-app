@@ -395,7 +395,7 @@ describe('inviting guardians from the members list', function (): void {
             // Inviter et relancer ne se proposent jamais ensemble : le tuteur
             // est à un seul stade à la fois.
             ->assertDontSee("sendGuardianInvitation({$ward->id})", escape: false)
-            ->assertSee("remindGuardianInvitation({$ward->id})", escape: false)
+            ->assertSee("openRemindGuardian({$ward->id})", escape: false)
             ->assertSee($guardian->full_name);
     });
 
@@ -406,7 +406,10 @@ describe('inviting guardians from the members list', function (): void {
         guardianOf($ward, ['email' => 'father@example.com', 'last_invited_at' => now()->subDay()]);
 
         Livewire::test('pages::club-admin.users.index')
-            ->call('remindGuardianInvitation', $ward->id);
+            ->call('openRemindGuardian', $ward->id)
+            ->assertSet('remindGuardianModal', true)
+            ->call('confirmRemindGuardian')
+            ->assertSet('remindGuardianModal', false);
 
         Mail::assertQueued(InviteGuardianMail::class, 2);
     });
@@ -416,8 +419,12 @@ describe('inviting guardians from the members list', function (): void {
         $ward = ward();
         guardianOf($ward, ['user_id' => User::factory()->create()->id]);
 
+        // Le tuteur a déjà un compte : il n'est pas « en attente », donc la
+        // modale ne s'ouvre même pas et rien ne part.
         Livewire::test('pages::club-admin.users.index')
-            ->call('remindGuardianInvitation', $ward->id);
+            ->call('openRemindGuardian', $ward->id)
+            ->assertSet('remindGuardianModal', false)
+            ->call('confirmRemindGuardian');
 
         Mail::assertNothingQueued();
     });
@@ -428,7 +435,7 @@ describe('inviting guardians from the members list', function (): void {
         guardianOf($ward, ['last_invited_at' => now()->subDay()]);
 
         Livewire::test('pages::club-admin.users.index')
-            ->call('remindGuardianInvitation', $ward->id)
+            ->call('openRemindGuardian', $ward->id)
             ->assertForbidden();
     });
 });

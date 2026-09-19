@@ -157,8 +157,8 @@
                                             :title="$remindableGuardians->count() === 1
                                                 ? __('Remind the guardian — :name', ['name' => $remindableGuardians->first()->full_name])
                                                 : __('Remind the guardians (:count)', ['count' => $remindableGuardians->count()])"
-                                            wire:click="remindGuardianInvitation({{ $user->id }})"
-                                            wire:confirm="{{ __('Send a second invitation?') }}" />
+                                            wire:click="openRemindGuardian({{ $user->id }})"
+                                    />
                                     @endif
                                 @endcan
                             @endif
@@ -297,8 +297,8 @@
                                                     :title="$remindableGuardians->count() === 1
                                                         ? __('Remind the guardian — :name', ['name' => $remindableGuardians->first()->full_name])
                                                         : __('Remind the guardians (:count)', ['count' => $remindableGuardians->count()])"
-                                                    wire:click="remindGuardianInvitation({{ $user->id }})"
-                                                    wire:confirm="{{ __('Send a second invitation?') }}" />
+                                                    wire:click="openRemindGuardian({{ $user->id }})"
+                                            />
                                             @endif
                                         @endcan
                                     @endif
@@ -448,6 +448,17 @@
          invalide le lien que le membre est peut-être en train de cliquer, et
          inviter un tuteur écrit à quelqu'un qui n'est pas dans la sélection. --}}
     @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
+        {{-- Relancer invalide le lien précédent : le parent est peut-être en
+             train de le cliquer. D'où la confirmation, comme pour l'envoi groupé. --}}
+        <x-confirm-modal model="remindGuardianModal" :title="__('Send a second invitation?')"
+            :confirmLabel="__('Send again')" confirmClass="btn-primary"
+            confirmAction="confirmRemindGuardian" :open="$remindGuardianModal">
+            <p>{{ $remindGuardianNames }}</p>
+            <p class="mt-2 text-sm opacity-70">
+                {{ __('The link already sent stops working, and a fresh one goes out.') }}
+            </p>
+        </x-confirm-modal>
+
         <x-confirm-modal model="confirmReinviteModal"
             :title="$waitingOnInvitation > 0 ? __('Send a second invitation?') : __('Send these invitations?')"
             :confirmLabel="$waitingOnInvitation > 0 ? __('Send again') : __('Send')"

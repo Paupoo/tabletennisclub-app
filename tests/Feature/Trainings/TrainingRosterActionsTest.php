@@ -44,7 +44,8 @@ it('keeps the roster read-only for a delegation that cannot touch an affiliation
         ->call($method, ...$args)
         ->assertForbidden();
 })->with([
-    ['removeFromRoster', [1]],
+    ['openRemoveFromRoster', [1]],
+    ['confirmRemoveFromRoster', []],
     ['openLeaveMember', [1]],
     ['openMoveMember', [1]],
     ['confirmLeaveMember', []],
@@ -62,13 +63,16 @@ it('dismisses a request without touching a euro', function (): void {
     Livewire::actingAs($this->manager)
         ->test(TRAINING_ROSTER_COMPONENT)
         ->call('openPack', $pack->id)
-        ->call('removeFromRoster', $member->id);
+        ->call('openRemoveFromRoster', $member->id)
+        ->assertSet('removeFromRosterModal', true)
+        ->call('confirmRemoveFromRoster')
+        ->assertSet('removeFromRosterModal', false);
 
     // Rien n'a été validé ni facturé : la ligne n'a aucune histoire à garder.
     expect($subscription->trainingPacks()->where('training_pack_id', $pack->id)->exists())->toBeFalse();
 })->group('training', 'enrollment');
 
-it('refuses to drop a confirmed spot through the one-click path', function (): void {
+it('refuses to drop a confirmed spot through the queue path', function (): void {
     Notification::fake();
 
     $pack = makeTrainingPack($this->season);
@@ -79,10 +83,13 @@ it('refuses to drop a confirmed spot through the one-click path', function (): v
     Livewire::actingAs($this->manager)
         ->test(TRAINING_ROSTER_COMPONENT)
         ->call('openPack', $pack->id)
-        ->call('removeFromRoster', $member->id);
+        ->call('openRemoveFromRoster', $member->id)
+        // La confirmation ne s'ouvre même pas : ce chemin ne traite pas les
+        // places validées.
+        ->assertSet('removeFromRosterModal', false);
 
-    // Une place validée peut rendre de l'argent : elle passe par la modale, pas
-    // par un clic dans une ligne de tableau.
+    // Une place validée peut rendre de l'argent : elle passe par sa propre
+    // modale, celle qui ouvre un remboursement.
     expect($subscription->trainingPacks()->where('training_pack_id', $pack->id)->first()->pivot->status)
         ->toBe('enrolled');
 })->group('training', 'enrollment');

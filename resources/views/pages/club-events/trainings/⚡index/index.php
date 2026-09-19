@@ -145,6 +145,15 @@ new class extends Component
 
     public bool $regenerationConfirmed = false;
 
+    public bool $removeFromRosterModal = false;
+
+    public string $removeFromRosterName = '';
+
+    /** `pending` ou `waiting`/`offered` : la modale ne dit pas la même chose. */
+    public string $removeFromRosterStatus = '';
+
+    public int $removeFromRosterUserId = 0;
+
     public ?int $selectedPackId = null;
 
     public bool $showAllSessions = false;
@@ -529,6 +538,41 @@ new class extends Component
         $this->save();
     }
 
+    public function confirmRemoveFromRoster(): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $pack = $this->selectedPack;
+        $subscription = $this->rosterSubscription($this->removeFromRosterUserId);
+
+        if (! $pack || ! $subscription) {
+            return;
+        }
+
+        $pivot = $subscription->trainingPacks()->where('training_pack_id', $pack->id)->first();
+
+        if ($pivot === null || $pivot->pivot->status === 'enrolled') {
+            return;
+        }
+
+        (new LeaveTrainingPackAction)(
+            $subscription,
+            $pack,
+            $subscription->has_other_family_members ? 2 : 1,
+        );
+
+        $this->removeFromRosterModal = false;
+        $this->removeFromRosterUserId = 0;
+        $this->removeFromRosterName = '';
+        $this->removeFromRosterStatus = '';
+        $this->forgetRoster();
+
+        $this->success(__(':member removed from :pack.', [
+            'member' => $subscription->user->first_name . ' ' . $subscription->user->last_name,
+            'pack' => $pack->name,
+        ]));
+    }
+
     public function confirmWithdrawPack(): void
     {
         if ($this->withdrawingPackId) {
@@ -864,6 +908,38 @@ new class extends Component
         $this->selectedPackId = $packId;
         $this->packTab = 'roster';
         unset($this->selectedPack, $this->sessions, $this->packRoster, $this->packSummary, $this->packAttendance);
+    }
+
+    /**
+     * Écarte une demande, ou retire quelqu'un de la file d'attente.
+     *
+     * Sans confirmation, et c'est voulu : {@see LeaveTrainingPackAction} détache
+     * purement et simplement tout ce qui n'est pas `enrolled` — aucune date de
+     * sortie, aucun euro, aucune trace. Une place validée, elle, passe par la
+     * modale, parce qu'elle peut rendre de l'argent.
+     */
+    /** Ouvre la confirmation de retrait d'une demande ou d'une place en file. */
+    public function openRemoveFromRoster(int $userId): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $pack = $this->selectedPack;
+        $subscription = $this->rosterSubscription($userId);
+
+        if (! $pack || ! $subscription) {
+            return;
+        }
+
+        $pivot = $subscription->trainingPacks()->where('training_pack_id', $pack->id)->first();
+
+        if ($pivot === null || $pivot->pivot->status === 'enrolled') {
+            return;
+        }
+
+        $this->removeFromRosterUserId = $userId;
+        $this->removeFromRosterName = (string) $subscription->user->full_name;
+        $this->removeFromRosterStatus = (string) $pivot->pivot->status;
+        $this->removeFromRosterModal = true;
     }
 
     public function openWithdrawPack(int $packId): void
@@ -1205,45 +1281,6 @@ new class extends Component
     public function removeFilter(string $key): void
     {
         $this->reset([$key]);
-    }
-
-    /**
-     * Écarte une demande, ou retire quelqu'un de la file d'attente.
-     *
-     * Sans confirmation, et c'est voulu : {@see LeaveTrainingPackAction} détache
-     * purement et simplement tout ce qui n'est pas `enrolled` — aucune date de
-     * sortie, aucun euro, aucune trace. Une place validée, elle, passe par la
-     * modale, parce qu'elle peut rendre de l'argent.
-     */
-    public function removeFromRoster(int $userId): void
-    {
-        Gate::authorize(Permission::SubscriptionsManage->value);
-
-        $pack = $this->selectedPack;
-        $subscription = $this->rosterSubscription($userId);
-
-        if (! $pack || ! $subscription) {
-            return;
-        }
-
-        $pivot = $subscription->trainingPacks()->where('training_pack_id', $pack->id)->first();
-
-        if ($pivot === null || $pivot->pivot->status === 'enrolled') {
-            return;
-        }
-
-        (new LeaveTrainingPackAction)(
-            $subscription,
-            $pack,
-            $subscription->has_other_family_members ? 2 : 1,
-        );
-
-        $this->forgetRoster();
-
-        $this->success(__(':member removed from :pack.', [
-            'member' => $subscription->user->first_name . ' ' . $subscription->user->last_name,
-            'pack' => $pack->name,
-        ]));
     }
 
     public function restorePack(int $packId): void

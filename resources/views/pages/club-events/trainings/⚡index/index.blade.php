@@ -335,10 +335,7 @@
                                                                     <li>
                                                                         <button type="button"
                                                                             class="w-full justify-start gap-2 text-start text-error"
-                                                                            wire:click="removeFromRoster({{ $row['id'] }})"
-                                                                            wire:confirm="{{ $group['key'] === 'pending'
-                                                                                ? __('Dismiss this request?')
-                                                                                : __('Take this member off the waiting list?') }}">
+                                                                            wire:click="openRemoveFromRoster({{ $row['id'] }})">
                                                                             <x-icon name="o-x-mark" class="h-4 w-4" />
                                                                             {{ $group['key'] === 'pending'
                                                                                 ? __('Dismiss the request')
@@ -1113,6 +1110,20 @@
             <x-button :label="__('Add the member')" class="btn-primary" wire:click="addMemberToPack" spinner />
         </x-slot:actions>
     </x-app-modal>
+
+    {{-- ── Dismiss a request, or leave the waiting list ─────────────────────── --}}
+    <x-confirm-modal model="removeFromRosterModal"
+        :title="$removeFromRosterStatus === 'pending'
+            ? __('Dismiss this request?')
+            : __('Take this member off the waiting list?')"
+        :confirmLabel="__('Remove')" confirmAction="confirmRemoveFromRoster" :open="$removeFromRosterModal">
+        <p>{{ $removeFromRosterName }}</p>
+        <p class="mt-2 text-sm opacity-70">
+            {{ $removeFromRosterStatus === 'pending'
+                ? __('Nothing was validated and nothing was billed: the line is simply detached, and the member can ask again.')
+                : __('The queue is renumbered behind them. Coming back means starting at the end of it.') }}
+        </p>
+    </x-confirm-modal>
 
     {{-- ── Take an enrolled member out of the pack ──────────────────────────── --}}
     <x-app-modal :title="__('Remove :member from this pack?', ['member' => $leaveMemberName])"

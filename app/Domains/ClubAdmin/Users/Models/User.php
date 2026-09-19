@@ -874,6 +874,22 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Pool::class, 'pool_user');
     }
 
+    /**
+     * Les tuteurs qu'on peut relancer : le lien est parti, il court encore, et
+     * personne n'a répondu.
+     *
+     * Distinct de {@see self::invitableGuardians()}, qui ne rend que ceux à qui
+     * on n'a jamais écrit ou dont le lien a expiré. Les deux gestes ne se disent
+     * pas pareil au secrétariat — « inviter » et « relancer » — et l'envoi en
+     * masse ne vise que le premier.
+     *
+     * @return Collection<int, Guardian>
+     */
+    public function remindableGuardians(): Collection
+    {
+        return $this->guardiansAt('waiting');
+    }
+
     public function requiresGuardian(): bool
     {
         return $this->isMinor() && ! $this->hasGuardian();

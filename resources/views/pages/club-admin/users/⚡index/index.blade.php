@@ -89,6 +89,7 @@
             @php
                 $invStatus = $user->invitationStatus();
                 $invitableGuardians = $user->invitableGuardians();
+                $remindableGuardians = $user->remindableGuardians();
             @endphp
             {{-- <x-list-item> pose l'identité et les actions sur une même ligne. Depuis
             que chaque ligne porte une action nommée, « Modifier » et « Plus » prennent
@@ -148,6 +149,16 @@
                                                 ? __('Invite the guardian — :name', ['name' => $invitableGuardians->first()->full_name])
                                                 : __('Invite the guardians (:count)', ['count' => $invitableGuardians->count()])"
                                             wire:click="sendGuardianInvitation({{ $user->id }})" />
+                                    @elseif ($remindableGuardians->isNotEmpty())
+                                        {{-- Le lien court encore et personne n'a répondu. Un membre qui a sa
+                                        propre adresse se relance à tout moment ; rien ne justifiait qu'un
+                                        tuteur doive attendre l'expiration du lien, sept jours plus tard. --}}
+                                        <x-menu-item icon="o-bell-alert"
+                                            :title="$remindableGuardians->count() === 1
+                                                ? __('Remind the guardian — :name', ['name' => $remindableGuardians->first()->full_name])
+                                                : __('Remind the guardians (:count)', ['count' => $remindableGuardians->count()])"
+                                            wire:click="remindGuardianInvitation({{ $user->id }})"
+                                            wire:confirm="{{ __('Send a second invitation?') }}" />
                                     @endif
                                 @endcan
                             @endif
@@ -211,7 +222,7 @@
                     :create-label="__('Create a member')"
                     :create-href="auth()->user()->can('create', \App\Domains\ClubAdmin\Users\Models\User::class) ? route('admin.users.create') : null" />
             @else
-                <x-table :headers="$headers" :rows="$users" :sort-by="$sortBy" selectable wire:model.live="selected">
+                <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$users" :sort-by="$sortBy" selectable wire:model.live="selected">
                     @scope('cell_photo', $user)
                         <x-avatar class="h-10 w-10" image="{{ $user->photo ?? '/images/empty-user.jpg' }}" />
                     @endscope
@@ -255,6 +266,7 @@
                         @php
                             $invStatus = $user->invitationStatus();
                             $invitableGuardians = $user->invitableGuardians();
+                            $remindableGuardians = $user->remindableGuardians();
                         @endphp
                         <div class="flex items-center justify-end gap-2">
                             <x-admin.shared.row-menu
@@ -277,6 +289,16 @@
                                                         ? __('Invite the guardian — :name', ['name' => $invitableGuardians->first()->full_name])
                                                         : __('Invite the guardians (:count)', ['count' => $invitableGuardians->count()])"
                                                     wire:click="sendGuardianInvitation({{ $user->id }})" />
+                                            @elseif ($remindableGuardians->isNotEmpty())
+                                                {{-- Le lien court encore et personne n'a répondu. Un membre qui a sa
+                                                propre adresse se relance à tout moment ; rien ne justifiait qu'un
+                                                tuteur doive attendre l'expiration du lien, sept jours plus tard. --}}
+                                                <x-menu-item icon="o-bell-alert"
+                                                    :title="$remindableGuardians->count() === 1
+                                                        ? __('Remind the guardian — :name', ['name' => $remindableGuardians->first()->full_name])
+                                                        : __('Remind the guardians (:count)', ['count' => $remindableGuardians->count()])"
+                                                    wire:click="remindGuardianInvitation({{ $user->id }})"
+                                                    wire:confirm="{{ __('Send a second invitation?') }}" />
                                             @endif
                                         @endcan
                                     @endif

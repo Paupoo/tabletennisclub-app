@@ -53,8 +53,12 @@ new class extends Component
         return (int) $this->items->sum('quantity');
     }
 
+    public bool $clearModal = false;
+
     public function clear(BarCartService $cartService): void
     {
+        $this->clearModal = false;
+
         $cartService->clearSessionCart();
 
         $this->redirectRoute('bar.index', navigate: true);

@@ -521,8 +521,13 @@ new class extends Component
      * the only place it can be changed, and it can never be changed for free —
      * the price follows, and so does the money still owed either way.
      */
+    /** Ouverte depuis les deux boutons « Changer de formule » de l'écran. */
+    public bool $changeFormulaModal = false;
+
     public function changeFormula(): void
     {
+        $this->changeFormulaModal = false;
+
         Gate::authorize(Permission::SubscriptionsManage->value);
 
         $subscription = Subscription::with(['user', 'trainingPacks', 'payments'])->find($this->currentRequestId);

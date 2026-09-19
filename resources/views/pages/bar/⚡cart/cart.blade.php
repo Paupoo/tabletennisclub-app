@@ -89,8 +89,7 @@
             <div class="mt-4 space-y-2.5">
                 <div class="flex flex-wrap gap-2.5">
                     <x-button :label="__('Empty the order')" icon="o-trash"
-                        wire:click="clear"
-                        wire:confirm="{{ __('Empty this order?') }}"
+                        wire:click="$set('clearModal', true)"
                         class="btn-outline btn-error tap-comfort min-w-[9rem] flex-1" />
 
                     @if ($this->tabName)
@@ -106,4 +105,10 @@
             </div>
         </x-card>
     @endif
+
+    <x-confirm-modal model="clearModal" :title="__('Empty this order?')"
+        :confirmLabel="__('Empty the order')" confirmAction="clear" :open="$clearModal">
+        <p>{{ __('Every line goes, and the order starts again from nothing.') }}</p>
+    </x-confirm-modal>
+
 </div>

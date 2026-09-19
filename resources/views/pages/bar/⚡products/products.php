@@ -70,8 +70,12 @@ new class extends Component
 
     public string $price = '';
 
+    public bool $deleteModal = false;
+
     public function delete(): void
     {
+        $this->deleteModal = false;
+
         $product = BarProduct::withStock()->findOrFail($this->editingId);
 
         // Le stock doit être à zéro : supprimer un produit encore en rayon

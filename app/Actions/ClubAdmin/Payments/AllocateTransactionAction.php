@@ -83,13 +83,40 @@ final class AllocateTransactionAction
     }
 
     /**
+     * La ligne est-elle soldée par ce qui vient d'y être crédité ?
+     *
+     * En centimes, sans tolérance à inventer : les deux montants sortent de la
+     * même colonne et la comparaison est exacte.
+     *
+     * Seule une ligne `pending` bascule. `cancelled`, `to_refund` et `refunded`
+     * racontent autre chose que l'attente d'un paiement, et un encaissement ne
+     * les réécrit pas.
+     */
+    private function isSettledByCredits(Payment $payment, int $credited): bool
+    {
+        if ($payment->status !== 'pending' || $payment->payment_method === 'refund') {
+            return false;
+        }
+
+        return $credited >= (int) round((float) $payment->amount_due * 100);
+    }
+
+    /**
+     * Le miroir de la ligne, et son statut quand le solde est atteint.
+     *
      * `sum()` rend des centimes bruts, le mutateur attend des euros.
      */
     private function refreshPaymentMirror(Payment $payment): void
     {
-        $payment->update([
-            'amount_paid' => round(((float) $payment->credits()->sum('amount')) / 100, 2),
-        ]);
+        $credited = (int) $payment->credits()->sum('amount');
+
+        $attributes = ['amount_paid' => round($credited / 100, 2)];
+
+        if ($this->isSettledByCredits($payment, $credited)) {
+            $attributes['status'] = 'paid';
+        }
+
+        $payment->update($attributes);
     }
 
     /**
@@ -99,10 +126,19 @@ final class AllocateTransactionAction
      */
     private function refreshTransactionMirror(Transaction $transaction): void
     {
+        $allocated = abs((float) $transaction->credits()->sum('amount')) / 100;
+
+        // Le miroir prend le signe de la ligne de relevé. Les crédits, eux,
+        // restent positifs : le sens de l'argent est porté par la transaction,
+        // comme `payment_method` le porte côté paiement. Sans ce report, une
+        // sortie de 105 € entièrement traitée afficherait +105 face à -105 et
+        // ne pourrait jamais se dire soldée.
+        $sign = (float) $transaction->amount < 0 ? -1 : 1;
+
         // `forceFill` : le miroir est délibérément hors `$fillable`, pour qu'un
         // `update()` de passage ne puisse pas le contredire.
         $transaction->forceFill([
-            'allocated_amount' => round(((float) $transaction->credits()->sum('amount')) / 100, 2),
+            'allocated_amount' => round($sign * $allocated, 2),
         ])->save();
     }
 
@@ -114,6 +150,13 @@ final class AllocateTransactionAction
      */
     private function settlePayable(Payment $payment): void
     {
+        // Une ligne de remboursement est de l'argent qui sort : elle ne règle
+        // aucune cotisation, et la faire passer par la machine à états de
+        // l'affiliation demanderait une transition qui n'a pas lieu d'être.
+        if ($payment->payment_method === 'refund') {
+            return;
+        }
+
         $payable = $payment->payable;
 
         if ($payable instanceof Subscription) {

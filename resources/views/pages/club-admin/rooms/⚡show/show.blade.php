@@ -54,7 +54,7 @@
                 @else
                     {{-- Desktop --}}
                     <div class="hidden overflow-x-auto md:block">
-                        <x-table :headers="$headers" :rows="$tables" class="table-sm">
+                        <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$tables" class="table-sm">
                             @scope('cell_name', $table)
                                 <span class="font-bold">{{ $table->name }}</span>
                             @endscope

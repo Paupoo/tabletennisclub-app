@@ -51,6 +51,24 @@
                     </div>
                 </x-section-accordion>
 
+                {{-- ENTRAÎNEUR — une relation, pas une délégation : encadrer un pack
+                     ou une séance suffit. Le groupe reste court parce que le monde
+                     admin d'un coach tient en un écran ; on ne le remplit pas de
+                     portes qui répondent 403. --}}
+                @if($showCoach)
+                <x-section-accordion
+                    :label="__('Coach')"
+                    :open-on-mobile="false"
+                    :count="count($coachTiles) . ' accès'"
+                    color="gray">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-2">
+                        @foreach($coachTiles as $tile)
+                            @include('clubAdmin._dashboard_tile', $tile)
+                        @endforeach
+                    </div>
+                </x-section-accordion>
+                @endif
+
                 @if($showSecretary)
                 @php
                     $secretaryTiles = [

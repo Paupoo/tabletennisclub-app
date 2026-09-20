@@ -375,6 +375,69 @@ describe('inviting guardians from the members list', function (): void {
             ->call('sendGuardianInvitation', $ward->id)
             ->assertForbidden();
     });
+
+    /*
+     * Un membre qui a sa propre adresse se relance à tout moment. Un tuteur ne
+     * le pouvait pas : `invitableGuardians()` ne rend que le stade `actionable`,
+     * et un tuteur relancé reste `waiting` sept jours — la durée de validité du
+     * lien. Le parent qui n'a rien vu passer n'avait donc aucun recours avant
+     * expiration, alors que l'action d'envoi, elle, n'a jamais rien refusé.
+     */
+    it('offers a reminder while the guardian link is still running', function (): void {
+        $ward = ward();
+        $guardian = guardianOf($ward, [
+            'first_name' => 'Cristina',
+            'last_name' => 'Decreton',
+            'last_invited_at' => now()->subDay(),
+        ]);
+
+        Livewire::test('pages::club-admin.users.index')
+            // Inviter et relancer ne se proposent jamais ensemble : le tuteur
+            // est à un seul stade à la fois.
+            ->assertDontSee("sendGuardianInvitation({$ward->id})", escape: false)
+            ->assertSee("openRemindGuardian({$ward->id})", escape: false)
+            ->assertSee($guardian->full_name);
+    });
+
+    it('sends the reminder to every guardian still waiting', function (): void {
+        Mail::fake();
+        $ward = ward();
+        guardianOf($ward, ['email' => 'mother@example.com', 'last_invited_at' => now()->subDay()]);
+        guardianOf($ward, ['email' => 'father@example.com', 'last_invited_at' => now()->subDay()]);
+
+        Livewire::test('pages::club-admin.users.index')
+            ->call('openRemindGuardian', $ward->id)
+            ->assertSet('remindGuardianModal', true)
+            ->call('confirmRemindGuardian')
+            ->assertSet('remindGuardianModal', false);
+
+        Mail::assertQueued(InviteGuardianMail::class, 2);
+    });
+
+    it('reminds nobody once a guardian holds an account', function (): void {
+        Mail::fake();
+        $ward = ward();
+        guardianOf($ward, ['user_id' => User::factory()->create()->id]);
+
+        // Le tuteur a déjà un compte : il n'est pas « en attente », donc la
+        // modale ne s'ouvre même pas et rien ne part.
+        Livewire::test('pages::club-admin.users.index')
+            ->call('openRemindGuardian', $ward->id)
+            ->assertSet('remindGuardianModal', false)
+            ->call('confirmRemindGuardian');
+
+        Mail::assertNothingQueued();
+    });
+
+    it('closes the reminder to a member who may not write to the club', function (): void {
+        actingAs(User::factory()->create());
+        $ward = ward();
+        guardianOf($ward, ['last_invited_at' => now()->subDay()]);
+
+        Livewire::test('pages::club-admin.users.index')
+            ->call('openRemindGuardian', $ward->id)
+            ->assertForbidden();
+    });
 });
 
 describe('inviting guardians in bulk', function (): void {

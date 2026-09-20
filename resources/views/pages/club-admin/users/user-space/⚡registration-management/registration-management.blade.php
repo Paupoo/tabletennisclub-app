@@ -391,9 +391,6 @@
                                                         </div>
                                                         <div class="mt-1 flex items-center gap-2">
                                                             <span class="text-xs font-semibold">{{ number_format($pack['price'], 2) }} €</span>
-                                                            @if($pack['allow_discount'])
-                                                                <span class="text-xs text-muted italic">{{ __('(discount may apply)') }}</span>
-                                                            @endif
                                                             @if(!empty($pack['description']))
                                                                 <button type="button" @click="descOpen = !descOpen" class="text-xs text-primary underline">
                                                                     <span x-text="descOpen ? '{{ __('Hide') }}' : '{{ __('Info') }}'"></span>

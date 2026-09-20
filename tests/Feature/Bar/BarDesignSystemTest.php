@@ -190,7 +190,10 @@ it('keeps a product deletion behind a confirmation, and says why it can be refus
     Livewire::actingAs($this->manager)
         ->test('pages::bar.products')
         ->call('openProduct', $this->inStock->id)
-        ->assertSeeHtml('wire:confirm')
+        // La confirmation est passée du `confirm()` du navigateur à la modale
+        // maison : l'intention ne bouge pas, le bouton ouvre au lieu d'agir.
+        ->assertSeeHtml("\$set('deleteModal', true)")
+        ->assertSee(__('Delete this product permanently?'))
         // Par `__()` et non en dur : la chaîne est traduite, et l'assertion doit
         // suivre la langue de l'application plutôt que figer l'anglais source.
         ->assertSee(__('Only a product at zero stock can be deleted. To take one off the menu, switch Available off.'));

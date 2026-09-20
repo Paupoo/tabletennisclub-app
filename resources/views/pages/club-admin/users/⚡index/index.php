@@ -94,6 +94,14 @@ new class extends Component
     // ── Quick invite ─────────────────────────────────────────────────────────
     public bool $quickInviteDrawer = false;
 
+    // ── Relance d'un tuteur ──────────────────────────────────────────────────
+    public bool $remindGuardianModal = false;
+
+    /** Qui sera relancé, pour que la modale le nomme. */
+    public string $remindGuardianNames = '';
+
+    public int $remindGuardianUserId = 0;
+
     // ── Filters & sort ───────────────────────────────────────────────────────
     #[Url]
     public string $search = '';
@@ -276,6 +284,44 @@ new class extends Component
 
         $this->userToDelete = $userId;
         $this->deleteModal = true;
+    }
+
+    public function confirmRemindGuardian(): void
+    {
+        Gate::authorize('sendEmail', User::class);
+
+        // Rien d'ouvert : la modale est le seul chemin, et elle porte l'identité
+        // du pupille. Sans ce garde, un appel direct cherchait l'utilisateur 0.
+        if ($this->remindGuardianUserId === 0) {
+            return;
+        }
+
+        $user = User::with('guardians.member')->findOrFail($this->remindGuardianUserId);
+        $guardians = $user->remindableGuardians();
+
+        if ($guardians->isEmpty()) {
+            $this->error($this->whyNotInvitable($user));
+
+            return;
+        }
+
+        $sent = $guardians->filter(
+            fn (Guardian $guardian): bool => SendGuardianInvitationAction::handle($guardian)
+        );
+
+        if ($sent->isEmpty()) {
+            $this->error($this->whyNotInvitable($user->refresh()->load('guardians.member')));
+
+            return;
+        }
+
+        $this->remindGuardianModal = false;
+        $this->remindGuardianUserId = 0;
+        $this->remindGuardianNames = '';
+
+        $this->success(__('Reminder sent to :names.', [
+            'names' => $sent->pluck('full_name')->join(', ', ' ' . __('and') . ' '),
+        ]));
     }
 
     public function delete(): void
@@ -467,6 +513,34 @@ new class extends Component
         $this->anonymizeUserId = $userId;
         $this->anonymizeConfirmText = '';
         $this->anonymizeModal = true;
+    }
+
+    /**
+     * Relance un tuteur dont le lien court encore.
+     *
+     * Un membre qui a sa propre adresse se relance à tout moment ; un tuteur ne
+     * le pouvait pas avant l'expiration du lien, sept jours plus tard. Rien ne
+     * justifiait cette différence, et le cas est banal : le parent n'a rien vu
+     * passer. {@see SendGuardianInvitationAction} n'a d'ailleurs aucun garde-fou
+     * sur l'attente — c'est le filtre de l'appelant qui bloquait.
+     */
+    /** Ouvre la confirmation de relance des tuteurs d'un pupille. */
+    public function openRemindGuardian(int $userId): void
+    {
+        Gate::authorize('sendEmail', User::class);
+
+        $user = User::with('guardians.member')->findOrFail($userId);
+        $guardians = $user->remindableGuardians();
+
+        if ($guardians->isEmpty()) {
+            $this->error($this->whyNotInvitable($user));
+
+            return;
+        }
+
+        $this->remindGuardianUserId = $userId;
+        $this->remindGuardianNames = $guardians->pluck('full_name')->join(', ', ' ' . __('and') . ' ');
+        $this->remindGuardianModal = true;
     }
 
     public function quickInvite(): void

@@ -175,7 +175,7 @@
 
     {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
     <x-card class="hidden bg-base-100 shadow-sm rounded-t-none lg:block">
-        <x-table :headers="$headers" :rows="$payments" :sort-by="$sortBy" wire:model.live="selected" selectable hover>
+        <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$payments" :sort-by="$sortBy" wire:model.live="selected" selectable hover>
 
             @scope('cell_reference', $payment)
             <span class="font-mono text-sm tracking-tight text-primary">{{ $payment->reference }}</span>

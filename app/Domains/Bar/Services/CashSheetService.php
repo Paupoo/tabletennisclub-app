@@ -18,10 +18,12 @@ class CashSheetService
 {
     public function build(string $date): array
     {
-        $date = Carbon::parse($date)->toDateString();
+        $businessDayStart = Carbon::parse($date)->startOfDay()->setTime(6, 0);
+        $businessDayEnd = $businessDayStart->copy()->addDay();
 
         $ordersQuery = BarOrder::query()
-            ->whereDate('created_at', $date);
+            ->where('created_at', '>=', $businessDayStart)
+            ->where('created_at', '<', $businessDayEnd);
 
         // --- Orders summary ---
         $ordersTotal = (clone $ordersQuery)->count();
@@ -47,8 +49,9 @@ class CashSheetService
 
         // --- Total quantity sold ---
         $itemsTotal = (int) BarOrderItem::query()
-            ->whereHas('order', function (Builder $q) use ($date): void {
-                $q->whereDate('created_at', $date);
+            ->whereHas('order', function (Builder $q) use ($businessDayStart, $businessDayEnd): void {
+                $q->where('created_at', '>=', $businessDayStart)
+                    ->where('created_at', '<', $businessDayEnd);
             })
             ->sum('quantity');
 
@@ -74,8 +77,9 @@ class CashSheetService
                 SUM(total_price) as total_revenue
             ')
             ->with('product:id,name')
-            ->whereHas('order', function (Builder $q) use ($date): void {
-                $q->whereDate('created_at', $date);
+            ->whereHas('order', function (Builder $q) use ($businessDayStart, $businessDayEnd): void {
+                $q->where('created_at', '>=', $businessDayStart)
+                    ->where('created_at', '<', $businessDayEnd);
             })
             ->groupBy('product_id')
             ->orderByDesc('total_quantity')

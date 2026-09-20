@@ -30,7 +30,6 @@ enum Role: string
     case ACCESS = 'acces';
     case ADMINISTRATOR = 'administrateur';
     case ATTESTATIONS = 'attestations';
-    case BAR = 'bar';
     case BARMAN = 'barman';
     case CASH_REGISTER = 'caisse';
     case COACH = 'coach';
@@ -136,7 +135,6 @@ enum Role: string
             self::TRAININGS => __('Build the training offer, packs and season planning.'),
             self::COACH => __('Lead training sessions and record attendance.'),
             self::MEETINGS => __('Convene meetings, write and publish the minutes.'),
-            self::BAR => __('Manage the bar: products, stock, orders and cash sheet.'),
             self::BARMAN => __('Serve drinks and snacks, close orders and take over others.'),
             self::STORE_KEEPER => __('Manage the stock, the products and the categories.'),
             self::FACILITIES => __('Manage rooms, tables and entrusted equipment.'),
@@ -183,7 +181,6 @@ enum Role: string
             self::TRAININGS => __('Training offer'),
             self::COACH => __('Coach'),
             self::MEETINGS => __('Meetings'),
-            self::BAR => __('Bar'),
             self::BARMAN => __('Barman'),
             self::STORE_KEEPER => __('Store keeper'),
             self::FACILITIES => __('Facilities'),
@@ -342,9 +339,6 @@ enum Role: string
                 Permission::MeetingsMinutesManage,
             ],
 
-            self::BAR => [
-                Permission::BarAccess,
-            ],
             self::BARMAN => [
                 Permission::BarAccess,
                 Permission::BarOrdersManage,

@@ -138,11 +138,11 @@ describe('the overview screen', function (): void {
 
 describe('assigning delegations on the member form', function (): void {
     it('loads the delegations already held', function (): void {
-        $member = User::factory()->withRole(Role::BAR, Role::WEBSITE)->create();
+        $member = User::factory()->withRole(Role::BARMAN, Role::WEBSITE)->create();
 
         Livewire::actingAs($this->admin)
             ->test(USER_FORM, ['user' => $member])
-            ->assertSet('delegations', fn (array $held): bool => in_array(Role::BAR->value, $held, true)
+            ->assertSet('delegations', fn (array $held): bool => in_array(Role::BARMAN->value, $held, true)
                 && in_array(Role::WEBSITE->value, $held, true));
     });
 
@@ -204,14 +204,14 @@ describe('assigning delegations on the member form', function (): void {
     });
 
     it('revokes a delegation that was unchecked', function (): void {
-        $member = User::factory()->withRole(Role::BAR)->create();
+        $member = User::factory()->withRole(Role::BARMAN)->create();
 
         Livewire::actingAs($this->admin)
             ->test(USER_FORM, ['user' => $member])
             ->set('delegations', [])
             ->call('save');
 
-        expect($member->fresh()->getRoleNames()->all())->not->toContain(Role::BAR->value);
+        expect($member->fresh()->getRoleNames()->all())->not->toContain(Role::BARMAN->value);
     });
 
     it('never lets the delegations field grant the administrator role', function (): void {
@@ -220,11 +220,11 @@ describe('assigning delegations on the member form', function (): void {
         Livewire::actingAs($this->admin)
             ->test(USER_FORM, ['user' => $member])
             ->set('is_admin', false)
-            ->set('delegations', [Role::ADMINISTRATOR->value, Role::BAR->value])
+            ->set('delegations', [Role::ADMINISTRATOR->value, Role::BARMAN->value])
             ->call('save');
 
         expect($member->fresh())
             ->hasRole(Role::ADMINISTRATOR->value)->toBeFalse()
-            ->and($member->fresh()->getRoleNames()->all())->toBe([Role::BAR->value]);
+            ->and($member->fresh()->getRoleNames()->all())->toBe([Role::BARMAN->value]);
     });
 });

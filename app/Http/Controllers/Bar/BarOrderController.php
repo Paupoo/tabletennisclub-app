@@ -10,6 +10,8 @@ use App\Domains\Bar\Services\StockService;
 use App\Domains\Shared\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Support\LocaleSort;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +19,8 @@ use Illuminate\View\View;
 
 class BarOrderController extends Controller
 {
+    private const int BAR_DAY_START_HOUR = 6;
+
     public function __construct(private readonly StockService $stockService)
     {
         $this->middleware('auth');
@@ -61,21 +65,34 @@ class BarOrderController extends Controller
         $status = $request->input('status', 'all');
 
         $query = BarOrder::query()->with(['items.product', 'createdBy']);
+        $periodRange = null;
 
         switch ($period) {
             case 'today':
-                $query->whereDate('created_at', today());
+                $periodRange = $this->barDayRange();
                 break;
             case '7':
-                $query->where('created_at', '>=', now()->subDays(7));
+                [$periodStart, $periodEnd] = $this->barDayRange();
+                $periodRange = [$periodStart->subDays(6), $periodEnd];
                 break;
             case '30':
-                $query->where('created_at', '>=', now()->subDays(30));
+                [$periodStart, $periodEnd] = $this->barDayRange();
+                $periodRange = [$periodStart->subDays(29), $periodEnd];
                 break;
             case 'all':
             default:
                 // no filter
                 break;
+        }
+
+        if ($periodRange !== null) {
+            [$periodStart, $periodEnd] = $periodRange;
+
+            $query->where(function (Builder $query) use ($periodStart, $periodEnd): void {
+                $query
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->orWhereBetween('paid_at', [$periodStart, $periodEnd]);
+            });
         }
 
         switch ($status) {
@@ -95,12 +112,25 @@ class BarOrderController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        $totalRevenue = $orders
+        $paidOrders = $orders->filter(function (BarOrder $order) use ($periodRange): bool {
+            if (! $order->is_paid || $order->paid_at === null) {
+                return false;
+            }
+
+            if ($periodRange === null) {
+                return true;
+            }
+
+            [$periodStart, $periodEnd] = $periodRange;
+
+            return Carbon::parse($order->paid_at)->betweenIncluded($periodStart, $periodEnd);
+        });
+
+        $totalRevenue = $paidOrders
             ->where('payment_method', '!=', 'offered')
-            ->where('is_paid', 1)
             ->sum('total_price');
         $totalRevenueUnpaid = $orders->where('is_paid', 0)->sum('total_price');
-        $totalRevenueOffered = $orders->where('payment_method', 'offered')->sum('total_price');
+        $totalRevenueOffered = $paidOrders->where('payment_method', 'offered')->sum('total_price');
         $orderCount = $orders->count();
 
         return view('bar.orders.history', [
@@ -216,5 +246,21 @@ class BarOrderController extends Controller
         $order->update(['name' => trim($validated['name']), 'open_name_key' => $key]);
 
         return back()->with('success', sprintf('Ardoise renommée « %s ».', $order->name));
+    }
+
+    /**
+     * Return the current bar business day, from 06:00 to 05:59 the next day.
+     *
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    private function barDayRange(): array
+    {
+        $start = now()->startOfDay()->setTime(self::BAR_DAY_START_HOUR, 0);
+
+        if (now()->lt($start)) {
+            $start->subDay();
+        }
+
+        return [$start, $start->copy()->addDay()];
     }
 }

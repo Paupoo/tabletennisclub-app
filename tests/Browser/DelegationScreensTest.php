@@ -107,17 +107,17 @@ it('renders in dark mode without losing the delegation badges', function (): voi
 
 it('renders the member form delegations section without JS errors', function (): void {
     $this->actingAs($this->admin);
-    $member = User::factory()->withRole(Role::BAR)->create();
+    $member = User::factory()->withRole(Role::BARMAN)->create();
 
     visit(route('admin.users.edit', $member))
         ->assertNoJavaScriptErrors()
         ->assertSee('Délégations')
-        ->assertSee(Role::BAR->label());
+        ->assertSee(Role::BARMAN->label());
 });
 
 it('keeps the member form usable on a phone', function (): void {
     $this->actingAs($this->admin);
-    $member = User::factory()->withRole(Role::BAR)->create();
+    $member = User::factory()->withRole(Role::BARMAN)->create();
 
     $page = visit(route('admin.users.edit', $member))->resize(375, 812);
 
@@ -165,7 +165,7 @@ it('keeps the member form usable on a phone', function (): void {
  */
 it('renders the rights-only member file without JS errors', function (): void {
     $accessManager = User::factory()->withRole(Role::ACCESS)->create();
-    $member = User::factory()->withRole(Role::BAR)->create(['last_name' => 'Moreau']);
+    $member = User::factory()->withRole(Role::BARMAN)->create(['last_name' => 'Moreau']);
 
     $this->actingAs($accessManager);
 
@@ -173,7 +173,7 @@ it('renders the rights-only member file without JS errors', function (): void {
         ->assertNoJavaScriptErrors()
         ->assertSee('Moreau')
         ->assertSee('Délégations')
-        ->assertSee(Role::BAR->label())
+        ->assertSee(Role::BARMAN->label())
         ->assertSee('Réservé aux administrateurs')
         ->assertDontSee('Informations personnelles');
 });

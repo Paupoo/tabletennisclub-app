@@ -107,6 +107,44 @@ it('renders the payment screen through the club layout', function (): void {
         ->assertSee('À encaisser', escape: false);
 });
 
+it('does not reopen a paid order from browser history', function (): void {
+    $order = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 180,
+        'is_paid' => true,
+        'paid_at' => now(),
+        'payment_method' => 'cash',
+    ]);
+
+    $this->actingAs($this->manager)
+        ->get(route('bar.payment.show', $order))
+        ->assertRedirect(route('bar.orders.index'))
+        ->assertSessionHas('error', 'Commande déjà payée.');
+
+    $this->actingAs($this->manager)
+        ->get(route('bar.payment.show', ['order' => $order, 'method' => 'qr']))
+        ->assertRedirect(route('bar.orders.index'));
+});
+
+it('does not cache an unpaid order payment screen', function (): void {
+    $order = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 180,
+        'is_paid' => false,
+    ]);
+
+    $response = $this->actingAs($this->manager)
+        ->get(route('bar.payment.show', $order))
+        ->assertOk()
+        ->assertHeader('Pragma', 'no-cache');
+
+    expect($response->headers->get('Cache-Control'))
+        ->toContain('no-store')
+        ->toContain('no-cache')
+        ->toContain('must-revalidate')
+        ->toContain('max-age=0');
+});
+
 it('lists only unpaid orders, each with its cash-out button', function (): void {
     // BarOrderController::index() ne retourne que les commandes ouvertes
     // (`where('is_paid', 0)`). L'écran est donc une file d'encaissement : une
@@ -158,6 +196,17 @@ it('shows the stock state of each product on the order screen', function (): voi
         ->assertOk()
         ->assertSee('24 en stock')
         ->assertSee('Rupture de stock');
+});
+
+it('searches products on the order screen', function (): void {
+    $this->actingAs($this->manager)
+        ->withSession(['bar_tab_name' => 'Alpa A']);
+
+    Livewire::actingAs($this->manager)
+        ->test('pages::bar.counter')
+        ->set('search', 'jupiler')
+        ->assertSee('Jupiler 25 cl')
+        ->assertDontSee('Chimay bleue');
 });
 
 it('asks who the round is for before showing the catalogue', function (): void {

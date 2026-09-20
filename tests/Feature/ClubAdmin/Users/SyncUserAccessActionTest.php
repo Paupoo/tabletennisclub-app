@@ -129,11 +129,11 @@ describe('anti-escalation, enforced by the writer itself', function (): void {
 
         SyncUserAccessAction::handle(
             $member,
-            new AccessData(delegations: [Role::ACCESS->value, Role::BAR->value]),
+            new AccessData(delegations: [Role::ACCESS->value, Role::BARMAN->value]),
             $this->accessManager,
         );
 
-        expect($member->fresh()->getRoleNames()->all())->toBe([Role::BAR->value]);
+        expect($member->fresh()->getRoleNames()->all())->toBe([Role::BARMAN->value]);
     });
 
     it('lets an administrator hand the reserved délégation over', function (): void {
@@ -150,17 +150,17 @@ describe('anti-escalation, enforced by the writer itself', function (): void {
 
     it('neither grants nor revokes the reserved délégation on a non-administrator save', function (): void {
         // Rendered locked, so their form cannot move it in either direction.
-        $colleague = User::factory()->withRole(Role::ACCESS, Role::BAR)->create();
+        $colleague = User::factory()->withRole(Role::ACCESS, Role::BARMAN)->create();
 
         SyncUserAccessAction::handle(
             $colleague,
-            new AccessData(delegations: [Role::BAR->value]),
+            new AccessData(delegations: [Role::BARMAN->value]),
             $this->accessManager,
         );
 
         expect($colleague->fresh()->getRoleNames()->all())
             ->toContain(Role::ACCESS->value)
-            ->toContain(Role::BAR->value);
+            ->toContain(Role::BARMAN->value);
     });
 
     it('keeps the administrator checkbox out of reach of an access manager', function (): void {
@@ -191,7 +191,7 @@ describe('anti-escalation, enforced by the writer itself', function (): void {
 
     it('writes nothing at all when the caller may not manage rights', function (): void {
         $membersDelegate = User::factory()->withRole(Role::MEMBERS)->create();
-        $member = User::factory()->withRole(Role::BAR)->create();
+        $member = User::factory()->withRole(Role::BARMAN)->create();
 
         SyncUserAccessAction::handle(
             $member,
@@ -199,7 +199,7 @@ describe('anti-escalation, enforced by the writer itself', function (): void {
             $membersDelegate,
         );
 
-        expect($member->fresh()->getRoleNames()->all())->toBe([Role::BAR->value]);
+        expect($member->fresh()->getRoleNames()->all())->toBe([Role::BARMAN->value]);
     });
 
     it('writes nothing on your own file, administrators included', function (): void {
@@ -220,7 +220,7 @@ describe('the audit trail', function (): void {
      | shows up as a row with an empty diff, which is how this one first shipped.
      */
     it('records roles_changed in the shape the audit screen reads', function (): void {
-        $member = User::factory()->withRole(Role::BAR)->create();
+        $member = User::factory()->withRole(Role::BARMAN)->create();
 
         SyncUserAccessAction::handle(
             $member,
@@ -233,7 +233,7 @@ describe('the audit trail', function (): void {
         expect($activity)->not->toBeNull()
             ->and($activity->subject_id)->toBe($member->id)
             ->and($activity->causer_id)->toBe($this->admin->id)
-            ->and($activity->attribute_changes['old']['roles'])->toBe(Role::BAR->value)
+            ->and($activity->attribute_changes['old']['roles'])->toBe(Role::BARMAN->value)
             ->and($activity->attribute_changes['attributes']['roles'])->toBe(Role::WEBSITE->value);
     });
 
@@ -242,23 +242,23 @@ describe('the audit trail', function (): void {
 
         SyncUserAccessAction::handle(
             $member,
-            new AccessData(isCommitteeMember: true, delegations: [Role::BAR->value]),
+            new AccessData(isCommitteeMember: true, delegations: [Role::BARMAN->value]),
             $this->admin,
         );
 
         $changes = Activity::query()->where('event', 'roles_changed')->latest('id')->first()->attribute_changes;
 
         expect($changes)->toHaveKey('attributes')
-            ->and($changes['attributes']['roles'])->toBe(Role::BAR->value . ', ' . Role::COMMITTEE->value)
+            ->and($changes['attributes']['roles'])->toBe(Role::BARMAN->value . ', ' . Role::COMMITTEE->value)
             ->and($changes['old']['roles'])->toBe('');
     });
 
     it('stays silent when the set of roles does not move', function (): void {
-        $member = User::factory()->withRole(Role::BAR)->create();
+        $member = User::factory()->withRole(Role::BARMAN)->create();
 
         SyncUserAccessAction::handle(
             $member,
-            new AccessData(delegations: [Role::BAR->value]),
+            new AccessData(delegations: [Role::BARMAN->value]),
             $this->admin,
         );
 

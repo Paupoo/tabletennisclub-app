@@ -63,12 +63,6 @@ Délivrer les attestations mutuelle, et détenir le cachet du club et la signatu
 - `attestations.configure`
 - `club.update`
 
-### Bar — `bar`
-
-Gérer le bar : produits, stock, commandes et feuille de caisse.
-
-- `bar.access`
-
 ### Barman — `barman`
 
 Servir les boissons et collations, fermer les commandes et reprendre celles d'autres.

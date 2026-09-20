@@ -114,6 +114,49 @@ it('says so out loud when the cash sheet cannot be sent', function (): void {
         ->assertSessionHas('error');
 });
 
+it('keeps after-midnight sales in the same cash sheet business day', function (): void {
+    $overnight = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 180,
+        'is_paid' => true,
+    ]);
+    $overnight->forceFill(['created_at' => '2026-09-20 02:00:00'])->saveQuietly();
+
+    $nextBusinessDay = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 300,
+        'is_paid' => true,
+    ]);
+    $nextBusinessDay->forceFill(['created_at' => '2026-09-20 07:00:00'])->saveQuietly();
+
+    $summary = app(CashSheetService::class)->build('2026-09-19')[0];
+
+    expect($summary['orders_total'])->toBe(1)
+        ->and($summary['sold_total_cents'])->toBe(180);
+});
+
+it('excludes offered orders from the total received', function (): void {
+    BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 180,
+        'is_paid' => true,
+        'payment_method' => 'cash',
+    ]);
+    BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 300,
+        'is_paid' => true,
+        'payment_method' => 'offered',
+    ]);
+
+    $summary = app(CashSheetService::class)->build(now()->toDateString())[0];
+
+    expect($summary['sold_total_cents'])->toBe(480)
+        ->and($summary['received_total_cents'])->toBe(180)
+        ->and($summary['by_method_cents']['cash'])->toBe(180)
+        ->and($summary['by_method_cents']['offered'])->toBe(300);
+});
+
 it('says so out loud when there is nothing to send', function (): void {
     // Le garde portait sur `empty($csv)`, et buildCsv() écrit toujours sa ligne
     // d'en-tête : il ne se déclenchait donc jamais. Une journée sans vente partait

@@ -86,15 +86,8 @@
                 </x-slot:actions>
             </x-header>
 
-            @if ($this->favourites->isNotEmpty())
-                <x-bar.category-panel key="favorites" :label="__('Favourites')"
-                    icon="o-star" icon-class="text-secondary" :count="$this->favourites->count()">
-                    @foreach ($this->favourites as $product)
-                        <x-bar.product-row :key="'fav-' . $product->id"
-                            :product="$product" :state="$this->stateOf($product)" />
-                    @endforeach
-                </x-bar.category-panel>
-            @endif
+            <x-input wire:model.live.debounce.200ms="search" :placeholder="__('Search products')"
+                icon="o-magnifying-glass" clearable />
 
             @foreach ($this->catalogue as $category)
                 <x-bar.category-panel :key="'cat-' . $category->id" :label="$category->name"

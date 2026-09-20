@@ -153,7 +153,7 @@
                     :heading="__('No contacts yet')"
                     :filtered="$hasActiveFilters" />
             @else
-                <x-table :headers="$headers" :rows="$contacts" :sort-by="$sortBy"
+                <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$contacts" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
                     @scope('cell_full_name', $contact)
                         <span class="font-medium">

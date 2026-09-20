@@ -162,16 +162,22 @@
                                         du <ul class="menu"> plutôt que dans un x-menu-item,
                                         qui ne sait rendre qu'un lien.
                                     --}}
+                                    {{--
+                                        Un événement plutôt qu'un état partagé : ce bouton vit
+                                        dans <x-admin.shared.row-menu>, qui déclare son propre
+                                        `open`. Une variable de page du même nom serait masquée
+                                        ici, et le clic ouvrirait le menu au lieu de la boîte.
+                                    --}}
                                     <li>
-                                        <form method="POST" action="{{ route('bar.orders.destroy', $order) }}"
-                                            onsubmit="return confirm('Supprimer définitivement la commande #{{ $order->id }} ?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-error w-full justify-start gap-2 text-start">
-                                                <x-icon name="o-trash" class="h-4 w-4" />
-                                                Supprimer la commande
-                                            </button>
-                                        </form>
+                                        <button type="button" data-delete-order
+                                            class="text-error w-full justify-start gap-2 text-start"
+                                            @click="$dispatch('confirm-order-delete', {
+                                                label: {{ json_encode('#' . $order->id . ($order->name ? ' — ' . $order->name : '')) }},
+                                                action: {{ json_encode(route('bar.orders.destroy', $order)) }}
+                                            })">
+                                            <x-icon name="o-trash" class="h-4 w-4" />
+                                            Supprimer la commande
+                                        </button>
                                     </li>
                                 @endcan
                             </x-admin.shared.row-menu>
@@ -181,6 +187,34 @@
                 </div>
             @endforeach
         @endif
+
+        {{-- Page servie en GET par un contrôleur : pas de Livewire, donc pas de
+             wire:model. `id` fait sauter à maryUI sa branche Livewire, sans quoi
+             il génère un `entangle()` et la page tombe en 500. L'état s'appelle
+             `open` parce que le composant émet `x-trap="open"` quoi qu'il arrive.
+             Et `showModal()` plutôt que l'attribut open : le drawer du layout
+             porte un transform, qui piège tout descendant `position: fixed`. --}}
+        <div x-data="{ open: false, label: '', action: '' }"
+            @confirm-order-delete.window="label = $event.detail.label; action = $event.detail.action; open = true">
+            <x-app-modal id="bar-order-delete" x-ref="confirmBox"
+                x-effect="open ? $refs.confirmBox.showModal() : $refs.confirmBox.close()"
+                @close="open = false"
+                title="Supprimer définitivement cette commande ?">
+                <p x-text="label" class="font-semibold"></p>
+                <p class="mt-2 text-sm opacity-70">
+                    Les consommations qu'elle porte disparaissent avec elle, et la caisse n'en gardera pas trace.
+                </p>
+
+                <x-slot:actions>
+                    <x-button label="Annuler" @click="open = false" />
+                    <form method="POST" :action="action" data-confirm-form>
+                        @csrf
+                        @method('DELETE')
+                        <x-button label="Supprimer" type="submit" class="btn-error" />
+                    </form>
+                </x-slot:actions>
+            </x-app-modal>
+        </div>
 
     </div>
 </x-app-layout>

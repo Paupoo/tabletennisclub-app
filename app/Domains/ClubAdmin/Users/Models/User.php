@@ -29,6 +29,7 @@ use App\Domains\Shared\Support\AddressNormalizer;
 use App\Domains\Shared\Support\IbanNormalizer;
 use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Models\Training;
+use App\Domains\Trainings\Models\TrainingPack;
 use App\Observers\UserObserver;
 use Carbon\Carbon;
 use Database\Factories\Domains\ClubAdmin\Users\Models\UserFactory;
@@ -322,6 +323,31 @@ class User extends Authenticatable implements MustVerifyEmail
     public function club(): BelongsTo
     {
         return $this->belongsTo(Club::class);
+    }
+
+    /**
+     * Le premier pack que cette personne encadre, s'il y en a un.
+     *
+     * Pendant exact de {@see self::captainOf()} : entraîner est une relation
+     * (`training_packs.trainer_id`), pas une délégation. {@see TrainingPolicy::recordAttendance()}
+     * le sait déjà — elle autorise le pointage sur `$training->trainer_id === $user->id`.
+     * Le Gate `access-coach-area` est ce qui l'ignorait, et fermait la porte à
+     * trois entraîneurs sur cinq.
+     */
+    public function coachOf(): HasOne
+    {
+        return $this->hasOne(TrainingPack::class, 'trainer_id');
+    }
+
+    /**
+     * La première séance qu'on lui a confiée, s'il y en a une.
+     *
+     * Une séance se réassigne à quelqu'un qui n'encadre aucun pack : le pack
+     * seul ne suffit donc pas à dire qui entraîne aujourd'hui.
+     */
+    public function coachOfSession(): HasOne
+    {
+        return $this->hasOne(Training::class, 'trainer_id');
     }
 
     /**
@@ -846,6 +872,22 @@ class User extends Authenticatable implements MustVerifyEmail
     public function pools(): BelongsToMany
     {
         return $this->belongsToMany(Pool::class, 'pool_user');
+    }
+
+    /**
+     * Les tuteurs qu'on peut relancer : le lien est parti, il court encore, et
+     * personne n'a répondu.
+     *
+     * Distinct de {@see self::invitableGuardians()}, qui ne rend que ceux à qui
+     * on n'a jamais écrit ou dont le lien a expiré. Les deux gestes ne se disent
+     * pas pareil au secrétariat — « inviter » et « relancer » — et l'envoi en
+     * masse ne vise que le premier.
+     *
+     * @return Collection<int, Guardian>
+     */
+    public function remindableGuardians(): Collection
+    {
+        return $this->guardiansAt('waiting');
     }
 
     public function requiresGuardian(): bool

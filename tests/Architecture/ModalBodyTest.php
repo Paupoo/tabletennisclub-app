@@ -14,6 +14,12 @@ use Symfony\Component\Finder\Finder;
  * <x-app-modal :open="$theSameProperty"> holds the body back until the dialog
  * is open. The shell stays, so Alpine keeps the mechanics it entangles with.
  * This test keeps a new modal from being written without it.
+ *
+ * One exception, and it says why: a modal on a page with no Livewire component
+ * has no property to name. It carries an `id`, which is what makes maryUI skip
+ * its own `entangle()` branch, and Alpine drives it from the surrounding scope.
+ * The cost this rule exists to prevent does not arise there either — such a
+ * body is rendered once, by a controller, not on every Livewire round trip.
  */
 it('holds back the body of every modal until it is open', function (): void {
     $viewsPath = dirname(__DIR__, 2) . '/resources/views';
@@ -50,7 +56,11 @@ it('holds back the body of every modal until it is open', function (): void {
 
             $tag = substr($source, $start, $end - $start + 1);
 
-            if (! str_contains($tag, ':open=')) {
+            // Piloté par Alpine, hors de tout composant Livewire : l'`id` est la
+            // marque de ce cas, et il n'existe aucune propriété à nommer.
+            $drivenByAlpine = str_contains($tag, 'id=') && str_contains($tag, 'x-effect=');
+
+            if (! str_contains($tag, ':open=') && ! $drivenByAlpine) {
                 $line = substr_count(substr($source, 0, $start), "\n") + 1;
                 $offenders[] = str_replace($viewsPath . '/', '', $path) . ':' . $line;
             }

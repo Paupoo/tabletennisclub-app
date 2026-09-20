@@ -204,7 +204,7 @@
                     :create-label="__('Create a tournament')"
                     :create-href="$this->canManage ? route('admin.tournaments.wizard') : null" />
             @else
-                <x-table :headers="$headers" :rows="$tournaments" :sort-by="$sortBy"
+                <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$tournaments" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
                     @scope('cell_name', $tournament)
                         <span class="font-medium">{{ $tournament->name }}</span>

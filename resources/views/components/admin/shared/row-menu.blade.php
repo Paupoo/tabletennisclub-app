@@ -20,6 +20,15 @@
     has nowhere to go. From lg it is an ordinary dropdown.
 
     The slot takes <x-menu-item> entries, which are labelled by contract.
+
+    Inside a <table>, the host has to hand the panel its way out. Mary wraps a
+    table in `overflow-x-auto` (Table.php), which opens a clipping context and
+    cuts the open panel off — nine screens did it before anyone noticed, because
+    the markup is identical whether it shows or not. Such a table declares
+    `container-class="overflow-x-auto lg:overflow-x-visible"`: from lg the table
+    fits its box, so the scrolling has nothing left to protect, and below lg the
+    panel is a fixed bottom sheet that overflow never held.
+    Guarded by tests/Architecture/RowMenuInTableTest.php.
 --}}
 <div
     x-data="{ open: false }"

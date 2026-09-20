@@ -608,16 +608,14 @@
                 </p>
                 <p class="mt-2 text-xs italic text-muted">{{ __('The member will be notified by email.') }}</p>
                 <x-button :label="__('Change formula')" icon="o-arrows-right-left" class="btn-soft btn-sm mt-3"
-                    wire:click="changeFormula"
-                    wire:confirm="{{ __('Change the formula of this affiliation? The member will be notified.') }}"
-                    spinner />
+                    wire:click="$set('changeFormulaModal', true)" />
             </div>
         @endif
 
         <x-slot:actions>
             @if (! $paymentGenerated && $currentRequest && $currentRequest->status === 'pending' && Auth::user()->can('subscriptions.manage'))
                 <x-button :label="__('Change formula')" icon="o-arrows-right-left" class="btn-ghost btn-sm"
-                    wire:click="changeFormula" spinner />
+                    wire:click="$set('changeFormulaModal', true)" />
                 <x-button :label="__('Reject')" wire:click="reject" class="btn-ghost text-error" spinner />
                 <x-button :label="__('Approve and Invoice')" wire:click="approve" class="btn-primary shadow-lg" spinner />
             @elseif ($paymentGenerated && Auth::user()->can('subscriptions.manage'))
@@ -1383,4 +1381,16 @@
                 @click="mobileActionsOpen = false" />
         @endcan
     </x-admin.shared.mobile-actions>
+
+    <x-confirm-modal model="changeFormulaModal" :title="__('Change the formula of this affiliation?')"
+        :confirmLabel="__('Change formula')" confirmClass="btn-primary"
+        confirmAction="changeFormula" :open="$changeFormulaModal">
+        <p>{{ __('The member will be notified by email.') }}</p>
+        <p class="mt-2 text-sm opacity-70">
+            {{ $currentRequest?->type === __('Competition')
+                ? __('Switching to recreative reprices the affiliation at 60 € and takes the member out of the force lists. Any overpayment is reported to you for refund, capped at what they actually paid.')
+                : __('Switching to competition reprices the affiliation at 125 € and invoices the difference as a new payment with its own structured reference.') }}
+        </p>
+    </x-confirm-modal>
+
 </div>

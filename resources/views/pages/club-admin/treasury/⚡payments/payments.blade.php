@@ -428,67 +428,12 @@
             </div>
         </div>
 
-        <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
-            <div class="text-xs font-bold uppercase tracking-widest text-muted mb-3">
-                {{ __('Unreconciled bank transactions') }}
-            </div>
-
-            @forelse($pendingTransactions as $transaction)
-            @php
-                $score = $transaction->match_score ?? 'none';
-                $isPerfect = $score === 'perfect';
-            @endphp
-            <button type="button"
-                wire:click="$set('selectedTransactionId', {{ $transaction->id }})"
-                aria-pressed="{{ $selectedTransactionId === $transaction->id ? 'true' : 'false' }}"
-                @class([
-                    'w-full text-left flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all duration-150',
-                    'border-primary bg-primary/5 shadow-sm'   => $selectedTransactionId === $transaction->id,
-                    'border-success/60 bg-success/5'          => $selectedTransactionId !== $transaction->id && $isPerfect,
-                    'border-base-300 hover:border-primary bg-base-100' => $selectedTransactionId !== $transaction->id && !$isPerfect,
-                ])>
-
-                <div @class([
-                    'w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center',
-                    'border-primary bg-primary' => $selectedTransactionId === $transaction->id,
-                    'border-base-300'           => $selectedTransactionId !== $transaction->id,
-                ])>
-                    @if($selectedTransactionId === $transaction->id)
-                    <div class="w-2 h-2 rounded-full bg-primary-content"></div>
-                    @endif
-                </div>
-
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2">
-                        <span class="font-medium text-sm truncate">{{ $transaction->counterparty_name ?? '—' }}</span>
-                        @if($score === 'perfect')
-                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-success bg-success/15 px-1.5 py-0.5 rounded">{{ __('Perfect match') }}</span>
-                        @elseif($score === 'reference')
-                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-info bg-info/15 px-1.5 py-0.5 rounded">{{ __('Ref. match') }}</span>
-                        @elseif($score === 'amount')
-                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-warning-content bg-warning/15 px-1.5 py-0.5 rounded">{{ __('Amount match') }}</span>
-                        @endif
-                    </div>
-                    @if($transaction->structured_reference)
-                    <div class="font-mono text-xs text-primary mt-0.5">{{ $transaction->structured_reference }}</div>
-                    @elseif($transaction->free_reference)
-                    <div class="text-xs text-muted mt-0.5 truncate italic">{{ $transaction->free_reference }}</div>
-                    @endif
-                </div>
-
-                <div class="text-right shrink-0">
-                    <div class="font-bold tabular-nums">{{ number_format($transaction->amount, 2, ',', ' ') }} €</div>
-                    <div class="text-xs text-muted">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</div>
-                </div>
-            </button>
-
-            @empty
-            <div class="flex flex-col items-center justify-center py-10 text-muted">
-                <x-icon name="o-inbox" class="w-10 h-10 mb-3" />
-                <p class="text-sm italic">{{ __('No unreconciled transactions. Import a bank statement first.') }}</p>
-            </div>
-            @endforelse
-        </div>
+        <x-admin.treasury.candidate-list
+            :candidates="$pendingTransactions"
+            :selected="$selectedTransactionId"
+            property="selectedTransactionId"
+            :heading="__('Unreconciled bank transactions')"
+            :empty-message="__('No unreconciled transactions. Import a bank statement first.')" />
 
         @endif
 
@@ -583,64 +528,13 @@
             </div>
         </div>
 
-        <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
-            <div class="text-xs font-bold uppercase tracking-widest text-muted mb-3">
-                {{ __('Outgoing bank transactions') }}
-            </div>
-
-            @forelse($refundTransactions as $transaction)
-            @php $score = $transaction->match_score ?? 'none'; @endphp
-            <button type="button"
-                wire:click="$set('selectedRefundTransactionId', {{ $transaction->id }})"
-                aria-pressed="{{ $selectedRefundTransactionId === $transaction->id ? 'true' : 'false' }}"
-                @class([
-                    'w-full text-left flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all duration-150',
-                    'border-primary bg-primary/5 shadow-sm'                            => $selectedRefundTransactionId === $transaction->id,
-                    'border-success/60 bg-success/5'                                   => $selectedRefundTransactionId !== $transaction->id && $score === 'perfect',
-                    'border-info/40 bg-info/5'                                         => $selectedRefundTransactionId !== $transaction->id && $score === 'iban',
-                    'border-warning/40 bg-warning/5'                                   => $selectedRefundTransactionId !== $transaction->id && $score === 'amount',
-                    'border-base-300 hover:border-primary bg-base-100'               => $selectedRefundTransactionId !== $transaction->id && $score === 'none',
-                ])>
-
-                <div @class([
-                    'w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center',
-                    'border-primary bg-primary' => $selectedRefundTransactionId === $transaction->id,
-                    'border-base-300'           => $selectedRefundTransactionId !== $transaction->id,
-                ])>
-                    @if($selectedRefundTransactionId === $transaction->id)
-                    <div class="w-2 h-2 rounded-full bg-primary-content"></div>
-                    @endif
-                </div>
-
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2">
-                        <span class="font-medium text-sm truncate">{{ $transaction->counterparty_name ?? '—' }}</span>
-                        @if($score === 'perfect')
-                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-success bg-success/15 px-1.5 py-0.5 rounded">{{ __('Perfect match') }}</span>
-                        @elseif($score === 'iban')
-                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-info bg-info/15 px-1.5 py-0.5 rounded">{{ __('IBAN match') }}</span>
-                        @elseif($score === 'amount')
-                        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-warning-content bg-warning/15 px-1.5 py-0.5 rounded">{{ __('Amount match') }}</span>
-                        @endif
-                    </div>
-                    @if($transaction->counterparty_bank_account)
-                    <div class="font-mono text-xs text-base-content/50 mt-0.5">{{ $transaction->counterparty_bank_account }}</div>
-                    @endif
-                </div>
-
-                <div class="text-right shrink-0">
-                    <div class="font-bold tabular-nums text-error">{{ number_format($transaction->amount, 2, ',', ' ') }} €</div>
-                    <div class="text-xs text-muted">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</div>
-                </div>
-            </button>
-
-            @empty
-            <div class="flex flex-col items-center justify-center py-10 text-muted">
-                <x-icon name="o-inbox" class="w-10 h-10 mb-3" />
-                <p class="text-sm italic">{{ __('No outgoing transactions found. Import a bank statement containing the refund transfer.') }}</p>
-            </div>
-            @endforelse
-        </div>
+        <x-admin.treasury.candidate-list
+            :candidates="$refundTransactions"
+            :selected="$selectedRefundTransactionId"
+            property="selectedRefundTransactionId"
+            :heading="__('Outgoing bank transactions')"
+            :empty-message="__('No outgoing transactions found. Import a bank statement containing the refund transfer.')"
+            outgoing />
 
         @endif
 

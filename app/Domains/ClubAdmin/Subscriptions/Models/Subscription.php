@@ -406,13 +406,25 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     }
 
     /**
-     * Calcule le total payé (en euros) via tous les payments.
+     * Ce que le membre a versé sur cette affiliation, en euros.
+     *
+     * L'argent, jamais le statut. Une ligne partiellement payée reste
+     * `pending` — c'est voulu, les relances doivent continuer de partir — et
+     * filtrer sur le statut ferait disparaître ses euros du solde : une
+     * affiliation à 365 € créditée de 200 € annoncerait 365 € à devoir.
+     * AttestationEligibility réclamait déjà ce principe mot pour mot sans
+     * pouvoir s'appuyer dessus.
+     *
+     * Une ligne annulée ne porte plus rien, et une ligne de remboursement est
+     * de l'argent qui sort : ni l'une ni l'autre n'entre ici.
+     *
      * La colonne amount_paid est stockée en centimes.
      */
     public function totalPaid(): float
     {
         return round(((float) $this->payments()
-            ->whereIn('status', ['paid', 'refunded'])
+            ->where('status', '!=', 'cancelled')
+            ->where(fn ($q) => $q->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
             ->sum('amount_paid')) / 100, 2);
     }
 

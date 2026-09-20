@@ -146,7 +146,7 @@ class BarPaymentController extends Controller
      * The server-side check in pay() remains authoritative for concurrent pages;
      * this filtering prevents the normal UI path from offering an invalid choice.
      *
-     * @return SupportCollection<int, object{name: string}>
+     * @return SupportCollection<int, object{name: string}&\stdClass>
      */
     private function availableVisitingClubsForOrder(BarOrder $order): SupportCollection
     {
@@ -203,7 +203,7 @@ class BarPaymentController extends Controller
     }
 
     /**
-     * @return SupportCollection<int, object{name: string}>
+     * @return SupportCollection<int, object{name: string}&\stdClass>
      */
     private function visitingClubsForOrder(BarOrder $order): SupportCollection
     {

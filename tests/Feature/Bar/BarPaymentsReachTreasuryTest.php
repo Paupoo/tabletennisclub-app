@@ -213,7 +213,8 @@ it('keeps the visiting club available when an order is closed later', function (
     Carbon::setTestNow('2026-09-21 10:00:00');
     $club = barVisitingClubForToday(Carbon::parse('2026-09-20'));
     $order = barOrderToSettle($this->barman);
-    $order->update(['created_at' => '2026-09-20 02:00:00']);
+    $order->created_at = Carbon::parse('2026-09-20 12:00:00');
+    $order->save();
 
     $this->actingAs($this->barman)
         ->get(route('bar.payment.show', $order))

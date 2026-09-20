@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\CaptainSelection;
 
+use App\Data\Interclub\LineupVerdict;
+use App\Data\Interclub\PoolCandidate;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Services\InterclubAvailabilityService;
+use App\Domains\Competitions\Interclub\Services\InterclubPoolService;
 use App\Domains\Competitions\Interclub\Services\InterclubPreparationService;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Permission;
@@ -245,17 +248,31 @@ new class extends Component
 
         abort_if($interclub->start_date_time < now(), 403);
 
-        // Safety re-check: block if any selected player double-booked this week
-        foreach ($this->selectedPlayerIds as $selectedId) {
-            if ($this->isPlayerDoubleBooked($selectedId, $interclub)) {
-                $this->error(
-                    __('Selection blocked'),
-                    __('One or more players are already selected in another team for week :n.', ['n' => $interclub->week_number]),
-                    position: 'toast-bottom toast-end'
-                );
+        // Contrôle de sûreté : quelqu'un a pu aligner un de ces joueurs pendant
+        // que ce tiroir était ouvert. Avec le pool, ce n'est plus une course de
+        // quelques millisecondes — c'est la durée d'un coup de téléphone, et le
+        // message doit donc nommer le joueur et l'équipe qui l'a pris. « Un ou
+        // plusieurs joueurs » était inexploitable dès lors qu'on compose avec
+        // des joueurs d'autres équipes.
+        $blocked = $this->blockedPlayerData($interclub);
 
-                return;
+        foreach ($this->selectedPlayerIds as $selectedId) {
+            if (! isset($blocked[$selectedId])) {
+                continue;
             }
+
+            $taken = User::find($selectedId);
+
+            $this->error(
+                __('Selection blocked'),
+                __(':player has been lined up in team :team in the meantime.', [
+                    'player' => trim(($taken?->last_name ?? '') . ' ' . ($taken?->first_name ?? '')) ?: __('A player'),
+                    'team' => $blocked[$selectedId],
+                ]),
+                position: 'toast-bottom toast-end'
+            );
+
+            return;
         }
 
         $existingIds = $interclub->users()->pluck('users.id')->toArray();
@@ -443,6 +460,19 @@ new class extends Component
             return;
         }
 
+        // Le pool ne propose jamais un joueur que C.22 interdit, mais l'identité
+        // arrive par le réseau : la recherche de remplaçant, un tiroir resté
+        // ouvert pendant qu'une compo bougeait, ou simplement une requête forgée.
+        if ($interclub && $this->isForbiddenByRule($userId, $interclub)) {
+            $this->warning(
+                __('Lineup rule'),
+                __('Rule C.22: this player would be stronger than the third player of the superior team.'),
+                position: 'toast-bottom toast-end'
+            );
+
+            return;
+        }
+
         if (count($this->selectedPlayerIds) >= $maxPlayers) {
             $this->warning(
                 __('Team full'),
@@ -588,6 +618,12 @@ new class extends Component
         $roster = collect();
         $maxPlayers = 4;
         $blockedPlayerIds = [];
+        $poolRows = collect();
+        $poolWaiting = collect();
+        $poolHiddenCount = 0;
+        $poolMaybeCount = 0;
+        $poolMaybeTeams = [];
+        $lineupConstraint = null;
 
         if ($this->selectedInterclubId && $this->drawerSelection) {
             $drawerInterclub = $fixtures->firstWhere('id', $this->selectedInterclubId)
@@ -614,6 +650,50 @@ new class extends Component
                     $fixtures,
                     $this->selectedPlayerIds,
                 );
+
+                // ── Article C.22 ────────────────────────────────────────────
+                // Le verdict se lit sur le plus fort de la composition en cours,
+                // donc il change à chaque case cochée. L'effectif propre est
+                // *grisé* et jamais masqué : on masque ce qu'on n'a jamais
+                // promis, on désactive ce qu'on a déjà montré.
+                ['constraint' => $lineupConstraint, 'verdict' => $verdictFor] =
+                    $this->lineupLegality($drawerInterclub, $this->selectedPlayerIds);
+
+                $roster = $roster->map(function (array $player) use ($verdictFor): array {
+                    $verdict = $verdictFor($player['force_index'] ?? null);
+
+                    $player['legality'] = $verdict->state;
+                    $player['legality_reason'] = $verdict->isWorthShowing() ? $verdict->reason->label() : null;
+                    $player['is_illegal'] = $verdict->isForbidden();
+
+                    return $player;
+                });
+
+                // ── Les joueurs libres ──────────────────────────────────────
+                $pool = app(InterclubPoolService::class)->poolFor($drawerInterclub);
+                $poolCategory = $drawerInterclub->league?->category;
+
+                $poolRows = $pool->freePlayers
+                    ->reject(fn (PoolCandidate $candidate): bool => in_array($candidate->user->id, $this->selectedPlayerIds, true))
+                    ->map(fn (PoolCandidate $candidate): array => $this->buildPoolRow($candidate, $poolCategory, $verdictFor, $fixtures, $selectedTeam, $season))
+                    ->sortBy([['force_sort', 'asc'], ['last_name', 'asc'], ['first_name', 'asc']])
+                    ->values();
+
+                // Rouge : illégal quoi que fasse l'équipe supérieure. On cesse de
+                // le proposer plutôt que de refuser le geste ensuite — mais on
+                // dit combien, sinon la liste semble simplement vide.
+                $poolHiddenCount = $poolRows->where('is_illegal', true)->count();
+                $poolRows = $poolRows->where('is_illegal', false)->values();
+
+                $poolMaybeCount = $pool->maybePlayers->count();
+                $poolMaybeTeams = $pool->maybePlayers
+                    ->map(fn (PoolCandidate $candidate): string => $candidate->originTeam->name)
+                    ->unique()
+                    ->sort()
+                    ->values()
+                    ->all();
+
+                $poolWaiting = $pool->waitingTeams;
             }
         }
 
@@ -748,6 +828,12 @@ new class extends Component
                 : null,
             'alertMatches' => $alertMatches,
             'roster' => $roster,
+            'poolRows' => $poolRows,
+            'poolWaiting' => $poolWaiting,
+            'poolHiddenCount' => $poolHiddenCount,
+            'poolMaybeCount' => $poolMaybeCount,
+            'poolMaybeTeams' => $poolMaybeTeams,
+            'lineupConstraint' => $lineupConstraint,
             'maxPlayers' => $maxPlayers,
             'searchResults' => $searchResults,
             'searchNote' => $searchNote,
@@ -788,14 +874,44 @@ new class extends Component
         Gate::authorize('selectLineup', $interclub);
     }
 
-    /**
-     * Explain why a substitute search returned nothing: matching competitors do
-     * exist, but the category rule and/or the same-week alignment hid them (I2).
-     *
-     * @param  Collection<int, User>  $nameMatches
-     * @param  array<int, int>  $excludedIds
-     * @param  callable(User): bool  $matchesCategory
-     */
+    private function buildPoolRow(
+        PoolCandidate $candidate,
+        ?string $category,
+        \Closure $verdictFor,
+        \Illuminate\Database\Eloquent\Collection $fixtures,
+        ?Team $targetTeam,
+        ?Season $season,
+    ): array {
+        $player = $candidate->user;
+        $forceIndex = $player->forceListFor($category);
+        $verdict = $verdictFor($forceIndex);
+
+        return [
+            'id' => $player->id,
+            'name' => $player->last_name . ' ' . $player->first_name,
+            'last_name' => $player->last_name ?? '',
+            'first_name' => $player->first_name ?? '',
+            'rank' => $player->ranking->getLabel(),
+            'force_index' => $forceIndex,
+            // Les indices manquants en fin de liste : un `null` n'est pas un
+            // joueur fort, c'est un joueur qu'on ne sait pas classer.
+            'force_sort' => $forceIndex ?? PHP_INT_MAX,
+            'availability' => $candidate->availability,
+            'availability_note' => $candidate->availabilityNote,
+            'origin_team' => $candidate->originTeam->name,
+            'phone_number' => $player->phone_number,
+            'email' => $player->email,
+            // Ce que le capitaine doit surveiller pour rester en règle : un
+            // emprunt répété finit par peser sur la feuille de match.
+            'played_for_us' => $season && $targetTeam
+                ? $this->countPoolFixtures($player->id, $targetTeam->id, $season, $fixtures)
+                : 0,
+            'legality' => $verdict->state,
+            'legality_reason' => $verdict->isWorthShowing() ? $verdict->reason->label() : null,
+            'is_illegal' => $verdict->isForbidden(),
+        ];
+    }
+
     private function buildSearchNote(Collection $nameMatches, array $excludedIds, callable $matchesCategory, ?string $teamCategory): ?string
     {
         if ($nameMatches->isEmpty()) {
@@ -922,6 +1038,19 @@ new class extends Component
     }
 
     /**
+     * Combien de fois ce joueur a déjà été aligné dans cette équipe cette saison.
+     *
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
+     */
+    private function countPoolFixtures(int $userId, int $teamId, Season $season, \Illuminate\Database\Eloquent\Collection $fixtures): int
+    {
+        return $this->fixturesForTeam($fixtures, $teamId)
+            ->filter(fn (Interclub $ic): bool => $ic->season_id === $season->id
+                && $ic->users->contains(fn (User $u): bool => $u->id === $userId && (bool) $u->registration?->is_selected))
+            ->count();
+    }
+
+    /**
      * A season change can strand the selection on a team that does not exist in
      * the new season. Falling back to the first reachable team keeps the page's
      * "exactly one team, never none" invariant true.
@@ -1025,6 +1154,48 @@ new class extends Component
         }
 
         return $groups;
+    }
+
+    /**
+     * Explain why a substitute search returned nothing: matching competitors do
+     * exist, but the category rule and/or the same-week alignment hid them (I2).
+     *
+     * @param  Collection<int, User>  $nameMatches
+     * @param  array<int, int>  $excludedIds
+     * @param  callable(User): bool  $matchesCategory
+     */
+    /**
+     * Une ligne du pool : le joueur, d'où il vient, et ce que C.22 en dit.
+     *
+     * Les coordonnées y figurent, opt-in `contact_visibility` outrepassé. C'est
+     * l'élargissement délibéré de la décision T8, qui ne valait jusqu'ici que
+     * pour l'effectif du capitaine : le samedi matin à neuf heures, un capitaine
+     * appelle — il n'envoie pas une invitation et n'attend pas une réponse.
+     *
+     * @param  \Closure(?int): LineupVerdict  $verdictFor
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
+     * @return array<string, mixed>
+     */
+    /**
+     * L'article C.22 interdit-il formellement d'ajouter ce joueur ?
+     *
+     * Seul le rouge bloque : l'orange dépend d'une composition que personne n'a
+     * encore faite, et refuser sur une incertitude coûterait plus cher que de
+     * laisser le capitaine décider en connaissance de cause.
+     */
+    private function isForbiddenByRule(int $userId, Interclub $interclub): bool
+    {
+        ['verdict' => $verdictFor] = $this->lineupLegality($interclub, $this->selectedPlayerIds);
+
+        $player = User::find($userId);
+
+        if (! $player instanceof User) {
+            return false;
+        }
+
+        $interclub->loadMissing('league');
+
+        return $verdictFor($player->forceListFor($interclub->league?->category))->isForbidden();
     }
 
     private function loadAccessibleTeams(User $user, ?Season $season): \Illuminate\Database\Eloquent\Collection

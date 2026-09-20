@@ -2,7 +2,7 @@
 title: Préparer une nouvelle saison
 summary: L'enchaînement de juillet-août, dans l'ordre : créer la saison, la basculer, rouvrir les affiliations, charger les affiliés et le calendrier.
 audience: committee, secretary
-order: 18
+order: 19
 ---
 
 Ouvrir une saison, ce n'est pas un bouton mais une suite de gestes, et **l'ordre compte**. Voici l'enchaînement complet. Comptez une soirée, entre début juillet et fin août — le premier match d'interclubs se joue à la mi-septembre et le calendrier de la fédération n'est complet que quelques semaines avant.

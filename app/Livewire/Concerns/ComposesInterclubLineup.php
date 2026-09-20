@@ -4,13 +4,19 @@ declare(strict_types=1);
 
 namespace App\Livewire\Concerns;
 
+use App\Data\Interclub\LineupConstraint;
+use App\Data\Interclub\LineupVerdict;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Competitions\Interclub\Services\InterclubLineupLegalityService;
 use App\Domains\Competitions\Interclub\Services\InterclubPreparationService;
 use App\Domains\Shared\Enums\InterclubAvailability;
+use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\LineupLegality;
+use App\Domains\Shared\Enums\LineupLegalityReason;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
@@ -128,6 +134,47 @@ trait ComposesInterclubLineup
     }
 
     /**
+     * Ce que l'article C.22 autorise pour cette composition, joueur par joueur.
+     *
+     * Rendu sous forme de fermeture plutôt que de tableau : le verdict dépend du
+     * plus fort de la composition *en cours*, donc il change à chaque case
+     * cochée, et il doit être demandé pour des gens qui ne sont pas tous dans le
+     * même ensemble — l'effectif, le pool, les résultats de recherche.
+     *
+     * Quand le rang des équipes ne se lit pas, la règle se tait entièrement
+     * plutôt que de se calculer sur un ordre supposé.
+     *
+     * @param  array<int, int>  $selectedPlayerIds
+     * @return array{constraint: LineupConstraint, verdict: \Closure(?int): LineupVerdict}
+     */
+    protected function lineupLegality(Interclub $interclub, array $selectedPlayerIds): array
+    {
+        $service = app(InterclubLineupLegalityService::class);
+        $constraint = $service->constraintFor($interclub);
+
+        $interclub->loadMissing('league');
+        $category = LeagueCategory::fromName($interclub->league?->category);
+
+        $currentIndices = $selectedPlayerIds === []
+            ? []
+            : User::whereIn('id', $selectedPlayerIds)
+                ->get()
+                ->map(fn (User $player): ?int => $player->forceListFor($category))
+                ->values()
+                ->all();
+
+        $verdict = function (?int $forceIndex) use ($service, $constraint, $currentIndices): LineupVerdict {
+            if (! $constraint->rankIsReadable) {
+                return new LineupVerdict(LineupLegality::NOT_APPLICABLE, LineupLegalityReason::TEAM_RANK_UNKNOWN);
+            }
+
+            return $service->verdictFor($forceIndex, $currentIndices, $constraint->bounds());
+        };
+
+        return ['constraint' => $constraint, 'verdict' => $verdict];
+    }
+
+    /**
      * @param  Collection<int, mixed>  $pivotMap
      * @param  EloquentCollection<int, Interclub>  $fixtures
      * @param  array<int, string>  $blockedPlayerData
@@ -158,6 +205,10 @@ trait ComposesInterclubLineup
             'email' => $player->email,
             'rank' => $player->ranking->getLabel(),
             'rank_sort' => $player->ranking->value,
+            // L'indice de référence, sur lequel se lit l'article C.22 — et qui
+            // n'est pas le classement : il vient de la liste des forces déposée
+            // par le club, et il a une sous-liste par catégorie.
+            'force_index' => $player->forceListFor($team?->league?->category),
             'availability' => $availability,
             'availability_note' => $pivot?->availability_note,
             'matches_played' => $season && $team

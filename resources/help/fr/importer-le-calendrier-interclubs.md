@@ -2,7 +2,7 @@
 title: Importer le calendrier interclubs
 summary: Équipes, divisions, adversaires et rencontres, chargés depuis la fédération au lieu d'être recopiés. Ce que ça fait, et ce qu'il faut vérifier après.
 audience: committee, secretary
-order: 19
+order: 20
 ---
 
 L'AFTT publie son calendrier dans une base que l'application sait lire. Plutôt que d'encoder à la main les divisions, les adversaires et les dizaines de rencontres, on les charge d'un coup.

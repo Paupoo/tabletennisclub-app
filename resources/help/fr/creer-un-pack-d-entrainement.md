@@ -2,7 +2,7 @@
 title: Créer et gérer un pack d'entraînement
 summary: L'assistant en trois étapes, les séances générées automatiquement, ouvrir ou fermer les inscriptions, ajouter un membre à la main, lire les présences et gérer les niveaux.
 audience: committee
-order: 15
+order: 16
 ---
 
 Un **pack** est l'entraînement tel qu'on le vend : « Jeunes du mardi », un niveau, un coach, un prix. Les **séances** sont les dates concrètes que l'application en déduit. Vous ne créez jamais une séance à la main — vous décrivez le pack, l'application génère le calendrier.

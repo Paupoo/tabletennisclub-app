@@ -157,11 +157,6 @@ new class extends Component
         unset($this->cart, $this->catalogue);
     }
 
-    public function updatedSearch(): void
-    {
-        unset($this->catalogue);
-    }
-
     public function render(): View
     {
         return $this->view();
@@ -236,6 +231,11 @@ new class extends Component
             ->whereIn('id', array_keys($cart))
             ->get()
             ->sum(fn (BarProduct $p): int => (int) $p->sale_price * (int) ($cart[$p->id] ?? 0));
+    }
+
+    public function updatedSearch(): void
+    {
+        unset($this->catalogue);
     }
 
     public function with(): array

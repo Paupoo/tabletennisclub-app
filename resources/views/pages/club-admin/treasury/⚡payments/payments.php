@@ -352,33 +352,10 @@ new class extends Component
         $col = $this->sortBy['column'];
         $dir = $this->sortBy['direction'];
 
-        $rows = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
-            ->where('status', $this->statusFilter)
-            ->when($this->search, fn ($q) => $q
-                ->where('reference', 'like', "%{$this->search}%")
-                // `payable.user` suppose que tout payable a un membre. Une commande
-                // de bar n'en a pas — le bar ne sait pas qui a payé — et la
-                // recherche tombait alors en BadMethodCallException pour tout le
-                // monde, y compris pour chercher une affiliation.
-                ->orWhereHasMorph(
-                    'payable',
-                    $this->payableTypesWithUser(),
-                    fn ($q) => $q->whereHas('user', fn ($u) => $u
-                        ->where('first_name', 'like', "%{$this->search}%")
-                        ->orWhere('last_name', 'like', "%{$this->search}%")
-                    )
-                )
-            )
-            ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo))
-            ->when($this->userId, fn ($q) => $q->whereHasMorph(
-                'payable',
-                [Subscription::class, TournamentRegistration::class, MeetingUser::class],
-                fn ($q) => $q->where('user_id', $this->userId)
-            ))
-            ->when($this->eventType, fn ($q) => $q->where('payable_type', $this->eventType))
-            ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName))
+        $rows = $this->applyFilters(
+            Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
+                ->where('status', $this->statusFilter)
+        )
             ->get()
             ->map(function (Payment $p) {
                 $label = $p->payable instanceof DescribesPayment ? $p->payable->getPaymentLabel() : null;
@@ -778,32 +755,7 @@ new class extends Component
 
     private function allMatchingPaymentIds(): array
     {
-        return Payment::where('status', $this->statusFilter)
-            ->when($this->search, fn ($q) => $q
-                ->where('reference', 'like', "%{$this->search}%")
-                // `payable.user` suppose que tout payable a un membre. Une commande
-                // de bar n'en a pas — le bar ne sait pas qui a payé — et la
-                // recherche tombait alors en BadMethodCallException pour tout le
-                // monde, y compris pour chercher une affiliation.
-                ->orWhereHasMorph(
-                    'payable',
-                    $this->payableTypesWithUser(),
-                    fn ($q) => $q->whereHas('user', fn ($u) => $u
-                        ->where('first_name', 'like', "%{$this->search}%")
-                        ->orWhere('last_name', 'like', "%{$this->search}%")
-                    )
-                )
-            )
-            ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo))
-            ->when($this->userId, fn ($q) => $q->whereHasMorph(
-                'payable',
-                [Subscription::class, TournamentRegistration::class, MeetingUser::class],
-                fn ($q) => $q->where('user_id', $this->userId)
-            ))
-            ->when($this->eventType, fn ($q) => $q->where('payable_type', $this->eventType))
-            ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName))
+        return $this->applyFilters(Payment::where('status', $this->statusFilter))
             ->pluck('id')
             ->toArray();
     }
@@ -821,6 +773,50 @@ new class extends Component
                     ->whereHas('meeting', fn ($m) => $m->where('title', 'like', "%{$name}%"))
                 );
         });
+    }
+
+    /**
+     * Les filtres de l'écran, hors onglet de statut.
+     *
+     * Partagée par la liste et par « sélectionner tous les résultats » : les deux
+     * doivent désigner le même ensemble, et deux copies l'ont déjà démenti.
+     *
+     * La recherche est enfermée dans son propre groupe parce que `when()` n'ouvre
+     * aucune parenthèse et que `AND` lie plus fort que `OR` : à plat, la branche
+     * « nom du membre » s'évade du filtre de statut et un paiement soldé remonte
+     * dans l'onglet « À rembourser ».
+     *
+     * @param  Builder<Payment>  $q
+     * @return Builder<Payment>
+     */
+    private function applyFilters(Builder $q): Builder
+    {
+        return $q
+            ->when($this->search, fn (Builder $q): Builder => $q->where(function (Builder $q): void {
+                $q->where('reference', 'like', "%{$this->search}%")
+                    // `payable.user` suppose que tout payable a un membre. Une commande
+                    // de bar n'en a pas — le bar ne sait pas qui a payé — et la
+                    // recherche tombait alors en BadMethodCallException pour tout le
+                    // monde, y compris pour chercher une affiliation.
+                    ->orWhereHasMorph(
+                        'payable',
+                        $this->payableTypesWithUser(),
+                        fn ($q) => $q->whereHas('user', fn ($u) => $u
+                            ->where('first_name', 'like', "%{$this->search}%")
+                            ->orWhere('last_name', 'like', "%{$this->search}%")
+                        )
+                    );
+            }))
+            ->when($this->paymentMethod, fn (Builder $q): Builder => $q->where('payment_method', $this->paymentMethod))
+            ->when($this->dateFrom, fn (Builder $q): Builder => $q->whereDate('created_at', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn (Builder $q): Builder => $q->whereDate('created_at', '<=', $this->dateTo))
+            ->when($this->userId, fn (Builder $q): Builder => $q->whereHasMorph(
+                'payable',
+                [Subscription::class, TournamentRegistration::class, MeetingUser::class],
+                fn ($q) => $q->where('user_id', $this->userId)
+            ))
+            ->when($this->eventType, fn (Builder $q): Builder => $q->where('payable_type', $this->eventType))
+            ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName));
     }
 
     private function eventTypeLabel(string $type): string

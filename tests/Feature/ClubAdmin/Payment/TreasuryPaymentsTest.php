@@ -9,6 +9,8 @@ use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\Role;
+use App\Jobs\SendPaymentReminderJob;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Exceptions\MethodNotFoundException;
 use Livewire\Livewire;
 
@@ -184,5 +186,80 @@ describe('reconcile modal — tournament name', function (): void {
             ->call('openReconcile', $payment->id)
             ->assertSet('reconcileModal', true)
             ->assertSee('Grand Prix Final');
+    });
+});
+
+// ── search stays inside the active tab ────────────────────────────────────────
+
+describe('treasury search — stays inside the active tab', function (): void {
+    it('does not leak a paid payment into the to-refund tab when searching by name', function (): void {
+        $admin = User::factory()->create();
+        $member = User::factory()->create(['first_name' => 'Nadia', 'last_name' => 'Lemoine']);
+        $subscription = Subscription::factory()->create(['user_id' => $member->id]);
+
+        $subscription->payments()->create([
+            'reference' => 'LEAK/2026/00001',
+            'amount_due' => 215,
+            'amount_paid' => 215,
+            'status' => 'paid',
+        ]);
+
+        mountTreasury($admin)
+            ->set('statusFilter', 'to_refund')
+            ->set('search', 'Lemoine')
+            ->assertDontSee('LEAK/2026/00001');
+    });
+
+    it('still finds the payment in its own tab, by member name and by reference', function (): void {
+        $admin = User::factory()->create();
+        $member = User::factory()->create(['first_name' => 'Nadia', 'last_name' => 'Lemoine']);
+        $subscription = Subscription::factory()->create(['user_id' => $member->id]);
+
+        $subscription->payments()->create([
+            'reference' => 'LEAK/2026/00001',
+            'amount_due' => 215,
+            'amount_paid' => 215,
+            'status' => 'paid',
+        ]);
+
+        // Les deux branches du OR, séparément : borner la recherche au statut ne
+        // doit pas revenir à amputer l'une d'elles.
+        mountTreasury($admin)
+            ->set('statusFilter', 'paid')
+            ->set('search', 'Lemoine')
+            ->assertSee('LEAK/2026/00001')
+            ->set('search', 'LEAK/2026/00001')
+            ->assertSee('Nadia Lemoine');
+    });
+
+    it('does not reach settled payments when selecting every search result', function (): void {
+        Queue::fake();
+
+        $admin = User::factory()->create();
+        $member = User::factory()->create(['first_name' => 'Nadia', 'last_name' => 'Lemoine']);
+        $subscription = Subscription::factory()->create(['user_id' => $member->id]);
+
+        $subscription->payments()->create([
+            'reference' => 'LEAK/2026/00001',
+            'amount_due' => 215,
+            'amount_paid' => 215,
+            'status' => 'paid',
+        ]);
+        $subscription->payments()->create([
+            'reference' => 'LEAK/2026/00002',
+            'amount_due' => 125,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        // « Tout sélectionner » passe par allMatchingPaymentIds(), qui est privée :
+        // le seul point d'observation public est ce que l'action de masse enfile.
+        mountTreasury($admin)
+            ->set('statusFilter', 'pending')
+            ->set('search', 'Lemoine')
+            ->set('selectingAllResults', true)
+            ->call('bulkSendReminder');
+
+        Queue::assertPushed(SendPaymentReminderJob::class, 1);
     });
 });

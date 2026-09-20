@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Payment\Models;
 
+use App\Domains\ClubAdmin\Payment\Services\TransactionMatch;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,6 +31,7 @@ use Illuminate\Support\Carbon;
  * @property-read Payment|null $payment
  * @property-read Payment|null $refundPayment
  * @property-read BankImport|null $bankImport
+ * @property TransactionMatch|null $match Verdict de rapprochement, posé à la volée par TransactionMatcher::rank() — jamais persisté.
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction newQuery()

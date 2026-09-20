@@ -228,6 +228,24 @@ Go to **Interclubs → Teams**. Create or edit teams. Assign a captain to each t
 
 Go to **Interclubs → Captain selection**. Review available players for each round and confirm the lineup.
 
+### Free players and rule C.22
+
+Below the squad, the lineup panel offers the **free players of the match day**: those who declared themselves available for their own team's fixture, whom their captain did not keep, and whom nobody has engaged elsewhere. Same match day, same category, never wider.
+
+A player only enters that list **once their team's lineup has been sent**: until their captain has decided, they are pending rather than free. When a team has not composed yet, the panel names it, names its captain and gives their contact details — the rest is a phone call.
+
+There is **no in-app invitation**: the captain phones, and once the player agrees they tick them like anyone from their own squad. Phone and email are shown for that purpose even when the member has not opened their contact details to the wider club — the deliberate extension of the rule that already applies to a captain's own squad.
+
+On both lists the application enforces **rule C.22 of the federation's regulations**: the first player of a team may not carry a reference index smaller — therefore be stronger — than the third player of the superior team, or the second in women's and age categories. The penalty falls on the inferior team, which loses by forfeit.
+
+In practice:
+
+- a pool player the rule forbids is **not offered**, but the number of hidden players is shown;
+- a player from the captain's **own squad** stays visible, **checkbox greyed out**, with the reason written under their name;
+- where legality depends on a lineup the superior team has not composed yet, the warning is amber and **nothing is blocked**.
+
+Two limits worth knowing. Team rank is inferred from the team **name** (A, B, C… then 1, 2, 3 past Z), there being no stored rank: if a team name cannot be ordered, the rule falls silent for the whole category and says so. And the regulation is written on the third player who *actually played*, unknowable before the match: the application predicts from planned lineups, it does not certify.
+
 ### Availability management
 
 Send availability requests to players before each round from the interclub management page. Players respond via email or in-app. View responses in the availability dashboard.

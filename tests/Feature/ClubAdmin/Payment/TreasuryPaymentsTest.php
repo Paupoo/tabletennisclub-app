@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
@@ -186,6 +188,43 @@ describe('reconcile modal — tournament name', function (): void {
             ->call('openReconcile', $payment->id)
             ->assertSet('reconcileModal', true)
             ->assertSee('Grand Prix Final');
+    });
+});
+
+// ── reconcile modal — match verdict ───────────────────────────────────────────
+
+describe('reconcile modal — match verdict', function (): void {
+    it('names the guardian whose IBAN paid, instead of a bare amount badge', function (): void {
+        $admin = User::factory()->create();
+        $member = User::factory()->create(['first_name' => 'Quentin', 'last_name' => 'Vandevelde', 'iban' => null]);
+        $guardian = Guardian::factory()->create([
+            'first_name' => 'Michel',
+            'last_name' => 'Michotte',
+            'iban' => 'BE68 5390 0754 7034',
+        ]);
+        $member->guardians()->attach($guardian->id);
+
+        $subscription = Subscription::factory()->create(['user_id' => $member->id]);
+        $payment = $subscription->payments()->create([
+            'reference' => 'RCN/2026/00001',
+            'amount_due' => 150,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        Transaction::create([
+            'date' => now(),
+            'amount' => 150,
+            'counterparty_name' => 'M ET MME MICHEL MICHOTTE',
+            'counterparty_bank_account' => 'BE68539007547034',
+            'free_reference' => 'vandevelde Quentin affiliation 2025-2026',
+            'description' => 'VIREMENT EUROPEEN',
+        ]);
+
+        mountTreasury($admin)
+            ->call('openReconcile', $payment->id)
+            ->assertSee(__('Strong match'))
+            ->assertSee(__(':name (guardian) IBAN', ['name' => 'Michel Michotte']));
     });
 });
 

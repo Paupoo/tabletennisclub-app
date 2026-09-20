@@ -2,7 +2,7 @@
 title: Traiter les demandes d'entraînement
 summary: Approuver ou refuser pack par pack, comprendre le montant réclamé, inscrire un membre à la main, et rembourser celui qu'on retire d'un entraînement.
 audience: committee, secretary, treasurer
-order: 16
+order: 17
 ---
 
 Quand un membre demande un entraînement, rien n'est acquis et **rien n'est facturé** : sa demande attend votre décision. Tout se traite depuis **Membres → Inscriptions**, où le filtre **En attente** isole les dossiers à trancher.

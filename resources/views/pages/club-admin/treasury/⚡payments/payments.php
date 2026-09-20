@@ -6,6 +6,7 @@ use App\Contracts\DescribesPayment;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
+use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
@@ -392,40 +393,18 @@ new class extends Component
 
     public function pendingTransactions(): Collection
     {
-        $payment = $this->reconcilePaymentId ? Payment::find($this->reconcilePaymentId) : null;
-        $normalizedPayRef = $payment ? $this->normalizeReference($payment->reference) : null;
+        $payment = $this->reconcilePaymentId
+            ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->reconcileEagerLoads())])->find($this->reconcilePaymentId)
+            : null;
 
-        return Transaction::whereDoesntHave('payment')
+        $candidates = Transaction::whereDoesntHave('payment')
             ->where('amount', '>', 0)
             ->orderBy('date', 'desc')
-            ->get()
-            ->map(function (Transaction $t) use ($payment, $normalizedPayRef): Transaction {
-                if (! $payment) {
-                    $t->match_score = 'none';
+            ->get();
 
-                    return $t;
-                }
-
-                $normalizedTransRef = $this->normalizeReference($t->structured_reference ?? '');
-                $refMatch = $normalizedPayRef && $normalizedTransRef && $normalizedPayRef === $normalizedTransRef;
-                $amountMatch = abs($t->amount - $payment->amount_due) < 0.01;
-
-                $t->match_score = match (true) {
-                    $refMatch && $amountMatch => 'perfect',
-                    $refMatch => 'reference',
-                    $amountMatch => 'amount',
-                    default => 'none',
-                };
-
-                return $t;
-            })
-            ->sortByDesc(fn ($t): int => match ($t->match_score) {
-                'perfect' => 3,
-                'reference' => 2,
-                'amount' => 1,
-                default => 0,
-            })
-            ->values();
+        return $payment
+            ? (new TransactionMatcher)->rank($payment, $candidates)
+            : $candidates;
     }
 
     public function previewBatchMatch(): void
@@ -539,41 +518,21 @@ new class extends Component
     #[Computed]
     public function refundTransactions(): Collection
     {
-        $payment = $this->refundPaymentId ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])->find($this->refundPaymentId) : null;
-        $user = $payment?->payable?->user;
+        $payment = $this->refundPaymentId
+            ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->reconcileEagerLoads())])->find($this->refundPaymentId)
+            : null;
 
-        $normalizedIban = $this->normalizeIban($user?->iban ?? '');
-
-        return Transaction::whereDoesntHave('refundPayment')
+        // Un remboursement sort du compte du club : les candidates sont les
+        // débits, mais le barème est le même — c'est le même membre qu'on
+        // cherche au bout du virement.
+        $candidates = Transaction::whereDoesntHave('refundPayment')
             ->where('amount', '<', 0)
             ->orderBy('date', 'desc')
-            ->get()
-            ->map(function (Transaction $t) use ($payment, $normalizedIban): Transaction {
-                if (! $payment) {
-                    $t->match_score = 'none';
+            ->get();
 
-                    return $t;
-                }
-
-                $ibanMatch = $normalizedIban && $this->normalizeIban($t->counterparty_bank_account ?? '') === $normalizedIban;
-                $amountMatch = abs(abs($t->amount) - $payment->amount_paid) < 0.01;
-
-                $t->match_score = match (true) {
-                    $ibanMatch && $amountMatch => 'perfect',
-                    $ibanMatch => 'iban',
-                    $amountMatch => 'amount',
-                    default => 'none',
-                };
-
-                return $t;
-            })
-            ->sortByDesc(fn (Transaction $t): int => match ($t->match_score) {
-                'perfect' => 3,
-                'iban' => 2,
-                'amount' => 1,
-                default => 0,
-            })
-            ->values();
+        return $payment
+            ? (new TransactionMatcher)->rank($payment, $candidates)
+            : $candidates;
     }
 
     public function render(): View
@@ -863,6 +822,23 @@ new class extends Component
     private function payableTypesWithUser(): array
     {
         return array_keys($this->payableEagerLoads());
+    }
+
+    /**
+     * Comme {@see payableEagerLoads}, plus les tuteurs.
+     *
+     * Le barème de rapprochement interroge l'IBAN et le nom de chaque tuteur ;
+     * la liste principale, elle, ne les affiche jamais et n'a pas à les payer.
+     *
+     * @return array<class-string, array<int, string>>
+     */
+    private function reconcileEagerLoads(): array
+    {
+        return [
+            TournamentRegistration::class => ['user.guardians', 'tournament'],
+            MeetingUser::class => ['user.guardians', 'meeting'],
+            Subscription::class => ['user.guardians', 'season'],
+        ];
     }
 
     private function reconcileSubscription(Subscription $subscription, float $amount): void

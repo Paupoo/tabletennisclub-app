@@ -70,7 +70,7 @@ class InterclubLineupLegalityService
                 continue;
             }
 
-            $core = $this->indices($team['core'] ?? []);
+            $core = $this->indices($team['core']);
 
             $strongest = $this->moreConstraining($strongest, $core[$position - 1] ?? null);
             $weakest = $this->moreConstraining($weakest, $this->weakestThreshold($core, $category, $position));

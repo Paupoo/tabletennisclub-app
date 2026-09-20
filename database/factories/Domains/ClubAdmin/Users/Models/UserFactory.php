@@ -68,11 +68,15 @@ class UserFactory extends Factory
     public function isCompetitor(): static
     {
         return $this->state(function (array $attributes): array {
-            $unusedLicence = fake()->numberBetween(95000, 170000);
-
-            while (User::where('licence', $unusedLicence)->exists()) {
-                $unusedLicence++;
-            }
+            // `unique()` porte sur le générateur, pas sur la base, et c'est tout
+            // l'enjeu : `->count(N)->create()` exécute les N closures *avant* la
+            // moindre insertion, si bien qu'une garde interrogeant la table ne
+            // voit aucun des frères de la fournée. La table, elle, reste
+            // consultée pour les lignes déjà persistées — un semis, une saison
+            // importée — que le générateur ne connaît pas.
+            do {
+                $unusedLicence = fake()->unique()->numberBetween(95000, 170000);
+            } while (User::where('licence', $unusedLicence)->exists());
 
             return [
                 'licence' => $unusedLicence,

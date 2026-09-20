@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Interclub\Services;
 
+use App\Data\Interclub\LineupConstraint;
 use App\Data\Interclub\LineupVerdict;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LineupLegality;
 use App\Domains\Shared\Enums\LineupLegalityReason;
+use Illuminate\Support\Collection;
 
 /**
  * L'article C.22 du règlement fédéral, en arithmétique pure.
@@ -32,6 +36,69 @@ use App\Domains\Shared\Enums\LineupLegalityReason;
  */
 class InterclubLineupLegalityService
 {
+    /**
+     * Ce que les équipes supérieures imposent à la composition d'une rencontre.
+     *
+     * C'est la moitié « base de données » de la règle : elle rassemble les
+     * équipes qui dominent celle qu'on compose, lit leur composition de la
+     * journée quand elle existe et leur noyau sinon, puis passe le tout à
+     * l'arithmétique du dessus. Les deux vivent dans le même fichier parce que
+     * la règle est une : la séparer ferait deux endroits à corriger le jour où
+     * la fédération change le numéro de la place qui porte le seuil.
+     *
+     * Le rang vient du nom de l'équipe ({@see Team::rankOf()}), faute de quoi la
+     * règle se tait.
+     */
+    public function constraintFor(Interclub $fixture): LineupConstraint
+    {
+        $fixture->loadMissing(['league', 'visitedTeam.club', 'visitingTeam.club']);
+
+        $category = LeagueCategory::fromName($fixture->league?->category);
+        $team = $this->ownTeamOf($fixture);
+
+        if (! $team instanceof Team) {
+            return new LineupConstraint(null, null, true, []);
+        }
+
+        $peers = $this->clubTeamsOfCategory($fixture);
+
+        // Un seul nom illisible suffit : l'ordre de toute la catégorie devient
+        // une supposition, et une supposition n'a pas à faire disparaître des
+        // joueurs de l'écran d'un capitaine.
+        if ($peers->contains(fn (Team $peer): bool => Team::rankOf($peer->name) === null)) {
+            return new LineupConstraint(null, null, false, []);
+        }
+
+        $ownRank = Team::rankOf($team->name);
+
+        if ($ownRank === null) {
+            return new LineupConstraint(null, null, false, []);
+        }
+
+        $superior = $this->superiorTeams($peers, $ownRank, $category);
+
+        if ($superior->isEmpty()) {
+            return new LineupConstraint(null, null, true, []);
+        }
+
+        $lineups = $this->lineupsOfWeek($fixture, $superior);
+
+        $bounds = $this->thresholdBounds(
+            $superior->map(fn (Team $peer): array => [
+                'lineup' => $lineups[$peer->id] ?? null,
+                'core' => $this->coreIndices($peer, $category),
+            ])->values()->all(),
+            $category,
+        );
+
+        return new LineupConstraint(
+            strongest: $bounds['strongest'],
+            weakest: $bounds['weakest'],
+            rankIsReadable: true,
+            superiorTeamNames: $superior->pluck('name')->values()->all(),
+        );
+    }
+
     /**
      * Les deux valeurs que le seuil de l'équipe supérieure peut prendre.
      *
@@ -122,6 +189,39 @@ class InterclubLineupLegalityService
     }
 
     /**
+     * Les équipes du club engagées dans la même catégorie et la même saison.
+     *
+     * @return Collection<int, Team>
+     */
+    private function clubTeamsOfCategory(Interclub $fixture): Collection
+    {
+        $category = $fixture->league?->category;
+
+        return Team::query()
+            ->with(['users', 'league'])
+            ->where('teams.season_id', $fixture->season_id)
+            ->whereHas('club', fn ($query) => $query->where('is_own_club', true))
+            ->whereHas('league', fn ($query) => $category === null
+                ? $query->whereNull('category')
+                : $query->where('category', $category))
+            ->orderBy('teams.id')
+            ->get();
+    }
+
+    /**
+     * Les indices de référence du noyau, dans la sous-liste de la catégorie.
+     *
+     * @return list<int|null>
+     */
+    private function coreIndices(Team $team, ?LeagueCategory $category): array
+    {
+        return $team->users
+            ->map(fn (User $player): ?int => $player->forceListFor($category))
+            ->values()
+            ->all();
+    }
+
+    /**
      * Les indices exploitables d'une composition ou d'un noyau, du plus fort au
      * plus faible. Les indices manquants sont écartés ici ; l'incertitude qu'ils
      * créent se traite ailleurs, avec son propre motif.
@@ -150,6 +250,51 @@ class InterclubLineupLegalityService
     }
 
     /**
+     * Les compositions de la journée, par équipe supérieure.
+     *
+     * @param  Collection<int, Team>  $superior
+     * @return array<int, list<int|null>>
+     */
+    private function lineupsOfWeek(Interclub $fixture, Collection $superior): array
+    {
+        $category = LeagueCategory::fromName($fixture->league?->category);
+        $teamIds = $superior->pluck('id')->all();
+
+        $fixtures = Interclub::query()
+            ->with(['users'])
+            ->where('season_id', $fixture->season_id)
+            ->where('week_number', $fixture->week_number)
+            ->where('id', '!=', $fixture->id)
+            ->where(fn ($query) => $query
+                ->whereIn('visited_team_id', $teamIds)
+                ->orWhereIn('visiting_team_id', $teamIds))
+            ->orderBy('interclubs.id')
+            ->get();
+
+        $lineups = [];
+
+        foreach ($fixtures as $sibling) {
+            $selected = $sibling->users
+                ->filter(fn (User $player): bool => (bool) $player->registration?->is_selected)
+                ->map(fn (User $player): ?int => $player->forceListFor($category))
+                ->values()
+                ->all();
+
+            if ($selected === []) {
+                continue;
+            }
+
+            foreach ([$sibling->visited_team_id, $sibling->visiting_team_id] as $teamId) {
+                if ($teamId !== null && in_array($teamId, $teamIds, true)) {
+                    $lineups[$teamId] = $selected;
+                }
+            }
+        }
+
+        return $lineups;
+    }
+
+    /**
      * Du seuil déjà retenu et du nouveau, celui qui contraint le plus.
      *
      * Le premier joueur de l'équipe inférieure doit avoir un indice *au moins
@@ -162,6 +307,48 @@ class InterclubLineupLegalityService
         }
 
         return $current === null ? $candidate : max($current, $candidate);
+    }
+
+    /** Le camp du club dans cette rencontre, et `null` s'il n'y en a pas. */
+    private function ownTeamOf(Interclub $fixture): ?Team
+    {
+        foreach ([$fixture->visitedTeam, $fixture->visitingTeam] as $team) {
+            if ($team?->club?->is_own_club) {
+                return $team;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Les équipes qui contraignent celle-ci.
+     *
+     * Chez les messieurs, l'équipe immédiatement supérieure et elle seule : la
+     * sanction de C.22.1.4 vise « l'équipe immédiatement inférieure ». Chez les
+     * dames et les catégories d'âge, C.22.2.4 parle de « une des équipes
+     * supérieures » — donc toutes.
+     *
+     * « Immédiatement supérieure » se lit comme la plus proche au-dessus, et non
+     * comme le rang moins un : une catégorie peut n'avoir ni B ni D.
+     *
+     * @param  Collection<int, Team>  $peers
+     * @return Collection<int, Team>
+     */
+    private function superiorTeams(Collection $peers, int $ownRank, ?LeagueCategory $category): Collection
+    {
+        $above = $peers
+            ->filter(fn (Team $peer): bool => (Team::rankOf($peer->name) ?? PHP_INT_MAX) < $ownRank)
+            ->sortBy(fn (Team $peer): int => Team::rankOf($peer->name) ?? PHP_INT_MAX)
+            ->values();
+
+        if ($category !== LeagueCategory::MEN) {
+            return $above;
+        }
+
+        $nearest = $above->last();
+
+        return $nearest instanceof Team ? collect([$nearest]) : collect();
     }
 
     /**

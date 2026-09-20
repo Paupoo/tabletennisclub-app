@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -19,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string $date
  * @property string $description
  * @property float $amount
+ * @property float $allocated_amount
  * @property string|null $counterparty_name
  * @property string|null $counterparty_bank_account
  * @property string|null $structured_reference
@@ -68,6 +70,16 @@ class Transaction extends Model
         return $this->belongsTo(BankImport::class);
     }
 
+    /**
+     * Les affectations de cette ligne de relevé.
+     *
+     * @return HasMany<PaymentCredit, $this>
+     */
+    public function credits(): HasMany
+    {
+        return $this->hasMany(PaymentCredit::class);
+    }
+
     public function payment(): HasOne
     {
         return $this->hasOne(Payment::class, 'transaction_id');
@@ -76,6 +88,20 @@ class Transaction extends Model
     public function refundPayment(): HasOne
     {
         return $this->hasOne(Payment::class, 'refund_transaction_id');
+    }
+
+    /**
+     * Ce qui a déjà trouvé son paiement, en euros.
+     *
+     * Miroir des lignes de crédit, écrit par AllocateTransactionAction et par
+     * personne d'autre — d'où son absence de `$fillable`.
+     */
+    protected function allocatedAmount(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
+            set: fn (int|float $value): int => (int) round($value * 100),
+        );
     }
 
     /** Amount stored in cents, exposed as euros. */

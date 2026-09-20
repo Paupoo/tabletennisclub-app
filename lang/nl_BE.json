@@ -623,6 +623,7 @@
     "Showing": "Toont",
     "Subtotal": "Subtotaal",
     "This payment is settled: there is nothing to chase.": "Deze betaling is voldaan: er valt niets aan te manen.",
+    "This allocation exceeds the transaction: only :amount € remain to allocate.": "Deze toewijzing overschrijdt de transactie: er blijft slechts :amount € over om toe te wijzen.",
     "The club will get in touch when building the training schedule.": "De club neemt contact op bij het samenstellen van het trainingsrooster.",
     "Under control": "Onder controle",
     "Waiting list — not billed": "Wachtlijst — niet gefactureerd",

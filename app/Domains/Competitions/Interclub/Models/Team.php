@@ -104,6 +104,38 @@ class Team extends Model
             ->first();
     }
 
+    /**
+     * Le rang de cette équipe dans son club, déduit de son nom.
+     *
+     * Rien en base ne hiérarchise les équipes, et la division ne peut pas servir :
+     * « 3A » et « 3C » sont deux séries du même niveau — le suffixe est
+     * géographique — et l'on rencontre des libellés sans rang du tout, comme
+     * « BARRAGES P3 vers P2 » ou « TF ». Le nom reste le seul ordre exploitable,
+     * et c'est celui que le règlement suppose quand il écrit « équipe A » puis
+     * « équipe B » (exemples de l'article C.22.1.1).
+     *
+     * `null` pour un nom qui ne se laisse pas ranger : l'appelant doit alors
+     * renoncer à la règle plutôt que la calculer sur un ordre inventé.
+     */
+    public static function rankOf(?string $name): ?int
+    {
+        $name = mb_strtoupper(trim((string) $name));
+
+        if (preg_match('/^[A-Z]$/', $name) === 1) {
+            return ord($name) - 64;
+        }
+
+        // Passé Z, le club numérote. Ces équipes viennent après les lettres, et
+        // c'est tout l'intérêt de passer par un rang plutôt que de trier les noms :
+        // en ASCII les chiffres précèdent les lettres, donc « 1 » — la plus faible
+        // — se rangerait devant « A ».
+        if (preg_match('/^[1-9][0-9]*$/', $name) === 1) {
+            return 26 + (int) $name;
+        }
+
+        return null;
+    }
+
     public function captain(): BelongsTo
     {
         return $this->belongsTo(User::class, 'captain_id');

@@ -178,3 +178,42 @@ it('counts the allocations already posted when it checks the transaction ceiling
         ->and($second->fresh()->amount_paid)->toBe(0.0)
         ->and($transaction->fresh()->allocated_amount)->toBe(150.0);
 })->group('payments', 'reconciliation');
+
+/**
+ * Le versement qui solde vraiment porte l'affiliation à `paid`.
+ *
+ * Le pendant du premier test : `markAsPaid()` n'était appelé sous aucune
+ * condition, et c'est l'autre moitié de la correction — une fois le solde
+ * atteint, il doit bien être appelé.
+ */
+it('marks the affiliation paid once the balance reaches zero', function (): void {
+    $member = User::factory()->create();
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => $member->id,
+        'status' => 'confirmed',
+        'amount_due' => 365,
+    ]);
+
+    $payment = $subscription->payments()->create([
+        'reference' => '123/4567/89012',
+        'amount_due' => 365,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 365.0,
+        'counterparty_name' => $member->full_name,
+    ]);
+
+    (new AllocateTransactionAction)($transaction, [$payment->id => 365.0]);
+
+    expect($subscription->fresh()->status)->toBe('paid')
+        ->and($subscription->fresh()->balanceDue())->toBe(0.0)
+        // La colonne de l'affiliation suit, au lieu d'être écrasée par le
+        // dernier virement venu.
+        ->and($subscription->fresh()->amount_paid)->toBe(365.0);
+})->group('payments', 'reconciliation');

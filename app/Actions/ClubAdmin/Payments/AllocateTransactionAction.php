@@ -7,6 +7,7 @@ namespace App\Actions\ClubAdmin\Payments;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\PaymentCredit;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -41,6 +42,7 @@ final class AllocateTransactionAction
                 ]);
 
                 $this->refreshPaymentMirror($payment);
+                $this->settlePayable($payment);
             }
 
             $this->refreshTransactionMirror($transaction);
@@ -102,5 +104,46 @@ final class AllocateTransactionAction
         $transaction->forceFill([
             'allocated_amount' => round(((float) $transaction->credits()->sum('amount')) / 100, 2),
         ])->save();
+    }
+
+    /**
+     * Ce que l'encaissement change pour la chose payée.
+     *
+     * Tous les payables ne portent pas d'état de paiement : une commande de bar
+     * n'en a pas. Seuls ceux qui en ont un sont touchés.
+     */
+    private function settlePayable(Payment $payment): void
+    {
+        $payable = $payment->payable;
+
+        if ($payable instanceof Subscription) {
+            $this->settleSubscription($payable);
+        }
+    }
+
+    /**
+     * L'affiliation suit l'argent reçu, et ne bascule qu'au solde atteint.
+     *
+     * `markAsPaid()` était appelé sans condition : 50 € sur une affiliation de
+     * 365 € la déclaraient réglée. `isFullyPaid()` existait déjà, avec sa
+     * tolérance d'un centime, sans que personne ne l'interroge ici.
+     *
+     * Le premier euro confirme encore une affiliation restée `pending` : le
+     * club a l'argent du membre, et `confirmed_at` — que les mutuelles lisent —
+     * doit dater de l'engagement, pas du dernier versement.
+     */
+    private function settleSubscription(Subscription $subscription): void
+    {
+        $subscription->forceFill(['amount_paid' => $subscription->totalPaid()])->save();
+
+        if ($subscription->getStatus() === 'pending') {
+            $subscription->confirm();
+        }
+
+        if (! $subscription->isFullyPaid() || $subscription->getStatus() === 'paid') {
+            return;
+        }
+
+        $subscription->markAsPaid();
     }
 }

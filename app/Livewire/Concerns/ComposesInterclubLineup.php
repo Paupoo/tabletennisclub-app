@@ -33,6 +33,34 @@ use Illuminate\Support\Collection;
 trait ComposesInterclubLineup
 {
     /**
+     * Les joueurs déjà alignés ailleurs, par rencontre et pour la durée d'une
+     * requête. `with()` le demande une fois pour lui-même et une seconde fois à
+     * travers {@see buildLineupRoster()} : deux fois la même requête, avec ses
+     * équipes, ses clubs et ses pivots à chaque fois.
+     *
+     * @var array<int, array<int, string>>
+     */
+    private array $blockedPlayerCache = [];
+
+    /**
+     * La contrainte C.22 par rencontre, pour la durée d'une requête Livewire.
+     *
+     * Portée volontairement courte : une instance de composant ne vit que le
+     * temps d'une requête, donc ce cache ne peut pas répondre sur un état qu'un
+     * autre capitaine aurait changé entre-temps.
+     *
+     * @var array<int, LineupConstraint>
+     */
+    private array $lineupConstraintCache = [];
+
+    /**
+     * Les rencontres de la journée, par rencontre et pour la durée d'une requête.
+     *
+     * @var array<int, EloquentCollection<int, Interclub>>
+     */
+    private array $weekFixturesCache = [];
+
+    /**
      * Players already lined up the same week *in the same category*, and by whom.
      *
      * Same rule as isPlayerDoubleBooked(): a ladies fixture never blocks a senior
@@ -44,30 +72,29 @@ trait ComposesInterclubLineup
      */
     protected function blockedPlayerData(Interclub $interclub): array
     {
+        if (isset($this->blockedPlayerCache[$interclub->id])) {
+            return $this->blockedPlayerCache[$interclub->id];
+        }
+
         $blocked = [];
 
-        $sameWeekMatches = Interclub::where('season_id', $interclub->season_id)
-            ->where('week_number', $interclub->week_number)
-            ->where('id', '!=', $interclub->id)
-            ->whereHas('league', $this->sameCategoryAs($interclub))
-            ->with([
-                'visitedTeam.club',
-                'visitingTeam.club',
-                'users' => fn ($q) => $q->wherePivot('is_selected', true),
-            ])
-            ->get();
+        $sameWeekMatches = $this->weekFixtures($interclub)
+            ->reject(fn (Interclub $match): bool => $match->id === $interclub->id);
 
         foreach ($sameWeekMatches as $match) {
             $team = $match->visitedTeam?->club?->is_own_club
                 ? $match->visitedTeam
                 : $match->visitingTeam;
 
-            foreach ($match->users as $user) {
+            // Le filtre `is_selected` se fait ici plutôt que dans la requête :
+            // la journée est chargée une fois pour tout l'écran, et le pool a
+            // besoin de tout le monde, pas seulement des alignés.
+            foreach ($match->users->filter(fn (User $user): bool => (bool) $user->registration?->is_selected) as $user) {
                 $blocked[$user->id] = $team?->name ?? '?';
             }
         }
 
-        return $blocked;
+        return $this->blockedPlayerCache[$interclub->id] = $blocked;
     }
 
     /**
@@ -145,17 +172,27 @@ trait ComposesInterclubLineup
      * plutôt que de se calculer sur un ordre supposé.
      *
      * @param  array<int, int>  $selectedPlayerIds
+     * @param  array<int, int|null>|null  $currentIndices  les indices déjà connus de l'appelant
      * @return array{constraint: LineupConstraint, verdict: \Closure(?int): LineupVerdict}
      */
-    protected function lineupLegality(Interclub $interclub, array $selectedPlayerIds): array
+    protected function lineupLegality(Interclub $interclub, array $selectedPlayerIds, ?array $currentIndices = null): array
     {
         $service = app(InterclubLineupLegalityService::class);
-        $constraint = $service->constraintFor($interclub);
+
+        // Mémoïsé pour la durée de la requête, et seulement elle : la contrainte
+        // dépend des équipes et de leurs compositions, jamais de la case qu'on
+        // vient de cocher. `togglePlayer()` puis `with()` la redemandaient dans
+        // la même requête, et elle coûte cinq requêtes SQL à chaque fois.
+        $constraint = $this->lineupConstraintCache[$interclub->id]
+            ??= $service->constraintFor($interclub);
 
         $interclub->loadMissing('league');
         $category = LeagueCategory::fromName($interclub->league?->category);
 
-        $currentIndices = $selectedPlayerIds === []
+        // L'appelant qui a déjà l'effectif sous la main passe les indices : les
+        // lignes du tiroir les portent, et les relire coûterait une requête de
+        // plus à chaque case cochée.
+        $currentIndices ??= $selectedPlayerIds === []
             ? []
             : User::whereIn('id', $selectedPlayerIds)
                 ->get()
@@ -172,6 +209,30 @@ trait ComposesInterclubLineup
         };
 
         return ['constraint' => $constraint, 'verdict' => $verdict];
+    }
+
+    /**
+     * Les rencontres de la journée et de la catégorie, chargées une seule fois.
+     *
+     * Deux lectures de cet écran les parcourent au même instant : les joueurs
+     * déjà alignés ailleurs, et les joueurs libres. Elles demandaient chacune
+     * leur propre balayage, avec les équipes, les clubs et les pivots à chaque
+     * fois.
+     *
+     * La composition en cours n'est délibérément pas filtrée dans la requête :
+     * le pool a besoin de tous les joueurs, et c'est l'appelant qui restreint.
+     *
+     * @return EloquentCollection<int, Interclub>
+     */
+    protected function weekFixtures(Interclub $interclub): EloquentCollection
+    {
+        return $this->weekFixturesCache[$interclub->id] ??= Interclub::query()
+            ->where('season_id', $interclub->season_id)
+            ->where('week_number', $interclub->week_number)
+            ->whereHas('league', $this->sameCategoryAs($interclub))
+            ->with(['visitedTeam.club', 'visitingTeam.club', 'users'])
+            ->orderBy('interclubs.id')
+            ->get();
     }
 
     /**

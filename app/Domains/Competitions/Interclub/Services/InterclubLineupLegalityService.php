@@ -81,6 +81,13 @@ class InterclubLineupLegalityService
             return new LineupConstraint(null, null, true, []);
         }
 
+        // Les noyaux ne sont chargés qu'ici : la plupart des rencontres sont
+        // composées par l'équipe de tête, qui n'a personne au-dessus d'elle et
+        // n'a donc besoin du noyau de personne.
+        // `superiorTeams()` rend parfois une collection de base (le cas messieurs
+        // n'en garde qu'une) : seule la collection Eloquent charge une relation.
+        new \Illuminate\Database\Eloquent\Collection($superior->all())->loadMissing('users');
+
         $lineups = $this->lineupsOfWeek($fixture, $superior);
 
         $bounds = $this->thresholdBounds(
@@ -198,7 +205,6 @@ class InterclubLineupLegalityService
         $category = $fixture->league?->category;
 
         return Team::query()
-            ->with(['users', 'league'])
             ->where('teams.season_id', $fixture->season_id)
             ->whereHas('club', fn ($query) => $query->where('is_own_club', true))
             ->whereHas('league', fn ($query) => $category === null

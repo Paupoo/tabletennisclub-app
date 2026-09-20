@@ -122,7 +122,7 @@ class Team extends Model
         $name = mb_strtoupper(trim((string) $name));
 
         if (preg_match('/^[A-Z]$/', $name) === 1) {
-            return ord($name) - 64;
+            return ord($name[0]) - 64;
         }
 
         // Passé Z, le club numérote. Ces équipes viennent après les lettres, et

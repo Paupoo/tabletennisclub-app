@@ -78,9 +78,12 @@ class InterclubPoolService
      * capable de répondre sur un état que le tiroir vient de changer — un cache
      * qui ment est pire qu'une requête de plus.
      */
-    public function poolFor(Interclub $fixture): InterclubPool
+    public function poolFor(Interclub $fixture, ?EloquentCollection $week = null): InterclubPool
     {
-        $week = $this->sameWeekFixtures($fixture);
+        // L'appelant qui a déjà balayé la journée passe ses rencontres : l'écran
+        // de composition en a besoin pour une autre raison au même instant, et
+        // les charger deux fois coûte tout un jeu de relations.
+        $week ??= $this->sameWeekFixtures($fixture);
 
         $siblings = $week
             ->reject(fn (Interclub $other): bool => $other->id === $fixture->id)
@@ -91,7 +94,7 @@ class InterclubPoolService
         return new InterclubPool(
             freePlayers: $this->pick($siblings, InterclubAvailability::AVAILABLE, $engagedIds),
             maybePlayers: $this->pick($siblings, InterclubAvailability::MAYBE, $engagedIds),
-            waitingTeams: $this->waiting($siblings),
+            waitingTeams: $this->withCaptains($this->waiting($siblings)),
         );
     }
 
@@ -212,7 +215,7 @@ class InterclubPoolService
             ->whereHas('league', fn ($query) => $category === null
                 ? $query->whereNull('category')
                 : $query->where('category', $category))
-            ->with(['visitedTeam.club', 'visitedTeam.captain', 'visitingTeam.club', 'visitingTeam.captain', 'users'])
+            ->with(['visitedTeam.club', 'visitingTeam.club', 'users'])
             ->orderBy('interclubs.id')
             ->get();
     }
@@ -242,5 +245,28 @@ class InterclubPoolService
             })
             ->filter()
             ->values();
+    }
+
+    /**
+     * Les capitaines des équipes en attente, et d'elles seules.
+     *
+     * Chargés après coup plutôt qu'en `with()` sur les deux camps de chaque
+     * rencontre de la journée : le bloc d'attente est vide la plupart du temps,
+     * et l'écran de composition se recharge à chaque case cochée.
+     *
+     * @param  Collection<int, WaitingTeam>  $waiting
+     * @return Collection<int, WaitingTeam>
+     */
+    private function withCaptains(Collection $waiting): Collection
+    {
+        if ($waiting->isEmpty()) {
+            return $waiting;
+        }
+
+        // `pluck()` rend une collection de base : c'est la collection Eloquent
+        // qui sait charger une relation.
+        new EloquentCollection($waiting->pluck('team')->all())->loadMissing('captain');
+
+        return $waiting;
     }
 }

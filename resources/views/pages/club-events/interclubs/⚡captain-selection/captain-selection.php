@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\CaptainSelection;
 
-use App\Data\Interclub\LineupVerdict;
 use App\Data\Interclub\PoolCandidate;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
@@ -656,8 +655,13 @@ new class extends Component
                 // donc il change à chaque case cochée. L'effectif propre est
                 // *grisé* et jamais masqué : on masque ce qu'on n'a jamais
                 // promis, on désactive ce qu'on a déjà montré.
-                ['constraint' => $lineupConstraint, 'verdict' => $verdictFor] =
-                    $this->lineupLegality($drawerInterclub, $this->selectedPlayerIds);
+                ['constraint' => $lineupConstraint, 'verdict' => $verdictFor] = $this->lineupLegality(
+                    $drawerInterclub,
+                    $this->selectedPlayerIds,
+                    // Les indices sont déjà sur les lignes de l'effectif, y compris
+                    // pour les remplaçants venus d'ailleurs : inutile de les relire.
+                    $roster->whereIn('id', $this->selectedPlayerIds)->pluck('force_index')->values()->all(),
+                );
 
                 $roster = $roster->map(function (array $player) use ($verdictFor): array {
                     $verdict = $verdictFor($player['force_index'] ?? null);
@@ -670,7 +674,7 @@ new class extends Component
                 });
 
                 // ── Les joueurs libres ──────────────────────────────────────
-                $pool = app(InterclubPoolService::class)->poolFor($drawerInterclub);
+                $pool = app(InterclubPoolService::class)->poolFor($drawerInterclub, $this->weekFixtures($drawerInterclub));
                 $poolCategory = $drawerInterclub->league?->category;
 
                 $poolRows = $pool->freePlayers

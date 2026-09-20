@@ -77,6 +77,8 @@ class InterclubPoolService
      * Pas de mémoïsation sur l'instance, délibérément. Le service serait alors
      * capable de répondre sur un état que le tiroir vient de changer — un cache
      * qui ment est pire qu'une requête de plus.
+     *
+     * @param  EloquentCollection<int, Interclub>|null  $week
      */
     public function poolFor(Interclub $fixture, ?EloquentCollection $week = null): InterclubPool
     {

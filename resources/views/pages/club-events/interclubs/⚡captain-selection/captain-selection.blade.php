@@ -244,7 +244,13 @@
         :can-search-substitute="$canSearchSubstitute"
         :search-results="$searchResults"
         :search-note="$searchNote"
-        :search-term="$search" />
+        :search-term="$search"
+        :pool-rows="$poolRows"
+        :pool-waiting="$poolWaiting"
+        :pool-hidden-count="$poolHiddenCount"
+        :pool-maybe-count="$poolMaybeCount"
+        :pool-maybe-teams="$poolMaybeTeams"
+        :lineup-constraint="$lineupConstraint" />
 
     {{-- ── CONFIRMATION : RELANCE DES DISPONIBILITÉS ──────────────────── --}}
     {{-- L'action envoie des e-mails à toute l'équipe : elle se confirme. --}}

@@ -34,7 +34,10 @@ parameters:
         -
             identifier: property.notFound
             message: '#User::\$registration\.#'
-            path: app/Domains/Competitions/Interclub/Services/InterclubPreparationService.php
+            paths:
+                - app/Domains/Competitions/Interclub/Services/InterclubPreparationService.php
+                - app/Domains/Competitions/Interclub/Services/InterclubPoolService.php
+                - app/Domains/Competitions/Interclub/Services/InterclubLineupLegalityService.php
 
         # Livewire v4 single-file components live under resources/views/pages,
         # outside `paths`. A trait used only by them therefore looks unused.

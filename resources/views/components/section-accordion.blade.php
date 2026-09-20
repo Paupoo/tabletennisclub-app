@@ -47,8 +47,14 @@
 
 <section @if ($wireToggle === null)x-data="{{ $initialState }}" @endif{{ $attributes }}>
 
+    {{-- `group` + `cursor-pointer` : Tailwind v4 a retiré du preflight le
+         `button { cursor: pointer }` que v3 posait, et rien ne le remplace ici
+         (les deux seules règles du bundle sont scopées, `.modal-backdrop` et
+         `.mary-table-pagination`). Un `<button>` nu avait donc le curseur d'un
+         texte inerte : la section se lisait comme un badge, pas comme une
+         commande, et personne ne cliquait. --}}
     <button type="button"
-        class="mb-3 flex w-full items-center gap-3 text-left"
+        class="group mb-3 flex w-full cursor-pointer items-center gap-3 text-left focus-visible:outline-none"
         @if ($wireToggle === null)
             :aria-expanded="open ? 'true' : 'false'"
             @click="open = !open"
@@ -57,7 +63,11 @@
             wire:click="{{ $wireToggle }}"
         @endif>
 
-        <span class="inline-flex shrink-0 items-center gap-2 rounded-full {{ $c['pill_bg'] }} {{ $c['pill_border'] }} border px-4 py-1.5">
+        {{-- L'anneau remplace un aplat de survol : il se pose hors du flux, donc
+             il vaut pour les sept palettes et les deux thèmes sans toucher à la
+             mise en page. Le même anneau sert d'indicateur de focus, en primaire,
+             à la place du contour natif qui cerclait toute la largeur du bouton. --}}
+        <span class="inline-flex shrink-0 items-center gap-2 rounded-full {{ $c['pill_bg'] }} {{ $c['pill_border'] }} border px-4 py-1.5 transition group-hover:ring-2 group-hover:ring-base-content/10 group-focus-visible:ring-2 group-focus-visible:ring-primary/60">
             <span class="h-2 w-2 rounded-full {{ $c['dot'] }}"></span>
             <span @class(['text-sm font-bold', $c['pill_text'], 'uppercase tracking-wide' => $uppercase])>{{ $label }}</span>
             @if($count !== null)
@@ -69,7 +79,12 @@
             @isset($suffix){{ $suffix }}@endisset
         </span>
 
-        <div class="flex-1 border-t {{ $c['sep'] }}"></div>
+        {{-- Le chevron se tient contre la pastille, pas au bout du filet : c'est
+             le mécanisme du <summary> natif, le marqueur colle aux mots. À
+             l'autre extrémité il pouvait être à mille pixels de son libellé sur
+             un écran admin large, et les quatre sections qui arrivent pliées
+             n'avaient plus rien pour se signaler. `/30` valait 1,96:1 (DS-B) :
+             seul indice d'affordance du composant, il passe a `/60`. --}}
 
         {{-- Two tags rather than one carrying a conditional attribute: Blade
              compiles a component by matching its tag, and a @if between its
@@ -77,14 +92,16 @@
              source text. --}}
         @if ($wireToggle === null)
             <x-icon name="o-chevron-down"
-                class="h-4 w-4 text-base-content/30 transition-transform duration-200"
+                class="h-4 w-4 shrink-0 text-base-content/60 transition-transform duration-200 group-hover:text-base-content"
                 ::class="open ? '' : '-rotate-90'" />
         @else
             <x-icon name="o-chevron-down" @class([
-                'h-4 w-4 text-base-content/30 transition-transform duration-200',
+                'h-4 w-4 shrink-0 text-base-content/60 transition-transform duration-200 group-hover:text-base-content',
                 '-rotate-90' => ! $open,
             ]) />
         @endif
+
+        <div class="flex-1 border-t {{ $c['sep'] }}"></div>
 
     </button>
 

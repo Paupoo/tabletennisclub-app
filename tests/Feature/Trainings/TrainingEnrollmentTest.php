@@ -386,3 +386,117 @@ describe('Training Enrollment', function (): void {
     })->group('training', 'waitlist');
 
 });
+
+/*
+ * Le pendant du complément créé par AddMemberToTrainingPackAction, qui tient
+ * déjà l'invariant à la hausse — « always leaves invoiced and owed in agreement ».
+ * À la baisse, rien ne le tenait : une affiliation de 365 € dont on retirait deux
+ * packs retombait à 213 € dus et continuait d'en réclamer 365.
+ *
+ * Ce n'est pas un remboursement : tant que rien n'est rentré, il n'y a rien à
+ * rendre, seulement moins à demander.
+ */
+describe('what is still claimed after a departure', function (): void {
+
+    /** Ce que la facture réclame : ni les remboursements, ni les lignes annulées. */
+    function stillClaimed(Subscription $subscription): float
+    {
+        return round($subscription->fresh()->payments
+            ->filter(fn ($payment): bool => $payment->payment_method !== 'refund' && $payment->status !== 'cancelled')
+            ->sum(fn ($payment): float => (float) $payment->amount_due), 2);
+    }
+
+    /** Une affiliation facturée, non compétitrice pour que la licence soit connue. */
+    function billedSubscription(array $packs): Subscription
+    {
+        $subscription = Subscription::factory()->create(['is_competitive' => false, 'status' => 'confirmed']);
+        $subscription->trainingPacks()->attach(array_map(fn (TrainingPack $p): int => $p->id, $packs), ['status' => 'enrolled']);
+
+        (new CalculatePriceAction)($subscription);
+        $subscription->refresh();
+
+        $subscription->payments()->create([
+            'reference' => 'TEST-DUE',
+            'amount_due' => $subscription->amount_due,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        return $subscription;
+    }
+
+    test('claims less, rather than refunding, when nothing has been paid', function (): void {
+        Notification::fake();
+
+        $packs = TrainingPack::factory()->count(3)->create(['price' => 90, 'allow_discount' => true, 'max_participants' => 5]);
+        $subscription = billedSubscription($packs->all());
+        $before = (float) $subscription->amount_due;
+
+        $refundable = (new LeaveTrainingPackAction)($subscription, $packs->first());
+        $subscription->refresh();
+
+        expect((float) $subscription->amount_due)->toBeLessThan($before)
+            ->and(stillClaimed($subscription))->toBe(round((float) $subscription->amount_due, 2))
+            // Rien n'est rentré : il n'y a rien à rendre.
+            ->and($refundable)->toBe(0.0);
+    })->group('training', 'enrollment', 'money');
+
+    test('cancels a claim that no longer stands instead of leaving it at zero', function (): void {
+        Notification::fake();
+
+        $pack = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true, 'max_participants' => 5]);
+        $subscription = Subscription::factory()->create(['is_competitive' => false, 'status' => 'confirmed']);
+        $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+        (new CalculatePriceAction)($subscription);
+        $subscription->refresh();
+
+        // La forme réelle : la cotisation d'abord, puis le complément qu'a créé
+        // l'ajout du pack. Retirer le pack vide entièrement ce complément.
+        $licence = round((float) $subscription->amount_due - 90, 2);
+
+        $subscription->payments()->create([
+            'reference' => 'TEST-LICENCE',
+            'amount_due' => $licence,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        $complement = $subscription->payments()->create([
+            'reference' => 'TEST-PACK',
+            'amount_due' => 90,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        (new LeaveTrainingPackAction)($subscription, $pack);
+
+        // Annulée, pas détruite : la référence structurée reste lisible pour un
+        // membre qui l'aurait déjà reçue.
+        expect($complement->fresh()->status)->toBe('cancelled');
+    })->group('training', 'enrollment', 'money');
+
+    test('never claims less than what has already been collected on a line', function (): void {
+        Notification::fake();
+
+        $packs = TrainingPack::factory()->count(2)->create(['price' => 90, 'allow_discount' => true, 'max_participants' => 5]);
+        $subscription = Subscription::factory()->create(['is_competitive' => false, 'status' => 'confirmed']);
+        $subscription->trainingPacks()->attach($packs->pluck('id')->all(), ['status' => 'enrolled']);
+        (new CalculatePriceAction)($subscription);
+        $subscription->refresh();
+
+        $due = (float) $subscription->amount_due;
+
+        // Un acompte est tombé sur la ligne : la baisse s'arrête là, et le reste
+        // devient un trop-perçu que seul un remboursement peut rendre.
+        $payment = $subscription->payments()->create([
+            'reference' => 'TEST-PART',
+            'amount_due' => $due,
+            'amount_paid' => $due - 10,
+            'status' => 'paid',
+        ]);
+
+        (new LeaveTrainingPackAction)($subscription, $packs->first());
+
+        expect((float) $payment->fresh()->amount_due)->toBeGreaterThanOrEqual((float) $payment->fresh()->amount_paid);
+    })->group('training', 'enrollment', 'money');
+});

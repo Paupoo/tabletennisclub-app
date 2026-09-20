@@ -150,7 +150,7 @@
                     :heading="__('No spam recorded')"
                     :filtered="$hasActiveFilters" />
             @else
-                <x-table :headers="$headers" :rows="$spams" :sort-by="$sortBy"
+                <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$spams" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
                     @scope('cell_created_at', $spam)
                         <span class="text-xs text-base-content/40">

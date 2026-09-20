@@ -2,13 +2,17 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\Role;
+use App\Jobs\SendPaymentReminderJob;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Exceptions\MethodNotFoundException;
 use Livewire\Livewire;
 
@@ -184,5 +188,117 @@ describe('reconcile modal — tournament name', function (): void {
             ->call('openReconcile', $payment->id)
             ->assertSet('reconcileModal', true)
             ->assertSee('Grand Prix Final');
+    });
+});
+
+// ── reconcile modal — match verdict ───────────────────────────────────────────
+
+describe('reconcile modal — match verdict', function (): void {
+    it('names the guardian whose IBAN paid, instead of a bare amount badge', function (): void {
+        $admin = User::factory()->create();
+        $member = User::factory()->create(['first_name' => 'Quentin', 'last_name' => 'Vandevelde', 'iban' => null]);
+        $guardian = Guardian::factory()->create([
+            'first_name' => 'Michel',
+            'last_name' => 'Michotte',
+            'iban' => 'BE68 5390 0754 7034',
+        ]);
+        $member->guardians()->attach($guardian->id);
+
+        $subscription = Subscription::factory()->create(['user_id' => $member->id]);
+        $payment = $subscription->payments()->create([
+            'reference' => 'RCN/2026/00001',
+            'amount_due' => 150,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        Transaction::create([
+            'date' => now(),
+            'amount' => 150,
+            'counterparty_name' => 'M ET MME MICHEL MICHOTTE',
+            'counterparty_bank_account' => 'BE68539007547034',
+            'free_reference' => 'vandevelde Quentin affiliation 2025-2026',
+            'description' => 'VIREMENT EUROPEEN',
+        ]);
+
+        mountTreasury($admin)
+            ->call('openReconcile', $payment->id)
+            ->assertSee(__('Strong match'))
+            ->assertSee(__(':name (guardian) IBAN', ['name' => 'Michel Michotte']));
+    });
+});
+
+// ── search stays inside the active tab ────────────────────────────────────────
+
+describe('treasury search — stays inside the active tab', function (): void {
+    it('does not leak a paid payment into the to-refund tab when searching by name', function (): void {
+        $admin = User::factory()->create();
+        $member = User::factory()->create(['first_name' => 'Nadia', 'last_name' => 'Lemoine']);
+        $subscription = Subscription::factory()->create(['user_id' => $member->id]);
+
+        $subscription->payments()->create([
+            'reference' => 'LEAK/2026/00001',
+            'amount_due' => 215,
+            'amount_paid' => 215,
+            'status' => 'paid',
+        ]);
+
+        mountTreasury($admin)
+            ->set('statusFilter', 'to_refund')
+            ->set('search', 'Lemoine')
+            ->assertDontSee('LEAK/2026/00001');
+    });
+
+    it('still finds the payment in its own tab, by member name and by reference', function (): void {
+        $admin = User::factory()->create();
+        $member = User::factory()->create(['first_name' => 'Nadia', 'last_name' => 'Lemoine']);
+        $subscription = Subscription::factory()->create(['user_id' => $member->id]);
+
+        $subscription->payments()->create([
+            'reference' => 'LEAK/2026/00001',
+            'amount_due' => 215,
+            'amount_paid' => 215,
+            'status' => 'paid',
+        ]);
+
+        // Les deux branches du OR, séparément : borner la recherche au statut ne
+        // doit pas revenir à amputer l'une d'elles.
+        mountTreasury($admin)
+            ->set('statusFilter', 'paid')
+            ->set('search', 'Lemoine')
+            ->assertSee('LEAK/2026/00001')
+            ->set('search', 'LEAK/2026/00001')
+            ->assertSee('Nadia Lemoine');
+    });
+
+    it('does not reach settled payments when selecting every search result', function (): void {
+        Queue::fake();
+
+        $admin = User::factory()->create();
+        $member = User::factory()->create(['first_name' => 'Nadia', 'last_name' => 'Lemoine']);
+        $subscription = Subscription::factory()->create(['user_id' => $member->id]);
+
+        $subscription->payments()->create([
+            'reference' => 'LEAK/2026/00001',
+            'amount_due' => 215,
+            'amount_paid' => 215,
+            'status' => 'paid',
+        ]);
+        $subscription->payments()->create([
+            'reference' => 'LEAK/2026/00002',
+            'amount_due' => 125,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        // « Tout sélectionner » passe par allMatchingPaymentIds(), qui est privée :
+        // le seul point d'observation public est ce que l'action de masse enfile.
+        mountTreasury($admin)
+            ->set('statusFilter', 'pending')
+            ->set('search', 'Lemoine')
+            ->set('selectingAllResults', true)
+            ->call('bulkSendReminder');
+
+        Queue::assertPushed(SendPaymentReminderJob::class, 1);
     });
 });

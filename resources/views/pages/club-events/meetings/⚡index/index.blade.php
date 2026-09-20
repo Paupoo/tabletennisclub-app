@@ -125,7 +125,7 @@
                     :create-label="__('New meeting')"
                     :create-href="$this->canManage ? route('admin.meetings.create') : null" />
             @else
-                <x-table :headers="$headers" :rows="$meetings" :sort-by="$sortBy"
+                <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$meetings" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
                     @scope('cell_title', $meeting)
                         <div class="flex items-center gap-2">

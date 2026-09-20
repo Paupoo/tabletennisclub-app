@@ -229,6 +229,24 @@ Allez dans **Interclubs → Équipes**. Créez ou modifiez des équipes. Assigne
 
 Allez dans **Interclubs → Sélection capitaines**. Examinez les joueurs disponibles pour chaque journée et confirmez la composition d'équipe.
 
+### Joueurs libres et règle C.22
+
+Sous l'effectif, le panneau de composition propose les **joueurs libres de la journée** : ceux qui se sont déclarés disponibles pour la rencontre de leur propre équipe, que leur capitaine n'a pas retenus, et que personne n'a engagés ailleurs. Même journée, même catégorie, jamais au-delà.
+
+Un joueur n'y entre **qu'une fois la composition de son équipe envoyée** : tant que son capitaine n'a pas tranché, il est en attente et non disponible. Quand une équipe n'a pas encore composé, le panneau la nomme, nomme son capitaine et donne ses coordonnées — il reste à l'appeler.
+
+Il n'y a **pas d'invitation dans l'application** : le capitaine téléphone, et quand le joueur accepte il le coche comme n'importe qui de son effectif. Le téléphone et l'e-mail sont affichés pour cela, même si le membre n'a pas ouvert ses coordonnées au reste du club — c'est l'extension délibérée de la règle qui vaut déjà pour l'effectif d'un capitaine.
+
+Sur ces listes, l'application applique l'**article C.22 du règlement fédéral** : le premier joueur d'une équipe ne peut avoir un indice de référence plus petit — donc être plus fort — que le troisième joueur de l'équipe supérieure, le deuxième chez les dames et les catégories d'âge. La sanction frappe l'équipe inférieure, qui perd par forfait.
+
+Concrètement :
+
+- un joueur du pool que la règle interdit **n'est pas proposé**, mais le nombre de joueurs masqués est affiché ;
+- un joueur du **propre effectif** du capitaine reste visible, **case grisée**, motif écrit sous son nom ;
+- quand la légalité dépend d'une composition que l'équipe supérieure n'a pas encore faite, l'avertissement est orange et **rien n'est bloqué**.
+
+Deux limites à connaître. Le rang des équipes se déduit de leur **nom** (A, B, C… puis 1, 2, 3 au-delà de Z), faute d'un rang stocké : si un nom d'équipe ne se range pas, la règle se tait pour toute la catégorie et le dit. Et le règlement se lit sur le troisième joueur *ayant effectivement joué*, inconnaissable avant la rencontre : l'application prédit à partir des compositions prévues, elle ne certifie pas.
+
 ### Gestion des disponibilités
 
 Envoyez des demandes de disponibilités aux joueurs avant chaque journée depuis la page de gestion des interclubs. Les joueurs répondent par email ou dans l'application. Consultez les réponses dans le tableau de bord des disponibilités.

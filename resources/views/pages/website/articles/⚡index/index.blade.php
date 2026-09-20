@@ -172,7 +172,7 @@
                     :create-label="__('Write an article')"
                     :create-href="auth()->user()->can('news_posts.manage') ? route('admin.website.articles.create') : null" />
             @else
-                <x-table :headers="$headers" :rows="$articles" :sort-by="$sortBy"
+                <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$articles" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
                     @scope('cell_title', $article)
                         <span class="font-medium">{{ $article->title }}</span>

@@ -46,3 +46,31 @@ it('the unreconciled filter count matches the unreconciled tile', function (): v
     expect($filtered)->toBe($tile)
         ->and($filtered)->toBe(2);
 });
+
+it('a searched counterparty outside the date range stays out of the list', function (): void {
+    $admin = transactionsAdmin();
+    $inRange = Transaction::create([
+        'date' => '2026-03-10',
+        'amount' => 50,
+        'counterparty_name' => 'Nadia Lemoine',
+        'description' => 'in range',
+    ]);
+    $outOfRange = Transaction::create([
+        'date' => '2025-11-04',
+        'amount' => 80,
+        'counterparty_name' => 'Nadia Lemoine',
+        'description' => 'out of range',
+    ]);
+
+    // `when()` n'ouvre aucune parenthèse : sans groupe, la recherche sur le nom
+    // du tiers s'évade du filtre de date et ramène toute l'histoire du membre.
+    $component = Livewire::actingAs($admin)
+        ->test(TRANSACTIONS_COMPONENT)
+        ->set('search', 'Lemoine')
+        ->set('dateFrom', '2026-01-01');
+
+    $ids = collect($component->viewData('transactions')->items())->pluck('id');
+
+    expect($ids)->toContain($inRange->id)
+        ->and($ids)->not->toContain($outOfRange->id);
+});

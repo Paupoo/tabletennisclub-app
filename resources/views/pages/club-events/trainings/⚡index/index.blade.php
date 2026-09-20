@@ -209,7 +209,16 @@
                                         :label="__('Add a member')" wire:click="openAddMember" />
                                 </div>
                             @else
-                                <div class="overflow-x-auto rounded-xl border border-base-300 bg-base-100">
+                                {{-- `overflow-x-auto` rend la table défilable sur un téléphone, mais
+                                     il ouvre aussi un contexte de rognage : le panneau de
+                                     <x-admin.shared.row-menu>, en `lg:absolute`, s'y faisait couper.
+                                     Ce roster est le premier endroit où ce composant rencontre un
+                                     <table> — les onze autres écrans l'emploient dans des listes.
+                                     À partir de lg la table tient dans sa boîte, donc le défilement
+                                     n'a plus rien à protéger et le rognage part avec lui. En dessous,
+                                     le panneau est un `fixed` en feuille du bas, que `overflow` ne
+                                     retient pas. --}}
+                                <div class="overflow-x-auto rounded-xl border border-base-300 bg-base-100 lg:overflow-x-visible">
                                     <table class="table table-sm">
                                         <thead>
                                             <tr>
@@ -230,6 +239,15 @@
                                                 @if ($group['key'] === 'enrolled')
                                                     <th class="text-center">{{ __('Attendance') }}</th>
                                                 @endif
+                                                {{-- La colonne n'apparaît que pour qui peut agir : sortir
+                                                     quelqu'un d'un pack touche à l'argent de son affiliation,
+                                                     donc c'est la serrure de l'écran Affiliations qui commande,
+                                                     pas celle qui a ouvert cette page. --}}
+                                                @can('subscriptions.manage')
+                                                    @if ($group['key'] !== 'past')
+                                                        <th class="w-px text-right">{{ __('Actions') }}</th>
+                                                    @endif
+                                                @endcan
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -288,6 +306,46 @@
                                                             {{ $row['rate'] !== null ? $row['rate'] . '%' : '—' }}
                                                         </td>
                                                     @endif
+
+                                                    @can('subscriptions.manage')
+                                                        @if ($group['key'] === 'enrolled')
+                                                            <td class="w-px">
+                                                                {{-- Déplacer reste dans la ligne, désinscrire passe
+                                                                     dans le menu : c'est le geste qui peut rendre de
+                                                                     l'argent, il ne doit pas se déclencher au frôlement. --}}
+                                                                <x-admin.shared.row-menu :label="__('Move')"
+                                                                    icon="o-arrows-right-left"
+                                                                    wire-click="openMoveMember({{ $row['id'] }})">
+                                                                    <li>
+                                                                        <button type="button"
+                                                                            class="w-full justify-start gap-2 text-start text-error"
+                                                                            wire:click="openLeaveMember({{ $row['id'] }})">
+                                                                            <x-icon name="o-user-minus" class="h-4 w-4" />
+                                                                            {{ __('Remove from the pack') }}
+                                                                        </button>
+                                                                    </li>
+                                                                </x-admin.shared.row-menu>
+                                                            </td>
+                                                        @elseif ($group['key'] !== 'past')
+                                                            <td class="w-px">
+                                                                {{-- Ni date de sortie, ni euro, ni trace : la ligne est
+                                                                     détachée. Mais une place dans la file ne se retrouve
+                                                                     pas — on la reprend à la fin —, d'où la confirmation. --}}
+                                                                <x-admin.shared.row-menu>
+                                                                    <li>
+                                                                        <button type="button"
+                                                                            class="w-full justify-start gap-2 text-start text-error"
+                                                                            wire:click="openRemoveFromRoster({{ $row['id'] }})">
+                                                                            <x-icon name="o-x-mark" class="h-4 w-4" />
+                                                                            {{ $group['key'] === 'pending'
+                                                                                ? __('Dismiss the request')
+                                                                                : __('Remove from the waiting list') }}
+                                                                        </button>
+                                                                    </li>
+                                                                </x-admin.shared.row-menu>
+                                                            </td>
+                                                        @endif
+                                                    @endcan
                                                 </tr>
                                             @endforeach
                                         </tbody>
@@ -575,7 +633,7 @@
                                         {{-- Actions --}}
                                         <div class="mt-auto flex flex-nowrap items-center gap-1 border-t border-base-300 pt-2">
                                             <x-button class="btn-ghost btn-sm min-w-0 flex-1 text-xs"
-                                                icon="o-arrow-top-right-on-square" :label="__('Open')"
+                                                icon="o-eye" :label="__('Details')"
                                                 wire:click="openPack({{ $pack->id }})" />
                                             <x-button class="btn-ghost btn-sm shrink-0 text-xs" icon="o-pencil"
                                                 :aria-label="__('Edit')"
@@ -1050,6 +1108,62 @@
         <x-slot:actions>
             <x-button :label="__('Cancel')" wire:click="$set('addMemberModal', false)" />
             <x-button :label="__('Add the member')" class="btn-primary" wire:click="addMemberToPack" spinner />
+        </x-slot:actions>
+    </x-app-modal>
+
+    {{-- ── Dismiss a request, or leave the waiting list ─────────────────────── --}}
+    <x-confirm-modal model="removeFromRosterModal"
+        :title="$removeFromRosterStatus === 'pending'
+            ? __('Dismiss this request?')
+            : __('Take this member off the waiting list?')"
+        :confirmLabel="__('Remove')" confirmAction="confirmRemoveFromRoster" :open="$removeFromRosterModal">
+        <p>{{ $removeFromRosterName }}</p>
+        <p class="mt-2 text-sm opacity-70">
+            {{ $removeFromRosterStatus === 'pending'
+                ? __('Nothing was validated and nothing was billed: the line is simply detached, and the member can ask again.')
+                : __('The queue is renumbered behind them. Coming back means starting at the end of it.') }}
+        </p>
+    </x-confirm-modal>
+
+    {{-- ── Take an enrolled member out of the pack ──────────────────────────── --}}
+    <x-app-modal :title="__('Remove :member from this pack?', ['member' => $leaveMemberName])"
+        wire:model="leaveMemberModal" separator :open="$leaveMemberModal">
+        <p class="text-sm text-base-content/70">
+            {{ __('The months already attended stay billed. Only what drops out of the amount due is offered back — and never more than the member actually paid.') }}
+        </p>
+        <p class="mt-2 text-sm text-base-content/70">
+            {{ __('A refund, if there is one, enters the treasury workflow. The spot goes back to the waiting list.') }}
+        </p>
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('leaveMemberModal', false)" />
+            <x-button :label="__('Remove from the pack')" class="btn-error" wire:click="confirmLeaveMember" spinner />
+        </x-slot:actions>
+    </x-app-modal>
+
+    {{-- ── Move an enrolled member to another pack ──────────────────────────── --}}
+    <x-app-modal :title="__('Move :member to another pack', ['member' => $moveMemberName])"
+        wire:model="moveMemberModal" separator :open="$moveMemberModal">
+        {{-- Le champ d'abord, les explications ensuite. La liste de Mary bascule
+             au-dessus du champ quand elle ne tient pas dessous, et elle débordait
+             alors par le haut de la modale, rognée. Un paragraphe posé avant le
+             champ le pousse vers le bas et lui retire précisément la place dont
+             la liste a besoin. `height` plafonne la liste en second rideau. --}}
+        <x-choices-offline :label="__('Destination pack')" wire:model="moveTargetPackId"
+            :options="$this->moveTargetOptions" option-label="name" single searchable
+            height="max-h-52" />
+
+        <p class="mt-4 text-sm text-base-content/70">
+            {{ __('The pack left behind stays billed up to today, and the new one starts billing next month — so this month is never paid twice. At equal price, moving costs nothing.') }}
+        </p>
+
+        <p class="mt-1 text-xs text-base-content/50">
+            {{ __('Packs withdrawn from the offer are not listed. A full pack still is — marked, and yours to override.') }}
+        </p>
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('moveMemberModal', false)" />
+            <x-button :label="__('Move the member')" class="btn-primary" wire:click="confirmMoveMember" spinner />
         </x-slot:actions>
     </x-app-modal>
 

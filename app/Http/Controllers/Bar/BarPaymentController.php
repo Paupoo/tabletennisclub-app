@@ -12,7 +12,7 @@ use App\Domains\Shared\Enums\Permission;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class BarPaymentController extends Controller
 {
@@ -53,7 +53,7 @@ class BarPaymentController extends Controller
             ->with('success', 'Paiement enregistré.');
     }
 
-    public function show(Request $request, BarOrder $order, GeneratePaymentQR $generatePaymentQR): View
+    public function show(Request $request, BarOrder $order, GeneratePaymentQR $generatePaymentQR): Response
     {
         // `bar.orders.takeover` : un bar tourne en équipe, et celui qui encaisse n'est
         // presque jamais celui qui a servi. La permission existait, elle est accordée
@@ -62,6 +62,13 @@ class BarPaymentController extends Controller
             && $request->user()?->can(Permission::BarOrdersTakeover->value) !== true) {
             abort(403);
         }
+
+        if ($order->is_paid) {
+            return redirect()
+                ->route('bar.orders.index')
+                ->with('error', 'Commande déjà payée.');
+        }
+
         // load items + product for display
         $order->load('items.product');
 
@@ -76,6 +83,9 @@ class BarPaymentController extends Controller
             $qrCode = $generatePaymentQR($payment);
         }
 
-        return view('bar.payments.index', compact('order', 'method', 'qrCode'));
+        return response()
+            ->view('bar.payments.index', compact('order', 'method', 'qrCode'))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache');
     }
 }

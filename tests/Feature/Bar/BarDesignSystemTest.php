@@ -107,6 +107,39 @@ it('renders the payment screen through the club layout', function (): void {
         ->assertSee('À encaisser', escape: false);
 });
 
+it('does not reopen a paid order from browser history', function (): void {
+    $order = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 180,
+        'is_paid' => true,
+        'paid_at' => now(),
+        'payment_method' => 'cash',
+    ]);
+
+    $this->actingAs($this->manager)
+        ->get(route('bar.payment.show', $order))
+        ->assertRedirect(route('bar.orders.index'))
+        ->assertSessionHas('error', 'Commande déjà payée.');
+
+    $this->actingAs($this->manager)
+        ->get(route('bar.payment.show', ['order' => $order, 'method' => 'qr']))
+        ->assertRedirect(route('bar.orders.index'));
+});
+
+it('does not cache an unpaid order payment screen', function (): void {
+    $order = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 180,
+        'is_paid' => false,
+    ]);
+
+    $this->actingAs($this->manager)
+        ->get(route('bar.payment.show', $order))
+        ->assertOk()
+        ->assertHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        ->assertHeader('Pragma', 'no-cache');
+});
+
 it('lists only unpaid orders, each with its cash-out button', function (): void {
     // BarOrderController::index() ne retourne que les commandes ouvertes
     // (`where('is_paid', 0)`). L'écran est donc une file d'encaissement : une

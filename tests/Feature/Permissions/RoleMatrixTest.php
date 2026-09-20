@@ -51,6 +51,14 @@ describe('matrix invariants', function (): void {
 });
 
 describe('what a délégation actually grants', function (): void {
+    it('keeps bar access with the two operational bar roles', function (): void {
+        expect(Role::BARMAN->permissions())
+            ->toContain(Permission::BarAccess);
+
+        expect(Role::STORE_KEEPER->permissions())
+            ->toContain(Permission::BarAccess);
+    });
+
     it('grants the treasury delegate the treasury, and nothing else', function (): void {
         $user = User::factory()->withRole(Role::TREASURY)->create();
 

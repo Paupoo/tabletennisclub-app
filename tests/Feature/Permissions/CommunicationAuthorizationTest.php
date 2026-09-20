@@ -43,7 +43,7 @@ describe('the bar, previously open to every member', function (): void {
     });
 
     it('opens to whoever holds the bar duty', function (): void {
-        $barkeeper = User::factory()->withRole(Role::BAR)->create();
+        $barkeeper = User::factory()->withRole(Role::BARMAN)->create();
 
         expect($barkeeper->hasRole(Role::COMMITTEE->value))->toBeFalse();
 

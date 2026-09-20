@@ -370,7 +370,7 @@ it('grants audit log access on the supervision delegation', function (array $rol
 */
 it('renders a rights change like any other entry, named and with its diff', function (): void {
     $admin = User::factory()->isAdmin()->create();
-    $member = User::factory()->withRole(Role::BAR)->create();
+    $member = User::factory()->withRole(Role::BARMAN)->create();
 
     SyncUserAccessAction::handle(
         $member,
@@ -381,7 +381,7 @@ it('renders a rights change like any other entry, named and with its diff', func
     $component = Livewire::actingAs($admin)
         ->test('pages::club-admin.audit.index')
         ->assertSee(__('Rights changed'))
-        ->assertSee(Role::BAR->value)
+        ->assertSee(Role::BARMAN->value)
         ->assertSee(Role::WEBSITE->value);
 
     // The raw event name has one legitimate home on this page: the value of its
@@ -423,7 +423,7 @@ it('leaves a rights change as the single entry it is', function (): void {
 
     SyncUserAccessAction::handle(
         $member,
-        new AccessData(delegations: [Role::BAR->value]),
+        new AccessData(delegations: [Role::BARMAN->value]),
         $admin,
     );
 

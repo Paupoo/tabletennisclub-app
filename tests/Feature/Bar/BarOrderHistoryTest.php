@@ -23,16 +23,16 @@ it('keeps an overnight service in one history day', function (): void {
         'name' => 'Overnight',
         'total_price' => 100,
         'is_paid' => false,
-        'created_at' => '2026-09-19 21:00:00',
     ]);
+    $overnight->forceFill(['created_at' => '2026-09-19 21:00:00'])->saveQuietly();
 
     $outsideBusinessDay = BarOrder::create([
         'created_by' => $this->manager->id,
         'name' => 'Tomorrow',
         'total_price' => 100,
         'is_paid' => false,
-        'created_at' => '2026-09-20 07:00:00',
     ]);
+    $outsideBusinessDay->forceFill(['created_at' => '2026-09-20 07:00:00'])->saveQuietly();
 
     $response = $this->get(route('bar.orders.history'));
 

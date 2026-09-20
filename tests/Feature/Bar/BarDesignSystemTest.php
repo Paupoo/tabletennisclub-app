@@ -133,11 +133,16 @@ it('does not cache an unpaid order payment screen', function (): void {
         'is_paid' => false,
     ]);
 
-    $this->actingAs($this->manager)
+    $response = $this->actingAs($this->manager)
         ->get(route('bar.payment.show', $order))
         ->assertOk()
-        ->assertHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
         ->assertHeader('Pragma', 'no-cache');
+
+    expect($response->headers->get('Cache-Control'))
+        ->toContain('no-store')
+        ->toContain('no-cache')
+        ->toContain('must-revalidate')
+        ->toContain('max-age=0');
 });
 
 it('lists only unpaid orders, each with its cash-out button', function (): void {
@@ -194,8 +199,10 @@ it('shows the stock state of each product on the order screen', function (): voi
 });
 
 it('searches products on the order screen', function (): void {
+    $this->actingAs($this->manager)
+        ->withSession(['bar_tab_name' => 'Alpa A']);
+
     Livewire::actingAs($this->manager)
-        ->withSession(['bar_tab_name' => 'Alpa A'])
         ->test('pages::bar.counter')
         ->set('search', 'jupiler')
         ->assertSee('Jupiler 25 cl')

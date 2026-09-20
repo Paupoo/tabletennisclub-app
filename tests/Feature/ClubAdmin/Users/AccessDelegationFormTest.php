@@ -72,14 +72,14 @@ describe('state 1 — both rights', function (): void {
             ->set('first_name', 'Modifie')
             ->set('is_committee_member', true)
             ->set('committee_role', CommitteeRolesEnum::SECRETARY->value)
-            ->set('delegations', [Role::BAR->value])
+            ->set('delegations', [Role::BARMAN->value])
             ->call('save');
 
         expect($this->target->fresh())
             ->first_name->toBe('Modifie')
             ->committee_role->toBe(CommitteeRolesEnum::SECRETARY)
             ->hasRole(Role::COMMITTEE->value)->toBeTrue()
-            ->hasRole(Role::BAR->value)->toBeTrue();
+            ->hasRole(Role::BARMAN->value)->toBeTrue();
     });
 
     it('creates a member with their rights in one go', function (): void {
@@ -96,7 +96,7 @@ describe('state 1 — both rights', function (): void {
             ->set('password_confirmation', 'Sup3r-Str0ng-P4ss!')
             ->set('is_committee_member', true)
             ->set('committee_role', CommitteeRolesEnum::PRESIDENT->value)
-            ->set('delegations', [Role::BAR->value])
+            ->set('delegations', [Role::BARMAN->value])
             ->call('save')
             ->assertHasNoErrors();
 
@@ -104,7 +104,7 @@ describe('state 1 — both rights', function (): void {
             ->not->toBeNull()
             ->committee_role->toBe(CommitteeRolesEnum::PRESIDENT)
             ->hasRole(Role::COMMITTEE->value)->toBeTrue()
-            ->hasRole(Role::BAR->value)->toBeTrue();
+            ->hasRole(Role::BARMAN->value)->toBeTrue();
     });
 });
 
@@ -119,22 +119,22 @@ describe('state 2 — data only, the members delegate', function (): void {
     });
 
     it('folds the rights layer into a read-only summary', function (): void {
-        $held = User::factory()->withRole(Role::BAR)->create();
+        $held = User::factory()->withRole(Role::BARMAN)->create();
 
         Livewire::actingAs($this->dataDelegate)
             ->test(MEMBER_FORM, ['user' => $held])
-            ->assertSee(Role::BAR->label())
+            ->assertSee(Role::BARMAN->label())
             ->assertDontSee(__('Operational duties. Anyone can hold them, and they stack.'));
     });
 
     it('summarises what the member holds, not what the payload claims', function (): void {
-        $held = User::factory()->withRole(Role::BAR)->create();
+        $held = User::factory()->withRole(Role::BARMAN)->create();
 
         Livewire::actingAs($this->dataDelegate)
             ->test(MEMBER_FORM, ['user' => $held])
             ->set('delegations', [Role::TREASURY->value])
             ->set('is_admin', true)
-            ->assertSee(Role::BAR->label())
+            ->assertSee(Role::BARMAN->label())
             ->assertDontSee(Role::TREASURY->label());
     });
 
@@ -259,14 +259,14 @@ describe('state 3 — rights only, the access manager', function (): void {
             ->set('first_name', 'Falsifie')
             ->set('licence', '999999')
             ->set('iban', 'BE68539007547034')
-            ->set('delegations', [Role::BAR->value])
+            ->set('delegations', [Role::BARMAN->value])
             ->call('save');
 
         expect($this->target->fresh())
             ->first_name->toBe('Origine')
             ->licence->toBe('123456')
             ->iban->toBeNull()
-            ->hasRole(Role::BAR->value)->toBeTrue();
+            ->hasRole(Role::BARMAN->value)->toBeTrue();
     });
 
     /*
@@ -290,12 +290,12 @@ describe('state 3 — rights only, the access manager', function (): void {
     it('cannot hand out the délégation that hands out délégations', function (): void {
         Livewire::actingAs($this->accessManager)
             ->test(MEMBER_FORM, ['user' => $this->target])
-            ->set('delegations', [Role::ACCESS->value, Role::BAR->value])
+            ->set('delegations', [Role::ACCESS->value, Role::BARMAN->value])
             ->call('save');
 
         expect($this->target->fresh())
             ->hasRole(Role::ACCESS->value)->toBeFalse()
-            ->hasRole(Role::BAR->value)->toBeTrue();
+            ->hasRole(Role::BARMAN->value)->toBeTrue();
     });
 
     it('renders that délégation locked rather than hiding it', function (): void {
@@ -343,12 +343,12 @@ describe('nobody edits their own rights', function (): void {
         Livewire::actingAs($this->admin)
             ->test(MEMBER_FORM, ['user' => $this->admin])
             ->set('first_name', 'Renomme')
-            ->set('delegations', [Role::BAR->value])
+            ->set('delegations', [Role::BARMAN->value])
             ->call('save');
 
         expect($this->admin->fresh())
             ->first_name->toBe('Renomme')
-            ->hasRole(Role::BAR->value)->toBeFalse()
+            ->hasRole(Role::BARMAN->value)->toBeFalse()
             ->hasRole(Role::ADMINISTRATOR->value)->toBeTrue();
     });
 

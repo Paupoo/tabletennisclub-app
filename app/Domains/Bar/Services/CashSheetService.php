@@ -41,6 +41,7 @@ class CashSheetService
 
         $receivedTotalCents = (int) (clone $ordersQuery)
             ->where('is_paid', 1)
+            ->whereNotIn('payment_method', ['offered', 'free'])
             ->sum('total_price');
 
         $unpaidTotalCents = (int) (clone $ordersQuery)

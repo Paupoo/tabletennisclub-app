@@ -104,13 +104,19 @@
             --}}
             <div class="border-base-300 mt-3 border-t pt-3">
                 <button type="button" class="btn btn-outline btn-sm text-muted tap-comfort gap-2"
-                    @click="offered = ! offered" :aria-expanded="offered">
+                    @click="offered = ! offered" :aria-expanded="offered"
+                    @disabled($offeredOrderLimitReached)>
                     <x-icon name="o-gift" class="h-4 w-4" />
                     Offrir cette consommation
                 </button>
+                @if ($offeredOrderLimitReached)
+                    <p class="text-warning mt-2 text-xs">Une commande offerte ne peut pas contenir plus de 4 articles.</p>
+                @elseif ($visitingClubs->isEmpty())
+                    <p class="text-muted mt-2 text-xs">Aucun club visiteur disponible. Utilisez la raison manuelle ci-dessous.</p>
+                @endif
             </div>
 
-            {{-- Consommation offerte : la raison est obligatoire, elle part en feuille de caisse. --}}
+            {{-- Le club reste le parcours normal ; le texte permet de contourner un club manquant. --}}
             <div x-show="offered" x-cloak x-collapse>
                 <form method="POST" action="{{ route('bar.payment.pay', $order) }}"
                     class="border-base-300 mt-3 flex flex-wrap items-end gap-2.5 rounded-lg border border-dashed p-3">
@@ -119,11 +125,23 @@
 
                     <div class="min-w-[12rem] flex-1">
                         <label class="label" for="offered-reason">
-                            <span class="label-text text-xs font-semibold">Raison</span>
+                            <span class="label-text text-xs font-semibold">Club visiteur</span>
                         </label>
-                        <input id="offered-reason" type="text" name="reason" required
-                            class="input input-bordered tap-comfort w-full"
-                            placeholder="ex. arbitres du match">
+                        <select id="offered-reason" name="reason" class="select select-bordered tap-comfort w-full">
+                            <option value="">Sélectionner un club</option>
+                            @foreach ($visitingClubs as $club)
+                                <option value="{{ $club->name }}">{{ $club->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="min-w-[12rem] flex-1">
+                        <label class="label" for="offered-manual-reason">
+                            <span class="label-text text-xs font-semibold">Autre raison</span>
+                        </label>
+                        <input id="offered-manual-reason" name="manual_reason" type="text" maxlength="255"
+                            placeholder="Ex. bénévole, erreur de sélection…"
+                            class="input input-bordered tap-comfort w-full">
                     </div>
 
                     <button type="submit" class="btn btn-secondary tap-comfort gap-2">

@@ -24,6 +24,7 @@ auth.json
 npm-debug.log
 yarn-error.log
 yarn.lock
+pnpm-lock.yaml
 
 # ============================================
 # Storage & Cache

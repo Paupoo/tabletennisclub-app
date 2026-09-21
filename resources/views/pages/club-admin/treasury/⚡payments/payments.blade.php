@@ -460,7 +460,7 @@
             <div class="flex items-start gap-3 p-3 rounded-xl bg-success/10 border border-success/20 text-sm">
                 <x-icon name="o-sparkles" class="w-5 h-5 text-success shrink-0 mt-0.5" />
                 <span>
-                    {{ __(':count perfect match(es) found — structured reference and amount match exactly. Confirm to reconcile all at once.', ['count' => count($batchMatches)]) }}
+                    {{ __(':count allocation(s) found on the structured reference. The amount says how much, no longer to whom.', ['count' => count($batchMatches)]) }}
                 </span>
             </div>
 

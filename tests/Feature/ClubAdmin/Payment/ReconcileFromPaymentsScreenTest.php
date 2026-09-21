@@ -67,3 +67,77 @@ it('leaves the balance owed when the treasurer reconciles a partial transfer', f
         // de la transaction resterait à zéro.
         ->and($transaction->fresh()->allocated_amount)->toBe(200.0);
 })->group('payments', 'reconciliation');
+
+/**
+ * Le cas A par le rapprochement en masse.
+ *
+ * Les transactions étaient indexées par `keyBy(référence)` : deux virements
+ * portant la même communication structurée s'écrasaient l'un l'autre, et seul
+ * le dernier survivait. Le premier disparaissait sans un mot — aucun test ne
+ * pouvait le voir, celui qui s'en chargeait ayant recopié le `keyBy` fautif.
+ *
+ * La référence structurée est un identifiant que le club a lui-même émis :
+ * elle désigne le paiement à elle seule. Le montant ne décide plus de *qui*,
+ * seulement de *combien*.
+ */
+it('offers every transfer carrying the payment reference, not just the last one', function (): void {
+    [$subscription, $payment] = affiliationAwaiting();
+
+    foreach ([200.0, 165.0] as $amount) {
+        Transaction::create([
+            'date' => now()->toDateString(),
+            'description' => 'VIREMENT EN VOTRE FAVEUR',
+            'amount' => $amount,
+            'counterparty_name' => $subscription->user->full_name,
+            'structured_reference' => $payment->reference,
+        ]);
+    }
+
+    $screen = reconcileScreen(User::factory()->create())
+        ->call('previewBatchMatch');
+
+    expect($screen->get('batchMatches'))->toHaveCount(2);
+
+    $screen->call('confirmBatchReconcile');
+
+    expect($payment->fresh()->amount_paid)->toBe(365.0)
+        ->and($payment->fresh()->status)->toBe('paid')
+        ->and($subscription->fresh()->balanceDue())->toBe(0.0);
+})->group('payments', 'batch');
+
+/**
+ * Une transaction déjà entièrement affectée ne revient pas dans la sélection.
+ *
+ * Le masse filtrait sur `whereDoesntHave('payment')`, une colonne que plus
+ * personne n'écrit depuis que le geste passe par l'action. Sans reprise, il
+ * proposerait à l'infini des lignes qu'il a lui-même soldées — et I1 les
+ * refuserait une à une, en silence, au milieu de la boucle.
+ */
+it('leaves out a transfer it has already allocated in full', function (): void {
+    // Le paiement reste `pending` après le premier passage — il doit encore
+    // 165 €. C'est ce qui rend ce test discriminant : filtrer sur le statut du
+    // paiement ne suffit pas à écarter la transaction, il faut regarder ce
+    // qu'elle a encore à placer.
+    [, $payment] = affiliationAwaiting();
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 200.0,
+        'counterparty_name' => 'Payeur',
+        'structured_reference' => $payment->reference,
+    ]);
+
+    reconcileScreen(User::factory()->create())
+        ->call('previewBatchMatch')
+        ->call('confirmBatchReconcile');
+
+    expect($payment->fresh()->status)->toBe('pending')
+        ->and($payment->fresh()->amount_paid)->toBe(200.0)
+        ->and($transaction->fresh()->isSettled())->toBeTrue();
+
+    // Second passage : le paiement réclame toujours, la transaction n'a plus
+    // rien à donner.
+    expect(reconcileScreen(User::factory()->create())->call('previewBatchMatch')->get('batchMatches'))
+        ->toBeEmpty();
+})->group('payments', 'batch');

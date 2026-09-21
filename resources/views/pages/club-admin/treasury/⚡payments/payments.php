@@ -153,8 +153,11 @@ new class extends Component
                     return;
                 }
 
+                // Le montant vient de la sélection : c'est celui que le
+                // trésorier a sous les yeux dans la modale, et le recalculer
+                // ici ferait diverger ce qu'il confirme de ce qui est écrit.
                 (new AllocateTransactionAction)($transaction, [
-                    $payment->id => $this->allocatableAmount($payment, $transaction),
+                    $payment->id => (float) $match['amount'],
                 ]);
 
                 $count++;
@@ -406,26 +409,62 @@ new class extends Component
 
         $pendingPayments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
             ->where('status', 'pending')
-            ->whereNull('transaction_id')
             ->get();
 
-        $unreconciledTransactions = Transaction::whereDoesntHave('payment')
-            ->where('amount', '>', 0)
+        // Ce qu'il reste à placer sur chaque ligne de relevé, en centimes. Le
+        // compteur vit pour toute la passe : une même transaction peut servir
+        // plusieurs paiements, et chacun ne prend que ce qui reste.
+        $remaining = [];
+
+        // `groupBy`, pas `keyBy` : deux virements portant la même communication
+        // structurée sont deux versements sur la même créance, pas un doublon.
+        // L'index par clé unique n'en gardait qu'un, silencieusement.
+        //
+        // Une ligne sans communication structurée n'entre pas : le masse ne
+        // tranche que sur l'identifiant que le club a lui-même émis. Les
+        // rapprochements par nom ou IBAN se choisissent, ils ne se décident pas.
+        $byReference = Transaction::where('amount', '>', 0)
+            ->whereNull('settled_at')
+            ->whereNotNull('structured_reference')
             ->get()
-            ->keyBy(fn ($t): string => $this->normalizeReference($t->structured_reference ?? '___' . $t->id));
+            ->filter(function (Transaction $transaction) use (&$remaining): bool {
+                $remaining[$transaction->id] = (int) round(abs($transaction->residue()) * 100);
+
+                return $remaining[$transaction->id] > 0;
+            })
+            ->groupBy(fn (Transaction $transaction): string => $this->normalizeReference((string) $transaction->structured_reference));
 
         $this->batchMatches = [];
 
         foreach ($pendingPayments as $payment) {
             $normalizedRef = $this->normalizeReference($payment->reference);
+
             if (! $normalizedRef) {
                 continue;
             }
 
-            $transaction = $unreconciledTransactions->get($normalizedRef);
+            $candidates = $byReference->get($normalizedRef);
 
-            if ($transaction && abs($transaction->amount - $payment->amount_due) < 0.01) {
-                $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
+            if ($candidates === null) {
+                continue;
+            }
+
+            // Le solde restant, en centimes. Le montant ne décide plus de *qui*
+            // — la référence l'a déjà fait — seulement de *combien*.
+            $balance = (int) round(((float) $payment->amount_due - (float) $payment->amount_paid) * 100);
+
+            $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
+
+            foreach ($candidates as $transaction) {
+                if ($balance <= 0) {
+                    break;
+                }
+
+                $take = min($balance, $remaining[$transaction->id]);
+
+                if ($take <= 0) {
+                    continue;
+                }
 
                 $this->batchMatches[] = [
                     'payment_id' => $payment->id,
@@ -434,16 +473,18 @@ new class extends Component
                     'member' => $payment->payable instanceof DescribesPayment ? $payment->payable->getPayerName() : '—',
                     'event_type' => $label['type'] ?? null,
                     'event_name' => $label['name'] ?? null,
-                    'amount' => $payment->amount_due,
+                    'amount' => round($take / 100, 2),
                     'transaction_date' => $transaction->date,
                     'counterparty' => $transaction->counterparty_name ?? '—',
                 ];
-                $unreconciledTransactions->forget($normalizedRef);
+
+                $remaining[$transaction->id] -= $take;
+                $balance -= $take;
             }
         }
 
         if ($this->batchMatches === []) {
-            $this->warning(__('No perfect matches found. Import a bank statement or reconcile manually.'));
+            $this->warning(__('No reference matches found. Import a bank statement or reconcile manually.'));
 
             return;
         }

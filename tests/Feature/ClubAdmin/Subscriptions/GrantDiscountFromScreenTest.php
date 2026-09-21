@@ -288,3 +288,63 @@ it('discounts a pack the committee adds by hand', function (): void {
         ->and(round((float) $subscription->payments()->where('status', 'pending')->sum('amount_due') / 100, 2))
         ->toBe(195.0);
 })->group('subscriptions', 'discount');
+
+/**
+ * Le champ doit être **atteignable** dans la page rendue.
+ *
+ * Les tests précédents posaient `inlineDiscountValue` directement sur le
+ * composant : ils prouvaient que la remise s'applique, jamais qu'un humain
+ * puisse la saisir. Le repli avait été posé dans une branche du gabarit gardée
+ * par `status !== 'pending'`, sous une condition `status === 'pending'` —
+ * jamais vraie, donc invisible exactement là où il servait.
+ */
+it('shows the inline discount field while reviewing a pending affiliation', function (): void {
+    $subscription = Subscription::factory()->pending()->create([
+        'user_id' => User::factory()->create(['licence' => '445566'])->id,
+        'is_competitive' => true,
+    ]);
+
+    discountScreen()
+        ->call('review', $subscription->id)
+        ->assertSeeHtml('wire:model="inlineDiscountReason"');
+})->group('subscriptions', 'discount');
+
+/**
+ * Et sur une affiliation déjà confirmée, c'est le bouton du geste canonique
+ * qui doit être là.
+ */
+it('shows the canonical discount button on a confirmed affiliation', function (): void {
+    $subscription = affiliationToDiscount();
+
+    discountScreen()
+        ->call('review', $subscription->id)
+        ->assertSeeHtml('openDiscount(' . $subscription->id . ')');
+})->group('subscriptions', 'discount');
+
+/**
+ * Le même contrôle sur les deux autres emplacements : le champ doit être dans
+ * la page, pas seulement dans le composant.
+ */
+it('shows the inline discount field while reviewing a mid-season pack request', function (): void {
+    $subscription = affiliationToDiscount();
+
+    $pack = TrainingPack::factory()->create([
+        'price' => 90,
+        'season_id' => $subscription->season_id,
+    ]);
+    $subscription->trainingPacks()->attach($pack->id, ['status' => 'pending']);
+
+    discountScreen()
+        ->call('reviewTrainingRequest', $subscription->id)
+        ->assertSeeHtml('wire:model="inlineDiscountReason"');
+})->group('subscriptions', 'discount');
+
+it('shows the inline discount field when the committee adds a member to a pack', function (): void {
+    $pack = TrainingPack::factory()->create(['price' => 90]);
+
+    Livewire::actingAs(User::factory()->isAdmin()->create())
+        ->test('pages::club-events.trainings.index')
+        ->set('selectedPackId', $pack->id)
+        ->set('addMemberModal', true)
+        ->assertSeeHtml('wire:model="inlineDiscountReason"');
+})->group('subscriptions', 'discount');

@@ -391,10 +391,6 @@
                     </div>
                 @endif
 
-                @if ($currentRequest->status === 'pending' && ! $paymentGenerated)
-                    <x-admin.shared.inline-discount :mode="$inlineDiscountMode" />
-                @endif
-
                 @if ($currentRequest->discounts->isNotEmpty())
                     <div>
                         <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Discounts') }}</h3>
@@ -592,6 +588,15 @@
                         </span>
                     @endif
                 </div>
+            </div>
+        @endif
+
+        {{-- Remise au fil de la validation (uniquement en review pending).
+             Même garde que le motif de refus : c'est la branche où la fiche
+             d'une affiliation en attente est réellement rendue. --}}
+        @if (! $paymentGenerated && $currentRequest && $currentRequest->status === 'pending')
+            <div class="mt-4">
+                <x-admin.shared.inline-discount :mode="$inlineDiscountMode" />
             </div>
         @endif
 

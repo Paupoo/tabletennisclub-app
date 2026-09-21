@@ -290,10 +290,14 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
 
         // Un `to_refund` compte déjà comme sorti : la demande est dans le
         // circuit trésorerie, la rejouer créerait un doublon.
+        // `amount_due` : c'est l'engagement qui compte comme sorti, pas son
+        // exécution. Un `to_refund` pas encore viré a `amount_paid = 0`, et
+        // le lire ici ferait réapparaître un argent déjà promis au membre.
+        // ReduceOutstandingInvoiceAction avait déjà choisi cette colonne.
         $refunded = (float) $this->payments()
             ->where('payment_method', 'refund')
             ->whereIn('status', ['to_refund', 'paid', 'refunded'])
-            ->sum('amount_paid');
+            ->sum('amount_due');
 
         return round(($received - $refunded) / 100, 2);
     }

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
+use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -314,4 +315,64 @@ it('turns a payment line paid only once it is fully credited', function (): void
     expect($payment->fresh()->status)->toBe('paid')
         ->and($payment->fresh()->amount_paid)->toBe(365.0)
         ->and($subscription->fresh()->status)->toBe('paid');
+})->group('payments', 'reconciliation');
+
+/**
+ * Un remboursement promis n'est pas un remboursement versé.
+ *
+ * `RequestSubscriptionRefundAction` écrivait `amount_paid` dès la création,
+ * avant qu'un euro n'ait quitté la banque : les deux états portaient les mêmes
+ * chiffres et seul le statut les distinguait. Avec le miroir, `amount_due` dit
+ * l'engagement et `amount_paid` ce qui est sorti.
+ *
+ * `netAmountPaid()` ne bouge pas entre les deux : une demande dans le circuit
+ * compte déjà comme sortie — sa docstring le pose, la rejouer créerait un
+ * doublon. Elle lit simplement la colonne qui ne ment plus.
+ */
+it('tells a promised refund from an executed one', function (): void {
+    $member = User::factory()->create();
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => $member->id,
+        'status' => 'confirmed',
+        'amount_due' => 365,
+    ]);
+
+    $payment = $subscription->payments()->create([
+        'reference' => '123/4567/89012',
+        'amount_due' => 365,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    $incoming = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 365.0,
+        'counterparty_name' => $member->full_name,
+    ]);
+
+    (new AllocateTransactionAction)($incoming, [$payment->id => 365.0]);
+
+    $refund = (new RequestSubscriptionRefundAction)($subscription, 65.0);
+
+    // Promis : engagé, rien de sorti.
+    expect($refund->fresh()->amount_due)->toBe(65.0)
+        ->and($refund->fresh()->amount_paid)->toBe(0.0)
+        ->and($refund->fresh()->status)->toBe('to_refund')
+        ->and($subscription->fresh()->netAmountPaid())->toBe(300.0);
+
+    $outgoing = Transaction::create([
+        'date' => now()->addDays(3)->toDateString(),
+        'description' => 'VIREMENT EN FAVEUR DE TIERS',
+        'amount' => -65.0,
+        'counterparty_name' => $member->full_name,
+    ]);
+
+    (new AllocateTransactionAction)($outgoing, [$refund->id => 65.0]);
+
+    // Exécuté : la banque a bougé, le net du membre est inchangé.
+    expect($refund->fresh()->amount_paid)->toBe(65.0)
+        ->and($refund->fresh()->status)->toBe('refunded')
+        ->and($subscription->fresh()->netAmountPaid())->toBe(300.0);
 })->group('payments', 'reconciliation');

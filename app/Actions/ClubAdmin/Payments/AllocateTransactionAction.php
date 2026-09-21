@@ -83,25 +83,6 @@ final class AllocateTransactionAction
     }
 
     /**
-     * La ligne est-elle soldée par ce qui vient d'y être crédité ?
-     *
-     * En centimes, sans tolérance à inventer : les deux montants sortent de la
-     * même colonne et la comparaison est exacte.
-     *
-     * Seule une ligne `pending` bascule. `cancelled`, `to_refund` et `refunded`
-     * racontent autre chose que l'attente d'un paiement, et un encaissement ne
-     * les réécrit pas.
-     */
-    private function isSettledByCredits(Payment $payment, int $credited): bool
-    {
-        if ($payment->status !== 'pending' || $payment->payment_method === 'refund') {
-            return false;
-        }
-
-        return $credited >= (int) round((float) $payment->amount_due * 100);
-    }
-
-    /**
      * Le miroir de la ligne, et son statut quand le solde est atteint.
      *
      * `sum()` rend des centimes bruts, le mutateur attend des euros.
@@ -112,8 +93,10 @@ final class AllocateTransactionAction
 
         $attributes = ['amount_paid' => round($credited / 100, 2)];
 
-        if ($this->isSettledByCredits($payment, $credited)) {
-            $attributes['status'] = 'paid';
+        $settled = $this->settledStatusFor($payment, $credited);
+
+        if ($settled !== null) {
+            $attributes['status'] = $settled;
         }
 
         $payment->update($attributes);
@@ -140,6 +123,34 @@ final class AllocateTransactionAction
         $transaction->forceFill([
             'allocated_amount' => round($sign * $allocated, 2),
         ])->save();
+    }
+
+    /**
+     * Le statut que ce qui vient d'être crédité fait atteindre à la ligne, s'il
+     * y en a un.
+     *
+     * En centimes, sans tolérance à inventer : les deux montants sortent de la
+     * même colonne et la comparaison est exacte.
+     *
+     * Deux sens, deux mots. Une créance soldée devient `paid` ; un
+     * remboursement exécuté devient `refunded` — c'est le mot que
+     * `confirmRefundReconcile()` emploie déjà, et en changer ferait diverger
+     * les deux portes du même geste.
+     *
+     * Une ligne qui n'attend plus rien — `cancelled`, ou déjà close — n'est pas
+     * réécrite par un encaissement.
+     */
+    private function settledStatusFor(Payment $payment, int $credited): ?string
+    {
+        if ($credited < (int) round((float) $payment->amount_due * 100)) {
+            return null;
+        }
+
+        return match (true) {
+            $payment->payment_method === 'refund' && $payment->status === 'to_refund' => 'refunded',
+            $payment->payment_method !== 'refund' && $payment->status === 'pending' => 'paid',
+            default => null,
+        };
     }
 
     /**

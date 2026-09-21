@@ -92,7 +92,10 @@ describe('CancelSubscriptionWithRefundAction', function (): void {
             ->and($refundPayment->status)->toBe('to_refund')
             ->and($refundPayment->payment_method)->toBe('refund')
             ->and($refundPayment->amount_due)->toBe(125.0)
-            ->and($refundPayment->amount_paid)->toBe(125.0);
+            // Engagé, pas encore versé : `amount_paid` est le miroir de ce qui
+            // a quitté la banque, et rien n'en est sorti tant qu'aucun virement
+            // n'est rapproché.
+            ->and($refundPayment->amount_paid)->toBe(0.0);
 
         Notification::assertSentTo($subscription->user, SubscriptionCancelledNotification::class);
     });

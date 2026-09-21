@@ -483,7 +483,11 @@ new class extends Component
 
             foreach ($outgoingTransactions as $key => $transaction) {
                 $ibanMatch = $normalizedIban && $this->normalizeIban($transaction->counterparty_bank_account ?? '') === $normalizedIban;
-                $amountMatch = abs(abs($transaction->amount) - $payment->amount_paid) < 0.01;
+                // `amount_due` : sur une ligne de remboursement c'est
+                // l'engagement, et `amount_paid` ne vaut plus que ce qui est
+                // déjà sorti — zéro tant que le virement n'est pas fait, donc
+                // exactement les lignes que cet appariement cherche.
+                $amountMatch = abs(abs($transaction->amount) - $payment->amount_due) < 0.01;
 
                 if ($ibanMatch && $amountMatch) {
                     $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
@@ -496,7 +500,7 @@ new class extends Component
                         'event_type' => $label['type'] ?? null,
                         'event_name' => $label['name'] ?? null,
                         'iban' => $user->iban,
-                        'amount' => $payment->amount_paid,
+                        'amount' => $payment->amount_due,
                         'transaction_date' => $transaction->date,
                         'counterparty' => $transaction->counterparty_name ?? '—',
                     ];

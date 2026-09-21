@@ -24,7 +24,12 @@ class RequestSubscriptionRefundAction
         $payment = $subscription->payments()->create([
             'reference' => (new GeneratePaymentReference)(),
             'amount_due' => $amount,
-            'amount_paid' => $amount,
+            // Rien n'est sorti tant que la banque n'a rien bougé : `amount_due`
+            // porte l'engagement, `amount_paid` reste le miroir de ce qui a
+            // réellement quitté le compte. Les deux portaient le même chiffre,
+            // et « remboursement promis » ne se distinguait plus de
+            // « remboursement versé » autrement que par le statut.
+            'amount_paid' => 0,
             'status' => 'to_refund',
             'payment_method' => 'refund',
         ]);

@@ -183,3 +183,90 @@ it('executes a refund through the allocation action', function (): void {
         ->and($outgoing->fresh()->allocated_amount)->toBe(-65.0)
         ->and($outgoing->fresh()->isSettled())->toBeTrue();
 })->group('payments', 'reconciliation');
+
+/**
+ * Le trésorier ouvre un remboursement sur demande du membre.
+ *
+ * Aucun bouton n'existait : les six appelants de RequestSubscriptionRefundAction
+ * sont des gestes de secrétariat — annuler une affiliation, arrêter un pack,
+ * déplacer un membre. Un membre qui appelle pour dire « j'ai payé deux fois »
+ * obligeait le trésorier à passer par le secrétaire, qui devait modifier une
+ * affiliation pour provoquer un remboursement qu'il ne voulait pas provoquer.
+ */
+it('lets the treasurer open a refund on a payment, with a reason', function (): void {
+    [$subscription, $payment] = affiliationAwaiting();
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 365.0,
+        'counterparty_name' => $subscription->user->full_name,
+    ]);
+
+    reconcileScreen(User::factory()->create())
+        // Les 365 € doivent être rentrés : on ne rembourse pas ce qu'on n'a pas.
+        ->call('openReconcile', $payment->id)
+        ->set('selectedTransactionId', $transaction->id)
+        ->call('confirmReconcile')
+        ->call('openRefundRequest', $payment->id)
+        ->set('refundRequestAmount', 65.0)
+        ->set('refundRequestReason', 'Double virement du membre')
+        ->call('confirmRefundRequest')
+        ->assertHasNoErrors();
+
+    $refund = $subscription->fresh()->payments()->where('payment_method', 'refund')->first();
+
+    expect($refund)->not->toBeNull()
+        ->and($refund->status)->toBe('to_refund')
+        ->and($refund->amount_due)->toBe(65.0)
+        ->and($refund->amount_paid)->toBe(0.0);
+})->group('payments', 'refund');
+
+/**
+ * Le plafond est ce qui est réellement rentré, net des remboursements déjà
+ * engagés. `netAmountPaid()` existait pour ça — sa docstring prévient que s'en
+ * passer rembourserait deux fois — sans être appelée par aucun écran.
+ */
+it('refuses to refund more than the member actually paid', function (): void {
+    [$subscription, $payment] = affiliationAwaiting();
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 200.0,
+        'counterparty_name' => $subscription->user->full_name,
+    ]);
+
+    reconcileScreen(User::factory()->create())
+        ->call('openReconcile', $payment->id)
+        ->set('selectedTransactionId', $transaction->id)
+        ->call('confirmReconcile')
+        ->call('openRefundRequest', $payment->id)
+        ->set('refundRequestAmount', 300.0)
+        ->set('refundRequestReason', 'Trop demandé')
+        ->call('confirmRefundRequest');
+
+    expect($subscription->fresh()->payments()->where('payment_method', 'refund')->count())->toBe(0);
+})->group('payments', 'refund');
+
+it('requires a reason before opening a refund', function (): void {
+    [$subscription, $payment] = affiliationAwaiting();
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 365.0,
+        'counterparty_name' => $subscription->user->full_name,
+    ]);
+
+    reconcileScreen(User::factory()->create())
+        ->call('openReconcile', $payment->id)
+        ->set('selectedTransactionId', $transaction->id)
+        ->call('confirmReconcile')
+        ->call('openRefundRequest', $payment->id)
+        ->set('refundRequestAmount', 65.0)
+        ->set('refundRequestReason', '   ')
+        ->call('confirmRefundRequest');
+
+    expect($subscription->fresh()->payments()->where('payment_method', 'refund')->count())->toBe(0);
+})->group('payments', 'refund');

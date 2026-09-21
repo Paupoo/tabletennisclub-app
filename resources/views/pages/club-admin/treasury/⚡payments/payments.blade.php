@@ -254,9 +254,21 @@
                     class="btn-xs btn-outline" />
             @endcan
             @else
-            <div class="flex items-center gap-1.5 text-success text-xs font-bold">
-                <x-icon name="o-check-circle" class="w-4 h-4" />
-                {{ __('Paid') }}
+            <div class="flex items-center gap-1.5">
+                <span class="flex items-center gap-1.5 text-success text-xs font-bold">
+                    <x-icon name="o-check-circle" class="w-4 h-4" />
+                    {{ __('Paid') }}
+                </span>
+                @can('payments.refund')
+                    {{-- Le membre appelle, le trésorier ouvre. Ce geste n'existait
+                         nulle part : un remboursement ne pouvait naître que d'un
+                         changement de facture côté secrétariat. --}}
+                    <x-button
+                        :label="__('Refund')"
+                        icon="o-arrow-uturn-left"
+                        wire:click="openRefundRequest({{ $payment->id }})"
+                        class="btn-xs btn-ghost" />
+                @endcan
             </div>
             @endif
             @endscope
@@ -638,4 +650,28 @@
             @click="mobileActionsOpen = false; $wire.call('toggleSelectionMode')" />
     </x-admin.shared.mobile-actions>
 
+
+    {{-- Ouvrir un remboursement --}}
+    <x-app-modal wire:model="refundRequestModal" :title="__('Open a refund')" separator class="backdrop-blur-sm"
+        :open="$refundRequestModal">
+        <div class="space-y-4">
+            <div class="flex items-center gap-3 rounded-lg border border-info/20 bg-info/10 p-3 text-sm">
+                <x-icon name="o-information-circle" class="h-4 w-4 shrink-0 text-info" />
+                <span>{{ __('The amount cannot exceed what the member actually paid, net of refunds already under way.') }}</span>
+            </div>
+
+            <x-input :label="__('Amount (€)')" type="number" step="0.01" min="0"
+                wire:model="refundRequestAmount" />
+
+            <x-input :label="__('Reason')" wire:model="refundRequestReason"
+                :placeholder="__('Why is the club giving this money back?')"
+                :hint="__('Mandatory. Sent to the treasury and kept with the payment.')" />
+        </div>
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" @click="$wire.refundRequestModal = false" class="btn-ghost" />
+            <x-button :label="__('Open the refund')" icon="o-arrow-uturn-left" class="btn-primary"
+                wire:click="confirmRefundRequest" spinner="confirmRefundRequest" />
+        </x-slot:actions>
+    </x-app-modal>
 </div>

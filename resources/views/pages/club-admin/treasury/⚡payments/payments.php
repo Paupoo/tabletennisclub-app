@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
+use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Contracts\DescribesPayment;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
@@ -66,6 +67,14 @@ new class extends Component
     public bool $refundBatchModal = false;
 
     public bool $refundModal = false;
+
+    public float $refundRequestAmount = 0.0;
+
+    public bool $refundRequestModal = false;
+
+    public ?int $refundRequestPaymentId = null;
+
+    public string $refundRequestReason = '';
 
     public ?int $refundPaymentId = null;
 
@@ -226,6 +235,66 @@ new class extends Component
         $this->reconcilePaymentId = null;
         $this->selectedTransactionId = null;
         $this->success(__('Payment reconciled successfully.'));
+    }
+
+    /**
+     * Ouvre un remboursement sur une ligne, à la demande du membre.
+     *
+     * Le geste manquait à la trésorerie : un remboursement ne pouvait naître
+     * que d'un changement de facture côté secrétariat. Le membre qui a payé
+     * deux fois n'a rien changé à sa facture.
+     */
+    public function confirmRefundRequest(): void
+    {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
+        $payment = Payment::find($this->refundRequestPaymentId);
+
+        if (! $payment || ! $payment->payable instanceof Subscription) {
+            $this->error(__('A refund can only be opened on an affiliation for now.'));
+
+            return;
+        }
+
+        $reason = trim($this->refundRequestReason);
+
+        if ($reason === '') {
+            $this->error(__('A reason is required to open a refund.'));
+
+            return;
+        }
+
+        // Ce qui est réellement rentré, net des remboursements déjà engagés.
+        // `netAmountPaid()` existait pour ce calcul — sa docstring prévient que
+        // s'en passer rembourserait deux fois — sans qu'aucun écran l'appelle.
+        $ceiling = $payment->payable->netAmountPaid();
+
+        if ($this->refundRequestAmount <= 0.0 || $this->refundRequestAmount > $ceiling) {
+            $this->error(__('A refund cannot exceed the :amount € actually received.', [
+                'amount' => number_format($ceiling, 2, ',', ' '),
+            ]));
+
+            return;
+        }
+
+        (new RequestSubscriptionRefundAction)($payment->payable, $this->refundRequestAmount, $reason);
+
+        $this->reset(['refundRequestModal', 'refundRequestPaymentId', 'refundRequestAmount', 'refundRequestReason']);
+        $this->success(__('Refund opened. The treasury has been notified.'));
+    }
+
+    public function openRefundRequest(int $paymentId): void
+    {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
+        $payment = Payment::find($paymentId);
+
+        $this->refundRequestPaymentId = $paymentId;
+        $this->refundRequestReason = '';
+        $this->refundRequestAmount = $payment?->payable instanceof Subscription
+            ? $payment->payable->netAmountPaid()
+            : 0.0;
+        $this->refundRequestModal = true;
     }
 
     public function confirmRefundReconcile(): void

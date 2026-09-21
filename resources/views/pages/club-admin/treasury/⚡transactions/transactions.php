@@ -2,7 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
+use App\Actions\ClubAdmin\Payments\SettleTransactionResidueAction;
 use App\Domains\ClubAdmin\Payment\Models\BankImport;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -11,6 +16,8 @@ use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +36,15 @@ new class extends Component
 {
     use HasBreadcrumbs, Toast, WithFileUploads, WithPagination;
     use HasBulkActions, HasFilterDrawer;
+
+    /** @var array<string, float|string> payment_id => montant en euros */
+    public array $allocations = [];
+
+    public bool $allocationModal = false;
+
+    public ?int $allocationTransactionId = null;
+
+    public string $residueReason = '';
 
     public string $amountDirection = '';
 
@@ -50,6 +66,138 @@ new class extends Component
     public string $search = '';
 
     public array $sortBy = ['column' => 'date', 'direction' => 'desc'];
+
+    /**
+     * Le paiement courant du tiroir, s'il y en a un.
+     */
+    #[Computed]
+    public function allocationTransaction(): ?Transaction
+    {
+        return $this->allocationTransactionId
+            ? Transaction::find($this->allocationTransactionId)
+            : null;
+    }
+
+    /**
+     * Les paiements que cette ligne de relevé pourrait solder, les plus
+     * probables d'abord.
+     *
+     * `TransactionMatcher` note d'habitude des transactions pour un paiement ;
+     * on l'interroge ici dans l'autre sens, paiement par paiement. C'est le
+     * même barème — celui qui sait déjà remonter l'IBAN et le nom de chaque
+     * tuteur, donc reconnaître les deux enfants derrière le virement d'un
+     * parent.
+     *
+     * @return Collection<int, Payment>
+     */
+    #[Computed]
+    public function allocationCandidates(): Collection
+    {
+        $transaction = $this->allocationTransaction();
+
+        if (! $transaction instanceof Transaction) {
+            return collect();
+        }
+
+        // Un débit rembourse : ses candidats sont les remboursements engagés.
+        $payments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith([
+            Subscription::class => ['user.guardians', 'season'],
+        ])])
+            ->where('status', (float) $transaction->amount < 0 ? 'to_refund' : 'pending')
+            ->get()
+            ->filter(fn (Payment $payment): bool => $this->outstandingOf($payment) > 0.0);
+
+        $matcher = new TransactionMatcher;
+
+        return $payments
+            ->sortByDesc(fn (Payment $payment): int => $matcher->score($payment, $transaction, false)->strength->rank())
+            ->values();
+    }
+
+    public function confirmAllocation(): void
+    {
+        Gate::authorize(Permission::PaymentsReconcile->value);
+
+        $transaction = $this->allocationTransaction();
+
+        if (! $transaction instanceof Transaction) {
+            return;
+        }
+
+        $wanted = collect($this->allocations)
+            ->map(fn (float|string $amount): float => round((float) $amount, 2))
+            ->filter(fn (float $amount): bool => $amount > 0.0)
+            ->mapWithKeys(fn (float $amount, int|string $paymentId): array => [(int) $paymentId => $amount])
+            ->all();
+
+        if ($wanted === []) {
+            $this->error(__('Nothing to allocate.'));
+
+            return;
+        }
+
+        try {
+            (new AllocateTransactionAction)($transaction, $wanted);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->closeAllocation();
+        $this->success(__(':count allocation(s) recorded.', ['count' => count($wanted)]));
+    }
+
+    public function openAllocation(int $transactionId): void
+    {
+        Gate::authorize(Permission::PaymentsReconcile->value);
+
+        $this->allocationTransactionId = $transactionId;
+        $this->allocations = [];
+        $this->residueReason = '';
+        $this->allocationModal = true;
+
+        unset($this->allocationTransaction, $this->allocationCandidates);
+    }
+
+    /**
+     * Le reste à placer sur la ligne courante, en euros.
+     */
+    #[Computed]
+    public function remainingToAllocate(): float
+    {
+        $transaction = $this->allocationTransaction();
+
+        if (! $transaction instanceof Transaction) {
+            return 0.0;
+        }
+
+        $claimed = collect($this->allocations)->sum(fn (float|string $amount): float => round((float) $amount, 2));
+
+        return round(abs($transaction->residue()) - $claimed, 2);
+    }
+
+    public function settleResidue(): void
+    {
+        Gate::authorize(Permission::PaymentsReconcile->value);
+
+        $transaction = $this->allocationTransaction();
+
+        if (! $transaction instanceof Transaction) {
+            return;
+        }
+
+        try {
+            (new SettleTransactionResidueAction)($transaction, $this->residueReason);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->closeAllocation();
+        $this->success(__('Residue written off.'));
+    }
 
     public function bulkDelete(): void
     {
@@ -119,6 +267,7 @@ new class extends Component
             ['key' => 'structured_reference', 'label' => __('Reference'),   'sortable' => false],
             ['key' => 'amount',               'label' => __('Amount'),      'sortable' => true],
             ['key' => 'status',               'label' => __('Status'),      'sortable' => false],
+            ['key' => 'allocate',             'label' => '',                'sortable' => false],
         ];
     }
 
@@ -387,6 +536,24 @@ new class extends Component
             ->when($this->reconciledFilter === 'unreconciled', fn (Builder $q): Builder => $q->unallocated())
             ->when($this->amountDirection === 'credit', fn (Builder $q): Builder => $q->where('amount', '>', 0))
             ->when($this->amountDirection === 'debit', fn (Builder $q): Builder => $q->where('amount', '<', 0));
+    }
+
+    private function closeAllocation(): void
+    {
+        $this->reset(['allocationModal', 'allocationTransactionId', 'allocations', 'residueReason']);
+
+        unset($this->allocationTransaction, $this->allocationCandidates, $this->remainingToAllocate, $this->stats);
+    }
+
+    /**
+     * Ce que cette ligne de paiement réclame encore, en euros.
+     *
+     * Sur un remboursement, `amount_due` porte l'engagement et `amount_paid` ce
+     * qui est déjà sorti : la soustraction dit la même chose dans les deux sens.
+     */
+    private function outstandingOf(Payment $payment): float
+    {
+        return max(0.0, round((float) $payment->amount_due - (float) $payment->amount_paid, 2));
     }
 
     private function normalizeHeader(string $h): string

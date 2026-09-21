@@ -125,3 +125,99 @@ it('shows an unallocated outgoing transfer as work still to do', function (): vo
 
     expect(idsUnder('unreconciled'))->toContain($debit->id);
 })->group('payments', 'transactions');
+
+/**
+ * Le cas B, depuis la transaction : une mère vire 730 € pour ses deux enfants.
+ *
+ * Le sens paiement → transaction sait déjà le faire depuis que le lien n'est
+ * plus unique, mais il oblige le trésorier à ouvrir deux fiches et à retrouver
+ * deux fois la même ligne de relevé. Le geste naturel part du virement.
+ */
+it('splits one transfer across several payments from the transaction drawer', function (): void {
+    $mother = User::factory()->create();
+
+    $children = collect([1, 2])->map(function (): object {
+        $child = User::factory()->create();
+
+        $subscription = Subscription::factory()->create([
+            'user_id' => $child->id,
+            'status' => 'confirmed',
+            'amount_due' => 365,
+        ]);
+
+        return (object) [
+            'subscription' => $subscription,
+            'payment' => $subscription->payments()->create([
+                'reference' => sprintf('300/0000/%05d', $child->id),
+                'amount_due' => 365,
+                'amount_paid' => 0,
+                'status' => 'pending',
+            ]),
+        ];
+    });
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT',
+        'amount' => 730.0,
+        'counterparty_name' => $mother->full_name,
+    ]);
+
+    settlementScreen()
+        ->call('openAllocation', $transaction->id)
+        ->set('allocations', [
+            (string) $children[0]->payment->id => 365.0,
+            (string) $children[1]->payment->id => 365.0,
+        ])
+        ->call('confirmAllocation')
+        ->assertHasNoErrors();
+
+    expect($children[0]->subscription->fresh()->balanceDue())->toBe(0.0)
+        ->and($children[1]->subscription->fresh()->balanceDue())->toBe(0.0)
+        ->and($transaction->fresh()->isSettled())->toBeTrue();
+})->group('payments', 'transactions');
+
+/**
+ * I1 tient aussi de ce côté : le tiroir refuse d'inventer de l'argent, et il
+ * le dit au trésorier plutôt que d'échouer en silence.
+ */
+it('refuses an allocation that exceeds the transfer, and writes nothing', function (): void {
+    $transaction = allocatableTransaction(200.0);
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => User::factory()->create()->id,
+        'status' => 'confirmed',
+        'amount_due' => 365,
+    ]);
+
+    $payment = $subscription->payments()->create([
+        'reference' => '400/0000/00001',
+        'amount_due' => 365,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    settlementScreen()
+        ->call('openAllocation', $transaction->id)
+        ->set('allocations', [(string) $payment->id => 250.0])
+        ->call('confirmAllocation');
+
+    expect($payment->fresh()->amount_paid)->toBe(0.0)
+        ->and($transaction->fresh()->allocated_amount)->toBe(0.0);
+})->group('payments', 'transactions');
+
+/**
+ * Solder un reliquat depuis le tiroir : le troisième geste du cas C.
+ */
+it('writes off a residue from the drawer, with a reason', function (): void {
+    $transaction = allocatableTransaction(305.0, 300.0);
+
+    settlementScreen()
+        ->call('openAllocation', $transaction->id)
+        ->set('residueReason', 'Arrondi du membre, acquis au club')
+        ->call('settleResidue')
+        ->assertHasNoErrors();
+
+    expect($transaction->fresh()->isSettled())->toBeTrue()
+        ->and($transaction->fresh()->settled_reason)->toBe('Arrondi du membre, acquis au club');
+})->group('payments', 'transactions');

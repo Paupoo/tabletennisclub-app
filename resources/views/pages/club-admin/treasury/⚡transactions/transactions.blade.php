@@ -133,6 +133,21 @@
             @endif
             @endscope
 
+            @scope('cell_allocate', $transaction)
+            @can('payments.reconcile')
+                @unless($transaction->isSettled())
+                    {{-- Le geste naturel part du virement : une ligne peut solder
+                         plusieurs paiements, et l'ouvrir depuis chaque fiche
+                         obligerait à retrouver deux fois le même relevé. --}}
+                    <x-button
+                        :label="__('Allocate')"
+                        icon="o-arrows-pointing-in"
+                        wire:click="openAllocation({{ $transaction->id }})"
+                        class="btn-xs btn-outline" />
+                @endunless
+            @endcan
+            @endscope
+
         </x-table>
 
         @if($transactions->total() === 0)
@@ -337,4 +352,67 @@
             :description="__('Bulk actions on multiple transactions')"
             @click="mobileActionsOpen = false; $wire.call('toggleSelectionMode')" />
     </x-admin.shared.mobile-actions>
+
+    {{-- Affecter une ligne de relevé --}}
+    <x-app-modal wire:model="allocationModal" :title="__('Allocate this transaction')" separator box-class="max-w-2xl"
+        :open="$allocationModal">
+        @if($this->allocationTransaction)
+            @php
+                $tx = $this->allocationTransaction;
+            @endphp
+            <div class="space-y-4">
+                <div class="grid grid-cols-3 gap-3 text-center">
+                    <div class="rounded-lg border border-base-300 bg-base-200/60 p-3">
+                        <div class="text-xs uppercase tracking-widest text-muted">{{ __('Received') }}</div>
+                        <div class="font-black tabular-nums">{{ number_format(abs($tx->amount), 2, ',', ' ') }} €</div>
+                    </div>
+                    <div class="rounded-lg border border-base-300 bg-base-200/60 p-3">
+                        <div class="text-xs uppercase tracking-widest text-muted">{{ __('Allocated') }}</div>
+                        <div class="font-black tabular-nums">{{ number_format(abs($tx->allocated_amount), 2, ',', ' ') }} €</div>
+                    </div>
+                    <div class="rounded-lg border border-info/20 bg-info/10 p-3">
+                        <div class="text-xs uppercase tracking-widest text-muted">{{ __('Left to place') }}</div>
+                        <div class="font-black tabular-nums text-info">{{ number_format($this->remainingToAllocate, 2, ',', ' ') }} €</div>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    @forelse($this->allocationCandidates as $candidate)
+                        <div class="flex items-center gap-3 rounded-lg border border-base-300 p-3" wire:key="alloc-{{ $candidate->id }}">
+                            <div class="flex-1 min-w-0">
+                                <div class="font-semibold text-sm truncate">
+                                    {{ $candidate->payable instanceof \App\Contracts\DescribesPayment ? $candidate->payable->getPayerName() : '—' }}
+                                </div>
+                                <div class="font-mono text-xs text-primary">{{ $candidate->reference }}</div>
+                            </div>
+                            <div class="text-xs opacity-60 whitespace-nowrap">
+                                {{ __('owes :amount €', ['amount' => number_format($candidate->amount_due - $candidate->amount_paid, 2, ',', ' ')]) }}
+                            </div>
+                            <x-input type="number" step="0.01" min="0" class="w-28"
+                                wire:model.live.blur="allocations.{{ $candidate->id }}" />
+                        </div>
+                    @empty
+                        <p class="py-6 text-center text-sm text-muted">{{ __('No payment is waiting for money in this direction.') }}</p>
+                    @endforelse
+                </div>
+
+                @if(abs($tx->residue()) > 0.001)
+                    <div class="space-y-3 rounded-xl border border-warning/20 bg-warning/5 p-3">
+                        <p class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Write off what is left') }}</p>
+                        <x-input :label="__('Reason')" wire:model.blur="residueReason"
+                            :placeholder="__('Member rounded up, kept by the club')"
+                            :hint="__('Mandatory. The club keeps the remainder and the line is closed.')" />
+                        <x-button :label="__('Write off the residue')" icon="o-archive-box-x-mark"
+                            wire:click="settleResidue" spinner="settleResidue" class="btn-sm btn-warning btn-outline" />
+                    </div>
+                @endif
+            </div>
+        @endif
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" @click="$wire.allocationModal = false" class="btn-ghost" />
+            <x-button :label="__('Allocate')" icon="o-arrows-pointing-in" class="btn-primary"
+                wire:click="confirmAllocation" spinner="confirmAllocation" />
+        </x-slot:actions>
+    </x-app-modal>
 </div>

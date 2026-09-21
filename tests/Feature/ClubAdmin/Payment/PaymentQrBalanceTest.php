@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -59,4 +60,23 @@ it('encodes what is still owed, not what was originally claimed', function (): v
 
 it('encodes the full amount when nothing has been paid yet', function (): void {
     expect(qrTextFor(365.0, 0.0))->toContain('EUR365.00');
+})->group('payments', 'qr');
+
+/**
+ * Un paiement qui n'existe pas en base a quand même droit à son QR.
+ *
+ * Le bar construit un `Payment` transitoire — `amount_due` et une référence,
+ * rien d'autre — pour afficher un QR au client. `amount_paid` y est donc
+ * `null`, et les accesseurs de Payment type-hintaient `int` là où ceux de
+ * Subscription acceptent déjà `?int`. Lire le solde a suffi à le révéler.
+ */
+it('builds a QR for a payment that was never saved', function (): void {
+    Club::factory()->ownClub()->create(['bic' => 'GEBABEBB', 'bank_account' => 'BE68539007547034']);
+
+    $transient = new Payment([
+        'amount_due' => 18.0,
+        'reference' => 'Bar order #42',
+    ]);
+
+    expect((new GeneratePaymentQR)->qrText($transient))->toContain('EUR18.00');
 })->group('payments', 'qr');

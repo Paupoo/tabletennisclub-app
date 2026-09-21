@@ -72,10 +72,18 @@ class Payment extends Model
         'refund_transaction_id',
     ];
 
+    /**
+     * Les montants tolèrent l'absence, comme ceux de {@see Subscription}.
+     *
+     * Un `Payment` n'est pas toujours une ligne en base : le bar en construit
+     * un transitoire, `amount_due` et une référence, pour afficher un QR au
+     * client. `amount_paid` y est nul, et un type strict fait tomber la page
+     * sur une valeur qui n'a jamais eu à exister.
+     */
     public function amountDue(): Attribute
     {
         return Attribute::make(
-            get: fn (int $value): float => round($value / 100, 2),
+            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
             set: fn (int|float $value): int => (int) round($value * 100),
         );
     }
@@ -83,7 +91,7 @@ class Payment extends Model
     public function amountPaid(): Attribute
     {
         return Attribute::make(
-            get: fn (int $value): float => round($value / 100, 2),
+            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
             set: fn (int|float $value): int => (int) round($value * 100),
         );
     }

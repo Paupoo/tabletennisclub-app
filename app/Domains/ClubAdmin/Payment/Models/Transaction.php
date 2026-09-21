@@ -21,6 +21,9 @@ use Illuminate\Support\Carbon;
  * @property string $description
  * @property float $amount
  * @property float $allocated_amount
+ * @property Carbon|null $settled_at
+ * @property string|null $settled_reason
+ * @property int|null $settled_by_id
  * @property string|null $counterparty_name
  * @property string|null $counterparty_bank_account
  * @property string|null $structured_reference
@@ -51,6 +54,7 @@ class Transaction extends Model
 
     protected $casts = [
         'date' => 'date',
+        'settled_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -80,6 +84,17 @@ class Transaction extends Model
         return $this->hasMany(PaymentCredit::class);
     }
 
+    /**
+     * Cette ligne de relevé est-elle close ?
+     *
+     * Deux façons de l'être, et elles se valent pour le trésorier : tout est
+     * affecté, ou ce qui restait a été délibérément abandonné.
+     */
+    public function isSettled(): bool
+    {
+        return $this->settled_at !== null || $this->residueInCents() === 0;
+    }
+
     public function payment(): HasOne
     {
         return $this->hasOne(Payment::class, 'transaction_id');
@@ -88,6 +103,14 @@ class Transaction extends Model
     public function refundPayment(): HasOne
     {
         return $this->hasOne(Payment::class, 'refund_transaction_id');
+    }
+
+    /**
+     * Ce qui reste à affecter sur cette ligne, en euros, du signe du montant.
+     */
+    public function residue(): float
+    {
+        return round($this->residueInCents() / 100, 2);
     }
 
     /**
@@ -111,5 +134,14 @@ class Transaction extends Model
             get: fn (int $value): float => round($value / 100, 2),
             set: fn (int|float $value): int => (int) round($value * 100),
         );
+    }
+
+    /**
+     * En centimes : deux flottants qui devraient être égaux ne le sont pas
+     * toujours, et une ligne soldée à un millième près resterait ouverte.
+     */
+    private function residueInCents(): int
+    {
+        return (int) round(((float) $this->amount - (float) $this->allocated_amount) * 100);
     }
 }

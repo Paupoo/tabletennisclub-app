@@ -283,9 +283,13 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
      */
     public function netAmountPaid(): float
     {
+        // Même règle que totalPaid() : l'argent, jamais le statut. Une ligne
+        // partiellement payée reste `pending`, et ses euros sont pourtant sur
+        // le compte du club — les exclure ferait refuser de rendre un argent
+        // bel et bien encaissé.
         $received = (float) $this->payments()
             ->where(fn ($q) => $q->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
-            ->whereIn('status', ['paid', 'refunded'])
+            ->where('status', '!=', 'cancelled')
             ->sum('amount_paid');
 
         // Un `to_refund` compte déjà comme sorti : la demande est dans le

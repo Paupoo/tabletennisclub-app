@@ -376,3 +376,40 @@ it('tells a promised refund from an executed one', function (): void {
         ->and($refund->fresh()->status)->toBe('refunded')
         ->and($subscription->fresh()->netAmountPaid())->toBe(300.0);
 })->group('payments', 'reconciliation');
+
+/**
+ * Ce qui est rentré compte, même sur une ligne encore ouverte.
+ *
+ * `netAmountPaid()` plafonne ce qu'un trésorier peut rembourser. Son côté
+ * « reçu » filtrait sur le statut, comme `totalPaid()` le faisait : les 200 €
+ * d'une ligne restée `pending` n'y comptaient pas, et le club aurait refusé de
+ * rendre un argent qu'il avait bel et bien encaissé.
+ */
+it('counts what came in on a line that is still open', function (): void {
+    $member = User::factory()->create();
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => $member->id,
+        'status' => 'confirmed',
+        'amount_due' => 365,
+    ]);
+
+    $payment = $subscription->payments()->create([
+        'reference' => '123/4567/89012',
+        'amount_due' => 365,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 200.0,
+        'counterparty_name' => $member->full_name,
+    ]);
+
+    (new AllocateTransactionAction)($transaction, [$payment->id => 200.0]);
+
+    expect($payment->fresh()->status)->toBe('pending')
+        ->and($subscription->fresh()->netAmountPaid())->toBe(200.0);
+})->group('payments', 'reconciliation');

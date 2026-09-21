@@ -51,6 +51,29 @@ final class AllocateTransactionAction
     }
 
     /**
+     * Un encaissement qui ne vient pas de la banque — la caisse, typiquement.
+     *
+     * `payments.amount_paid` est le miroir des lignes de crédit : tout ce qui
+     * entre doit passer par une ligne, sans quoi la colonne cesse d'être
+     * vérifiable. Une ligne sans transaction n'est pas un manque, c'est
+     * exactement ce qu'un paiement en espèces est.
+     */
+    public function credit(Payment $payment, float $amount, string $method): void
+    {
+        DB::transaction(function () use ($payment, $amount, $method): void {
+            $payment->credits()->create([
+                'transaction_id' => null,
+                'amount' => $amount,
+                'method' => $method,
+                'created_by_id' => Auth::id(),
+            ]);
+
+            $this->refreshPaymentMirror($payment);
+            $this->settlePayable($payment);
+        });
+    }
+
+    /**
      * I1 : la somme affectée ne dépasse jamais ce que la banque a bougé.
      *
      * Compté en centimes, parce que c'est l'unité de stockage : comparer des

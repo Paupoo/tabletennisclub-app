@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Tournament\Services;
 
+use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
@@ -233,16 +234,12 @@ class TournamentService
             ->firstOrFail();
 
         $payment = $this->ensurePaymentExists($registration, $tournament);
-        $payment->update([
-            'status' => 'paid',
-            'payment_method' => 'cash',
-            'amount_paid' => $tournament->price,
-        ]);
+        $payment->update(['payment_method' => 'cash']);
 
-        DB::table('tournament_user')
-            ->where('tournament_id', $tournament->id)
-            ->where('user_id', $user->id)
-            ->update(['has_paid' => true]);
+        // `amount_paid` n'est plus écrit ici : c'est le miroir des lignes de
+        // crédit, et l'action est seule à le poser. Le statut et `has_paid`
+        // suivent de là.
+        (new AllocateTransactionAction)->credit($payment, (float) $tournament->price, 'cash');
 
         CashRegisterEntry::create([
             'cash_register_id' => $register->id,

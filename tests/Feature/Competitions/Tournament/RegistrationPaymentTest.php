@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Payment\Models\PaymentCredit;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\Tournament;
@@ -193,3 +194,35 @@ describe('openQrModal', function (): void {
         expect(Payment::count())->toBe(1);
     });
 })->group('Tournament', 'Payment', 'Livewire');
+
+/**
+ * La caisse crédite comme la banque.
+ *
+ * `recordCashPayment()` écrivait `amount_paid` en direct. La colonne est
+ * désormais le miroir des lignes de crédit : un second écrivain la ferait
+ * mentir dès le premier encaissement en espèces, et plus rien ne permettrait
+ * de dire si elle est cohérente.
+ *
+ * Une ligne de crédit sans transaction, c'est exactement ce que la caisse est.
+ */
+it('records a cash payment as a credit line with no bank transaction', function (): void {
+    $admin = User::factory()->isAdmin()->create();
+    test()->actingAs($admin);
+
+    $tournament = paidTournamentNoPayment();
+    $user = User::factory()->create();
+    registrationWithoutPaymentRecord($tournament, $user);
+
+    $register = CashRegister::create(['name' => 'Main register', 'balance' => 0]);
+
+    app(TournamentService::class)->recordCashPayment($tournament, $user, $register);
+
+    $payment = Payment::first();
+    $credit = PaymentCredit::where('payment_id', $payment->id)->first();
+
+    expect($credit)->not->toBeNull()
+        ->and($credit->transaction_id)->toBeNull()
+        ->and($credit->amount)->toBe($tournament->price)
+        ->and($credit->method)->toBe('cash')
+        ->and($payment->amount_paid)->toBe($tournament->price);
+})->group('Tournament', 'Payment');

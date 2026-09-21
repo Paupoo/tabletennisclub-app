@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Actions\ClubAdmin\Subscriptions\ApproveTrainingPacksAction;
+use App\Actions\ClubAdmin\Subscriptions\GrantSubscriptionDiscountAction;
 use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\CancelSubscriptionWithRefundAction;
 use App\Actions\ClubAdmin\Subscriptions\ChangeSubscriptionFormulaAction;
@@ -283,6 +284,87 @@ new class extends Component
 
         $this->paymentGenerated = true;
         $this->success(__('Subscription confirmed. Payment information generated.'));
+    }
+
+    public bool $discountModal = false;
+
+    /** 'amount' (euros) ou 'percent' — le pourcentage n'est qu'un clavier. */
+    public string $discountMode = 'amount';
+
+    public string $discountReason = '';
+
+    public ?int $discountSubscriptionId = null;
+
+    public float $discountValue = 0.0;
+
+    /**
+     * Accorde la remise saisie.
+     *
+     * Le pourcentage est converti ici, une fois, sur le montant que le
+     * secrétaire a sous les yeux. Rien ne le persiste : la remise est gelée en
+     * euros, et si le membre ajoute un entraînement plus tard, on redemande.
+     * Le pourcentage survit dans le motif, parce que « 30 % » raconte le geste
+     * mieux que « 37,50 € » trois ans après.
+     */
+    public function confirmDiscount(): void
+    {
+        Gate::authorize(Permission::SubscriptionsDiscount->value);
+
+        $subscription = Subscription::find($this->discountSubscriptionId);
+
+        if (! $subscription instanceof Subscription) {
+            return;
+        }
+
+        $reason = trim($this->discountReason);
+        $amount = $this->discountMode === 'percent'
+            ? round((float) $subscription->amount_due * $this->discountValue / 100, 2)
+            : round($this->discountValue, 2);
+
+        if ($this->discountMode === 'percent' && $reason !== '') {
+            $reason = __(':percent% — :reason', [
+                'percent' => rtrim(rtrim(number_format($this->discountValue, 2, ',', ''), '0'), ','),
+                'reason' => $reason,
+            ]);
+        }
+
+        try {
+            $granted = (new GrantSubscriptionDiscountAction)(
+                $subscription,
+                $amount,
+                $reason,
+                $subscription->has_other_family_members ? 2 : 1,
+            );
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->reset(['discountModal', 'discountSubscriptionId', 'discountValue', 'discountReason', 'discountMode']);
+
+        // Le trop-perçu n'est pas remboursé ici — c'est un geste de trésorerie —
+        // mais celui qui vient de le causer doit l'apprendre maintenant.
+        if ($granted->leavesMoneyToRefund()) {
+            $this->warning(__('Discount granted. :amount € are now owed back to the member — the treasury has to refund them.', [
+                'amount' => number_format($granted->refundable, 2, ',', ' '),
+            ]));
+
+            return;
+        }
+
+        $this->success(__('Discount granted.'));
+    }
+
+    public function openDiscount(int $subscriptionId): void
+    {
+        Gate::authorize(Permission::SubscriptionsDiscount->value);
+
+        $this->discountSubscriptionId = $subscriptionId;
+        $this->discountMode = 'amount';
+        $this->discountValue = 0.0;
+        $this->discountReason = '';
+        $this->discountModal = true;
     }
 
     public function approveTrainingRequest(): void

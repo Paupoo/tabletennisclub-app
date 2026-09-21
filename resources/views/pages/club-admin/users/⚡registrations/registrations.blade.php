@@ -627,6 +627,15 @@
                 <x-button :label="__('Close')" @click="$wire.reviewModal = false" class="btn-ghost" />
                 <x-button :label="__('Send by email')" icon="o-paper-airplane" class="btn-primary" wire:click="sendPaymentEmail" spinner />
             @else
+                @if ($currentRequest && in_array($currentRequest->status, ['confirmed', 'paid']) && Auth::user()->can('subscriptions.discount'))
+                    {{-- Le geste canonique : accordable à tout moment, pas
+                         seulement au moment où on facture. --}}
+                    <x-button
+                        :label="__('Grant a discount')"
+                        icon="o-gift"
+                        class="btn-ghost"
+                        wire:click="openDiscount({{ $currentRequest->id }})" spinner />
+                @endif
                 @if ($currentRequest && in_array($currentRequest->status, ['confirmed', 'paid']) && Auth::user()->can('subscriptions.manage'))
                     <x-button
                         :label="$currentRequest->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
@@ -1400,4 +1409,38 @@
         </p>
     </x-confirm-modal>
 
+    {{-- ── Remise sur une affiliation ───────────────────────────────────── --}}
+    <x-app-modal wire:model="discountModal" :title="__('Grant a discount')" separator class="backdrop-blur-sm"
+        :open="$discountModal">
+        <div class="space-y-4">
+            <div class="flex items-center gap-3 rounded-lg border border-info/20 bg-info/10 p-3 text-sm">
+                <x-icon name="o-information-circle" class="h-4 w-4 shrink-0 text-info" />
+                <span>{{ __('The discount is frozen in euros. If the member adds a training later, you will be asked again.') }}</span>
+            </div>
+
+            <x-radio :label="__('Expressed as')" wire:model.live="discountMode" :options="[
+                ['id' => 'amount', 'name' => __('An amount in €')],
+                ['id' => 'percent', 'name' => __('A percentage')],
+            ]" />
+
+            <x-input
+                :label="$discountMode === 'percent' ? __('Percentage (%)') : __('Amount (€)')"
+                type="number" step="0.01" min="0"
+                wire:model="discountValue" />
+
+            <x-input :label="__('Reason')" wire:model="discountReason"
+                :placeholder="__('Thank you for a season behind the bar')"
+                :hint="__('Mandatory. Shown on the affiliation and kept with it.')" />
+
+            <p class="text-xs text-muted">
+                {{ __('The attestation will state the discounted amount: a member given 30% will claim less from their mutual insurer.') }}
+            </p>
+        </div>
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" @click="$wire.discountModal = false" class="btn-ghost" />
+            <x-button :label="__('Grant the discount')" icon="o-gift" class="btn-primary"
+                wire:click="confirmDiscount" spinner="confirmDiscount" />
+        </x-slot:actions>
+    </x-app-modal>
 </div>

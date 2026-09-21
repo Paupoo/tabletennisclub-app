@@ -239,6 +239,7 @@ est une situation légitime.
 Aucune délégation ne les porte : elles ne peuvent pas être confiées.
 
 - `bar.cash_sheet.send`
+- `subscriptions.discount`
 - `users.anonymize`
 - `users.delete`
 

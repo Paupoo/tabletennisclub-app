@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\PaymentCredit;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -172,6 +173,14 @@ final class AllocateTransactionAction
 
         if ($payable instanceof Subscription) {
             $this->settleSubscription($payable);
+
+            return;
+        }
+
+        // Une inscription au tournoi n'a pas de solde partiel à raconter : le
+        // drapeau ne se lève qu'une fois la place entièrement payée.
+        if ($payable instanceof TournamentRegistration && $payment->status === 'paid') {
+            $payable->update(['has_paid' => true]);
         }
     }
 

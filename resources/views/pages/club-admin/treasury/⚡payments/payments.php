@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Contracts\DescribesPayment;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
@@ -152,15 +153,9 @@ new class extends Component
                     return;
                 }
 
-                $payment->update([
-                    'transaction_id' => $transaction->id,
-                    'amount_paid' => $transaction->amount,
-                    'status' => 'paid',
+                (new AllocateTransactionAction)($transaction, [
+                    $payment->id => $this->allocatableAmount($payment, $transaction),
                 ]);
-
-                if ($payment->payable instanceof Subscription) {
-                    $this->reconcileSubscription($payment->payable, $transaction->amount);
-                }
 
                 $count++;
             });
@@ -213,16 +208,14 @@ new class extends Component
         $payment = Payment::findOrFail($this->reconcilePaymentId);
         $transaction = Transaction::findOrFail($this->selectedTransactionId);
 
-        $payment->update([
-            'transaction_id' => $transaction->id,
-            'amount_paid' => $transaction->amount,
-            'status' => 'paid',
-        ]);
+        try {
+            (new AllocateTransactionAction)($transaction, [
+                $payment->id => $this->allocatableAmount($payment, $transaction),
+            ]);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
 
-        if ($payment->payable instanceof Subscription) {
-            $this->reconcileSubscription($payment->payable, $transaction->amount);
-        } elseif ($payment->payable instanceof TournamentRegistration) {
-            $payment->payable->update(['has_paid' => true]);
+            return;
         }
 
         $this->reconcileModal = false;
@@ -845,20 +838,18 @@ new class extends Component
         ];
     }
 
-    private function reconcileSubscription(Subscription $subscription, float $amount): void
+    /**
+     * Ce qu'on peut raisonnablement affecter de cette ligne à ce paiement.
+     *
+     * Le plus petit des deux restes : ce que la transaction n'a pas encore
+     * placé, et ce que le paiement réclame encore. Jamais au-delà du solde —
+     * dépasser reconnaît un trop-perçu, et c'est une décision, pas un défaut.
+     */
+    private function allocatableAmount(Payment $payment, Transaction $transaction): float
     {
-        $subscription->update(['amount_paid' => $amount]);
+        $residue = abs($transaction->residue());
+        $balance = max(0.0, round((float) $payment->amount_due - (float) $payment->amount_paid, 2));
 
-        $status = $subscription->getStatus();
-
-        if ($status === 'paid') {
-            return;
-        }
-
-        if ($status === 'pending') {
-            $subscription->confirm();
-        }
-
-        $subscription->markAsPaid();
+        return round(min($residue, $balance), 2);
     }
 };

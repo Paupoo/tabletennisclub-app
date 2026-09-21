@@ -391,6 +391,30 @@
                     </div>
                 @endif
 
+                @if ($currentRequest->discounts->isNotEmpty())
+                    <div>
+                        <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Discounts') }}</h3>
+                        <div class="space-y-2">
+                            @foreach ($currentRequest->discounts as $discount)
+                                {{-- Une ligne par octroi, motif compris : « pourquoi
+                                     cette affiliation est-elle à 100 € ? » se répond
+                                     ici, et non en fouillant le journal d'audit.
+                                     Sa propre section : les remises ne dépendent
+                                     d'aucun pack, et la section des packs ne rend
+                                     rien pour une affiliation qui n'en a pas. --}}
+                                <div class="flex items-start gap-3 rounded-lg border border-success/20 bg-success/5 p-2.5 text-sm"
+                                    wire:key="discount-{{ $discount->id }}">
+                                    <x-icon name="o-gift" class="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
+                                    <span class="min-w-0 flex-1">{{ $discount->reason }}</span>
+                                    <span class="whitespace-nowrap text-xs font-semibold text-success">
+                                        − {{ number_format($discount->amount, 2) }} €
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 @if (! empty($currentRequest->payments))
                     <div>
                         <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Payments') }}</h3>

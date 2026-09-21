@@ -92,3 +92,32 @@ it('refuses the gesture to someone without the discount permission', function ()
 
     expect($subscription->fresh()->discounts)->toHaveCount(0);
 })->group('subscriptions', 'discount');
+
+/**
+ * La remise se lit sur l'écran, motif compris.
+ *
+ * C'est l'argument qui a fait choisir une table plutôt qu'une colonne qui
+ * s'additionne : « pourquoi cette affiliation est-elle à 100 € ? » doit se
+ * répondre ici, pas en fouillant le journal d'audit.
+ *
+ * Deux affiliations, pas une : une fixture à un seul enregistrement rend le
+ * test complaisant sur le chargement anticipé.
+ */
+it('shows the granted discounts and their reasons on the affiliation list', function (): void {
+    $first = affiliationToDiscount();
+    $second = affiliationToDiscount();
+
+    foreach ([$first, $second] as $subscription) {
+        discountScreen()
+            ->call('openDiscount', $subscription->id)
+            ->set('discountMode', 'amount')
+            ->set('discountValue', 25.0)
+            ->set('discountReason', 'Accord parents séparés')
+            ->call('confirmDiscount');
+    }
+
+    discountScreen()
+        ->call('review', $first->id)
+        ->assertSee('Accord parents séparés')
+        ->assertOk();
+})->group('subscriptions', 'discount');

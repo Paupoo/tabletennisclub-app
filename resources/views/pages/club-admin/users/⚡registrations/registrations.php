@@ -1144,7 +1144,7 @@ new class extends Component
             return null;
         }
 
-        $subscription = Subscription::with(['user', 'trainingPacks', 'payments'])->find($id);
+        $subscription = Subscription::with(['user', 'trainingPacks', 'payments', 'discounts'])->find($id);
 
         return $subscription === null ? null : $this->toRow($subscription);
     }
@@ -1171,7 +1171,7 @@ new class extends Component
             : 'status';
         $direction = $this->sortBy['direction'] === 'desc' ? 'desc' : 'asc';
 
-        $query = Subscription::with(['user', 'trainingPacks', 'payments'])
+        $query = Subscription::with(['user', 'trainingPacks', 'payments', 'discounts'])
             // Trier sur le nom demande la table des membres ; la jointure la
             // rend disponible à tous les tris, le nom servant de départage.
             ->join('users', 'users.id', '=', 'subscriptions.user_id')
@@ -2009,6 +2009,9 @@ new class extends Component
                 'type' => $sub->is_competitive ? __('Competition') : __('Recreational'),
                 'status' => $sub->status,
                 'amount_due' => $sub->amount_due,
+                // Les remises accordées, motif compris : l'écran doit savoir
+                // dire pourquoi cette affiliation coûte ce qu'elle coûte.
+                'discounts' => $sub->discounts,
                 'total_paid' => (float) $sub->payments->whereIn('status', ['paid', 'refunded'])->sum('amount_paid'),
                 'trainings_count' => $sub->trainings_count,
                 'pending_packs' => $pendingPacks,

@@ -52,7 +52,7 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- Stats --}}
-    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
         <x-admin.shared.stat-card
             :label="__('Total')"
             :value="$this->stats['total']"
@@ -60,19 +60,26 @@
             icon="o-building-library" />
 
         <x-admin.shared.stat-card
-            :label="__('Reconciled')"
+            :label="__('Settled')"
             :value="$this->stats['reconciled']"
-            :hint="__('matched to a payment')"
+            :hint="__('fully allocated or written off')"
             icon="o-check-badge"
             color="success" />
 
         <x-admin.shared.stat-card
+            :label="__('Partly allocated')"
+            :value="$this->stats['partial']"
+            :hint="__('something still to place')"
+            icon="o-adjustments-horizontal"
+            color="info" />
+
+        <x-admin.shared.stat-card
             :label="__('Unreconciled')"
             :value="$this->stats['unreconciled']"
-            :hint="__('incoming, no match yet')"
+            :hint="__('nothing allocated yet')"
             icon="o-clock"
             color="warning"
-            class="sm:col-span-2 lg:col-span-1" />
+            class="sm:col-span-2 lg:col-span-3" />
     </div>
 
     <x-card class="bg-base-100 shadow-sm">
@@ -113,8 +120,12 @@
             @endscope
 
             @scope('cell_status', $transaction)
-            @if($transaction->payment)
-            <x-badge value="{{ __('Reconciled') }}" class="badge-success badge-sm badge-soft" />
+            @if($transaction->isSettled())
+            <x-badge value="{{ __('Settled') }}" class="badge-success badge-sm badge-soft" />
+            @elseif($transaction->allocated_amount != 0)
+            {{-- Ce qui reste à placer : c'est le seul chiffre qui dit au trésorier ce qu'il lui reste à faire sur cette ligne. --}}
+            <x-badge value="{{ __(':amount € left', ['amount' => number_format(abs($transaction->residue()), 2, ',', ' ')]) }}"
+                class="badge-info badge-sm badge-soft" />
             @elseif($transaction->amount < 0)
             <x-badge value="{{ __('Outgoing') }}" class="badge-error badge-sm badge-soft" />
             @else

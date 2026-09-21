@@ -90,7 +90,11 @@ new class extends Component
         }
 
         if ($this->reconciledFilter) {
-            $label = $this->reconciledFilter === 'reconciled' ? __('Reconciled') : __('Unreconciled');
+            $label = match ($this->reconciledFilter) {
+                'reconciled' => __('Settled'),
+                'partial' => __('Partly allocated'),
+                default => __('Unreconciled'),
+            };
             $chips[] = ['key' => 'reconciledFilter', 'label' => $label];
         }
 
@@ -126,7 +130,11 @@ new class extends Component
 
         $ids = array_map(intval(...), $this->selected);
 
-        $this->reconciledInSelection = Transaction::whereIn('id', $ids)->has('payment')->count();
+        // Tout ce qui n'est pas vierge : une ligne affectée en partie porte
+        // elle aussi des crédits qui disparaîtraient avec elle.
+        $this->reconciledInSelection = Transaction::whereIn('id', $ids)
+            ->whereNot(fn (Builder $q): Builder => $q->unallocated())
+            ->count();
         $this->confirmDeleteModal = true;
     }
 
@@ -262,8 +270,9 @@ new class extends Component
             'transactions' => $this->transactions(),
             'filterChips' => $this->getFilterChips(),
             'reconciledOptions' => [
-                ['id' => 'reconciled',   'name' => __('Reconciled')],
                 ['id' => 'unreconciled', 'name' => __('Unreconciled')],
+                ['id' => 'partial',      'name' => __('Partly allocated')],
+                ['id' => 'reconciled',   'name' => __('Settled')],
             ],
             'amountDirectionOptions' => [
                 ['id' => 'credit', 'name' => __('Credit (incoming)')],
@@ -281,8 +290,9 @@ new class extends Component
     {
         return [
             'total' => Transaction::count(),
-            'reconciled' => Transaction::has('payment')->count(),
-            'unreconciled' => Transaction::doesntHave('payment')->where('amount', '>', 0)->count(),
+            'reconciled' => Transaction::settled()->count(),
+            'partial' => Transaction::partiallyAllocated()->count(),
+            'unreconciled' => Transaction::unallocated()->count(),
         ];
     }
 
@@ -291,7 +301,7 @@ new class extends Component
         $col = $this->sortBy['column'];
         $dir = $this->sortBy['direction'];
 
-        return $this->applyFilters(Transaction::with('payment'))
+        return $this->applyFilters(Transaction::with('credits'))
             ->orderBy($col, $dir)
             ->paginate(25);
     }
@@ -372,8 +382,9 @@ new class extends Component
             }))
             ->when($this->dateFrom, fn (Builder $q): Builder => $q->whereDate('date', '>=', $this->dateFrom))
             ->when($this->dateTo, fn (Builder $q): Builder => $q->whereDate('date', '<=', $this->dateTo))
-            ->when($this->reconciledFilter === 'reconciled', fn (Builder $q): Builder => $q->has('payment'))
-            ->when($this->reconciledFilter === 'unreconciled', fn (Builder $q): Builder => $q->doesntHave('payment')->where('amount', '>', 0))
+            ->when($this->reconciledFilter === 'reconciled', fn (Builder $q): Builder => $q->settled())
+            ->when($this->reconciledFilter === 'partial', fn (Builder $q): Builder => $q->partiallyAllocated())
+            ->when($this->reconciledFilter === 'unreconciled', fn (Builder $q): Builder => $q->unallocated())
             ->when($this->amountDirection === 'credit', fn (Builder $q): Builder => $q->where('amount', '>', 0))
             ->when($this->amountDirection === 'debit', fn (Builder $q): Builder => $q->where('amount', '<', 0));
     }

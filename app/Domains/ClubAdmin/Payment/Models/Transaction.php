@@ -6,6 +6,7 @@ namespace App\Domains\ClubAdmin\Payment\Models;
 
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatch;
 use App\Domains\Shared\Traits\HasAuditLog;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -39,6 +40,9 @@ use Illuminate\Support\Carbon;
  * @property TransactionMatch|null $match Verdict de rapprochement, posé à la volée par TransactionMatcher::rank() — jamais persisté.
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction unallocated()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction partiallyAllocated()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction settled()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction query()
@@ -111,6 +115,51 @@ class Transaction extends Model
     public function residue(): float
     {
         return round($this->residueInCents() / 100, 2);
+    }
+
+    /**
+     * Une partie a trouvé son paiement, le reste attend.
+     *
+     * @param  Builder<Transaction>  $query
+     * @return Builder<Transaction>
+     */
+    public function scopePartiallyAllocated(Builder $query): Builder
+    {
+        return $query->whereNull('settled_at')
+            ->where('allocated_amount', '!=', 0)
+            ->whereColumn('allocated_amount', '!=', 'amount');
+    }
+
+    /**
+     * Close : tout est affecté, ou ce qui restait a été délibérément abandonné.
+     *
+     * Le groupe autour du `OR` n'est pas décoratif — à plat, il s'évaderait des
+     * filtres de date et de recherche que l'écran applique autour.
+     *
+     * @param  Builder<Transaction>  $query
+     * @return Builder<Transaction>
+     */
+    public function scopeSettled(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q): Builder => $q
+            ->whereColumn('allocated_amount', 'amount')
+            ->orWhereNotNull('settled_at'));
+    }
+
+    /**
+     * Rien n'a encore été placé sur cette ligne, et rien n'a été abandonné.
+     *
+     * Les débits en font partie : un virement sortant jamais rapproché est un
+     * remboursement parti sans destinataire identifié, donc du travail. La
+     * règle d'avant les écartait parce que `has('payment')` ne regardait que
+     * `transaction_id` — les remboursements vivaient dans une autre colonne.
+     *
+     * @param  Builder<Transaction>  $query
+     * @return Builder<Transaction>
+     */
+    public function scopeUnallocated(Builder $query): Builder
+    {
+        return $query->where('allocated_amount', 0)->whereNull('settled_at');
     }
 
     /**

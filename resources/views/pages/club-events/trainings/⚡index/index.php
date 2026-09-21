@@ -24,6 +24,7 @@ use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
 use App\Domains\Trainings\Services\TrainingAttendanceReport;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
 use App\Domains\Trainings\Services\TrainingWaitlistService;
+use App\Livewire\Concerns\GrantsInlineDiscount;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
@@ -39,6 +40,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
+    use GrantsInlineDiscount;
     use HasBreadcrumbs;
     use HasFilterDrawer;
     use Toast;
@@ -264,6 +266,11 @@ new class extends Component
                 $this->addMemberStartsOn ?: null,
                 $subscription->has_other_family_members ? 2 : 1,
             );
+
+            // Après l'ajout : le complément est calculé sur l'écart de montant
+            // dû, et la remise le rabote ensuite — comme pour la validation
+            // d'une demande de pack.
+            $this->applyInlineDiscount($subscription->fresh());
         } catch (DomainException $e) {
             $this->error($e->getMessage());
 

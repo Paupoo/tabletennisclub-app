@@ -391,6 +391,10 @@
                     </div>
                 @endif
 
+                @if ($currentRequest->status === 'pending' && ! $paymentGenerated)
+                    <x-admin.shared.inline-discount :mode="$inlineDiscountMode" />
+                @endif
+
                 @if ($currentRequest->discounts->isNotEmpty())
                     <div>
                         <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Discounts') }}</h3>
@@ -798,6 +802,10 @@
                         :placeholder="__('Optional personal note to the member...')"
                         class="textarea textarea-bordered textarea-sm w-full text-sm" rows="2"></textarea>
                 </div>
+            </div>
+
+            <div class="mt-4">
+                <x-admin.shared.inline-discount :mode="$inlineDiscountMode" />
             </div>
         @endif
 

@@ -148,6 +148,7 @@ Créer et modifier les membres, gérer les affiliations et les inscriptions.
 - `users.import`
 - `subscriptions.view`
 - `subscriptions.manage`
+- `subscriptions.discount`
 
 ### Saisons — `saisons`
 
@@ -239,7 +240,6 @@ est une situation légitime.
 Aucune délégation ne les porte : elles ne peuvent pas être confiées.
 
 - `bar.cash_sheet.send`
-- `subscriptions.discount`
 - `users.anonymize`
 - `users.delete`
 

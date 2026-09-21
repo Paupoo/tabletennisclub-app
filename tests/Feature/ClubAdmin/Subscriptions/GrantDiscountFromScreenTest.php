@@ -5,7 +5,11 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\Ranking;
+use App\Domains\Shared\Enums\Role;
+use App\Domains\Trainings\Models\TrainingPack;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
@@ -120,4 +124,167 @@ it('shows the granted discounts and their reasons on the affiliation list', func
         ->call('review', $first->id)
         ->assertSee('Accord parents séparés')
         ->assertOk();
+})->group('subscriptions', 'discount');
+
+/**
+ * Le secrétaire — la délégation MEMBERS — accorde les remises.
+ *
+ * La permission est à part pour que le comité puisse la déplacer sans toucher
+ * au code, mais par défaut elle vit là où le geste se fait.
+ */
+it('lets the members delegation grant a discount', function (): void {
+    $subscription = affiliationToDiscount();
+
+    $secretary = User::factory()->create();
+    $secretary->assignRole(Role::MEMBERS->value);
+
+    Livewire::actingAs($secretary)
+        ->test(REGISTRATIONS_COMPONENT)
+        ->call('openDiscount', $subscription->id)
+        ->set('discountMode', 'amount')
+        ->set('discountValue', 25.0)
+        ->set('discountReason', 'Accord parents séparés')
+        ->call('confirmDiscount')
+        ->assertHasNoErrors();
+
+    expect($subscription->fresh()->amount_due)->toBe(100.0);
+})->group('subscriptions', 'discount');
+
+/**
+ * Le raccourci au fil de la validation d'une demande de pack.
+ *
+ * Le complément est facturé, puis la remise le rabote : le membre reçoit une
+ * communication au montant remisé, pas une relance pour un prix qu'on vient de
+ * lui faire baisser.
+ */
+it('discounts a mid-season pack approval without billing the full complement', function (): void {
+    // Le complément facturé construit un QR, qui a besoin du club et de son IBAN.
+    Club::factory()->ownClub()->create([
+        'bic' => 'GEBABEBB',
+        'bank_account' => 'BE68539007547034',
+    ]);
+    Club::forgetOwnClub();
+
+    $subscription = affiliationToDiscount();
+
+    $pack = TrainingPack::factory()->create(['price' => 100, 'allow_discount' => false]);
+    $subscription->trainingPacks()->attach($pack->id, ['status' => 'pending']);
+
+    // Une facture déjà émise : c'est elle qui rend le complément facturable.
+    $subscription->payments()->create([
+        'reference' => '600/0000/00001',
+        'amount_due' => 125,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    discountScreen()
+        ->call('reviewTrainingRequest', $subscription->id)
+        ->set('approvedPackIds', [$pack->id])
+        ->set('inlineDiscountMode', 'amount')
+        ->set('inlineDiscountValue', 40.0)
+        ->set('inlineDiscountReason', 'Une semaine sur deux')
+        ->call('approveTrainingRequest')
+        ->assertHasNoErrors();
+
+    $subscription = $subscription->fresh();
+
+    expect($subscription->discounts)->toHaveCount(1)
+        ->and($subscription->discounts->first()->amount)->toBe(40.0)
+        // 125 de cotisation + 100 de pack − 40 de remise
+        ->and($subscription->amount_due)->toBe(185.0)
+        // Ce qu'on réclame suit ce qu'on doit.
+        ->and(round((float) $subscription->payments()->where('status', 'pending')->sum('amount_due') / 100, 2))
+        ->toBe(185.0);
+})->group('subscriptions', 'discount');
+
+/**
+ * Le raccourci au fil de la validation d'une nouvelle affiliation.
+ *
+ * Ici la remise doit passer **avant** la facture : le paiement naît du montant
+ * dû, donc la communication que le membre reçoit doit déjà porter le prix
+ * remisé — pas un plein tarif corrigé après coup.
+ */
+it('bills a newly approved affiliation at the discounted price', function (): void {
+    Club::factory()->ownClub()->create([
+        'bic' => 'GEBABEBB',
+        'bank_account' => 'BE68539007547034',
+    ]);
+    Club::forgetOwnClub();
+
+    $member = User::factory()->create(['licence' => '918273', 'ranking' => Ranking::NC]);
+
+    $subscription = Subscription::factory()->pending()->create([
+        'user_id' => $member->id,
+        'is_competitive' => true,
+    ]);
+
+    discountScreen()
+        ->call('review', $subscription->id)
+        ->set('inlineDiscountMode', 'percent')
+        ->set('inlineDiscountValue', 20.0)
+        ->set('inlineDiscountReason', 'Bénévolat au tournoi')
+        ->call('approve')
+        ->assertHasNoErrors();
+
+    $subscription = $subscription->fresh();
+    $payment = $subscription->payments()->first();
+
+    // 125 € de cotisation, 20 % offerts.
+    expect($subscription->discounts)->toHaveCount(1)
+        ->and($subscription->amount_due)->toBe(100.0)
+        ->and($payment->amount_due)->toBe(100.0)
+        ->and($subscription->discounts->first()->reason)->toContain('20');
+})->group('subscriptions', 'discount');
+
+/**
+ * Le raccourci au fil de l'ajout manuel par le comité.
+ *
+ * Le seul des trois moments qui n'a pas d'écran de validation — la docstring
+ * de AddMemberToTrainingPackAction l'assume : « le comité n'a pas à valider sa
+ * propre décision ». Mais il facture un complément, donc la question du prix
+ * s'y pose comme ailleurs.
+ */
+it('discounts a pack the committee adds by hand', function (): void {
+    $member = User::factory()->create();
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => $member->id,
+        'status' => 'confirmed',
+        'is_competitive' => true,
+    ]);
+
+    (new CalculatePriceAction)($subscription);
+
+    // Une facture déjà émise : sans elle, rien ne serait réclamé en plus.
+    $subscription->payments()->create([
+        'reference' => '700/0000/00001',
+        'amount_due' => 125,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    $pack = TrainingPack::factory()->create([
+        'price' => 100,
+        'allow_discount' => false,
+        'season_id' => $subscription->season_id,
+    ]);
+
+    Livewire::actingAs(User::factory()->isAdmin()->create())
+        ->test('pages::club-events.trainings.index')
+        ->set('selectedPackId', $pack->id)
+        ->set('addMemberUserId', $member->id)
+        ->set('inlineDiscountMode', 'amount')
+        ->set('inlineDiscountValue', 30.0)
+        ->set('inlineDiscountReason', 'Accord parents séparés')
+        ->call('addMemberToPack')
+        ->assertHasNoErrors();
+
+    $subscription = $subscription->fresh();
+
+    expect($subscription->discounts)->toHaveCount(1)
+        // 125 + 100 − 30
+        ->and($subscription->amount_due)->toBe(195.0)
+        ->and(round((float) $subscription->payments()->where('status', 'pending')->sum('amount_due') / 100, 2))
+        ->toBe(195.0);
 })->group('subscriptions', 'discount');

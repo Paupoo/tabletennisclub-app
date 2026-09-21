@@ -34,6 +34,7 @@ use App\Domains\Subscriptions\Notifications\TrainingPackRejectedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Services\TrainingPackProrata;
 use App\Domains\Trainings\Services\TrainingWaitlistService;
+use App\Livewire\Concerns\GrantsInlineDiscount;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Livewire\Concerns\ManagesGuardians;
@@ -56,6 +57,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
+    use GrantsInlineDiscount;
     use HasBreadcrumbs, HasFilterDrawer, ManagesGuardians, Toast, WithPagination;
 
     /** Résultats de recherche affichés dans le drawer ; au-delà, on annonce le reste. */
@@ -258,6 +260,13 @@ new class extends Component
             (new ApproveTrainingPacksAction)($subscription, $this->approvedPackIds, $familyMembersCount);
         }
 
+        // Avant la facture, et non après : ici le paiement naît de
+        // `getAmountDue()`, donc la communication doit déjà porter le montant
+        // remisé. À l'inverse du raccourci de la demande de pack, où le
+        // complément existe avant qu'on puisse le raboter.
+        $this->applyInlineDiscount($subscription);
+        $subscription->refresh();
+
         // Génère le Payment si aucun n'existe déjà pour cette subscription
         $payment = $subscription->payments()->where('status', 'pending')->first();
         if (! $payment) {
@@ -287,6 +296,7 @@ new class extends Component
     }
 
     public bool $discountModal = false;
+
 
     /** 'amount' (euros) ou 'percent' — le pourcentage n'est qu'un clavier. */
     public string $discountMode = 'amount';
@@ -417,6 +427,8 @@ new class extends Component
             ];
             $this->paymentGenerated = true;
         }
+
+        $this->applyInlineDiscount($subscription->fresh());
 
         $rejectedIds = array_diff($allPendingIds, $this->approvedPackIds);
         if ($rejectedIds !== []) {

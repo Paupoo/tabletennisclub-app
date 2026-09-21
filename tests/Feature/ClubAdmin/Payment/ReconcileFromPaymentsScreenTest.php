@@ -141,3 +141,45 @@ it('leaves out a transfer it has already allocated in full', function (): void {
     expect(reconcileScreen(User::factory()->create())->call('previewBatchMatch')->get('batchMatches'))
         ->toBeEmpty();
 })->group('payments', 'batch');
+
+/**
+ * Le remboursement passe par la même porte que l'encaissement.
+ *
+ * `confirmRefundReconcile()` écrivait `refund_transaction_id` et le statut à la
+ * main. La colonne était `unique()` : un virement sortant ne pouvait payer
+ * qu'un seul remboursement.
+ */
+it('executes a refund through the allocation action', function (): void {
+    $member = User::factory()->create();
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => $member->id,
+        'status' => 'confirmed',
+        'amount_due' => 365,
+    ]);
+
+    $refund = $subscription->payments()->create([
+        'reference' => '999/0000/00065',
+        'amount_due' => 65,
+        'amount_paid' => 0,
+        'status' => 'to_refund',
+        'payment_method' => 'refund',
+    ]);
+
+    $outgoing = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN FAVEUR DE TIERS',
+        'amount' => -65.0,
+        'counterparty_name' => $member->full_name,
+    ]);
+
+    reconcileScreen(User::factory()->create())
+        ->call('openRefundReconcile', $refund->id)
+        ->set('selectedRefundTransactionId', $outgoing->id)
+        ->call('confirmRefundReconcile');
+
+    expect($refund->fresh()->status)->toBe('refunded')
+        ->and($refund->fresh()->amount_paid)->toBe(65.0)
+        ->and($outgoing->fresh()->allocated_amount)->toBe(-65.0)
+        ->and($outgoing->fresh()->isSettled())->toBeTrue();
+})->group('payments', 'reconciliation');

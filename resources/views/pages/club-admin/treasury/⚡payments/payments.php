@@ -93,8 +93,10 @@ new class extends Component
 
         $payments = Payment::whereIn('id', $ids)->where('status', 'to_refund')->get();
 
-        $blocked = $payments->filter(fn (Payment $p): bool => $p->refund_transaction_id !== null);
-        $toCancel = $payments->filter(fn (Payment $p): bool => $p->refund_transaction_id === null);
+        // Ce qui bloque l'annulation, c'est l'argent déjà sorti — pas une
+        // colonne de liaison que plus personne n'écrit.
+        $blocked = $payments->filter(fn (Payment $p): bool => (float) $p->amount_paid > 0.0);
+        $toCancel = $payments->filter(fn (Payment $p): bool => (float) $p->amount_paid <= 0.0);
 
         foreach ($toCancel as $payment) {
             $payment->update(['status' => 'paid']);
@@ -184,9 +186,8 @@ new class extends Component
                     return;
                 }
 
-                $payment->update([
-                    'refund_transaction_id' => $transaction->id,
-                    'status' => 'refunded',
+                (new AllocateTransactionAction)($transaction, [
+                    $payment->id => $this->allocatableAmount($payment, $transaction),
                 ]);
 
                 $count++;
@@ -237,15 +238,18 @@ new class extends Component
             return;
         }
 
-        DB::transaction(function (): void {
-            $payment = Payment::findOrFail($this->refundPaymentId);
-            $transaction = Transaction::findOrFail($this->selectedRefundTransactionId);
+        $payment = Payment::findOrFail($this->refundPaymentId);
+        $transaction = Transaction::findOrFail($this->selectedRefundTransactionId);
 
-            $payment->update([
-                'refund_transaction_id' => $transaction->id,
-                'status' => 'refunded',
+        try {
+            (new AllocateTransactionAction)($transaction, [
+                $payment->id => $this->allocatableAmount($payment, $transaction),
             ]);
-        });
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
 
         $this->refundModal = false;
         $this->refundPaymentId = null;
@@ -393,10 +397,15 @@ new class extends Component
             ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->reconcileEagerLoads())])->find($this->reconcilePaymentId)
             : null;
 
-        $candidates = Transaction::whereDoesntHave('payment')
-            ->where('amount', '>', 0)
+        // Ce qui reste à placer, pas ce qui n'a pas de paiement attaché : depuis
+        // que le geste passe par l'action, le lien `payment` n'est plus écrit,
+        // et une ligne déjà entièrement affectée reviendrait dans la liste.
+        $candidates = Transaction::where('amount', '>', 0)
+            ->whereNull('settled_at')
             ->orderBy('date', 'desc')
-            ->get();
+            ->get()
+            ->filter(fn (Transaction $transaction): bool => abs($transaction->residue()) > 0.001)
+            ->values();
 
         return $payment
             ? (new TransactionMatcher)->rank($payment, $candidates)
@@ -498,12 +507,16 @@ new class extends Component
 
         $toRefundPayments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
             ->where('status', 'to_refund')
-            ->whereNull('refund_transaction_id')
             ->get();
 
-        $outgoingTransactions = Transaction::whereDoesntHave('refundPayment')
-            ->where('amount', '<', 0)
-            ->get();
+        // Un virement sortant qui a encore quelque chose à placer. Le lien
+        // `refundPayment` ne dit plus rien : personne ne l'écrit depuis que le
+        // geste passe par l'action.
+        $outgoingTransactions = Transaction::where('amount', '<', 0)
+            ->whereNull('settled_at')
+            ->get()
+            ->filter(fn (Transaction $transaction): bool => abs($transaction->residue()) > 0.001)
+            ->values();
 
         $this->refundBatchMatches = [];
 
@@ -563,10 +576,12 @@ new class extends Component
         // Un remboursement sort du compte du club : les candidates sont les
         // débits, mais le barème est le même — c'est le même membre qu'on
         // cherche au bout du virement.
-        $candidates = Transaction::whereDoesntHave('refundPayment')
-            ->where('amount', '<', 0)
+        $candidates = Transaction::where('amount', '<', 0)
+            ->whereNull('settled_at')
             ->orderBy('date', 'desc')
-            ->get();
+            ->get()
+            ->filter(fn (Transaction $transaction): bool => abs($transaction->residue()) > 0.001)
+            ->values();
 
         return $payment
             ? (new TransactionMatcher)->rank($payment, $candidates)

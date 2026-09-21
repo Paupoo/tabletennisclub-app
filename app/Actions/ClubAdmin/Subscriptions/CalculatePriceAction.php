@@ -37,7 +37,14 @@ final readonly class CalculatePriceAction
         // reçue et que celle-ci absorbe. Le retrancher une seule fois, au
         // moment de l'affiliation, l'aurait fait disparaître au premier départ
         // de pack ou à la première réconciliation.
-        $subscription->amount_due = max(0.0, round($quote['total'] - $subscription->family_credit, 2));
+        // La remise du secrétaire se retranche ici, après le crédit famille et
+        // à chaque recalcul, pour la même raison que lui : ce calcul repart de
+        // zéro, et ce qui n'est pas relu à chaque passage n'existe plus au
+        // premier ajout de pack.
+        $subscription->amount_due = max(0.0, round(
+            $quote['total'] - $subscription->family_credit - $subscription->discountTotal(),
+            2,
+        ));
 
         $subscription->save();
 

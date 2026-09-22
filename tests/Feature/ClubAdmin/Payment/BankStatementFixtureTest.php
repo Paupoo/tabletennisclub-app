@@ -19,7 +19,9 @@ function seededClubForStatement(): void
 
     // Des membres sans famille, pour les cas qui n'en demandent pas.
     for ($i = 0; $i < 20; $i++) {
-        $member = User::factory()->create();
+        $member = User::factory()->create([
+            'iban' => sprintf('BE68%012d', 539007547000 + $i),
+        ]);
 
         $subscription = Subscription::factory()->create([
             'user_id' => $member->id,
@@ -109,4 +111,19 @@ it('carries a duplicate of one of its own rows', function (): void {
     }, $body);
 
     expect(count($fingerprints))->toBeGreaterThan(count(array_unique($fingerprints)));
+})->group('payments', 'fixture');
+
+/**
+ * Le membre qui paie de son propre compte sans mettre la communication.
+ *
+ * Seul son IBAN le désigne. C'est la branche « IBAN du membre » du barème —
+ * aussi peu exercée que l'était la branche tuteur, parce que huit membres sur
+ * deux cent soixante-neuf portaient un IBAN en base.
+ */
+it('produces a transfer recognisable by the member IBAN alone', function (): void {
+    seededClubForStatement();
+
+    $result = (new BankStatementFixture)->build();
+
+    expect($result->covered)->toContain('member_iban_only');
 })->group('payments', 'fixture');

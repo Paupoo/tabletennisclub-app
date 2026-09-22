@@ -25,6 +25,7 @@ use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TableStateEnum;
 use App\Domains\Shared\Models\AppSetting;
+use App\Support\Treasury\BankStatementFixture;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
@@ -349,8 +350,14 @@ class DatabaseSeeder extends Seeder
             $this->tableService->updateTablesCount($room);
         }
 
+        // Quatre membres sur cinq ont leur IBAN en fiche. Huit sur deux cent
+        // soixante-neuf en portaient un, et la branche « IBAN du membre » du
+        // barème de rapprochement restait donc aussi muette que l'était la
+        // branche tuteur. Un cinquième sans IBAN : le club ne l'a pas toujours,
+        // et c'est précisément ce qui fait vivre le rapprochement par le nom.
         User::factory()
             ->isNotCompetitor()
+            ->hasBankAccount(80)
             ->count(100)
             ->create();
 
@@ -396,5 +403,19 @@ class DatabaseSeeder extends Seeder
         // En dernier : la force list se calcule sur la population définitive,
         // et InterclubSeeder crée encore des compétiteurs.
         RecalculateForceListAction::handle();
+
+        // Le relevé de démonstration se génère une fois la base finie, jamais
+        // au milieu. Il vivait dans TreasurySeeder, qui tourne avant FineSeeder
+        // et TrainingPackSeeder : les créances que ceux-là créent n'existaient
+        // pas encore, et le fichier décrivait un instantané intermédiaire au
+        // lieu de la base qu'on allait ouvrir.
+        //
+        // Même classe que `treasury:demo-statement` : une implémentation, deux
+        // portes.
+        $fixture = new BankStatementFixture;
+        $paths = $fixture->write($fixture->build(), storage_path('app/seeders'));
+
+        $this->command?->info("Bank statement written to: {$paths['csv']}");
+        $this->command?->info("What to check: {$paths['manifest']}");
     }
 }

@@ -46,6 +46,7 @@ final class BankStatementFixture
         'rounded_up' => 'Virement arrondi au-dessus — reliquat',
         'grouped_refund' => 'Un sortant pour deux remboursements du même foyer',
         'guardian_name_only' => 'Tuteur non affilié, nom seul, sans référence',
+        'member_iban_only' => 'Membre payant de son compte, reconnaissable au seul IBAN',
         'unknown_reference' => 'Référence inconnue — la ligne qu\'on ne sait pas classer',
     ];
 
@@ -83,6 +84,7 @@ final class BankStatementFixture
         $this->caseRoundedUp($pending->shift());
         $this->caseFamilyTransfer();
         $this->caseGuardianNameOnly();
+        $this->caseMemberIbanOnly($pending->shift());
         $this->caseThirdParty();
         $this->caseRefundMatch($refunds->shift());
         $this->caseGroupedRefund($refunds);
@@ -263,6 +265,45 @@ final class BankStatementFixture
             'Ni référence ni IBAN — seulement « %s ». Attendu : le barème reconnaît le tuteur et propose %s.',
             $guardian->full_name,
             $this->payerName($claim),
+        ));
+    }
+
+    /**
+     * Ni référence ni nom lisible : seul l'IBAN désigne le membre.
+     *
+     * Le tiers porte un libellé que la banque du payeur a fabriqué — souvent
+     * le nom du titulaire du compte en majuscules, parfois autre chose — et le
+     * barème doit s'en sortir avec le numéro de compte seul.
+     */
+    private function caseMemberIbanOnly(?Payment $payment): void
+    {
+        if (! $payment instanceof Payment) {
+            $this->skip('member_iban_only', 'pas assez de paiements en attente');
+
+            return;
+        }
+
+        $iban = $this->ibanOf($payment);
+
+        if ($iban === '') {
+            $this->skip('member_iban_only', 'aucun membre avec une créance ouverte ne porte d\'IBAN en fiche');
+
+            return;
+        }
+
+        $this->push('member_iban_only', [
+            'amount' => (float) $payment->amount_due,
+            'counterparty' => 'TITULAIRE DU COMPTE',
+            'counterparty_ac' => $iban,
+            'structured_ref' => '',
+            'free_ref' => '',
+            'description' => 'VIREMENT EN VOTRE FAVEUR',
+        ]);
+
+        $this->note('member_iban_only', sprintf(
+            'Ni référence ni nom exploitable — seulement le compte %s. Attendu : le barème reconnaît %s par son IBAN et le propose en tête des candidats.',
+            $iban,
+            $this->payerName($payment),
         ));
     }
 

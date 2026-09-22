@@ -50,6 +50,24 @@ class UserFactory extends Factory
         ];
     }
 
+    /**
+     * Un membre dont le club a l'IBAN en fiche.
+     *
+     * Optionnel à dessein : le défaut reste sans IBAN, parce qu'un test du
+     * barème repose explicitement sur « l'IBAN du tuteur que le membre n'avait
+     * pas en fiche ». C'est le semis qui choisit d'en donner, pas le factory.
+     *
+     * @param  int  $odds  Pourcentage de chances d'en porter un.
+     */
+    public function hasBankAccount(int $odds = 100): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'iban' => fake()->boolean($odds)
+                ? sprintf('BE%02d%012d', fake()->numberBetween(10, 98), fake()->numberBetween(100000000000, 999999999999))
+                : null,
+        ]);
+    }
+
     public function isAdmin(): static
     {
         return $this->withRole(Role::ADMINISTRATOR);

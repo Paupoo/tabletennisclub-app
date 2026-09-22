@@ -16,7 +16,6 @@ use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingUser;
-use App\Support\Treasury\BankStatementFixture;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Seeder;
@@ -56,14 +55,6 @@ class TreasurySeeder extends Seeder
         $this->seedMiscCashEntries($cashRegister, $treasurer);
 
         $this->seedRefunds();
-
-        // Le relevé de démonstration est produit par BankStatementFixture, que
-        // `treasury:demo-statement` appelle aussi. Une seule implémentation,
-        // deux portes — le seeder ne doit pas avoir sa propre version qui
-        // diverge de celle qu'on lance à la main.
-        $fixture = new BankStatementFixture;
-        $paths = $fixture->write($fixture->build(), storage_path('app/seeders'));
-        $this->command?->info("Bank statement written to: {$paths['csv']}");
     }
 
     private function fakeBelgianIban(): string

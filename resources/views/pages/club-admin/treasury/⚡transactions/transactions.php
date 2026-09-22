@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
+use App\Contracts\DescribesPayment;
 use App\Actions\ClubAdmin\Payments\SettleTransactionResidueAction;
 use App\Domains\ClubAdmin\Payment\Models\BankImport;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
@@ -43,6 +44,8 @@ new class extends Component
     public array $allocations = [];
 
     public bool $allocationModal = false;
+
+    public string $allocationSearch = '';
 
     public ?int $allocationTransactionId = null;
 
@@ -117,10 +120,29 @@ new class extends Component
             ->get()
             ->filter(fn (Payment $payment): bool => $this->outstandingOf($payment) > 0.0);
 
+        // La recherche, pour aller chercher quelqu'un que le barème ne propose
+        // pas en tête : sur un club entier, trente candidats ne se lisent pas.
+        if (trim($this->allocationSearch) !== '') {
+            $needle = mb_strtolower(trim($this->allocationSearch));
+
+            $payments = $payments->filter(fn (Payment $payment): bool => str_contains(
+                mb_strtolower($this->payerNameOf($payment) . ' ' . $payment->reference),
+                $needle,
+            ));
+        }
+
         $matcher = new TransactionMatcher;
 
+        // Le verdict est attaché à la ligne, pas jeté : c'est lui qui dit au
+        // trésorier *pourquoi* un candidat est proposé, et sans cette raison
+        // une liste triée ressemble à une liste au hasard.
         return $payments
-            ->sortByDesc(fn (Payment $payment): int => $matcher->score($payment, $transaction, false)->strength->rank())
+            ->map(function (Payment $payment) use ($matcher, $transaction): Payment {
+                $payment->match = $matcher->score($payment, $transaction, false);
+
+                return $payment;
+            })
+            ->sortByDesc(fn (Payment $payment): int => $payment->match->strength->rank())
             ->values();
     }
 
@@ -158,12 +180,33 @@ new class extends Component
         $this->success(__(':count allocation(s) recorded.', ['count' => count($wanted)]));
     }
 
+    /**
+     * Pré-remplit ce qu'on propose d'affecter à cette ligne.
+     *
+     * Un clic plutôt qu'un calcul : le trésorier a sous les yeux ce qui reste
+     * sur la transaction et ce que le paiement réclame, et il n'a aucune raison
+     * de faire la soustraction lui-même.
+     */
+    public function suggestAllocation(int $paymentId): void
+    {
+        $payment = Payment::find($paymentId);
+
+        if (! $payment instanceof Payment) {
+            return;
+        }
+
+        $this->allocations[(string) $paymentId] = $this->suggestedFor($payment, $this->remainingToAllocate());
+
+        unset($this->remainingToAllocate);
+    }
+
     public function openAllocation(int $transactionId): void
     {
         Gate::authorize(Permission::PaymentsReconcile->value);
 
         $this->allocationTransactionId = $transactionId;
         $this->allocations = [];
+        $this->allocationSearch = '';
         $this->residueReason = '';
         $this->allocationModal = true;
 
@@ -550,7 +593,7 @@ new class extends Component
 
     private function closeAllocation(): void
     {
-        $this->reset(['allocationModal', 'allocationTransactionId', 'allocations', 'residueReason']);
+        $this->reset(['allocationModal', 'allocationTransactionId', 'allocations', 'allocationSearch', 'residueReason']);
 
         unset($this->allocationTransaction, $this->allocationCandidates, $this->remainingToAllocate, $this->stats);
     }
@@ -561,6 +604,22 @@ new class extends Component
      * Sur un remboursement, `amount_due` porte l'engagement et `amount_paid` ce
      * qui est déjà sorti : la soustraction dit la même chose dans les deux sens.
      */
+    /**
+     * Ce qu'on propose d'affecter à cette ligne : le plus petit des deux
+     * restes. Le trésorier n'a plus qu'à confirmer au lieu de calculer.
+     */
+    private function suggestedFor(Payment $payment, float $remaining): float
+    {
+        return round(min($this->outstandingOf($payment), max(0.0, $remaining)), 2);
+    }
+
+    private function payerNameOf(Payment $payment): string
+    {
+        $payable = $payment->payable;
+
+        return $payable instanceof DescribesPayment ? $payable->getPayerName() : '—';
+    }
+
     private function outstandingOf(Payment $payment): float
     {
         // Sur un remboursement, ce qui reste à faire est ce qui n'est pas

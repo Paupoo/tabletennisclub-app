@@ -380,18 +380,59 @@
                     </div>
                 </div>
 
-                <div class="space-y-2">
+                {{-- Qui a payé, et avec quelle communication. C'est la première
+                     chose dont on a besoin pour décider, et elle manquait. --}}
+                <div class="rounded-lg border border-base-300 bg-base-200/60 p-3 text-sm">
+                    <div class="flex flex-wrap items-baseline gap-x-2">
+                        <span class="font-semibold">{{ $tx->counterparty_name ?: __('Unknown counterparty') }}</span>
+                        <span class="text-xs opacity-60">{{ $tx->date?->format('d/m/Y') }}</span>
+                    </div>
+                    @if ($tx->structured_reference || $tx->free_reference)
+                        <div class="mt-0.5 font-mono text-xs text-primary">
+                            {{ $tx->structured_reference ?: $tx->free_reference }}
+                        </div>
+                    @endif
+                    @if ($tx->counterparty_bank_account)
+                        <div class="mt-0.5 font-mono text-xs opacity-50">{{ $tx->counterparty_bank_account }}</div>
+                    @endif
+                </div>
+
+                <x-input :placeholder="__('Search a member or a reference...')"
+                    wire:model.live.debounce.300ms="allocationSearch"
+                    icon="o-magnifying-glass" clearable />
+
+                <div class="max-h-80 space-y-2 overflow-y-auto">
                     @forelse($this->allocationCandidates as $candidate)
-                        <div class="flex items-center gap-3 rounded-lg border border-base-300 p-3" wire:key="alloc-{{ $candidate->id }}">
-                            <div class="flex-1 min-w-0">
-                                <div class="font-semibold text-sm truncate">
+                        <div class="flex items-center gap-3 rounded-lg border p-3 {{ $candidate->match?->strength->rank() > 0 ? 'border-success/30 bg-success/5' : 'border-base-300' }}"
+                            wire:key="alloc-{{ $candidate->id }}">
+                            <div class="min-w-0 flex-1">
+                                <div class="truncate text-sm font-semibold">
                                     {{ $candidate->payable instanceof \App\Contracts\DescribesPayment ? $candidate->payable->getPayerName() : '—' }}
                                 </div>
                                 <div class="font-mono text-xs text-primary">{{ $candidate->reference }}</div>
+
+                                {{-- Pourquoi ce candidat est proposé. Sans cette
+                                     raison, une liste triée ressemble à une liste
+                                     au hasard. --}}
+                                @if ($candidate->match && $candidate->match->reasons !== [])
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                        @foreach ($candidate->match->reasons as $reason)
+                                            <span class="badge badge-success badge-soft badge-xs">{{ $reason }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
-                            <div class="text-xs opacity-60 whitespace-nowrap">
-                                {{ __('owes :amount €', ['amount' => number_format($candidate->amount_due - $candidate->amount_paid, 2, ',', ' ')]) }}
+
+                            <div class="shrink-0 text-right">
+                                <div class="whitespace-nowrap text-xs opacity-60">
+                                    {{ __('owes :amount €', ['amount' => number_format($candidate->amount_due - $candidate->amount_paid, 2, ',', ' ')]) }}
+                                </div>
+                                <x-button
+                                    :label="__('Allocate :amount €', ['amount' => number_format(min($candidate->amount_due - $candidate->amount_paid, max(0, $this->remainingToAllocate)), 2, ',', ' ')])"
+                                    wire:click="suggestAllocation({{ $candidate->id }})"
+                                    class="btn-xs btn-ghost mt-1" />
                             </div>
+
                             <x-input type="number" step="0.01" min="0" class="w-28"
                                 wire:model.live.blur="allocations.{{ $candidate->id }}" />
                         </div>

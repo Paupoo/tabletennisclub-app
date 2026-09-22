@@ -324,3 +324,78 @@ it('offers a refund whose line still carries the money that came in', function (
 
     expect($candidates->pluck('reference'))->toContain('900/0000/00001');
 })->group('payments', 'transactions');
+
+/**
+ * Le tiroir doit dire qui a payé, et pourquoi chaque candidat est proposé.
+ *
+ * Rempli, il affichait trente-quatre lignes « doit 10,00 € » sans le nom du
+ * tiers, sans le moindre signal de pertinence et avec des cases vides à
+ * remplir une par une. Le barème calculait déjà le verdict — il était jeté.
+ */
+it('names the payer and says why each candidate is proposed', function (): void {
+    $member = User::factory()->create(['first_name' => 'Jade', 'last_name' => 'Delfosse']);
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => $member->id,
+        'status' => 'confirmed',
+        'amount_due' => 95,
+    ]);
+
+    $payment = $subscription->payments()->create([
+        'reference' => '023/0926/03979',
+        'amount_due' => 95,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 95.0,
+        'counterparty_name' => 'DELFOSSE Jade',
+        'structured_reference' => $payment->reference,
+    ]);
+
+    $screen = settlementScreen()->call('openAllocation', $transaction->id);
+
+    // Le tiers, pour savoir de qui vient l'argent.
+    $screen->assertSee('DELFOSSE Jade');
+
+    // Et la raison du rapprochement, attachée à la ligne.
+    $candidate = $screen->instance()->allocationCandidates()->firstWhere('reference', '023/0926/03979');
+
+    expect($candidate->match)->not->toBeNull()
+        ->and($candidate->match->reasons)->not->toBeEmpty();
+})->group('payments', 'transactions');
+
+/**
+ * Un clic remplit le montant, plutôt qu'un calcul de tête.
+ */
+it('fills in the amount it suggests for a candidate', function (): void {
+    $subscription = Subscription::factory()->create([
+        'user_id' => User::factory()->create()->id,
+        'status' => 'confirmed',
+        'amount_due' => 125,
+    ]);
+
+    $payment = $subscription->payments()->create([
+        'reference' => '024/0926/00001',
+        'amount_due' => 125,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT',
+        'amount' => 60.0,
+        'counterparty_name' => 'Payeur',
+    ]);
+
+    $screen = settlementScreen()
+        ->call('openAllocation', $transaction->id)
+        ->call('suggestAllocation', $payment->id);
+
+    // Le plus petit des deux restes : la transaction n'a que 60 € à placer.
+    expect($screen->get('allocations'))->toBe([(string) $payment->id => 60.0]);
+})->group('payments', 'transactions');

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Payment\Models;
 
+use App\Domains\ClubAdmin\Payment\Services\TransactionMatch;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -28,6 +29,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $last_reminded_at
  * @property int|null $refund_transaction_id
  * @property string $payment_method
+ * @property TransactionMatch|null $match Verdict de rapprochement, posé à la volée — jamais persisté.
  * @property-read Model|\Eloquent $payable
  * @property-read Transaction|null $refundTransaction
  *

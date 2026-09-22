@@ -401,49 +401,128 @@
                     wire:model.live.debounce.300ms="allocationSearch"
                     icon="o-magnifying-glass" clearable />
 
-                <div class="max-h-80 space-y-2 overflow-y-auto">
-                    @forelse($this->allocationCandidates as $candidate)
-                        <div class="flex items-center gap-3 rounded-lg border p-3 {{ $candidate->match?->strength->rank() > 0 ? 'border-success/30 bg-success/5' : 'border-base-300' }}"
-                            wire:key="alloc-{{ $candidate->id }}">
-                            <div class="min-w-0 flex-1">
-                                <div class="truncate text-sm font-semibold">
-                                    {{ $candidate->payable instanceof \App\Contracts\DescribesPayment ? $candidate->payable->getPayerName() : '—' }}
-                                </div>
-                                <div class="font-mono text-xs text-primary">{{ $candidate->reference }}</div>
+                @php
+                    // Ce que le barème reconnaît, et le reste. Les mélanger
+                    // présente vingt noms sans raison comme des suggestions,
+                    // ce qui est un contresens : ce ne sont que les créances
+                    // ouvertes du club.
+                    [$suggested, $others] = $this->allocationCandidates
+                        ->partition(fn ($c) => ($c->match?->strength->rank() ?? 0) > 0);
+                @endphp
 
-                                {{-- Pourquoi ce candidat est proposé. Sans cette
-                                     raison, une liste triée ressemble à une liste
-                                     au hasard. --}}
-                                @if ($candidate->match && $candidate->match->reasons !== [])
-                                    <div class="mt-1 flex flex-wrap gap-1">
-                                        @foreach ($candidate->match->reasons as $reason)
-                                            <span class="badge badge-success badge-soft badge-xs">{{ $reason }}</span>
-                                        @endforeach
+                @if ($suggested->isNotEmpty())
+                    <div>
+                        <h3 class="mb-2 text-xs font-bold uppercase tracking-widest text-success">
+                            {{ __('Suggested (:count)', ['count' => $suggested->count()]) }}
+                        </h3>
+                        @php
+                            $rows = $suggested;
+                        @endphp
+                        <div class="space-y-2">
+                        @foreach ($rows as $candidate)
+                            <div class="flex items-center gap-3 rounded-lg border p-3 {{ $candidate->match?->strength->rank() > 0 ? 'border-success/30 bg-success/5' : 'border-base-300' }}"
+                                wire:key="alloc-{{ $candidate->id }}">
+                                <div class="min-w-0 flex-1">
+                                    <div class="truncate text-sm font-semibold">
+                                        {{ $candidate->payable instanceof \App\Contracts\DescribesPayment ? $candidate->payable->getPayerName() : '—' }}
                                     </div>
-                                @endif
-                            </div>
+                                    <div class="font-mono text-xs text-primary">{{ $candidate->reference }}</div>
 
-                            <div class="shrink-0 text-right">
-                                <div class="whitespace-nowrap text-xs opacity-60">
-                                    {{ __('owes :amount €', ['amount' => number_format($candidate->amount_due - $candidate->amount_paid, 2, ',', ' ')]) }}
+                                    {{-- Pourquoi ce candidat est proposé. Sans cette
+                                         raison, une liste triée ressemble à une liste
+                                         au hasard. --}}
+                                    @if ($candidate->match && $candidate->match->reasons !== [])
+                                        <div class="mt-1 flex flex-wrap gap-1">
+                                            @foreach ($candidate->match->reasons as $reason)
+                                                <span class="badge badge-success badge-soft badge-xs">{{ $reason }}</span>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
-                                <x-button
-                                    :label="__('Allocate :amount €', ['amount' => number_format(min($candidate->amount_due - $candidate->amount_paid, max(0, $this->remainingToAllocate)), 2, ',', ' ')])"
-                                    wire:click="suggestAllocation({{ $candidate->id }})"
-                                    class="btn-xs btn-ghost mt-1" />
-                            </div>
 
-                            <x-input type="number" step="0.01" min="0" class="w-28"
-                                wire:model.live.blur="allocations.{{ $candidate->id }}" />
+                                <div class="shrink-0 text-right">
+                                    <div class="whitespace-nowrap text-xs opacity-60">
+                                        {{ __('owes :amount €', ['amount' => number_format($candidate->amount_due - $candidate->amount_paid, 2, ',', ' ')]) }}
+                                    </div>
+                                    <x-button
+                                        :label="__('Allocate :amount €', ['amount' => number_format(min($candidate->amount_due - $candidate->amount_paid, max(0, $this->remainingToAllocate)), 2, ',', ' ')])"
+                                        wire:click="suggestAllocation({{ $candidate->id }})"
+                                        class="btn-xs btn-ghost mt-1" />
+                                </div>
+
+                                <x-input type="number" step="0.01" min="0" class="w-28"
+                                    wire:model.live.blur="allocations.{{ $candidate->id }}" />
+                            </div>
+                        @endforeach
                         </div>
-                    @empty
-                        <p class="py-6 text-center text-sm text-muted">
-                            {{ $tx->amount < 0
-                                ? __('No refund is waiting to be paid out. This transfer went somewhere else — write off what is left, or leave it unreconciled.')
-                                : __('No payment is waiting for money. This transfer may be a subsidy, a sponsor or a supplier — write off what is left, or leave it unreconciled.') }}
-                        </p>
-                    @endforelse
-                </div>
+                    </div>
+                @elseif ($this->allocationCandidates->isNotEmpty())
+                    <div class="flex items-start gap-3 rounded-lg border border-warning/20 bg-warning/5 p-3 text-sm">
+                        <x-icon name="o-question-mark-circle" class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                        <div>
+                            <div class="font-semibold">{{ __('No payment matches this transfer') }}</div>
+                            <p class="mt-1 text-xs opacity-80">
+                                {{ __('Neither the communication nor the counterparty points to a member. Search below if you know who it is, write off what is left if the club keeps it, or leave the line unreconciled.') }}
+                            </p>
+                        </div>
+                    </div>
+                @endif
+
+                @if ($others->isNotEmpty())
+                    <div>
+                        <h3 class="mb-2 text-xs font-bold uppercase tracking-widest text-muted">
+                            {{ __('All open claims (:count)', ['count' => $others->count()]) }}
+                        </h3>
+                        @php
+                            $rows = $others;
+                        @endphp
+                        <div class="max-h-72 space-y-2 overflow-y-auto">
+                        @foreach ($rows as $candidate)
+                            <div class="flex items-center gap-3 rounded-lg border p-3 {{ $candidate->match?->strength->rank() > 0 ? 'border-success/30 bg-success/5' : 'border-base-300' }}"
+                                wire:key="alloc-{{ $candidate->id }}">
+                                <div class="min-w-0 flex-1">
+                                    <div class="truncate text-sm font-semibold">
+                                        {{ $candidate->payable instanceof \App\Contracts\DescribesPayment ? $candidate->payable->getPayerName() : '—' }}
+                                    </div>
+                                    <div class="font-mono text-xs text-primary">{{ $candidate->reference }}</div>
+
+                                    {{-- Pourquoi ce candidat est proposé. Sans cette
+                                         raison, une liste triée ressemble à une liste
+                                         au hasard. --}}
+                                    @if ($candidate->match && $candidate->match->reasons !== [])
+                                        <div class="mt-1 flex flex-wrap gap-1">
+                                            @foreach ($candidate->match->reasons as $reason)
+                                                <span class="badge badge-success badge-soft badge-xs">{{ $reason }}</span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <div class="shrink-0 text-right">
+                                    <div class="whitespace-nowrap text-xs opacity-60">
+                                        {{ __('owes :amount €', ['amount' => number_format($candidate->amount_due - $candidate->amount_paid, 2, ',', ' ')]) }}
+                                    </div>
+                                    <x-button
+                                        :label="__('Allocate :amount €', ['amount' => number_format(min($candidate->amount_due - $candidate->amount_paid, max(0, $this->remainingToAllocate)), 2, ',', ' ')])"
+                                        wire:click="suggestAllocation({{ $candidate->id }})"
+                                        class="btn-xs btn-ghost mt-1" />
+                                </div>
+
+                                <x-input type="number" step="0.01" min="0" class="w-28"
+                                    wire:model.live.blur="allocations.{{ $candidate->id }}" />
+                            </div>
+                        @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                @if ($this->allocationCandidates->isEmpty())
+                    <p class="py-6 text-center text-sm text-muted">
+                        {{ $tx->amount < 0
+                            ? __('No refund is waiting to be paid out. This transfer went somewhere else — write off what is left, or leave it unreconciled.')
+                            : __('No payment is waiting for money. This transfer may be a subsidy, a sponsor or a supplier — write off what is left, or leave it unreconciled.') }}
+                    </p>
+                @endif
 
                 @if(abs($tx->residue()) > 0.001)
                     <div class="space-y-3 rounded-xl border border-warning/20 bg-warning/5 p-3">

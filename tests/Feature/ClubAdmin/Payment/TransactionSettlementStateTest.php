@@ -399,3 +399,45 @@ it('fills in the amount it suggests for a candidate', function (): void {
     // Le plus petit des deux restes : la transaction n'a que 60 € à placer.
     expect($screen->get('allocations'))->toBe([(string) $payment->id => 60.0]);
 })->group('payments', 'transactions');
+
+/**
+ * Quand rien ne correspond, l'écran doit le dire.
+ *
+ * Un virement d'un tiers inconnu, sans communication reconnaissable, affichait
+ * vingt-et-un paiements en attente comme s'il s'agissait de suggestions. Aucun
+ * n'en était une : le barème ne leur trouve aucune raison. Une liste sans
+ * verdict se lit comme une liste de propositions, et c'est un contresens.
+ */
+it('says plainly when the scale recognises nobody', function (): void {
+    $subscription = Subscription::factory()->create([
+        'user_id' => User::factory()->create()->id,
+        'status' => 'confirmed',
+        'amount_due' => 10,
+    ]);
+
+    $subscription->payments()->create([
+        'reference' => '023/0926/03979',
+        'amount_due' => 10,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    // Le cas 13 du relevé de démonstration : un tiers qu'on ne connaît pas,
+    // une communication qui ne désigne rien.
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 95.0,
+        'counterparty_name' => 'DUBOIS Jean-Pierre',
+        'structured_reference' => '999/9999/99999',
+    ]);
+
+    $screen = settlementScreen()->call('openAllocation', $transaction->id);
+
+    $candidates = $screen->instance()->allocationCandidates();
+
+    // Aucun candidat n'a de raison : c'est le fait que l'écran doit annoncer.
+    expect($candidates->filter(fn ($c): bool => $c->match?->reasons !== []))->toBeEmpty();
+
+    $screen->assertSee(__('No payment matches this transfer'));
+})->group('payments', 'transactions');

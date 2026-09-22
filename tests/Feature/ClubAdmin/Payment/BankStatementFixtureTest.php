@@ -1,0 +1,112 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Support\Treasury\BankStatementFixture;
+use Database\Seeders\FamilySeeder;
+
+/**
+ * Un club de démonstration réduit, mais complet : des affiliations avec une
+ * créance ouverte, des remboursements engagés, et des familles.
+ */
+function seededClubForStatement(): void
+{
+    $season = makeActiveSeason();
+
+    test()->seed(FamilySeeder::class);
+
+    // Des membres sans famille, pour les cas qui n'en demandent pas.
+    for ($i = 0; $i < 20; $i++) {
+        $member = User::factory()->create();
+
+        $subscription = Subscription::factory()->create([
+            'user_id' => $member->id,
+            'season_id' => $season->id,
+            'status' => 'confirmed',
+            'amount_due' => 125,
+            'amount_paid' => 0,
+        ]);
+
+        $subscription->payments()->create([
+            'reference' => sprintf('021/0926/%05d', 1000 + $i),
+            'amount_due' => 125,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        // Trois remboursements engagés : un pour l'appariement simple, deux pour
+        // le virement sortant groupé.
+        if ($i < 3) {
+            $subscription->payments()->create([
+                'reference' => sprintf('021/0926/%05d', 9000 + $i),
+                'amount_due' => 40,
+                'amount_paid' => 0,
+                'status' => 'to_refund',
+                'payment_method' => 'refund',
+            ]);
+        }
+    }
+}
+
+it('covers every case of the catalogue on a seeded club', function (): void {
+    seededClubForStatement();
+
+    $result = (new BankStatementFixture)->build();
+
+    expect($result->skipped)->toBe([])
+        ->and($result->covered)->toHaveCount(count(BankStatementFixture::CASES))
+        ->and($result->rowCount)->toBeGreaterThan(20);
+})->group('payments', 'fixture');
+
+/**
+ * Le manifeste nomme chaque cas : c'est lui qui transforme quarante lignes de
+ * relevé en quelque chose qu'on peut éprouver à la main.
+ */
+it('writes a manifest that names every case it produced', function (): void {
+    seededClubForStatement();
+
+    $result = (new BankStatementFixture)->build();
+
+    foreach ($result->covered as $case) {
+        expect($result->manifest)->toContain(BankStatementFixture::CASES[$case]);
+    }
+})->group('payments', 'fixture');
+
+/**
+ * Les dates glissent avec le calendrier. Un relevé figé en mai tombe hors de
+ * toute plage qu'on pense à regarder, et on cherche le bug ailleurs.
+ */
+it('dates the statement on the days leading up to today', function (): void {
+    seededClubForStatement();
+
+    $result = (new BankStatementFixture)->build();
+
+    expect($result->csv)->toContain(now()->format('d/m/Y'))
+        ->and($result->csv)->not->toContain('/05/2026');
+})->group('payments', 'fixture');
+
+/**
+ * Le cas 6 vit à l'intérieur du fichier : deux lignes strictement identiques,
+ * pour que le dédoublonnage par empreinte se teste sans dépendre d'un import
+ * antérieur.
+ */
+it('carries a duplicate of one of its own rows', function (): void {
+    seededClubForStatement();
+
+    $lines = array_filter(explode("\r\n", (new BankStatementFixture)->build()->csv));
+    $body = array_slice($lines, 1);
+
+    // Les six colonnes sur lesquelles l'import calcule son empreinte : date,
+    // montant, IBAN du tiers, communication structurée, communication libre,
+    // libellé. Le solde n'en fait pas partie, donc deux lignes peuvent être
+    // des doublons sans être identiques caractère pour caractère.
+    $fingerprints = array_map(function (string $line): string {
+        $c = explode(';', $line);
+
+        return implode('|', [$c[5], $c[8], $c[12], $c[16], $c[17], $c[6]]);
+    }, $body);
+
+    expect(count($fingerprints))->toBeGreaterThan(count(array_unique($fingerprints)));
+})->group('payments', 'fixture');

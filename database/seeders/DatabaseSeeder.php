@@ -356,6 +356,11 @@ class DatabaseSeeder extends Seeder
 
         $this->call(SubscriptionSeeder::class);
 
+        // Des familles : un parent qui paie pour ses enfants est le cas le plus
+        // banal d'un club, et la base n'en portait aucun. Deux branches du
+        // barème de rapprochement en dépendent.
+        $this->call(FamilySeeder::class);
+
         // 1-3: teams, divisions, opponents, Interclub fixtures (observer creates empty results)
         $this->call(InterclubScheduleSeeder::class);
 

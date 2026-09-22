@@ -563,6 +563,20 @@ new class extends Component
      */
     private function outstandingOf(Payment $payment): float
     {
+        // Sur un remboursement, ce qui reste à faire est ce qui n'est pas
+        // encore **sorti**. `amount_paid` ne le dit pas de façon fiable : deux
+        // formes de `to_refund` coexistent, et celle héritée d'un paiement
+        // encaissé puis basculé garde l'encaissement d'origine dans cette
+        // colonne. Les crédits adossés à une transaction de débit, eux, ne
+        // décrivent que des sorties.
+        if ($payment->status === 'to_refund') {
+            $paidOut = abs((float) $payment->credits()
+                ->whereHas('transaction', fn (Builder $q): Builder => $q->where('amount', '<', 0))
+                ->sum('amount')) / 100;
+
+            return max(0.0, round((float) $payment->amount_due - $paidOut, 2));
+        }
+
         return max(0.0, round((float) $payment->amount_due - (float) $payment->amount_paid, 2));
     }
 

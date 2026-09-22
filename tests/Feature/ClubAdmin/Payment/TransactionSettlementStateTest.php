@@ -9,7 +9,9 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
@@ -225,15 +227,19 @@ it('writes off a residue from the drawer, with a reason', function (): void {
 })->group('payments', 'transactions');
 
 /**
- * Le tiroir doit supporter tous les payables, pas seulement les affiliations.
+ * Le tiroir ne doit pas aller chercher les membres un par un.
  *
  * `TransactionMatcher::payer()` lit `$payable->user` pour une affiliation, une
  * inscription au tournoi **et** une participation à une réunion. N'en charger
- * qu'un seul fait tomber l'écran en `LazyLoadingViolation` dès qu'une créance
- * d'un autre type traîne — et dix-neuf des créances ouvertes de la base de
- * démonstration sont des inscriptions à un tournoi.
+ * qu'un seul fait partir une requête par ligne — et sur la base de
+ * démonstration, dix-neuf des créances ouvertes sont des inscriptions.
+ *
+ * On compte les requêtes plutôt que d'attendre une exception :
+ * `Model::preventLazyLoading()` est actif mais ne lève rien dans cette suite,
+ * et une assertion sur `relationLoaded()` est aveugle — elle observe la
+ * relation **après** que le code l'a chargée, donc elle ne peut jamais échouer.
  */
-it('opens the drawer when a tournament registration is waiting for money', function (): void {
+it('loads every payable member in one go, whatever the payable', function (): void {
     $member = User::factory()->create();
 
     $tournament = Tournament::factory()->create(['price' => 15]);
@@ -259,26 +265,62 @@ it('opens the drawer when a tournament registration is waiting for money', funct
 
     $component = settlementScreen()->call('openAllocation', $transaction->id);
 
-    // On évalue vraiment les candidats : `assertOk()` ne force pas une
-    // propriété calculée, et c'est là que le barème lit `$payable->user`.
+    $singleUserLookups = 0;
+
+    DB::listen(function (QueryExecuted $query) use (&$singleUserLookups): void {
+        // La signature d'un chargement paresseux : on va chercher UN membre par
+        // son identifiant. Le chargement anticipé, lui, les prend en lot
+        // (`where id in (...)`).
+        if (preg_match('/from "users" where "users"\."id" = \?/', $query->sql) === 1) {
+            $singleUserLookups++;
+        }
+    });
+
     $candidates = $component->instance()->allocationCandidates();
 
-    expect($candidates->pluck('reference'))->toContain('800/0000/00001');
+    expect($candidates->pluck('reference'))->toContain('800/0000/00001')
+        ->and($singleUserLookups)->toBe(0, 'le barème est allé chercher des membres un par un');
+})->group('payments', 'transactions');
 
-    // L'invariant, plutôt que l'exception : `payer()` lit `$payable->user` sur
-    // les trois payables qui en portent un, et une relation non chargée fait
-    // tomber l'écran. Attendre l'exception ne suffit pas — elle ne se lève que
-    // si le payable se résout, ce qui dépend du type.
-    foreach ($candidates as $candidate) {
-        $payable = $candidate->payable;
+/**
+ * Un virement sortant doit trouver les remboursements qui l'attendent.
+ *
+ * Deux formes de `to_refund` coexistent : celle de
+ * RequestSubscriptionRefundAction, dont `amount_paid` vaut zéro jusqu'au
+ * virement, et celle héritée d'un paiement encaissé dont on a basculé le
+ * statut, qui garde `amount_paid = amount_due`. Un reste calculé sur
+ * `amount_due - amount_paid` écarte la seconde : le tiroir annonçait « aucun
+ * paiement n'attend d'argent dans ce sens » devant six remboursements ouverts.
+ *
+ * Ce qui compte est ce qui est déjà **sorti**, donc les crédits adossés à une
+ * transaction de débit.
+ */
+it('offers a refund whose line still carries the money that came in', function (): void {
+    $subscription = Subscription::factory()->create([
+        'user_id' => User::factory()->create()->id,
+        'status' => 'confirmed',
+        'amount_due' => 120,
+    ]);
 
-        if ($payable === null || ! method_exists($payable, 'user')) {
-            continue;
-        }
+    // La forme héritée : encaissée, puis basculée en `to_refund`.
+    $subscription->payments()->create([
+        'reference' => '900/0000/00001',
+        'amount_due' => 120,
+        'amount_paid' => 120,
+        'status' => 'to_refund',
+    ]);
 
-        expect($payable->relationLoaded('user'))->toBeTrue(sprintf(
-            '%s doit arriver avec son membre déjà chargé',
-            $payable::class,
-        ));
-    }
+    $outgoing = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN FAVEUR DE TIERS',
+        'amount' => -120.0,
+        'counterparty_name' => $subscription->user->full_name,
+    ]);
+
+    $candidates = settlementScreen()
+        ->call('openAllocation', $outgoing->id)
+        ->instance()
+        ->allocationCandidates();
+
+    expect($candidates->pluck('reference'))->toContain('900/0000/00001');
 })->group('payments', 'transactions');

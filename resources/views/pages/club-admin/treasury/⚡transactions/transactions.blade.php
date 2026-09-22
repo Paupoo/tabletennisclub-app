@@ -363,7 +363,11 @@
             <div class="space-y-4">
                 <div class="grid grid-cols-3 gap-3 text-center">
                     <div class="rounded-lg border border-base-300 bg-base-200/60 p-3">
-                        <div class="text-xs uppercase tracking-widest text-muted">{{ __('Received') }}</div>
+                        {{-- Le sens de l'argent, pas sa valeur absolue : « Reçu »
+                             sur un virement sortant était un contresens. --}}
+                        <div class="text-xs uppercase tracking-widest text-muted">
+                            {{ $tx->amount < 0 ? __('Paid out') : __('Received') }}
+                        </div>
                         <div class="font-black tabular-nums">{{ number_format(abs($tx->amount), 2, ',', ' ') }} €</div>
                     </div>
                     <div class="rounded-lg border border-base-300 bg-base-200/60 p-3">
@@ -392,7 +396,11 @@
                                 wire:model.live.blur="allocations.{{ $candidate->id }}" />
                         </div>
                     @empty
-                        <p class="py-6 text-center text-sm text-muted">{{ __('No payment is waiting for money in this direction.') }}</p>
+                        <p class="py-6 text-center text-sm text-muted">
+                            {{ $tx->amount < 0
+                                ? __('No refund is waiting to be paid out. This transfer went somewhere else — write off what is left, or leave it unreconciled.')
+                                : __('No payment is waiting for money. This transfer may be a subsidy, a sponsor or a supplier — write off what is left, or leave it unreconciled.') }}
+                        </p>
                     @endforelse
                 </div>
 

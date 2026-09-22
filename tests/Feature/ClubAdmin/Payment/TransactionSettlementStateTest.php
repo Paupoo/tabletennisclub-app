@@ -7,6 +7,8 @@ use App\Actions\ClubAdmin\Payments\SettleTransactionResidueAction;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use Illuminate\Support\Collection;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -220,4 +222,63 @@ it('writes off a residue from the drawer, with a reason', function (): void {
 
     expect($transaction->fresh()->isSettled())->toBeTrue()
         ->and($transaction->fresh()->settled_reason)->toBe('Arrondi du membre, acquis au club');
+})->group('payments', 'transactions');
+
+/**
+ * Le tiroir doit supporter tous les payables, pas seulement les affiliations.
+ *
+ * `TransactionMatcher::payer()` lit `$payable->user` pour une affiliation, une
+ * inscription au tournoi **et** une participation à une réunion. N'en charger
+ * qu'un seul fait tomber l'écran en `LazyLoadingViolation` dès qu'une créance
+ * d'un autre type traîne — et dix-neuf des créances ouvertes de la base de
+ * démonstration sont des inscriptions à un tournoi.
+ */
+it('opens the drawer when a tournament registration is waiting for money', function (): void {
+    $member = User::factory()->create();
+
+    $tournament = Tournament::factory()->create(['price' => 15]);
+    $tournament->users()->attach($member->id, ['registration_status' => 'registered']);
+
+    $registration = TournamentRegistration::where('tournament_id', $tournament->id)
+        ->where('user_id', $member->id)
+        ->firstOrFail();
+
+    $registration->payment()->create([
+        'reference' => '800/0000/00001',
+        'amount_due' => 15,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT',
+        'amount' => 15.0,
+        'counterparty_name' => $member->full_name,
+    ]);
+
+    $component = settlementScreen()->call('openAllocation', $transaction->id);
+
+    // On évalue vraiment les candidats : `assertOk()` ne force pas une
+    // propriété calculée, et c'est là que le barème lit `$payable->user`.
+    $candidates = $component->instance()->allocationCandidates();
+
+    expect($candidates->pluck('reference'))->toContain('800/0000/00001');
+
+    // L'invariant, plutôt que l'exception : `payer()` lit `$payable->user` sur
+    // les trois payables qui en portent un, et une relation non chargée fait
+    // tomber l'écran. Attendre l'exception ne suffit pas — elle ne se lève que
+    // si le payable se résout, ce qui dépend du type.
+    foreach ($candidates as $candidate) {
+        $payable = $candidate->payable;
+
+        if ($payable === null || ! method_exists($payable, 'user')) {
+            continue;
+        }
+
+        expect($payable->relationLoaded('user'))->toBeTrue(sprintf(
+            '%s doit arriver avec son membre déjà chargé',
+            $payable::class,
+        ));
+    }
 })->group('payments', 'transactions');

@@ -6,7 +6,11 @@ Bonjour **{{ $payment->payable->user->first_name ?? '' }}**,
 @php $label = $payment->payable->getPaymentLabel(); @endphp
 Vous avez un paiement en attente pour **{{ $label['type'] }}** : **{{ $label['name'] }}**.
 
-Montant à régler : **{{ number_format($payment->amount_due, 2, ',', ' ') }} €**
+Montant à régler : **{{ number_format($payment->balance(), 2, ',', ' ') }} €**
+@if ($payment->isPartiallyPaid())
+
+*Nous avons déjà reçu {{ number_format($payment->amount_paid, 2, ',', ' ') }} € sur les {{ number_format($payment->amount_due, 2, ',', ' ') }} € de votre cotisation.*
+@endif
 
 <x-mail::panel>
 **Coordonnées bancaires**

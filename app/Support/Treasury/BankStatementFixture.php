@@ -8,6 +8,8 @@ use App\Contracts\DescribesPayment;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
+use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
+use App\Domains\Meetings\Models\MeetingUser;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Carbon;
@@ -77,14 +79,18 @@ final class BankStatementFixture
         $pending = $this->pendingPayments();
         $refunds = $this->openRefunds();
 
-        $this->caseExact($pending->splice(0, 12));
-        $this->caseFreeText($pending->splice(0, 2));
+        // Les cas distinctifs d'abord. Chacun ne consomme qu'une créance, et
+        // c'est pour eux que le relevé existe ; les lignes « parfaites » se
+        // ressemblent toutes et prennent ce qui reste. L'ordre inverse a coûté
+        // un cas entier sur la vraie base, à une créance près.
         $this->casePartial($pending->shift());
         $this->caseSameReferenceTwice($pending->shift());
         $this->caseRoundedUp($pending->shift());
+        $this->caseMemberIbanOnly($pending);
+        $this->caseFreeText($pending->splice(0, 2));
         $this->caseFamilyTransfer();
         $this->caseGuardianNameOnly();
-        $this->caseMemberIbanOnly($pending->shift());
+        $this->caseExact($pending->splice(0, 12));
         $this->caseThirdParty();
         $this->caseRefundMatch($refunds->shift());
         $this->caseGroupedRefund($refunds);
@@ -275,21 +281,20 @@ final class BankStatementFixture
      * le nom du titulaire du compte en majuscules, parfois autre chose — et le
      * barème doit s'en sortir avec le numéro de compte seul.
      */
-    private function caseMemberIbanOnly(?Payment $payment): void
+    private function caseMemberIbanOnly(Collection $pending): void
     {
-        if (! $payment instanceof Payment) {
-            $this->skip('member_iban_only', 'pas assez de paiements en attente');
+        // On cherche, on ne prend pas le suivant : les premières créances sont
+        // souvent celles de pupilles, et un mineur n'a pas de compte en banque.
+        $index = $pending->search(fn (Payment $p): bool => $this->ibanOf($p) !== '');
 
-            return;
-        }
-
-        $iban = $this->ibanOf($payment);
-
-        if ($iban === '') {
+        if ($index === false) {
             $this->skip('member_iban_only', 'aucun membre avec une créance ouverte ne porte d\'IBAN en fiche');
 
             return;
         }
+
+        $payment = $pending->pull($index);
+        $iban = $this->ibanOf($payment);
 
         $this->push('member_iban_only', [
             'amount' => (float) $payment->amount_due,
@@ -502,7 +507,11 @@ final class BankStatementFixture
     {
         return Payment::where('status', 'to_refund')
             ->with(['payable' => fn (Relation $q): mixed => $q instanceof MorphTo
-                ? $q->morphWith([Subscription::class => ['user']])
+                ? $q->morphWith([
+                    Subscription::class => ['user'],
+                    TournamentRegistration::class => ['user'],
+                    MeetingUser::class => ['user'],
+                ])
                 : $q])
             ->orderBy('id')
             ->get();
@@ -528,7 +537,11 @@ final class BankStatementFixture
         return Payment::where('status', 'pending')
             ->where('payment_method', '!=', 'refund')
             ->with(['payable' => fn (Relation $q): mixed => $q instanceof MorphTo
-                ? $q->morphWith([Subscription::class => ['user']])
+                ? $q->morphWith([
+                    Subscription::class => ['user'],
+                    TournamentRegistration::class => ['user'],
+                    MeetingUser::class => ['user'],
+                ])
                 : $q])
             ->orderBy('id')
             ->get()

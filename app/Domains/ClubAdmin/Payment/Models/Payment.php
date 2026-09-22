@@ -97,6 +97,22 @@ class Payment extends Model
     }
 
     /**
+     * Ce qu'il reste à payer sur cette ligne, en euros.
+     *
+     * La seule chose qu'un membre ou un trésorier veut lire. `amount_due` est
+     * ce qui a été réclamé au départ : depuis qu'un paiement peut être crédité
+     * en plusieurs fois, les deux divergent, et afficher le premier revient à
+     * réclamer une somme déjà reçue.
+     *
+     * Jamais négatif : un trop-perçu n'est pas une dette négative, c'est de
+     * l'argent à rendre — et ça se dit ailleurs.
+     */
+    public function balance(): float
+    {
+        return max(0.0, round((float) $this->amount_due - (float) $this->amount_paid, 2));
+    }
+
+    /**
      * Les sommes encaissées sur ce paiement.
      *
      * @return HasMany<PaymentCredit, $this>
@@ -104,6 +120,12 @@ class Payment extends Model
     public function credits(): HasMany
     {
         return $this->hasMany(PaymentCredit::class);
+    }
+
+    /** Une ligne partiellement créditée : de l'argent est entré, il en manque. */
+    public function isPartiallyPaid(): bool
+    {
+        return (float) $this->amount_paid > 0.0 && $this->balance() > 0.0;
     }
 
     public function payable(): MorphTo

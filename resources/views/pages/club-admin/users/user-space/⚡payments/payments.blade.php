@@ -52,7 +52,7 @@
                         <div class="flex items-center justify-between gap-4 sm:justify-end">
                             <div class="text-right">
                                 <div class="font-bold tabular-nums">
-                                    {{ number_format($payment->status === 'paid' ? $payment->amount_paid : $payment->amount_due, 2, ',', ' ') }} €
+                                    {{ number_format($payment->status === 'paid' ? $payment->amount_paid : $payment->balance(), 2, ',', ' ') }} €
                                 </div>
                                 <x-badge :value="$statusLabels[$payment->status] ?? $payment->status"
                                     class="badge-sm {{ $statusStyles[$payment->status] ?? 'badge-ghost' }}" />
@@ -111,7 +111,7 @@
                 <div class="w-full divide-y divide-base-200 text-sm">
                     <div class="flex items-center justify-between py-2">
                         <span class="opacity-60">{{ __('Amount') }}</span>
-                        <span class="font-bold">{{ number_format($payment->amount_due, 2, ',', ' ') }} €</span>
+                        <span class="font-bold">{{ number_format($payment->balance(), 2, ',', ' ') }} €</span>
                     </div>
                     <div class="flex items-center justify-between py-2">
                         <span class="opacity-60">{{ __('Reference') }}</span>

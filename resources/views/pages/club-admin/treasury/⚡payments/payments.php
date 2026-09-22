@@ -436,6 +436,11 @@ new class extends Component
                     'member' => $p->payable instanceof DescribesPayment ? $p->payable->getPayerName() : '—',
                     'amount_due' => $p->amount_due,
                     'amount_paid' => $p->amount_paid,
+                    // Ce qui reste, et d'où vient ce qui est déjà là. Le
+                    // trésorier ne retient pas ses rapprochements : un solde
+                    // sans son origine ne se vérifie pas.
+                    'balance' => $p->balance(),
+                    'is_partially_paid' => $p->isPartiallyPaid(),
                     'status' => $p->status,
                     'created_at' => $p->created_at,
                     'invitation_counter' => $p->invitation_counter,
@@ -680,7 +685,13 @@ new class extends Component
             ]), 'name')->all(),
             'pendingTransactions' => $this->reconcileModal ? $this->pendingTransactions() : collect(),
             'currentPayment' => $this->reconcilePaymentId
-                ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])->find($this->reconcilePaymentId)
+                ? Payment::with([
+                    'payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads()),
+                    // L'historique des affectations : un trésorier ne retient
+                    // pas ses rapprochements, et un solde dont on ne peut pas
+                    // remonter l'origine ne se vérifie pas.
+                    'credits.transaction',
+                ])->find($this->reconcilePaymentId)
                 : null,
             'refundTransactions' => $this->refundModal ? $this->refundTransactions : collect(),
             'currentRefundPayment' => $this->refundPaymentId

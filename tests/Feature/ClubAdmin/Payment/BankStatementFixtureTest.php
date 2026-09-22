@@ -127,3 +127,45 @@ it('produces a transfer recognisable by the member IBAN alone', function (): voi
 
     expect($result->covered)->toContain('member_iban_only');
 })->group('payments', 'fixture');
+
+/**
+ * Sur une base pauvre, les cas distinctifs passent avant le nombre.
+ *
+ * Douze lignes « référence et montant exacts » sont la partie la moins
+ * instructive du fichier : elles se ressemblent toutes. Les cas qui ne
+ * consomment qu'une créance — partiel, référence répétée, arrondi, IBAN seul —
+ * sont ceux pour lesquels le relevé existe. Servir les premiers d'abord a
+ * coûté le quatorzième cas sur la vraie base, à une créance près.
+ */
+it('serves the distinctive cases before filling up on perfect matches', function (): void {
+    $season = makeActiveSeason();
+
+    test()->seed(FamilySeeder::class);
+
+    // Six créances seulement, plus celles des familles : de quoi servir chaque
+    // cas distinctif, pas de quoi remplir une douzaine de lignes parfaites.
+    for ($i = 0; $i < 6; $i++) {
+        $member = User::factory()->create(['iban' => sprintf('BE68%012d', 539007548000 + $i)]);
+
+        $subscription = Subscription::factory()->create([
+            'user_id' => $member->id,
+            'season_id' => $season->id,
+            'status' => 'confirmed',
+            'amount_due' => 125,
+            'amount_paid' => 0,
+        ]);
+
+        $subscription->payments()->create([
+            'reference' => sprintf('033/0926/%05d', 2000 + $i),
+            'amount_due' => 125,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+    }
+
+    $result = (new BankStatementFixture)->build();
+
+    foreach (['partial', 'same_reference_twice', 'rounded_up', 'member_iban_only'] as $case) {
+        expect($result->covered)->toContain($case);
+    }
+})->group('payments', 'fixture');

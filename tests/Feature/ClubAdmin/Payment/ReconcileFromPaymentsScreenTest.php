@@ -270,3 +270,65 @@ it('requires a reason before opening a refund', function (): void {
 
     expect($subscription->fresh()->payments()->where('payment_method', 'refund')->count())->toBe(0);
 })->group('payments', 'refund');
+
+/**
+ * Ce qu'il reste à rapprocher doit se lire sur la ligne.
+ *
+ * Après un versement de 100 € sur 120 € dus, l'écran affichait toujours
+ * « 120,00 € » — le montant réclamé au départ. Rien ne disait que 100 étaient
+ * rentrés ni que 20 manquaient. Le trésorier ne pouvait pas distinguer une
+ * ligne intacte d'une ligne presque soldée.
+ *
+ * C'était le prix annoncé du choix de ne pas créer de statut `partially_paid` :
+ * l'état ne se lit plus dans une colonne, il faut l'afficher. Il ne l'était pas.
+ */
+it('shows what is left to reconcile on a partly paid line', function (): void {
+    [$subscription, $payment] = affiliationAwaiting(120.0);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 100.0,
+        'counterparty_name' => $subscription->user->full_name,
+    ]);
+
+    $screen = reconcileScreen(User::factory()->create())
+        ->call('openReconcile', $payment->id)
+        ->set('selectedTransactionId', $transaction->id)
+        ->call('confirmReconcile');
+
+    // Le solde, puisque c'est ce qui reste à faire.
+    $screen->assertSee('20,00 €');
+
+    // Et d'où il vient, sinon le chiffre est illisible.
+    $screen->assertSee('100,00')
+        ->assertSee('120,00');
+})->group('payments', 'reconciliation');
+
+/**
+ * D'où viennent les euros déjà reçus.
+ *
+ * « Il reste 20 € » ne se vérifie pas si on ne peut pas remonter aux 100
+ * autres. Un trésorier ne retient pas ses propres rapprochements, et rouvrir
+ * la ligne doit suffire à les retrouver.
+ */
+it('lists where the money already received came from', function (): void {
+    [$subscription, $payment] = affiliationAwaiting(120.0);
+
+    $transaction = Transaction::create([
+        'date' => '2026-09-14',
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 100.0,
+        'counterparty_name' => 'ROELS Jules',
+    ]);
+
+    $screen = reconcileScreen(User::factory()->create())
+        ->call('openReconcile', $payment->id)
+        ->set('selectedTransactionId', $transaction->id)
+        ->call('confirmReconcile')
+        ->call('openReconcile', $payment->id);
+
+    $screen->assertSee('ROELS Jules')
+        ->assertSee('14/09/2026')
+        ->assertSee('100,00 €');
+})->group('payments', 'reconciliation');

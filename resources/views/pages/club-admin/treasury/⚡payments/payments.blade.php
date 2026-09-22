@@ -113,11 +113,22 @@
                             </div>
                         @endif
                     </div>
-                    <div class="shrink-0 text-right font-bold tabular-nums">
+                    <div class="shrink-0 text-right tabular-nums">
                         @if ($this->statusFilter === 'paid')
-                            {{ number_format($payment->amount_paid, 2, ',', ' ') }} €
+                            <span class="font-bold">{{ number_format($payment->amount_paid, 2, ',', ' ') }} €</span>
                         @else
-                            {{ number_format($payment->amount_due, 2, ',', ' ') }} €
+                            {{-- Le solde, pas le montant réclamé au départ : depuis
+                                 qu'une ligne se crédite en plusieurs fois, les deux
+                                 divergent, et le second réclame une somme reçue. --}}
+                            <span class="font-bold">{{ number_format($payment->balance, 2, ',', ' ') }} €</span>
+                            @if ($payment->is_partially_paid)
+                                <div class="text-xs font-normal text-info">
+                                    {{ __(':paid € received of :due €', [
+                                        'paid' => number_format($payment->amount_paid, 2, ',', ' '),
+                                        'due'  => number_format($payment->amount_due, 2, ',', ' '),
+                                    ]) }}
+                                </div>
+                            @endif
                         @endif
                     </div>
                 </div>
@@ -198,7 +209,17 @@
             @if($this->statusFilter === 'paid')
             <span class="tabular-nums font-bold">{{ number_format($payment->amount_paid, 2, ',', ' ') }} €</span>
             @else
-            <span class="tabular-nums font-bold">{{ number_format($payment->amount_due, 2, ',', ' ') }} €</span>
+            <div class="tabular-nums">
+                <span class="font-bold">{{ number_format($payment->balance, 2, ',', ' ') }} €</span>
+                @if ($payment->is_partially_paid)
+                    <div class="text-xs text-info">
+                        {{ __(':paid € received of :due €', [
+                            'paid' => number_format($payment->amount_paid, 2, ',', ' '),
+                            'due'  => number_format($payment->amount_due, 2, ',', ' '),
+                        ]) }}
+                    </div>
+                @endif
+            </div>
             @endif
             @endscope
 
@@ -436,10 +457,46 @@
                 <div class="font-mono text-xs text-primary mt-0.5">{{ $currentPayment->reference }}</div>
             </div>
             <div class="text-right shrink-0">
-                <div class="text-lg font-black">{{ number_format($currentPayment->amount_due, 2, ',', ' ') }} €</div>
-                <div class="text-xs text-muted">{{ __('expected') }}</div>
+                <div class="text-lg font-black">{{ number_format($currentPayment->balance(), 2, ',', ' ') }} €</div>
+                @if ($currentPayment->isPartiallyPaid())
+                    <div class="text-xs text-info">
+                        {{ __(':paid € received of :due €', [
+                            'paid' => number_format($currentPayment->amount_paid, 2, ',', ' '),
+                            'due'  => number_format($currentPayment->amount_due, 2, ',', ' '),
+                        ]) }}
+                    </div>
+                @endif
+                <div class="text-xs text-muted">{{ __('still expected') }}</div>
             </div>
         </div>
+
+        @if ($currentPayment->credits->isNotEmpty())
+            {{-- D'où vient ce qui est déjà là. Sans cette liste, le trésorier
+                 lit « il reste 20 € » sans pouvoir vérifier les 100 autres :
+                 il ne retient pas ses propres rapprochements. --}}
+            <div class="mb-6">
+                <h3 class="mb-2 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Already received') }}</h3>
+                <div class="space-y-1.5">
+                    @foreach ($currentPayment->credits as $credit)
+                        <div class="flex items-center gap-3 rounded-lg border border-success/20 bg-success/5 p-2.5 text-sm"
+                            wire:key="credit-{{ $credit->id }}">
+                            <x-icon name="o-check-circle" class="h-4 w-4 shrink-0 text-success" />
+                            <span class="flex-1 min-w-0 truncate">
+                                @if ($credit->transaction)
+                                    {{ \Illuminate\Support\Carbon::parse($credit->transaction->date)->format('d/m/Y') }}
+                                    — {{ $credit->transaction->counterparty_name ?? __('Unknown counterparty') }}
+                                @else
+                                    {{ __('Outside the bank (cash, waiver)') }}
+                                @endif
+                            </span>
+                            <span class="shrink-0 font-bold tabular-nums text-success">
+                                {{ number_format($credit->amount, 2, ',', ' ') }} €
+                            </span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
 
         <x-admin.treasury.candidate-list
             :candidates="$pendingTransactions"

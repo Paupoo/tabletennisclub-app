@@ -8,6 +8,8 @@ use App\Domains\ClubAdmin\Payment\Models\BankImport;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
+use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -100,8 +102,16 @@ new class extends Component
         }
 
         // Un débit rembourse : ses candidats sont les remboursements engagés.
+        //
+        // Les trois payables qui portent un membre sont chargés, pas seulement
+        // l'affiliation : `TransactionMatcher::payer()` lit `$payable->user`
+        // pour chacun d'eux, et dix-neuf des créances ouvertes de la base de
+        // démonstration sont des inscriptions à un tournoi. N'en charger qu'un
+        // fait tomber l'écran en LazyLoadingViolation.
         $payments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith([
             Subscription::class => ['user.guardians', 'season'],
+            TournamentRegistration::class => ['user.guardians', 'tournament'],
+            MeetingUser::class => ['user.guardians', 'meeting'],
         ])])
             ->where('status', (float) $transaction->amount < 0 ? 'to_refund' : 'pending')
             ->get()

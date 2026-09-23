@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
+use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
@@ -420,3 +421,36 @@ it('opens a refund for the overpayment, towards the account that paid', function
         ->and($refund->amount_due)->toBe(100.0)
         ->and($refund->refund_iban)->toBe('BE62510007547061');
 })->group('payments', 'overpaid');
+
+/**
+ * Le libellé que le trésorier recopiera dans sa banque.
+ *
+ * C'est la seule chose que le payeur lira. Le calculer sans l'afficher n'aide
+ * personne : le trésorier fait le virement dans son application bancaire, pas
+ * ici, et il a besoin du texte sous les yeux.
+ */
+it('shows the communication to put on the outgoing transfer', function (): void {
+    Club::factory()->ownClub()->create(['name' => 'CTT Ottignies-Blocry']);
+    Club::forgetOwnClub();
+
+    $member = User::factory()->create(['first_name' => 'Robbe', 'last_name' => 'Bogaert']);
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => $member->id,
+        'status' => 'confirmed',
+        'amount_due' => 120,
+    ]);
+
+    (new RequestSubscriptionRefundAction)(
+        $subscription,
+        100.0,
+        'Trop-perçu',
+        targetIban: 'BE62510007547061',
+    );
+
+    reconcileScreen(User::factory()->create())
+        ->set('statusFilter', 'to_refund')
+        ->assertSee('CTT Ottignies-Blocry - trop-percu')
+        ->assertSee('Robbe Bogaert')
+        ->assertSee('BE62510007547061');
+})->group('payments', 'refund');

@@ -10,6 +10,16 @@
         </x-slot:actions>
     </x-header>
 
+    @if ($this->heldForMember > 0)
+        {{-- Factuel, sans promesse : la déduction sur la prochaine cotisation
+             est un geste du trésorier, pas un automatisme. Annoncer l'inverse
+             créerait des e-mails. --}}
+        <div class="mb-4 flex items-center gap-3 rounded-lg border border-info/20 bg-info/10 p-3 text-sm">
+            <x-icon name="o-banknotes" class="h-4 w-4 shrink-0 text-info" />
+            <span>{{ __('The club is holding :amount € for you.', ['amount' => number_format($this->heldForMember, 2, ',', ' ')]) }}</span>
+        </div>
+    @endif
+
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     @php $statusStyles = ['pending' => 'badge-warning badge-soft', 'paid' => 'badge-success badge-soft', 'refunded' => 'badge-ghost', 'to_refund' => 'badge-error badge-soft']; @endphp

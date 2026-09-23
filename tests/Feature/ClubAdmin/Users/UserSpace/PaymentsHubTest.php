@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -118,3 +120,31 @@ it('is self-only', function (): void {
         ->test(PAYMENTS_HUB_COMPONENT, ['user' => $other])
         ->assertForbidden();
 });
+
+/**
+ * Le membre voit l'argent que le club détient pour lui.
+ *
+ * Par transparence : c'est une somme qui lui revient, et la lui cacher
+ * obligerait à la lui expliquer au téléphone. Formulation factuelle — le club
+ * ne promet pas de la déduire automatiquement, puisque c'est un geste manuel
+ * du trésorier.
+ */
+it('tells the member what the club is holding for them', function (): void {
+    $user = User::factory()->create();
+
+    $payment = subscriptionPayment($user, $this->season, 'paid', 120);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 220.0,
+        'counterparty_name' => $user->full_name,
+    ]);
+
+    (new AllocateTransactionAction)($transaction, [$payment->id => 220.0]);
+
+    Livewire::actingAs($user)
+        ->test(PAYMENTS_HUB_COMPONENT, ['user' => $user])
+        ->assertOk()
+        ->assertSee(__('The club is holding :amount € for you.', ['amount' => '100,00']));
+})->group('payments', 'overpaid');

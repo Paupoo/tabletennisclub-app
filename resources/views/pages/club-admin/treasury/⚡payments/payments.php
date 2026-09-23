@@ -11,6 +11,7 @@ use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Shared\Enums\Permission;
@@ -20,6 +21,7 @@ use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Mail\PaymentInvitationEmail;
 use App\Support\Breadcrumb;
+use App\Support\Treasury\SepaRemittance;
 use App\Support\LocaleSort;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -465,6 +467,17 @@ new class extends Component
                     // Le net, jamais « 220 sur 120 » : c'est ce que le club
                     // détient et devra rendre.
                     'overpayment' => $p->overpayment(),
+                    'refund_iban' => $p->refund_iban,
+                    // Le texte que le payeur lira sur son extrait. Le trésorier
+                    // fait le virement dans sa banque, pas ici : il lui faut
+                    // sous les yeux.
+                    'remittance' => $p->payment_method === 'refund'
+                        ? SepaRemittance::forOverpayment(
+                            club: Club::ourClub()->first()?->name ?? 'CTT Ottignies-Blocry',
+                            event: $label['name'] ?? '',
+                            member: $p->payable instanceof DescribesPayment ? $p->payable->getPayerName() : '',
+                        )
+                        : null,
                     'is_partially_paid' => $p->isPartiallyPaid(),
                     'status' => $p->status,
                     'created_at' => $p->created_at,

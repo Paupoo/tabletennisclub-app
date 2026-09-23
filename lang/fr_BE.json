@@ -383,6 +383,7 @@
     "The amount cannot exceed what the member has paid, minus refunds already opened.": "Le montant ne peut pas dépasser ce que le membre a versé, moins les remboursements déjà ouverts.",
     "The cash register :name has been retired.": "La caisse :name a été retirée du service.",
     "The cash register :name is back in service.": "La caisse :name est de nouveau en service.",
+    "The club is holding :amount € for you.": "Le club détient :amount € pour vous.",
     "The image could not be processed. Please try again.": "L'image n'a pas pu être traitée. Veuillez réessayer.",
     "The missing player's matches will be lost.": "Les matchs du joueur manquant seront perdus.",
     "The missing player's matches will be lost. The team will be told it plays short.": "Les matchs du joueur manquant seront perdus. L'équipe sera prévenue que vous jouez en effectif réduit.",

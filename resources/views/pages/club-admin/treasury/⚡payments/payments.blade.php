@@ -281,11 +281,23 @@
             </x-admin.shared.row-menu>
             @elseif($this->statusFilter === 'to_refund')
             @can('payments.refund')
-                <x-button
-                    :label="__('Reconcile')"
-                    icon="o-link"
-                    wire:click="openRefundReconcile({{ $payment->id }})"
-                    class="btn-xs btn-outline" />
+                <div class="flex flex-col items-end gap-1">
+                    {{-- Ce que le trésorier recopiera dans sa banque : le compte
+                         visé et la communication que le payeur lira. --}}
+                    @if ($payment->refund_iban)
+                        <span class="font-mono text-xs opacity-70">{{ $payment->refund_iban }}</span>
+                    @endif
+                    @if ($payment->remittance)
+                        <span class="max-w-xs truncate text-xs text-muted" title="{{ $payment->remittance }}">
+                            {{ $payment->remittance }}
+                        </span>
+                    @endif
+                    <x-button
+                        :label="__('Reconcile')"
+                        icon="o-link"
+                        wire:click="openRefundReconcile({{ $payment->id }})"
+                        class="btn-xs btn-outline" />
+                </div>
             @endcan
             @else
             <div class="flex items-center gap-1.5">

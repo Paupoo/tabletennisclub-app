@@ -125,6 +125,26 @@ new class extends Component
      *
      * @return LengthAwarePaginator<int, Payment>
      */
+    /**
+     * Ce que le club détient en trop pour ce membre et ceux dont il répond.
+     *
+     * Par transparence : c'est une somme qui lui revient, et la lui cacher
+     * obligerait à la lui expliquer au téléphone. Dérivé, comme partout
+     * ailleurs — les crédits dépassent le dû, il n'y a rien à stocker.
+     */
+    #[Computed]
+    public function heldForMember(): float
+    {
+        $ids = $this->user->payableUserIds();
+
+        return Payment::query()
+            ->whereHasMorph('payable', self::PAYABLE_TYPES, fn ($q) => $q->whereIn('user_id', $ids))
+            ->where(fn ($q) => $q->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
+            ->whereColumn('amount_paid', '>', 'amount_due')
+            ->get()
+            ->sum(fn (Payment $payment): float => $payment->overpayment());
+    }
+
     #[Computed]
     public function payments(): LengthAwarePaginator
     {

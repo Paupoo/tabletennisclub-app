@@ -55,3 +55,7 @@ Un quatrième cas, plus rare : **« indice de référence manquant »**. Ce n'es
 ## Si un joueur vous est pris pendant votre appel
 
 Cela arrive : vous ouvrez le panneau, vous téléphonez, et entre-temps un autre capitaine coche le même joueur. L'enregistrement est alors refusé, et le message vous nomme **le joueur et l'équipe qui l'a pris**. Décochez-le et rappelez quelqu'un d'autre.
+
+## Si personne n'est libre
+
+Une équipe messieurs peut débuter à 3 joueurs sur 4, et une équipe dames, jeunes ou vétérans à 2 sur 3. Quand vous avez vraiment tout essayé, l'application vous laisse le déclarer et convoquer l'équipe quand même : voyez [Jouer à 3](composer-ma-selection).

@@ -60,6 +60,8 @@ erDiagram
     MemberImport ||--o{ User : "members"
     User ||--o{ NewsPost : "articles"
     User ||--o| Team : "captainOf"
+    User ||--o| TrainingPack : "coachOf"
+    User ||--o| Training : "coachOfSession"
     User }o--o{ FamilyGroup : "familyGroups"
     User ||--o| Guardian : "guardianRecord"
     User }o--o{ Guardian : "guardians"

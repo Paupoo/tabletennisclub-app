@@ -51,6 +51,7 @@ erDiagram
         string free_reference "nullable"
         string import_fingerprint "nullable"
         int bank_import_id FK "nullable"
+        TransactionMatch match "nullable"
     }
 
     BankImport ||--o{ Transaction : "transactions"

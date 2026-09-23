@@ -20,6 +20,7 @@
             :can-search-substitute="$canSearchSubstitute"
             :search-results="$searchResults" :search-note="$searchNote"
             :search-term="$search"
+            short-handed-model="shortHandedOptIn" :minimum-players="$interclub->minimumPlayers()"
             save-action="saveSelection" />
 --}}
 @props([
@@ -44,6 +45,10 @@
     'poolMaybeCount' => 0,
     'poolMaybeTeams' => [],
     'lineupConstraint' => null,
+    // Jouer à 3 : la case n'est proposée qu'entre le minimum réglementaire et
+    // le complet, et seulement par un appelant qui sait l'enregistrer.
+    'shortHandedModel' => null,
+    'minimumPlayers' => null,
 ])
 
 @php
@@ -51,6 +56,8 @@
     $saveLabel ??= __('Save selection');
     $selectedCount = count($selectedIds);
     $isFull = $selectedCount >= $maxPlayers;
+    $offersShortHanded = $shortHandedModel && $minimumPlayers
+        && $selectedCount >= $minimumPlayers && ! $isFull;
     // Le pool est déplié quand il manque quelqu'un, replié sinon : c'est le seul
     // état où sa longueur coûte sans rien apporter.
     $poolOpen = ! $isFull;
@@ -81,6 +88,21 @@
                 'progress-warning' => $selectedCount > 0 && $selectedCount < $maxPlayers,
                 'progress-primary' => $selectedCount === 0,
             ]) max="{{ $maxPlayers }}" value="{{ $selectedCount }}"></progress>
+
+            {{-- Un vrai opt-in : sans cette case, une compo sous le complet reste
+                 un brouillon que personne ne reçoit. --}}
+            @if ($offersShortHanded)
+                <div class="mt-3 rounded-xl border border-warning/40 bg-warning/5 p-3">
+                    <p class="mb-2 text-xs font-semibold">
+                        {{ __('Minimum reached: the team may play with :n players.', ['n' => $selectedCount]) }}
+                    </p>
+                    <label class="flex cursor-pointer items-start gap-2 text-sm">
+                        <input type="checkbox" class="checkbox checkbox-warning checkbox-sm mt-0.5"
+                            wire:model.live="{{ $shortHandedModel }}" />
+                        <span>{{ __('I found no other player (team, free players, substitutes): we will play with :n.', ['n' => $selectedCount]) }}</span>
+                    </label>
+                </div>
+            @endif
         </div>
 
         {{-- Roster --}}

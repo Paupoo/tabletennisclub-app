@@ -479,3 +479,62 @@ it('rates that same week as settled when the earliest fixture is the settled one
 
     expect($summary['matrix'][$a->id][9])->toBe('confirmed');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Jouer à 3
+|--------------------------------------------------------------------------
+|
+| Un joueur confirmé ne suffit pas à régler une rencontre : c'est le trou par
+| lequel une compo envoyée à 4, puis amputée d'un désistement, restait verte.
+| Seule une déclaration du capitaine (« nous jouerons à 3 ») règle une
+| rencontre sous le complet, et encore faut-il le minimum réglementaire.
+|
+*/
+it('does not settle a fixture on a lineup confirmed short of the full team', function (): void {
+    $a = $this->teams['A'];
+
+    selectPlayers(scheduleMatch($a, 9, '2026-01-18 19:45:00'), $a, 3, confirmed: true);
+
+    expect(summaryFor($this->admin)['matrix'][$a->id][9])->toBe('urgent');
+});
+
+it('settles a fixture the captain declared short-handed, but tells it apart', function (): void {
+    $a = $this->teams['A'];
+
+    $interclub = scheduleMatch($a, 9, '2026-01-18 19:45:00');
+    selectPlayers($interclub, $a, 3, confirmed: true);
+    $interclub->update(['short_handed_confirmed_at' => now(), 'short_handed_confirmed_by' => $this->admin->id]);
+
+    $summary = summaryFor($this->admin);
+
+    expect($summary['matrix'][$a->id][9])->toBe('short')
+        ->and($summary['ok'])->toBe(1)
+        ->and($summary['kpi']['controlled'])->toBe(1)
+        ->and($summary['short_handed'])->toBe(1);
+});
+
+it('does not settle a declared short-handed fixture below the minimum to play', function (): void {
+    $a = $this->teams['A'];
+
+    $interclub = scheduleMatch($a, 9, '2026-01-18 19:45:00');
+    selectPlayers($interclub, $a, 2, confirmed: true);
+    $interclub->update(['short_handed_confirmed_at' => now(), 'short_handed_confirmed_by' => $this->admin->id]);
+
+    expect(summaryFor($this->admin)['matrix'][$a->id][9])->toBe('urgent');
+});
+
+it('keeps a short-handed fixture visible in the season overview without failing it', function (): void {
+    $a = $this->teams['A'];
+
+    $interclub = scheduleMatch($a, 9, '2026-01-18 19:45:00');
+    selectPlayers($interclub, $a, 3, confirmed: true);
+    $interclub->update(['short_handed_confirmed_at' => now(), 'short_handed_confirmed_by' => $this->admin->id]);
+
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-events.interclubs.captain-selection')
+        // Replié, l'accordéon doit encore le dire : c'est l'orange qu'on garde.
+        ->assertSee('dont 1 rencontre à effectif réduit')
+        ->assertSee('Sous contrôle — effectif réduit')
+        ->assertSeeHtml('ring-warning');
+});

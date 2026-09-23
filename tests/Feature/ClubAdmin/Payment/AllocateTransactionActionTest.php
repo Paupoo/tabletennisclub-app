@@ -413,3 +413,94 @@ it('counts what came in on a line that is still open', function (): void {
     expect($payment->fresh()->status)->toBe('pending')
         ->and($subscription->fresh()->netAmountPaid())->toBe(200.0);
 })->group('payments', 'reconciliation');
+
+/**
+ * Affecter zéro n'est pas une affectation.
+ *
+ * Rapprocher une créance déjà soldée écrivait une ligne de crédit vide et
+ * annonçait « réconcilié avec succès ». Rien ne s'était produit, et le grand
+ * livre gagnait une ligne qui ne dit rien.
+ */
+it('refuses an allocation worth nothing', function (): void {
+    $member = User::factory()->create();
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => $member->id,
+        'status' => 'confirmed',
+        'amount_due' => 120,
+    ]);
+
+    $payment = $subscription->payments()->create([
+        'reference' => '123/4567/89012',
+        'amount_due' => 120,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 120.0,
+        'counterparty_name' => $member->full_name,
+    ]);
+
+    expect(fn (): mixed => (new AllocateTransactionAction)($transaction, [$payment->id => 0.0]))
+        ->toThrow(DomainException::class);
+
+    expect($payment->fresh()->credits)->toHaveCount(0)
+        ->and($transaction->fresh()->allocated_amount)->toBe(0.0);
+})->group('payments', 'reconciliation');
+
+/**
+ * Affecter au-delà du solde reconnaît un trop-perçu.
+ *
+ * I2 reste souple à dessein : c'est la seule porte vers le remboursement. Mais
+ * l'excédent doit être **lisible** — le club détient de l'argent qui ne lui
+ * appartient plus, et personne ne peut le rendre sans le voir.
+ *
+ * Rien de neuf n'est stocké : le trop-perçu est ce que les crédits dépassent
+ * du montant dû, comme le solde est ce qu'il leur manque.
+ */
+it('records an overpayment when the allocation goes past the balance', function (): void {
+    $member = User::factory()->create();
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => $member->id,
+        'status' => 'confirmed',
+        'amount_due' => 120,
+    ]);
+
+    $payment = $subscription->payments()->create([
+        'reference' => '123/4567/89012',
+        'amount_due' => 120,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    $first = Transaction::create([
+        'date' => now()->subMonths(2)->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 100.0,
+        'counterparty_name' => $member->full_name,
+    ]);
+
+    (new AllocateTransactionAction)($first, [$payment->id => 100.0]);
+
+    expect($payment->fresh()->isOverpaid())->toBeFalse()
+        ->and($payment->fresh()->overpayment())->toBe(0.0);
+
+    // Le membre oublie qu'il a déjà versé 100 € et vire les 120 € entiers.
+    $again = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 120.0,
+        'counterparty_name' => $member->full_name,
+    ]);
+
+    (new AllocateTransactionAction)($again, [$payment->id => 120.0]);
+
+    expect($payment->fresh()->amount_paid)->toBe(220.0)
+        ->and($payment->fresh()->balance())->toBe(0.0)
+        ->and($payment->fresh()->isOverpaid())->toBeTrue()
+        ->and($payment->fresh()->overpayment())->toBe(100.0);
+})->group('payments', 'reconciliation');

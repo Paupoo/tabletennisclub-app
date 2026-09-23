@@ -30,6 +30,7 @@ final class AllocateTransactionAction
     public function __invoke(Transaction $transaction, array $allocations): void
     {
         DB::transaction(function () use ($transaction, $allocations): void {
+            $this->assertSomethingToAllocate($allocations);
             $this->assertFitsWithinTransaction($transaction, $allocations);
 
             foreach ($allocations as $paymentId => $amount) {
@@ -103,6 +104,29 @@ final class AllocateTransactionAction
             throw new \DomainException(__('This allocation exceeds the transaction: only :amount € remain to allocate.', [
                 'amount' => number_format(($capacity - $already) / 100, 2, ',', ' '),
             ]));
+        }
+    }
+
+    /**
+     * Affecter zéro n'est pas une affectation.
+     *
+     * Rapprocher une créance déjà soldée écrivait une ligne de crédit vide et
+     * annonçait un succès. Le grand livre gagnait une ligne qui ne dit rien, et
+     * le trésorier croyait avoir fait quelque chose.
+     *
+     * @param  array<int, float>  $allocations
+     *
+     * @throws \DomainException
+     */
+    private function assertSomethingToAllocate(array $allocations): void
+    {
+        $total = array_sum(array_map(
+            static fn (float|int $amount): int => (int) round(abs((float) $amount) * 100),
+            $allocations,
+        ));
+
+        if ($total === 0) {
+            throw new \DomainException(__('There is nothing left to allocate on this payment.'));
         }
     }
 

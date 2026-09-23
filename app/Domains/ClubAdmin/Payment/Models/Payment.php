@@ -124,10 +124,30 @@ class Payment extends Model
         return $this->hasMany(PaymentCredit::class);
     }
 
+    public function isOverpaid(): bool
+    {
+        return $this->overpayment() > 0.0;
+    }
+
     /** Une ligne partiellement créditée : de l'argent est entré, il en manque. */
     public function isPartiallyPaid(): bool
     {
         return (float) $this->amount_paid > 0.0 && $this->balance() > 0.0;
+    }
+
+    /**
+     * Ce que le club détient en trop sur cette ligne, en euros.
+     *
+     * Le pendant de {@see balance()} : ce que les crédits dépassent du montant
+     * dû, là où le solde est ce qu'il leur manque. Rien n'est stocké — un
+     * trop-perçu est une position, pas un objet.
+     *
+     * Cet argent n'appartient plus au club. Il revient au **compte qui l'a
+     * versé**, pas au membre : c'est celui-là qu'on rembourse.
+     */
+    public function overpayment(): float
+    {
+        return max(0.0, round((float) $this->amount_paid - (float) $this->amount_due, 2));
     }
 
     public function payable(): MorphTo

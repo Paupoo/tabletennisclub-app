@@ -482,3 +482,39 @@ it('names what is left on the transfer after a partial reconciliation', function
 
     expect($transaction->fresh()->residue())->toBe(100.0);
 })->group('payments', 'reconciliation');
+
+/**
+ * Une transaction à moitié consommée doit le dire dans la liste des candidates.
+ *
+ * Une mère vire 120 € pour deux enfants à 60 €. Après avoir rapproché le
+ * premier, le trésorier ouvre le second et voit la même ligne afficher
+ * « 120,00 € » : rien ne distingue un virement intact d'un virement à moitié
+ * placé, et il conclut que son premier geste n'a servi à rien.
+ *
+ * Le calcul était juste — 60 € affectés, 60 disponibles. C'est l'affichage
+ * qui mentait.
+ */
+it('shows what is left on a transfer already half placed', function (): void {
+    $mother = User::factory()->create(['first_name' => 'Sophie', 'last_name' => 'Martin']);
+
+    [, $first] = affiliationAwaiting(60.0);
+    [, $second] = affiliationAwaiting(60.0);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 120.0,
+        'counterparty_name' => $mother->full_name,
+    ]);
+
+    $screen = reconcileScreen(User::factory()->create())
+        ->call('openReconcile', $first->id)
+        ->set('selectedTransactionId', $transaction->id)
+        ->call('confirmReconcile')
+        ->call('openReconcile', $second->id);
+
+    // Une chaîne que seule l'étiquette « reste à placer » produit : « 60,00 »
+    // tout seul figure déjà ailleurs sur la page, et l'assertion ne
+    // discriminerait rien.
+    $screen->assertSee(__(':amount € left', ['amount' => '60,00']));
+})->group('payments', 'reconciliation');

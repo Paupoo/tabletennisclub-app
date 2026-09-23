@@ -111,6 +111,15 @@ l'écran — tableau, cartes et leurs requêtes — à chaque frappe.
                     <div @class(['font-bold tabular-nums', 'text-error' => $outgoing])>
                         {{ number_format($transaction->amount, 2, ',', ' ') }} €
                     </div>
+                    @if (abs($transaction->residue()) > 0.001 && abs($transaction->residue()) < abs($transaction->amount))
+                        {{-- Une ligne déjà entamée ressemblait trait pour trait à une
+                             ligne intacte : le virement d'un parent pour deux enfants
+                             affichait 120 € avant et après le premier rapprochement,
+                             et on croyait que rien ne s'était produit. --}}
+                        <div class="text-xs font-semibold tabular-nums text-info">
+                            {{ __(':amount € left', ['amount' => number_format(abs($transaction->residue()), 2, ',', ' ')]) }}
+                        </div>
+                    @endif
                     <div class="text-xs text-muted">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</div>
                 </div>
             </button>

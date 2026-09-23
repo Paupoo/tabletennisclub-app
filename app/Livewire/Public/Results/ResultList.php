@@ -153,6 +153,7 @@ class ResultList extends Component
                     'position_class' => $this->positionClass($team->final_position),
                     'matches' => $team->interclubResults->map(fn (InterclubResult $mr): array => [
                         'date' => $mr->is_bye ? 'Bye' : $mr->match_date?->format('d M Y'),
+                        'short_date' => $mr->is_bye ? 'Bye' : $mr->match_date?->format('d-m-y'),
                         'opponent' => $mr->opponent_name ?? 'Bye',
                         'venue' => $mr->is_home ? 'Domicile' : 'Extérieur',
                         'score' => $mr->score ?? ($mr->is_bye ? 'Bye' : '—'),

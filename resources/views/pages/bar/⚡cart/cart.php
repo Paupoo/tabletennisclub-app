@@ -160,14 +160,14 @@ new class extends Component
         $this->redirectRoute('bar.index', navigate: true);
     }
 
-    protected function authorizeOrders(): void
-    {
-        abort_unless(auth()->user()?->can(Permission::BarOrdersManage->value), 403);
-    }
-
     public function with(): array
     {
         return ['breadcrumbs' => $this->getBreadcrumbs()];
+    }
+
+    protected function authorizeOrders(): void
+    {
+        abort_unless(auth()->user()?->can(Permission::BarOrdersManage->value), 403);
     }
 
     protected function breadcrumbChain(): Breadcrumb

@@ -59,8 +59,6 @@ new class extends Component
 
     public string $name = '';
 
-    public string $search = '';
-
     /**
      * Ordre d'affichage — une navigation, pas un filtre (R2).
      *
@@ -73,6 +71,8 @@ new class extends Component
     public string $order = 'category';
 
     public string $price = '';
+
+    public string $search = '';
 
     public function delete(): void
     {

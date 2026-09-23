@@ -249,17 +249,17 @@ new class extends Component
         unset($this->catalogue);
     }
 
-    protected function authorizeOrders(): void
-    {
-        abort_unless(auth()->user()?->can(Permission::BarOrdersManage->value), 403);
-    }
-
     public function with(): array
     {
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
             'isChoosing' => $this->tabName === null && ! session()->get('bar_walk_in', false),
         ];
+    }
+
+    protected function authorizeOrders(): void
+    {
+        abort_unless(auth()->user()?->can(Permission::BarOrdersManage->value), 403);
     }
 
     protected function breadcrumbChain(): Breadcrumb

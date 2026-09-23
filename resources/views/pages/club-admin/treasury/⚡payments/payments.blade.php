@@ -572,31 +572,39 @@
             <div class="flex items-start gap-3 p-3 rounded-xl bg-success/10 border border-success/20 text-sm">
                 <x-icon name="o-sparkles" class="w-5 h-5 text-success shrink-0 mt-0.5" />
                 <span>
-                    {{ __(':count allocation(s) found on the structured communication. When a transfer only covers part of what is owed, only that part is allocated. Transfers without a communication are not proposed here.', ['count' => count($batchMatches)]) }}
+                    {{ __('Ticked lines are the ones where the reference and the amount match exactly. The others are defensible but need your eye.') }}
                 </span>
             </div>
 
             <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
-                @foreach($batchMatches as $match)
-                <div class="flex items-center gap-4 p-3 rounded-xl bg-base-100 border border-base-300">
-                    <x-icon name="o-check-circle" class="w-5 h-5 text-success shrink-0" />
-                    <div class="flex-1 min-w-0">
-                        <div class="font-semibold text-sm">{{ $match['member'] }}</div>
-                        @if (! empty($match['event_name']))
-                            <div class="text-xs text-muted mt-0.5">
-                                <span class="font-medium">{{ $match['event_type'] }}</span> · {{ $match['event_name'] }}
+                @foreach($batchMatches as $key => $match)
+                    <label class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 {{ $match['exact'] ? 'border-success/30 bg-success/5' : 'border-warning/30 bg-warning/5' }}"
+                        wire:key="batch-{{ $key }}">
+                        <input type="checkbox" class="checkbox checkbox-sm mt-0.5"
+                            value="{{ $key }}" wire:model.live="selectedBatchMatches" />
+
+                        <div class="min-w-0 flex-1">
+                            <div class="text-sm font-semibold">{{ $match['member'] }}</div>
+                            @if (! empty($match['event_name']))
+                                <div class="text-xs text-primary/70">
+                                    <span class="font-medium">{{ $match['event_type'] }}</span> · {{ $match['event_name'] }}
+                                </div>
+                            @endif
+                            <div class="mt-0.5 flex flex-wrap items-baseline gap-x-2">
+                                <span class="font-mono text-xs text-primary">{{ $match['reference'] }}</span>
+                                <span class="text-xs opacity-60">{{ $match['counterparty'] }}</span>
+                                <span class="text-xs opacity-60">{{ \Carbon\Carbon::parse($match['transaction_date'])->format('d/m/Y') }}</span>
                             </div>
-                        @endif
-                        <div class="flex items-center gap-3 mt-0.5">
-                            <span class="font-mono text-xs text-primary">{{ $match['reference'] }}</span>
-                            <span class="text-xs opacity-40">·</span>
-                            <span class="text-xs opacity-60">{{ $match['counterparty'] }}</span>
-                            <span class="text-xs opacity-40">·</span>
-                            <span class="text-xs opacity-60">{{ \Carbon\Carbon::parse($match['transaction_date'])->format('d/m/Y') }}</span>
+                            {{-- Pourquoi cette ligne est cochée, ou pourquoi elle ne l'est pas. --}}
+                            <div class="mt-1 text-xs {{ $match['exact'] ? 'text-success' : 'text-warning' }}">
+                                {{ $match['reason'] }}
+                            </div>
                         </div>
-                    </div>
-                    <span class="font-black tabular-nums text-success">{{ number_format($match['amount'], 2, ',', ' ') }} €</span>
-                </div>
+
+                        <span class="shrink-0 font-black tabular-nums {{ $match['exact'] ? 'text-success' : 'text-warning' }}">
+                            {{ number_format($match['amount'], 2, ',', ' ') }} €
+                        </span>
+                    </label>
                 @endforeach
             </div>
         </div>
@@ -604,7 +612,7 @@
         <x-slot:actions>
             <x-button :label="__('Cancel')" @click="$wire.batchModal = false" class="btn-ghost" />
             <x-button
-                :label="__('Confirm all (:count)', ['count' => count($batchMatches)])"
+                :label="__('Confirm the ticked (:count)', ['count' => count($selectedBatchMatches)])"
                 icon="o-check-badge"
                 class="btn-success"
                 wire:click="confirmBatchReconcile"

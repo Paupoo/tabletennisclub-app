@@ -106,7 +106,10 @@ it('offers every transfer carrying the payment reference, not just the last one'
 
     expect($screen->get('batchMatches'))->toHaveCount(2);
 
-    $screen->call('confirmBatchReconcile');
+    // Deux versements partiels : aucun n'est coché d'office, le trésorier les
+    // accepte après les avoir lus.
+    $screen->set('selectedBatchMatches', ['0', '1'])
+        ->call('confirmBatchReconcile');
 
     expect($payment->fresh()->amount_paid)->toBe(365.0)
         ->and($payment->fresh()->status)->toBe('paid')
@@ -138,6 +141,7 @@ it('leaves out a transfer it has already allocated in full', function (): void {
 
     reconcileScreen(User::factory()->create())
         ->call('previewBatchMatch')
+        ->set('selectedBatchMatches', ['0'])
         ->call('confirmBatchReconcile');
 
     expect($payment->fresh()->status)->toBe('pending')
@@ -518,3 +522,55 @@ it('shows what is left on a transfer already half placed', function (): void {
     // discriminerait rien.
     $screen->assertSee(__(':amount € left', ['amount' => '60,00']));
 })->group('payments', 'reconciliation');
+
+/**
+ * Le masse ne valide d'office que ce dont il est certain.
+ *
+ * La modale n'avait aucune case : elle listait les appariements et proposait
+ * « Tout confirmer ». Un versement partiel y passait au même titre qu'un
+ * paiement au centime près, sans que le trésorier puisse l'écarter. Sur
+ * quarante lignes et un seul bouton, personne ne lit.
+ *
+ * Un appariement parfait — référence **et** montant, sur une créance et un
+ * virement encore intacts — arrive coché. Tout le reste attend un geste.
+ */
+it('pre-selects only the matches it is certain of', function (): void {
+    [, $exact] = affiliationAwaiting(365.0);
+    [, $partial] = affiliationAwaiting(365.0);
+
+    Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 365.0,
+        'counterparty_name' => 'Payeur exact',
+        'structured_reference' => $exact->reference,
+    ]);
+
+    Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 200.0,
+        'counterparty_name' => 'Payeur partiel',
+        'structured_reference' => $partial->reference,
+    ]);
+
+    $screen = reconcileScreen(User::factory()->create())->call('previewBatchMatch');
+
+    $matches = $screen->get('batchMatches');
+    $selected = $screen->get('selectedBatchMatches');
+
+    expect($matches)->toHaveCount(2);
+
+    $exactKey = collect($matches)->search(fn (array $m): bool => $m['payment_id'] === $exact->id);
+    $partialKey = collect($matches)->search(fn (array $m): bool => $m['payment_id'] === $partial->id);
+
+    expect($selected)->toContain((string) $exactKey)
+        ->and($selected)->not->toContain((string) $partialKey);
+
+    // Et confirmer n'applique que ce qui est coché.
+    $screen->call('confirmBatchReconcile');
+
+    expect($exact->fresh()->status)->toBe('paid')
+        ->and($partial->fresh()->amount_paid)->toBe(0.0)
+        ->and($partial->fresh()->status)->toBe('pending');
+})->group('payments', 'batch');

@@ -43,6 +43,9 @@ new class extends Component
 
     public array $batchMatches = [];
 
+    /** Les clés cochées : par défaut, les seuls appariements dont le barème est certain. */
+    public array $selectedBatchMatches = [];
+
     public bool $batchModal = false;
 
     public bool $bulkCancelRefundModal = false;
@@ -163,7 +166,13 @@ new class extends Component
 
         $count = 0;
 
-        foreach ($this->batchMatches as $match) {
+        $selected = array_map(intval(...), $this->selectedBatchMatches);
+
+        foreach ($this->batchMatches as $key => $match) {
+            if (! in_array($key, $selected, true)) {
+                continue;
+            }
+
             DB::transaction(function () use ($match, &$count): void {
                 $payment = Payment::find($match['payment_id']);
                 $transaction = Transaction::find($match['transaction_id']);
@@ -185,6 +194,7 @@ new class extends Component
 
         $this->batchModal = false;
         $this->batchMatches = [];
+        $this->selectedBatchMatches = [];
         $this->success(__(':count payment(s) reconciled successfully.', ['count' => $count]));
     }
 
@@ -604,7 +614,21 @@ new class extends Component
                     continue;
                 }
 
+                // Parfait : la référence **et** le montant, sur une créance et
+                // un virement encore intacts. Tout le reste — un versement
+                // partiel, un second virement sur la même référence — est
+                // défendable mais demande un regard.
+                $exact = $balance === $remaining[$transaction->id]
+                    && (int) round((float) $payment->amount_paid * 100) === 0
+                    && (int) round(abs((float) $transaction->allocated_amount) * 100) === 0;
+
                 $this->batchMatches[] = [
+                    'exact' => $exact,
+                    'reason' => $exact
+                        ? __('reference and amount match exactly')
+                        : __('partial payment — :amount € owed', [
+                            'amount' => number_format((float) $payment->amount_due - (float) $payment->amount_paid, 2, ',', ' '),
+                        ]),
                     'payment_id' => $payment->id,
                     'transaction_id' => $transaction->id,
                     'reference' => $payment->reference,
@@ -626,6 +650,15 @@ new class extends Component
 
             return;
         }
+
+        // Cochés d'office : ceux dont le barème est certain. Les autres
+        // attendent un geste — quarante lignes et un seul bouton, personne ne
+        // lit, et de l'argent se place tout seul au mauvais endroit.
+        $this->selectedBatchMatches = collect($this->batchMatches)
+            ->filter(fn (array $match): bool => $match['exact'])
+            ->keys()
+            ->map(fn (int $key): string => (string) $key)
+            ->all();
 
         $this->batchModal = true;
     }

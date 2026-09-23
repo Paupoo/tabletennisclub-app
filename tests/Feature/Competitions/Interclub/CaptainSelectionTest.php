@@ -435,11 +435,17 @@ it('returns actionable status when selection is complete but not yet confirmed',
     expect(matchStatus($this->interclub->id, $this->captain, $this->team->id))->toBe('actionable');
 });
 
-it('returns confirmed status when selection_confirmed_at is set', function (): void {
-    $this->interclub->users()->attach($this->player1->id, [
-        'is_selected' => true,
-        'selection_confirmed_at' => now(),
-    ]);
+it('returns confirmed status once the whole lineup has been sent', function (): void {
+    // One confirmed player used to be enough — which is how a lineup cut from
+    // four to three by a withdrawal stayed green. The whole team has to be told.
+    $this->interclub->update(['total_players' => 2]);
+
+    foreach ([$this->player1, $this->player2] as $player) {
+        $this->interclub->users()->attach($player->id, [
+            'is_selected' => true,
+            'selection_confirmed_at' => now(),
+        ]);
+    }
 
     expect(matchStatus($this->interclub->id, $this->captain, $this->team->id))->toBe('confirmed');
 });

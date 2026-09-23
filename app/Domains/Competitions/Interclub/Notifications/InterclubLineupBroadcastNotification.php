@@ -72,6 +72,10 @@ class InterclubLineupBroadcastNotification extends Notification
                 'selectedPlayers' => $this->selectedPlayers,
                 'category' => $category,
                 'captainMessage' => $this->captainMessage,
+                // Jouer à 3 : la déclaration du capitaine, lue au moment de l'envoi.
+                'shortHanded' => $interclub->isShortHanded()
+                    ? ['playing' => $interclub->getSelectedPlayers()->count(), 'max' => $interclub->total_players]
+                    : null,
                 'isUpdate' => $this->isUpdate,
                 'url' => route('admin.interclubs.my-match', $interclub),
             ]);

@@ -54,6 +54,7 @@ erDiagram
     Club
     Interclub
     InterclubImport
+    InterclubIndividualMatch
     InterclubResult
     League
     Season
@@ -114,6 +115,8 @@ erDiagram
     MemberImport ||--o{ User : "members"
     User ||--o{ NewsPost : "articles"
     User ||--o| Team : "captainOf"
+    User ||--o| TrainingPack : "coachOf"
+    User ||--o| Training : "coachOfSession"
     User }o--o{ FamilyGroup : "familyGroups"
     User ||--o| Guardian : "guardianRecord"
     User }o--o{ Guardian : "guardians"
@@ -130,11 +133,13 @@ erDiagram
     Club }o--o{ Room : "rooms"
     Club ||--o{ Team : "teams"
     Club ||--o{ User : "users"
+    Interclub ||--o{ InterclubIndividualMatch : "individualMatches"
     Interclub ||--o| InterclubResult : "interclubResult"
     Interclub ||--o{ Team : "teams"
     Interclub }o--o{ User : "users"
     League ||--o{ Interclub : "interclubs"
     League ||--o{ Team : "teams"
+    Season ||--o{ InterclubResult : "interclubResults"
     Season ||--o{ Interclub : "interclubs"
     Season ||--o{ League : "leagues"
     Season ||--o{ Subscription : "subscriptions"

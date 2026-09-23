@@ -15,11 +15,13 @@ use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Feature;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Role;
+use App\Domains\Trainings\Models\Training;
 use App\Http\Controllers\Controller;
 use App\Services\ClubAdmin\Dashboard\AgendaBlockBuilder;
 use App\Support\QueueHealth;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class DashboardController extends Controller
 {
@@ -52,6 +54,10 @@ class DashboardController extends Controller
             Permission::FinesIssue->value,
         ]);
         $showCaptain = $isAdmin || $isCaptain;
+        // Le Gate, pas la délégation : encadrer un pack ou une séance suffit, et
+        // c'est ce que dit déjà TrainingPolicy::recordAttendance(). Trois des cinq
+        // entraîneurs du club n'ont aucune délégation.
+        $showCoach = Feature::Trainings->enabled() && Gate::allows('access-coach-area');
         $showCommittee = $isAdmin || in_array($role, [
             CommitteeRolesEnum::PRESIDENT,
             CommitteeRolesEnum::VICE_PRESIDENT,
@@ -59,6 +65,7 @@ class DashboardController extends Controller
         ]);
 
         $alerts = $this->buildAlerts($user, $isAdmin, $showSecretary, $showTreasurer, $showCaptain);
+        $coachTiles = $showCoach ? $this->buildCoachTiles($user) : [];
         $memberTiles = $this->buildMemberTiles($user);
         $agendaBlocks = $this->agendaBlocks->for($user);
 
@@ -66,7 +73,9 @@ class DashboardController extends Controller
             'showSecretary',
             'showTreasurer',
             'showCaptain',
+            'showCoach',
             'showCommittee',
+            'coachTiles',
             'alerts',
             'memberTiles',
             'agendaBlocks',
@@ -219,6 +228,48 @@ class DashboardController extends Controller
     /**
      * @return array<int, array{icon: string, label: string, sub: string, href: string}>
      */
+    /**
+     * Le monde admin d'un entraîneur tient en un écran : `coach.trainings`.
+     *
+     * On ne le garnit pas de portes fermées — la seconde tuile n'apparaît qu'à
+     * qui peut vraiment l'ouvrir, comme le fait déjà le bloc capitaine.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildCoachTiles(User $user): array
+    {
+        // La même requête que `sessionsToRecord` de l'écran coach : ce qui est
+        // passé, encore « scheduled », et que personne n'a pointé.
+        $toRecord = Training::where('trainer_id', $user->id)
+            ->where('start', '<', now())
+            ->where('status', 'scheduled')
+            ->whereNull('attendance_taken_at')
+            ->count();
+
+        $tiles = [
+            [
+                'icon' => 'o-calendar-days',
+                'label' => 'Mes séances',
+                'sub' => 'Pointage & planning',
+                'href' => route('coach.trainings'),
+                // La couleur club : l'entrée que cette personne doit trouver en premier.
+                'color' => 'secondary',
+                'badge' => $toRecord,
+            ],
+        ];
+
+        if ($user->can(Permission::TrainingsManage->value)) {
+            $tiles[] = [
+                'icon' => 'o-tag',
+                'label' => "Packs d'entraînement",
+                'sub' => 'Offre & inscrits',
+                'href' => route('admin.trainings.index'),
+            ];
+        }
+
+        return $tiles;
+    }
+
     private function buildMemberTiles(User $user): array
     {
         $tiles = [

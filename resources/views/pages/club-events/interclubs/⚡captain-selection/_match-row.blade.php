@@ -13,7 +13,9 @@
     $avCount = $ic['available_count'];
 
     [$statusBarColor, $statusLabel] = match ($ic['status']) {
-        'confirmed' => ['bg-success', __('Lineup sent')],
+        // À 3 comme à 4 : pour le capitaine, une compo envoyée est réglée.
+        // L'orange de l'effectif réduit reste à la vue globale.
+        'confirmed', 'short' => ['bg-success', __('Lineup sent')],
         'actionable' => ['bg-warning', __('Ready to compose')],
         'urgent' => ['bg-error', __('Needs attention')],
         'past' => ['bg-base-300', __('Played')],

@@ -10,6 +10,7 @@ use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -288,19 +289,7 @@ new class extends Component
         $col = $this->sortBy['column'];
         $dir = $this->sortBy['direction'];
 
-        return Transaction::with('payment')
-            ->when($this->search, fn ($q) => $q
-                ->where('counterparty_name', 'like', "%{$this->search}%")
-                ->orWhere('structured_reference', 'like', "%{$this->search}%")
-                ->orWhere('free_reference', 'like', "%{$this->search}%")
-                ->orWhere('description', 'like', "%{$this->search}%")
-            )
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('date', '<=', $this->dateTo))
-            ->when($this->reconciledFilter === 'reconciled', fn ($q) => $q->has('payment'))
-            ->when($this->reconciledFilter === 'unreconciled', fn ($q) => $q->doesntHave('payment')->where('amount', '>', 0))
-            ->when($this->amountDirection === 'credit', fn ($q) => $q->where('amount', '>', 0))
-            ->when($this->amountDirection === 'debit', fn ($q) => $q->where('amount', '<', 0))
+        return $this->applyFilters(Transaction::with('payment'))
             ->orderBy($col, $dir)
             ->paginate(25);
     }
@@ -351,20 +340,40 @@ new class extends Component
 
     private function allMatchingTransactionIds(): array
     {
-        return Transaction::when($this->search, fn ($q) => $q
-            ->where('counterparty_name', 'like', "%{$this->search}%")
-            ->orWhere('structured_reference', 'like', "%{$this->search}%")
-            ->orWhere('free_reference', 'like', "%{$this->search}%")
-            ->orWhere('description', 'like', "%{$this->search}%")
-        )
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('date', '<=', $this->dateTo))
-            ->when($this->reconciledFilter === 'reconciled', fn ($q) => $q->has('payment'))
-            ->when($this->reconciledFilter === 'unreconciled', fn ($q) => $q->doesntHave('payment')->where('amount', '>', 0))
-            ->when($this->amountDirection === 'credit', fn ($q) => $q->where('amount', '>', 0))
-            ->when($this->amountDirection === 'debit', fn ($q) => $q->where('amount', '<', 0))
+        return $this->applyFilters(Transaction::query())
             ->pluck('id')
             ->toArray();
+    }
+
+    /**
+     * Les filtres de l'écran.
+     *
+     * Partagée par la liste et par « sélectionner tous les résultats » : les deux
+     * doivent désigner le même ensemble, et deux copies l'ont déjà démenti.
+     *
+     * La recherche est enfermée dans son propre groupe parce que `when()` n'ouvre
+     * aucune parenthèse et que `AND` lie plus fort que `OR` : à plat, une ligne
+     * dont le tiers correspond échappe aux filtres de date, de rapprochement et
+     * de sens du montant.
+     *
+     * @param  Builder<Transaction>  $q
+     * @return Builder<Transaction>
+     */
+    private function applyFilters(Builder $q): Builder
+    {
+        return $q
+            ->when($this->search, fn (Builder $q): Builder => $q->where(function (Builder $q): void {
+                $q->where('counterparty_name', 'like', "%{$this->search}%")
+                    ->orWhere('structured_reference', 'like', "%{$this->search}%")
+                    ->orWhere('free_reference', 'like', "%{$this->search}%")
+                    ->orWhere('description', 'like', "%{$this->search}%");
+            }))
+            ->when($this->dateFrom, fn (Builder $q): Builder => $q->whereDate('date', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn (Builder $q): Builder => $q->whereDate('date', '<=', $this->dateTo))
+            ->when($this->reconciledFilter === 'reconciled', fn (Builder $q): Builder => $q->has('payment'))
+            ->when($this->reconciledFilter === 'unreconciled', fn (Builder $q): Builder => $q->doesntHave('payment')->where('amount', '>', 0))
+            ->when($this->amountDirection === 'credit', fn (Builder $q): Builder => $q->where('amount', '>', 0))
+            ->when($this->amountDirection === 'debit', fn (Builder $q): Builder => $q->where('amount', '<', 0));
     }
 
     private function normalizeHeader(string $h): string

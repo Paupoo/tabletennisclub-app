@@ -147,7 +147,7 @@
                     :filtered="filled($search) || count($filterChips) > 0"
                     :heading="__('No events found')" />
             @else
-                <x-table :headers="$headers" :rows="$events" :sort-by="$sortBy"
+                <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$events" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
                     @scope('cell_type', $event)
                         <span class="inline-flex items-center gap-1.5 text-sm">

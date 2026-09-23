@@ -28,6 +28,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $id
  * @property string $address
  * @property string|null $captain_message
+ * @property \Illuminate\Support\Carbon|null $short_handed_confirmed_at
+ * @property int|null $short_handed_confirmed_by
  * @property \Illuminate\Support\Carbon $start_date_time
  * @property int|null $week_number
  * @property int $total_players
@@ -42,6 +44,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property-read League|null $league
  * @property-read Room|null $room
  * @property-read Season|null $season
+ * @property-read User|null $shortHandedConfirmedBy
  * @property-read Collection<int, InterclubIndividualMatch> $individualMatches
  * @property-read Collection<int, Team> $teams
  * @property-read int|null $teams_count
@@ -80,6 +83,7 @@ class Interclub extends Model
     protected $casts = [
         'start_date_time' => 'datetime',
         'is_bye' => 'boolean',
+        'short_handed_confirmed_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -91,6 +95,8 @@ class Interclub extends Model
         'season_id',
         'start_date_time',
         'round_number',
+        'short_handed_confirmed_at',
+        'short_handed_confirmed_by',
         'total_players',
         'visited_team_id',
         'visiting_team_id',
@@ -173,6 +179,18 @@ class Interclub extends Model
     public function isLineupPublished(): bool
     {
         return $this->users()->wherePivotNotNull('selection_confirmed_at')->exists();
+    }
+
+    /**
+     * Whether the captain has declared the team will play one player short.
+     *
+     * A declaration, not a count: a lineup published at four that loses a
+     * player to a withdrawal leaves exactly the same stamps on the three who
+     * remain as one the captain chose to send at three.
+     */
+    public function isShortHanded(): bool
+    {
+        return $this->short_handed_confirmed_at !== null;
     }
 
     public function league(): BelongsTo
@@ -268,6 +286,14 @@ class Interclub extends Model
         $this->week_number = Carbon::create($date)->isoWeek;
 
         return $this;
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function shortHandedConfirmedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'short_handed_confirmed_by');
     }
 
     public function teams(): HasMany

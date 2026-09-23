@@ -2,7 +2,7 @@
 title: Demander mon attestation mutuelle
 summary: Votre mutualité rembourse une partie de votre cotisation. Voici comment obtenir le document, et ce que le club atteste exactement.
 audience: member
-order: 20
+order: 21
 ---
 
 La plupart des mutualités belges remboursent une partie de la cotisation d'un club sportif — entre 40 € et 100 € par an selon l'organisme et votre âge. Il leur faut une attestation du club. L'application la génère pour vous, déjà remplie, cachetée et signée.

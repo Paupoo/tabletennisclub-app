@@ -50,6 +50,8 @@ new class extends Component
 
     public ?int $categoryId = null;
 
+    public bool $deleteModal = false;
+
     public bool $drawer = false;
 
     /** Produit ouvert dans le tiroir ; null = création. */
@@ -74,6 +76,8 @@ new class extends Component
 
     public function delete(): void
     {
+        $this->deleteModal = false;
+
         $product = BarProduct::withStock()->findOrFail($this->editingId);
 
         // Le stock doit être à zéro : supprimer un produit encore en rayon

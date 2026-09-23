@@ -19,7 +19,10 @@
         <div class="mb-6">
             <x-section-accordion
                 :label="__('Season overview')"
-                :count="__(':ok of :total match days under control', ['ok' => $weekSummary['ok'], 'total' => $weekSummary['total']])"
+                :count="__(':ok of :total match days under control', ['ok' => $weekSummary['ok'], 'total' => $weekSummary['total']])
+                    . ($weekSummary['short_handed'] > 0
+                        ? ' · ' . trans_choice('including :count short-handed fixture|including :count short-handed fixtures', $weekSummary['short_handed'], ['count' => $weekSummary['short_handed']])
+                        : '')"
                 color="gray"
                 :open="false"
                 :uppercase="false">
@@ -244,7 +247,15 @@
         :can-search-substitute="$canSearchSubstitute"
         :search-results="$searchResults"
         :search-note="$searchNote"
-        :search-term="$search" />
+        :search-term="$search"
+        :pool-rows="$poolRows"
+        :pool-waiting="$poolWaiting"
+        :pool-hidden-count="$poolHiddenCount"
+        :pool-maybe-count="$poolMaybeCount"
+        :pool-maybe-teams="$poolMaybeTeams"
+        :lineup-constraint="$lineupConstraint"
+        short-handed-model="shortHandedOptIn"
+        :minimum-players="$drawerInterclub?->minimumPlayers()" />
 
     {{-- ── CONFIRMATION : RELANCE DES DISPONIBILITÉS ──────────────────── --}}
     {{-- L'action envoie des e-mails à toute l'équipe : elle se confirme. --}}
@@ -262,6 +273,19 @@
         :subtitle="$sendTargetLabel"
         wire:model="modalMessage" :open="$modalMessage">
         <div class="space-y-4">
+            {{-- Ce que le capitaine vient de déclarer, et ce que cela coûte : la
+                 dernière chose qu'il lit avant de convoquer l'équipe. --}}
+            @if ($sendsShortHanded)
+                <div class="rounded-xl border border-warning/40 bg-warning/5 p-3 text-sm">
+                    <div class="flex items-center gap-1.5 font-semibold">
+                        <x-icon name="o-exclamation-triangle" class="h-4 w-4 text-warning" />
+                        {{ __('You will play with :n of :max.', ['n' => count($sendLineupNames), 'max' => $sendMaxPlayers]) }}
+                    </div>
+                    <p class="mt-1 text-xs text-base-content/80">
+                        {{ __('The missing player\'s matches will be lost. The team will be told it plays short.') }}
+                    </p>
+                </div>
+            @endif
             @if ($isUpdateMode)
                 {{-- Diff summary: only added/removed players are notified --}}
                 @if (! empty($pendingRemovedNames))

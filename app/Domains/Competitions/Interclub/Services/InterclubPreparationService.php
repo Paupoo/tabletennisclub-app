@@ -20,6 +20,12 @@ use Illuminate\Support\Collection;
 class InterclubPreparationService
 {
     /**
+     * The statuses that count as settled: a full lineup sent, or one the
+     * captain declared short-handed and sent at the minimum the rules allow.
+     */
+    public const array SETTLED = ['confirmed', 'short'];
+
+    /**
      * @param  EloquentCollection<int, Interclub>  $fixtures
      * @return EloquentCollection<int, Interclub>
      */
@@ -31,6 +37,11 @@ class InterclubPreparationService
 
     /**
      * Where a single fixture stands. Ordered by how much attention it needs.
+     *
+     * One confirmed player used to settle a fixture: a lineup sent at four and
+     * then cut to three by a withdrawal stayed green although nobody had dealt
+     * with it. A fixture is settled by a full lineup, or by the captain's word
+     * that the team will play short — never by what is left of a lineup.
      */
     public function fixtureStatus(Interclub $interclub): string
     {
@@ -47,7 +58,8 @@ class InterclubPreparationService
         $daysUntil = (int) now()->diffInDays($interclub->start_date_time, false);
 
         return match (true) {
-            $confirmedCount > 0 => 'confirmed',
+            $confirmedCount >= $maxPlayers => 'confirmed',
+            $interclub->isShortHanded() && $confirmedCount >= $interclub->minimumPlayers() => 'short',
             $selectedCount >= $maxPlayers => 'actionable',
             $availableCount >= $maxPlayers => 'actionable',
             $daysUntil <= 14 => 'urgent',
@@ -60,7 +72,7 @@ class InterclubPreparationService
      *
      * @param  EloquentCollection<int, Team>  $teams
      * @param  EloquentCollection<int, Interclub>  $fixtures
-     * @return array{weeks: array<int, array{wk: int, status: string}>, preparation_score: int, total: int, ok: int, matrix: array<int, array<int, string|null>>, teams: array<int, array{id: int, name: string}>}
+     * @return array{weeks: array<int, array{wk: int, status: string}>, preparation_score: int, total: int, ok: int, short_handed: int, matrix: array<int, array<int, string|null>>, teams: array<int, array{id: int, name: string}>}
      */
     public function summary(EloquentCollection $teams, EloquentCollection $fixtures): array
     {
@@ -78,9 +90,11 @@ class InterclubPreparationService
         $scored = collect($weeks)->reject(fn (array $w): bool => $w['status'] === 'past');
 
         $total = $scored->count();
-        $ok = $scored->where('status', 'confirmed')->count();
+        $ok = $scored->whereIn('status', self::SETTLED)->count();
 
         $matrix = $this->teamWeekMatrix($teams, $weekNumbers, $fixtures);
+
+        $shortHanded = collect($matrix)->flatten()->filter(fn (?string $s): bool => $s === 'short')->count();
 
         // Trois catégories réutilisent les mêmes lettres : « A » ne veut rien dire
         // sans sa catégorie et sa division.
@@ -101,6 +115,9 @@ class InterclubPreparationService
             'preparation_score' => $total > 0 ? (int) round($ok / $total * 100) : 0,
             'total' => $total,
             'ok' => $ok,
+            // Réglées, mais à effectif réduit : l'orange que la vue globale garde
+            // visible sans le retirer du score.
+            'short_handed' => $shortHanded,
             'matrix' => $matrix,
             'teams' => $teamRows,
             // Une semaine absente de cette liste est une semaine de repos pour la
@@ -191,7 +208,7 @@ class InterclubPreparationService
             $standing['total'] = count($rows);
             $standing['played'] = count($rows) - count($live);
             $standing['todo'] = count(array_filter($live, fn (array $r): bool => in_array($r['status'], ['urgent', 'actionable'], true)));
-            $standing['controlled'] = count(array_filter($live, fn (array $r): bool => $r['status'] === 'confirmed'));
+            $standing['controlled'] = count(array_filter($live, fn (array $r): bool => in_array($r['status'], self::SETTLED, true)));
             // Les segments de la barre de progression, dans l'ordre du calendrier.
             $standing['segments'] = array_column($rows, 'status');
             $standing['next_date'] = $next['date'] ?? null;
@@ -248,7 +265,7 @@ class InterclubPreparationService
 
         return [
             'todo' => count(array_filter($live, fn (array $r): bool => in_array($r['status'], ['urgent', 'actionable'], true))),
-            'controlled' => count(array_filter($live, fn (array $r): bool => $r['status'] === 'confirmed')),
+            'controlled' => count(array_filter($live, fn (array $r): bool => in_array($r['status'], self::SETTLED, true))),
             'upcoming' => count(array_filter($live, fn (array $r): bool => $r['status'] === 'future')),
         ];
     }
@@ -395,7 +412,7 @@ class InterclubPreparationService
      */
     private function worstOf(string $a, string $b): string
     {
-        $rank = ['confirmed' => 0, 'future' => 1, 'actionable' => 2, 'urgent' => 3];
+        $rank = ['confirmed' => 0, 'short' => 1, 'future' => 2, 'actionable' => 3, 'urgent' => 4];
 
         return ($rank[$b] ?? 0) > ($rank[$a] ?? 0) ? $b : $a;
     }

@@ -33,9 +33,32 @@ Une fois la sélection enregistrée, l'application vous propose de **l'envoyer �
 
 **Tant que vous n'avez pas envoyé, vos joueurs ne savent pas qu'ils sont sélectionnés.** Une sélection enregistrée n'est pas une sélection communiquée — c'est la confusion la plus courante sur cet écran.
 
+## Jouer à 3
+
+Le règlement permet à une équipe messieurs de **débuter à 3 joueurs sur 4** (art. C.25.6) ; en dames, jeunes et vétérans, à **2 sur 3** (art. C.25.7). En dessous, la rencontre ne peut pas se jouer : c'est un **forfait**.
+
+**Avant d'en arriver là, cherchez un 4e joueur.** Le panneau vous montre les [joueurs libres de la journée](trouver-un-joueur-libre). Le plus sûr est d'emprunter dans une **équipe inférieure**, en respectant trois règles :
+
+- un joueur ne joue jamais plus bas que la place de son indice (art. C.22.1.1) ;
+- le 1er joueur d'une équipe ne peut pas être plus fort que le **3e joueur effectif** de l'équipe supérieure (art. C.22.1.3) ;
+- **un joueur ne joue qu'une fois par semaine** dans une même catégorie (art. C.20.1) — vérifiez que vous ne dépouillez pas son équipe sous le minimum.
+
+**Personne ?** Dès que vous avez coché le minimum, une case apparaît sous la barre de progression : *« Je n'ai trouvé aucun autre joueur… nous jouerons à 3 »*. **Sans cette case, rien ne part** : la sélection reste un brouillon. Cochée, elle vous ouvre la fenêtre d'envoi, qui rappelle que **les matchs du joueur manquant seront perdus**.
+
+À l'envoi :
+
+- les joueurs convoqués lisent dans leur e-mail que l'équipe joue à 3 ;
+- le reste de l'équipe reçoit un appel : *« Il nous manque un joueur. Si vous vous libérez, prévenez votre capitaine. »*
+
+Votre déclaration est enregistrée — qui l'a faite, et quand. Elle **tombe d'elle-même** si vous trouvez finalement un 4e joueur, ou si l'équipe passe sous le minimum. Elle survit à un simple échange entre deux joueurs.
+
+**Moins de 3 joueurs ?** L'application enregistre la sélection mais ne l'envoie pas, et vous le rappelle. Le forfait se déclare auprès de la fédération, **au moins 48 heures avant** la rencontre : l'amende est plus lourde passé ce délai (art. C.33.1).
+
 ## Modifier une sélection déjà envoyée
 
 Rouvrez le panneau et changez ce que vous voulez. À l'envoi, l'application est plus fine qu'au premier coup : **seuls les joueurs ajoutés ou retirés sont prévenus** du changement. Ceux qui restent sélectionnés ne reçoivent pas un second e-mail identique.
+
+**Un joueur se désiste et vous restez à 3 ?** Retirez-le, puis cochez la case *« nous jouerons à 3 »* avant d'enregistrer. Le joueur retiré est prévenu, et les 3 restants reçoivent une nouvelle convocation qui leur dit qu'on joue à 3. Si vous ne cochez pas la case, seul le joueur retiré est prévenu, et le match repasse **à traiter** : une sélection amputée n'est jamais considérée comme réglée. Vous pouvez revenir cocher la case plus tard : l'enregistrement rouvre alors la fenêtre d'envoi, même si la liste n'a pas changé.
 
 ## Qui d'autre voit cet écran
 

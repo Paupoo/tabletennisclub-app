@@ -234,12 +234,15 @@
     <li><x-menu-separator /></li>
 
     @feature('trainings')
-    @canany(['trainings.manage', 'coach_area.access'])
+    {{-- Le Gate, pas la permission nue : encadrer un pack ou une séance ouvre
+         l'espace coach au même titre que la délégation, sinon un entraîneur a
+         l'accès sans avoir le lien pour y aller. --}}
+    @canany(['trainings.manage', 'access-coach-area'])
     <x-menu-sub icon="o-academic-cap" :title="__('Trainings')">
         @can('trainings.manage')
         <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')" />
         @endcan
-        @can('coach_area.access')
+        @can('access-coach-area')
         <x-menu-item icon="o-calendar-days" link="{{ route('coach.trainings') }}" :title="__('My sessions')" />
         @endcan
     </x-menu-sub>

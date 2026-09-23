@@ -2,7 +2,7 @@
 title: Importer et gérer les extraits bancaires
 summary: Alimenter la liste des transactions depuis votre banque, sans doublons et sans perte.
 audience: treasurer, committee
-order: 13
+order: 14
 ---
 
 C'est la matière première du rapprochement : sans transactions, rien à apparier. **Trésorerie → Transactions.**

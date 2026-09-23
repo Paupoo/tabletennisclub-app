@@ -387,3 +387,36 @@ it('lists a match in "played" on the strength of the sheet alone', function (): 
         // Our club hosts this one, and the reader played for our club.
         ->and($played->first()['is_home'])->toBeTrue();
 });
+
+/*
+| Jouer à 3 : le joueur convoqué le lit sur sa page, avec qui l'a décidé et quand.
+*/
+it('tells a selected player the team plays short-handed, and who declared it', function (): void {
+    $match = aMatch();
+    $match->users()->attach($this->player->id, ['is_selected' => true, 'selection_confirmed_at' => now()]);
+    $match->update([
+        'short_handed_confirmed_at' => '2026-09-20 18:30:00',
+        'short_handed_confirmed_by' => $this->captain->id,
+    ]);
+
+    Livewire::actingAs($this->player)
+        ->test('pages::club-events.interclubs.my-match', ['interclub' => $match])
+        ->assertSee('Nous jouerons à 1 sur 4')
+        ->assertSee('Déclaré par ' . $this->captain->full_name . ', le 20/09/2026');
+});
+
+it('flags a short-handed match in the list of my matches', function (): void {
+    $match = aMatch();
+    $match->users()->attach($this->player->id, ['is_selected' => true, 'selection_confirmed_at' => now()]);
+
+    Livewire::actingAs($this->player)
+        ->test('pages::club-events.interclubs.my-matches')
+        ->assertDontSeeHtml('data-short-handed');
+
+    $match->update(['short_handed_confirmed_at' => now(), 'short_handed_confirmed_by' => $this->captain->id]);
+
+    Livewire::actingAs($this->player)
+        ->test('pages::club-events.interclubs.my-matches')
+        ->assertSeeHtml('data-short-handed')
+        ->assertSee('à 1');
+});

@@ -37,6 +37,8 @@ new class extends Component
 {
     use HasBreadcrumbs, Toast;
 
+    public bool $clearModal = false;
+
     public function add(int $productId, BarCartService $cartService): void
     {
         $this->authorizeOrders();
@@ -59,6 +61,7 @@ new class extends Component
     public function clear(BarCartService $cartService): void
     {
         $this->authorizeOrders();
+        $this->clearModal = false;
 
         $cartService->clearSessionCart();
 

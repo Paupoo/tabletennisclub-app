@@ -79,11 +79,18 @@ class LeaveTrainingPackAction
 
         $subscription->refresh();
 
-        $delta = max(0.0, $amountDueBefore - (float) $subscription->amount_due);
+        if ($amountDueBefore <= (float) $subscription->amount_due) {
+            return 0.0;
+        }
+
+        // Le dû a baissé : on réclame moins avant d'envisager de rendre. Tant que
+        // rien n'est rentré, il n'y a rien à rendre — seulement une facture à
+        // corriger, et c'est le cas courant d'un départ en début de saison.
+        $overpaid = (new ReduceOutstandingInvoiceAction)($subscription);
 
         // netAmountPaid() rather than totalPaid(): the latter counts refund
         // payments as money coming in — a cancelled `to_refund` goes back to
         // `paid` — so a second departure would refund the same euros twice.
-        return round(min($delta, $subscription->netAmountPaid()), 2);
+        return round(min($overpaid, $subscription->netAmountPaid()), 2);
     }
 }

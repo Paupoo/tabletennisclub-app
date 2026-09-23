@@ -2,7 +2,7 @@
 title: Délivrer les attestations mutuelle
 summary: Installer le cachet et le paraphe, tenir les formulaires des mutualités à jour, et révoquer une attestation erronée.
 audience: secretary, committee
-order: 21
+order: 22
 ---
 
 L'écran **Attestations mutuelle** du back-office porte trois choses : la façon dont le club signe, les formulaires sur lesquels les attestations se posent, et l'historique de ce qui a été délivré.

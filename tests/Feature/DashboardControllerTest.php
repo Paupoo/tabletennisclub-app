@@ -356,11 +356,107 @@ describe('DashboardController', function (): void {
             fn (string $state): bool => str_contains($state, 'min-width: 1024px'),
         );
 
-        // Four of the five accordions an administrator gets: Mon espace stays
-        // open, so the page still lands on something.
-        expect($sections[1])->toHaveCount(5)
-            ->and($collapsed)->toHaveCount(4)
+        // Five of the six accordions an administrator gets: Mon espace stays
+        // open, so the page still lands on something. The sixth is Entraîneur,
+        // added when coaching stopped being read as a délégation — an admin
+        // holds `coach_area.access` like every other permission.
+        expect($sections[1])->toHaveCount(6)
+            ->and($collapsed)->toHaveCount(5)
             ->and($sections[1][0])->not->toContain('min-width: 1024px');
     });
 
+});
+
+/*
+ * Entraîner est une relation (`training_packs.trainer_id`), pas une délégation —
+ * exactement comme être capitaine. TrainingPolicy::recordAttendance() le savait
+ * déjà ; le Gate `access-coach-area`, non, et il renvoyait 403 à trois des cinq
+ * entraîneurs du club sur l'écran où l'on pointe les présences.
+ */
+describe('the coach persona', function (): void {
+    it('opens the coach area to someone who leads a pack but holds no délégation', function (): void {
+        $season = makeActiveSeason();
+        $coach = User::factory()->create();
+        makeTrainingPack($season, ['trainer_id' => $coach->id]);
+
+        $this->actingAs($coach)->get(route('coach.trainings'))->assertOk();
+    });
+
+    it('opens it to someone a session was handed to, even without a pack', function (): void {
+        $season = makeActiveSeason();
+        $pack = makeTrainingPack($season);
+        $stand_in = User::factory()->create();
+
+        Training::factory()->create([
+            'training_pack_id' => $pack->id,
+            'trainer_id' => $stand_in->id,
+        ]);
+
+        $this->actingAs($stand_in)->get(route('coach.trainings'))->assertOk();
+    });
+
+    it('keeps it shut for a member who coaches nothing', function (): void {
+        $member = User::factory()->create();
+
+        $this->actingAs($member)->get(route('coach.trainings'))->assertForbidden();
+    });
+
+    it('shows the coach group to a pack trainer with no role at all', function (): void {
+        $season = makeActiveSeason();
+        $coach = User::factory()->create();
+        makeTrainingPack($season, ['trainer_id' => $coach->id]);
+
+        $this->actingAs($coach)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertViewHas('showCoach', true);
+    });
+
+    it('hides the coach group from a member who coaches nothing', function (): void {
+        $this->actingAs(User::factory()->create())
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertViewHas('showCoach', false);
+    });
+
+    it('badges the sessions still waiting to be recorded', function (): void {
+        $season = makeActiveSeason();
+        $coach = User::factory()->create();
+        $pack = makeTrainingPack($season, ['trainer_id' => $coach->id]);
+
+        Training::factory()->count(2)->create([
+            'training_pack_id' => $pack->id,
+            'trainer_id' => $coach->id,
+            'start' => now()->subWeek(),
+            'status' => 'scheduled',
+            'attendance_taken_at' => null,
+        ]);
+
+        // Déjà pointée : elle n'attend plus rien de personne.
+        Training::factory()->create([
+            'training_pack_id' => $pack->id,
+            'trainer_id' => $coach->id,
+            'start' => now()->subWeek(),
+            'status' => 'scheduled',
+            'attendance_taken_at' => now()->subDays(6),
+        ]);
+
+        $response = $this->actingAs($coach)->get(route('dashboard'))->assertOk();
+
+        expect($response->viewData('coachTiles')[0]['badge'])->toBe(2);
+    });
+
+    it('offers the packs tile only to someone who may open it', function (): void {
+        $season = makeActiveSeason();
+
+        $coach = User::factory()->create();
+        makeTrainingPack($season, ['trainer_id' => $coach->id]);
+
+        $manager = User::factory()->isCommitteeMember()->withRole(Role::TRAININGS)->create();
+        makeTrainingPack($season, ['trainer_id' => $manager->id]);
+
+        // On ne propose pas une porte qui répond 403 : c'est la règle du bloc capitaine.
+        expect($this->actingAs($coach)->get(route('dashboard'))->viewData('coachTiles'))->toHaveCount(1)
+            ->and($this->actingAs($manager)->get(route('dashboard'))->viewData('coachTiles'))->toHaveCount(2);
+    });
 });

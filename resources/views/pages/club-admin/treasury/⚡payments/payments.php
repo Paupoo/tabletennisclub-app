@@ -6,6 +6,7 @@ use App\Contracts\DescribesPayment;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
+use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
@@ -352,33 +353,10 @@ new class extends Component
         $col = $this->sortBy['column'];
         $dir = $this->sortBy['direction'];
 
-        $rows = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
-            ->where('status', $this->statusFilter)
-            ->when($this->search, fn ($q) => $q
-                ->where('reference', 'like', "%{$this->search}%")
-                // `payable.user` suppose que tout payable a un membre. Une commande
-                // de bar n'en a pas — le bar ne sait pas qui a payé — et la
-                // recherche tombait alors en BadMethodCallException pour tout le
-                // monde, y compris pour chercher une affiliation.
-                ->orWhereHasMorph(
-                    'payable',
-                    $this->payableTypesWithUser(),
-                    fn ($q) => $q->whereHas('user', fn ($u) => $u
-                        ->where('first_name', 'like', "%{$this->search}%")
-                        ->orWhere('last_name', 'like', "%{$this->search}%")
-                    )
-                )
-            )
-            ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo))
-            ->when($this->userId, fn ($q) => $q->whereHasMorph(
-                'payable',
-                [Subscription::class, TournamentRegistration::class, MeetingUser::class],
-                fn ($q) => $q->where('user_id', $this->userId)
-            ))
-            ->when($this->eventType, fn ($q) => $q->where('payable_type', $this->eventType))
-            ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName))
+        $rows = $this->applyFilters(
+            Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
+                ->where('status', $this->statusFilter)
+        )
             ->get()
             ->map(function (Payment $p) {
                 $label = $p->payable instanceof DescribesPayment ? $p->payable->getPaymentLabel() : null;
@@ -415,40 +393,18 @@ new class extends Component
 
     public function pendingTransactions(): Collection
     {
-        $payment = $this->reconcilePaymentId ? Payment::find($this->reconcilePaymentId) : null;
-        $normalizedPayRef = $payment ? $this->normalizeReference($payment->reference) : null;
+        $payment = $this->reconcilePaymentId
+            ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->reconcileEagerLoads())])->find($this->reconcilePaymentId)
+            : null;
 
-        return Transaction::whereDoesntHave('payment')
+        $candidates = Transaction::whereDoesntHave('payment')
             ->where('amount', '>', 0)
             ->orderBy('date', 'desc')
-            ->get()
-            ->map(function (Transaction $t) use ($payment, $normalizedPayRef): Transaction {
-                if (! $payment) {
-                    $t->match_score = 'none';
+            ->get();
 
-                    return $t;
-                }
-
-                $normalizedTransRef = $this->normalizeReference($t->structured_reference ?? '');
-                $refMatch = $normalizedPayRef && $normalizedTransRef && $normalizedPayRef === $normalizedTransRef;
-                $amountMatch = abs($t->amount - $payment->amount_due) < 0.01;
-
-                $t->match_score = match (true) {
-                    $refMatch && $amountMatch => 'perfect',
-                    $refMatch => 'reference',
-                    $amountMatch => 'amount',
-                    default => 'none',
-                };
-
-                return $t;
-            })
-            ->sortByDesc(fn ($t): int => match ($t->match_score) {
-                'perfect' => 3,
-                'reference' => 2,
-                'amount' => 1,
-                default => 0,
-            })
-            ->values();
+        return $payment
+            ? (new TransactionMatcher)->rank($payment, $candidates)
+            : $candidates;
     }
 
     public function previewBatchMatch(): void
@@ -562,41 +518,21 @@ new class extends Component
     #[Computed]
     public function refundTransactions(): Collection
     {
-        $payment = $this->refundPaymentId ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])->find($this->refundPaymentId) : null;
-        $user = $payment?->payable?->user;
+        $payment = $this->refundPaymentId
+            ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->reconcileEagerLoads())])->find($this->refundPaymentId)
+            : null;
 
-        $normalizedIban = $this->normalizeIban($user?->iban ?? '');
-
-        return Transaction::whereDoesntHave('refundPayment')
+        // Un remboursement sort du compte du club : les candidates sont les
+        // débits, mais le barème est le même — c'est le même membre qu'on
+        // cherche au bout du virement.
+        $candidates = Transaction::whereDoesntHave('refundPayment')
             ->where('amount', '<', 0)
             ->orderBy('date', 'desc')
-            ->get()
-            ->map(function (Transaction $t) use ($payment, $normalizedIban): Transaction {
-                if (! $payment) {
-                    $t->match_score = 'none';
+            ->get();
 
-                    return $t;
-                }
-
-                $ibanMatch = $normalizedIban && $this->normalizeIban($t->counterparty_bank_account ?? '') === $normalizedIban;
-                $amountMatch = abs(abs($t->amount) - $payment->amount_paid) < 0.01;
-
-                $t->match_score = match (true) {
-                    $ibanMatch && $amountMatch => 'perfect',
-                    $ibanMatch => 'iban',
-                    $amountMatch => 'amount',
-                    default => 'none',
-                };
-
-                return $t;
-            })
-            ->sortByDesc(fn (Transaction $t): int => match ($t->match_score) {
-                'perfect' => 3,
-                'iban' => 2,
-                'amount' => 1,
-                default => 0,
-            })
-            ->values();
+        return $payment
+            ? (new TransactionMatcher)->rank($payment, $candidates)
+            : $candidates;
     }
 
     public function render(): View
@@ -778,32 +714,7 @@ new class extends Component
 
     private function allMatchingPaymentIds(): array
     {
-        return Payment::where('status', $this->statusFilter)
-            ->when($this->search, fn ($q) => $q
-                ->where('reference', 'like', "%{$this->search}%")
-                // `payable.user` suppose que tout payable a un membre. Une commande
-                // de bar n'en a pas — le bar ne sait pas qui a payé — et la
-                // recherche tombait alors en BadMethodCallException pour tout le
-                // monde, y compris pour chercher une affiliation.
-                ->orWhereHasMorph(
-                    'payable',
-                    $this->payableTypesWithUser(),
-                    fn ($q) => $q->whereHas('user', fn ($u) => $u
-                        ->where('first_name', 'like', "%{$this->search}%")
-                        ->orWhere('last_name', 'like', "%{$this->search}%")
-                    )
-                )
-            )
-            ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo))
-            ->when($this->userId, fn ($q) => $q->whereHasMorph(
-                'payable',
-                [Subscription::class, TournamentRegistration::class, MeetingUser::class],
-                fn ($q) => $q->where('user_id', $this->userId)
-            ))
-            ->when($this->eventType, fn ($q) => $q->where('payable_type', $this->eventType))
-            ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName))
+        return $this->applyFilters(Payment::where('status', $this->statusFilter))
             ->pluck('id')
             ->toArray();
     }
@@ -821,6 +732,50 @@ new class extends Component
                     ->whereHas('meeting', fn ($m) => $m->where('title', 'like', "%{$name}%"))
                 );
         });
+    }
+
+    /**
+     * Les filtres de l'écran, hors onglet de statut.
+     *
+     * Partagée par la liste et par « sélectionner tous les résultats » : les deux
+     * doivent désigner le même ensemble, et deux copies l'ont déjà démenti.
+     *
+     * La recherche est enfermée dans son propre groupe parce que `when()` n'ouvre
+     * aucune parenthèse et que `AND` lie plus fort que `OR` : à plat, la branche
+     * « nom du membre » s'évade du filtre de statut et un paiement soldé remonte
+     * dans l'onglet « À rembourser ».
+     *
+     * @param  Builder<Payment>  $q
+     * @return Builder<Payment>
+     */
+    private function applyFilters(Builder $q): Builder
+    {
+        return $q
+            ->when($this->search, fn (Builder $q): Builder => $q->where(function (Builder $q): void {
+                $q->where('reference', 'like', "%{$this->search}%")
+                    // `payable.user` suppose que tout payable a un membre. Une commande
+                    // de bar n'en a pas — le bar ne sait pas qui a payé — et la
+                    // recherche tombait alors en BadMethodCallException pour tout le
+                    // monde, y compris pour chercher une affiliation.
+                    ->orWhereHasMorph(
+                        'payable',
+                        $this->payableTypesWithUser(),
+                        fn ($q) => $q->whereHas('user', fn ($u) => $u
+                            ->where('first_name', 'like', "%{$this->search}%")
+                            ->orWhere('last_name', 'like', "%{$this->search}%")
+                        )
+                    );
+            }))
+            ->when($this->paymentMethod, fn (Builder $q): Builder => $q->where('payment_method', $this->paymentMethod))
+            ->when($this->dateFrom, fn (Builder $q): Builder => $q->whereDate('created_at', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn (Builder $q): Builder => $q->whereDate('created_at', '<=', $this->dateTo))
+            ->when($this->userId, fn (Builder $q): Builder => $q->whereHasMorph(
+                'payable',
+                [Subscription::class, TournamentRegistration::class, MeetingUser::class],
+                fn ($q) => $q->where('user_id', $this->userId)
+            ))
+            ->when($this->eventType, fn (Builder $q): Builder => $q->where('payable_type', $this->eventType))
+            ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName));
     }
 
     private function eventTypeLabel(string $type): string
@@ -867,6 +822,23 @@ new class extends Component
     private function payableTypesWithUser(): array
     {
         return array_keys($this->payableEagerLoads());
+    }
+
+    /**
+     * Comme {@see payableEagerLoads}, plus les tuteurs.
+     *
+     * Le barème de rapprochement interroge l'IBAN et le nom de chaque tuteur ;
+     * la liste principale, elle, ne les affiche jamais et n'a pas à les payer.
+     *
+     * @return array<class-string, array<int, string>>
+     */
+    private function reconcileEagerLoads(): array
+    {
+        return [
+            TournamentRegistration::class => ['user.guardians', 'tournament'],
+            MeetingUser::class => ['user.guardians', 'meeting'],
+            Subscription::class => ['user.guardians', 'season'],
+        ];
     }
 
     private function reconcileSubscription(Subscription $subscription, float $amount): void

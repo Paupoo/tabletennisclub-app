@@ -202,8 +202,7 @@
                 --}}
                 <x-button :label="__('Delete this product')" icon="o-trash"
                     class="btn-outline btn-error btn-sm w-full"
-                    wire:click="delete"
-                    wire:confirm="{{ __('Delete this product permanently?') }}" />
+                    wire:click="$set('deleteModal', true)" />
 
                 <p class="text-subtle mt-2 flex items-start gap-1.5 text-xs">
                     <x-icon name="o-information-circle" class="mt-0.5 h-4 w-4 shrink-0" />
@@ -212,4 +211,10 @@
             </div>
         @endif
     </x-drawer>
+
+    <x-confirm-modal model="deleteModal" :title="__('Delete this product permanently?')"
+        :confirmLabel="__('Delete this product')" confirmAction="delete" :open="$deleteModal">
+        <p>{{ __('Only a product at zero stock can be deleted. To take one off the menu, switch Available off.') }}</p>
+    </x-confirm-modal>
+
 </div>

@@ -2,7 +2,7 @@
 title: Animer mes séances (coach)
 summary: Retrouver mes séances, pointer les présences et valider l'appel, rattraper une séance oubliée, annuler une séance quand je ne peux pas venir.
 audience: coach
-order: 17
+order: 18
 ---
 
 Votre espace se trouve dans **Coach → Entraînements**. Vous y voyez **vos séances**, celles où vous êtes désigné comme coach — pas celles des collègues.

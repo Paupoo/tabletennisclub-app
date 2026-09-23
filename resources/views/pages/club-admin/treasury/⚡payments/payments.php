@@ -600,7 +600,11 @@ new class extends Component
                 continue;
             }
 
-            $normalizedIban = $this->normalizeIban($user->iban ?? '');
+            // Le compte visé par le remboursement, et l'IBAN du membre à
+            // défaut. Un trop-perçu se rend au compte qui a versé — souvent
+            // celui d'un tuteur — et comparer l'IBAN du membre n'aurait jamais
+            // rien reconnu dans ce cas.
+            $normalizedIban = $this->normalizeIban($payment->refund_iban ?? $user->iban ?? '');
 
             foreach ($outgoingTransactions as $key => $transaction) {
                 $ibanMatch = $normalizedIban && $this->normalizeIban($transaction->counterparty_bank_account ?? '') === $normalizedIban;

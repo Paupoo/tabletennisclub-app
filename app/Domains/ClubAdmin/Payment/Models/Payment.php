@@ -29,6 +29,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $last_reminded_at
  * @property int|null $refund_transaction_id
  * @property string $payment_method
+ * @property string|null $refund_iban
  * @property TransactionMatch|null $match Verdict de rapprochement, posé à la volée — jamais persisté.
  * @property-read Model|\Eloquent $payable
  * @property-read Transaction|null $refundTransaction
@@ -70,6 +71,7 @@ class Payment extends Model
         'amount_paid',
         'status',
         'payment_method',
+        'refund_iban',
         'transaction_id',
         'refund_transaction_id',
     ];

@@ -200,6 +200,22 @@ new class extends Component
         unset($this->remainingToAllocate);
     }
 
+    /**
+     * Ouvre directement le tiroir quand on arrive avec `?allocate=`.
+     *
+     * Le trésorier vient de rapprocher depuis l'écran Paiements et suit le lien
+     * du bandeau : il doit atterrir sur le geste, pas sur une liste où
+     * retrouver sa ligne.
+     */
+    public function mount(): void
+    {
+        $id = request()->integer('allocate');
+
+        if ($id > 0 && Transaction::whereKey($id)->exists()) {
+            $this->openAllocation($id);
+        }
+    }
+
     public function openAllocation(int $transactionId): void
     {
         Gate::authorize(Permission::PaymentsReconcile->value);

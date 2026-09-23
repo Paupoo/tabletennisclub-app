@@ -454,3 +454,31 @@ it('shows the communication to put on the outgoing transfer', function (): void 
         ->assertSee('Robbe Bogaert')
         ->assertSee('BE62510007547061');
 })->group('payments', 'refund');
+
+/**
+ * Après un rapprochement partiel, dire ce qui reste sur le virement.
+ *
+ * L'écran répondait « Paiement réconcilié avec succès » et se taisait sur les
+ * cent euros encore à placer. Le trésorier cliquait, partait, et cet argent
+ * dormait sans que personne sache qu'il était à quelqu'un.
+ */
+it('names what is left on the transfer after a partial reconciliation', function (): void {
+    [$subscription, $payment] = affiliationAwaiting(20.0);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 120.0,
+        'counterparty_name' => $subscription->user->full_name,
+    ]);
+
+    // Un bandeau, pas un toast : le trésorier ne retient pas ses rapprochements,
+    // et un message qui s'efface au bout de trois secondes ne lui sert à rien.
+    reconcileScreen(User::factory()->create())
+        ->call('openReconcile', $payment->id)
+        ->set('selectedTransactionId', $transaction->id)
+        ->call('confirmReconcile')
+        ->assertSee('100,00');
+
+    expect($transaction->fresh()->residue())->toBe(100.0);
+})->group('payments', 'reconciliation');

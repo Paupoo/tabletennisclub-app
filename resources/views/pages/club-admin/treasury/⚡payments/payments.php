@@ -81,6 +81,9 @@ new class extends Component
     /** Le compte à rembourser : celui qui a versé, pas celui du membre. */
     public string $refundRequestIban = '';
 
+    /** Ce qu'un rapprochement vient de laisser sur le virement, s'il reste quelque chose. */
+    public ?array $residueNotice = null;
+
     public ?int $refundPaymentId = null;
 
     public string $search = '';
@@ -239,6 +242,19 @@ new class extends Component
         $this->reconcileModal = false;
         $this->reconcilePaymentId = null;
         $this->selectedTransactionId = null;
+
+        // Ce qui reste sur le virement doit être dit maintenant. Sans ça, le
+        // trésorier clique, s'en va, et cet argent dort sans que personne sache
+        // qu'il appartient à quelqu'un.
+        $residue = abs($transaction->fresh()->residue());
+
+        // Un bandeau plutôt qu'un toast : trois secondes ne suffisent pas à
+        // décider quoi faire de cent euros, et le trésorier ne retient pas ses
+        // propres rapprochements.
+        $this->residueNotice = $residue > 0.0
+            ? ['amount' => $residue, 'transaction_id' => $transaction->id]
+            : null;
+
         $this->success(__('Payment reconciled successfully.'));
     }
 
@@ -427,6 +443,7 @@ new class extends Component
 
         $this->reconcilePaymentId = $paymentId;
         $this->selectedTransactionId = null;
+        $this->residueNotice = null;
         $this->reconcileModal = true;
     }
 

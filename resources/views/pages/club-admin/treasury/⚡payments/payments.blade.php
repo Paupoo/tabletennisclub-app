@@ -91,6 +91,24 @@
     </div>
 
     {{-- Status filter — folder tabs; the filtered table lives outside as its own card --}}
+    @if ($residueNotice)
+        {{-- Ce que le rapprochement vient de laisser. Un toast s'efface ;
+             cent euros à placer demandent qu'on y revienne. --}}
+        <div class="mb-4 flex items-start gap-3 rounded-lg border border-info/20 bg-info/10 p-3 text-sm">
+            <x-icon name="o-information-circle" class="mt-0.5 h-4 w-4 shrink-0 text-info" />
+            <div class="flex-1">
+                {{ __(':amount € are still to place on this transfer — allocate them elsewhere, write them off, or refund them.', [
+                    'amount' => number_format($residueNotice['amount'], 2, ',', ' '),
+                ]) }}
+                @can('transactions.view')
+                    <a href="{{ route('admin.treasury.transactions', ['allocate' => $residueNotice['transaction_id']]) }}"
+                        wire:navigate class="link link-info ml-1">{{ __('Place it now') }}</a>
+                @endcan
+            </div>
+            <x-button icon="o-x-mark" wire:click="$set('residueNotice', null)" class="btn-ghost btn-xs" />
+        </div>
+    @endif
+
     <x-admin.shared.tabs wire:model.live="statusFilter">
         <x-admin.shared.tab name="pending"   :label="__('Pending')"   icon="o-clock" />
         <x-admin.shared.tab name="paid"      :label="__('Paid')"      icon="o-check-badge" />

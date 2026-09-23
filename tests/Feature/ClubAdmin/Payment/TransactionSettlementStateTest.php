@@ -441,3 +441,20 @@ it('says plainly when the scale recognises nobody', function (): void {
 
     $screen->assertSee(__('No payment matches this transfer'));
 })->group('payments', 'transactions');
+
+/**
+ * Le lien du bandeau doit ouvrir le geste, pas la liste.
+ *
+ * Le trésorier vient de rapprocher depuis l'écran Paiements et sait ce qu'il
+ * veut faire. Le déposer devant cinquante-quatre lignes à retrouver la sienne,
+ * c'est lui rendre le problème qu'on venait de lui signaler.
+ */
+it('opens the drawer straight away when the url points at a transaction', function (): void {
+    $transaction = allocatableTransaction(300.0);
+
+    Livewire::actingAs(User::factory()->isAdmin()->create())
+        ->withQueryParams(['allocate' => $transaction->id])
+        ->test(SETTLEMENT_COMPONENT)
+        ->assertSet('allocationModal', true)
+        ->assertSet('allocationTransactionId', $transaction->id);
+})->group('payments', 'transactions');

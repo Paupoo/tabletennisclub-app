@@ -409,6 +409,14 @@ class DatabaseSeeder extends Seeder
         // et InterclubSeeder crée encore des compétiteurs.
         RecalculateForceListAction::handle();
 
+        // Les seeders écrivent `amount_paid` en direct, sans crédit derrière :
+        // la reprise est une migration, donc elle tourne sur une base vide et
+        // ne voit rien de ce qui est semé ensuite. Rejouée ici, elle rend aux
+        // paiements leurs lignes de crédit et aux transactions leur miroir.
+        // Sans elle, une base fraîche ouvrait sur cinquante-sept paiements
+        // crédités que rien n'expliquait.
+        $this->call(BackfillPaymentCreditsSeeder::class);
+
         // Le relevé de démonstration se génère une fois la base finie, jamais
         // au milieu. Il vivait dans TreasurySeeder, qui tourne avant FineSeeder
         // et TrainingPackSeeder : les créances que ceux-là créent n'existaient

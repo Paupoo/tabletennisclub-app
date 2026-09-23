@@ -486,7 +486,7 @@
                                     {{ \Illuminate\Support\Carbon::parse($credit->transaction->date)->format('d/m/Y') }}
                                     — {{ $credit->transaction->counterparty_name ?? __('Unknown counterparty') }}
                                 @else
-                                    {{ __('Outside the bank (cash, waiver)') }}
+                                    {{ __('Received outside the bank') }}
                                 @endif
                             </span>
                             <span class="shrink-0 font-bold tabular-nums text-success">
@@ -529,7 +529,7 @@
             <div class="flex items-start gap-3 p-3 rounded-xl bg-success/10 border border-success/20 text-sm">
                 <x-icon name="o-sparkles" class="w-5 h-5 text-success shrink-0 mt-0.5" />
                 <span>
-                    {{ __(':count allocation(s) found on the structured reference. The amount says how much, no longer to whom.', ['count' => count($batchMatches)]) }}
+                    {{ __(':count allocation(s) found on the structured communication. When a transfer only covers part of what is owed, only that part is allocated. Transfers without a communication are not proposed here.', ['count' => count($batchMatches)]) }}
                 </span>
             </div>
 
@@ -714,7 +714,7 @@
         <div class="space-y-4">
             <div class="flex items-center gap-3 rounded-lg border border-info/20 bg-info/10 p-3 text-sm">
                 <x-icon name="o-information-circle" class="h-4 w-4 shrink-0 text-info" />
-                <span>{{ __('The amount cannot exceed what the member actually paid, net of refunds already under way.') }}</span>
+                <span>{{ __('The amount cannot exceed what the member has paid, minus refunds already opened.') }}</span>
             </div>
 
             <x-input :label="__('Amount (€)')" type="number" step="0.01" min="0"

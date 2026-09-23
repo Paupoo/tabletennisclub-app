@@ -529,7 +529,7 @@
                         <p class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Write off what is left') }}</p>
                         <x-input :label="__('Reason')" wire:model.blur="residueReason"
                             :placeholder="__('Member rounded up, kept by the club')"
-                            :hint="__('Mandatory. The club keeps the remainder and the line is closed.')" />
+                            :hint="__('Mandatory. The club keeps what is left and the transaction drops off the list to handle.')" />
                         <x-button :label="__('Write off the residue')" icon="o-archive-box-x-mark"
                             wire:click="settleResidue" spinner="settleResidue" class="btn-sm btn-warning btn-outline" />
                     </div>

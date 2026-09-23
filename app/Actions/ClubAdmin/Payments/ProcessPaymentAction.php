@@ -24,15 +24,18 @@ class ProcessPaymentAction
             throw new \DomainException('No pending payment found');
         }
 
-        // Met à jour le payment avec les infos du PSP
         $payment->update([
             'transaction_id' => $transactionId,
-            'amount_paid' => $amount,
             'status' => $status,
         ]);
 
-        // Si le paiement est réussi, met à jour la subscription
+        // `amount_paid` est le miroir des lignes de crédit et n'est écrit que
+        // par AllocateTransactionAction. L'identifiant reçu ici vient d'un
+        // prestataire de paiement, pas d'un relevé bancaire : c'est un
+        // encaissement sans transaction, et il se note comme tel.
         if ($status === 'paid') {
+            (new AllocateTransactionAction)->credit($payment, $amount, 'psp');
+
             $subscription->markAsPaid();
         }
 

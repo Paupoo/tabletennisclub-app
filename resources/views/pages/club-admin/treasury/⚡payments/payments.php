@@ -251,7 +251,7 @@ new class extends Component
         $payment = Payment::find($this->refundRequestPaymentId);
 
         if (! $payment || ! $payment->payable instanceof Subscription) {
-            $this->error(__('A refund can only be opened on an affiliation for now.'));
+            $this->error(__('A refund can only be opened on a membership fee.'));
 
             return;
         }

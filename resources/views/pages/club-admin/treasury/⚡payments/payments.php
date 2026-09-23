@@ -76,6 +76,9 @@ new class extends Component
 
     public string $refundRequestReason = '';
 
+    /** Le compte à rembourser : celui qui a versé, pas celui du membre. */
+    public string $refundRequestIban = '';
+
     public ?int $refundPaymentId = null;
 
     public string $search = '';
@@ -277,9 +280,14 @@ new class extends Component
             return;
         }
 
-        (new RequestSubscriptionRefundAction)($payment->payable, $this->refundRequestAmount, $reason);
+        (new RequestSubscriptionRefundAction)(
+            $payment->payable,
+            $this->refundRequestAmount,
+            $reason,
+            targetIban: $this->refundRequestIban !== '' ? $this->refundRequestIban : null,
+        );
 
-        $this->reset(['refundRequestModal', 'refundRequestPaymentId', 'refundRequestAmount', 'refundRequestReason']);
+        $this->reset(['refundRequestModal', 'refundRequestPaymentId', 'refundRequestAmount', 'refundRequestReason', 'refundRequestIban']);
         $this->success(__('Refund opened. The treasury has been notified.'));
     }
 
@@ -291,9 +299,23 @@ new class extends Component
 
         $this->refundRequestPaymentId = $paymentId;
         $this->refundRequestReason = '';
-        $this->refundRequestAmount = $payment?->payable instanceof Subscription
-            ? $payment->payable->netAmountPaid()
-            : 0.0;
+
+        // Sur un trop-perçu, les deux valeurs sont déductibles : l'excédent se
+        // calcule, et le compte se lit sur le virement qui l'a produit. Les
+        // faire saisir reviendrait à demander au trésorier de retrouver ce que
+        // le système a sous la main.
+        $overpaid = $payment instanceof Payment && $payment->isOverpaid();
+
+        $this->refundRequestAmount = match (true) {
+            $overpaid => $payment->overpayment(),
+            $payment?->payable instanceof Subscription => $payment->payable->netAmountPaid(),
+            default => 0.0,
+        };
+
+        $this->refundRequestIban = (string) ($overpaid
+            ? $this->payingAccountOf($payment)
+            : $payment?->payable?->user?->iban ?? '');
+
         $this->refundRequestModal = true;
     }
 
@@ -424,7 +446,7 @@ new class extends Component
 
         $rows = $this->applyFilters(
             Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
-                ->where('status', $this->statusFilter)
+                ->tap(fn (Builder $q): Builder => $this->applyTab($q))
         )
             ->get()
             ->map(function (Payment $p) {
@@ -440,6 +462,9 @@ new class extends Component
                     // trésorier ne retient pas ses rapprochements : un solde
                     // sans son origine ne se vérifie pas.
                     'balance' => $p->balance(),
+                    // Le net, jamais « 220 sur 120 » : c'est ce que le club
+                    // détient et devra rendre.
+                    'overpayment' => $p->overpayment(),
                     'is_partially_paid' => $p->isPartiallyPaid(),
                     'status' => $p->status,
                     'created_at' => $p->created_at,
@@ -851,9 +876,52 @@ new class extends Component
 
     private function allMatchingPaymentIds(): array
     {
-        return $this->applyFilters(Payment::where('status', $this->statusFilter))
+        return $this->applyFilters($this->scopedToTab())
             ->pluck('id')
             ->toArray();
+    }
+
+    /**
+     * Ce que l'onglet courant désigne.
+     *
+     * « Trop-perçus » n'est pas un statut : c'est une position, les crédits
+     * dépassent le dû. Même raisonnement que pour « partiellement payé », qu'on
+     * a refusé d'inventer comme statut — un état dérivé ne se stocke pas.
+     *
+     * @param  Builder<Payment>  $q
+     * @return Builder<Payment>
+     */
+    private function applyTab(Builder $q): Builder
+    {
+        if ($this->statusFilter !== 'overpaid') {
+            return $q->where('status', $this->statusFilter);
+        }
+
+        return $q->whereColumn('amount_paid', '>', 'amount_due')
+            ->where(fn (Builder $q): Builder => $q
+                ->where('payment_method', '!=', 'refund')
+                ->orWhereNull('payment_method'));
+    }
+
+    /** @return Builder<Payment> */
+    private function scopedToTab(): Builder
+    {
+        return $this->applyTab(Payment::query());
+    }
+
+    /**
+     * Le compte d'où vient l'argent en trop.
+     *
+     * Le dernier crédit adossé à une transaction entrante : c'est ce versement
+     * qui a fait basculer la ligne en trop-perçu, et c'est là qu'il faut rendre.
+     */
+    private function payingAccountOf(Payment $payment): ?string
+    {
+        return $payment->credits()
+            ->whereHas('transaction', fn (Builder $q): Builder => $q->where('amount', '>', 0))
+            ->with('transaction')
+            ->latest('id')
+            ->first()?->transaction?->counterparty_bank_account;
     }
 
     private function applyEventNameFilter(Builder $q, string $name): Builder

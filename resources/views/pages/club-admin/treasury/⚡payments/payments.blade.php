@@ -95,6 +95,9 @@
         <x-admin.shared.tab name="pending"   :label="__('Pending')"   icon="o-clock" />
         <x-admin.shared.tab name="paid"      :label="__('Paid')"      icon="o-check-badge" />
         <x-admin.shared.tab name="to_refund" :label="__('To refund')" icon="o-arrow-uturn-left" />
+        {{-- Pas un statut : une position. Les crédits dépassent le dû, et cet
+             argent n'appartient plus au club. --}}
+        <x-admin.shared.tab name="overpaid" :label="__('Overpaid')" icon="o-arrow-trending-up" />
     </x-admin.shared.tabs>
 
     {{-- ── Vue mobile ─────────────────────────────────────────────────
@@ -114,7 +117,12 @@
                         @endif
                     </div>
                     <div class="shrink-0 text-right tabular-nums">
-                        @if ($this->statusFilter === 'paid')
+                        @if ($this->statusFilter === 'overpaid')
+                            {{-- Le net : ce que le club détient en trop, jamais
+                                 « 220 sur 120 » qui a l'air d'un bug. --}}
+                            <span class="font-bold text-warning">{{ number_format($payment->overpayment, 2, ',', ' ') }} €</span>
+                            <div class="text-xs font-normal text-muted">{{ __('held by the club') }}</div>
+                        @elseif ($this->statusFilter === 'paid')
                             <span class="font-bold">{{ number_format($payment->amount_paid, 2, ',', ' ') }} €</span>
                         @else
                             {{-- Le solde, pas le montant réclamé au départ : depuis
@@ -206,7 +214,12 @@
             @endscope
 
             @scope('cell_amount_due', $payment)
-            @if($this->statusFilter === 'paid')
+            @if($this->statusFilter === 'overpaid')
+            <div class="tabular-nums">
+                <span class="font-bold text-warning">{{ number_format($payment->overpayment, 2, ',', ' ') }} €</span>
+                <div class="text-xs text-muted">{{ __('held by the club') }}</div>
+            </div>
+            @elseif($this->statusFilter === 'paid')
             <span class="tabular-nums font-bold">{{ number_format($payment->amount_paid, 2, ',', ' ') }} €</span>
             @else
             <div class="tabular-nums">
@@ -719,6 +732,9 @@
 
             <x-input :label="__('Amount (€)')" type="number" step="0.01" min="0"
                 wire:model="refundRequestAmount" />
+
+            <x-input :label="__('Account to refund')" wire:model="refundRequestIban"
+                :hint="__('The account the money came from. A guardian or an employer pays for a member — the money goes back where it came from.')" />
 
             <x-input :label="__('Reason')" wire:model="refundRequestReason"
                 :placeholder="__('Why is the club giving this money back?')"

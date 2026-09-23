@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
 
@@ -36,8 +38,13 @@ function affiliationAwaiting(float $due = 365.0): array
         'amount_due' => $due,
     ]);
 
+    // Une référence par appel : deux affiliations dans un même test se
+    // heurtaient à l'unicité de la colonne.
+    static $sequence = 0;
+    $sequence++;
+
     return [$subscription, $subscription->payments()->create([
-        'reference' => '123/4567/89012',
+        'reference' => sprintf('123/4567/%05d', $sequence),
         'amount_due' => $due,
         'amount_paid' => 0,
         'status' => 'pending',
@@ -332,3 +339,84 @@ it('lists where the money already received came from', function (): void {
         ->assertSee('14/09/2026')
         ->assertSee('100,00 €');
 })->group('payments', 'reconciliation');
+
+/**
+ * Le 4ᵉ onglet : l'argent que le club détient en trop.
+ *
+ * Un trop-perçu n'est pas un statut, c'est une position — les crédits
+ * dépassent le dû. L'onglet est donc un filtre dérivé, comme « partiellement
+ * payé » l'est sur une ligne. Sans lui, cet argent n'existe que pour qui pense
+ * à rouvrir la bonne fiche.
+ */
+it('gathers the overpayments the club is holding', function (): void {
+    [$subscription, $payment] = affiliationAwaiting(120.0);
+
+    // Une créance ordinaire, qui ne doit pas s'y retrouver.
+    [, $ordinary] = affiliationAwaiting(60.0);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 220.0,
+        'counterparty_name' => $subscription->user->full_name,
+    ]);
+
+    // Le trésorier reconnaît délibérément le trop-perçu : 220 € pour 120 € dus.
+    (new AllocateTransactionAction)($transaction, [$payment->id => 220.0]);
+
+    $rows = reconcileScreen(User::factory()->create())
+        ->set('statusFilter', 'overpaid')
+        ->viewData('payments');
+
+    $references = collect($rows->items())->pluck('reference');
+
+    expect($references)->toContain($payment->reference)
+        ->and($references)->not->toContain($ordinary->reference);
+
+    // Le net, jamais « 220 sur 120 ».
+    $row = collect($rows->items())->firstWhere('reference', $payment->reference);
+
+    expect($row->overpayment)->toBe(100.0);
+})->group('payments', 'overpaid');
+
+/**
+ * Rembourser un trop-perçu : au compte qui a versé, du montant en trop.
+ *
+ * Les deux valeurs sont déductibles — l'excédent se calcule, le compte se lit
+ * sur le virement d'origine. Les faire saisir au trésorier, c'est lui demander
+ * de retrouver une information que le système a sous la main.
+ */
+it('opens a refund for the overpayment, towards the account that paid', function (): void {
+    Club::factory()->ownClub()->create(['name' => 'CTT Ottignies-Blocry']);
+    Club::forgetOwnClub();
+
+    [$subscription, $payment] = affiliationAwaiting(120.0);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 220.0,
+        'counterparty_name' => 'MARTIN Sophie',
+        'counterparty_bank_account' => 'BE62510007547061',
+    ]);
+
+    (new AllocateTransactionAction)($transaction, [$payment->id => 220.0]);
+
+    $screen = reconcileScreen(User::factory()->create())
+        ->set('statusFilter', 'overpaid')
+        ->call('openRefundRequest', $payment->id);
+
+    // Les deux valeurs sont proposées, pas demandées.
+    expect($screen->get('refundRequestAmount'))->toBe(100.0)
+        ->and($screen->get('refundRequestIban'))->toBe('BE62510007547061');
+
+    $screen->set('refundRequestReason', 'Le membre avait déjà payé')
+        ->call('confirmRefundRequest')
+        ->assertHasNoErrors();
+
+    $refund = $subscription->fresh()->payments()->where('payment_method', 'refund')->first();
+
+    expect($refund)->not->toBeNull()
+        ->and($refund->amount_due)->toBe(100.0)
+        ->and($refund->refund_iban)->toBe('BE62510007547061');
+})->group('payments', 'overpaid');

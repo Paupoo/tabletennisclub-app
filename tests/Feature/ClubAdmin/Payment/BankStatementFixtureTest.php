@@ -2,8 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Support\Treasury\BankStatementFixture;
 use Database\Seeders\FamilySeeder;
 
@@ -37,6 +41,21 @@ function seededClubForStatement(): void
             'amount_paid' => 0,
             'status' => 'pending',
         ]);
+
+        // Une créance déjà partiellement réglée, pour le complément (cas 15).
+        if ($i === 5) {
+            $first = Transaction::create([
+                'date' => now()->subMonths(2)->toDateString(),
+                'description' => 'VIREMENT EN VOTRE FAVEUR',
+                'amount' => 70.0,
+                'counterparty_name' => $member->full_name,
+            ]);
+
+            (new AllocateTransactionAction)(
+                $first,
+                [$subscription->payments()->where('status', 'pending')->value('id') => 70.0],
+            );
+        }
 
         // Trois remboursements engagés : un pour l'appariement simple, deux pour
         // le virement sortant groupé.
@@ -168,4 +187,59 @@ it('serves the distinctive cases before filling up on perfect matches', function
     foreach (['partial', 'same_reference_twice', 'rounded_up', 'member_iban_only'] as $case) {
         expect($result->covered)->toContain($case);
     }
+})->group('payments', 'fixture');
+
+/**
+ * Le complément : une créance déjà partiellement réglée, et le virement qui la
+ * solde.
+ *
+ * C'est le cas réel le plus fréquent — le membre paie en septembre, puis en
+ * novembre, et les deux relevés arrivent à deux mois d'écart. Le cas 8 ne le
+ * couvre pas : ses deux virements arrivent ensemble, sur une créance intacte.
+ * Le cas 7 crée le partiel mais n'apporte jamais la suite.
+ */
+it('produces the transfer that completes a claim already partly settled', function (): void {
+    seededClubForStatement();
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => User::factory()->create()->id,
+        'season_id' => Season::where('is_active', true)->value('id'),
+        'status' => 'confirmed',
+        'amount_due' => 120,
+        'amount_paid' => 0,
+    ]);
+
+    $payment = $subscription->payments()->create([
+        'reference' => '099/0926/00001',
+        'amount_due' => 120,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    // Un premier versement, déjà rapproché : l'historique doit être vrai, donc
+    // il passe par l'action et laisse sa transaction derrière lui.
+    $first = Transaction::create([
+        'date' => now()->subMonths(2)->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 100.0,
+        'counterparty_name' => $subscription->user->full_name,
+        'structured_reference' => $payment->reference,
+    ]);
+
+    (new AllocateTransactionAction)($first, [$payment->id => 100.0]);
+
+    $result = (new BankStatementFixture)->build();
+
+    // Le complément vise la première créance partielle de la base, pas
+    // forcément celle que ce test vient de poser — d'où le calcul plutôt
+    // qu'un montant en dur.
+    $target = Payment::where('status', 'pending')
+        ->where('amount_paid', '>', 0)
+        ->orderBy('id')
+        ->first();
+
+    expect($result->covered)->toContain('completes_partial')
+        // Le solde, pas le montant plein.
+        ->and($result->csv)->toContain(';' . number_format($target->balance(), 2, '.', '') . ';')
+        ->and($result->csv)->not->toContain(';' . number_format((float) $target->amount_due, 2, '.', '') . ';' . number_format((float) $target->amount_due, 2, '.', '') . ';');
 })->group('payments', 'fixture');

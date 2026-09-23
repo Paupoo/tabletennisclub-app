@@ -382,6 +382,11 @@ class DatabaseSeeder extends Seeder
 
         $this->call(TreasurySeeder::class);
 
+        // Une cotisation à moitié payée, pour que le cas le plus fréquent d'un
+        // vrai club — payer en deux fois, à deux relevés d'écart — existe sans
+        // qu'on ait à importer deux fois à la main.
+        $this->call(PartiallySettledClaimSeeder::class);
+
         $this->call(FineSeeder::class);
 
         $this->call(TrainingPackSeeder::class);

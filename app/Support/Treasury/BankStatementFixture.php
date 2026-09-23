@@ -43,6 +43,7 @@ final class BankStatementFixture
         'refund_orphan' => 'Sortant orphelin, sans remboursement en attente',
         'duplicate' => 'Doublon strict d\'une ligne du même fichier',
         'partial' => 'Virement inférieur au solde — versement partiel',
+        'completes_partial' => 'Le complément d\'une créance déjà partiellement réglée',
         'same_reference_twice' => 'Deux virements portant la même référence',
         'family_transfer' => 'Un virement pour deux enfants, IBAN du tuteur',
         'rounded_up' => 'Virement arrondi au-dessus — reliquat',
@@ -83,6 +84,7 @@ final class BankStatementFixture
         // c'est pour eux que le relevé existe ; les lignes « parfaites » se
         // ressemblent toutes et prennent ce qui reste. L'ordre inverse a coûté
         // un cas entier sur la vraie base, à une créance près.
+        $this->caseCompletesPartial();
         $this->casePartial($pending->shift());
         $this->caseSameReferenceTwice($pending->shift());
         $this->caseRoundedUp($pending->shift());
@@ -133,6 +135,50 @@ final class BankStatementFixture
     }
 
     // ==================== Les cas ====================
+
+    /**
+     * Le complément d'une créance déjà partiellement réglée.
+     *
+     * Le cas réel le plus fréquent : le membre paie en septembre, puis en
+     * novembre, et les deux relevés arrivent à deux mois d'écart. Il ne se
+     * confond ni avec le versement partiel — qui n'apporte jamais la suite —
+     * ni avec les deux virements de même référence, qui arrivent ensemble sur
+     * une créance intacte.
+     *
+     * Cherché plutôt que fabriqué : la créance doit **déjà** porter un premier
+     * versement, et c'est au semis de la poser.
+     */
+    private function caseCompletesPartial(): void
+    {
+        $partial = Payment::where('status', 'pending')
+            ->where('payment_method', '!=', 'refund')
+            ->where('amount_paid', '>', 0)
+            ->with(['payable' => fn (Relation $q): mixed => $q instanceof MorphTo
+                ? $q->morphWith([
+                    Subscription::class => ['user'],
+                    TournamentRegistration::class => ['user'],
+                    MeetingUser::class => ['user'],
+                ])
+                : $q])
+            ->orderBy('id')
+            ->get()
+            ->first(fn (Payment $p): bool => $p->balance() > 0.0);
+
+        if (! $partial instanceof Payment) {
+            $this->skip('completes_partial', 'aucune créance déjà partiellement réglée — lancez le semis de trésorerie');
+
+            return;
+        }
+
+        $this->pushForPayment('completes_partial', $partial, $partial->balance());
+
+        $this->note('completes_partial', sprintf(
+            '%s € pour solder une créance de %s € dont %s € étaient déjà reçus. Attendu : le masse le propose, la ligne passe `paid`, et l\'historique du paiement montre les deux versements.',
+            number_format($partial->balance(), 2, ',', ' '),
+            number_format((float) $partial->amount_due, 2, ',', ' '),
+            number_format((float) $partial->amount_paid, 2, ',', ' '),
+        ));
+    }
 
     private function caseDuplicate(): void
     {

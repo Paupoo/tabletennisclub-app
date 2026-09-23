@@ -24,7 +24,7 @@
                     @foreach($team['matches'] as $match)
                         <tr class="border-b border-base-300 hover:bg-base-200">
                             <td class="py-3 px-4 hidden md:block">{{ $match['date'] }}</td>
-                            <td class="py-3 px-4 block md:hidden">13-12-24</td>
+                            <td class="py-3 px-4 block md:hidden">{{ $match['short_date'] }}</td>
                             <td class="py-3 px-4">{{ $match['opponent'] }}</td>
                             <td class="py-3 px-4 hidden md:block">{{ $match['venue'] }}</td>
                             <td class="py-3 px-4 font-mono ">{{ $match['score'] }}</td>

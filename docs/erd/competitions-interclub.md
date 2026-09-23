@@ -23,11 +23,12 @@ erDiagram
     Interclub {
         int id PK
         string address
+        string captain_message "nullable"
+        datetime short_handed_confirmed_at "nullable"
+        int short_handed_confirmed_by "nullable"
         datetime start_date_time
         int week_number "nullable"
         int total_players
-        string score "nullable"
-        string result "nullable"
         int visited_team_id FK "nullable"
         int visiting_team_id FK "nullable"
         int room_id FK "nullable"
@@ -44,6 +45,22 @@ erDiagram
         int unchanged_count
         int deleted_count
         int skipped_count
+    }
+    InterclubIndividualMatch {
+        int id PK
+        int interclub_id FK
+        int position
+        bool is_double
+        int user_id FK "nullable"
+        string our_player_name "nullable"
+        string our_player_licence "nullable"
+        string opponent_name "nullable"
+        string opponent_licence "nullable"
+        string opponent_ranking "nullable"
+        int our_sets "nullable"
+        int their_sets "nullable"
+        bool is_forfeit
+        bool we_won
     }
     InterclubResult {
         int id PK
@@ -91,11 +108,13 @@ erDiagram
     Club }o--o{ Room : "rooms"
     Club ||--o{ Team : "teams"
     Club ||--o{ User : "users"
+    Interclub ||--o{ InterclubIndividualMatch : "individualMatches"
     Interclub ||--o| InterclubResult : "interclubResult"
     Interclub ||--o{ Team : "teams"
     Interclub }o--o{ User : "users"
     League ||--o{ Interclub : "interclubs"
     League ||--o{ Team : "teams"
+    Season ||--o{ InterclubResult : "interclubResults"
     Season ||--o{ Interclub : "interclubs"
     Season ||--o{ League : "leagues"
     Season ||--o{ Subscription : "subscriptions"

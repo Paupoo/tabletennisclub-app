@@ -97,6 +97,10 @@
                                                 <span class="font-bold">vs {{ $match['opponent'] }}</span>
                                                 @if ($match['is_selected'])
                                                     <x-admin.shared.status-badge status="selected" />
+                                                    @if ($match['short_handed_count'])
+                                                        <x-badge data-short-handed class="badge-warning badge-soft badge-xs font-bold"
+                                                            :value="__('with :n', ['n' => $match['short_handed_count']])" />
+                                                    @endif
                                                 @endif
                                                 @if ($urgency)
                                                     <x-badge class="badge-warning badge-sm animate-pulse font-bold"

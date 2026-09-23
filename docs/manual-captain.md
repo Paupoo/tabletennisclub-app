@@ -38,6 +38,8 @@ Each row represents one interclub match. From left to right:
 
 An urgent row also has a light red background to draw your attention.
 
+A selection **declared short-handed** (see "Playing with three" below) and sent is **green**, like a full one: for you, it is settled. A lineup sent at four and then cut by a withdrawal **without** that declaration goes back to red or orange: the app no longer treats it as settled.
+
 ### Alert banner
 
 If one or more matches are **Urgent**, a red banner appears at the top of the page with a direct shortcut to each affected match. Click a match in the banner to open its selection drawer immediately.
@@ -81,6 +83,17 @@ Click a player card to toggle them in or out of the selection. A **blocked** pla
 
 Click **Save selection**. The selection is saved and the match status changes to **Actionable** (orange). You can come back and modify it before sending the lineup.
 
+### Playing with three
+
+The rules let a men's team **start with 3 of its 4 players** (art. C.25.6), and a ladies', youth or veterans' team with **2 of 3** (art. C.25.7). Fewer than that is a forfeit.
+
+1. **Look for a fourth player first**: the free players of the match day, or a player from a lower team — within their force index (art. C.22.1.1), the rule on the third player who actually played in the higher team (art. C.22.1.3), and the one-match-per-week rule (art. C.20.1).
+2. **Failing that, play with three.** At the minimum, a box appears under the progress bar: *"I found no other player… we will play with 3"*. **Without it, the selection stays a draft and nobody is convoked.**
+3. **Ticked**, the send window opens with a reminder that the missing player's matches will be lost. Convoked players read in their email that the team plays short; the rest of the team is asked to come forward if they become available.
+4. **Below the minimum**, the app saves without sending and reminds you to report the forfeit **at least 48 hours before** (art. C.33.1).
+
+The declaration is stored with your name and the date. It is withdrawn if you find a fourth player or the team falls below the minimum; it survives swapping one player for another.
+
 ---
 
 ## 5. Sending the lineup to the team
@@ -120,6 +133,9 @@ Follow up with them directly, or select them anyway if you know they are availab
 
 **I made a mistake in the selection after sending.**
 Reopen the selection drawer, make changes, save and resend. A new email will be sent to the whole team with the corrected lineup.
+
+**A player withdraws and I have nobody to replace them.**
+Remove them, tick *"we will play with 3"*, save and send. The removed player is told, and the three who remain are convoked again with a note that the team plays short. Without the box, only the removed player is told and the fixture goes back to needing attention; you can come back and tick it later.
 
 **A player is blocked (red lock icon).**
 They are already selected in another club team for that match day. Choose a different player or contact the club selector to rearrange.

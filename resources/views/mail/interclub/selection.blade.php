@@ -17,6 +17,12 @@
 
 </x-mail::panel>
 
+@if($shortHanded ?? null)
+<x-mail::panel>
+**{{ __('We will play with :n of :max.', ['n' => $shortHanded['playing'], 'max' => $shortHanded['max']]) }}** {{ __('The missing player\'s matches will be lost.') }}
+</x-mail::panel>
+@endif
+
 ---
 
 **{{ __('Selected lineup') }}**

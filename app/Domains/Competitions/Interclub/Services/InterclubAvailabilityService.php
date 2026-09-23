@@ -64,12 +64,17 @@ class InterclubAvailabilityService
     /**
      * Notify players added/removed since the last confirmation. Removed players are
      * always informed, even if the resulting selection is incomplete. Added players
-     * and the team broadcast are only notified once the selection is complete again.
+     * and the team broadcast are only notified once the lineup is ready again —
+     * complete, or declared short-handed at the minimum the rules allow.
+     *
+     * A lineup newly declared short-handed changes the match for everyone still
+     * in it, not only for whoever was added: the players who kept their place
+     * are convoked again, and the mail tells them the team plays one short.
      *
      * @param  array<int, int>  $addedUserIds
      * @param  array<int, int>  $removedUserIds
      */
-    public function notifySelectionChange(Interclub $interclub, array $addedUserIds, array $removedUserIds, string $captainMessage = ''): void
+    public function notifySelectionChange(Interclub $interclub, array $addedUserIds, array $removedUserIds, string $captainMessage = '', bool $announceShortHanded = false): void
     {
         $interclub->loadMissing(['visitedTeam', 'visitingTeam', 'visitedTeam.club', 'visitingTeam.club']);
 
@@ -80,7 +85,7 @@ class InterclubAvailabilityService
             $interclub->users()->updateExistingPivot($userId, ['selection_confirmed_at' => null]);
         }
 
-        if (! $interclub->isSelectionComplete()) {
+        if (! $interclub->isLineupReady()) {
             return;
         }
 
@@ -89,14 +94,14 @@ class InterclubAvailabilityService
         $selectedPlayers = $interclub->getSelectedPlayers();
         $selectedIds = $selectedPlayers->pluck('id');
 
-        if ($addedUserIds !== []) {
-            foreach ($selectedPlayers->whereIn('id', $addedUserIds) as $player) {
-                SendInterclubSelectionJob::dispatch($interclub->id, $player->id, $captainMessage);
-            }
+        $toConvoke = $announceShortHanded ? $selectedPlayers : $selectedPlayers->whereIn('id', $addedUserIds);
 
-            foreach ($addedUserIds as $userId) {
-                $interclub->users()->updateExistingPivot($userId, ['selection_confirmed_at' => now()]);
-            }
+        foreach ($toConvoke as $player) {
+            SendInterclubSelectionJob::dispatch($interclub->id, $player->id, $captainMessage);
+        }
+
+        foreach ($addedUserIds as $userId) {
+            $interclub->users()->updateExistingPivot($userId, ['selection_confirmed_at' => now()]);
         }
 
         $nonSelected = $ourTeam?->users()->whereNotIn('users.id', $selectedIds)->get() ?? collect();

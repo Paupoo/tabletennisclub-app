@@ -154,6 +154,16 @@ new class extends Component
             'selectedAt' => $registration?->selection_confirmed_at
                 ? Carbon::parse($registration->selection_confirmed_at)
                 : null,
+            // Jouer à 3 : ce que le capitaine a déclaré, par qui et quand. Rien
+            // tant que la composition n'est pas publiée.
+            'shortHanded' => $lineupPublished && $interclub->isShortHanded()
+                ? [
+                    'playing' => $interclub->getSelectedPlayers()->count(),
+                    'max' => $interclub->total_players,
+                    'by' => $interclub->shortHandedConfirmedBy?->full_name,
+                    'at' => $interclub->short_handed_confirmed_at,
+                ]
+                : null,
             'team' => $team,
         ];
     }

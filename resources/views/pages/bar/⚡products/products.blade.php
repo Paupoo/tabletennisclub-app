@@ -10,6 +10,9 @@
         </x-slot:actions>
     </x-header>
 
+    <x-input wire:model.live.debounce.200ms="search" :placeholder="__('Search products')"
+        icon="o-magnifying-glass" clearable />
+
     {{--
         L'ordre d'affichage est une navigation, pas un filtre (R2) : il change ce
         que la page montre, il vaut exactement une valeur, et `clearFilters()` ne
@@ -50,16 +53,22 @@
 
     @if ($groups->isEmpty())
         <x-card>
-            {{-- Le slot, et non `buttonText` + `href` : <x-empty-state> rend le bouton
+            @if (trim($search) !== '')
+                <x-empty-state
+                    icon="o-magnifying-glass"
+                    :heading="__('No results match your search criteria.')" />
+            @else
+                {{-- Le slot, et non `buttonText` + `href` : <x-empty-state> rend le bouton
             comme un lien et laisse tomber le reste du sac d'attributs, donc un
             `wire:click` posé à côté de `href` ne se déclencherait jamais. --}}
-            <x-empty-state
-                icon="o-cube"
-                :heading="__('No product yet')"
-                :message="__('Add the first product to build the bar menu.')">
-                <x-button :label="__('Add a product')" icon="o-plus"
-                    class="btn-primary btn-sm" wire:click="openCreate" />
-            </x-empty-state>
+                <x-empty-state
+                    icon="o-cube"
+                    :heading="__('No product yet')"
+                    :message="__('Add the first product to build the bar menu.')">
+                    <x-button :label="__('Add a product')" icon="o-plus"
+                        class="btn-primary btn-sm" wire:click="openCreate" />
+                </x-empty-state>
+            @endif
         </x-card>
     @else
         <div class="space-y-4">

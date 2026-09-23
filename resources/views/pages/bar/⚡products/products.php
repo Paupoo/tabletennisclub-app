@@ -57,6 +57,8 @@ new class extends Component
 
     public string $name = '';
 
+    public string $search = '';
+
     /**
      * Ordre d'affichage — une navigation, pas un filtre (R2).
      *
@@ -305,6 +307,12 @@ new class extends Component
      */
     protected function products(): Collection
     {
-        return BarProduct::query()->withStock()->with('category')->get();
+        $search = trim($this->search);
+
+        return BarProduct::query()
+            ->withStock()
+            ->with('category')
+            ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"))
+            ->get();
     }
 };

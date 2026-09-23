@@ -8,6 +8,7 @@ use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Services\BarCartService;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use App\Support\LocaleSort;
@@ -54,6 +55,8 @@ new class extends Component
 
     public function add(int $productId, BarCartService $cartService): void
     {
+        $this->authorizeOrders();
+
         $result = $cartService->addProductToSessionCart($productId);
 
         // Seul l'échec parle. Trente toasts « ajouté au panier » dans une tournée
@@ -104,6 +107,8 @@ new class extends Component
 
     public function leaveTab(BarCartService $cartService): void
     {
+        $this->authorizeOrders();
+
         $cartService->clearSessionCart();
 
         unset($this->cart, $this->openTabs);
@@ -111,6 +116,8 @@ new class extends Component
 
     public function openTab(BarCartService $cartService): void
     {
+        $this->authorizeOrders();
+
         $this->validate(['tabNameInput' => ['required', 'string', 'max:64']]);
 
         $result = $cartService->openTab($this->tabNameInput);
@@ -145,6 +152,8 @@ new class extends Component
 
     public function openWalkIn(BarCartService $cartService): void
     {
+        $this->authorizeOrders();
+
         $cartService->openWalkIn();
 
         unset($this->cart, $this->openTabs);
@@ -152,6 +161,8 @@ new class extends Component
 
     public function remove(int $productId, BarCartService $cartService): void
     {
+        $this->authorizeOrders();
+
         $cartService->removeProductFromSessionCart($productId);
 
         unset($this->cart, $this->catalogue);
@@ -236,6 +247,11 @@ new class extends Component
     public function updatedSearch(): void
     {
         unset($this->catalogue);
+    }
+
+    protected function authorizeOrders(): void
+    {
+        abort_unless(auth()->user()?->can(Permission::BarOrdersManage->value), 403);
     }
 
     public function with(): array

@@ -6,6 +6,7 @@ namespace Resources\views\Pages\Bar\Cart;
 
 use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Services\BarCartService;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
@@ -38,6 +39,8 @@ new class extends Component
 
     public function add(int $productId, BarCartService $cartService): void
     {
+        $this->authorizeOrders();
+
         $result = $cartService->addProductToSessionCart($productId);
 
         if ($result['status'] !== 'success') {
@@ -55,6 +58,8 @@ new class extends Component
 
     public function clear(BarCartService $cartService): void
     {
+        $this->authorizeOrders();
+
         $cartService->clearSessionCart();
 
         $this->redirectRoute('bar.index', navigate: true);
@@ -88,6 +93,8 @@ new class extends Component
 
     public function remove(int $productId, BarCartService $cartService): void
     {
+        $this->authorizeOrders();
+
         $cartService->removeProductFromSessionCart($productId);
 
         unset($this->items, $this->totalPrice, $this->cartCount);
@@ -117,6 +124,8 @@ new class extends Component
      */
     public function validateOrder(string $action, BarCartService $cartService): void
     {
+        $this->authorizeOrders();
+
         try {
             $order = $cartService->checkoutFromSessionCart($action);
         } catch (\RuntimeException $e) {
@@ -146,6 +155,11 @@ new class extends Component
         ));
 
         $this->redirectRoute('bar.index', navigate: true);
+    }
+
+    protected function authorizeOrders(): void
+    {
+        abort_unless(auth()->user()?->can(Permission::BarOrdersManage->value), 403);
     }
 
     public function with(): array

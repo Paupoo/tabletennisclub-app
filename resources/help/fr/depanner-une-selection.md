@@ -32,7 +32,7 @@ Un remplaçant trouvé par la recherche peut être sélectionné **même s'il n'
 
 ## Une équipe qui joue à 3
 
-Vous pouvez déclarer une équipe **à effectif réduit** à la place du capitaine, avec la même case — voyez [Jouer à 3](composer-ma-selection). La déclaration porte votre nom.
+Vous pouvez déclarer une équipe **à effectif réduit** à la place du capitaine, en désignant le joueur WO — voyez [Jouer à 3](composer-ma-selection). La déclaration porte votre nom.
 
 Dans l'**aperçu de la saison**, une rencontre déclarée à 3 compte comme **réglée**, mais elle ne se confond pas avec les autres : sa pastille reste **verte, cerclée d'orange**, et l'en-tête de l'aperçu, même replié, dit *« dont N rencontres à effectif réduit »*. C'est là qu'un 4e joueur peut encore se trouver d'ici le match.
 

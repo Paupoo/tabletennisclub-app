@@ -168,6 +168,12 @@ If registration is still open, you can unregister from the tournament page. You 
 
 Access via **My space → Calendar** or the interclub section. See your scheduled interclub matches, including date, opponent, and venue.
 
+In **All club events** mode, every match tile of the calendar opens too, even for a team that is not yours: you read the date, the venue, the lineup sent and the captain's name (their contact details only if they chose to share them).
+
+### For the match sheet
+
+The match page gathers everything to copy on the day: the federation's **match number**, the category, the division and series, the week, and both clubs with their **club licence**. The lineup is sorted in match-sheet order — force index, then last and first name — with each player's ranking and licence, and **WO** for a player written in but absent.
+
 ### Availability
 
 Before each interclub round, the captain may request your availability. Respond **Available / Unavailable** directly from the email notification or from the interclub section.

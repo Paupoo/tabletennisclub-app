@@ -365,6 +365,22 @@ describe('substitute search — explains the silent filtering (I2)', function ()
         expect(collect($component->viewData('searchResults'))->pluck('id'))->toContain($man->id)
             ->and($component->viewData('searchNote'))->toBeNull();
     });
+    it('shows a substitute without a force index but refuses to line them up', function (): void {
+        $unranked = User::factory()->isCompetitor()->create([
+            'gender' => Gender::MEN,
+            'last_name' => 'Sansindice',
+            'ranking' => Ranking::C0->value,
+        ]);
+        $unranked->forceFill(['force_list' => null])->saveQuietly();
+
+        $component = openSelectorSearch($this->selector, $this->interclub->id, $this->team->id, 'Sansindice');
+
+        expect(collect($component->viewData('searchResults'))->firstWhere('id', $unranked->id)['lacks_force_index'])->toBeTrue();
+
+        $component->call('togglePlayer', $unranked->id);
+
+        expect($component->get('selectedPlayerIds'))->not->toContain($unranked->id);
+    });
 });
 
 // ── Status logic tests ──────────────────────────────────────────────────────
@@ -426,13 +442,35 @@ it('returns actionable status when enough players are available even if no selec
     expect(matchStatus($interclub->id, $this->captain, $this->team->id))->toBe('actionable');
 });
 
-it('returns actionable status when selection is complete but not yet confirmed', function (): void {
-    // +7 days (urgent zone), but selection is complete → actionable takes priority
+/*
+| Problème 8 (validé le 2026-09-24) : une compo enregistrée mais pas envoyée a
+| son propre statut, « à envoyer » — elle n'est plus « prête à composer ». Et à
+| deux semaines du match, tout ce qui n'est pas parti devient à traiter : le
+| club veut les compos chez les joueurs au plus tard à J-14.
+*/
+it('reads a saved lineup not yet sent as to send', function (): void {
+    $this->interclub->update(['total_players' => 2, 'start_date_time' => now()->addDays(20)]);
+    $this->interclub->select($this->player1);
+    $this->interclub->select($this->player2);
+
+    expect(matchStatus($this->interclub->id, $this->captain, $this->team->id))->toBe('to_send');
+});
+
+it('needs attention two weeks out when the lineup has not been sent', function (): void {
+    // +7 jours : compo complète mais jamais envoyée.
     $this->interclub->select($this->player1);
     $this->interclub->select($this->player2);
     $this->interclub->update(['total_players' => 2]);
 
-    expect(matchStatus($this->interclub->id, $this->captain, $this->team->id))->toBe('actionable');
+    expect(matchStatus($this->interclub->id, $this->captain, $this->team->id))->toBe('urgent');
+});
+
+it('needs attention two weeks out even with enough players available', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+    $this->interclub->markAvailability($this->player1, InterclubAvailability::AVAILABLE);
+    $this->interclub->markAvailability($this->player2, InterclubAvailability::AVAILABLE);
+
+    expect(matchStatus($this->interclub->id, $this->captain, $this->team->id))->toBe('urgent');
 });
 
 it('returns confirmed status once the whole lineup has been sent', function (): void {
@@ -1323,4 +1361,168 @@ it('still lets the same player be on the roster of two different fixtures', func
 
     expect($this->interclub->users()->count())->toBe(1)
         ->and($other->users()->count())->toBe(1);
+});
+
+/*
+| Lire une composition sans la faire (règle DS-D). Un membre du comité lit toutes
+| les équipes : il voit qui est aligné et qui ne l'est pas, sans case à cocher,
+| sans joueurs libres, sans les coordonnées que seul un capitaine obtient (T8).
+*/
+describe('reading a lineup', function (): void {
+    beforeEach(function (): void {
+        $this->reader = User::factory()->isCommitteeMember()->create();
+        $this->player1->update(['phone_number' => '0470 12 34 56']);
+        $this->interclub->select($this->player1);
+    });
+
+    it('offers to consult, never to compose, to whoever only reads', function (): void {
+        Livewire::actingAs($this->reader)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->set('selectedTeamId', $this->team->id)
+            ->assertSeeHtml('inspectSelection(' . $this->interclub->id . ')')
+            ->assertDontSeeHtml('openSelection(' . $this->interclub->id . ')');
+    });
+
+    it('opens the lineup read-only, without the gestures of a captain', function (): void {
+        Livewire::actingAs($this->reader)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->set('selectedTeamId', $this->team->id)
+            ->call('inspectSelection', $this->interclub->id)
+            ->assertSet('drawerSelection', true)
+            ->assertSet('isReadOnly', true)
+            ->assertSet('selectedPlayerIds', [$this->player1->id])
+            ->assertSee($this->player2->last_name)
+            ->assertDontSeeHtml('togglePlayer(')
+            ->assertDontSeeHtml('wire:click="saveSelection"')
+            ->assertDontSee(__('Free players this match day'))
+            ->assertDontSee('0470 12 34 56');
+    });
+
+    it('says whether the lineup has reached the team yet', function (): void {
+        $component = Livewire::actingAs($this->reader)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->call('inspectSelection', $this->interclub->id)
+            ->assertSee(__('Not sent to the team yet'));
+
+        $this->travelTo(now()->startOfDay());
+        $this->interclub->users()->updateExistingPivot($this->player1->id, ['selection_confirmed_at' => now()]);
+
+        $component->call('inspectSelection', $this->interclub->id)
+            ->assertSee(__('Sent to the team on :date', ['date' => now()->format('d/m/Y')]));
+    });
+
+    it('refuses to compose from the read-only view', function (): void {
+        Livewire::actingAs($this->reader)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->call('inspectSelection', $this->interclub->id)
+            ->call('togglePlayer', $this->player2->id)
+            ->assertForbidden();
+    });
+
+    it('lets anyone who reaches the screen consult a match already played', function (): void {
+        $past = Interclub::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $this->league->id,
+            'visited_team_id' => $this->team->id,
+            'total_players' => 4,
+            'start_date_time' => now()->subDays(3),
+        ]);
+        $past->select($this->player2);
+
+        Livewire::actingAs($this->captain)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->assertSeeHtml('inspectSelection(' . $past->id . ')')
+            ->call('inspectSelection', $past->id)
+            ->assertSet('drawerSelection', true)
+            ->assertSet('isReadOnly', true)
+            ->assertSet('selectedPlayerIds', [$this->player2->id]);
+    });
+
+    it('refuses to open a lineup the user may not read', function (): void {
+        // Capitaine d'une autre équipe : il atteint l'écran, pas cette compo.
+        Team::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $this->league->id,
+            'captain_id' => $this->outsider->id,
+            'club_id' => $this->ownClub->id,
+        ]);
+
+        Livewire::actingAs($this->outsider)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->call('inspectSelection', $this->interclub->id)
+            ->assertForbidden();
+    });
+});
+
+/*
+| Problème 8, lot 1 : que le capitaine sache qu'enregistrer ne suffit pas.
+*/
+describe('sending the lineup', function (): void {
+    beforeEach(function (): void {
+        Queue::fake();
+        $this->interclub->update(['total_players' => 2, 'start_date_time' => now()->addDays(20)]);
+    });
+
+    it('reassures the captain that a lineup sent can still change', function (): void {
+        Livewire::actingAs($this->captain)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->call('openSelection', $this->interclub->id)
+            ->call('togglePlayer', $this->player1->id)
+            ->call('togglePlayer', $this->player2->id)
+            ->call('saveSelection')
+            ->assertSee(__('You can change it until match day: only the players added or removed will be told.'))
+            ->assertSee(__('Send later'))
+            ->assertDontSee(__('Skip'));
+    });
+
+    it('does not dress up a skipped send as a success', function (): void {
+        $component = Livewire::actingAs($this->captain)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->call('openSelection', $this->interclub->id)
+            ->call('togglePlayer', $this->player1->id)
+            ->call('togglePlayer', $this->player2->id)
+            ->call('saveSelection')
+            ->call('skipSending');
+
+        $toasts = collect($component->effects['xjs'] ?? [])
+            ->map(fn ($script): string => is_array($script) ? ($script['expression'] ?? '') : (string) $script)
+            ->filter(fn (string $expression): bool => str_starts_with($expression, 'toast('))
+            ->map(fn (string $expression): array => json_decode(substr($expression, 6, -1), true)['toast'] ?? []);
+
+        expect($toasts->pluck('title')->all())->toContain(__('Lineup saved, not sent: your team does not know it yet.'))
+            ->and($toasts->pluck('css')->implode(' '))->not->toContain('alert-success');
+    });
+
+    it('offers to send a saved lineup straight from the match row', function (): void {
+        $this->interclub->select($this->player1);
+        $this->interclub->select($this->player2);
+
+        Livewire::actingAs($this->captain)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->assertSee(__('Lineup to send'))
+            ->assertSeeHtml('sendSavedLineup(' . $this->interclub->id . ')')
+            ->call('sendSavedLineup', $this->interclub->id)
+            ->assertSet('modalMessage', true)
+            ->assertSet('drawerSelection', false)
+            ->call('sendLineupToTeam');
+
+        Queue::assertPushed(SendInterclubSelectionJob::class, 2);
+    });
+
+    it('refuses to send a lineup of a team the user does not lead', function (): void {
+        $this->interclub->select($this->player1);
+        $this->interclub->select($this->player2);
+
+        Team::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $this->league->id,
+            'captain_id' => $this->outsider->id,
+            'club_id' => $this->ownClub->id,
+        ]);
+
+        Livewire::actingAs($this->outsider)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->call('sendSavedLineup', $this->interclub->id)
+            ->assertForbidden();
+    });
 });

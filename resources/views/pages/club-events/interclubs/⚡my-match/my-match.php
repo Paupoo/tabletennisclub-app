@@ -134,9 +134,27 @@ new class extends Component
             'interclub' => $interclub,
             'isHome' => $isHome,
             'isOnRoster' => $myTeam !== null,
+            // L'équipe, capitaine compris, par opposition au visiteur venu du
+            // calendrier du club : à elle seule le mot du capitaine et ses
+            // coordonnées sans condition.
+            'isTeamMember' => $myTeam !== null || ($team?->captain_id !== null && $team->captain_id === $user->id),
+            'captainPhoneVisible' => $team?->captain !== null
+                && ($myTeam !== null || $team->captain_id === $user->id || $team->captain->contactVisibleTo($user, 'phone')),
+            'captainEmailVisible' => $team?->captain !== null
+                && ($myTeam !== null || $team->captain_id === $user->id || $team->captain->contactVisibleTo($user, 'email')),
             'isPast' => $isPast,
             'isSelected' => (bool) $registration?->is_selected && $lineupPublished,
-            'lineup' => $lineupPublished ? $interclub->getSelectedPlayers() : collect(),
+            // L'ordre de la feuille (C.22.3.1) : indice de force, puis nom et
+            // prénom pour départager un même indice. Un indice absent en dernier.
+            'lineup' => $lineupPublished
+                ? $interclub->getSelectedPlayers()->sortBy([
+                    fn (User $a, User $b): int => ($a->forceListFor($team?->league?->category) ?? PHP_INT_MAX) <=> ($b->forceListFor($team?->league?->category) ?? PHP_INT_MAX),
+                    fn (User $a, User $b): int => strcasecmp((string) $a->last_name, (string) $b->last_name),
+                    fn (User $a, User $b): int => strcasecmp((string) $a->first_name, (string) $b->first_name),
+                ])->values()
+                : collect(),
+            'lineupCategory' => $team?->league?->category,
+            'sheetInfo' => $this->sheetInfo($interclub, $team),
             'lineupPublished' => $lineupPublished,
             'myAvailability' => $registration?->availability
                 ? InterclubAvailability::from($registration->availability)
@@ -158,7 +176,7 @@ new class extends Component
             // tant que la composition n'est pas publiée.
             'shortHanded' => $lineupPublished && $interclub->isShortHanded()
                 ? [
-                    'playing' => $interclub->getSelectedPlayers()->count(),
+                    'playing' => $interclub->shortHandedSummary()['playing'] ?? 0,
                     'max' => $interclub->total_players,
                     'by' => $interclub->shortHandedConfirmedBy?->full_name,
                     'at' => $interclub->short_handed_confirmed_at,
@@ -306,6 +324,35 @@ new class extends Component
         [$home, $away] = array_map(intval(...), explode('-', $result->score, 2));
 
         return $isHome ? "{$home}-{$away}" : "{$away}-{$home}";
+    }
+
+    /**
+     * What the match sheet asks for, so nobody hunts for it at the table.
+     *
+     * The federation writes division and series as one code — « P2A », « 3C » —
+     * the series being the final letter.
+     *
+     * @return array{match_number: string|null, category: string|null, division: string|null, series: string|null, week: int|null, home: array{name: string, licence: string|null}, away: array{name: string, licence: string|null}}
+     */
+    private function sheetInfo(Interclub $interclub, ?Team $team): array
+    {
+        $code = (string) ($interclub->league?->division ?: $team?->league?->division);
+        $splits = preg_match('/^(.+?)([A-Z])$/', $code, $parts) === 1;
+
+        $side = fn (?Team $side): array => [
+            'name' => trim(($side?->club?->name ?? '') . ' ' . ($side?->name ?? '')) ?: '—',
+            'licence' => $side?->club?->licence,
+        ];
+
+        return [
+            'match_number' => $interclub->aftt_match_id,
+            'category' => LeagueCategory::fromName($interclub->league?->category ?? $team?->league?->category)?->label(),
+            'division' => $code === '' ? null : ($splits ? $parts[1] : $code),
+            'series' => $splits ? $parts[2] : null,
+            'week' => $interclub->week_number,
+            'home' => $side($interclub->visitedTeam),
+            'away' => $side($interclub->visitingTeam),
+        ];
     }
 
     /**

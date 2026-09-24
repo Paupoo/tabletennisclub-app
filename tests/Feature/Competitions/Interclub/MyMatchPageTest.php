@@ -64,12 +64,42 @@ it('opens the page for a player on the roster', function (): void {
         ->assertOk();
 });
 
-it('refuses a member who plays for neither side', function (): void {
+/*
+| Décidé le 2026-09-24 : tout membre lit la page d'une rencontre du club, depuis
+| « Tout le club » du calendrier. Ce qui reste à l'équipe — la réponse, le mot du
+| capitaine, ses coordonnées s'il ne les partage pas — lui reste réservé.
+*/
+it('opens the page to any member, who reads it as a visitor', function (): void {
     $match = aMatch();
+    $match->update(['captain_message' => 'Covoiturage depuis la gare à 18h30']);
 
     Livewire::actingAs($this->stranger)
         ->test('pages::club-events.interclubs.my-match', ['interclub' => $match])
-        ->assertForbidden();
+        ->assertOk()
+        ->assertSee(__('Captain'))
+        ->assertDontSee(__('Your captain'))
+        ->assertSee($this->captain->full_name)
+        ->assertDontSee('0470 12 34 56')
+        ->assertDontSee('Covoiturage depuis la gare');
+});
+
+it('shows a visitor the captain contact the captain chose to share', function (): void {
+    $this->captain->update(['contact_visibility' => ['phone' => true]]);
+
+    Livewire::actingAs($this->stranger)
+        ->test('pages::club-events.interclubs.my-match', ['interclub' => aMatch()])
+        ->assertSee('0470 12 34 56');
+});
+
+it('still hands the captain phone to the team, shared or not', function (): void {
+    $match = aMatch();
+    $match->update(['captain_message' => 'Covoiturage depuis la gare à 18h30']);
+
+    Livewire::actingAs($this->player)
+        ->test('pages::club-events.interclubs.my-match', ['interclub' => $match])
+        ->assertSee(__('Your captain'))
+        ->assertSee('0470 12 34 56')
+        ->assertSee('Covoiturage depuis la gare');
 });
 
 it('refuses a bye', function (): void {
@@ -203,12 +233,10 @@ it('downloads the fixture as a calendar file', function (): void {
         ->toContain('UID:interclub-' . $match->id . '@');
 });
 
-it('refuses the calendar file to a member who plays for neither side', function (): void {
-    $match = aMatch();
-
+it('hands the calendar file to any member who may read the match', function (): void {
     $this->actingAs($this->stranger)
-        ->get(route('admin.interclubs.my-match.ics', $match))
-        ->assertForbidden();
+        ->get(route('admin.interclubs.my-match.ics', aMatch()))
+        ->assertOk();
 });
 
 it('offers no calendar file for a match already played', function (): void {
@@ -356,10 +384,6 @@ it('lets a member open a match they played for a team that has no roster', funct
     $match = aMatch(-7);
     $veteran = User::factory()->create();
 
-    Livewire::actingAs($veteran)
-        ->test('pages::club-events.interclubs.my-match', ['interclub' => $match])
-        ->assertForbidden();
-
     InterclubIndividualMatch::factory()->create([
         'interclub_id' => $match->id, 'position' => 1,
         'user_id' => $veteran->id, 'we_won' => true,
@@ -419,4 +443,60 @@ it('flags a short-handed match in the list of my matches', function (): void {
         ->test('pages::club-events.interclubs.my-matches')
         ->assertSeeHtml('data-short-handed')
         ->assertSee('à 1');
+});
+
+/*
+| Le jour J, les joueurs recopient la feuille de match : tout ce qu'elle demande
+| est sur la page, et la composition suit l'ordre de la feuille (C.22.3.1).
+*/
+describe('the match sheet block', function (): void {
+    it('gives every value the match sheet asks for', function (): void {
+        $this->league->update(['division' => 'P2A']);
+        $this->team->club->update(['licence' => 'BBW214']);
+        $this->opponent->club->update(['licence' => 'BBW042']);
+
+        $match = aMatch();
+        $match->update(['aftt_match_id' => 'PBBWP02/025', 'week_number' => 7]);
+
+        Livewire::actingAs($this->player)
+            ->test('pages::club-events.interclubs.my-match', ['interclub' => $match])
+            ->assertSee(__('For the match sheet'))
+            ->assertSee('PBBWP02/025')
+            ->assertSee(__('Men'))
+            ->assertSeeInOrder([__('Division'), 'P2', __('Series'), 'A'])
+            ->assertSee('BBW214')
+            ->assertSee('BBW042');
+    });
+
+    it('orders the line-up like the sheet, with index, ranking, licence and walkover', function (): void {
+        $match = aMatch();
+
+        $strong = User::factory()->isCompetitor()->create(['last_name' => 'Zeller', 'first_name' => 'Anna', 'ranking' => 'B2']);
+        $tieB = User::factory()->isCompetitor()->create(['last_name' => 'Bertin', 'first_name' => 'Yves', 'ranking' => 'C0']);
+        $tieA = User::factory()->isCompetitor()->create(['last_name' => 'Bertin', 'first_name' => 'Alex', 'ranking' => 'C0']);
+        $walkover = User::factory()->isCompetitor()->create(['last_name' => 'Adam', 'first_name' => 'Wout', 'ranking' => 'C4']);
+
+        // Indices posés après toutes les créations : l'observateur les recalcule.
+        $strong->forceFill(['force_list' => 3])->saveQuietly();
+        $tieB->forceFill(['force_list' => 9])->saveQuietly();
+        $tieA->forceFill(['force_list' => 9])->saveQuietly();
+        $walkover->forceFill(['force_list' => 14])->saveQuietly();
+
+        foreach ([$walkover, $tieB, $strong, $tieA] as $player) {
+            $match->users()->attach($player->id, [
+                'is_selected' => true,
+                'is_walkover' => $player->is($walkover),
+                'selection_confirmed_at' => now(),
+            ]);
+        }
+
+        Livewire::actingAs($this->player)
+            ->test('pages::club-events.interclubs.my-match', ['interclub' => $match])
+            ->assertSeeInOrder([
+                '#3', 'Anna Zeller', 'B2', $strong->licence,
+                '#9', 'Alex Bertin',
+                '#9', 'Yves Bertin',
+                '#14', 'Wout Adam', 'WO',
+            ]);
+    });
 });

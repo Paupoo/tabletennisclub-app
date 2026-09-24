@@ -125,6 +125,31 @@ it('reads the threshold from the superior team lineup once it exists', function 
         ->and($constraint->superiorTeamNames)->toBe(['A']);
 });
 
+/**
+ * C.22.1.3 : « le troisième joueur ayant effectivement participé […] Le joueur
+ * effectif est celui qui a joué un point. » Un WO n'en joue aucun. L'exclure
+ * est aussi la lecture stricte : le compter ne peut que baisser le seuil.
+ */
+it('never counts the walkover player of the superior team', function (): void {
+    $men = leagueFor('MEN');
+    [, $fixtureA, $playersA] = squad('A', $men, [2, 4, 5, 8]);
+    [, $fixtureB] = squad('B', $men, [20, 22, 24, 26]);
+
+    settleForceLists();
+
+    foreach ($playersA as $selected) {
+        $fixtureA->select($selected);
+    }
+
+    $fixtureA->users()->updateExistingPivot($playersA[1]->id, ['is_walkover' => true]);
+
+    $constraint = $this->rule->constraintFor($fixtureB);
+
+    // Jouent : #2, #5, #8 → troisième effectif = #8. Avec le WO, on lirait #5.
+    expect($constraint->strongest)->toBe(8)
+        ->and($constraint->weakest)->toBe(8);
+});
+
 it('falls back to the squad bounds while the superior team has not composed', function (): void {
     $men = leagueFor('MEN');
     squad('A', $men, [1, 2, 5, 8, 11, 14, 17]);

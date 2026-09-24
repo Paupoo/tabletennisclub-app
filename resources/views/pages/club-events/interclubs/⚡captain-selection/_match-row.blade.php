@@ -16,6 +16,8 @@
         // À 3 comme à 4 : pour le capitaine, une compo envoyée est réglée.
         // L'orange de l'effectif réduit reste à la vue globale.
         'confirmed', 'short' => ['bg-success', __('Lineup sent')],
+        // Composée mais pas envoyée : le seul statut qui ne demande qu'un clic.
+        'to_send' => ['bg-info', __('Lineup to send')],
         'actionable' => ['bg-warning', __('Ready to compose')],
         'urgent' => ['bg-error', __('Needs attention')],
         'past' => ['bg-base-300', __('Played')],
@@ -99,7 +101,26 @@
 
         {{-- Une action nommée, le reste derrière un menu nommé : la règle de
              row-menu, appliquée par 9 pages index. --}}
-        @if (! $isPast && $ic['may_compose'])
+        @if (! $isPast && $ic['may_compose'] && $ic['awaits_sending'])
+            {{-- Composée, pas envoyée : l'action qui reste est « envoyer », et
+                 composer passe dans le menu (problème 8, piste B1). --}}
+            <div class="shrink-0">
+                <x-admin.shared.row-menu
+                    :label="__('Send')"
+                    icon="o-paper-airplane"
+                    spinner
+                    wire-click="sendSavedLineup({{ $ic['id'] }})">
+                    <x-menu-item
+                        icon="o-pencil-square"
+                        :title="__('Compose')"
+                        wire:click="openSelection({{ $ic['id'] }})" />
+                    <x-menu-item
+                        icon="o-envelope"
+                        :title="__('Request availability')"
+                        wire:click="confirmAvailabilityRequest({{ $ic['id'] }})" />
+                </x-admin.shared.row-menu>
+            </div>
+        @elseif (! $isPast && $ic['may_compose'])
             <div class="shrink-0">
                 <x-admin.shared.row-menu
                     :label="__('Compose')"
@@ -111,6 +132,17 @@
                         :title="__('Request availability')"
                         wire:click="confirmAvailabilityRequest({{ $ic['id'] }})" />
                 </x-admin.shared.row-menu>
+            </div>
+        @else
+            {{-- DS-D : qui ne compose pas consulte — et un match joué ne se
+                 compose plus, mais sa compo reste une histoire à lire. --}}
+            <div class="shrink-0">
+                <x-button
+                    :label="__('Consult')"
+                    icon="o-eye"
+                    class="btn-sm btn-ghost"
+                    spinner="inspectSelection({{ $ic['id'] }})"
+                    wire:click="inspectSelection({{ $ic['id'] }})" />
             </div>
         @endif
     </div>

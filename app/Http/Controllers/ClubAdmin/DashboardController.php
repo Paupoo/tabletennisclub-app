@@ -65,7 +65,7 @@ class DashboardController extends Controller
             CommitteeRolesEnum::ADMINISTRATOR,
         ]);
 
-        $alerts = $this->buildAlerts($user, $isAdmin, $showSecretary, $showTreasurer, $showCaptain);
+        $alerts = $this->buildAlerts($user, $isAdmin, $showSecretary, $showTreasurer, $showCaptain, $isCaptain);
         $coachTiles = $showCoach ? $this->buildCoachTiles($user) : [];
         $memberTiles = $this->buildMemberTiles($user);
         // The proxy tiles are rendered by the act-for component, which holds the
@@ -90,7 +90,7 @@ class DashboardController extends Controller
     /**
      * @return array<int, array{type: string, icon: string, label: string, route: string}>
      */
-    private function buildAlerts(User $user, bool $isAdmin, bool $showSecretary, bool $showTreasurer, bool $showCaptain): array
+    private function buildAlerts(User $user, bool $isAdmin, bool $showSecretary, bool $showTreasurer, bool $showCaptain, bool $isCaptain = false): array
     {
         $alerts = [];
         $currentSeason = Season::current();
@@ -199,6 +199,29 @@ class DashboardController extends Controller
                     'type' => 'error',
                     'icon' => 'o-clipboard-document-check',
                     'label' => $pendingSelections === 1 ? '1 sélection manquante' : "{$pendingSelections} sélections manquantes",
+                    'route' => route('admin.interclubs.captain-selection'),
+                ];
+            }
+        }
+
+        // Personal alert: lineups the captain saved but never sent. Enregistrer
+        // ne prévient personne, et c'est l'envoi qui termine la tâche.
+        if ($isCaptain) {
+            $toSend = Interclub::query()
+                ->with('users')
+                ->where('start_date_time', '>', now())
+                ->where(fn ($q) => $q
+                    ->whereHas('visitedTeam', fn ($t) => $t->where('captain_id', $user->id))
+                    ->orWhereHas('visitingTeam', fn ($t) => $t->where('captain_id', $user->id)))
+                ->get()
+                ->filter(fn (Interclub $ic): bool => $ic->awaitsSending())
+                ->count();
+
+            if ($toSend > 0) {
+                $alerts[] = [
+                    'type' => 'warning',
+                    'icon' => 'o-paper-airplane',
+                    'label' => $toSend === 1 ? '1 compo à envoyer à votre équipe' : "{$toSend} compos à envoyer à votre équipe",
                     'route' => route('admin.interclubs.captain-selection'),
                 ];
             }

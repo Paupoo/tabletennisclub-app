@@ -30,6 +30,15 @@ erDiagram
         float amount_paid
         float family_credit
     }
+    SubscriptionDiscount {
+        int id PK
+        int subscription_id FK
+        int payment_id FK "nullable"
+        float amount
+        string reason
+        int granted_by_id FK "nullable"
+        datetime granted_at
+    }
     SubscriptionTrainingPack {
         int id PK
         int subscription_id FK
@@ -44,6 +53,7 @@ erDiagram
     }
 
     Registration ||--o{ Payment : "payments"
+    Subscription ||--o{ SubscriptionDiscount : "discounts"
     Subscription ||--o{ Payment : "payments"
     Subscription }o--o{ TrainingPack : "trainingPacks"
 ```

@@ -244,3 +244,73 @@ it('names the sibling captain still holding players back', function (): void {
         ->and($waiting->first()->availableCount)->toBe(1)
         ->and($waiting->first()->team->captain->phone_number)->toBe('0470 11 22 33');
 });
+
+/**
+ * Sans indice de force, pas d'alignement : ce n'est pas une incertitude C.22 à
+ * lever par un coup de fil, c'est une case fermée.
+ */
+describe('a player without a force index', function (): void {
+    it('greys out an own player and refuses the tick', function (): void {
+        poolForceQueue(reset: true);
+
+        $captain = User::factory()->isCompetitor()->create();
+        [, $fixture, $players] = poolSquad('A', [5, null], $captain);
+
+        settlePoolForce();
+
+        $component = openDrawerAs($captain, $fixture);
+        $row = $component->viewData('roster')->firstWhere('id', $players[1]->id);
+
+        expect($row['is_illegal'])->toBeTrue()
+            ->and($row['legality_reason'])->toBe(__('This player has no force index: they cannot be lined up.'));
+
+        $component->call('togglePlayer', $players[1]->id);
+
+        expect($component->get('selectedPlayerIds'))->not->toContain($players[1]->id);
+
+        // Un joueur indexé de la même équipe reste sélectionnable.
+        $component->call('togglePlayer', $players[0]->id);
+
+        expect($component->get('selectedPlayerIds'))->toContain($players[0]->id);
+    });
+
+    it('hides a free player, counted apart from those rule C.22 forbids', function (): void {
+        poolForceQueue(reset: true);
+
+        $captainB = User::factory()->isCompetitor()->create();
+        [, $fixtureA, $playersA] = poolSquad('A', [1, 2, 3, 4, null]);
+        [, $fixtureB] = poolSquad('B', [30, 31], $captainB);
+
+        settlePoolForce();
+
+        $fixtureA->markAvailability($playersA[4], InterclubAvailability::AVAILABLE);
+        publishFor($fixtureA, array_slice($playersA, 0, 4));
+
+        $component = openDrawerAs($captainB, $fixtureB);
+
+        expect($component->viewData('poolRows'))->toBeEmpty()
+            ->and($component->viewData('poolUnrankedCount'))->toBe(1)
+            ->and($component->viewData('poolHiddenCount'))->toBe(0);
+
+        $component->assertSee(trans_choice('{1} :count player hidden: no force index.|[2,*] :count players hidden: no force index.', 1, ['count' => 1]));
+    });
+
+    it('still lets the captain untick one lined up before the rule', function (): void {
+        poolForceQueue(reset: true);
+
+        $captain = User::factory()->isCompetitor()->create();
+        [, $fixture, $players] = poolSquad('A', [5, null], $captain);
+
+        settlePoolForce();
+
+        $fixture->select($players[1]);
+
+        $component = openDrawerAs($captain, $fixture);
+
+        expect($component->get('selectedPlayerIds'))->toContain($players[1]->id);
+
+        $component->call('togglePlayer', $players[1]->id);
+
+        expect($component->get('selectedPlayerIds'))->not->toContain($players[1]->id);
+    });
+});

@@ -304,7 +304,7 @@ class Interclub extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)
-            ->withPivot('is_subscribed', 'is_selected', 'has_played', 'availability', 'availability_note', 'selection_confirmed_at')
+            ->withPivot('is_subscribed', 'is_selected', 'is_walkover', 'has_played', 'availability', 'availability_note', 'selection_confirmed_at')
             ->as('registration')
             ->withTimestamps();
     }

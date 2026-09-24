@@ -27,7 +27,7 @@
 
 **{{ __('Selected lineup') }}**
 
-<x-mail.lineup :players="$selectedPlayers" :category="$category" :highlight="$notifiable" />
+<x-mail.lineup :players="$selectedPlayers" :category="$category" :highlight="$notifiable" :walkover-id="$shortHanded['walkover_id'] ?? null" />
 
 @if($captainMessage)
 <div style="border-left: 4px solid #fbbf24; background-color: #fffbeb; border-radius: 0 6px 6px 0; margin: 24px 0; overflow: hidden;">

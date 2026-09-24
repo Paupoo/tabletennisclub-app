@@ -100,3 +100,10 @@ Schedule::command('queue:check-health')
     ->hourly()
     ->withoutOverlapping()
     ->when(Feature::Supervision->enabled(...));
+
+// Problème 8 (validé le 2026-09-24) : le dimanche soir, la semaine de matchs est
+// bouclée ; chaque capitaine reçoit la liste de ses compos pas encore envoyées.
+Schedule::command('interclubs:remind-captains')
+    ->weeklyOn(0, '18:00')
+    ->withoutOverlapping()
+    ->when(Feature::Interclubs->enabled(...));

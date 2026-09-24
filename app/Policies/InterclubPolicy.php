@@ -6,7 +6,6 @@ namespace App\Policies;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
-use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
 use App\Domains\Shared\Enums\Permission;
 
 /**
@@ -72,49 +71,19 @@ class InterclubPolicy
      * Opening one fixture's own page.
      *
      * Wider than {@see view()}, which gates the club-wide fixture management
-     * screens behind a délégation. This page is where a player lands from
-     * "you are selected", so the roster has to grant it — and the id is in the
-     * URL, so something has to refuse it. Three groups may look: whoever plays
-     * for either side, whoever captains either side, and whoever already reads
-     * every fixture elsewhere — the committee included, whose team files link
-     * here.
+     * screens behind a délégation. Since 2026-09-24 every member reads the page
+     * of any fixture the club plays: the club calendar links every match tile
+     * here, and a link must never lead to a 403 (DS-D). What stays the team's —
+     * the answer, the captain's word, their contact details — the page itself
+     * holds back from a visitor.
      *
-     * Roster membership *or* a row on the fixture: a member who answered and
-     * then left the team still has an answer on this match, and reading their
-     * own page back should not 403.
+     * The id is still in the URL, so a fixture the club does not play in is
+     * refused.
      */
     public function viewMatchPage(User $user, Interclub $interclub): bool
     {
-        if ($user->canAny([
-            Permission::InterclubsView->value,
-            Permission::InterclubsManage->value,
-            Permission::SelectionsManage->value,
-            Permission::ResultsManage->value,
-        ])) {
-            return true;
-        }
+        $interclub->loadMissing(['visitedTeam.club', 'visitingTeam.club']);
 
-        if ($interclub->isCaptainedBy($user)) {
-            return true;
-        }
-
-        $teamIds = array_filter([$interclub->visited_team_id, $interclub->visiting_team_id]);
-
-        $playsForEitherSide = $teamIds !== [] && $user->teams()
-            ->whereIn('teams.id', $teamIds)
-            ->exists();
-
-        if ($playsForEitherSide) {
-            return true;
-        }
-
-        // Having played it is the strongest claim of all, and the only one a
-        // member keeps on a season imported from the federation: those team
-        // rows arrive empty, because the federation publishes its own teams and
-        // never our roster. The match sheet, which it does publish, names them.
-        return $interclub->users()->where('users.id', $user->id)->exists()
-            || InterclubIndividualMatch::where('interclub_id', $interclub->id)
-                ->where('user_id', $user->id)
-                ->exists();
+        return $interclub->visitedTeam?->club?->is_own_club || $interclub->visitingTeam?->club?->is_own_club;
     }
 }

@@ -253,10 +253,14 @@
         :pool-rows="$poolRows"
         :pool-waiting="$poolWaiting"
         :pool-hidden-count="$poolHiddenCount"
+        :pool-unranked-count="$poolUnrankedCount"
         :pool-maybe-count="$poolMaybeCount"
         :pool-maybe-teams="$poolMaybeTeams"
         :lineup-constraint="$lineupConstraint"
-        short-handed-model="shortHandedOptIn"
+        walkover-action="designateWalkover"
+        :walkover-id="$walkoverPlayerId"
+        :readonly="$isReadOnly"
+        :sent-at="$drawerSentAt"
         :minimum-players="$drawerInterclub?->minimumPlayers()" />
 
     {{-- ── CONFIRMATION : RELANCE DES DISPONIBILITÉS ──────────────────── --}}
@@ -275,15 +279,25 @@
         :subtitle="$sendTargetLabel"
         wire:model="modalMessage" :open="$modalMessage">
         <div class="space-y-4">
+            {{-- La crainte qui retient l'envoi : « et si ça change ? ». La mise à
+                 jour ne prévient que les concernés — il suffit de le dire. --}}
+            <p class="flex items-start gap-2 text-sm text-base-content/80" data-send-reassurance>
+                <x-icon name="o-arrow-path" class="mt-0.5 h-4 w-4 shrink-0 text-base-content/50" />
+                <span>{{ __('You can change it until match day: only the players added or removed will be told.') }}</span>
+            </p>
+
             {{-- Ce que le capitaine vient de déclarer, et ce que cela coûte : la
                  dernière chose qu'il lit avant de convoquer l'équipe. --}}
             @if ($sendsShortHanded)
                 <div class="rounded-xl border border-warning/40 bg-warning/5 p-3 text-sm">
                     <div class="flex items-center gap-1.5 font-semibold">
                         <x-icon name="o-exclamation-triangle" class="h-4 w-4 text-warning" />
-                        {{ __('You will play with :n of :max.', ['n' => count($sendLineupNames), 'max' => $sendMaxPlayers]) }}
+                        {{ __('You will play with :n of :max.', ['n' => $sendPlayingCount, 'max' => $sendMaxPlayers]) }}
                     </div>
                     <p class="mt-1 text-xs text-base-content/80">
+                        @if ($sendWalkoverName)
+                            {{ __(':player goes on the sheet as walkover (WO).', ['player' => $sendWalkoverName]) }}
+                        @endif
                         {{ __('The missing player\'s matches will be lost. The team will be told it plays short.') }}
                     </p>
                 </div>
@@ -374,7 +388,7 @@
                     ? trans_choice('Notify the removed player|Notify the :count removed players', count($pendingRemovedNames), ['count' => count($pendingRemovedNames)])
                     : __('Send to team');
             @endphp
-            <x-button class="btn-ghost" :label="__('Skip')" spinner="skipSending" wire:click="skipSending" />
+            <x-button class="btn-ghost" :label="__('Send later')" spinner="skipSending" wire:click="skipSending" />
             <x-button class="btn-primary" icon="o-paper-airplane" :label="$sendLabel"
                 spinner="sendLineupToTeam" wire:click="sendLineupToTeam" />
         </x-slot:actions>

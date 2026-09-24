@@ -671,7 +671,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function interclubs(): BelongsToMany
     {
         return $this->belongsToMany(Interclub::class)
-            ->withPivot('is_subscribed', 'is_selected', 'has_played')
+            ->withPivot('is_subscribed', 'is_selected', 'is_walkover', 'has_played')
             ->as('registration')
             ->withTimestamps();
     }

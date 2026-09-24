@@ -3,12 +3,14 @@
 declare(strict_types=1);
 
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
@@ -42,6 +44,15 @@ new class extends Component
         $this->dateProposals[] = ['proposed_at' => ''];
     }
 
+    /**
+     * Defense in depth: the route gates this too. The form used to share the
+     * reading group's `meetings.view`, and its save checked nothing.
+     */
+    public function mount(): void
+    {
+        Gate::authorize(Permission::MeetingsManage->value);
+    }
+
     public function removeDateProposal(int $index): void
     {
         array_splice($this->dateProposals, $index, 1);
@@ -55,6 +66,8 @@ new class extends Component
     /** Create the meeting and land on its hub — nothing is sent at this point. */
     public function save(): void
     {
+        Gate::authorize(Permission::MeetingsManage->value);
+
         $this->validate([
             'title' => 'required|string|max:255',
             'type' => 'required|string|in:' . implode(',', array_column(MeetingTypeEnum::cases(), 'value')),

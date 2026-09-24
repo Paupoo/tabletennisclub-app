@@ -316,7 +316,10 @@ Route::prefix('admin/club-events/meetings')
     ->middleware(['auth', 'verified', 'can:meetings.view', 'feature:meetings'])
     ->group(function (): void {
         Route::livewire('/', 'pages::club-events.meetings.index')->name('admin.meetings.index');
-        Route::livewire('/create', 'pages::club-events.meetings.create')->name('admin.meetings.create');
+        // Reading is the committee baseline; convening is the meetings délégation.
+        Route::livewire('/create', 'pages::club-events.meetings.create')
+            ->middleware('can:meetings.manage')
+            ->name('admin.meetings.create');
         Route::livewire('/{meeting}', 'pages::club-events.meetings.show')->name('admin.meetings.show');
         Route::livewire('/{meeting}/minutes', 'pages::club-events.meetings.minutes')->name('admin.meetings.minutes');
     });

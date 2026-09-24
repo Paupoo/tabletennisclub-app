@@ -75,7 +75,7 @@ final class AllocateTransactionAction
     }
 
     /**
-     * I1 : la somme affectée ne dépasse jamais ce que la banque a bougé.
+     * I1 : la somme affectée ne dépasse jamais le montant de la ligne de relevé.
      *
      * Compté en centimes, parce que c'est l'unité de stockage : comparer des
      * euros flottants ferait dépendre un invariant comptable d'un arrondi.

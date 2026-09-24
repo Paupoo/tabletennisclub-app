@@ -37,6 +37,12 @@ it('offers a reader no bank import and no deletion', function (): void {
         ->assertDontSee('openConfirmDeleteModal');
 });
 
+it('does not invite a reader to import a bank statement from the payments', function (): void {
+    Livewire::actingAs($this->reader)
+        ->test('pages::club-admin.treasury.payments')
+        ->assertDontSee(__('Import a bank statement'));
+});
+
 it('refuses a reader the deletion of bank lines', function (): void {
     Livewire::actingAs($this->reader)
         ->test('pages::club-admin.treasury.transactions')

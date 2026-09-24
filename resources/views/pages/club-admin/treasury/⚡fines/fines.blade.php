@@ -6,8 +6,10 @@
     <x-header progress-indicator separator :subtitle="__('Federation fines passed on to members')" :title="__('Fines')">
         <x-slot:actions>
             <x-admin.shared.filters-button :count="count($filterChips)" class="btn-sm" />
-            <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Issue a fine')"
-                wire:click="openFineDrawer" />
+            @can('fines.issue')
+                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Issue a fine')"
+                    wire:click="openFineDrawer" />
+            @endcan
         </x-slot:actions>
     </x-header>
 
@@ -53,7 +55,7 @@
                                 @endif
                             </div>
 
-                            @if (! $fine->payment || $fine->payment->status !== 'paid')
+                            @if ((! $fine->payment || $fine->payment->status !== 'paid') && auth()->user()->can('fines.cancel'))
                                 <x-dropdown icon="o-ellipsis-vertical" class="btn-ghost btn-sm btn-circle" right>
                                     <x-menu-item icon="o-x-circle" :title="__('Cancel this fine')"
                                         wire:click="confirmCancel({{ $fine->id }})" />

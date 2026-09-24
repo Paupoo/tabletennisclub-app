@@ -175,7 +175,8 @@
 
     {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
     <x-card class="hidden bg-base-100 shadow-sm rounded-t-none lg:block">
-        <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$payments" :sort-by="$sortBy" wire:model.live="selected" selectable hover>
+        {{-- The bulk actions are reminders and refunds: without either, nothing to select for. --}}
+        <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$payments" :sort-by="$sortBy" wire:model.live="selected" :selectable="auth()->user()->canAny(['payments.remind', 'payments.refund'])" hover>
 
             @scope('cell_reference', $payment)
             <span class="font-mono text-sm tracking-tight text-primary">{{ $payment->reference }}</span>

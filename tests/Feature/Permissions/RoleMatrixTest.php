@@ -50,6 +50,38 @@ describe('matrix invariants', function (): void {
     })->with(CommitteeRolesEnum::cases());
 });
 
+describe('the committee reads the club', function (): void {
+    /*
+     * Transparency, decided on 2026-09-24: a committee seat reads every
+     * functional area of the club. Supervision (audit log, queue) is technical,
+     * and the attestations screen issues sealed documents — neither is here on
+     * purpose. Changing this list is a decision; this test makes it a visible one.
+     */
+    it('holds exactly the reading rights decided for it', function (): void {
+        expect(array_map(static fn (Permission $p): string => $p->value, Role::COMMITTEE->permissions()))
+            ->toEqualCanonicalizing([
+                'users.view',
+                'subscriptions.view',
+                'payments.view',
+                'transactions.view',
+                'fines.view',
+                'cash_register.view',
+                'contacts.view',
+                'news_posts.view',
+                'interclubs.view',
+                'tournaments.view',
+                'trainings.view',
+                'meetings.view',
+                'seasons.view',
+                'facilities.view',
+            ]);
+    });
+
+    it('lets the facilities délégation read what it manages', function (): void {
+        expect(Role::FACILITIES->permissions())->toContain(Permission::FacilitiesView);
+    });
+});
+
 describe('what a délégation actually grants', function (): void {
     it('keeps bar access with the two operational bar roles', function (): void {
         expect(Role::BARMAN->permissions())

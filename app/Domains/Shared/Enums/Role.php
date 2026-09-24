@@ -230,14 +230,18 @@ enum Role: string
                 Permission::ClubUpdate,
             ],
 
+            // Transparency (decided 2026-09-24): a committee seat reads every
+            // functional area of the club, finances and fines included. Left
+            // out on purpose: the audit log and the queue, which are technical
+            // supervision, and the attestations, a screen that issues sealed
+            // documents rather than one that shows anything to read.
             self::COMMITTEE => [
                 Permission::UsersView,
                 Permission::SubscriptionsView,
                 Permission::PaymentsView,
-                // Deliberately not FinesView: fines are named disciplinary records.
-                // The club restricted them before this refactor, and a security
-                // refactor must not widen access as a side effect. Move it here if
-                // the committee should see them — it is a one-line decision.
+                Permission::TransactionsView,
+                Permission::FinesView,
+                Permission::CashRegisterView,
                 Permission::ContactsView,
                 Permission::NewsPostsView,
                 Permission::InterclubsView,
@@ -245,6 +249,7 @@ enum Role: string
                 Permission::TrainingsView,
                 Permission::MeetingsView,
                 Permission::SeasonsView,
+                Permission::FacilitiesView,
             ],
 
             self::TREASURY => [
@@ -353,6 +358,7 @@ enum Role: string
                 Permission::BarStockManage,
             ],
             self::FACILITIES => [
+                Permission::FacilitiesView,
                 Permission::RoomsManage,
                 Permission::TablesManage,
                 Permission::EquipmentHolderUpdate,

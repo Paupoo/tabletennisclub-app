@@ -6,8 +6,10 @@
     <x-header :title="__('Key rings')" :subtitle="__('Who holds which key ring, and which ones are in the drawer')"
         separator progress-indicator>
         <x-slot:actions>
-            <x-button :label="__('Create a key ring')" icon="o-plus" class="btn-primary btn-sm"
-                wire:click="openCreate" />
+            @if ($this->mayManage)
+                <x-button :label="__('Create a key ring')" icon="o-plus" class="btn-primary btn-sm"
+                    wire:click="openCreate" />
+            @endif
         </x-slot:actions>
     </x-header>
 
@@ -47,6 +49,7 @@
                     <span class="text-sm text-base-content/60">{{ $keyRing->notes }}</span>
                 @endif
 
+                @if ($this->mayManage)
                 <div class="ml-auto flex items-center gap-2">
                     @if ($keyRing->trashed())
                         <x-button :label="__('Put back in service')" icon="o-arrow-path" class="btn-ghost btn-sm"
@@ -58,6 +61,7 @@
                             wire:click="openRetire({{ $keyRing->id }})" />
                     @endif
                 </div>
+                @endif
             </div>
         @empty
             <x-empty-state icon="o-key" :heading="__('No key ring yet')"

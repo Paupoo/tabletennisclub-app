@@ -170,12 +170,15 @@ it('refuses access to a member who cannot manage finances', function (): void {
         ->assertForbidden();
 });
 
-it('refuses access to a committee member without the fines delegation', function (): void {
+it('lets a committee member without the fines delegation read, not fine', function (): void {
     $secretary = User::factory()->isCommitteeMember()->create([
         'committee_role' => CommitteeRolesEnum::SECRETARY,
     ]);
 
     Livewire::actingAs($secretary)
         ->test(FINES_COMPONENT)
+        ->assertOk()
+        ->assertDontSee('openFineDrawer')
+        ->call('openFineDrawer')
         ->assertForbidden();
 });

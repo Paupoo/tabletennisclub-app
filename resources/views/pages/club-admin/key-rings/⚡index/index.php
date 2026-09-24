@@ -148,6 +148,16 @@ new class extends Component
             : __(':ring has been moved.', ['ring' => $keyRing->label()]));
     }
 
+    /**
+     * Whether the visitor hands key rings over, or only reads who holds them:
+     * the committee reads it at the baseline.
+     */
+    #[Computed]
+    public function mayManage(): bool
+    {
+        return Gate::allows(Permission::EquipmentHolderUpdate->value);
+    }
+
     public function openCreate(): void
     {
         Gate::authorize(Permission::EquipmentHolderUpdate->value);

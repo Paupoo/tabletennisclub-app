@@ -24,6 +24,8 @@ new class extends Component
 
     public function confirmDeleteRoom(int $id): void
     {
+        $this->authorize('delete', Room::findOrFail($id));
+
         $this->deletingRoomId = $id;
         $this->deleteRoomModal = true;
     }

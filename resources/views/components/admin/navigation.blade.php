@@ -89,7 +89,7 @@
 
     <li><x-menu-separator /></li>
 
-    @canany(['club.update', 'seasons.view', 'rooms.manage', 'equipment.holder.update'])
+    @canany(['club.update', 'seasons.view', 'facilities.view'])
     <x-menu-sub icon="o-building-office" :title="__('Club Settings')">
         @can('club.update')
         <x-menu-item icon="o-identification" link="{{ route('admin.club-info') }}" :title="__('Informations')" />
@@ -97,10 +97,10 @@
         @can('seasons.view')
         <x-menu-item icon="o-calendar" link="{{ route('admin.seasons.index') }}" :title="__('Seasons')" />
         @endcan
-        @can('rooms.manage')
+        @can('facilities.view')
         <x-menu-item icon="o-building-office-2" link="{{ route('admin.rooms.index') }}" :title="__('Rooms')" />
         @endcan
-        @can('equipment.holder.update')
+        @can('facilities.view')
         <x-menu-item icon="o-key" link="{{ route('admin.key-rings.index') }}" :title="__('Key rings')" />
         @endcan
     </x-menu-sub>

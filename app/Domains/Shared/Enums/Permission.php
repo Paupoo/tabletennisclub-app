@@ -56,6 +56,9 @@ enum Permission: string
     case ContactsView = 'contacts.view';
     case EquipmentHolderUpdate = 'equipment.holder.update';
     case EventPostsManage = 'event_posts.manage';
+
+    // Installations
+    case FacilitiesView = 'facilities.view';
     case FinesCancel = 'fines.cancel';
     case FinesIssue = 'fines.issue';
 

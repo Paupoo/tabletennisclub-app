@@ -106,6 +106,8 @@ new class extends Component
 
     public function openManualEntry(): void
     {
+        Gate::authorize(Permission::CashRegisterEntryCreate->value);
+
         $this->reset(['entryAmount', 'entryReason', 'entryNotes']);
         $this->entryReason = 'manual';
         $this->manualEntryModal = true;
@@ -190,6 +192,8 @@ new class extends Component
 
     public function saveManualEntry(): void
     {
+        Gate::authorize(Permission::CashRegisterEntryCreate->value);
+
         $this->validate([
             'entryAmount' => 'required|integer|not_in:0',
             'entryReason' => 'required|string',

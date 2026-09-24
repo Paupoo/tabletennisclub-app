@@ -21,6 +21,8 @@ class BarPaymentController extends Controller
 {
     public function pay(Request $request, BarOrder $order, RecordBarOrderPayment $recordPayment): RedirectResponse
     {
+        abort_unless($request->user()?->can(Permission::BarOrdersPay->value), 403);
+
         $validated = $request->validate([
             'method' => 'required|in:cash,offered,qr',
             'reason' => 'nullable|string|max:255',

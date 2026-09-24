@@ -881,6 +881,18 @@ new class extends Component
         ];
     }
 
+    /**
+     * Whether the visitor acts on the requests, or only reads them.
+     *
+     * The committee reads every request at the baseline: the screen then invites
+     * it to consult, never to review, and locks what only an acceptance uses.
+     */
+    #[Computed]
+    public function mayManage(): bool
+    {
+        return Gate::allows(Permission::SubscriptionsManage->value);
+    }
+
     public function mount(): void
     {
         Gate::authorize(Permission::SubscriptionsView->value);

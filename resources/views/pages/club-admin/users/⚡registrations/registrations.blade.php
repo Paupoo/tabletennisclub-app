@@ -101,8 +101,9 @@
                                 <div class="text-sm font-semibold">{{ $sub->user->first_name }} {{ $sub->user->last_name }}</div>
                                 <div class="mt-0.5 text-xs text-muted">{{ __('New affiliation request') }}</div>
                             </div>
-                            <x-button :label="__('Review')" icon="o-check-circle"
-                                class="btn-sm btn-warning"
+                            <x-button :label="$this->mayManage ? __('Review') : __('Consult')"
+                                :icon="$this->mayManage ? 'o-check-circle' : 'o-eye'"
+                                :class="$this->mayManage ? 'btn-sm btn-warning' : 'btn-sm btn-ghost'"
                                 wire:click="review({{ $sub->id }})" />
                         </div>
                     @endforeach
@@ -116,8 +117,9 @@
                                     @endforeach
                                 </div>
                             </div>
-                            <x-button :label="__('Review')" icon="o-academic-cap"
-                                class="btn-sm btn-warning"
+                            <x-button :label="$this->mayManage ? __('Review') : __('Consult')"
+                                :icon="$this->mayManage ? 'o-academic-cap' : 'o-eye'"
+                                :class="$this->mayManage ? 'btn-sm btn-warning' : 'btn-sm btn-ghost'"
                                 wire:click="reviewTrainingRequest({{ $sub->id }})" />
                         </div>
                     @endforeach
@@ -446,11 +448,12 @@
                     <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Federation details') }}</h3>
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <x-input :label="__('Licence number')" mandatory numeric wire:model.live.debounce="reviewLicence"
-                            :hint="__('6 digits')" />
+                            :hint="__('6 digits')" :disabled="! $this->mayManage" />
                         <x-select :options="$rankings" icon="o-scale" :label="__('Ranking')" mandatory
-                            wire:model.live="reviewRanking" />
+                            wire:model.live="reviewRanking" :disabled="! $this->mayManage" />
                     </div>
-                    @if (blank($reviewLicence) || blank($reviewRanking) || $reviewRanking === 'NA')
+                    {{-- Addressed to whoever accepts: a reader accepts nothing. --}}
+                    @if ($this->mayManage && (blank($reviewLicence) || blank($reviewRanking) || $reviewRanking === 'NA'))
                         <x-alert icon="o-information-circle" class="alert-info mt-3">
                             <span class="text-sm">
                                 {{ __('A licence number and a ranking are required to accept an affiliation. An unranked player is NC, not N/A.') }}
@@ -478,7 +481,7 @@
                         <div class="space-y-2">
                             @foreach ($currentRequest->pending_packs as $pack)
                                 <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-base-300 p-3 transition-colors hover:border-primary/30 has-checked:border-primary/20 has-checked:bg-primary/5">
-                                    <input type="checkbox" wire:model.live="approvedPackIds" value="{{ $pack->id }}"
+                                    <input type="checkbox" wire:model.live="approvedPackIds" value="{{ $pack->id }}" @disabled(! $this->mayManage)
                                         class="checkbox checkbox-primary checkbox-sm shrink-0" />
                                     <div class="min-w-0 flex-1">
                                         <div class="text-sm font-semibold">{{ $pack->name }}</div>
@@ -487,7 +490,9 @@
                                 </label>
                             @endforeach
                         </div>
+                        @if ($this->mayManage)
                         <p class="mt-2 text-xs italic text-muted">{{ __('Unchecked packs will be removed from the request.') }}</p>
+                    @endif
                     </div>
                 @endif
 
@@ -563,7 +568,7 @@
         @endif
 
         {{-- Raison de refus (uniquement en review pending) --}}
-        @if (! $paymentGenerated && $currentRequest && $currentRequest->status === 'pending')
+        @if ($this->mayManage && ! $paymentGenerated && $currentRequest && $currentRequest->status === 'pending')
             <div x-data="{ rejectOpen: false }" class="mt-4">
                 <button type="button" @click="rejectOpen = !rejectOpen"
                     class="flex items-center gap-1.5 text-xs text-error opacity-60 transition-opacity hover:opacity-100">
@@ -660,7 +665,7 @@
                                 $discounted = $inApproved && ($pb['discounted'] ?? false);
                             @endphp
                             <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-base-300 p-3 transition-colors hover:border-warning/30 has-checked:border-warning/20 has-checked:bg-warning/5">
-                                <input type="checkbox" wire:model.live="approvedPackIds" value="{{ $pack->id }}"
+                                <input type="checkbox" wire:model.live="approvedPackIds" value="{{ $pack->id }}" @disabled(! $this->mayManage)
                                     class="checkbox checkbox-warning checkbox-sm shrink-0" />
                                 <div class="min-w-0 flex-1">
                                     <div class="text-sm font-semibold">{{ $pack->name }}</div>
@@ -677,7 +682,9 @@
                             </label>
                         @endforeach
                     </div>
-                    <p class="mt-2 text-xs italic text-muted">{{ __('Unchecked packs will be removed from the request.') }}</p>
+                    @if ($this->mayManage)
+                        <p class="mt-2 text-xs italic text-muted">{{ __('Unchecked packs will be removed from the request.') }}</p>
+                    @endif
 
                     @if (! empty($bd['retro_adjustments'] ?? []))
                         <div class="mt-3 space-y-2 rounded-xl border border-info/20 bg-info/5 p-3">
@@ -731,7 +738,7 @@
             </div>
         @endif
 
-        @if (! $paymentGenerated && $currentTrainingRequest)
+        @if ($this->mayManage && ! $paymentGenerated && $currentTrainingRequest)
             <div x-data="{ rejectOpen: false }" class="mt-4">
                 <button type="button" @click="rejectOpen = !rejectOpen"
                     class="flex items-center gap-1.5 text-xs text-error opacity-60 transition-opacity hover:opacity-100">

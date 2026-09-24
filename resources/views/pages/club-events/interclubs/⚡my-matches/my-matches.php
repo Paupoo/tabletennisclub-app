@@ -97,7 +97,9 @@ new class extends Component
             'visitingTeam.league',
             'league',
         ])
-            ->withCount(['users as selected_count' => fn ($q) => $q->where('interclub_user.is_selected', true)])
+            // Ceux qui jouent : le WO figure sur la feuille mais pas à la table.
+            ->withCount(['users as selected_count' => fn ($q) => $q->where('interclub_user.is_selected', true)
+                ->where('interclub_user.is_walkover', false)])
             ->withoutByes()
             ->where(function ($q) use ($teamIds): void {
                 $q->whereIn('visited_team_id', $teamIds)

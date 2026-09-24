@@ -80,7 +80,13 @@ class UserFactory extends Factory
 
             return [
                 'licence' => $unusedLicence,
-                'ranking' => fake()->randomElement(array_column(Ranking::cases(), 'name')),
+                // Jamais NA : un NA n'a pas d'indice de force, donc ne peut être
+                // ni cherché ni aligné. Tiré au hasard, il faisait échouer une
+                // fois sur dix-huit tout test qui compose une équipe.
+                'ranking' => fake()->randomElement(array_column(
+                    array_filter(Ranking::cases(), fn (Ranking $ranking): bool => $ranking !== Ranking::NA),
+                    'name',
+                )),
             ];
         })->afterCreating(function (User $user): void {
             $season = Season::current() ?? Season::inRandomOrder()->first();

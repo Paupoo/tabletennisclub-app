@@ -31,14 +31,17 @@ Chaque ligne correspond à un match interclub. De gauche à droite :
 | Couleur | Statut | Signification |
 |---|---|---|
 | 🟢 Vert | **Confirmée** | La sélection a été envoyée à l'équipe — rien à faire |
-| 🟡 Orange | **À confirmer** | Assez de joueurs dispos ou sélection complète, mais pas encore envoyée |
-| 🔴 Rouge | **Attention** | Match dans les 14 jours et pas assez de disponibilités reçues |
+| 🔵 Bleu | **Compo à envoyer** | Sélection complète enregistrée, mais pas encore envoyée à l'équipe. Un bouton **Envoyer** figure sur la ligne |
+| 🟡 Orange | **Prête à composer** | Assez de joueurs disponibles, mais pas encore de sélection complète |
+| 🔴 Rouge | **Attention** | Match dans les 14 jours dont la compo n'est pas partie : le club vise un envoi à J-14 au plus tard |
 | ⚪ Gris clair | **À venir** | Match lointain, sans urgence |
 | ◼ Gris foncé | **Passé** | Match terminé |
 
 Une ligne rouge a aussi un fond légèrement teinté pour attirer l'œil.
 
-Une sélection **déclarée à 3** (voir « Jouer à 3 » plus bas) et envoyée est **verte**, comme une sélection complète : pour vous, elle est réglée. En revanche, une sélection envoyée à 4 puis amputée d'un joueur **sans** déclaration repasse en rouge ou orange : l'application ne la considère plus comme réglée.
+Une sélection **déclarée à 3** (voir « Jouer à 3 » plus bas) et envoyée est **verte**, comme une sélection complète : pour vous, elle est réglée. En revanche, une sélection envoyée à 4 puis amputée d'un joueur **sans** joueur WO repasse en rouge ou orange : l'application ne la considère plus comme réglée.
+
+Sur un match **déjà joué**, le bouton **Consulter** rouvre la composition en lecture seule.
 
 ### Bandeau d'alerte
 
@@ -75,30 +78,38 @@ En dessous, la **liste des membres de l'équipe** s'affiche. Pour chaque joueur 
 
 ### Sélectionner / désélectionner un joueur
 
-Cliquez sur la carte d'un joueur pour le basculer dans ou hors de la sélection. Un joueur **bloqué** (icône cadenas 🔒) est déjà sélectionné dans une autre équipe cette semaine — il ne peut pas être sélectionné.
+Cliquez sur la carte d'un joueur pour le basculer dans ou hors de la sélection. Un joueur **bloqué** (icône cadenas 🔒) ne peut pas être sélectionné : il est déjà aligné dans une autre équipe cette semaine, la règle C.22 l'interdit, ou il n'a **pas d'indice de force** (sans place sur la liste des forces, pas de feuille de match — art. C.18.2.2). Le motif est écrit sous son nom.
 
 > **Conseil :** Privilégiez les joueurs avec le badge **Disponible** (vert). Les joueurs sans réponse peuvent être sélectionnés, mais informez-les directement.
 
 ### Enregistrer sans envoyer
 
-Cliquez sur **Enregistrer la sélection**. La sélection est sauvegardée et le statut du match passe à **À confirmer** (orange). Vous pouvez revenir la modifier avant d'envoyer la feuille.
+Cliquez sur **Enregistrer la sélection**. La sélection est sauvegardée et le statut du match passe à **Compo à envoyer** (bleu). **Vos joueurs ne savent encore rien** : la tâche n'est finie qu'une fois la feuille envoyée (section 5).
 
 ### Jouer à 3
 
 Le règlement permet à une équipe messieurs de **débuter à 3 joueurs sur 4** (art. C.25.6), et à une équipe dames, jeunes ou vétérans à **2 sur 3** (art. C.25.7). Moins, c'est un forfait.
 
 1. **Cherchez d'abord un 4e joueur** : les joueurs libres de la journée, ou un joueur d'une équipe inférieure, en respectant son indice (art. C.22.1.1), la règle du 3e joueur effectif de l'équipe supérieure (art. C.22.1.3) et la règle d'un seul match par semaine (art. C.20.1).
-2. **Faute de mieux, jouez à 3.** Au minimum, une case apparaît sous la barre de progression : *« Je n'ai trouvé aucun autre joueur… nous jouerons à 3 »*. **Sans elle, la sélection reste un brouillon et personne n'est convoqué.**
-3. **Cochée**, la fenêtre d'envoi s'ouvre avec un rappel : les matchs du joueur manquant seront perdus. Les convoqués lisent dans leur e-mail que l'équipe joue à 3 ; les autres membres de l'équipe reçoivent un appel à se manifester s'ils se libèrent.
+2. **Faute de mieux, désignez le joueur WO.** Au minimum, le bloc **« Toujours à 3 ? Désignez le joueur WO »** apparaît **en bas du tiroir**, après les joueurs libres et la recherche. Le joueur WO figure sur la feuille de match mais ne joue pas : il perd ses matchs et **ne peut être aligné dans aucune autre équipe de la catégorie cette semaine** (art. C.20.1). Les indisponibles et ceux qui n'ont pas répondu sont proposés en premier. **Sans joueur WO, la sélection reste un brouillon et personne n'est convoqué.**
+3. **À l'enregistrement**, la fenêtre d'envoi s'ouvre avec un rappel : les matchs du joueur manquant seront perdus. Tous les e-mails de composition annoncent que l'équipe joue à 3 et marquent le joueur **WO** ; les autres membres de l'équipe reçoivent un appel à se manifester s'ils se libèrent.
 4. **Sous le minimum**, l'application enregistre sans envoyer et vous rappelle de prévenir le forfait **au moins 48 heures avant** (art. C.33.1).
 
-La déclaration est enregistrée avec votre nom et la date. Elle tombe si vous trouvez un 4e joueur ou si l'équipe passe sous le minimum ; elle survit à l'échange d'un joueur contre un autre.
+Le joueur WO passe les mêmes contrôles que les autres (indice de force, C.22, un match par semaine), mais ne compte **jamais** dans le seuil C.22 des équipes inférieures : seul un joueur qui a joué un point est effectif (art. C.22.1.3).
+
+La déclaration est enregistrée avec votre nom et la date. Elle tombe si vous cochez un vrai 4e joueur (il prend la place du WO), si vous retirez le joueur WO ou si l'équipe passe sous le minimum ; elle survit à l'échange d'un joueur contre un autre.
 
 ---
 
 ## 5. Envoyer la feuille à l'équipe
 
 Une fois la sélection enregistrée, une fenêtre **Notifier l'équipe** s'ouvre automatiquement.
+
+**Le club vise un envoi au moins deux semaines avant chaque match**, pour que chacun puisse s'organiser. N'attendez pas d'être certain de tout : une modification reste possible jusqu'au jour du match, et **seuls les joueurs ajoutés ou retirés sont prévenus**. Pour ne rien oublier :
+
+- une compo enregistrée mais pas envoyée porte un bouton **Envoyer** sur la ligne du match ;
+- votre tableau de bord affiche **« N compos à envoyer à votre équipe »** ;
+- chaque **dimanche à 18 h**, un e-mail liste vos matchs des trois semaines à venir dont la compo n'est pas partie (rien n'est envoyé si tout est parti).
 
 ### Ce que reçoivent les joueurs
 
@@ -116,7 +127,7 @@ Cliquez sur le bouton d'envoi. Le statut du match passe à **Confirmée** (vert)
 
 ### Ne pas envoyer maintenant
 
-Si vous voulez sauvegarder sans notifier l'équipe, cliquez sur **Ne pas envoyer**. La sélection est enregistrée mais aucun email n'est envoyé. Le statut reste **À confirmer** (orange).
+Si vous voulez sauvegarder sans notifier l'équipe, cliquez sur **Envoyer plus tard**. La sélection est enregistrée mais aucun email n'est envoyé, et un message orange vous le rappelle. Le statut reste **Compo à envoyer** (bleu) jusqu'à l'envoi.
 
 ---
 

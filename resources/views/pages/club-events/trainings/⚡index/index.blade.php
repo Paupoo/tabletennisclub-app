@@ -1117,6 +1117,10 @@
             {{ __('Leave empty to start today. Set an earlier date to bill the months already attended.') }}
         </p>
 
+        <div class="mt-4">
+            <x-admin.shared.inline-discount :mode="$inlineDiscountMode" />
+        </div>
+
         <x-slot:actions>
             <x-button :label="__('Cancel')" wire:click="$set('addMemberModal', false)" />
             <x-button :label="__('Add the member')" class="btn-primary" wire:click="addMemberToPack" spinner />

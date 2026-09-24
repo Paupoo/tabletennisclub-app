@@ -168,6 +168,12 @@ Si les inscriptions sont encore ouvertes, vous pouvez vous désinscrire depuis l
 
 Accès via **Mon espace → Calendrier** ou la section interclubs. Consultez vos matchs interclubs planifiés, incluant la date, l'adversaire et le lieu.
 
+En mode **Tout le club**, chaque tuile de match du calendrier s'ouvre aussi, même pour une équipe qui n'est pas la vôtre : vous y lisez la date, le lieu, la composition envoyée et le nom du capitaine (ses coordonnées seulement s'il a choisi de les partager).
+
+### Pour la feuille de match
+
+La page du match rassemble tout ce qu'il faut recopier le jour J : le **n° de match** de la fédération, la catégorie, la division et la série, la semaine, et les deux clubs avec leur **matricule**. La composition y est triée dans l'ordre de la feuille — indice de force, puis nom et prénom — avec le classement et la licence de chaque joueur, et la mention **WO** pour un joueur inscrit mais absent.
+
 ### Disponibilités
 
 Avant chaque journée d'interclubs, le capitaine peut demander vos disponibilités. Répondez **Disponible / Indisponible** directement depuis la notification email ou depuis la section interclubs.

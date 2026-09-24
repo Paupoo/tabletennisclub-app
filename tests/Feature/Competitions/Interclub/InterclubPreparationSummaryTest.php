@@ -182,7 +182,9 @@ it('colours each cell of the team by week matrix', function (): void {
 
     expect($summary['matrix'][$id('C')])->toBe([
         1 => 'past',
-        2 => 'actionable',
+        // Assez de disponibles, mais à moins de deux semaines sans compo
+        // envoyée : à traiter (objectif J-14, décidé le 2026-09-24).
+        2 => 'urgent',
         // No fixture that week — the cell stays empty.
         3 => null,
         4 => 'future',
@@ -537,4 +539,29 @@ it('keeps a short-handed fixture visible in the season overview without failing 
         ->assertSee('dont 1 rencontre à effectif réduit')
         ->assertSee('Sous contrôle — effectif réduit')
         ->assertSeeHtml('ring-warning');
+});
+
+/*
+| Problème 8, piste D1 : combien de jours avant le match chaque équipe envoie sa
+| compo, en moyenne. Sans mesure, on ne saurait pas si les relances servent.
+*/
+it('measures how many days ahead each team sends its lineup', function (): void {
+    $a = $this->teams['A'];
+
+    $first = scheduleMatch($a, 1, '2026-01-08 19:45:00');
+    $second = scheduleMatch($a, 2, '2026-01-22 19:45:00');
+    $unsent = scheduleMatch($a, 3, '2026-01-29 19:45:00');
+
+    foreach ([[$first, '2025-12-29 10:00:00'], [$second, '2026-01-02 10:00:00']] as [$match, $sentAt]) {
+        foreach ($a->users->take(2) as $player) {
+            $match->users()->attach($player->id, ['is_selected' => true, 'selection_confirmed_at' => $sentAt]);
+        }
+    }
+    selectPlayers($unsent, $a, 2);
+
+    $row = collect(summaryFor($this->admin)['teams'])->firstWhere('id', $a->id);
+
+    // 10 jours puis 20 jours avant : 15 en moyenne. La compo jamais envoyée ne compte pas.
+    expect($row['lead_days'])->toBe(15)
+        ->and(collect(summaryFor($this->admin)['teams'])->firstWhere('id', $this->teams['B']->id)['lead_days'])->toBeNull();
 });

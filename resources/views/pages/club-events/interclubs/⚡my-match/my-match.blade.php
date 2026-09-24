@@ -203,6 +203,35 @@
         @endif
     </div>
 
+    {{-- ── Pour la feuille de match ──────────────────────────────────────────
+         Tout ce que la feuille demande, pour ne rien chercher à la table. Les
+         joueurs viennent juste en dessous, dans l'ordre de la feuille. --}}
+    <x-card class="mb-6 shadow-sm" :title="__('For the match sheet')" icon="o-clipboard-document-list" separator data-sheet-info>
+        <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
+            @foreach ([
+                __('Match number') => $sheetInfo['match_number'],
+                __('Category') => $sheetInfo['category'],
+                __('Division') => $sheetInfo['division'],
+                __('Series') => $sheetInfo['series'],
+                __('Week') => $sheetInfo['week'],
+            ] as $label => $value)
+                <div class="min-w-0">
+                    <dt class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ $label }}</dt>
+                    <dd class="font-semibold tabular-nums text-base-content">{{ $value ?? '—' }}</dd>
+                </div>
+            @endforeach
+        </dl>
+        <dl class="mt-4 grid gap-3 border-t border-base-300 pt-4 text-sm sm:grid-cols-2">
+            @foreach ([__('Visited club') => $sheetInfo['home'], __('Visiting club') => $sheetInfo['away']] as $label => $side)
+                <div class="min-w-0">
+                    <dt class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ $label }}</dt>
+                    <dd class="truncate font-semibold text-base-content">{{ $side['name'] }}</dd>
+                    <dd class="text-xs tabular-nums text-base-content/70">{{ __('Club licence') }} : {{ $side['licence'] ?? '—' }}</dd>
+                </div>
+            @endforeach
+        </dl>
+    </x-card>
+
     {{-- ── Composition et mot du capitaine ────────────────────────────────── --}}
     <div class="grid gap-6 lg:grid-cols-2">
         <x-card class="shadow-sm" :title="__('Line-up')" icon="o-user-group" separator>
@@ -222,11 +251,20 @@
                 @endif
                 <div class="divide-y divide-base-200">
                     @foreach ($lineup as $player)
+                        @php $forceIndex = $player->forceListFor($lineupCategory); @endphp
                         <div class="flex items-center gap-3 py-2.5" wire:key="lineup-{{ $player->id }}">
-                            <x-icon name="o-user" class="h-4 w-4 shrink-0 text-base-content/30" />
-                            <span class="min-w-0 flex-1 truncate text-sm font-semibold text-base-content">
-                                {{ $player->full_name }}
+                            <span class="w-10 shrink-0 rounded-lg bg-base-200 py-1 text-center text-xs font-bold tabular-nums text-base-content/70">
+                                {{ $forceIndex === null ? '—' : '#' . $forceIndex }}
                             </span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block truncate text-sm font-semibold text-base-content">{{ $player->full_name }}</span>
+                                <span class="block text-xs tabular-nums text-base-content/60">
+                                    {{ $player->ranking?->getLabel() }}@if ($player->licence) · {{ $player->licence }}@endif
+                                </span>
+                            </span>
+                            @if ($player->registration?->is_walkover)
+                                <x-badge class="badge-warning badge-xs font-bold" value="WO" />
+                            @endif
                             @if ($player->id === auth()->id())
                                 <x-badge class="badge-primary badge-xs font-bold" :value="__('You')" />
                             @endif
@@ -309,8 +347,10 @@
             @endif
         </x-card>
 
-        <x-card class="shadow-sm" :title="__('Your captain')" icon="o-megaphone" separator>
-            @if ($interclub->captain_message)
+        <x-card class="shadow-sm" :title="$isTeamMember ? __('Your captain') : __('Captain')" icon="o-megaphone" separator>
+            {{-- Le mot du capitaine s'adresse à l'équipe : covoiturage, rendez-vous,
+                 un tel en retard. Un visiteur du calendrier du club ne le lit pas. --}}
+            @if ($isTeamMember && $interclub->captain_message)
                 <p class="mb-5 whitespace-pre-line rounded-xl border border-base-300 bg-base-200/50 p-4 text-sm italic text-base-content">
                     “{{ $interclub->captain_message }}”
                 </p>
@@ -325,17 +365,17 @@
                 </div>
 
                 <div class="mt-3 flex flex-wrap gap-2">
-                    @if ($captain->phone_number)
+                    @if ($captainPhoneVisible && $captain->phone_number)
                         <x-button :label="$captain->phone_number" icon="o-phone" class="btn-outline btn-sm"
                             link="tel:{{ $captain->phone_number }}" no-wire-navigate />
                     @endif
-                    @if ($captain->email)
+                    @if ($captainEmailVisible && $captain->email)
                         <x-button :label="__('Send an email')" icon="o-envelope" class="btn-outline btn-sm"
                             link="mailto:{{ $captain->email }}" no-wire-navigate />
                     @endif
                 </div>
 
-                @if ($lineupPublished && ! $isPast)
+                @if ($isTeamMember && $lineupPublished && ! $isPast)
                     <x-admin.shared.info-alert class="mt-4" icon="o-information-circle">
                         {{ __('The line-up has been sent. If you can no longer play, contact your captain directly — changing an answer here would not warn anyone.') }}
                     </x-admin.shared.info-alert>

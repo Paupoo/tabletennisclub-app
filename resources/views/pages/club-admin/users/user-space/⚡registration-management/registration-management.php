@@ -435,9 +435,17 @@ new class extends Component
 
     public function openPaymentModal(int $userId, int $paymentId): void
     {
-        $payment = Payment::find($paymentId);
+        $payment = Payment::with(['discounts', 'payable'])->find($paymentId);
 
-        if (! $payment) {
+        // Seulement une affiliation de quelqu'un que cet écran montre : le
+        // membre et sa famille, recalculés ici plutôt que lus dans
+        // `$registrations`, que le navigateur peut réécrire. Sans ce garde,
+        // n'importe quel identifiant ouvrait la communication d'un autre.
+        $inScope = $payment?->payable instanceof Subscription
+            && $payment->payable->user_id === $userId
+            && in_array($userId, $this->user->familyMembers()->pluck('id')->push($this->user->id)->all(), true);
+
+        if (! $inScope) {
             $this->error(__('No payment found. Please contact the club.'));
 
             return;
@@ -451,6 +459,11 @@ new class extends Component
             'bic' => Club::ourClub()->first()->bic,
             'beneficiary' => 'CTT Ottignies-Blocry ASBL',
             'qr_code' => (new GeneratePaymentQR)($payment),
+            'amount_before_discounts' => $payment->amountBeforeDiscounts(),
+            'discounts' => $payment->discounts
+                ->map(fn ($discount): array => ['amount' => $discount->amount, 'reason' => $discount->reason])
+                ->values()
+                ->all(),
         ];
         $this->paymentModal = true;
     }
@@ -532,7 +545,7 @@ new class extends Component
 
         // All subscriptions for history (all seasons, including cancelled)
         $allSubs = Subscription::whereIn('user_id', $userIds)
-            ->with(['season', 'trainingPacks', 'payments'])
+            ->with(['season', 'trainingPacks', 'payments.discounts', 'discounts'])
             ->orderByDesc('created_at')
             ->get()
             ->groupBy('user_id');
@@ -557,6 +570,13 @@ new class extends Component
                     'is_competitive' => $sub->is_competitive,
                     'amount_due' => $sub->amount_due,
                     'amount_paid' => $sub->amount_paid,
+                    // Toutes les remises de l'affiliation, liées ou non à une
+                    // communication : c'est le prix de la saison qu'elles expliquent.
+                    'amount_before_discounts' => round((float) $sub->amount_due + $sub->discounts->sum('amount'), 2),
+                    'discounts' => $sub->discounts
+                        ->map(fn ($d): array => ['amount' => $d->amount, 'reason' => $d->reason])
+                        ->values()
+                        ->toArray(),
                     'enrolled_packs' => $sub->trainingPacks
                         ->filter(fn ($p): bool => in_array($p->pivot->status, ['enrolled', 'pending'], true))
                         ->map(fn ($p): array => [
@@ -573,6 +593,11 @@ new class extends Component
                             'id' => $p->id,
                             'reference' => $p->reference,
                             'amount_due' => (float) $p->amount_due,
+                            'amount_before_discounts' => $p->amountBeforeDiscounts(),
+                            'discounts' => $p->discounts
+                                ->map(fn ($d): array => ['amount' => $d->amount, 'reason' => $d->reason])
+                                ->values()
+                                ->toArray(),
                         ])
                         ->values()
                         ->toArray(),

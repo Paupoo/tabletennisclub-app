@@ -41,6 +41,7 @@
         $dotClass = fn (?string $status): ?string => match ($status) {
             'confirmed' => 'bg-success',
             'short' => 'bg-success ' . $shortRing,
+            'to_send' => 'bg-info',
             'actionable' => 'bg-warning',
             'urgent' => 'bg-error',
             'past' => 'border border-base-300',
@@ -51,6 +52,7 @@
         $statusLabel = fn (?string $status): string => match ($status) {
             'confirmed' => __('Under control'),
             'short' => __('Under control — short-handed'),
+            'to_send' => __('Lineup to send'),
             'actionable' => __('Ready to compose'),
             'urgent' => __('Needs attention'),
             'past' => __('Played'),
@@ -126,13 +128,17 @@
                                 {{ $matchDayMap[$wk['wk']] ?? $wk['wk'] }}
                             </th>
                         @endforeach
+                        {{-- Délai moyen d'envoi : l'objectif du club est J-14. --}}
+                        <th class="whitespace-nowrap pb-2 pl-4 text-right font-bold text-base-content/60" title="{{ __('Average number of days between sending the lineup and the match. The club aims for 14.') }}">
+                            {{ __('Sent') }}
+                        </th>
                     </tr>
                 </thead>
 
                 @foreach ($teamsByCategory as $category => $teams)
                     <tbody>
                         <tr>
-                            <th colspan="{{ count($weekSummary['weeks']) + 1 }}"
+                            <th colspan="{{ count($weekSummary['weeks']) + 2 }}"
                                 class="sticky left-0 z-10 bg-base-50 pb-1 pt-3 text-left text-xs font-bold uppercase tracking-widest text-base-content/60">
                                 {{ $categoryLabels[$category] ?? $category }}
                                 <span class="font-normal normal-case tracking-normal">
@@ -164,6 +170,14 @@
                                         @endif
                                     </td>
                                 @endforeach
+                                <td @class([
+                                    'whitespace-nowrap py-1 pl-4 text-right font-bold tabular-nums',
+                                    'text-base-content/40' => $t['lead_days'] === null,
+                                    'text-success' => $t['lead_days'] !== null && $t['lead_days'] >= 14,
+                                    'text-warning-content' => $t['lead_days'] !== null && $t['lead_days'] < 14,
+                                ]) data-lead-days="{{ $t['id'] }}">
+                                    {{ $t['lead_days'] === null ? '—' : __('D-:n', ['n' => $t['lead_days']]) }}
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -235,6 +249,7 @@
                                     'h-2 flex-1 rounded-sm',
                                     'bg-base-content/30' => $segment === 'past',
                                     'bg-error' => $segment === 'urgent',
+                                    'bg-info' => $segment === 'to_send',
                                     'bg-warning' => $segment === 'actionable',
                                     'bg-success' => in_array($segment, ['confirmed', 'short'], true),
                                     'ring-2 ring-inset ring-warning' => $segment === 'short',
@@ -254,11 +269,11 @@
             {{-- Ce qui demande une action, daté --}}
             @php
                 $actionable = collect($weekSummary['week_rows'])
-                    ->filter(fn (array $r): bool => in_array($r['status'], ['urgent', 'actionable'], true))
+                    ->filter(fn (array $r): bool => in_array($r['status'], \App\Domains\Competitions\Interclub\Services\InterclubPreparationService::TO_DO, true))
                     ->sortBy('starts_at')
                     ->values();
                 $futureRows = collect($weekSummary['week_rows'])
-                    ->reject(fn (array $r): bool => $r['is_past'] || in_array($r['status'], ['urgent', 'actionable'], true))
+                    ->reject(fn (array $r): bool => $r['is_past'] || in_array($r['status'], \App\Domains\Competitions\Interclub\Services\InterclubPreparationService::TO_DO, true))
                     ->sortBy('starts_at')
                     ->values();
                 $playedRows = collect($weekSummary['week_rows'])
@@ -278,6 +293,7 @@
                                 <span @class([
                                     'w-1 shrink-0 self-stretch rounded-full',
                                     'bg-error' => $row['status'] === 'urgent',
+                                    'bg-info' => $row['status'] === 'to_send',
                                     'bg-warning' => $row['status'] === 'actionable',
                                 ]) aria-hidden="true"></span>
                                 <div class="w-16 shrink-0">
@@ -350,6 +366,7 @@
         <div class="hidden flex-wrap items-center gap-x-4 gap-y-2 text-xs text-base-content/60 lg:flex">
             <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-success"></span>{{ __('Under control') }}</span>
             <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-success {{ $shortRing }}"></span>{{ __('Under control — short-handed') }}</span>
+            <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-info"></span>{{ __('Lineup to send') }}</span>
             <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-warning"></span>{{ __('Ready to compose') }}</span>
             <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-error"></span>{{ __('Needs attention') }}</span>
             <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-base-300"></span>{{ __('Upcoming') }}</span>

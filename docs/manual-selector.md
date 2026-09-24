@@ -33,8 +33,9 @@ Each match carries a status shown as a **coloured bar** on the left of the row.
 | Colour | Status | What it means for you |
 |---|---|---|
 | 🟢 Green | **Confirmed** | Lineup sent — nothing to do |
-| 🟡 Orange | **Actionable** | Enough players available or selection complete, but the lineup has not been sent yet. Chase the captain or send it yourself. |
-| 🔴 Red | **Urgent** | Match within 14 days, not enough availability responses. Act now. |
+| 🔵 Blue | **Lineup to send** | Complete selection saved, but not sent to the team yet. Chase the captain or send it yourself. |
+| 🟡 Orange | **Ready to compose** | Enough players available, but no complete selection yet, more than two weeks out. |
+| 🔴 Red | **Urgent** | Match within 14 days whose lineup has not gone out: the club aims to send by two weeks before. Act now. |
 | ⚪ Light grey | **Upcoming** | Match is far away, no urgency |
 | ◼ Dark grey | **Past** | Match has been played |
 
@@ -57,7 +58,7 @@ Click a match in the banner to open its selection drawer directly — without ha
 Recommended order of priority on each visit:
 
 1. **Red banner** — handle all **Urgent** matches within 14 days immediately
-2. **Orange status** — check that the captain is aware; send the lineup yourself if the captain is unavailable
+2. **Blue and orange statuses** — check that the captain is aware; send the lineup yourself if the captain is unavailable
 3. **Light grey (Upcoming)** — verify that availability requests have been sent for matches coming up soon
 
 ---

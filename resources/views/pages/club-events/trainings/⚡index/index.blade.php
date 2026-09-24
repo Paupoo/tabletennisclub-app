@@ -11,10 +11,12 @@
             :subtitle="implode(' · ', array_filter([$selectedPack?->level?->label, $selectedPack?->type?->label(), $selectedPack?->season?->name]))"
             :title="$selectedPack?->name ?? __('Training pack')">
             <x-slot:actions>
-                <x-button class="btn-primary btn-sm" icon="o-user-plus" :label="__('Add a member')"
-                    wire:click="openAddMember" />
-                <x-button class="btn-ghost btn-sm" icon="o-pencil" :label="__('Edit')"
-                    wire:click="openEdit({{ $selectedPackId }})" />
+                @if ($this->mayManage)
+                    <x-button class="btn-primary btn-sm" icon="o-user-plus" :label="__('Add a member')"
+                        wire:click="openAddMember" />
+                    <x-button class="btn-ghost btn-sm" icon="o-pencil" :label="__('Edit')"
+                        wire:click="openEdit({{ $selectedPackId }})" />
+                @endif
                 <x-button class="btn-ghost" icon="o-arrow-left" :label="__('Back')" wire:click="backToList" />
             </x-slot:actions>
         </x-header>
@@ -27,9 +29,11 @@
                 <div class="hidden items-center gap-2 lg:flex">
                     <x-admin.shared.filters-button :count="count($filterChips)" />
                 </div>
-                <x-button class="btn-ghost btn-sm" icon="o-swatch" :label="__('Levels')"
-                    wire:click="$set('levelDrawer', true)" />
-                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New pack')" wire:click="openCreate" />
+                @if ($this->mayManage)
+                    <x-button class="btn-ghost btn-sm" icon="o-swatch" :label="__('Levels')"
+                        wire:click="$set('levelDrawer', true)" />
+                    <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New pack')" wire:click="openCreate" />
+                @endif
             </x-slot:actions>
         </x-header>
 
@@ -205,8 +209,10 @@
                                 <div class="rounded-xl border border-dashed border-base-300 py-10 text-center text-base-content/40">
                                     <x-icon class="mx-auto mb-2 h-8 w-8" name="o-user-group" />
                                     <p>{{ __('Nobody is enrolled in this pack yet.') }}</p>
-                                    <x-button class="btn-primary btn-sm mt-4" icon="o-user-plus"
-                                        :label="__('Add a member')" wire:click="openAddMember" />
+                                    @if ($this->mayManage)
+                                        <x-button class="btn-primary btn-sm mt-4" icon="o-user-plus"
+                                            :label="__('Add a member')" wire:click="openAddMember" />
+                                    @endif
                                 </div>
                             @else
                                 {{-- `overflow-x-auto` rend la table défilable sur un téléphone, mais
@@ -394,8 +400,10 @@
                                         class="badge-error badge-soft" />
                                 @else
                                     <x-badge value="{{ __('Scheduled') }}" class="badge-success badge-soft" />
-                                    <x-button class="btn-ghost btn-sm text-error" icon="o-x-circle"
-                                        :label="__('Cancel')" wire:click="openCancel({{ $session->id }})" />
+                                    @if ($this->mayManage)
+                                        <x-button class="btn-ghost btn-sm text-error" icon="o-x-circle"
+                                            :label="__('Cancel')" wire:click="openCancel({{ $session->id }})" />
+                                    @endif
                                 @endif
                             </div>
                         </div>
@@ -542,8 +550,10 @@
             <div class="rounded-xl border border-dashed border-base-300 py-16 text-center text-base-content/40">
                 <x-icon class="mx-auto mb-2 h-10 w-10" name="o-academic-cap" />
                 <p>{{ __('No training packs for this season yet.') }}</p>
-                <x-button class="btn-primary mt-4" :label="__('Create first pack')"
-                    wire:click="openCreate" />
+                @if ($this->mayManage)
+                    <x-button class="btn-primary mt-4" :label="__('Create first pack')"
+                        wire:click="openCreate" />
+                @endif
             </div>
         @else
             <div class="space-y-6">
@@ -635,6 +645,7 @@
                                             <x-button class="btn-ghost btn-sm min-w-0 flex-1 text-xs"
                                                 icon="o-eye" :label="__('Details')"
                                                 wire:click="openPack({{ $pack->id }})" />
+                                            @if ($this->mayManage)
                                             <x-button class="btn-ghost btn-sm shrink-0 text-xs" icon="o-pencil"
                                                 :aria-label="__('Edit')"
                                                 wire:click="openEdit({{ $pack->id }})" />
@@ -688,6 +699,7 @@
                                                         wire:click="restorePack({{ $pack->id }})" />
                                                 @endif
                                             </x-dropdown>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>

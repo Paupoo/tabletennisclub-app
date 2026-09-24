@@ -12,7 +12,9 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasEventPostForm, Toast;
+    use HasEventPostForm, Toast {
+        HasEventPostForm::saveEventPost as persistEventPost;
+    }
 
     // ── Model reference (serialized as strings for Livewire hydration) ────
     #[Locked]
@@ -74,7 +76,19 @@ new class extends Component
         $this->showModal = true;
     }
 
-    protected function resolveEventPostData(): array
+    /**
+     * The host decides who may publish (`can-publish`), and the property is
+     * locked; this is where that decision is enforced. It used to only grey the
+     * trigger, so a reader could still call the save by hand.
+     */
+    public function saveEventPost(string $status = 'draft'): void
+    {
+        abort_unless($this->canPublish, 403);
+
+        $this->persistEventPost($status);
+    }
+
+        protected function resolveEventPostData(): array
     {
         /** @var Model $model */
         $model = ($this->modelClass)::findOrFail($this->modelId);

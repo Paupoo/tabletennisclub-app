@@ -325,7 +325,9 @@ new class extends Component
 
     public function mount(): void
     {
-        $this->canManage = Gate::allows('manage-season');
+        // Used to ask `manage-season`, which resolves to contacts.manage: the
+        // contacts délégation saw the planning tools, the trainings one did not.
+        $this->canManage = Gate::allows(Permission::TrainingPlansManage->value);
     }
 
     /**

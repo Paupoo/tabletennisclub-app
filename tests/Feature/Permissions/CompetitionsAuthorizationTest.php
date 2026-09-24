@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Role;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -55,9 +56,10 @@ describe('trainings', function (): void {
 
         // The coach runs sessions…
         $this->actingAs($coach)->get(route('coach.trainings'))->assertOk();
-        // …but does not shape the season's offer.
-        $this->actingAs($coach)->get(route('admin.trainings.index'))->assertForbidden();
-        $this->actingAs($coach)->get(route('admin.planning.board'))->assertForbidden();
+        // …reads the season's offer, but does not shape it.
+        $this->actingAs($coach)->get(route('admin.trainings.index'))->assertOk();
+        expect($coach->can(Permission::TrainingsManage->value))->toBeFalse()
+            ->and($coach->can(Permission::TrainingPlansManage->value))->toBeFalse();
 
         // And the other way round.
         $this->actingAs($builder)->get(route('admin.trainings.index'))->assertOk();
@@ -65,9 +67,11 @@ describe('trainings', function (): void {
         $this->actingAs($builder)->get(route('coach.trainings'))->assertForbidden();
     });
 
-    it('no longer opens the training screens on committee membership alone', function (): void {
-        $this->actingAs($this->committeeOnly)->get(route('admin.trainings.index'))->assertForbidden();
-        $this->actingAs($this->committeeOnly)->get(route('admin.planning.board'))->assertForbidden();
+    it('opens the training screens to the committee, read-only', function (): void {
+        $this->actingAs($this->committeeOnly)->get(route('admin.trainings.index'))->assertOk();
+        $this->actingAs($this->committeeOnly)->get(route('admin.planning.board'))->assertOk();
+
+        expect($this->committeeOnly->can(Permission::TrainingsManage->value))->toBeFalse();
     });
 
     it('lets the trainer of a pack read it without holding the duty', function (): void {

@@ -106,7 +106,7 @@
     </x-menu-sub>
     @endcanany
 
-    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'training_plans.manage'])
+    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'trainings.view'])
     <x-menu-sub icon="o-user-group" :title="__('Members Admin')">
         @can('users.view')
             <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
@@ -126,7 +126,7 @@
             <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
         @endcan
         @feature('training_planning')
-        @can('training_plans.manage')
+        @can('trainings.view')
         <x-menu-item icon="o-view-columns" link="{{ route('admin.planning.board') }}" :title="__('Planning board')" />
         @endcan
         @endfeature
@@ -235,9 +235,9 @@
     {{-- Le Gate, pas la permission nue : encadrer un pack ou une séance ouvre
          l'espace coach au même titre que la délégation, sinon un entraîneur a
          l'accès sans avoir le lien pour y aller. --}}
-    @canany(['trainings.manage', 'access-coach-area'])
+    @canany(['trainings.view', 'access-coach-area'])
     <x-menu-sub icon="o-academic-cap" :title="__('Trainings')">
-        @can('trainings.manage')
+        @can('trainings.view')
         <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')" />
         @endcan
         @can('access-coach-area')

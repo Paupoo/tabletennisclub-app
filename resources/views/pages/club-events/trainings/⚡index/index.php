@@ -327,6 +327,8 @@ new class extends Component
 
     public function confirmCancel(): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         $training = Training::with(['trainingPack.subscriptions.user'])->findOrFail($this->cancelTrainingId);
 
         $type = $this->cancelType === 'CLOSED'
@@ -353,6 +355,8 @@ new class extends Component
      */
     public function confirmDiscontinuePack(): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         if (! $this->discontinuingPackId) {
             return;
         }
@@ -532,6 +536,8 @@ new class extends Component
      */
     public function confirmRegeneration(): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         $this->regenerationConfirmed = true;
         $this->regenerateModal = false;
 
@@ -575,6 +581,8 @@ new class extends Component
 
     public function confirmWithdrawPack(): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         if ($this->withdrawingPackId) {
             $this->withdrawPack($this->withdrawingPackId);
         }
@@ -651,6 +659,8 @@ new class extends Component
 
     public function editLevel(int $levelId): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         $level = TrainingLevel::findOrFail($levelId);
 
         $this->levelForm = [
@@ -705,6 +715,16 @@ new class extends Component
     public function levels(): Collection
     {
         return TrainingLevel::ordered()->get();
+    }
+
+    /**
+     * Whether the visitor builds the offer, or only reads it: the committee reads
+     * every pack, its roster and its attendance at the baseline.
+     */
+    #[Computed]
+    public function mayManage(): bool
+    {
+        return Gate::allows(Permission::TrainingsManage->value);
     }
 
     public function mount(): void
@@ -769,6 +789,8 @@ new class extends Component
 
     public function newLevel(): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         $this->levelForm = ['id' => null, 'label' => '', 'color' => 'primary'];
     }
 
@@ -816,6 +838,8 @@ new class extends Component
 
     public function openAddMember(): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         $this->addMemberUserId = 0;
         $this->addMemberStartsOn = '';
         $this->addMemberModal = true;
@@ -827,6 +851,8 @@ new class extends Component
 
     public function openCancel(int $trainingId): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         $this->cancelTrainingId = $trainingId;
         $this->cancelType = 'FREE';
         $this->cancelNote = '';
@@ -837,6 +863,8 @@ new class extends Component
 
     public function openCreate(): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         $this->resetWizardFields();
         $this->wizardOpen = true;
         $this->step = '1';
@@ -844,6 +872,8 @@ new class extends Component
 
     public function openDiscontinuePack(int $packId): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         $this->discontinuingPackId = $packId;
         $this->discontinueReason = '';
         $this->discontinuePackModal = true;
@@ -851,6 +881,8 @@ new class extends Component
 
     public function openEdit(int $packId): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         $pack = TrainingPack::findOrFail($packId);
 
         $this->packId = $pack->id;
@@ -944,6 +976,8 @@ new class extends Component
 
     public function openWithdrawPack(int $packId): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         $this->withdrawingPackId = $packId;
         $this->withdrawPackModal = true;
     }
@@ -1285,6 +1319,8 @@ new class extends Component
 
     public function restorePack(int $packId): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         TrainingPack::findOrFail($packId)->update(['is_active' => true]);
         unset($this->packs);
         $this->success(__('Pack back in the offer.'));
@@ -1301,6 +1337,8 @@ new class extends Component
 
     public function save(): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         $rules = [
             'formSeasonId' => 'required|integer|min:1',
             'formName' => 'required|min:2|max:255',
@@ -1542,6 +1580,8 @@ new class extends Component
      */
     public function toggleEnrollments(int $packId): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         $pack = TrainingPack::findOrFail($packId);
         $pack->update(['enrollments_open' => ! $pack->enrollments_open]);
 
@@ -1635,6 +1675,8 @@ new class extends Component
      */
     public function withdrawPack(int $packId): void
     {
+        Gate::authorize(Permission::TrainingsManage->value);
+
         TrainingPack::findOrFail($packId)->update(['is_active' => false]);
         unset($this->packs);
         $this->withdrawPackModal = false;

@@ -199,7 +199,7 @@ Route::prefix('admin/club-admin/attestations/')
     });
 
 Route::prefix('admin/club-admin/planning/')
-    ->middleware(['auth', 'verified', 'can:training_plans.manage', 'feature:training_planning'])
+    ->middleware(['auth', 'verified', 'can:trainings.view', 'feature:training_planning'])
     ->group(function (): void {
         Route::livewire('board', 'pages::club-admin.planning.board')->name('admin.planning.board');
     });
@@ -297,9 +297,10 @@ Route::prefix('admin/club-admin/tables/')
             });
     });
 
-// Training packs administration — committee only.
+// Training packs — readable at the committee baseline; every write is guarded
+// inside the component.
 Route::prefix('admin/club-events/interclubs/')
-    ->middleware(['auth', 'verified', 'can:trainings.manage', 'feature:trainings'])
+    ->middleware(['auth', 'verified', 'can:trainings.view', 'feature:trainings'])
     ->group(function (): void {
         Route::livewire('trainings', 'pages::club-events.trainings.index')->name('admin.trainings.index');
     });

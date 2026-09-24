@@ -104,6 +104,17 @@ new class extends Component
     }
 
     /**
+     * Where a holder's name leads: the edit form for whoever writes either half
+     * of the file, the read-only file for everyone else on this screen.
+     */
+    public function memberFileUrl(User $user): string
+    {
+        return Gate::allows('update', $user) || Gate::allows('manageAccess', $user)
+            ? route('admin.users.edit', $user)
+            : route('admin.users.show', $user);
+    }
+
+    /**
      * The same data seen from the members' side.
      *
      * @return Collection<int, array{user: User, roles: Collection<int, Role>}>
@@ -122,17 +133,6 @@ new class extends Component
             ])
             ->filter(fn (array $row): bool => $row['roles']->isNotEmpty())
             ->values();
-    }
-
-    /**
-     * Where a holder's name leads: the edit form for whoever writes either half
-     * of the file, the read-only file for everyone else on this screen.
-     */
-    public function memberFileUrl(User $user): string
-    {
-        return Gate::allows('update', $user) || Gate::allows('manageAccess', $user)
-            ? route('admin.users.edit', $user)
-            : route('admin.users.show', $user);
     }
 
     public function removeFilter(string $key): void

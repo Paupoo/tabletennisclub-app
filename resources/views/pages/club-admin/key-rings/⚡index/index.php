@@ -107,6 +107,16 @@ new class extends Component
     }
 
     /**
+     * Whether the visitor hands key rings over, or only reads who holds them:
+     * the committee reads it at the baseline.
+     */
+    #[Computed]
+    public function mayManage(): bool
+    {
+        return Gate::allows(Permission::EquipmentHolderUpdate->value);
+    }
+
+    /**
      * Hand the ring to someone — including a ring coming back into service.
      *
      * Putting a ring back is the same question as moving one: who has it now?
@@ -146,16 +156,6 @@ new class extends Component
         $this->success($wasRetired
             ? __(':ring is back in service.', ['ring' => $keyRing->label()])
             : __(':ring has been moved.', ['ring' => $keyRing->label()]));
-    }
-
-    /**
-     * Whether the visitor hands key rings over, or only reads who holds them:
-     * the committee reads it at the baseline.
-     */
-    #[Computed]
-    public function mayManage(): bool
-    {
-        return Gate::allows(Permission::EquipmentHolderUpdate->value);
     }
 
     public function openCreate(): void

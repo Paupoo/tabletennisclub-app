@@ -6,24 +6,13 @@ Ce manuel couvre tout ce qu'un membre du comité (et un administrateur) peut fai
 
 ## Résumé des permissions
 
-| Action | Comité | Admin |
-|---|---|---|
-| Créer des membres | ✅ | ✅ |
-| Modifier des membres | ✅ | ✅ |
-| Activer/désactiver | ✅ | ✅ |
-| Promouvoir/rétrograder membre du comité | ✅ | ✅ |
-| Supprimer (archiver) des membres | ❌ | ✅ |
-| Restaurer des membres archivés | ❌ | ✅ |
-| Promouvoir/rétrograder administrateur | ❌ | ✅ |
-| Anonymiser un membre (RGPD) | ❌ | ✅ |
-| Gérer les tournois | ✅ | ✅ |
-| Gérer les interclubs | ✅ | ✅ |
-| Gérer les réunions | ✅ | ✅ |
-| Gérer les packs d'entraînement | ✅ | ✅ |
-| Gérer le contenu du site web | ✅ | ✅ |
-| Gérer la trésorerie | ✅ | ✅ |
+Un siège au comité **consulte** tout le fonctionnel du club : les membres et leur fiche, les affiliations, les paiements, les extraits bancaires, les amendes, la caisse, les contacts, les interclubs (équipes, calendrier, sélections, résultats), les tournois, les entraînements et le tableau de planification, les réunions, les saisons, les articles et événements du site, les salles et les trousseaux. Les écrans de consultation n'affichent aucune action que vous ne pouvez pas faire.
 
-> **Groupe gestionnaire** : certaines fonctions récentes — gérer les contacts (qualifier, répondre, intégrer) et les modèles d'email, **éditer** le roster de saison, **composer/importer** dans le tableau de planification — sont réservées aux administrateurs et aux membres du comité ayant le rôle **secrétaire, président ou vice-président**. Les autres membres du comité conservent l'accès en **consultation** (voir et exporter).
+**Agir** relève d'une *délégation*, attribuée à n'importe quel membre — du comité ou non — depuis sa fiche : Membres, Trésorerie, Amendes, Caisse, Interclubs, Sélections, Tournois, Entraînements, Réunions, Site web, Installations, etc. Elles se cumulent.
+
+Volontairement hors du siège au comité : le journal d'audit et la file d'attente (supervision technique), et les attestations mutuelle (l'écran délivre des documents scellés). Archiver, anonymiser et nommer un administrateur restent aux administrateurs.
+
+La matrice complète, générée, se trouve dans [permissions.md](permissions.md).
 
 ---
 

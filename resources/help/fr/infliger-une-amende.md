@@ -7,7 +7,7 @@ order: 9
 
 Quand la fédération sanctionne le club pour le fait d'un joueur — forfait, absence injustifiée, retard, comportement — vous pouvez répercuter l'amende sur ce joueur. Elle devient alors un paiement dû comme un autre.
 
-**Réservé aux gestionnaires des finances** : administrateurs, trésorier, président. Les autres membres du comité ne voient pas cette page.
+**Réservé à la délégation Amendes** et aux administrateurs. Les autres membres du comité **consultent** la liste des amendes, sans pouvoir en infliger ni en annuler.
 
 > ## ⚠️ La validation prévient le membre tout de suite
 >

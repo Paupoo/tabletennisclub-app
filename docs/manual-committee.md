@@ -6,24 +6,13 @@ This manual covers everything a committee member (and administrator) can do in t
 
 ## Permission Summary
 
-| Action | Committee | Admin |
-|---|---|---|
-| Create users | ✅ | ✅ |
-| Edit users | ✅ | ✅ |
-| Toggle active/inactive | ✅ | ✅ |
-| Promote/demote committee member | ✅ | ✅ |
-| Delete (archive) users | ❌ | ✅ |
-| Restore archived users | ❌ | ✅ |
-| Promote/demote admin | ❌ | ✅ |
-| Anonymize user (GDPR) | ❌ | ✅ |
-| Manage tournaments | ✅ | ✅ |
-| Manage interclubs | ✅ | ✅ |
-| Manage meetings | ✅ | ✅ |
-| Manage training packs | ✅ | ✅ |
-| Manage website content | ✅ | ✅ |
-| Manage treasury | ✅ | ✅ |
+A committee seat **reads** every functional area of the club: members and their files, affiliations, payments, bank lines, fines, the cash register, contacts, interclubs (teams, calendar, selections, results), tournaments, trainings and the planning board, meetings, seasons, the website's articles and events, rooms and key rings. Reading screens show no action you could not take.
 
-> **Managing group**: some recent features — managing contacts (qualify, reply, onboard) and email templates, **editing** the season roster, **composing/importing** in the planning board — are restricted to administrators and committee members with the **secretary, president or vice-president** role. Other committee members keep **read** access (view and export).
+**Acting** is a *délégation*, handed to any member — committee or not — on their member file: Members, Treasury, Fines, Cash register, Interclubs, Selections, Tournaments, Trainings, Meetings, Website, Facilities, and so on. They stack.
+
+Left out of the committee seat on purpose: the audit log and the job queue (technical supervision), and mutual attestations (the screen issues sealed documents). Archiving, anonymising and promoting an administrator stay with administrators.
+
+The full, generated matrix is in [permissions.md](permissions.md).
 
 ---
 

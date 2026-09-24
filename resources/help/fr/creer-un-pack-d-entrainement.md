@@ -7,7 +7,7 @@ order: 16
 
 Un **pack** est l'entraînement tel qu'on le vend : « Jeunes du mardi », un niveau, un coach, un prix. Les **séances** sont les dates concrètes que l'application en déduit. Vous ne créez jamais une séance à la main — vous décrivez le pack, l'application génère le calendrier.
 
-Tout se passe dans **Entraînements**, réservé au comité.
+Tout se passe dans **Entraînements**. Construire l'offre revient à la délégation **Entraînements** ; le reste du comité consulte les packs, leurs inscrits et les présences, sans les boutons.
 
 ## Créer un pack
 

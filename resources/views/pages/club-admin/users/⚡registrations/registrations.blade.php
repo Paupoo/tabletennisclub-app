@@ -198,7 +198,7 @@
                     @scope('cell_name', $req)
                         <div>
                             <span class="font-bold text-base-content">{{ $req->name }}</span>
-                            <div class="hidden text-xs text-muted md:block">{{ $req->type }}</div>
+                            <div class="text-xs text-muted xl:hidden">{{ $req->type }}</div>
                         </div>
                     @endscope
 
@@ -391,6 +391,30 @@
                     </div>
                 @endif
 
+                @if ($currentRequest->discounts->isNotEmpty())
+                    <div>
+                        <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Discounts') }}</h3>
+                        <div class="space-y-2">
+                            @foreach ($currentRequest->discounts as $discount)
+                                {{-- Une ligne par octroi, motif compris : « pourquoi
+                                     cette affiliation est-elle à 100 € ? » se répond
+                                     ici, et non en fouillant le journal d'audit.
+                                     Sa propre section : les remises ne dépendent
+                                     d'aucun pack, et la section des packs ne rend
+                                     rien pour une affiliation qui n'en a pas. --}}
+                                <div class="flex items-start gap-3 rounded-lg border border-success/20 bg-success/5 p-2.5 text-sm"
+                                    wire:key="discount-{{ $discount->id }}">
+                                    <x-icon name="o-gift" class="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
+                                    <span class="min-w-0 flex-1">{{ $discount->reason }}</span>
+                                    <span class="whitespace-nowrap text-xs font-semibold text-success">
+                                        − {{ number_format($discount->amount, 2) }} €
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 @if (! empty($currentRequest->payments))
                     <div>
                         <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Payments') }}</h3>
@@ -550,6 +574,9 @@
                         <span class="font-bold">{{ __('Amount') }}</span>
                         <span class="text-primary text-lg font-black">{{ $paymentData['amount_due'] }} €</span>
                     </div>
+                    <x-payments.discount-breakdown
+                        :amount-before-discounts="$paymentData['amount_before_discounts'] ?? 0"
+                        :discounts="$paymentData['discounts'] ?? []" />
                 </div>
                 <div class="flex gap-2 rounded-lg border border-warning/20 bg-warning/10 p-3 text-xs">
                     <x-icon name="o-exclamation-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-warning-content" />
@@ -564,6 +591,15 @@
                         </span>
                     @endif
                 </div>
+            </div>
+        @endif
+
+        {{-- Remise au fil de la validation (uniquement en review pending).
+             Même garde que le motif de refus : c'est la branche où la fiche
+             d'une affiliation en attente est réellement rendue. --}}
+        @if (! $paymentGenerated && $currentRequest && $currentRequest->status === 'pending')
+            <div class="mt-4">
+                <x-admin.shared.inline-discount :mode="$inlineDiscountMode" />
             </div>
         @endif
 
@@ -627,6 +663,15 @@
                 <x-button :label="__('Close')" @click="$wire.reviewModal = false" class="btn-ghost" />
                 <x-button :label="__('Send by email')" icon="o-paper-airplane" class="btn-primary" wire:click="sendPaymentEmail" spinner />
             @else
+                @if ($currentRequest && in_array($currentRequest->status, ['confirmed', 'paid']) && Auth::user()->can('subscriptions.discount'))
+                    {{-- Le geste canonique : accordable à tout moment, pas
+                         seulement au moment où on facture. --}}
+                    <x-button
+                        :label="__('Grant a discount')"
+                        icon="o-gift"
+                        class="btn-ghost"
+                        wire:click="openDiscount({{ $currentRequest->id }})" spinner />
+                @endif
                 @if ($currentRequest && in_array($currentRequest->status, ['confirmed', 'paid']) && Auth::user()->can('subscriptions.manage'))
                     <x-button
                         :label="$currentRequest->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
@@ -730,6 +775,9 @@
                         <span class="font-bold">{{ __('Amount') }}</span>
                         <span class="text-primary text-lg font-black">{{ $paymentData['amount_due'] }} €</span>
                     </div>
+                    <x-payments.discount-breakdown
+                        :amount-before-discounts="$paymentData['amount_before_discounts'] ?? 0"
+                        :discounts="$paymentData['discounts'] ?? []" />
                 </div>
                 <div class="flex items-center gap-3 rounded-xl border border-base-300 bg-base-200/50 p-3 text-sm">
                     <x-icon name="o-envelope" class="h-4 w-4 shrink-0 opacity-50" />
@@ -765,6 +813,10 @@
                         :placeholder="__('Optional personal note to the member...')"
                         class="textarea textarea-bordered textarea-sm w-full text-sm" rows="2"></textarea>
                 </div>
+            </div>
+
+            <div class="mt-4">
+                <x-admin.shared.inline-discount :mode="$inlineDiscountMode" />
             </div>
         @endif
 
@@ -1400,4 +1452,38 @@
         </p>
     </x-confirm-modal>
 
+    {{-- ── Remise sur une affiliation ───────────────────────────────────── --}}
+    <x-app-modal wire:model="discountModal" :title="__('Grant a discount')" separator class="backdrop-blur-sm"
+        :open="$discountModal">
+        <div class="space-y-4">
+            <div class="flex items-center gap-3 rounded-lg border border-info/20 bg-info/10 p-3 text-sm">
+                <x-icon name="o-information-circle" class="h-4 w-4 shrink-0 text-info" />
+                <span>{{ __('The discount is frozen in euros. If the member adds a training later, you will be asked again.') }}</span>
+            </div>
+
+            <x-radio :label="__('Expressed as')" wire:model.live="discountMode" :options="[
+                ['id' => 'amount', 'name' => __('An amount in €')],
+                ['id' => 'percent', 'name' => __('A percentage')],
+            ]" />
+
+            <x-input
+                :label="$discountMode === 'percent' ? __('Percentage (%)') : __('Amount (€)')"
+                type="number" step="0.01" min="0"
+                wire:model="discountValue" />
+
+            <x-input :label="__('Reason')" wire:model="discountReason"
+                :placeholder="__('Thank you for a season behind the bar')"
+                :hint="__('Mandatory. Shown on the affiliation and kept with it.')" />
+
+            <p class="text-xs text-muted">
+                {{ __('The attestation will state the discounted amount: a member given 30% will claim less from their mutual insurer.') }}
+            </p>
+        </div>
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" @click="$wire.discountModal = false" class="btn-ghost" />
+            <x-button :label="__('Grant the discount')" icon="o-gift" class="btn-primary"
+                wire:click="confirmDiscount" spinner="confirmDiscount" />
+        </x-slot:actions>
+    </x-app-modal>
 </div>

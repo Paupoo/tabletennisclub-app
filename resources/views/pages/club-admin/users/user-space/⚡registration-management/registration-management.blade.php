@@ -153,6 +153,9 @@
                                                         <div class="flex-1 min-w-0">
                                                             <div class="font-mono text-xs opacity-60">{{ $payment['reference'] }}</div>
                                                             <div class="font-bold text-base text-info">{{ number_format($payment['amount_due'], 2) }} €</div>
+                                                            <x-payments.discount-breakdown class="mt-1 max-w-xs"
+                                                                :amount-before-discounts="$payment['amount_before_discounts'] ?? 0"
+                                                                :discounts="$payment['discounts'] ?? []" />
                                                         </div>
                                                         <x-button
                                                             :label="__('Pay')"
@@ -187,6 +190,9 @@
                                                 @endif
                                                 <span class="ml-auto font-bold text-sm">{{ $currentEntry['amount_due'] }} €</span>
                                             </div>
+                                            <x-payments.discount-breakdown class="pl-8"
+                                                :amount-before-discounts="$currentEntry['amount_before_discounts'] ?? 0"
+                                                :discounts="$currentEntry['discounts'] ?? []" />
                                             @foreach($currentEntry['enrolled_packs'] as $packInfo)
                                                 <div class="flex items-center gap-2 text-xs opacity-60 pl-8 flex-wrap">
                                                     <x-icon name="o-academic-cap" class="w-3.5 h-3.5 text-success shrink-0" />
@@ -208,6 +214,9 @@
                                                         <div class="flex-1 min-w-0">
                                                             <div class="font-mono text-xs opacity-60">{{ $payment['reference'] }}</div>
                                                             <div class="font-bold text-base text-warning-content">{{ number_format($payment['amount_due'], 2) }} €</div>
+                                                            <x-payments.discount-breakdown class="mt-1 max-w-xs"
+                                                                :amount-before-discounts="$payment['amount_before_discounts'] ?? 0"
+                                                                :discounts="$payment['discounts'] ?? []" />
                                                         </div>
                                                         <x-button
                                                             :label="__('Pay')"
@@ -793,6 +802,9 @@
                     <span class="font-bold">{{ __('Amount') }}</span>
                     <span class="text-lg font-bold text-primary">{{ $paymentDetails['amount_due'] }} €</span>
                 </div>
+                <x-payments.discount-breakdown
+                    :amount-before-discounts="$paymentDetails['amount_before_discounts'] ?? 0"
+                    :discounts="$paymentDetails['discounts'] ?? []" />
             </div>
 
             <div class="flex gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20 text-xs">

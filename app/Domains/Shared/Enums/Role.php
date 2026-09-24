@@ -285,6 +285,11 @@ enum Role: string
                 Permission::UsersImport,
                 Permission::SubscriptionsView,
                 Permission::SubscriptionsManage,
+                // Offrir n'est pas gérer, mais c'est le même bureau qui le
+                // fait : le secrétaire accorde les remises. Déplacer cette
+                // ligne vers le trésorier ou l'administrateur est une décision
+                // produit, pas une modification de code.
+                Permission::SubscriptionsDiscount,
                 // Deliberately not UsersDelete / UsersAnonymize: archiving a member
                 // and erasing their personal data were administrator-only before
                 // this refactor, and anonymisation is irreversible. Administrators

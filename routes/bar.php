@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 // geste des dizaines de fois d'affilée, debout, avec quelqu'un en face. Chaque « + »
 // était un rechargement complet de page.
 Route::livewire('/', 'pages::bar.counter')
+    ->middleware('can:bar.orders.manage')
     ->name('index');
 
 /*
@@ -29,6 +30,7 @@ Route::livewire('/', 'pages::bar.counter')
 // comptoir : elles n'ont pas de route à elles. Les trois POST qui vivaient ici
 // servaient la version Blade de l'écran de choix.
 Route::post('/orders/{order}/rename', [BarOrderController::class, 'rename'])
+    ->middleware('can:bar.orders.manage')
     ->name('orders.rename');
 
 /*
@@ -40,6 +42,7 @@ Route::post('/orders/{order}/rename', [BarOrderController::class, 'rename'])
 // pas des routes. Les quatre POST qui vivaient ici servaient les formulaires de la
 // version Blade, où chaque « + » coûtait un rechargement complet.
 Route::livewire('/cart', 'pages::bar.cart')
+    ->middleware('can:bar.orders.manage')
     ->name('cart.show');
 /*
 |--------------------------------------------------------------------------
@@ -47,8 +50,10 @@ Route::livewire('/cart', 'pages::bar.cart')
 |--------------------------------------------------------------------------
 */
 Route::get('/orders/{order}/payment', [BarPaymentController::class, 'show'])
+    ->middleware('can:bar.orders.pay')
     ->name('payment.show');
 Route::post('/orders/{order}/payment/pay', [BarPaymentController::class, 'pay'])
+    ->middleware('can:bar.orders.pay')
     ->name('payment.pay');
 /*
 |--------------------------------------------------------------------------
@@ -56,12 +61,15 @@ Route::post('/orders/{order}/payment/pay', [BarPaymentController::class, 'pay'])
 |--------------------------------------------------------------------------
 */
 Route::get('/orders', [BarOrderController::class, 'index'])
+    ->middleware('can:bar.orders.manage')
     ->name('orders.index');
 // Route::post('/orders/{order}/pay', [BarOrderController::class, 'pay'])
 //     ->name('orders.pay');
 Route::get('/orders/history', [BarOrderController::class, 'history'])
+    ->middleware('can:bar.orders.manage')
     ->name('orders.history');
 Route::get('/orders/{order}/modify', [BarOrderController::class, 'modify'])
+    ->middleware('can:bar.orders.manage')
     ->name('orders.modify');
 Route::delete('/orders/{order}', [BarOrderController::class, 'destroy'])
     ->middleware('can:bar.orders.manage')
@@ -71,7 +79,7 @@ Route::delete('/orders/{order}', [BarOrderController::class, 'destroy'])
 | Categories
 |--------------------------------------------------------------------------
 */
-Route::prefix('categories')->middleware('can:bar.products.manage')->name('categories.')->group(function (): void {
+Route::prefix('categories')->middleware('can:bar.categories.manage')->name('categories.')->group(function (): void {
     Route::get('/', [BarCategoryController::class, 'index'])
         ->name('index');
     Route::post('/', [BarCategoryController::class, 'store'])

@@ -72,6 +72,8 @@ new class extends Component
 
     public string $price = '';
 
+    public string $search = '';
+
     public function delete(): void
     {
         $this->deleteModal = false;
@@ -309,6 +311,12 @@ new class extends Component
      */
     protected function products(): Collection
     {
-        return BarProduct::query()->withStock()->with('category')->get();
+        $search = trim($this->search);
+
+        return BarProduct::query()
+            ->withStock()
+            ->with('category')
+            ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"))
+            ->get();
     }
 };

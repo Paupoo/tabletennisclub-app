@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Subscriptions\Models;
 
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,6 +17,7 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property int $subscription_id
+ * @property int|null $payment_id
  * @property float $amount
  * @property string $reason
  * @property int|null $granted_by_id
@@ -23,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Subscription $subscription
+ * @property-read Payment|null $payment
  * @property-read User|null $grantedBy
  *
  * @mixin \Eloquent
@@ -37,6 +40,7 @@ class SubscriptionDiscount extends Model
 
     protected $fillable = [
         'subscription_id',
+        'payment_id',
         'amount',
         'reason',
         'granted_by_id',
@@ -46,6 +50,15 @@ class SubscriptionDiscount extends Model
     public function grantedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'granted_by_id');
+    }
+
+    /**
+     * La communication que la remise a allégée — nulle si elle n'en a réduit
+     * aucune, ou en a entamé plusieurs.
+     */
+    public function payment(): BelongsTo
+    {
+        return $this->belongsTo(Payment::class);
     }
 
     public function subscription(): BelongsTo

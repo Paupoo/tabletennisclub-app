@@ -198,7 +198,7 @@
                     @scope('cell_name', $req)
                         <div>
                             <span class="font-bold text-base-content">{{ $req->name }}</span>
-                            <div class="hidden text-xs text-muted md:block">{{ $req->type }}</div>
+                            <div class="text-xs text-muted xl:hidden">{{ $req->type }}</div>
                         </div>
                     @endscope
 
@@ -574,6 +574,9 @@
                         <span class="font-bold">{{ __('Amount') }}</span>
                         <span class="text-primary text-lg font-black">{{ $paymentData['amount_due'] }} €</span>
                     </div>
+                    <x-payments.discount-breakdown
+                        :amount-before-discounts="$paymentData['amount_before_discounts'] ?? 0"
+                        :discounts="$paymentData['discounts'] ?? []" />
                 </div>
                 <div class="flex gap-2 rounded-lg border border-warning/20 bg-warning/10 p-3 text-xs">
                     <x-icon name="o-exclamation-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-warning-content" />
@@ -772,6 +775,9 @@
                         <span class="font-bold">{{ __('Amount') }}</span>
                         <span class="text-primary text-lg font-black">{{ $paymentData['amount_due'] }} €</span>
                     </div>
+                    <x-payments.discount-breakdown
+                        :amount-before-discounts="$paymentData['amount_before_discounts'] ?? 0"
+                        :discounts="$paymentData['discounts'] ?? []" />
                 </div>
                 <div class="flex items-center gap-3 rounded-xl border border-base-300 bg-base-200/50 p-3 text-sm">
                     <x-icon name="o-envelope" class="h-4 w-4 shrink-0 opacity-50" />

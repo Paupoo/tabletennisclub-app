@@ -51,6 +51,12 @@
 
                         <div class="flex items-center justify-between gap-4 sm:justify-end">
                             <div class="text-right">
+                                @if ($payment->discounts->isNotEmpty())
+                                    <div class="text-xs tabular-nums text-muted line-through"
+                                        title="{{ $payment->discounts->pluck('reason')->join(' · ') }}">
+                                        {{ number_format($payment->amountBeforeDiscounts(), 2, ',', ' ') }} €
+                                    </div>
+                                @endif
                                 <div class="font-bold tabular-nums">
                                     {{ number_format($payment->status === 'paid' ? $payment->amount_paid : $payment->amount_due, 2, ',', ' ') }} €
                                 </div>
@@ -98,7 +104,7 @@
     {{-- QR payment modal --}}
     <x-app-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm" :open="$paymentModal">
         @if ($paymentQr && $selectedPaymentId)
-            @php $payment = \App\Domains\ClubAdmin\Payment\Models\Payment::find($selectedPaymentId); @endphp
+            @php $payment = \App\Domains\ClubAdmin\Payment\Models\Payment::with('discounts')->find($selectedPaymentId); @endphp
             @php $label = $payment?->payable instanceof \App\Contracts\DescribesPayment ? $payment->payable->getPaymentLabel() : null; @endphp
             <div class="flex flex-col items-center gap-5">
                 @if ($label)
@@ -113,6 +119,9 @@
                         <span class="opacity-60">{{ __('Amount') }}</span>
                         <span class="font-bold">{{ number_format($payment->amount_due, 2, ',', ' ') }} €</span>
                     </div>
+                    <x-payments.discount-breakdown class="py-2"
+                        :amount-before-discounts="$payment->amountBeforeDiscounts()"
+                        :discounts="$payment->discounts" />
                     <div class="flex items-center justify-between py-2">
                         <span class="opacity-60">{{ __('Reference') }}</span>
                         <span class="font-mono text-xs">{{ $payment->reference }}</span>

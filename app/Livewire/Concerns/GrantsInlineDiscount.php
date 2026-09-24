@@ -6,6 +6,7 @@ namespace App\Livewire\Concerns;
 
 use App\Actions\ClubAdmin\Subscriptions\GrantSubscriptionDiscountAction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionDiscount;
 use App\Domains\Shared\Enums\Permission;
 use Illuminate\Support\Facades\Gate;
 
@@ -34,19 +35,27 @@ trait GrantsInlineDiscount
      *
      * Silencieuse quand les champs sont vides : c'est un raccourci facultatif,
      * et la plupart des validations n'en accordent aucune.
+     *
+     * Un pourcentage porte sur le prix qu'on est en train de décider, pas sur
+     * tout ce que l'affiliation doit : 10 % sur deux packs à 160 € font 16 €,
+     * pas 10 % de la cotisation en plus. Seule la validation d'une affiliation
+     * décide du montant entier ; les écrans de pack passent leur complément.
+     *
+     * @param  float|null  $decidedPrice  L'assiette du pourcentage, en euros ; le montant dû entier si absente.
+     * @return SubscriptionDiscount|null La remise accordée, pour que l'appelant la lie à la facture qu'il crée ensuite.
      */
-    private function applyInlineDiscount(Subscription $subscription): void
+    private function applyInlineDiscount(Subscription $subscription, ?float $decidedPrice = null): ?SubscriptionDiscount
     {
         if ($this->inlineDiscountValue <= 0.0 || trim($this->inlineDiscountReason) === '') {
-            return;
+            return null;
         }
 
         if (! Gate::allows(Permission::SubscriptionsDiscount->value)) {
-            return;
+            return null;
         }
 
         $amount = $this->inlineDiscountMode === 'percent'
-            ? round((float) $subscription->amount_due * $this->inlineDiscountValue / 100, 2)
+            ? round(($decidedPrice ?? (float) $subscription->amount_due) * $this->inlineDiscountValue / 100, 2)
             : round($this->inlineDiscountValue, 2);
 
         $reason = trim($this->inlineDiscountReason);
@@ -60,17 +69,21 @@ trait GrantsInlineDiscount
             ]);
         }
 
+        $discount = null;
+
         try {
-            (new GrantSubscriptionDiscountAction)(
+            $discount = (new GrantSubscriptionDiscountAction)(
                 $subscription,
                 $amount,
                 $reason,
                 $subscription->has_other_family_members ? 2 : 1,
-            );
+            )->discount;
         } catch (\DomainException $e) {
             $this->error($e->getMessage());
         }
 
         $this->reset(['inlineDiscountValue', 'inlineDiscountReason', 'inlineDiscountMode']);
+
+        return $discount;
     }
 }

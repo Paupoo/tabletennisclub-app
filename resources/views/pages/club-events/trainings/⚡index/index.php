@@ -259,6 +259,8 @@ new class extends Component
             return;
         }
 
+        $previousAmountDue = (float) $subscription->amount_due;
+
         try {
             (new AddMemberToTrainingPackAction)(
                 $subscription,
@@ -270,7 +272,8 @@ new class extends Component
             // Après l'ajout : le complément est calculé sur l'écart de montant
             // dû, et la remise le rabote ensuite — comme pour la validation
             // d'une demande de pack.
-            $this->applyInlineDiscount($subscription->fresh());
+            $subscription = $subscription->fresh();
+            $this->applyInlineDiscount($subscription, (float) $subscription->amount_due - $previousAmountDue);
         } catch (DomainException $e) {
             $this->error($e->getMessage());
 

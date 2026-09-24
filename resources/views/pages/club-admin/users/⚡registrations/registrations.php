@@ -5,12 +5,12 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Actions\ClubAdmin\Subscriptions\ApproveTrainingPacksAction;
-use App\Actions\ClubAdmin\Subscriptions\GrantSubscriptionDiscountAction;
 use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\CancelSubscriptionWithRefundAction;
 use App\Actions\ClubAdmin\Subscriptions\ChangeSubscriptionFormulaAction;
 use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
+use App\Actions\ClubAdmin\Subscriptions\GrantSubscriptionDiscountAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\ReconcileTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
@@ -18,6 +18,7 @@ use App\Actions\User\CreateUserAction;
 use App\Data\User\CreateUserData;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionDiscount;
 use App\Domains\ClubAdmin\Subscriptions\Services\FamilyDiscount;
 use App\Domains\ClubAdmin\Users\Models\CharterSignature;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
@@ -87,6 +88,17 @@ new class extends Component
     public ?int $currentRequestId = null;
 
     public ?int $currentTrainingRequestId = null;
+
+    public bool $discountModal = false;
+
+    /** 'amount' (euros) ou 'percent' — le pourcentage n'est qu'un clavier. */
+    public string $discountMode = 'amount';
+
+    public string $discountReason = '';
+
+    public ?int $discountSubscriptionId = null;
+
+    public float $discountValue = 0.0;
 
     public array $familyBasket = [];
 
@@ -264,7 +276,7 @@ new class extends Component
         // `getAmountDue()`, donc la communication doit déjà porter le montant
         // remisé. À l'inverse du raccourci de la demande de pack, où le
         // complément existe avant qu'on puisse le raboter.
-        $this->applyInlineDiscount($subscription);
+        $discount = $this->applyInlineDiscount($subscription);
         $subscription->refresh();
 
         // Génère le Payment si aucun n'existe déjà pour cette subscription
@@ -276,6 +288,10 @@ new class extends Component
                 'amount_paid' => 0,
                 'status' => 'pending',
             ]);
+
+            // Accordée avant que la facture existe, la remise n'a rien pu
+            // réduire : c'est cette facture-ci qu'elle explique.
+            $discount?->update(['payment_id' => $payment->id]);
         }
 
         $this->paymentData = [
@@ -289,92 +305,11 @@ new class extends Component
             'beneficiary' => 'CTT Ottignies-Blocry ASBL',
             'qr_code' => (new GeneratePaymentQR)($payment),
             'invitation_counter' => $payment->invitation_counter,
+            ...$this->discountBreakdown($payment),
         ];
 
         $this->paymentGenerated = true;
         $this->success(__('Subscription confirmed. Payment information generated.'));
-    }
-
-    public bool $discountModal = false;
-
-
-    /** 'amount' (euros) ou 'percent' — le pourcentage n'est qu'un clavier. */
-    public string $discountMode = 'amount';
-
-    public string $discountReason = '';
-
-    public ?int $discountSubscriptionId = null;
-
-    public float $discountValue = 0.0;
-
-    /**
-     * Accorde la remise saisie.
-     *
-     * Le pourcentage est converti ici, une fois, sur le montant que le
-     * secrétaire a sous les yeux. Rien ne le persiste : la remise est gelée en
-     * euros, et si le membre ajoute un entraînement plus tard, on redemande.
-     * Le pourcentage survit dans le motif, parce que « 30 % » raconte le geste
-     * mieux que « 37,50 € » trois ans après.
-     */
-    public function confirmDiscount(): void
-    {
-        Gate::authorize(Permission::SubscriptionsDiscount->value);
-
-        $subscription = Subscription::find($this->discountSubscriptionId);
-
-        if (! $subscription instanceof Subscription) {
-            return;
-        }
-
-        $reason = trim($this->discountReason);
-        $amount = $this->discountMode === 'percent'
-            ? round((float) $subscription->amount_due * $this->discountValue / 100, 2)
-            : round($this->discountValue, 2);
-
-        if ($this->discountMode === 'percent' && $reason !== '') {
-            $reason = __(':percent% — :reason', [
-                'percent' => rtrim(rtrim(number_format($this->discountValue, 2, ',', ''), '0'), ','),
-                'reason' => $reason,
-            ]);
-        }
-
-        try {
-            $granted = (new GrantSubscriptionDiscountAction)(
-                $subscription,
-                $amount,
-                $reason,
-                $subscription->has_other_family_members ? 2 : 1,
-            );
-        } catch (DomainException $e) {
-            $this->error($e->getMessage());
-
-            return;
-        }
-
-        $this->reset(['discountModal', 'discountSubscriptionId', 'discountValue', 'discountReason', 'discountMode']);
-
-        // Le trop-perçu n'est pas remboursé ici — c'est un geste de trésorerie —
-        // mais celui qui vient de le causer doit l'apprendre maintenant.
-        if ($granted->leavesMoneyToRefund()) {
-            $this->warning(__('Discount granted. :amount € are now owed back to the member — the treasury has to refund them.', [
-                'amount' => number_format($granted->refundable, 2, ',', ' '),
-            ]));
-
-            return;
-        }
-
-        $this->success(__('Discount granted.'));
-    }
-
-    public function openDiscount(int $subscriptionId): void
-    {
-        Gate::authorize(Permission::SubscriptionsDiscount->value);
-
-        $this->discountSubscriptionId = $subscriptionId;
-        $this->discountMode = 'amount';
-        $this->discountValue = 0.0;
-        $this->discountReason = '';
-        $this->discountModal = true;
     }
 
     public function approveTrainingRequest(): void
@@ -405,14 +340,21 @@ new class extends Component
         // Delta = new total − what was already owed (CalculatePriceAction applied discount inside)
         $deltaCost = max(0.0, $subscription->amount_due - $previousAmountDue);
 
-        if ($deltaCost > 0) {
-            $payment = $subscription->payments()->create([
+        $payment = $deltaCost > 0
+            ? $subscription->payments()->create([
                 'reference' => (new GeneratePaymentReference)(),
                 'amount_due' => $deltaCost,
                 'amount_paid' => 0,
                 'status' => 'pending',
-            ]);
+            ])
+            : null;
 
+        // Après le complément, qu'elle rabote ; mais avant la fenêtre de
+        // paiement, qui doit montrer ce que le membre recevra réellement.
+        $this->applyInlineDiscount($subscription->fresh(), $deltaCost);
+
+        // Remisé à 100 %, le complément est annulé : plus rien à communiquer.
+        if ($payment instanceof Payment && $payment->refresh()->status === 'pending') {
             $this->paymentData = [
                 'payment_id' => $payment->id,
                 'reference' => $payment->reference,
@@ -424,11 +366,10 @@ new class extends Component
                 'beneficiary' => 'CTT Ottignies-Blocry ASBL',
                 'qr_code' => (new GeneratePaymentQR)($payment),
                 'invitation_counter' => 0,
+                ...$this->discountBreakdown($payment),
             ];
             $this->paymentGenerated = true;
         }
-
-        $this->applyInlineDiscount($subscription->fresh());
 
         $rejectedIds = array_diff($allPendingIds, $this->approvedPackIds);
         if ($rejectedIds !== []) {
@@ -762,6 +703,65 @@ new class extends Component
         }
     }
 
+    /**
+     * Accorde la remise saisie.
+     *
+     * Le pourcentage est converti ici, une fois, sur le montant que le
+     * secrétaire a sous les yeux. Rien ne le persiste : la remise est gelée en
+     * euros, et si le membre ajoute un entraînement plus tard, on redemande.
+     * Le pourcentage survit dans le motif, parce que « 30 % » raconte le geste
+     * mieux que « 37,50 € » trois ans après.
+     */
+    public function confirmDiscount(): void
+    {
+        Gate::authorize(Permission::SubscriptionsDiscount->value);
+
+        $subscription = Subscription::find($this->discountSubscriptionId);
+
+        if (! $subscription instanceof Subscription) {
+            return;
+        }
+
+        $reason = trim($this->discountReason);
+        $amount = $this->discountMode === 'percent'
+            ? round((float) $subscription->amount_due * $this->discountValue / 100, 2)
+            : round($this->discountValue, 2);
+
+        if ($this->discountMode === 'percent' && $reason !== '') {
+            $reason = __(':percent% — :reason', [
+                'percent' => rtrim(rtrim(number_format($this->discountValue, 2, ',', ''), '0'), ','),
+                'reason' => $reason,
+            ]);
+        }
+
+        try {
+            $granted = (new GrantSubscriptionDiscountAction)(
+                $subscription,
+                $amount,
+                $reason,
+                $subscription->has_other_family_members ? 2 : 1,
+            );
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->reset(['discountModal', 'discountSubscriptionId', 'discountValue', 'discountReason', 'discountMode']);
+
+        // Le trop-perçu n'est pas remboursé ici — c'est un geste de trésorerie —
+        // mais celui qui vient de le causer doit l'apprendre maintenant.
+        if ($granted->leavesMoneyToRefund()) {
+            $this->warning(__('Discount granted. :amount € are now owed back to the member — the treasury has to refund them.', [
+                'amount' => number_format($granted->refundable, 2, ',', ' '),
+            ]));
+
+            return;
+        }
+
+        $this->success(__('Discount granted.'));
+    }
+
     public function confirmRefund(): void
     {
         Gate::authorize(Permission::SubscriptionsManage->value);
@@ -961,16 +961,23 @@ new class extends Component
         return $chips;
     }
 
+    /**
+     * Entre 1024 et 1279 px, la carte n'offre que 634 à 710 px et le tableau
+     * complet en demandait 826 : il débordait à droite. La licence se lit alors
+     * sous le nom, et la charte attend `xl`.
+     *
+     * @return array<int, array<string, mixed>>
+     */
     public function headers(): array
     {
         return [
             ['key' => 'name', 'label' => __('Member')],
-            ['key' => 'type', 'label' => __('Licence'), 'class' => 'hidden md:table-cell'],
+            ['key' => 'type', 'label' => __('Licence'), 'class' => 'hidden xl:table-cell'],
             ['key' => 'trainings_count', 'label' => __('Training')],
             ['key' => 'amount_due', 'label' => __('Amount')],
             // La signature de la charte vit dans une autre table, sans colonne
             // à trier ici : l'en-tête reste inerte.
-            ['key' => 'charter', 'label' => __('Charter'), 'sortable' => false, 'class' => 'hidden lg:table-cell'],
+            ['key' => 'charter', 'label' => __('Charter'), 'sortable' => false, 'class' => 'hidden xl:table-cell'],
             ['key' => 'status', 'label' => __('Status')],
         ];
     }
@@ -1018,6 +1025,17 @@ new class extends Component
             : null;
         $this->cancelMessage = '';
         $this->cancelModal = true;
+    }
+
+    public function openDiscount(int $subscriptionId): void
+    {
+        Gate::authorize(Permission::SubscriptionsDiscount->value);
+
+        $this->discountSubscriptionId = $subscriptionId;
+        $this->discountMode = 'amount';
+        $this->discountValue = 0.0;
+        $this->discountReason = '';
+        $this->discountModal = true;
     }
 
     public function openReconcileModal(int $subscriptionId, int $packId): void
@@ -1938,6 +1956,24 @@ new class extends Component
             ['licence' => trim($user->licence)],
             ['licence' => ['digits:6', ValidationRule::unique('users', 'licence')->ignore($user->id)]],
         )->fails();
+    }
+
+    /**
+     * Le prix normal et les remises qui l'ont allégé, pour la fenêtre de paiement.
+     *
+     * @return array{amount_before_discounts: float, discounts: list<array{amount: float, reason: string}>}
+     */
+    private function discountBreakdown(Payment $payment): array
+    {
+        $payment->load('discounts');
+
+        return [
+            'amount_before_discounts' => $payment->amountBeforeDiscounts(),
+            'discounts' => $payment->discounts
+                ->map(fn (SubscriptionDiscount $discount): array => ['amount' => $discount->amount, 'reason' => $discount->reason])
+                ->values()
+                ->all(),
+        ];
     }
 
     /**

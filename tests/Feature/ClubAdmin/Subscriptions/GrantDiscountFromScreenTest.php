@@ -13,11 +13,11 @@ use App\Domains\Trainings\Models\TrainingPack;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
-const REGISTRATIONS_COMPONENT = 'pages::club-admin.users.registrations';
+const DISCOUNT_SCREEN_COMPONENT = 'pages::club-admin.users.registrations';
 
 function discountScreen(): Testable
 {
-    return Livewire::actingAs(User::factory()->isAdmin()->create())->test(REGISTRATIONS_COMPONENT);
+    return Livewire::actingAs(User::factory()->isAdmin()->create())->test(DISCOUNT_SCREEN_COMPONENT);
 }
 
 function affiliationToDiscount(bool $competitive = true): Subscription
@@ -90,7 +90,7 @@ it('refuses the gesture to someone without the discount permission', function ()
     $secretary->givePermissionTo(Permission::SubscriptionsView->value);
 
     Livewire::actingAs($secretary)
-        ->test(REGISTRATIONS_COMPONENT)
+        ->test(DISCOUNT_SCREEN_COMPONENT)
         ->call('openDiscount', $subscription->id)
         ->assertForbidden();
 
@@ -139,7 +139,7 @@ it('lets the members delegation grant a discount', function (): void {
     $secretary->assignRole(Role::MEMBERS->value);
 
     Livewire::actingAs($secretary)
-        ->test(REGISTRATIONS_COMPONENT)
+        ->test(DISCOUNT_SCREEN_COMPONENT)
         ->call('openDiscount', $subscription->id)
         ->set('discountMode', 'amount')
         ->set('discountValue', 25.0)
@@ -196,6 +196,82 @@ it('discounts a mid-season pack approval without billing the full complement', f
         // Ce qu'on réclame suit ce qu'on doit.
         ->and(round((float) $subscription->payments()->where('status', 'pending')->sum('amount_due') / 100, 2))
         ->toBe(185.0);
+})->group('subscriptions', 'discount');
+
+/**
+ * Un pourcentage porte sur le prix qu'on décide, et la fenêtre le montre.
+ *
+ * Deux défauts vus en vrai : 10 % sur deux packs à 160 € avaient pris
+ * 10 % des 285 € dus (cotisation comprise), et la fenêtre de paiement,
+ * construite avant la remise, affichait encore le complément plein.
+ */
+it('takes a percentage of the pack being approved and shows the discounted complement', function (): void {
+    Club::factory()->ownClub()->create([
+        'bic' => 'GEBABEBB',
+        'bank_account' => 'BE68539007547034',
+    ]);
+    Club::forgetOwnClub();
+
+    $subscription = affiliationToDiscount();
+
+    $pack = TrainingPack::factory()->create(['price' => 100, 'allow_discount' => false]);
+    $subscription->trainingPacks()->attach($pack->id, ['status' => 'pending']);
+
+    $subscription->payments()->create([
+        'reference' => '600/0000/00002',
+        'amount_due' => 125,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    discountScreen()
+        ->call('reviewTrainingRequest', $subscription->id)
+        ->set('approvedPackIds', [$pack->id])
+        ->set('inlineDiscountMode', 'percent')
+        ->set('inlineDiscountValue', 10.0)
+        ->set('inlineDiscountReason', 'Révision des comptes')
+        ->call('approveTrainingRequest')
+        ->assertHasNoErrors()
+        ->assertSet('paymentGenerated', true)
+        ->assertSet('paymentData.amount_due', 90.0);
+
+    $subscription = $subscription->fresh();
+
+    // 10 % des 100 € du pack, pas des 225 € dus.
+    expect($subscription->discounts->first()->amount)->toBe(10.0)
+        ->and($subscription->amount_due)->toBe(215.0);
+})->group('subscriptions', 'discount');
+
+it('shows no payment window when the complement is discounted away', function (): void {
+    Club::factory()->ownClub()->create([
+        'bic' => 'GEBABEBB',
+        'bank_account' => 'BE68539007547034',
+    ]);
+    Club::forgetOwnClub();
+
+    $subscription = affiliationToDiscount();
+
+    $pack = TrainingPack::factory()->create(['price' => 100, 'allow_discount' => false]);
+    $subscription->trainingPacks()->attach($pack->id, ['status' => 'pending']);
+
+    $subscription->payments()->create([
+        'reference' => '600/0000/00003',
+        'amount_due' => 125,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    discountScreen()
+        ->call('reviewTrainingRequest', $subscription->id)
+        ->set('approvedPackIds', [$pack->id])
+        ->set('inlineDiscountMode', 'percent')
+        ->set('inlineDiscountValue', 100.0)
+        ->set('inlineDiscountReason', 'Offert')
+        ->call('approveTrainingRequest')
+        ->assertHasNoErrors()
+        ->assertSet('paymentGenerated', false);
+
+    expect($subscription->fresh()->amount_due)->toBe(125.0);
 })->group('subscriptions', 'discount');
 
 /**
@@ -287,6 +363,46 @@ it('discounts a pack the committee adds by hand', function (): void {
         ->and($subscription->amount_due)->toBe(195.0)
         ->and(round((float) $subscription->payments()->where('status', 'pending')->sum('amount_due') / 100, 2))
         ->toBe(195.0);
+})->group('subscriptions', 'discount');
+
+it('takes a percentage of the pack the committee adds, not of the whole affiliation', function (): void {
+    $member = User::factory()->create();
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => $member->id,
+        'status' => 'confirmed',
+        'is_competitive' => true,
+    ]);
+
+    (new CalculatePriceAction)($subscription);
+
+    $subscription->payments()->create([
+        'reference' => '700/0000/00002',
+        'amount_due' => 125,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    $pack = TrainingPack::factory()->create([
+        'price' => 100,
+        'allow_discount' => false,
+        'season_id' => $subscription->season_id,
+    ]);
+
+    Livewire::actingAs(User::factory()->isAdmin()->create())
+        ->test('pages::club-events.trainings.index')
+        ->set('selectedPackId', $pack->id)
+        ->set('addMemberUserId', $member->id)
+        ->set('inlineDiscountMode', 'percent')
+        ->set('inlineDiscountValue', 10.0)
+        ->set('inlineDiscountReason', 'Accord parents séparés')
+        ->call('addMemberToPack')
+        ->assertHasNoErrors();
+
+    $subscription = $subscription->fresh();
+
+    expect($subscription->discounts->first()->amount)->toBe(10.0)
+        ->and($subscription->amount_due)->toBe(215.0);
 })->group('subscriptions', 'discount');
 
 /**

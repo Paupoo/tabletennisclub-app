@@ -4642,6 +4642,8 @@
     ":name has no address of their own, and no guardian with an account to act for them.": ":name heeft geen eigen adres en geen verantwoordelijke volwassene met een account om namens hem te handelen.",
     ":count member(s) are managed by a guardian and have no login of their own to be handed.": ":count lid/leden worden beheerd door een verantwoordelijke volwassene en hebben geen eigen login om te ontvangen.",
     "Acting for :ward": "Handelt voor :ward",
+    "Act for :ward": "Handelen voor :ward",
+    "Switch to their account": "Overschakelen naar hun account",
     "Guardian to invite": "Verantwoordelijke volwassene uit te nodigen",
     "Guardian invited": "Verantwoordelijke volwassene uitgenodigd",
     "Managed by a guardian": "Beheerd door een verantwoordelijke volwassene",

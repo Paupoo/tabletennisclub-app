@@ -28,8 +28,15 @@
     $c = $colorMap[$pending ? 'primary' : ($color ?? 'neutral')] ?? $colorMap['neutral'];
 @endphp
 
+{{-- A tile is a link, or — given `wireClick` — a button for a Livewire
+     action that must not ride a GET, like taking a ward's seat. --}}
+@if(isset($wireClick))
+<button type="button" wire:click="{{ $wireClick }}" wire:key="{{ $wireKey ?? $wireClick }}"
+   class="cursor-pointer group relative bg-base-100 rounded-xl border border-base-300 {{ $c['border'] }} hover:shadow-md transition-all p-4 flex flex-col items-center gap-2 text-center">
+@else
 <a href="{{ $href ?? '#' }}"
    class="group relative bg-base-100 rounded-xl border border-base-300 {{ $c['border'] }} hover:shadow-md transition-all p-4 flex flex-col items-center gap-2 text-center">
+@endif
 
     @if($pending)
     <span class="absolute top-2 right-2">
@@ -42,4 +49,8 @@
     </div>
     <span class="text-xs font-semibold text-base-content leading-tight">{{ $label }}</span>
     <span class="text-xs text-base-content/40 leading-tight">{{ $sub }}</span>
+@if(isset($wireClick))
+</button>
+@else
 </a>
+@endif

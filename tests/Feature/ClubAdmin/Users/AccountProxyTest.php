@@ -288,3 +288,42 @@ describe('The switcher in the member menu', function (): void {
             ->assertForbidden();
     });
 });
+
+describe('The shortcut at the head of the dashboard', function (): void {
+    test('a guardian finds each ward as the very first tile of their space', function (): void {
+        [$ward, $guardian] = wardAndGuardian();
+
+        $response = $this->actingAs($guardian)->get(route('dashboard'))->assertOk();
+
+        expect($response->viewData('proxyTileCount'))->toBe(1);
+        $response->assertSeeInOrder([
+            __('Act for :ward', ['ward' => $ward->first_name]),
+            'Mon profil',
+        ]);
+    });
+
+    test('a member with no ward gets no shortcut', function (): void {
+        $member = User::factory()->create();
+
+        $response = $this->actingAs($member)->get(route('dashboard'))->assertOk();
+
+        expect($response->viewData('proxyTileCount'))->toBe(0);
+        $response->assertDontSee(__('Switch to their account'));
+    });
+
+    test('the tile takes the seat, then offers it back', function (): void {
+        [$ward, $guardian] = wardAndGuardian();
+        $this->actingAs($guardian);
+
+        Livewire::test('actions.act-for', ['variant' => 'tiles'])
+            ->assertSee(__('Act for :ward', ['ward' => $ward->first_name]))
+            ->call('actFor', $ward->id)
+            ->assertRedirect(route('dashboard'));
+
+        expect(auth()->id())->toBe($ward->id);
+
+        $this->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee(__('Back to my account (:name)', ['name' => $guardian->first_name]));
+    });
+});

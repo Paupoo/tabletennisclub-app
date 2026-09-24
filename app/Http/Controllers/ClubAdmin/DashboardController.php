@@ -18,6 +18,7 @@ use App\Domains\Shared\Enums\Role;
 use App\Domains\Trainings\Models\Training;
 use App\Http\Controllers\Controller;
 use App\Services\ClubAdmin\Dashboard\AgendaBlockBuilder;
+use App\Support\AccountProxy;
 use App\Support\QueueHealth;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -67,6 +68,9 @@ class DashboardController extends Controller
         $alerts = $this->buildAlerts($user, $isAdmin, $showSecretary, $showTreasurer, $showCaptain);
         $coachTiles = $showCoach ? $this->buildCoachTiles($user) : [];
         $memberTiles = $this->buildMemberTiles($user);
+        // The proxy tiles are rendered by the act-for component, which holds the
+        // action; the dashboard only needs to know how many to count.
+        $proxyTileCount = AccountProxy::isActing() ? 1 : $user->managedAccounts()->count();
         $agendaBlocks = $this->agendaBlocks->for($user);
 
         return view('clubAdmin.dashboard', compact(
@@ -78,6 +82,7 @@ class DashboardController extends Controller
             'coachTiles',
             'alerts',
             'memberTiles',
+            'proxyTileCount',
             'agendaBlocks',
         ));
     }

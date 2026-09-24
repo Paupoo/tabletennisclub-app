@@ -4642,6 +4642,8 @@
     ":name has no address of their own, and no guardian with an account to act for them.": ":name n'a pas d'adresse propre, et aucun adulte responsable disposant d'un compte pour agir en son nom.",
     ":count member(s) are managed by a guardian and have no login of their own to be handed.": ":count membre(s) sont gérés par un adulte responsable et n'ont pas d'identifiant propre à recevoir.",
     "Acting for :ward": "J'agis pour :ward",
+    "Act for :ward": "Agir pour :ward",
+    "Switch to their account": "Passer sur son compte",
     "Guardian to invite": "Adulte responsable à inviter",
     "Guardian invited": "Adulte responsable invité",
     "Managed by a guardian": "Géré par un adulte responsable",

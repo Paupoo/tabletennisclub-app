@@ -11,6 +11,13 @@ use Livewire\Component;
 
 new class extends Component
 {
+    /**
+     * Where the switcher sits: the member menu, or the head of the dashboard's
+     * "Mon espace" — a guardian signing in lands on their own account and has
+     * to see, first thing, that their child's is one step away.
+     */
+    public string $variant = 'menu';
+
     /** Take a ward's seat. Authorization lives in {@see AccountProxy::start()}. */
     public function actFor(int $userId): void
     {
@@ -53,6 +60,31 @@ new class extends Component
 
 ?>
 
+@if ($variant === 'tiles')
+    {{-- `contents`: the tiles join the dashboard grid they are dropped into. --}}
+    <div class="contents">
+        @if ($this->isActing)
+            @include('clubAdmin._dashboard_tile', [
+                'icon' => 'o-arrow-uturn-left',
+                'label' => __('Back to my account (:name)', ['name' => $this->actor?->first_name]),
+                'sub' => __('You are acting for :ward.', ['ward' => auth()->user()->first_name]),
+                'wireClick' => 'stopActing',
+                'color' => 'secondary',
+            ])
+        @else
+            @foreach ($this->wards as $ward)
+                @include('clubAdmin._dashboard_tile', [
+                    'icon' => 'o-user-group',
+                    'label' => __('Act for :ward', ['ward' => $ward->first_name]),
+                    'sub' => __('Switch to their account'),
+                    'wireClick' => 'actFor(' . $ward->id . ')',
+                    'wireKey' => 'ward-tile-' . $ward->id,
+                    'color' => 'secondary',
+                ])
+            @endforeach
+        @endif
+    </div>
+@else
 {{-- One root per branch: Livewire allows a single root element, and x-menu-sub
      renders the <li> this component owes the menu's <ul>. --}}
 @if ($this->isActing)
@@ -78,4 +110,5 @@ new class extends Component
     {{-- A member with no ward owes the menu nothing, but Livewire still needs a
          root to anchor the component to. --}}
     <li hidden></li>
+@endif
 @endif

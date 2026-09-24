@@ -48,7 +48,11 @@
             class="btn-xs btn-outline" />
     @endif
 
-    @if ($slot->isNotEmpty())
+    {{-- hasActualContent(), not isNotEmpty(): a slot whose every entry sits
+    behind a refused @can still carries its indentation, and used to open a
+    "More" menu onto an empty panel. A note alone still earns the menu — it
+    explains why the action the reader looks for is not there. --}}
+    @if ($slot->hasActualContent() || (isset($note) && $note->hasActualContent()))
         <button
             type="button"
             data-row-menu-trigger

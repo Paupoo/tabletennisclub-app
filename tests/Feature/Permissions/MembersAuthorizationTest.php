@@ -49,7 +49,9 @@ describe('reaching the screens', function (): void {
         $this->actingAs($this->committeeOnly)->get(route('admin.users.index'))->assertOk();
         $this->actingAs($this->committeeOnly)->get(route('admin.subscriptions.roster'))->assertOk();
         $this->actingAs($this->committeeOnly)->get(route('admin.users.create'))->assertForbidden();
-        $this->actingAs($this->committeeOnly)->get(route('admin.users.delegations'))->assertForbidden();
+        // Who holds which duty is transparency, not management: the overview is
+        // read-only, and assigning happens on the member's form.
+        $this->actingAs($this->committeeOnly)->get(route('admin.users.delegations'))->assertOk();
     });
 });
 

@@ -31,6 +31,15 @@ describe('the overview screen', function (): void {
             ->assertOk();
     });
 
+    it('opens for a committee member without any délégation, leading to the read-only file', function (): void {
+        $holder = User::factory()->withRole(Role::CASH_REGISTER)->create();
+
+        Livewire::actingAs(User::factory()->isCommitteeMember()->create())
+            ->test(DELEGATIONS)
+            ->assertSee(route('admin.users.show', $holder))
+            ->assertDontSee(route('admin.users.edit', $holder));
+    });
+
     it('lists the holders of a delegation', function (): void {
         $xavier = User::factory()->withRole(Role::CASH_REGISTER)->create(['last_name' => 'Dubois']);
 

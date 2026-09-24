@@ -9,6 +9,7 @@ use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -121,6 +122,17 @@ new class extends Component
             ])
             ->filter(fn (array $row): bool => $row['roles']->isNotEmpty())
             ->values();
+    }
+
+    /**
+     * Where a holder's name leads: the edit form for whoever writes either half
+     * of the file, the read-only file for everyone else on this screen.
+     */
+    public function memberFileUrl(User $user): string
+    {
+        return Gate::allows('update', $user) || Gate::allows('manageAccess', $user)
+            ? route('admin.users.edit', $user)
+            : route('admin.users.show', $user);
     }
 
     public function removeFilter(string $key): void

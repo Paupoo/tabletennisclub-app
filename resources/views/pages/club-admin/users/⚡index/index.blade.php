@@ -130,9 +130,9 @@
                 <div class="mt-3">
                     @if (! $selectionModeActive)
                         <x-admin.shared.row-menu
-                            :label="$this->mayOpenMemberFile($user) ? __('Edit') : null"
-                            icon="o-pencil"
-                            :link="$this->mayOpenMemberFile($user) ? route('admin.users.edit', $user->id) : null">
+                            :label="$this->mayEditMemberFile($user) ? __('Edit') : __('Consult')"
+                            :icon="$this->mayEditMemberFile($user) ? 'o-pencil' : 'o-eye'"
+                            :link="$this->mayEditMemberFile($user) ? route('admin.users.edit', $user->id) : route('admin.users.show', $user->id)">
                             @if ($invStatus !== 'active')
                                 @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
                                     {{-- An invitation hands over a login, so it only goes to the
@@ -230,13 +230,10 @@
                          on one line: the status column added here costs width, and without
                          this every name of average length folded in two. --}}
                     @scope('cell_name', $user)
-                        @if ($this->mayOpenMemberFile($user))
-                            <a class="font-medium whitespace-nowrap hover:underline" href="{{ route('admin.users.edit', $user) }}">
-                                {{ $user->first_name }} {{ $user->last_name }}
-                            </a>
-                        @else
-                            <span class="font-medium whitespace-nowrap">{{ $user->first_name }} {{ $user->last_name }}</span>
-                        @endif
+                        {{-- The name opens the file, which everyone on this list may read. --}}
+                        <a class="font-medium whitespace-nowrap hover:underline" href="{{ route('admin.users.show', $user) }}">
+                            {{ $user->first_name }} {{ $user->last_name }}
+                        </a>
                     @endscope
                     @scope('cell_is_competitive', $user)
                         @if ($user->is_competitor)
@@ -270,9 +267,9 @@
                         @endphp
                         <div class="flex items-center justify-end gap-2">
                             <x-admin.shared.row-menu
-                                    :label="$this->mayOpenMemberFile($user) ? __('Edit') : null"
-                                    icon="o-pencil"
-                                    :link="$this->mayOpenMemberFile($user) ? route('admin.users.edit', $user->id) : null">
+                                    :label="$this->mayEditMemberFile($user) ? __('Edit') : __('Consult')"
+                                    :icon="$this->mayEditMemberFile($user) ? 'o-pencil' : 'o-eye'"
+                                    :link="$this->mayEditMemberFile($user) ? route('admin.users.edit', $user->id) : route('admin.users.show', $user->id)">
                                     @if ($invStatus !== 'active')
                                         @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
                                             {{-- An invitation hands over a login, so it only goes to the

@@ -340,9 +340,16 @@ Route::post('/meetings/{meeting}/rsvp/{user}', [MeetingRsvpController::class, 's
 
 // Tournament administration (events) — committee only.
 Route::prefix('admin/club-events/tournaments')
+    ->middleware(['auth', 'verified', 'feature:tournaments'])
+    ->group(function (): void {
+        // The list is the committee baseline; the tools below are the organiser's.
+        Route::livewire('/', 'pages::club-events.tournaments.index')
+            ->middleware('can:tournaments.view')
+            ->name('admin.tournaments.index');
+    });
+Route::prefix('admin/club-events/tournaments')
     ->middleware(['auth', 'verified', 'can:tournaments.manage', 'feature:tournaments'])
     ->group(function (): void {
-        Route::livewire('/', 'pages::club-events.tournaments.index')->name('admin.tournaments.index');
         Route::livewire('{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');
         Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
         Route::livewire('{tournament}/wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard.edit');

@@ -152,6 +152,7 @@ it('leads a committee member without any délégation to every screen it may rea
     'admin.interclubs.clubs',
     'admin.trainings.index',
     'admin.planning.board',
+    'admin.tournaments.index',
 ]);
 
 it('keeps the configuration tools out of a reader\'s menu', function (): void {

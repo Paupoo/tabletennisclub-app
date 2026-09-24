@@ -31,8 +31,8 @@ describe('tournaments', function (): void {
             ->assertOk();
     });
 
-    it('no longer opens on committee membership alone', function (): void {
-        $this->actingAs($this->committeeOnly)->get(route('admin.tournaments.index'))->assertForbidden();
+    it('opens the list to the committee, read-only, and not to a plain member', function (): void {
+        $this->actingAs($this->committeeOnly)->get(route('admin.tournaments.index'))->assertOk();
         $this->actingAs($this->member)->get(route('admin.tournaments.index'))->assertForbidden();
     });
 

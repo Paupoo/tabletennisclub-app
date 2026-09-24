@@ -279,7 +279,7 @@
     @endfeature
 
     @feature('meetings', 'tournaments')
-    @canany(['meetings.view', 'tournaments.manage'])
+    @canany(['meetings.view', 'tournaments.view'])
     <x-menu-sub icon="o-star" :title="__('Events')">
         @feature('meetings')
         @can('meetings.view')
@@ -287,7 +287,7 @@
         @endcan
         @endfeature
         @feature('tournaments')
-        @can('tournaments.manage')
+        @can('tournaments.view')
         <x-menu-item icon="o-trophy" link="{{ route('admin.tournaments.index') }}" :title="__('Tournaments')" />
         @endcan
         @endfeature

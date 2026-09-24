@@ -11,6 +11,7 @@ use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
+use App\Support\Markdown;
 use App\Support\Breadcrumb;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Gate;
@@ -34,6 +35,10 @@ new class extends Component
     public bool $deleteModal = false;
 
     public ?int $deletingId = null;
+
+    public ?int $previewingId = null;
+
+    public bool $previewModal = false;
 
     #[Url]
     public string $search = '';
@@ -97,13 +102,55 @@ new class extends Component
 
     public function confirmBulkArchive(): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         $this->confirmBulkArchiveModal = true;
     }
 
     public function confirmDelete(int $id): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         $this->deletingId = $id;
         $this->deleteModal = true;
+    }
+
+    /**
+     * Whether the visitor edits the articles, or only reads them: the committee
+     * reads every article at the baseline, drafts included.
+     */
+    #[Computed]
+    public function mayManage(): bool
+    {
+        return Gate::allows(Permission::NewsPostsManage->value);
+    }
+
+    /**
+     * A draft has no public page yet, and the editor is the website délégation's:
+     * a reader reads it here.
+     */
+    public function openPreview(int $id): void
+    {
+        Gate::authorize(Permission::NewsPostsView->value);
+
+        $this->previewingId = NewsPost::findOrFail($id)->id;
+        $this->previewModal = true;
+    }
+
+    /**
+     * The article open in the preview, rendered the way the public page does.
+     *
+     * @return array{title: string, html: string}|null
+     */
+    #[Computed]
+    public function preview(): ?array
+    {
+        $article = $this->previewingId ? NewsPost::find($this->previewingId) : null;
+
+        return $article === null ? null : [
+            'title' => $article->title,
+            'html' => Markdown::safe($article->content ?? ''),
+        ];
     }
 
     public function delete(): void

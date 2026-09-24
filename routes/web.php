@@ -510,8 +510,12 @@ Route::middleware(['auth', 'verified'])
     });
 
 Route::prefix('admin/website')->middleware(['auth', 'verified', 'feature:website'])->group(function (): void {
+    // What the club publishes is readable at the committee baseline, drafts
+    // included; writing it is the website délégation.
+    Route::livewire('/articles', 'pages::website.articles.index')
+        ->middleware('can:news_posts.view')
+        ->name('admin.website.articles.index');
     Route::middleware('can:news_posts.manage')->group(function (): void {
-        Route::livewire('/articles', 'pages::website.articles.index')->name('admin.website.articles.index');
         Route::livewire('/articles/create', 'pages::website.articles.edit')->name('admin.website.articles.create');
         Route::livewire('/articles/{newsPost}/edit', 'pages::website.articles.edit')->name('admin.website.articles.edit');
     });
@@ -527,7 +531,7 @@ Route::prefix('admin/website')->middleware(['auth', 'verified', 'feature:website
             ->name('admin.website.spams.index');
     });
     Route::livewire('/events', 'pages::website.events.index')
-        ->middleware('can:event_posts.manage')
+        ->middleware('can:news_posts.view')
         ->name('admin.website.events.index');
 });
 

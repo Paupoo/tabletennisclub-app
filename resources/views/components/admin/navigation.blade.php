@@ -296,10 +296,10 @@
     @endfeature
 
     @feature('website', 'contacts')
-    @canany(['news_posts.manage', 'contacts.view', 'contacts.manage', 'spams.manage', 'event_posts.manage'])
+    @canany(['news_posts.view', 'contacts.view', 'contacts.manage', 'spams.manage', 'event_posts.manage'])
     <x-menu-sub icon="o-globe-alt" :title="__('Website')">
         @feature('website')
-        @can('news_posts.manage')
+        @can('news_posts.view')
         <x-menu-item icon="o-newspaper" link="{{ route('admin.website.articles.index') }}" :title="__('Articles')" />
         @endcan
         @endfeature
@@ -315,7 +315,7 @@
         @endcan
         @endfeature
         @feature('website')
-        @can('event_posts.manage')
+        @can('news_posts.view')
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.website.events.index') }}" :title="__('Events')" />
         @endcan
         @endfeature

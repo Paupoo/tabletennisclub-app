@@ -52,13 +52,18 @@ describe('the bar, previously open to every member', function (): void {
 });
 
 describe('the website admin, previously guarded by route middleware alone', function (): void {
-    it('keeps a committee member out of the article and event screens', function (string $routeName): void {
+    it('keeps a committee member out of the editors and the spam queue', function (string $routeName): void {
         $this->actingAs($this->committeeOnly)->get(route($routeName))->assertForbidden();
     })->with([
-        'admin.website.articles.index',
         'admin.website.articles.create',
-        'admin.website.events.index',
         'admin.website.spams.index',
+    ]);
+
+    it('lets a committee member read what the club publishes', function (string $routeName): void {
+        $this->actingAs($this->committeeOnly)->get(route($routeName))->assertOk();
+    })->with([
+        'admin.website.articles.index',
+        'admin.website.events.index',
     ]);
 
     it('keeps a plain member out as well', function (string $routeName): void {

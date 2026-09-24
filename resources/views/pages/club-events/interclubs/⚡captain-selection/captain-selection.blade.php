@@ -202,7 +202,9 @@
                         :color="$section['color']"
                         :open="$section['open']"
                         wire:key="section-{{ $viewMode }}-{{ $isDayMode ? $selectedMatchDay : $selectedTeamId }}-{{ $section['key'] }}">
-                        <div class="divide-y divide-base-200 overflow-hidden rounded-xl border border-base-300">
+                        {{-- Pas d'overflow-hidden : il rognait le panneau du menu « Plus »
+                             des lignes. Les coins s'arrondissent sur les lignes elles-mêmes. --}}
+                        <div class="divide-y divide-base-200 rounded-xl border border-base-300 [&>[data-match-row]:first-child]:rounded-t-xl [&>[data-match-row]:last-child]:rounded-b-xl">
                             @foreach ($groups[$section['key']] as $ic)
                                 @include('pages::club-events.interclubs.⚡captain-selection._match-row', [
                                     'ic' => $ic,

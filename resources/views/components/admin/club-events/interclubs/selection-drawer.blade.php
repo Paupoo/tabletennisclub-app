@@ -20,7 +20,8 @@
             :can-search-substitute="$canSearchSubstitute"
             :search-results="$searchResults" :search-note="$searchNote"
             :search-term="$search"
-            short-handed-model="shortHandedOptIn" :minimum-players="$interclub->minimumPlayers()"
+            walkover-action="designateWalkover" :walkover-id="$walkoverPlayerId"
+            :minimum-players="$interclub->minimumPlayers()"
             save-action="saveSelection" />
 --}}
 @props([
@@ -42,12 +43,19 @@
     'poolRows' => [],
     'poolWaiting' => [],
     'poolHiddenCount' => 0,
+    'poolUnrankedCount' => 0,
     'poolMaybeCount' => 0,
     'poolMaybeTeams' => [],
     'lineupConstraint' => null,
-    // Jouer à 3 : la case n'est proposée qu'entre le minimum réglementaire et
-    // le complet, et seulement par un appelant qui sait l'enregistrer.
-    'shortHandedModel' => null,
+    // Jouer à 3 : le joueur WO n'est proposé qu'au minimum réglementaire, et
+    // seulement par un appelant qui sait l'enregistrer.
+    'walkoverAction' => null,
+    // Lecture seule (DS-D) : la compo telle qu'enregistrée, sans aucun geste —
+    // ni case, ni joueurs libres, ni recherche, ni coordonnées (dérogation T8
+    // réservée au capitaine).
+    'readonly' => false,
+    'sentAt' => null,
+    'walkoverId' => null,
     'minimumPlayers' => null,
 ])
 
@@ -55,14 +63,30 @@
     $title ??= __('Selection');
     $saveLabel ??= __('Save selection');
     $selectedCount = count($selectedIds);
-    $isFull = $selectedCount >= $maxPlayers;
-    $offersShortHanded = $shortHandedModel && $minimumPlayers
-        && $selectedCount >= $minimumPlayers && ! $isFull;
+    // Le WO occupe une place sur la feuille, pas à la table : il ne rend pas la
+    // compo pleine, et un vrai joueur coché lui reprend sa place.
+    $hasWalkover = $walkoverId !== null && in_array($walkoverId, $selectedIds);
+    $playingCount = $selectedCount - ($hasWalkover ? 1 : 0);
+    $isFull = $playingCount >= $maxPlayers;
+    $offersWalkover = ! $readonly && $walkoverAction && $minimumPlayers && $playingCount === $minimumPlayers;
+    // Candidats au WO : quiconque le tiroir laisse aligner, les absents
+    // déclarés d'abord — c'est le cas réel le plus fréquent.
+    $walkoverCandidates = collect($roster)
+        ->concat($poolRows)
+        ->reject(fn (array $p): bool => (in_array($p['id'], $selectedIds) && $p['id'] !== $walkoverId)
+            || ($p['is_blocked'] ?? false) || ($p['is_illegal'] ?? false))
+        ->unique('id')
+        ->sortBy(fn (array $p): int => match ($p['availability'] ?? null) {
+            \App\Domains\Shared\Enums\InterclubAvailability::UNAVAILABLE => 0,
+            null => 1,
+            default => 2,
+        })
+        ->values();
     // Le pool est déplié quand il manque quelqu'un, replié sinon : c'est le seul
     // état où sa longueur coûte sans rien apporter.
     $poolOpen = ! $isFull;
     $poolHasSomethingToSay = count($poolRows) > 0 || count($poolWaiting) > 0
-        || $poolHiddenCount > 0 || $poolMaybeCount > 0;
+        || $poolHiddenCount > 0 || $poolUnrankedCount > 0 || $poolMaybeCount > 0;
 @endphp
 
 <x-drawer class="w-11/12 lg:w-2/5" right separator
@@ -80,7 +104,7 @@
                     'text-success' => $selectedCount == $maxPlayers,
                     'text-warning-content' => $selectedCount > 0 && $selectedCount < $maxPlayers,
                     'text-base-content/60' => $selectedCount === 0,
-                ])>{{ $selectedCount }} / {{ $maxPlayers }}</span>
+                ])>{{ $playingCount }} / {{ $maxPlayers }}@if ($hasWalkover) · {{ __('+ 1 WO') }}@endif</span>
             </div>
             <progress @class([
                 'progress w-full h-2 transition-all duration-500',
@@ -89,26 +113,30 @@
                 'progress-primary' => $selectedCount === 0,
             ]) max="{{ $maxPlayers }}" value="{{ $selectedCount }}"></progress>
 
-            {{-- Un vrai opt-in : sans cette case, une compo sous le complet reste
-                 un brouillon que personne ne reçoit. --}}
-            @if ($offersShortHanded)
-                <div class="mt-3 rounded-xl border border-warning/40 bg-warning/5 p-3">
-                    <p class="mb-2 text-xs font-semibold">
-                        {{ __('Minimum reached: the team may play with :n players.', ['n' => $selectedCount]) }}
-                    </p>
-                    <label class="flex cursor-pointer items-start gap-2 text-sm">
-                        <input type="checkbox" class="checkbox checkbox-warning checkbox-sm mt-0.5"
-                            wire:model.live="{{ $shortHandedModel }}" />
-                        <span>{{ __('I found no other player (team, free players, substitutes): we will play with :n.', ['n' => $selectedCount]) }}</span>
-                    </label>
-                </div>
+            {{-- Au minimum sans WO : ni complète, ni déclarée. Le bloc WO vit en
+                 bas, après tout ce qui peut encore compléter l'équipe. --}}
+            @if ($offersWalkover && ! $hasWalkover)
+                <p class="mt-2 text-xs text-warning-content">
+                    {{ __('One player missing: look further down, or name a walkover player as a last resort.') }}
+                </p>
             @endif
         </div>
+
+        @if ($readonly)
+            <div @class([
+                'flex items-center gap-2 rounded-lg p-3 text-xs font-semibold',
+                'bg-success/10 text-success' => $sentAt,
+                'bg-warning/10 text-warning-content' => ! $sentAt,
+            ])>
+                <x-icon :name="$sentAt ? 'o-paper-airplane' : 'o-pencil-square'" class="h-4 w-4 shrink-0" />
+                {{ $sentAt ? __('Sent to the team on :date', ['date' => $sentAt->format('d/m/Y')]) : __('Not sent to the team yet') }}
+            </div>
+        @endif
 
         {{-- Roster --}}
         <div>
             <div class="mb-3 text-xs font-bold uppercase tracking-widest opacity-60">{{ __('Team roster') }}</div>
-            @if ($isFull)
+            @if ($isFull && ! $readonly)
                 <p class="mb-3 text-xs text-base-content/70">
                     {{ __('Lineup full. Untick a player to free a spot.') }}
                 </p>
@@ -123,7 +151,7 @@
                         $blockedTeam = $player['blocked_team'] ?? null;
                         // Une compo pleine ne refuse plus un geste : elle cesse
                         // de le proposer. Décocher reste toujours possible.
-                        $isRefused   = $isFull && ! $isSelected;
+                        $isRefused   = ($isFull && ! $isSelected) || $readonly;
                         // Décision 20 : on masque ce qu'on n'a jamais promis, on
                         // désactive ce qu'on a déjà montré. Un joueur de son
                         // propre effectif que l'on ferait disparaître passerait
@@ -169,7 +197,12 @@
 
                         {{-- Name + availability + note --}}
                         <div class="min-w-0 flex-1">
-                            <div class="text-xs font-bold">{{ $player['name'] }}</div>
+                            <div class="flex items-center gap-1.5 text-xs font-bold">
+                                {{ $player['name'] }}
+                                @if ($hasWalkover && $player['id'] === $walkoverId)
+                                    <span class="badge badge-warning badge-xs font-bold">WO</span>
+                                @endif
+                            </div>
                             <div class="mt-0.5 flex items-center gap-1">
                                 @if ($isBlocked)
                                     <x-icon name="o-no-symbol" class="h-3 w-3 text-error" />
@@ -199,7 +232,7 @@
                                 </div>
                             @endif
                             {{-- Captain override: contact details of own players (T8) --}}
-                            @if (! empty($player['phone_number']) || ! empty($player['email']))
+                            @if (! $readonly && (! empty($player['phone_number']) || ! empty($player['email'])))
                                 <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                                     @if (! empty($player['phone_number']))
                                         <a href="tel:{{ $player['phone_number'] }}" @click.stop
@@ -232,8 +265,14 @@
                             </div>
                         </div>
 
-                        {{-- Checkbox / lock --}}
-                        @if ($isBlocked || $isIllegal)
+                        {{-- Checkbox / lock — en lecture, seulement l'état --}}
+                        @if ($readonly)
+                            @if ($isSelected)
+                                <x-icon name="o-check-circle" class="h-6 w-6 shrink-0 text-primary" :title="__('Selected')" />
+                            @else
+                                <span class="h-6 w-6 shrink-0"></span>
+                            @endif
+                        @elseif ($isBlocked || $isIllegal)
                             <x-icon name="o-lock-closed" class="h-4 w-4 shrink-0 text-error/50" />
                         @else
                             {{-- 44 px reste la cible de confort de l'Apple HIG pour la case
@@ -267,7 +306,7 @@
              retenus, une fois leur composition publiée. Le pool ne montre que
              ce que l'article C.22 permet d'aligner : ce qu'il masque, il le
              compte, sans quoi la liste paraîtrait simplement vide. --}}
-        @if ($poolHasSomethingToSay)
+        @if ($poolHasSomethingToSay && ! $readonly)
             <details class="border-t border-dashed border-base-300 pt-4" @if ($poolOpen) open @endif>
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-2">
                     <span class="text-xs font-bold uppercase tracking-widest opacity-60">
@@ -379,6 +418,12 @@
                         </p>
                     @endif
 
+                    @if ($poolUnrankedCount > 0)
+                        <p class="px-1 text-xs opacity-60">
+                            {{ trans_choice('{1} :count player hidden: no force index.|[2,*] :count players hidden: no force index.', $poolUnrankedCount, ['count' => $poolUnrankedCount]) }}
+                        </p>
+                    @endif
+
                     {{-- Un pool vide a deux causes opposées et le même aspect : tout le
                          monde joue, ou personne n'a encore composé. On dit laquelle,
                          et à qui téléphoner. --}}
@@ -438,7 +483,7 @@
         @endif
 
         {{-- Search substitute (admin / selector only) --}}
-        @if ($canSearchSubstitute)
+        @if ($canSearchSubstitute && ! $readonly)
             <div class="border-t border-dashed border-base-300 pt-4">
                 <div class="mb-3 text-xs font-bold uppercase tracking-widest opacity-60">
                     {{ __('Search a substitute') }}
@@ -448,17 +493,26 @@
                 @if (strlen((string) $searchTerm) >= 2)
                     <div class="animate-in fade-in slide-in-from-top-2 mt-4 space-y-2">
                         @forelse($searchResults as $res)
-                            @php $isSelected = in_array($res['id'], $selectedIds); @endphp
+                            @php
+                                $isSelected = in_array($res['id'], $selectedIds);
+                                $isUnranked = ($res['lacks_force_index'] ?? false) && ! $isSelected;
+                            @endphp
                             <div @class([
-                                'flex cursor-pointer items-center justify-between rounded-lg border border-dashed p-2 transition-all',
+                                'flex items-center justify-between rounded-lg border border-dashed p-2 transition-all',
+                                'cursor-pointer' => ! $isUnranked,
+                                'cursor-not-allowed opacity-60' => $isUnranked,
                                 'border-primary bg-primary/5' => $isSelected,
-                                'border-base-300 hover:border-primary' => ! $isSelected,
-                            ]) wire:click="togglePlayer({{ $res['id'] }})">
+                                'border-base-300 hover:border-primary' => ! $isSelected && ! $isUnranked,
+                                'border-base-300' => $isUnranked,
+                            ]) @unless ($isUnranked) wire:click="togglePlayer({{ $res['id'] }})" @endunless>
                                 <div class="flex items-center gap-2">
                                     <x-icon class="h-4 w-4 opacity-60" name="o-user-plus" />
                                     <div class="flex flex-col">
                                         <span class="text-sm font-bold">{{ $res['name'] }}</span>
                                         <span class="text-xs uppercase opacity-60">{{ $res['rank'] }}</span>
+                                        @if ($isUnranked)
+                                            <span class="text-xs font-semibold text-error">{{ __('No force index') }}</span>
+                                        @endif
                                     </div>
                                 </div>
                                 @if ($isSelected)
@@ -479,9 +533,56 @@
                 @endif
             </div>
         @endif
+
+        {{-- ── JOUER À 3 : LE JOUEUR WO ─────────────────────────────────────
+             Dernier recours, donc en dernier : après l'effectif, les joueurs
+             libres et la recherche. Le WO est nommé sur la feuille, aligné
+             (C.20.1 le bloque ailleurs la semaine), mais ne joue pas. --}}
+        @if ($offersWalkover)
+            <div class="rounded-xl border border-warning/40 bg-warning/5 p-4" data-walkover-block>
+                <div class="text-xs font-bold uppercase tracking-widest text-warning-content">
+                    {{ __('Still :n? Name the walkover player', ['n' => $playingCount]) }}
+                </div>
+                <p class="mt-1 text-xs text-base-content/70">
+                    {{ __('The team plays with :n. The walkover player goes on the match sheet, loses their matches and cannot play in another team this week.', ['n' => $playingCount]) }}
+                </p>
+                <div class="mt-3 space-y-1.5">
+                    @forelse ($walkoverCandidates as $candidate)
+                        @php $isWalkover = $candidate['id'] === $walkoverId; @endphp
+                        <button type="button"
+                            wire:key="walkover-{{ $fixtureId }}-{{ $candidate['id'] }}-{{ $isWalkover ? 1 : 0 }}"
+                            wire:click="{{ $walkoverAction }}({{ $candidate['id'] }})"
+                            wire:loading.attr="disabled"
+                            @class([
+                                'flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg border p-2 text-left text-sm transition-all',
+                                'border-warning bg-warning/10' => $isWalkover,
+                                'border-base-300 bg-base-100 hover:border-warning' => ! $isWalkover,
+                            ])>
+                            <span class="min-w-0">
+                                <span class="font-semibold">{{ $candidate['name'] }}</span>
+                                <span class="text-xs opacity-60">· {{ $candidate['rank'] }}</span>
+                                @if (($candidate['availability'] ?? null) === \App\Domains\Shared\Enums\InterclubAvailability::UNAVAILABLE)
+                                    <span class="text-xs text-error">· {{ __('Unavailable') }}</span>
+                                @elseif (($candidate['availability'] ?? null) === null)
+                                    <span class="text-xs opacity-60">· {{ __('No response') }}</span>
+                                @endif
+                            </span>
+                            @if ($isWalkover)
+                                <span class="badge badge-warning badge-sm font-bold">WO</span>
+                            @endif
+                        </button>
+                    @empty
+                        <p class="text-xs opacity-60">{{ __('Nobody left who may go on the sheet.') }}</p>
+                    @endforelse
+                </div>
+            </div>
+        @endif
     </div>
 
     <x-slot:actions>
+        @if ($readonly)
+            <x-button x-on:click="$wire.set('{{ $model }}', false)" class="btn-primary" :label="__('Close')" />
+        @else
         <x-button x-on:click="$wire.set('{{ $model }}', false)" class="btn-ghost" :label="__('Cancel')" />
         {{-- `spinner` ne fait pas qu'afficher une roue : il pose aussi
              `wire:loading.attr="disabled"`, donc il répond au deuxième clic
@@ -493,5 +594,6 @@
             :label="$saveLabel"
             spinner="{{ $saveAction }}"
             wire:click="{{ $saveAction }}" />
+        @endif
     </x-slot:actions>
 </x-drawer>

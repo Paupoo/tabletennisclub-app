@@ -32,6 +32,7 @@ erDiagram
     %% ClubAdmin/Subscriptions
     Registration
     Subscription
+    SubscriptionDiscount
     SubscriptionTrainingPack
 
     %% ClubAdmin/Subscriptions/Attestations
@@ -105,9 +106,11 @@ erDiagram
     Fine ||--o| Payment : "payment"
     BankImport ||--o{ Transaction : "transactions"
     CashRegister ||--o{ CashRegisterEntry : "entries"
+    Payment ||--o{ SubscriptionDiscount : "discounts"
     Transaction ||--o| Payment : "payment"
     Transaction ||--o| Payment : "refundPayment"
     Registration ||--o{ Payment : "payments"
+    Subscription ||--o{ SubscriptionDiscount : "discounts"
     Subscription ||--o{ Payment : "payments"
     Subscription }o--o{ TrainingPack : "trainingPacks"
     FamilyGroup }o--o{ User : "users"

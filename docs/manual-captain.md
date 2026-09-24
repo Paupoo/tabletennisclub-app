@@ -31,14 +31,17 @@ Each row represents one interclub match. From left to right:
 | Colour | Status | Meaning |
 |---|---|---|
 | 🟢 Green | **Confirmed** | Lineup sent to the team — nothing to do |
-| 🟡 Orange | **Actionable** | Enough players available or selection complete, but lineup not yet sent |
-| 🔴 Red | **Urgent** | Match within 14 days and not enough availability responses received |
+| 🔵 Blue | **Lineup to send** | Complete selection saved, but not sent to the team yet. A **Send** button sits on the row |
+| 🟡 Orange | **Ready to compose** | Enough players available, but no complete selection yet |
+| 🔴 Red | **Urgent** | Match within 14 days whose lineup has not gone out: the club aims to send by two weeks before |
 | ⚪ Light grey | **Upcoming** | Match is far away, no urgency |
 | ◼ Dark grey | **Past** | Match has been played |
 
 An urgent row also has a light red background to draw your attention.
 
-A selection **declared short-handed** (see "Playing with three" below) and sent is **green**, like a full one: for you, it is settled. A lineup sent at four and then cut by a withdrawal **without** that declaration goes back to red or orange: the app no longer treats it as settled.
+A selection **declared short-handed** (see "Playing with three" below) and sent is **green**, like a full one: for you, it is settled. A lineup sent at four and then cut by a withdrawal **without** a walkover player goes back to red or orange: the app no longer treats it as settled.
+
+On a match **already played**, the **Consult** button reopens the lineup read-only.
 
 ### Alert banner
 
@@ -75,30 +78,38 @@ Below it, the **team roster** is displayed. For each player:
 
 ### Selecting / deselecting a player
 
-Click a player card to toggle them in or out of the selection. A **blocked** player (lock icon 🔒) is already selected in another team for the same match day and cannot be selected again.
+Click a player card to toggle them in or out of the selection. A **blocked** player (lock icon 🔒) cannot be selected: they are already lined up in another team that week, rule C.22 forbids them, or they have **no force index** (no place on the force list, no match sheet — art. C.18.2.2). The reason is written under their name.
 
 > **Tip:** Prefer players with the **Available** (green) badge. Players without a response can still be selected, but contact them directly to confirm.
 
 ### Saving without sending
 
-Click **Save selection**. The selection is saved and the match status changes to **Actionable** (orange). You can come back and modify it before sending the lineup.
+Click **Save selection**. The selection is saved and the match status changes to **Lineup to send** (blue). **Your players know nothing yet**: the task is only done once the lineup is sent (section 5).
 
 ### Playing with three
 
 The rules let a men's team **start with 3 of its 4 players** (art. C.25.6), and a ladies', youth or veterans' team with **2 of 3** (art. C.25.7). Fewer than that is a forfeit.
 
 1. **Look for a fourth player first**: the free players of the match day, or a player from a lower team — within their force index (art. C.22.1.1), the rule on the third player who actually played in the higher team (art. C.22.1.3), and the one-match-per-week rule (art. C.20.1).
-2. **Failing that, play with three.** At the minimum, a box appears under the progress bar: *"I found no other player… we will play with 3"*. **Without it, the selection stays a draft and nobody is convoked.**
-3. **Ticked**, the send window opens with a reminder that the missing player's matches will be lost. Convoked players read in their email that the team plays short; the rest of the team is asked to come forward if they become available.
+2. **Failing that, name the walkover player.** At the minimum, the **"Still 3? Name the walkover player"** block appears **at the bottom of the drawer**, after the free players and the search. The walkover player goes on the match sheet but does not play: they lose their matches and **cannot be lined up in any other team of the category that week** (art. C.20.1). Players who answered unavailable or not at all are offered first. **Without a walkover player, the selection stays a draft and nobody is convoked.**
+3. **On saving**, the send window opens with a reminder that the missing player's matches will be lost. Every lineup email says the team plays with three and marks the **WO** player; the rest of the team is asked to come forward if they become available.
 4. **Below the minimum**, the app saves without sending and reminds you to report the forfeit **at least 48 hours before** (art. C.33.1).
 
-The declaration is stored with your name and the date. It is withdrawn if you find a fourth player or the team falls below the minimum; it survives swapping one player for another.
+The walkover player passes the same checks as the others (force index, C.22, one match a week), but **never** counts in the C.22 threshold of the lower teams: only a player who played a point is effective (art. C.22.1.3).
+
+The declaration is stored with your name and the date. It is withdrawn if you tick a real fourth player (who takes the walkover's place), remove the walkover player, or the team falls below the minimum; it survives swapping one player for another.
 
 ---
 
 ## 5. Sending the lineup to the team
 
 Once the selection is saved, a **Notify the team** window opens automatically.
+
+**The club aims to send every lineup at least two weeks before the match**, so everyone can get organised. Do not wait to be sure of everything: a change remains possible until match day, and **only the players added or removed are told**. So nothing slips:
+
+- a lineup saved but not sent carries a **Send** button on the match row;
+- your dashboard shows **"N lineups to send to your team"**;
+- every **Sunday at 18:00**, an email lists your matches of the next three weeks whose lineup has not gone out (nothing is sent when everything has).
 
 ### What players receive
 
@@ -116,7 +127,7 @@ Click the send button. The match status changes to **Confirmed** (green). The ac
 
 ### Not sending now
 
-If you want to save without notifying the team, click **Don't send**. The selection is saved but no email is sent. The status remains **Actionable** (orange).
+If you want to save without notifying the team, click **Send later**. The selection is saved but no email is sent, and an orange message reminds you so. The status stays **Lineup to send** (blue) until you send it.
 
 ---
 

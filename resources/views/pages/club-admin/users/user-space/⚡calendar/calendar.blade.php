@@ -329,7 +329,9 @@
                             :endTime="$isTraining ? ($event['endTime'] ?? null) : null"
                             :type="$event['type']"
                             :link="match (true) {
-                                $isInterclub && $event['isUserInTeam'] => route('admin.interclubs.my-match', $event['sourceId']),
+                                // Toute rencontre du club : sa page s'ouvre à tout membre,
+                                // en visiteur pour qui n'est pas de l'équipe.
+                                $isInterclub => route('admin.interclubs.my-match', $event['sourceId']),
                                 $myTournament => route('admin.tournaments.live', $event['tournamentId']),
                                 default => '#',
                             }"

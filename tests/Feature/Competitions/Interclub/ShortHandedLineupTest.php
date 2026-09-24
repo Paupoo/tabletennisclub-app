@@ -8,6 +8,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Competitions\Interclub\Services\InterclubPreparationService;
 use App\Jobs\SendInterclubPlayerRemovedJob;
 use App\Jobs\SendInterclubSelectionJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -69,7 +70,7 @@ function composeLineup(int $count): Testable
 
 it('opens the send modal on three of four once the captain declares it', function (): void {
     composeLineup(3)
-        ->set('shortHandedOptIn', true)
+        ->call('designateWalkover', $this->players[3]->id)
         ->call('saveSelection')
         ->assertSet('modalMessage', true)
         ->assertSet('sendsShortHanded', true);
@@ -79,7 +80,7 @@ it('records who declared the team short-handed once the lineup is sent', functio
     $this->freezeTime();
 
     composeLineup(3)
-        ->set('shortHandedOptIn', true)
+        ->call('designateWalkover', $this->players[3]->id)
         ->call('saveSelection')
         ->call('sendLineupToTeam');
 
@@ -88,12 +89,13 @@ it('records who declared the team short-handed once the lineup is sent', functio
     expect($interclub->short_handed_confirmed_at?->toDateTimeString())->toBe(now()->toDateTimeString())
         ->and($interclub->short_handed_confirmed_by)->toBe($this->captain->id);
 
-    Queue::assertPushed(SendInterclubSelectionJob::class, 3);
+    // Les trois qui jouent, et le WO : il figure sur la feuille.
+    Queue::assertPushed(SendInterclubSelectionJob::class, 4);
 });
 
 it('records nothing when the captain skips sending', function (): void {
     composeLineup(3)
-        ->set('shortHandedOptIn', true)
+        ->call('designateWalkover', $this->players[3]->id)
         ->call('saveSelection')
         ->call('skipSending');
 
@@ -125,7 +127,7 @@ function shortHandedToasts(Testable $component): array
 
 it('ignores the declaration below the minimum and says the fixture cannot be played', function (): void {
     $component = composeLineup(2)
-        ->set('shortHandedOptIn', true)
+        ->call('designateWalkover', $this->players[3]->id)
         ->call('saveSelection')
         ->assertSet('modalMessage', false)
         ->assertSet('sendsShortHanded', false);
@@ -135,12 +137,14 @@ it('ignores the declaration below the minimum and says the fixture cannot be pla
         ->toContain('48 h');
 });
 
-/** A lineup of the first three players, sent, and declared short-handed. */
+/** A lineup of the first three players and the fourth as walkover, sent and declared short-handed. */
 function sendShortHandedLineup(): void
 {
     foreach (test()->players->take(3) as $player) {
         test()->interclub->users()->attach($player->id, ['is_selected' => true, 'selection_confirmed_at' => now()]);
     }
+
+    test()->interclub->users()->attach(test()->players[3]->id, ['is_selected' => true, 'is_walkover' => true, 'selection_confirmed_at' => now()]);
 
     test()->interclub->update([
         'short_handed_confirmed_at' => now(),
@@ -148,13 +152,13 @@ function sendShortHandedLineup(): void
     ]);
 }
 
-it('ticks the box again when the drawer reopens on a declared fixture', function (): void {
+it('names the walkover player again when the drawer reopens on a declared fixture', function (): void {
     sendShortHandedLineup();
 
     Livewire::actingAs($this->captain)
         ->test('pages::club-events.interclubs.captain-selection')
         ->call('openSelection', $this->interclub->id)
-        ->assertSet('shortHandedOptIn', true);
+        ->assertSet('walkoverPlayerId', $this->players[3]->id);
 });
 
 it('withdraws the declaration once a fourth player is found', function (): void {
@@ -163,10 +167,15 @@ it('withdraws the declaration once a fourth player is found', function (): void 
     Livewire::actingAs($this->captain)
         ->test('pages::club-events.interclubs.captain-selection')
         ->call('openSelection', $this->interclub->id)
-        ->call('togglePlayer', $this->players[3]->id)
+        // Le capitaine lui-même se libère : il prend la place du WO.
+        ->call('togglePlayer', $this->captain->id)
+        ->assertSet('walkoverPlayerId', null)
         ->call('saveSelection');
 
-    expect($this->interclub->fresh()->short_handed_confirmed_at)->toBeNull();
+    $interclub = $this->interclub->fresh();
+
+    expect($interclub->short_handed_confirmed_at)->toBeNull()
+        ->and($interclub->getSelectedPlayers()->pluck('id')->all())->not->toContain($this->players[3]->id);
 });
 
 it('keeps the declaration through a swap and convokes the replacement', function (): void {
@@ -176,7 +185,7 @@ it('keeps the declaration through a swap and convokes the replacement', function
         ->test('pages::club-events.interclubs.captain-selection')
         ->call('openSelection', $this->interclub->id)
         ->call('togglePlayer', $this->players[0]->id)
-        ->call('togglePlayer', $this->players[3]->id)
+        ->call('togglePlayer', $this->captain->id)
         ->call('saveSelection')
         ->assertSet('isUpdateMode', true)
         ->assertSet('sendsShortHanded', true)
@@ -185,16 +194,17 @@ it('keeps the declaration through a swap and convokes the replacement', function
     expect($this->interclub->fresh()->short_handed_confirmed_at)->not->toBeNull();
 
     Queue::assertPushed(SendInterclubPlayerRemovedJob::class, fn (SendInterclubPlayerRemovedJob $job): bool => $job->userId === $this->players[0]->id);
-    Queue::assertPushed(SendInterclubSelectionJob::class, fn (SendInterclubSelectionJob $job): bool => $job->userId === $this->players[3]->id);
+    Queue::assertPushed(SendInterclubSelectionJob::class, fn (SendInterclubSelectionJob $job): bool => $job->userId === $this->captain->id);
 });
 
-it('withdraws the declaration when the captain unticks the box', function (): void {
+it('withdraws the declaration when the captain unticks the walkover player', function (): void {
     sendShortHandedLineup();
 
     Livewire::actingAs($this->captain)
         ->test('pages::club-events.interclubs.captain-selection')
         ->call('openSelection', $this->interclub->id)
-        ->set('shortHandedOptIn', false)
+        ->call('togglePlayer', $this->players[3]->id)
+        ->assertSet('walkoverPlayerId', null)
         ->call('saveSelection');
 
     expect($this->interclub->fresh()->short_handed_confirmed_at)->toBeNull();
@@ -226,25 +236,26 @@ it('tells the three who remain that the team now plays short', function (): void
         ->test('pages::club-events.interclubs.captain-selection')
         ->call('openSelection', $this->interclub->id)
         ->call('togglePlayer', $this->players[3]->id)
-        ->set('shortHandedOptIn', true)
+        // Celui qui ne peut plus venir reste sur la feuille, inscrit WO.
+        ->call('designateWalkover', $this->players[3]->id)
         ->call('saveSelection')
         ->assertSet('isUpdateMode', true)
         ->assertSet('sendsShortHanded', true)
         ->call('sendLineupToTeam');
 
-    Queue::assertPushed(SendInterclubPlayerRemovedJob::class, 1);
+    Queue::assertNotPushed(SendInterclubPlayerRemovedJob::class);
 
     foreach ($this->players->take(3) as $player) {
         Queue::assertPushed(SendInterclubSelectionJob::class, fn (SendInterclubSelectionJob $job): bool => $job->userId === $player->id);
     }
 });
 
-it('offers the box only between the minimum and a full team', function (int $count, bool $offered): void {
+it('offers a walkover only when the lineup stands at the minimum', function (int $count, bool $offered): void {
     $component = composeLineup($count);
 
     $offered
-        ? $component->assertSeeHtml('wire:model.live="shortHandedOptIn"')
-        : $component->assertDontSeeHtml('wire:model.live="shortHandedOptIn"');
+        ? $component->assertSeeHtml('designateWalkover(')
+        : $component->assertDontSeeHtml('designateWalkover(');
 })->with([
     'two of four' => [2, false],
     'three of four' => [3, true],
@@ -253,7 +264,7 @@ it('offers the box only between the minimum and a full team', function (int $cou
 
 it('warns in the send modal that the team plays short and what it costs', function (): void {
     composeLineup(3)
-        ->set('shortHandedOptIn', true)
+        ->call('designateWalkover', $this->players[3]->id)
         ->call('saveSelection')
         ->assertSee('Vous jouerez à 3 sur 4')
         ->assertSee('Les matchs du joueur manquant seront perdus');
@@ -279,7 +290,7 @@ it('lets the captain declare it later, on a lineup already cut to three', functi
     Livewire::actingAs($this->captain)
         ->test('pages::club-events.interclubs.captain-selection')
         ->call('openSelection', $this->interclub->id)
-        ->set('shortHandedOptIn', true)
+        ->call('designateWalkover', $this->players[3]->id)
         ->call('saveSelection')
         ->assertSet('modalMessage', true)
         ->assertSet('sendsShortHanded', true)
@@ -287,5 +298,96 @@ it('lets the captain declare it later, on a lineup already cut to three', functi
 
     expect($this->interclub->fresh()->isShortHanded())->toBeTrue();
 
-    Queue::assertPushed(SendInterclubSelectionJob::class, 3);
+    Queue::assertPushed(SendInterclubSelectionJob::class, 4);
+});
+
+/*
+| Le joueur WO. Jouer à 3, c'est inscrire un quatrième joueur absent sur la
+| feuille : il est aligné (C.20.1 le bloque ailleurs la semaine) mais ne joue
+| pas. Le capitaine doit le nommer ; on ne déclare plus « à 3 » sans lui.
+*/
+describe('the walkover player', function (): void {
+    it('lines up the walkover player beside the three who play', function (): void {
+        composeLineup(3)
+            ->call('designateWalkover', $this->players[3]->id)
+            ->assertSet('walkoverPlayerId', $this->players[3]->id)
+            ->call('saveSelection');
+
+        $lineup = $this->interclub->fresh()->users->keyBy('id');
+
+        expect($lineup)->toHaveCount(4)
+            ->and((bool) $lineup[$this->players[3]->id]->registration->is_selected)->toBeTrue()
+            ->and((bool) $lineup[$this->players[3]->id]->registration->is_walkover)->toBeTrue()
+            ->and((bool) $lineup[$this->players[0]->id]->registration->is_walkover)->toBeFalse();
+    });
+
+    it('offers no walkover away from the minimum', function (): void {
+        composeLineup(2)
+            ->call('designateWalkover', $this->players[3]->id)
+            ->assertSet('walkoverPlayerId', null)
+            ->assertSet('selectedPlayerIds', $this->players->take(2)->pluck('id')->all());
+    });
+
+    it('refuses a walkover player already lined up elsewhere that week', function (): void {
+        $otherTeam = Team::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $this->league->id,
+            'captain_id' => $this->captain->id,
+            'club_id' => $this->team->club_id,
+        ]);
+
+        Interclub::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $this->league->id,
+            'visited_team_id' => $otherTeam->id,
+            'week_number' => $this->interclub->week_number,
+            'start_date_time' => now()->addDays(4),
+        ])->select($this->players[3]);
+
+        composeLineup(3)
+            ->call('designateWalkover', $this->players[3]->id)
+            ->assertSet('walkoverPlayerId', null);
+    });
+
+    it('bars the walkover player from the other teams of the category that week', function (): void {
+        sendShortHandedLineup();
+
+        $otherTeam = Team::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $this->league->id,
+            'captain_id' => $this->captain->id,
+            'club_id' => $this->team->club_id,
+        ]);
+
+        $sameWeek = Interclub::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $this->league->id,
+            'visited_team_id' => $otherTeam->id,
+            'week_number' => $this->interclub->week_number,
+            'total_players' => 4,
+            'start_date_time' => now()->addDays(4),
+        ]);
+
+        Livewire::actingAs($this->captain)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->call('openSelection', $sameWeek->id)
+            ->call('togglePlayer', $this->players[3]->id)
+            ->assertSet('selectedPlayerIds', []);
+    });
+
+    it('tells the players on their match list that the team plays with three', function (): void {
+        sendShortHandedLineup();
+
+        Livewire::actingAs($this->players[0])
+            ->test('pages::club-events.interclubs.my-matches')
+            ->assertSee(__('with :n', ['n' => 3]))
+            ->assertDontSee(__('with :n', ['n' => 4]));
+    });
+
+    it('reads as short-handed, not as a full lineup, once sent', function (): void {
+        sendShortHandedLineup();
+
+        expect(app(InterclubPreparationService::class)
+            ->fixtureStatus($this->interclub->fresh()->load('users')))->toBe('short');
+    });
 });

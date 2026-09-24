@@ -68,6 +68,9 @@ it('never sends a member to a page the committee alone can open', function (): v
         'SubscriptionRefundRequestedNotification.php',
         // SendTeamCreatedNotification sends it to User::role('administrator').
         'TeamCreatedNotification.php',
+        // RemindCaptainsCommand sends it to the captain of the team only, and
+        // `access-selections` admits every captain — CaptainLineupReminderTest.
+        'CaptainLineupReminderNotification.php',
     ];
 
     $files = (new Finder)

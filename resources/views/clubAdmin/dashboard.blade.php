@@ -42,9 +42,15 @@
                 {{-- MON ESPACE (all users) --}}
                 <x-section-accordion
                     label="Mon espace"
-                    :count="count($memberTiles) . ' accès'"
+                    :count="(count($memberTiles) + $proxyTileCount) . ' accès'"
                     color="gray">
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-2">
+                        {{-- First, and in club yellow: a guardian lands on their own
+                             account, and their child's has to be the first thing
+                             they see, not an entry buried in the member menu. --}}
+                        @if($proxyTileCount > 0)
+                            <livewire:actions.act-for variant="tiles" />
+                        @endif
                         @foreach($memberTiles as $tile)
                             @include('clubAdmin._dashboard_tile', $tile)
                         @endforeach

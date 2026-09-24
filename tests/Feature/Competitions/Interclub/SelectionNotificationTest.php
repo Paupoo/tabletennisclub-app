@@ -423,6 +423,37 @@ it('asks the rest of the team to step in when the team plays short-handed', func
         ->toContain('prévenez votre capitaine');
 });
 
+/*
+| Le WO se note sur la feuille de match : le mail le nomme, pour que personne
+| ne l'attende à la table et que le capitaine le recopie tel quel.
+*/
+it('names the walkover player in both lineup mails', function (): void {
+    foreach ([$this->player1, $this->player2, $this->captain, $this->player3] as $player) {
+        $this->interclub->select($player);
+    }
+
+    $this->interclub->users()->updateExistingPivot($this->player3->id, ['is_walkover' => true]);
+    $this->interclub->update(['short_handed_confirmed_at' => now(), 'short_handed_confirmed_by' => $this->captain->id]);
+
+    $interclub = $this->interclub->fresh();
+    $selection = (string) new InterclubSelectionNotification($interclub)->toMail($this->player1)->render();
+    // Le job de diffusion recharge les joueurs sans le pivot : c'est ainsi que
+    // les non-sélectionnés les reçoivent, et la marque doit y être aussi.
+    $broadcast = (string) new InterclubLineupBroadcastNotification($interclub, User::whereIn('id', $interclub->getSelectedPlayers()->pluck('id'))->get())->toMail($this->player1)->render();
+
+    foreach ([$selection, $broadcast] as $html) {
+        expect($html)->toContain('à 3 sur 4')
+            // La marque dans le tableau suffit : pas de phrase qui la répète.
+            ->not->toContain('est inscrit WO');
+
+        // Dans le tableau, la ligne du WO porte la marque, et elle seule.
+        $rows = collect(explode('</tr>', $html));
+
+        expect($rows->first(fn (string $row): bool => str_contains($row, $this->player3->full_name . '</span>')))->toContain('>WO</span>')
+            ->and($rows->filter(fn (string $row): bool => str_contains($row, '>WO</span>')))->toHaveCount(1);
+    }
+});
+
 it('says nothing of the sort for a full lineup', function (): void {
     $this->interclub->select($this->player1);
 

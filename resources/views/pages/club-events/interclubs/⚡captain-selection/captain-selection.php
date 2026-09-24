@@ -18,6 +18,7 @@ use App\Livewire\Concerns\ComposesInterclubLineup;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -48,6 +49,14 @@ new class extends Component
      * C'est un filtre au sens de DS-A — il restreint un ensemble et s'efface.
      */
     public bool $filterAlerts = false;
+
+    /**
+     * The drawer opened to read a lineup rather than to compose it: whoever
+     * reads every team, and anyone on a match already played. Locked, and
+     * every gesture that writes refuses it.
+     */
+    #[Locked]
+    public bool $isReadOnly = false;
 
     public bool $isUpdateMode = false;
 
@@ -94,18 +103,21 @@ new class extends Component
     public ?int $sendTargetId = null;
 
     /**
-     * The captain's box in the drawer: « nous jouerons à 3 ». Only offered
-     * between the minimum the rules allow and a full team.
-     */
-    public bool $shortHandedOptIn = false;
-
-    /**
      * A season is a matrix of teams × match days. 'team' reads one row — a team,
      * all its days. 'day' reads one column — a day, all the teams. The control
      * center was that column on a page of its own, and duplicated everything
      * around it to get there.
      */
     public string $viewMode = 'team';
+
+    /**
+     * The player written on the sheet who will not play: « nous jouerons à 3 ».
+     *
+     * Part of the lineup — aligned, so barred elsewhere that week (C.20.1) —
+     * and named, because the sheet names them. Only offered once the lineup
+     * stands exactly at the minimum the rules allow.
+     */
+    public ?int $walkoverPlayerId = null;
 
     /**
      * Memoised for the render: `with()` and `getFilterChips()` both need the
@@ -150,6 +162,37 @@ new class extends Component
     }
 
     /**
+     * Name the player who goes on the sheet but will not play.
+     *
+     * Last resort, so only once the lineup stands exactly at the minimum the
+     * rules allow. The walkover player is aligned like any other, and answers
+     * to the same checks: force index, rule C.22, one team a week.
+     */
+    public function designateWalkover(int $userId): void
+    {
+        abort_if($this->isReadOnly, 403);
+
+        $interclub = $this->selectedInterclub();
+
+        if (! $interclub) {
+            return;
+        }
+
+        $playing = array_values(array_diff($this->selectedPlayerIds, [$this->walkoverPlayerId]));
+
+        if (in_array($userId, $playing, true) || count($playing) !== $interclub->minimumPlayers()) {
+            return;
+        }
+
+        if ($this->refusesInLineup($userId, $interclub)) {
+            return;
+        }
+
+        $this->selectedPlayerIds = [...$playing, $userId];
+        $this->walkoverPlayerId = $userId;
+    }
+
+    /**
      * The season is the only filter left. Under DS-A the team determines the
      * object of the page — exactly one, never none — so it is navigation, and
      * navigation does not belong in the filter drawer or in a removable chip.
@@ -170,6 +213,33 @@ new class extends Component
         }
 
         return $chips;
+    }
+
+    /**
+     * Read a lineup without composing it (règle DS-D): who is in, who is not,
+     * and what they answered. Open to whoever reads every fixture, and — on a
+     * match already played — to whoever may compose it, as its history.
+     */
+    public function inspectSelection(int $interclubId): void
+    {
+        $interclub = Interclub::findOrFail($interclubId);
+
+        abort_unless(
+            Gate::allows('view', $interclub) || Gate::allows('selectLineup', $interclub),
+            403,
+        );
+
+        $ourTeam = $this->ownTeamOf($interclub);
+
+        if ($ourTeam && $ourTeam->id !== $this->selectedTeamId) {
+            $this->selectedTeamId = $ourTeam->id;
+        }
+
+        $this->selectedInterclubId = $interclubId;
+        $this->loadLineupOf($interclub);
+        $this->isReadOnly = true;
+
+        $this->drawerSelection = true;
     }
 
     public function mount(): void
@@ -204,12 +274,8 @@ new class extends Component
 
         $this->selectedInterclubId = $interclubId;
 
-        $this->selectedPlayerIds = $interclub->users()
-            ->wherePivot('is_selected', true)
-            ->pluck('users.id')
-            ->toArray();
-
-        $this->shortHandedOptIn = $interclub->isShortHanded();
+        $this->loadLineupOf($interclub);
+        $this->isReadOnly = false;
 
         $this->drawerSelection = true;
     }
@@ -255,6 +321,8 @@ new class extends Component
 
     public function saveSelection(): void
     {
+        abort_if($this->isReadOnly, 403);
+
         $interclub = $this->selectedInterclub();
 
         if (! $interclub) {
@@ -290,6 +358,15 @@ new class extends Component
             return;
         }
 
+        // Sous le minimum, on ne joue plus à 3 : c'est un forfait, et le WO
+        // n'était sur la feuille que pour compléter la compo. Jugé ici et non
+        // au décochage, pour qu'un échange fait dans le désordre le garde.
+        if ($this->walkoverPlayerId !== null
+            && count($this->selectedPlayerIds) - 1 !== $interclub->minimumPlayers()) {
+            $this->selectedPlayerIds = array_values(array_diff($this->selectedPlayerIds, [$this->walkoverPlayerId]));
+            $this->walkoverPlayerId = null;
+        }
+
         $existingIds = $interclub->users()->pluck('users.id')->toArray();
         $maxPlayers = $interclub->total_players;
 
@@ -311,16 +388,18 @@ new class extends Component
 
         DB::transaction(function () use ($interclub, $existingIds): void {
             foreach ($this->selectedPlayerIds as $userId) {
+                $pivot = ['is_selected' => true, 'is_walkover' => $userId === $this->walkoverPlayerId];
+
                 if (in_array($userId, $existingIds, true)) {
-                    $interclub->users()->updateExistingPivot($userId, ['is_selected' => true]);
+                    $interclub->users()->updateExistingPivot($userId, $pivot);
                 } else {
-                    $interclub->users()->attach($userId, ['is_selected' => true]);
+                    $interclub->users()->attach($userId, $pivot);
                 }
             }
 
             $toDeselect = array_diff($existingIds, $this->selectedPlayerIds);
             foreach ($toDeselect as $userId) {
-                $interclub->users()->updateExistingPivot($userId, ['is_selected' => false]);
+                $interclub->users()->updateExistingPivot($userId, ['is_selected' => false, 'is_walkover' => false]);
             }
         });
 
@@ -328,11 +407,13 @@ new class extends Component
         $this->sendTargetId = $interclub->id;
 
         $selectedCount = count($this->selectedPlayerIds);
-        $isShortLineup = $selectedCount >= $interclub->minimumPlayers() && $selectedCount < $maxPlayers;
-        $this->sendsShortHanded = $isShortLineup && $this->shortHandedOptIn;
+        // Jouer à 3, c'est une compo qui nomme son WO : il n'y a plus d'autre
+        // façon de le déclarer.
+        $this->sendsShortHanded = $this->walkoverPlayerId !== null
+            && in_array($this->walkoverPlayerId, $this->selectedPlayerIds, true);
 
         // La déclaration tombe dès qu'elle ne décrit plus la compo : un 4e trouvé,
-        // une équipe passée sous le minimum, ou la case décochée. Elle survit à un
+        // une équipe passée sous le minimum, ou le WO retiré. Elle survit à un
         // simple échange — on joue toujours à 3, et le capitaine l'a déjà dit.
         if ($interclub->isShortHanded() && ! $this->sendsShortHanded) {
             $interclub->update(['short_handed_confirmed_at' => null, 'short_handed_confirmed_by' => null]);
@@ -351,9 +432,13 @@ new class extends Component
                     ]),
                     // Sous le minimum, la rencontre ne peut pas se jouer (C.25.6) :
                     // l'app ne déclare pas le forfait, mais elle le dit.
-                    $selectedCount < $interclub->minimumPlayers()
-                        ? __('Fewer than :min players: the fixture cannot be played. Report the forfeit at least 48 h before.', ['min' => $interclub->minimumPlayers()])
-                        : null,
+                    match (true) {
+                        $selectedCount < $interclub->minimumPlayers() => __('Fewer than :min players: the fixture cannot be played. Report the forfeit at least 48 h before.', ['min' => $interclub->minimumPlayers()]),
+                        // Au minimum sans WO : ni complète, ni déclarée. On dit
+                        // comment la finir, en dernier recours.
+                        $selectedCount === $interclub->minimumPlayers() => __('To play with :n, name the walkover player at the bottom of the drawer.', ['n' => $selectedCount]),
+                        default => null,
+                    },
                     position: 'toast-bottom toast-end'
                 );
             }
@@ -468,6 +553,24 @@ new class extends Component
         );
     }
 
+    /**
+     * Send a lineup already saved, from its row, without reopening the drawer.
+     *
+     * The lineup is the recorded one: saving it again changes nothing in the
+     * pivot, and walks the same road as the drawer's button — the modal, its
+     * diff against what the team was already told, and nothing sent unasked.
+     */
+    public function sendSavedLineup(int $interclubId): void
+    {
+        $this->openSelection($interclubId);
+
+        if (! $this->drawerSelection) {
+            return;
+        }
+
+        $this->saveSelection();
+    }
+
     /** Reading direction of the matrix. Anything else is ignored. */
     public function setViewMode(string $mode): void
     {
@@ -484,41 +587,40 @@ new class extends Component
     public function skipSending(): void
     {
         $this->resetSendModal();
-        $this->success(__('Selection saved.'), position: 'toast-bottom toast-end');
+        // Pas un succès : la tâche du capitaine n'est pas finie tant que
+        // l'équipe ne sait rien. Le vert disait le contraire.
+        $this->warning(
+            __('Lineup saved, not sent: your team does not know it yet.'),
+            position: 'toast-bottom toast-end'
+        );
     }
 
     public function togglePlayer(int $userId): void
     {
+        abort_if($this->isReadOnly, 403);
+
         $interclub = $this->selectedInterclub();
         $maxPlayers = $interclub?->total_players ?? 4;
 
         if (in_array($userId, $this->selectedPlayerIds)) {
             $this->selectedPlayerIds = array_values(array_diff($this->selectedPlayerIds, [$userId]));
 
-            return;
-        }
-
-        if ($interclub && $this->isPlayerDoubleBooked($userId, $interclub)) {
-            $this->warning(
-                __('Player already aligned'),
-                __('This player is already selected in another team for week :n.', ['n' => $interclub->week_number]),
-                position: 'toast-bottom toast-end'
-            );
+            if ($userId === $this->walkoverPlayerId) {
+                $this->walkoverPlayerId = null;
+            }
 
             return;
         }
 
-        // Le pool ne propose jamais un joueur que C.22 interdit, mais l'identité
-        // arrive par le réseau : la recherche de remplaçant, un tiroir resté
-        // ouvert pendant qu'une compo bougeait, ou simplement une requête forgée.
-        if ($interclub && $this->isForbiddenByRule($userId, $interclub)) {
-            $this->warning(
-                __('Lineup rule'),
-                __('Rule C.22: this player would be stronger than the third player of the superior team.'),
-                position: 'toast-bottom toast-end'
-            );
-
+        if ($interclub && $this->refusesInLineup($userId, $interclub)) {
             return;
+        }
+
+        // Un vrai quatrième trouvé : le WO n'a plus de raison d'être et lui cède
+        // sa place, plutôt que d'exiger qu'on le décoche d'abord.
+        if (count($this->selectedPlayerIds) >= $maxPlayers && $this->walkoverPlayerId !== null) {
+            $this->selectedPlayerIds = array_values(array_diff($this->selectedPlayerIds, [$this->walkoverPlayerId]));
+            $this->walkoverPlayerId = null;
         }
 
         if (count($this->selectedPlayerIds) >= $maxPlayers) {
@@ -557,7 +659,8 @@ new class extends Component
             $this->selectedInterclubId = null;
             $this->selectedPlayerIds = [];
             $this->search = '';
-            $this->shortHandedOptIn = false;
+            $this->walkoverPlayerId = null;
+            $this->isReadOnly = false;
         }
     }
 
@@ -671,9 +774,11 @@ new class extends Component
         $poolRows = collect();
         $poolWaiting = collect();
         $poolHiddenCount = 0;
+        $poolUnrankedCount = 0;
         $poolMaybeCount = 0;
         $poolMaybeTeams = [];
         $lineupConstraint = null;
+        $drawerSentAt = null;
 
         if ($this->selectedInterclubId && $this->drawerSelection) {
             $drawerInterclub = $fixtures->firstWhere('id', $this->selectedInterclubId)
@@ -692,6 +797,13 @@ new class extends Component
                     ->map(fn ($u) => $u->registration);
 
                 $blockedPlayerIds = array_keys($this->blockedPlayerData($drawerInterclub));
+
+                // Ce que lit qui consulte : la compo est-elle déjà chez l'équipe ?
+                $drawerSentAt = $drawerInterclub->users
+                    ->filter(fn (User $u): bool => (bool) $u->registration?->is_selected)
+                    ->map(fn (User $u) => $u->registration?->selection_confirmed_at)
+                    ->filter()
+                    ->min();
 
                 $roster = $this->buildLineupRoster(
                     $drawerInterclub,
@@ -721,34 +833,49 @@ new class extends Component
                     $player['legality_reason'] = $verdict->isWorthShowing() ? $verdict->reason->label() : null;
                     $player['is_illegal'] = $verdict->isForbidden();
 
+                    // Sans indice, pas d'alignement du tout : ce n'est plus une
+                    // incertitude C.22 à lever, c'est une case fermée.
+                    if ($player['force_index'] === null) {
+                        $player['legality_reason'] = __('This player has no force index: they cannot be lined up.');
+                        $player['is_illegal'] = true;
+                    }
+
                     return $player;
                 });
 
                 // ── Les joueurs libres ──────────────────────────────────────
-                $pool = app(InterclubPoolService::class)->poolFor($drawerInterclub, $this->weekFixtures($drawerInterclub));
-                $poolCategory = $drawerInterclub->league?->category;
+                // Sans objet pour qui lit : ils servent à compléter une compo.
+                if (! $this->isReadOnly) {
+                    $pool = app(InterclubPoolService::class)->poolFor($drawerInterclub, $this->weekFixtures($drawerInterclub));
+                    $poolCategory = $drawerInterclub->league?->category;
 
-                $poolRows = $pool->freePlayers
-                    ->reject(fn (PoolCandidate $candidate): bool => in_array($candidate->user->id, $this->selectedPlayerIds, true))
-                    ->map(fn (PoolCandidate $candidate): array => $this->buildPoolRow($candidate, $poolCategory, $verdictFor, $fixtures, $selectedTeam, $season))
-                    ->sortBy([['force_sort', 'asc'], ['last_name', 'asc'], ['first_name', 'asc']])
-                    ->values();
+                    $poolRows = $pool->freePlayers
+                        ->reject(fn (PoolCandidate $candidate): bool => in_array($candidate->user->id, $this->selectedPlayerIds, true))
+                        ->map(fn (PoolCandidate $candidate): array => $this->buildPoolRow($candidate, $poolCategory, $verdictFor, $fixtures, $selectedTeam, $season))
+                        ->sortBy([['force_sort', 'asc'], ['last_name', 'asc'], ['first_name', 'asc']])
+                        ->values();
 
-                // Rouge : illégal quoi que fasse l'équipe supérieure. On cesse de
-                // le proposer plutôt que de refuser le geste ensuite — mais on
-                // dit combien, sinon la liste semble simplement vide.
-                $poolHiddenCount = $poolRows->where('is_illegal', true)->count();
-                $poolRows = $poolRows->where('is_illegal', false)->values();
+                    // Rouge : illégal quoi que fasse l'équipe supérieure. On cesse de
+                    // le proposer plutôt que de refuser le geste ensuite — mais on
+                    // dit combien, sinon la liste semble simplement vide.
+                    // Un joueur libre sans indice n'est jamais alignable : on le retire
+                    // aussi, mais on le compte à part — « trop fort » serait faux.
+                    $poolUnrankedCount = $poolRows->whereNull('force_index')->count();
+                    $poolRows = $poolRows->whereNotNull('force_index')->values();
 
-                $poolMaybeCount = $pool->maybePlayers->count();
-                $poolMaybeTeams = $pool->maybePlayers
-                    ->map(fn (PoolCandidate $candidate): string => $candidate->originTeam->name)
-                    ->unique()
-                    ->sort()
-                    ->values()
-                    ->all();
+                    $poolHiddenCount = $poolRows->where('is_illegal', true)->count();
+                    $poolRows = $poolRows->where('is_illegal', false)->values();
 
-                $poolWaiting = $pool->waitingTeams;
+                    $poolMaybeCount = $pool->maybePlayers->count();
+                    $poolMaybeTeams = $pool->maybePlayers
+                        ->map(fn (PoolCandidate $candidate): string => $candidate->originTeam->name)
+                        ->unique()
+                        ->sort()
+                        ->values()
+                        ->all();
+
+                    $poolWaiting = $pool->waitingTeams;
+                }
             }
         }
 
@@ -762,6 +889,8 @@ new class extends Component
         $pendingRemovedNames = [];
         $modalIsComplete = true;
         $sendLineupNames = [];
+        $sendPlayingCount = 0;
+        $sendWalkoverName = null;
         $sendMaxPlayers = $maxPlayers;
         $sendTargetLabel = '';
 
@@ -783,10 +912,18 @@ new class extends Component
                     $modalInterclub->start_date_time->format('d/m/Y'),
                 ));
 
-                $sendLineupNames = $modalInterclub->users()
+                $sendLineup = $modalInterclub->users()
                     ->wherePivot('is_selected', true)
-                    ->get()
-                    ->map(fn (User $u): string => $u->last_name . ' ' . $u->first_name)
+                    ->get();
+
+                // Le WO figure sur la feuille, mais ne joue pas : la fenêtre le
+                // nomme comme tel et ne le compte pas parmi ceux qui jouent.
+                $sendWalkover = $sendLineup->first(fn (User $u): bool => (bool) $u->registration?->is_walkover);
+                $sendWalkoverName = $sendWalkover ? $sendWalkover->last_name . ' ' . $sendWalkover->first_name : null;
+                $sendPlayingCount = $sendLineup->count() - ($sendWalkover ? 1 : 0);
+
+                $sendLineupNames = $sendLineup
+                    ->map(fn (User $u): string => $u->last_name . ' ' . $u->first_name . ($u->registration?->is_walkover ? ' (WO)' : ''))
                     ->values()
                     ->all();
             }
@@ -838,6 +975,7 @@ new class extends Component
                 'id' => $u->id,
                 'name' => $u->last_name . ' ' . $u->first_name,
                 'rank' => $u->ranking->getLabel(),
+                'lacks_force_index' => $u->forceListFor($teamCategory) === null,
             ])->values();
 
             if ($searchResults->isEmpty()) {
@@ -863,6 +1001,7 @@ new class extends Component
             // Le titre du tiroir se calculait dans le template, à coups de
             // flatMap sur toutes les rencontres. C'est de la présentation, mais
             // pas du gabarit.
+            'drawerSentAt' => $drawerSentAt ? Carbon::parse($drawerSentAt) : null,
             'drawerTitle' => $drawerInterclub
                 ? __('Selection') . ' — ' . __('Match day') . ' ' . ($matchDayMap[$drawerInterclub->week_number] ?? $drawerInterclub->week_number)
                 : __('Selection'),
@@ -888,6 +1027,7 @@ new class extends Component
             'poolRows' => $poolRows,
             'poolWaiting' => $poolWaiting,
             'poolHiddenCount' => $poolHiddenCount,
+            'poolUnrankedCount' => $poolUnrankedCount,
             'poolMaybeCount' => $poolMaybeCount,
             'poolMaybeTeams' => $poolMaybeTeams,
             'lineupConstraint' => $lineupConstraint,
@@ -900,6 +1040,8 @@ new class extends Component
             'matchDayMap' => $matchDayMap,
             'filterChips' => $this->getFilterChips(),
             'sendLineupNames' => $sendLineupNames,
+            'sendPlayingCount' => $sendPlayingCount,
+            'sendWalkoverName' => $sendWalkoverName,
             'sendMaxPlayers' => $sendMaxPlayers,
             'sendTargetLabel' => $sendTargetLabel,
             'pendingAddedNames' => $pendingAddedNames,
@@ -1046,9 +1188,13 @@ new class extends Component
 
             $status = $this->fixtureStatus($ic);
 
+            // Une compo complète dont un nom au moins n'a pas été annoncé à
+            // l'équipe : la première fois, ou après une modification.
+            $awaitsSending = ! $isPast && $ic->awaitsSending();
+
             $selectedPlayerNames = $isPast || ! $mayCompose
                 ? $icUsers->filter(fn ($u) => $u->registration?->is_selected)
-                    ->map(fn ($u): string => $u->last_name . ' ' . $u->first_name)
+                    ->map(fn ($u): string => $u->last_name . ' ' . $u->first_name . ($u->registration?->is_walkover ? ' (WO)' : ''))
                     ->values()
                     ->toArray()
                 : [];
@@ -1074,6 +1220,7 @@ new class extends Component
                 'unavail_count' => $unavailCount,
                 'pending_count' => $pendingCount,
                 'selected_count' => $selectedCount,
+                'awaits_sending' => $awaitsSending,
                 'max_players' => $ic->total_players,
                 'selected_player_names' => $selectedPlayerNames,
                 'may_compose' => $mayCompose,
@@ -1144,7 +1291,7 @@ new class extends Component
         // Par coup d'envoi, pas par numéro de semaine : la journée la plus proche
         // n'est pas celle qui porte le plus petit numéro.
         $needsWork = $matches
-            ->filter(fn (array $m): bool => in_array($m['status'], ['urgent', 'actionable'], true))
+            ->filter(fn (array $m): bool => in_array($m['status'], InterclubPreparationService::TO_DO, true))
             ->sortBy('starts_at')
             ->pluck('wk')
             ->first();
@@ -1202,7 +1349,7 @@ new class extends Component
         foreach ($matches as $match) {
             $key = match (true) {
                 $match['is_past'] => 'played',
-                in_array($match['status'], ['urgent', 'actionable'], true) => 'todo',
+                in_array($match['status'], InterclubPreparationService::TO_DO, true) => 'todo',
                 in_array($match['status'], InterclubPreparationService::SETTLED, true) => 'controlled',
                 default => 'upcoming',
             };
@@ -1220,33 +1367,6 @@ new class extends Component
         return $groups;
     }
 
-    /**
-     * Explain why a substitute search returned nothing: matching competitors do
-     * exist, but the category rule and/or the same-week alignment hid them (I2).
-     *
-     * @param  Collection<int, User>  $nameMatches
-     * @param  array<int, int>  $excludedIds
-     * @param  callable(User): bool  $matchesCategory
-     */
-    /**
-     * Une ligne du pool : le joueur, d'où il vient, et ce que C.22 en dit.
-     *
-     * Les coordonnées y figurent, opt-in `contact_visibility` outrepassé. C'est
-     * l'élargissement délibéré de la décision T8, qui ne valait jusqu'ici que
-     * pour l'effectif du capitaine : le samedi matin à neuf heures, un capitaine
-     * appelle — il n'envoie pas une invitation et n'attend pas une réponse.
-     *
-     * @param  \Closure(?int): LineupVerdict  $verdictFor
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
-     * @return array<string, mixed>
-     */
-    /**
-     * L'article C.22 interdit-il formellement d'ajouter ce joueur ?
-     *
-     * Seul le rouge bloque : l'orange dépend d'une composition que personne n'a
-     * encore faite, et refuser sur une incertitude coûterait plus cher que de
-     * laisser le capitaine décider en connaissance de cause.
-     */
     private function isForbiddenByRule(int $userId, Interclub $interclub): bool
     {
         ['verdict' => $verdictFor] = $this->lineupLegality($interclub, $this->selectedPlayerIds);
@@ -1260,6 +1380,20 @@ new class extends Component
         $interclub->loadMissing('league');
 
         return $verdictFor($player->forceListFor($interclub->league?->category))->isForbidden();
+    }
+
+    /** Whether the player has no force index in the category of this fixture. */
+    private function lacksForceIndex(int $userId, Interclub $interclub): bool
+    {
+        $player = User::find($userId);
+
+        if (! $player instanceof User) {
+            return false;
+        }
+
+        $interclub->loadMissing('league');
+
+        return $player->forceListFor($interclub->league?->category) === null;
     }
 
     private function loadAccessibleTeams(User $user, ?Season $season): \Illuminate\Database\Eloquent\Collection
@@ -1308,6 +1442,20 @@ new class extends Component
             ->get();
     }
 
+    /** The lineup as recorded: who is selected, and who of them goes as walkover. */
+    private function loadLineupOf(Interclub $interclub): void
+    {
+        $this->selectedPlayerIds = $interclub->users()
+            ->wherePivot('is_selected', true)
+            ->pluck('users.id')
+            ->toArray();
+
+        $this->walkoverPlayerId = $interclub->users()
+            ->wherePivot('is_selected', true)
+            ->wherePivot('is_walkover', true)
+            ->value('users.id');
+    }
+
     /** The other club's side of a fixture, named for display. */
     private function opponentNameOf(Interclub $interclub): string
     {
@@ -1330,6 +1478,76 @@ new class extends Component
             : $interclub->visitingTeam;
     }
 
+    /**
+     * Explain why a substitute search returned nothing: matching competitors do
+     * exist, but the category rule and/or the same-week alignment hid them (I2).
+     *
+     * @param  Collection<int, User>  $nameMatches
+     * @param  array<int, int>  $excludedIds
+     * @param  callable(User): bool  $matchesCategory
+     */
+    /**
+     * Une ligne du pool : le joueur, d'où il vient, et ce que C.22 en dit.
+     *
+     * Les coordonnées y figurent, opt-in `contact_visibility` outrepassé. C'est
+     * l'élargissement délibéré de la décision T8, qui ne valait jusqu'ici que
+     * pour l'effectif du capitaine : le samedi matin à neuf heures, un capitaine
+     * appelle — il n'envoie pas une invitation et n'attend pas une réponse.
+     *
+     * @param  \Closure(?int): LineupVerdict  $verdictFor
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Interclub>  $fixtures
+     * @return array<string, mixed>
+     */
+    /**
+     * L'article C.22 interdit-il formellement d'ajouter ce joueur ?
+     *
+     * Seul le rouge bloque : l'orange dépend d'une composition que personne n'a
+     * encore faite, et refuser sur une incertitude coûterait plus cher que de
+     * laisser le capitaine décider en connaissance de cause.
+     */
+    /**
+     * Whether the player may not go on this fixture's sheet, saying why.
+     *
+     * The drawer stops offering what these refuse, but the identity arrives
+     * over the network: a substitute search, a drawer left open while another
+     * lineup moved, or a forged request.
+     */
+    private function refusesInLineup(int $userId, Interclub $interclub): bool
+    {
+        if ($this->isPlayerDoubleBooked($userId, $interclub)) {
+            $this->warning(
+                __('Player already aligned'),
+                __('This player is already selected in another team for week :n.', ['n' => $interclub->week_number]),
+                position: 'toast-bottom toast-end'
+            );
+
+            return true;
+        }
+
+        // Sans indice de force, un joueur n'a pas de place sur la feuille (C.18.2.2).
+        if ($this->lacksForceIndex($userId, $interclub)) {
+            $this->warning(
+                __('No force index'),
+                __('This player has no force index: they cannot be lined up.'),
+                position: 'toast-bottom toast-end'
+            );
+
+            return true;
+        }
+
+        if ($this->isForbiddenByRule($userId, $interclub)) {
+            $this->warning(
+                __('Lineup rule'),
+                __('Rule C.22: this player would be stronger than the third player of the superior team.'),
+                position: 'toast-bottom toast-end'
+            );
+
+            return true;
+        }
+
+        return false;
+    }
+
     private function resetSendModal(): void
     {
         $this->sendTargetId = null;
@@ -1339,7 +1557,7 @@ new class extends Component
         $this->pendingAddedIds = [];
         $this->pendingRemovedIds = [];
         $this->sendsShortHanded = false;
-        $this->shortHandedOptIn = false;
+        $this->walkoverPlayerId = null;
     }
 
     private function selectedInterclub(): ?Interclub

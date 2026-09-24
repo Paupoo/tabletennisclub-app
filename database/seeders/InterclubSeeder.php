@@ -12,9 +12,11 @@ use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
+use App\Domains\Shared\Enums\Ranking;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
@@ -23,7 +25,7 @@ use Illuminate\Support\Facades\DB;
 class InterclubSeeder extends Seeder
 {
     // Maps simplified seeder names to real BBW licence numbers from DatabaseSeeder
-    private const CLUB_LICENCE_MAP = [
+    private const array CLUB_LICENCE_MAP = [
         'Arc En Ciel' => 'BBW134',
         'TT Zénith Brussels' => 'BBW205',
         "Braine-l'Alleud" => 'BBW179',
@@ -53,7 +55,27 @@ class InterclubSeeder extends Seeder
         'TT Perwez' => 'BBW289',
     ];
 
-    private ?Club $club;
+    /**
+     * Headcount per ranking series in each pool, NA never drawn. Sliced seven by
+     * seven, the men's pool gives an A of C players for P2 down to an E of E and
+     * NC players for P5; the veterans and women pools top out at division 3 and 2.
+     *
+     * @var array<string, int>
+     */
+    private const array MEN_POOL = ['C' => 7, 'D' => 10, 'E' => 13, 'NC' => 5];
+
+    private const int ROSTER_SIZE = 7;
+
+    /** @var array<string, int> */
+    private const array VETERANS_POOL = ['C' => 3, 'D' => 8, 'E' => 8, 'NC' => 2];
+
+    /** Women among the men's demo players: the men's category is open to them. */
+    private const int WOMEN_IN_MEN_POOL = 3;
+
+    /** @var array<string, int> */
+    private const array WOMEN_POOL = ['C' => 2, 'D' => 3, 'E' => 2];
+
+    private ?Club $club = null;
 
     private Season $season;
 
@@ -87,22 +109,6 @@ class InterclubSeeder extends Seeder
         $this->seedAlertMatches();
     }
 
-    private function assignPlayers(Team $team, int $count): void
-    {
-        $existing = $team->users()->count();
-
-        if ($existing >= $count) {
-            return;
-        }
-
-        $needed = $count - $existing;
-        $players = User::factory($needed)->isCompetitor()->create(['club_id' => $this->club->id]);
-
-        foreach ($players as $player) {
-            $team->users()->syncWithoutDetaching([$player->id]);
-        }
-    }
-
     // ─────────────────────────────────────────────────────────────────────────
     // Clean all data for the seeded season before recreating it
     // ─────────────────────────────────────────────────────────────────────────
@@ -129,7 +135,47 @@ class InterclubSeeder extends Seeder
         }
     }
 
-    private function createCaptain(string $firstName, string $lastName): User
+    /**
+     * Compose a category's teams from one pool, strongest team first.
+     *
+     * The pool's rankings are drawn per series, sorted strongest → weakest, then
+     * sliced seven by seven: team A always holds the strongest players and the
+     * last team the weakest. Within a slice the order is shuffled, so a playing
+     * captain gets a ranking of their own team's level rather than its best.
+     *
+     * Demo players carry a stable email per pool and position, so a second run
+     * reuses them instead of piling up orphan competitors.
+     *
+     * @param  list<array{0: Team, 1: User|null}>  $rosters  each team with its playing captain, null when the captain does not play
+     * @param  array<string, int>  $seriesCounts  headcount per ranking series
+     * @param  callable(int): array<string, mixed>  $playerAttributes  extra attributes for the demo player at that position
+     */
+    private function composeTeams(string $pool, array $rosters, array $seriesCounts, callable $playerAttributes): void
+    {
+        $ladder = $this->rankingLadder($seriesCounts);
+        $position = 0;
+
+        foreach ($rosters as $index => [$team, $playingCaptain]) {
+            $slice = collect(array_slice($ladder, $index * self::ROSTER_SIZE, self::ROSTER_SIZE))->shuffle();
+
+            if ($playingCaptain !== null) {
+                $playingCaptain->update(['ranking' => $slice->shift()]);
+                $team->users()->syncWithoutDetaching([$playingCaptain->id]);
+            }
+
+            foreach ($slice as $ranking) {
+                $position++;
+                $player = $this->demoPlayer("interclub.{$pool}.{$position}@demo.ctt.be", $ranking, $playerAttributes($position));
+                $team->users()->syncWithoutDetaching([$player->id]);
+            }
+        }
+    }
+
+    /**
+     * The ranking is left to {@see self::composeTeams()}, which gives a playing
+     * captain one of their own team's level.
+     */
+    private function createCaptain(string $firstName, string $lastName, Gender $gender, ?Carbon $birthdate = null): User
     {
         $user = User::firstOrCreate(
             ['email' => strtolower($firstName . '.' . $lastName) . '@demo.ctt.be'],
@@ -139,22 +185,13 @@ class InterclubSeeder extends Seeder
                 'email_verified_at' => now(),
                 'password' => bcrypt('password'),
                 'club_id' => $this->club->id,
-                'licence' => rand(95000, 170000),
-                'ranking' => 'B4',
+                'licence' => random_int(95000, 170000),
+                'ranking' => Ranking::NC,
             ]
         );
 
-        $seasonId = Season::current()?->id;
-        if ($seasonId !== null && ! Subscription::where('user_id', $user->id)->where('season_id', $seasonId)->exists()) {
-            Subscription::create([
-                'user_id' => $user->id,
-                'season_id' => $seasonId,
-                'is_competitive' => true,
-                'status' => 'paid',
-                'amount_due' => 0,
-                'amount_paid' => 0,
-            ]);
-        }
+        $user->update(array_filter(['gender' => $gender, 'birthdate' => $birthdate]));
+        $this->ensureCompetitiveSubscription($user);
 
         return $user;
     }
@@ -167,7 +204,8 @@ class InterclubSeeder extends Seeder
         $homeClub = $isHome ? $this->club : $opponentTeam->club;
         $homeAddress = $homeClub?->street ?? ($isHome ? 'Rue de l\'invasion 80, 1340 Ottignies' : 'Salle adverse');
 
-        $interclub = Interclub::create([
+        // InterclubResult is created automatically by InterclubObserver.
+        return Interclub::create([
             'visited_team_id' => $visitedId,
             'visiting_team_id' => $visitingId,
             'start_date_time' => Carbon::parse($dateTime),
@@ -177,9 +215,28 @@ class InterclubSeeder extends Seeder
             'season_id' => $this->season->id,
             'league_id' => $ourTeam->league_id,
         ]);
+    }
 
-        // InterclubResult is created automatically by InterclubObserver.
-        return $interclub;
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function demoPlayer(string $email, Ranking $ranking, array $attributes): User
+    {
+        $player = User::firstWhere('email', $email)
+            ?? User::factory()->isCompetitor()->create(['email' => $email, 'club_id' => $this->club->id]);
+
+        $player->update(['ranking' => $ranking, ...$attributes]);
+        $this->ensureCompetitiveSubscription($player);
+
+        return $player;
+    }
+
+    private function ensureCompetitiveSubscription(User $user): void
+    {
+        Subscription::firstOrCreate(
+            ['user_id' => $user->id, 'season_id' => $this->season->id],
+            ['is_competitive' => true, 'status' => 'paid', 'amount_due' => 0, 'amount_paid' => 0],
+        );
     }
 
     private function league(string $division, LeagueCategory $category, LeagueLevel $level = LeagueLevel::PROVINCIAL_BW): League
@@ -210,6 +267,32 @@ class InterclubSeeder extends Seeder
         return Team::firstOrCreate(
             ['name' => $teamLetter, 'season_id' => $this->season->id, 'league_id' => $league->id, 'club_id' => $opponentClub->id],
         );
+    }
+
+    /**
+     * Draw the given headcount in each series, strongest first.
+     *
+     * @param  array<string, int>  $seriesCounts
+     * @return list<Ranking>
+     */
+    private function rankingLadder(array $seriesCounts): array
+    {
+        $ladder = [];
+
+        foreach ($seriesCounts as $series => $count) {
+            $choices = array_values(array_filter(
+                Ranking::cases(),
+                static fn (Ranking $ranking): bool => str_starts_with($ranking->value, $series),
+            ));
+
+            for ($drawn = 0; $drawn < $count; $drawn++) {
+                $ladder[] = fake()->randomElement($choices);
+            }
+        }
+
+        usort($ladder, fn (Ranking $a, Ranking $b): int => $this->strength($a) <=> $this->strength($b));
+
+        return $ladder;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -251,7 +334,7 @@ class InterclubSeeder extends Seeder
 
         foreach ($interclubs as $index => $interclub) {
             foreach ($players as $player) {
-                $random = rand(1, 10);
+                $random = random_int(1, 10);
                 $availability = match (true) {
                     $random <= 6 => InterclubAvailability::AVAILABLE,
                     $random <= 8 => InterclubAvailability::UNAVAILABLE,
@@ -260,14 +343,18 @@ class InterclubSeeder extends Seeder
                 $interclub->markAvailability($player, $availability);
             }
 
+            // A captain lines up the strongest available players.
+            $strongestAvailable = $interclub->getAvailablePlayers()
+                ->sortBy(fn (User $player): int => $this->strength($player->ranking));
+
             if ($index === 0) {
-                foreach ($interclub->getAvailablePlayers()->take($maxPlayers) as $player) {
+                foreach ($strongestAvailable->take($maxPlayers) as $player) {
                     $interclub->select($player);
                 }
             }
 
             if ($index === 1) {
-                foreach ($interclub->getAvailablePlayers()->take($maxPlayers - 1) as $player) {
+                foreach ($strongestAvailable->take($maxPlayers - 1) as $player) {
                     $interclub->select($player);
                 }
             }
@@ -285,11 +372,12 @@ class InterclubSeeder extends Seeder
         $leagueD = $this->league('P4A', LeagueCategory::MEN);
         $leagueE = $this->league('P5B', LeagueCategory::MEN);
 
-        $captainA = User::firstWhere('email', 'aurelien.paulus@gmail.com') ?? $this->createCaptain('Jean', 'Dupont');
-        $captainB = $this->createCaptain('Marc', 'Durand');
-        $captainC = $this->createCaptain('Luc', 'Lambert');
-        $captainD = $this->createCaptain('Pierre', 'Renard');
-        $captainE = $this->createCaptain('Thomas', 'Laurent');
+        // Team A's captain does not play: seven pool players fill it.
+        $captainA = User::firstWhere('email', 'aurelien.paulus@gmail.com') ?? $this->createCaptain('Jean', 'Dupont', Gender::MEN);
+        $captainB = $this->createCaptain('Marc', 'Durand', Gender::MEN);
+        $captainC = $this->createCaptain('Luc', 'Lambert', Gender::MEN);
+        $captainD = $this->createCaptain('Pierre', 'Renard', Gender::MEN);
+        $captainE = $this->createCaptain('Thomas', 'Laurent', Gender::MEN);
 
         $teamA = $this->team('A', $leagueA, $captainA);
         $teamB = $this->team('B', $leagueB, $captainB);
@@ -297,11 +385,15 @@ class InterclubSeeder extends Seeder
         $teamD = $this->team('D', $leagueD, $captainD);
         $teamE = $this->team('E', $leagueE, $captainE);
 
-        $this->assignPlayers($teamA, 7);
-        $this->assignPlayers($teamB, 7);
-        $this->assignPlayers($teamC, 7);
-        $this->assignPlayers($teamD, 7);
-        $this->assignPlayers($teamE, 7);
+        $demoPlayers = array_sum(self::MEN_POOL) - 4;
+        $womenPositions = collect(range(1, $demoPlayers))->random(self::WOMEN_IN_MEN_POOL)->all();
+
+        $this->composeTeams(
+            'men',
+            [[$teamA, null], [$teamB, $captainB], [$teamC, $captainC], [$teamD, $captainD], [$teamE, $captainE]],
+            self::MEN_POOL,
+            fn (int $position): array => ['gender' => in_array($position, $womenPositions, true) ? Gender::WOMEN : Gender::MEN],
+        );
 
         // ── Équipe A (P2A) — 9 adversaires, vendredis 20h00
         $a1 = $this->opponentTeam('Arc En Ciel', 'F', $leagueA, 'Avenue Urbain Britsiers 5, 1030 Schaerbeek');
@@ -480,17 +572,21 @@ class InterclubSeeder extends Seeder
         $leagueB = $this->league('3C', LeagueCategory::VETERANS);
         $leagueC = $this->league('4F', LeagueCategory::VETERANS);
 
-        $captainA = User::firstWhere('email', 'aurelien.paulus@gmail.com') ?? $this->createCaptain('Pierre', 'Martin');
-        $captainB = $this->createCaptain('André', 'Lecomte');
-        $captainC = $this->createCaptain('Robert', 'Charlier');
+        // Team A's captain does not play: seven pool players fill it.
+        $captainA = User::firstWhere('email', 'aurelien.paulus@gmail.com') ?? $this->createCaptain('Pierre', 'Martin', Gender::MEN);
+        $captainB = $this->createCaptain('André', 'Lecomte', Gender::MEN, $this->veteranBirthdate());
+        $captainC = $this->createCaptain('Robert', 'Charlier', Gender::MEN, $this->veteranBirthdate());
 
         $teamA = $this->team('A', $leagueA, $captainA);
         $teamB = $this->team('B', $leagueB, $captainB);
         $teamC = $this->team('C', $leagueC, $captainC);
 
-        $this->assignPlayers($teamA, 7);
-        $this->assignPlayers($teamB, 7);
-        $this->assignPlayers($teamC, 7);
+        $this->composeTeams(
+            'veterans',
+            [[$teamA, null], [$teamB, $captainB], [$teamC, $captainC]],
+            self::VETERANS_POOL,
+            fn (int $position): array => ['gender' => Gender::MEN, 'birthdate' => $this->veteranBirthdate()],
+        );
 
         // ── Vét. A (3B) — 9 adversaires, dimanches 10h00
         $va1 = $this->opponentTeam('Uccle Ping', 'B', $leagueA, 'Chaussée de Waterloo 1475, 1180 Uccle');
@@ -599,9 +695,15 @@ class InterclubSeeder extends Seeder
     {
         $league = $this->league('2A', LeagueCategory::WOMEN);
 
-        $captain = $this->createCaptain('Marie', 'Simon');
+        $captain = $this->createCaptain('Marie', 'Simon', Gender::WOMEN);
         $team = $this->team('A', $league, $captain);
-        $this->assignPlayers($team, 7);
+
+        $this->composeTeams(
+            'women',
+            [[$team, $captain]],
+            self::WOMEN_POOL,
+            fn (int $position): array => ['gender' => Gender::WOMEN],
+        );
 
         $w1 = $this->opponentTeam('La Hulpe-Rixensart', 'A', $league, 'Rue du Moulin 15, 1310 La Hulpe');
         $w2 = $this->opponentTeam('REP Nivellois', 'A', $league, 'Rue des Heures Claires 46, 1400 Nivelles');
@@ -636,6 +738,14 @@ class InterclubSeeder extends Seeder
         $this->seedAvailabilityAndSelections($team, array_slice($interclubs, 0, 3));
     }
 
+    /**
+     * Position of a ranking in the enum, strongest first: lower is stronger.
+     */
+    private function strength(?Ranking $ranking): int
+    {
+        return $ranking === null ? PHP_INT_MAX : (int) array_search($ranking, Ranking::cases(), true);
+    }
+
     private function team(string $name, League $league, User $captain): Team
     {
         $team = Team::firstOrCreate(
@@ -645,10 +755,16 @@ class InterclubSeeder extends Seeder
 
         $team->update(['captain_id' => $captain->id]);
 
-        if (! $team->users()->where('users.id', $captain->id)->exists()) {
-            $team->users()->syncWithoutDetaching([$captain->id]);
-        }
-
         return $team;
+    }
+
+    /**
+     * A birthdate that makes a veteran by the end of the seeded season.
+     */
+    private function veteranBirthdate(): Carbon
+    {
+        return $this->season->end_at->copy()
+            ->subYears(fake()->numberBetween(User::VETERAN_AGE, 70))
+            ->subDays(fake()->numberBetween(0, 364));
     }
 }

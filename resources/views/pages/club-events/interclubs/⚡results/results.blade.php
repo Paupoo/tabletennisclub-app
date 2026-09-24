@@ -100,6 +100,7 @@
                                         </x-slot:title>
 
                                         <x-slot:actions>
+                                            @if (in_array($team->id, $recordableTeamIds, true))
                                             <div class="flex flex-wrap items-center gap-2">
                                                 {{-- Position finale --}}
                                                 <div class="flex items-center gap-2">
@@ -117,6 +118,9 @@
                                                     :tooltip="__('Declare a general forfeit')"
                                                     wire:click="openTeamForfeitModal({{ $team->id }})" />
                                             </div>
+                                            @elseif ($team->final_position)
+                                                <span class="text-sm text-base-content/70">{{ __('Final position') }} : {{ $team->final_position }}</span>
+                                            @endif
                                         </x-slot:actions>
 
                                         {{-- Tableau des rencontres --}}
@@ -193,14 +197,16 @@
                                                                         @endif
                                                                     </td>
                                                                     <td class="py-2 text-right">
-                                                                        <div class="flex justify-end gap-1">
-                                                                            <x-button class="btn-ghost btn-xs" icon="o-pencil"
-                                                                                :aria-label="__('Edit the result')"
-                                                                                wire:click="openEditModal({{ $mr->id }})" />
-                                                                            <x-button class="btn-ghost btn-xs text-error" icon="o-trash"
-                                                                                :aria-label="__('Delete the result')"
-                                                                                wire:click="confirmDelete({{ $mr->id }})" />
-                                                                        </div>
+                                                                        @if (in_array($team->id, $recordableTeamIds, true))
+                                                                            <div class="flex justify-end gap-1">
+                                                                                <x-button class="btn-ghost btn-xs" icon="o-pencil"
+                                                                                    :aria-label="__('Edit the result')"
+                                                                                    wire:click="openEditModal({{ $mr->id }})" />
+                                                                                <x-button class="btn-ghost btn-xs text-error" icon="o-trash"
+                                                                                    :aria-label="__('Delete the result')"
+                                                                                    wire:click="confirmDelete({{ $mr->id }})" />
+                                                                            </div>
+                                                                        @endif
                                                                     </td>
                                                                 </tr>
                                                             @endforeach

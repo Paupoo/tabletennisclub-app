@@ -89,7 +89,7 @@
                         @endif
                     @endif
                 </div>
-                @if ($isPast && ! empty($ic['selected_player_names']))
+                @if (($isPast || ! $ic['may_compose']) && ! empty($ic['selected_player_names']))
                     <div class="mt-1 text-sm text-base-content/60">
                         {{ implode(', ', $ic['selected_player_names']) }}
                     </div>
@@ -99,7 +99,7 @@
 
         {{-- Une action nommée, le reste derrière un menu nommé : la règle de
              row-menu, appliquée par 9 pages index. --}}
-        @if (! $isPast)
+        @if (! $isPast && $ic['may_compose'])
             <div class="shrink-0">
                 <x-admin.shared.row-menu
                     :label="__('Compose')"

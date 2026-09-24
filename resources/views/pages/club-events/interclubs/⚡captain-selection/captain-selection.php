@@ -593,7 +593,7 @@ new class extends Component
     public function with(): array
     {
         $user = Auth::user();
-        $isAdminOrCommittee = $user->can(Permission::InterclubsManage->value);
+        $isAdminOrCommittee = $user->can(Permission::InterclubsView->value);
         $canSearchSubstitute = $user->can(Permission::SelectionsManage->value);
 
         $seasons = Season::orderBy('start_at')->get();
@@ -619,8 +619,9 @@ new class extends Component
         // The banner routes to the teams that are *not* on screen. The urgent
         // fixtures of the visible team are rows in the list right below it;
         // repeating them there only spent the top of the page saying it twice.
+        // A call to act, so only on the teams the visitor composes for.
         $alertMatches = $teamsData
-            ->reject(fn ($t): bool => $t['id'] === $this->selectedTeamId)
+            ->reject(fn ($t): bool => $t['id'] === $this->selectedTeamId || ! $t['may_compose'])
             ->flatMap(fn ($t) => collect($t['matches'])->map(fn ($m): array => array_merge($m, ['team_name' => $t['name'], 'team_id' => $t['id']])))
             ->filter(fn ($m): bool => $m['status'] === 'urgent')
             ->values();
@@ -1016,7 +1017,12 @@ new class extends Component
 
         $interclubs = $this->fixturesForTeam($fixtures, $team->id);
 
-        $matches = $interclubs->map(function (Interclub $ic) use ($teamMemberCount): array {
+        // Mirrors InterclubPolicy::selectLineup at the team level, so a reader's
+        // rows carry the lineup instead of a "Compose" they would be refused.
+        $mayCompose = Auth::user()->can(Permission::SelectionsManage->value)
+            || $team->captain_id === Auth::id();
+
+        $matches = $interclubs->map(function (Interclub $ic) use ($teamMemberCount, $mayCompose): array {
             $ourTeam = $ic->visitedTeam?->club?->is_own_club
                 ? $ic->visitedTeam
                 : $ic->visitingTeam;
@@ -1040,7 +1046,7 @@ new class extends Component
 
             $status = $this->fixtureStatus($ic);
 
-            $selectedPlayerNames = $isPast
+            $selectedPlayerNames = $isPast || ! $mayCompose
                 ? $icUsers->filter(fn ($u) => $u->registration?->is_selected)
                     ->map(fn ($u): string => $u->last_name . ' ' . $u->first_name)
                     ->values()
@@ -1070,6 +1076,7 @@ new class extends Component
                 'selected_count' => $selectedCount,
                 'max_players' => $ic->total_players,
                 'selected_player_names' => $selectedPlayerNames,
+                'may_compose' => $mayCompose,
             ];
         });
 
@@ -1080,6 +1087,7 @@ new class extends Component
             'captain_name' => trim(($team->captain?->last_name ?? '') . ' ' . ($team->captain?->first_name ?? '')),
             'matches' => $matches->values()->toArray(),
             'has_alert' => $matches->where('status', 'urgent')->isNotEmpty(),
+            'may_compose' => $mayCompose,
         ];
     }
 
@@ -1268,8 +1276,9 @@ new class extends Component
             $query->where('season_id', $season->id);
         }
 
-        // A club-wide selector sees every team; a captain, only theirs.
-        if (! $user->can(Permission::SelectionsManage->value)) {
+        // A club-wide selector sees every team, and so does the committee, which
+        // reads them; a captain, only theirs.
+        if (! $user->can(Permission::SelectionsManage->value) && ! $user->can(Permission::InterclubsView->value)) {
             $query->where('captain_id', $user->id);
         }
 

@@ -60,12 +60,16 @@ new class extends Component
 
     public function confirmDelete(int $interclubId): void
     {
+        Gate::authorize(Permission::InterclubsManage->value);
+
         $this->deletingInterclubId = $interclubId;
         $this->deleteModal = true;
     }
 
     public function delete(): void
     {
+        Gate::authorize(Permission::InterclubsManage->value);
+
         if ($this->deletingInterclubId) {
             Interclub::findOrFail($this->deletingInterclubId)->delete();
             $this->success(__('Match deleted'));
@@ -95,15 +99,27 @@ new class extends Component
         return $chips;
     }
 
+    /**
+     * Whether the visitor writes the calendar, or only reads it: the committee
+     * reads every fixture at the baseline.
+     */
+    #[Computed]
+    public function mayManage(): bool
+    {
+        return Gate::allows(Permission::InterclubsManage->value);
+    }
+
     public function mount(): void
     {
-        Gate::authorize(Permission::InterclubsManage->value);
+        Gate::authorize(Permission::InterclubsView->value);
 
         $this->seasonId = Season::current()?->id;
     }
 
     public function openCreateModal(?int $teamId = null): void
     {
+        Gate::authorize(Permission::InterclubsManage->value);
+
         $this->resetErrorBag();
         $this->editingInterclubId = null;
         $this->formOurTeamId = $teamId ?? $this->selectedTeamId;
@@ -117,6 +133,8 @@ new class extends Component
 
     public function openEditModal(int $interclubId): void
     {
+        Gate::authorize(Permission::InterclubsManage->value);
+
         $interclub = Interclub::findOrFail($interclubId);
         $ourTeamIds = Team::inClub()->where('season_id', $this->seasonId)->pluck('id');
         $isHome = $ourTeamIds->contains($interclub->visited_team_id);
@@ -144,6 +162,8 @@ new class extends Component
 
     public function save(): void
     {
+        Gate::authorize(Permission::InterclubsManage->value);
+
         $this->validate([
             'formOurTeamId' => 'required|exists:teams,id',
             'formOpponentTeamId' => 'required|exists:teams,id',

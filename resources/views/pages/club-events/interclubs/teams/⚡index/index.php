@@ -147,6 +147,8 @@ new class extends Component
 
     public function delete(): void
     {
+        Gate::authorize(Permission::TeamsManage->value);
+
         $team = Team::findOrFail($this->teamToDelete);
         $team->users()->detach();
         $team->delete();

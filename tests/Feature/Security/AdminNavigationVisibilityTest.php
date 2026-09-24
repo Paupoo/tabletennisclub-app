@@ -145,4 +145,15 @@ it('leads a committee member without any délégation to every screen it may rea
     expect(renderAdminNavigation($committee))->toContain(route($routeName));
 })->with([
     'admin.users.delegations',
+    'admin.interclubs.captain-selection',
+    'admin.interclubs.results',
+    'admin.interclubs.interclubs',
+    'admin.interclubs.teams',
+    'admin.interclubs.clubs',
 ]);
+
+it('keeps the configuration tools out of a reader\'s menu', function (): void {
+    $committee = User::factory()->isCommitteeMember()->create();
+
+    expect(renderAdminNavigation($committee))->not->toContain(route('admin.interclubs.division-setup'));
+});

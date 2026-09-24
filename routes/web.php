@@ -398,12 +398,18 @@ Route::prefix('admin/club-events/interclubs/')
 
         // Interclub configuration & control — the interclubs délégation.
         Route::middleware('can:interclubs.manage')->group(function (): void {
-            Route::livewire('teams', 'pages::club-events.interclubs.teams.index')->name('admin.interclubs.teams');
             Route::livewire('teams/builder', 'pages::club-events.interclubs.teams.builder')->name('admin.interclubs.teams.builder');
-            Route::livewire('teams/{team}', 'pages::club-events.interclubs.teams.show')->name('admin.interclubs.teams.show');
             Route::livewire('teams/{team}/edit', 'pages::club-events.interclubs.teams.edit')->name('admin.interclubs.teams.edit');
-            Route::livewire('interclubs', 'pages::club-events.interclubs.interclubs')->name('admin.interclubs.interclubs');
             Route::livewire('division-setup', 'pages::club-events.interclubs.division-setup')->name('admin.interclubs.division-setup');
+        });
+
+        // Who plays where, and against whom: readable at the committee baseline.
+        // Every write on these screens is guarded inside the component — the
+        // route no longer is the only thing standing in front of them.
+        Route::middleware('can:interclubs.view')->group(function (): void {
+            Route::livewire('teams', 'pages::club-events.interclubs.teams.index')->name('admin.interclubs.teams');
+            Route::livewire('teams/{team}', 'pages::club-events.interclubs.teams.show')->name('admin.interclubs.teams.show');
+            Route::livewire('interclubs', 'pages::club-events.interclubs.interclubs')->name('admin.interclubs.interclubs');
             Route::livewire('clubs', 'pages::club-events.interclubs.clubs')->name('admin.interclubs.clubs');
         });
     });

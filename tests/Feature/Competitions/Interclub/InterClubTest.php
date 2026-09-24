@@ -8,6 +8,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -49,7 +50,7 @@ beforeEach(function (): void {
  * aucune autorisation, et un délégué interclubs pouvait y composer n'importe
  * quelle équipe. La fusion referme cela.
  */
-test('the selections screen is closed to the interclubs délégation', function (): void {
+test('the selections screen is read-only for the interclubs délégation', function (): void {
     $this->actingAs($this->createFakeAdmin())
         ->get(route('admin.interclubs.captain-selection'))
         ->assertOK();
@@ -57,9 +58,13 @@ test('the selections screen is closed to the interclubs délégation', function 
     $committee_member = $this->createFakeCommitteeMember();
     $committee_member->assignRole(Role::INTERCLUBS->value);
 
+    // The committee reads every lineup; composing one stays with the selections
+    // délégation and the captains.
     $this->actingAs($committee_member)
         ->get(route('admin.interclubs.captain-selection'))
-        ->assertForbidden();
+        ->assertOK();
+
+    expect($committee_member->can(Permission::SelectionsManage->value))->toBeFalse();
 });
 test('captains are able to create an interclub', function (): void {
     // to do

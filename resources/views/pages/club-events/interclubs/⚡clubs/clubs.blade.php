@@ -13,11 +13,13 @@
                 clearable />
         </x-slot:middle>
         <x-slot:actions>
-            <x-button
-                class="btn-primary btn-sm"
-                icon="o-plus"
-                :label="__('New club')"
-                wire:click="openCreateModal" />
+            @if ($this->mayManage)
+                <x-button
+                    class="btn-primary btn-sm"
+                    icon="o-plus"
+                    :label="__('New club')"
+                    wire:click="openCreateModal" />
+            @endif
         </x-slot:actions>
     </x-header>
 
@@ -28,7 +30,9 @@
                     <p class="text-sm">{{ __('No clubs match your search.') }}</p>
                 @else
                     <p class="text-sm">{{ __('No opponent clubs yet.') }}</p>
-                    <x-button class="btn-primary btn-sm mt-4" icon="o-plus" :label="__('Add first club')" wire:click="openCreateModal" />
+                    @if ($this->mayManage)
+                        <x-button class="btn-primary btn-sm mt-4" icon="o-plus" :label="__('Add first club')" wire:click="openCreateModal" />
+                    @endif
                 @endif
             </div>
         </x-card>
@@ -68,18 +72,20 @@
                         @endif
 
                         {{-- Actions --}}
-                        <div class="flex shrink-0 gap-1">
-                            <x-button
-                                class="btn-ghost btn-sm btn-circle"
-                                icon="o-pencil"
-                                :tooltip="__('Edit')"
-                                wire:click="openEditModal({{ $club->id }})" :aria-label="__('Edit')" />
-                            <x-button
-                                class="btn-ghost btn-sm btn-circle text-error"
-                                icon="o-trash"
-                                :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $club->id }})" :aria-label="__('Delete')" />
-                        </div>
+                        @if ($this->mayManage)
+                            <div class="flex shrink-0 gap-1">
+                                <x-button
+                                    class="btn-ghost btn-sm btn-circle"
+                                    icon="o-pencil"
+                                    :tooltip="__('Edit')"
+                                    wire:click="openEditModal({{ $club->id }})" :aria-label="__('Edit')" />
+                                <x-button
+                                    class="btn-ghost btn-sm btn-circle text-error"
+                                    icon="o-trash"
+                                    :tooltip="__('Delete')"
+                                    wire:click="confirmDelete({{ $club->id }})" :aria-label="__('Delete')" />
+                            </div>
+                        @endif
                     </div>
                 @endforeach
             </div>

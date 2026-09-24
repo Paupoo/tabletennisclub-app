@@ -7,14 +7,18 @@
         <x-slot:actions>
             {{-- Mobile: filter · ☰ --}}
             <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-search="false" :show-more="false" />
-            <button class="btn btn-primary btn-circle btn-sm lg:hidden" @click="mobileActionsOpen = true">
-                <x-icon name="o-bars-3" class="h-5 w-5" />
-            </button>
+            @if ($this->mayManage)
+                <button class="btn btn-primary btn-circle btn-sm lg:hidden" @click="mobileActionsOpen = true">
+                    <x-icon name="o-bars-3" class="h-5 w-5" />
+                </button>
+            @endif
             {{-- Desktop: Filters + New match --}}
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
-                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New match')"
-                    wire:click="openCreateModal" />
+                @if ($this->mayManage)
+                    <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New match')"
+                        wire:click="openCreateModal" />
+                @endif
             </div>
         </x-slot:actions>
     </x-header>
@@ -32,10 +36,12 @@
         <x-card class="mt-4">
             <div class="py-16 text-center text-gray-500">
                 {{ __('No matches scheduled for this season.') }}
-                <div class="mt-4">
-                    <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Add first match')"
-                        wire:click="openCreateModal" />
-                </div>
+                @if ($this->mayManage)
+                    <div class="mt-4">
+                        <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Add first match')"
+                            wire:click="openCreateModal" />
+                    </div>
+                @endif
             </div>
         </x-card>
     @else
@@ -71,11 +77,13 @@
                                             <div class="border-base-300 flex-1 border-t"></div>
                                             <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
                                         </button>
-                                        <x-button
-                                            class="btn-ghost btn-sm shrink-0"
-                                            icon="o-plus"
-                                            :label="__('Add a match')"
-                                            wire:click.stop="openCreateModal({{ $matches->first()['our_team_id'] }})" />
+                                        @if ($this->mayManage)
+                                            <x-button
+                                                class="btn-ghost btn-sm shrink-0"
+                                                icon="o-plus"
+                                                :label="__('Add a match')"
+                                                wire:click.stop="openCreateModal({{ $matches->first()['our_team_id'] }})" />
+                                        @endif
                                     </div>
 
                                     <div x-show="open" x-collapse>
@@ -114,14 +122,16 @@
                                                         </div>
 
                                                         {{-- Actions --}}
-                                                        <div class="flex shrink-0 gap-1">
-                                                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                                                :tooltip="__('Edit')"
-                                                                wire:click="openEditModal({{ $match['id'] }})" :aria-label="__('Edit')" />
-                                                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                                                :tooltip="__('Delete')"
-                                                                wire:click="confirmDelete({{ $match['id'] }})" :aria-label="__('Delete')" />
-                                                        </div>
+                                                        @if ($this->mayManage)
+                                                            <div class="flex shrink-0 gap-1">
+                                                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
+                                                                    :tooltip="__('Edit')"
+                                                                    wire:click="openEditModal({{ $match['id'] }})" :aria-label="__('Edit')" />
+                                                                <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
+                                                                    :tooltip="__('Delete')"
+                                                                    wire:click="confirmDelete({{ $match['id'] }})" :aria-label="__('Delete')" />
+                                                            </div>
+                                                        @endif
                                                     </div>
                                                 @endforeach
                                             </div>
@@ -186,13 +196,15 @@
     </x-confirm-modal>
 
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
-    <x-admin.shared.mobile-actions>
-        <x-admin.shared.mobile-action-item
-            icon="o-plus" color="primary"
-            :label="__('New match')"
-            :description="__('Add a match to the schedule')"
-            @click="mobileActionsOpen = false; $wire.call('openCreateModal')" />
-    </x-admin.shared.mobile-actions>
+    @if ($this->mayManage)
+        <x-admin.shared.mobile-actions>
+            <x-admin.shared.mobile-action-item
+                icon="o-plus" color="primary"
+                :label="__('New match')"
+                :description="__('Add a match to the schedule')"
+                @click="mobileActionsOpen = false; $wire.call('openCreateModal')" />
+        </x-admin.shared.mobile-actions>
+    @endif
 
     {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
     <x-admin.shared.filter-drawer :title="__('Filters')">

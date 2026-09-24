@@ -75,8 +75,9 @@ class InterclubPolicy
      * screens behind a délégation. This page is where a player lands from
      * "you are selected", so the roster has to grant it — and the id is in the
      * URL, so something has to refuse it. Three groups may look: whoever plays
-     * for either side, whoever captains either side, and the délégations that
-     * already see every fixture elsewhere.
+     * for either side, whoever captains either side, and whoever already reads
+     * every fixture elsewhere — the committee included, whose team files link
+     * here.
      *
      * Roster membership *or* a row on the fixture: a member who answered and
      * then left the team still has an answer on this match, and reading their
@@ -85,6 +86,7 @@ class InterclubPolicy
     public function viewMatchPage(User $user, Interclub $interclub): bool
     {
         if ($user->canAny([
+            Permission::InterclubsView->value,
             Permission::InterclubsManage->value,
             Permission::SelectionsManage->value,
             Permission::ResultsManage->value,

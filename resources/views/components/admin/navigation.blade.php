@@ -252,7 +252,7 @@
          access-selections / access-results Gates say so, and the menu has to
          ask the same question, or a captain reaches their own screens by URL
          only. The season configuration below stays permission-gated. --}}
-    @if (Gate::any(['access-selections', 'access-results']) || $user->can('interclubs.manage'))
+    @if (Gate::any(['access-selections', 'access-results']) || $user->can('interclubs.view'))
     <x-menu-sub icon="o-calendar-days" link="#" :title="__('Interclubs')">
         @can('access-selections')
         <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" :title="__('Selections')" />
@@ -260,13 +260,17 @@
         @can('access-results')
         <x-menu-item icon="o-squares-2x2" link="{{ route('admin.interclubs.results') }}" :title="__('Results')" />
         @endcan
-        @can('interclubs.manage')
+        {{-- Readable at the committee baseline; only the division setup is a
+             tool with nothing to read, and stays with the délégation. --}}
+        @can('interclubs.view')
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.interclubs.interclubs') }}" :title="__('Planning')" />
         {{-- Two levels of indent leave 156px for a label. "Interclubs" already
         names the section this sits in, so the season goes without saying. --}}
         <x-menu-sub icon="o-cog-6-tooth" :title="__('Configuration')">
             <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" :title="__('Our teams')" />
+            @can('interclubs.manage')
             <x-menu-item icon="o-table-cells" link="{{ route('admin.interclubs.division-setup') }}" :title="__('Opponents')" />
+            @endcan
             <x-menu-item icon="o-building-office-2" link="{{ route('admin.interclubs.clubs') }}" :title="__('Clubs')" />
         </x-menu-sub>
         @endcan

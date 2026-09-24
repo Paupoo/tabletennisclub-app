@@ -69,6 +69,8 @@ new class extends Component
 
     public function confirmDelete(int $matchResultId): void
     {
+        $this->authorizeTeam(InterclubResult::findOrFail($matchResultId)->team_id);
+
         $this->deletingInterclubResultId = $matchResultId;
         $this->deleteModal = true;
     }
@@ -130,14 +132,16 @@ new class extends Component
     {
         $this->seasonId = Season::current()?->id;
 
-        // Results delegate, or captain of at least one team; authorizeTeam()
-        // then narrows each mutation to the teams actually captained.
+        // Results delegate, captain of at least one team, or the committee which
+        // reads them all; authorizeTeam() then narrows each mutation to the
+        // teams the visitor actually records for.
         Gate::authorize('access-results');
     }
 
     public function openEditModal(int $matchResultId): void
     {
         $mr = InterclubResult::findOrFail($matchResultId);
+        $this->authorizeTeam($mr->team_id);
         $this->resetErrorBag();
         $this->editingInterclubResultId = $mr->id;
         $this->editingTeamId = $mr->team_id;
@@ -168,6 +172,8 @@ new class extends Component
 
     public function openTeamForfeitModal(int $teamId): void
     {
+        $this->authorizeTeam($teamId);
+
         $this->forfeitingTeamId = $teamId;
         $this->teamForfeitModal = true;
     }
@@ -292,7 +298,8 @@ new class extends Component
             ->inClub()
             ->where('season_id', $this->seasonId);
 
-        if (! $user->can(Permission::ResultsManage->value)) {
+        // The committee reads every team; a captain records, and sees, their own.
+        if (! $user->can(Permission::ResultsManage->value) && ! $user->can(Permission::InterclubsView->value)) {
             $teamsQuery->where('captain_id', $user->id);
         }
 
@@ -307,7 +314,13 @@ new class extends Component
 
         $matchDayMap = $this->seasonId ? Interclub::matchDayMap($this->seasonId) : [];
 
+        // Same rule as authorizeTeam(), so a reader's rows carry no action.
+        $recordableTeamIds = $user->can(Permission::ResultsManage->value)
+            ? $teams->pluck('id')->all()
+            : $teams->where('captain_id', $user->id)->pluck('id')->all();
+
         return [
+            'recordableTeamIds' => $recordableTeamIds,
             'filterChips' => $this->filterChips,
             'seasons' => Season::orderBy('start_at')->get(),
             'teamsByCategory' => $teamsByCategory,

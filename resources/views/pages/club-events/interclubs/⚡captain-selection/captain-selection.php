@@ -74,6 +74,14 @@ new class extends Component
     public ?int $selectedTeamId = null;
 
     /**
+     * Whether the modal about to open sends a lineup the captain declared
+     * short-handed. Decided on save, acted upon on send: the declaration is
+     * only recorded once the team has been told, never on a skipped send.
+     */
+    #[Locked]
+    public bool $sendsShortHanded = false;
+
+    /**
      * Which fixture the "notify the team" modal will mail.
      *
      * Deliberately not selectedInterclubId, which is where the *drawer* is. The
@@ -84,6 +92,12 @@ new class extends Component
      */
     #[Locked]
     public ?int $sendTargetId = null;
+
+    /**
+     * The captain's box in the drawer: « nous jouerons à 3 ». Only offered
+     * between the minimum the rules allow and a full team.
+     */
+    public bool $shortHandedOptIn = false;
 
     /**
      * A season is a matrix of teams × match days. 'team' reads one row — a team,
@@ -194,6 +208,8 @@ new class extends Component
             ->wherePivot('is_selected', true)
             ->pluck('users.id')
             ->toArray();
+
+        $this->shortHandedOptIn = $interclub->isShortHanded();
 
         $this->drawerSelection = true;
     }
@@ -311,17 +327,33 @@ new class extends Component
         $this->drawerSelection = false;
         $this->sendTargetId = $interclub->id;
 
+        $selectedCount = count($this->selectedPlayerIds);
+        $isShortLineup = $selectedCount >= $interclub->minimumPlayers() && $selectedCount < $maxPlayers;
+        $this->sendsShortHanded = $isShortLineup && $this->shortHandedOptIn;
+
+        // La déclaration tombe dès qu'elle ne décrit plus la compo : un 4e trouvé,
+        // une équipe passée sous le minimum, ou la case décochée. Elle survit à un
+        // simple échange — on joue toujours à 3, et le capitaine l'a déjà dit.
+        if ($interclub->isShortHanded() && ! $this->sendsShortHanded) {
+            $interclub->update(['short_handed_confirmed_at' => null, 'short_handed_confirmed_by' => null]);
+        }
+
         if ($previouslyConfirmedIds === []) {
-            if ($interclub->isSelectionComplete()) {
+            if ($interclub->isSelectionComplete() || $this->sendsShortHanded) {
                 $this->isUpdateMode = false;
                 $this->modalMessage = true;
             } else {
                 $this->sendTargetId = null;
                 $this->success(
                     __('Selection saved — :n of :max players.', [
-                        'n' => count($this->selectedPlayerIds),
+                        'n' => $selectedCount,
                         'max' => $maxPlayers,
                     ]),
+                    // Sous le minimum, la rencontre ne peut pas se jouer (C.25.6) :
+                    // l'app ne déclare pas le forfait, mais elle le dit.
+                    $selectedCount < $interclub->minimumPlayers()
+                        ? __('Fewer than :min players: the fixture cannot be played. Report the forfeit at least 48 h before.', ['min' => $interclub->minimumPlayers()])
+                        : null,
                     position: 'toast-bottom toast-end'
                 );
             }
@@ -332,7 +364,12 @@ new class extends Component
         $added = array_values(array_diff($this->selectedPlayerIds, $previouslyConfirmedIds));
         $removed = array_values(array_diff($previouslyConfirmedIds, $this->selectedPlayerIds));
 
-        if ($added === [] && $removed === []) {
+        // Une compo déjà amputée à 3, enregistrée sans la case, que le capitaine
+        // revient déclarer : rien n'a changé dans la liste, mais l'équipe doit
+        // encore apprendre qu'elle joue à 3.
+        $declaresNow = $this->sendsShortHanded && ! $interclub->isShortHanded();
+
+        if ($added === [] && $removed === [] && ! $declaresNow) {
             $this->sendTargetId = null;
             $this->success(__('Selection saved.'), position: 'toast-bottom toast-end');
 
@@ -385,6 +422,18 @@ new class extends Component
             return;
         }
 
+        // La déclaration « nous jouerons à 3 » n'existe qu'une fois l'équipe
+        // prévenue : un envoi sauté ne règle rien. Elle précède les services,
+        // qui lisent la rencontre pour savoir quoi dire aux joueurs.
+        $announceShortHanded = $this->sendsShortHanded && ! $interclub->isShortHanded();
+
+        if ($this->sendsShortHanded) {
+            $interclub->update([
+                'short_handed_confirmed_at' => now(),
+                'short_handed_confirmed_by' => Auth::id(),
+            ]);
+        }
+
         // Ce que l'envoi va réellement faire, décidé avant que resetSendModal()
         // n'efface le diff. Une compo déjà envoyée puis ramenée sous le complet
         // ne prévient que les joueurs écartés : notifySelectionChange() sort
@@ -392,10 +441,10 @@ new class extends Component
         // c'est le compte rendu — « toute l'équipe a été notifiée », qui était
         // faux, sur le seul écran qui dise au capitaine ce qui est parti.
         $removedCount = count($this->pendingRemovedIds);
-        $onlyRemovedAreNotified = $this->isUpdateMode && ! $interclub->isSelectionComplete();
+        $onlyRemovedAreNotified = $this->isUpdateMode && ! $interclub->isLineupReady();
 
         if ($this->isUpdateMode) {
-            $service->notifySelectionChange($interclub, $this->pendingAddedIds, $this->pendingRemovedIds, $this->captainMeetupInfo);
+            $service->notifySelectionChange($interclub, $this->pendingAddedIds, $this->pendingRemovedIds, $this->captainMeetupInfo, $announceShortHanded);
         } else {
             $service->confirmSelection($interclub, $this->captainMeetupInfo);
         }
@@ -508,6 +557,7 @@ new class extends Component
             $this->selectedInterclubId = null;
             $this->selectedPlayerIds = [];
             $this->search = '';
+            $this->shortHandedOptIn = false;
         }
     }
 
@@ -543,7 +593,7 @@ new class extends Component
     public function with(): array
     {
         $user = Auth::user();
-        $isAdminOrCommittee = $user->can(Permission::InterclubsManage->value);
+        $isAdminOrCommittee = $user->can(Permission::InterclubsView->value);
         $canSearchSubstitute = $user->can(Permission::SelectionsManage->value);
 
         $seasons = Season::orderBy('start_at')->get();
@@ -569,8 +619,9 @@ new class extends Component
         // The banner routes to the teams that are *not* on screen. The urgent
         // fixtures of the visible team are rows in the list right below it;
         // repeating them there only spent the top of the page saying it twice.
+        // A call to act, so only on the teams the visitor composes for.
         $alertMatches = $teamsData
-            ->reject(fn ($t): bool => $t['id'] === $this->selectedTeamId)
+            ->reject(fn ($t): bool => $t['id'] === $this->selectedTeamId || ! $t['may_compose'])
             ->flatMap(fn ($t) => collect($t['matches'])->map(fn ($m): array => array_merge($m, ['team_name' => $t['name'], 'team_id' => $t['id']])))
             ->filter(fn ($m): bool => $m['status'] === 'urgent')
             ->values();
@@ -720,7 +771,9 @@ new class extends Component
 
             if ($modalInterclub) {
                 $sendMaxPlayers = $modalInterclub->total_players;
-                $modalIsComplete = $modalInterclub->isSelectionComplete();
+                // La déclaration n'est tamponnée qu'à l'envoi : tant que la fenêtre
+                // est ouverte, c'est l'intention du capitaine qui fait foi.
+                $modalIsComplete = $this->sendsShortHanded || $modalInterclub->isLineupReady();
 
                 // Une action qui engage douze e-mails nomme sa cible : une
                 // cible erronée doit se voir avant le clic, pas après.
@@ -964,7 +1017,12 @@ new class extends Component
 
         $interclubs = $this->fixturesForTeam($fixtures, $team->id);
 
-        $matches = $interclubs->map(function (Interclub $ic) use ($teamMemberCount): array {
+        // Mirrors InterclubPolicy::selectLineup at the team level, so a reader's
+        // rows carry the lineup instead of a "Compose" they would be refused.
+        $mayCompose = Auth::user()->can(Permission::SelectionsManage->value)
+            || $team->captain_id === Auth::id();
+
+        $matches = $interclubs->map(function (Interclub $ic) use ($teamMemberCount, $mayCompose): array {
             $ourTeam = $ic->visitedTeam?->club?->is_own_club
                 ? $ic->visitedTeam
                 : $ic->visitingTeam;
@@ -988,7 +1046,7 @@ new class extends Component
 
             $status = $this->fixtureStatus($ic);
 
-            $selectedPlayerNames = $isPast
+            $selectedPlayerNames = $isPast || ! $mayCompose
                 ? $icUsers->filter(fn ($u) => $u->registration?->is_selected)
                     ->map(fn ($u): string => $u->last_name . ' ' . $u->first_name)
                     ->values()
@@ -1018,6 +1076,7 @@ new class extends Component
                 'selected_count' => $selectedCount,
                 'max_players' => $ic->total_players,
                 'selected_player_names' => $selectedPlayerNames,
+                'may_compose' => $mayCompose,
             ];
         });
 
@@ -1028,6 +1087,7 @@ new class extends Component
             'captain_name' => trim(($team->captain?->last_name ?? '') . ' ' . ($team->captain?->first_name ?? '')),
             'matches' => $matches->values()->toArray(),
             'has_alert' => $matches->where('status', 'urgent')->isNotEmpty(),
+            'may_compose' => $mayCompose,
         ];
     }
 
@@ -1143,7 +1203,7 @@ new class extends Component
             $key = match (true) {
                 $match['is_past'] => 'played',
                 in_array($match['status'], ['urgent', 'actionable'], true) => 'todo',
-                $match['status'] === 'confirmed' => 'controlled',
+                in_array($match['status'], InterclubPreparationService::SETTLED, true) => 'controlled',
                 default => 'upcoming',
             };
 
@@ -1216,8 +1276,9 @@ new class extends Component
             $query->where('season_id', $season->id);
         }
 
-        // A club-wide selector sees every team; a captain, only theirs.
-        if (! $user->can(Permission::SelectionsManage->value)) {
+        // A club-wide selector sees every team, and so does the committee, which
+        // reads them; a captain, only theirs.
+        if (! $user->can(Permission::SelectionsManage->value) && ! $user->can(Permission::InterclubsView->value)) {
             $query->where('captain_id', $user->id);
         }
 
@@ -1277,6 +1338,8 @@ new class extends Component
         $this->isUpdateMode = false;
         $this->pendingAddedIds = [];
         $this->pendingRemovedIds = [];
+        $this->sendsShortHanded = false;
+        $this->shortHandedOptIn = false;
     }
 
     private function selectedInterclub(): ?Interclub

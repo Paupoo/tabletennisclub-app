@@ -116,11 +116,15 @@ new class extends Component
 
     public function confirmBulkArchive(): void
     {
+        Gate::authorize(Permission::EventPostsManage->value);
+
         $this->confirmBulkArchiveModal = true;
     }
 
     public function confirmDelete(int $id): void
     {
+        Gate::authorize(Permission::EventPostsManage->value);
+
         $this->deletingId = $id;
         $this->deleteModal = true;
     }
@@ -194,6 +198,16 @@ new class extends Component
     }
 
     // ── Single-record actions ─────────────────────────────────────────────────
+
+    /**
+     * Whether the visitor edits the events, or only reads them: the committee
+     * reads every event at the baseline, and opens one with its fields locked.
+     */
+    #[Computed]
+    public function mayManage(): bool
+    {
+        return Gate::allows(Permission::EventPostsManage->value);
+    }
 
     public function openEdit(int $id): void
     {

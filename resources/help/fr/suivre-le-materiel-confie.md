@@ -22,7 +22,7 @@ Trois gestes, tous sur la ligne du trousseau :
 - **Retirer** — le trousseau quitte la liste sans être effacé. Il garde son numéro **et son dernier détenteur**, ce qui vous dit de la poche de qui un trousseau perdu a disparu.
 - **Remettre en service** — cochez **Afficher les trousseaux retirés**, puis le bouton sur la ligne grisée. La même fenêtre que **Déplacer** s'ouvre : elle rappelle qui l'avait en dernier et vous demande qui le prend maintenant. Le champ démarre **vide**, parce qu'un trousseau ne retourne pas chez la personne qui l'avait — soit il est perdu et ne revient jamais, soit il a été rendu et attend au tiroir qu'on le confie à quelqu'un d'autre.
 
-> **Qui peut le faire :** les titulaires de la délégation **Installations** et les **administrateurs**. Ce n'est plus le comité entier : confier un objet du club est une charge, elle s'attribue.
+> **Qui peut le faire :** les titulaires de la délégation **Installations** et les **administrateurs**. Le reste du comité **consulte** la liste — savoir qui a une clé fait partie de sa mission — mais n'y voit aucun bouton : confier un objet du club est une charge, elle s'attribue.
 
 Détenir un trousseau **n'ouvre aucun écran** de l'application. Ça ne déclenche rien : ça note qui a une clé physique en main. Tenez l'inventaire à jour quand un trousseau change de main, sinon la vue d'ensemble ment.
 

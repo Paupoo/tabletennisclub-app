@@ -99,23 +99,39 @@ describe('the delegations', function (): void {
     it('does not let the interclubs delegate compose lineups — that is the selections duty', function (): void {
         $delegate = User::factory()->withRole(Role::INTERCLUBS)->create();
 
+        // They read the lineups like the rest of the committee — reading is not composing.
         expect($delegate)
             ->can('selectLineup', $this->fixture)->toBeFalse()
             ->can('selectLineup', $this->otherFixture)->toBeFalse();
-
-        $this->actingAs($delegate)->get(route('admin.interclubs.captain-selection'))->assertForbidden();
     });
 
-    it('no longer opens the configuration screens on committee membership alone', function (string $routeName): void {
+    it('opens the interclub screens to the committee, read-only', function (string $routeName): void {
+        $this->actingAs(User::factory()->isCommitteeMember()->create())
+            ->get(route($routeName))
+            ->assertOk();
+    })->with([
+        'admin.interclubs.teams',
+        'admin.interclubs.clubs',
+        'admin.interclubs.interclubs',
+        'admin.interclubs.captain-selection',
+        'admin.interclubs.results',
+    ]);
+
+    it('keeps the configuration tools with the interclubs delegate', function (string $routeName): void {
         $this->actingAs(User::factory()->isCommitteeMember()->create())
             ->get(route($routeName))
             ->assertForbidden();
     })->with([
-        'admin.interclubs.teams',
-        'admin.interclubs.clubs',
         'admin.interclubs.division-setup',
-        'admin.interclubs.interclubs',
+        'admin.interclubs.teams.builder',
     ]);
+
+    it('opens a team to the committee, but not its edit form', function (): void {
+        $committee = User::factory()->isCommitteeMember()->create();
+
+        $this->actingAs($committee)->get(route('admin.interclubs.teams.show', $this->team))->assertOk();
+        $this->actingAs($committee)->get(route('admin.interclubs.teams.edit', $this->team))->assertForbidden();
+    });
 });
 
 describe('the fixtures are no longer open to everyone', function (): void {

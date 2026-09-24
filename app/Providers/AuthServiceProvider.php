@@ -94,10 +94,14 @@ class AuthServiceProvider extends ServiceProvider
          * report for their own teams without holding one. Each screen then narrows
          * down to the teams they actually captain.
          */
+        // Reaching the screen, not acting on it: the committee reads every team's
+        // lineups and results, and the components decide who may write what.
         Gate::define('access-selections', fn (User $user): bool => $user->can(Permission::SelectionsManage->value)
+            || $user->can(Permission::InterclubsView->value)
             || $user->captainOf()->exists());
 
         Gate::define('access-results', fn (User $user): bool => $user->can(Permission::ResultsManage->value)
+            || $user->can(Permission::InterclubsView->value)
             || $user->captainOf()->exists());
 
         Gate::define('manage-contacts', fn (User $user): bool => $user->can(Permission::ContactsManage->value));

@@ -24,7 +24,10 @@ it('opens a members-list row menu without the table clipping it', function (): v
         'last_name' => 'Abitbol',
     ]);
 
-    User::factory()->count(3)->create();
+    // One unverified member, so exactly one row carries a real entry ("Resend
+    // invitation"): a row whose every entry is refused renders no menu at all.
+    User::factory()->count(2)->create();
+    User::factory()->unverified()->create();
 
     $this->actingAs($secretary);
 
@@ -33,9 +36,9 @@ it('opens a members-list row menu without the table clipping it', function (): v
     $page->assertNoJavaScriptErrors()
         ->wait(1)
         // Les deux jumeaux sont dans le DOM, seul celui du tableau est à l'écran
-        // à cette largeur : on vise une ligne précise, sinon le sélecteur est
-        // ambigu et le clic échoue.
-        ->click('tbody tr:first-child [data-row-menu-trigger]')
+        // à cette largeur : on vise le tableau, où une seule ligne a un menu,
+        // sinon le sélecteur est ambigu et le clic échoue.
+        ->click('tbody [data-row-menu-trigger]')
         ->wait(1);
 
     $probe = $page->script(<<<'JS'

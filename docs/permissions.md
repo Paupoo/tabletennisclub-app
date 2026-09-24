@@ -20,7 +20,7 @@ Trois familles cohabitent, et une seule décide :
 
 Accès sans restriction à toute l'application.
 
-Détient les 68 permissions. Accordées explicitement plutôt que
+Détient les 69 permissions. Accordées explicitement plutôt que
 par un court-circuit `Gate::before`, car certaines policies encodent des règles qui
 doivent survivre à un administrateur — il ne peut toujours pas supprimer son propre
 compte.
@@ -32,6 +32,9 @@ Accès de base au back-office : consulter les données du club sans les gérer.
 - `users.view`
 - `subscriptions.view`
 - `payments.view`
+- `transactions.view`
+- `fines.view`
+- `cash_register.view`
 - `contacts.view`
 - `news_posts.view`
 - `interclubs.view`
@@ -39,6 +42,7 @@ Accès de base au back-office : consulter les données du club sans les gérer.
 - `trainings.view`
 - `meetings.view`
 - `seasons.view`
+- `facilities.view`
 
 ---
 
@@ -101,6 +105,7 @@ Traiter les demandes entrantes, les modèles de réponse et les spams.
 
 Gérer les salles, les tables et le matériel confié.
 
+- `facilities.view`
 - `rooms.manage`
 - `tables.manage`
 - `equipment.holder.update`

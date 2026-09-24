@@ -66,8 +66,8 @@
                     icon="o-home"
                     :heading="__('No rooms yet')"
                     :message="__('Create the first room to start organizing your equipment.')"
-                    :buttonText="__('Create room')"
-                    href="{{ route('admin.rooms.create') }}" />
+                    :buttonText="auth()->user()->can('create', \App\Domains\ClubAdmin\Club\Models\Room::class) ? __('Create room') : null"
+                    :href="auth()->user()->can('create', \App\Domains\ClubAdmin\Club\Models\Room::class) ? route('admin.rooms.create') : null" />
             </div>
         @endforelse
 

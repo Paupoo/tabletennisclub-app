@@ -38,6 +38,8 @@ Chaque ligne correspond à un match interclub. De gauche à droite :
 
 Une ligne rouge a aussi un fond légèrement teinté pour attirer l'œil.
 
+Une sélection **déclarée à 3** (voir « Jouer à 3 » plus bas) et envoyée est **verte**, comme une sélection complète : pour vous, elle est réglée. En revanche, une sélection envoyée à 4 puis amputée d'un joueur **sans** déclaration repasse en rouge ou orange : l'application ne la considère plus comme réglée.
+
 ### Bandeau d'alerte
 
 Si un ou plusieurs matchs sont en statut **Attention**, un bandeau rouge s'affiche en haut de page avec un raccourci direct vers chaque match concerné. Cliquez sur un match dans ce bandeau pour ouvrir directement le tiroir de sélection.
@@ -81,6 +83,17 @@ Cliquez sur la carte d'un joueur pour le basculer dans ou hors de la sélection.
 
 Cliquez sur **Enregistrer la sélection**. La sélection est sauvegardée et le statut du match passe à **À confirmer** (orange). Vous pouvez revenir la modifier avant d'envoyer la feuille.
 
+### Jouer à 3
+
+Le règlement permet à une équipe messieurs de **débuter à 3 joueurs sur 4** (art. C.25.6), et à une équipe dames, jeunes ou vétérans à **2 sur 3** (art. C.25.7). Moins, c'est un forfait.
+
+1. **Cherchez d'abord un 4e joueur** : les joueurs libres de la journée, ou un joueur d'une équipe inférieure, en respectant son indice (art. C.22.1.1), la règle du 3e joueur effectif de l'équipe supérieure (art. C.22.1.3) et la règle d'un seul match par semaine (art. C.20.1).
+2. **Faute de mieux, jouez à 3.** Au minimum, une case apparaît sous la barre de progression : *« Je n'ai trouvé aucun autre joueur… nous jouerons à 3 »*. **Sans elle, la sélection reste un brouillon et personne n'est convoqué.**
+3. **Cochée**, la fenêtre d'envoi s'ouvre avec un rappel : les matchs du joueur manquant seront perdus. Les convoqués lisent dans leur e-mail que l'équipe joue à 3 ; les autres membres de l'équipe reçoivent un appel à se manifester s'ils se libèrent.
+4. **Sous le minimum**, l'application enregistre sans envoyer et vous rappelle de prévenir le forfait **au moins 48 heures avant** (art. C.33.1).
+
+La déclaration est enregistrée avec votre nom et la date. Elle tombe si vous trouvez un 4e joueur ou si l'équipe passe sous le minimum ; elle survit à l'échange d'un joueur contre un autre.
+
 ---
 
 ## 5. Envoyer la feuille à l'équipe
@@ -120,6 +133,9 @@ Relancez-le manuellement, ou sélectionnez-le quand même si vous savez qu'il es
 
 **Je me suis trompé dans la sélection après envoi.**
 Rouvrez le tiroir de sélection, modifiez, enregistrez et renvoyez la feuille. Un nouvel email sera envoyé à toute l'équipe avec la composition corrigée.
+
+**Un joueur se désiste et je n'ai personne pour le remplacer.**
+Retirez-le, cochez *« nous jouerons à 3 »*, enregistrez et envoyez. Le joueur retiré est prévenu, les 3 restants sont reconvoqués avec la mention « à 3 ». Sans la case, seul le joueur retiré est prévenu et le match repasse à traiter ; vous pouvez revenir la cocher plus tard.
 
 **Un joueur est bloqué (cadenas rouge).**
 Il est déjà sélectionné dans une autre équipe du club pour cette journée. Choisissez un autre joueur ou contactez le sélectionneur du club pour déplacer la sélection.

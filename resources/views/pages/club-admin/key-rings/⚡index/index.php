@@ -107,6 +107,16 @@ new class extends Component
     }
 
     /**
+     * Whether the visitor hands key rings over, or only reads who holds them:
+     * the committee reads it at the baseline.
+     */
+    #[Computed]
+    public function mayManage(): bool
+    {
+        return Gate::allows(Permission::EquipmentHolderUpdate->value);
+    }
+
+    /**
      * Hand the ring to someone — including a ring coming back into service.
      *
      * Putting a ring back is the same question as moving one: who has it now?

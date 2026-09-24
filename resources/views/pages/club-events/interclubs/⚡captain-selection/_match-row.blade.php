@@ -13,7 +13,9 @@
     $avCount = $ic['available_count'];
 
     [$statusBarColor, $statusLabel] = match ($ic['status']) {
-        'confirmed' => ['bg-success', __('Lineup sent')],
+        // À 3 comme à 4 : pour le capitaine, une compo envoyée est réglée.
+        // L'orange de l'effectif réduit reste à la vue globale.
+        'confirmed', 'short' => ['bg-success', __('Lineup sent')],
         'actionable' => ['bg-warning', __('Ready to compose')],
         'urgent' => ['bg-error', __('Needs attention')],
         'past' => ['bg-base-300', __('Played')],
@@ -87,7 +89,7 @@
                         @endif
                     @endif
                 </div>
-                @if ($isPast && ! empty($ic['selected_player_names']))
+                @if (($isPast || ! $ic['may_compose']) && ! empty($ic['selected_player_names']))
                     <div class="mt-1 text-sm text-base-content/60">
                         {{ implode(', ', $ic['selected_player_names']) }}
                     </div>
@@ -97,7 +99,7 @@
 
         {{-- Une action nommée, le reste derrière un menu nommé : la règle de
              row-menu, appliquée par 9 pages index. --}}
-        @if (! $isPast)
+        @if (! $isPast && $ic['may_compose'])
             <div class="shrink-0">
                 <x-admin.shared.row-menu
                     :label="__('Compose')"

@@ -37,8 +37,8 @@ describe('the screens answer to their own delegation', function (): void {
         'cash register' => ['admin.treasury.cash', Role::CASH_REGISTER, Role::TREASURY],
     ]);
 
-    it('no longer opens on committee membership alone', function (string $routeName): void {
-        $this->actingAs($this->plainCommittee)->get(route($routeName))->assertForbidden();
+    it('opens every treasury screen to the committee, read-only', function (string $routeName): void {
+        $this->actingAs($this->plainCommittee)->get(route($routeName))->assertOk();
     })->with([
         'admin.treasury.transactions',
         'admin.treasury.fines',
@@ -51,11 +51,12 @@ describe('the screens answer to their own delegation', function (): void {
 
     // The action triggers are unique markers; the "Auto-match" / "Import" wording
     // also lives in always-rendered modal titles, so we assert on the triggers.
-    it('hides the reconcile and import controls from the read-only committee', function (): void {
+    it('hides the reconcile controls from the read-only committee', function (): void {
+        // The link to the bank lines stays: the committee reads them too.
         Livewire::actingAs($this->plainCommittee)
             ->test('pages::club-admin.treasury.payments')
             ->assertDontSee('previewBatchMatch')
-            ->assertDontSee(route('admin.treasury.transactions'));
+            ->assertDontSee('previewBatchRefundMatch');
     });
 
     it('shows the reconcile and import controls to the treasury delegate', function (): void {

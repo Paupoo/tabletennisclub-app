@@ -124,7 +124,7 @@
                     @else
                         <div class="mt-3 flex flex-wrap gap-1.5">
                             @foreach ($row['holders'] as $holder)
-                                <a href="{{ route('admin.users.edit', $holder) }}"
+                                <a href="{{ $this->memberFileUrl($holder) }}"
                                     class="inline-flex items-center gap-1 rounded-full border border-base-300 px-2.5 py-1 text-xs transition-colors duration-150 hover:border-primary">
                                     {{ $holder->first_name }} {{ $holder->last_name }}
                                     @if ($holder->committee_role)
@@ -148,7 +148,7 @@
             {{-- Cards on a phone: 16 duties across a table would scroll sideways. --}}
             <div class="space-y-3 md:hidden">
                 @foreach ($this->memberRows as $row)
-                    <a href="{{ route('admin.users.edit', $row['user']) }}"
+                    <a href="{{ $this->memberFileUrl($row['user']) }}"
                         class="block rounded-xl border border-base-300 bg-base-100 p-4 transition-colors duration-150 hover:border-primary">
                         <div class="flex items-center justify-between gap-2">
                             <p class="truncate text-sm font-semibold text-base-content">
@@ -183,7 +183,7 @@
                         @foreach ($this->memberRows as $row)
                             <tr class="hover">
                                 <td class="whitespace-nowrap font-medium">
-                                    <a href="{{ route('admin.users.edit', $row['user']) }}"
+                                    <a href="{{ $this->memberFileUrl($row['user']) }}"
                                         class="hover:text-primary">
                                         {{ $row['user']->first_name }} {{ $row['user']->last_name }}
                                     </a>

@@ -136,13 +136,14 @@
 
                 <div class="mt-3">
                     @if (! $selectionModeActive)
+                        {{-- ?step=1 : l'icône réglages doit ouvrir la configuration. Sans étape
+                             explicite, mount() la déduit du statut et ouvre les invitations.
+                             Un lecteur n'a pas l'assistant : il consulte la page live. --}}
                         <x-admin.shared.row-menu
-                            :label="__('Settings')"
-                            icon="o-cog-6-tooth"
-                            {{-- ?step=1 : l'icône réglages doit ouvrir la configuration. Sans étape
-                 explicite, mount() la déduit du statut et ouvre les invitations. --}}
-                link="{{ route('admin.tournaments.wizard.edit', [$tournament, 'step' => 1]) }}">
-                            @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
+                            :label="$this->canManage ? __('Settings') : ($this->liveUrlFor($tournament) ? __('Consult') : null)"
+                            :icon="$this->canManage ? 'o-cog-6-tooth' : 'o-eye'"
+                            :link="$this->canManage ? route('admin.tournaments.wizard.edit', [$tournament, 'step' => 1]) : $this->liveUrlFor($tournament)">
+                            @if ($this->canManage && $tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
                                 <x-menu-item icon="o-rocket-launch" link="{{ route('admin.tournaments.live-center', $tournament->id) }}" :title="__('Live Center')" />
                             @endif
                             @if ($this->canManage)
@@ -205,7 +206,7 @@
                     :create-href="$this->canManage ? route('admin.tournaments.wizard') : null" />
             @else
                 <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$tournaments" :sort-by="$sortBy"
-                    selectable wire:model.live="selected">
+                    :selectable="$this->canManage" wire:model.live="selected">
                     @scope('cell_name', $tournament)
                         <span class="font-medium">{{ $tournament->name }}</span>
                     @endscope
@@ -271,13 +272,14 @@
 
                     @scope('actions', $tournament)
                         {{-- ?step=1 : l'icône réglages doit ouvrir la configuration. Sans étape
-                             explicite, mount() la déduit du statut et ouvre les invitations. --}}
+                             explicite, mount() la déduit du statut et ouvre les invitations.
+                             Un lecteur n'a pas l'assistant : il consulte la page live. --}}
                         <x-admin.shared.row-menu
-                            :label="__('Settings')"
-                            icon="o-cog-6-tooth"
-                            link="{{ route('admin.tournaments.wizard.edit', [$tournament, 'step' => 1]) }}">
+                            :label="$this->canManage ? __('Settings') : ($this->liveUrlFor($tournament) ? __('Consult') : null)"
+                            :icon="$this->canManage ? 'o-cog-6-tooth' : 'o-eye'"
+                            :link="$this->canManage ? route('admin.tournaments.wizard.edit', [$tournament, 'step' => 1]) : $this->liveUrlFor($tournament)">
 
-                            @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
+                            @if ($this->canManage && $tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
                                 <x-menu-item icon="o-rocket-launch"
                                     link="{{ route('admin.tournaments.live-center', $tournament->id) }}"
                                     :title="__('Live Center')" />

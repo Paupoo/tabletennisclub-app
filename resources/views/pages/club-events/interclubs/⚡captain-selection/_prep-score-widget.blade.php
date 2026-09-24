@@ -33,8 +33,14 @@
         $teamsByCategory = collect($weekSummary['teams'])->groupBy(fn (array $t): string => $t['category'] ?? '—');
         $categoryWeeks = $weekSummary['category_weeks'];
 
+        // Effectif réduit : réglé pour le capitaine, mais l'orange reste dans la
+        // vue globale. Pas une pastille orange — elle se confondrait avec
+        // « prêt à composer » — un vert cerclé d'orange.
+        $shortRing = 'ring-2 ring-warning ring-offset-1 ring-offset-base-50';
+
         $dotClass = fn (?string $status): ?string => match ($status) {
             'confirmed' => 'bg-success',
+            'short' => 'bg-success ' . $shortRing,
             'actionable' => 'bg-warning',
             'urgent' => 'bg-error',
             'past' => 'border border-base-300',
@@ -44,6 +50,7 @@
 
         $statusLabel = fn (?string $status): string => match ($status) {
             'confirmed' => __('Under control'),
+            'short' => __('Under control — short-handed'),
             'actionable' => __('Ready to compose'),
             'urgent' => __('Needs attention'),
             'past' => __('Played'),
@@ -229,7 +236,8 @@
                                     'bg-base-content/30' => $segment === 'past',
                                     'bg-error' => $segment === 'urgent',
                                     'bg-warning' => $segment === 'actionable',
-                                    'bg-success' => $segment === 'confirmed',
+                                    'bg-success' => in_array($segment, ['confirmed', 'short'], true),
+                                    'ring-2 ring-inset ring-warning' => $segment === 'short',
                                     'bg-base-200' => $segment === 'future',
                                 ])></span>
                             @endforeach
@@ -324,8 +332,9 @@
                                         </span>
                                         <span @class([
                                             'shrink-0 rounded-full px-2 py-0.5 text-xs font-bold',
-                                            'bg-success/10 text-success' => $row['status'] === 'confirmed',
-                                            'bg-base-200 text-base-content/70' => $row['status'] !== 'confirmed',
+                                            'bg-success/10 text-success' => in_array($row['status'], ['confirmed', 'short'], true),
+                                            'ring-1 ring-warning' => $row['status'] === 'short',
+                                            'bg-base-200 text-base-content/70' => ! in_array($row['status'], ['confirmed', 'short'], true),
                                         ])>{{ $statusLabel($row['status']) }}</span>
                                     </div>
                                 @endforeach
@@ -340,6 +349,7 @@
         {{-- Elle décrit les pastilles de la grille : elle disparaît avec elle. --}}
         <div class="hidden flex-wrap items-center gap-x-4 gap-y-2 text-xs text-base-content/60 lg:flex">
             <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-success"></span>{{ __('Under control') }}</span>
+            <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-success {{ $shortRing }}"></span>{{ __('Under control — short-handed') }}</span>
             <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-warning"></span>{{ __('Ready to compose') }}</span>
             <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-error"></span>{{ __('Needs attention') }}</span>
             <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-base-300"></span>{{ __('Upcoming') }}</span>

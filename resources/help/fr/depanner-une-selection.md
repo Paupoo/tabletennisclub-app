@@ -30,6 +30,12 @@ Un cas que le message ne couvre pas : **seuls les compétiteurs** sont cherchés
 
 Un remplaçant trouvé par la recherche peut être sélectionné **même s'il n'a jamais donné sa disponibilité** — il n'est pas dans l'équipe, donc on ne la lui a jamais demandée. **Prévenez-le vous-même avant d'envoyer la feuille.**
 
+## Une équipe qui joue à 3
+
+Vous pouvez déclarer une équipe **à effectif réduit** à la place du capitaine, avec la même case — voyez [Jouer à 3](composer-ma-selection). La déclaration porte votre nom.
+
+Dans l'**aperçu de la saison**, une rencontre déclarée à 3 compte comme **réglée**, mais elle ne se confond pas avec les autres : sa pastille reste **verte, cerclée d'orange**, et l'en-tête de l'aperçu, même replié, dit *« dont N rencontres à effectif réduit »*. C'est là qu'un 4e joueur peut encore se trouver d'ici le match.
+
 ## Envoyer au nom du capitaine
 
 L'envoi prévient toute l'équipe, quelle que soit la personne qui a composé. Si vous intervenez parce que le capitaine est injoignable, il recevra la feuille comme les autres — inutile de le prévenir séparément.

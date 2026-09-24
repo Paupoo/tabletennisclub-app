@@ -216,10 +216,10 @@ describe('Key ring inventory authorization', function (): void {
             ->assertOk();
     });
 
-    it('is closed to a committee member without the delegation', function (): void {
+    it('is readable by a committee member without the delegation', function (): void {
         $this->actingAs(User::factory()->isCommitteeMember()->create())
             ->get(route('admin.key-rings.index'))
-            ->assertForbidden();
+            ->assertOk();
     });
 
     it('is closed to a plain member', function (): void {

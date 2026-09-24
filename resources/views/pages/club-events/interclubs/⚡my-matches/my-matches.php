@@ -97,6 +97,7 @@ new class extends Component
             'visitingTeam.league',
             'league',
         ])
+            ->withCount(['users as selected_count' => fn ($q) => $q->where('interclub_user.is_selected', true)])
             ->withoutByes()
             ->where(function ($q) use ($teamIds): void {
                 $q->whereIn('visited_team_id', $teamIds)
@@ -140,6 +141,8 @@ new class extends Component
                     'availability_note' => $pivot?->availability_note,
                     'is_selected' => (bool) $pivot?->is_selected,
                     'selection_confirmed_at' => $pivot?->selection_confirmed_at,
+                    // Jouer à 3 : le nombre annoncé, seulement si le capitaine l'a déclaré.
+                    'short_handed_count' => $interclub->isShortHanded() ? (int) $interclub->selected_count : null,
                     'days_until' => (int) now()->diffInDays($interclub->start_date_time, false),
                 ];
             });

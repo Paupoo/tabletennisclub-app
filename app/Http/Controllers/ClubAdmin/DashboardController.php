@@ -43,14 +43,14 @@ class DashboardController extends Controller
         // Was a third, narrower definition of "treasurer" — the dashboard hid the
         // treasury card from the president while the fines screen let them act.
         // The délégation is now the single answer.
-        // Managing permissions, not viewing ones: payments.view belongs to the
-        // committee baseline, so keying on it would have shown the treasury
-        // section to every committee member — widening what this refactor is
-        // meant to tighten.
+        // Managing permissions, not viewing ones: the committee baseline reads the
+        // payments, the bank lines and the cash register, and this section is a
+        // list of things to do — keying it on a view right would hand every
+        // committee member the treasurer's to-do list.
         $showTreasurer = $user->canAny([
             Permission::PaymentsReconcile->value,
-            Permission::TransactionsView->value,
-            Permission::CashRegisterView->value,
+            Permission::TransactionsImport->value,
+            Permission::CashRegisterEntryCreate->value,
             Permission::FinesIssue->value,
         ]);
         $showCaptain = $isAdmin || $isCaptain;

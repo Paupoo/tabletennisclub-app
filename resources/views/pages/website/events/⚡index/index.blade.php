@@ -13,7 +13,7 @@
         </x-slot:middle>
         <x-slot:actions>
             {{-- Mobile: 🔍 · filter · ☰ --}}
-            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" />
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-more="$this->mayManage" />
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
@@ -109,15 +109,17 @@
                 <div class="mt-3">
                     @if (! $selectionModeActive)
                         <x-admin.shared.row-menu
-                            :label="__('Edit')"
-                            icon="o-pencil"
+                            :label="$this->mayManage ? __('Edit') : __('Consult')"
+                            :icon="$this->mayManage ? 'o-pencil' : 'o-eye'"
                             wire-click="openEdit({{ $event->id }})">
-                            @if ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT)
+                            @if (! $this->mayManage)
+                                {{-- A reader opens the event read-only, and nothing else. --}}
+                            @elseif ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT)
                                 <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $event->id }})" spinner :title="__('Publish')" />
                             @elseif ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
                                 <x-menu-item icon="o-archive-box" wire:click="archive({{ $event->id }})" spinner :title="__('Archive')" />
                             @endif
-                            @if ($event->canBeDeleted())
+                            @if ($this->mayManage && $event->canBeDeleted())
                                 <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $event->id }})" :title="__('Delete')" />
                             @endif
                         </x-admin.shared.row-menu>
@@ -148,7 +150,7 @@
                     :heading="__('No events found')" />
             @else
                 <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$events" :sort-by="$sortBy"
-                    selectable wire:model.live="selected">
+                    :selectable="$this->mayManage" wire:model.live="selected">
                     @scope('cell_type', $event)
                         <span class="inline-flex items-center gap-1.5 text-sm">
                             <span>{{ $event->type->getIcon() }}</span>
@@ -208,15 +210,17 @@
 
                     @scope('actions', $event)
                         <x-admin.shared.row-menu
-                            :label="__('Edit')"
-                            icon="o-pencil"
+                            :label="$this->mayManage ? __('Edit') : __('Consult')"
+                            :icon="$this->mayManage ? 'o-pencil' : 'o-eye'"
                             wire-click="openEdit({{ $event->id }})">
-                            @if ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT)
+                            @if (! $this->mayManage)
+                                {{-- A reader opens the event read-only, and nothing else. --}}
+                            @elseif ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT)
                                 <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $event->id }})" spinner :title="__('Publish')" />
                             @elseif ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
                                 <x-menu-item icon="o-archive-box" wire:click="archive({{ $event->id }})" spinner :title="__('Archive')" />
                             @endif
-                            @if ($event->canBeDeleted())
+                            @if ($this->mayManage && $event->canBeDeleted())
                                 <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $event->id }})" :title="__('Delete')" />
                             @endif
                         </x-admin.shared.row-menu>
@@ -265,7 +269,10 @@
     </x-admin.shared.filter-drawer>
 
     {{-- ── Drawer édition ───────────────────────────────────────────────── --}}
-    <x-drawer wire:model="editDrawer" :title="__('Edit event')" right with-close-button class="w-full max-w-lg">
+    {{-- Opened read-only for a reader (DS-D): every field shown, none editable,
+         and nothing to save. --}}
+    @php $readOnly = ! $this->mayManage; @endphp
+    <x-drawer wire:model="editDrawer" :title="$readOnly ? __('Event') : __('Edit event')" right with-close-button class="w-full max-w-lg">
         @if ($selectedEvent)
             <div class="space-y-5 p-1">
 
@@ -288,18 +295,24 @@
                             ['PUBLISHED', __('Published'), 'btn-success'],
                             ['ARCHIVED',  __('Archived'),  'btn-ghost'],
                         ] as [$val, $label, $cls])
-                            <x-button class="btn-sm btn-soft {{ $cls }} {{ $editStatus === $val ? 'opacity-100' : 'opacity-70' }}"
-                                :label="$label"
-                                wire:click="$set('editStatus', '{{ $val }}')" />
+                            @if ($readOnly)
+                                @if ($editStatus === $val)
+                                    <x-badge :value="$label" class="badge-soft {{ str_replace('btn-', 'badge-', $cls) }}" />
+                                @endif
+                            @else
+                                <x-button class="btn-sm btn-soft {{ $cls }} {{ $editStatus === $val ? 'opacity-100' : 'opacity-70' }}"
+                                    :label="$label"
+                                    wire:click="$set('editStatus', '{{ $val }}')" />
+                            @endif
                         @endforeach
                     </div>
                 </div>
 
                 {{-- Featured --}}
                 <div class="space-y-3">
-                    <x-toggle wire:model.live="editFeatured" :label="__('Featured on website')" />
+                    <x-toggle wire:model.live="editFeatured" :label="__('Featured on website')" :disabled="$readOnly" />
                     @if ($editFeatured)
-                        <x-input wire:model="editFeaturedUntil"
+                        <x-input wire:model="editFeaturedUntil" :disabled="$readOnly"
                             :label="__('Featured until')"
                             type="date"
                             min="{{ now()->format('Y-m-d') }}"
@@ -308,26 +321,26 @@
                 </div>
 
                 {{-- Contenu --}}
-                <x-input wire:model="editTitle" :label="__('Title')" />
-                <x-textarea wire:model="editDescription" :label="__('Description')" rows="4" />
+                <x-input wire:model="editTitle" :disabled="$readOnly" :label="__('Title')" />
+                <x-textarea wire:model="editDescription" :disabled="$readOnly" :label="__('Description')" rows="4" />
 
                 {{-- Logistique --}}
-                <x-input wire:model="editLocation" :label="__('Location')" icon="o-map-pin" />
+                <x-input wire:model="editLocation" :disabled="$readOnly" :label="__('Location')" icon="o-map-pin" />
 
                 <div class="grid grid-cols-2 gap-3">
-                    <x-input wire:model="editEventDate" :label="__('Date')" type="date" />
-                    <x-input wire:model="editStartTime" :label="__('Start time')" type="time" />
+                    <x-input wire:model="editEventDate" :disabled="$readOnly" :label="__('Date')" type="date" />
+                    <x-input wire:model="editStartTime" :disabled="$readOnly" :label="__('Start time')" type="time" />
                 </div>
-                <x-input wire:model="editEndTime" :label="__('End time')" type="time"
+                <x-input wire:model="editEndTime" :disabled="$readOnly" :label="__('End time')" type="time"
                     :hint="__('Optional')" />
-                <x-input wire:model="editPrice" :label="__('Price')"
+                <x-input wire:model="editPrice" :disabled="$readOnly" :label="__('Price')"
                     :hint="__('Leave empty if free')" icon="o-banknotes" />
 
                 {{-- Optionnel --}}
                 <div class="grid grid-cols-3 gap-3">
-                    <x-input wire:model="editIcon" :label="__('Icon')" :hint="__('Emoji')" />
+                    <x-input wire:model="editIcon" :disabled="$readOnly" :label="__('Icon')" :hint="__('Emoji')" />
                     <div class="col-span-2">
-                        <x-textarea wire:model="editNotes" :label="__('Notes')" rows="2" />
+                        <x-textarea wire:model="editNotes" :disabled="$readOnly" :label="__('Notes')" rows="2" />
                     </div>
                 </div>
 
@@ -335,8 +348,12 @@
         @endif
 
         <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$set('editDrawer', false)" />
-            <x-button class="btn-primary" :label="__('Save')" wire:click="saveEdit" spinner />
+            @if ($readOnly)
+                <x-button :label="__('Close')" wire:click="$set('editDrawer', false)" />
+            @else
+                <x-button :label="__('Cancel')" wire:click="$set('editDrawer', false)" />
+                <x-button class="btn-primary" :label="__('Save')" wire:click="saveEdit" spinner />
+            @endif
         </x-slot:actions>
     </x-drawer>
 
@@ -356,6 +373,7 @@
     </x-confirm-modal>
 
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
+    @if ($this->mayManage)
     <x-admin.shared.mobile-actions>
         <x-admin.shared.mobile-action-item
             icon="o-check-circle" color="base"
@@ -363,4 +381,5 @@
             :description="__('Bulk actions on multiple events')"
             @click="mobileActionsOpen = false; $wire.call('toggleSelectionMode')" />
     </x-admin.shared.mobile-actions>
+    @endif
 </div>

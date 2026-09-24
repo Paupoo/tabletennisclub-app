@@ -97,6 +97,7 @@ erDiagram
 - `id`, `address`, `start_date_time`, `week_number`
 - `total_players`, `score`, `result`
 - `visited_team_id`, `visiting_team_id`, `room_id`, `league_id`, `season_id`
+- `short_handed_confirmed_at`, `short_handed_confirmed_by` (déclaration « nous jouerons à 3 » du capitaine ; `null` = pas de déclaration)
 
 #### `interclub_user` (Selection polymorphe)
 - `user_id`, `interclub_id`

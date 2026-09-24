@@ -392,3 +392,42 @@ it('queues the removal notice and the availability request too', function (): vo
     Queue::assertPushed(SendInterclubPlayerRemovedJob::class, 1);
     Queue::assertPushed(SendInterclubAvailabilityRequestJob::class, 4);
 });
+
+/*
+| Jouer à 3 : la convocation le dit, et l'annonce au noyau devient un appel.
+| Sans cela, les trois convoqués cherchent un quatrième qu'on n'attend pas, et
+| les autres ignorent qu'une place est encore à prendre.
+*/
+it('tells the convoked players the team plays short-handed', function (): void {
+    $this->interclub->select($this->player1);
+    $this->interclub->select($this->player2);
+    $this->interclub->select($this->player3);
+    $this->interclub->update(['short_handed_confirmed_at' => now(), 'short_handed_confirmed_by' => $this->captain->id]);
+
+    $html = (string) new InterclubSelectionNotification($this->interclub->fresh())->toMail($this->player1)->render();
+
+    expect($html)->toContain('Nous jouerons à 3 sur 4')
+        ->toContain('Les matchs du joueur manquant seront perdus');
+});
+
+it('asks the rest of the team to step in when the team plays short-handed', function (): void {
+    $this->interclub->select($this->player1);
+    $this->interclub->select($this->player2);
+    $this->interclub->select($this->player3);
+    $this->interclub->update(['short_handed_confirmed_at' => now(), 'short_handed_confirmed_by' => $this->captain->id]);
+
+    $interclub = $this->interclub->fresh();
+    $html = (string) new InterclubLineupBroadcastNotification($interclub, $interclub->getSelectedPlayers())->toMail($this->captain)->render();
+
+    expect($html)->toContain('Il nous manque un joueur')
+        ->toContain('prévenez votre capitaine');
+});
+
+it('says nothing of the sort for a full lineup', function (): void {
+    $this->interclub->select($this->player1);
+
+    $interclub = $this->interclub->fresh();
+
+    expect((string) new InterclubSelectionNotification($interclub)->toMail($this->player1)->render())->not->toContain('Nous jouerons à')
+        ->and((string) new InterclubLineupBroadcastNotification($interclub, $interclub->getSelectedPlayers())->toMail($this->captain)->render())->not->toContain('Il nous manque');
+});

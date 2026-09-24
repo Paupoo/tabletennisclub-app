@@ -207,6 +207,19 @@
     <div class="grid gap-6 lg:grid-cols-2">
         <x-card class="shadow-sm" :title="__('Line-up')" icon="o-user-group" separator>
             @if ($lineupPublished)
+                @if ($shortHanded)
+                    <div class="mb-3 rounded-xl border border-info/30 bg-info/5 p-3 text-sm" data-short-handed>
+                        <div class="flex items-center gap-1.5 font-semibold">
+                            <x-icon name="o-information-circle" class="h-4 w-4 text-info" />
+                            {{ __('We will play with :n of :max.', ['n' => $shortHanded['playing'], 'max' => $shortHanded['max']]) }}
+                        </div>
+                        @if ($shortHanded['by'])
+                            <p class="mt-1 text-xs text-base-content/70">
+                                {{ __('Declared by :name, on :date.', ['name' => $shortHanded['by'], 'date' => $shortHanded['at']->format('d/m/Y')]) }}
+                            </p>
+                        @endif
+                    </div>
+                @endif
                 <div class="divide-y divide-base-200">
                     @foreach ($lineup as $player)
                         <div class="flex items-center gap-3 py-2.5" wire:key="lineup-{{ $player->id }}">

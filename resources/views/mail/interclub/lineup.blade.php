@@ -25,6 +25,12 @@
 
 </x-mail::panel>
 
+@if($shortHanded ?? null)
+<x-mail::panel>
+**{{ __('We are one player short.') }}** {{ __('If you become available, let your captain know.') }}
+</x-mail::panel>
+@endif
+
 ---
 
 **{{ __('Selected players') }}**

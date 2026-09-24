@@ -13,12 +13,14 @@
         </x-slot:middle>
         <x-slot:actions>
             {{-- Mobile: 🔍 · filter · ☰ --}}
-            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" />
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-more="$this->mayManage" />
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
-                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New article')"
-                    link="{{ route('admin.website.articles.create') }}" />
+                @if ($this->mayManage)
+                    <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New article')"
+                        link="{{ route('admin.website.articles.create') }}" />
+                @endif
             </div>
         </x-slot:actions>
     </x-header>
@@ -130,18 +132,27 @@
 
                 <div class="mt-3">
                     @if (! $selectionModeActive)
-                        <x-admin.shared.row-menu
-                            :label="__('Edit')"
-                            icon="o-pencil"
-                            link="{{ route('admin.website.articles.edit', $article->slug) }}">
-                            @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
-                                <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $article->id }})" :title="__('Publish')" />
-                            @endif
-                            @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
-                                <x-menu-item icon="o-archive-box" wire:click="archive({{ $article->id }})" :title="__('Archive')" />
-                            @endif
-                            <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $article->id }})" :title="__('Delete')" />
-                        </x-admin.shared.row-menu>
+                        @if ($this->mayManage)
+                            <x-admin.shared.row-menu
+                                :label="__('Edit')"
+                                icon="o-pencil"
+                                link="{{ route('admin.website.articles.edit', $article->slug) }}">
+                                @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
+                                    <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $article->id }})" :title="__('Publish')" />
+                                @endif
+                                @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
+                                    <x-menu-item icon="o-archive-box" wire:click="archive({{ $article->id }})" :title="__('Archive')" />
+                                @endif
+                                <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $article->id }})" :title="__('Delete')" />
+                            </x-admin.shared.row-menu>
+                        @elseif ($article->status === \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
+                            {{-- Published: the reader reads it where the public does. --}}
+                            <x-admin.shared.row-menu :label="__('Consult')" icon="o-eye"
+                                :link="route('public.clubPosts.show', $article->slug)" />
+                        @else
+                            <x-admin.shared.row-menu :label="__('Consult')" icon="o-eye"
+                                wire-click="openPreview({{ $article->id }})" />
+                        @endif
                     @endif
                 </div>
             </div>
@@ -173,7 +184,7 @@
                     :create-href="auth()->user()->can('news_posts.manage') ? route('admin.website.articles.create') : null" />
             @else
                 <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$articles" :sort-by="$sortBy"
-                    selectable wire:model.live="selected">
+                    :selectable="$this->mayManage" wire:model.live="selected">
                     @scope('cell_title', $article)
                         <span class="font-medium">{{ $article->title }}</span>
                     @endscope
@@ -203,18 +214,27 @@
                         </span>
                     @endscope
                     @scope('actions', $article)
-                        <x-admin.shared.row-menu
-                            :label="__('Edit')"
-                            icon="o-pencil"
-                            link="{{ route('admin.website.articles.edit', $article->slug) }}">
-                            @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
-                                <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $article->id }})" :title="__('Publish')" />
-                            @endif
-                            @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
-                                <x-menu-item icon="o-archive-box" wire:click="archive({{ $article->id }})" :title="__('Archive')" />
-                            @endif
-                            <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $article->id }})" :title="__('Delete')" />
-                        </x-admin.shared.row-menu>
+                        @if ($this->mayManage)
+                            <x-admin.shared.row-menu
+                                :label="__('Edit')"
+                                icon="o-pencil"
+                                link="{{ route('admin.website.articles.edit', $article->slug) }}">
+                                @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
+                                    <x-menu-item class="text-success" icon="o-check-circle" wire:click="publish({{ $article->id }})" :title="__('Publish')" />
+                                @endif
+                                @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
+                                    <x-menu-item icon="o-archive-box" wire:click="archive({{ $article->id }})" :title="__('Archive')" />
+                                @endif
+                                <x-menu-item class="text-error" icon="o-trash" wire:click="confirmDelete({{ $article->id }})" :title="__('Delete')" />
+                            </x-admin.shared.row-menu>
+                        @elseif ($article->status === \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
+                            {{-- Published: the reader reads it where the public does. --}}
+                            <x-admin.shared.row-menu :label="__('Consult')" icon="o-eye"
+                                :link="route('public.clubPosts.show', $article->slug)" />
+                        @else
+                            <x-admin.shared.row-menu :label="__('Consult')" icon="o-eye"
+                                wire-click="openPreview({{ $article->id }})" />
+                        @endif
                     @endscope
                 </x-table>
                 <div class="mt-4">
@@ -274,7 +294,17 @@
         </p>
     </x-confirm-modal>
 
+    {{-- ── Aperçu en lecture seule ─────────────────────────────────────── --}}
+    <x-app-modal wire:model="previewModal" :title="$this->preview['title'] ?? __('Article')" separator :open="$previewModal">
+        {{-- Rendered through Markdown::safe(), exactly as the public page does. --}}
+        <div class="prose max-w-none">{!! $this->preview['html'] ?? '' !!}</div>
+        <x-slot:actions>
+            <x-button :label="__('Close')" wire:click="$set('previewModal', false)" />
+        </x-slot:actions>
+    </x-app-modal>
+
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
+    @if ($this->mayManage)
     <x-admin.shared.mobile-actions>
         <x-admin.shared.mobile-action-item
             icon="o-plus" color="primary"
@@ -288,4 +318,5 @@
             :description="__('Bulk actions on multiple articles')"
             @click="mobileActionsOpen = false; $wire.call('toggleSelectionMode')" />
     </x-admin.shared.mobile-actions>
+    @endif
 </div>

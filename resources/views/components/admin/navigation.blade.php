@@ -89,7 +89,7 @@
 
     <li><x-menu-separator /></li>
 
-    @canany(['club.update', 'seasons.view', 'rooms.manage', 'equipment.holder.update'])
+    @canany(['club.update', 'seasons.view', 'facilities.view'])
     <x-menu-sub icon="o-building-office" :title="__('Club Settings')">
         @can('club.update')
         <x-menu-item icon="o-identification" link="{{ route('admin.club-info') }}" :title="__('Informations')" />
@@ -97,16 +97,16 @@
         @can('seasons.view')
         <x-menu-item icon="o-calendar" link="{{ route('admin.seasons.index') }}" :title="__('Seasons')" />
         @endcan
-        @can('rooms.manage')
+        @can('facilities.view')
         <x-menu-item icon="o-building-office-2" link="{{ route('admin.rooms.index') }}" :title="__('Rooms')" />
         @endcan
-        @can('equipment.holder.update')
+        @can('facilities.view')
         <x-menu-item icon="o-key" link="{{ route('admin.key-rings.index') }}" :title="__('Key rings')" />
         @endcan
     </x-menu-sub>
     @endcanany
 
-    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'training_plans.manage'])
+    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'trainings.view'])
     <x-menu-sub icon="o-user-group" :title="__('Members Admin')">
         @can('users.view')
             <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
@@ -119,14 +119,14 @@
             <x-menu-item icon="o-document-check" link="{{ route('admin.attestations.index') }}" :title="__('Mutual attestations')" />
         @endcan
         @endfeature
-        @canany(['users.update', 'access.manage'])
+        @can('users.view')
             <x-menu-item icon="o-key" link="{{ route('admin.users.delegations') }}" :title="__('Delegations')" />
-        @endcanany
+        @endcan
         @can('subscriptions.view')
             <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
         @endcan
         @feature('training_planning')
-        @can('training_plans.manage')
+        @can('trainings.view')
         <x-menu-item icon="o-view-columns" link="{{ route('admin.planning.board') }}" :title="__('Planning board')" />
         @endcan
         @endfeature
@@ -206,6 +206,8 @@
         <x-menu-item icon="o-clock" link="{{ route('bar.orders.history') }}" :title="__('History')" />
         @can('bar.products.manage')
         <x-menu-item icon="o-cube" link="{{ route('bar.products.index') }}" :title="__('Products')" />
+        @endcan
+        @can('bar.categories.manage')
         <x-menu-item icon="o-tag" link="{{ route('bar.categories.index') }}" :title="__('Categories')" />
         @endcan
         @can('bar.cash_sheet.send')
@@ -235,9 +237,9 @@
     {{-- Le Gate, pas la permission nue : encadrer un pack ou une séance ouvre
          l'espace coach au même titre que la délégation, sinon un entraîneur a
          l'accès sans avoir le lien pour y aller. --}}
-    @canany(['trainings.manage', 'access-coach-area'])
+    @canany(['trainings.view', 'access-coach-area'])
     <x-menu-sub icon="o-academic-cap" :title="__('Trainings')">
-        @can('trainings.manage')
+        @can('trainings.view')
         <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')" />
         @endcan
         @can('access-coach-area')
@@ -252,7 +254,7 @@
          access-selections / access-results Gates say so, and the menu has to
          ask the same question, or a captain reaches their own screens by URL
          only. The season configuration below stays permission-gated. --}}
-    @if (Gate::any(['access-selections', 'access-results']) || $user->can('interclubs.manage'))
+    @if (Gate::any(['access-selections', 'access-results']) || $user->can('interclubs.view'))
     <x-menu-sub icon="o-calendar-days" link="#" :title="__('Interclubs')">
         @can('access-selections')
         <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" :title="__('Selections')" />
@@ -260,13 +262,17 @@
         @can('access-results')
         <x-menu-item icon="o-squares-2x2" link="{{ route('admin.interclubs.results') }}" :title="__('Results')" />
         @endcan
-        @can('interclubs.manage')
+        {{-- Readable at the committee baseline; only the division setup is a
+             tool with nothing to read, and stays with the délégation. --}}
+        @can('interclubs.view')
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.interclubs.interclubs') }}" :title="__('Planning')" />
         {{-- Two levels of indent leave 156px for a label. "Interclubs" already
         names the section this sits in, so the season goes without saying. --}}
         <x-menu-sub icon="o-cog-6-tooth" :title="__('Configuration')">
             <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" :title="__('Our teams')" />
+            @can('interclubs.manage')
             <x-menu-item icon="o-table-cells" link="{{ route('admin.interclubs.division-setup') }}" :title="__('Opponents')" />
+            @endcan
             <x-menu-item icon="o-building-office-2" link="{{ route('admin.interclubs.clubs') }}" :title="__('Clubs')" />
         </x-menu-sub>
         @endcan
@@ -275,7 +281,7 @@
     @endfeature
 
     @feature('meetings', 'tournaments')
-    @canany(['meetings.view', 'tournaments.manage'])
+    @canany(['meetings.view', 'tournaments.view'])
     <x-menu-sub icon="o-star" :title="__('Events')">
         @feature('meetings')
         @can('meetings.view')
@@ -283,7 +289,7 @@
         @endcan
         @endfeature
         @feature('tournaments')
-        @can('tournaments.manage')
+        @can('tournaments.view')
         <x-menu-item icon="o-trophy" link="{{ route('admin.tournaments.index') }}" :title="__('Tournaments')" />
         @endcan
         @endfeature
@@ -292,10 +298,10 @@
     @endfeature
 
     @feature('website', 'contacts')
-    @canany(['news_posts.manage', 'contacts.view', 'contacts.manage', 'spams.manage', 'event_posts.manage'])
+    @canany(['news_posts.view', 'contacts.view', 'contacts.manage', 'spams.manage', 'event_posts.manage'])
     <x-menu-sub icon="o-globe-alt" :title="__('Website')">
         @feature('website')
-        @can('news_posts.manage')
+        @can('news_posts.view')
         <x-menu-item icon="o-newspaper" link="{{ route('admin.website.articles.index') }}" :title="__('Articles')" />
         @endcan
         @endfeature
@@ -311,7 +317,7 @@
         @endcan
         @endfeature
         @feature('website')
-        @can('event_posts.manage')
+        @can('news_posts.view')
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.website.events.index') }}" :title="__('Events')" />
         @endcan
         @endfeature

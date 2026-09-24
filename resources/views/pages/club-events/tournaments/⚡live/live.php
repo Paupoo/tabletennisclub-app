@@ -51,7 +51,8 @@ new class extends Component
     public function mount(): void
     {
         abort_unless(
-            $this->isParticipant || auth()->user()?->can(Permission::TournamentsManage->value),
+            // The committee follows every tournament; the page writes nothing.
+            $this->isParticipant || auth()->user()?->can(Permission::TournamentsView->value),
             403,
         );
     }

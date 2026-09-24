@@ -60,12 +60,14 @@
             :message="__('Teams are registered season by season. Open one to compose this year\'s teams.')" />
     @elseif ($teams->isEmpty())
         <x-card>
+            {{-- The builder is the interclubs delegate's tool: a reader is told
+                 there is nothing yet, not sent to a screen that refuses them. --}}
             <x-empty-state
                 icon="o-trophy"
                 :heading="__('No team for the :season season', ['season' => $season->name])"
                 :message="__('Build the teams to register them in their divisions.')"
-                :buttonText="__('Build teams')"
-                :href="route('admin.interclubs.teams.builder')" />
+                :buttonText="$isAdminOrCommittee ? __('Build teams') : null"
+                :href="$isAdminOrCommittee ? route('admin.interclubs.teams.builder') : null" />
         </x-card>
     @else
         @php

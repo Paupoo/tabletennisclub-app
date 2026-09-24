@@ -80,6 +80,14 @@ it('renders the stock screen', function (): void {
         ->assertSee('Bières');
 });
 
+it('filters products by name', function (): void {
+    Livewire::actingAs($this->manager)
+        ->test('pages::bar.products')
+        ->set('search', 'jupiler')
+        ->assertSee('Jupiler 25 cl')
+        ->assertDontSee('Coca-Cola');
+});
+
 it('turns a count above the shelf into an incoming movement of the difference', function (): void {
     Livewire::actingAs($this->manager)
         ->test('pages::bar.products')

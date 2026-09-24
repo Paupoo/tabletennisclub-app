@@ -136,3 +136,35 @@ it('keeps my matches hidden from a member who plays in no team', function (): vo
     expect(renderAdminNavigation(User::factory()->create()))
         ->not->toContain(route('admin.interclubs.my-matches'));
 });
+
+// Transparency: every screen the committee may read is reachable from its menu,
+// not only by URL.
+it('leads a committee member without any délégation to every screen it may read', function (string $routeName): void {
+    $committee = User::factory()->isCommitteeMember()->create();
+
+    expect(renderAdminNavigation($committee))->toContain(route($routeName));
+})->with([
+    'admin.users.delegations',
+    'admin.interclubs.captain-selection',
+    'admin.interclubs.results',
+    'admin.interclubs.interclubs',
+    'admin.interclubs.teams',
+    'admin.interclubs.clubs',
+    'admin.trainings.index',
+    'admin.planning.board',
+    'admin.tournaments.index',
+    'admin.website.articles.index',
+    'admin.website.events.index',
+    'admin.rooms.index',
+    'admin.key-rings.index',
+    'admin.treasury.payments',
+    'admin.treasury.transactions',
+    'admin.treasury.fines',
+    'admin.treasury.cash',
+]);
+
+it('keeps the configuration tools out of a reader\'s menu', function (): void {
+    $committee = User::factory()->isCommitteeMember()->create();
+
+    expect(renderAdminNavigation($committee))->not->toContain(route('admin.interclubs.division-setup'));
+});

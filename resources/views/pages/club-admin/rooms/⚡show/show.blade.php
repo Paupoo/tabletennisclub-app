@@ -46,11 +46,12 @@
                 <x-slot:title>{{ __('Tables') }}</x-slot:title>
 
                 @if ($tables->isEmpty())
+                    @php $mayCreateTable = auth()->user()->can('create', \App\Domains\ClubAdmin\Club\Models\Table::class); @endphp
                     <x-admin.shared.empty
                         icon="o-squares-2x2"
                         :title="__('No table in this room yet')"
-                        :action="__('Create table')"
-                        :href="route('admin.tables.create')" />
+                        :action="$mayCreateTable ? __('Create table') : null"
+                        :href="$mayCreateTable ? route('admin.tables.create') : null" />
                 @else
                     {{-- Desktop --}}
                     <div class="hidden overflow-x-auto md:block">
@@ -74,10 +75,11 @@
                             @endscope
 
                             @scope('actions', $table)
+                                {{-- Tables have no page of their own: a reader gets the row, not a link. --}}
                                 <x-admin.shared.row-menu
-                                    :label="__('Edit')"
+                                    :label="auth()->user()->can('update', $table) ? __('Edit') : null"
                                     icon="o-pencil"
-                                    link="{{ route('admin.tables.edit', $table) }}">
+                                    :link="auth()->user()->can('update', $table) ? route('admin.tables.edit', $table) : null">
                                     @can('update', $table)
                                         <x-menu-item icon="o-lock-open" wire:click="confirmUnlink({{ $table->id }})" spinner :title="__('Unlink')" />
                                     @endcan
@@ -109,9 +111,9 @@
                                 </x-slot:sub-value>
                                 <x-slot:actions>
                                     <x-admin.shared.row-menu
-                                        :label="__('Edit')"
+                                        :label="auth()->user()->can('update', $table) ? __('Edit') : null"
                                         icon="o-pencil"
-                                        link="{{ route('admin.tables.edit', $table) }}">
+                                        :link="auth()->user()->can('update', $table) ? route('admin.tables.edit', $table) : null">
                                         @can('update', $table)
                                         @endcan
                                         @can('delete', $table)

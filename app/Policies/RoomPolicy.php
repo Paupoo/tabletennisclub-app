@@ -55,7 +55,7 @@ class RoomPolicy
      */
     public function view(User $user, Room $room): bool
     {
-        return false;
+        return $user->can(Permission::FacilitiesView->value);
     }
 
     /**

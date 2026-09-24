@@ -187,6 +187,21 @@ test('shows match results for the active season', function (): void {
         ->assertSee('Victoire');
 });
 
+test('shows the real match date on phones instead of a placeholder', function (): void {
+    ['season' => $season, 'team' => $team] = makeSeasonWithTeamAndResults('2025-2026', true, '2025-09-01');
+
+    InterclubResult::factory()->create([
+        'team_id' => $team->id,
+        'season_id' => $season->id,
+        'match_date' => '2025-10-15',
+    ]);
+
+    $this->get(route('results'))
+        ->assertOk()
+        ->assertSee('15-10-25')
+        ->assertDontSee('13-12-24');
+});
+
 test('can filter results by category', function (): void {
     ['season' => $season] = makeSeasonWithTeamAndResults('2025-2026', true, '2025-09-01');
 

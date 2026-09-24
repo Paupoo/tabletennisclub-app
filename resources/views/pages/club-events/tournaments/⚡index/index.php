@@ -81,6 +81,8 @@ new class extends Component
 
     public function bulkCancel(): void
     {
+        abort_unless($this->canManage, 403);
+
         $cancelled = 0;
         $refused = 0;
 
@@ -136,6 +138,8 @@ new class extends Component
 
     public function confirmBulkCancel(): void
     {
+        abort_unless($this->canManage, 403);
+
         $this->confirmBulkCancelModal = true;
     }
 
@@ -197,6 +201,18 @@ new class extends Component
     public function getTotalMatchingCount(): int
     {
         return $this->tournaments->total();
+    }
+
+    /**
+     * Where a reader follows a tournament: its live page, once there is play to
+     * follow. Before that the list already says all there is — status, dates and
+     * registrations.
+     */
+    public function liveUrlFor(Tournament $tournament): ?string
+    {
+        return in_array($tournament->status, [TournamentStatusEnum::PENDING, TournamentStatusEnum::CLOSED], true)
+            ? route('admin.tournaments.live', $tournament)
+            : null;
     }
 
     /**

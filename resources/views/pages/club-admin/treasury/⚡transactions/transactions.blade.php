@@ -17,11 +17,13 @@
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
-                <x-button
-                    :label="__('Import CSV')"
-                    icon="o-arrow-up-tray"
-                    class="btn-primary btn-sm"
-                    wire:click="$set('importModal', true)" />
+                @can('transactions.import')
+                    <x-button
+                        :label="__('Import CSV')"
+                        icon="o-arrow-up-tray"
+                        class="btn-primary btn-sm"
+                        wire:click="$set('importModal', true)" />
+                @endcan
             </div>
         </x-slot:actions>
     </x-header>
@@ -74,7 +76,8 @@
     </div>
 
     <x-card class="bg-base-100 shadow-sm">
-        <x-table :headers="$headers" :rows="$transactions" :sort-by="$sortBy" wire:model.live="selected" selectable hover>
+        {{-- Selecting only ever leads to deleting: a reader gets no checkboxes. --}}
+        <x-table :headers="$headers" :rows="$transactions" :sort-by="$sortBy" wire:model.live="selected" :selectable="auth()->user()->can('transactions.delete')" hover>
 
             @scope('cell_date', $transaction)
             <span class="text-sm tabular-nums">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</span>

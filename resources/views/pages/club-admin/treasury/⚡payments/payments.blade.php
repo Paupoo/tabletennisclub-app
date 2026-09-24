@@ -17,7 +17,7 @@
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
-                @canany(['payments.reconcile', 'payments.refund', 'transactions.view'])
+                @canany(['payments.reconcile', 'payments.refund', 'transactions.import'])
                 <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
                     @if($statusFilter === 'to_refund')
                         @can('payments.refund')
@@ -30,7 +30,7 @@
                                 wire:click="previewBatchMatch" spinner="previewBatchMatch" />
                         @endcan
                     @endif
-                    @can('transactions.view')
+                    @can('transactions.import')
                     <x-menu-item icon="o-arrow-up-tray" :title="__('Import a bank statement')"
                         link="{{ route('admin.treasury.transactions') }}" />
                     @endcan
@@ -166,7 +166,7 @@
                 icon="o-banknotes"
                 :filtered="filled($search) || count($filterChips) > 0"
                 :heading="__('No payments to display.')"
-                :create-label="Gate::allows('transactions.view') ? __('Import a bank statement') : null"
+                :create-label="Gate::allows('transactions.import') ? __('Import a bank statement') : null"
                 :create-href="Gate::allows('transactions.view') ? route('admin.treasury.transactions') : null" />
         @endforelse
 
@@ -175,7 +175,8 @@
 
     {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
     <x-card class="hidden bg-base-100 shadow-sm rounded-t-none lg:block">
-        <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$payments" :sort-by="$sortBy" wire:model.live="selected" selectable hover>
+        {{-- The bulk actions are reminders and refunds: without either, nothing to select for. --}}
+        <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$payments" :sort-by="$sortBy" wire:model.live="selected" :selectable="auth()->user()->canAny(['payments.remind', 'payments.refund'])" hover>
 
             @scope('cell_reference', $payment)
             <span class="font-mono text-sm tracking-tight text-primary">{{ $payment->reference }}</span>
@@ -273,7 +274,7 @@
                 icon="o-banknotes"
                 :heading="__('No payments to display.')"
                 :message="__('Cotisations appear here once a bank statement is imported or a payment is matched.')"
-                :buttonText="Gate::allows('transactions.view') ? __('Import a bank statement') : null"
+                :buttonText="Gate::allows('transactions.import') ? __('Import a bank statement') : null"
                 :href="Gate::allows('transactions.view') ? route('admin.treasury.transactions') : null" />
         @endif
 
@@ -622,7 +623,7 @@
                 @click="mobileActionsOpen = false; $wire.call('previewBatchMatch')" />
             @endcan
         @endif
-        @can('transactions.view')
+        @can('transactions.import')
         <x-admin.shared.mobile-action-item
             icon="o-arrow-up-tray" color="info"
             :label="__('Import a bank statement')"

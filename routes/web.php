@@ -151,6 +151,11 @@ Route::prefix('admin/club-admin/users/')
         Route::livewire('create', 'pages::club-admin.users.form')
             ->middleware('can:users.create')
             ->name('admin.users.create');
+        // The file, read-only: the committee baseline reads what it may not edit.
+        Route::livewire('{user}', 'pages::club-admin.users.show')
+            ->middleware('can:users.view')
+            ->whereNumber('user')
+            ->name('admin.users.show');
         // Two duties, one screen: whoever keeps the member's data up to date, and
         // whoever hands out their rights. Neither holds the other's permission,
         // and the form renders only the sections the visitor may actually write.
@@ -165,11 +170,11 @@ Route::prefix('admin/club-admin/users/')
         Route::livewire('registrations', 'pages::club-admin.users.registrations')
             ->middleware('can:subscriptions.view')
             ->name('admin.users.registrations');
-        // Who holds what: readable by whoever hands the duties out, and by whoever
-        // edits the members — the overview is where both go to check coverage.
-        // Read-only on purpose: assigning happens on the member's own form.
+        // Who holds what: the committee baseline, since knowing whom to ask for a
+        // duty is transparency, not management. Read-only on purpose: assigning
+        // happens on the member's own form.
         Route::livewire('delegations', 'pages::club-admin.users.delegations')
-            ->middleware('can.any:users.update,access.manage')
+            ->middleware('can:users.view')
             ->name('admin.users.delegations');
         // Season roster — readable at the committee baseline, editing reserved to
         // the members délégation (guarded inside the component).
@@ -194,7 +199,7 @@ Route::prefix('admin/club-admin/attestations/')
     });
 
 Route::prefix('admin/club-admin/planning/')
-    ->middleware(['auth', 'verified', 'can:training_plans.manage', 'feature:training_planning'])
+    ->middleware(['auth', 'verified', 'can:trainings.view', 'feature:training_planning'])
     ->group(function (): void {
         Route::livewire('board', 'pages::club-admin.planning.board')->name('admin.planning.board');
     });
@@ -249,17 +254,17 @@ Route::prefix('admin/club-admin/seasons/')
         Route::livewire('list', 'pages::club-admin.seasons.index')->name('admin.seasons.index');
     });
 
-// Key rings — the club's entrusted equipment. Gated by the délégation that the
-// permissions doc already names for it: holding a ring opens a door, never a
-// screen, so the duty to hand one over is what the gate checks.
+// Key rings — the club's entrusted equipment. Who holds which key is read at
+// the committee baseline (holding a ring opens a door, never a screen); handing
+// one over is the facilities délégation, checked inside the component.
 Route::prefix('admin/club-admin/key-rings/')
-    ->middleware(['auth', 'verified', 'can:equipment.holder.update'])
+    ->middleware(['auth', 'verified', 'can:facilities.view'])
     ->group(function (): void {
         Route::livewire('list', 'pages::club-admin.key-rings.index')->name('admin.key-rings.index');
     });
 
 Route::prefix('admin/club-admin/rooms/')
-    ->middleware(['auth', 'verified', 'can:rooms.manage'])
+    ->middleware(['auth', 'verified', 'can:facilities.view'])
     ->group(function (): void {
         Route::livewire('list', 'pages::club-admin.rooms.index')->name('admin.rooms.index');
 
@@ -292,9 +297,10 @@ Route::prefix('admin/club-admin/tables/')
             });
     });
 
-// Training packs administration — committee only.
+// Training packs — readable at the committee baseline; every write is guarded
+// inside the component.
 Route::prefix('admin/club-events/interclubs/')
-    ->middleware(['auth', 'verified', 'can:trainings.manage', 'feature:trainings'])
+    ->middleware(['auth', 'verified', 'can:trainings.view', 'feature:trainings'])
     ->group(function (): void {
         Route::livewire('trainings', 'pages::club-events.trainings.index')->name('admin.trainings.index');
     });
@@ -310,7 +316,10 @@ Route::prefix('admin/club-events/meetings')
     ->middleware(['auth', 'verified', 'can:meetings.view', 'feature:meetings'])
     ->group(function (): void {
         Route::livewire('/', 'pages::club-events.meetings.index')->name('admin.meetings.index');
-        Route::livewire('/create', 'pages::club-events.meetings.create')->name('admin.meetings.create');
+        // Reading is the committee baseline; convening is the meetings délégation.
+        Route::livewire('/create', 'pages::club-events.meetings.create')
+            ->middleware('can:meetings.manage')
+            ->name('admin.meetings.create');
         Route::livewire('/{meeting}', 'pages::club-events.meetings.show')->name('admin.meetings.show');
         Route::livewire('/{meeting}/minutes', 'pages::club-events.meetings.minutes')->name('admin.meetings.minutes');
     });
@@ -331,9 +340,16 @@ Route::post('/meetings/{meeting}/rsvp/{user}', [MeetingRsvpController::class, 's
 
 // Tournament administration (events) — committee only.
 Route::prefix('admin/club-events/tournaments')
+    ->middleware(['auth', 'verified', 'feature:tournaments'])
+    ->group(function (): void {
+        // The list is the committee baseline; the tools below are the organiser's.
+        Route::livewire('/', 'pages::club-events.tournaments.index')
+            ->middleware('can:tournaments.view')
+            ->name('admin.tournaments.index');
+    });
+Route::prefix('admin/club-events/tournaments')
     ->middleware(['auth', 'verified', 'can:tournaments.manage', 'feature:tournaments'])
     ->group(function (): void {
-        Route::livewire('/', 'pages::club-events.tournaments.index')->name('admin.tournaments.index');
         Route::livewire('{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');
         Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
         Route::livewire('{tournament}/wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard.edit');
@@ -393,12 +409,18 @@ Route::prefix('admin/club-events/interclubs/')
 
         // Interclub configuration & control — the interclubs délégation.
         Route::middleware('can:interclubs.manage')->group(function (): void {
-            Route::livewire('teams', 'pages::club-events.interclubs.teams.index')->name('admin.interclubs.teams');
             Route::livewire('teams/builder', 'pages::club-events.interclubs.teams.builder')->name('admin.interclubs.teams.builder');
-            Route::livewire('teams/{team}', 'pages::club-events.interclubs.teams.show')->name('admin.interclubs.teams.show');
             Route::livewire('teams/{team}/edit', 'pages::club-events.interclubs.teams.edit')->name('admin.interclubs.teams.edit');
-            Route::livewire('interclubs', 'pages::club-events.interclubs.interclubs')->name('admin.interclubs.interclubs');
             Route::livewire('division-setup', 'pages::club-events.interclubs.division-setup')->name('admin.interclubs.division-setup');
+        });
+
+        // Who plays where, and against whom: readable at the committee baseline.
+        // Every write on these screens is guarded inside the component — the
+        // route no longer is the only thing standing in front of them.
+        Route::middleware('can:interclubs.view')->group(function (): void {
+            Route::livewire('teams', 'pages::club-events.interclubs.teams.index')->name('admin.interclubs.teams');
+            Route::livewire('teams/{team}', 'pages::club-events.interclubs.teams.show')->name('admin.interclubs.teams.show');
+            Route::livewire('interclubs', 'pages::club-events.interclubs.interclubs')->name('admin.interclubs.interclubs');
             Route::livewire('clubs', 'pages::club-events.interclubs.clubs')->name('admin.interclubs.clubs');
         });
     });
@@ -488,8 +510,12 @@ Route::middleware(['auth', 'verified'])
     });
 
 Route::prefix('admin/website')->middleware(['auth', 'verified', 'feature:website'])->group(function (): void {
+    // What the club publishes is readable at the committee baseline, drafts
+    // included; writing it is the website délégation.
+    Route::livewire('/articles', 'pages::website.articles.index')
+        ->middleware('can:news_posts.view')
+        ->name('admin.website.articles.index');
     Route::middleware('can:news_posts.manage')->group(function (): void {
-        Route::livewire('/articles', 'pages::website.articles.index')->name('admin.website.articles.index');
         Route::livewire('/articles/create', 'pages::website.articles.edit')->name('admin.website.articles.create');
         Route::livewire('/articles/{newsPost}/edit', 'pages::website.articles.edit')->name('admin.website.articles.edit');
     });
@@ -505,7 +531,7 @@ Route::prefix('admin/website')->middleware(['auth', 'verified', 'feature:website
             ->name('admin.website.spams.index');
     });
     Route::livewire('/events', 'pages::website.events.index')
-        ->middleware('can:event_posts.manage')
+        ->middleware('can:news_posts.view')
         ->name('admin.website.events.index');
 });
 

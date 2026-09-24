@@ -5,17 +5,21 @@
 <div>
     <x-header :title="__('Cash Register')" :subtitle="__('In-person cash management')" separator progress-indicator>
         <x-slot:actions>
+            @can('cash_register.holder.change')
             <x-button
                 :label="__('New register')"
                 icon="o-building-library"
                 class="btn-outline btn-sm"
                 wire:click="$set('createRegisterModal', true)" />
+            @endcan
             @if($this->register)
+            @can('cash_register.entry.create')
             <x-button
                 :label="__('Add entry')"
                 icon="o-plus"
                 class="btn-primary btn-sm"
                 wire:click="openManualEntry" />
+            @endcan
             @can('cash_register.manage')
             @unless($this->register->trashed())
             <x-button

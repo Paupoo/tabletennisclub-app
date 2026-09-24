@@ -11,6 +11,7 @@ use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
@@ -40,12 +41,16 @@ new class extends Component
 
     public function confirmDelete(int $clubId): void
     {
+        Gate::authorize(Permission::ClubsManage->value);
+
         $this->deletingClubId = $clubId;
         $this->deleteModal = true;
     }
 
     public function delete(): void
     {
+        Gate::authorize(Permission::ClubsManage->value);
+
         if (! $this->deletingClubId) {
             $this->deleteModal = false;
 
@@ -68,13 +73,25 @@ new class extends Component
         $this->success(__('Club deleted.'));
     }
 
+    /**
+     * Whether the visitor maintains the directory, or only reads it: the
+     * committee reads the opposing clubs at the baseline.
+     */
+    #[Computed]
+    public function mayManage(): bool
+    {
+        return Gate::allows(Permission::ClubsManage->value);
+    }
+
     public function mount(): void
     {
-        Gate::authorize(Permission::ClubsManage->value);
+        Gate::authorize(Permission::InterclubsView->value);
     }
 
     public function openCreateModal(): void
     {
+        Gate::authorize(Permission::ClubsManage->value);
+
         $this->resetErrorBag();
         $this->editingClubId = null;
         $this->formName = '';
@@ -87,6 +104,8 @@ new class extends Component
 
     public function openEditModal(int $clubId): void
     {
+        Gate::authorize(Permission::ClubsManage->value);
+
         $club = Club::findOrFail($clubId);
         $this->resetErrorBag();
         $this->editingClubId = $club->id;
@@ -105,6 +124,8 @@ new class extends Component
 
     public function save(): void
     {
+        Gate::authorize(Permission::ClubsManage->value);
+
         $this->validate([
             'formName' => ['required', 'string', 'max:100'],
             'formLicence' => ['nullable', 'string', 'max:50', Rule::unique('clubs', 'licence')->ignore($this->editingClubId)],

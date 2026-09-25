@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
+use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
@@ -19,7 +21,6 @@ use App\Domains\Meetings\Models\MeetingUser;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Collection;
 
 class TreasurySeeder extends Seeder
 {
@@ -57,6 +58,25 @@ class TreasurySeeder extends Seeder
         $this->seedRefunds();
     }
 
+    /**
+     * Le virement sortant, puis son affectation.
+     *
+     * Passe par l'action de ventilation comme le ferait l'écran : c'est elle
+     * qui écrit la ligne de crédit et fait basculer le statut.
+     */
+    private function executeRefund(Payment $refund, User $member): void
+    {
+        $outgoing = Transaction::create([
+            'date' => Carbon::now()->subDays(random_int(2, 14))->toDateString(),
+            'description' => 'Remboursement — ' . $member->full_name,
+            'amount' => -(float) $refund->amount_due,
+            'counterparty_name' => $member->full_name,
+            'counterparty_bank_account' => $member->iban,
+        ]);
+
+        (new AllocateTransactionAction)($outgoing, [$refund->id => (float) $refund->amount_due]);
+    }
+
     private function fakeBelgianIban(): string
     {
         $check = str_pad((string) random_int(10, 99), 2, '0', STR_PAD_LEFT);
@@ -68,6 +88,25 @@ class TreasurySeeder extends Seeder
     private function generateRef(): string
     {
         return (new GeneratePaymentReference)();
+    }
+
+    /**
+     * La ligne que le trésorier verra dans l'onglet « À rembourser ».
+     *
+     * Même forme que {@see RequestSubscriptionRefundAction},
+     * sans la notification : un seeder n'envoie pas de courrier, et passer par
+     * l'action le rendrait dépendant des permissions Spatie.
+     */
+    private function openRefund(Payment $encashment, string $reason): Payment
+    {
+        return $encashment->payable->payments()->create([
+            'reference' => (new GeneratePaymentReference)(),
+            'amount_due' => $encashment->amount_paid,
+            'amount_paid' => 0,
+            'status' => 'to_refund',
+            'payment_method' => 'refund',
+            'refund_iban' => $encashment->payable->user->iban,
+        ]);
     }
 
     /**
@@ -186,17 +225,25 @@ class TreasurySeeder extends Seeder
     }
 
     /**
-     * 8 refund scenarios seeded across 3 groups:
-     *   3 × to_refund — pending (club has not sent the money yet)
-     *   3 × to_refund — club already wired the money; outgoing appears only in the CSV stub
-     *   2 × refunded  — outgoing Transaction already in DB, auto-matched
+     * 8 remboursements, dans la seule forme qu'un remboursement peut prendre.
      *
-     * Returns the 3 "in CSV" to_refund payments so writeBankImportCsv() can generate the
-     * matching outgoing rows in the import stub.
+     * Une ligne dédiée par remboursement : `amount_due` porte l'engagement de
+     * rendre, `amount_paid` ne bouge qu'au débit rapproché, et le paiement
+     * encaissé reste `paid` — il a bel et bien été reçu.
+     *
+     * Le seeder basculait autrefois le statut d'un paiement déjà encaissé.
+     * `amount_paid` y comptait alors ce qui était **entré**, là où une ligne
+     * dédiée compte ce qui est **sorti** : deux sens opposés sous un même
+     * statut, qu'aucun écran ne peut afficher juste pour les deux. Pire, le
+     * solde valait zéro, et exécuter le remboursement se terminait sur « il ne
+     * reste rien à affecter ». Voir tests/Feature/ClubAdmin/Payment/RefundShapeTest.php.
+     *
+     *   6 × to_refund — le club n'a pas encore viré
+     *   2 × refunded  — le virement sortant est en base, et affecté
      */
-    private function seedRefunds(): Collection
+    private function seedRefunds(): void
     {
-        $paidPayments = Payment::where('status', 'paid')
+        $encashed = Payment::where('status', 'paid')
             ->orderBy('id')
             ->with(['payable' => fn (MorphTo $m) => $m->morphWith($this->morphWith)])
             ->get()
@@ -204,8 +251,9 @@ class TreasurySeeder extends Seeder
             ->values()
             ->take(8);
 
-        // Ensure every refund user has an IBAN (required for auto-match)
-        foreach ($paidPayments as $p) {
+        // L'appariement du virement sortant se fait sur le compte visé : sans
+        // IBAN, ces lignes ne seraient jamais reconnues.
+        foreach ($encashed as $p) {
             if (! $p->payable->user->iban) {
                 $p->payable->user->update(['iban' => $this->fakeBelgianIban()]);
             }
@@ -218,38 +266,20 @@ class TreasurySeeder extends Seeder
             'Remboursement double paiement',
             'Remboursement erreur de montant',
             'Remboursement suite annulation événement',
-            null, // reconciled — 1
-            null, // reconciled — 2
+            'Remboursement — virement déjà exécuté',
+            'Remboursement — virement déjà exécuté',
         ];
 
-        // 3 pending to_refund
-        foreach ($paidPayments->take(3) as $i => $p) {
-            $p->update(['status' => 'to_refund']);
-        }
+        foreach ($encashed as $i => $encashment) {
+            $refund = $this->openRefund($encashment, $reasons[$i]);
 
-        // 3 "in CSV" to_refund (outgoing will appear only in the CSV file)
-        $inCsvRefunds = $paidPayments->slice(3, 3)->values();
-        foreach ($inCsvRefunds as $p) {
-            $p->update(['status' => 'to_refund']);
+            // Les deux derniers sont déjà partis : le débit existe en banque,
+            // et c'est son affectation — pas une écriture de statut — qui fait
+            // passer la ligne en `refunded`.
+            if ($i >= 6) {
+                $this->executeRefund($refund, $encashment->payable->user);
+            }
         }
-
-        // 2 already reconciled refunds — outgoing Transaction in DB + linked
-        foreach ($paidPayments->slice(6, 2) as $p) {
-            $user = $p->payable->user;
-            $refundTx = Transaction::create([
-                'date' => Carbon::now()->subDays(random_int(2, 14))->toDateString(),
-                'description' => 'Remboursement — ' . $user->full_name,
-                'amount' => -(float) $p->amount_paid,
-                'counterparty_name' => $user->full_name,
-                'counterparty_bank_account' => $user->iban,
-            ]);
-            $p->update(['status' => 'refunded', 'refund_transaction_id' => $refundTx->id]);
-        }
-
-        // Return with freshly loaded user IBANs
-        return $inCsvRefunds->map(
-            fn (Payment $p) => $p->refresh()->load(['payable' => fn (MorphTo $m) => $m->morphWith($this->morphWith)])
-        );
     }
 
     /**

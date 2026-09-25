@@ -6,6 +6,7 @@ namespace App\Domains\Competitions\Tournament\Services;
 
 use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
+use App\Actions\ClubAdmin\Payments\OpenRefundAction;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
@@ -51,9 +52,12 @@ class TournamentService
         if ($registration?->payment_id) {
             $payment = $registration->payment;
 
-            if ($payment?->status === 'paid') {
-                $payment->update(['status' => 'to_refund']);
-                $this->notifyTreasurerAndSecretary($payment, $user, $tournament);
+            if ($payment?->status === 'paid' && ! $this->refundAlreadyOpen($registration)) {
+                // L'inscription reste payée — elle l'a été. Ce que le club doit
+                // rendre prend sa propre ligne, que le trésorier exécutera.
+                $openRefund = new OpenRefundAction;
+                $refund = $openRefund($payment);
+                $this->notifyTreasurerAndSecretary($refund, $user, $tournament);
             } elseif ($payment?->status === 'pending') {
                 $payment->update(['status' => 'cancelled']);
             }
@@ -524,5 +528,22 @@ class TournamentService
         foreach ($waiting as $index => $registration) {
             $registration->update(['waitlist_position' => $index + 1]);
         }
+    }
+
+    /**
+     * Un remboursement a-t-il déjà été ouvert pour cette inscription ?
+     *
+     * Écrire `to_refund` sur l'encaissement rendait l'annulation idempotente
+     * par accident : au second appel le statut n'était plus `paid`, et rien ne
+     * se produisait. Ouvrir une ligne dédiée perd cette garantie — sans cette
+     * vérification, annuler deux fois ouvrirait deux dettes pour un seul
+     * paiement.
+     */
+    private function refundAlreadyOpen(TournamentRegistration $registration): bool
+    {
+        return Payment::where('payable_type', $registration->getMorphClass())
+            ->where('payable_id', $registration->id)
+            ->where('payment_method', 'refund')
+            ->exists();
     }
 }

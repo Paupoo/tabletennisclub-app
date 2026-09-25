@@ -244,7 +244,16 @@ describe('cancelRegistration', function (): void {
         expect($payment->fresh()->status)->toBe('cancelled');
     });
 
-    it('marks a paid payment as to_refund', function (): void {
+    /**
+     * Annuler une inscription payée n'efface pas le fait qu'elle a été payée.
+     *
+     * Le service basculait l'encaissement en `to_refund`, ce qui donnait au même
+     * enregistrement deux sens à la fois : `amount_paid` y comptait l'argent
+     * entré, là où le reste du domaine y lit l'argent sorti. Le solde valait
+     * alors zéro, l'onglet « À rembourser » affichait 0,00 €, et exécuter le
+     * virement était refusé faute de quoi que ce soit à affecter.
+     */
+    it('opens a refund line and leaves the payment received', function (): void {
         Notification::fake();
         $tournament = paymentTournament(['price' => 10, 'max_users' => 10]);
         $user = User::factory()->create();
@@ -265,7 +274,46 @@ describe('cancelRegistration', function (): void {
         Event::fake();
         (new TournamentService)->cancelRegistration($tournament, $user);
 
-        expect($payment->fresh()->status)->toBe('to_refund');
+        expect($payment->fresh()->status)->toBe('paid');
+
+        $refund = Payment::where('payment_method', 'refund')->sole();
+
+        expect($refund->status)->toBe('to_refund')
+            ->and((float) $refund->amount_due)->toBe(1000.0)
+            ->and((float) $refund->amount_paid)->toBe(0.0);
+    });
+
+    /**
+     * Annuler deux fois n'ouvre qu'une dette.
+     *
+     * Écrire `to_refund` sur l'encaissement rendait le geste idempotent par
+     * accident : au second appel le statut n'était plus `paid`, et rien ne se
+     * produisait. Une ligne dédiée perd cette protection — et le service doit
+     * donc la porter lui-même, sinon le club devrait deux fois le même argent.
+     */
+    it('opens a single refund even when the cancellation is replayed', function (): void {
+        Notification::fake();
+        Event::fake();
+        $tournament = paymentTournament(['price' => 10, 'max_users' => 10]);
+        $user = User::factory()->create();
+        $tournament->users()->attach($user->id, ['registration_status' => 'registered']);
+
+        $registration = TournamentRegistration::where('tournament_id', $tournament->id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $payment = $registration->payment()->create([
+            'reference' => 'TEST/004',
+            'amount_due' => 1000,
+            'amount_paid' => 1000,
+            'status' => 'paid',
+        ]);
+        $registration->update(['payment_id' => $payment->id]);
+
+        (new TournamentService)->cancelRegistration($tournament, $user);
+        (new TournamentService)->cancelRegistration($tournament, $user);
+
+        expect(Payment::where('payment_method', 'refund')->count())->toBe(1);
     });
 
     it('renders the treasurer refund email with a link to the member profile', function (): void {
@@ -281,8 +329,9 @@ describe('cancelRegistration', function (): void {
         $payment = $registration->payment()->create([
             'reference' => 'TEST/003',
             'amount_due' => 1000,
-            'amount_paid' => 1000,
+            'amount_paid' => 0,
             'status' => 'to_refund',
+            'payment_method' => 'refund',
         ]);
 
         $mail = new RefundRequestedNotification($payment, $member, $tournament)->toMail($treasurer);

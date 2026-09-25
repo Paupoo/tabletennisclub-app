@@ -6,7 +6,7 @@ namespace Database\Seeders;
 
 use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
-use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
+use App\Actions\ClubAdmin\Payments\OpenRefundAction;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
@@ -93,20 +93,11 @@ class TreasurySeeder extends Seeder
     /**
      * La ligne que le trésorier verra dans l'onglet « À rembourser ».
      *
-     * Même forme que {@see RequestSubscriptionRefundAction},
-     * sans la notification : un seeder n'envoie pas de courrier, et passer par
-     * l'action le rendrait dépendant des permissions Spatie.
+     * Toute la forme canonique vient de l'action ; le seeder n'ajoute rien.
      */
-    private function openRefund(Payment $encashment, string $reason): Payment
+    private function openRefund(Payment $encashment): Payment
     {
-        return $encashment->payable->payments()->create([
-            'reference' => (new GeneratePaymentReference)(),
-            'amount_due' => $encashment->amount_paid,
-            'amount_paid' => 0,
-            'status' => 'to_refund',
-            'payment_method' => 'refund',
-            'refund_iban' => $encashment->payable->user->iban,
-        ]);
+        return (new OpenRefundAction)($encashment);
     }
 
     /**
@@ -259,19 +250,8 @@ class TreasurySeeder extends Seeder
             }
         }
 
-        $reasons = [
-            'Désistement tournoi — remboursement inscription',
-            'Trop-perçu cotisation — remboursement solde',
-            'Annulation repas réunion comité — remboursement',
-            'Remboursement double paiement',
-            'Remboursement erreur de montant',
-            'Remboursement suite annulation événement',
-            'Remboursement — virement déjà exécuté',
-            'Remboursement — virement déjà exécuté',
-        ];
-
         foreach ($encashed as $i => $encashment) {
-            $refund = $this->openRefund($encashment, $reasons[$i]);
+            $refund = $this->openRefund($encashment);
 
             // Les deux derniers sont déjà partis : le débit existe en banque,
             // et c'est son affectation — pas une écriture de statut — qui fait

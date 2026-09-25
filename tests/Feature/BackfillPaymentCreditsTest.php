@@ -35,23 +35,24 @@ function legacyPayment(Subscription $subscription, array $attributes): Payment
     static $counter = 0;
     $counter++;
 
-    $payment = $subscription->payments()->create([
+    // Entièrement en direct : on pose l'état brut d'avant migration, colonnes de
+    // liaison comprises — et le modèle refuse maintenant la forme que l'ancien
+    // code écrivait, un « à rembourser » qui ne se dit pas remboursement.
+    $id = DB::table('payments')->insertGetId([
         'reference' => sprintf('100/0000/%05d', $counter),
-        'amount_due' => $attributes['amount_due'],
-        'amount_paid' => 0,
+        'payable_type' => $subscription->getMorphClass(),
+        'payable_id' => $subscription->id,
+        'amount_due' => (int) round(((float) $attributes['amount_due']) * 100),
+        'amount_paid' => (int) round(((float) ($attributes['amount_paid'] ?? 0)) * 100),
         'status' => $attributes['status'],
         'payment_method' => $attributes['payment_method'] ?? 'electronic',
-    ]);
-
-    // En direct : les mutateurs attendent des euros, et on veut poser l'état
-    // brut d'avant migration, colonnes de liaison comprises.
-    DB::table('payments')->where('id', $payment->id)->update(array_filter([
-        'amount_paid' => (int) round(($attributes['amount_paid'] ?? 0) * 100),
         'transaction_id' => $attributes['transaction_id'] ?? null,
         'refund_transaction_id' => $attributes['refund_transaction_id'] ?? null,
-    ], fn (mixed $v): bool => $v !== null));
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
 
-    return $payment->fresh();
+    return Payment::findOrFail($id);
 }
 
 function backfillSubscription(): Subscription

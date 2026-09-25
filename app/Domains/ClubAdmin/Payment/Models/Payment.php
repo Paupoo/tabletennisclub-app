@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\ClubAdmin\Payment\Models;
 
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatch;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionDiscount;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @property int $id
@@ -153,6 +155,15 @@ class Payment extends Model
         return $this->hasMany(SubscriptionDiscount::class);
     }
 
+    /**
+     * Une créance d'affiliation, par opposition à son remboursement ou à tout
+     * autre payable.
+     */
+    public function isAffiliationClaim(): bool
+    {
+        return $this->payable_type === Subscription::class && $this->payment_method !== 'refund';
+    }
+
     public function isOverpaid(): bool
     {
         return $this->overpayment() > 0.0;
@@ -173,9 +184,15 @@ class Payment extends Model
      *
      * Cet argent n'appartient plus au club. Il revient au **compte qui l'a
      * versé**, pas au membre : c'est celui-là qu'on rembourse.
+     *
+     * Une affiliation se compte entière : voir {@see affiliationOverpayment()}.
      */
     public function overpayment(): float
     {
+        if ($this->isAffiliationClaim()) {
+            return $this->affiliationOverpayment();
+        }
+
         return max(0.0, round(
             (float) $this->amount_paid - (float) $this->amount_due - $this->refundsCommitted(),
             2,
@@ -257,5 +274,49 @@ class Payment extends Model
                 );
             }
         });
+    }
+
+    /**
+     * Le trop-perçu d'une affiliation, porté par sa dernière ligne créditée.
+     *
+     * Un prix qui baisse après paiement laisse de l'argent en trop sans
+     * qu'aucune ligne ne le porte : chacune a encaissé ce qu'elle réclamait.
+     * L'excédent se calcule donc sur l'ensemble — reçu, moins dû, moins
+     * remboursements engagés, comme {@see Subscription::netAmountPaid()} — et
+     * s'affiche sur la dernière ligne créditée, celle d'où partirait le
+     * remboursement. Les autres lignes n'en portent aucun : le même euro ne
+     * se compte qu'une fois.
+     *
+     * Conséquence assumée : une ligne payée au-delà de son dû, alors qu'une
+     * autre attend encore, n'est plus un trop-perçu — c'est de l'argent qui
+     * reste dû sur l'affiliation.
+     *
+     * En centimes bruts, sans passer par les mutateurs, comme le filtre SQL
+     * de l'onglet qui doit dire la même chose.
+     */
+    private function affiliationOverpayment(): float
+    {
+        $claims = static::query()
+            ->where('payable_type', $this->payable_type)
+            ->where('payable_id', $this->payable_id)
+            ->where(fn (Builder $q): Builder => $q->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
+            ->where('status', '!=', 'cancelled');
+
+        if ((int) (clone $claims)->where('amount_paid', '>', 0)->max('id') !== $this->id) {
+            return 0.0;
+        }
+
+        $received = (int) (clone $claims)->sum('amount_paid');
+
+        $committed = (int) static::query()
+            ->where('payable_type', $this->payable_type)
+            ->where('payable_id', $this->payable_id)
+            ->where('payment_method', 'refund')
+            ->whereIn('status', ['to_refund', 'paid', 'refunded'])
+            ->sum('amount_due');
+
+        $due = (int) DB::table('subscriptions')->where('id', $this->payable_id)->value('amount_due');
+
+        return max(0.0, round(($received - $committed - $due) / 100, 2));
     }
 }

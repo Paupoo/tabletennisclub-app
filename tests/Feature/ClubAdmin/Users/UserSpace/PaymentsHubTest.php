@@ -19,6 +19,9 @@ function subscriptionPayment(User $user, Season $season, string $status = 'pendi
     $subscription = Subscription::factory()->for($user)->create([
         'season_id' => $season->id,
         'status' => $status === 'paid' ? 'paid' : 'confirmed',
+        // Le prix de l'affiliation est celui de sa facture : tiré au hasard, il
+        // décidait seul de ce qu'un trop-perçu d'affiliation vaut.
+        'amount_due' => $amount,
     ]);
 
     return $subscription->payments()->create([

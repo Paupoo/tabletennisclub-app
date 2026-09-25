@@ -38,7 +38,8 @@ class ExpenseReportFactory extends Factory
             'description' => fake()->sentence(4),
             'amount' => fake()->randomFloat(2, 3, 150),
             'spent_on' => fake()->dateTimeBetween('-2 months', 'now'),
-            'refund_iban' => sprintf('BE%02d%012d', fake()->numberBetween(10, 98), fake()->numberBetween(100000000000, 999999999999)),
+            // A valid checksum: a correction goes back through ValidIban.
+            'refund_iban' => fake()->iban('BE'),
             'status' => ExpenseReportStatus::Submitted,
         ];
     }

@@ -28,6 +28,11 @@
         <x-menu-item icon="o-users" link="{{ route('admin.user.teams', $user) }}" :title="__('My team(s)')" />
         <x-menu-item icon="o-star" link="{{ route('admin.user.event-subscription', $user) }}" :title="__('My registrations')" />
         <x-menu-item icon="o-credit-card" link="{{ route('admin.user.payments', $user) }}" :title="__('My payments')" />
+        @feature('expense_reports')
+        @can('create', \App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport::class)
+            <x-menu-item icon="o-receipt-percent" link="{{ route('admin.user.expense-reports', $user) }}" :title="__('My expense reports')" />
+        @endcan
+        @endfeature
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" :title="__('My Calendar')" />
         <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('My season')" />
         @feature('attestations')

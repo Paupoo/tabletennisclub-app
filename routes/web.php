@@ -22,6 +22,7 @@ use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentPrintController;
 use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\ClubPosts\PublicNewsPostController;
+use App\Http\Controllers\ExpenseReports\ExpenseReportFileController;
 use App\Http\Controllers\HomeController;
 use App\Http\Middleware\ProtectAgainstSpam;
 use Illuminate\Support\Facades\Route;
@@ -114,6 +115,9 @@ Route::prefix('admin/my-space/')
         Route::livewire('{user}/charte', 'pages::club-admin.users.user-space.charter')->name('admin.user.charter');
         Route::livewire('{user}/directory', 'pages::club-admin.users.user-space.directory')->name('admin.user.directory');
         Route::livewire('{user}/payments', 'pages::club-admin.users.user-space.payments')->name('admin.user.payments');
+        Route::livewire('{user}/expense-reports', 'pages::club-admin.users.user-space.expense-reports')
+            ->name('admin.user.expense-reports')
+            ->middleware('feature:expense_reports');
         // Mutual-insurer attestation — behind its own feature flag, and the
         // download is authorised in the controller (the member it names, or the
         // office), never by the my-space binding alone.
@@ -123,6 +127,12 @@ Route::prefix('admin/my-space/')
         Route::get('attestation/{attestation}/telecharger', [AttestationDownloadController::class, 'download'])
             ->name('admin.user.attestation.download')
             ->middleware('feature:attestations');
+
+        // A proof of an expense report — authorised in the controller against
+        // the report (its author, or the treasury readers).
+        Route::get('expense-reports/files/{file}', [ExpenseReportFileController::class, 'show'])
+            ->name('admin.expense-reports.file')
+            ->middleware('feature:expense_reports');
 
         // Private member documents — authorization handled in the controller
         // (self, admin, committee, guardians), not limited to the my-space owner.

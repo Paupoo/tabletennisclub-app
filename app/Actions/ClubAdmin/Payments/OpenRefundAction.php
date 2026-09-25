@@ -59,14 +59,16 @@ final class OpenRefundAction
     /**
      * Le compte du membre, quand la chose payée en désigne un.
      *
-     * Tous les payables n'ont pas de membre — une commande de bar n'en a pas —
-     * et aucun contrat commun ne l'expose. On lit donc l'attribut, et on ne
-     * garde que ce qui est bien un membre.
+     * Par la colonne `user_id`, jamais par la relation : le chargement
+     * paresseux est interdit hors production, et une migration ou un appel qui
+     * n'aurait pas préchargé `payable.user` lèverait une violation au lieu de
+     * rendre un IBAN. Une commande de bar n'a pas de membre du tout — le bar ne
+     * sait pas qui a payé — et rend donc `null`.
      */
     private function memberIban(?Model $payable): ?string
     {
-        $member = $payable?->getAttribute('user');
+        $memberId = $payable?->getAttribute('user_id');
 
-        return $member instanceof User ? $member->iban : null;
+        return $memberId === null ? null : User::find($memberId)?->iban;
     }
 }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
+use App\Actions\ClubAdmin\Payments\OpenRefundAction;
 use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use Illuminate\Database\Migrations\Migration;
@@ -78,14 +78,7 @@ return new class extends Migration
             return;
         }
 
-        $encashment->payable?->payments()->create([
-            'reference' => (new GeneratePaymentReference)(),
-            'amount_due' => $owed,
-            'amount_paid' => 0,
-            'status' => 'to_refund',
-            'payment_method' => 'refund',
-            'refund_iban' => $encashment->payable->user?->iban,
-        ]);
+        (new OpenRefundAction)($encashment, $owed);
 
         $encashment->update(['status' => 'paid']);
     }

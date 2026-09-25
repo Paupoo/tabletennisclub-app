@@ -256,7 +256,7 @@ describe('cancelRegistration', function (): void {
     it('opens a refund line and leaves the payment received', function (): void {
         Notification::fake();
         $tournament = paymentTournament(['price' => 10, 'max_users' => 10]);
-        $user = User::factory()->create();
+        $user = User::factory()->create(['iban' => 'BE68539007547034']);
         $tournament->users()->attach($user->id, ['registration_status' => 'registered']);
 
         $registration = TournamentRegistration::where('tournament_id', $tournament->id)
@@ -280,7 +280,10 @@ describe('cancelRegistration', function (): void {
 
         expect($refund->status)->toBe('to_refund')
             ->and((float) $refund->amount_due)->toBe(1000.0)
-            ->and((float) $refund->amount_paid)->toBe(0.0);
+            ->and((float) $refund->amount_paid)->toBe(0.0)
+            // Le compte à créditer : sans lui, le trésorier n'a rien à recopier
+            // dans sa banque et l'appariement du virement sortant ne reconnaît rien.
+            ->and($refund->refund_iban)->toBe('BE68539007547034');
     });
 
     /**

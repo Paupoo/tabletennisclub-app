@@ -15,8 +15,18 @@
             </div>
         </x-slot:title>
 
+        {{-- Four groups, from the most used to the rarest: who I am and when
+             I play; my life at the club in the order it happens (affiliate,
+             sign up, join a team, play); the money; the settings. Split by
+             separators, not headings — MemberSpaceMenuOrderTest holds it. --}}
         <x-menu-item icon="o-user" link="{{ route('admin.user.profile', $user) }}"
             :title="__('My profile')" />
+        <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" :title="__('My Calendar')" />
+
+        <li data-menu-group="separator-club"><x-menu-separator /></li>
+        <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('My season')" />
+        <x-menu-item icon="o-star" link="{{ route('admin.user.event-subscription', $user) }}" :title="__('My registrations')" />
+        <x-menu-item icon="o-users" link="{{ route('admin.user.teams', $user) }}" :title="__('My team(s)')" />
         @feature('interclubs')
         {{-- Team membership, not the competitive licence alone: see
              User::playsInterclub(). --}}
@@ -25,19 +35,20 @@
             <x-menu-item icon="o-trophy" link="{{ route('admin.user.interclub-record', $user) }}" :title="__('My interclub record')" />
         @endif
         @endfeature
-        <x-menu-item icon="o-users" link="{{ route('admin.user.teams', $user) }}" :title="__('My team(s)')" />
-        <x-menu-item icon="o-star" link="{{ route('admin.user.event-subscription', $user) }}" :title="__('My registrations')" />
+
+        <li data-menu-group="separator-money"><x-menu-separator /></li>
         <x-menu-item icon="o-credit-card" link="{{ route('admin.user.payments', $user) }}" :title="__('My payments')" />
         @feature('expense_reports')
         @can('create', \App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport::class)
             <x-menu-item icon="o-receipt-percent" link="{{ route('admin.user.expense-reports', $user) }}" :title="__('My expense reports')" />
         @endcan
         @endfeature
-        <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" :title="__('My Calendar')" />
-        <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('My season')" />
+        {{-- Follows an affiliation validated and paid: it sits with the money. --}}
         @feature('attestations')
         <x-menu-item icon="o-document-check" link="{{ route('admin.user.attestation', $user) }}" :title="__('Mutual attestation')" />
         @endfeature
+
+        <li data-menu-group="separator-settings"><x-menu-separator /></li>
         <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" :title="__('Settings')" />
         <li><x-menu-separator /></li>
         {{-- The proxy a guardian holds over the accounts of their wards: see

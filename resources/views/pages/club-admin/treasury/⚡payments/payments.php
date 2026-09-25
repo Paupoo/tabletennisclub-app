@@ -15,6 +15,7 @@ use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Support\IbanNormalizer;
 use App\Jobs\SendPaymentReminderJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
@@ -341,11 +342,25 @@ new class extends Component
             return;
         }
 
+        // Le trésorier recopiera ce numéro dans sa banque : une chaîne qui n'est
+        // pas un IBAN y sera refusée, ou pire, partira sans revenir. Le champ
+        // était du texte libre, et une base porte déjà un remboursement dont le
+        // compte vaut « A rembourser ».
+        $account = trim($this->refundRequestIban);
+
+        if ($account !== '' && ! IbanNormalizer::isValid($account)) {
+            $this->error(__('This is not a valid account number.'));
+
+            return;
+        }
+
         (new RequestSubscriptionRefundAction)(
             $payment->payable,
             $this->refundRequestAmount,
             $reason,
-            targetIban: $this->refundRequestIban !== '' ? $this->refundRequestIban : null,
+            // Sous sa forme compacte : c'est celle que l'appariement du virement
+            // sortant compare.
+            targetIban: $account !== '' ? IbanNormalizer::normalize($account) : null,
         );
 
         $this->reset(['refundRequestModal', 'refundRequestPaymentId', 'refundRequestAmount', 'refundRequestReason', 'refundRequestIban']);

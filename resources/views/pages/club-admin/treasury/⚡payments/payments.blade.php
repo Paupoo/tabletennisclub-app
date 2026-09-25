@@ -356,6 +356,13 @@
                         wire:click="openRefundReconcile({{ $payment->id }})" />
                 </x-admin.shared.row-menu>
             @endcan
+            @elseif($this->statusFilter === 'refunded')
+            {{-- Rien à faire sur un remboursement déjà versé. Cet onglet tombait
+                 dans la branche des créances réglées : la ligne portait une
+                 pastille « Payé » — alors que c'est de l'argent sorti — et un
+                 bouton « Rembourser » qui ouvrait une demande préremplie à 0 €,
+                 refusée à la confirmation. Sa colonne d'état dit déjà tout :
+                 remboursé, et viré tel jour. --}}
             @else
             <div class="flex items-center gap-1.5">
                 <span class="flex items-center gap-1.5 text-success text-xs font-bold">

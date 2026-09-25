@@ -59,6 +59,53 @@ it('never calls a second transfer on the same reference an exact match', functio
         ->and(collect($matches)->pluck('exact')->all())->toBe([false, false])
         ->and($screen->get('selectedBatchMatches'))->toBe([]);
 
-    // Et le second dit ce qu'il reste vraiment, pas le dû d'origine.
-    expect($matches[1]['reason'])->toContain('24,00');
+    // Chaque ligne dit sa part de la créance, jamais une dette qui décroît :
+    // « 60 € dus » puis « 24 € dus » s'additionnent à l'œil et laissent croire
+    // qu'il en faut 84.
+    expect($matches[0]['reason'])->toBe(__(':taken € of :due €', ['taken' => '36,00', 'due' => '60,00']))
+        ->and($matches[1]['reason'])->toBe(__(':taken € of :due €', ['taken' => '24,00', 'due' => '60,00']));
+})->group('payments');
+
+/**
+ * Quand les virements ne couvrent pas la créance, la dernière ligne le dit.
+ *
+ * Sans cela, deux montants qui ne font pas le compte se lisent comme s'ils le
+ * faisaient : c'est la seule chose que la liste ne peut pas laisser deviner.
+ */
+it('says what will remain when the transfers do not cover the claim', function (): void {
+    $treasurer = User::factory()->create();
+    $treasurer->assignRole(Role::TREASURY->value);
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => User::factory()->create()->id,
+        'status' => 'confirmed',
+        'amount_due' => 60,
+    ]);
+
+    $claim = $subscription->payments()->create([
+        'reference' => '025/0926/00298',
+        'amount_due' => 60,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    Transaction::create([
+        'date' => '2026-08-30',
+        'description' => 'VIREMENT',
+        'amount' => 36.0,
+        'counterparty_name' => 'Finn Martin',
+        'structured_reference' => $claim->reference,
+    ]);
+
+    $matches = Livewire::actingAs($treasurer)
+        ->test('pages::club-admin.treasury.payments')
+        ->call('previewBatchMatch')
+        ->get('batchMatches');
+
+    expect($matches)->toHaveCount(1)
+        ->and($matches[0]['reason'])->toBe(__(':taken € of :due € — :left € will remain', [
+            'taken' => '36,00',
+            'due' => '60,00',
+            'left' => '24,00',
+        ]));
 })->group('payments');

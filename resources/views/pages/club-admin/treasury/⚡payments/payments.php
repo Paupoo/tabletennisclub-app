@@ -674,6 +674,11 @@ new class extends Component
 
             $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
 
+            // Les lignes de cette créance, mises de côté : ce qu'il restera se
+            // sait une fois la répartition faite, et c'est la dernière d'entre
+            // elles qui doit le dire.
+            $rows = [];
+
             foreach ($candidates as $transaction) {
                 if ($balance <= 0) {
                     break;
@@ -702,15 +707,16 @@ new class extends Component
                     && (int) round((float) $payment->amount_paid * 100) === 0
                     && (int) round(abs((float) $transaction->allocated_amount) * 100) === 0;
 
-                $this->batchMatches[] = [
+                $rows[] = [
                     'exact' => $exact,
+                    // Sa part de la créance, jamais une dette qui décroît :
+                    // « 60 € dus » puis « 24 € dus » s'additionnent à l'œil, et
+                    // le trésorier lit qu'il en faut 84.
                     'reason' => $exact
                         ? __('reference and amount match exactly')
-                        // Ce qu'il reste à cet instant de la passe, pas le dû
-                        // d'origine : sur un second virement, annoncer les 60 €
-                        // du départ dément la ligne qu'on est en train de lire.
-                        : __('partial payment — :amount € owed', [
-                            'amount' => number_format($balance / 100, 2, ',', ' '),
+                        : __(':taken € of :due €', [
+                            'taken' => number_format($take / 100, 2, ',', ' '),
+                            'due' => number_format($openingBalance / 100, 2, ',', ' '),
                         ]),
                     'payment_id' => $payment->id,
                     'transaction_id' => $transaction->id,
@@ -726,6 +732,21 @@ new class extends Component
                 $remaining[$transaction->id] -= $take;
                 $balance -= $take;
             }
+
+            // Deux montants qui ne font pas le compte se lisent comme s'ils le
+            // faisaient : c'est la seule chose que la liste ne peut pas laisser
+            // deviner.
+            if ($rows !== [] && $balance > 0) {
+                $last = array_key_last($rows);
+
+                $rows[$last]['reason'] = __(':taken € of :due € — :left € will remain', [
+                    'taken' => number_format($rows[$last]['amount'], 2, ',', ' '),
+                    'due' => number_format($openingBalance / 100, 2, ',', ' '),
+                    'left' => number_format($balance / 100, 2, ',', ' '),
+                ]);
+            }
+
+            $this->batchMatches = array_merge($this->batchMatches, $rows);
         }
 
         if ($this->batchMatches === []) {

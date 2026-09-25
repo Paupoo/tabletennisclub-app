@@ -3258,6 +3258,8 @@
     "This is not a valid account number.": "Dit is geen geldig rekeningnummer.",
     "refund(s) completed": "uitgevoerde terugbetaling(en)",
     "Nobody knows which account this money came from \u2014 enter it before opening the refund.": "Niemand weet van welke rekening dit geld komt: vul ze in voor u de terugbetaling opent.",
+    ":taken € of :due €": ":taken € van :due €",
+    ":taken € of :due € \u2014 :left € will remain": ":taken € van :due € \u2014 er blijft :left € over",
     "Total out": "Totaal uitgave",
     "Total spams": "Totaal spam",
     "Tournament": "Toernooi",

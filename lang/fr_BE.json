@@ -3252,6 +3252,8 @@
     "This is not a valid account number.": "Ce num\u00e9ro de compte n'est pas un IBAN valide.",
     "refund(s) completed": "remboursement(s) effectué(s)",
     "Nobody knows which account this money came from \u2014 enter it before opening the refund.": "Personne ne sait de quel compte vient cet argent\u00a0: saisissez-le avant d'ouvrir le remboursement.",
+    ":taken € of :due €": ":taken € des :due €",
+    ":taken € of :due € \u2014 :left € will remain": ":taken € des :due € \u2014 il restera :left €",
     "Total out": "Total sorties",
     "Total spams": "Total des spams",
     "Tournament": "Tournoi",

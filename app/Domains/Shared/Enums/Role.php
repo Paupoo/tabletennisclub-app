@@ -28,6 +28,7 @@ enum Role: string
     // Kept alphabetical by Pint; the socle/délégation split is carried by
     // isDelegation(), not by the ordering here.
     case ACCESS = 'acces';
+    case ACCOUNTS_AUDIT = 'verification-comptes';
     case ADMINISTRATOR = 'administrateur';
     case ATTESTATIONS = 'attestations';
     case BARMAN = 'barman';
@@ -35,6 +36,7 @@ enum Role: string
     case COACH = 'coach';
     case COMMITTEE = 'comite';
     case CONTACTS = 'contacts';
+    case EXPENSE_REPORTS = 'notes-de-frais';
     case FACILITIES = 'installations';
     case FINES = 'amendes';
     case INTERCLUBS = 'interclubs';
@@ -120,6 +122,8 @@ enum Role: string
     {
         return match ($this) {
             self::ACCESS => __('Hand out the délégations and the committee seat. Does not open the member file itself.'),
+            self::ACCOUNTS_AUDIT => __('Read the whole treasury to audit the accounts, without changing anything.'),
+            self::EXPENSE_REPORTS => __('Accept or reject the members\' expense reports, as a backup to the treasurer.'),
             self::ADMINISTRATOR => __('Unrestricted access to the whole application.'),
             self::ATTESTATIONS => __('Issue the mutual-insurer attestations, and hold the club seal and the signature they carry.'),
             self::COMMITTEE => __('Baseline back-office access: consult the club data without managing it.'),
@@ -166,6 +170,8 @@ enum Role: string
     {
         return match ($this) {
             self::ACCESS => __('Access rights'),
+            self::ACCOUNTS_AUDIT => __('Accounts audit'),
+            self::EXPENSE_REPORTS => __('Expense reports'),
             self::ADMINISTRATOR => __('Administrator'),
             self::ATTESTATIONS => __('Mutual attestations'),
             self::COMMITTEE => __('Committee member'),
@@ -252,11 +258,33 @@ enum Role: string
                 Permission::FacilitiesView,
             ],
 
+            // The auditors the general assembly elects are, by design, outside
+            // the committee: nobody audits their own accounts. They read every
+            // treasury screen and the affiliations to cross-check a fee, and
+            // write nothing. The committee hands the délégation out before the
+            // audit and takes it back after the assembly.
+            self::ACCOUNTS_AUDIT => [
+                Permission::PaymentsView,
+                Permission::TransactionsView,
+                Permission::FinesView,
+                Permission::CashRegisterView,
+                Permission::SubscriptionsView,
+            ],
+
+            // A backup decider, so the treasurer's own reports find someone to
+            // decide on them. Deciding is not paying: the refund it opens lands
+            // in the treasurer's queue, and the IBANs stay masked here.
+            self::EXPENSE_REPORTS => [
+                Permission::PaymentsView,
+                Permission::ExpenseReportsProcess,
+            ],
+
             self::TREASURY => [
                 Permission::PaymentsView,
                 Permission::PaymentsReconcile,
                 Permission::PaymentsRefund,
                 Permission::PaymentsRemind,
+                Permission::ExpenseReportsProcess,
                 Permission::TransactionsView,
                 Permission::TransactionsImport,
                 Permission::TransactionsDelete,

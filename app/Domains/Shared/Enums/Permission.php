@@ -57,6 +57,10 @@ enum Permission: string
     case EquipmentHolderUpdate = 'equipment.holder.update';
     case EventPostsManage = 'event_posts.manage';
 
+    // Notes de frais : accepter, réduire, rejeter, annuler une acceptation.
+    // Lire les notes passe par PaymentsView, comme le reste de la trésorerie.
+    case ExpenseReportsProcess = 'expense_reports.process';
+
     // Installations
     case FacilitiesView = 'facilities.view';
     case FinesCancel = 'fines.cancel';

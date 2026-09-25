@@ -44,7 +44,7 @@ class IbanNormalizer
         $remainder = 0;
 
         foreach (str_split($rearranged) as $character) {
-            $value = ctype_digit($character) ? $character : (string) (ord($character) - 55);
+            $value = ctype_digit($character) ? $character : (string) (ord($character[0]) - 55);
 
             foreach (str_split($value) as $digit) {
                 $remainder = ($remainder * 10 + (int) $digit) % 97;

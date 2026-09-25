@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Domains\ClubAdmin\Payment\Models;
 
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatch;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionDiscount;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +35,7 @@ use Illuminate\Support\Carbon;
  * @property TransactionMatch|null $match Verdict de rapprochement, posé à la volée — jamais persisté.
  * @property-read Model|\Eloquent $payable
  * @property-read Transaction|null $refundTransaction
+ * @property-read Collection<int, SubscriptionDiscount> $discounts
  *
  * @method static \Database\Factories\Domains\ClubAdmin\Payment\Models\PaymentFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment newModelQuery()
@@ -76,6 +79,18 @@ class Payment extends Model
         'transaction_id',
         'refund_transaction_id',
     ];
+
+    /**
+     * Ce que la communication aurait réclamé sans les remises qui l'ont allégée.
+     *
+     * Le prix « normal » se reconstitue plutôt qu'il ne se stocke : une remise
+     * est gelée en euros et liée à la communication qu'elle a réduite, donc
+     * les additionner suffit.
+     */
+    public function amountBeforeDiscounts(): float
+    {
+        return round($this->amount_due + $this->discounts->sum('amount'), 2);
+    }
 
     /**
      * Les montants tolèrent l'absence, comme ceux de {@see Subscription}.
@@ -154,6 +169,16 @@ class Payment extends Model
             (float) $this->amount_paid - (float) $this->amount_due - $this->refundsCommitted(),
             2,
         ));
+    }
+
+    /**
+     * Les remises d'affiliation que cette communication a absorbées.
+     *
+     * @return HasMany<SubscriptionDiscount, $this>
+     */
+    public function discounts(): HasMany
+    {
+        return $this->hasMany(SubscriptionDiscount::class);
     }
 
     public function payable(): MorphTo

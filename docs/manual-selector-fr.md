@@ -33,8 +33,9 @@ Chaque match porte un statut matérialisé par une **barre colorée** à gauche 
 | Couleur | Statut | Ce que cela signifie pour vous |
 |---|---|---|
 | 🟢 Vert | **Confirmée** | Sélection envoyée — rien à faire |
-| 🟡 Orange | **À confirmer** | Assez de joueurs disponibles ou sélection complète, mais la feuille n'a pas encore été envoyée. Relancez le capitaine ou envoyez vous-même. |
-| 🔴 Rouge | **Attention** | Match dans les 14 jours et pas assez de disponibilités. Action requise en priorité. |
+| 🟡 Orange | **Prête à composer** | Assez de joueurs disponibles, mais pas encore de sélection complète, à plus de deux semaines du match. |
+| 🔵 Bleu | **Compo à envoyer** | Sélection complète enregistrée, mais pas encore envoyée à l'équipe. Relancez le capitaine ou envoyez vous-même. |
+| 🔴 Rouge | **Attention** | Match dans les 14 jours dont la compo n'a pas été envoyée : le club vise un envoi à J-14 au plus tard. Action requise en priorité. |
 | ⚪ Gris clair | **À venir** | Match lointain, sans urgence |
 | ◼ Gris foncé | **Passé** | Match terminé |
 
@@ -57,7 +58,7 @@ Cliquez sur un match dans le bandeau pour ouvrir directement le tiroir de sélec
 Ordre de priorité recommandé à chaque visite :
 
 1. **Bandeau rouge** — traitez immédiatement tous les matchs en statut **Attention** dans les 14 jours
-2. **Statut orange** — vérifiez que le capitaine est au courant ; envoyez la feuille si le capitaine est absent
+2. **Statuts bleu et orange** — vérifiez que le capitaine est au courant ; envoyez la feuille si le capitaine est absent
 3. **Statut gris clair (À venir)** — vérifiez que les demandes de disponibilité ont été envoyées pour les matchs qui approchent
 
 ---

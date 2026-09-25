@@ -98,6 +98,11 @@ enum Permission: string
     // porteur de ce droit ne l'exerce que sur ses propres équipes)
     case SelectionsManage = 'selections.manage';
     case SpamsManage = 'spams.manage';
+    // Offrir n'est pas gérer : inscrire quelqu'un à un pack et lui faire
+    // cadeau de 100 € ne sont pas le même pouvoir, et le comité doit pouvoir
+    // les séparer sans toucher au code.
+    case SubscriptionsDiscount = 'subscriptions.discount';
+
     case SubscriptionsManage = 'subscriptions.manage';
     case SubscriptionsView = 'subscriptions.view';
     case TablesManage = 'tables.manage';

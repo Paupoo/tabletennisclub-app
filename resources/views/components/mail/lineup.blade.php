@@ -2,6 +2,9 @@
     'players',
     'category' => null,
     'highlight' => null,
+    // Le WO se lit sur la rencontre, pas sur le joueur : certains appelants
+    // rechargent les joueurs sans le pivot, et la marque disparaissait.
+    'walkoverId' => null,
 ])
 @php
     $sortedPlayers = collect($players)->sortBy(
@@ -32,6 +35,9 @@
 <span style="font-weight: {{ $isRecipient ? '700' : '500' }};">{{ $player->full_name }}</span>
 @if ($player->ranking)
 <span style="margin-left: 6px; font-size: 12px; font-weight: 600; color: #64748b;">{{ $player->ranking->getLabel() }}</span>
+@endif
+@if ($walkoverId !== null && $player->id === $walkoverId)
+<span style="margin-left: 6px; padding: 2px 6px; border-radius: 4px; background-color: #fbbf24; color: #78350f; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">WO</span>
 @endif
 @if ($isRecipient)
 <span style="margin-left: 6px; padding: 2px 6px; border-radius: 4px; background-color: #1e40af; color: #ffffff; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">{{ __('you') }}</span>

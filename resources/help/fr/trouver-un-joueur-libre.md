@@ -58,4 +58,4 @@ Cela arrive : vous ouvrez le panneau, vous téléphonez, et entre-temps un autre
 
 ## Si personne n'est libre
 
-Une équipe messieurs peut débuter à 3 joueurs sur 4, et une équipe dames, jeunes ou vétérans à 2 sur 3. Quand vous avez vraiment tout essayé, l'application vous laisse le déclarer et convoquer l'équipe quand même : voyez [Jouer à 3](composer-ma-selection).
+Une équipe messieurs peut débuter à 3 joueurs sur 4, et une équipe dames, jeunes ou vétérans à 2 sur 3. Quand vous avez vraiment tout essayé, l'application vous laisse le déclarer, en désignant le joueur inscrit WO sur la feuille, et convoquer l'équipe quand même : voyez [Jouer à 3](composer-ma-selection).

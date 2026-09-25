@@ -54,6 +54,11 @@ function barOrderToSettle(User $barman, int $cents = 250): BarOrder
 }
 
 beforeEach(function (): void {
+    // La journée de caisse commence à 6 h (CashSheetService) : entre minuit et
+    // 6 h, une commande créée « maintenant » compte pour la veille et les tests
+    // qui lisent la journée du jour échouaient. On se place en pleine journée.
+    $this->travelTo(now()->setTime(14, 0));
+
     Club::factory()->ownClub()->create();
     $this->barman = User::factory()->isAdmin()->create();
     $this->treasurer = User::factory()->isAdmin()->create();

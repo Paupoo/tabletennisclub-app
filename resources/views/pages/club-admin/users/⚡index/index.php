@@ -438,16 +438,25 @@ new class extends Component
         return $this->users->total();
     }
 
-    /** @return array<int, array<string, mixed>> */
+    /**
+     * Les colonnes du tableau desktop, et la largeur à partir de laquelle chacune paraît.
+     *
+     * Toutes ensemble, elles demandaient 1140 px : la carte n'en offre que 634
+     * à 1024 et 890 à 1280, et le tableau débordait à droite, emportant le
+     * bouton de chaque ligne. L'e-mail est passé sous le nom ; Licence et
+     * Classement attendent `xl`, la photo — un avatar générique pour presque
+     * tout le monde — attend `2xl`.
+     *
+     * @return array<int, array<string, mixed>>
+     */
     #[Computed]
     public function headers(): array
     {
         return [
-            ['key' => 'photo',          'label' => '',            'sortable' => false],
+            ['key' => 'photo',          'label' => '',            'sortable' => false, 'class' => 'hidden 2xl:table-cell'],
             ['key' => 'name',           'label' => __('Name'),    'sortable' => true],
-            ['key' => 'email',          'label' => __('Email'),   'sortable' => true],
-            ['key' => 'is_competitive', 'label' => __('Licence'), 'sortable' => true],
-            ['key' => 'ranking',        'label' => __('Ranking'), 'sortable' => true],
+            ['key' => 'is_competitive', 'label' => __('Licence'), 'sortable' => true,  'class' => 'hidden xl:table-cell'],
+            ['key' => 'ranking',        'label' => __('Ranking'), 'sortable' => true,  'class' => 'hidden xl:table-cell'],
             ['key' => 'status',         'label' => __('Status'),  'sortable' => false],
         ];
     }

@@ -156,7 +156,7 @@ new class extends Component
                 TournamentRegistration::class => ['user', 'tournament'],
                 MeetingUser::class => ['user', 'meeting'],
                 Fine::class => ['user'],
-            ])])
+            ]), 'discounts'])
             ->whereHasMorph('payable', self::PAYABLE_TYPES, fn ($q) => $q->whereIn('user_id', $ids))
             ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
             ->when($this->typeFilter, fn ($q) => $q->where('payable_type', $this->typeFilter))

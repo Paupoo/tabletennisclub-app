@@ -6,6 +6,8 @@ use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
@@ -458,5 +460,53 @@ describe('the coach persona', function (): void {
         // On ne propose pas une porte qui répond 403 : c'est la règle du bloc capitaine.
         expect($this->actingAs($coach)->get(route('dashboard'))->viewData('coachTiles'))->toHaveCount(1)
             ->and($this->actingAs($manager)->get(route('dashboard'))->viewData('coachTiles'))->toHaveCount(2);
+    });
+});
+
+/*
+| Problème 8, piste B2 : le capitaine voit à chaque connexion ce qu'il lui reste
+| à envoyer — une compo enregistrée que son équipe ne connaît pas.
+*/
+describe('lineups waiting to be sent', function (): void {
+    beforeEach(function (): void {
+        $this->season = Season::factory()->create(['is_active' => true]);
+        $this->captain = User::factory()->isCompetitor()->create();
+        $this->team = Team::factory()->create([
+            'season_id' => $this->season->id,
+            'captain_id' => $this->captain->id,
+            'club_id' => Club::factory()->ownClub()->create()->id,
+        ]);
+
+        $this->fixture = fn (): Interclub => Interclub::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $this->team->league_id,
+            'visited_team_id' => $this->team->id,
+            'total_players' => 2,
+            'start_date_time' => now()->addDays(20),
+        ]);
+    });
+
+    it('tells a captain how many saved lineups the team has not received', function (): void {
+        foreach ([($this->fixture)(), ($this->fixture)()] as $match) {
+            $match->select(User::factory()->isCompetitor()->create());
+            $match->select(User::factory()->isCompetitor()->create());
+        }
+
+        $alerts = collect($this->actingAs($this->captain)->get(route('dashboard'))->viewData('alerts'));
+
+        expect($alerts->pluck('label'))->toContain('2 compos à envoyer à votre équipe')
+            ->and($alerts->firstWhere('label', '2 compos à envoyer à votre équipe')['route'])->toBe(route('admin.interclubs.captain-selection'));
+    });
+
+    it('says nothing once the lineup has reached the team', function (): void {
+        $match = ($this->fixture)();
+
+        foreach ([User::factory()->isCompetitor()->create(), User::factory()->isCompetitor()->create()] as $player) {
+            $match->users()->attach($player->id, ['is_selected' => true, 'selection_confirmed_at' => now()]);
+        }
+
+        $alerts = collect($this->actingAs($this->captain)->get(route('dashboard'))->viewData('alerts'));
+
+        expect($alerts->pluck('label')->implode(' '))->not->toContain('à envoyer');
     });
 });

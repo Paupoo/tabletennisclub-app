@@ -56,6 +56,7 @@ erDiagram
 
     BankImport ||--o{ Transaction : "transactions"
     CashRegister ||--o{ CashRegisterEntry : "entries"
+    Payment ||--o{ SubscriptionDiscount : "discounts"
     Transaction ||--o| Payment : "payment"
     Transaction ||--o| Payment : "refundPayment"
 ```

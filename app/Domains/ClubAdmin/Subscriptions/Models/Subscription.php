@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -54,6 +55,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collection<int, Payment> $payments
+ * @property-read Collection<int, SubscriptionDiscount> $discounts
  * @property-read int|null $payments_count
  * @property-read Season $season
  * @property-read Collection<int, TrainingPack> $trainingPacks
@@ -218,6 +220,28 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     public function confirm(): void
     {
         $this->getCurrentState()->confirm($this);
+    }
+
+    /**
+     * Les remises accordées sur cette affiliation.
+     *
+     * @return HasMany<SubscriptionDiscount, $this>
+     */
+    public function discounts(): HasMany
+    {
+        return $this->hasMany(SubscriptionDiscount::class);
+    }
+
+    /**
+     * Ce que le club a décidé de ne pas réclamer, en euros.
+     *
+     * Interrogé à chaque recalcul de prix, au même titre que `family_credit` :
+     * une remise retranchée une seule fois disparaîtrait au premier ajout de
+     * pack.
+     */
+    public function discountTotal(): float
+    {
+        return round(((float) $this->discounts()->sum('amount')) / 100, 2);
     }
 
     // ==================== Other ====================

@@ -27,7 +27,7 @@
 
 @if($shortHanded ?? null)
 <x-mail::panel>
-**{{ __('We are one player short.') }}** {{ __('If you become available, let your captain know.') }}
+**{{ __('We are one player short.') }}** {{ __('We will play with :n of :max.', ['n' => $shortHanded['playing'], 'max' => $shortHanded['max']]) }} {{ __('If you become available, let your captain know.') }}
 </x-mail::panel>
 @endif
 
@@ -35,7 +35,7 @@
 
 **{{ __('Selected players') }}**
 
-<x-mail.lineup :players="$selectedPlayers" :category="$category ?? null" />
+<x-mail.lineup :players="$selectedPlayers" :category="$category ?? null" :walkover-id="$shortHanded['walkover_id'] ?? null" />
 
 @if($captainMessage)
 <div style="border-left: 4px solid #fbbf24; background-color: #fffbeb; border-radius: 0 6px 6px 0; margin: 24px 0; overflow: hidden;">

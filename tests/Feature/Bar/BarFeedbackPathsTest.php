@@ -48,6 +48,11 @@ function openTabAndServe(User $user, string $name, int $productId): void
 }
 
 beforeEach(function (): void {
+    // La journée de caisse commence à 6 h (CashSheetService) : entre minuit et
+    // 6 h, une commande créée « maintenant » compte pour la veille et les tests
+    // qui lisent la journée du jour échouaient. On se place en pleine journée.
+    $this->travelTo(now()->setTime(14, 0));
+
     $this->manager = User::factory()->isAdmin()->create();
 
     $this->category = BarCategory::create(['name' => 'Bières']);

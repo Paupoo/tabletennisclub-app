@@ -228,12 +228,17 @@
                     @endscope
                     {{-- A member's name is what the eye scans down the column, so it stays
                          on one line: the status column added here costs width, and without
-                         this every name of average length folded in two. --}}
+                         this every name of average length folded in two. The address sits
+                         beneath it rather than in a column of its own, which cost 254px
+                         and pushed the row off the card. --}}
                     @scope('cell_name', $user)
                         {{-- The name opens the file, which everyone on this list may read. --}}
                         <a class="font-medium whitespace-nowrap hover:underline" href="{{ route('admin.users.show', $user) }}">
                             {{ $user->first_name }} {{ $user->last_name }}
                         </a>
+                        @if ($user->email)
+                            <div class="max-w-56 truncate text-xs text-muted" title="{{ $user->email }}">{{ $user->email }}</div>
+                        @endif
                     @endscope
                     @scope('cell_is_competitive', $user)
                         @if ($user->is_competitor)
@@ -250,7 +255,7 @@
                          was clipped on every row: a cell sized for controls is not sized
                          for prose. --}}
                     @scope('cell_status', $user)
-                        <div class="flex flex-wrap items-center gap-1.5">
+                        <div class="flex max-w-48 flex-wrap items-center gap-1.5">
                             <x-admin.users.account-status-badge :user="$user" />
                             @if ($user->has_paid)
                                 <x-badge :value="__('Paid')" class="badge-success badge-soft badge-sm shrink-0 whitespace-nowrap" />

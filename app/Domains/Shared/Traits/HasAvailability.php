@@ -14,6 +14,18 @@ use Illuminate\Database\Eloquent\Collection;
  */
 trait HasAvailability
 {
+    /**
+     * A complete lineup at least one name of which the team has not been told:
+     * saved and never sent, or changed since it was. Reads the loaded users.
+     */
+    public function awaitsSending(): bool
+    {
+        $selected = $this->users->filter(fn (User $player): bool => (bool) $player->registration?->is_selected);
+
+        return $selected->count() >= $this->total_players
+            && $selected->contains(fn (User $player): bool => $player->registration?->selection_confirmed_at === null);
+    }
+
     public function deselect(User $user): void
     {
         $this->users()->updateExistingPivot($user->id, ['is_selected' => false]);
@@ -101,5 +113,28 @@ trait HasAvailability
         } else {
             $this->users()->attach($user->id, $pivotData);
         }
+    }
+
+    /**
+     * What a lineup mail says about playing short: how many play, out of how
+     * many, and who goes on the sheet as walkover. Null for a full lineup.
+     *
+     * @return array{playing: int, max: int, walkover: string|null, walkover_id: int|null}|null
+     */
+    public function shortHandedSummary(): ?array
+    {
+        if (! $this->isShortHanded()) {
+            return null;
+        }
+
+        $selected = $this->getSelectedPlayers();
+        $walkover = $selected->first(fn (User $player): bool => (bool) $player->registration?->is_walkover);
+
+        return [
+            'playing' => $selected->count() - ($walkover ? 1 : 0),
+            'max' => $this->total_players,
+            'walkover' => $walkover?->full_name,
+            'walkover_id' => $walkover?->id,
+        ];
     }
 }

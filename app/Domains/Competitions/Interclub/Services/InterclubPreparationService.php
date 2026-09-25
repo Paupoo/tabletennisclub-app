@@ -7,6 +7,7 @@ namespace App\Domains\Competitions\Interclub\Services;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Team;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -24,6 +25,9 @@ class InterclubPreparationService
      * captain declared short-handed and sent at the minimum the rules allow.
      */
     public const array SETTLED = ['confirmed', 'short'];
+
+    /** What still asks something of a captain: compose, send, or both in a hurry. */
+    public const array TO_DO = ['urgent', 'to_send', 'actionable'];
 
     /**
      * @param  EloquentCollection<int, Interclub>  $fixtures
@@ -58,11 +62,17 @@ class InterclubPreparationService
         $daysUntil = (int) now()->diffInDays($interclub->start_date_time, false);
 
         return match (true) {
-            $confirmedCount >= $maxPlayers => 'confirmed',
+            // Une compo à 3 envoyée compte quatre noms, WO compris : la
+            // déclaration se lit donc avant le compte, pas après.
             $interclub->isShortHanded() && $confirmedCount >= $interclub->minimumPlayers() => 'short',
-            $selectedCount >= $maxPlayers => 'actionable',
-            $availableCount >= $maxPlayers => 'actionable',
+            $confirmedCount >= $maxPlayers => 'confirmed',
+            // Le club veut les compos chez les joueurs à J-14 : passé ce cap,
+            // tout ce qui n'est pas parti est à traiter, composé ou non.
             $daysUntil <= 14 => 'urgent',
+            // Composée, enregistrée, pas envoyée : il reste un geste, et ce
+            // n'est plus « composer ».
+            $selectedCount >= $maxPlayers => 'to_send',
+            $availableCount >= $maxPlayers => 'actionable',
             default => 'future',
         };
     }
@@ -103,6 +113,7 @@ class InterclubPreparationService
             'name' => $t->name,
             'division' => $t->league?->division,
             'category' => $t->league?->category,
+            'lead_days' => $this->averageLeadDays($this->fixturesForTeam($fixtures, $t->id)),
         ])->sortBy([
             fn (array $a, array $b): int => $this->categoryRank($a['category']) <=> $this->categoryRank($b['category']),
             fn (array $a, array $b): int => $a['name'] <=> $b['name'],
@@ -176,6 +187,34 @@ class InterclubPreparationService
         return $sawPlayedFixture ? 'past' : 'confirmed';
     }
 
+    /**
+     * How many days before the match the team hears its lineup, on average.
+     *
+     * Measured from the first announcement of each fixture — a later update
+     * does not move it. Fixtures never sent are left out: they are already
+     * counted by the red of the matrix. Null when nothing was ever sent.
+     *
+     * @param  Collection<int, Interclub>  $fixtures
+     */
+    private function averageLeadDays(Collection $fixtures): ?int
+    {
+        $leads = $fixtures
+            ->map(function (Interclub $ic): ?float {
+                $sentAt = $ic->users
+                    ->filter(fn ($u): bool => (bool) $u->registration?->is_selected)
+                    ->map(fn ($u) => $u->registration?->selection_confirmed_at)
+                    ->filter()
+                    ->min();
+
+                return $sentAt === null
+                    ? null
+                    : Carbon::parse($sentAt)->diffInDays($ic->start_date_time, false);
+            })
+            ->filter(fn (?float $days): bool => $days !== null);
+
+        return $leads->isEmpty() ? null : (int) round($leads->avg());
+    }
+
     /** L'ordre d'affichage des catégories : seniors, dames, vétérans. */
     private function categoryRank(?string $category): int
     {
@@ -207,7 +246,7 @@ class InterclubPreparationService
 
             $standing['total'] = count($rows);
             $standing['played'] = count($rows) - count($live);
-            $standing['todo'] = count(array_filter($live, fn (array $r): bool => in_array($r['status'], ['urgent', 'actionable'], true)));
+            $standing['todo'] = count(array_filter($live, fn (array $r): bool => in_array($r['status'], self::TO_DO, true)));
             $standing['controlled'] = count(array_filter($live, fn (array $r): bool => in_array($r['status'], self::SETTLED, true)));
             // Les segments de la barre de progression, dans l'ordre du calendrier.
             $standing['segments'] = array_column($rows, 'status');
@@ -264,7 +303,7 @@ class InterclubPreparationService
         $live = array_filter($weekRows, fn (array $r): bool => $r['status'] !== 'past');
 
         return [
-            'todo' => count(array_filter($live, fn (array $r): bool => in_array($r['status'], ['urgent', 'actionable'], true))),
+            'todo' => count(array_filter($live, fn (array $r): bool => in_array($r['status'], self::TO_DO, true))),
             'controlled' => count(array_filter($live, fn (array $r): bool => in_array($r['status'], self::SETTLED, true))),
             'upcoming' => count(array_filter($live, fn (array $r): bool => $r['status'] === 'future')),
         ];
@@ -394,7 +433,7 @@ class InterclubPreparationService
                     // bilan met en avant.
                     'to_compose' => count(array_filter(
                         $cells,
-                        fn (array $c): bool => in_array($c['status'], ['urgent', 'actionable'], true),
+                        fn (array $c): bool => in_array($c['status'], self::TO_DO, true),
                     )),
                     'cells' => $cells,
                 ];
@@ -412,7 +451,7 @@ class InterclubPreparationService
      */
     private function worstOf(string $a, string $b): string
     {
-        $rank = ['confirmed' => 0, 'short' => 1, 'future' => 2, 'actionable' => 3, 'urgent' => 4];
+        $rank = ['confirmed' => 0, 'short' => 1, 'future' => 2, 'to_send' => 3, 'actionable' => 4, 'urgent' => 5];
 
         return ($rank[$b] ?? 0) > ($rank[$a] ?? 0) ? $b : $a;
     }

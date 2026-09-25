@@ -281,7 +281,11 @@ class InterclubLineupLegalityService
 
         foreach ($fixtures as $sibling) {
             $selected = $sibling->users
-                ->filter(fn (User $player): bool => (bool) $player->registration?->is_selected)
+                // Le WO est sur la feuille mais ne joue aucun point : C.22.1.3 ne
+                // lit que les joueurs effectifs. Le compter ne pourrait que
+                // baisser le seuil, donc autoriser à tort.
+                ->filter(fn (User $player): bool => (bool) $player->registration?->is_selected
+                    && ! $player->registration?->is_walkover)
                 ->map(fn (User $player): ?int => $player->forceListFor($category))
                 ->values()
                 ->all();

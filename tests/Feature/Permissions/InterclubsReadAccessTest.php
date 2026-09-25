@@ -232,9 +232,9 @@ describe('a fixture seen from a team file', function (): void {
             ->assertOk();
     });
 
-    it('stays closed to a member who neither plays nor reads', function (): void {
+    it('opens to any member too, since the club calendar links to it', function (): void {
         $this->actingAs(User::factory()->create())
             ->get(route('admin.interclubs.my-match', $this->fixture))
-            ->assertForbidden();
+            ->assertOk();
     });
 });

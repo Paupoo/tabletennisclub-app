@@ -3,15 +3,15 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
-use App\Contracts\DescribesPayment;
 use App\Actions\ClubAdmin\Payments\SettleTransactionResidueAction;
+use App\Contracts\DescribesPayment;
 use App\Domains\ClubAdmin\Payment\Models\BankImport;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\MeetingUser;
-use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
@@ -20,8 +20,8 @@ use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -40,16 +40,14 @@ new class extends Component
     use HasBreadcrumbs, Toast, WithFileUploads, WithPagination;
     use HasBulkActions, HasFilterDrawer;
 
+    public bool $allocationModal = false;
+
     /** @var array<string, float|string> payment_id => montant en euros */
     public array $allocations = [];
-
-    public bool $allocationModal = false;
 
     public string $allocationSearch = '';
 
     public ?int $allocationTransactionId = null;
-
-    public string $residueReason = '';
 
     public string $amountDirection = '';
 
@@ -68,20 +66,11 @@ new class extends Component
 
     public int $reconciledInSelection = 0;
 
+    public string $residueReason = '';
+
     public string $search = '';
 
     public array $sortBy = ['column' => 'date', 'direction' => 'desc'];
-
-    /**
-     * Le paiement courant du tiroir, s'il y en a un.
-     */
-    #[Computed]
-    public function allocationTransaction(): ?Transaction
-    {
-        return $this->allocationTransactionId
-            ? Transaction::find($this->allocationTransactionId)
-            : null;
-    }
 
     /**
      * Les paiements que cette ligne de relevé pourrait solder, les plus
@@ -146,6 +135,41 @@ new class extends Component
             ->values();
     }
 
+    /**
+     * Le paiement courant du tiroir, s'il y en a un.
+     */
+    #[Computed]
+    public function allocationTransaction(): ?Transaction
+    {
+        return $this->allocationTransactionId
+            ? Transaction::find($this->allocationTransactionId)
+            : null;
+    }
+
+    public function bulkDelete(): void
+    {
+        Gate::authorize(Permission::TransactionsDelete->value);
+
+        $ids = array_map(intval(...), $this->selected);
+
+        if ($this->selectingAllResults) {
+            $ids = $this->allMatchingTransactionIds();
+        }
+
+        Transaction::whereIn('id', $ids)->get()->each(fn (Transaction $transaction) => $transaction->delete());
+
+        $this->confirmDeleteModal = false;
+        $this->reconciledInSelection = 0;
+        $this->clearSelection();
+        $this->success(__(':count transaction(s) deleted.', ['count' => count($ids)]));
+    }
+
+    public function clearFilters(): void
+    {
+        $this->reset(['dateFrom', 'dateTo', 'reconciledFilter', 'amountDirection']);
+        $this->resetPage();
+    }
+
     public function confirmAllocation(): void
     {
         Gate::authorize(Permission::PaymentsReconcile->value);
@@ -178,118 +202,6 @@ new class extends Component
 
         $this->closeAllocation();
         $this->success(__(':count allocation(s) recorded.', ['count' => count($wanted)]));
-    }
-
-    /**
-     * Pré-remplit ce qu'on propose d'affecter à cette ligne.
-     *
-     * Un clic plutôt qu'un calcul : le trésorier a sous les yeux ce qui reste
-     * sur la transaction et ce que le paiement réclame, et il n'a aucune raison
-     * de faire la soustraction lui-même.
-     */
-    public function suggestAllocation(int $paymentId): void
-    {
-        $payment = Payment::find($paymentId);
-
-        if (! $payment instanceof Payment) {
-            return;
-        }
-
-        $this->allocations[(string) $paymentId] = $this->suggestedFor($payment, $this->remainingToAllocate());
-
-        unset($this->remainingToAllocate);
-    }
-
-    /**
-     * Ouvre directement le tiroir quand on arrive avec `?allocate=`.
-     *
-     * Le trésorier vient de rapprocher depuis l'écran Paiements et suit le lien
-     * du bandeau : il doit atterrir sur le geste, pas sur une liste où
-     * retrouver sa ligne.
-     */
-    public function mount(): void
-    {
-        $id = request()->integer('allocate');
-
-        if ($id > 0 && Transaction::whereKey($id)->exists()) {
-            $this->openAllocation($id);
-        }
-    }
-
-    public function openAllocation(int $transactionId): void
-    {
-        Gate::authorize(Permission::PaymentsReconcile->value);
-
-        $this->allocationTransactionId = $transactionId;
-        $this->allocations = [];
-        $this->allocationSearch = '';
-        $this->residueReason = '';
-        $this->allocationModal = true;
-
-        unset($this->allocationTransaction, $this->allocationCandidates);
-    }
-
-    /**
-     * Le reste à placer sur la ligne courante, en euros.
-     */
-    #[Computed]
-    public function remainingToAllocate(): float
-    {
-        $transaction = $this->allocationTransaction();
-
-        if (! $transaction instanceof Transaction) {
-            return 0.0;
-        }
-
-        $claimed = collect($this->allocations)->sum(fn (float|string $amount): float => round((float) $amount, 2));
-
-        return round(abs($transaction->residue()) - $claimed, 2);
-    }
-
-    public function settleResidue(): void
-    {
-        Gate::authorize(Permission::PaymentsReconcile->value);
-
-        $transaction = $this->allocationTransaction();
-
-        if (! $transaction instanceof Transaction) {
-            return;
-        }
-
-        try {
-            (new SettleTransactionResidueAction)($transaction, $this->residueReason);
-        } catch (DomainException $e) {
-            $this->error($e->getMessage());
-
-            return;
-        }
-
-        $this->closeAllocation();
-        $this->success(__('Residue written off.'));
-    }
-
-    public function bulkDelete(): void
-    {
-        Gate::authorize(Permission::TransactionsDelete->value);
-
-        $ids = array_map(intval(...), $this->selected);
-
-        if ($this->selectingAllResults) {
-            $ids = $this->allMatchingTransactionIds();
-        }
-
-        Transaction::whereIn('id', $ids)->get()->each(fn (Transaction $transaction) => $transaction->delete());
-
-        $this->confirmDeleteModal = false;
-        $this->reconciledInSelection = 0;
-        $this->clearSelection();
-        $this->success(__(':count transaction(s) deleted.', ['count' => count($ids)]));
-    }
-
-    public function clearFilters(): void
-    {
-        $this->reset(['dateFrom', 'dateTo', 'reconciledFilter', 'amountDirection']);
-        $this->resetPage();
     }
 
     // ==================== HasFilterDrawer ====================
@@ -338,6 +250,35 @@ new class extends Component
             ['key' => 'status',               'label' => __('Status'),      'sortable' => false],
             ['key' => 'allocate',             'label' => '',                'sortable' => false],
         ];
+    }
+
+    /**
+     * Ouvre directement le tiroir quand on arrive avec `?allocate=`.
+     *
+     * Le trésorier vient de rapprocher depuis l'écran Paiements et suit le lien
+     * du bandeau : il doit atterrir sur le geste, pas sur une liste où
+     * retrouver sa ligne.
+     */
+    public function mount(): void
+    {
+        $id = request()->integer('allocate');
+
+        if ($id > 0 && Transaction::whereKey($id)->exists()) {
+            $this->openAllocation($id);
+        }
+    }
+
+    public function openAllocation(int $transactionId): void
+    {
+        Gate::authorize(Permission::PaymentsReconcile->value);
+
+        $this->allocationTransactionId = $transactionId;
+        $this->allocations = [];
+        $this->allocationSearch = '';
+        $this->residueReason = '';
+        $this->allocationModal = true;
+
+        unset($this->allocationTransaction, $this->allocationCandidates);
     }
 
     // ==================== Bulk actions ====================
@@ -481,6 +422,23 @@ new class extends Component
         }
     }
 
+    /**
+     * Le reste à placer sur la ligne courante, en euros.
+     */
+    #[Computed]
+    public function remainingToAllocate(): float
+    {
+        $transaction = $this->allocationTransaction();
+
+        if (! $transaction instanceof Transaction) {
+            return 0.0;
+        }
+
+        $claimed = collect($this->allocations)->sum(fn (float|string $amount): float => round((float) $amount, 2));
+
+        return round(abs($transaction->residue()) - $claimed, 2);
+    }
+
     public function render(): View
     {
         return $this->view([
@@ -501,6 +459,28 @@ new class extends Component
         ]);
     }
 
+    public function settleResidue(): void
+    {
+        Gate::authorize(Permission::PaymentsReconcile->value);
+
+        $transaction = $this->allocationTransaction();
+
+        if (! $transaction instanceof Transaction) {
+            return;
+        }
+
+        try {
+            (new SettleTransactionResidueAction)($transaction, $this->residueReason);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->closeAllocation();
+        $this->success(__('Residue written off.'));
+    }
+
     // ==================== Data ====================
 
     #[Computed]
@@ -512,6 +492,26 @@ new class extends Component
             'partial' => Transaction::partiallyAllocated()->count(),
             'unreconciled' => Transaction::unallocated()->count(),
         ];
+    }
+
+    /**
+     * Pré-remplit ce qu'on propose d'affecter à cette ligne.
+     *
+     * Un clic plutôt qu'un calcul : le trésorier a sous les yeux ce qui reste
+     * sur la transaction et ce que le paiement réclame, et il n'a aucune raison
+     * de faire la soustraction lui-même.
+     */
+    public function suggestAllocation(int $paymentId): void
+    {
+        $payment = Payment::find($paymentId);
+
+        if (! $payment instanceof Payment) {
+            return;
+        }
+
+        $this->allocations[(string) $paymentId] = $this->suggestedFor($payment, $this->remainingToAllocate());
+
+        unset($this->remainingToAllocate);
     }
 
     public function transactions(): LengthAwarePaginator
@@ -614,26 +614,12 @@ new class extends Component
         unset($this->allocationTransaction, $this->allocationCandidates, $this->remainingToAllocate, $this->stats);
     }
 
-    /**
-     * Ce que cette ligne de paiement réclame encore, en euros.
-     *
-     * Sur un remboursement, `amount_due` porte l'engagement et `amount_paid` ce
-     * qui est déjà sorti : la soustraction dit la même chose dans les deux sens.
-     */
-    /**
-     * Ce qu'on propose d'affecter à cette ligne : le plus petit des deux
-     * restes. Le trésorier n'a plus qu'à confirmer au lieu de calculer.
-     */
-    private function suggestedFor(Payment $payment, float $remaining): float
+    private function normalizeHeader(string $h): string
     {
-        return round(min($this->outstandingOf($payment), max(0.0, $remaining)), 2);
-    }
+        $h = strtolower(trim($h));
+        $accents = ['é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'à' => 'a', 'â' => 'a', 'ä' => 'a', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ô' => 'o', 'ö' => 'o', 'î' => 'i', 'ï' => 'i', 'ç' => 'c'];
 
-    private function payerNameOf(Payment $payment): string
-    {
-        $payable = $payment->payable;
-
-        return $payable instanceof DescribesPayment ? $payable->getPayerName() : '—';
+        return str_replace(array_keys($accents), array_values($accents), $h);
     }
 
     private function outstandingOf(Payment $payment): float
@@ -653,14 +639,6 @@ new class extends Component
         }
 
         return max(0.0, round((float) $payment->amount_due - (float) $payment->amount_paid, 2));
-    }
-
-    private function normalizeHeader(string $h): string
-    {
-        $h = strtolower(trim($h));
-        $accents = ['é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'à' => 'a', 'â' => 'a', 'ä' => 'a', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ô' => 'o', 'ö' => 'o', 'î' => 'i', 'ï' => 'i', 'ç' => 'c'];
-
-        return str_replace(array_keys($accents), array_values($accents), $h);
     }
 
     private function parseAmount(mixed $v): float
@@ -702,5 +680,27 @@ new class extends Component
         }
 
         return null;
+    }
+
+    private function payerNameOf(Payment $payment): string
+    {
+        $payable = $payment->payable;
+
+        return $payable instanceof DescribesPayment ? $payable->getPayerName() : '—';
+    }
+
+    /**
+     * Ce que cette ligne de paiement réclame encore, en euros.
+     *
+     * Sur un remboursement, `amount_due` porte l'engagement et `amount_paid` ce
+     * qui est déjà sorti : la soustraction dit la même chose dans les deux sens.
+     */
+    /**
+     * Ce qu'on propose d'affecter à cette ligne : le plus petit des deux
+     * restes. Le trésorier n'a plus qu'à confirmer au lieu de calculer.
+     */
+    private function suggestedFor(Payment $payment, float $remaining): float
+    {
+        return round(min($this->outstandingOf($payment), max(0.0, $remaining)), 2);
     }
 };

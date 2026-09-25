@@ -577,7 +577,7 @@ new class extends Component
         };
 
         $this->refundRequestIban = (string) ($overpaid
-            ? $this->payingAccountOf($payment)
+            ? $payment->payingAccount()
             : $payment?->payable?->user?->iban ?? '');
 
         $this->refundRequestModal = true;
@@ -1296,21 +1296,6 @@ new class extends Component
     private function payableTypesWithUser(): array
     {
         return array_keys($this->payableEagerLoads());
-    }
-
-    /**
-     * Le compte d'où vient l'argent en trop.
-     *
-     * Le dernier crédit adossé à une transaction entrante : c'est ce versement
-     * qui a fait basculer la ligne en trop-perçu, et c'est là qu'il faut rendre.
-     */
-    private function payingAccountOf(Payment $payment): ?string
-    {
-        return $payment->credits()
-            ->whereHas('transaction', fn (Builder $q): Builder => $q->where('amount', '>', 0))
-            ->with('transaction')
-            ->latest('id')
-            ->first()?->transaction?->counterparty_bank_account;
     }
 
     /**

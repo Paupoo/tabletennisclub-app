@@ -7,6 +7,7 @@ namespace App\Domains\ClubAdmin\Payment\Models;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatch;
 use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionDiscount;
 use App\Domains\Shared\Traits\HasAuditLog;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -142,6 +143,16 @@ class Payment extends Model
         return $this->hasMany(PaymentCredit::class);
     }
 
+    /**
+     * Les remises d'affiliation que cette communication a absorbées.
+     *
+     * @return HasMany<SubscriptionDiscount, $this>
+     */
+    public function discounts(): HasMany
+    {
+        return $this->hasMany(SubscriptionDiscount::class);
+    }
+
     public function isOverpaid(): bool
     {
         return $this->overpayment() > 0.0;
@@ -171,19 +182,26 @@ class Payment extends Model
         ));
     }
 
-    /**
-     * Les remises d'affiliation que cette communication a absorbées.
-     *
-     * @return HasMany<SubscriptionDiscount, $this>
-     */
-    public function discounts(): HasMany
-    {
-        return $this->hasMany(SubscriptionDiscount::class);
-    }
-
     public function payable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * Le compte d'où vient l'argent reçu sur cette ligne.
+     *
+     * Le dernier crédit adossé à une transaction entrante : c'est ce versement
+     * qui a fait basculer la ligne en trop-perçu, et c'est là qu'il faut rendre.
+     * Rien quand l'argent n'est venu d'aucun virement — espèces, historique
+     * repris sans relevé.
+     */
+    public function payingAccount(): ?string
+    {
+        return $this->credits()
+            ->whereHas('transaction', fn (Builder $q): Builder => $q->where('amount', '>', 0))
+            ->with('transaction')
+            ->latest('id')
+            ->first()?->transaction?->counterparty_bank_account;
     }
 
     /**

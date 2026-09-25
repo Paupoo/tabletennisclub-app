@@ -72,6 +72,15 @@ final class GrantSubscriptionDiscountAction
 
             $this->linkToAbsorbingPayment($discount, $subscription, $pendingBefore);
 
+            if ($refundable > 0.0) {
+                (new RequestSubscriptionRefundAction)(
+                    $subscription,
+                    $refundable,
+                    __('Discount granted: :reason', ['reason' => $reason]),
+                    $this->payingAccountOf($subscription),
+                );
+            }
+
             return new DiscountGranted($discount->fresh(), $refundable);
         });
     }
@@ -99,5 +108,24 @@ final class GrantSubscriptionDiscountAction
         if ($reduced->count() === 1 && $reduced->first() === round($discount->amount, 2)) {
             $discount->update(['payment_id' => $reduced->keys()->first()]);
         }
+    }
+
+    /**
+     * Le compte qui a payé l'affiliation, pour y rendre ce que la remise libère.
+     *
+     * La ligne créditée la plus récente, comme pour un trop-perçu de ligne.
+     * Rien quand aucun virement n'a payé : le remboursement se replie alors
+     * sur l'IBAN du membre — la remise est un geste envers lui, et c'est à lui
+     * que le club rend faute de mieux.
+     */
+    private function payingAccountOf(Subscription $subscription): ?string
+    {
+        return $subscription->payments()
+            ->where(fn ($q) => $q->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
+            ->latest('id')
+            ->get()
+            ->map(fn (Payment $payment): ?string => $payment->payingAccount())
+            ->filter()
+            ->first();
     }
 }

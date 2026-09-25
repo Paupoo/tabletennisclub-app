@@ -107,12 +107,10 @@ it('refuses a discount without a reason, and one worth nothing', function (): vo
 /**
  * La remise descend le dû sous ce que le membre a déjà versé.
  *
- * Il reste alors de l'argent au club qui ne lui appartient plus. Rien ne le
- * rend tout seul : `ReduceOutstandingInvoiceAction` prend déjà ce parti —
- * « tant que rien n'est rentré, il n'y a rien à rendre ; ce qui a déjà été
- * encaissé est renvoyé à l'appelant, à qui revient d'ouvrir un remboursement ».
- *
- * Ce qui compte, c'est que le secrétaire l'apprenne au moment où il l'a causé.
+ * Il reste alors de l'argent au club qui ne lui appartient plus.
+ * `ReduceOutstandingInvoiceAction` le renvoie à l'appelant, et la remise en
+ * ouvre le remboursement — voir DiscountOpensRefundTest. Le montant reste
+ * nommé pour que le secrétaire l'apprenne au moment où il l'a causé.
  */
 it('names the money that must go back when the discount lands on a paid affiliation', function (): void {
     $subscription = pricedAffiliation(competitive: true);

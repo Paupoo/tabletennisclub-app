@@ -302,12 +302,20 @@ it('offers a refund whose line still carries the money that came in', function (
         'amount_due' => 120,
     ]);
 
-    // La forme héritée : encaissée, puis basculée en `to_refund`.
-    $subscription->payments()->create([
+    // La forme héritée : encaissée, puis basculée en `to_refund`. Écrite en SQL
+    // brut parce que le modèle la refuse maintenant — c'est bien l'ancien code
+    // qui l'a produite, et une base dont la migration de normalisation n'a pas
+    // encore tourné en porte encore.
+    DB::table('payments')->insert([
         'reference' => '900/0000/00001',
-        'amount_due' => 120,
-        'amount_paid' => 120,
+        'payable_type' => $subscription->getMorphClass(),
+        'payable_id' => $subscription->id,
+        'amount_due' => 12000,
+        'amount_paid' => 12000,
         'status' => 'to_refund',
+        'payment_method' => 'Wire',
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
 
     $outgoing = Transaction::create([

@@ -19,17 +19,22 @@ function runNormaliseLegacyRefundMigration(): void
  */
 function flippedEncashment(Subscription $subscription): Payment
 {
-    $payment = $subscription->payments()->create([
+    // En SQL brut : le modèle refuse désormais cette forme, et c'est bien
+    // l'ancien code — pas le modèle d'aujourd'hui — qui l'a écrite en base.
+    $id = DB::table('payments')->insertGetId([
         'reference' => '090/0926/00001',
-        'amount_due' => 120,
-        'amount_paid' => 120,
+        'payable_type' => $subscription->getMorphClass(),
+        'payable_id' => $subscription->id,
+        'amount_due' => 12000,
+        'amount_paid' => 12000,
         'status' => 'to_refund',
         'payment_method' => 'Wire',
+        'transaction_id' => '4',
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
 
-    DB::table('payments')->where('id', $payment->id)->update(['transaction_id' => '4']);
-
-    return $payment->fresh();
+    return Payment::findOrFail($id);
 }
 
 /**

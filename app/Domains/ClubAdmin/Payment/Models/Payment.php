@@ -161,4 +161,30 @@ class Payment extends Model
     {
         return $this->belongsTo(Transaction::class, 'refund_transaction_id');
     }
+
+    /**
+     * Un paiement marqué « à rembourser » dit qu'il en est un.
+     *
+     * Deux formes ont coexisté sous ce statut : la ligne dédiée, où
+     * `amount_paid` compte ce qui est **sorti**, et un encaissement dont on
+     * basculait le statut, où il compte ce qui est **entré**. Sous un même mot,
+     * deux sens opposés — aucun écran ne pouvait afficher un chiffre juste pour
+     * les deux, et la seconde forme ne s'exécutait pas : son solde valait zéro,
+     * et l'affectation du débit était refusée faute de quoi que ce soit à
+     * affecter.
+     *
+     * Le seeder est réparé et l'action a toujours posé la bonne méthode ; cette
+     * garde ferme la route pour la suite.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (self $payment): void {
+            if ($payment->status === 'to_refund' && $payment->payment_method !== 'refund') {
+                throw new \DomainException(
+                    'Un paiement « à rembourser » doit porter la méthode `refund` : '
+                    . 'basculer le statut d\'un encaissement lui donnerait deux sens à la fois.'
+                );
+            }
+        });
+    }
 }

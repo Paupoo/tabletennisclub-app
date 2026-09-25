@@ -21,8 +21,8 @@ use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Mail\PaymentInvitationEmail;
 use App\Support\Breadcrumb;
-use App\Support\Treasury\SepaRemittance;
 use App\Support\LocaleSort;
+use App\Support\Treasury\SepaRemittance;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -42,9 +42,6 @@ new class extends Component
     use HasBulkActions, HasFilterDrawer;
 
     public array $batchMatches = [];
-
-    /** Les clés cochées : par défaut, les seuls appariements dont le barème est certain. */
-    public array $selectedBatchMatches = [];
 
     public bool $batchModal = false;
 
@@ -73,7 +70,12 @@ new class extends Component
 
     public bool $refundModal = false;
 
+    public ?int $refundPaymentId = null;
+
     public float $refundRequestAmount = 0.0;
+
+    /** Le compte à rembourser : celui qui a versé, pas celui du membre. */
+    public string $refundRequestIban = '';
 
     public bool $refundRequestModal = false;
 
@@ -81,15 +83,13 @@ new class extends Component
 
     public string $refundRequestReason = '';
 
-    /** Le compte à rembourser : celui qui a versé, pas celui du membre. */
-    public string $refundRequestIban = '';
-
     /** Ce qu'un rapprochement vient de laisser sur le virement, s'il reste quelque chose. */
     public ?array $residueNotice = null;
 
-    public ?int $refundPaymentId = null;
-
     public string $search = '';
+
+    /** Les clés cochées : par défaut, les seuls appariements dont le barème est certain. */
+    public array $selectedBatchMatches = [];
 
     public ?int $selectedRefundTransactionId = null;
 
@@ -268,6 +268,35 @@ new class extends Component
         $this->success(__('Payment reconciled successfully.'));
     }
 
+    public function confirmRefundReconcile(): void
+    {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
+        if (! $this->refundPaymentId || ! $this->selectedRefundTransactionId) {
+            $this->error(__('Please select a transaction.'));
+
+            return;
+        }
+
+        $payment = Payment::findOrFail($this->refundPaymentId);
+        $transaction = Transaction::findOrFail($this->selectedRefundTransactionId);
+
+        try {
+            (new AllocateTransactionAction)($transaction, [
+                $payment->id => $this->allocatableAmount($payment, $transaction),
+            ]);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->refundModal = false;
+        $this->refundPaymentId = null;
+        $this->selectedRefundTransactionId = null;
+        $this->success(__('Refund confirmed successfully.'));
+    }
+
     /**
      * Ouvre un remboursement sur une ligne, à la demande du membre.
      *
@@ -317,63 +346,6 @@ new class extends Component
 
         $this->reset(['refundRequestModal', 'refundRequestPaymentId', 'refundRequestAmount', 'refundRequestReason', 'refundRequestIban']);
         $this->success(__('Refund opened. The treasury has been notified.'));
-    }
-
-    public function openRefundRequest(int $paymentId): void
-    {
-        Gate::authorize(Permission::PaymentsRefund->value);
-
-        $payment = Payment::find($paymentId);
-
-        $this->refundRequestPaymentId = $paymentId;
-        $this->refundRequestReason = '';
-
-        // Sur un trop-perçu, les deux valeurs sont déductibles : l'excédent se
-        // calcule, et le compte se lit sur le virement qui l'a produit. Les
-        // faire saisir reviendrait à demander au trésorier de retrouver ce que
-        // le système a sous la main.
-        $overpaid = $payment instanceof Payment && $payment->isOverpaid();
-
-        $this->refundRequestAmount = match (true) {
-            $overpaid => $payment->overpayment(),
-            $payment?->payable instanceof Subscription => $payment->payable->netAmountPaid(),
-            default => 0.0,
-        };
-
-        $this->refundRequestIban = (string) ($overpaid
-            ? $this->payingAccountOf($payment)
-            : $payment?->payable?->user?->iban ?? '');
-
-        $this->refundRequestModal = true;
-    }
-
-    public function confirmRefundReconcile(): void
-    {
-        Gate::authorize(Permission::PaymentsRefund->value);
-
-        if (! $this->refundPaymentId || ! $this->selectedRefundTransactionId) {
-            $this->error(__('Please select a transaction.'));
-
-            return;
-        }
-
-        $payment = Payment::findOrFail($this->refundPaymentId);
-        $transaction = Transaction::findOrFail($this->selectedRefundTransactionId);
-
-        try {
-            (new AllocateTransactionAction)($transaction, [
-                $payment->id => $this->allocatableAmount($payment, $transaction),
-            ]);
-        } catch (DomainException $e) {
-            $this->error($e->getMessage());
-
-            return;
-        }
-
-        $this->refundModal = false;
-        $this->refundPaymentId = null;
-        $this->selectedRefundTransactionId = null;
-        $this->success(__('Refund confirmed successfully.'));
     }
 
     // ==================== HasFilterDrawer ====================
@@ -468,9 +440,37 @@ new class extends Component
         $this->refundModal = true;
     }
 
+    public function openRefundRequest(int $paymentId): void
+    {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
+        $payment = Payment::find($paymentId);
+
+        $this->refundRequestPaymentId = $paymentId;
+        $this->refundRequestReason = '';
+
+        // Sur un trop-perçu, les deux valeurs sont déductibles : l'excédent se
+        // calcule, et le compte se lit sur le virement qui l'a produit. Les
+        // faire saisir reviendrait à demander au trésorier de retrouver ce que
+        // le système a sous la main.
+        $overpaid = $payment instanceof Payment && $payment->isOverpaid();
+
+        $this->refundRequestAmount = match (true) {
+            $overpaid => $payment->overpayment(),
+            $payment?->payable instanceof Subscription => $payment->payable->netAmountPaid(),
+            default => 0.0,
+        };
+
+        $this->refundRequestIban = (string) ($overpaid
+            ? $this->payingAccountOf($payment)
+            : $payment?->payable?->user?->iban ?? '');
+
+        $this->refundRequestModal = true;
+    }
+
     public function payments(): LengthAwarePaginator
     {
-        $col = $this->sortBy['column'];
+        $col = $this->sortColumn();
         $dir = $this->sortBy['direction'];
 
         $rows = $this->applyFilters(
@@ -950,62 +950,18 @@ new class extends Component
     }
 
     /**
-     * Ce que l'onglet courant désigne.
+     * Ce qu'on peut raisonnablement affecter de cette ligne à ce paiement.
      *
-     * « Trop-perçus » n'est pas un statut : c'est une position, les crédits
-     * dépassent le dû. Même raisonnement que pour « partiellement payé », qu'on
-     * a refusé d'inventer comme statut — un état dérivé ne se stocke pas.
-     *
-     * @param  Builder<Payment>  $q
-     * @return Builder<Payment>
+     * Le plus petit des deux restes : ce que la transaction n'a pas encore
+     * placé, et ce que le paiement réclame encore. Jamais au-delà du solde —
+     * dépasser reconnaît un trop-perçu, et c'est une décision, pas un défaut.
      */
-    /**
-     * Les lignes dont les crédits dépassent le dû.
-     *
-     * Une position, pas un statut : rien n'est stocké, et le filtre doit donc
-     * vivre au même endroit pour la carte et pour l'onglet.
-     *
-     * @return Builder<Payment>
-     */
-    private function overpaid(): Builder
+    private function allocatableAmount(Payment $payment, Transaction $transaction): float
     {
-        return Payment::whereColumn('amount_paid', '>', 'amount_due')
-            ->where(fn (Builder $q): Builder => $q
-                ->where('payment_method', '!=', 'refund')
-                ->orWhereNull('payment_method'));
-    }
+        $residue = abs($transaction->residue());
+        $balance = max(0.0, round((float) $payment->amount_due - (float) $payment->amount_paid, 2));
 
-    private function applyTab(Builder $q): Builder
-    {
-        if ($this->statusFilter !== 'overpaid') {
-            return $q->where('status', $this->statusFilter);
-        }
-
-        return $q->whereColumn('amount_paid', '>', 'amount_due')
-            ->where(fn (Builder $q): Builder => $q
-                ->where('payment_method', '!=', 'refund')
-                ->orWhereNull('payment_method'));
-    }
-
-    /** @return Builder<Payment> */
-    private function scopedToTab(): Builder
-    {
-        return $this->applyTab(Payment::query());
-    }
-
-    /**
-     * Le compte d'où vient l'argent en trop.
-     *
-     * Le dernier crédit adossé à une transaction entrante : c'est ce versement
-     * qui a fait basculer la ligne en trop-perçu, et c'est là qu'il faut rendre.
-     */
-    private function payingAccountOf(Payment $payment): ?string
-    {
-        return $payment->credits()
-            ->whereHas('transaction', fn (Builder $q): Builder => $q->where('amount', '>', 0))
-            ->with('transaction')
-            ->latest('id')
-            ->first()?->transaction?->counterparty_bank_account;
+        return round(min($residue, $balance), 2);
     }
 
     private function applyEventNameFilter(Builder $q, string $name): Builder
@@ -1067,6 +1023,18 @@ new class extends Component
             ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName));
     }
 
+    private function applyTab(Builder $q): Builder
+    {
+        if ($this->statusFilter !== 'overpaid') {
+            return $q->where('status', $this->statusFilter);
+        }
+
+        return $q->whereColumn('amount_paid', '>', 'amount_due')
+            ->where(fn (Builder $q): Builder => $q
+                ->where('payment_method', '!=', 'refund')
+                ->orWhereNull('payment_method'));
+    }
+
     private function eventTypeLabel(string $type): string
     {
         return match ($type) {
@@ -1085,6 +1053,22 @@ new class extends Component
     private function normalizeReference(string $ref): string
     {
         return preg_replace('/[^0-9]/', '', $ref) ?? '';
+    }
+
+    /**
+     * Les lignes dont les crédits dépassent le dû.
+     *
+     * Une position, pas un statut : rien n'est stocké, et le filtre doit donc
+     * vivre au même endroit pour la carte et pour l'onglet.
+     *
+     * @return Builder<Payment>
+     */
+    private function overpaid(): Builder
+    {
+        return Payment::whereColumn('amount_paid', '>', 'amount_due')
+            ->where(fn (Builder $q): Builder => $q
+                ->where('payment_method', '!=', 'refund')
+                ->orWhereNull('payment_method'));
     }
 
     private function payableEagerLoads(): array
@@ -1114,6 +1098,21 @@ new class extends Component
     }
 
     /**
+     * Le compte d'où vient l'argent en trop.
+     *
+     * Le dernier crédit adossé à une transaction entrante : c'est ce versement
+     * qui a fait basculer la ligne en trop-perçu, et c'est là qu'il faut rendre.
+     */
+    private function payingAccountOf(Payment $payment): ?string
+    {
+        return $payment->credits()
+            ->whereHas('transaction', fn (Builder $q): Builder => $q->where('amount', '>', 0))
+            ->with('transaction')
+            ->latest('id')
+            ->first()?->transaction?->counterparty_bank_account;
+    }
+
+    /**
      * Comme {@see payableEagerLoads}, plus les tuteurs.
      *
      * Le barème de rapprochement interroge l'IBAN et le nom de chaque tuteur ;
@@ -1130,18 +1129,42 @@ new class extends Component
         ];
     }
 
-    /**
-     * Ce qu'on peut raisonnablement affecter de cette ligne à ce paiement.
-     *
-     * Le plus petit des deux restes : ce que la transaction n'a pas encore
-     * placé, et ce que le paiement réclame encore. Jamais au-delà du solde —
-     * dépasser reconnaît un trop-perçu, et c'est une décision, pas un défaut.
-     */
-    private function allocatableAmount(Payment $payment, Transaction $transaction): float
+    /** @return Builder<Payment> */
+    private function scopedToTab(): Builder
     {
-        $residue = abs($transaction->residue());
-        $balance = max(0.0, round((float) $payment->amount_due - (float) $payment->amount_paid, 2));
+        return $this->applyTab(Payment::query());
+    }
 
-        return round(min($residue, $balance), 2);
+    /**
+     * Ce que l'onglet courant désigne.
+     *
+     * « Trop-perçus » n'est pas un statut : c'est une position, les crédits
+     * dépassent le dû. Même raisonnement que pour « partiellement payé », qu'on
+     * a refusé d'inventer comme statut — un état dérivé ne se stocke pas.
+     *
+     * @param  Builder<Payment>  $q
+     * @return Builder<Payment>
+     */
+    /**
+     * La colonne sur laquelle ranger, quand la colonne affichée n'est pas
+     * celle qui est déclarée.
+     *
+     * L'en-tête « Montant » porte la clé `amount_due` sur les quatre onglets,
+     * alors que la cellule montre le solde, l'encaissé ou l'excédent selon
+     * l'onglet. Trier sur la clé déclarée rangeait sur un chiffre que personne
+     * ne voit — invisible tant que rien n'est crédité en plusieurs fois, et
+     * faux dès le premier acompte.
+     */
+    private function sortColumn(): string
+    {
+        if ($this->sortBy['column'] !== 'amount_due') {
+            return $this->sortBy['column'];
+        }
+
+        return match ($this->statusFilter) {
+            'overpaid' => 'overpayment',
+            'paid' => 'amount_paid',
+            default => 'balance',
+        };
     }
 };

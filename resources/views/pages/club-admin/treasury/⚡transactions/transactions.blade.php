@@ -78,8 +78,7 @@
             :value="$this->stats['unreconciled']"
             :hint="__('nothing allocated yet')"
             icon="o-clock"
-            color="warning"
-            class="sm:col-span-2 lg:col-span-3" />
+            color="warning" />
     </div>
 
     <x-card class="bg-base-100 shadow-sm">

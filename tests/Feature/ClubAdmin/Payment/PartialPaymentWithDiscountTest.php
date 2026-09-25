@@ -122,3 +122,13 @@ it('asks the member for the balance in the payment window of their season screen
         __('Already received'), '− 60,00 €',
     ]));
 })->group('payments', 'discount');
+
+it('settles a partly paid line once a discount brings it down to what came in', function (): void {
+    $payment = partlyPaidAffiliation(60.0);
+
+    (new GrantSubscriptionDiscountAction)($payment->payable, 65.0, 'Remerciement buvette');
+
+    expect($payment->fresh()->status)->toBe('paid')
+        ->and($payment->fresh()->balance())->toBe(0.0)
+        ->and($payment->payable->fresh()->getStatus())->toBe('paid');
+})->group('payments', 'discount');

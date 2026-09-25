@@ -75,6 +75,23 @@ final class AllocateTransactionAction
     }
 
     /**
+     * Solde une ligne que ses crédits couvrent déjà, sans rien encaisser.
+     *
+     * Le montant dû peut baisser sous l'argent reçu — une remise, un
+     * entraînement retiré. La ligne atteint alors son solde sans qu'aucun
+     * encaissement ne passe par ici, et elle restait `pending` à 0 € : relancée
+     * pour rien, et l'affiliation jamais réglée. La règle qui décide qu'une
+     * ligne est payée reste ici, seule.
+     */
+    public function settleIfCovered(Payment $payment): void
+    {
+        DB::transaction(function () use ($payment): void {
+            $this->refreshPaymentMirror($payment);
+            $this->settlePayable($payment);
+        });
+    }
+
+    /**
      * I1 : la somme affectée ne dépasse jamais le montant de la ligne de relevé.
      *
      * Compté en centimes, parce que c'est l'unité de stockage : comparer des

@@ -454,7 +454,10 @@ new class extends Component
         $this->paymentDetails = [
             'name' => $this->registrations[$userId]['name'] ?? '',
             'reference' => $payment->reference,
-            'amount_due' => $payment->amount_due,
+            // Le solde, comme le QR juste en dessous : le montant de départ
+            // réclamerait une somme déjà reçue.
+            'balance' => $payment->balance(),
+            'already_received' => $payment->amount_paid,
             'iban' => Club::ourClub()->first()->bank_account,
             'bic' => Club::ourClub()->first()->bic,
             'beneficiary' => 'CTT Ottignies-Blocry ASBL',

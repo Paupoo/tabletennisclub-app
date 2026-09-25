@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
+use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Contracts\DescribesPayment;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
@@ -9,9 +11,11 @@ use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Support\IbanNormalizer;
 use App\Jobs\SendPaymentReminderJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
@@ -19,8 +23,10 @@ use App\Livewire\Concerns\HasFilterDrawer;
 use App\Mail\PaymentInvitationEmail;
 use App\Support\Breadcrumb;
 use App\Support\LocaleSort;
+use App\Support\Treasury\SepaRemittance;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -60,15 +66,44 @@ new class extends Component
 
     public ?int $reconcilePaymentId = null;
 
+    /**
+     * Placer le virement entier sur la créance, excédent compris.
+     *
+     * Le défaut reste de ne placer que le solde : un excédent reconnu devient
+     * un trop-perçu à rendre, et c'est une décision, pas une conséquence.
+     */
+    public bool $reconcileWholeTransfer = false;
+
     public array $refundBatchMatches = [];
 
     public bool $refundBatchModal = false;
+
+    public bool $refundInstructionsModal = false;
+
+    public ?int $refundInstructionsPaymentId = null;
 
     public bool $refundModal = false;
 
     public ?int $refundPaymentId = null;
 
+    public float $refundRequestAmount = 0.0;
+
+    /** Le compte à rembourser : celui qui a versé, pas celui du membre. */
+    public string $refundRequestIban = '';
+
+    public bool $refundRequestModal = false;
+
+    public ?int $refundRequestPaymentId = null;
+
+    public string $refundRequestReason = '';
+
+    /** Ce qu'un rapprochement vient de laisser sur le virement, s'il reste quelque chose. */
+    public ?array $residueNotice = null;
+
     public string $search = '';
+
+    /** Les clés cochées : par défaut, les seuls appariements dont le barème est certain. */
+    public array $selectedBatchMatches = [];
 
     public ?int $selectedRefundTransactionId = null;
 
@@ -92,8 +127,10 @@ new class extends Component
 
         $payments = Payment::whereIn('id', $ids)->where('status', 'to_refund')->get();
 
-        $blocked = $payments->filter(fn (Payment $p): bool => $p->refund_transaction_id !== null);
-        $toCancel = $payments->filter(fn (Payment $p): bool => $p->refund_transaction_id === null);
+        // Ce qui bloque l'annulation, c'est l'argent déjà sorti — pas une
+        // colonne de liaison que plus personne n'écrit.
+        $blocked = $payments->filter(fn (Payment $p): bool => (float) $p->amount_paid > 0.0);
+        $toCancel = $payments->filter(fn (Payment $p): bool => (float) $p->amount_paid <= 0.0);
 
         foreach ($toCancel as $payment) {
             $payment->update(['status' => 'paid']);
@@ -143,7 +180,13 @@ new class extends Component
 
         $count = 0;
 
-        foreach ($this->batchMatches as $match) {
+        $selected = array_map(intval(...), $this->selectedBatchMatches);
+
+        foreach ($this->batchMatches as $key => $match) {
+            if (! in_array($key, $selected, true)) {
+                continue;
+            }
+
             DB::transaction(function () use ($match, &$count): void {
                 $payment = Payment::find($match['payment_id']);
                 $transaction = Transaction::find($match['transaction_id']);
@@ -152,15 +195,12 @@ new class extends Component
                     return;
                 }
 
-                $payment->update([
-                    'transaction_id' => $transaction->id,
-                    'amount_paid' => $transaction->amount,
-                    'status' => 'paid',
+                // Le montant vient de la sélection : c'est celui que le
+                // trésorier a sous les yeux dans la modale, et le recalculer
+                // ici ferait diverger ce qu'il confirme de ce qui est écrit.
+                (new AllocateTransactionAction)($transaction, [
+                    $payment->id => (float) $match['amount'],
                 ]);
-
-                if ($payment->payable instanceof Subscription) {
-                    $this->reconcileSubscription($payment->payable, $transaction->amount);
-                }
 
                 $count++;
             });
@@ -168,6 +208,7 @@ new class extends Component
 
         $this->batchModal = false;
         $this->batchMatches = [];
+        $this->selectedBatchMatches = [];
         $this->success(__(':count payment(s) reconciled successfully.', ['count' => $count]));
     }
 
@@ -186,9 +227,8 @@ new class extends Component
                     return;
                 }
 
-                $payment->update([
-                    'refund_transaction_id' => $transaction->id,
-                    'status' => 'refunded',
+                (new AllocateTransactionAction)($transaction, [
+                    $payment->id => $this->allocatableAmount($payment, $transaction),
                 ]);
 
                 $count++;
@@ -213,21 +253,47 @@ new class extends Component
         $payment = Payment::findOrFail($this->reconcilePaymentId);
         $transaction = Transaction::findOrFail($this->selectedTransactionId);
 
-        $payment->update([
-            'transaction_id' => $transaction->id,
-            'amount_paid' => $transaction->amount,
-            'status' => 'paid',
-        ]);
+        $wholeTransfer = $this->reconcileWholeTransfer && $this->excessOf($payment, $transaction) > 0.0;
 
-        if ($payment->payable instanceof Subscription) {
-            $this->reconcileSubscription($payment->payable, $transaction->amount);
-        } elseif ($payment->payable instanceof TournamentRegistration) {
-            $payment->payable->update(['has_paid' => true]);
+        try {
+            (new AllocateTransactionAction)($transaction, [
+                $payment->id => $wholeTransfer
+                    ? round(abs($transaction->residue()), 2)
+                    : $this->allocatableAmount($payment, $transaction),
+            ]);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
         }
 
         $this->reconcileModal = false;
         $this->reconcilePaymentId = null;
         $this->selectedTransactionId = null;
+        $this->reconcileWholeTransfer = false;
+
+        // L'excédent vient d'être reconnu comme trop-perçu : le seul geste qui
+        // lui reste est de le rendre, et le trésorier l'a décidé à l'instant.
+        if ($wholeTransfer) {
+            $this->residueNotice = null;
+            $this->success(__('Payment reconciled successfully.'));
+            $this->openRefundRequest($payment->id);
+
+            return;
+        }
+
+        // Ce qui reste sur le virement doit être dit maintenant. Sans ça, le
+        // trésorier clique, s'en va, et cet argent dort sans que personne sache
+        // qu'il appartient à quelqu'un.
+        $residue = abs($transaction->fresh()->residue());
+
+        // Un bandeau plutôt qu'un toast : trois secondes ne suffisent pas à
+        // décider quoi faire de cent euros, et le trésorier ne retient pas ses
+        // propres rapprochements.
+        $this->residueNotice = $residue > 0.0
+            ? ['amount' => $residue, 'transaction_id' => $transaction->id]
+            : null;
+
         $this->success(__('Payment reconciled successfully.'));
     }
 
@@ -241,20 +307,102 @@ new class extends Component
             return;
         }
 
-        DB::transaction(function (): void {
-            $payment = Payment::findOrFail($this->refundPaymentId);
-            $transaction = Transaction::findOrFail($this->selectedRefundTransactionId);
+        $payment = Payment::findOrFail($this->refundPaymentId);
+        $transaction = Transaction::findOrFail($this->selectedRefundTransactionId);
 
-            $payment->update([
-                'refund_transaction_id' => $transaction->id,
-                'status' => 'refunded',
+        try {
+            (new AllocateTransactionAction)($transaction, [
+                $payment->id => $this->allocatableAmount($payment, $transaction),
             ]);
-        });
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
 
         $this->refundModal = false;
         $this->refundPaymentId = null;
         $this->selectedRefundTransactionId = null;
         $this->success(__('Refund confirmed successfully.'));
+    }
+
+    /**
+     * Ouvre un remboursement sur une ligne, à la demande du membre.
+     *
+     * Le geste manquait à la trésorerie : un remboursement ne pouvait naître
+     * que d'un changement de facture côté secrétariat. Le membre qui a payé
+     * deux fois n'a rien changé à sa facture.
+     */
+    public function confirmRefundRequest(): void
+    {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
+        $payment = Payment::find($this->refundRequestPaymentId);
+
+        if (! $payment || ! $payment->payable instanceof Subscription) {
+            $this->error(__('A refund can only be opened on a membership fee.'));
+
+            return;
+        }
+
+        $reason = trim($this->refundRequestReason);
+
+        if ($reason === '') {
+            $this->error(__('A reason is required to open a refund.'));
+
+            return;
+        }
+
+        // Ce qui est réellement rentré, net des remboursements déjà engagés.
+        // `netAmountPaid()` existait pour ce calcul — sa docstring prévient que
+        // s'en passer rembourserait deux fois — sans qu'aucun écran l'appelle.
+        $ceiling = $payment->payable->netAmountPaid();
+
+        if ($this->refundRequestAmount <= 0.0 || $this->refundRequestAmount > $ceiling) {
+            $this->error(__('A refund cannot exceed the :amount € actually received.', [
+                'amount' => number_format($ceiling, 2, ',', ' '),
+            ]));
+
+            return;
+        }
+
+        // Le trésorier recopiera ce numéro dans sa banque : une chaîne qui n'est
+        // pas un IBAN y sera refusée, ou pire, partira sans revenir. Le champ
+        // était du texte libre, et une base porte déjà un remboursement dont le
+        // compte vaut « A rembourser ».
+        $account = trim($this->refundRequestIban);
+
+        // Un trop-perçu se rend au compte qui a versé, et à aucun autre. Ce
+        // compte vient souvent d'un tiers — une commune, un employeur, un
+        // tuteur — et se replier sur l'IBAN du membre enverrait l'argent à
+        // quelqu'un qui ne l'a jamais versé. Faute de le connaître, on demande
+        // plutôt que de deviner.
+        //
+        // Une cotisation annulée, elle, se rend bien à son titulaire : c'est le
+        // motif qui décide, pas l'absence de donnée.
+        if ($account === '' && $payment->isOverpaid()) {
+            $this->error(__('Nobody knows which account this money came from — enter it before opening the refund.'));
+
+            return;
+        }
+
+        if ($account !== '' && ! IbanNormalizer::isValid($account)) {
+            $this->error(__('This is not a valid account number.'));
+
+            return;
+        }
+
+        (new RequestSubscriptionRefundAction)(
+            $payment->payable,
+            $this->refundRequestAmount,
+            $reason,
+            // Sous sa forme compacte : c'est celle que l'appariement du virement
+            // sortant compare.
+            targetIban: $account !== '' ? IbanNormalizer::normalize($account) : null,
+        );
+
+        $this->reset(['refundRequestModal', 'refundRequestPaymentId', 'refundRequestAmount', 'refundRequestReason', 'refundRequestIban']);
+        $this->success(__('Refund opened. The treasury has been notified.'));
     }
 
     // ==================== HasFilterDrawer ====================
@@ -305,11 +453,57 @@ new class extends Component
             ['key' => 'created_at', 'label' => __('Date'),      'sortable' => true],
         ];
 
-        if ($this->statusFilter === 'to_refund') {
-            $headers[] = ['key' => 'iban', 'label' => __('IBAN'), 'sortable' => false];
+        if (in_array($this->statusFilter, ['to_refund', 'refunded'], true)) {
+            // Le statut, pas l'IBAN : le compte à créditer se lit dans la modale
+            // d'instructions, avec le montant et la communication. Ce que la
+            // liste doit dire, c'est où en est chaque remboursement.
+            $headers[] = ['key' => 'refund_state', 'label' => __('Status'), 'sortable' => false];
         }
 
         return $headers;
+    }
+
+    /**
+     * Le trésorier vient de faire le virement dans sa banque.
+     *
+     * Rien d'autre ne peut le savoir : le débit n'apparaîtra sur le relevé que
+     * des semaines plus tard, et c'est le rapprochement qui clôt la ligne.
+     * Entre les deux, cette date est la seule chose qui distingue un
+     * remboursement à faire d'un remboursement fait.
+     */
+    public function markRefundAsWired(): void
+    {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
+        $payment = Payment::find($this->refundInstructionsPaymentId);
+
+        if ($payment === null) {
+            $this->error(__('This refund no longer exists.'));
+
+            return;
+        }
+
+        $payment->forceFill(['refund_wired_at' => now()])->save();
+
+        $this->reset(['refundInstructionsModal', 'refundInstructionsPaymentId']);
+        $this->success(__('Noted — it now shows as wired, waiting for the statement.'));
+    }
+
+    /**
+     * Ouvre directement la demande de remboursement quand on arrive avec `?refund=`.
+     *
+     * Le trésorier vient de rendre un reliquat depuis le tiroir des
+     * transactions : il doit atterrir sur le geste, prérempli, pas sur une
+     * liste où retrouver sa ligne.
+     */
+    public function mount(): void
+    {
+        $payment = Payment::find(request()->integer('refund'));
+
+        if ($payment instanceof Payment && $payment->isOverpaid() && Gate::allows(Permission::PaymentsRefund->value)) {
+            $this->statusFilter = 'overpaid';
+            $this->openRefundRequest($payment->id);
+        }
     }
 
     public function openBulkCancelRefundModal(): void
@@ -334,10 +528,24 @@ new class extends Component
 
         $this->reconcilePaymentId = $paymentId;
         $this->selectedTransactionId = null;
+        $this->reconcileWholeTransfer = false;
+        $this->residueNotice = null;
         $this->reconcileModal = true;
     }
 
     // ==================== Refund reconciliation ====================
+
+    /**
+     * Ce qu'il faut pour aller faire le virement : le compte, le montant, et la
+     * communication en entier. Hors de la ligne, où elle était tronquée.
+     */
+    public function openRefundInstructions(int $paymentId): void
+    {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
+        $this->refundInstructionsPaymentId = $paymentId;
+        $this->refundInstructionsModal = true;
+    }
 
     public function openRefundReconcile(int $paymentId): void
     {
@@ -348,14 +556,42 @@ new class extends Component
         $this->refundModal = true;
     }
 
+    public function openRefundRequest(int $paymentId): void
+    {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
+        $payment = Payment::find($paymentId);
+
+        $this->refundRequestPaymentId = $paymentId;
+        $this->refundRequestReason = '';
+
+        // Sur un trop-perçu, les deux valeurs sont déductibles : l'excédent se
+        // calcule, et le compte se lit sur le virement qui l'a produit. Les
+        // faire saisir reviendrait à demander au trésorier de retrouver ce que
+        // le système a sous la main.
+        $overpaid = $payment instanceof Payment && $payment->isOverpaid();
+
+        $this->refundRequestAmount = match (true) {
+            $overpaid => $payment->overpayment(),
+            $payment?->payable instanceof Subscription => $payment->payable->netAmountPaid(),
+            default => 0.0,
+        };
+
+        $this->refundRequestIban = (string) ($overpaid
+            ? $payment->payingAccount()
+            : $payment?->payable?->user?->iban ?? '');
+
+        $this->refundRequestModal = true;
+    }
+
     public function payments(): LengthAwarePaginator
     {
-        $col = $this->sortBy['column'];
+        $col = $this->sortColumn();
         $dir = $this->sortBy['direction'];
 
         $rows = $this->applyFilters(
             Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
-                ->where('status', $this->statusFilter)
+                ->tap(fn (Builder $q): Builder => $this->applyTab($q))
         )
             ->get()
             ->map(function (Payment $p) {
@@ -367,6 +603,16 @@ new class extends Component
                     'member' => $p->payable instanceof DescribesPayment ? $p->payable->getPayerName() : '—',
                     'amount_due' => $p->amount_due,
                     'amount_paid' => $p->amount_paid,
+                    // Ce qui reste, et d'où vient ce qui est déjà là. Le
+                    // trésorier ne retient pas ses rapprochements : un solde
+                    // sans son origine ne se vérifie pas.
+                    'balance' => $p->balance(),
+                    // Le net, jamais « 220 sur 120 » : c'est ce que le club
+                    // détient et devra rendre.
+                    'overpayment' => $p->overpayment(),
+                    'refund_wired_at' => $p->refund_wired_at,
+
+                    'is_partially_paid' => $p->isPartiallyPaid(),
                     'status' => $p->status,
                     'created_at' => $p->created_at,
                     'invitation_counter' => $p->invitation_counter,
@@ -397,10 +643,15 @@ new class extends Component
             ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->reconcileEagerLoads())])->find($this->reconcilePaymentId)
             : null;
 
-        $candidates = Transaction::whereDoesntHave('payment')
-            ->where('amount', '>', 0)
+        // Ce qui reste à placer, pas ce qui n'a pas de paiement attaché : depuis
+        // que le geste passe par l'action, le lien `payment` n'est plus écrit,
+        // et une ligne déjà entièrement affectée reviendrait dans la liste.
+        $candidates = Transaction::where('amount', '>', 0)
+            ->whereNull('settled_at')
             ->orderBy('date', 'desc')
-            ->get();
+            ->get()
+            ->filter(fn (Transaction $transaction): bool => abs($transaction->residue()) > 0.001)
+            ->values();
 
         return $payment
             ? (new TransactionMatcher)->rank($payment, $candidates)
@@ -413,47 +664,147 @@ new class extends Component
 
         $pendingPayments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
             ->where('status', 'pending')
-            ->whereNull('transaction_id')
             ->get();
 
-        $unreconciledTransactions = Transaction::whereDoesntHave('payment')
-            ->where('amount', '>', 0)
+        // Ce qu'il reste à placer sur chaque ligne de relevé, en centimes. Le
+        // compteur vit pour toute la passe : une même transaction peut servir
+        // plusieurs paiements, et chacun ne prend que ce qui reste.
+        $remaining = [];
+
+        // `groupBy`, pas `keyBy` : deux virements portant la même communication
+        // structurée sont deux versements sur la même créance, pas un doublon.
+        // L'index par clé unique n'en gardait qu'un, silencieusement.
+        //
+        // Une ligne sans communication structurée n'entre pas : le masse ne
+        // tranche que sur l'identifiant que le club a lui-même émis. Les
+        // rapprochements par nom ou IBAN se choisissent, ils ne se décident pas.
+        $byReference = Transaction::where('amount', '>', 0)
+            ->whereNull('settled_at')
+            ->whereNotNull('structured_reference')
             ->get()
-            ->keyBy(fn ($t): string => $this->normalizeReference($t->structured_reference ?? '___' . $t->id));
+            ->filter(function (Transaction $transaction) use (&$remaining): bool {
+                $remaining[$transaction->id] = (int) round(abs($transaction->residue()) * 100);
+
+                return $remaining[$transaction->id] > 0;
+            })
+            ->groupBy(fn (Transaction $transaction): string => $this->normalizeReference((string) $transaction->structured_reference));
 
         $this->batchMatches = [];
 
         foreach ($pendingPayments as $payment) {
             $normalizedRef = $this->normalizeReference($payment->reference);
+
             if (! $normalizedRef) {
                 continue;
             }
 
-            $transaction = $unreconciledTransactions->get($normalizedRef);
+            $candidates = $byReference->get($normalizedRef);
 
-            if ($transaction && abs($transaction->amount - $payment->amount_due) < 0.01) {
-                $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
+            if ($candidates === null) {
+                continue;
+            }
 
-                $this->batchMatches[] = [
+            // Le solde restant, en centimes. Le montant ne décide plus de *qui*
+            // — la référence l'a déjà fait — seulement de *combien*.
+            $balance = (int) round(((float) $payment->amount_due - (float) $payment->amount_paid) * 100);
+
+            // Ce que la créance devait avant que la passe y touche. Le solde
+            // ci-dessus est consommé par la boucle, et le verdict doit se
+            // prononcer sur l'état d'avant, pas sur ce que le tour précédent a
+            // laissé.
+            $openingBalance = $balance;
+
+            $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
+
+            // Les lignes de cette créance, mises de côté : ce qu'il restera se
+            // sait une fois la répartition faite, et c'est la dernière d'entre
+            // elles qui doit le dire.
+            $rows = [];
+
+            foreach ($candidates as $transaction) {
+                if ($balance <= 0) {
+                    break;
+                }
+
+                $take = min($balance, $remaining[$transaction->id]);
+
+                if ($take <= 0) {
+                    continue;
+                }
+
+                // Parfait : la référence **et** le montant, sur une créance et
+                // un virement encore intacts. Tout le reste — un versement
+                // partiel, un second virement sur la même référence — est
+                // défendable mais demande un regard.
+                //
+                // « Intacte » se juge aussi vis-à-vis de la passe en cours :
+                // les deux gardes suivantes lisent la base, qui ne sait rien de
+                // ce que la boucle vient d'attribuer. Un membre payant 36 puis
+                // 24 sur une créance de 60 arrivait au second virement avec 24
+                // à placer face à une ligne de 24, et s'entendait dire
+                // « montant exact » sous un montant qui n'est pas celui de la
+                // créance.
+                $exact = $balance === $openingBalance
+                    && $balance === $remaining[$transaction->id]
+                    && (int) round((float) $payment->amount_paid * 100) === 0
+                    && (int) round(abs((float) $transaction->allocated_amount) * 100) === 0;
+
+                $rows[] = [
+                    'exact' => $exact,
+                    // Sa part de la créance, jamais une dette qui décroît :
+                    // « 60 € dus » puis « 24 € dus » s'additionnent à l'œil, et
+                    // le trésorier lit qu'il en faut 84.
+                    'reason' => $exact
+                        ? __('reference and amount match exactly')
+                        : __(':taken € of :due €', [
+                            'taken' => number_format($take / 100, 2, ',', ' '),
+                            'due' => number_format($openingBalance / 100, 2, ',', ' '),
+                        ]),
                     'payment_id' => $payment->id,
                     'transaction_id' => $transaction->id,
                     'reference' => $payment->reference,
                     'member' => $payment->payable instanceof DescribesPayment ? $payment->payable->getPayerName() : '—',
                     'event_type' => $label['type'] ?? null,
                     'event_name' => $label['name'] ?? null,
-                    'amount' => $payment->amount_due,
+                    'amount' => round($take / 100, 2),
                     'transaction_date' => $transaction->date,
                     'counterparty' => $transaction->counterparty_name ?? '—',
                 ];
-                $unreconciledTransactions->forget($normalizedRef);
+
+                $remaining[$transaction->id] -= $take;
+                $balance -= $take;
             }
+
+            // Deux montants qui ne font pas le compte se lisent comme s'ils le
+            // faisaient : c'est la seule chose que la liste ne peut pas laisser
+            // deviner.
+            if ($rows !== [] && $balance > 0) {
+                $last = array_key_last($rows);
+
+                $rows[$last]['reason'] = __(':taken € of :due € — :left € will remain', [
+                    'taken' => number_format($rows[$last]['amount'], 2, ',', ' '),
+                    'due' => number_format($openingBalance / 100, 2, ',', ' '),
+                    'left' => number_format($balance / 100, 2, ',', ' '),
+                ]);
+            }
+
+            $this->batchMatches = array_merge($this->batchMatches, $rows);
         }
 
         if ($this->batchMatches === []) {
-            $this->warning(__('No perfect matches found. Import a bank statement or reconcile manually.'));
+            $this->warning(__('No reference matches found. Import a bank statement or reconcile manually.'));
 
             return;
         }
+
+        // Cochés d'office : ceux dont le barème est certain. Les autres
+        // attendent un geste — quarante lignes et un seul bouton, personne ne
+        // lit, et de l'argent se place tout seul au mauvais endroit.
+        $this->selectedBatchMatches = collect($this->batchMatches)
+            ->filter(fn (array $match): bool => $match['exact'])
+            ->keys()
+            ->map(fn (int $key): string => (string) $key)
+            ->all();
 
         $this->batchModal = true;
     }
@@ -464,12 +815,16 @@ new class extends Component
 
         $toRefundPayments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
             ->where('status', 'to_refund')
-            ->whereNull('refund_transaction_id')
             ->get();
 
-        $outgoingTransactions = Transaction::whereDoesntHave('refundPayment')
-            ->where('amount', '<', 0)
-            ->get();
+        // Un virement sortant qui a encore quelque chose à placer. Le lien
+        // `refundPayment` ne dit plus rien : personne ne l'écrit depuis que le
+        // geste passe par l'action.
+        $outgoingTransactions = Transaction::where('amount', '<', 0)
+            ->whereNull('settled_at')
+            ->get()
+            ->filter(fn (Transaction $transaction): bool => abs($transaction->residue()) > 0.001)
+            ->values();
 
         $this->refundBatchMatches = [];
 
@@ -479,11 +834,19 @@ new class extends Component
                 continue;
             }
 
-            $normalizedIban = $this->normalizeIban($user->iban ?? '');
+            // Le compte visé par le remboursement, et l'IBAN du membre à
+            // défaut. Un trop-perçu se rend au compte qui a versé — souvent
+            // celui d'un tuteur — et comparer l'IBAN du membre n'aurait jamais
+            // rien reconnu dans ce cas.
+            $normalizedIban = $this->normalizeIban($payment->refund_iban ?? $user->iban ?? '');
 
             foreach ($outgoingTransactions as $key => $transaction) {
                 $ibanMatch = $normalizedIban && $this->normalizeIban($transaction->counterparty_bank_account ?? '') === $normalizedIban;
-                $amountMatch = abs(abs($transaction->amount) - $payment->amount_paid) < 0.01;
+                // `amount_due` : sur une ligne de remboursement c'est
+                // l'engagement, et `amount_paid` ne vaut plus que ce qui est
+                // déjà sorti — zéro tant que le virement n'est pas fait, donc
+                // exactement les lignes que cet appariement cherche.
+                $amountMatch = abs(abs($transaction->amount) - $payment->amount_due) < 0.01;
 
                 if ($ibanMatch && $amountMatch) {
                     $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
@@ -496,7 +859,7 @@ new class extends Component
                         'event_type' => $label['type'] ?? null,
                         'event_name' => $label['name'] ?? null,
                         'iban' => $user->iban,
-                        'amount' => $payment->amount_paid,
+                        'amount' => $payment->amount_due,
                         'transaction_date' => $transaction->date,
                         'counterparty' => $transaction->counterparty_name ?? '—',
                     ];
@@ -525,10 +888,12 @@ new class extends Component
         // Un remboursement sort du compte du club : les candidates sont les
         // débits, mais le barème est le même — c'est le même membre qu'on
         // cherche au bout du virement.
-        $candidates = Transaction::whereDoesntHave('refundPayment')
-            ->where('amount', '<', 0)
+        $candidates = Transaction::where('amount', '<', 0)
+            ->whereNull('settled_at')
             ->orderBy('date', 'desc')
-            ->get();
+            ->get()
+            ->filter(fn (Transaction $transaction): bool => abs($transaction->residue()) > 0.001)
+            ->values();
 
         return $payment
             ? (new TransactionMatcher)->rank($payment, $candidates)
@@ -557,9 +922,17 @@ new class extends Component
                 ['id' => BarOrder::class,               'name' => __('Bar')],
             ]), 'name')->all(),
             'pendingTransactions' => $this->reconcileModal ? $this->pendingTransactions() : collect(),
+            'reconcileExcess' => $this->reconcileExcess(),
             'currentPayment' => $this->reconcilePaymentId
-                ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])->find($this->reconcilePaymentId)
+                ? Payment::with([
+                    'payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads()),
+                    // L'historique des affectations : un trésorier ne retient
+                    // pas ses rapprochements, et un solde dont on ne peut pas
+                    // remonter l'origine ne se vérifie pas.
+                    'credits.transaction',
+                ])->find($this->reconcilePaymentId)
                 : null,
+            'refundInstructions' => $this->refundInstructionsModal ? $this->refundInstructions() : null,
             'refundTransactions' => $this->refundModal ? $this->refundTransactions : collect(),
             'currentRefundPayment' => $this->refundPaymentId
                 ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])->find($this->refundPaymentId)
@@ -647,6 +1020,16 @@ new class extends Component
             'paid_total' => round(Payment::where('status', 'paid')->sum('amount_paid') / 100, 2),
             'to_refund_count' => Payment::where('status', 'to_refund')->count(),
             'to_refund_total' => round(Payment::where('status', 'to_refund')->sum('amount_due') / 100, 2),
+            // Le net, comme la colonne de l'onglet : ce que le club détient en
+            // trop, jamais la somme encaissée. Même définition que applyTab(),
+            // sans quoi la carte et l'onglet compteraient deux ensembles.
+            'refunded_count' => Payment::where('status', 'refunded')->count(),
+            'refunded_total' => round(Payment::where('status', 'refunded')->sum('amount_paid') / 100, 2),
+            'overpaid_count' => $this->overpaid()->count(),
+            // Sommé sur les lignes plutôt qu'en SQL : c'est `overpayment()` qui
+            // sait retrancher ce qui est déjà promis, et l'ensemble est court
+            // par nature — un trop-perçu appelle une action, il ne s'accumule pas.
+            'overpaid_total' => round($this->overpaid()->get()->sum(fn (Payment $p): float => $p->overpayment()), 2),
         ];
     }
 
@@ -678,6 +1061,12 @@ new class extends Component
     public function updatedSearch(): void
     {
         $this->resetPage();
+    }
+
+    /** Le choix de placer tout le virement vaut pour un virement, pas pour le suivant. */
+    public function updatedSelectedTransactionId(): void
+    {
+        $this->reconcileWholeTransfer = false;
     }
 
     public function updatedSortBy(): void
@@ -714,9 +1103,57 @@ new class extends Component
 
     private function allMatchingPaymentIds(): array
     {
-        return $this->applyFilters(Payment::where('status', $this->statusFilter))
+        return $this->applyFilters($this->scopedToTab())
             ->pluck('id')
             ->toArray();
+    }
+
+    private function allocatableAmount(Payment $payment, Transaction $transaction): float
+    {
+        $residue = abs($transaction->residue());
+        $balance = max(0.0, round((float) $payment->amount_due - (float) $payment->amount_paid, 2));
+
+        return round(min($residue, $balance), 2);
+    }
+
+    /**
+     * La traduction SQL de `Payment::affiliationOverpayment()`.
+     *
+     * Une affiliation se compte entière : la ligne n'apparaît que si elle est
+     * la dernière créditée, et que l'affiliation a reçu plus que son dû et ses
+     * remboursements engagés. Même forme additive que ci-dessus, pour la même
+     * raison — jamais de soustraction sur des colonnes `unsigned`.
+     *
+     * @param  Builder<Payment>  $query
+     * @return Builder<Payment>
+     */
+    private function applyAffiliationOverpaidConditions(Builder $query): Builder
+    {
+        $claims = fn (string $alias): QueryBuilder => DB::table("payments as {$alias}")
+            ->whereColumn("{$alias}.payable_type", 'payments.payable_type')
+            ->whereColumn("{$alias}.payable_id", 'payments.payable_id')
+            ->where(fn ($q) => $q->where("{$alias}.payment_method", '!=', 'refund')->orWhereNull("{$alias}.payment_method"))
+            ->where("{$alias}.status", '!=', 'cancelled');
+
+        $lastCredited = $claims('last_credited')->where('last_credited.amount_paid', '>', 0)->selectRaw('max(last_credited.id)');
+        $received = $claims('received')->selectRaw('coalesce(sum(received.amount_paid), 0)');
+
+        $committed = DB::table('payments as refunds')
+            ->selectRaw('coalesce(sum(refunds.amount_due), 0)')
+            ->whereColumn('refunds.payable_type', 'payments.payable_type')
+            ->whereColumn('refunds.payable_id', 'payments.payable_id')
+            ->where('refunds.payment_method', 'refund')
+            ->whereIn('refunds.status', ['to_refund', 'paid', 'refunded']);
+
+        $due = DB::table('subscriptions')->select('subscriptions.amount_due')->whereColumn('subscriptions.id', 'payments.payable_id');
+
+        return $query
+            ->where('payments.payable_type', Subscription::class)
+            ->whereRaw('payments.id = (' . $lastCredited->toSql() . ')', $lastCredited->getBindings())
+            ->whereRaw(
+                '(' . $received->toSql() . ') > (' . $due->toSql() . ') + (' . $committed->toSql() . ')',
+                [...$received->getBindings(), ...$due->getBindings(), ...$committed->getBindings()],
+            );
     }
 
     private function applyEventNameFilter(Builder $q, string $name): Builder
@@ -778,6 +1215,53 @@ new class extends Component
             ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName));
     }
 
+    /**
+     * Les lignes dont l'excédent n'a pas encore été rendu.
+     *
+     * Le reste à rendre se compare en SQL à la somme des remboursements ouverts
+     * sur la même chose payée : une ligne entièrement remboursée doit quitter
+     * l'onglet, et la carte compter la même chose que lui.
+     *
+     * @param  Builder<Payment>  $query
+     * @return Builder<Payment>
+     */
+    private function applyOverpaidConditions(Builder $query): Builder
+    {
+        $committed = DB::table('payments as refunds')
+            ->selectRaw('coalesce(sum(refunds.amount_due), 0)')
+            ->whereColumn('refunds.payable_type', 'payments.payable_type')
+            ->whereColumn('refunds.payable_id', 'payments.payable_id')
+            ->where('refunds.payment_method', 'refund')
+            ->whereIn('refunds.status', ['to_refund', 'refunded']);
+
+        return $query
+            ->where(fn (Builder $q): Builder => $q
+                ->where('payment_method', '!=', 'refund')
+                ->orWhereNull('payment_method'))
+            // Additionner plutôt que soustraire : les deux colonnes sont
+            // `unsigned`, et « payé − dû » dans un WHERE s'évalue sur toutes les
+            // lignes — MySQL refuse l'underflow dès qu'une créance n'est pas
+            // soldée. `payé > dû + promis` dit la même chose sans jamais passer
+            // sous zéro, et reste vrai sur SQLite, où la suite tourne.
+            ->where(fn (Builder $q): Builder => $q
+                ->where(fn (Builder $line): Builder => $line
+                    ->where('payments.payable_type', '!=', Subscription::class)
+                    ->whereRaw(
+                        'payments.amount_paid > payments.amount_due + (' . $committed->toSql() . ')',
+                        $committed->getBindings(),
+                    ))
+                ->orWhere(fn (Builder $affiliation): Builder => $this->applyAffiliationOverpaidConditions($affiliation)));
+    }
+
+    private function applyTab(Builder $q): Builder
+    {
+        if ($this->statusFilter !== 'overpaid') {
+            return $q->where('status', $this->statusFilter);
+        }
+
+        return $this->applyOverpaidConditions($q);
+    }
+
     private function eventTypeLabel(string $type): string
     {
         return match ($type) {
@@ -788,6 +1272,28 @@ new class extends Component
         };
     }
 
+    /**
+     * Ce qu'on peut raisonnablement affecter de cette ligne à ce paiement.
+     *
+     * Le plus petit des deux restes : ce que la transaction n'a pas encore
+     * placé, et ce que le paiement réclame encore. Jamais au-delà du solde —
+     * dépasser reconnaît un trop-perçu, et c'est une décision, pas un défaut.
+     */
+    /**
+     * Ce que le virement apporte au-delà du solde de la créance, en euros.
+     *
+     * Seule une affiliation se rembourse : ailleurs, reconnaître un excédent
+     * créerait un trop-perçu que rien ne permet de rendre.
+     */
+    private function excessOf(Payment $payment, Transaction $transaction): float
+    {
+        if (! $payment->payable instanceof Subscription || (float) $transaction->amount <= 0.0) {
+            return 0.0;
+        }
+
+        return max(0.0, round(abs($transaction->residue()) - $payment->balance(), 2));
+    }
+
     private function normalizeIban(string $iban): string
     {
         return strtoupper(str_replace([' ', '-'], '', $iban));
@@ -796,6 +1302,19 @@ new class extends Component
     private function normalizeReference(string $ref): string
     {
         return preg_replace('/[^0-9]/', '', $ref) ?? '';
+    }
+
+    /**
+     * Les lignes dont les crédits dépassent le dû.
+     *
+     * Une position, pas un statut : rien n'est stocké, et le filtre doit donc
+     * vivre au même endroit pour la carte et pour l'onglet.
+     *
+     * @return Builder<Payment>
+     */
+    private function overpaid(): Builder
+    {
+        return $this->applyOverpaidConditions(Payment::query());
     }
 
     private function payableEagerLoads(): array
@@ -841,20 +1360,104 @@ new class extends Component
         ];
     }
 
-    private function reconcileSubscription(Subscription $subscription, float $amount): void
+    /** L'excédent du virement choisi dans la modale de rapprochement, s'il y en a un. */
+    private function reconcileExcess(): float
     {
-        $subscription->update(['amount_paid' => $amount]);
-
-        $status = $subscription->getStatus();
-
-        if ($status === 'paid') {
-            return;
+        if (! $this->reconcileModal || ! $this->reconcilePaymentId || ! $this->selectedTransactionId) {
+            return 0.0;
         }
 
-        if ($status === 'pending') {
-            $subscription->confirm();
+        $payment = Payment::find($this->reconcilePaymentId);
+        $transaction = Transaction::find($this->selectedTransactionId);
+
+        return $payment instanceof Payment && $transaction instanceof Transaction
+            ? $this->excessOf($payment, $transaction)
+            : 0.0;
+    }
+
+    /**
+     * Ce que l'onglet courant désigne.
+     *
+     * « Trop-perçus » n'est pas un statut : c'est une position, les crédits
+     * dépassent le dû. Même raisonnement que pour « partiellement payé », qu'on
+     * a refusé d'inventer comme statut — un état dérivé ne se stocke pas.
+     *
+     * @param  Builder<Payment>  $q
+     * @return Builder<Payment>
+     */
+    /**
+     * La colonne sur laquelle ranger, quand la colonne affichée n'est pas
+     * celle qui est déclarée.
+     *
+     * L'en-tête « Montant » porte la clé `amount_due` sur les quatre onglets,
+     * alors que la cellule montre le solde, l'encaissé ou l'excédent selon
+     * l'onglet. Trier sur la clé déclarée rangeait sur un chiffre que personne
+     * ne voit — invisible tant que rien n'est crédité en plusieurs fois, et
+     * faux dès le premier acompte.
+     */
+    /**
+     * Le texte que le payeur lira sur son extrait.
+     *
+     * Le trésorier fait le virement dans sa banque, pas ici : cette chaîne n'a
+     * qu'un usage, être recopiée en entier. Elle est donc construite une fois
+     * et servie aussi bien à la ligne qu'à la modale d'instructions.
+     *
+     * @param  array{type: string, name: string}|null  $label
+     */
+    /**
+     * @return array{member: string, event: string|null, amount: float, iban: string|null, remittance: string|null, reference: string, wired: bool}|null
+     */
+    private function refundInstructions(): ?array
+    {
+        $payment = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
+            ->find($this->refundInstructionsPaymentId);
+
+        if ($payment === null) {
+            return null;
         }
 
-        $subscription->markAsPaid();
+        $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
+
+        return [
+            'member' => $payment->payable instanceof DescribesPayment ? $payment->payable->getPayerName() : '—',
+            'event' => $label['name'] ?? null,
+            'amount' => $payment->balance(),
+            'iban' => $payment->refund_iban,
+            'remittance' => $this->remittanceFor($payment, $label),
+            'reference' => $payment->reference,
+            'wired' => $payment->refund_wired_at !== null,
+        ];
+    }
+
+    private function remittanceFor(Payment $payment, ?array $label): ?string
+    {
+        if ($payment->payment_method !== 'refund') {
+            return null;
+        }
+
+        return SepaRemittance::forOverpayment(
+            club: Club::ourClub()->first()?->name ?? 'CTT Ottignies-Blocry',
+            event: $label['name'] ?? '',
+            member: $payment->payable instanceof DescribesPayment ? $payment->payable->getPayerName() : '',
+        );
+    }
+
+    /** @return Builder<Payment> */
+    private function scopedToTab(): Builder
+    {
+        return $this->applyTab(Payment::query());
+    }
+
+    private function sortColumn(): string
+    {
+        if ($this->sortBy['column'] !== 'amount_due') {
+            return $this->sortBy['column'];
+        }
+
+        return match ($this->statusFilter) {
+            'overpaid' => 'overpayment',
+            'paid' => 'amount_paid',
+            default => 'balance',
+        };
     }
 };

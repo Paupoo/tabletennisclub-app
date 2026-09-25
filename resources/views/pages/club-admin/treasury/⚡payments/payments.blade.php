@@ -64,37 +64,77 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- Stats --}}
-    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-5">
         <x-admin.shared.stat-card
             :label="__('Pending')"
             :value="number_format($this->stats['pending_total'], 2, ',', ' ') . ' €'"
             :hint="$this->stats['pending_count'] . ' ' . __('payment(s) awaiting reconciliation')"
             icon="o-clock"
-            color="warning"
-            class="{{ $statusFilter === 'pending' ? 'ring-2 ring-primary/30' : '' }}" />
+            color="warning" />
 
         <x-admin.shared.stat-card
             :label="__('Paid')"
             :value="number_format($this->stats['paid_total'], 2, ',', ' ') . ' €'"
             :hint="$this->stats['paid_count'] . ' ' . __('payment(s) received')"
             icon="o-check-badge"
-            color="success"
-            class="{{ $statusFilter === 'paid' ? 'ring-2 ring-primary/30' : '' }}" />
+            color="success" />
 
         <x-admin.shared.stat-card
             :label="__('To refund')"
             :value="number_format($this->stats['to_refund_total'], 2, ',', ' ') . ' €'"
             :hint="$this->stats['to_refund_count'] . ' ' . __('refund(s) pending')"
             icon="o-arrow-uturn-left"
-            :color="$this->stats['to_refund_count'] > 0 ? 'error' : 'neutral'"
-            class="sm:col-span-2 lg:col-span-1 {{ $statusFilter === 'to_refund' ? 'ring-2 ring-primary/30' : '' }}" />
+            :color="$this->stats['to_refund_count'] > 0 ? 'error' : 'neutral'" />
+
+        <x-admin.shared.stat-card
+            :label="__('Refunded')"
+            :value="number_format($this->stats['refunded_total'], 2, ',', ' ') . ' €'"
+            :hint="$this->stats['refunded_count'] . ' ' . __('refund(s) completed')"
+            icon="o-check-circle"
+            color="neutral" />
+
+        {{-- Le quatrième onglet avait sa colonne dans le tableau mais aucun
+             total : l'argent que le club détient en trop était le seul état
+             qu'on ne pouvait pas lire d'un coup d'œil, alors que c'est celui
+             qui appelle une action — il ne lui appartient plus. --}}
+        <x-admin.shared.stat-card
+            :label="__('Overpaid')"
+            :value="number_format($this->stats['overpaid_total'], 2, ',', ' ') . ' €'"
+            :hint="$this->stats['overpaid_count'] . ' ' . __('payment(s) held in excess')"
+            icon="o-arrow-trending-up"
+            :color="$this->stats['overpaid_count'] > 0 ? 'warning' : 'neutral'" />
     </div>
 
     {{-- Status filter — folder tabs; the filtered table lives outside as its own card --}}
+    @if ($residueNotice)
+        {{-- Ce que le rapprochement vient de laisser. Un toast s'efface ;
+             cent euros à placer demandent qu'on y revienne. --}}
+        <div class="mb-4 flex items-start gap-3 rounded-lg border border-info/20 bg-info/10 p-3 text-sm">
+            <x-icon name="o-information-circle" class="mt-0.5 h-4 w-4 shrink-0 text-info" />
+            <div class="flex-1">
+                {{ __(':amount € are still to place on this transfer — allocate them elsewhere, write them off, or refund them.', [
+                    'amount' => number_format($residueNotice['amount'], 2, ',', ' '),
+                ]) }}
+                @can('transactions.view')
+                    <a href="{{ route('admin.treasury.transactions', ['allocate' => $residueNotice['transaction_id']]) }}"
+                        wire:navigate class="link link-info ml-1">{{ __('Place it now') }}</a>
+                @endcan
+            </div>
+            <x-button icon="o-x-mark" wire:click="$set('residueNotice', null)" class="btn-ghost btn-xs" />
+        </div>
+    @endif
+
     <x-admin.shared.tabs wire:model.live="statusFilter">
+        {{-- L'ordre suit le travail : ce qu'on attend, ce qu'on doit rendre,
+             puis ce qui est clos des deux côtés, et enfin l'argent détenu en
+             trop — le seul état qui appelle encore une décision. --}}
         <x-admin.shared.tab name="pending"   :label="__('Pending')"   icon="o-clock" />
-        <x-admin.shared.tab name="paid"      :label="__('Paid')"      icon="o-check-badge" />
         <x-admin.shared.tab name="to_refund" :label="__('To refund')" icon="o-arrow-uturn-left" />
+        <x-admin.shared.tab name="paid"      :label="__('Paid')"      icon="o-check-badge" />
+        <x-admin.shared.tab name="refunded"  :label="__('Refunded')"  icon="o-check-circle" />
+        {{-- Pas un statut : une position. Les crédits dépassent le dû, et cet
+             argent n'appartient plus au club. --}}
+        <x-admin.shared.tab name="overpaid" :label="__('Overpaid')" icon="o-arrow-trending-up" />
     </x-admin.shared.tabs>
 
     {{-- ── Vue mobile ─────────────────────────────────────────────────
@@ -113,11 +153,29 @@
                             </div>
                         @endif
                     </div>
-                    <div class="shrink-0 text-right font-bold tabular-nums">
-                        @if ($this->statusFilter === 'paid')
-                            {{ number_format($payment->amount_paid, 2, ',', ' ') }} €
+                    <div class="shrink-0 text-right tabular-nums">
+                        @if ($this->statusFilter === 'overpaid')
+                            {{-- Le net : ce que le club détient en trop, jamais
+                                 « 220 sur 120 » qui a l'air d'un bug. --}}
+                            <span class="font-bold text-warning">{{ number_format($payment->overpayment, 2, ',', ' ') }} €</span>
+                            <div class="text-xs font-normal text-muted">{{ __('held by the club') }}</div>
+                        @elseif (in_array($this->statusFilter, ['paid', 'refunded'], true))
+                            {{-- Ce qui a réellement bougé : encaissé d'un côté,
+                                 sorti de l'autre. --}}
+                            <span class="font-bold">{{ number_format($payment->amount_paid, 2, ',', ' ') }} €</span>
                         @else
-                            {{ number_format($payment->amount_due, 2, ',', ' ') }} €
+                            {{-- Le solde, pas le montant réclamé au départ : depuis
+                                 qu'une ligne se crédite en plusieurs fois, les deux
+                                 divergent, et le second réclame une somme reçue. --}}
+                            <span class="font-bold">{{ number_format($payment->balance, 2, ',', ' ') }} €</span>
+                            @if ($payment->is_partially_paid)
+                                <div class="text-xs font-normal text-info">
+                                    {{ __(':paid € received of :due €', [
+                                        'paid' => number_format($payment->amount_paid, 2, ',', ' '),
+                                        'due'  => number_format($payment->amount_due, 2, ',', ' '),
+                                    ]) }}
+                                </div>
+                            @endif
                         @endif
                     </div>
                 </div>
@@ -153,10 +211,17 @@
                         @endcan
                     @elseif ($this->statusFilter === 'to_refund')
                         @can('payments.refund')
+                            {{-- Les deux gestes, comme sur le tableau : aller chercher
+                                 de quoi virer, puis rapprocher quand le relevé arrive. --}}
                             <x-admin.shared.row-menu
-                                :label="__('Reconcile')"
-                                icon="o-link"
-                                wire-click="openRefundReconcile({{ $payment->id }})" />
+                                :label="__('Transfer details')"
+                                icon="o-clipboard-document"
+                                wire-click="openRefundInstructions({{ $payment->id }})">
+                                <x-menu-item
+                                    icon="o-link"
+                                    :title="__('Reconcile')"
+                                    wire:click="openRefundReconcile({{ $payment->id }})" />
+                            </x-admin.shared.row-menu>
                         @endcan
                     @endif
                 </div>
@@ -195,10 +260,25 @@
             @endscope
 
             @scope('cell_amount_due', $payment)
-            @if($this->statusFilter === 'paid')
+            @if($this->statusFilter === 'overpaid')
+            <div class="tabular-nums">
+                <span class="font-bold text-warning">{{ number_format($payment->overpayment, 2, ',', ' ') }} €</span>
+                <div class="text-xs text-muted">{{ __('held by the club') }}</div>
+            </div>
+            @elseif(in_array($this->statusFilter, ['paid', 'refunded'], true))
             <span class="tabular-nums font-bold">{{ number_format($payment->amount_paid, 2, ',', ' ') }} €</span>
             @else
-            <span class="tabular-nums font-bold">{{ number_format($payment->amount_due, 2, ',', ' ') }} €</span>
+            <div class="tabular-nums">
+                <span class="font-bold">{{ number_format($payment->balance, 2, ',', ' ') }} €</span>
+                @if ($payment->is_partially_paid)
+                    <div class="text-xs text-info">
+                        {{ __(':paid € received of :due €', [
+                            'paid' => number_format($payment->amount_paid, 2, ',', ' '),
+                            'due'  => number_format($payment->amount_due, 2, ',', ' '),
+                        ]) }}
+                    </div>
+                @endif
+            </div>
             @endif
             @endscope
 
@@ -219,11 +299,25 @@
             @endif
             @endscope
 
-            @scope('cell_iban', $payment)
-            @if($payment->iban)
-                <span class="font-mono text-xs">{{ $payment->iban }}</span>
+            @scope('cell_refund_state', $payment)
+            {{-- Où en est ce remboursement. Le compte à créditer se lit dans la
+                 modale d'instructions ; ici, la seule question du trésorier est
+                 « l'ai-je déjà viré ? » — et seule cette date peut y répondre,
+                 le débit n'arrivant sur le relevé que des semaines plus tard. --}}
+            @if ($this->statusFilter === 'refunded')
+                <x-badge :value="__('Refunded')" class="badge-success badge-soft badge-sm" />
+                @if ($payment->refund_wired_at)
+                    <div class="mt-0.5 text-xs text-muted">
+                        {{ __('Wired on :date', ['date' => \Carbon\Carbon::parse($payment->refund_wired_at)->format('d/m/Y')]) }}
+                    </div>
+                @endif
+            @elseif ($payment->refund_wired_at)
+                <x-badge
+                    value="{{ __('Wired on :date', ['date' => \Carbon\Carbon::parse($payment->refund_wired_at)->format('d/m/Y')]) }}"
+                    class="badge-info badge-soft badge-sm" />
+                <div class="mt-0.5 text-xs text-muted">{{ __('waiting for the statement') }}</div>
             @else
-                <x-badge value="{{ __('Missing') }}" class="badge-warning badge-sm" icon="o-exclamation-triangle" />
+                <x-badge :value="__('To wire')" class="badge-warning badge-soft badge-sm" />
             @endif
             @endscope
 
@@ -247,16 +341,44 @@
             </x-admin.shared.row-menu>
             @elseif($this->statusFilter === 'to_refund')
             @can('payments.refund')
-                <x-button
-                    :label="__('Reconcile')"
-                    icon="o-link"
-                    wire:click="openRefundReconcile({{ $payment->id }})"
-                    class="btn-xs btn-outline" />
+                {{-- Deux gestes, séparés de plusieurs semaines : on va chercher
+                     de quoi faire le virement aujourd'hui, on le rapproche quand
+                     le relevé arrive. La communication SEPA fait 140 caractères
+                     et n'a qu'un usage — être copiée : elle vit donc dans la
+                     modale, où elle tient en entier. --}}
+                <x-admin.shared.row-menu
+                    :label="__('Transfer details')"
+                    icon="o-clipboard-document"
+                    wire-click="openRefundInstructions({{ $payment->id }})">
+                    <x-menu-item
+                        icon="o-link"
+                        :title="__('Reconcile')"
+                        wire:click="openRefundReconcile({{ $payment->id }})" />
+                </x-admin.shared.row-menu>
             @endcan
+            @elseif($this->statusFilter === 'refunded')
+            {{-- Rien à faire sur un remboursement déjà versé. Cet onglet tombait
+                 dans la branche des créances réglées : la ligne portait une
+                 pastille « Payé » — alors que c'est de l'argent sorti — et un
+                 bouton « Rembourser » qui ouvrait une demande préremplie à 0 €,
+                 refusée à la confirmation. Sa colonne d'état dit déjà tout :
+                 remboursé, et viré tel jour. --}}
             @else
-            <div class="flex items-center gap-1.5 text-success text-xs font-bold">
-                <x-icon name="o-check-circle" class="w-4 h-4" />
-                {{ __('Paid') }}
+            <div class="flex items-center gap-1.5">
+                <span class="flex items-center gap-1.5 text-success text-xs font-bold">
+                    <x-icon name="o-check-circle" class="w-4 h-4" />
+                    {{ __('Paid') }}
+                </span>
+                @can('payments.refund')
+                    {{-- Le membre appelle, le trésorier ouvre. Ce geste n'existait
+                         nulle part : un remboursement ne pouvait naître que d'un
+                         changement de facture côté secrétariat. --}}
+                    <x-button
+                        :label="__('Refund')"
+                        icon="o-arrow-uturn-left"
+                        wire:click="openRefundRequest({{ $payment->id }})"
+                        class="btn-xs btn-ghost" />
+                @endcan
             </div>
             @endif
             @endscope
@@ -424,10 +546,46 @@
                 <div class="font-mono text-xs text-primary mt-0.5">{{ $currentPayment->reference }}</div>
             </div>
             <div class="text-right shrink-0">
-                <div class="text-lg font-black">{{ number_format($currentPayment->amount_due, 2, ',', ' ') }} €</div>
-                <div class="text-xs text-muted">{{ __('expected') }}</div>
+                <div class="text-lg font-black">{{ number_format($currentPayment->balance(), 2, ',', ' ') }} €</div>
+                @if ($currentPayment->isPartiallyPaid())
+                    <div class="text-xs text-info">
+                        {{ __(':paid € received of :due €', [
+                            'paid' => number_format($currentPayment->amount_paid, 2, ',', ' '),
+                            'due'  => number_format($currentPayment->amount_due, 2, ',', ' '),
+                        ]) }}
+                    </div>
+                @endif
+                <div class="text-xs text-muted">{{ __('still expected') }}</div>
             </div>
         </div>
+
+        @if ($currentPayment->credits->isNotEmpty())
+            {{-- D'où vient ce qui est déjà là. Sans cette liste, le trésorier
+                 lit « il reste 20 € » sans pouvoir vérifier les 100 autres :
+                 il ne retient pas ses propres rapprochements. --}}
+            <div class="mb-6">
+                <h3 class="mb-2 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Already received') }}</h3>
+                <div class="space-y-1.5">
+                    @foreach ($currentPayment->credits as $credit)
+                        <div class="flex items-center gap-3 rounded-lg border border-success/20 bg-success/5 p-2.5 text-sm"
+                            wire:key="credit-{{ $credit->id }}">
+                            <x-icon name="o-check-circle" class="h-4 w-4 shrink-0 text-success" />
+                            <span class="flex-1 min-w-0 truncate">
+                                @if ($credit->transaction)
+                                    {{ \Illuminate\Support\Carbon::parse($credit->transaction->date)->format('d/m/Y') }}
+                                    — {{ $credit->transaction->counterparty_name ?? __('Unknown counterparty') }}
+                                @else
+                                    {{ __('Received outside the bank') }}
+                                @endif
+                            </span>
+                            <span class="shrink-0 font-bold tabular-nums text-success">
+                                {{ number_format($credit->amount, 2, ',', ' ') }} €
+                            </span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
 
         <x-admin.treasury.candidate-list
             :candidates="$pendingTransactions"
@@ -435,6 +593,34 @@
             property="selectedTransactionId"
             :heading="__('Unreconciled bank transactions')"
             :empty-message="__('No unreconciled transactions. Import a bank statement first.')" />
+
+        @if ($reconcileExcess > 0)
+            {{-- Le virement dépasse le solde : ce qui en est fait se décide ici,
+                 pas après coup. Placer le solde seul laissait l'excédent sur le
+                 virement, attaché à personne, et aucun écran ne savait le rendre. --}}
+            <fieldset class="mt-4 space-y-2 rounded-xl border border-info/20 bg-info/5 p-3 text-sm">
+                <legend class="px-1 text-xs font-bold uppercase tracking-widest text-muted">
+                    {{ __('This transfer brings :excess € more than the balance', ['excess' => number_format($reconcileExcess, 2, ',', ' ')]) }}
+                </legend>
+                <label class="flex cursor-pointer items-start gap-2">
+                    <input type="radio" name="reconcile-whole" class="radio radio-sm radio-primary mt-0.5"
+                        @checked(! $reconcileWholeTransfer) wire:click="$set('reconcileWholeTransfer', false)" />
+                    <span>
+                        {{ __('Place :amount € — the rest waits for another claim', ['amount' => number_format($currentPayment->balance(), 2, ',', ' ')]) }}
+                    </span>
+                </label>
+                <label class="flex cursor-pointer items-start gap-2">
+                    <input type="radio" name="reconcile-whole" class="radio radio-sm radio-primary mt-0.5"
+                        @checked($reconcileWholeTransfer) wire:click="$set('reconcileWholeTransfer', true)" />
+                    <span>
+                        {{ __('Place the whole :amount €', ['amount' => number_format($currentPayment->balance() + $reconcileExcess, 2, ',', ' ')]) }}
+                        <span class="block text-xs opacity-70">
+                            {{ __(':excess € become an overpayment, to give back to the account that paid', ['excess' => number_format($reconcileExcess, 2, ',', ' ')]) }}
+                        </span>
+                    </span>
+                </label>
+            </fieldset>
+        @endif
 
         @endif
 
@@ -460,31 +646,39 @@
             <div class="flex items-start gap-3 p-3 rounded-xl bg-success/10 border border-success/20 text-sm">
                 <x-icon name="o-sparkles" class="w-5 h-5 text-success shrink-0 mt-0.5" />
                 <span>
-                    {{ __(':count perfect match(es) found — structured reference and amount match exactly. Confirm to reconcile all at once.', ['count' => count($batchMatches)]) }}
+                    {{ __('Ticked lines are the ones where the reference and the amount match exactly. The others are defensible but need your eye.') }}
                 </span>
             </div>
 
             <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
-                @foreach($batchMatches as $match)
-                <div class="flex items-center gap-4 p-3 rounded-xl bg-base-100 border border-base-300">
-                    <x-icon name="o-check-circle" class="w-5 h-5 text-success shrink-0" />
-                    <div class="flex-1 min-w-0">
-                        <div class="font-semibold text-sm">{{ $match['member'] }}</div>
-                        @if (! empty($match['event_name']))
-                            <div class="text-xs text-muted mt-0.5">
-                                <span class="font-medium">{{ $match['event_type'] }}</span> · {{ $match['event_name'] }}
+                @foreach($batchMatches as $key => $match)
+                    <label class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 {{ $match['exact'] ? 'border-success/30 bg-success/5' : 'border-warning/30 bg-warning/5' }}"
+                        wire:key="batch-{{ $key }}">
+                        <input type="checkbox" class="checkbox checkbox-sm mt-0.5"
+                            value="{{ $key }}" wire:model.live="selectedBatchMatches" />
+
+                        <div class="min-w-0 flex-1">
+                            <div class="text-sm font-semibold">{{ $match['member'] }}</div>
+                            @if (! empty($match['event_name']))
+                                <div class="text-xs text-primary/70">
+                                    <span class="font-medium">{{ $match['event_type'] }}</span> · {{ $match['event_name'] }}
+                                </div>
+                            @endif
+                            <div class="mt-0.5 flex flex-wrap items-baseline gap-x-2">
+                                <span class="font-mono text-xs text-primary">{{ $match['reference'] }}</span>
+                                <span class="text-xs opacity-60">{{ $match['counterparty'] }}</span>
+                                <span class="text-xs opacity-60">{{ \Carbon\Carbon::parse($match['transaction_date'])->format('d/m/Y') }}</span>
                             </div>
-                        @endif
-                        <div class="flex items-center gap-3 mt-0.5">
-                            <span class="font-mono text-xs text-primary">{{ $match['reference'] }}</span>
-                            <span class="text-xs opacity-40">·</span>
-                            <span class="text-xs opacity-60">{{ $match['counterparty'] }}</span>
-                            <span class="text-xs opacity-40">·</span>
-                            <span class="text-xs opacity-60">{{ \Carbon\Carbon::parse($match['transaction_date'])->format('d/m/Y') }}</span>
+                            {{-- Pourquoi cette ligne est cochée, ou pourquoi elle ne l'est pas. --}}
+                            <div class="mt-1 text-xs {{ $match['exact'] ? 'text-success' : 'text-warning' }}">
+                                {{ $match['reason'] }}
+                            </div>
                         </div>
-                    </div>
-                    <span class="font-black tabular-nums text-success">{{ number_format($match['amount'], 2, ',', ' ') }} €</span>
-                </div>
+
+                        <span class="shrink-0 font-black tabular-nums {{ $match['exact'] ? 'text-success' : 'text-warning' }}">
+                            {{ number_format($match['amount'], 2, ',', ' ') }} €
+                        </span>
+                    </label>
                 @endforeach
             </div>
         </div>
@@ -492,11 +686,63 @@
         <x-slot:actions>
             <x-button :label="__('Cancel')" @click="$wire.batchModal = false" class="btn-ghost" />
             <x-button
-                :label="__('Confirm all (:count)', ['count' => count($batchMatches)])"
+                :label="__('Confirm the ticked (:count)', ['count' => count($selectedBatchMatches)])"
                 icon="o-check-badge"
                 class="btn-success"
                 wire:click="confirmBatchReconcile"
                 spinner />
+        </x-slot:actions>
+    </x-app-modal>
+
+
+    {{-- ========================================== --}}
+    {{-- Modal : de quoi faire le virement          --}}
+    {{-- ========================================== --}}
+    <x-app-modal wire:model="refundInstructionsModal" :title="__('Transfer details')" separator
+        box-class="max-w-2xl" :open="$refundInstructionsModal">
+
+        @if ($refundInstructions)
+            <div class="flex items-start gap-3 rounded-lg border border-info/20 bg-info/10 p-3 text-sm">
+                <x-icon name="o-information-circle" class="mt-0.5 h-4 w-4 shrink-0 text-info" />
+                <span>{{ __('The transfer is made in your bank, not here. Copy the three lines below, then come back to reconcile it once the statement is imported.') }}</span>
+            </div>
+
+            <div class="mt-4 space-y-3">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Member') }}</p>
+                    <p class="text-sm font-semibold">{{ $refundInstructions['member'] }}</p>
+                    @if ($refundInstructions['event'])
+                        <p class="text-xs text-muted">{{ $refundInstructions['event'] }}</p>
+                    @endif
+                </div>
+
+                <x-admin.treasury.copyable-line
+                    :label="__('Amount to transfer')"
+                    :value="number_format($refundInstructions['amount'], 2, ',', ' ') . ' €'" />
+
+                <x-admin.treasury.copyable-line
+                    :label="__('Account to credit')"
+                    :value="$refundInstructions['iban'] ?? __('No account on file — ask the member')"
+                    :copyable="$refundInstructions['iban'] !== null"
+                    mono />
+
+                <x-admin.treasury.copyable-line
+                    :label="__('Communication')"
+                    :value="$refundInstructions['remittance'] ?? ''"
+                    wrap />
+            </div>
+        @endif
+
+        <x-slot:actions>
+            <x-button :label="__('Close')" @click="$wire.refundInstructionsModal = false" class="btn-ghost" />
+            @if ($refundInstructions && ! $refundInstructions['wired'])
+                <x-button
+                    :label="__('I have made the transfer')"
+                    icon="o-check"
+                    class="btn-primary"
+                    wire:click="markRefundAsWired"
+                    spinner="markRefundAsWired" />
+            @endif
         </x-slot:actions>
     </x-app-modal>
 
@@ -524,7 +770,11 @@
                 @endif
             </div>
             <div class="text-right shrink-0">
-                <div class="text-lg font-black text-error">{{ number_format($currentRefundPayment->amount_paid, 2, ',', ' ') }} €</div>
+                {{-- Ce qu'il reste à virer, comme la ligne du tableau. `amount_paid`
+                     compte ce qui est déjà sorti : zéro tant que le virement n'a
+                     pas été fait, donc une modale d'exécution qui annonçait
+                     0,00 € à rembourser. --}}
+                <div class="text-lg font-black text-error">{{ number_format($currentRefundPayment->balance(), 2, ',', ' ') }} €</div>
                 <div class="text-xs text-muted">{{ __('to refund') }}</div>
             </div>
         </div>
@@ -638,4 +888,31 @@
             @click="mobileActionsOpen = false; $wire.call('toggleSelectionMode')" />
     </x-admin.shared.mobile-actions>
 
+
+    {{-- Ouvrir un remboursement --}}
+    <x-app-modal wire:model="refundRequestModal" :title="__('Open a refund')" separator class="backdrop-blur-sm"
+        :open="$refundRequestModal">
+        <div class="space-y-4">
+            <div class="flex items-center gap-3 rounded-lg border border-info/20 bg-info/10 p-3 text-sm">
+                <x-icon name="o-information-circle" class="h-4 w-4 shrink-0 text-info" />
+                <span>{{ __('The amount cannot exceed what the member has paid, minus refunds already opened.') }}</span>
+            </div>
+
+            <x-input :label="__('Amount (€)')" type="number" step="0.01" min="0"
+                wire:model="refundRequestAmount" />
+
+            <x-input :label="__('Account to refund')" wire:model="refundRequestIban"
+                :hint="__('The account the money came from. A guardian or an employer pays for a member — the money goes back where it came from.')" />
+
+            <x-input :label="__('Reason')" wire:model="refundRequestReason"
+                :placeholder="__('Why is the club giving this money back?')"
+                :hint="__('Mandatory. Sent to the treasury and kept with the payment.')" />
+        </div>
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" @click="$wire.refundRequestModal = false" class="btn-ghost" />
+            <x-button :label="__('Open the refund')" icon="o-arrow-uturn-left" class="btn-primary"
+                wire:click="confirmRefundRequest" spinner="confirmRefundRequest" />
+        </x-slot:actions>
+    </x-app-modal>
 </div>

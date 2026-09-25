@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Subscriptions;
 
+use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 
@@ -84,6 +85,11 @@ class ReduceOutstandingInvoiceAction
                 $payment->update(['status' => 'cancelled']);
             } else {
                 $payment->update(['amount_due' => round((float) $payment->amount_due - $taken, 2)]);
+
+                // Baissée jusqu'à ce qui est déjà rentré, la ligne est soldée.
+                // Son payable est l'affiliation qu'on tient déjà : chargée en
+                // lot, la ligne ne pourrait pas aller le chercher seule.
+                (new AllocateTransactionAction)->settleIfCovered($payment->setRelation('payable', $subscription));
             }
 
             $excess = round($excess - $taken, 2);

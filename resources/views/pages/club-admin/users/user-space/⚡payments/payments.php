@@ -73,6 +73,32 @@ new class extends Component
         ]));
     }
 
+    /**
+     * Payments for this member and the users they guard, newest first.
+     * Scoped strictly to {@see User::payableUserIds()} — never widened by filters.
+     *
+     * @return LengthAwarePaginator<int, Payment>
+     */
+    /**
+     * Ce que le club détient en trop pour ce membre et ceux dont il répond.
+     *
+     * Par transparence : c'est une somme qui lui revient, et la lui cacher
+     * obligerait à la lui expliquer au téléphone. Dérivé, comme partout
+     * ailleurs — les crédits dépassent le dû, il n'y a rien à stocker.
+     */
+    #[Computed]
+    public function heldForMember(): float
+    {
+        $ids = $this->user->payableUserIds();
+
+        return Payment::query()
+            ->whereHasMorph('payable', self::PAYABLE_TYPES, fn ($q) => $q->whereIn('user_id', $ids))
+            ->where(fn ($q) => $q->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
+            ->whereColumn('amount_paid', '>', 'amount_due')
+            ->get()
+            ->sum(fn (Payment $payment): float => $payment->overpayment());
+    }
+
     public function mount(User $user): void
     {
         abort_unless(Auth::user()->is($user), 403);
@@ -119,12 +145,6 @@ new class extends Component
         return LocaleSort::by($payable, fn (User $user): string => $user->full_name);
     }
 
-    /**
-     * Payments for this member and the users they guard, newest first.
-     * Scoped strictly to {@see User::payableUserIds()} — never widened by filters.
-     *
-     * @return LengthAwarePaginator<int, Payment>
-     */
     #[Computed]
     public function payments(): LengthAwarePaginator
     {

@@ -31,7 +31,11 @@ function makeTournamentWithPendingPayment(User $user, float $amount = 25.0): arr
 
     $payment = $registration->payment()->create([
         'reference' => '001/2506/00001',
-        'amount_due' => (int) ($amount * 100),
+        // Euros : le mutateur de `amount_due` convertit en centimes lui-même.
+        // Multiplier ici inscrivait une entrée de tournoi à 2500 €, ce que
+        // personne ne voyait tant que la réconciliation écrivait « payé » sans
+        // comparer le versement au montant dû.
+        'amount_due' => $amount,
         'amount_paid' => 0,
         'status' => 'pending',
     ]);
@@ -69,7 +73,7 @@ describe('confirmReconcile — TournamentRegistration payable', function (): voi
             ->assertHasNoErrors();
 
         expect($payment->fresh()->status)->toBe('paid');
-        expect($payment->fresh()->transaction_id)->toEqual($transaction->id);
+        expect($transaction->fresh()->allocated_amount)->toBe(25.0);
 
         expect(
             DB::table('tournament_user')
@@ -163,7 +167,7 @@ describe('confirmReconcile — Subscription payable (regression)', function (): 
         expect($subscription->fresh()->amount_paid)->toBe(125.0);
     })->group('reconciliation', 'subscription');
 
-    it('reconciles a subscription payment regardless of amount (partial payment)', function (): void {
+    it('credits a partial transfer without declaring the payment settled', function (): void {
         $admin = User::factory()->isAdmin()->create();
 
         $subscription = Subscription::factory()->create([
@@ -193,7 +197,12 @@ describe('confirmReconcile — Subscription payable (regression)', function (): 
             ->call('confirmReconcile')
             ->assertHasNoErrors();
 
-        expect($payment->fresh()->status)->toBe('paid');
+        // L'intention d'origine tient : un montant qui ne correspond pas n'est
+        // pas refusé. C'est la conclusion qui change — 60 € sur 125 € dus sont
+        // encaissés, et la ligne continue de réclamer les 65 restants.
+        expect($payment->fresh()->status)->toBe('pending')
+            ->and($payment->fresh()->amount_paid)->toBe(60.0)
+            ->and($subscription->fresh()->balanceDue())->toBe(65.0);
     })->group('reconciliation', 'subscription');
 
 })->group('payments');

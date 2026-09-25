@@ -26,6 +26,9 @@ function paymentWithStatus(string $status): object
         'amount_due' => 125,
         'amount_paid' => $status === 'paid' ? 125 : 0,
         'status' => $status,
+        // Un remboursement dit qu'il en est un : le modèle refuse désormais
+        // qu'on marque « à rembourser » un encaissement.
+        'payment_method' => $status === 'to_refund' ? 'refund' : 'electronic',
     ]);
 }
 

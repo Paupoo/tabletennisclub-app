@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
+use App\Actions\ClubAdmin\Payments\OpenRefundAction;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
@@ -19,7 +21,6 @@ use App\Domains\Meetings\Models\MeetingUser;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Collection;
 
 class TreasurySeeder extends Seeder
 {
@@ -54,8 +55,26 @@ class TreasurySeeder extends Seeder
         $this->seedOrphanedAndOutgoingTransactions();
         $this->seedMiscCashEntries($cashRegister, $treasurer);
 
-        $inCsvRefunds = $this->seedRefunds();
-        $this->writeBankImportCsv($inCsvRefunds);
+        $this->seedRefunds();
+    }
+
+    /**
+     * Le virement sortant, puis son affectation.
+     *
+     * Passe par l'action de ventilation comme le ferait l'écran : c'est elle
+     * qui écrit la ligne de crédit et fait basculer le statut.
+     */
+    private function executeRefund(Payment $refund, User $member): void
+    {
+        $outgoing = Transaction::create([
+            'date' => Carbon::now()->subDays(random_int(2, 14))->toDateString(),
+            'description' => 'Remboursement — ' . $member->full_name,
+            'amount' => -(float) $refund->amount_due,
+            'counterparty_name' => $member->full_name,
+            'counterparty_bank_account' => $member->iban,
+        ]);
+
+        (new AllocateTransactionAction)($outgoing, [$refund->id => (float) $refund->amount_due]);
     }
 
     private function fakeBelgianIban(): string
@@ -69,6 +88,16 @@ class TreasurySeeder extends Seeder
     private function generateRef(): string
     {
         return (new GeneratePaymentReference)();
+    }
+
+    /**
+     * La ligne que le trésorier verra dans l'onglet « À rembourser ».
+     *
+     * Toute la forme canonique vient de l'action ; le seeder n'ajoute rien.
+     */
+    private function openRefund(Payment $encashment): Payment
+    {
+        return (new OpenRefundAction)($encashment);
     }
 
     /**
@@ -187,17 +216,25 @@ class TreasurySeeder extends Seeder
     }
 
     /**
-     * 8 refund scenarios seeded across 3 groups:
-     *   3 × to_refund — pending (club has not sent the money yet)
-     *   3 × to_refund — club already wired the money; outgoing appears only in the CSV stub
-     *   2 × refunded  — outgoing Transaction already in DB, auto-matched
+     * 8 remboursements, dans la seule forme qu'un remboursement peut prendre.
      *
-     * Returns the 3 "in CSV" to_refund payments so writeBankImportCsv() can generate the
-     * matching outgoing rows in the import stub.
+     * Une ligne dédiée par remboursement : `amount_due` porte l'engagement de
+     * rendre, `amount_paid` ne bouge qu'au débit rapproché, et le paiement
+     * encaissé reste `paid` — il a bel et bien été reçu.
+     *
+     * Le seeder basculait autrefois le statut d'un paiement déjà encaissé.
+     * `amount_paid` y comptait alors ce qui était **entré**, là où une ligne
+     * dédiée compte ce qui est **sorti** : deux sens opposés sous un même
+     * statut, qu'aucun écran ne peut afficher juste pour les deux. Pire, le
+     * solde valait zéro, et exécuter le remboursement se terminait sur « il ne
+     * reste rien à affecter ». Voir tests/Feature/ClubAdmin/Payment/RefundShapeTest.php.
+     *
+     *   6 × to_refund — le club n'a pas encore viré
+     *   2 × refunded  — le virement sortant est en base, et affecté
      */
-    private function seedRefunds(): Collection
+    private function seedRefunds(): void
     {
-        $paidPayments = Payment::where('status', 'paid')
+        $encashed = Payment::where('status', 'paid')
             ->orderBy('id')
             ->with(['payable' => fn (MorphTo $m) => $m->morphWith($this->morphWith)])
             ->get()
@@ -205,52 +242,24 @@ class TreasurySeeder extends Seeder
             ->values()
             ->take(8);
 
-        // Ensure every refund user has an IBAN (required for auto-match)
-        foreach ($paidPayments as $p) {
+        // L'appariement du virement sortant se fait sur le compte visé : sans
+        // IBAN, ces lignes ne seraient jamais reconnues.
+        foreach ($encashed as $p) {
             if (! $p->payable->user->iban) {
                 $p->payable->user->update(['iban' => $this->fakeBelgianIban()]);
             }
         }
 
-        $reasons = [
-            'Désistement tournoi — remboursement inscription',
-            'Trop-perçu cotisation — remboursement solde',
-            'Annulation repas réunion comité — remboursement',
-            'Remboursement double paiement',
-            'Remboursement erreur de montant',
-            'Remboursement suite annulation événement',
-            null, // reconciled — 1
-            null, // reconciled — 2
-        ];
+        foreach ($encashed as $i => $encashment) {
+            $refund = $this->openRefund($encashment);
 
-        // 3 pending to_refund
-        foreach ($paidPayments->take(3) as $i => $p) {
-            $p->update(['status' => 'to_refund']);
+            // Les deux derniers sont déjà partis : le débit existe en banque,
+            // et c'est son affectation — pas une écriture de statut — qui fait
+            // passer la ligne en `refunded`.
+            if ($i >= 6) {
+                $this->executeRefund($refund, $encashment->payable->user);
+            }
         }
-
-        // 3 "in CSV" to_refund (outgoing will appear only in the CSV file)
-        $inCsvRefunds = $paidPayments->slice(3, 3)->values();
-        foreach ($inCsvRefunds as $p) {
-            $p->update(['status' => 'to_refund']);
-        }
-
-        // 2 already reconciled refunds — outgoing Transaction in DB + linked
-        foreach ($paidPayments->slice(6, 2) as $p) {
-            $user = $p->payable->user;
-            $refundTx = Transaction::create([
-                'date' => Carbon::now()->subDays(random_int(2, 14))->toDateString(),
-                'description' => 'Remboursement — ' . $user->full_name,
-                'amount' => -(float) $p->amount_paid,
-                'counterparty_name' => $user->full_name,
-                'counterparty_bank_account' => $user->iban,
-            ]);
-            $p->update(['status' => 'refunded', 'refund_transaction_id' => $refundTx->id]);
-        }
-
-        // Return with freshly loaded user IBANs
-        return $inCsvRefunds->map(
-            fn (Payment $p) => $p->refresh()->load(['payable' => fn (MorphTo $m) => $m->morphWith($this->morphWith)])
-        );
     }
 
     /**
@@ -463,188 +472,5 @@ class TreasurySeeder extends Seeder
                 $registration->update(['has_paid' => true, 'payment_id' => $payment->id]);
             }
         }
-    }
-
-    /**
-     * Generates storage/app/seeders/bank_import_demo_2026-05.csv (Latin-1, semicolon)
-     *
-     * ~30 rows:
-     *   15 — perfect pending payments: exact structured ref + exact amount
-     *    3 — free-text only: right amount, no structured ref (member name as free comm.)
-     *    2 — wrong amount: right structured ref, member paid €5 less
-     *    5 — third-party: commune subsidy, sponsor, federation costs, supplier, fine
-     *    3 — outgoing refunds matching to_refund payments (auto-matchable by IBAN + amount)
-     *    2 — orphaned outgoing (no matching to_refund in DB)
-     */
-    private function writeBankImportCsv(Collection $inCsvRefunds): void
-    {
-        // Pending payments with no linked incoming transaction and a resolvable user
-        $available = Payment::where('status', 'pending')
-            ->whereNull('transaction_id')
-            ->with(['payable' => fn (MorphTo $m) => $m->morphWith($this->morphWith)])
-            ->get()
-            ->filter(fn (Payment $p) => $p->payable?->user !== null)
-            ->values();
-
-        $perfectSource = $available->take(15);       // rows 1-15: perfect match
-        $freeTextSource = $available->slice(15, 3);   // rows 16-18: free text only
-        $wrongAmtSource = $available->slice(18, 2);   // rows 19-20: wrong amount
-
-        $rows = [];
-        $baseDate = Carbon::parse('2026-05-02');
-        $dayOffset = 0;
-        $txnSeq = 1;
-        $internalRef = function () use (&$txnSeq): string {
-            return sprintf('%03d/0526/%05d', random_int(10, 999), $txnSeq++);
-        };
-
-        // ── 15 perfect pending payments ───────────────────────────────────────
-        foreach ($perfectSource as $p) {
-            $rows[] = [
-                'date' => $baseDate->copy()->addDays($dayOffset)->format('d/m/Y'),
-                'description' => $internalRef(),
-                'amount' => $p->amount_due,
-                'counterparty' => $p->payable->user->full_name,
-                'counterparty_ac' => $this->fakeBelgianIban(),
-                'structured_ref' => $p->reference,
-                'free_ref' => '',
-            ];
-            if ((++$dayOffset % 4) === 0) {
-                $dayOffset++; // skip a day occasionally for realism
-            }
-        }
-
-        // ── 3 free-text incorrect (right amount, no structured ref) ───────────
-        foreach ($freeTextSource as $p) {
-            $rows[] = [
-                'date' => $baseDate->copy()->addDays($dayOffset++)->format('d/m/Y'),
-                'description' => $internalRef(),
-                'amount' => $p->amount_due,
-                'counterparty' => $p->payable->user->full_name,
-                'counterparty_ac' => $this->fakeBelgianIban(),
-                'structured_ref' => '',
-                'free_ref' => $p->payable->user->full_name . ' — cotisation club',
-            ];
-        }
-
-        // ── 2 wrong-amount incorrect (right ref, paid €5 short) ──────────────
-        foreach ($wrongAmtSource as $p) {
-            $rows[] = [
-                'date' => $baseDate->copy()->addDays($dayOffset++)->format('d/m/Y'),
-                'description' => $internalRef(),
-                'amount' => max(0.01, $p->amount_due - 5),
-                'counterparty' => $p->payable->user->full_name,
-                'counterparty_ac' => $this->fakeBelgianIban(),
-                'structured_ref' => $p->reference,
-                'free_ref' => '',
-            ];
-        }
-
-        // ── 5 third-party operational transactions ────────────────────────────
-        foreach ([
-            [600.00, 'SUBSIDE ANNUEL 2026',            'Commune Ottignies-LLN',          'BE14 0000 1000 0042', ''],
-            [1500.00, 'PARTENARIAT MAILLOTS SAISON',     'Décathlète Sport SA',             'BE32 0000 2000 0099', ''],
-            [-1432.00, 'COTISATION FRBTT 2026-2027',      'AFTT — FRBTT Fédération',         'BE22 0000 3000 0017', ''],
-            [-25.00, 'AMENDE ARBITRAGE NON EFFECTUE',   'AFTT Province BW',                'BE50 0000 4000 0055', ''],
-            [-148.75, 'FACT 2026-0512 MAINTENANCE',      'Sport Pro Belgium SPRL',           'BE88 0000 5000 0031', ''],
-        ] as [$amount, $description, $counterparty, $account, $ref]) {
-            $rows[] = [
-                'date' => $baseDate->copy()->addDays($dayOffset++)->format('d/m/Y'),
-                'description' => $internalRef(),
-                'amount' => $amount,
-                'counterparty' => $counterparty,
-                'counterparty_ac' => $account,
-                'structured_ref' => $ref,
-                'free_ref' => $description,
-            ];
-        }
-
-        // ── 3 outgoing refunds matching to_refund payments ────────────────────
-        foreach ($inCsvRefunds as $p) {
-            $user = $p->payable->user;
-            $rows[] = [
-                'date' => $baseDate->copy()->addDays($dayOffset++)->format('d/m/Y'),
-                'description' => $internalRef(),
-                'amount' => -(float) $p->amount_paid,
-                'counterparty' => $user->full_name,
-                'counterparty_ac' => $user->iban ?? $this->fakeBelgianIban(),
-                'structured_ref' => '',
-                'free_ref' => 'Remboursement — ' . $user->full_name,
-            ];
-        }
-
-        // ── 2 orphaned outgoing (wrong IBAN, cannot auto-match) ───────────────
-        foreach ([
-            [-50.00,  'Inconnu Dupont A. — réf. incorrecte', 'BE99 0000 9999 0001'],
-            [-120.00, 'Inconnu Martin B. — IBAN inconnu',    'BE77 0000 9999 0002'],
-        ] as [$amount, $counterparty, $account]) {
-            $rows[] = [
-                'date' => $baseDate->copy()->addDays($dayOffset++)->format('d/m/Y'),
-                'description' => $internalRef(),
-                'amount' => $amount,
-                'counterparty' => $counterparty,
-                'counterparty_ac' => $account,
-                'structured_ref' => '',
-                'free_ref' => '',
-            ];
-        }
-
-        // ── Write file ────────────────────────────────────────────────────────
-        $dir = storage_path('app/seeders');
-        if (! is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
-        $headers = [
-            'Numéro de compte', 'Nom de la rubrique', 'Nom', 'Devise',
-            "Numéro de l'extrait", 'Date', 'Description', 'Valeur',
-            'Montant', 'Solde', 'crédit', 'débit',
-            'numéro de compte contrepartie', 'BIC contrepartie',
-            'Nom contrepartie', 'Adresse contrepartie',
-            'communication structurée', 'Communication libre',
-        ];
-
-        $clubAccount = 'BE11 0000 0000 0001';
-        $clubName = 'Club Tennis de Table Ottignies-Blocry';
-        $extract = '2026/05';
-        $balance = 2000.00;
-
-        $lines = [implode(';', $headers)];
-
-        foreach ($rows as $row) {
-            $amount = (float) $row['amount'];
-            $balance = round($balance + $amount, 2);
-            $credit = $amount > 0 ? number_format($amount, 2, '.', '') : '';
-            $debit = $amount < 0 ? number_format(abs($amount), 2, '.', '') : '';
-            $dateStr = $row['date'];
-
-            $lines[] = implode(';', [
-                $clubAccount,
-                'Extrait',
-                $clubName,
-                'EUR',
-                $extract,
-                $dateStr,
-                $row['description'],
-                $dateStr,
-                number_format($amount, 2, '.', ''),
-                number_format($balance, 2, '.', ''),
-                $credit,
-                $debit,
-                $row['counterparty_ac'],
-                'BBRUBEBB',
-                $row['counterparty'],
-                '',
-                $row['structured_ref'],
-                $row['free_ref'],
-            ]);
-        }
-
-        $content = implode("\r\n", $lines) . "\r\n";
-        $latin1 = mb_convert_encoding($content, 'ISO-8859-1', 'UTF-8');
-
-        $path = $dir . '/bank_import_demo_2026-05.csv';
-        file_put_contents($path, $latin1);
-        $this->command?->info("Bank import CSV written to: {$path}");
     }
 }

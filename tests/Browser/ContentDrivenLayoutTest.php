@@ -27,6 +27,19 @@ const PAYMENTS_STAT_ROW = <<<'JS_WRAP'
     cards: cards.length,
     clipped,
     tabOverflow: list.scrollWidth - list.clientWidth,
+    tabScrollable: ['auto', 'scroll'].includes(getComputedStyle(list).overflowX),
+  });
+})()
+JS_WRAP;
+
+const TRANSACTION_STAT_ROW = <<<'JS_WRAP'
+(() => {
+  const cards = [...document.querySelectorAll('[data-stat-card]')];
+
+  return JSON.stringify({
+    cards: cards.length,
+    tops: [...new Set(cards.map(c => Math.round(c.getBoundingClientRect().top)))],
+    widths: [...new Set(cards.map(c => Math.round(c.getBoundingClientRect().width)))],
   });
 })()
 JS_WRAP;
@@ -66,10 +79,34 @@ it('gives every payment stat the same width and its hint in full on a phone', fu
         true
     );
 
-    expect($row['cards'])->toBe(3);
-    expect($row['widths'])->toHaveCount(1, 'the three stats share one row width, none is left half-size');
+    // Cinq : une carte par onglet, « Remboursés » et « Trop-perçus » compris.
+    expect($row['cards'])->toBe(5);
+    expect($row['widths'])->toHaveCount(1, 'the five stats share one row width, none is left half-size');
     expect($row['clipped'])->toBe([], 'a hint cut mid-word says nothing');
-    expect($row['tabOverflow'])->toBeLessThanOrEqual(0);
+    // Cinq onglets ne tiennent pas dans 390 px, quoi qu'on fasse aux libellés :
+    // sans leurs icônes ils dépassent encore. Ce qui reste exigible est que le
+    // dépassement soit atteignable — la rangée défile — et non qu'il soit nul.
+    expect($row['tabOverflow'])->toBeGreaterThan(0);
+    expect($row['tabScrollable'])->toBeTrue('the tab row overflows without a way to reach what is hidden');
+});
+
+/**
+ * Les cartes des transactions tiennent sur une rangée, comme partout ailleurs.
+ *
+ * La quatrième gardait un `lg:col-span-3` hérité d'une grille à trois colonnes :
+ * dans une grille de quatre, elle ne trouvait plus la place et basculait seule
+ * sous les autres, large comme trois. C'est la deuxième fois qu'un reliquat de
+ * `col-span` disloque une rangée de cartes — d'où cette sonde.
+ */
+it('keeps the transaction stats on one row', function (): void {
+    $row = json_decode(
+        (string) visit(route('admin.treasury.transactions'))->resize(1440, 900)->script(TRANSACTION_STAT_ROW),
+        true
+    );
+
+    expect($row['cards'])->toBe(4);
+    expect($row['tops'])->toHaveCount(1, 'a card dropped to a row of its own');
+    expect($row['widths'])->toHaveCount(1, 'the four stats share one row width');
 });
 
 it('starts the planning board body on the same line as its title', function (): void {

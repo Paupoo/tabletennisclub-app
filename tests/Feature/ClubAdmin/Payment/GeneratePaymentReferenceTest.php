@@ -76,3 +76,33 @@ it('uses 97 as the check digits when the base is an exact multiple of 97', funct
         ->and($method->invoke($action, 5))->toBe('05')
         ->and($method->invoke($action, 42))->toBe('42');
 });
+
+/**
+ * Récupérés de `ReconciliationTest`, dont le reste ne touchait jamais le code
+ * de l'application. Ces deux-là, si : ils appellent le générateur.
+ */
+it('gives a different reference on each call once a payment has been created', function (): void {
+    $subscription = Subscription::factory()->create(['status' => 'confirmed']);
+
+    $first = (new GeneratePaymentReference)();
+
+    // Créer un paiement avance le compteur de séquence du jour.
+    $subscription->payments()->create([
+        'reference' => $first,
+        'amount_due' => 125,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    expect((new GeneratePaymentReference)())->not->toBe($first);
+})->group('payments', 'reference');
+
+it('appends check digits that satisfy the modulo-97 constraint', function (): void {
+    $digits = preg_replace('/[^0-9]/', '', (new GeneratePaymentReference)()) ?? '';
+
+    // 0 + date(6) + séquence(3) = 10 chiffres de base, puis la clé.
+    $base = (int) substr($digits, 0, 10);
+    $checksum = (int) substr($digits, 10);
+
+    expect($base % 97)->toBe($checksum);
+})->group('payments', 'reference');

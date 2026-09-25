@@ -13,7 +13,7 @@ function transactionsAdmin(): User
     return User::factory()->isAdmin()->create();
 }
 
-it('the unreconciled filter shows only credits, like the unreconciled tile (I8)', function (): void {
+it('the unreconciled filter shows every line with nothing allocated, in either direction', function (): void {
     $admin = transactionsAdmin();
     $credit = Transaction::create(['date' => now(), 'amount' => 50, 'description' => 'incoming']);
     $debit = Transaction::create(['date' => now(), 'amount' => -30, 'description' => 'outgoing']);
@@ -24,17 +24,20 @@ it('the unreconciled filter shows only credits, like the unreconciled tile (I8)'
 
     $ids = collect($component->viewData('transactions')->items())->pluck('id');
 
-    // A debit (outgoing) has no payment by nature — it is not an "unreconciled"
-    // incoming payment and must not pad the list the tile already excludes.
+    // Les débits entraient ici parce qu'« un débit n'a pas de paiement par
+    // nature » — vrai du modèle d'avant, où les remboursements vivaient dans
+    // une seconde colonne que `has('payment')` ne regardait pas. Un virement
+    // sortant jamais rapproché est un remboursement parti sans destinataire
+    // identifié : c'est du travail, et il doit se voir.
     expect($ids)->toContain($credit->id)
-        ->and($ids)->not->toContain($debit->id);
+        ->and($ids)->toContain($debit->id);
 });
 
 it('the unreconciled filter count matches the unreconciled tile', function (): void {
     $admin = transactionsAdmin();
-    Transaction::create(['date' => now(), 'amount' => 50, 'description' => 'in 1']);   // credit, unreconciled
-    Transaction::create(['date' => now(), 'amount' => 80, 'description' => 'in 2']);   // credit, unreconciled
-    Transaction::create(['date' => now(), 'amount' => -30, 'description' => 'out']);   // debit, unreconciled
+    Transaction::create(['date' => now(), 'amount' => 50, 'description' => 'in 1']);
+    Transaction::create(['date' => now(), 'amount' => 80, 'description' => 'in 2']);
+    Transaction::create(['date' => now(), 'amount' => -30, 'description' => 'out']);
 
     $component = Livewire::actingAs($admin)
         ->test(TRANSACTIONS_COMPONENT)
@@ -43,8 +46,10 @@ it('the unreconciled filter count matches the unreconciled tile', function (): v
     $tile = $component->instance()->stats['unreconciled'];
     $filtered = $component->viewData('transactions')->total();
 
+    // L'intention d'origine tient : la tuile et le filtre désignent le même
+    // ensemble. Ce sont les trois lignes, débit compris.
     expect($filtered)->toBe($tile)
-        ->and($filtered)->toBe(2);
+        ->and($filtered)->toBe(3);
 });
 
 it('a searched counterparty outside the date range stays out of the list', function (): void {

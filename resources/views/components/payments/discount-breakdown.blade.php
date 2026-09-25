@@ -1,4 +1,4 @@
-@props(['amountBeforeDiscounts', 'discounts'])
+@props(['amountBeforeDiscounts', 'discounts', 'alreadyReceived' => 0.0])
 
 {{--
     Le prix normal et ce qui l'a allégé, sous le montant d'une communication.
@@ -8,6 +8,11 @@
     pour qui se pose la question. `discounts` est une liste de
     `['amount' => float, 'reason' => string]` — tableau ou modèles, la fenêtre
     admin passe l'un, l'espace membre l'autre.
+
+    `alreadyReceived` ferme le décompte quand le montant affiché au-dessus est
+    le solde : sans lui, prix normal moins remises ne tombe pas sur le chiffre
+    qu'on réclame dès qu'une partie est déjà rentrée. Les appelants qui
+    affichent le montant dû ne le passent pas.
 --}}
 @if (count($discounts) > 0)
     <div {{ $attributes->class('space-y-0.5 text-xs text-muted') }}>
@@ -21,5 +26,11 @@
                 <span class="whitespace-nowrap tabular-nums text-success">− {{ number_format($discount['amount'], 2, ',', ' ') }} €</span>
             </div>
         @endforeach
+        @if ($alreadyReceived > 0)
+            <div class="flex justify-between gap-3">
+                <span>{{ __('Already received') }}</span>
+                <span class="whitespace-nowrap tabular-nums">− {{ number_format($alreadyReceived, 2, ',', ' ') }} €</span>
+            </div>
+        @endif
     </div>
 @endif

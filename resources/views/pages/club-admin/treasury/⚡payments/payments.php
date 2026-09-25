@@ -666,6 +666,12 @@ new class extends Component
             // — la référence l'a déjà fait — seulement de *combien*.
             $balance = (int) round(((float) $payment->amount_due - (float) $payment->amount_paid) * 100);
 
+            // Ce que la créance devait avant que la passe y touche. Le solde
+            // ci-dessus est consommé par la boucle, et le verdict doit se
+            // prononcer sur l'état d'avant, pas sur ce que le tour précédent a
+            // laissé.
+            $openingBalance = $balance;
+
             $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
 
             foreach ($candidates as $transaction) {
@@ -683,7 +689,16 @@ new class extends Component
                 // un virement encore intacts. Tout le reste — un versement
                 // partiel, un second virement sur la même référence — est
                 // défendable mais demande un regard.
-                $exact = $balance === $remaining[$transaction->id]
+                //
+                // « Intacte » se juge aussi vis-à-vis de la passe en cours :
+                // les deux gardes suivantes lisent la base, qui ne sait rien de
+                // ce que la boucle vient d'attribuer. Un membre payant 36 puis
+                // 24 sur une créance de 60 arrivait au second virement avec 24
+                // à placer face à une ligne de 24, et s'entendait dire
+                // « montant exact » sous un montant qui n'est pas celui de la
+                // créance.
+                $exact = $balance === $openingBalance
+                    && $balance === $remaining[$transaction->id]
                     && (int) round((float) $payment->amount_paid * 100) === 0
                     && (int) round(abs((float) $transaction->allocated_amount) * 100) === 0;
 
@@ -691,8 +706,11 @@ new class extends Component
                     'exact' => $exact,
                     'reason' => $exact
                         ? __('reference and amount match exactly')
+                        // Ce qu'il reste à cet instant de la passe, pas le dû
+                        // d'origine : sur un second virement, annoncer les 60 €
+                        // du départ dément la ligne qu'on est en train de lire.
                         : __('partial payment — :amount € owed', [
-                            'amount' => number_format((float) $payment->amount_due - (float) $payment->amount_paid, 2, ',', ' '),
+                            'amount' => number_format($balance / 100, 2, ',', ' '),
                         ]),
                     'payment_id' => $payment->id,
                     'transaction_id' => $transaction->id,

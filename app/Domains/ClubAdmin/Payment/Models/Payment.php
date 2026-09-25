@@ -150,12 +150,39 @@ class Payment extends Model
      */
     public function overpayment(): float
     {
-        return max(0.0, round((float) $this->amount_paid - (float) $this->amount_due, 2));
+        return max(0.0, round(
+            (float) $this->amount_paid - (float) $this->amount_due - $this->refundsCommitted(),
+            2,
+        ));
     }
 
     public function payable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * Ce que le club s'est déjà engagé à rendre sur la même chose payée.
+     *
+     * Un remboursement est une ligne à part : sans cette soustraction, rendre
+     * l'argent ne diminuait jamais le trop-perçu, et l'écran réclamait
+     * indéfiniment une somme déjà partie.
+     *
+     * Les versements effectués comptent, et les demandes ouvertes aussi : entre
+     * l'ouverture et le virement l'argent est déjà promis, et l'oublier ferait
+     * rouvrir une seconde demande pour la même somme. Une demande annulée, elle,
+     * ne compte pas — elle ne porte plus ni `to_refund` ni `refunded`.
+     */
+    public function refundsCommitted(): float
+    {
+        $committed = (int) static::query()
+            ->where('payable_type', $this->payable_type)
+            ->where('payable_id', $this->payable_id)
+            ->where('payment_method', 'refund')
+            ->whereIn('status', ['to_refund', 'refunded'])
+            ->sum('amount_due');
+
+        return round($committed / 100, 2);
     }
 
     public function refundTransaction(): BelongsTo

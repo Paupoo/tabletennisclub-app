@@ -27,6 +27,7 @@ const PAYMENTS_STAT_ROW = <<<'JS_WRAP'
     cards: cards.length,
     clipped,
     tabOverflow: list.scrollWidth - list.clientWidth,
+    tabScrollable: ['auto', 'scroll'].includes(getComputedStyle(list).overflowX),
   });
 })()
 JS_WRAP;
@@ -66,12 +67,15 @@ it('gives every payment stat the same width and its hint in full on a phone', fu
         true
     );
 
-    // Quatre depuis que « Trop-perçus » a rejoint les trois autres : le
-    // quatrième onglet avait sa colonne dans le tableau et aucun total.
-    expect($row['cards'])->toBe(4);
-    expect($row['widths'])->toHaveCount(1, 'the four stats share one row width, none is left half-size');
+    // Cinq : une carte par onglet, « Remboursés » et « Trop-perçus » compris.
+    expect($row['cards'])->toBe(5);
+    expect($row['widths'])->toHaveCount(1, 'the five stats share one row width, none is left half-size');
     expect($row['clipped'])->toBe([], 'a hint cut mid-word says nothing');
-    expect($row['tabOverflow'])->toBeLessThanOrEqual(0);
+    // Cinq onglets ne tiennent pas dans 390 px, quoi qu'on fasse aux libellés :
+    // sans leurs icônes ils dépassent encore. Ce qui reste exigible est que le
+    // dépassement soit atteignable — la rangée défile — et non qu'il soit nul.
+    expect($row['tabOverflow'])->toBeGreaterThan(0);
+    expect($row['tabScrollable'])->toBeTrue('the tab row overflows without a way to reach what is hidden');
 });
 
 it('starts the planning board body on the same line as its title', function (): void {

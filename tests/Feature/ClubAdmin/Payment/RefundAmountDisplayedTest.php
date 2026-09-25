@@ -50,12 +50,38 @@ it('never shows a zero amount on the refund tab', function (): void {
     // Et de quoi remplir la quatrième : sans elle, la carte « Trop-perçus »
     // affiche un zéro parfaitement légitime, et l'assertion ci-dessous ne
     // saurait plus distinguer un total vide d'un chiffre faux.
-    $subscription->payments()->create([
+    //
+    // Sur une **autre** affiliation : l'excédent est net des remboursements
+    // ouverts sur la même chose payée, et celui d'en dessous l'effacerait.
+    $other = Subscription::factory()->create([
+        'user_id' => User::factory()->create()->id,
+        'status' => 'confirmed',
+        'amount_due' => 40,
+    ]);
+    $other->payments()->create([
         'reference' => '451/0926/00003',
         'amount_due' => 40,
         'amount_paid' => 61.30,
         'status' => 'paid',
         'payment_method' => 'Wire',
+    ]);
+
+    // Et la cinquième. Ce test exige que toute carte porte un chiffre : c'est
+    // ce qui permet à l'assertion finale de ne rien savoir du balisage, et le
+    // prix à payer est d'alimenter chaque nouvel état ajouté à l'écran.
+    // Sur une troisième affiliation, pour la même raison : posé sur celle du
+    // trop-perçu, il l'effacerait — l'excédent est net des remboursements.
+    $settled = Subscription::factory()->create([
+        'user_id' => User::factory()->create()->id,
+        'status' => 'confirmed',
+        'amount_due' => 88.15,
+    ]);
+    $settled->payments()->create([
+        'reference' => '451/0926/00004',
+        'amount_due' => 88.15,
+        'amount_paid' => 88.15,
+        'status' => 'refunded',
+        'payment_method' => 'refund',
     ]);
 
     $refund = (new RequestSubscriptionRefundAction)($subscription, 137.50, 'Trop-perçu');

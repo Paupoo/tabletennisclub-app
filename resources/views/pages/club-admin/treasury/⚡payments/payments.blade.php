@@ -64,7 +64,7 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- Stats --}}
-    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-5">
         <x-admin.shared.stat-card
             :label="__('Pending')"
             :value="number_format($this->stats['pending_total'], 2, ',', ' ') . ' €'"
@@ -85,6 +85,13 @@
             :hint="$this->stats['to_refund_count'] . ' ' . __('refund(s) pending')"
             icon="o-arrow-uturn-left"
             :color="$this->stats['to_refund_count'] > 0 ? 'error' : 'neutral'" />
+
+        <x-admin.shared.stat-card
+            :label="__('Refunded')"
+            :value="number_format($this->stats['refunded_total'], 2, ',', ' ') . ' €'"
+            :hint="$this->stats['refunded_count'] . ' ' . __('refund(s) completed')"
+            icon="o-check-circle"
+            color="neutral" />
 
         {{-- Le quatrième onglet avait sa colonne dans le tableau mais aucun
              total : l'argent que le club détient en trop était le seul état
@@ -118,9 +125,13 @@
     @endif
 
     <x-admin.shared.tabs wire:model.live="statusFilter">
+        {{-- L'ordre suit le travail : ce qu'on attend, ce qu'on doit rendre,
+             puis ce qui est clos des deux côtés, et enfin l'argent détenu en
+             trop — le seul état qui appelle encore une décision. --}}
         <x-admin.shared.tab name="pending"   :label="__('Pending')"   icon="o-clock" />
-        <x-admin.shared.tab name="paid"      :label="__('Paid')"      icon="o-check-badge" />
         <x-admin.shared.tab name="to_refund" :label="__('To refund')" icon="o-arrow-uturn-left" />
+        <x-admin.shared.tab name="paid"      :label="__('Paid')"      icon="o-check-badge" />
+        <x-admin.shared.tab name="refunded"  :label="__('Refunded')"  icon="o-check-circle" />
         {{-- Pas un statut : une position. Les crédits dépassent le dû, et cet
              argent n'appartient plus au club. --}}
         <x-admin.shared.tab name="overpaid" :label="__('Overpaid')" icon="o-arrow-trending-up" />
@@ -148,7 +159,9 @@
                                  « 220 sur 120 » qui a l'air d'un bug. --}}
                             <span class="font-bold text-warning">{{ number_format($payment->overpayment, 2, ',', ' ') }} €</span>
                             <div class="text-xs font-normal text-muted">{{ __('held by the club') }}</div>
-                        @elseif ($this->statusFilter === 'paid')
+                        @elseif (in_array($this->statusFilter, ['paid', 'refunded'], true))
+                            {{-- Ce qui a réellement bougé : encaissé d'un côté,
+                                 sorti de l'autre. --}}
                             <span class="font-bold">{{ number_format($payment->amount_paid, 2, ',', ' ') }} €</span>
                         @else
                             {{-- Le solde, pas le montant réclamé au départ : depuis
@@ -252,7 +265,7 @@
                 <span class="font-bold text-warning">{{ number_format($payment->overpayment, 2, ',', ' ') }} €</span>
                 <div class="text-xs text-muted">{{ __('held by the club') }}</div>
             </div>
-            @elseif($this->statusFilter === 'paid')
+            @elseif(in_array($this->statusFilter, ['paid', 'refunded'], true))
             <span class="tabular-nums font-bold">{{ number_format($payment->amount_paid, 2, ',', ' ') }} €</span>
             @else
             <div class="tabular-nums">
@@ -291,7 +304,14 @@
                  modale d'instructions ; ici, la seule question du trésorier est
                  « l'ai-je déjà viré ? » — et seule cette date peut y répondre,
                  le débit n'arrivant sur le relevé que des semaines plus tard. --}}
-            @if ($payment->refund_wired_at)
+            @if ($this->statusFilter === 'refunded')
+                <x-badge :value="__('Refunded')" class="badge-success badge-soft badge-sm" />
+                @if ($payment->refund_wired_at)
+                    <div class="mt-0.5 text-xs text-muted">
+                        {{ __('Wired on :date', ['date' => \Carbon\Carbon::parse($payment->refund_wired_at)->format('d/m/Y')]) }}
+                    </div>
+                @endif
+            @elseif ($payment->refund_wired_at)
                 <x-badge
                     value="{{ __('Wired on :date', ['date' => \Carbon\Carbon::parse($payment->refund_wired_at)->format('d/m/Y')]) }}"
                     class="badge-info badge-soft badge-sm" />

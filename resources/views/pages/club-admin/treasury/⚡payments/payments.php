@@ -415,7 +415,7 @@ new class extends Component
             ['key' => 'created_at', 'label' => __('Date'),      'sortable' => true],
         ];
 
-        if ($this->statusFilter === 'to_refund') {
+        if (in_array($this->statusFilter, ['to_refund', 'refunded'], true)) {
             // Le statut, pas l'IBAN : le compte à créditer se lit dans la modale
             // d'instructions, avec le montant et la communication. Ce que la
             // liste doit dire, c'est où en est chaque remboursement.
@@ -927,8 +927,13 @@ new class extends Component
             // Le net, comme la colonne de l'onglet : ce que le club détient en
             // trop, jamais la somme encaissée. Même définition que applyTab(),
             // sans quoi la carte et l'onglet compteraient deux ensembles.
+            'refunded_count' => Payment::where('status', 'refunded')->count(),
+            'refunded_total' => round(Payment::where('status', 'refunded')->sum('amount_paid') / 100, 2),
             'overpaid_count' => $this->overpaid()->count(),
-            'overpaid_total' => round(((int) $this->overpaid()->sum(DB::raw('amount_paid - amount_due'))) / 100, 2),
+            // Sommé sur les lignes plutôt qu'en SQL : c'est `overpayment()` qui
+            // sait retrancher ce qui est déjà promis, et l'ensemble est court
+            // par nature — un trop-perçu appelle une action, il ne s'accumule pas.
+            'overpaid_total' => round($this->overpaid()->get()->sum(fn (Payment $p): float => $p->overpayment()), 2),
         ];
     }
 
@@ -1075,16 +1080,47 @@ new class extends Component
             ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName));
     }
 
+    /**
+     * Les lignes dont l'excédent n'a pas encore été rendu.
+     *
+     * Le reste à rendre se compare en SQL à la somme des remboursements ouverts
+     * sur la même chose payée : une ligne entièrement remboursée doit quitter
+     * l'onglet, et la carte compter la même chose que lui.
+     *
+     * @param  Builder<Payment>  $query
+     * @return Builder<Payment>
+     */
+    private function applyOverpaidConditions(Builder $query): Builder
+    {
+        $committed = DB::table('payments as refunds')
+            ->selectRaw('coalesce(sum(refunds.amount_due), 0)')
+            ->whereColumn('refunds.payable_type', 'payments.payable_type')
+            ->whereColumn('refunds.payable_id', 'payments.payable_id')
+            ->where('refunds.payment_method', 'refund')
+            ->whereIn('refunds.status', ['to_refund', 'refunded']);
+
+        return $query
+            ->where(fn (Builder $q): Builder => $q
+                ->where('payment_method', '!=', 'refund')
+                ->orWhereNull('payment_method'))
+            // Additionner plutôt que soustraire : les deux colonnes sont
+            // `unsigned`, et « payé − dû » dans un WHERE s'évalue sur toutes les
+            // lignes — MySQL refuse l'underflow dès qu'une créance n'est pas
+            // soldée. `payé > dû + promis` dit la même chose sans jamais passer
+            // sous zéro, et reste vrai sur SQLite, où la suite tourne.
+            ->whereRaw(
+                'payments.amount_paid > payments.amount_due + (' . $committed->toSql() . ')',
+                $committed->getBindings(),
+            );
+    }
+
     private function applyTab(Builder $q): Builder
     {
         if ($this->statusFilter !== 'overpaid') {
             return $q->where('status', $this->statusFilter);
         }
 
-        return $q->whereColumn('amount_paid', '>', 'amount_due')
-            ->where(fn (Builder $q): Builder => $q
-                ->where('payment_method', '!=', 'refund')
-                ->orWhereNull('payment_method'));
+        return $this->applyOverpaidConditions($q);
     }
 
     private function eventTypeLabel(string $type): string
@@ -1117,10 +1153,7 @@ new class extends Component
      */
     private function overpaid(): Builder
     {
-        return Payment::whereColumn('amount_paid', '>', 'amount_due')
-            ->where(fn (Builder $q): Builder => $q
-                ->where('payment_method', '!=', 'refund')
-                ->orWhereNull('payment_method'));
+        return $this->applyOverpaidConditions(Payment::query());
     }
 
     private function payableEagerLoads(): array

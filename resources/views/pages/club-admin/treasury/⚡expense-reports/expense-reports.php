@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\ExpenseReports\Actions\AcceptExpenseReport;
 use App\Domains\ClubAdmin\ExpenseReports\Actions\CancelExpenseReportAcceptance;
 use App\Domains\ClubAdmin\ExpenseReports\Actions\RejectExpenseReport;
+use App\Domains\ClubAdmin\ExpenseReports\Jobs\GenerateExpenseReportExport;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
+use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReportExport;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\ExpenseReportDisplayStatus;
@@ -73,6 +75,21 @@ new class extends Component
     #[Url(as: 'member')]
     public ?int $userId = null;
 
+    /** The quarterly gesture: a ZIP of every paid report not archived yet. */
+    public function archiveUnarchived(): void
+    {
+        Gate::authorize('archive', ExpenseReport::class);
+
+        $ids = ExpenseReport::query()
+            ->whereDisplayStatus(ExpenseReportDisplayStatus::Paid)
+            ->whereNull('archived_at')
+            ->orderBy('id')
+            ->pluck('id')
+            ->all();
+
+        $this->queueExport('zip', $ids);
+    }
+
     public function cancelAcceptance(): void
     {
         $report = $this->shownOrFail();
@@ -133,6 +150,21 @@ new class extends Component
         $this->rejectModal = false;
         $this->refreshLists();
         $this->success(__('Rejected. The member has been told why.'));
+    }
+
+    /**
+     * Queue a PDF or ZIP of exactly what the screen shows — the tab, the
+     * search and the filters — and tell the requester when it is ready.
+     */
+    public function export(string $format): void
+    {
+        Gate::authorize('export', ExpenseReport::class);
+
+        if (! in_array($format, ['pdf', 'zip'], true)) {
+            return;
+        }
+
+        $this->queueExport($format, $this->filteredQuery()->orderBy('expense_reports.id')->pluck('expense_reports.id')->all());
     }
 
     /**
@@ -338,6 +370,29 @@ new class extends Component
     {
         /** @var User */
         return Auth::user();
+    }
+
+    /**
+     * @param  list<int>  $reportIds
+     */
+    private function queueExport(string $format, array $reportIds): void
+    {
+        if ($reportIds === []) {
+            $this->warning(__('Nothing to export: no report matches the current filters.'));
+
+            return;
+        }
+
+        $export = ExpenseReportExport::create([
+            'requested_by' => $this->actor()->id,
+            'format' => $format,
+            'report_ids' => $reportIds,
+            'status' => 'pending',
+        ]);
+
+        GenerateExpenseReportExport::dispatch($export->id);
+
+        $this->success(__('The export is being prepared. The bell will ring when it is ready.'));
     }
 
     private function refreshLists(): void

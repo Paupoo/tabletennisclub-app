@@ -13,6 +13,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\ExpenseReportDisplayStatus;
 use App\Domains\Shared\Enums\ExpenseReportStatus;
 use App\Domains\Shared\Enums\Feature;
 use App\Domains\Shared\Enums\Permission;
@@ -204,6 +205,22 @@ class DashboardController extends Controller
                     'icon' => 'o-receipt-percent',
                     'label' => $toDecide === 1 ? '1 note de frais à traiter' : "{$toDecide} notes de frais à traiter",
                     'route' => route('admin.treasury.expense-reports'),
+                ];
+            }
+        }
+
+        // Whoever's download archives: a decider, or whoever wires refunds.
+        if (Feature::ExpenseReports->enabled() && Gate::allows('archive', ExpenseReport::class)) {
+            $toArchive = ExpenseReport::query()
+                ->whereDisplayStatus(ExpenseReportDisplayStatus::Paid)
+                ->whereNull('archived_at')
+                ->count();
+            if ($toArchive > 0) {
+                $alerts[] = [
+                    'type' => 'info',
+                    'icon' => 'o-archive-box',
+                    'label' => $toArchive === 1 ? '1 note de frais payée à archiver' : "{$toArchive} notes de frais payées à archiver",
+                    'route' => route('admin.treasury.expense-reports', ['tab' => 'paid', 'unarchived' => 1]),
                 ];
             }
         }

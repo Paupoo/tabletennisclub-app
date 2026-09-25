@@ -22,6 +22,7 @@ use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentPrintController;
 use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\ClubPosts\PublicNewsPostController;
+use App\Http\Controllers\ExpenseReports\ExpenseReportExportController;
 use App\Http\Controllers\ExpenseReports\ExpenseReportFileController;
 use App\Http\Controllers\HomeController;
 use App\Http\Middleware\ProtectAgainstSpam;
@@ -132,6 +133,10 @@ Route::prefix('admin/my-space/')
         // the report (its author, or the treasury readers).
         Route::get('expense-reports/files/{file}', [ExpenseReportFileController::class, 'show'])
             ->name('admin.expense-reports.file')
+            ->middleware('feature:expense_reports');
+        // An export: only its requester, only for a week.
+        Route::get('expense-reports/exports/{export}', [ExpenseReportExportController::class, 'download'])
+            ->name('admin.expense-reports.export')
             ->middleware('feature:expense_reports');
 
         // Private member documents — authorization handled in the controller

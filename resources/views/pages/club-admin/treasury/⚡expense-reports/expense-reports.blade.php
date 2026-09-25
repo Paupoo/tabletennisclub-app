@@ -16,6 +16,20 @@
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
             </div>
+            @can('export', \App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport::class)
+                {{-- What the screen shows — tab, search and filters — is what
+                     the file holds. Prepared in the background; the bell
+                     rings with the link. --}}
+                <x-dropdown :label="__('Export')" icon="o-arrow-down-tray" right class="btn-ghost btn-sm">
+                    <x-menu-item icon="o-printer" :title="__('Printable PDF')" wire:click="export('pdf')" spinner="export" />
+                    <x-menu-item icon="o-archive-box-arrow-down" :title="__('ZIP archive (original proofs)')" wire:click="export('zip')" spinner="export" />
+                    @can('archive', \App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport::class)
+                        <x-menu-separator />
+                        <x-menu-item icon="o-archive-box" :title="__('Archive the paid reports not archived yet')"
+                            wire:click="archiveUnarchived" spinner="archiveUnarchived" />
+                    @endcan
+                </x-dropdown>
+            @endcan
         </x-slot:actions>
     </x-header>
 

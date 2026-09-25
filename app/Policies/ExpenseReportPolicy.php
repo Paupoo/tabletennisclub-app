@@ -23,6 +23,16 @@ use App\Support\AccountProxy;
  */
 class ExpenseReportPolicy
 {
+    /**
+     * Take the paid reports' originals off the server. Only a decider or
+     * whoever wires refunds: their download is the one that counts as
+     * archiving.
+     */
+    public function archive(User $user): bool
+    {
+        return $user->canAny([Permission::ExpenseReportsProcess->value, Permission::PaymentsRefund->value]);
+    }
+
     /** Undo an acceptance while the refund has not left the account. */
     public function cancelAcceptance(User $user, ExpenseReport $report): bool
     {

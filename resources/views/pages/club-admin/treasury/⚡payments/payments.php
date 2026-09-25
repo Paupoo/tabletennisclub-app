@@ -348,6 +348,20 @@ new class extends Component
         // compte vaut « A rembourser ».
         $account = trim($this->refundRequestIban);
 
+        // Un trop-perçu se rend au compte qui a versé, et à aucun autre. Ce
+        // compte vient souvent d'un tiers — une commune, un employeur, un
+        // tuteur — et se replier sur l'IBAN du membre enverrait l'argent à
+        // quelqu'un qui ne l'a jamais versé. Faute de le connaître, on demande
+        // plutôt que de deviner.
+        //
+        // Une cotisation annulée, elle, se rend bien à son titulaire : c'est le
+        // motif qui décide, pas l'absence de donnée.
+        if ($account === '' && $payment->isOverpaid()) {
+            $this->error(__('Nobody knows which account this money came from — enter it before opening the refund.'));
+
+            return;
+        }
+
         if ($account !== '' && ! IbanNormalizer::isValid($account)) {
             $this->error(__('This is not a valid account number.'));
 

@@ -157,7 +157,7 @@ new class extends Component
             ->with(['refund', 'files'])
             ->where('user_id', $this->user->id)
             ->when($this->categoryFilter !== '', fn (Builder $q): Builder => $q->where('category', $this->categoryFilter))
-            ->when($this->statusFilter !== '', fn (Builder $q): Builder => $this->applyStatusFilter($q))
+            ->when(ExpenseReportDisplayStatus::tryFrom($this->statusFilter), fn (Builder $q, ExpenseReportDisplayStatus $status): Builder => $q->whereDisplayStatus($status))
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->paginate(20);
@@ -373,24 +373,6 @@ new class extends Component
             'newFiles' => __('Proofs'),
             'newFiles.*' => __('Proof'),
         ];
-    }
-
-    /**
-     * "Paid" is not a stored status: an accepted report is paid once its
-     * refund is, so both filters read the refund.
-     *
-     * @param  Builder<ExpenseReport>  $query
-     * @return Builder<ExpenseReport>
-     */
-    private function applyStatusFilter(Builder $query): Builder
-    {
-        return match ($this->statusFilter) {
-            ExpenseReportDisplayStatus::Paid->value => $query->where('status', 'accepted')
-                ->whereHas('refund', fn (Builder $q): Builder => $q->where('status', 'refunded')),
-            ExpenseReportDisplayStatus::Accepted->value => $query->where('status', 'accepted')
-                ->whereDoesntHave('refund', fn (Builder $q): Builder => $q->where('status', 'refunded')),
-            default => $query->where('status', $this->statusFilter),
-        };
     }
 
     private function ownReport(int $reportId): ExpenseReport

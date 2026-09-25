@@ -57,6 +57,8 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, Payment> $payments
  *
  * @method static ExpenseReportFactory factory($count = null, $state = [])
+ * @method static Builder<static>|ExpenseReport whereDisplayStatus(ExpenseReportDisplayStatus $status)
+ * @method static Builder<static>|ExpenseReport paidInYear(int $year)
  */
 class ExpenseReport extends Model implements DescribesPayment
 {
@@ -158,6 +160,24 @@ class ExpenseReport extends Model implements DescribesPayment
     }
 
     /**
+     * The day the refund left the club's account: the date of the bank debit
+     * reconciled with it. What decides the financial year a report counts in —
+     * a receipt of 28 December refunded on 10 January belongs to January.
+     */
+    public function paidOn(): ?Carbon
+    {
+        if ($this->displayStatus() !== ExpenseReportDisplayStatus::Paid) {
+            return null;
+        }
+
+        $date = $this->refund?->credits()
+            ->join('transactions', 'transactions.id', '=', 'payment_credits.transaction_id')
+            ->max('transactions.date');
+
+        return $date === null ? null : Carbon::parse($date);
+    }
+
+    /**
      * Every refund this report ever opened, cancelled ones included.
      *
      * @return MorphMany<Payment, $this>
@@ -215,6 +235,34 @@ class ExpenseReport extends Model implements DescribesPayment
     public function resumedFrom(): BelongsTo
     {
         return $this->belongsTo(self::class, 'resumed_from_id');
+    }
+
+    /**
+     * Reports whose refund left the club's account during a calendar year —
+     * the club's financial year runs from January to December.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopePaidInYear(Builder $query, int $year): void
+    {
+        $query->whereDisplayStatus(ExpenseReportDisplayStatus::Paid)
+            ->whereHas('refund.credits.transaction', fn (Builder $q): Builder => $q->whereYear('date', $year));
+    }
+
+    /**
+     * Reports in a status as screens show it, "paid" read off the refund.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeWhereDisplayStatus(Builder $query, ExpenseReportDisplayStatus $status): void
+    {
+        $refunded = fn (Builder $q): Builder => $q->where('status', 'refunded');
+
+        match ($status) {
+            ExpenseReportDisplayStatus::Paid => $query->where('status', ExpenseReportStatus::Accepted)->whereHas('refund', $refunded),
+            ExpenseReportDisplayStatus::Accepted => $query->where('status', ExpenseReportStatus::Accepted)->whereDoesntHave('refund', $refunded),
+            default => $query->where('status', $status->value),
+        };
     }
 
     /**

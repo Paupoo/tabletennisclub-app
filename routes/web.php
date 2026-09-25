@@ -228,6 +228,12 @@ Route::prefix('admin/treasury/')
             ->middleware('can:transactions.view')
             ->name('admin.treasury.transactions');
 
+        // Read by whoever reads the treasury; deciding is checked in the
+        // component, against the report.
+        Route::livewire('expense-reports', 'pages::club-admin.treasury.expense-reports')
+            ->middleware(['feature:expense_reports', 'can:payments.view'])
+            ->name('admin.treasury.expense-reports');
+
         Route::livewire('fines', 'pages::club-admin.treasury.fines')
             ->middleware('can:fines.view')
             ->name('admin.treasury.fines');

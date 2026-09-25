@@ -145,6 +145,17 @@
         @can('payments.view')
             <x-menu-item icon="o-credit-card" link="{{ route('admin.treasury.payments') }}" :title="__('Payments')" />
         @endcan
+        @feature('expense_reports')
+        @can('payments.view')
+            @php
+                $expenseReportsToDecide = auth()->user()->can('expense_reports.process')
+                    ? \App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport::where('status', 'submitted')->where('user_id', '!=', auth()->id())->count()
+                    : 0;
+            @endphp
+            <x-menu-item icon="o-receipt-percent" link="{{ route('admin.treasury.expense-reports') }}" :title="__('Expense reports')"
+                :badge="$expenseReportsToDecide > 0 ? (string) $expenseReportsToDecide : null" badge-classes="badge-warning" />
+        @endcan
+        @endfeature
         @can('fines.view')
             <x-menu-item icon="o-scale" link="{{ route('admin.treasury.fines') }}" :title="__('Fines')" />
         @endcan

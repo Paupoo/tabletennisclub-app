@@ -47,6 +47,17 @@ it('never shows a zero amount on the refund tab', function (): void {
         'status' => 'paid',
     ]);
 
+    // Et de quoi remplir la quatrième : sans elle, la carte « Trop-perçus »
+    // affiche un zéro parfaitement légitime, et l'assertion ci-dessous ne
+    // saurait plus distinguer un total vide d'un chiffre faux.
+    $subscription->payments()->create([
+        'reference' => '451/0926/00003',
+        'amount_due' => 40,
+        'amount_paid' => 61.30,
+        'status' => 'paid',
+        'payment_method' => 'Wire',
+    ]);
+
     $refund = (new RequestSubscriptionRefundAction)($subscription, 137.50, 'Trop-perçu');
 
     Livewire::actingAs($treasurer)

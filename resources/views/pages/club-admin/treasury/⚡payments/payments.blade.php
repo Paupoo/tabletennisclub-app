@@ -64,30 +64,38 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- Stats --}}
-    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
         <x-admin.shared.stat-card
             :label="__('Pending')"
             :value="number_format($this->stats['pending_total'], 2, ',', ' ') . ' €'"
             :hint="$this->stats['pending_count'] . ' ' . __('payment(s) awaiting reconciliation')"
             icon="o-clock"
-            color="warning"
-            class="{{ $statusFilter === 'pending' ? 'ring-2 ring-primary/30' : '' }}" />
+            color="warning" />
 
         <x-admin.shared.stat-card
             :label="__('Paid')"
             :value="number_format($this->stats['paid_total'], 2, ',', ' ') . ' €'"
             :hint="$this->stats['paid_count'] . ' ' . __('payment(s) received')"
             icon="o-check-badge"
-            color="success"
-            class="{{ $statusFilter === 'paid' ? 'ring-2 ring-primary/30' : '' }}" />
+            color="success" />
 
         <x-admin.shared.stat-card
             :label="__('To refund')"
             :value="number_format($this->stats['to_refund_total'], 2, ',', ' ') . ' €'"
             :hint="$this->stats['to_refund_count'] . ' ' . __('refund(s) pending')"
             icon="o-arrow-uturn-left"
-            :color="$this->stats['to_refund_count'] > 0 ? 'error' : 'neutral'"
-            class="sm:col-span-2 lg:col-span-1 {{ $statusFilter === 'to_refund' ? 'ring-2 ring-primary/30' : '' }}" />
+            :color="$this->stats['to_refund_count'] > 0 ? 'error' : 'neutral'" />
+
+        {{-- Le quatrième onglet avait sa colonne dans le tableau mais aucun
+             total : l'argent que le club détient en trop était le seul état
+             qu'on ne pouvait pas lire d'un coup d'œil, alors que c'est celui
+             qui appelle une action — il ne lui appartient plus. --}}
+        <x-admin.shared.stat-card
+            :label="__('Overpaid')"
+            :value="number_format($this->stats['overpaid_total'], 2, ',', ' ') . ' €'"
+            :hint="$this->stats['overpaid_count'] . ' ' . __('payment(s) held in excess')"
+            icon="o-arrow-trending-up"
+            :color="$this->stats['overpaid_count'] > 0 ? 'warning' : 'neutral'" />
     </div>
 
     {{-- Status filter — folder tabs; the filtered table lives outside as its own card --}}

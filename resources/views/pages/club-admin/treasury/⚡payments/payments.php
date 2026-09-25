@@ -872,6 +872,11 @@ new class extends Component
             'paid_total' => round(Payment::where('status', 'paid')->sum('amount_paid') / 100, 2),
             'to_refund_count' => Payment::where('status', 'to_refund')->count(),
             'to_refund_total' => round(Payment::where('status', 'to_refund')->sum('amount_due') / 100, 2),
+            // Le net, comme la colonne de l'onglet : ce que le club détient en
+            // trop, jamais la somme encaissée. Même définition que applyTab(),
+            // sans quoi la carte et l'onglet compteraient deux ensembles.
+            'overpaid_count' => $this->overpaid()->count(),
+            'overpaid_total' => round(((int) $this->overpaid()->sum(DB::raw('amount_paid - amount_due'))) / 100, 2),
         ];
     }
 
@@ -954,6 +959,22 @@ new class extends Component
      * @param  Builder<Payment>  $q
      * @return Builder<Payment>
      */
+    /**
+     * Les lignes dont les crédits dépassent le dû.
+     *
+     * Une position, pas un statut : rien n'est stocké, et le filtre doit donc
+     * vivre au même endroit pour la carte et pour l'onglet.
+     *
+     * @return Builder<Payment>
+     */
+    private function overpaid(): Builder
+    {
+        return Payment::whereColumn('amount_paid', '>', 'amount_due')
+            ->where(fn (Builder $q): Builder => $q
+                ->where('payment_method', '!=', 'refund')
+                ->orWhereNull('payment_method'));
+    }
+
     private function applyTab(Builder $q): Builder
     {
         if ($this->statusFilter !== 'overpaid') {

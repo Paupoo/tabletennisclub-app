@@ -180,7 +180,7 @@ it('orders the treasury event types', function (): void {
 
     // « Bar » se range entre Affiliation et Réunion, pas en fin de liste :
     // c'est le tri qui décide, jamais l'ordre de déclaration.
-    expect($names->all())->toBe([__('Subscription'), __('Bar'), __('Meeting'), __('Tournament')]);
+    expect($names->all())->toBe([__('Subscription'), __('Bar'), __('Expense report'), __('Meeting'), __('Tournament')]);
 });
 
 it('orders the contact reasons', function (): void {

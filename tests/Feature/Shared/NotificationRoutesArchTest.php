@@ -71,6 +71,13 @@ it('never sends a member to a page the committee alone can open', function (): v
         // RemindCaptainsCommand sends it to the captain of the team only, and
         // `access-selections` admits every captain — CaptainLineupReminderTest.
         'CaptainLineupReminderNotification.php',
+        // The three go to User::permission('expense_reports.process') — plus
+        // 'payments.refund' for the last — and every délégation holding either
+        // also holds payments.view, which the page asks for. The member's own
+        // expense report notifications link to their member space instead.
+        'ExpenseReportSubmittedNotification.php',
+        'ExpenseReportsDigestNotification.php',
+        'ExpenseReportsToArchiveNotification.php',
     ];
 
     $files = (new Finder)

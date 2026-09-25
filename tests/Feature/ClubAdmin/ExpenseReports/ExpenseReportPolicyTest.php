@@ -29,6 +29,21 @@ describe('the new délégations', function (): void {
             ->can(Permission::PaymentsReconcile->value)->toBeFalse();
     });
 
+    /*
+     * The deciders' bell, digest and archiving reminder link to the treasury
+     * page, gated by payments.view: whoever holds a right that brings those
+     * notifications must be able to open it (NotificationRoutesArchTest).
+     */
+    it('lets whoever decides or wires refunds read the treasury', function (Role $role): void {
+        $grants = $role->permissions();
+
+        if (in_array(Permission::ExpenseReportsProcess, $grants, true) || in_array(Permission::PaymentsRefund, $grants, true)) {
+            expect($grants)->toContain(Permission::PaymentsView);
+        } else {
+            expect(true)->toBeTrue();
+        }
+    })->with(Role::cases());
+
     it('gives the treasury the right to decide on expense reports', function (): void {
         expect(Role::TREASURY->permissions())->toContain(Permission::ExpenseReportsProcess);
     });

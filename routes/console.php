@@ -77,6 +77,21 @@ Schedule::command('attestations:purge')
     ->withoutOverlapping();
 
 /*
+ * Notes de frais. Le digest part le dimanche soir, pour que la semaine du
+ * trésorier commence avec la liste de ce qui attend. La purge, elle, tourne
+ * même quand le domaine est coupé : éteindre la fonction ne doit pas prolonger
+ * la vie des justificatifs d'une note jamais payée.
+ */
+Schedule::command('expense-reports:send-digest')
+    ->weeklyOn(0, '19:00')
+    ->withoutOverlapping()
+    ->when(Feature::ExpenseReports->enabled(...));
+
+Schedule::command('expense-reports:purge-files')
+    ->dailyAt('03:30')
+    ->withoutOverlapping();
+
+/*
  * Les feuilles de match de la fédération : le score officiel de chaque
  * rencontre et le détail joueur par joueur.
  *

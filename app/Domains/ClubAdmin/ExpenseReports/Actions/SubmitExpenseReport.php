@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace App\Domains\ClubAdmin\ExpenseReports\Actions;
 
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
+use App\Domains\ClubAdmin\ExpenseReports\Notifications\ExpenseReportSubmittedNotification;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\ExpenseReportStatus;
+use App\Domains\Shared\Enums\Permission;
 use App\Support\AccountProxy;
 use Carbon\CarbonInterface;
 use DomainException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 final class SubmitExpenseReport
 {
@@ -55,6 +58,13 @@ final class SubmitExpenseReport
         ]));
 
         (new StoreExpenseReportFiles)($report, $files);
+
+        $report->setRelation('user', $author);
+
+        Notification::send(
+            User::permission(Permission::ExpenseReportsProcess->value)->whereKeyNot($author->id)->get(),
+            new ExpenseReportSubmittedNotification($report),
+        );
 
         return $report->load('files');
     }

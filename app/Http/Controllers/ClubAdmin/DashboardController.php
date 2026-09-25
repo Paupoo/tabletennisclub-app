@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\ClubAdmin;
 
 use App\Domains\ClubAdmin\Contact\Models\Contact;
+use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -12,6 +13,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\ExpenseReportStatus;
 use App\Domains\Shared\Enums\Feature;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Role;
@@ -186,6 +188,22 @@ class DashboardController extends Controller
                     'icon' => 'o-banknotes',
                     'label' => $pendingPayments === 1 ? '1 paiement en attente' : "{$pendingPayments} paiements en attente",
                     'route' => route('admin.treasury.payments'),
+                ];
+            }
+        }
+
+        // Keyed on the right to decide, never on reading the treasury: the
+        // committee reads every report and decides on none.
+        if (Feature::ExpenseReports->enabled() && $user->can(Permission::ExpenseReportsProcess->value)) {
+            $toDecide = ExpenseReport::where('status', ExpenseReportStatus::Submitted)
+                ->where('user_id', '!=', $user->id)
+                ->count();
+            if ($toDecide > 0) {
+                $alerts[] = [
+                    'type' => 'warning',
+                    'icon' => 'o-receipt-percent',
+                    'label' => $toDecide === 1 ? '1 note de frais à traiter' : "{$toDecide} notes de frais à traiter",
+                    'route' => route('admin.treasury.expense-reports'),
                 ];
             }
         }

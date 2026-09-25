@@ -63,6 +63,7 @@ class Payment extends Model
         'amount_due' => 'integer',   // stocké en centimes
         'amount_paid' => 'integer',  // stocké en centimes
         'last_reminded_at' => 'datetime',
+        'refund_wired_at' => 'datetime',
     ];
 
     protected $fillable = [

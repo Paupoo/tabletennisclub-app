@@ -286,14 +286,18 @@
             @endif
             @endscope
 
-            @scope('cell_iban', $payment)
-            {{-- Le compte à créditer, pas celui du membre : un trop-perçu se rend
-                 d'où il vient, et afficher le titulaire quand un tiers a payé
-                 donnerait à recopier le mauvais numéro. --}}
-            @if($payment->refund_iban ?? $payment->iban)
-                <span class="font-mono text-xs">{{ $payment->refund_iban ?? $payment->iban }}</span>
+            @scope('cell_refund_state', $payment)
+            {{-- Où en est ce remboursement. Le compte à créditer se lit dans la
+                 modale d'instructions ; ici, la seule question du trésorier est
+                 « l'ai-je déjà viré ? » — et seule cette date peut y répondre,
+                 le débit n'arrivant sur le relevé que des semaines plus tard. --}}
+            @if ($payment->refund_wired_at)
+                <x-badge
+                    value="{{ __('Wired on :date', ['date' => \Carbon\Carbon::parse($payment->refund_wired_at)->format('d/m/Y')]) }}"
+                    class="badge-info badge-soft badge-sm" />
+                <div class="mt-0.5 text-xs text-muted">{{ __('waiting for the statement') }}</div>
             @else
-                <x-badge value="{{ __('Missing') }}" class="badge-warning badge-sm" icon="o-exclamation-triangle" />
+                <x-badge :value="__('To wire')" class="badge-warning badge-soft badge-sm" />
             @endif
             @endscope
 
@@ -676,6 +680,14 @@
 
         <x-slot:actions>
             <x-button :label="__('Close')" @click="$wire.refundInstructionsModal = false" class="btn-ghost" />
+            @if ($refundInstructions && ! $refundInstructions['wired'])
+                <x-button
+                    :label="__('I have made the transfer')"
+                    icon="o-check"
+                    class="btn-primary"
+                    wire:click="markRefundAsWired"
+                    spinner="markRefundAsWired" />
+            @endif
         </x-slot:actions>
     </x-app-modal>
 

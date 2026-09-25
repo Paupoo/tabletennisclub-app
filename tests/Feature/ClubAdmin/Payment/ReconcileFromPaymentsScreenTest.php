@@ -452,16 +452,18 @@ it('shows the communication to put on the outgoing transfer', function (): void 
         targetIban: 'BE62510007547061',
     );
 
-    // La ligne nomme le membre et le compte à créditer — celui du tiers qui a
-    // payé, pas celui du titulaire. La communication, elle, fait 140 caractères
-    // et n'a qu'un usage, être copiée : elle vit dans la modale d'instructions,
-    // où elle tient en entier.
+    // La ligne nomme le membre et dit où en est le remboursement. Le compte à
+    // créditer — celui du tiers qui a payé, pas celui du titulaire — et la
+    // communication vivent dans la modale d'instructions : ce sont les deux
+    // choses qu'on recopie dans sa banque, et la seconde fait 140 caractères.
     reconcileScreen(User::factory()->create())
         ->set('statusFilter', 'to_refund')
         ->assertSee('Robbe Bogaert')
-        ->assertSee('BE62510007547061')
+        ->assertSee(__('To wire'))
+        ->assertDontSee('BE62510007547061')
         ->assertDontSee('CTT Ottignies-Blocry - trop-percu')
         ->call('openRefundInstructions', $refund->id)
+        ->assertSee('BE62510007547061')
         ->assertSee('CTT Ottignies-Blocry - trop-percu');
 })->group('payments', 'refund');
 

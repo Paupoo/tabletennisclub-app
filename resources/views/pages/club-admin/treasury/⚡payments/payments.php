@@ -401,10 +401,39 @@ new class extends Component
         ];
 
         if ($this->statusFilter === 'to_refund') {
-            $headers[] = ['key' => 'iban', 'label' => __('IBAN'), 'sortable' => false];
+            // Le statut, pas l'IBAN : le compte à créditer se lit dans la modale
+            // d'instructions, avec le montant et la communication. Ce que la
+            // liste doit dire, c'est où en est chaque remboursement.
+            $headers[] = ['key' => 'refund_state', 'label' => __('Status'), 'sortable' => false];
         }
 
         return $headers;
+    }
+
+    /**
+     * Le trésorier vient de faire le virement dans sa banque.
+     *
+     * Rien d'autre ne peut le savoir : le débit n'apparaîtra sur le relevé que
+     * des semaines plus tard, et c'est le rapprochement qui clôt la ligne.
+     * Entre les deux, cette date est la seule chose qui distingue un
+     * remboursement à faire d'un remboursement fait.
+     */
+    public function markRefundAsWired(): void
+    {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
+        $payment = Payment::find($this->refundInstructionsPaymentId);
+
+        if ($payment === null) {
+            $this->error(__('This refund no longer exists.'));
+
+            return;
+        }
+
+        $payment->forceFill(['refund_wired_at' => now()])->save();
+
+        $this->reset(['refundInstructionsModal', 'refundInstructionsPaymentId']);
+        $this->success(__('Noted — it now shows as wired, waiting for the statement.'));
     }
 
     public function openBulkCancelRefundModal(): void
@@ -510,7 +539,7 @@ new class extends Component
                     // Le net, jamais « 220 sur 120 » : c'est ce que le club
                     // détient et devra rendre.
                     'overpayment' => $p->overpayment(),
-                    'refund_iban' => $p->refund_iban,
+                    'refund_wired_at' => $p->refund_wired_at,
 
                     'is_partially_paid' => $p->isPartiallyPaid(),
                     'status' => $p->status,
@@ -1167,7 +1196,7 @@ new class extends Component
      * @param  array{type: string, name: string}|null  $label
      */
     /**
-     * @return array{member: string, event: string|null, amount: float, iban: string|null, remittance: string|null, reference: string}|null
+     * @return array{member: string, event: string|null, amount: float, iban: string|null, remittance: string|null, reference: string, wired: bool}|null
      */
     private function refundInstructions(): ?array
     {
@@ -1187,6 +1216,7 @@ new class extends Component
             'iban' => $payment->refund_iban,
             'remittance' => $this->remittanceFor($payment, $label),
             'reference' => $payment->reference,
+            'wired' => $payment->refund_wired_at !== null,
         ];
     }
 

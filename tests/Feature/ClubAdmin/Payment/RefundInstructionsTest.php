@@ -49,5 +49,35 @@ it('keeps the transfer instructions out of the row until they are asked for', fu
         ->assertSet('refundInstructionsModal', true)
         ->assertSee('trop-percu')
         ->assertSee('BE68539007547034')
-        ->assertSee('137,50 €');
+        ->assertSee('137,50 €')
+        // Blade n'exécute pas ses directives dans l'attribut d'une balise de
+        // composant : un `@click="…@js($value)"` arrivait tel quel dans la page,
+        // et les trois boutons « Copier » ne faisaient rien.
+        ->assertDontSee('@js(');
+})->group('payments', 'refund');
+
+/**
+ * Entre le virement et son rapprochement, l'écran doit savoir où il en est.
+ *
+ * Un remboursement ne quitte l'onglet qu'une fois **rapproché**, donc après
+ * l'import du relevé — plusieurs semaines plus tard. Entre les deux, la liste
+ * mélangeait sans les distinguer « pas encore viré » et « viré, en attente du
+ * relevé ». Sur cinq lignes on s'en souvient ; sur trente, c'est un virement
+ * en double.
+ */
+it('remembers that the transfer has been made', function (): void {
+    [$treasurer, $refund] = refundAwaitingTransfer();
+
+    $screen = Livewire::actingAs($treasurer)
+        ->test('pages::club-admin.treasury.payments')
+        ->set('statusFilter', 'to_refund');
+
+    $screen->assertDontSee(__('Wired on :date', ['date' => now()->format('d/m/Y')]));
+
+    $screen->call('openRefundInstructions', $refund->id)
+        ->call('markRefundAsWired')
+        ->assertSet('refundInstructionsModal', false)
+        ->assertSee(__('Wired on :date', ['date' => now()->format('d/m/Y')]));
+
+    expect($refund->fresh()->refund_wired_at)->not->toBeNull();
 })->group('payments', 'refund');

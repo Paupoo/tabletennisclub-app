@@ -429,7 +429,7 @@ it('opens a refund for the overpayment, towards the account that paid', function
 /**
  * Le libellé que le trésorier recopiera dans sa banque.
  *
- * C'est la seule chose que le payeur lira. Le calculer sans l'afficher n'aide
+ * C'est la seule chose que le payeur lira. Elle se lit désormais dans la modale
  * personne : le trésorier fait le virement dans son application bancaire, pas
  * ici, et il a besoin du texte sous les yeux.
  */
@@ -445,18 +445,24 @@ it('shows the communication to put on the outgoing transfer', function (): void 
         'amount_due' => 120,
     ]);
 
-    (new RequestSubscriptionRefundAction)(
+    $refund = (new RequestSubscriptionRefundAction)(
         $subscription,
         100.0,
         'Trop-perçu',
         targetIban: 'BE62510007547061',
     );
 
+    // La ligne nomme le membre et le compte à créditer — celui du tiers qui a
+    // payé, pas celui du titulaire. La communication, elle, fait 140 caractères
+    // et n'a qu'un usage, être copiée : elle vit dans la modale d'instructions,
+    // où elle tient en entier.
     reconcileScreen(User::factory()->create())
         ->set('statusFilter', 'to_refund')
-        ->assertSee('CTT Ottignies-Blocry - trop-percu')
         ->assertSee('Robbe Bogaert')
-        ->assertSee('BE62510007547061');
+        ->assertSee('BE62510007547061')
+        ->assertDontSee('CTT Ottignies-Blocry - trop-percu')
+        ->call('openRefundInstructions', $refund->id)
+        ->assertSee('CTT Ottignies-Blocry - trop-percu');
 })->group('payments', 'refund');
 
 /**

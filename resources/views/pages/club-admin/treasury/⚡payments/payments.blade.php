@@ -198,10 +198,17 @@
                         @endcan
                     @elseif ($this->statusFilter === 'to_refund')
                         @can('payments.refund')
+                            {{-- Les deux gestes, comme sur le tableau : aller chercher
+                                 de quoi virer, puis rapprocher quand le relevé arrive. --}}
                             <x-admin.shared.row-menu
-                                :label="__('Reconcile')"
-                                icon="o-link"
-                                wire-click="openRefundReconcile({{ $payment->id }})" />
+                                :label="__('Transfer details')"
+                                icon="o-clipboard-document"
+                                wire-click="openRefundInstructions({{ $payment->id }})">
+                                <x-menu-item
+                                    icon="o-link"
+                                    :title="__('Reconcile')"
+                                    wire:click="openRefundReconcile({{ $payment->id }})" />
+                            </x-admin.shared.row-menu>
                         @endcan
                     @endif
                 </div>
@@ -280,8 +287,11 @@
             @endscope
 
             @scope('cell_iban', $payment)
-            @if($payment->iban)
-                <span class="font-mono text-xs">{{ $payment->iban }}</span>
+            {{-- Le compte à créditer, pas celui du membre : un trop-perçu se rend
+                 d'où il vient, et afficher le titulaire quand un tiers a payé
+                 donnerait à recopier le mauvais numéro. --}}
+            @if($payment->refund_iban ?? $payment->iban)
+                <span class="font-mono text-xs">{{ $payment->refund_iban ?? $payment->iban }}</span>
             @else
                 <x-badge value="{{ __('Missing') }}" class="badge-warning badge-sm" icon="o-exclamation-triangle" />
             @endif
@@ -307,23 +317,20 @@
             </x-admin.shared.row-menu>
             @elseif($this->statusFilter === 'to_refund')
             @can('payments.refund')
-                <div class="flex flex-col items-end gap-1">
-                    {{-- Ce que le trésorier recopiera dans sa banque : le compte
-                         visé et la communication que le payeur lira. --}}
-                    @if ($payment->refund_iban)
-                        <span class="font-mono text-xs opacity-70">{{ $payment->refund_iban }}</span>
-                    @endif
-                    @if ($payment->remittance)
-                        <span class="max-w-xs truncate text-xs text-muted" title="{{ $payment->remittance }}">
-                            {{ $payment->remittance }}
-                        </span>
-                    @endif
-                    <x-button
-                        :label="__('Reconcile')"
+                {{-- Deux gestes, séparés de plusieurs semaines : on va chercher
+                     de quoi faire le virement aujourd'hui, on le rapproche quand
+                     le relevé arrive. La communication SEPA fait 140 caractères
+                     et n'a qu'un usage — être copiée : elle vit donc dans la
+                     modale, où elle tient en entier. --}}
+                <x-admin.shared.row-menu
+                    :label="__('Transfer details')"
+                    icon="o-clipboard-document"
+                    wire-click="openRefundInstructions({{ $payment->id }})">
+                    <x-menu-item
                         icon="o-link"
-                        wire:click="openRefundReconcile({{ $payment->id }})"
-                        class="btn-xs btn-outline" />
-                </div>
+                        :title="__('Reconcile')"
+                        wire:click="openRefundReconcile({{ $payment->id }})" />
+                </x-admin.shared.row-menu>
             @endcan
             @else
             <div class="flex items-center gap-1.5">
@@ -625,6 +632,50 @@
                 class="btn-success"
                 wire:click="confirmBatchReconcile"
                 spinner />
+        </x-slot:actions>
+    </x-app-modal>
+
+
+    {{-- ========================================== --}}
+    {{-- Modal : de quoi faire le virement          --}}
+    {{-- ========================================== --}}
+    <x-app-modal wire:model="refundInstructionsModal" :title="__('Transfer details')" separator
+        box-class="max-w-2xl" :open="$refundInstructionsModal">
+
+        @if ($refundInstructions)
+            <div class="flex items-start gap-3 rounded-lg border border-info/20 bg-info/10 p-3 text-sm">
+                <x-icon name="o-information-circle" class="mt-0.5 h-4 w-4 shrink-0 text-info" />
+                <span>{{ __('The transfer is made in your bank, not here. Copy the three lines below, then come back to reconcile it once the statement is imported.') }}</span>
+            </div>
+
+            <div class="mt-4 space-y-3">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Member') }}</p>
+                    <p class="text-sm font-semibold">{{ $refundInstructions['member'] }}</p>
+                    @if ($refundInstructions['event'])
+                        <p class="text-xs text-muted">{{ $refundInstructions['event'] }}</p>
+                    @endif
+                </div>
+
+                <x-admin.treasury.copyable-line
+                    :label="__('Amount to transfer')"
+                    :value="number_format($refundInstructions['amount'], 2, ',', ' ') . ' €'" />
+
+                <x-admin.treasury.copyable-line
+                    :label="__('Account to credit')"
+                    :value="$refundInstructions['iban'] ?? __('No account on file — ask the member')"
+                    :copyable="$refundInstructions['iban'] !== null"
+                    mono />
+
+                <x-admin.treasury.copyable-line
+                    :label="__('Communication')"
+                    :value="$refundInstructions['remittance'] ?? ''"
+                    wrap />
+            </div>
+        @endif
+
+        <x-slot:actions>
+            <x-button :label="__('Close')" @click="$wire.refundInstructionsModal = false" class="btn-ghost" />
         </x-slot:actions>
     </x-app-modal>
 

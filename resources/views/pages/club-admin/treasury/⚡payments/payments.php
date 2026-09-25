@@ -68,6 +68,10 @@ new class extends Component
 
     public bool $refundBatchModal = false;
 
+    public bool $refundInstructionsModal = false;
+
+    public ?int $refundInstructionsPaymentId = null;
+
     public bool $refundModal = false;
 
     public ?int $refundPaymentId = null;
@@ -431,6 +435,18 @@ new class extends Component
 
     // ==================== Refund reconciliation ====================
 
+    /**
+     * Ce qu'il faut pour aller faire le virement : le compte, le montant, et la
+     * communication en entier. Hors de la ligne, où elle était tronquée.
+     */
+    public function openRefundInstructions(int $paymentId): void
+    {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
+        $this->refundInstructionsPaymentId = $paymentId;
+        $this->refundInstructionsModal = true;
+    }
+
     public function openRefundReconcile(int $paymentId): void
     {
         Gate::authorize(Permission::PaymentsRefund->value);
@@ -495,16 +511,7 @@ new class extends Component
                     // détient et devra rendre.
                     'overpayment' => $p->overpayment(),
                     'refund_iban' => $p->refund_iban,
-                    // Le texte que le payeur lira sur son extrait. Le trésorier
-                    // fait le virement dans sa banque, pas ici : il lui faut
-                    // sous les yeux.
-                    'remittance' => $p->payment_method === 'refund'
-                        ? SepaRemittance::forOverpayment(
-                            club: Club::ourClub()->first()?->name ?? 'CTT Ottignies-Blocry',
-                            event: $label['name'] ?? '',
-                            member: $p->payable instanceof DescribesPayment ? $p->payable->getPayerName() : '',
-                        )
-                        : null,
+
                     'is_partially_paid' => $p->isPartiallyPaid(),
                     'status' => $p->status,
                     'created_at' => $p->created_at,
@@ -785,6 +792,7 @@ new class extends Component
                     'credits.transaction',
                 ])->find($this->reconcilePaymentId)
                 : null,
+            'refundInstructions' => $this->refundInstructionsModal ? $this->refundInstructions() : null,
             'refundTransactions' => $this->refundModal ? $this->refundTransactions : collect(),
             'currentRefundPayment' => $this->refundPaymentId
                 ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])->find($this->refundPaymentId)
@@ -1129,12 +1137,6 @@ new class extends Component
         ];
     }
 
-    /** @return Builder<Payment> */
-    private function scopedToTab(): Builder
-    {
-        return $this->applyTab(Payment::query());
-    }
-
     /**
      * Ce que l'onglet courant désigne.
      *
@@ -1155,6 +1157,58 @@ new class extends Component
      * ne voit — invisible tant que rien n'est crédité en plusieurs fois, et
      * faux dès le premier acompte.
      */
+    /**
+     * Le texte que le payeur lira sur son extrait.
+     *
+     * Le trésorier fait le virement dans sa banque, pas ici : cette chaîne n'a
+     * qu'un usage, être recopiée en entier. Elle est donc construite une fois
+     * et servie aussi bien à la ligne qu'à la modale d'instructions.
+     *
+     * @param  array{type: string, name: string}|null  $label
+     */
+    /**
+     * @return array{member: string, event: string|null, amount: float, iban: string|null, remittance: string|null, reference: string}|null
+     */
+    private function refundInstructions(): ?array
+    {
+        $payment = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
+            ->find($this->refundInstructionsPaymentId);
+
+        if ($payment === null) {
+            return null;
+        }
+
+        $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
+
+        return [
+            'member' => $payment->payable instanceof DescribesPayment ? $payment->payable->getPayerName() : '—',
+            'event' => $label['name'] ?? null,
+            'amount' => $payment->balance(),
+            'iban' => $payment->refund_iban,
+            'remittance' => $this->remittanceFor($payment, $label),
+            'reference' => $payment->reference,
+        ];
+    }
+
+    private function remittanceFor(Payment $payment, ?array $label): ?string
+    {
+        if ($payment->payment_method !== 'refund') {
+            return null;
+        }
+
+        return SepaRemittance::forOverpayment(
+            club: Club::ourClub()->first()?->name ?? 'CTT Ottignies-Blocry',
+            event: $label['name'] ?? '',
+            member: $payment->payable instanceof DescribesPayment ? $payment->payable->getPayerName() : '',
+        );
+    }
+
+    /** @return Builder<Payment> */
+    private function scopedToTab(): Builder
+    {
+        return $this->applyTab(Payment::query());
+    }
+
     private function sortColumn(): string
     {
         if ($this->sortBy['column'] !== 'amount_due') {

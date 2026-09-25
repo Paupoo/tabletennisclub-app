@@ -18,7 +18,7 @@ beforeEach(function (): void {
     Notification::fake();
 });
 
-function acceptedReport(float $amount = 42.5): ExpenseReport
+function acceptedExpenseReport(float $amount = 42.5): ExpenseReport
 {
     $report = ExpenseReport::factory()->create(['amount' => $amount]);
     (new AcceptExpenseReport)($report, User::factory()->create());
@@ -26,7 +26,7 @@ function acceptedReport(float $amount = 42.5): ExpenseReport
     return $report->refresh();
 }
 
-function debit(float $amount): Transaction
+function expenseRefundDebit(float $amount): Transaction
 {
     return Transaction::create([
         'date' => now()->toDateString(),
@@ -37,9 +37,9 @@ function debit(float $amount): Transaction
 }
 
 it('becomes paid once the bank debit is reconciled with its refund, and tells the member', function (): void {
-    $report = acceptedReport(42.5);
+    $report = acceptedExpenseReport(42.5);
 
-    (new AllocateTransactionAction)(debit(42.5), [$report->refund->id => 42.5]);
+    (new AllocateTransactionAction)(expenseRefundDebit(42.5), [$report->refund->id => 42.5]);
 
     $report->refresh();
 
@@ -48,16 +48,16 @@ it('becomes paid once the bank debit is reconciled with its refund, and tells th
 });
 
 it('stays accepted while only part of the refund has left', function (): void {
-    $report = acceptedReport(42.5);
+    $report = acceptedExpenseReport(42.5);
 
-    (new AllocateTransactionAction)(debit(20), [$report->refund->id => 20]);
+    (new AllocateTransactionAction)(expenseRefundDebit(20), [$report->refund->id => 20]);
 
     expect($report->refresh()->displayStatus())->toBe(ExpenseReportDisplayStatus::Accepted);
     Notification::assertNotSentTo($report->user, ExpenseReportPaidNotification::class);
 });
 
 it('leaves expense report refunds alone when the payments screen cancels refunds in bulk', function (): void {
-    $report = acceptedReport();
+    $report = acceptedExpenseReport();
     $refund = $report->refund;
     $treasurer = User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create();
 
@@ -71,8 +71,8 @@ it('leaves expense report refunds alone when the payments screen cancels refunds
 });
 
 it('lists expense report refunds in the treasury refunds, named after the member', function (): void {
-    $first = acceptedReport(10);
-    $second = acceptedReport(20);
+    $first = acceptedExpenseReport(10);
+    $second = acceptedExpenseReport(20);
     $treasurer = User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create();
 
     Livewire::actingAs($treasurer)

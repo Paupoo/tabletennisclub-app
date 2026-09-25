@@ -15,7 +15,7 @@ beforeEach(function (): void {
     Storage::fake('local');
 });
 
-function storedProof(User $author): ExpenseReportFile
+function storedExpenseProof(User $author): ExpenseReportFile
 {
     $report = (new SubmitExpenseReport)(
         author: $author,
@@ -32,7 +32,7 @@ function storedProof(User $author): ExpenseReportFile
 
 it('serves the proof inline to its author, locked down', function (): void {
     $author = User::factory()->create();
-    $proof = storedProof($author);
+    $proof = storedExpenseProof($author);
 
     $this->actingAs($author)
         ->get(route('admin.expense-reports.file', $proof))
@@ -44,7 +44,7 @@ it('serves the proof inline to its author, locked down', function (): void {
 
 it('hands the original over as a file on request', function (): void {
     $author = User::factory()->create();
-    $proof = storedProof($author);
+    $proof = storedExpenseProof($author);
 
     $this->actingAs($author)
         ->get(route('admin.expense-reports.file', $proof) . '?download=1')
@@ -53,7 +53,7 @@ it('hands the original over as a file on request', function (): void {
 });
 
 it('serves it to the treasury readers', function (Role $role): void {
-    $proof = storedProof(User::factory()->create());
+    $proof = storedExpenseProof(User::factory()->create());
 
     $this->actingAs(User::factory()->withRole($role)->create())
         ->get(route('admin.expense-reports.file', $proof))
@@ -61,7 +61,7 @@ it('serves it to the treasury readers', function (Role $role): void {
 })->with([Role::COMMITTEE, Role::TREASURY, Role::ACCOUNTS_AUDIT, Role::EXPENSE_REPORTS]);
 
 it('refuses any other member', function (): void {
-    $proof = storedProof(User::factory()->create());
+    $proof = storedExpenseProof(User::factory()->create());
 
     $this->actingAs(User::factory()->create())
         ->get(route('admin.expense-reports.file', $proof))
@@ -69,7 +69,7 @@ it('refuses any other member', function (): void {
 });
 
 it('refuses a guest', function (): void {
-    $proof = storedProof(User::factory()->create());
+    $proof = storedExpenseProof(User::factory()->create());
 
     $this->get(route('admin.expense-reports.file', $proof))->assertRedirect(route('login'));
 });

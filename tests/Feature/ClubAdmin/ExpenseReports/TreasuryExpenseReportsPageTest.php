@@ -19,13 +19,13 @@ beforeEach(function (): void {
     Notification::fake();
 });
 
-function treasurer(): User
+function expenseTreasurer(): User
 {
     return User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create();
 }
 
 /** A report accepted by someone else and paid by a debit dated $date. */
-function paidReport(string $date, array $attributes = []): ExpenseReport
+function paidExpenseReport(string $date, array $attributes = []): ExpenseReport
 {
     $report = ExpenseReport::factory()->create($attributes);
     (new AcceptExpenseReport)($report, User::factory()->create());
@@ -43,7 +43,7 @@ function paidReport(string $date, array $attributes = []): ExpenseReport
 
 describe('who reaches the page', function (): void {
     it('opens to the treasury', function (): void {
-        $this->actingAs(treasurer())
+        $this->actingAs(expenseTreasurer())
             ->get(route('admin.treasury.expense-reports'))
             ->assertOk()
             ->assertSee(__('Expense reports'));
@@ -71,13 +71,13 @@ describe('who reaches the page', function (): void {
     it('does not exist when the feature is off', function (): void {
         config(['features.expense_reports' => false]);
 
-        $this->actingAs(treasurer())
+        $this->actingAs(expenseTreasurer())
             ->get(route('admin.treasury.expense-reports'))
             ->assertNotFound();
     });
 
     it('shows the treasury menu entry to the readers', function (): void {
-        $treasurer = treasurer();
+        $treasurer = expenseTreasurer();
         $this->actingAs($treasurer);
 
         $this->blade('<x-admin.navigation :user="$user" />', ['user' => $treasurer])
@@ -90,7 +90,7 @@ describe('the list', function (): void {
         ExpenseReport::factory()->create(['description' => 'Balles à traiter']);
         ExpenseReport::factory()->rejected()->create(['description' => 'Scotch refusé']);
 
-        Livewire::actingAs(treasurer())
+        Livewire::actingAs(expenseTreasurer())
             ->test(TREASURY_EXPENSES)
             ->assertSet('statusFilter', 'submitted')
             ->assertSee('Balles à traiter')
@@ -100,9 +100,9 @@ describe('the list', function (): void {
     it('tells accepted reports from paid ones', function (): void {
         $accepted = ExpenseReport::factory()->create(['description' => 'Accepté pas payé']);
         (new AcceptExpenseReport)($accepted, User::factory()->create());
-        paidReport('2026-03-10', ['description' => 'Déjà payé']);
+        paidExpenseReport('2026-03-10', ['description' => 'Déjà payé']);
 
-        Livewire::actingAs(treasurer())
+        Livewire::actingAs(expenseTreasurer())
             ->test(TREASURY_EXPENSES)
             ->set('statusFilter', 'accepted')
             ->assertSee('Accepté pas payé')
@@ -113,10 +113,10 @@ describe('the list', function (): void {
     });
 
     it('filters on the financial year the money left in', function (): void {
-        paidReport('2025-12-30', ['description' => 'Payé fin 2025', 'spent_on' => '2025-12-01']);
-        paidReport('2026-01-10', ['description' => 'Payé début 2026', 'spent_on' => '2025-12-28']);
+        paidExpenseReport('2025-12-30', ['description' => 'Payé fin 2025', 'spent_on' => '2025-12-01']);
+        paidExpenseReport('2026-01-10', ['description' => 'Payé début 2026', 'spent_on' => '2025-12-28']);
 
-        Livewire::actingAs(treasurer())
+        Livewire::actingAs(expenseTreasurer())
             ->test(TREASURY_EXPENSES)
             ->set('statusFilter', 'all')
             ->set('fiscalYear', 2026)
@@ -128,10 +128,10 @@ describe('the list', function (): void {
         $member = User::factory()->create(['first_name' => 'Zébulon', 'last_name' => 'Trésor']);
         ExpenseReport::factory()->for($member)->create(['description' => 'Parking Zébulon', 'category' => ExpenseCategory::Travel]);
         ExpenseReport::factory()->create(['description' => 'Balles autre', 'category' => ExpenseCategory::SportsEquipment]);
-        paidReport('2026-03-10', ['description' => 'Archivée', 'archived_at' => now()]);
-        paidReport('2026-03-11', ['description' => 'Pas archivée']);
+        paidExpenseReport('2026-03-10', ['description' => 'Archivée', 'archived_at' => now()]);
+        paidExpenseReport('2026-03-11', ['description' => 'Pas archivée']);
 
-        $page = Livewire::actingAs(treasurer())->test(TREASURY_EXPENSES);
+        $page = Livewire::actingAs(expenseTreasurer())->test(TREASURY_EXPENSES);
 
         $page->set('search', 'Zébulon')->assertSee('Parking Zébulon')->assertDontSee('Balles autre')
             ->set('search', '')
@@ -146,7 +146,7 @@ describe('deciding', function (): void {
     it('accepts the declared amount from the drawer', function (): void {
         $report = ExpenseReport::factory()->create(['amount' => 42.5]);
 
-        Livewire::actingAs(treasurer())
+        Livewire::actingAs(expenseTreasurer())
             ->test(TREASURY_EXPENSES)
             ->call('show', $report->id)
             ->assertSeeHtml('wire:click="openAccept"')
@@ -162,7 +162,7 @@ describe('deciding', function (): void {
     it('asks why when accepting less, and never more', function (): void {
         $report = ExpenseReport::factory()->create(['amount' => 42.5]);
 
-        Livewire::actingAs(treasurer())
+        Livewire::actingAs(expenseTreasurer())
             ->test(TREASURY_EXPENSES)
             ->call('show', $report->id)
             ->call('openAccept')
@@ -184,7 +184,7 @@ describe('deciding', function (): void {
     it('rejects with a reason', function (): void {
         $report = ExpenseReport::factory()->create();
 
-        Livewire::actingAs(treasurer())
+        Livewire::actingAs(expenseTreasurer())
             ->test(TREASURY_EXPENSES)
             ->call('show', $report->id)
             ->call('openReject')
@@ -198,7 +198,7 @@ describe('deciding', function (): void {
     });
 
     it('lets nobody decide on their own report, and says who should', function (): void {
-        $treasurer = treasurer();
+        $treasurer = expenseTreasurer();
         $report = ExpenseReport::factory()->for($treasurer)->create();
 
         Livewire::actingAs($treasurer)
@@ -213,7 +213,7 @@ describe('deciding', function (): void {
         $report = ExpenseReport::factory()->create();
         (new AcceptExpenseReport)($report, User::factory()->create());
 
-        Livewire::actingAs(treasurer())
+        Livewire::actingAs(expenseTreasurer())
             ->test(TREASURY_EXPENSES)
             ->set('statusFilter', 'accepted')
             ->call('show', $report->id)
@@ -229,7 +229,7 @@ describe('deciding', function (): void {
         $second = ExpenseReport::factory()->for($member)->create(['amount' => 42.5, 'spent_on' => '2026-09-13']);
         $second->files()->create(['path' => 'b', 'original_name' => 'b.jpg', 'mime_type' => 'image/jpeg', 'size' => 1, 'sha256' => str_repeat('c', 64)]);
 
-        Livewire::actingAs(treasurer())
+        Livewire::actingAs(expenseTreasurer())
             ->test(TREASURY_EXPENSES)
             ->call('show', $second->id)
             ->assertSee(__('Possible duplicate of report #:id', ['id' => $first->id]))
@@ -243,7 +243,7 @@ describe('what the drawer shows', function (): void {
         $image = $report->files()->create(['path' => 'a', 'original_name' => 'ticket.jpg', 'mime_type' => 'image/jpeg', 'size' => 1, 'sha256' => str_repeat('a', 64)]);
         $pdf = $report->files()->create(['path' => 'b', 'original_name' => 'extrait.pdf', 'mime_type' => 'application/pdf', 'size' => 1, 'sha256' => str_repeat('b', 64)]);
 
-        Livewire::actingAs(treasurer())
+        Livewire::actingAs(expenseTreasurer())
             ->test(TREASURY_EXPENSES)
             ->call('show', $report->id)
             ->assertSeeHtml('<img')
@@ -255,7 +255,7 @@ describe('what the drawer shows', function (): void {
     it('masks the IBAN from whoever does not wire refunds', function (): void {
         $report = ExpenseReport::factory()->create(['refund_iban' => 'BE68539007547034']);
 
-        Livewire::actingAs(treasurer())
+        Livewire::actingAs(expenseTreasurer())
             ->test(TREASURY_EXPENSES)
             ->call('show', $report->id)
             ->assertSee('BE68 5390 0754 7034');

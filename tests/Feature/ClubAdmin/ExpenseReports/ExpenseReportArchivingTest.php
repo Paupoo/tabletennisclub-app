@@ -20,7 +20,7 @@ beforeEach(function (): void {
     Notification::fake();
 });
 
-function paidAndUnarchived(float $amount = 20, array $attributes = []): ExpenseReport
+function paidUnarchivedExpenseReport(float $amount = 20, array $attributes = []): ExpenseReport
 {
     $report = ExpenseReport::factory()->create(['amount' => $amount, ...$attributes]);
     (new AcceptExpenseReport)($report, User::factory()->create());
@@ -34,8 +34,8 @@ function paidAndUnarchived(float $amount = 20, array $attributes = []): ExpenseR
 describe('archiving from the screen', function (): void {
     it('exports as a ZIP every paid report not archived yet, in one click', function (): void {
         Queue::fake();
-        $toArchive = paidAndUnarchived();
-        paidAndUnarchived(10, ['archived_at' => now()]);
+        $toArchive = paidUnarchivedExpenseReport();
+        paidUnarchivedExpenseReport(10, ['archived_at' => now()]);
         ExpenseReport::factory()->create();
 
         Livewire::actingAs(User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create())
@@ -63,9 +63,9 @@ describe('the reminder to archive', function (): void {
         $treasurer = User::factory()->withRole(Role::TREASURY)->create();
         $backup = User::factory()->withRole(Role::EXPENSE_REPORTS)->create();
         $reader = User::factory()->isCommitteeMember()->create();
-        paidAndUnarchived(12.5);
-        paidAndUnarchived(7.5);
-        paidAndUnarchived(100, ['archived_at' => now()]);
+        paidUnarchivedExpenseReport(12.5);
+        paidUnarchivedExpenseReport(7.5);
+        paidUnarchivedExpenseReport(100, ['archived_at' => now()]);
 
         $this->artisan('expense-reports:remind-archiving')->assertSuccessful();
 
@@ -76,7 +76,7 @@ describe('the reminder to archive', function (): void {
 
     it('speaks of the closed financial year in January', function (): void {
         $treasurer = User::factory()->withRole(Role::TREASURY)->create();
-        paidAndUnarchived();
+        paidUnarchivedExpenseReport();
 
         $this->artisan('expense-reports:remind-archiving', ['--year-end' => true])->assertSuccessful();
 
@@ -85,7 +85,7 @@ describe('the reminder to archive', function (): void {
 
     it('stays silent when everything paid is archived', function (): void {
         User::factory()->withRole(Role::TREASURY)->create();
-        paidAndUnarchived(10, ['archived_at' => now()]);
+        paidUnarchivedExpenseReport(10, ['archived_at' => now()]);
 
         $this->artisan('expense-reports:remind-archiving')->assertSuccessful();
 
@@ -107,7 +107,7 @@ describe('the reminder to archive', function (): void {
 
     it('shows the dashboard alert to whoever may archive', function (): void {
         $treasurer = User::factory()->withRole(Role::TREASURY)->create();
-        paidAndUnarchived();
+        paidUnarchivedExpenseReport();
 
         $alerts = collect($this->actingAs($treasurer)->get(route('dashboard'))->viewData('alerts'));
 

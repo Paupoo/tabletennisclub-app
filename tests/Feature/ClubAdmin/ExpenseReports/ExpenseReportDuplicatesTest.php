@@ -6,7 +6,7 @@ use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
 use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Support\Carbon;
 
-function proofWithFingerprint(ExpenseReport $report, string $fingerprint): void
+function expenseProofWithFingerprint(ExpenseReport $report, string $fingerprint): void
 {
     $report->files()->create([
         'path' => "expense-reports/{$report->id}/x.jpg",
@@ -41,11 +41,11 @@ it('ignores withdrawn and rejected reports, and the report itself', function ():
 it('flags the same proof already used on another accepted report, whoever sent it', function (): void {
     $fingerprint = str_repeat('f', 64);
     $accepted = ExpenseReport::factory()->accepted()->create();
-    proofWithFingerprint($accepted, $fingerprint);
+    expenseProofWithFingerprint($accepted, $fingerprint);
     $pending = ExpenseReport::factory()->create();
-    proofWithFingerprint($pending, str_repeat('0', 64));
+    expenseProofWithFingerprint($pending, str_repeat('0', 64));
     $report = ExpenseReport::factory()->create();
-    proofWithFingerprint($report, $fingerprint);
+    expenseProofWithFingerprint($report, $fingerprint);
 
     expect($report->reportsSharingAProof()->modelKeys())->toBe([$accepted->id]);
 });

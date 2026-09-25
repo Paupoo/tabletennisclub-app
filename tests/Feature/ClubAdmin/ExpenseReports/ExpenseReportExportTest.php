@@ -40,7 +40,7 @@ function exportablePaidReport(string $description, string $proofBytes = 'JPEGDAT
     return $report->refresh();
 }
 
-function runExport(User $requester, string $format, array $reportIds): ExpenseReportExport
+function runExpenseReportExport(User $requester, string $format, array $reportIds): ExpenseReportExport
 {
     $export = ExpenseReportExport::create([
         'requested_by' => $requester->id,
@@ -100,7 +100,7 @@ describe('what the export holds', function (): void {
         $report = exportablePaidReport('Balles Nittaku', 'ORIGINAL-BYTES');
         $requester = User::factory()->isCommitteeMember()->create();
 
-        $export = runExport($requester, 'zip', [$report->id]);
+        $export = runExpenseReportExport($requester, 'zip', [$report->id]);
 
         expect($export->status)->toBe('ready')
             ->and($export->expires_at->isAfter(now()->addDays(6)))->toBeTrue();
@@ -122,7 +122,7 @@ describe('what the export holds', function (): void {
     it('prints a PDF that holds every report, even with a proof it cannot read', function (): void {
         $report = exportablePaidReport('Balles Nittaku', 'not-really-a-jpeg');
 
-        $export = runExport(User::factory()->isCommitteeMember()->create(), 'pdf', [$report->id]);
+        $export = runExpenseReportExport(User::factory()->isCommitteeMember()->create(), 'pdf', [$report->id]);
 
         expect($export->status)->toBe('ready')
             ->and(Storage::disk('local')->get($export->path))->toStartWith('%PDF');
@@ -133,7 +133,7 @@ describe('fetching the export', function (): void {
     it('hands it to whoever asked for it, and to nobody else', function (): void {
         $report = exportablePaidReport('Balles');
         $requester = User::factory()->isCommitteeMember()->create();
-        $export = runExport($requester, 'pdf', [$report->id]);
+        $export = runExpenseReportExport($requester, 'pdf', [$report->id]);
 
         $this->actingAs(User::factory()->isCommitteeMember()->create())
             ->get(route('admin.expense-reports.export', $export))
@@ -148,7 +148,7 @@ describe('fetching the export', function (): void {
     it('marks the reports archived when a treasurer downloads the ZIP', function (): void {
         $report = exportablePaidReport('Balles');
         $treasurer = User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create();
-        $export = runExport($treasurer, 'zip', [$report->id]);
+        $export = runExpenseReportExport($treasurer, 'zip', [$report->id]);
 
         $this->actingAs($treasurer)->get(route('admin.expense-reports.export', $export))->assertOk();
 
@@ -160,8 +160,8 @@ describe('fetching the export', function (): void {
         $reader = User::factory()->isCommitteeMember()->create();
         $treasurer = User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create();
 
-        $this->actingAs($reader)->get(route('admin.expense-reports.export', runExport($reader, 'zip', [$report->id])))->assertOk();
-        $this->actingAs($treasurer)->get(route('admin.expense-reports.export', runExport($treasurer, 'pdf', [$report->id])))->assertOk();
+        $this->actingAs($reader)->get(route('admin.expense-reports.export', runExpenseReportExport($reader, 'zip', [$report->id])))->assertOk();
+        $this->actingAs($treasurer)->get(route('admin.expense-reports.export', runExpenseReportExport($treasurer, 'pdf', [$report->id])))->assertOk();
 
         expect($report->refresh()->archived_at)->toBeNull();
     });
@@ -169,7 +169,7 @@ describe('fetching the export', function (): void {
     it('says the export has expired after seven days', function (): void {
         $report = exportablePaidReport('Balles');
         $requester = User::factory()->isCommitteeMember()->create();
-        $export = runExport($requester, 'pdf', [$report->id]);
+        $export = runExpenseReportExport($requester, 'pdf', [$report->id]);
 
         $this->travel(8)->days();
         $this->artisan('expense-reports:prune-exports')->assertSuccessful();
@@ -202,7 +202,7 @@ it('prints the pages of a PDF proof, and falls back on a note for a broken one',
         $report->files()->create(['path' => "expense-reports/{$report->id}/{$name}", 'original_name' => $name, 'mime_type' => 'application/pdf', 'size' => 1, 'sha256' => hash('sha256', $name)]);
     }
 
-    $export = runExport(User::factory()->isCommitteeMember()->create(), 'pdf', [$report->id]);
+    $export = runExpenseReportExport(User::factory()->isCommitteeMember()->create(), 'pdf', [$report->id]);
     $printed = Storage::disk('local')->get($export->path);
 
     // Summary, report page, the imported invoice page, the note about the broken file.

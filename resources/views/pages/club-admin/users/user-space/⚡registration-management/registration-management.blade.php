@@ -800,11 +800,12 @@
                 </div>
                 <div class="flex justify-between items-center pt-1 border-t border-base-300">
                     <span class="font-bold">{{ __('Amount') }}</span>
-                    <span class="text-lg font-bold text-primary">{{ $paymentDetails['amount_due'] }} €</span>
+                    <span class="text-lg font-bold text-primary">{{ number_format($paymentDetails['balance'], 2, ',', ' ') }} €</span>
                 </div>
                 <x-payments.discount-breakdown
                     :amount-before-discounts="$paymentDetails['amount_before_discounts'] ?? 0"
-                    :discounts="$paymentDetails['discounts'] ?? []" />
+                    :discounts="$paymentDetails['discounts'] ?? []"
+                    :already-received="$paymentDetails['already_received'] ?? 0" />
             </div>
 
             <div class="flex gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20 text-xs">

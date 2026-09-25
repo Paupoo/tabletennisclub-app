@@ -102,3 +102,23 @@ it('closes the discount breakdown with what came in, under the balance of the me
         __('Reference'),
     ]));
 })->group('payments', 'discount');
+
+it('asks the member for the balance in the payment window of their season screen', function (): void {
+    $season = makeActiveSeason();
+    $member = User::factory()->create();
+    $payment = partlyPaidAffiliation(60.0, $member);
+    $payment->payable->update(['season_id' => $season->id]);
+    (new GrantSubscriptionDiscountAction)($payment->payable, 25.0, 'Remerciement buvette');
+
+    $html = Livewire::actingAs($member)
+        ->test('pages::club-admin.users.user-space.registration-management', ['user' => $member])
+        ->call('openPaymentModal', $member->id, $payment->id)
+        ->html();
+
+    expect(readableText($html))->toContain(implode(' ', [
+        __('Amount'), '40,00 €',
+        __('Normal price'), '125,00 €',
+        'Remerciement buvette', '− 25,00 €',
+        __('Already received'), '− 60,00 €',
+    ]));
+})->group('payments', 'discount');

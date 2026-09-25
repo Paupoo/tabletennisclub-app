@@ -68,10 +68,10 @@ new class extends Component
     /** @var list<int> */
     public array $removedFileIds = [];
 
+    public ?int $resumedFromId = null;
+
     #[Url(as: 'resume')]
     public ?int $resumeId = null;
-
-    public ?int $resumedFromId = null;
 
     #[Url(as: 'report')]
     public ?int $shownId = null;
@@ -82,17 +82,6 @@ new class extends Component
     public string $statusFilter = '';
 
     public User $user;
-
-    /**
-     * @return array<int, array{key: string, label: string}>
-     */
-    public function getFilterChips(): array
-    {
-        return array_values(array_filter([
-            $this->statusFilter !== '' ? ['key' => 'statusFilter', 'label' => ExpenseReportDisplayStatus::tryFrom($this->statusFilter)?->label() ?? $this->statusFilter] : null,
-            $this->categoryFilter !== '' ? ['key' => 'categoryFilter', 'label' => ExpenseCategory::tryFrom($this->categoryFilter)?->label() ?? $this->categoryFilter] : null,
-        ]));
-    }
 
     public function clearFilters(): void
     {
@@ -105,6 +94,17 @@ new class extends Component
     public function editing(): ?ExpenseReport
     {
         return $this->editingId === null ? null : ExpenseReport::with('files')->find($this->editingId);
+    }
+
+    /**
+     * @return array<int, array{key: string, label: string}>
+     */
+    public function getFilterChips(): array
+    {
+        return array_values(array_filter([
+            $this->statusFilter !== '' ? ['key' => 'statusFilter', 'label' => ExpenseReportDisplayStatus::tryFrom($this->statusFilter)?->label() ?? $this->statusFilter] : null,
+            $this->categoryFilter !== '' ? ['key' => 'categoryFilter', 'label' => ExpenseCategory::tryFrom($this->categoryFilter)?->label() ?? $this->categoryFilter] : null,
+        ]));
     }
 
     public function mount(User $user): void
@@ -147,6 +147,17 @@ new class extends Component
         $this->formDrawer = true;
     }
 
+    public function removeExistingFile(int $fileId): void
+    {
+        $this->removedFileIds[] = $fileId;
+    }
+
+    public function removeNewFile(int $index): void
+    {
+        unset($this->newFiles[$index]);
+        $this->newFiles = array_values($this->newFiles);
+    }
+
     /**
      * @return LengthAwarePaginator<int, ExpenseReport>
      */
@@ -181,17 +192,6 @@ new class extends Component
         $this->shownId = null;
         $this->readerDrawer = false;
         $this->formDrawer = true;
-    }
-
-    public function removeExistingFile(int $fileId): void
-    {
-        $this->removedFileIds[] = $fileId;
-    }
-
-    public function removeNewFile(int $index): void
-    {
-        unset($this->newFiles[$index]);
-        $this->newFiles = array_values($this->newFiles);
     }
 
     /**
@@ -278,6 +278,12 @@ new class extends Component
         unset($this->reports);
     }
 
+    public function show(int $reportId): void
+    {
+        $this->shownId = $this->ownReport($reportId)->id;
+        $this->readerDrawer = true;
+    }
+
     /** The report open in the reading drawer. */
     #[Computed]
     public function shown(): ?ExpenseReport
@@ -289,12 +295,6 @@ new class extends Component
         return ExpenseReport::with(['files', 'refund', 'decider'])
             ->where('user_id', $this->user->id)
             ->find($this->shownId);
-    }
-
-    public function show(int $reportId): void
-    {
-        $this->shownId = $this->ownReport($reportId)->id;
-        $this->readerDrawer = true;
     }
 
     public function updated(string $property): void

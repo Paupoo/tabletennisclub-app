@@ -38,9 +38,9 @@ new class extends Component
 {
     use HasBreadcrumbs, HasFilterDrawer, Toast, WithPagination;
 
-    public bool $acceptModal = false;
-
     public string $acceptedAmount = '';
+
+    public bool $acceptModal = false;
 
     #[Url(as: 'category')]
     public string $categoryFilter = '';
@@ -97,7 +97,7 @@ new class extends Component
 
         try {
             (new CancelExpenseReportAcceptance)($report, $this->actor());
-        } catch (\DomainException $e) {
+        } catch (DomainException $e) {
             $this->error($e->getMessage());
 
             return;
@@ -340,6 +340,12 @@ new class extends Component
             ->current(__('Expense reports'));
     }
 
+    private function actor(): User
+    {
+        /** @var User */
+        return Auth::user();
+    }
+
     /**
      * The tab, the search and the drawer's filters — shared with the export,
      * which must take exactly what the treasurer sees.
@@ -364,12 +370,6 @@ new class extends Component
             ->when($this->dateTo !== '', fn (Builder $q): Builder => $q->whereDate('spent_on', '<=', $this->dateTo))
             ->when($this->fiscalYear !== null, fn (Builder $q): Builder => $q->paidInYear((int) $this->fiscalYear))
             ->when($this->unarchivedOnly, fn (Builder $q): Builder => $q->whereNull('archived_at'));
-    }
-
-    private function actor(): User
-    {
-        /** @var User */
-        return Auth::user();
     }
 
     /**

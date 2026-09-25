@@ -10,6 +10,7 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Mail\PaymentInvitationEmail;
+use Livewire\Livewire;
 
 /*
 | Une communication à la fois remisée et partiellement payée.
@@ -53,12 +54,15 @@ function partlyPaidAffiliation(float $received, ?User $member = null): Payment
     return $payment->fresh();
 }
 
-/** Le texte du mail tel que le membre le lit : sans balises ni CSS injecté. */
+/** Ce qu'un humain lit d'une page ou d'un mail : sans balises, sans CSS injecté, espaces resserrés. */
+function readableText(string $html): string
+{
+    return trim((string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($html))));
+}
+
 function invitationText(Payment $payment): string
 {
-    $html = new PaymentInvitationEmail($payment)->render();
-
-    return (string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($html)));
+    return readableText(new PaymentInvitationEmail($payment)->render());
 }
 
 it('itemises the normal price, the discount and what came in down to the balance in the email', function (): void {
@@ -78,4 +82,23 @@ it('calls the starting figure the initial amount when nothing was discounted', f
         ->toContain('Montant initial : 125,00 €')
         ->toContain('Déjà reçu : − 60,00 €')
         ->not->toContain('Prix normal');
+})->group('payments', 'discount');
+
+it('closes the discount breakdown with what came in, under the balance of the members QR window', function (): void {
+    $member = User::factory()->create();
+    $payment = partlyPaidAffiliation(60.0, $member);
+    (new GrantSubscriptionDiscountAction)($payment->payable, 25.0, 'Remerciement buvette');
+
+    $html = Livewire::actingAs($member)
+        ->test('pages::club-admin.users.user-space.payments', ['user' => $member])
+        ->call('openPaymentModal', $payment->id)
+        ->html();
+
+    expect(readableText($html))->toContain(implode(' ', [
+        __('Amount'), '40,00 €',
+        __('Normal price'), '125,00 €',
+        'Remerciement buvette', '− 25,00 €',
+        __('Already received'), '− 60,00 €',
+        __('Reference'),
+    ]));
 })->group('payments', 'discount');

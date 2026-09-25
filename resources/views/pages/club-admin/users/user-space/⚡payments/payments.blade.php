@@ -131,7 +131,8 @@
                     </div>
                     <x-payments.discount-breakdown class="py-2"
                         :amount-before-discounts="$payment->amountBeforeDiscounts()"
-                        :discounts="$payment->discounts" />
+                        :discounts="$payment->discounts"
+                        :already-received="$payment->amount_paid" />
                     <div class="flex items-center justify-between py-2">
                         <span class="opacity-60">{{ __('Reference') }}</span>
                         <span class="font-mono text-xs">{{ $payment->reference }}</span>

@@ -26,9 +26,9 @@ use App\Support\LocaleSort;
 use App\Support\Treasury\SepaRemittance;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
@@ -1116,6 +1116,46 @@ new class extends Component
         return round(min($residue, $balance), 2);
     }
 
+    /**
+     * La traduction SQL de `Payment::affiliationOverpayment()`.
+     *
+     * Une affiliation se compte entière : la ligne n'apparaît que si elle est
+     * la dernière créditée, et que l'affiliation a reçu plus que son dû et ses
+     * remboursements engagés. Même forme additive que ci-dessus, pour la même
+     * raison — jamais de soustraction sur des colonnes `unsigned`.
+     *
+     * @param  Builder<Payment>  $query
+     * @return Builder<Payment>
+     */
+    private function applyAffiliationOverpaidConditions(Builder $query): Builder
+    {
+        $claims = fn (string $alias): QueryBuilder => DB::table("payments as {$alias}")
+            ->whereColumn("{$alias}.payable_type", 'payments.payable_type')
+            ->whereColumn("{$alias}.payable_id", 'payments.payable_id')
+            ->where(fn ($q) => $q->where("{$alias}.payment_method", '!=', 'refund')->orWhereNull("{$alias}.payment_method"))
+            ->where("{$alias}.status", '!=', 'cancelled');
+
+        $lastCredited = $claims('last_credited')->where('last_credited.amount_paid', '>', 0)->selectRaw('max(last_credited.id)');
+        $received = $claims('received')->selectRaw('coalesce(sum(received.amount_paid), 0)');
+
+        $committed = DB::table('payments as refunds')
+            ->selectRaw('coalesce(sum(refunds.amount_due), 0)')
+            ->whereColumn('refunds.payable_type', 'payments.payable_type')
+            ->whereColumn('refunds.payable_id', 'payments.payable_id')
+            ->where('refunds.payment_method', 'refund')
+            ->whereIn('refunds.status', ['to_refund', 'paid', 'refunded']);
+
+        $due = DB::table('subscriptions')->select('subscriptions.amount_due')->whereColumn('subscriptions.id', 'payments.payable_id');
+
+        return $query
+            ->where('payments.payable_type', Subscription::class)
+            ->whereRaw('payments.id = (' . $lastCredited->toSql() . ')', $lastCredited->getBindings())
+            ->whereRaw(
+                '(' . $received->toSql() . ') > (' . $due->toSql() . ') + (' . $committed->toSql() . ')',
+                [...$received->getBindings(), ...$due->getBindings(), ...$committed->getBindings()],
+            );
+    }
+
     private function applyEventNameFilter(Builder $q, string $name): Builder
     {
         return $q->where(function ($q) use ($name): void {
@@ -1211,46 +1251,6 @@ new class extends Component
                         $committed->getBindings(),
                     ))
                 ->orWhere(fn (Builder $affiliation): Builder => $this->applyAffiliationOverpaidConditions($affiliation)));
-    }
-
-    /**
-     * La traduction SQL de `Payment::affiliationOverpayment()`.
-     *
-     * Une affiliation se compte entière : la ligne n'apparaît que si elle est
-     * la dernière créditée, et que l'affiliation a reçu plus que son dû et ses
-     * remboursements engagés. Même forme additive que ci-dessus, pour la même
-     * raison — jamais de soustraction sur des colonnes `unsigned`.
-     *
-     * @param  Builder<Payment>  $query
-     * @return Builder<Payment>
-     */
-    private function applyAffiliationOverpaidConditions(Builder $query): Builder
-    {
-        $claims = fn (string $alias): QueryBuilder => DB::table("payments as {$alias}")
-            ->whereColumn("{$alias}.payable_type", 'payments.payable_type')
-            ->whereColumn("{$alias}.payable_id", 'payments.payable_id')
-            ->where(fn ($q) => $q->where("{$alias}.payment_method", '!=', 'refund')->orWhereNull("{$alias}.payment_method"))
-            ->where("{$alias}.status", '!=', 'cancelled');
-
-        $lastCredited = $claims('last_credited')->where('last_credited.amount_paid', '>', 0)->selectRaw('max(last_credited.id)');
-        $received = $claims('received')->selectRaw('coalesce(sum(received.amount_paid), 0)');
-
-        $committed = DB::table('payments as refunds')
-            ->selectRaw('coalesce(sum(refunds.amount_due), 0)')
-            ->whereColumn('refunds.payable_type', 'payments.payable_type')
-            ->whereColumn('refunds.payable_id', 'payments.payable_id')
-            ->where('refunds.payment_method', 'refund')
-            ->whereIn('refunds.status', ['to_refund', 'paid', 'refunded']);
-
-        $due = DB::table('subscriptions')->select('subscriptions.amount_due')->whereColumn('subscriptions.id', 'payments.payable_id');
-
-        return $query
-            ->where('payments.payable_type', Subscription::class)
-            ->whereRaw('payments.id = (' . $lastCredited->toSql() . ')', $lastCredited->getBindings())
-            ->whereRaw(
-                '(' . $received->toSql() . ') > (' . $due->toSql() . ') + (' . $committed->toSql() . ')',
-                [...$received->getBindings(), ...$due->getBindings(), ...$committed->getBindings()],
-            );
     }
 
     private function applyTab(Builder $q): Builder

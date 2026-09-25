@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\ClubAdmin\Payment\Notifications;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\Shared\Support\IbanNormalizer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -51,7 +52,13 @@ class WeeklyRefundReminderNotification extends Notification
                 $line .= " ({$tournament->name})";
             }
 
-            if ($user->iban) {
+            // Le compte gelé sur la ligne d'abord : un trop-perçu se rend au
+            // compte qui a versé, une note de frais à celui que le membre a
+            // donné en la déclarant — ni l'un ni l'autre n'est forcément
+            // celui de sa fiche.
+            if ($payment->refund_iban) {
+                $line .= ' — IBAN: ' . IbanNormalizer::format($payment->refund_iban);
+            } elseif ($user->iban) {
                 $line .= " — IBAN: {$user->iban_formatted}";
             } else {
                 $line .= ' — ' . __('no IBAN on file');

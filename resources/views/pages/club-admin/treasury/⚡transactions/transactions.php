@@ -7,6 +7,7 @@ use App\Actions\ClubAdmin\Payments\SettleTransactionResidueAction;
 use App\Contracts\DescribesPayment;
 use App\Domains\ClubAdmin\Payment\Models\BankImport;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Payment\Models\PaymentCredit;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
@@ -278,7 +279,7 @@ new class extends Component
         $this->residueReason = '';
         $this->allocationModal = true;
 
-        unset($this->allocationTransaction, $this->allocationCandidates);
+        unset($this->allocationTransaction, $this->allocationCandidates, $this->servedCredits, $this->refundableClaim);
     }
 
     // ==================== Bulk actions ====================
@@ -423,6 +424,32 @@ new class extends Component
     }
 
     /**
+     * La créance qui recevrait le reliquat pour qu'il soit rendu, s'il y en a une.
+     *
+     * Un virement qui a déjà payé quelqu'un a un payeur connu : son surplus est
+     * un trop-perçu, qui se rend au compte d'où il vient. La dernière créance
+     * servie le porte — le choix est sans effet comptable, l'argent retourne au
+     * même compte. Un virement qui n'a encore payé personne n'en a pas : on ne
+     * devine pas à qui rendre.
+     *
+     * Seule une affiliation se rembourse ; ailleurs, le trop-perçu n'aurait
+     * aucune porte de sortie.
+     */
+    #[Computed]
+    public function refundableClaim(): ?Payment
+    {
+        $transaction = $this->allocationTransaction();
+
+        if (! $transaction instanceof Transaction || (float) $transaction->amount <= 0.0 || $transaction->isSettled()) {
+            return null;
+        }
+
+        return $this->servedCredits()
+            ->map(fn (PaymentCredit $credit): ?Payment => $credit->payment)
+            ->last(fn (?Payment $payment): bool => $payment?->payable instanceof Subscription);
+    }
+
+    /**
      * Le reste à placer sur la ligne courante, en euros.
      */
     #[Computed]
@@ -457,6 +484,63 @@ new class extends Component
             'recentImports' => BankImport::with('user')->latest()->limit(10)->get(),
             'breadcrumbs' => $this->getBreadcrumbs(),
         ]);
+    }
+
+    /**
+     * Rend le reliquat au payeur : il devient un trop-perçu sur la créance que
+     * le virement a payée, et le trésorier atterrit sur la demande de
+     * remboursement, préremplie.
+     */
+    public function returnResidue(): void
+    {
+        Gate::authorize(Permission::PaymentsReconcile->value);
+        Gate::authorize(Permission::PaymentsRefund->value);
+
+        $transaction = $this->allocationTransaction();
+        $claim = $this->refundableClaim();
+
+        if (! $transaction instanceof Transaction || ! $claim instanceof Payment) {
+            return;
+        }
+
+        try {
+            (new AllocateTransactionAction)($transaction, [$claim->id => round(abs($transaction->residue()), 2)]);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->closeAllocation();
+        $this->redirectRoute('admin.treasury.payments', ['refund' => $claim->id], navigate: true);
+    }
+
+    /**
+     * Ce que la ligne courante a déjà payé, dans l'ordre où elle l'a payé.
+     *
+     * Sans cette liste, « Affecté 20,00 € » ne dit pas à qui, et le tiroir
+     * concluait que le virement ne désignait personne alors qu'il venait de
+     * solder une affiliation.
+     *
+     * @return Collection<int, PaymentCredit>
+     */
+    #[Computed]
+    public function servedCredits(): Collection
+    {
+        $transaction = $this->allocationTransaction();
+
+        if (! $transaction instanceof Transaction) {
+            return collect();
+        }
+
+        return $transaction->credits()
+            ->with(['payment.payable' => fn (MorphTo $m) => $m->morphWith([
+                Subscription::class => ['user', 'season'],
+                TournamentRegistration::class => ['user', 'tournament'],
+                MeetingUser::class => ['user', 'meeting'],
+            ])])
+            ->orderBy('id')
+            ->get();
     }
 
     public function settleResidue(): void

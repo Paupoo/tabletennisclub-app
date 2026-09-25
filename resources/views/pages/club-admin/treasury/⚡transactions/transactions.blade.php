@@ -396,6 +396,58 @@
                     @endif
                 </div>
 
+                {{-- À qui sont allés les euros déjà affectés. Sans cette liste,
+                     « Affecté 20,00 € » ne dit pas à qui. --}}
+                @if ($this->servedCredits->isNotEmpty())
+                    <div>
+                        <h3 class="mb-2 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Already placed') }}</h3>
+                        <div class="space-y-1.5">
+                            @foreach ($this->servedCredits as $credit)
+                                @php
+                                    $served = $credit->payment?->payable;
+                                    $servedLabel = $served instanceof \App\Contracts\DescribesPayment ? $served->getPaymentLabel() : null;
+                                @endphp
+                                <div class="flex items-center gap-3 rounded-lg border border-success/20 bg-success/5 p-2.5 text-sm"
+                                    wire:key="served-{{ $credit->id }}">
+                                    <x-icon name="o-check-circle" class="h-4 w-4 shrink-0 text-success" />
+                                    <div class="min-w-0 flex-1">
+                                        <div class="truncate font-semibold">
+                                            {{ $served instanceof \App\Contracts\DescribesPayment ? $served->getPayerName() : '—' }}
+                                        </div>
+                                        @if ($servedLabel)
+                                            <div class="truncate text-xs text-primary/70">{{ $servedLabel['type'] }} · {{ $servedLabel['name'] }}</div>
+                                        @endif
+                                    </div>
+                                    <span class="shrink-0 font-bold tabular-nums text-success">
+                                        {{ number_format($credit->amount, 2, ',', ' ') }} €
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Le virement a un payeur connu : son surplus est un trop-perçu,
+                     et le rendre est le geste que le bandeau des paiements promet. --}}
+                @if ($this->refundableClaim)
+                    @php
+                        $claimPayable = $this->refundableClaim->payable;
+                    @endphp
+                    <div class="space-y-2 rounded-xl border border-info/20 bg-info/5 p-3 text-sm">
+                        <div class="font-semibold">
+                            {{ __('This transfer comes from :name', ['name' => $claimPayable->getPayerName()]) }}
+                        </div>
+                        <p class="text-xs opacity-80">
+                            {{ __('It has already settled what it was paying for. The :amount € left are an overpayment, to give back to the account that paid.', ['amount' => number_format(abs($tx->residue()), 2, ',', ' ')]) }}
+                        </p>
+                        @can('payments.refund')
+                            <x-button :label="__('Give :amount € back to the payer', ['amount' => number_format(abs($tx->residue()), 2, ',', ' ')])"
+                                icon="o-arrow-uturn-left" wire:click="returnResidue" spinner="returnResidue"
+                                class="btn-sm btn-info btn-outline" />
+                        @endcan
+                    </div>
+                @endif
+
                 <x-input :placeholder="__('Search a member or a reference...')"
                     wire:model.live.debounce.300ms="allocationSearch"
                     icon="o-magnifying-glass" clearable />
@@ -455,7 +507,7 @@
                         @endforeach
                         </div>
                     </div>
-                @elseif ($this->allocationCandidates->isNotEmpty())
+                @elseif ($this->allocationCandidates->isNotEmpty() && $this->servedCredits->isEmpty())
                     <div class="flex items-start gap-3 rounded-lg border border-warning/20 bg-warning/5 p-3 text-sm">
                         <x-icon name="o-question-mark-circle" class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
                         <div>
@@ -515,7 +567,7 @@
                     </div>
                 @endif
 
-                @if ($this->allocationCandidates->isEmpty())
+                @if ($this->allocationCandidates->isEmpty() && $this->servedCredits->isEmpty())
                     <p class="py-6 text-center text-sm text-muted">
                         {{ $tx->amount < 0
                             ? __('No refund is waiting to be paid out. This transfer went somewhere else — write off what is left, or leave it unreconciled.')

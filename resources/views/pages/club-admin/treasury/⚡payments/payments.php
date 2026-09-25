@@ -65,6 +65,14 @@ new class extends Component
 
     public ?int $reconcilePaymentId = null;
 
+    /**
+     * Placer le virement entier sur la créance, excédent compris.
+     *
+     * Le défaut reste de ne placer que le solde : un excédent reconnu devient
+     * un trop-perçu à rendre, et c'est une décision, pas une conséquence.
+     */
+    public bool $reconcileWholeTransfer = false;
+
     public array $refundBatchMatches = [];
 
     public bool $refundBatchModal = false;
@@ -244,9 +252,13 @@ new class extends Component
         $payment = Payment::findOrFail($this->reconcilePaymentId);
         $transaction = Transaction::findOrFail($this->selectedTransactionId);
 
+        $wholeTransfer = $this->reconcileWholeTransfer && $this->excessOf($payment, $transaction) > 0.0;
+
         try {
             (new AllocateTransactionAction)($transaction, [
-                $payment->id => $this->allocatableAmount($payment, $transaction),
+                $payment->id => $wholeTransfer
+                    ? round(abs($transaction->residue()), 2)
+                    : $this->allocatableAmount($payment, $transaction),
             ]);
         } catch (DomainException $e) {
             $this->error($e->getMessage());
@@ -257,6 +269,17 @@ new class extends Component
         $this->reconcileModal = false;
         $this->reconcilePaymentId = null;
         $this->selectedTransactionId = null;
+        $this->reconcileWholeTransfer = false;
+
+        // L'excédent vient d'être reconnu comme trop-perçu : le seul geste qui
+        // lui reste est de le rendre, et le trésorier l'a décidé à l'instant.
+        if ($wholeTransfer) {
+            $this->residueNotice = null;
+            $this->success(__('Payment reconciled successfully.'));
+            $this->openRefundRequest($payment->id);
+
+            return;
+        }
 
         // Ce qui reste sur le virement doit être dit maintenant. Sans ça, le
         // trésorier clique, s'en va, et cet argent dort sans que personne sache
@@ -465,6 +488,23 @@ new class extends Component
         $this->success(__('Noted — it now shows as wired, waiting for the statement.'));
     }
 
+    /**
+     * Ouvre directement la demande de remboursement quand on arrive avec `?refund=`.
+     *
+     * Le trésorier vient de rendre un reliquat depuis le tiroir des
+     * transactions : il doit atterrir sur le geste, prérempli, pas sur une
+     * liste où retrouver sa ligne.
+     */
+    public function mount(): void
+    {
+        $payment = Payment::find(request()->integer('refund'));
+
+        if ($payment instanceof Payment && $payment->isOverpaid() && Gate::allows(Permission::PaymentsRefund->value)) {
+            $this->statusFilter = 'overpaid';
+            $this->openRefundRequest($payment->id);
+        }
+    }
+
     public function openBulkCancelRefundModal(): void
     {
         Gate::authorize(Permission::PaymentsRefund->value);
@@ -487,6 +527,7 @@ new class extends Component
 
         $this->reconcilePaymentId = $paymentId;
         $this->selectedTransactionId = null;
+        $this->reconcileWholeTransfer = false;
         $this->residueNotice = null;
         $this->reconcileModal = true;
     }
@@ -880,6 +921,7 @@ new class extends Component
                 ['id' => BarOrder::class,               'name' => __('Bar')],
             ]), 'name')->all(),
             'pendingTransactions' => $this->reconcileModal ? $this->pendingTransactions() : collect(),
+            'reconcileExcess' => $this->reconcileExcess(),
             'currentPayment' => $this->reconcilePaymentId
                 ? Payment::with([
                     'payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads()),
@@ -1020,6 +1062,12 @@ new class extends Component
         $this->resetPage();
     }
 
+    /** Le choix de placer tout le virement vaut pour un virement, pas pour le suivant. */
+    public function updatedSelectedTransactionId(): void
+    {
+        $this->reconcileWholeTransfer = false;
+    }
+
     public function updatedSortBy(): void
     {
         $this->resetPage();
@@ -1059,13 +1107,6 @@ new class extends Component
             ->toArray();
     }
 
-    /**
-     * Ce qu'on peut raisonnablement affecter de cette ligne à ce paiement.
-     *
-     * Le plus petit des deux restes : ce que la transaction n'a pas encore
-     * placé, et ce que le paiement réclame encore. Jamais au-delà du solde —
-     * dépasser reconnaît un trop-perçu, et c'est une décision, pas un défaut.
-     */
     private function allocatableAmount(Payment $payment, Transaction $transaction): float
     {
         $residue = abs($transaction->residue());
@@ -1186,6 +1227,28 @@ new class extends Component
         };
     }
 
+    /**
+     * Ce qu'on peut raisonnablement affecter de cette ligne à ce paiement.
+     *
+     * Le plus petit des deux restes : ce que la transaction n'a pas encore
+     * placé, et ce que le paiement réclame encore. Jamais au-delà du solde —
+     * dépasser reconnaît un trop-perçu, et c'est une décision, pas un défaut.
+     */
+    /**
+     * Ce que le virement apporte au-delà du solde de la créance, en euros.
+     *
+     * Seule une affiliation se rembourse : ailleurs, reconnaître un excédent
+     * créerait un trop-perçu que rien ne permet de rendre.
+     */
+    private function excessOf(Payment $payment, Transaction $transaction): float
+    {
+        if (! $payment->payable instanceof Subscription || (float) $transaction->amount <= 0.0) {
+            return 0.0;
+        }
+
+        return max(0.0, round(abs($transaction->residue()) - $payment->balance(), 2));
+    }
+
     private function normalizeIban(string $iban): string
     {
         return strtoupper(str_replace([' ', '-'], '', $iban));
@@ -1265,6 +1328,21 @@ new class extends Component
             MeetingUser::class => ['user.guardians', 'meeting'],
             Subscription::class => ['user.guardians', 'season'],
         ];
+    }
+
+    /** L'excédent du virement choisi dans la modale de rapprochement, s'il y en a un. */
+    private function reconcileExcess(): float
+    {
+        if (! $this->reconcileModal || ! $this->reconcilePaymentId || ! $this->selectedTransactionId) {
+            return 0.0;
+        }
+
+        $payment = Payment::find($this->reconcilePaymentId);
+        $transaction = Transaction::find($this->selectedTransactionId);
+
+        return $payment instanceof Payment && $transaction instanceof Transaction
+            ? $this->excessOf($payment, $transaction)
+            : 0.0;
     }
 
     /**

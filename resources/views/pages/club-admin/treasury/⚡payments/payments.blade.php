@@ -594,6 +594,34 @@
             :heading="__('Unreconciled bank transactions')"
             :empty-message="__('No unreconciled transactions. Import a bank statement first.')" />
 
+        @if ($reconcileExcess > 0)
+            {{-- Le virement dépasse le solde : ce qui en est fait se décide ici,
+                 pas après coup. Placer le solde seul laissait l'excédent sur le
+                 virement, attaché à personne, et aucun écran ne savait le rendre. --}}
+            <fieldset class="mt-4 space-y-2 rounded-xl border border-info/20 bg-info/5 p-3 text-sm">
+                <legend class="px-1 text-xs font-bold uppercase tracking-widest text-muted">
+                    {{ __('This transfer brings :excess € more than the balance', ['excess' => number_format($reconcileExcess, 2, ',', ' ')]) }}
+                </legend>
+                <label class="flex cursor-pointer items-start gap-2">
+                    <input type="radio" name="reconcile-whole" class="radio radio-sm radio-primary mt-0.5"
+                        @checked(! $reconcileWholeTransfer) wire:click="$set('reconcileWholeTransfer', false)" />
+                    <span>
+                        {{ __('Place :amount € — the rest waits for another claim', ['amount' => number_format($currentPayment->balance(), 2, ',', ' ')]) }}
+                    </span>
+                </label>
+                <label class="flex cursor-pointer items-start gap-2">
+                    <input type="radio" name="reconcile-whole" class="radio radio-sm radio-primary mt-0.5"
+                        @checked($reconcileWholeTransfer) wire:click="$set('reconcileWholeTransfer', true)" />
+                    <span>
+                        {{ __('Place the whole :amount €', ['amount' => number_format($currentPayment->balance() + $reconcileExcess, 2, ',', ' ')]) }}
+                        <span class="block text-xs opacity-70">
+                            {{ __(':excess € become an overpayment, to give back to the account that paid', ['excess' => number_format($reconcileExcess, 2, ',', ' ')]) }}
+                        </span>
+                    </span>
+                </label>
+            </fieldset>
+        @endif
+
         @endif
 
         <x-slot:actions>

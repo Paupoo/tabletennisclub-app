@@ -644,7 +644,11 @@
                 @endif
             </div>
             <div class="text-right shrink-0">
-                <div class="text-lg font-black text-error">{{ number_format($currentRefundPayment->amount_paid, 2, ',', ' ') }} €</div>
+                {{-- Ce qu'il reste à virer, comme la ligne du tableau. `amount_paid`
+                     compte ce qui est déjà sorti : zéro tant que le virement n'a
+                     pas été fait, donc une modale d'exécution qui annonçait
+                     0,00 € à rembourser. --}}
+                <div class="text-lg font-black text-error">{{ number_format($currentRefundPayment->balance(), 2, ',', ' ') }} €</div>
                 <div class="text-xs text-muted">{{ __('to refund') }}</div>
             </div>
         </div>

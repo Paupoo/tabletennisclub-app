@@ -394,6 +394,12 @@ Go to **Treasury → Transactions**. Record bank transactions (from your bank st
 - Add a transaction (amount, date, communication reference, payer)
 - Reconcile: match transactions to pending payments
 
+### Expense reports
+
+Go to **Treasury → Expense reports**. Adult members declare there what they paid for the club, with their proofs. The whole committee **reads** the reports; **accepting** them (possibly for a lower amount, with a reason) or **rejecting** them (reason required) belongs to the **Treasury** délégation, the **Expense reports** délégation (the treasurer's backup) and the administrators, and **nobody decides on their own report**. An accepted report becomes an ordinary refund in **Payments → To refund**; it turns "paid" when the debit is reconciled.
+
+**Export** prepares in the background a printable PDF or a ZIP (CSV + original proofs) of what the screen shows. A quarterly reminder asks the treasury to archive the paid reports. The accounts auditors are given the **Accounts audit** délégation: the whole treasury, read-only. The detail lives in the help articles *Traiter les notes de frais* and *Vérifier les notes de frais*.
+
 ### Cash register (bar)
 
 Go to **Treasury → Cash register**. Manage bar orders, cash sheet, and stock movements if the bar module is active.
@@ -452,6 +458,10 @@ As a committee member, the following emails are sent automatically — you do no
 | Meeting minutes | All attendees |
 | Meeting cancelled/postponed | All invited members |
 | Refund requested | Admin |
+| Expense report accepted, rejected (with reason) or paid | The report's author |
+| New expense report (bell only) | Treasury and Expense reports délégations, except the author |
+| Digest of expense reports waiting (Sunday 19:00) | Treasury and Expense reports délégations |
+| Paid expense reports to archive (quarterly, and on 5 January) | Treasury and Expense reports délégation |
 
 ---
 

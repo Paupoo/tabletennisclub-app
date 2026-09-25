@@ -275,6 +275,7 @@ calendrier public.
 | Bar | `FEATURE_BAR` |
 | Caisse | `FEATURE_CASH_REGISTER` |
 | Contacts | `FEATURE_CONTACTS` |
+| Notes de frais | `FEATURE_EXPENSE_REPORTS` |
 | Centre d'aide | `FEATURE_HELP_CENTRE` |
 | Interclubs | `FEATURE_INTERCLUBS` |
 | Réunions | `FEATURE_MEETINGS` |

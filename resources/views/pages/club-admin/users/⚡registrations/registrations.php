@@ -749,10 +749,10 @@ new class extends Component
 
         $this->reset(['discountModal', 'discountSubscriptionId', 'discountValue', 'discountReason', 'discountMode']);
 
-        // Le trop-perçu n'est pas remboursé ici — c'est un geste de trésorerie —
-        // mais celui qui vient de le causer doit l'apprendre maintenant.
+        // La remise a ouvert elle-même le remboursement de ce qu'elle libère ;
+        // celui qui vient de le causer doit l'apprendre maintenant.
         if ($granted->leavesMoneyToRefund()) {
-            $this->warning(__('Discount granted. :amount € are now owed back to the member — the treasury has to refund them.', [
+            $this->warning(__('Discount granted. A refund of :amount € has been opened for the treasury.', [
                 'amount' => number_format($granted->refundable, 2, ',', ' '),
             ]));
 

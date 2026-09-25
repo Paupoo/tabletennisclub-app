@@ -1,0 +1,584 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
+use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Transaction;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Shared\Enums\Role;
+use Livewire\Livewire;
+
+/**
+ * Le rapprochement tel que le trésorier le fait réellement.
+ *
+ * `ReconciliationTest` couvrait ce geste en exécutant lui-même l'`update()`
+ * qu'il vérifiait : l'assertion recalculait l'attendu comme le code, donc elle
+ * ne pouvait jamais le contredire. `confirmReconcile()` n'y était jamais
+ * appelée, et c'est pourquoi « 50 € soldent une cotisation de 365 € » a pu
+ * vivre en production sous une suite verte.
+ */
+function reconcileScreen(User $actor)
+{
+    $actor->assignRole(Role::TREASURY->value);
+
+    return Livewire::actingAs($actor)->test('pages::club-admin.treasury.payments');
+}
+
+/** @return array{0: Subscription, 1: Payment} */
+function affiliationAwaiting(float $due = 365.0): array
+{
+    $member = User::factory()->create();
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => $member->id,
+        'status' => 'confirmed',
+        'amount_due' => $due,
+    ]);
+
+    // Une référence par appel : deux affiliations dans un même test se
+    // heurtaient à l'unicité de la colonne.
+    static $sequence = 0;
+    $sequence++;
+
+    return [$subscription, $subscription->payments()->create([
+        'reference' => sprintf('123/4567/%05d', $sequence),
+        'amount_due' => $due,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ])];
+}
+
+it('leaves the balance owed when the treasurer reconciles a partial transfer', function (): void {
+    [$subscription, $payment] = affiliationAwaiting();
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 200.0,
+        'counterparty_name' => $subscription->user->full_name,
+    ]);
+
+    reconcileScreen(User::factory()->create())
+        ->call('openReconcile', $payment->id)
+        ->set('selectedTransactionId', $transaction->id)
+        ->call('confirmReconcile');
+
+    expect($payment->fresh()->amount_paid)->toBe(200.0)
+        ->and($payment->fresh()->status)->toBe('pending')
+        ->and($subscription->fresh()->status)->toBe('confirmed')
+        ->and($subscription->fresh()->balanceDue())->toBe(165.0)
+        // Le geste passe bien par l'action : sans ligne de crédit, le miroir
+        // de la transaction resterait à zéro.
+        ->and($transaction->fresh()->allocated_amount)->toBe(200.0);
+})->group('payments', 'reconciliation');
+
+/**
+ * Le cas A par le rapprochement en masse.
+ *
+ * Les transactions étaient indexées par `keyBy(référence)` : deux virements
+ * portant la même communication structurée s'écrasaient l'un l'autre, et seul
+ * le dernier survivait. Le premier disparaissait sans un mot — aucun test ne
+ * pouvait le voir, celui qui s'en chargeait ayant recopié le `keyBy` fautif.
+ *
+ * La référence structurée est un identifiant que le club a lui-même émis :
+ * elle désigne le paiement à elle seule. Le montant ne décide plus de *qui*,
+ * seulement de *combien*.
+ */
+it('offers every transfer carrying the payment reference, not just the last one', function (): void {
+    [$subscription, $payment] = affiliationAwaiting();
+
+    foreach ([200.0, 165.0] as $amount) {
+        Transaction::create([
+            'date' => now()->toDateString(),
+            'description' => 'VIREMENT EN VOTRE FAVEUR',
+            'amount' => $amount,
+            'counterparty_name' => $subscription->user->full_name,
+            'structured_reference' => $payment->reference,
+        ]);
+    }
+
+    $screen = reconcileScreen(User::factory()->create())
+        ->call('previewBatchMatch');
+
+    expect($screen->get('batchMatches'))->toHaveCount(2);
+
+    // Deux versements partiels : aucun n'est coché d'office, le trésorier les
+    // accepte après les avoir lus.
+    $screen->set('selectedBatchMatches', ['0', '1'])
+        ->call('confirmBatchReconcile');
+
+    expect($payment->fresh()->amount_paid)->toBe(365.0)
+        ->and($payment->fresh()->status)->toBe('paid')
+        ->and($subscription->fresh()->balanceDue())->toBe(0.0);
+})->group('payments', 'batch');
+
+/**
+ * Une transaction déjà entièrement affectée ne revient pas dans la sélection.
+ *
+ * Le masse filtrait sur `whereDoesntHave('payment')`, une colonne que plus
+ * personne n'écrit depuis que le geste passe par l'action. Sans reprise, il
+ * proposerait à l'infini des lignes qu'il a lui-même soldées — et I1 les
+ * refuserait une à une, en silence, au milieu de la boucle.
+ */
+it('leaves out a transfer it has already allocated in full', function (): void {
+    // Le paiement reste `pending` après le premier passage — il doit encore
+    // 165 €. C'est ce qui rend ce test discriminant : filtrer sur le statut du
+    // paiement ne suffit pas à écarter la transaction, il faut regarder ce
+    // qu'elle a encore à placer.
+    [, $payment] = affiliationAwaiting();
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 200.0,
+        'counterparty_name' => 'Payeur',
+        'structured_reference' => $payment->reference,
+    ]);
+
+    reconcileScreen(User::factory()->create())
+        ->call('previewBatchMatch')
+        ->set('selectedBatchMatches', ['0'])
+        ->call('confirmBatchReconcile');
+
+    expect($payment->fresh()->status)->toBe('pending')
+        ->and($payment->fresh()->amount_paid)->toBe(200.0)
+        ->and($transaction->fresh()->isSettled())->toBeTrue();
+
+    // Second passage : le paiement réclame toujours, la transaction n'a plus
+    // rien à donner.
+    expect(reconcileScreen(User::factory()->create())->call('previewBatchMatch')->get('batchMatches'))
+        ->toBeEmpty();
+})->group('payments', 'batch');
+
+/**
+ * Le remboursement passe par la même porte que l'encaissement.
+ *
+ * `confirmRefundReconcile()` écrivait `refund_transaction_id` et le statut à la
+ * main. La colonne était `unique()` : un virement sortant ne pouvait payer
+ * qu'un seul remboursement.
+ */
+it('executes a refund through the allocation action', function (): void {
+    $member = User::factory()->create();
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => $member->id,
+        'status' => 'confirmed',
+        'amount_due' => 365,
+    ]);
+
+    $refund = $subscription->payments()->create([
+        'reference' => '999/0000/00065',
+        'amount_due' => 65,
+        'amount_paid' => 0,
+        'status' => 'to_refund',
+        'payment_method' => 'refund',
+    ]);
+
+    $outgoing = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN FAVEUR DE TIERS',
+        'amount' => -65.0,
+        'counterparty_name' => $member->full_name,
+    ]);
+
+    reconcileScreen(User::factory()->create())
+        ->call('openRefundReconcile', $refund->id)
+        ->set('selectedRefundTransactionId', $outgoing->id)
+        ->call('confirmRefundReconcile');
+
+    expect($refund->fresh()->status)->toBe('refunded')
+        ->and($refund->fresh()->amount_paid)->toBe(65.0)
+        ->and($outgoing->fresh()->allocated_amount)->toBe(-65.0)
+        ->and($outgoing->fresh()->isSettled())->toBeTrue();
+})->group('payments', 'reconciliation');
+
+/**
+ * Le trésorier ouvre un remboursement sur demande du membre.
+ *
+ * Aucun bouton n'existait : les six appelants de RequestSubscriptionRefundAction
+ * sont des gestes de secrétariat — annuler une affiliation, arrêter un pack,
+ * déplacer un membre. Un membre qui appelle pour dire « j'ai payé deux fois »
+ * obligeait le trésorier à passer par le secrétaire, qui devait modifier une
+ * affiliation pour provoquer un remboursement qu'il ne voulait pas provoquer.
+ */
+it('lets the treasurer open a refund on a payment, with a reason', function (): void {
+    [$subscription, $payment] = affiliationAwaiting();
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 365.0,
+        'counterparty_name' => $subscription->user->full_name,
+    ]);
+
+    reconcileScreen(User::factory()->create())
+        // Les 365 € doivent être rentrés : on ne rembourse pas ce qu'on n'a pas.
+        ->call('openReconcile', $payment->id)
+        ->set('selectedTransactionId', $transaction->id)
+        ->call('confirmReconcile')
+        ->call('openRefundRequest', $payment->id)
+        ->set('refundRequestAmount', 65.0)
+        ->set('refundRequestReason', 'Double virement du membre')
+        ->call('confirmRefundRequest')
+        ->assertHasNoErrors();
+
+    $refund = $subscription->fresh()->payments()->where('payment_method', 'refund')->first();
+
+    expect($refund)->not->toBeNull()
+        ->and($refund->status)->toBe('to_refund')
+        ->and($refund->amount_due)->toBe(65.0)
+        ->and($refund->amount_paid)->toBe(0.0);
+})->group('payments', 'refund');
+
+/**
+ * Le plafond est ce qui est réellement rentré, net des remboursements déjà
+ * engagés. `netAmountPaid()` existait pour ça — sa docstring prévient que s'en
+ * passer rembourserait deux fois — sans être appelée par aucun écran.
+ */
+it('refuses to refund more than the member actually paid', function (): void {
+    [$subscription, $payment] = affiliationAwaiting();
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 200.0,
+        'counterparty_name' => $subscription->user->full_name,
+    ]);
+
+    reconcileScreen(User::factory()->create())
+        ->call('openReconcile', $payment->id)
+        ->set('selectedTransactionId', $transaction->id)
+        ->call('confirmReconcile')
+        ->call('openRefundRequest', $payment->id)
+        ->set('refundRequestAmount', 300.0)
+        ->set('refundRequestReason', 'Trop demandé')
+        ->call('confirmRefundRequest');
+
+    expect($subscription->fresh()->payments()->where('payment_method', 'refund')->count())->toBe(0);
+})->group('payments', 'refund');
+
+it('requires a reason before opening a refund', function (): void {
+    [$subscription, $payment] = affiliationAwaiting();
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 365.0,
+        'counterparty_name' => $subscription->user->full_name,
+    ]);
+
+    reconcileScreen(User::factory()->create())
+        ->call('openReconcile', $payment->id)
+        ->set('selectedTransactionId', $transaction->id)
+        ->call('confirmReconcile')
+        ->call('openRefundRequest', $payment->id)
+        ->set('refundRequestAmount', 65.0)
+        ->set('refundRequestReason', '   ')
+        ->call('confirmRefundRequest');
+
+    expect($subscription->fresh()->payments()->where('payment_method', 'refund')->count())->toBe(0);
+})->group('payments', 'refund');
+
+/**
+ * Ce qu'il reste à rapprocher doit se lire sur la ligne.
+ *
+ * Après un versement de 100 € sur 120 € dus, l'écran affichait toujours
+ * « 120,00 € » — le montant réclamé au départ. Rien ne disait que 100 étaient
+ * rentrés ni que 20 manquaient. Le trésorier ne pouvait pas distinguer une
+ * ligne intacte d'une ligne presque soldée.
+ *
+ * C'était le prix annoncé du choix de ne pas créer de statut `partially_paid` :
+ * l'état ne se lit plus dans une colonne, il faut l'afficher. Il ne l'était pas.
+ */
+it('shows what is left to reconcile on a partly paid line', function (): void {
+    [$subscription, $payment] = affiliationAwaiting(120.0);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 100.0,
+        'counterparty_name' => $subscription->user->full_name,
+    ]);
+
+    $screen = reconcileScreen(User::factory()->create())
+        ->call('openReconcile', $payment->id)
+        ->set('selectedTransactionId', $transaction->id)
+        ->call('confirmReconcile');
+
+    // Le solde, puisque c'est ce qui reste à faire.
+    $screen->assertSee('20,00 €');
+
+    // Et d'où il vient, sinon le chiffre est illisible.
+    $screen->assertSee('100,00')
+        ->assertSee('120,00');
+})->group('payments', 'reconciliation');
+
+/**
+ * D'où viennent les euros déjà reçus.
+ *
+ * « Il reste 20 € » ne se vérifie pas si on ne peut pas remonter aux 100
+ * autres. Un trésorier ne retient pas ses propres rapprochements, et rouvrir
+ * la ligne doit suffire à les retrouver.
+ */
+it('lists where the money already received came from', function (): void {
+    [$subscription, $payment] = affiliationAwaiting(120.0);
+
+    $transaction = Transaction::create([
+        'date' => '2026-09-14',
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 100.0,
+        'counterparty_name' => 'ROELS Jules',
+    ]);
+
+    $screen = reconcileScreen(User::factory()->create())
+        ->call('openReconcile', $payment->id)
+        ->set('selectedTransactionId', $transaction->id)
+        ->call('confirmReconcile')
+        ->call('openReconcile', $payment->id);
+
+    $screen->assertSee('ROELS Jules')
+        ->assertSee('14/09/2026')
+        ->assertSee('100,00 €');
+})->group('payments', 'reconciliation');
+
+/**
+ * Le 4ᵉ onglet : l'argent que le club détient en trop.
+ *
+ * Un trop-perçu n'est pas un statut, c'est une position — les crédits
+ * dépassent le dû. L'onglet est donc un filtre dérivé, comme « partiellement
+ * payé » l'est sur une ligne. Sans lui, cet argent n'existe que pour qui pense
+ * à rouvrir la bonne fiche.
+ */
+it('gathers the overpayments the club is holding', function (): void {
+    [$subscription, $payment] = affiliationAwaiting(120.0);
+
+    // Une créance ordinaire, qui ne doit pas s'y retrouver.
+    [, $ordinary] = affiliationAwaiting(60.0);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 220.0,
+        'counterparty_name' => $subscription->user->full_name,
+    ]);
+
+    // Le trésorier reconnaît délibérément le trop-perçu : 220 € pour 120 € dus.
+    (new AllocateTransactionAction)($transaction, [$payment->id => 220.0]);
+
+    $rows = reconcileScreen(User::factory()->create())
+        ->set('statusFilter', 'overpaid')
+        ->viewData('payments');
+
+    $references = collect($rows->items())->pluck('reference');
+
+    expect($references)->toContain($payment->reference)
+        ->and($references)->not->toContain($ordinary->reference);
+
+    // Le net, jamais « 220 sur 120 ».
+    $row = collect($rows->items())->firstWhere('reference', $payment->reference);
+
+    expect($row->overpayment)->toBe(100.0);
+})->group('payments', 'overpaid');
+
+/**
+ * Rembourser un trop-perçu : au compte qui a versé, du montant en trop.
+ *
+ * Les deux valeurs sont déductibles — l'excédent se calcule, le compte se lit
+ * sur le virement d'origine. Les faire saisir au trésorier, c'est lui demander
+ * de retrouver une information que le système a sous la main.
+ */
+it('opens a refund for the overpayment, towards the account that paid', function (): void {
+    Club::factory()->ownClub()->create(['name' => 'CTT Ottignies-Blocry']);
+    Club::forgetOwnClub();
+
+    [$subscription, $payment] = affiliationAwaiting(120.0);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 220.0,
+        'counterparty_name' => 'MARTIN Sophie',
+        'counterparty_bank_account' => 'BE62510007547061',
+    ]);
+
+    (new AllocateTransactionAction)($transaction, [$payment->id => 220.0]);
+
+    $screen = reconcileScreen(User::factory()->create())
+        ->set('statusFilter', 'overpaid')
+        ->call('openRefundRequest', $payment->id);
+
+    // Les deux valeurs sont proposées, pas demandées.
+    expect($screen->get('refundRequestAmount'))->toBe(100.0)
+        ->and($screen->get('refundRequestIban'))->toBe('BE62510007547061');
+
+    $screen->set('refundRequestReason', 'Le membre avait déjà payé')
+        ->call('confirmRefundRequest')
+        ->assertHasNoErrors();
+
+    $refund = $subscription->fresh()->payments()->where('payment_method', 'refund')->first();
+
+    expect($refund)->not->toBeNull()
+        ->and($refund->amount_due)->toBe(100.0)
+        ->and($refund->refund_iban)->toBe('BE62510007547061');
+})->group('payments', 'overpaid');
+
+/**
+ * Le libellé que le trésorier recopiera dans sa banque.
+ *
+ * C'est la seule chose que le payeur lira. Elle se lit désormais dans la modale
+ * personne : le trésorier fait le virement dans son application bancaire, pas
+ * ici, et il a besoin du texte sous les yeux.
+ */
+it('shows the communication to put on the outgoing transfer', function (): void {
+    Club::factory()->ownClub()->create(['name' => 'CTT Ottignies-Blocry']);
+    Club::forgetOwnClub();
+
+    $member = User::factory()->create(['first_name' => 'Robbe', 'last_name' => 'Bogaert']);
+
+    $subscription = Subscription::factory()->create([
+        'user_id' => $member->id,
+        'status' => 'confirmed',
+        'amount_due' => 120,
+    ]);
+
+    $refund = (new RequestSubscriptionRefundAction)(
+        $subscription,
+        100.0,
+        'Trop-perçu',
+        targetIban: 'BE62510007547061',
+    );
+
+    // La ligne nomme le membre et dit où en est le remboursement. Le compte à
+    // créditer — celui du tiers qui a payé, pas celui du titulaire — et la
+    // communication vivent dans la modale d'instructions : ce sont les deux
+    // choses qu'on recopie dans sa banque, et la seconde fait 140 caractères.
+    reconcileScreen(User::factory()->create())
+        ->set('statusFilter', 'to_refund')
+        ->assertSee('Robbe Bogaert')
+        ->assertSee(__('To wire'))
+        ->assertDontSee('BE62510007547061')
+        ->assertDontSee('CTT Ottignies-Blocry - trop-percu')
+        ->call('openRefundInstructions', $refund->id)
+        ->assertSee('BE62510007547061')
+        ->assertSee('CTT Ottignies-Blocry - trop-percu');
+})->group('payments', 'refund');
+
+/**
+ * Après un rapprochement partiel, dire ce qui reste sur le virement.
+ *
+ * L'écran répondait « Paiement réconcilié avec succès » et se taisait sur les
+ * cent euros encore à placer. Le trésorier cliquait, partait, et cet argent
+ * dormait sans que personne sache qu'il était à quelqu'un.
+ */
+it('names what is left on the transfer after a partial reconciliation', function (): void {
+    [$subscription, $payment] = affiliationAwaiting(20.0);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 120.0,
+        'counterparty_name' => $subscription->user->full_name,
+    ]);
+
+    // Un bandeau, pas un toast : le trésorier ne retient pas ses rapprochements,
+    // et un message qui s'efface au bout de trois secondes ne lui sert à rien.
+    reconcileScreen(User::factory()->create())
+        ->call('openReconcile', $payment->id)
+        ->set('selectedTransactionId', $transaction->id)
+        ->call('confirmReconcile')
+        ->assertSee('100,00');
+
+    expect($transaction->fresh()->residue())->toBe(100.0);
+})->group('payments', 'reconciliation');
+
+/**
+ * Une transaction à moitié consommée doit le dire dans la liste des candidates.
+ *
+ * Une mère vire 120 € pour deux enfants à 60 €. Après avoir rapproché le
+ * premier, le trésorier ouvre le second et voit la même ligne afficher
+ * « 120,00 € » : rien ne distingue un virement intact d'un virement à moitié
+ * placé, et il conclut que son premier geste n'a servi à rien.
+ *
+ * Le calcul était juste — 60 € affectés, 60 disponibles. C'est l'affichage
+ * qui mentait.
+ */
+it('shows what is left on a transfer already half placed', function (): void {
+    $mother = User::factory()->create(['first_name' => 'Sophie', 'last_name' => 'Martin']);
+
+    [, $first] = affiliationAwaiting(60.0);
+    [, $second] = affiliationAwaiting(60.0);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 120.0,
+        'counterparty_name' => $mother->full_name,
+    ]);
+
+    $screen = reconcileScreen(User::factory()->create())
+        ->call('openReconcile', $first->id)
+        ->set('selectedTransactionId', $transaction->id)
+        ->call('confirmReconcile')
+        ->call('openReconcile', $second->id);
+
+    // Une chaîne que seule l'étiquette « reste à placer » produit : « 60,00 »
+    // tout seul figure déjà ailleurs sur la page, et l'assertion ne
+    // discriminerait rien.
+    $screen->assertSee(__(':amount € left', ['amount' => '60,00']));
+})->group('payments', 'reconciliation');
+
+/**
+ * Le masse ne valide d'office que ce dont il est certain.
+ *
+ * La modale n'avait aucune case : elle listait les appariements et proposait
+ * « Tout confirmer ». Un versement partiel y passait au même titre qu'un
+ * paiement au centime près, sans que le trésorier puisse l'écarter. Sur
+ * quarante lignes et un seul bouton, personne ne lit.
+ *
+ * Un appariement parfait — référence **et** montant, sur une créance et un
+ * virement encore intacts — arrive coché. Tout le reste attend un geste.
+ */
+it('pre-selects only the matches it is certain of', function (): void {
+    [, $exact] = affiliationAwaiting(365.0);
+    [, $partial] = affiliationAwaiting(365.0);
+
+    Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 365.0,
+        'counterparty_name' => 'Payeur exact',
+        'structured_reference' => $exact->reference,
+    ]);
+
+    Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 200.0,
+        'counterparty_name' => 'Payeur partiel',
+        'structured_reference' => $partial->reference,
+    ]);
+
+    $screen = reconcileScreen(User::factory()->create())->call('previewBatchMatch');
+
+    $matches = $screen->get('batchMatches');
+    $selected = $screen->get('selectedBatchMatches');
+
+    expect($matches)->toHaveCount(2);
+
+    $exactKey = collect($matches)->search(fn (array $m): bool => $m['payment_id'] === $exact->id);
+    $partialKey = collect($matches)->search(fn (array $m): bool => $m['payment_id'] === $partial->id);
+
+    expect($selected)->toContain((string) $exactKey)
+        ->and($selected)->not->toContain((string) $partialKey);
+
+    // Et confirmer n'applique que ce qui est coché.
+    $screen->call('confirmBatchReconcile');
+
+    expect($exact->fresh()->status)->toBe('paid')
+        ->and($partial->fresh()->amount_paid)->toBe(0.0)
+        ->and($partial->fresh()->status)->toBe('pending');
+})->group('payments', 'batch');

@@ -25,6 +25,7 @@ use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TableStateEnum;
 use App\Domains\Shared\Models\AppSetting;
+use App\Support\Treasury\BankStatementFixture;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
@@ -349,12 +350,23 @@ class DatabaseSeeder extends Seeder
             $this->tableService->updateTablesCount($room);
         }
 
+        // Quatre membres sur cinq ont leur IBAN en fiche. Huit sur deux cent
+        // soixante-neuf en portaient un, et la branche « IBAN du membre » du
+        // barème de rapprochement restait donc aussi muette que l'était la
+        // branche tuteur. Un cinquième sans IBAN : le club ne l'a pas toujours,
+        // et c'est précisément ce qui fait vivre le rapprochement par le nom.
         User::factory()
             ->isNotCompetitor()
+            ->hasBankAccount(80)
             ->count(100)
             ->create();
 
         $this->call(SubscriptionSeeder::class);
+
+        // Des familles : un parent qui paie pour ses enfants est le cas le plus
+        // banal d'un club, et la base n'en portait aucun. Deux branches du
+        // barème de rapprochement en dépendent.
+        $this->call(FamilySeeder::class);
 
         // 1-3: teams, divisions, opponents, Interclub fixtures (observer creates empty results)
         $this->call(InterclubScheduleSeeder::class);
@@ -369,6 +381,11 @@ class DatabaseSeeder extends Seeder
         $this->call(MeetingSeeder::class);
 
         $this->call(TreasurySeeder::class);
+
+        // Une cotisation à moitié payée, pour que le cas le plus fréquent d'un
+        // vrai club — payer en deux fois, à deux relevés d'écart — existe sans
+        // qu'on ait à importer deux fois à la main.
+        $this->call(PartiallySettledClaimSeeder::class);
 
         $this->call(FineSeeder::class);
 
@@ -391,5 +408,27 @@ class DatabaseSeeder extends Seeder
         // En dernier : la force list se calcule sur la population définitive,
         // et InterclubSeeder crée encore des compétiteurs.
         RecalculateForceListAction::handle();
+
+        // Les seeders écrivent `amount_paid` en direct, sans crédit derrière :
+        // la reprise est une migration, donc elle tourne sur une base vide et
+        // ne voit rien de ce qui est semé ensuite. Rejouée ici, elle rend aux
+        // paiements leurs lignes de crédit et aux transactions leur miroir.
+        // Sans elle, une base fraîche ouvrait sur cinquante-sept paiements
+        // crédités que rien n'expliquait.
+        $this->call(BackfillPaymentCreditsSeeder::class);
+
+        // Le relevé de démonstration se génère une fois la base finie, jamais
+        // au milieu. Il vivait dans TreasurySeeder, qui tourne avant FineSeeder
+        // et TrainingPackSeeder : les créances que ceux-là créent n'existaient
+        // pas encore, et le fichier décrivait un instantané intermédiaire au
+        // lieu de la base qu'on allait ouvrir.
+        //
+        // Même classe que `treasury:demo-statement` : une implémentation, deux
+        // portes.
+        $fixture = new BankStatementFixture;
+        $paths = $fixture->write($fixture->build(), storage_path('app/seeders'));
+
+        $this->command?->info("Bank statement written to: {$paths['csv']}");
+        $this->command?->info("What to check: {$paths['manifest']}");
     }
 }

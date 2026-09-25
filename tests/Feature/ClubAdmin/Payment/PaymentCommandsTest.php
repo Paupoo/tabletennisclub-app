@@ -25,6 +25,7 @@ describe('payment:send-refund-reminder', function (): void {
             'amount_due' => 6000,
             'amount_paid' => 0,
             'status' => 'to_refund',
+            'payment_method' => 'refund',
         ]);
 
         $this->artisan('payment:send-refund-reminder')->assertSuccessful();
@@ -52,6 +53,7 @@ describe('payment:send-refund-reminder', function (): void {
             'amount_due' => 6000,
             'amount_paid' => 0,
             'status' => 'to_refund',
+            'payment_method' => 'refund',
         ]);
 
         $this->artisan('payment:send-refund-reminder')->assertSuccessful();

@@ -36,18 +36,9 @@ class GeneratePaymentQR
      */
     public function png(Payment $payment): string
     {
-        $BIC = Club::ourClub()->first()->bic;
-        $IBAN = Club::ourClub()->first()->bank_account;
-        $amount = number_format((float) $payment->amount_due, 2, '.', '');
-        $currency = 'EUR';
-        $beneficiary = 'CTT Ottignies-Blocry ASBL';
-        $reference = $payment->reference; // votre référence / communication
-
-        $qrText = "BCD\n001\n1\nSCT\n{$BIC}\n{$beneficiary}\n{$IBAN}\n{$currency}{$amount}\nCHAR\n\n{$reference}";
-
         $builder = new Builder(
             writer: new PngWriter,
-            data: $qrText,
+            data: $this->qrText($payment),
             encoding: new Encoding('UTF-8'),
             errorCorrectionLevel: ErrorCorrectionLevel::High,
             size: 300,
@@ -57,5 +48,32 @@ class GeneratePaymentQR
         $result = $builder->build();
 
         return $result->getString();
+    }
+
+    /**
+     * Le contenu encodé dans le QR, au format EPC069-12.
+     *
+     * Public, et c'est délibéré : c'est la charge utile qu'on veut pouvoir
+     * vérifier. Décoder un PNG pour savoir quel montant un membre verra dans
+     * son application bancaire est un détour que personne ne prendra.
+     */
+    public function qrText(Payment $payment): string
+    {
+        $club = Club::ourClub()->first();
+
+        // Le solde, pas ce qui a été réclamé au départ. Tant que « payé en
+        // partie » n'existait pas, les deux se confondaient ; depuis, un membre
+        // ayant versé 200 € sur 365 € et scannant sa relance se verrait
+        // proposer un virement de 365 € — il aurait payé 565 € en tout.
+        $balance = max(0.0, round((float) $payment->amount_due - (float) $payment->amount_paid, 2));
+
+        return sprintf(
+            "BCD\n001\n1\nSCT\n%s\n%s\n%s\nEUR%s\nCHAR\n\n%s",
+            $club->bic,
+            'CTT Ottignies-Blocry ASBL',
+            $club->bank_account,
+            number_format($balance, 2, '.', ''),
+            $payment->reference,
+        );
     }
 }

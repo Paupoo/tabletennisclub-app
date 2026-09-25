@@ -11,17 +11,15 @@ use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionDiscount;
  *
  * Porte le trop-perçu plutôt que de le laisser deviner : quand la remise
  * descend le montant dû sous ce que le membre a déjà versé, il reste de
- * l'argent au club qui ne lui appartient plus. Rien ne le rend automatiquement
- * — `ReduceOutstandingInvoiceAction` prend déjà ce parti, et le remboursement
- * est un geste de trésorerie, pas une conséquence d'un clic du secrétariat.
- *
- * Mais il doit être dit, sinon personne ne le saura.
+ * l'argent au club qui ne lui appartient plus. `GrantSubscriptionDiscountAction`
+ * en ouvre le remboursement vers le compte qui a payé ; ce montant permet à
+ * l'écran de dire au secrétaire ce qu'il vient de déclencher.
  */
 final readonly class DiscountGranted
 {
     public function __construct(
         public SubscriptionDiscount $discount,
-        /** Le trop-perçu qui subsiste, en euros : déjà encaissé, donc seul un remboursement peut le rendre. */
+        /** Le trop-perçu libéré, en euros : déjà encaissé, et dont le remboursement est ouvert. */
         public float $refundable,
     ) {}
 

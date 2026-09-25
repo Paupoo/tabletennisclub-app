@@ -307,17 +307,25 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
      */
     public function netAmountPaid(): float
     {
+        // Même règle que totalPaid() : l'argent, jamais le statut. Une ligne
+        // partiellement payée reste `pending`, et ses euros sont pourtant sur
+        // le compte du club — les exclure ferait refuser de rendre un argent
+        // bel et bien encaissé.
         $received = (float) $this->payments()
             ->where(fn ($q) => $q->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
-            ->whereIn('status', ['paid', 'refunded'])
+            ->where('status', '!=', 'cancelled')
             ->sum('amount_paid');
 
         // Un `to_refund` compte déjà comme sorti : la demande est dans le
         // circuit trésorerie, la rejouer créerait un doublon.
+        // `amount_due` : c'est l'engagement qui compte comme sorti, pas son
+        // exécution. Un `to_refund` pas encore viré a `amount_paid = 0`, et
+        // le lire ici ferait réapparaître un argent déjà promis au membre.
+        // ReduceOutstandingInvoiceAction avait déjà choisi cette colonne.
         $refunded = (float) $this->payments()
             ->where('payment_method', 'refund')
             ->whereIn('status', ['to_refund', 'paid', 'refunded'])
-            ->sum('amount_paid');
+            ->sum('amount_due');
 
         return round(($received - $refunded) / 100, 2);
     }
@@ -430,13 +438,25 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     }
 
     /**
-     * Calcule le total payé (en euros) via tous les payments.
+     * Ce que le membre a versé sur cette affiliation, en euros.
+     *
+     * L'argent, jamais le statut. Une ligne partiellement payée reste
+     * `pending` — c'est voulu, les relances doivent continuer de partir — et
+     * filtrer sur le statut ferait disparaître ses euros du solde : une
+     * affiliation à 365 € créditée de 200 € annoncerait 365 € à devoir.
+     * AttestationEligibility réclamait déjà ce principe mot pour mot sans
+     * pouvoir s'appuyer dessus.
+     *
+     * Une ligne annulée ne porte plus rien, et une ligne de remboursement est
+     * de l'argent qui sort : ni l'une ni l'autre n'entre ici.
+     *
      * La colonne amount_paid est stockée en centimes.
      */
     public function totalPaid(): float
     {
         return round(((float) $this->payments()
-            ->whereIn('status', ['paid', 'refunded'])
+            ->where('status', '!=', 'cancelled')
+            ->where(fn ($q) => $q->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
             ->sum('amount_paid')) / 100, 2);
     }
 

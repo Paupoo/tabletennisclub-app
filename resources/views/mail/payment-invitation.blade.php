@@ -6,13 +6,16 @@ Bonjour **{{ $payment->payable->user->first_name ?? '' }}**,
 @php $label = $payment->payable->getPaymentLabel(); @endphp
 Vous avez un paiement en attente pour **{{ $label['type'] }}** : **{{ $label['name'] }}**.
 
-Montant à régler : **{{ number_format($payment->amount_due, 2, ',', ' ') }} €**
-@if ($payment->discounts->isNotEmpty())
+Montant à régler : **{{ number_format($payment->balance(), 2, ',', ' ') }} €**
+@if ($payment->discounts->isNotEmpty() || $payment->isPartiallyPaid())
 
-<small>Prix normal : {{ number_format($payment->amountBeforeDiscounts(), 2, ',', ' ') }} €
+<small>{{ $payment->discounts->isNotEmpty() ? 'Prix normal' : 'Montant initial' }} : {{ number_format($payment->amountBeforeDiscounts(), 2, ',', ' ') }} €
 @foreach ($payment->discounts as $discount)
 <br>Remise : − {{ number_format($discount->amount, 2, ',', ' ') }} € <em>({{ $discount->reason }})</em>
 @endforeach
+@if ($payment->isPartiallyPaid())
+<br>Déjà reçu : − {{ number_format($payment->amount_paid, 2, ',', ' ') }} €
+@endif
 </small>
 @endif
 

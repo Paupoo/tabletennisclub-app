@@ -285,3 +285,21 @@ it('opens a report from the link in a notification, with its proofs', function (
         ->set('readerDrawer', false)
         ->assertSet('shownId', null);
 });
+
+it('lists the reports as cards on a phone and as a table on a desktop', function (): void {
+    $member = User::factory()->create();
+    ExpenseReport::factory()->for($member)->create(['description' => 'Balles Nittaku', 'amount' => 42.5]);
+
+    $html = Livewire::actingAs($member)
+        ->test(MEMBER_EXPENSES, ['user' => $member])
+        ->html();
+
+    expect($html)->toContain('data-mobile-list')
+        ->and(substr_count($html, 'Balles Nittaku'))->toBeGreaterThanOrEqual(2);
+
+    Livewire::actingAs($member)
+        ->test(MEMBER_EXPENSES, ['user' => $member])
+        ->assertSeeHtml('<table')
+        ->assertSee(__('Date of the expense'))
+        ->assertSee(__('Declared on'));
+});

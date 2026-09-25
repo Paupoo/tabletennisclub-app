@@ -22,45 +22,78 @@
             {{ __('Paid something for the club? Declare it with the receipt, the treasury refunds you by transfer.') }}
         </x-admin.shared.list-empty-state>
     @else
-        <x-card class="!p-0">
-            <div class="divide-y divide-base-200">
-                @foreach ($this->reports as $report)
-                    @php
-                        $displayStatus = $report->displayStatus();
-                    @endphp
-                    <button type="button" wire:key="report-{{ $report->id }}"
-                        class="flex w-full cursor-pointer flex-col gap-3 p-4 text-left hover:bg-base-200/40 sm:flex-row sm:items-center sm:justify-between"
-                        wire:click="show({{ $report->id }})">
-                        <span class="block min-w-0 flex-1">
-                            <span class="flex items-center gap-2">
-                                <span class="truncate font-semibold">{{ $report->description }}</span>
-                                <x-badge :value="$report->category->label()" class="badge-ghost badge-sm shrink-0" />
-                            </span>
-                            <span class="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-base-content/60">
-                                <span>{{ __('Spent on :date', ['date' => $report->spent_on->format('d/m/Y')]) }}</span>
-                                <span class="text-base-content/30">·</span>
-                                <span>{{ __('Declared on :date', ['date' => $report->created_at?->format('d/m/Y')]) }}</span>
-                            </span>
-                            @if (filled($report->decision_reason))
-                                <span class="mt-1 block text-sm text-base-content/80">
-                                    <span class="font-semibold">{{ __('Treasury') }} —</span> {{ $report->decision_reason }}
-                                </span>
-                            @endif
+        {{-- ── Mobile: cards ── --}}
+        <div class="grid grid-cols-1 gap-3 lg:hidden" data-mobile-list>
+            @foreach ($this->reports as $report)
+                @php
+                    $displayStatus = $report->displayStatus();
+                @endphp
+                <button type="button" wire:key="mobile-report-{{ $report->id }}" wire:click="show({{ $report->id }})"
+                    class="block w-full cursor-pointer rounded-lg border border-base-300 bg-base-100 p-3 text-left">
+                    <span class="flex items-start justify-between gap-3">
+                        <span class="min-w-0">
+                            <span class="block truncate font-medium">{{ $report->description }}</span>
+                            <span class="block truncate text-xs text-muted">{{ $report->category->label() }}</span>
                         </span>
-                        <span class="block text-right">
-                            <span class="block font-bold tabular-nums">
-                                {{ number_format($report->accepted_amount ?? $report->amount, 2, ',', ' ') }} €
-                            </span>
-                            @if ($report->accepted_amount !== null && $report->accepted_amount < $report->amount)
-                                <span class="block text-xs tabular-nums text-muted line-through">
-                                    {{ number_format($report->amount, 2, ',', ' ') }} €
-                                </span>
-                            @endif
+                        <span class="shrink-0 text-right">
+                            <span class="block font-bold tabular-nums">{{ number_format($report->accepted_amount ?? $report->amount, 2, ',', ' ') }} €</span>
                             <x-badge :value="$displayStatus->label()" class="badge-sm {{ $displayStatus->badgeClass() }}" />
                         </span>
-                    </button>
-                @endforeach
-            </div>
+                    </span>
+                    <span class="mt-1 block text-xs text-muted">
+                        {{ __('Spent on :date', ['date' => $report->spent_on->format('d/m/Y')]) }}
+                        · {{ __('Declared on :date', ['date' => $report->created_at?->format('d/m/Y')]) }}
+                    </span>
+                    @if (filled($report->decision_reason))
+                        <span class="mt-1 block text-sm text-base-content/80">
+                            <span class="font-semibold">{{ __('Treasury') }} —</span> {{ $report->decision_reason }}
+                        </span>
+                    @endif
+                </button>
+            @endforeach
+        </div>
+
+        {{-- ── Desktop: table ── --}}
+        <x-card class="hidden bg-base-100 shadow-sm lg:block">
+            <x-table :headers="$headers" :rows="$this->reports" hover
+                @row-click="$wire.show($event.detail.id)">
+                @scope('cell_description', $report)
+                    <div class="max-w-md">
+                        <div class="truncate font-medium">{{ $report->description }}</div>
+                        @if (filled($report->decision_reason))
+                            <div class="truncate text-xs text-muted">{{ __('Treasury') }} — {{ $report->decision_reason }}</div>
+                        @endif
+                    </div>
+                @endscope
+
+                @scope('cell_category', $report)
+                    <span class="text-sm">{{ $report->category->label() }}</span>
+                @endscope
+
+                @scope('cell_spent_on', $report)
+                    <span class="text-sm">{{ $report->spent_on->format('d/m/Y') }}</span>
+                @endscope
+
+                @scope('cell_created_at', $report)
+                    <span class="text-sm">{{ $report->created_at?->format('d/m/Y') }}</span>
+                @endscope
+
+                @scope('cell_amount', $report)
+                    <div class="tabular-nums">
+                        <span class="font-bold">{{ number_format($report->accepted_amount ?? $report->amount, 2, ',', ' ') }} €</span>
+                        @if ($report->accepted_amount !== null && $report->accepted_amount < $report->amount)
+                            <div class="text-xs text-muted line-through">{{ number_format($report->amount, 2, ',', ' ') }} €</div>
+                        @endif
+                    </div>
+                @endscope
+
+                @scope('cell_status', $report)
+                    @php
+                        $status = $report->displayStatus();
+                    @endphp
+                    <x-badge :value="$status->label()" class="badge-sm {{ $status->badgeClass() }}" />
+                @endscope
+            </x-table>
         </x-card>
 
         <div class="mt-6">

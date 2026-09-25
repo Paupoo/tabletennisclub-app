@@ -107,6 +107,21 @@ new class extends Component
         ]));
     }
 
+    /**
+     * @return array<int, array{key: string, label: string, sortable: bool}>
+     */
+    public function headers(): array
+    {
+        return [
+            ['key' => 'description', 'label' => __('Expense'), 'sortable' => false],
+            ['key' => 'category', 'label' => __('Nature'), 'sortable' => false],
+            ['key' => 'spent_on', 'label' => __('Date of the expense'), 'sortable' => false],
+            ['key' => 'created_at', 'label' => __('Declared on'), 'sortable' => false],
+            ['key' => 'amount', 'label' => __('Amount'), 'sortable' => false],
+            ['key' => 'status', 'label' => __('Status'), 'sortable' => false],
+        ];
+    }
+
     public function mount(User $user): void
     {
         abort_unless(Auth::user()->is($user), 403);
@@ -317,6 +332,7 @@ new class extends Component
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
             'filterChips' => $this->getFilterChips(),
+            'headers' => $this->headers(),
             'maxFiles' => self::MAX_FILES,
         ];
     }

@@ -343,6 +343,6 @@ new class extends Component
             ];
         }
 
-        return array_map(fn (array $lines): array => $this->byCategory($lines), $sections);
+        return array_map($this->byCategory(...), $sections);
     }
 };

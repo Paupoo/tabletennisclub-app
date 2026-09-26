@@ -20,7 +20,7 @@ Trois familles cohabitent, et une seule décide :
 
 Accès sans restriction à toute l'application.
 
-Détient les 70 permissions. Accordées explicitement plutôt que
+Détient les 71 permissions. Accordées explicitement plutôt que
 par un court-circuit `Gate::before`, car certaines policies encodent des règles qui
 doivent survivre à un administrateur — il ne peut toujours pas supprimer son propre
 compte.
@@ -56,6 +56,16 @@ Attribue les délégations et le siège au comité. N'ouvre pas la fiche du memb
 
 - `users.view`
 - `access.manage`
+
+### Vérification des comptes — `verification-comptes`
+
+Consulter toute la trésorerie pour vérifier les comptes, sans rien modifier.
+
+- `payments.view`
+- `transactions.view`
+- `fines.view`
+- `cash_register.view`
+- `subscriptions.view`
 
 ### Attestations mutuelle — `attestations`
 
@@ -100,6 +110,13 @@ Traiter les demandes entrantes, les modèles de réponse et les spams.
 - `contacts.view`
 - `contacts.manage`
 - `spams.manage`
+
+### Notes de frais — `notes-de-frais`
+
+Accepter ou rejeter les notes de frais des membres, en relais du trésorier.
+
+- `payments.view`
+- `expense_reports.process`
 
 ### Installations — `installations`
 
@@ -206,6 +223,7 @@ Pointer les paiements, importer les extraits bancaires, gérer les remboursement
 - `payments.reconcile`
 - `payments.refund`
 - `payments.remind`
+- `expense_reports.process`
 - `transactions.view`
 - `transactions.import`
 - `transactions.delete`
@@ -257,6 +275,7 @@ calendrier public.
 | Bar | `FEATURE_BAR` |
 | Caisse | `FEATURE_CASH_REGISTER` |
 | Contacts | `FEATURE_CONTACTS` |
+| Notes de frais | `FEATURE_EXPENSE_REPORTS` |
 | Centre d'aide | `FEATURE_HELP_CENTRE` |
 | Interclubs | `FEATURE_INTERCLUBS` |
 | Réunions | `FEATURE_MEETINGS` |

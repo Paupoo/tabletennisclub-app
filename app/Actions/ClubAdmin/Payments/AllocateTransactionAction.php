@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Payments;
 
+use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
+use App\Domains\ClubAdmin\ExpenseReports\Notifications\ExpenseReportPaidNotification;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\PaymentCredit;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
@@ -230,6 +232,8 @@ final class AllocateTransactionAction
         // aucune cotisation, et la faire passer par la machine à états de
         // l'affiliation demanderait une transition qui n'a pas lieu d'être.
         if ($payment->payment_method === 'refund') {
+            $this->settleRefund($payment);
+
             return;
         }
 
@@ -245,6 +249,30 @@ final class AllocateTransactionAction
         // drapeau ne se lève qu'une fois la place entièrement payée.
         if ($payable instanceof TournamentRegistration && $payment->status === 'paid') {
             $payable->update(['has_paid' => true]);
+        }
+    }
+
+    /**
+     * Un remboursement exécuté ne change rien à la chose remboursée — sauf une
+     * note de frais, dont c'est l'aboutissement : le membre apprend que
+     * l'argent est parti.
+     *
+     * Rien n'est écrit sur la note : « payée » se lit sur ce remboursement.
+     * Seul le passage à `refunded` compte, pour qu'un second crédit sur une
+     * ligne déjà close ne prévienne pas deux fois.
+     */
+    private function settleRefund(Payment $payment): void
+    {
+        if ($payment->status !== 'refunded' || ! $payment->wasChanged('status')) {
+            return;
+        }
+
+        $payable = $payment->payable;
+
+        if ($payable instanceof ExpenseReport) {
+            $payable->loadMissing('user');
+
+            DB::afterCommit(fn () => $payable->user->notify(new ExpenseReportPaidNotification($payable)));
         }
     }
 

@@ -6,6 +6,7 @@ use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Contracts\DescribesPayment;
 use App\Domains\Bar\Models\BarOrder;
+use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
@@ -127,6 +128,12 @@ new class extends Component
 
         $payments = Payment::whereIn('id', $ids)->where('status', 'to_refund')->get();
 
+        // Une note de frais ne s'annule que depuis la note : ici, la ligne
+        // repasserait en `paid` sans encaissement derrière, et la note
+        // resterait acceptée sur un remboursement fantôme.
+        $expenseRefunds = $payments->filter(fn (Payment $p): bool => $p->payable_type === ExpenseReport::class);
+        $payments = $payments->reject(fn (Payment $p): bool => $p->payable_type === ExpenseReport::class);
+
         // Ce qui bloque l'annulation, c'est l'argent déjà sorti — pas une
         // colonne de liaison que plus personne n'écrit.
         $blocked = $payments->filter(fn (Payment $p): bool => (float) $p->amount_paid > 0.0);
@@ -138,6 +145,14 @@ new class extends Component
 
         $this->bulkCancelRefundModal = false;
         $this->clearSelection();
+
+        if ($expenseRefunds->isNotEmpty()) {
+            $this->warning(__(':count expense report refund(s) skipped — cancel them from the expense report.', ['count' => $expenseRefunds->count()]));
+        }
+
+        if ($payments->isEmpty()) {
+            return;
+        }
 
         if ($blocked->isNotEmpty() && $toCancel->isEmpty()) {
             $this->error(__(':count payment(s) already linked to a bank transaction — cannot cancel refund.', ['count' => $blocked->count()]));
@@ -920,6 +935,7 @@ new class extends Component
                 ['id' => TournamentRegistration::class, 'name' => __('Tournament')],
                 ['id' => MeetingUser::class,            'name' => __('Meeting')],
                 ['id' => BarOrder::class,               'name' => __('Bar')],
+                ['id' => ExpenseReport::class,          'name' => __('Expense report')],
             ]), 'name')->all(),
             'pendingTransactions' => $this->reconcileModal ? $this->pendingTransactions() : collect(),
             'reconcileExcess' => $this->reconcileExcess(),
@@ -1208,7 +1224,7 @@ new class extends Component
             ->when($this->dateTo, fn (Builder $q): Builder => $q->whereDate('created_at', '<=', $this->dateTo))
             ->when($this->userId, fn (Builder $q): Builder => $q->whereHasMorph(
                 'payable',
-                [Subscription::class, TournamentRegistration::class, MeetingUser::class],
+                [Subscription::class, TournamentRegistration::class, MeetingUser::class, ExpenseReport::class],
                 fn ($q) => $q->where('user_id', $this->userId)
             ))
             ->when($this->eventType, fn (Builder $q): Builder => $q->where('payable_type', $this->eventType))
@@ -1268,6 +1284,7 @@ new class extends Component
             Subscription::class => __('Subscription'),
             TournamentRegistration::class => __('Tournament'),
             MeetingUser::class => __('Meeting'),
+            ExpenseReport::class => __('Expense report'),
             default => $type,
         };
     }
@@ -1323,6 +1340,7 @@ new class extends Component
             TournamentRegistration::class => ['user', 'tournament'],
             MeetingUser::class => ['user', 'meeting'],
             Subscription::class => ['user', 'season'],
+            ExpenseReport::class => ['user'],
         ];
     }
 
@@ -1357,6 +1375,7 @@ new class extends Component
             TournamentRegistration::class => ['user.guardians', 'tournament'],
             MeetingUser::class => ['user.guardians', 'meeting'],
             Subscription::class => ['user.guardians', 'season'],
+            ExpenseReport::class => ['user.guardians'],
         ];
     }
 

@@ -395,6 +395,12 @@ Allez dans **Trésorerie → Transactions**. Enregistrez les transactions bancai
 - Ajouter une transaction (montant, date, communication structurée, payeur)
 - Réconcilier : associer les transactions aux paiements en attente
 
+### Notes de frais
+
+Allez dans **Trésorerie → Notes de frais**. Les membres majeurs y déclarent ce qu'ils ont avancé pour le club, avec leurs justificatifs. Tout le comité **consulte** les notes ; les **accepter** (éventuellement pour un montant inférieur, avec un motif) ou les **rejeter** (motif obligatoire) relève de la délégation **Trésorerie**, de la délégation **Notes de frais** (le relais du trésorier) et des administrateurs, et **personne ne traite sa propre note**. Une note acceptée devient un remboursement ordinaire dans **Paiements → À rembourser** ; elle passe en « payée » au rapprochement du débit.
+
+**Exporter** prépare en arrière-plan un PDF imprimable ou un ZIP (CSV + justificatifs originaux) de ce que l'écran affiche. Un rappel trimestriel invite la trésorerie à archiver les notes payées. Les vérificateurs aux comptes reçoivent la délégation **Vérification des comptes** : toute la trésorerie en lecture seule. Le détail est dans les articles d'aide *Traiter les notes de frais* et *Vérifier les notes de frais*.
+
 ### Caisse (bar)
 
 Allez dans **Trésorerie → Caisse**. Gérez les commandes du bar, la feuille de caisse et les mouvements de stock si le module bar est actif.
@@ -453,6 +459,10 @@ En tant que membre du comité, les emails suivants sont envoyés automatiquement
 | Procès-verbal de réunion | Tous les participants |
 | Réunion annulée/reportée | Tous les membres invités |
 | Demande de remboursement | Administrateur |
+| Note de frais acceptée, rejetée (avec motif) ou payée | Membre auteur de la note |
+| Nouvelle note de frais (cloche uniquement) | Délégations Trésorerie et Notes de frais, sauf l'auteur |
+| Récapitulatif des notes de frais en attente (dimanche 19 h) | Délégations Trésorerie et Notes de frais |
+| Notes de frais payées à archiver (chaque trimestre, et le 5 janvier) | Trésorerie et délégation Notes de frais |
 
 ---
 

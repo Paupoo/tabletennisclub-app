@@ -19,6 +19,11 @@ erDiagram
     Contact
     EmailTemplate
 
+    %% ClubAdmin/ExpenseReports
+    ExpenseReport
+    ExpenseReportExport
+    ExpenseReportFile
+
     %% ClubAdmin/Fines
     Fine
 
@@ -27,6 +32,7 @@ erDiagram
     CashRegister
     CashRegisterEntry
     Payment
+    PaymentCredit
     Transaction
 
     %% ClubAdmin/Subscriptions
@@ -103,10 +109,15 @@ erDiagram
     Room ||--o{ Training : "trainings"
     Table }o--o{ TournamentMatch : "match"
     Table }o--o{ Tournament : "tournaments"
+    ExpenseReport ||--o{ ExpenseReportFile : "files"
+    ExpenseReport ||--o{ Payment : "payments"
+    ExpenseReport ||--o| Payment : "refund"
     Fine ||--o| Payment : "payment"
     BankImport ||--o{ Transaction : "transactions"
     CashRegister ||--o{ CashRegisterEntry : "entries"
+    Payment ||--o{ PaymentCredit : "credits"
     Payment ||--o{ SubscriptionDiscount : "discounts"
+    Transaction ||--o{ PaymentCredit : "credits"
     Transaction ||--o| Payment : "payment"
     Transaction ||--o| Payment : "refundPayment"
     Registration ||--o{ Payment : "payments"

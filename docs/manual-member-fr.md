@@ -231,3 +231,13 @@ Votre mutualité rembourse une partie de votre cotisation de club sportif. **Mon
 **Pour vos enfants.** Connectez-vous en tant que votre pupille et suivez les mêmes étapes ; le numéro de registre national demandé est celui de l'enfant.
 
 Chaque attestation porte une référence et un QR code renvoyant vers une page publique qui confirme qu'elle a bien été délivrée par le club, et si elle est toujours valable.
+
+---
+
+## 13. Notes de frais
+
+Vous avez payé quelque chose pour le club (balles, fournitures, parking d'un déplacement) ? **Mon espace → Mes notes de frais → Déclarer une dépense** : nature, description, montant TVAC, date, IBAN de remboursement et 1 à 5 justificatifs (PDF, JPG, PNG ou WebP, 10 Mo maximum chacun).
+
+**Réservé aux membres majeurs** dont la date de naissance est renseignée ; un parent déclare depuis son propre compte, jamais depuis celui de son enfant.
+
+La trésorerie accepte ou rejette la note, avec un motif que vous recevez par e-mail. Une note acceptée est remboursée **par virement** ; elle passe en « payée » quand le club retrouve le virement sur son extrait. Tant qu'elle est en cours, vous pouvez la modifier ou la retirer ; une note rejetée peut être **reprise** dans une nouvelle note déjà remplie. Le détail est dans l'article d'aide *Déclarer une note de frais*.

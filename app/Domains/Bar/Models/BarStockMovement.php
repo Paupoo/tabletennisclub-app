@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $product_id
  * @property int|null $batch_id
+ * @property int|null $restocking_id
  * @property int $quantity
  * @property string $movement_type
  * @property string|null $reason
@@ -66,6 +67,7 @@ class BarStockMovement extends Model
         'source_movement_id' => 'integer',
         'order_id' => 'integer',
         'order_item_id' => 'integer',
+        'restocking_id' => 'integer',
     ];
 
     protected $fillable = [
@@ -79,6 +81,7 @@ class BarStockMovement extends Model
         'source_movement_id',
         'order_id',
         'order_item_id',
+        'restocking_id',
     ];
 
     protected $table = 'bar_stock_movements';

@@ -164,3 +164,51 @@ it('lets anyone abandon the trip, and the list is free again', function (): void
 
     expect(BarRestocking::inProgress()->shopper_id)->toBe($other->id);
 });
+
+it('enters what was really bought into the stock, linked to the trip, and closes it', function (): void {
+    $chimay = restockingTripProduct('Chimay bleue', $this->jupiler->category, stock: 0, min: 0, max: 0, packSize: 24, packLabel: 'carton');
+    $chimay->update(['max_stock' => null]);   // hors réassort : pris en promo
+
+    Livewire::actingAs($this->shopper)->test('pages::bar.restocking')->call('start');
+    $trip = BarRestocking::inProgress();
+    $jupilerLine = $trip->lines->firstWhere('product_id', $this->jupiler->id);
+    $cocaLine = $trip->lines->firstWhere('product_id', $this->coca->id);
+
+    Livewire::actingAs($this->shopper)
+        ->test('pages::bar.restocking')
+        ->call('toggleInCart', $jupilerLine->id, true)
+        ->call('openClosing')
+        // Coché = la quantité proposée ; non coché = « pas trouvé ».
+        ->assertSet("bought.{$jupilerLine->id}", 2)
+        ->assertSet("bought.{$cocaLine->id}", 0)
+        ->set("bought.{$cocaLine->id}", 1)
+        ->set('extraProductId', $chimay->id)
+        ->call('addExtra')
+        ->assertSet("extras.{$chimay->id}", 1)
+        ->assertDontSee('<x-', false)
+        ->call('close')
+        ->assertHasNoErrors();
+
+    expect($this->jupiler->fresh()->stock)->toBe(5 + 48)
+        ->and($this->coca->fresh()->stock)->toBe(14 + 6)
+        ->and($chimay->fresh()->stock)->toBe(24);
+
+    expect($trip->fresh())
+        ->status->toBe(BarRestocking::STATUS_CLOSED)
+        ->closed_at->not->toBeNull();
+    expect(BarStockMovement::query()->where('restocking_id', $trip->id)->sum('quantity'))->toBe(48 + 6 + 24);
+    expect($jupilerLine->fresh()->bought_packs)->toBe(2)
+        ->and($trip->lines()->where('section', 'extra')->where('product_id', $chimay->id)->value('bought_packs'))->toBe(1);
+});
+
+it('lets only the one shopping close the trip', function (): void {
+    Livewire::actingAs($this->shopper)->test('pages::bar.restocking')->call('start');
+
+    Livewire::actingAs(User::factory()->withRole(Role::STORE_KEEPER)->create())
+        ->test('pages::bar.restocking')
+        ->call('openClosing')
+        ->call('close');
+
+    expect(BarRestocking::inProgress())->not->toBeNull()
+        ->and($this->jupiler->fresh()->stock)->toBe(5);
+});

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\Bar\Restocking;
 
+use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Models\BarRestocking;
 use App\Domains\Bar\Models\BarRestockingLine;
 use App\Domains\Bar\Services\RestockingList;
@@ -37,6 +38,25 @@ new class extends Component
 
     public bool $abandonModal = false;
 
+    /**
+     * Conditionnements achetés, par ligne de la liste figée.
+     *
+     * @var array<int, int|string>
+     */
+    public array $bought = [];
+
+    /** L'écran de retour du magasin, à la place de la liste. */
+    public bool $closing = false;
+
+    public ?int $extraProductId = null;
+
+    /**
+     * Conditionnements achetés hors liste, par produit.
+     *
+     * @var array<int, int|string>
+     */
+    public array $extras = [];
+
     public bool $takeOverModal = false;
 
     public function abandon(RestockingTrips $restockingTrips): void
@@ -49,6 +69,81 @@ new class extends Component
             $restockingTrips->abandon($trip, auth()->user());
             $this->success(__('The trip is abandoned. The list is free.'));
         }
+    }
+
+    /**
+     * Ajouter un produit du catalogue qui n'était pas sur la liste.
+     *
+     * Choisi dans le catalogue, jamais créé ici : créer un produit reste le
+     * travail de l'écran Produits, avec son prix et sa catégorie.
+     */
+    public function addExtra(): void
+    {
+        $trip = $this->myTrip();
+
+        if ($trip === null || $this->extraProductId === null) {
+            return;
+        }
+
+        $productId = $this->extraProductId;
+        $this->extraProductId = null;
+
+        if ($trip->lines->contains('product_id', $productId) || ! BarProduct::query()->whereKey($productId)->exists()) {
+            return;
+        }
+
+        $this->extras[$productId] ??= 1;
+    }
+
+    public function close(RestockingTrips $restockingTrips): void
+    {
+        $trip = $this->myTrip();
+
+        if ($trip === null) {
+            return;
+        }
+
+        $this->validate([
+            'bought.*' => ['nullable', 'integer', 'min:0', 'max:999'],
+            'extras.*' => ['nullable', 'integer', 'min:0', 'max:999'],
+        ]);
+
+        try {
+            $restockingTrips->close($trip, auth()->user(), $this->bought, $this->extras);
+        } catch (\DomainException $exception) {
+            $this->error($exception->getMessage());
+
+            return;
+        }
+
+        $this->reset('closing', 'bought', 'extras', 'extraProductId');
+        $this->success(__('Thank you! The stock is updated.'));
+    }
+
+    /**
+     * Passer à l'écran du retour, pré-rempli par les cases cochées.
+     *
+     * Coché = la quantité proposée, non coché = 0 (« pas trouvé ») : on ne corrige
+     * plus que les exceptions, et un article oublié en rayon n'entre pas en stock.
+     */
+    public function openClosing(): void
+    {
+        $trip = $this->myTrip();
+
+        if ($trip === null) {
+            return;
+        }
+
+        $this->bought = $trip->lines
+            ->mapWithKeys(fn (BarRestockingLine $line): array => [$line->id => $line->in_cart ? $line->proposed_packs : 0])
+            ->all();
+        $this->extras = [];
+        $this->closing = true;
+    }
+
+    public function removeExtra(int $productId): void
+    {
+        unset($this->extras[$productId]);
     }
 
     public function render(): View
@@ -108,6 +203,8 @@ new class extends Component
             'trip' => $trip,
             'isMine' => $trip !== null && $trip->shopper_id === auth()->id(),
             'sections' => $trip !== null ? $this->sectionsOfTrip($trip) : $this->sectionsOfList($restockingList->current()),
+            'extraOptions' => $this->closing && $trip !== null ? $this->extraOptions($trip) : [],
+            'extraProducts' => BarProduct::query()->whereKey(array_keys($this->extras))->get()->keyBy('id'),
         ];
     }
 
@@ -133,6 +230,31 @@ new class extends Component
         return LocaleSort::by(collect(array_keys($grouped)), fn (string $category): string => $category)
             ->mapWithKeys(fn (string $category): array => [$category => $grouped[$category]])
             ->all();
+    }
+
+    /**
+     * Les produits qu'on peut ajouter : ceux du catalogue qui ne sont pas déjà sur la liste.
+     *
+     * @return array<int, array{id: int, name: string}>
+     */
+    protected function extraOptions(BarRestocking $trip): array
+    {
+        $taken = array_merge($trip->lines->pluck('product_id')->all(), array_keys($this->extras));
+
+        return LocaleSort::byKey(
+            BarProduct::query()->whereKeyNot($taken)->get()->map(fn (BarProduct $p): array => ['id' => $p->id, 'name' => $p->name]),
+            'name'
+        )->values()->all();
+    }
+
+    /**
+     * La tournée en cours, si c'est celle de l'utilisateur.
+     */
+    protected function myTrip(): ?BarRestocking
+    {
+        $trip = BarRestocking::inProgress();
+
+        return $trip !== null && $trip->shopper_id === auth()->id() ? $trip : null;
     }
 
     /**
@@ -188,6 +310,8 @@ new class extends Component
                 'name' => $line->product->name,
                 'category' => $line->product->category->name,
                 'packs_label' => $this->packsLabel($line->proposed_packs, $line->pack_size, $line->pack_label),
+                'pack_size' => $line->pack_size,
+                'pack_label' => $line->pack_label,
                 'units' => $line->proposed_packs * $line->pack_size,
                 'stock' => $line->stock_at_start,
                 'max' => $line->product->max_stock,

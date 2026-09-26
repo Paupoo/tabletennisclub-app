@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Bar\Services;
 
+use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Models\BarRestocking;
 use App\Domains\Bar\Models\BarRestockingLine;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -19,7 +20,10 @@ use Illuminate\Support\Facades\DB;
  */
 class RestockingTrips
 {
-    public function __construct(private readonly RestockingList $restockingList) {}
+    public function __construct(
+        private readonly RestockingList $restockingList,
+        private readonly StockService $stockService,
+    ) {}
 
     /**
      * Libérer la liste : la tournée n'aura pas lieu, ou plus.
@@ -38,6 +42,68 @@ class RestockingTrips
             'abandoned_by' => $by->id,
             'closed_at' => now(),
         ]);
+    }
+
+    /**
+     * Rentrer du magasin : ce qui a vraiment été acheté entre en stock, et la tournée se ferme.
+     *
+     * On ajoute ce qui a été acheté, on ne recale pas sur un comptage : les ventes
+     * faites pendant la tournée restent justes. Chaque entrée porte la tournée, pour
+     * qu'on sache d'où vient le stock et que le ticket se rapproche de ce qui est
+     * arrivé. Une fois close, la tournée ne bouge plus — une erreur se corrige par
+     * l'inventaire.
+     *
+     * @param  array<int|string, int|string|null>  $boughtByLine  conditionnements achetés, par ligne de la liste
+     * @param  array<int|string, int|string|null>  $extrasByProduct  conditionnements achetés hors liste, par produit
+     *
+     * @throws \DomainException quand la tournée n'est plus en cours, ou n'est pas à celui qui rentre
+     */
+    public function close(BarRestocking $trip, User $shopper, array $boughtByLine, array $extrasByProduct = []): void
+    {
+        DB::transaction(function () use ($trip, $shopper, $boughtByLine, $extrasByProduct): void {
+            $trip = BarRestocking::query()->lockForUpdate()->findOrFail($trip->id);
+
+            if (! $trip->isInProgress() || $trip->shopper_id !== $shopper->id) {
+                throw new \DomainException(__('Only the one doing the shopping can close the trip.'));
+            }
+
+            $reason = "Shopping trip #{$trip->id}";
+
+            foreach ($trip->lines as $line) {
+                $packs = max(0, (int) ($boughtByLine[$line->id] ?? 0));
+                $line->update(['bought_packs' => $packs]);
+
+                if ($packs > 0) {
+                    $this->stockService->addIncomingStock($line->product_id, $packs * $line->pack_size, $reason, $shopper->id, $shopper->id, $trip->id);
+                }
+            }
+
+            $onTheList = $trip->lines->pluck('product_id')->all();
+
+            foreach ($extrasByProduct as $productId => $packs) {
+                $packs = max(0, (int) $packs);
+
+                if ($packs === 0 || in_array((int) $productId, $onTheList, true)) {
+                    continue;
+                }
+
+                $product = BarProduct::query()->withStock()->findOrFail((int) $productId);
+
+                $trip->lines()->create([
+                    'product_id' => $product->id,
+                    'section' => BarRestockingLine::SECTION_EXTRA,
+                    'stock_at_start' => $product->stock,
+                    'pack_size' => $product->pack_size,
+                    'pack_label' => $product->pack_label,
+                    'proposed_packs' => 0,
+                    'bought_packs' => $packs,
+                ]);
+
+                $this->stockService->addIncomingStock($product->id, $packs * $product->pack_size, $reason, $shopper->id, $shopper->id, $trip->id);
+            }
+
+            $trip->update(['status' => BarRestocking::STATUS_CLOSED, 'closed_at' => now()]);
+        });
     }
 
     /**

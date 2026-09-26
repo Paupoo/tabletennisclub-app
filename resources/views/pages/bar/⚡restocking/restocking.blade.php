@@ -52,6 +52,67 @@
         </x-confirm-modal>
     @endif
 
+    @if ($closing && $isMine)
+        {{--
+            Le retour du magasin. Pré-rempli par les cases cochées : on ne touche
+            qu'aux exceptions. Les boutons − / + changent le champ côté navigateur,
+            sans aller-retour au serveur — tout part en une fois à la validation.
+        --}}
+        <x-card class="mb-4" :title="__('What did you buy?')"
+            :subtitle="__('In packs. 0 = not found. The units enter the stock when you confirm.')">
+            <ul class="divide-base-300 divide-y">
+                @foreach ($trip->lines as $line)
+                    @continue($line->section === 'extra')
+                    <li class="flex items-center gap-3 py-2" wire:key="bought-{{ $line->id }}">
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate font-semibold">{{ $line->product->name }}</p>
+                            <p class="text-subtle text-xs">
+                                {{ $line->pack_label ? __(':label of :size', ['label' => $line->pack_label, 'size' => $line->pack_size]) : __('packs of :size', ['size' => $line->pack_size]) }}
+                                · {{ __('proposed: :packs', ['packs' => $line->proposed_packs]) }}
+                            </p>
+                        </div>
+                        <x-bar.pack-stepper model="bought.{{ $line->id }}" :label="$line->product->name" />
+                    </li>
+                @endforeach
+
+                @foreach ($extras as $productId => $packs)
+                    @php
+                        $extra = $extraProducts[$productId] ?? null;
+                    @endphp
+                    @continue($extra === null)
+                    <li class="flex items-center gap-3 py-2" wire:key="extra-{{ $productId }}">
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate font-semibold">{{ $extra->name }}</p>
+                            <p class="text-subtle text-xs">
+                                {{ __('Not on the list') }} ·
+                                {{ $extra->pack_label ? __(':label of :size', ['label' => $extra->pack_label, 'size' => $extra->pack_size]) : __('packs of :size', ['size' => $extra->pack_size]) }}
+                            </p>
+                        </div>
+                        <x-bar.pack-stepper model="extras.{{ $productId }}" :label="$extra->name" />
+                        <x-button icon="o-x-mark" class="btn-ghost btn-sm btn-circle" wire:click="removeExtra({{ $productId }})"
+                            :tooltip="__('Remove')" />
+                    </li>
+                @endforeach
+            </ul>
+
+            <div class="mt-3 flex items-end gap-2">
+                <x-select :label="__('Something else?')" :options="$extraOptions" wire:model="extraProductId"
+                    :placeholder="__('Choose a bar product')" class="select-sm" />
+                <x-button class="btn-sm" icon="o-plus" :label="__('Add')" wire:click="addExtra" />
+            </div>
+
+            <x-slot:actions>
+                <x-button :label="__('Back to the list')" wire:click="$set('closing', false)" />
+                <x-button class="btn-primary" icon="o-check" :label="__('Confirm and fill the stock')"
+                    wire:click="close" spinner="close" />
+            </x-slot:actions>
+        </x-card>
+    @else
+        @if ($isMine)
+            <x-button class="btn-primary mb-4 w-full sm:w-auto" icon="o-home"
+                :label="__('I am back: enter what I bought')" wire:click="openClosing" spinner="openClosing" />
+        @endif
+
     @foreach (['to_buy' => __('To buy'), 'if_room' => __('If you have room')] as $section => $title)
         @if ($sections[$section] !== [])
             <section class="mb-6" wire:key="section-{{ $section }}">
@@ -91,4 +152,5 @@
             </section>
         @endif
     @endforeach
+    @endif
 </div>

@@ -198,14 +198,50 @@ new class extends Component
     {
         $trip = BarRestocking::inProgress()?->load(['shopper', 'lines.product.category']);
 
+        $sections = $trip !== null ? $this->sectionsOfTrip($trip) : $this->sectionsOfList($restockingList->current());
+
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
+            'listText' => $this->asText($sections),
             'trip' => $trip,
             'isMine' => $trip !== null && $trip->shopper_id === auth()->id(),
-            'sections' => $trip !== null ? $this->sectionsOfTrip($trip) : $this->sectionsOfList($restockingList->current()),
+            'sections' => $sections,
             'extraOptions' => $this->closing && $trip !== null ? $this->extraOptions($trip) : [],
             'extraProducts' => BarProduct::query()->whereKey(array_keys($this->extras))->get()->keyBy('id'),
         ];
+    }
+
+    /**
+     * La liste en texte brut, à coller dans une conversation.
+     *
+     * Pour qui préfère le papier, ou part à deux et se partage les rayons. Aucun
+     * signe de ponctuation propre à une langue : le texte se colle tel quel.
+     *
+     * @param  array<string, array<string, array<int, array<string, mixed>>>>  $sections
+     */
+    protected function asText(array $sections): string
+    {
+        $blocks = [];
+
+        foreach (['to_buy' => __('To buy'), 'if_room' => __('If you have room')] as $section => $title) {
+            if (($sections[$section] ?? []) === []) {
+                continue;
+            }
+
+            $lines = [$title];
+
+            foreach ($sections[$section] as $category => $products) {
+                $lines[] = '— ' . $category;
+
+                foreach ($products as $product) {
+                    $lines[] = "• {$product['name']} · {$product['packs_label']} ({$product['units']})";
+                }
+            }
+
+            $blocks[] = implode("\n", $lines);
+        }
+
+        return implode("\n\n", $blocks);
     }
 
     protected function breadcrumbChain(): Breadcrumb

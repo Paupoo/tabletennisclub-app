@@ -212,3 +212,19 @@ it('lets only the one shopping close the trip', function (): void {
     expect(BarRestocking::inProgress())->not->toBeNull()
         ->and($this->jupiler->fresh()->stock)->toBe(5);
 });
+
+it('offers the list as plain text, to paste in a chat', function (): void {
+    $text = Livewire::actingAs($this->shopper)
+        ->test('pages::bar.restocking')
+        ->viewData('listText');
+
+    expect($text)->toBe(implode("\n", [
+        __('To buy'),
+        '— Bières',
+        '• Jupiler · 2 × casier (48)',
+        '',
+        __('If you have room'),
+        '— Softs',
+        '• Coca-Cola · 3 × pack (18)',
+    ]));
+});

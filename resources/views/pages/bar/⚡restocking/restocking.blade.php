@@ -108,10 +108,26 @@
             </x-slot:actions>
         </x-card>
     @else
-        @if ($isMine)
-            <x-button class="btn-primary mb-4 w-full sm:w-auto" icon="o-home"
-                :label="__('I am back: enter what I bought')" wire:click="openClosing" spinner="openClosing" />
-        @endif
+        <div class="mb-4 flex flex-wrap gap-2">
+            @if ($isMine)
+                <x-button class="btn-primary w-full sm:w-auto" icon="o-home"
+                    :label="__('I am back: enter what I bought')" wire:click="openClosing" spinner="openClosing" />
+            @endif
+
+            @if ($listText !== '')
+                {{-- Le texte voyage dans un attribut plutôt que par un aller-retour :
+                le presse-papiers exige un geste de l'utilisateur, qu'un appel réseau
+                intercalé ferait perdre sur Safari. --}}
+                <button type="button" class="btn btn-outline btn-sm tap-min"
+                    x-data="{ copied: false }"
+                    data-list="{{ $listText }}"
+                    @click="navigator.clipboard.writeText($el.dataset.list).then(() => { copied = true; setTimeout(() => copied = false, 2000) })">
+                    <x-icon name="o-clipboard-document" class="h-4 w-4" />
+                    <span x-show="! copied">{{ __('Copy the list') }}</span>
+                    <span x-show="copied" x-cloak>{{ __('Copied') }}</span>
+                </button>
+            @endif
+        </div>
 
     @foreach (['to_buy' => __('To buy'), 'if_room' => __('If you have room')] as $section => $title)
         @if ($sections[$section] !== [])

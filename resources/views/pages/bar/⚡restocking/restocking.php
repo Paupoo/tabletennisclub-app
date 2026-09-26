@@ -148,7 +148,7 @@ new class extends Component
             'paidBy' => __('Who paid'),
             'ticketAmount' => __('Receipt total'),
             'refundIban' => __('Refund account (IBAN)'),
-            'ticketFiles' => __('Receipt'),
+            'ticketFiles' => __('Receipt photo'),
         ]);
 
         try {

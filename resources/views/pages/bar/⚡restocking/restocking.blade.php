@@ -135,7 +135,7 @@
                             :hint="__('VAT included, as on the receipt')" />
 
                         <div>
-                            <x-file wire:model="ticketFiles" :label="__('Receipt')" multiple accept=".pdf,.jpg,.jpeg,.png,.webp"
+                            <x-file wire:model="ticketFiles" :label="__('Receipt photo')" multiple accept=".pdf,.jpg,.jpeg,.png,.webp"
                                 :hint="__('A photo of the receipt is enough. PDF, JPG, PNG or WebP, 10 MB each.')" />
                             @error('ticketFiles.*')
                                 <p class="text-error mt-1 text-sm">{{ $message }}</p>

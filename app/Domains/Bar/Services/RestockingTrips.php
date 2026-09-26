@@ -22,6 +22,25 @@ class RestockingTrips
     public function __construct(private readonly RestockingList $restockingList) {}
 
     /**
+     * Libérer la liste : la tournée n'aura pas lieu, ou plus.
+     *
+     * Ouvert à tous et sans délai — ce sont des adultes. L'écran conseille
+     * seulement d'appeler d'abord celui qui y était.
+     */
+    public function abandon(BarRestocking $trip, User $by): void
+    {
+        if (! $trip->isInProgress()) {
+            return;
+        }
+
+        $trip->update([
+            'status' => BarRestocking::STATUS_ABANDONED,
+            'abandoned_by' => $by->id,
+            'closed_at' => now(),
+        ]);
+    }
+
+    /**
      * Figer la liste du moment au nom de celui qui part.
      *
      * @throws \DomainException quand une tournée est déjà en cours, ou que rien n'est à acheter
@@ -62,5 +81,17 @@ class RestockingTrips
                 return $trip;
             });
         });
+    }
+
+    /**
+     * Prendre la tournée à son compte : la liste et les cases cochées restent.
+     */
+    public function takeOver(BarRestocking $trip, User $shopper): void
+    {
+        if (! $trip->isInProgress()) {
+            return;
+        }
+
+        $trip->update(['shopper_id' => $shopper->id]);
     }
 }

@@ -35,6 +35,22 @@ new class extends Component
 {
     use HasBreadcrumbs, Toast;
 
+    public bool $abandonModal = false;
+
+    public bool $takeOverModal = false;
+
+    public function abandon(RestockingTrips $restockingTrips): void
+    {
+        $this->abandonModal = false;
+
+        $trip = BarRestocking::inProgress();
+
+        if ($trip !== null) {
+            $restockingTrips->abandon($trip, auth()->user());
+            $this->success(__('The trip is abandoned. The list is free.'));
+        }
+    }
+
     public function render(): View
     {
         return $this->view();
@@ -51,6 +67,18 @@ new class extends Component
         }
 
         $this->success(__('The list is yours. Good shopping!'));
+    }
+
+    public function takeOver(RestockingTrips $restockingTrips): void
+    {
+        $this->takeOverModal = false;
+
+        $trip = BarRestocking::inProgress();
+
+        if ($trip !== null) {
+            $restockingTrips->takeOver($trip, auth()->user());
+            $this->success(__('The trip is yours now.'));
+        }
     }
 
     /**

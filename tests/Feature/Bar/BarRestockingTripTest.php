@@ -131,3 +131,36 @@ it('remembers what is already in the cart, and only for the one shopping', funct
 
     expect($line->fresh()->in_cart)->toBeTrue();
 });
+
+it('tells the others who is shopping, and lets them take the trip over', function (): void {
+    Livewire::actingAs($this->shopper)->test('pages::bar.restocking')->call('start');
+    $trip = BarRestocking::inProgress();
+    $trip->lines->first()->update(['in_cart' => true]);
+    $other = User::factory()->withRole(Role::STORE_KEEPER)->create();
+
+    Livewire::actingAs($other)
+        ->test('pages::bar.restocking')
+        ->assertSee(__(':name is doing the shopping', ['name' => 'Aurélien Paulus']))
+        ->assertDontSee('<x-', false)
+        ->call('takeOver');
+
+    expect($trip->fresh()->shopper_id)->toBe($other->id)
+        ->and($trip->lines()->where('in_cart', true)->count())->toBe(1);
+});
+
+it('lets anyone abandon the trip, and the list is free again', function (): void {
+    Livewire::actingAs($this->shopper)->test('pages::bar.restocking')->call('start');
+    $trip = BarRestocking::inProgress();
+    $other = User::factory()->withRole(Role::STORE_KEEPER)->create();
+
+    Livewire::actingAs($other)->test('pages::bar.restocking')->call('abandon');
+
+    expect($trip->fresh())
+        ->status->toBe(BarRestocking::STATUS_ABANDONED)
+        ->abandoned_by->toBe($other->id)
+        ->and(BarRestocking::inProgress())->toBeNull();
+
+    Livewire::actingAs($other)->test('pages::bar.restocking')->call('start');
+
+    expect(BarRestocking::inProgress()->shopper_id)->toBe($other->id);
+});

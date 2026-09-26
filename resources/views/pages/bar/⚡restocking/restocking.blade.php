@@ -18,6 +18,40 @@
         @endif
     @endif
 
+    @if ($trip !== null)
+        <x-alert :class="'mb-4 ' . ($isMine ? 'alert-info' : 'alert-warning')" icon="o-shopping-cart">
+            <p class="font-semibold">
+                {{ $isMine ? __('You are doing the shopping') : __(':name is doing the shopping', ['name' => $trip->shopper->full_name]) }}
+            </p>
+            <p class="text-sm">{{ __('Since :date', ['date' => $trip->started_at->translatedFormat('l j F, H:i')]) }}</p>
+
+            <x-slot:actions>
+                @unless ($isMine)
+                    <x-button class="btn-sm" :label="__('Take over')" wire:click="$set('takeOverModal', true)" />
+                @endunless
+                <x-button class="btn-ghost btn-sm" :label="__('Give up')" wire:click="$set('abandonModal', true)" />
+            </x-slot:actions>
+        </x-alert>
+
+        {{-- Rien n'interdit de reprendre ou d'abandonner la tournée d'un autre : on
+        conseille seulement de l'appeler d'abord, ses coordonnées sous les yeux. --}}
+        @unless ($isMine)
+            <x-confirm-modal model="takeOverModal" :title="__('Take over the trip of :name?', ['name' => $trip->shopper->full_name])"
+                :confirmLabel="__('Take over')" confirmAction="takeOver" :open="$takeOverModal">
+                <x-bar.restocking-contact :shopper="$trip->shopper" />
+            </x-confirm-modal>
+        @endunless
+
+        <x-confirm-modal model="abandonModal" :title="__('Abandon the trip?')"
+            :confirmLabel="__('Give up')" confirmAction="abandon" :open="$abandonModal">
+            @if ($isMine)
+                <p>{{ __('The list becomes free for someone else. What is ticked is lost.') }}</p>
+            @else
+                <x-bar.restocking-contact :shopper="$trip->shopper" />
+            @endif
+        </x-confirm-modal>
+    @endif
+
     @foreach (['to_buy' => __('To buy'), 'if_room' => __('If you have room')] as $section => $title)
         @if ($sections[$section] !== [])
             <section class="mb-6" wire:key="section-{{ $section }}">

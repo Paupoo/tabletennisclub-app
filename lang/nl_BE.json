@@ -4918,6 +4918,8 @@
     "Restocking target updated.": "Doelvoorraad bijgewerkt.",
     "Suggested: :min – :max": "Voorgesteld: :min – :max",
     "Apply the suggestion": "Voorstel overnemen",
+    "Apply suggestions (:count)": "Voorstellen overnemen (:count)",
+    "{0} No suggestion to apply.|{1} Suggestion applied to one product.|[2,*] Suggestions applied to :count products.": "{0} Geen voorstel om over te nemen.|{1} Voorstel overgenomen voor één product.|[2,*] Voorstellen overgenomen voor :count producten.",
     "Suggestion applied.": "Voorstel overgenomen.",
     "Bought by": "Aankoop per",
     "units": "stuks",

@@ -6,6 +6,13 @@
     <x-header progress-indicator separator :title="__('Products')"
         :subtitle="__('Count the shelf, set the price, tune the alert threshold.')">
         <x-slot:actions>
+            {{-- Seulement les produits sans max : un réglage posé à la main n'est
+            jamais écrasé en masse. Le bouton disparaît quand il n'a rien à faire. --}}
+            @if ($unsetWithSuggestionCount > 0)
+                <x-button class="btn-ghost btn-sm" icon="o-sparkles"
+                    :label="__('Apply suggestions (:count)', ['count' => $unsetWithSuggestionCount])"
+                    wire:click="applyAllSuggestions" spinner="applyAllSuggestions" />
+            @endif
             <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Add')" wire:click="openCreate" />
         </x-slot:actions>
     </x-header>

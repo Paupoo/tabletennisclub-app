@@ -109,3 +109,30 @@ it('offers what sales suggest, and applies it to one product on request', functi
         ->low_stock_threshold->toBe(14)
         ->max_stock->toBe(42);
 });
+
+it('applies every suggestion at once, to the products nobody has set yet', function (): void {
+    $coca = BarProduct::create([
+        'name' => 'Coca-Cola',
+        'sale_price' => 150,
+        'is_available' => 1,
+        'category_id' => $this->jupiler->category_id,
+        'low_stock_threshold' => 5,
+        'max_stock' => 30,
+    ]);
+    restockingSettingsSale($this->jupiler, 14);
+    restockingSettingsSale($coca, 2);
+
+    Livewire::actingAs($this->storeKeeper)
+        ->test('pages::bar.products')
+        ->assertSee(__('Apply suggestions (:count)', ['count' => 1]))
+        ->call('applyAllSuggestions')
+        ->assertDontSee(__('Apply suggestions (:count)', ['count' => 1]));
+
+    expect($this->jupiler->fresh())
+        ->low_stock_threshold->toBe(14)
+        ->max_stock->toBe(42);
+    // Un réglage choisi à la main n'est jamais écrasé en masse.
+    expect($coca->fresh())
+        ->low_stock_threshold->toBe(5)
+        ->max_stock->toBe(30);
+});

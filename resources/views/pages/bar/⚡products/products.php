@@ -80,6 +80,28 @@ new class extends Component
     public string $search = '';
 
     /**
+     * Reprendre les suggestions pour tous les produits qu'on n'a pas encore réglés.
+     *
+     * « Pas encore réglé » veut dire sans max : c'est le max qui fait entrer un
+     * produit dans le réassort. Un réglage posé à la main n'est jamais écrasé en
+     * masse — il a peut-être une raison que les ventes ignorent.
+     */
+    public function applyAllSuggestions(RestockingSuggestions $restockingSuggestions): void
+    {
+        $applied = 0;
+
+        foreach ($this->unsetProductsWithSuggestion($restockingSuggestions->all()) as $product => $suggestion) {
+            BarProduct::query()->whereKey($product)->update([
+                'low_stock_threshold' => $suggestion['min'],
+                'max_stock' => $suggestion['max'],
+            ]);
+            $applied++;
+        }
+
+        $this->success(trans_choice('{0} No suggestion to apply.|{1} Suggestion applied to one product.|[2,*] Suggestions applied to :count products.', $applied));
+    }
+
+    /**
      * Reprendre pour un produit le min et le max que suggèrent ses ventes.
      *
      * Jamais automatique : c'est le magasinier qui sait ce que les ventes ignorent,
@@ -278,7 +300,8 @@ new class extends Component
             'categories' => $this->categoriesForSelect(),
             'groups' => $this->groups(),
             'headers' => $this->headers(),
-            'suggestions' => app(RestockingSuggestions::class)->all(),
+            'suggestions' => $suggestions = app(RestockingSuggestions::class)->all(),
+            'unsetWithSuggestionCount' => count($this->unsetProductsWithSuggestion($suggestions)),
             'lowStockCount' => $this->products()->filter(fn (BarProduct $p): bool => $p->is_low_stock)->count(),
         ];
     }
@@ -372,5 +395,18 @@ new class extends Component
             ->with('category')
             ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"))
             ->get();
+    }
+
+    /**
+     * Les suggestions des produits sans max, c'est-à-dire pas encore réglés.
+     *
+     * @param  array<int, array{min: int, max: int}>  $suggestions
+     * @return array<int, array{min: int, max: int}>
+     */
+    protected function unsetProductsWithSuggestion(array $suggestions): array
+    {
+        $unset = BarProduct::query()->whereNull('max_stock')->pluck('id')->all();
+
+        return array_intersect_key($suggestions, array_flip($unset));
     }
 };

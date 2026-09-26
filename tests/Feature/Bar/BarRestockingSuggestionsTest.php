@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\Bar\Models\BarProduct;
+use App\Domains\Bar\Services\BarRestockingSettings;
 use App\Domains\Bar\Services\RestockingSuggestions;
 use Illuminate\Support\Carbon;
 
@@ -113,4 +114,26 @@ it('follows a rising product faster than a plain average would', function (): vo
     // Les quatre semaines anciennes pèsent la moitié des quatre récentes :
     // (10 × 2 + 4 × 1) / 3 = 8 par semaine, là où la moyenne simple dirait 7.
     expect(app(RestockingSuggestions::class)->all()[$this->coca->id])->toBe(['min' => 8, 'max' => 24]);
+});
+
+it('covers as many weeks as the bar is set to', function (): void {
+    restockingSuggestionsSale('2026-09-18 21:00', [[$this->jupiler, 10]]);
+
+    app(BarRestockingSettings::class)->setCoverage(minWeeks: 2, maxWeeks: 4);
+
+    expect(app(RestockingSuggestions::class)->all()[$this->jupiler->id])->toBe(['min' => 20, 'max' => 40]);
+});
+
+it('lets a perishable product cover fewer weeks, and caps what the fridge can hold', function (): void {
+    restockingSuggestionsSale('2026-09-18 21:00', [[$this->jupiler, 10], [$this->coca, 10]]);
+
+    // Un sandwich ne se stocke pas trois semaines : une seule, et le min suit.
+    $this->jupiler->update(['restocking_weeks' => 1]);
+    // Le frigo ne prend que 18 canettes, quoi qu'en disent les ventes.
+    $this->coca->update(['restocking_cap' => 18]);
+
+    $suggestions = app(RestockingSuggestions::class)->all();
+
+    expect($suggestions[$this->jupiler->id])->toBe(['min' => 10, 'max' => 10])
+        ->and($suggestions[$this->coca->id])->toBe(['min' => 10, 'max' => 18]);
 });

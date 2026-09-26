@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Bar\Services;
 
 use App\Domains\Bar\Models\BarOrderItem;
+use App\Domains\Bar\Models\BarProduct;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -34,12 +35,6 @@ class RestockingSuggestions
      */
     public const int HALF_LIFE_WEEKS = 4;
 
-    /** … et le max trois : environ deux semaines entre deux tournées. */
-    public const int MAX_WEEKS = 3;
-
-    /** Le min couvre une semaine de ventes… */
-    public const int MIN_WEEKS = 1;
-
     /** Combien de semaines actives on regarde. */
     public const int WEEKS_OBSERVED = 12;
 
@@ -48,6 +43,8 @@ class RestockingSuggestions
      * à la soirée de la veille — la même frontière que la feuille de caisse.
      */
     private const int BUSINESS_DAY_STARTS_AT = 6;
+
+    public function __construct(private readonly BarRestockingSettings $settings) {}
 
     /**
      * Les suggestions des produits qui ont vendu, indexées par identifiant.
@@ -68,18 +65,32 @@ class RestockingSuggestions
         $weights = $activeWeeks->mapWithKeys(fn (string $week, int $age): array => [$week => 0.5 ** ($age / self::HALF_LIFE_WEEKS)]);
         $totalWeight = $weights->sum();
 
+        $products = BarProduct::query()->get(['id', 'restocking_weeks', 'restocking_cap'])->keyBy('id');
+        $minWeeks = $this->settings->minWeeks();
+        $maxWeeks = $this->settings->maxWeeks();
+
         return $sales
             ->whereIn('week', $activeWeeks->all())
             ->groupBy('product_id')
-            ->map(function (Collection $rows) use ($weights, $totalWeight): array {
+            ->filter(fn (Collection $rows, int $productId): bool => $products->has($productId))
+            ->map(function (Collection $rows, int $productId) use ($weights, $totalWeight, $products, $minWeeks, $maxWeeks): array {
                 // Arrondi au centième : 8 unités par semaine ne doivent pas devenir
                 // 8,000000001 et un max de 25 au lieu de 24.
                 $weekly = round($rows->sum(fn (array $row): float => $row['quantity'] * $weights[$row['week']]) / $totalWeight, 2);
 
-                return [
-                    'min' => (int) ceil($weekly * self::MIN_WEEKS),
-                    'max' => (int) ceil($weekly * self::MAX_WEEKS),
-                ];
+                // Un périssable couvre moins de semaines que le bar ; le min suit.
+                $product = $products[$productId];
+                $productMaxWeeks = $product->restocking_weeks ?? $maxWeeks;
+                $max = (int) ceil($weekly * $productMaxWeeks);
+                $min = (int) ceil($weekly * min($minWeeks, $productMaxWeeks));
+
+                // Le plafond est celui du frigo : ni le max ni le min ne le dépassent.
+                if ($product->restocking_cap !== null) {
+                    $max = min($max, $product->restocking_cap);
+                    $min = min($min, $max);
+                }
+
+                return ['min' => $min, 'max' => $max];
             })
             ->all();
     }

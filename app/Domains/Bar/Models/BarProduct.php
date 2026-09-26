@@ -23,6 +23,10 @@ use Illuminate\Support\Carbon;
  * @property int|null $max_stock
  * @property int $pack_size
  * @property string|null $pack_label
+ * @property string|null $restocking_mode
+ * @property int|null $restocking_weeks
+ * @property int|null $restocking_cap
+ * @property Carbon|null $restocking_adjusted_at
  * @property int|null $created_by
  * @property int|null $modified_by
  * @property Carbon|null $created_at
@@ -74,6 +78,9 @@ class BarProduct extends Model
     protected $casts = [
         'max_stock' => 'integer',
         'pack_size' => 'integer',
+        'restocking_weeks' => 'integer',
+        'restocking_cap' => 'integer',
+        'restocking_adjusted_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -84,6 +91,10 @@ class BarProduct extends Model
         'max_stock',
         'pack_size',
         'pack_label',
+        'restocking_mode',
+        'restocking_weeks',
+        'restocking_cap',
+        'restocking_adjusted_at',
         'category_id',
     ];
 

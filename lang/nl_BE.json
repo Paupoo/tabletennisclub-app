@@ -4914,6 +4914,8 @@
     "Add the first product to build the bar menu.": "Voeg het eerste product toe om de barkaart samen te stellen.",
     "Alert threshold for :product": "Waarschuwingsdrempel voor :product",
     "Alert threshold updated.": "Waarschuwingsdrempel bijgewerkt.",
+    "Restocking target for :product": "Doelvoorraad voor :product",
+    "Restocking target updated.": "Doelvoorraad bijgewerkt.",
     "At or below its alert threshold": "Op of onder de waarschuwingsdrempel",
     "Available: :product": "Beschikbaar: :product",
     "By shelf": "Per rek",

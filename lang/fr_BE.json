@@ -4914,6 +4914,8 @@
     "Add the first product to build the bar menu.": "Ajoutez le premier produit pour composer la carte du bar.",
     "Alert threshold for :product": "Seuil d'alerte pour :product",
     "Alert threshold updated.": "Seuil d'alerte mis à jour.",
+    "Restocking target for :product": "Stock cible pour :product",
+    "Restocking target updated.": "Stock cible mis à jour.",
     "At or below its alert threshold": "Au seuil d'alerte ou en dessous",
     "Available: :product": "Disponible : :product",
     "By shelf": "Par rayon",

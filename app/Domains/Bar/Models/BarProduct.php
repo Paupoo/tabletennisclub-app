@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property int $sale_price
  * @property int $is_available
  * @property int|null $low_stock_threshold
+ * @property int|null $max_stock
  * @property int|null $created_by
  * @property int|null $modified_by
  * @property Carbon|null $created_at
@@ -64,11 +65,16 @@ class BarProduct extends Model
      */
     public const int LOW_STOCK_THRESHOLD = 3;
 
+    protected $casts = [
+        'max_stock' => 'integer',
+    ];
+
     protected $fillable = [
         'name',
         'sale_price',
         'is_available',
         'low_stock_threshold',
+        'max_stock',
         'category_id',
     ];
 

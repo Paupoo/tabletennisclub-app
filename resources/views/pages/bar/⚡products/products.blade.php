@@ -145,6 +145,17 @@
                                     class="input input-bordered input-sm tap-comfort w-14 text-end tabular-nums lg:w-20">
                             @endscope
 
+                            @scope('cell_max', $product)
+                                {{-- Vide = hors réassort : pas de placeholder, aucun défaut
+                                ne s'applique ici, au contraire du seuil. --}}
+                                <input type="number" min="0" inputmode="numeric"
+                                    wire:key="max-{{ $product->id }}"
+                                    value="{{ $product->max_stock }}"
+                                    wire:change="updateMaxStock({{ $product->id }}, $event.target.value)"
+                                    aria-label="{{ __('Restocking target for :product', ['product' => $product->name]) }}"
+                                    class="input input-bordered input-sm tap-comfort w-14 text-end tabular-nums lg:w-20">
+                            @endscope
+
                             @scope('cell_available', $product)
                                 {{--
                                     La bascule est enveloppée d'un label `tap-comfort`

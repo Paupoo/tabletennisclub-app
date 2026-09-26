@@ -164,6 +164,21 @@ new class extends Component
     }
 
     /**
+     * Jusqu'où remonter le stock quand on fait les courses.
+     *
+     * Vidé, le produit sort du réassort : au contraire du seuil, un max absent ne
+     * retombe sur aucun défaut, il dit « on ne rachète pas ».
+     */
+    public function updateMaxStock(int $productId, ?string $maxStock): void
+    {
+        $value = ($maxStock === null || trim($maxStock) === '') ? null : max(0, (int) $maxStock);
+
+        BarProduct::query()->findOrFail($productId)->update(['max_stock' => $value]);
+
+        $this->success(__('Restocking target updated.'));
+    }
+
+    /**
      * Aligner le stock sur ce qui a été compté sur l'étagère.
      *
      * Le champ porte un comptage, pas un mouvement : l'écart devient une entrée ou
@@ -301,7 +316,10 @@ new class extends Component
             ['key' => 'name', 'label' => __('Product'), 'sortable' => false, 'class' => 'max-w-0 w-full'],
             ['key' => 'price', 'label' => __('Price'), 'sortable' => false, 'class' => 'hidden lg:table-cell text-end w-1'],
             ['key' => 'stock', 'label' => __('Stock'), 'sortable' => false, 'class' => 'text-end w-1'],
-            ['key' => 'threshold', 'label' => __('Threshold'), 'sortable' => false, 'class' => 'hidden lg:table-cell text-end w-1'],
+            // « Min » plutôt que « Seuil » : le même chiffre déclenche l'alerte au
+            // comptoir et l'entrée dans la liste de courses, et il fait paire avec Max.
+            ['key' => 'threshold', 'label' => __('Min'), 'sortable' => false, 'class' => 'hidden lg:table-cell text-end w-1'],
+            ['key' => 'max', 'label' => __('Max'), 'sortable' => false, 'class' => 'hidden lg:table-cell text-end w-1'],
             ['key' => 'available', 'label' => __('On menu'), 'sortable' => false, 'class' => 'text-end w-1'],
         ];
     }

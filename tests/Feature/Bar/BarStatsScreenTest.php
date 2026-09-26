@@ -101,3 +101,22 @@ it('lists what sold on the days typed in, best sellers first and sleepers last',
         ->test('pages::bar.stats')
         ->assertSeeInOrder(['Bières', 'Jupiler', '37', '8,4', 'Chimay bleue', __('Not sold')]);
 });
+
+it('shows the committee the sales entry of the bar menu, and none of the counter', function (): void {
+    $html = (string) $this->actingAs(User::factory()->isCommitteeMember()->create())
+        ->get(route('bar.stats.index'))
+        ->getContent();
+
+    expect($html)->toContain('href="' . route('bar.stats.index') . '"')
+        ->not->toContain('href="' . route('bar.index') . '"')
+        ->not->toContain('href="' . route('bar.orders.history') . '"');
+});
+
+it('adds the sales entry to the menu of a store keeper, next to the counter', function (): void {
+    $html = (string) $this->actingAs(User::factory()->withRole(Role::STORE_KEEPER)->create())
+        ->get(route('bar.stats.index'))
+        ->getContent();
+
+    expect($html)->toContain('href="' . route('bar.stats.index') . '"')
+        ->toContain('href="' . route('bar.products.index') . '"');
+});

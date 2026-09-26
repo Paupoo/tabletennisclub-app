@@ -169,7 +169,9 @@
         un barman voit trois liens qui mènent à un 403.
     --}}
     @feature('bar')
-    @can('bar.access')
+    {{-- Le sous-menu s'ouvre aussi à qui ne lit que les ventes (le comité) : il n'y
+         voit alors que « Ventes », les entrées du comptoir restant sous bar.access. --}}
+    @canany(['bar.access', 'bar.stats.view'])
     @php
         // Panier de session : un simple array_sum, aucune requête. Le cast en
         // array est une assurance, pas une coquetterie — ce menu est rendu sur
@@ -189,6 +191,7 @@
         modifier une commande, c'est encore être dans la file d'encaissement.
     --}}
     <x-menu-sub icon="o-shopping-bag" :title="__('Bar')">
+        @can('bar.access')
         <x-menu-item
             icon="o-shopping-bag"
             link="{{ route('bar.index') }}"
@@ -204,6 +207,7 @@
             exact
             :active="request()->routeIs('bar.payment.*', 'bar.orders.modify')" />
         <x-menu-item icon="o-clock" link="{{ route('bar.orders.history') }}" :title="__('History')" />
+        @endcan
         @can('bar.products.manage')
         <x-menu-item icon="o-cube" link="{{ route('bar.products.index') }}" :title="__('Products')" />
         @endcan
@@ -212,6 +216,9 @@
         @endcan
         @can('bar.cash_sheet.send')
         <x-menu-item icon="o-document-chart-bar" link="{{ route('bar.cashSheet.index') }}" :title="__('Cash sheet')" />
+        @endcan
+        @can('bar.stats.view')
+        <x-menu-item icon="o-chart-bar" link="{{ route('bar.stats.index') }}" :title="__('Sales')" />
         @endcan
         {{--
             De quoi installer la salle avant le service : l'écran à caster derrière
@@ -223,12 +230,14 @@
             caster le back-office à la place de la carte laisserait le barman sans
             caisse, devant une salle qui attend.
         --}}
+        @can('bar.access')
         <x-menu-separator :title="__('Menu')" />
         <x-menu-item icon="o-tv" link="{{ route('public.bar.screen') }}" :title="__('Cast the menu')" external />
         <x-menu-item icon="o-device-phone-mobile" link="{{ route('public.bar.menu') }}" :title="__('Menu on a phone')" external exact />
         <x-menu-item icon="o-printer" link="{{ route('public.bar.flyer') }}" :title="__('Print the QR sheets')" external />
+        @endcan
     </x-menu-sub>
-    @endcan
+    @endcanany
     @endfeature
 
     <li><x-menu-separator /></li>

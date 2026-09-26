@@ -26,7 +26,7 @@
 @if ($adjustments !== [])
 ## {{ __('Settings adjusted this week') }}
 
-{{ __('The automatic restocking followed the sales. A product corrected by hand becomes manual.') }}
+{{ __('The automatic restocking followed the sales.') }}
 
 <x-mail::table>
 | {{ __('Product') }} | {{ __('Min') }} | {{ __('Max') }} |

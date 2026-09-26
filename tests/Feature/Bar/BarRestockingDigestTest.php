@@ -166,6 +166,7 @@ it('reports the week\'s adjustments and the products that no longer sell', funct
         $html = (string) $notification->toMail($this->storeKeeper)->render();
 
         return str_contains($html, __('Settings adjusted this week'))
+            && str_contains($html, __('The automatic restocking followed the sales.'))
             && str_contains($html, 'Coca-Cola')
             && str_contains($html, '24 → 30')
             && str_contains($html, e(__('No longer selling')))

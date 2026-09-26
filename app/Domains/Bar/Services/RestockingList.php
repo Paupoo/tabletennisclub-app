@@ -72,13 +72,12 @@ class RestockingList
             ];
         }
 
-        // L'ordre du magasin, à peu près : par rayon, puis par nom. Deux tris
-        // successifs, le tri de PHP étant stable : le second garde l'ordre du premier
-        // à catégorie égale.
-        foreach ($list as $section => $lines) {
-            $byName = LocaleSort::by(collect($lines), fn (array $line): string => $line['name']);
-            $list[$section] = array_values(LocaleSort::by($byName, fn (array $line): string => $line['category'])->all());
-        }
+        // L'ordre du magasin, à peu près : par rayon, puis par nom, comme la langue
+        // de l'interface les lit.
+        $collator = LocaleSort::collator();
+        $storeOrder = fn (array $a, array $b): int => (int) ($collator->compare($a['category'], $b['category']) ?: $collator->compare($a['name'], $b['name']));
+        usort($list['to_buy'], $storeOrder);
+        usort($list['if_room'], $storeOrder);
 
         return $list;
     }

@@ -71,6 +71,9 @@ it('never sends a member to a page the committee alone can open', function (): v
         // RemindCaptainsCommand sends it to the captain of the team only, and
         // `access-selections` admits every captain — CaptainLineupReminderTest.
         'CaptainLineupReminderNotification.php',
+        // SendBarRestockingDigestCommand sends it to User::permission('bar.restocking.shop')
+        // only, the permission the linked screen asks for — BarRestockingDigestTest.
+        'BarRestockingDigestNotification.php',
     ];
 
     $files = (new Finder)

@@ -140,6 +140,14 @@ Schedule::command('interclubs:remind-captains')
     ->withoutOverlapping()
     ->when(Feature::Interclubs->enabled(...));
 
+// Réassort automatique (décidé le 2026-09-27) : le vendredi à 6 h 05, une fois la
+// soirée du jeudi close — une journée d'exploitation finit à 6 h —, et avant le
+// digest du samedi qui dit ce qui a bougé.
+Schedule::command('bar:restocking-recalculate')
+    ->weeklyOn(5, '06:05')
+    ->withoutOverlapping()
+    ->when(Feature::Bar->enabled(...));
+
 // Réassort du bar (décidé le 2026-09-26) : le samedi à 10 h, le lendemain des
 // matchs, magasins ouverts — et qui n'y va pas le samedi a la semaine devant lui.
 Schedule::command('bar:restocking-digest')

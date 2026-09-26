@@ -117,7 +117,7 @@ class RestockingTrips
 
             $trip->update(['status' => BarRestocking::STATUS_CLOSED, 'closed_at' => now(), 'paid_by' => $paidBy]);
 
-            if ($paidBy === BarRestocking::PAID_BY_ME && $claim !== null) {
+            if ($paidBy === BarRestocking::PAID_BY_ME) {
                 $report = (new SubmitExpenseReport)(
                     author: $shopper,
                     category: ExpenseCategory::Bar,

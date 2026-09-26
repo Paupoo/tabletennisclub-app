@@ -107,3 +107,10 @@ Schedule::command('interclubs:remind-captains')
     ->weeklyOn(0, '18:00')
     ->withoutOverlapping()
     ->when(Feature::Interclubs->enabled(...));
+
+// Réassort du bar (décidé le 2026-09-26) : le samedi à 10 h, le lendemain des
+// matchs, magasins ouverts — et qui n'y va pas le samedi a la semaine devant lui.
+Schedule::command('bar:restocking-digest')
+    ->weeklyOn(6, '10:00')
+    ->withoutOverlapping()
+    ->when(Feature::Bar->enabled(...));

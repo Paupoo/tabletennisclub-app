@@ -294,18 +294,6 @@ new class extends Component
     }
 
     /**
-     * « 2 × casier », « 2 × 24 », ou « 7 » pour un produit qui s'achète à l'unité.
-     */
-    protected function packsLabel(int $packs, int $packSize, ?string $packLabel): string
-    {
-        if ($packSize === 1 && ($packLabel === null || $packLabel === '')) {
-            return (string) $packs;
-        }
-
-        return $packs . ' × ' . ($packLabel !== null && $packLabel !== '' ? $packLabel : $packSize);
-    }
-
-    /**
      * @param  array{to_buy: list<array<string, mixed>>, if_room: list<array<string, mixed>>}  $list
      * @return array<string, array<string, array<int, array<string, mixed>>>>
      */
@@ -318,7 +306,7 @@ new class extends Component
                 'line_id' => null,
                 'name' => $line['name'],
                 'category' => $line['category'],
-                'packs_label' => $this->packsLabel($line['packs'], $line['pack_size'], $line['pack_label']),
+                'packs_label' => RestockingList::packsLabel($line['packs'], $line['pack_size'], $line['pack_label']),
                 'units' => $line['units'],
                 'stock' => $line['stock'],
                 'max' => $line['max'],
@@ -345,7 +333,7 @@ new class extends Component
                 'line_id' => $line->id,
                 'name' => $line->product->name,
                 'category' => $line->product->category->name,
-                'packs_label' => $this->packsLabel($line->proposed_packs, $line->pack_size, $line->pack_label),
+                'packs_label' => RestockingList::packsLabel($line->proposed_packs, $line->pack_size, $line->pack_label),
                 'pack_size' => $line->pack_size,
                 'pack_label' => $line->pack_label,
                 'units' => $line->proposed_packs * $line->pack_size,

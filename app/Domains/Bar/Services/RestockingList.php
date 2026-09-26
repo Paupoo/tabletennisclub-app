@@ -26,6 +26,20 @@ use App\Support\LocaleSort;
 class RestockingList
 {
     /**
+     * « 2 × casier », « 2 × 24 », ou « 7 » pour un produit qui s'achète à l'unité.
+     *
+     * Une seule écriture pour l'écran des courses et le digest du samedi.
+     */
+    public static function packsLabel(int $packs, int $packSize, ?string $packLabel): string
+    {
+        if ($packLabel !== null && $packLabel !== '') {
+            return $packs . ' × ' . $packLabel;
+        }
+
+        return $packSize === 1 ? (string) $packs : $packs . ' × ' . $packSize;
+    }
+
+    /**
      * @return array{to_buy: list<RestockingLine>, if_room: list<RestockingLine>}
      */
     public function current(): array

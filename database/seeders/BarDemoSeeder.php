@@ -46,6 +46,10 @@ use Random\Randomizer;
  *   la place », 3 sans max (donc 3 suggestions à reprendre), un produit jamais
  *   vendu, Coca Zero en hausse et Leffe en baisse.
  *
+ * Le réassort automatique reste éteint pour le bar ; seul Coca Zero, en hausse,
+ * est en automatique, et le sandwich ne couvre qu'une semaine (il périme).
+ * `php artisan bar:restocking-recalculate` montre ce que ferait le vendredi.
+ *
  * Tous les tirages partent d'une graine fixe, dans un générateur à soi : deux
  * lancements le même jour donnent la même base. Ni `fake()` ni `mt_rand()` — l'aléa
  * global est consommé ailleurs pendant le semis, et la séquence se décalait.
@@ -186,6 +190,8 @@ class BarDemoSeeder extends Seeder
                 'max_stock' => $row['max'],
                 'pack_size' => $row['pack'],
                 'pack_label' => $row['label'],
+                'restocking_mode' => $name === 'Coca Zero' ? 'auto' : null,
+                'restocking_weeks' => $name === 'Sandwich' ? 1 : null,
             ]);
         }
 
@@ -395,6 +401,7 @@ class BarDemoSeeder extends Seeder
         ExpenseReport::query()->whereKey($reportIds)->delete();
 
         Payment::query()->where('payable_type', (new BarOrder)->getMorphClass())->delete();
+        DB::table('bar_restocking_adjustments')->delete();
         DB::table('bar_stock_movements')->update(['source_movement_id' => null]);
         DB::table('bar_stock_movements')->delete();
         DB::table('bar_order_items')->delete();

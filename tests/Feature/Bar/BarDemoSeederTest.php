@@ -109,6 +109,11 @@ it('closes three past trips, the one Xavier paid with a submitted expense report
     expect(DB::table('bar_stock_movements')->where('restocking_id', $paid->id)->count())->toBeGreaterThan(0);
 });
 
+it('puts Coca Zero alone in automatic mode, and lets the sandwich cover a single week', function (): void {
+    expect(BarProduct::query()->where('restocking_mode', 'auto')->pluck('name')->all())->toBe(['Coca Zero'])
+        ->and(barDemoProduct('Sandwich')->restocking_weeks)->toBe(1);
+});
+
 it('makes Xavier and the first account store keepers', function (): void {
     expect($this->xavier->fresh()->hasRole(Role::STORE_KEEPER->value))->toBeTrue()
         ->and($this->firstUser->fresh()->hasRole(Role::STORE_KEEPER->value))->toBeTrue();

@@ -297,6 +297,29 @@
                     @endif
                 </div>
 
+                {{-- Une note issue des courses du bar : ce qui est entré en stock, à
+                rapprocher du ticket. Les quantités viennent de la tournée close, qui
+                ne bouge plus. --}}
+                @if ($shown->restocking)
+                    <div class="rounded-xl border border-base-300 text-sm">
+                        <p class="border-b border-base-300 p-3 font-semibold">
+                            {{ __('Bar shopping trip') }}
+                            <span class="text-muted font-normal">· {{ $shown->restocking->closed_at?->format('d/m/Y H:i') }}</span>
+                        </p>
+                        <ul class="divide-y divide-base-200">
+                            @foreach ($shown->restocking->lines->where('bought_packs', '>', 0) as $line)
+                                <li class="flex justify-between gap-4 p-3" wire:key="restocking-line-{{ $line->id }}">
+                                    <span>{{ $line->product->name }}</span>
+                                    <span class="tabular-nums">
+                                        {{ \App\Domains\Bar\Services\RestockingList::packsLabel($line->bought_packs, $line->pack_size, $line->pack_label) }}
+                                        <span class="text-muted">({{ __(':units units', ['units' => $line->bought_packs * $line->pack_size]) }})</span>
+                                    </span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 @if (filled($shown->decision_reason))
                     <div class="rounded-xl border border-base-300 bg-base-200/40 p-3 text-sm">
                         <div class="mb-1 font-semibold">{{ __('Reason sent to the member') }}</div>

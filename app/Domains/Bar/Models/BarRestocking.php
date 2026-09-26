@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Bar\Models;
 
+use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Collection;
@@ -25,14 +26,26 @@ use Illuminate\Support\Carbon;
  * @property int|null $abandoned_by
  * @property Carbon $started_at
  * @property Carbon|null $closed_at
+ * @property string|null $paid_by
+ * @property int|null $expense_report_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $shopper
+ * @property-read ExpenseReport|null $expenseReport
  * @property-read Collection<int, BarRestockingLine> $lines
  */
 class BarRestocking extends Model
 {
     use HasAuditLog;
+
+    /** Carte ou caisse du club : pas de note de frais. */
+    public const string PAID_BY_CLUB = 'club';
+
+    /** La personne qui a fait les courses, remboursée par une note de frais. */
+    public const string PAID_BY_ME = 'me';
+
+    /** Un don : personne n'est remboursé. */
+    public const string PAID_BY_NOBODY = 'nobody';
 
     public const string STATUS_ABANDONED = 'abandoned';
 
@@ -51,6 +64,8 @@ class BarRestocking extends Model
         'abandoned_by',
         'started_at',
         'closed_at',
+        'paid_by',
+        'expense_report_id',
     ];
 
     protected $table = 'bar_restockings';
@@ -61,6 +76,14 @@ class BarRestocking extends Model
     public static function inProgress(): ?self
     {
         return self::query()->where('status', self::STATUS_IN_PROGRESS)->latest('id')->first();
+    }
+
+    /**
+     * @return BelongsTo<ExpenseReport, $this>
+     */
+    public function expenseReport(): BelongsTo
+    {
+        return $this->belongsTo(ExpenseReport::class);
     }
 
     public function isInProgress(): bool

@@ -7,9 +7,13 @@ namespace App\Domains\Bar\Services;
 use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Models\BarRestocking;
 use App\Domains\Bar\Models\BarRestockingLine;
+use App\Domains\ClubAdmin\ExpenseReports\Actions\SubmitExpenseReport;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\ExpenseCategory;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Les gestes d'une tournée de courses : partir, reprendre, abandonner, rentrer.
@@ -53,14 +57,23 @@ class RestockingTrips
      * arrivé. Une fois close, la tournée ne bouge plus — une erreur se corrige par
      * l'inventaire.
      *
+     * Qui a payé se dit à la clôture : `me` soumet dans la même transaction la note
+     * de frais de celui qui rentre, pré-remplie par ce qui vient d'entrer en stock —
+     * si elle échoue, rien n'est écrit, et la tournée reste ouverte.
+     *
      * @param  array<int|string, int|string|null>  $boughtByLine  conditionnements achetés, par ligne de la liste
      * @param  array<int|string, int|string|null>  $extrasByProduct  conditionnements achetés hors liste, par produit
+     * @param  array{amount: float, iban: string, files: array<int, UploadedFile>}|null  $claim  le ticket, quand `$paidBy` vaut `me`
      *
      * @throws \DomainException quand la tournée n'est plus en cours, ou n'est pas à celui qui rentre
      */
-    public function close(BarRestocking $trip, User $shopper, array $boughtByLine, array $extrasByProduct = []): void
+    public function close(BarRestocking $trip, User $shopper, array $boughtByLine, array $extrasByProduct, string $paidBy, ?array $claim = null): void
     {
-        DB::transaction(function () use ($trip, $shopper, $boughtByLine, $extrasByProduct): void {
+        if ($paidBy === BarRestocking::PAID_BY_ME && $claim === null) {
+            throw new \DomainException('A refund needs the receipt.');
+        }
+
+        DB::transaction(function () use ($trip, $shopper, $boughtByLine, $extrasByProduct, $paidBy, $claim): void {
             $trip = BarRestocking::query()->lockForUpdate()->findOrFail($trip->id);
 
             if (! $trip->isInProgress() || $trip->shopper_id !== $shopper->id) {
@@ -102,7 +115,21 @@ class RestockingTrips
                 $this->stockService->addIncomingStock($product->id, $packs * $product->pack_size, $reason, $shopper->id, $shopper->id, $trip->id);
             }
 
-            $trip->update(['status' => BarRestocking::STATUS_CLOSED, 'closed_at' => now()]);
+            $trip->update(['status' => BarRestocking::STATUS_CLOSED, 'closed_at' => now(), 'paid_by' => $paidBy]);
+
+            if ($paidBy === BarRestocking::PAID_BY_ME && $claim !== null) {
+                $report = (new SubmitExpenseReport)(
+                    author: $shopper,
+                    category: ExpenseCategory::Bar,
+                    description: $this->describe($trip),
+                    amount: $claim['amount'],
+                    spentOn: today(),
+                    refundIban: $claim['iban'],
+                    files: $claim['files'],
+                );
+
+                $trip->update(['expense_report_id' => $report->id]);
+            }
         });
     }
 
@@ -159,5 +186,17 @@ class RestockingTrips
         }
 
         $trip->update(['shopper_id' => $shopper->id]);
+    }
+
+    /**
+     * Ce que le valideur lit dans la note : la date, puis ce qui est entré en stock.
+     */
+    private function describe(BarRestocking $trip): string
+    {
+        $items = $trip->lines()->with('product')->where('bought_packs', '>', 0)->get()
+            ->map(fn (BarRestockingLine $line): string => RestockingList::packsLabel((int) $line->bought_packs, $line->pack_size, $line->pack_label) . ' ' . $line->product->name)
+            ->join(', ');
+
+        return Str::limit(__('Bar shopping of :date: :items', ['date' => today()->format('d/m/Y'), 'items' => $items]), 255);
     }
 }

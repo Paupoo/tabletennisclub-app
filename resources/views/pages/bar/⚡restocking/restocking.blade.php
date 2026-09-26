@@ -101,6 +101,66 @@
                 <x-button class="btn-sm" icon="o-plus" :label="__('Add')" wire:click="addExtra" />
             </div>
 
+            {{--
+                La dernière question. Payé de sa poche : la note de frais part avec
+                la clôture, pré-remplie ; il ne reste que le total et la photo du
+                ticket. Un mineur, ou quelqu'un qui agit pour un autre, ne voit pas
+                cette option — la même règle que sur l'écran des notes de frais.
+            --}}
+            <div class="border-base-300 mt-4 border-t pt-4">
+                <p class="mb-2 font-semibold">{{ __('Who paid?') }}</p>
+                <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    @foreach (array_filter([
+                        'me' => $canClaim ? __('I paid, I want to be refunded') : null,
+                        'club' => __('The club (card, cash box)'),
+                        'nobody' => __('Nobody, it is a gift'),
+                    ]) as $value => $label)
+                        <button type="button" wire:click="$set('paidBy', '{{ $value }}')" wire:key="paid-by-{{ $value }}"
+                            @class([
+                                'btn btn-sm tap-min justify-start',
+                                'btn-primary' => $paidBy === $value,
+                                'btn-outline' => $paidBy !== $value,
+                            ])>
+                            {{ $label }}
+                        </button>
+                    @endforeach
+                </div>
+                @error('paidBy')
+                    <p class="text-error mt-1 text-sm">{{ $message }}</p>
+                @enderror
+
+                @if ($paidBy === 'me')
+                    <div class="mt-4 space-y-3">
+                        <x-input wire:model="ticketAmount" :label="__('Receipt total')" inputmode="decimal" suffix="€"
+                            :hint="__('VAT included, as on the receipt')" />
+
+                        <div>
+                            <x-file wire:model="ticketFiles" :label="__('Receipt')" multiple accept=".pdf,.jpg,.jpeg,.png,.webp"
+                                :hint="__('A photo of the receipt is enough. PDF, JPG, PNG or WebP, 10 MB each.')" />
+                            @error('ticketFiles.*')
+                                <p class="text-error mt-1 text-sm">{{ $message }}</p>
+                            @enderror
+                            @if (count($ticketFiles) > 0)
+                                <ul class="mt-2 space-y-1 text-sm">
+                                    @foreach ($ticketFiles as $index => $upload)
+                                        <li wire:key="ticket-file-{{ $index }}" class="flex items-center justify-between gap-2">
+                                            <span class="truncate">{{ $upload->getClientOriginalName() }}</span>
+                                            <x-button icon="o-x-mark" class="btn-ghost btn-xs" :title="__('Remove')"
+                                                wire:click="removeTicketFile({{ $index }})" />
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                        </div>
+
+                        <x-input wire:model="refundIban" :label="__('Refund account (IBAN)')"
+                            :hint="__('Prefilled from your profile; change it if the money should go elsewhere.')" />
+
+                        <p class="text-subtle text-xs">{{ __('The expense report is submitted when you confirm, with what you bought in its description. The treasury takes it from there.') }}</p>
+                    </div>
+                @endif
+            </div>
+
             <x-slot:actions>
                 <x-button :label="__('Back to the list')" wire:click="$set('closing', false)" />
                 <x-button class="btn-primary" icon="o-check" :label="__('Confirm and fill the stock')"

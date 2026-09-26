@@ -186,6 +186,7 @@ it('enters what was really bought into the stock, linked to the trip, and closes
         ->call('addExtra')
         ->assertSet("extras.{$chimay->id}", 1)
         ->assertDontSee('<x-', false)
+        ->set('paidBy', 'club')
         ->call('close')
         ->assertHasNoErrors();
 

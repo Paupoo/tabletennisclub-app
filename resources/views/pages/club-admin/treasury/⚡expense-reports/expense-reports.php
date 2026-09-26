@@ -287,7 +287,7 @@ new class extends Component
     {
         return $this->shownId === null
             ? null
-            : ExpenseReport::with(['user', 'files', 'refund', 'decider', 'resumedFrom'])->find($this->shownId);
+            : ExpenseReport::with(['user', 'files', 'refund', 'decider', 'resumedFrom', 'restocking.lines.product'])->find($this->shownId);
     }
 
     /**

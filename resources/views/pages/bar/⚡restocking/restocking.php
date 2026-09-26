@@ -9,11 +9,18 @@ use App\Domains\Bar\Models\BarRestocking;
 use App\Domains\Bar\Models\BarRestockingLine;
 use App\Domains\Bar\Services\RestockingList;
 use App\Domains\Bar\Services\RestockingTrips;
+use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
+use App\Domains\Shared\Enums\Feature;
+use App\Domains\Shared\Rules\ValidIban;
+use App\Domains\Shared\Support\IbanNormalizer;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use App\Support\LocaleSort;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
 
 /*
@@ -34,7 +41,10 @@ use Mary\Traits\Toast;
 */
 new class extends Component
 {
-    use HasBreadcrumbs, Toast;
+    use HasBreadcrumbs, Toast, WithFileUploads;
+
+    /** Le plafond de justificatifs d'une note de frais, comme sur l'écran du membre. */
+    private const int MAX_TICKET_FILES = 5;
 
     public bool $abandonModal = false;
 
@@ -57,7 +67,17 @@ new class extends Component
      */
     public array $extras = [];
 
+    /** Qui a payé : `me`, `club` ou `nobody` — voir BarRestocking::PAID_BY_*. */
+    public ?string $paidBy = null;
+
+    public string $refundIban = '';
+
     public bool $takeOverModal = false;
+
+    public string $ticketAmount = '';
+
+    /** @var array<int, mixed> */
+    public array $ticketFiles = [];
 
     public function abandon(RestockingTrips $restockingTrips): void
     {
@@ -103,21 +123,53 @@ new class extends Component
             return;
         }
 
+        $this->ticketAmount = str_replace([',', ' ', '€'], ['.', '', ''], $this->ticketAmount);
+
+        $claims = $this->paidBy === BarRestocking::PAID_BY_ME;
+
+        // Avant toute validation : un mineur n'a pas à se voir réclamer un IBAN pour
+        // une note qu'il ne peut pas soumettre.
+        if ($claims && ! $this->canClaim()) {
+            $this->resetValidation();
+            $this->addError('paidBy', __('Only an adult member, acting for themself, may claim an expense back.'));
+
+            return;
+        }
+
         $this->validate([
             'bought.*' => ['nullable', 'integer', 'min:0', 'max:999'],
             'extras.*' => ['nullable', 'integer', 'min:0', 'max:999'],
+            'paidBy' => ['required', Rule::in([BarRestocking::PAID_BY_ME, BarRestocking::PAID_BY_CLUB, BarRestocking::PAID_BY_NOBODY])],
+            'ticketAmount' => $claims ? ['required', 'numeric', 'min:0.01', 'max:99999.99'] : ['nullable'],
+            'refundIban' => $claims ? ['required', new ValidIban] : ['nullable'],
+            'ticketFiles' => $claims ? ['required', 'array', 'min:1', 'max:' . self::MAX_TICKET_FILES] : ['nullable', 'array'],
+            'ticketFiles.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
+        ], [], [
+            'paidBy' => __('Who paid'),
+            'ticketAmount' => __('Receipt total'),
+            'refundIban' => __('Refund account (IBAN)'),
+            'ticketFiles' => __('Receipt'),
         ]);
 
         try {
-            $restockingTrips->close($trip, auth()->user(), $this->bought, $this->extras);
+            $restockingTrips->close(
+                $trip,
+                auth()->user(),
+                $this->bought,
+                $this->extras,
+                (string) $this->paidBy,
+                $claims ? ['amount' => round((float) $this->ticketAmount, 2), 'iban' => $this->refundIban, 'files' => $this->ticketFiles] : null,
+            );
         } catch (\DomainException $exception) {
             $this->error($exception->getMessage());
 
             return;
         }
 
-        $this->reset('closing', 'bought', 'extras', 'extraProductId');
-        $this->success(__('Thank you! The stock is updated.'));
+        $this->reset('closing', 'bought', 'extras', 'extraProductId', 'paidBy', 'ticketAmount', 'ticketFiles', 'refundIban');
+        $this->success($claims
+            ? __('Thank you! The stock is updated and your expense report is submitted.')
+            : __('Thank you! The stock is updated.'));
     }
 
     /**
@@ -138,12 +190,19 @@ new class extends Component
             ->mapWithKeys(fn (BarRestockingLine $line): array => [$line->id => $line->in_cart ? $line->proposed_packs : 0])
             ->all();
         $this->extras = [];
+        $this->refundIban = (string) IbanNormalizer::format(auth()->user()->iban);
         $this->closing = true;
     }
 
     public function removeExtra(int $productId): void
     {
         unset($this->extras[$productId]);
+    }
+
+    public function removeTicketFile(int $index): void
+    {
+        unset($this->ticketFiles[$index]);
+        $this->ticketFiles = array_values($this->ticketFiles);
     }
 
     public function render(): View
@@ -202,6 +261,7 @@ new class extends Component
 
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
+            'canClaim' => $this->closing && $this->canClaim(),
             'listText' => $this->asText($sections),
             'trip' => $trip,
             'isMine' => $trip !== null && $trip->shopper_id === auth()->id(),
@@ -266,6 +326,17 @@ new class extends Component
         return LocaleSort::by(collect(array_keys($grouped)), fn (string $category): string => $category)
             ->mapWithKeys(fn (string $category): array => [$category => $grouped[$category]])
             ->all();
+    }
+
+    /**
+     * Celui qui rentre peut-il se faire rembourser par une note de frais ?
+     *
+     * La même règle que partout ailleurs : un adulte, agissant pour lui-même, et
+     * les notes de frais ouvertes au club.
+     */
+    protected function canClaim(): bool
+    {
+        return Feature::ExpenseReports->enabled() && Gate::allows('create', ExpenseReport::class);
     }
 
     /**

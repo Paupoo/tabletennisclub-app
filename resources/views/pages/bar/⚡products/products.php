@@ -6,6 +6,7 @@ namespace Resources\views\Pages\Bar\Products;
 
 use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarProduct;
+use App\Domains\Bar\Services\RestockingSuggestions;
 use App\Domains\Bar\Services\StockService;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
@@ -77,6 +78,28 @@ new class extends Component
     public string $price = '';
 
     public string $search = '';
+
+    /**
+     * Reprendre pour un produit le min et le max que suggèrent ses ventes.
+     *
+     * Jamais automatique : c'est le magasinier qui sait ce que les ventes ignorent,
+     * la place au frigo ou une date de péremption.
+     */
+    public function applySuggestion(int $productId, RestockingSuggestions $restockingSuggestions): void
+    {
+        $suggestion = $restockingSuggestions->all()[$productId] ?? null;
+
+        if ($suggestion === null) {
+            return;
+        }
+
+        BarProduct::query()->findOrFail($productId)->update([
+            'low_stock_threshold' => $suggestion['min'],
+            'max_stock' => $suggestion['max'],
+        ]);
+
+        $this->success(__('Suggestion applied.'));
+    }
 
     public function delete(): void
     {
@@ -255,6 +278,7 @@ new class extends Component
             'categories' => $this->categoriesForSelect(),
             'groups' => $this->groups(),
             'headers' => $this->headers(),
+            'suggestions' => app(RestockingSuggestions::class)->all(),
             'lowStockCount' => $this->products()->filter(fn (BarProduct $p): bool => $p->is_low_stock)->count(),
         ];
     }

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\Bar\Models\BarCategory;
+use App\Domains\Bar\Models\BarOrder;
 use App\Domains\Bar\Models\BarProduct;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Role;
@@ -80,4 +81,31 @@ it('refuses a pack of no unit', function (): void {
         ->assertHasErrors('packSize');
 
     expect($this->jupiler->fresh()->pack_size)->toBe(1);
+});
+
+/**
+ * Une commande réglée vendredi dernier : de quoi donner une suggestion au produit.
+ */
+function restockingSettingsSale(BarProduct $product, int $quantity): void
+{
+    $order = BarOrder::create(['total_price' => 0, 'is_paid' => 1, 'payment_method' => 'Cash']);
+    $order->items()->create([
+        'product_id' => $product->id,
+        'quantity' => $quantity,
+        'unit_price' => 200,
+        'total_price' => 200 * $quantity,
+    ]);
+}
+
+it('offers what sales suggest, and applies it to one product on request', function (): void {
+    restockingSettingsSale($this->jupiler, 14);
+
+    Livewire::actingAs($this->storeKeeper)
+        ->test('pages::bar.products')
+        ->assertSee(__('Suggested: :min – :max', ['min' => 14, 'max' => 42]))
+        ->call('applySuggestion', $this->jupiler->id);
+
+    expect($this->jupiler->fresh())
+        ->low_stock_threshold->toBe(14)
+        ->max_stock->toBe(42);
 });

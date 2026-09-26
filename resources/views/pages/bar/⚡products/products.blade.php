@@ -145,7 +145,7 @@
                                     class="input input-bordered input-sm tap-comfort w-14 text-end tabular-nums lg:w-20">
                             @endscope
 
-                            @scope('cell_max', $product)
+                            @scope('cell_max', $product, $suggestions)
                                 {{-- Vide = hors réassort : pas de placeholder, aucun défaut
                                 ne s'applique ici, au contraire du seuil. --}}
                                 <input type="number" min="0" inputmode="numeric"
@@ -154,6 +154,20 @@
                                     wire:change="updateMaxStock({{ $product->id }}, $event.target.value)"
                                     aria-label="{{ __('Restocking target for :product', ['product' => $product->name]) }}"
                                     class="input input-bordered input-sm tap-comfort w-14 text-end tabular-nums lg:w-20">
+
+                                {{-- La suggestion est son propre bouton : elle ne s'affiche
+                                que si elle apporte quelque chose, et un tap la reprend. --}}
+                                @php
+                                    $suggestion = $suggestions[$product->id] ?? null;
+                                @endphp
+                                @if ($suggestion !== null && ($suggestion['min'] !== $product->low_stock_threshold || $suggestion['max'] !== $product->max_stock))
+                                    <button type="button"
+                                        wire:click="applySuggestion({{ $product->id }})"
+                                        title="{{ __('Apply the suggestion') }}"
+                                        class="text-subtle mt-1 block w-full cursor-pointer whitespace-nowrap text-end text-xs tabular-nums hover:underline">
+                                        {{ __('Suggested: :min – :max', $suggestion) }}
+                                    </button>
+                                @endif
                             @endscope
 
                             @scope('cell_available', $product)

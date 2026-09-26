@@ -74,6 +74,13 @@ it('never sends a member to a page the committee alone can open', function (): v
         // SendBarRestockingDigestCommand sends it to User::permission('bar.restocking.shop')
         // only, the permission the linked screen asks for — BarRestockingDigestTest.
         'BarRestockingDigestNotification.php',
+        // The three go to User::permission('expense_reports.process') — plus
+        // 'payments.refund' for the last — and every délégation holding either
+        // also holds payments.view, which the page asks for. The member's own
+        // expense report notifications link to their member space instead.
+        'ExpenseReportSubmittedNotification.php',
+        'ExpenseReportsDigestNotification.php',
+        'ExpenseReportsToArchiveNotification.php',
     ];
 
     $files = (new Finder)

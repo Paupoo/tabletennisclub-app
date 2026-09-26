@@ -36,15 +36,32 @@ final class OpenRefundAction
      */
     public function __invoke(Payment $encashment, ?float $amount = null, ?string $targetIban = null): Payment
     {
-        $payable = $encashment->payable;
+        // Un trop-perçu se rend d'où il vient ; à défaut, à son titulaire.
+        return $this->forPayable(
+            $encashment->payable,
+            $amount ?? (float) $encashment->amount_paid,
+            $targetIban,
+        );
+    }
 
+    /**
+     * Ouvre un remboursement sur une chose que le club doit, sans encaissement
+     * d'origine.
+     *
+     * Une note de frais n'a jamais fait entrer d'argent : c'est le membre qui a
+     * payé, ailleurs. Il n'y a donc pas d'encaissement à citer, seulement une
+     * dette et le compte où la régler.
+     *
+     * @param  string|null  $targetIban  Le compte à créditer ; celui du membre par défaut.
+     */
+    public function forPayable(?Model $payable, float $amount, ?string $targetIban = null): Payment
+    {
         $refund = new Payment([
             'reference' => (new GeneratePaymentReference)(),
-            'amount_due' => $amount ?? (float) $encashment->amount_paid,
+            'amount_due' => $amount,
             'amount_paid' => 0,
             'status' => 'to_refund',
             'payment_method' => 'refund',
-            // Un trop-perçu se rend d'où il vient ; à défaut, à son titulaire.
             'refund_iban' => $targetIban ?? $this->memberIban($payable),
         ]);
 

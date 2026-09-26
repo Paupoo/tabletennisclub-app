@@ -705,6 +705,18 @@ class User extends Authenticatable implements MustVerifyEmail
             : 'expired';
     }
 
+    /**
+     * Whether the member is known to be of age.
+     *
+     * Not the negation of {@see self::isMinor()}: an unknown birthdate is
+     * neither. Anything touching money asks this one, and fails closed — a
+     * member whose age nobody recorded is never presumed to be an adult.
+     */
+    public function isAdult(): bool
+    {
+        return $this->birthdate !== null && Carbon::parse($this->birthdate)->age >= 18;
+    }
+
     public function isAffiliatedForCurrentSeason(): bool
     {
         $season = Season::current();

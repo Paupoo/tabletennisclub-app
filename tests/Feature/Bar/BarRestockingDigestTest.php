@@ -86,6 +86,16 @@ it('lists what must be bought, not what fits if there is room, and links to the 
         ->toContain(route('bar.restocking.index'));
 });
 
+it('asks to plan the shopping, in French', function (): void {
+    app()->setLocale('fr_BE');
+
+    $html = (string) new BarRestockingDigestNotification(app(RestockingList::class)->current()['to_buy'], null)
+        ->toMail($this->storeKeeper)
+        ->render();
+
+    expect($html)->toContain('Ces produits ont atteint leur seuil minimum, veuillez planifier les courses.');
+});
+
 it('says so when someone is already shopping', function (): void {
     $trip = BarRestocking::query()->create([
         'status' => BarRestocking::STATUS_IN_PROGRESS,

@@ -5111,7 +5111,7 @@
     ":count product must be bought for the bar.|:count products must be bought for the bar.": ":count product moet gekocht worden voor de bar.|:count producten moeten gekocht worden voor de bar.",
     "Bar — :count product to buy|Bar — :count products to buy": "Bar — :count product te kopen|Bar — :count producten te kopen",
     ":name is already doing the shopping, since :date.": ":name doet al de boodschappen, sinds :date.",
-    "These products are at or below their min. Whoever has the keys and a moment can fill the bar.": "Deze producten zitten op of onder hun minimum. Wie de sleutels en even tijd heeft, kan de bar aanvullen.",
+    "These products have reached their minimum threshold, please plan the shopping.": "Deze producten hebben hun minimumdrempel bereikt, gelieve de boodschappen te plannen.",
     "Open the shopping list": "Boodschappenlijst openen",
     "Who paid?": "Wie heeft betaald?",
     "Who paid": "Wie heeft betaald",

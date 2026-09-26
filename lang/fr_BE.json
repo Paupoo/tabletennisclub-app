@@ -5111,7 +5111,7 @@
     ":count product must be bought for the bar.|:count products must be bought for the bar.": ":count produit est à acheter pour le bar.|:count produits sont à acheter pour le bar.",
     "Bar — :count product to buy|Bar — :count products to buy": "Bar — :count produit à acheter|Bar — :count produits à acheter",
     ":name is already doing the shopping, since :date.": ":name fait déjà les courses, depuis :date.",
-    "These products are at or below their min. Whoever has the keys and a moment can fill the bar.": "Ces produits sont à leur min ou en dessous. Qui a les clés et un moment peut remplir le bar.",
+    "These products have reached their minimum threshold, please plan the shopping.": "Ces produits ont atteint leur seuil minimum, veuillez planifier les courses.",
     "Open the shopping list": "Ouvrir la liste de courses",
     "Who paid?": "Qui a payé ?",
     "Who paid": "Qui a payé",

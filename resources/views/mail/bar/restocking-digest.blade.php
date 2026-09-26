@@ -10,7 +10,7 @@
 @endif
 
 @if ($lines !== [])
-{{ __('These products are at or below their min. Whoever has the keys and a moment can fill the bar.') }}
+{{ __('These products have reached their minimum threshold, please plan the shopping.') }}
 
 <x-mail::table>
 | {{ __('Product') }} | {{ __('To buy') }} |

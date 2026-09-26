@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Bar;
 
+use App\Domains\Bar\Services\RestockingDigest;
 use App\Domains\Bar\Services\RestockingList;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Permission;
@@ -16,18 +17,18 @@ use Illuminate\Console\Command;
  * The Saturday digest: to whoever may go shopping for the bar, what must be bought.
  *
  * Sent to every holder of the permission — the store keeper role and its
- * délégations alike — and only when something is at or below its min: no
- * "all is well" mail. It goes out even while a trip is in progress; the mail
+ * délégations alike — when something is at or below its min, or when the
+ * automatic restocking moved a setting this week: no "all is well" mail. It goes out even while a trip is in progress; the mail
  * says so, so nobody shops twice.
  */
 #[Signature('bar:restocking-digest')]
 #[Description('Mail whoever may do the bar shopping what must be bought.')]
 class SendBarRestockingDigestCommand extends Command
 {
-    public function handle(RestockingList $restockingList): int
+    public function handle(RestockingList $restockingList, RestockingDigest $digest): int
     {
-        if ($restockingList->current()['to_buy'] === []) {
-            $this->components->info('Nothing to buy: no digest sent.');
+        if ($restockingList->current()['to_buy'] === [] && $digest->adjustmentsOfTheWeek()->isEmpty()) {
+            $this->components->info('Nothing to buy and nothing adjusted: no digest sent.');
 
             return self::SUCCESS;
         }

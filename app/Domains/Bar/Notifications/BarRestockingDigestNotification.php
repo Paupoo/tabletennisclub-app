@@ -18,6 +18,9 @@ use Illuminate\Notifications\Notification;
  * une tournée est en cours, le mail le dit en tête — qu'on ne parte pas en double,
  * ou qu'on la reprenne en connaissance de cause.
  *
+ * Il dit aussi ce que le réassort automatique a ajusté dans la semaine, et les
+ * produits qui ne se vendent plus — c'est au comité de les retirer.
+ *
  * Pas de désabonnement : qui ne veut plus le recevoir rend la délégation.
  *
  * @phpstan-import-type RestockingLine from RestockingList
@@ -28,10 +31,14 @@ class BarRestockingDigestNotification extends Notification
 
     /**
      * @param  list<RestockingLine>  $toBuy
+     * @param  list<array{name: string, min: string, max: string}>  $adjustments  ce que l'automatique a changé cette semaine
+     * @param  list<string>  $sleeping  les produits au réassort qui ne se vendent plus
      */
     public function __construct(
         public readonly array $toBuy,
         public readonly ?BarRestocking $tripInProgress,
+        public readonly array $adjustments = [],
+        public readonly array $sleeping = [],
     ) {}
 
     /** @return array<string, mixed> */
@@ -39,7 +46,9 @@ class BarRestockingDigestNotification extends Notification
     {
         return [
             'title' => __('Bar shopping'),
-            'body' => trans_choice(':count product must be bought for the bar.|:count products must be bought for the bar.', count($this->toBuy), ['count' => count($this->toBuy)]),
+            'body' => $this->toBuy === []
+                ? __('The automatic restocking adjusted some settings this week.')
+                : trans_choice(':count product must be bought for the bar.|:count products must be bought for the bar.', count($this->toBuy), ['count' => count($this->toBuy)]),
             'url' => route('bar.restocking.index'),
             'category' => 'bar',
             'icon' => 'o-shopping-cart',
@@ -49,7 +58,9 @@ class BarRestockingDigestNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject(trans_choice('Bar — :count product to buy|Bar — :count products to buy', count($this->toBuy), ['count' => count($this->toBuy)]))
+            ->subject($this->toBuy === []
+                ? __('Bar — restocking settings adjusted')
+                : trans_choice('Bar — :count product to buy|Bar — :count products to buy', count($this->toBuy), ['count' => count($this->toBuy)]))
             ->markdown('mail.bar.restocking-digest', [
                 'notifiable' => $notifiable,
                 'lines' => array_map(fn (array $line): array => [
@@ -62,6 +73,8 @@ class BarRestockingDigestNotification extends Notification
                     'name' => $this->tripInProgress->shopper->full_name,
                     'date' => $this->tripInProgress->started_at->translatedFormat('l j F'),
                 ]),
+                'adjustments' => $this->adjustments,
+                'sleeping' => $this->sleeping,
                 'url' => route('bar.restocking.index'),
             ]);
     }

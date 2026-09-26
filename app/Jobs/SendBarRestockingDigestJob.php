@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Domains\Bar\Models\BarRestocking;
+use App\Domains\Bar\Models\BarRestockingAdjustment;
 use App\Domains\Bar\Notifications\BarRestockingDigestNotification;
+use App\Domains\Bar\Services\RestockingDigest;
 use App\Domains\Bar\Services\RestockingList;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Jobs\Concerns\RetriesWhileRateLimited;
@@ -15,7 +17,8 @@ use Illuminate\Queue\Middleware\RateLimited;
 
 /**
  * Mails one store keeper the bar's shopping list. The list is computed here,
- * not in the command: a bar filled while the queue drained sends nothing.
+ * not in the command: a bar filled while the queue drained sends nothing,
+ * unless the automatic restocking moved something this week.
  */
 class SendBarRestockingDigestJob implements ShouldQueue
 {
@@ -23,7 +26,7 @@ class SendBarRestockingDigestJob implements ShouldQueue
 
     public function __construct(public int $userId) {}
 
-    public function handle(RestockingList $restockingList): void
+    public function handle(RestockingList $restockingList, RestockingDigest $digest): void
     {
         $user = User::find($this->userId);
 
@@ -32,12 +35,22 @@ class SendBarRestockingDigestJob implements ShouldQueue
         }
 
         $toBuy = $restockingList->current()['to_buy'];
+        $adjustments = $digest->adjustmentsOfTheWeek();
 
-        if ($toBuy === []) {
+        if ($toBuy === [] && $adjustments->isEmpty()) {
             return;
         }
 
-        $user->notify(new BarRestockingDigestNotification($toBuy, BarRestocking::inProgress()?->load('shopper')));
+        $user->notify(new BarRestockingDigestNotification(
+            $toBuy,
+            BarRestocking::inProgress()?->load('shopper'),
+            $adjustments->map(fn (BarRestockingAdjustment $adjustment): array => [
+                'name' => $adjustment->product->name,
+                'min' => ($adjustment->old_min ?? '—') . ' → ' . $adjustment->new_min,
+                'max' => ($adjustment->old_max ?? '—') . ' → ' . $adjustment->new_max,
+            ])->values()->all(),
+            $digest->sleepingProducts()->pluck('name')->values()->all(),
+        ));
     }
 
     /**

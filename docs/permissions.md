@@ -20,7 +20,7 @@ Trois familles cohabitent, et une seule décide :
 
 Accès sans restriction à toute l'application.
 
-Détient les 70 permissions. Accordées explicitement plutôt que
+Détient les 72 permissions. Accordées explicitement plutôt que
 par un court-circuit `Gate::before`, car certaines policies encodent des règles qui
 doivent survivre à un administrateur — il ne peut toujours pas supprimer son propre
 compte.
@@ -43,6 +43,7 @@ Accès de base au back-office : consulter les données du club sans les gérer.
 - `meetings.view`
 - `seasons.view`
 - `facilities.view`
+- `bar.stats.view`
 
 ---
 
@@ -172,6 +173,8 @@ Gérer le stock, les produits et les catégories.
 - `bar.categories.manage`
 - `bar.products.manage`
 - `bar.stock.manage`
+- `bar.restocking.shop`
+- `bar.stats.view`
 
 ### Supervision technique — `supervision`
 

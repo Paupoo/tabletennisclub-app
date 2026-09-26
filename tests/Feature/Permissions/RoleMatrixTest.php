@@ -74,6 +74,7 @@ describe('the committee reads the club', function (): void {
                 'meetings.view',
                 'seasons.view',
                 'facilities.view',
+                'bar.stats.view',
             ]);
     });
 
@@ -89,6 +90,15 @@ describe('what a délégation actually grants', function (): void {
 
         expect(Role::STORE_KEEPER->permissions())
             ->toContain(Permission::BarAccess);
+    });
+
+    it('sends the store keeper shopping, and lets them read what sells', function (): void {
+        expect(Role::STORE_KEEPER->permissions())
+            ->toContain(Permission::BarRestockingShop)
+            ->toContain(Permission::BarStatsView);
+
+        expect(Role::BARMAN->permissions())
+            ->not->toContain(Permission::BarRestockingShop);
     });
 
     it('grants the treasury delegate the treasury, and nothing else', function (): void {

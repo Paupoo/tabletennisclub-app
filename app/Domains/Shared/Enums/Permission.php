@@ -40,6 +40,8 @@ enum Permission: string
     case BarOrdersPay = 'bar.orders.pay';
     case BarOrdersTakeover = 'bar.orders.takeover';
     case BarProductsManage = 'bar.products.manage';
+    case BarRestockingShop = 'bar.restocking.shop';
+    case BarStatsView = 'bar.stats.view';
     case BarStockManage = 'bar.stock.manage';
     case CashRegisterEntryCreate = 'cash_register.entry.create';
     case CashRegisterHolderChange = 'cash_register.holder.change';

@@ -250,6 +250,7 @@ enum Role: string
                 Permission::MeetingsView,
                 Permission::SeasonsView,
                 Permission::FacilitiesView,
+                Permission::BarStatsView,
             ],
 
             self::TREASURY => [
@@ -361,6 +362,8 @@ enum Role: string
                 Permission::BarCategoriesManage,
                 Permission::BarProductsManage,
                 Permission::BarStockManage,
+                Permission::BarRestockingShop,
+                Permission::BarStatsView,
             ],
             self::FACILITIES => [
                 Permission::FacilitiesView,

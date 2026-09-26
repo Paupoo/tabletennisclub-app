@@ -198,6 +198,15 @@
             <x-input :label="__('Price')" wire:model="price" suffix="€" inputmode="decimal"
                 :hint="__('Comma or dot, two decimals at most.')" required />
 
+            {{-- Comment on l'achète : la liste de courses compte en conditionnements,
+            pour que personne n'ait à convertir des unités au milieu du rayon. --}}
+            <div class="grid grid-cols-2 gap-3">
+                <x-input :label="__('Bought by')" wire:model="packSize" type="number" min="1"
+                    inputmode="numeric" :suffix="__('units')" required />
+                <x-input :label="__('Purchase pack')" wire:model="packLabel"
+                    :placeholder="__('crate, pack…')" />
+            </div>
+
             <x-slot:actions>
                 <x-button :label="__('Cancel')" wire:click="$set('drawer', false)" type="button" />
                 <x-button :label="__('Save')" type="submit" class="btn-primary" spinner="save" />

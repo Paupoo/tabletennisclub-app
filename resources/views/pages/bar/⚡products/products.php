@@ -70,6 +70,10 @@ new class extends Component
     #[Url]
     public string $order = 'category';
 
+    public string $packLabel = '';
+
+    public string $packSize = '1';
+
     public string $price = '';
 
     public string $search = '';
@@ -99,6 +103,8 @@ new class extends Component
         $this->editingId = null;
         $this->name = '';
         $this->price = '';
+        $this->packSize = '1';
+        $this->packLabel = '';
         $this->categoryId = BarCategory::query()->orderBy('name')->value('id');
         $this->resetValidation();
         $this->drawer = true;
@@ -112,6 +118,8 @@ new class extends Component
         $this->name = $product->name;
         $this->price = number_format($product->sale_price / 100, 2, ',', '');
         $this->categoryId = $product->category_id;
+        $this->packSize = (string) $product->pack_size;
+        $this->packLabel = (string) $product->pack_label;
         $this->resetValidation();
         $this->drawer = true;
     }
@@ -130,12 +138,16 @@ new class extends Component
             ],
             'price' => ['required', 'string', 'regex:/^\d+(?:[\.,]\d{1,2})?$/'],
             'categoryId' => ['required', 'exists:bar_categories,id'],
+            'packSize' => ['required', 'integer', 'min:1', 'max:1000'],
+            'packLabel' => ['nullable', 'string', 'max:30'],
         ]);
 
         $payload = [
             'name' => $validated['name'],
             'sale_price' => cents($validated['price']),
             'category_id' => (int) $validated['categoryId'],
+            'pack_size' => (int) $validated['packSize'],
+            'pack_label' => trim((string) $validated['packLabel']) ?: null,
         ];
 
         if ($this->editingId === null) {

@@ -54,3 +54,30 @@ it('shows the restocking target next to the stock on the products screen', funct
         ->assertSeeHtml('aria-label="' . e(__('Restocking target for :product', ['product' => 'Jupiler 25 cl'])) . '"')
         ->assertSeeHtml('value="48"');
 });
+
+it('records how a product is bought, one unit when nobody says otherwise', function (): void {
+    expect($this->jupiler->fresh()->pack_size)->toBe(1);
+
+    Livewire::actingAs($this->storeKeeper)
+        ->test('pages::bar.products')
+        ->call('openProduct', $this->jupiler->id)
+        ->set('packSize', '24')
+        ->set('packLabel', 'casier')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($this->jupiler->fresh())
+        ->pack_size->toBe(24)
+        ->pack_label->toBe('casier');
+});
+
+it('refuses a pack of no unit', function (): void {
+    Livewire::actingAs($this->storeKeeper)
+        ->test('pages::bar.products')
+        ->call('openProduct', $this->jupiler->id)
+        ->set('packSize', '0')
+        ->call('save')
+        ->assertHasErrors('packSize');
+
+    expect($this->jupiler->fresh()->pack_size)->toBe(1);
+});

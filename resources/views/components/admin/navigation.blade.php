@@ -217,6 +217,9 @@
         @can('bar.cash_sheet.send')
         <x-menu-item icon="o-document-chart-bar" link="{{ route('bar.cashSheet.index') }}" :title="__('Cash sheet')" />
         @endcan
+        @can('bar.restocking.shop')
+        <x-menu-item icon="o-shopping-cart" link="{{ route('bar.restocking.index') }}" :title="__('Shopping')" />
+        @endcan
         @can('bar.stats.view')
         <x-menu-item icon="o-chart-bar" link="{{ route('bar.stats.index') }}" :title="__('Sales')" />
         @endcan

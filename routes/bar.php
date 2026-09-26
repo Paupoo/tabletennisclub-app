@@ -109,6 +109,15 @@ Route::prefix('products')->middleware('can:bar.products.manage')->name('products
 
 /*
 |--------------------------------------------------------------------------
+| Restocking — les courses
+|--------------------------------------------------------------------------
+*/
+Route::livewire('/restocking', 'pages::bar.restocking')
+    ->middleware('can:bar.restocking.shop')
+    ->name('restocking.index');
+
+/*
+|--------------------------------------------------------------------------
 | Sales — l'écran du comité
 |--------------------------------------------------------------------------
 */

@@ -17,7 +17,8 @@ use Illuminate\Support\Collection;
  *
  * La moyenne se prend sur les dernières semaines où le bar a vendu quelque
  * chose, pas sur les dernières semaines du calendrier : juillet et août fermés
- * diviseraient sinon les ventes de septembre par deux. Un offert compte, il vide
+ * diviseraient sinon les ventes de septembre par deux. Elle est pondérée — les
+ * semaines récentes comptent davantage — pour qu'une tendance se suive. Un offert compte, il vide
  * le frigo autant qu'une vente ; une ardoise encore ouverte ne compte pas.
  *
  * Pas d'arrondi au conditionnement : il se fait au moment d'acheter, et arrondir
@@ -25,6 +26,14 @@ use Illuminate\Support\Collection;
  */
 class RestockingSuggestions
 {
+    /**
+     * Toutes les combien de semaines actives le poids d'une semaine est divisé par deux.
+     *
+     * Une vraie hausse se voit en deux ou trois semaines ; un vendredi exceptionnel,
+     * noyé dans les onze autres, ne fait pas bondir le max.
+     */
+    public const int HALF_LIFE_WEEKS = 4;
+
     /** … et le max trois : environ deux semaines entre deux tournées. */
     public const int MAX_WEEKS = 3;
 
@@ -49,17 +58,23 @@ class RestockingSuggestions
     {
         $sales = $this->paidSalesOfLastYear();
 
-        $activeWeeks = $sales->pluck('week')->unique()->sortDesc()->take(self::WEEKS_OBSERVED);
+        $activeWeeks = $sales->pluck('week')->unique()->sortDesc()->take(self::WEEKS_OBSERVED)->values();
 
         if ($activeWeeks->isEmpty()) {
             return [];
         }
 
+        // Le poids de chaque semaine active, la plus récente d'abord.
+        $weights = $activeWeeks->mapWithKeys(fn (string $week, int $age): array => [$week => 0.5 ** ($age / self::HALF_LIFE_WEEKS)]);
+        $totalWeight = $weights->sum();
+
         return $sales
             ->whereIn('week', $activeWeeks->all())
             ->groupBy('product_id')
-            ->map(function (Collection $rows) use ($activeWeeks): array {
-                $weekly = $rows->sum('quantity') / $activeWeeks->count();
+            ->map(function (Collection $rows) use ($weights, $totalWeight): array {
+                // Arrondi au centième : 8 unités par semaine ne doivent pas devenir
+                // 8,000000001 et un max de 25 au lieu de 24.
+                $weekly = round($rows->sum(fn (array $row): float => $row['quantity'] * $weights[$row['week']]) / $totalWeight, 2);
 
                 return [
                     'min' => (int) ceil($weekly * self::MIN_WEEKS),

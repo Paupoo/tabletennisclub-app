@@ -15,7 +15,9 @@ use Illuminate\Support\Carbon;
 |
 | Min ≈ une semaine de ventes, max ≈ trois, sur les douze dernières semaines où
 | le bar a vendu quelque chose : l'été et les vacances ne doivent pas faire
-| chuter les moyennes. Un offert compte comme une vente — il vide le frigo tout
+| chuter les moyennes. La moyenne est pondérée : le poids d'une semaine est
+| divisé par deux toutes les quatre semaines actives, pour suivre une tendance
+| sans s'affoler d'une soirée (décidé le 2026-09-27). Un offert compte comme une vente — il vide le frigo tout
 | autant ; une ardoise encore ouverte ne compte pas.
 |
 */
@@ -65,10 +67,11 @@ it('suggests one week of sales as min and three as max, over the weeks the bar s
 
     $suggestions = app(RestockingSuggestions::class)->all();
 
-    // Jupiler : 42 en 3 semaines = 14 par semaine.
+    // Poids des semaines actives, de la plus récente : 1 ; 0,841 ; 0,707 (Σ 2,548).
+    // Jupiler : (10 + 20 × 0,841 + 12 × 0,707) / 2,548 = 13,86 par semaine.
     expect($suggestions[$this->jupiler->id])->toBe(['min' => 14, 'max' => 42]);
-    // Coca : 5 en 3 semaines = 1,67 par semaine, arrondi au-dessus.
-    expect($suggestions[$this->coca->id])->toBe(['min' => 2, 'max' => 5]);
+    // Coca : 5 / 2,548 = 1,96 par semaine, arrondi au-dessus.
+    expect($suggestions[$this->coca->id])->toBe(['min' => 2, 'max' => 6]);
 });
 
 it('counts what was offered and leaves out a tab still open', function (): void {
@@ -96,4 +99,18 @@ it('suggests nothing for a product that never sold', function (): void {
     restockingSuggestionsSale('2026-09-18 21:00', [[$this->coca, 4]]);
 
     expect(app(RestockingSuggestions::class)->all())->not->toHaveKey($this->jupiler->id);
+});
+
+it('follows a rising product faster than a plain average would', function (): void {
+    // Huit vendredis d'affilée : 4 Coca par semaine, puis 10 les quatre dernières.
+    foreach (range(0, 7) as $weeksAgo) {
+        restockingSuggestionsSale(
+            Carbon::parse('2026-09-18 21:00')->subWeeks($weeksAgo)->toDateTimeString(),
+            [[$this->coca, $weeksAgo < 4 ? 10 : 4]],
+        );
+    }
+
+    // Les quatre semaines anciennes pèsent la moitié des quatre récentes :
+    // (10 × 2 + 4 × 1) / 3 = 8 par semaine, là où la moyenne simple dirait 7.
+    expect(app(RestockingSuggestions::class)->all()[$this->coca->id])->toBe(['min' => 8, 'max' => 24]);
 });

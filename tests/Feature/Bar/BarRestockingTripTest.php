@@ -113,3 +113,21 @@ it('keeps a single trip at a time', function (): void {
     expect(BarRestocking::query()->count())->toBe(1)
         ->and(BarRestocking::inProgress()->shopper_id)->toBe($this->shopper->id);
 });
+
+it('remembers what is already in the cart, and only for the one shopping', function (): void {
+    Livewire::actingAs($this->shopper)->test('pages::bar.restocking')->call('start');
+    $line = BarRestocking::inProgress()->lines->firstWhere('product_id', $this->jupiler->id);
+
+    Livewire::actingAs($this->shopper)
+        ->test('pages::bar.restocking')
+        ->call('toggleInCart', $line->id, true);
+
+    expect($line->fresh()->in_cart)->toBeTrue();
+
+    // Un autre ne coche pas dans le caddie de quelqu'un : il reprend d'abord la tournée.
+    Livewire::actingAs(User::factory()->withRole(Role::STORE_KEEPER)->create())
+        ->test('pages::bar.restocking')
+        ->call('toggleInCart', $line->id, false);
+
+    expect($line->fresh()->in_cart)->toBeTrue();
+});

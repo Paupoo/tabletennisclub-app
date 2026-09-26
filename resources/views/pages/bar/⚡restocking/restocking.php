@@ -53,6 +53,24 @@ new class extends Component
         $this->success(__('The list is yours. Good shopping!'));
     }
 
+    /**
+     * Cocher ou décocher une ligne « dans le caddie ».
+     *
+     * Enregistré tout de suite : la case doit survivre à un rechargement ou à une
+     * coupure de réseau au milieu du rayon. Seul celui qui tient la tournée coche —
+     * un autre la reprend d'abord.
+     */
+    public function toggleInCart(int $lineId, bool $inCart): void
+    {
+        $line = BarRestockingLine::query()->with('restocking')->findOrFail($lineId);
+
+        if (! $line->restocking->isInProgress() || $line->restocking->shopper_id !== auth()->id()) {
+            return;
+        }
+
+        $line->update(['in_cart' => $inCart]);
+    }
+
     public function with(RestockingList $restockingList): array
     {
         $trip = BarRestocking::inProgress()?->load(['shopper', 'lines.product.category']);

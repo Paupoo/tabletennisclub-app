@@ -4943,6 +4943,7 @@
     ":units units · stock :stock / max :max": ":units unités · stock :stock / max :max",
     "Someone is already doing the shopping.": "Quelqu'un fait déjà les courses.",
     "The list is yours. Good shopping!": "La liste est à vous. Bonnes courses !",
+    "In the cart: :product": "Dans le caddie : :product",
     "Bought by": "S'achète par",
     "units": "unités",
     "Purchase pack": "Conditionnement",

@@ -4943,6 +4943,7 @@
     ":units units · stock :stock / max :max": ":units stuks · voorraad :stock / max :max",
     "Someone is already doing the shopping.": "Iemand doet al de boodschappen.",
     "The list is yours. Good shopping!": "De lijst is van jou. Veel succes!",
+    "In the cart: :product": "In de winkelwagen: :product",
     "Bought by": "Aankoop per",
     "units": "stuks",
     "Purchase pack": "Verpakking",

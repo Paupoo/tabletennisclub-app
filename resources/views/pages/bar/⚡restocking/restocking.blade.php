@@ -31,7 +31,17 @@
                             <ul class="divide-base-300 divide-y">
                                 @foreach ($lines as $line)
                                     <li class="flex items-center gap-3 px-2 py-2" wire:key="line-{{ $section }}-{{ $line['name'] }}">
-                                        <div class="min-w-0 flex-1">
+                                        @if ($isMine)
+                                            {{-- La case entière est la cible : un pouce, un caddie. --}}
+                                            <label class="tap-comfort cursor-pointer">
+                                                <input type="checkbox" class="checkbox checkbox-primary"
+                                                    wire:key="cart-{{ $line['line_id'] }}"
+                                                    @checked($line['in_cart'])
+                                                    wire:change="toggleInCart({{ $line['line_id'] }}, $event.target.checked)"
+                                                    aria-label="{{ __('In the cart: :product', ['product' => $line['name']]) }}">
+                                            </label>
+                                        @endif
+                                        <div @class(['min-w-0 flex-1', 'opacity-50 line-through' => $line['in_cart']])>
                                             <p class="truncate text-base font-semibold">{{ $line['name'] }}</p>
                                             <p class="text-subtle text-xs tabular-nums">
                                                 {{ __(':units units · stock :stock / max :max', ['units' => $line['units'], 'stock' => $line['stock'], 'max' => $line['max']]) }}

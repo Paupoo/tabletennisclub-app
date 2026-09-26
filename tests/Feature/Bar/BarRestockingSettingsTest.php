@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\Bar\Models\BarProduct;
+use App\Domains\Bar\Services\BarRestockingSettings;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
@@ -135,4 +136,90 @@ it('applies every suggestion at once, to the products nobody has set yet', funct
     expect($coca->fresh())
         ->low_stock_threshold->toBe(5)
         ->max_stock->toBe(30);
+});
+
+/**
+ * Le titre du toast Mary émis par le dernier appel : Mary le pousse en JS dans
+ * l'effet `xjs`, jamais dans le HTML.
+ */
+function barRestockingToastTitle(object $component): string
+{
+    foreach ($component->effects['xjs'] ?? [] as $effect) {
+        if (preg_match('/^toast\((.*)\)$/s', (string) ($effect['expression'] ?? ''), $matches) === 1) {
+            return json_decode($matches[1], true)['toast']['title'] ?? '';
+        }
+    }
+
+    return '';
+}
+
+it('turns an automatic product manual when someone corrects it by hand, and says so', function (): void {
+    $this->jupiler->update(['low_stock_threshold' => 12, 'max_stock' => 48, 'restocking_mode' => 'auto']);
+
+    $component = Livewire::actingAs($this->storeKeeper)
+        ->test('pages::bar.products')
+        ->call('updateMaxStock', $this->jupiler->id, '60');
+
+    expect(barRestockingToastTitle($component))
+        ->toBe(__(':product is now manual: the automatic restocking leaves it alone.', ['product' => 'Jupiler 25 cl']));
+
+    expect($this->jupiler->fresh())
+        ->max_stock->toBe(60)
+        ->restocking_mode->toBe('manual');
+});
+
+it('marks the automatic products in the table', function (): void {
+    $this->jupiler->update(['max_stock' => 48, 'restocking_mode' => 'auto']);
+
+    Livewire::actingAs($this->storeKeeper)
+        ->test('pages::bar.products')
+        ->assertSeeHtml('data-restocking="auto"');
+});
+
+it('sets how a product is restocked from its drawer: mode, own coverage and cap', function (): void {
+    Livewire::actingAs($this->storeKeeper)
+        ->test('pages::bar.products')
+        ->call('openProduct', $this->jupiler->id)
+        ->set('restockingMode', 'auto')
+        ->set('restockingWeeks', '1')
+        ->set('restockingCap', '72')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($this->jupiler->fresh())
+        ->restocking_mode->toBe('auto')
+        ->restocking_weeks->toBe(1)
+        ->restocking_cap->toBe(72);
+
+    Livewire::actingAs($this->storeKeeper)
+        ->test('pages::bar.products')
+        ->call('openProduct', $this->jupiler->id)
+        ->set('restockingMode', '')
+        ->set('restockingWeeks', '')
+        ->set('restockingCap', '')
+        ->call('save');
+
+    expect($this->jupiler->fresh())
+        ->restocking_mode->toBeNull()
+        ->restocking_weeks->toBeNull()
+        ->restocking_cap->toBeNull();
+});
+
+it('switches the whole bar to automatic and sets its coverage', function (): void {
+    Livewire::actingAs($this->storeKeeper)
+        ->test('pages::bar.products')
+        ->call('openRestockingSettings')
+        ->assertSet('restockingAutomatic', false)
+        ->assertSet('coverageMinWeeks', '1')
+        ->assertSet('coverageMaxWeeks', '3')
+        ->set('restockingAutomatic', true)
+        ->set('coverageMinWeeks', '2')
+        ->set('coverageMaxWeeks', '4')
+        ->call('saveRestockingSettings')
+        ->assertHasNoErrors();
+
+    $settings = app(BarRestockingSettings::class);
+    expect($settings->isAutomatic())->toBeTrue()
+        ->and($settings->minWeeks())->toBe(2)
+        ->and($settings->maxWeeks())->toBe(4);
 });

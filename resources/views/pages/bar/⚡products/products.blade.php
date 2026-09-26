@@ -13,6 +13,10 @@
                     :label="__('Apply suggestions (:count)', ['count' => $unsetWithSuggestionCount])"
                     wire:click="applyAllSuggestions" spinner="applyAllSuggestions" />
             @endif
+            @can('bar.stock.manage')
+                <x-button class="btn-ghost btn-sm" icon="o-cog-6-tooth" :label="__('Restocking settings')"
+                    wire:click="openRestockingSettings" />
+            @endcan
             <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Add')" wire:click="openCreate" />
         </x-slot:actions>
     </x-header>
@@ -104,7 +108,7 @@
                             `lg` et restent atteignables par le tiroir. Voir DESIGN.md.
                         --}}
                         <x-table :headers="$headers" :rows="$group['products']" class="table-sm">
-                            @scope('cell_name', $product)
+                            @scope('cell_name', $product, $automaticIds)
                                 {{-- Le nom est la porte du tiroir : c'est la cible la plus
                                 large de la ligne, et elle n'a besoin d'aucune icône pour
                                 s'annoncer puisqu'elle porte déjà le nom du produit. --}}
@@ -112,6 +116,10 @@
                                     wire:click="openProduct({{ $product->id }})"
                                     class="tap-comfort -mx-2 flex w-full min-w-0 justify-start gap-2 rounded-lg px-2 text-start font-medium hover:underline">
                                     <span class="truncate">{{ $product->name }}</span>
+                                    @if (isset($automaticIds[$product->id]))
+                                        <span data-restocking="auto" class="badge badge-info badge-soft badge-xs shrink-0"
+                                            title="{{ __('Min and max set by the automatic restocking') }}">{{ __('Auto') }}</span>
+                                    @endif
                                     @unless ($product->is_available)
                                         <x-icon name="o-eye-slash" class="text-base-content/50 h-4 w-4 shrink-0"
                                             :title="__('Off menu')" />
@@ -228,6 +236,27 @@
                     :placeholder="__('crate, pack…')" />
             </div>
 
+            {{-- Comment ce produit se réassortit : suivre le bar, ou s'en écarter.
+            Le plafond et la couverture propre ne servent qu'au calcul : ils bornent
+            ce que l'automatique et les suggestions proposent. --}}
+            <x-select :label="__('Restocking')" wire:model="restockingMode" :options="[
+                ['id' => '', 'name' => __('Follow the bar setting')],
+                ['id' => 'auto', 'name' => __('Always automatic')],
+                ['id' => 'manual', 'name' => __('Always manual')],
+            ]" />
+            <div class="grid grid-cols-2 gap-3">
+                <x-input :label="__('Own coverage')" wire:model="restockingWeeks" type="number" min="1" max="12"
+                    inputmode="numeric" :suffix="__('weeks')" :hint="__('Fewer weeks for a perishable product.')" />
+                <x-input :label="__('Cap')" wire:model="restockingCap" type="number" min="0"
+                    inputmode="numeric" :hint="__('The max never goes above, e.g. fridge space.')" />
+            </div>
+            @php
+                $adjustedAt = $editingId ? \App\Domains\Bar\Models\BarProduct::query()->whereKey($editingId)->value('restocking_adjusted_at') : null;
+            @endphp
+            @if ($adjustedAt)
+                <p class="text-subtle text-xs">{{ __('Last automatic adjustment: :date', ['date' => \Illuminate\Support\Carbon::parse($adjustedAt)->format('d/m/Y')]) }}</p>
+            @endif
+
             <x-slot:actions>
                 <x-button :label="__('Cancel')" wire:click="$set('drawer', false)" type="button" />
                 <x-button :label="__('Save')" type="submit" class="btn-primary" spinner="save" />
@@ -251,6 +280,30 @@
                 </p>
             </div>
         @endif
+    </x-drawer>
+
+    {{-- Les réglages du réassort pour tout le bar. L'automatique part éteint : le
+    comité l'allume quand il a vu ce qu'il ferait, et chaque produit peut s'en
+    écarter depuis son tiroir. --}}
+    <x-drawer wire:model="restockingSettingsDrawer" right with-close-button class="w-full max-w-sm"
+        :title="__('Restocking settings')">
+        <x-form wire:submit="saveRestockingSettings">
+            <x-toggle :label="__('Automatic restocking')" wire:model="restockingAutomatic"
+                :hint="__('Every Friday at 6:05, the products in restocking take the min and max their sales suggest. A product corrected by hand becomes manual.')" />
+
+            <div class="grid grid-cols-2 gap-3">
+                <x-input :label="__('Min coverage')" wire:model="coverageMinWeeks" type="number" min="1" max="12"
+                    inputmode="numeric" :suffix="__('weeks')" />
+                <x-input :label="__('Max coverage')" wire:model="coverageMaxWeeks" type="number" min="1" max="12"
+                    inputmode="numeric" :suffix="__('weeks')" />
+            </div>
+            <p class="text-subtle text-xs">{{ __('How many weeks of sales the min and the max hold. The suggestions use them too.') }}</p>
+
+            <x-slot:actions>
+                <x-button :label="__('Cancel')" wire:click="$set('restockingSettingsDrawer', false)" type="button" />
+                <x-button :label="__('Save')" type="submit" class="btn-primary" spinner="saveRestockingSettings" />
+            </x-slot:actions>
+        </x-form>
     </x-drawer>
 
     <x-confirm-modal model="deleteModal" :title="__('Delete this product permanently?')"

@@ -167,6 +167,9 @@ describe('fetching the export', function (): void {
     });
 
     it('says the export has expired after seven days', function (): void {
+        // Debug mode renders the exception page, which prints the message whatever
+        // the error views hold: the test must see the page production serves.
+        config(['app.debug' => false]);
         $report = exportablePaidReport('Balles');
         $requester = User::factory()->isCommitteeMember()->create();
         $export = runExpenseReportExport($requester, 'pdf', [$report->id]);

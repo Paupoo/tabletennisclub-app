@@ -47,15 +47,15 @@ class BarSalesReport
         $previous = $this->salesBetween($start->copy()->subDays($days), $start);
 
         $rows = BarProduct::query()->with('category')->get()->map(function (BarProduct $product) use ($current, $previous, $days): array {
-            $units = (int) ($current[$product->id]->units ?? 0);
-            $previousUnits = (int) ($previous[$product->id]->units ?? 0);
+            $units = $current[$product->id]['units'] ?? 0;
+            $previousUnits = $previous[$product->id]['units'] ?? 0;
 
             return [
                 'id' => $product->id,
                 'name' => $product->name,
                 'category' => $product->category->name,
                 'units' => $units,
-                'revenue' => (int) ($current[$product->id]->revenue ?? 0),
+                'revenue' => $current[$product->id]['revenue'] ?? 0,
                 'weekly' => round($units / $days * 7, 1),
                 'previous_units' => $previousUnits,
                 'change' => $previousUnits === 0 ? null : (int) round(($units - $previousUnits) / $previousUnits * 100),
@@ -82,11 +82,16 @@ class BarSalesReport
     /**
      * Unités et chiffre d'affaires par produit, commandes réglées seulement.
      *
-     * @return Collection<int, object{units: int|string, revenue: int|string}>
+     * Les sommes arrivent en chaînes sous MySQL : elles sont remises en entiers ici,
+     * une fois, plutôt qu'à chaque lecture.
+     *
+     * @return array<int, array{units: int, revenue: int}>
      */
-    private function salesBetween(CarbonInterface $start, CarbonInterface $end): Collection
+    private function salesBetween(CarbonInterface $start, CarbonInterface $end): array
     {
-        return BarOrderItem::query()
+        $sales = [];
+
+        BarOrderItem::query()
             ->join('bar_orders', 'bar_orders.id', '=', 'bar_order_items.order_id')
             ->where('bar_orders.is_paid', 1)
             ->where('bar_orders.created_at', '>=', $start)
@@ -98,6 +103,10 @@ class BarSalesReport
                 DB::raw('SUM(bar_order_items.quantity) as units'),
                 DB::raw('SUM(bar_order_items.total_price) as revenue'),
             ])
-            ->keyBy('product_id');
+            ->each(function (object $row) use (&$sales): void {
+                $sales[(int) $row->product_id] = ['units' => (int) $row->units, 'revenue' => (int) $row->revenue];
+            });
+
+        return $sales;
     }
 }

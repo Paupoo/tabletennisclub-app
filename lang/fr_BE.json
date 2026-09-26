@@ -4921,6 +4921,8 @@
     "Apply suggestions (:count)": "Reprendre les suggestions (:count)",
     "{0} No suggestion to apply.|{1} Suggestion applied to one product.|[2,*] Suggestions applied to :count products.": "{0} Aucune suggestion à reprendre.|{1} Suggestion reprise pour un produit.|[2,*] Suggestions reprises pour :count produits.",
     "Suggestion applied.": "Suggestion reprise.",
+    "Bar sales": "Ventes du bar",
+    "What sells, what sleeps: a guide for the next purchases.": "Ce qui se vend, ce qui dort : de quoi guider les prochains achats.",
     "Bought by": "S'achète par",
     "units": "unités",
     "Purchase pack": "Conditionnement",

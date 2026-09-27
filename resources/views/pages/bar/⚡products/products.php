@@ -68,6 +68,12 @@ new class extends Component
     /** Produit ouvert dans le tiroir ; null = création. */
     public ?int $editingId = null;
 
+    /** Le max du produit dans le tiroir ; vide = hors réassort. */
+    public string $maxStock = '';
+
+    /** Le min (seuil d'alerte) du produit dans le tiroir ; vide = le défaut du bar. */
+    public string $minStock = '';
+
     public string $name = '';
 
     /**
@@ -174,6 +180,8 @@ new class extends Component
         $this->price = '';
         $this->packSize = '1';
         $this->packLabel = '';
+        $this->minStock = '';
+        $this->maxStock = '';
         $this->restockingMode = '';
         $this->restockingWeeks = '';
         $this->restockingCap = '';
@@ -192,6 +200,8 @@ new class extends Component
         $this->categoryId = $product->category_id;
         $this->packSize = (string) $product->pack_size;
         $this->packLabel = (string) $product->pack_label;
+        $this->minStock = (string) $product->low_stock_threshold;
+        $this->maxStock = (string) $product->max_stock;
         $this->restockingMode = (string) $product->restocking_mode;
         $this->restockingWeeks = (string) $product->restocking_weeks;
         $this->restockingCap = (string) $product->restocking_cap;
@@ -213,7 +223,7 @@ new class extends Component
         return $this->view();
     }
 
-    public function save(): void
+    public function save(RestockingAutomation $automation): void
     {
         $validated = $this->validate([
             'name' => [
@@ -227,6 +237,8 @@ new class extends Component
             'restockingMode' => ['nullable', Rule::in(['auto', 'manual'])],
             'restockingWeeks' => ['nullable', 'integer', 'min:1', 'max:12'],
             'restockingCap' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'minStock' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'maxStock' => ['nullable', 'integer', 'min:0', 'max:9999'],
         ]);
 
         $payload = [
@@ -238,6 +250,8 @@ new class extends Component
             'restocking_mode' => ($validated['restockingMode'] ?? '') ?: null,
             'restocking_weeks' => filled($validated['restockingWeeks'] ?? null) ? (int) $validated['restockingWeeks'] : null,
             'restocking_cap' => filled($validated['restockingCap'] ?? null) ? (int) $validated['restockingCap'] : null,
+            'low_stock_threshold' => filled($validated['minStock'] ?? null) ? (int) $validated['minStock'] : null,
+            'max_stock' => filled($validated['maxStock'] ?? null) ? (int) $validated['maxStock'] : null,
         ];
 
         if ($this->editingId === null) {
@@ -245,8 +259,18 @@ new class extends Component
             BarProduct::query()->create($payload);
             $this->success(__('Product created.'));
         } else {
-            BarProduct::query()->findOrFail($this->editingId)->update($payload);
-            $this->success(__('Product updated.'));
+            $product = BarProduct::query()->findOrFail($this->editingId)->fill($payload);
+
+            // Même règle que les champs du tableau : un min ou un max corrigé à la
+            // main sur un produit automatique le fait passer en manuel.
+            if ($product->isDirty(['low_stock_threshold', 'max_stock']) && $automation->isAutomatic($product)) {
+                $product->restocking_mode = 'manual';
+                $product->save();
+                $this->warning(__(':product is now manual: the automatic restocking leaves it alone.', ['product' => $product->name]));
+            } else {
+                $product->save();
+                $this->success(__('Product updated.'));
+            }
         }
 
         $this->drawer = false;

@@ -223,3 +223,46 @@ it('switches the whole bar to automatic and sets its coverage', function (): voi
         ->and($settings->minWeeks())->toBe(2)
         ->and($settings->maxWeeks())->toBe(4);
 });
+
+it('sets the min and max from the drawer, where a phone reaches them', function (): void {
+    $this->jupiler->update(['low_stock_threshold' => 12, 'max_stock' => 48]);
+
+    Livewire::actingAs($this->storeKeeper)
+        ->test('pages::bar.products')
+        ->call('openProduct', $this->jupiler->id)
+        ->assertSet('minStock', '12')
+        ->assertSet('maxStock', '48')
+        ->set('minStock', '10')
+        ->set('maxStock', '')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($this->jupiler->fresh())
+        ->low_stock_threshold->toBe(10)
+        ->max_stock->toBeNull();
+});
+
+it('turns an automatic product manual when its drawer changes the min or max, and only then', function (): void {
+    $this->jupiler->update(['low_stock_threshold' => 12, 'max_stock' => 48, 'restocking_mode' => 'auto']);
+
+    Livewire::actingAs($this->storeKeeper)
+        ->test('pages::bar.products')
+        ->call('openProduct', $this->jupiler->id)
+        ->set('price', '2,50')
+        ->call('save');
+
+    expect($this->jupiler->fresh()->restocking_mode)->toBe('auto');
+
+    $component = Livewire::actingAs($this->storeKeeper)
+        ->test('pages::bar.products')
+        ->call('openProduct', $this->jupiler->id)
+        ->set('maxStock', '60')
+        ->call('save');
+
+    expect(barRestockingToastTitle($component))
+        ->toBe(__(':product is now manual: the automatic restocking leaves it alone.', ['product' => 'Jupiler 25 cl']));
+
+    expect($this->jupiler->fresh())
+        ->max_stock->toBe(60)
+        ->restocking_mode->toBe('manual');
+});

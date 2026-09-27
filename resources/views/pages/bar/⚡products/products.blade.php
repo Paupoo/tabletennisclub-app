@@ -9,14 +9,29 @@
             {{-- Seulement les produits sans max : un réglage posé à la main n'est
             jamais écrasé en masse. Le bouton disparaît quand il n'a rien à faire. --}}
             @if ($unsetWithSuggestionCount > 0)
-                <x-button class="btn-ghost btn-sm" icon="o-sparkles"
+                <x-button class="btn-ghost btn-sm hidden lg:inline-flex" icon="o-sparkles"
                     :label="__('Apply suggestions (:count)', ['count' => $unsetWithSuggestionCount])"
                     wire:click="applyAllSuggestions" spinner="applyAllSuggestions" />
             @endif
             @can('bar.stock.manage')
-                <x-button class="btn-ghost btn-sm" icon="o-cog-6-tooth" :label="__('Restocking settings')"
+                <x-button class="btn-ghost btn-sm hidden lg:inline-flex" icon="o-cog-6-tooth" :label="__('Restocking settings')"
                     wire:click="openRestockingSettings" />
             @endcan
+            {{-- Sur téléphone, trois boutons nommés sortent de l'écran : les deux
+            réglages passent dans un menu, « Ajouter » reste en vue. --}}
+            @if ($unsetWithSuggestionCount > 0 || auth()->user()->can('bar.stock.manage'))
+                <x-dropdown icon="o-ellipsis-vertical" right class="btn-ghost btn-sm lg:hidden" :title="__('More actions')">
+                    @if ($unsetWithSuggestionCount > 0)
+                        <x-menu-item icon="o-sparkles"
+                            :title="__('Apply suggestions (:count)', ['count' => $unsetWithSuggestionCount])"
+                            wire:click="applyAllSuggestions" />
+                    @endif
+                    @can('bar.stock.manage')
+                        <x-menu-item icon="o-cog-6-tooth" :title="__('Restocking settings')"
+                            wire:click="openRestockingSettings" />
+                    @endcan
+                </x-dropdown>
+            @endif
             <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Add')" wire:click="openCreate" />
         </x-slot:actions>
     </x-header>
@@ -30,7 +45,7 @@
         saurait pas le vider. Il reste donc visible au-dessus du contenu, et son
         libellé titre ce qui suit.
     --}}
-    <div class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+    <div class="mb-4 mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
         <span class="text-muted text-xs font-bold uppercase tracking-widest">{{ __('Order') }}</span>
 
         <div class="join">
@@ -128,7 +143,7 @@
                             @endscope
 
                             @scope('cell_price', $product)
-                                <span class="tabular-nums">{{ euros($product->sale_price) }}</span>
+                                <span class="whitespace-nowrap tabular-nums">{{ euros($product->sale_price) }}</span>
                             @endscope
 
                             @scope('cell_stock', $product)
@@ -235,6 +250,24 @@
                 <x-input :label="__('Purchase pack')" wire:model="packLabel"
                     :placeholder="__('crate, pack…')" />
             </div>
+
+            {{-- Le min et le max, aussi dans le tableau : sous `lg` leurs colonnes se
+            replient, et c'est ici seulement qu'un téléphone les atteint. --}}
+            <div class="grid grid-cols-2 gap-3">
+                <x-input :label="__('Min')" wire:model="minStock" type="number" min="0" inputmode="numeric" />
+                <x-input :label="__('Max')" wire:model="maxStock" type="number" min="0" inputmode="numeric" />
+            </div>
+            @php
+                $drawerSuggestion = $editingId ? ($suggestions[$editingId] ?? null) : null;
+            @endphp
+            @if ($drawerSuggestion !== null)
+                <button type="button"
+                    wire:click="$set('minStock', '{{ $drawerSuggestion['min'] }}'); $set('maxStock', '{{ $drawerSuggestion['max'] }}')"
+                    title="{{ __('Apply the suggestion') }}"
+                    class="text-subtle -mt-2 cursor-pointer justify-self-start text-xs tabular-nums hover:underline">
+                    {{ __('Suggested: :min – :max', $drawerSuggestion) }}
+                </button>
+            @endif
 
             {{-- Comment ce produit se réassortit : suivre le bar, ou s'en écarter.
             Le plafond et la couverture propre ne servent qu'au calcul : ils bornent

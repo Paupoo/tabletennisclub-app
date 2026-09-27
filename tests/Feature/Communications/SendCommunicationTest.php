@@ -182,7 +182,7 @@ it('keeps the communication and each address it went to', function (): void {
 it('marks an address the mail server kept refusing as failed', function (): void {
     $recipient = CommunicationRecipient::factory()->create(['status' => CommunicationRecipient::STATUS_PENDING, 'sent_at' => null]);
 
-    (new SendCommunicationJob($recipient->id))->failed(new RuntimeException('Connection refused'));
+    new SendCommunicationJob($recipient->id)->failed(new RuntimeException('Connection refused'));
 
     expect($recipient->fresh())
         ->status->toBe(CommunicationRecipient::STATUS_FAILED)

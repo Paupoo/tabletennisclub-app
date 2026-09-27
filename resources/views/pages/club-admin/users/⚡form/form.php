@@ -182,6 +182,17 @@ new class extends Component
     }
 
     /**
+     * Whether the visitor may write the délégations — manageAccess, plus an
+     * administrator on their own file, who picks their duties but never their
+     * seat, their title or their administrator flag.
+     */
+    #[Computed()]
+    public function canManageDelegations(): bool
+    {
+        return Gate::allows('manageDelegations', $this->user?->exists ? $this->user : new User);
+    }
+
+    /**
      * Whether the reserved délégations are within the visitor's reach.
      *
      * Rendered locked rather than hidden for everyone else: a duty missing from
@@ -583,7 +594,7 @@ new class extends Component
         // Null, not an empty AccessData: whoever may not hand out rights says
         // nothing about them rather than submitting what the form happens to
         // hold, so a payload forged past the markup writes nothing.
-        $access = $this->canManageAccess ? $this->accessData() : null;
+        $access = $this->canManageDelegations ? $this->accessData() : null;
 
         if ($this->user) {
             $this->handlePhotoUpload($this->user);

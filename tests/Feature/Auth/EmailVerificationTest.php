@@ -52,3 +52,12 @@ test('email verification screen can be rendered', function (): void {
 
     $response->assertStatus(200);
 });
+test('a verified member opening the verification prompt lands on the dashboard', function (): void {
+    $user = User::factory()->create([
+        'email_verified_at' => now(),
+    ]);
+
+    $response = $this->actingAs($user)->get('/verify-email');
+
+    $response->assertRedirect(route('dashboard'));
+});

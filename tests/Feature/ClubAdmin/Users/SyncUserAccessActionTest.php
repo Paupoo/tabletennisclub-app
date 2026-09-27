@@ -202,7 +202,7 @@ describe('anti-escalation, enforced by the writer itself', function (): void {
         expect($member->fresh()->getRoleNames()->all())->toBe([Role::BARMAN->value]);
     });
 
-    it('writes nothing on your own file, administrators included', function (): void {
+    it('never moves the administrator flag on your own file', function (): void {
         SyncUserAccessAction::handle(
             $this->admin,
             new AccessData(isAdmin: false, delegations: []),
@@ -210,6 +210,77 @@ describe('anti-escalation, enforced by the writer itself', function (): void {
         );
 
         expect($this->admin->fresh()->hasRole(Role::ADMINISTRATOR->value))->toBeTrue();
+    });
+
+    it('writes nothing on the own file of an access manager', function (): void {
+        SyncUserAccessAction::handle(
+            $this->accessManager,
+            new AccessData(delegations: [Role::TREASURY->value]),
+            $this->accessManager,
+        );
+
+        expect($this->accessManager->fresh()->getRoleNames()->all())->toBe([Role::ACCESS->value]);
+    });
+});
+
+describe('an administrator on their own file', function (): void {
+    it('picks their own délégations, the reserved ones included', function (): void {
+        $admin = User::factory()->isAdmin()->withRole(Role::BARMAN)->create();
+
+        SyncUserAccessAction::handle(
+            $admin,
+            new AccessData(isAdmin: true, delegations: [Role::COACH->value, Role::ACCESS->value]),
+            $admin,
+        );
+
+        expect($admin->fresh())
+            ->hasRole(Role::COACH->value)->toBeTrue()
+            ->hasRole(Role::ACCESS->value)->toBeTrue()
+            ->hasRole(Role::BARMAN->value)->toBeFalse()
+            ->hasRole(Role::ADMINISTRATOR->value)->toBeTrue();
+    });
+
+    it('moves neither the flag, nor the seat, nor the title', function (): void {
+        $seated = User::factory()->isAdmin()->isCommitteeMember()->create([
+            'committee_role' => CommitteeRolesEnum::TREASURER,
+        ]);
+        $unseated = User::factory()->isAdmin()->create();
+
+        SyncUserAccessAction::handle(
+            $seated,
+            new AccessData(isAdmin: false, isCommitteeMember: false, delegations: [Role::COACH->value]),
+            $seated,
+        );
+        SyncUserAccessAction::handle(
+            $unseated,
+            new AccessData(isAdmin: true, isCommitteeMember: true, committeeRole: CommitteeRolesEnum::PRESIDENT),
+            $unseated,
+        );
+
+        expect($seated->fresh())
+            ->hasRole(Role::ADMINISTRATOR->value)->toBeTrue()
+            ->hasRole(Role::COMMITTEE->value)->toBeTrue()
+            ->committee_role->toBe(CommitteeRolesEnum::TREASURER)
+            ->hasRole(Role::COACH->value)->toBeTrue();
+
+        expect($unseated->fresh())
+            ->hasRole(Role::COMMITTEE->value)->toBeFalse()
+            ->committee_role->toBeNull();
+    });
+
+    it('leaves a trace in the audit trail, caused by themselves', function (): void {
+        SyncUserAccessAction::handle(
+            $this->admin,
+            new AccessData(isAdmin: true, delegations: [Role::COACH->value]),
+            $this->admin,
+        );
+
+        $activity = Activity::query()->where('event', 'roles_changed')->latest('id')->first();
+
+        expect($activity)->not->toBeNull()
+            ->and($activity->subject_id)->toBe($this->admin->id)
+            ->and($activity->causer_id)->toBe($this->admin->id)
+            ->and($activity->attribute_changes['attributes']['roles'])->toBe(Role::ADMINISTRATOR->value . ', ' . Role::COACH->value);
     });
 });
 

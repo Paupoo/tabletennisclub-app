@@ -24,8 +24,15 @@ it('offers only our own teams of the active season, with their category', functi
     $ownClub = Club::factory()->ownClub()->create();
     $opponent = Club::factory()->create();
     $current = makeActiveSeason();
-    $previous = Season::factory()->create(['is_active' => false]);
-    $veterans = League::factory()->create(['category' => LeagueCategory::VETERANS->name]);
+    // Every season dated by hand, the league's included: the factory draws a
+    // random year, and two draws in eleven overlap the calendar year that
+    // makeActiveSeason() takes.
+    $previous = Season::factory()->create([
+        'is_active' => false,
+        'start_at' => now()->subYear()->startOfYear(),
+        'end_at' => now()->subYear()->endOfYear(),
+    ]);
+    $veterans = League::factory()->create(['category' => LeagueCategory::VETERANS->name, 'season_id' => $current->id]);
 
     $ours = Team::factory()->create(['name' => 'A', 'club_id' => $ownClub->id, 'season_id' => $current->id, 'league_id' => $veterans->id]);
     Team::factory()->create(['name' => 'B', 'club_id' => $opponent->id, 'season_id' => $current->id, 'league_id' => $veterans->id]);

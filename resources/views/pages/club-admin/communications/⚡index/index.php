@@ -2,22 +2,29 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Communications\Actions\SendCommunication;
+use App\Domains\ClubAdmin\Communications\Actions\SendTestCommunication;
 use App\Domains\ClubAdmin\Communications\Data\Audience;
 use App\Domains\ClubAdmin\Communications\Data\AudienceCriteria;
+use App\Domains\ClubAdmin\Communications\Models\Communication;
 use App\Domains\ClubAdmin\Communications\Services\AudienceBuilder;
+use App\Domains\ClubAdmin\Communications\Services\InvitationBlock;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\AudienceAgeBand;
 use App\Domains\Shared\Enums\AudienceBase;
 use App\Domains\Shared\Enums\AudienceLicence;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\InvitationTarget;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use App\Support\Markdown;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Mary\Traits\Toast;
 
 /**
  * Who a club-wide message reaches, before it is written.
@@ -30,10 +37,15 @@ use Livewire\Component;
  * The addresses leave in Bcc only, the club's own address in To, in batches a
  * mail client accepts in one link. Taking them out is recorded in the audit
  * trail: it is the members' personal data leaving the application.
+ *
+ * Or the message is written here, in markdown, and sent one address at a time
+ * by {@see SendCommunication}. Opened with `?from=<id>`, the screen starts
+ * from a past communication — its text and its filters — so next season's
+ * reaffiliation call is the last one, edited.
  */
 new class extends Component
 {
-    use HasBreadcrumbs;
+    use HasBreadcrumbs, Toast;
 
     /** How many addresses one mailto link carries: longer links get cut by some clients. */
     public const int MAILTO_BATCH_SIZE = 50;
@@ -42,6 +54,8 @@ new class extends Component
     public array $ageBands = [];
 
     public string $base = AudienceBase::Active->value;
+
+    public string $body = '';
 
     /** @var list<int> */
     public array $excludedUserIds = [];
@@ -52,8 +66,16 @@ new class extends Component
     /** @var list<int> */
     public array $includedUnclassifiedIds = [];
 
+    public ?int $invitationId = null;
+
+    public string $invitationTarget = '';
+
     /** @var list<string> */
     public array $licences = [];
+
+    public ?string $replyTo = null;
+
+    public string $subject = '';
 
     #[Computed]
     public function addressCount(): int
@@ -69,14 +91,14 @@ new class extends Component
 
     public function criteria(): AudienceCriteria
     {
-        return new AudienceCriteria(
-            base: AudienceBase::tryFrom($this->base) ?? AudienceBase::Active,
-            licences: array_values(array_filter(array_map(AudienceLicence::tryFrom(...), $this->licences))),
-            genders: array_values(array_filter(array_map(Gender::tryFrom(...), $this->genders))),
-            ageBands: array_values(array_filter(array_map(AudienceAgeBand::tryFrom(...), $this->ageBands))),
-            excludedUserIds: $this->excludedUserIds,
-            includedUnclassifiedIds: $this->includedUnclassifiedIds,
-        );
+        return AudienceCriteria::fromArray([
+            'base' => $this->base,
+            'licences' => $this->licences,
+            'genders' => $this->genders,
+            'age_bands' => $this->ageBands,
+            'excluded_user_ids' => $this->excludedUserIds,
+            'included_unclassified_ids' => $this->includedUnclassifiedIds,
+        ]);
     }
 
     /** @return Collection<int, User> */
@@ -89,6 +111,30 @@ new class extends Component
             ->orderBy('first_name')
             ->orderBy('id')
             ->get();
+    }
+
+    /** Appends the chosen "invite to…" block to the message. */
+    public function insertInvitation(): void
+    {
+        $target = InvitationTarget::tryFrom($this->invitationTarget);
+
+        if ($target === null || $this->invitationId === null) {
+            return;
+        }
+
+        $block = app(InvitationBlock::class)->markdown($target, $this->invitationId);
+
+        $this->body = rtrim($this->body) === '' ? $block : rtrim($this->body) . "\n\n" . $block;
+        $this->reset('invitationId');
+    }
+
+    /** @return list<array{id: int, name: string}> */
+    #[Computed]
+    public function invitationOptions(): array
+    {
+        $target = InvitationTarget::tryFrom($this->invitationTarget);
+
+        return $target === null ? [] : app(InvitationBlock::class)->options($target);
     }
 
     /**
@@ -108,6 +154,34 @@ new class extends Component
             ->all();
     }
 
+    public function mount(): void
+    {
+        $this->replyTo = Auth::user()?->contactEmail();
+
+        $from = request()->integer('from');
+        $past = $from > 0 ? Communication::find($from) : null;
+
+        if ($past === null) {
+            return;
+        }
+
+        $criteria = AudienceCriteria::fromArray($past->criteria)->toArray();
+
+        $this->subject = $past->subject;
+        $this->body = $past->body;
+        $this->replyTo = $past->reply_to ?? $this->replyTo;
+        $this->base = $criteria['base'];
+        $this->licences = $criteria['licences'];
+        $this->genders = $criteria['genders'];
+        $this->ageBands = $criteria['age_bands'];
+    }
+
+    #[Computed]
+    public function previewHtml(): string
+    {
+        return Markdown::safe($this->body);
+    }
+
     /**
      * The addresses left the application: say who took them, when, and for
      * which audience. Neither the list nor any message is kept.
@@ -116,8 +190,6 @@ new class extends Component
      */
     public function recordExport(string $channel): void
     {
-        $criteria = $this->criteria();
-
         activity()
             ->causedBy(Auth::user())
             ->event('communication_addresses_exported')
@@ -125,14 +197,7 @@ new class extends Component
                 'channel' => in_array($channel, ['copy', 'mailto'], true) ? $channel : 'copy',
                 'address_count' => $this->addressCount,
                 'member_count' => $this->audience()->members->count(),
-                'criteria' => [
-                    'base' => $criteria->base->value,
-                    'licences' => array_map(fn (AudienceLicence $licence): string => $licence->value, $criteria->licences),
-                    'genders' => array_map(fn (Gender $gender): string => $gender->value, $criteria->genders),
-                    'age_bands' => array_map(fn (AudienceAgeBand $band): string => $band->value, $criteria->ageBands),
-                    'excluded_user_ids' => $criteria->excludedUserIds,
-                    'included_unclassified_ids' => $criteria->includedUnclassifiedIds,
-                ],
+                'criteria' => $this->criteria()->toArray(),
             ])
             ->log('communication_addresses_exported');
     }
@@ -140,6 +205,36 @@ new class extends Component
     public function render(): View
     {
         return $this->view()->title(__('Communications'));
+    }
+
+    public function send(): void
+    {
+        $this->validate($this->rules());
+
+        if ($this->addressCount === 0) {
+            $this->error(__('Nobody to write to with these filters.'));
+
+            return;
+        }
+
+        $communication = app(SendCommunication::class)(
+            author: Auth::user(),
+            criteria: $this->criteria(),
+            subject: $this->subject,
+            body: $this->body,
+            replyTo: $this->replyTo,
+        );
+
+        $this->redirectRoute('admin.communications.show', $communication, navigate: true);
+    }
+
+    public function sendTest(): void
+    {
+        $this->validate($this->rules());
+
+        app(SendTestCommunication::class)(Auth::user(), $this->subject, $this->body, $this->replyTo);
+
+        $this->success(__('Test sent to :email.', ['email' => (string) Auth::user()?->contactEmail()]));
     }
 
     public function toggleExclusion(int $userId): void
@@ -163,6 +258,7 @@ new class extends Component
             'licenceOptions' => array_map(fn (AudienceLicence $licence): array => ['id' => $licence->value, 'name' => $licence->label()], AudienceLicence::cases()),
             'genderOptions' => Gender::options(),
             'ageBandOptions' => array_map(fn (AudienceAgeBand $band): array => ['id' => $band->value, 'name' => $band->label()], AudienceAgeBand::cases()),
+            'invitationTargetOptions' => array_map(fn (InvitationTarget $target): array => ['id' => $target->value, 'name' => $target->label()], InvitationTarget::cases()),
         ];
     }
 
@@ -171,6 +267,16 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Communications'));
+    }
+
+    /** @return array<string, list<string>> */
+    private function rules(): array
+    {
+        return [
+            'subject' => ['required', 'string', 'max:200'],
+            'body' => ['required', 'string', 'max:20000'],
+            'replyTo' => ['nullable', 'email'],
+        ];
     }
 
     /**

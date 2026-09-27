@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Http\Controllers\Attestations\AttestationDownloadController;
 use App\Http\Controllers\Attestations\AttestationVerificationController;
 use App\Http\Controllers\Bar\PublicBarMenuController;
+use App\Http\Controllers\ClubAdmin\Communications\InvitationRedirectController;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\GuardianInvitationController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
@@ -209,7 +210,23 @@ Route::prefix('admin/club-admin/communications/')
     ->middleware(['auth', 'verified', 'can:communications.send'])
     ->group(function (): void {
         Route::livewire('/', 'pages::club-admin.communications.index')->name('admin.communications.index');
+        Route::livewire('history', 'pages::club-admin.communications.history')->name('admin.communications.history');
+        Route::livewire('{communication}', 'pages::club-admin.communications.show')
+            ->whereNumber('communication')
+            ->name('admin.communications.show');
     });
+/*
+ * Where the button of an invitation leads: "for whom?", then the member's own
+ * registration screen, from the right seat. Any signed-in member.
+ */
+Route::middleware(['auth', 'verified'])->group(function (): void {
+    Route::get('/invitation/{type}/{id}', [InvitationRedirectController::class, 'show'])
+        ->whereNumber('id')
+        ->name('communications.invitation');
+    Route::post('/invitation/{type}/{id}', [InvitationRedirectController::class, 'choose'])
+        ->whereNumber('id')
+        ->name('communications.invitation.choose');
+});
 /*
  * Mutual attestations — the attestations délégation, and nobody else.
  *

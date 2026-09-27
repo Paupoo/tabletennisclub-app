@@ -4,7 +4,11 @@
     </x-slot:breadcrumbs>
 
     <x-header progress-indicator separator :title="__('Communications')"
-        :subtitle="__('Choose who to write to, check nobody is missing, then take the addresses — always in Bcc.')" />
+        :subtitle="__('Choose who to write to, check nobody is missing, then take the addresses — always in Bcc.')">
+        <x-slot:actions>
+            <x-button icon="o-clock" :label="__('History')" :link="route('admin.communications.history')" class="btn-ghost" />
+        </x-slot:actions>
+    </x-header>
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {{-- Audience ------------------------------------------------------------}}
@@ -82,6 +86,46 @@
                         </p>
                     </div>
                 @endif
+            </x-card>
+
+            {{-- Write -------------------------------------------------------------}}
+            <x-card :title="__('Write from the application')"
+                :subtitle="__('One message per address, sent from the club. Replies go to the address below.')" shadow separator>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <x-input :label="__('Subject')" wire:model="subject" />
+                        <x-input :label="__('Replies go to')" wire:model="replyTo" type="email" />
+                    </div>
+
+                    <div class="flex flex-wrap items-end gap-2">
+                        <x-select :label="__('Invite to')" wire:model.live="invitationTarget" :options="$invitationTargetOptions"
+                            :placeholder="__('Choose')" class="min-w-40" />
+                        @if ($invitationTarget !== '')
+                            <x-select :label="__('Which one')" wire:model="invitationId" :options="$this->invitationOptions"
+                                :placeholder="__('Choose')" class="min-w-64" />
+                            <x-button icon="o-plus" :label="__('Insert')" wire:click="insertInvitation" class="btn-outline" />
+                        @endif
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                        <x-textarea :label="__('Message (markdown)')" wire:model.live.debounce.500ms="body" rows="14"
+                            :hint="__('**bold**, *italic*, [link](https://…), blank line for a new paragraph.')" />
+                        <div>
+                            <p class="mb-2 text-sm font-semibold">{{ __('Preview') }}</p>
+                            <div class="prose prose-sm max-w-none rounded-box border border-base-300 p-4">
+                                {!! $this->previewHtml !!}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap justify-end gap-2">
+                        <x-button icon="o-beaker" :label="__('Send me a test')" wire:click="sendTest" spinner="sendTest" class="btn-outline" />
+                        <x-button icon="o-paper-airplane" class="btn-primary" spinner="send"
+                            :label="__('Send to :count addresses', ['count' => $this->addressCount])"
+                            wire:click="send"
+                            wire:confirm="{{ __('Send this message to :addresses addresses (:members members)? It cannot be recalled.', ['addresses' => $this->addressCount, 'members' => $this->audience->members->count()]) }}" />
+                    </div>
+                </div>
             </x-card>
 
             {{-- Unreachable --------------------------------------------------------}}

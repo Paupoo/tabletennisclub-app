@@ -24,6 +24,7 @@ return [
     'bar' => env('FEATURE_BAR', true),
     'cash_register' => env('FEATURE_CASH_REGISTER', true),
     'contacts' => env('FEATURE_CONTACTS', true),
+    'expense_reports' => env('FEATURE_EXPENSE_REPORTS', true),
     'help_centre' => env('FEATURE_HELP_CENTRE', true),
     'interclubs' => env('FEATURE_INTERCLUBS', true),
     'meetings' => env('FEATURE_MEETINGS', true),

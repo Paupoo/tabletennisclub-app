@@ -82,11 +82,13 @@ it('orders the people a member may pay for on the displayed name', function (): 
  * Team names are free text, so the case is reachable.
  */
 it('orders the team filter of the members list, accents in their place', function (): void {
-    $league = League::factory()->create(['season_id' => $this->season->id]);
+    $league = League::factory()->create(['season_id' => $this->season->id, 'category' => 'MEN']);
+    $ownClub = Club::factory()->ownClub()->create();
 
     foreach (['F', 'É'] as $letter) {
         Team::factory()->create([
             'name' => $letter,
+            'club_id' => $ownClub->id,
             'season_id' => $this->season->id,
             'league_id' => $league->id,
         ]);
@@ -97,7 +99,9 @@ it('orders the team filter of the members list, accents in their place', functio
         ->viewData('teams')
         ->pluck('name');
 
-    expect($names->all())->toBe([__('Team') . ' É', __('Team') . ' F']);
+    $men = ' · ' . LeagueCategory::MEN->label();
+
+    expect($names->all())->toBe([__('Team') . ' É' . $men, __('Team') . ' F' . $men]);
 });
 
 /*
@@ -110,9 +114,11 @@ it('orders the directory team filter on the full label, breaking ties on the cat
     $veterans = League::factory()->create(['season_id' => $this->season->id, 'category' => 'VETERANS']);
     $men = League::factory()->create(['season_id' => $this->season->id, 'category' => 'MEN']);
 
+    $ownClub = Club::factory()->ownClub()->create();
+
     // Inserted in the order that used to decide the outcome.
-    Team::factory()->create(['name' => 'A', 'season_id' => $this->season->id, 'league_id' => $veterans->id]);
-    Team::factory()->create(['name' => 'A', 'season_id' => $this->season->id, 'league_id' => $men->id]);
+    Team::factory()->create(['name' => 'A', 'club_id' => $ownClub->id, 'season_id' => $this->season->id, 'league_id' => $veterans->id]);
+    Team::factory()->create(['name' => 'A', 'club_id' => $ownClub->id, 'season_id' => $this->season->id, 'league_id' => $men->id]);
 
     $viewer = activeMember($this->season);
 
@@ -124,6 +130,30 @@ it('orders the directory team filter on the full label, breaking ties on the cat
 
     expect($names->first())->toBe('A · ' . LeagueCategory::MEN->label())
         ->and($names->last())->toBe('A · ' . LeagueCategory::VETERANS->label());
+});
+
+/*
+ * The teams table holds the whole league, the opponents imported from the
+ * federation included: the filter listed some ninety teams, most of them
+ * another club's. Only our own teams can narrow down our directory.
+ */
+it('offers only our own teams in the directory team filter', function (): void {
+    $league = League::factory()->create(['season_id' => $this->season->id, 'category' => 'MEN']);
+    $ownClub = Club::factory()->ownClub()->create();
+    $opponent = Club::factory()->create();
+    $ours = Team::factory()->create(['name' => 'A', 'club_id' => $ownClub->id, 'season_id' => $this->season->id, 'league_id' => $league->id]);
+    Team::factory()->create(['name' => 'B', 'club_id' => $opponent->id, 'season_id' => $this->season->id, 'league_id' => $league->id]);
+
+    $viewer = activeMember($this->season);
+
+    $ids = Livewire::actingAs($viewer)
+        ->test('pages::club-admin.users.user-space.directory', ['user' => $viewer])
+        ->instance()
+        ->teamsForFilter
+        ->pluck('id')
+        ->all();
+
+    expect($ids)->toBe([$ours->id]);
 });
 
 /*
@@ -180,7 +210,7 @@ it('orders the treasury event types', function (): void {
 
     // « Bar » se range entre Affiliation et Réunion, pas en fin de liste :
     // c'est le tri qui décide, jamais l'ordre de déclaration.
-    expect($names->all())->toBe([__('Subscription'), __('Bar'), __('Meeting'), __('Tournament')]);
+    expect($names->all())->toBe([__('Subscription'), __('Bar'), __('Expense report'), __('Meeting'), __('Tournament')]);
 });
 
 it('orders the contact reasons', function (): void {

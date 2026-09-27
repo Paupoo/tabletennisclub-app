@@ -39,12 +39,27 @@ erDiagram
         datetime last_reminded_at "nullable"
         int refund_transaction_id FK "nullable"
         string payment_method
+        string refund_iban "nullable"
+        TransactionMatch match "nullable"
+    }
+    PaymentCredit {
+        int id PK
+        int payment_id FK
+        int transaction_id FK "nullable"
+        float amount
+        string method "nullable"
+        string note "nullable"
+        int created_by_id FK "nullable"
     }
     Transaction {
         int id PK
         string date
         string description
         float amount
+        float allocated_amount
+        datetime settled_at "nullable"
+        string settled_reason "nullable"
+        int settled_by_id FK "nullable"
         string counterparty_name "nullable"
         string counterparty_bank_account "nullable"
         string structured_reference "nullable"
@@ -56,7 +71,9 @@ erDiagram
 
     BankImport ||--o{ Transaction : "transactions"
     CashRegister ||--o{ CashRegisterEntry : "entries"
+    Payment ||--o{ PaymentCredit : "credits"
     Payment ||--o{ SubscriptionDiscount : "discounts"
+    Transaction ||--o{ PaymentCredit : "credits"
     Transaction ||--o| Payment : "payment"
     Transaction ||--o| Payment : "refundPayment"
 ```

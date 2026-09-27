@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Communications\Models\CommunicationRecipient;
 use App\Domains\Shared\Enums\Feature;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -77,6 +78,46 @@ Schedule::command('attestations:purge')
     ->withoutOverlapping();
 
 /*
+ * Notes de frais. Le digest part le dimanche soir, pour que la semaine du
+ * trésorier commence avec la liste de ce qui attend. La purge, elle, tourne
+ * même quand le domaine est coupé : éteindre la fonction ne doit pas prolonger
+ * la vie des justificatifs d'une note jamais payée.
+ */
+Schedule::command('expense-reports:send-digest')
+    ->weeklyOn(0, '19:00')
+    ->withoutOverlapping()
+    ->when(Feature::ExpenseReports->enabled(...));
+
+Schedule::command('expense-reports:purge-files')
+    ->dailyAt('03:30')
+    ->withoutOverlapping();
+
+// Le rappel d'archivage : chaque trimestre, et le 5 janvier plutôt que le 1er,
+// pour l'exercice qui vient de se clôturer — c'est le moment où le trésorier
+// prépare les comptes pour les vérificateurs.
+Schedule::command('expense-reports:remind-archiving')
+    ->cron('0 8 1 4,7,10 *')
+    ->withoutOverlapping()
+    ->when(Feature::ExpenseReports->enabled(...));
+
+Schedule::command('expense-reports:remind-archiving --year-end')
+    ->cron('0 8 5 1 *')
+    ->withoutOverlapping()
+    ->when(Feature::ExpenseReports->enabled(...));
+
+Schedule::command('expense-reports:prune-exports')
+    ->dailyAt('03:40')
+    ->withoutOverlapping();
+
+/*
+ * Communications: the addresses each one went to are personal data, pruned
+ * two seasons after the sending. What the club said is kept.
+ */
+Schedule::command('model:prune', ['--model' => [CommunicationRecipient::class]])
+    ->dailyAt('03:50')
+    ->withoutOverlapping();
+
+/*
  * Les feuilles de match de la fédération : le score officiel de chaque
  * rencontre et le détail joueur par joueur.
  *
@@ -107,3 +148,18 @@ Schedule::command('interclubs:remind-captains')
     ->weeklyOn(0, '18:00')
     ->withoutOverlapping()
     ->when(Feature::Interclubs->enabled(...));
+
+// Réassort automatique (décidé le 2026-09-27) : le vendredi à 6 h 05, une fois la
+// soirée du jeudi close — une journée d'exploitation finit à 6 h —, et avant le
+// digest du samedi qui dit ce qui a bougé.
+Schedule::command('bar:restocking-recalculate')
+    ->weeklyOn(5, '06:05')
+    ->withoutOverlapping()
+    ->when(Feature::Bar->enabled(...));
+
+// Réassort du bar (décidé le 2026-09-26) : le samedi à 10 h, le lendemain des
+// matchs, magasins ouverts — et qui n'y va pas le samedi a la semaine devant lui.
+Schedule::command('bar:restocking-digest')
+    ->weeklyOn(6, '10:00')
+    ->withoutOverlapping()
+    ->when(Feature::Bar->enabled(...));

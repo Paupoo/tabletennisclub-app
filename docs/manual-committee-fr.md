@@ -95,6 +95,8 @@ Lors de la création ou de la modification d'un **mineur** (moins de 18 ans), la
 
 Un tuteur peut couvrir plusieurs frères et sœurs. Un tuteur qui est également membre du club peut être recherché dans la liste des membres existants.
 
+**Qui reçoit les emails d'un mineur ?** Tous ses tuteurs qui ont une adresse, plus le mineur lui-même s'il en a une. Chaque adresse reçoit **son propre message** : deux parents séparés ne voient jamais l'adresse l'un de l'autre. Un adulte sans adresse est joint de la même façon, via ses tuteurs.
+
 **Important :** Un mineur ne peut pas finaliser son affiliation sans tuteur rattaché. Le système avertit à l'enregistrement si aucun tuteur n'est renseigné, et bloque l'affiliation jusqu'à ce qu'il soit ajouté.
 
 ---
@@ -395,6 +397,12 @@ Allez dans **Trésorerie → Transactions**. Enregistrez les transactions bancai
 - Ajouter une transaction (montant, date, communication structurée, payeur)
 - Réconcilier : associer les transactions aux paiements en attente
 
+### Notes de frais
+
+Allez dans **Trésorerie → Notes de frais**. Les membres majeurs y déclarent ce qu'ils ont avancé pour le club, avec leurs justificatifs. Tout le comité **consulte** les notes ; les **accepter** (éventuellement pour un montant inférieur, avec un motif) ou les **rejeter** (motif obligatoire) relève de la délégation **Trésorerie**, de la délégation **Notes de frais** (le relais du trésorier) et des administrateurs, et **personne ne traite sa propre note**. Une note acceptée devient un remboursement ordinaire dans **Paiements → À rembourser** ; elle passe en « payée » au rapprochement du débit.
+
+**Exporter** prépare en arrière-plan un PDF imprimable ou un ZIP (CSV + justificatifs originaux) de ce que l'écran affiche. Un rappel trimestriel invite la trésorerie à archiver les notes payées. Les vérificateurs aux comptes reçoivent la délégation **Vérification des comptes** : toute la trésorerie en lecture seule. Le détail est dans les articles d'aide *Traiter les notes de frais* et *Vérifier les notes de frais*.
+
 ### Caisse (bar)
 
 Allez dans **Trésorerie → Caisse**. Gérez les commandes du bar, la feuille de caisse et les mouvements de stock si le module bar est actif.
@@ -453,6 +461,10 @@ En tant que membre du comité, les emails suivants sont envoyés automatiquement
 | Procès-verbal de réunion | Tous les participants |
 | Réunion annulée/reportée | Tous les membres invités |
 | Demande de remboursement | Administrateur |
+| Note de frais acceptée, rejetée (avec motif) ou payée | Membre auteur de la note |
+| Nouvelle note de frais (cloche uniquement) | Délégations Trésorerie et Notes de frais, sauf l'auteur |
+| Récapitulatif des notes de frais en attente (dimanche 19 h) | Délégations Trésorerie et Notes de frais |
+| Notes de frais payées à archiver (chaque trimestre, et le 5 janvier) | Trésorerie et délégation Notes de frais |
 
 ---
 
@@ -480,3 +492,33 @@ L'écran **Attestations mutuelle** porte trois choses : la façon dont le club s
 **Délivrance à la place d'un membre.** Possible depuis la fiche du membre, avec les mêmes contrôles — utile pour un appel téléphonique ou un compte géré.
 
 **Rétention.** Les PDF sont supprimés automatiquement après douze mois, parce qu'ils portent un numéro de registre national. L'historique est conservé.
+
+---
+
+## 15. Communications au club
+
+**Menu :** Administration des membres → Communications (droit `communications.send`, donné au comité).
+
+L'écran répond à « à qui dois-je écrire, sans oublier personne et sans écrire à ceux qui sont partis ? ».
+
+### Choisir le public
+
+- **Qui** : membres actifs (par défaut), affiliations en attente, ou membres de la saison passée qui ne sont pas revenus. Jamais plusieurs à la fois.
+- **Filtres** : licence (compétiteurs, récréatifs), genre, âge (jeunes de moins de 18 ans aujourd'hui, adultes, vétérans à la fin de la saison), et une **activité** (inscrits à un tournoi, à un pack, présents à une réunion, joueurs d'une équipe). Plusieurs cases d'un même bloc élargissent ; des blocs différents resserrent.
+- **Inviter puis relancer** : pour un tournoi, un pack ou une réunion, trois modes. « Inscrits » prévient les participants ; « Pas encore invités » écarte ceux qu'une communication a déjà invités et ceux déjà inscrits — pour ne jamais inviter deux fois ; « Invités, pas encore inscrits » ne garde que ceux qui ont reçu l'invitation sans s'inscrire depuis.
+
+### Vérifier que personne ne manque
+
+- **Injoignables** (en rouge) : aucun email, ni le leur ni celui d'un tuteur. Complétez leur fiche ou prévenez-les autrement — leur téléphone est affiché.
+- **Non classés** (en orange) : pas de date de naissance, un filtre d'âge ne peut pas les placer. Cochez ceux à qui le message s'adresse.
+- **Écarter** un membre le retire de ce message seulement.
+
+### Prendre les adresses
+
+**Copier** met la liste dans le presse-papiers : collez-la **en Cci**. Les boutons d'ouverture de la messagerie mettent le club en À et les membres en Cci, par lots de 50 adresses. Chaque export est tracé dans le journal d'audit.
+
+### Écrire depuis l'application
+
+Rédigez en markdown avec l'aperçu, **Insérer** une invitation (tournoi, pack, réunion) ajoute un bloc avec un lien « S'inscrire ». Ce lien mène à une page « Pour qui ? » : un parent y choisit son enfant et arrive sur ses inscriptions. **M'envoyer un test** vous l'envoie à vous seul.
+
+L'envoi part au nom du club, les réponses arrivent à l'adresse choisie (la vôtre par défaut). Chaque adresse reçoit son propre message, au rythme de 15 par minute. La page de la communication suit l'avancement, liste les échecs et permet de les relancer ; **Réécrire** repart du même texte et des mêmes filtres. Les adresses sont effacées après deux saisons, le message reste.

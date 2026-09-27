@@ -83,10 +83,12 @@
             {{-- Le champ ne grandit pas (`flex: 0 1 auto`) : il occupe 202 px
                  d'une coque de 341, badge ou pas. Celui-ci se pose donc dans un
                  vide qui existait déjà, sans rien coûter à la saisie. --}}
+            {{-- `pointer-coarse:hidden` : sous un doigt, aucun clavier pour taper
+                 le raccourci, et le badge ne fait que mordre sur le champ. --}}
             const hint = document.createElement('kbd');
             hint.setAttribute('data-search-hint', '');
             hint.setAttribute('aria-hidden', 'true');
-            hint.className = 'kbd kbd-sm pointer-events-none opacity-60';
+            hint.className = 'kbd kbd-sm pointer-events-none opacity-60 pointer-coarse:hidden';
             hint.textContent = this.isApple() ? '⌘ K' : 'Ctrl K';
 
             shell.append(hint);

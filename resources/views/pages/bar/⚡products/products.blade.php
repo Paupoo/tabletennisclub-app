@@ -6,6 +6,32 @@
     <x-header progress-indicator separator :title="__('Products')"
         :subtitle="__('Count the shelf, set the price, tune the alert threshold.')">
         <x-slot:actions>
+            {{-- Seulement les produits sans max : un réglage posé à la main n'est
+            jamais écrasé en masse. Le bouton disparaît quand il n'a rien à faire. --}}
+            @if ($unsetWithSuggestionCount > 0)
+                <x-button class="btn-ghost btn-sm hidden lg:inline-flex" icon="o-sparkles"
+                    :label="__('Apply suggestions (:count)', ['count' => $unsetWithSuggestionCount])"
+                    wire:click="applyAllSuggestions" spinner="applyAllSuggestions" />
+            @endif
+            @can('bar.stock.manage')
+                <x-button class="btn-ghost btn-sm hidden lg:inline-flex" icon="o-cog-6-tooth" :label="__('Restocking settings')"
+                    wire:click="openRestockingSettings" />
+            @endcan
+            {{-- Sur téléphone, trois boutons nommés sortent de l'écran : les deux
+            réglages passent dans un menu, « Ajouter » reste en vue. --}}
+            @if ($unsetWithSuggestionCount > 0 || auth()->user()->can('bar.stock.manage'))
+                <x-dropdown icon="o-ellipsis-vertical" right class="btn-ghost btn-sm lg:hidden" :title="__('More actions')">
+                    @if ($unsetWithSuggestionCount > 0)
+                        <x-menu-item icon="o-sparkles"
+                            :title="__('Apply suggestions (:count)', ['count' => $unsetWithSuggestionCount])"
+                            wire:click="applyAllSuggestions" />
+                    @endif
+                    @can('bar.stock.manage')
+                        <x-menu-item icon="o-cog-6-tooth" :title="__('Restocking settings')"
+                            wire:click="openRestockingSettings" />
+                    @endcan
+                </x-dropdown>
+            @endif
             <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Add')" wire:click="openCreate" />
         </x-slot:actions>
     </x-header>
@@ -19,7 +45,7 @@
         saurait pas le vider. Il reste donc visible au-dessus du contenu, et son
         libellé titre ce qui suit.
     --}}
-    <div class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+    <div class="mb-4 mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
         <span class="text-muted text-xs font-bold uppercase tracking-widest">{{ __('Order') }}</span>
 
         <div class="join">
@@ -97,7 +123,7 @@
                             `lg` et restent atteignables par le tiroir. Voir DESIGN.md.
                         --}}
                         <x-table :headers="$headers" :rows="$group['products']" class="table-sm">
-                            @scope('cell_name', $product)
+                            @scope('cell_name', $product, $automaticIds)
                                 {{-- Le nom est la porte du tiroir : c'est la cible la plus
                                 large de la ligne, et elle n'a besoin d'aucune icône pour
                                 s'annoncer puisqu'elle porte déjà le nom du produit. --}}
@@ -105,6 +131,10 @@
                                     wire:click="openProduct({{ $product->id }})"
                                     class="tap-comfort -mx-2 flex w-full min-w-0 justify-start gap-2 rounded-lg px-2 text-start font-medium hover:underline">
                                     <span class="truncate">{{ $product->name }}</span>
+                                    @if (isset($automaticIds[$product->id]))
+                                        <span data-restocking="auto" class="badge badge-info badge-soft badge-xs shrink-0"
+                                            title="{{ __('Min and max set by the automatic restocking') }}">{{ __('Auto') }}</span>
+                                    @endif
                                     @unless ($product->is_available)
                                         <x-icon name="o-eye-slash" class="text-base-content/50 h-4 w-4 shrink-0"
                                             :title="__('Off menu')" />
@@ -113,7 +143,7 @@
                             @endscope
 
                             @scope('cell_price', $product)
-                                <span class="tabular-nums">{{ euros($product->sale_price) }}</span>
+                                <span class="whitespace-nowrap tabular-nums">{{ euros($product->sale_price) }}</span>
                             @endscope
 
                             @scope('cell_stock', $product)
@@ -143,6 +173,31 @@
                                     wire:change="updateThreshold({{ $product->id }}, $event.target.value)"
                                     aria-label="{{ __('Alert threshold for :product', ['product' => $product->name]) }}"
                                     class="input input-bordered input-sm tap-comfort w-14 text-end tabular-nums lg:w-20">
+                            @endscope
+
+                            @scope('cell_max', $product, $suggestions)
+                                {{-- Vide = hors réassort : pas de placeholder, aucun défaut
+                                ne s'applique ici, au contraire du seuil. --}}
+                                <input type="number" min="0" inputmode="numeric"
+                                    wire:key="max-{{ $product->id }}"
+                                    value="{{ $product->max_stock }}"
+                                    wire:change="updateMaxStock({{ $product->id }}, $event.target.value)"
+                                    aria-label="{{ __('Restocking target for :product', ['product' => $product->name]) }}"
+                                    class="input input-bordered input-sm tap-comfort w-14 text-end tabular-nums lg:w-20">
+
+                                {{-- La suggestion est son propre bouton : elle ne s'affiche
+                                que si elle apporte quelque chose, et un tap la reprend. --}}
+                                @php
+                                    $suggestion = $suggestions[$product->id] ?? null;
+                                @endphp
+                                @if ($suggestion !== null && ($suggestion['min'] !== $product->low_stock_threshold || $suggestion['max'] !== $product->max_stock))
+                                    <button type="button"
+                                        wire:click="applySuggestion({{ $product->id }})"
+                                        title="{{ __('Apply the suggestion') }}"
+                                        class="text-subtle mt-1 block w-full cursor-pointer whitespace-nowrap text-end text-xs tabular-nums hover:underline">
+                                        {{ __('Suggested: :min – :max', $suggestion) }}
+                                    </button>
+                                @endif
                             @endscope
 
                             @scope('cell_available', $product)
@@ -187,6 +242,54 @@
             <x-input :label="__('Price')" wire:model="price" suffix="€" inputmode="decimal"
                 :hint="__('Comma or dot, two decimals at most.')" required />
 
+            {{-- Comment on l'achète : la liste de courses compte en conditionnements,
+            pour que personne n'ait à convertir des unités au milieu du rayon. --}}
+            <div class="grid grid-cols-2 gap-3">
+                <x-input :label="__('Bought by')" wire:model="packSize" type="number" min="1"
+                    inputmode="numeric" :suffix="__('units')" required />
+                <x-input :label="__('Purchase pack')" wire:model="packLabel"
+                    :placeholder="__('crate, pack…')" />
+            </div>
+
+            {{-- Le min et le max, aussi dans le tableau : sous `lg` leurs colonnes se
+            replient, et c'est ici seulement qu'un téléphone les atteint. --}}
+            <div class="grid grid-cols-2 gap-3">
+                <x-input :label="__('Min')" wire:model="minStock" type="number" min="0" inputmode="numeric" />
+                <x-input :label="__('Max')" wire:model="maxStock" type="number" min="0" inputmode="numeric" />
+            </div>
+            @php
+                $drawerSuggestion = $editingId ? ($suggestions[$editingId] ?? null) : null;
+            @endphp
+            @if ($drawerSuggestion !== null)
+                <button type="button"
+                    wire:click="$set('minStock', '{{ $drawerSuggestion['min'] }}'); $set('maxStock', '{{ $drawerSuggestion['max'] }}')"
+                    title="{{ __('Apply the suggestion') }}"
+                    class="text-subtle -mt-2 cursor-pointer justify-self-start text-xs tabular-nums hover:underline">
+                    {{ __('Suggested: :min – :max', $drawerSuggestion) }}
+                </button>
+            @endif
+
+            {{-- Comment ce produit se réassortit : suivre le bar, ou s'en écarter.
+            Le plafond et la couverture propre ne servent qu'au calcul : ils bornent
+            ce que l'automatique et les suggestions proposent. --}}
+            <x-select :label="__('Restocking')" wire:model="restockingMode" :options="[
+                ['id' => '', 'name' => __('Follow the bar setting')],
+                ['id' => 'auto', 'name' => __('Always automatic')],
+                ['id' => 'manual', 'name' => __('Always manual')],
+            ]" />
+            <div class="grid grid-cols-2 gap-3">
+                <x-input :label="__('Own coverage')" wire:model="restockingWeeks" type="number" min="1" max="12"
+                    inputmode="numeric" :suffix="__('weeks')" :hint="__('Fewer weeks for a perishable product.')" />
+                <x-input :label="__('Cap')" wire:model="restockingCap" type="number" min="0"
+                    inputmode="numeric" :hint="__('The max never goes above, e.g. fridge space.')" />
+            </div>
+            @php
+                $adjustedAt = $editingId ? \App\Domains\Bar\Models\BarProduct::query()->whereKey($editingId)->value('restocking_adjusted_at') : null;
+            @endphp
+            @if ($adjustedAt)
+                <p class="text-subtle text-xs">{{ __('Last automatic adjustment: :date', ['date' => \Illuminate\Support\Carbon::parse($adjustedAt)->format('d/m/Y')]) }}</p>
+            @endif
+
             <x-slot:actions>
                 <x-button :label="__('Cancel')" wire:click="$set('drawer', false)" type="button" />
                 <x-button :label="__('Save')" type="submit" class="btn-primary" spinner="save" />
@@ -210,6 +313,42 @@
                 </p>
             </div>
         @endif
+    </x-drawer>
+
+    {{-- Les réglages du réassort pour tout le bar. L'automatique part éteint : le
+    comité l'allume quand il a vu ce qu'il ferait, et chaque produit peut s'en
+    écarter depuis son tiroir. --}}
+    <x-drawer wire:model="restockingSettingsDrawer" right with-close-button class="w-full max-w-sm"
+        :title="__('Restocking settings')">
+        <x-form wire:submit="saveRestockingSettings">
+            <x-toggle :label="__('Automatic restocking')" wire:model="restockingAutomatic"
+                :hint="__('Every Friday at 6:05, the products in restocking take the min and max their sales suggest. A product corrected by hand becomes manual.')" />
+
+            <div class="grid grid-cols-2 gap-3">
+                <x-input :label="__('Min coverage')" wire:model="coverageMinWeeks" type="number" min="1" max="12"
+                    inputmode="numeric" :suffix="__('weeks')" />
+                <x-input :label="__('Max coverage')" wire:model="coverageMaxWeeks" type="number" min="1" max="12"
+                    inputmode="numeric" :suffix="__('weeks')" />
+            </div>
+            <p class="text-subtle text-xs">{{ __('How many weeks of sales the min and the max hold. The suggestions use them too.') }}</p>
+
+            <x-slot:actions>
+                <x-button :label="__('Cancel')" wire:click="$set('restockingSettingsDrawer', false)" type="button" />
+                <x-button :label="__('Save')" type="submit" class="btn-primary" spinner="saveRestockingSettings" />
+            </x-slot:actions>
+        </x-form>
+
+        {{-- Hors du formulaire : le calcul part des réglages enregistrés, pas de
+        ceux qu'on est en train de taper. --}}
+        <div class="border-base-300 mt-6 border-t pt-4">
+            <x-button :label="__('Recalculate now')" icon="o-arrow-path"
+                class="btn-outline btn-sm w-full"
+                wire:click="recalculateRestocking" spinner="recalculateRestocking" />
+
+            <p class="text-subtle mt-2 text-xs">
+                {{ __('Updates the min and max of the automatic products right away, from their sales.') }}
+            </p>
+        </div>
     </x-drawer>
 
     <x-confirm-modal model="deleteModal" :title="__('Delete this product permanently?')"

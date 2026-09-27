@@ -15,8 +15,18 @@
             </div>
         </x-slot:title>
 
+        {{-- Four groups, from the most used to the rarest: who I am and when
+             I play; my life at the club in the order it happens (affiliate,
+             sign up, join a team, play); the money; the settings. Split by
+             separators, not headings — MemberSpaceMenuOrderTest holds it. --}}
         <x-menu-item icon="o-user" link="{{ route('admin.user.profile', $user) }}"
             :title="__('My profile')" />
+        <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" :title="__('My Calendar')" />
+
+        <li data-menu-group="separator-club"><x-menu-separator /></li>
+        <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('My season')" />
+        <x-menu-item icon="o-star" link="{{ route('admin.user.event-subscription', $user) }}" :title="__('My registrations')" />
+        <x-menu-item icon="o-users" link="{{ route('admin.user.teams', $user) }}" :title="__('My team(s)')" />
         @feature('interclubs')
         {{-- Team membership, not the competitive licence alone: see
              User::playsInterclub(). --}}
@@ -25,14 +35,20 @@
             <x-menu-item icon="o-trophy" link="{{ route('admin.user.interclub-record', $user) }}" :title="__('My interclub record')" />
         @endif
         @endfeature
-        <x-menu-item icon="o-users" link="{{ route('admin.user.teams', $user) }}" :title="__('My team(s)')" />
-        <x-menu-item icon="o-star" link="{{ route('admin.user.event-subscription', $user) }}" :title="__('My registrations')" />
+
+        <li data-menu-group="separator-money"><x-menu-separator /></li>
         <x-menu-item icon="o-credit-card" link="{{ route('admin.user.payments', $user) }}" :title="__('My payments')" />
-        <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" :title="__('My Calendar')" />
-        <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('My season')" />
+        @feature('expense_reports')
+        @can('create', \App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport::class)
+            <x-menu-item icon="o-receipt-percent" link="{{ route('admin.user.expense-reports', $user) }}" :title="__('My expense reports')" />
+        @endcan
+        @endfeature
+        {{-- Follows an affiliation validated and paid: it sits with the money. --}}
         @feature('attestations')
         <x-menu-item icon="o-document-check" link="{{ route('admin.user.attestation', $user) }}" :title="__('Mutual attestation')" />
         @endfeature
+
+        <li data-menu-group="separator-settings"><x-menu-separator /></li>
         <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" :title="__('Settings')" />
         <li><x-menu-separator /></li>
         {{-- The proxy a guardian holds over the accounts of their wards: see
@@ -106,7 +122,7 @@
     </x-menu-sub>
     @endcanany
 
-    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'trainings.view'])
+    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'trainings.view', 'communications.send'])
     <x-menu-sub icon="o-user-group" :title="__('Members Admin')">
         @can('users.view')
             <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
@@ -125,6 +141,9 @@
         @can('subscriptions.view')
             <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
         @endcan
+        @can('communications.send')
+            <x-menu-item icon="o-envelope" link="{{ route('admin.communications.index') }}" :title="__('Communications')" />
+        @endcan
         @feature('training_planning')
         @can('trainings.view')
         <x-menu-item icon="o-view-columns" link="{{ route('admin.planning.board') }}" :title="__('Planning board')" />
@@ -140,6 +159,17 @@
         @can('payments.view')
             <x-menu-item icon="o-credit-card" link="{{ route('admin.treasury.payments') }}" :title="__('Payments')" />
         @endcan
+        @feature('expense_reports')
+        @can('payments.view')
+            @php
+                $expenseReportsToDecide = auth()->user()->can('expense_reports.process')
+                    ? \App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport::where('status', 'submitted')->where('user_id', '!=', auth()->id())->count()
+                    : 0;
+            @endphp
+            <x-menu-item icon="o-receipt-percent" link="{{ route('admin.treasury.expense-reports') }}" :title="__('Expense reports')"
+                :badge="$expenseReportsToDecide > 0 ? (string) $expenseReportsToDecide : null" badge-classes="badge-warning" />
+        @endcan
+        @endfeature
         @can('fines.view')
             <x-menu-item icon="o-scale" link="{{ route('admin.treasury.fines') }}" :title="__('Fines')" />
         @endcan
@@ -169,7 +199,9 @@
         un barman voit trois liens qui mènent à un 403.
     --}}
     @feature('bar')
-    @can('bar.access')
+    {{-- Le sous-menu s'ouvre aussi à qui ne lit que les ventes (le comité) : il n'y
+         voit alors que « Ventes », les entrées du comptoir restant sous bar.access. --}}
+    @canany(['bar.access', 'bar.stats.view'])
     @php
         // Panier de session : un simple array_sum, aucune requête. Le cast en
         // array est une assurance, pas une coquetterie — ce menu est rendu sur
@@ -189,6 +221,7 @@
         modifier une commande, c'est encore être dans la file d'encaissement.
     --}}
     <x-menu-sub icon="o-shopping-bag" :title="__('Bar')">
+        @can('bar.access')
         <x-menu-item
             icon="o-shopping-bag"
             link="{{ route('bar.index') }}"
@@ -204,6 +237,7 @@
             exact
             :active="request()->routeIs('bar.payment.*', 'bar.orders.modify')" />
         <x-menu-item icon="o-clock" link="{{ route('bar.orders.history') }}" :title="__('History')" />
+        @endcan
         @can('bar.products.manage')
         <x-menu-item icon="o-cube" link="{{ route('bar.products.index') }}" :title="__('Products')" />
         @endcan
@@ -212,6 +246,12 @@
         @endcan
         @can('bar.cash_sheet.send')
         <x-menu-item icon="o-document-chart-bar" link="{{ route('bar.cashSheet.index') }}" :title="__('Cash sheet')" />
+        @endcan
+        @can('bar.restocking.shop')
+        <x-menu-item icon="o-shopping-cart" link="{{ route('bar.restocking.index') }}" :title="__('Shopping')" />
+        @endcan
+        @can('bar.stats.view')
+        <x-menu-item icon="o-chart-bar" link="{{ route('bar.stats.index') }}" :title="__('Sales')" />
         @endcan
         {{--
             De quoi installer la salle avant le service : l'écran à caster derrière
@@ -223,12 +263,14 @@
             caster le back-office à la place de la carte laisserait le barman sans
             caisse, devant une salle qui attend.
         --}}
+        @can('bar.access')
         <x-menu-separator :title="__('Menu')" />
         <x-menu-item icon="o-tv" link="{{ route('public.bar.screen') }}" :title="__('Cast the menu')" external />
         <x-menu-item icon="o-device-phone-mobile" link="{{ route('public.bar.menu') }}" :title="__('Menu on a phone')" external exact />
         <x-menu-item icon="o-printer" link="{{ route('public.bar.flyer') }}" :title="__('Print the QR sheets')" external />
+        @endcan
     </x-menu-sub>
-    @endcan
+    @endcanany
     @endfeature
 
     <li><x-menu-separator /></li>

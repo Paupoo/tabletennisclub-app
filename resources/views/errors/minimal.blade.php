@@ -1,5 +1,5 @@
 {{--
-    Le gabarit des huit pages d'erreur.
+    Le gabarit des pages d'erreur.
 
     Il embarquait un instantané figé de Tailwind v1, avec sa propre règle
     `prefers-color-scheme` — si bien qu'elles répondaient déjà au mode sombre,

@@ -40,6 +40,8 @@ enum Permission: string
     case BarOrdersPay = 'bar.orders.pay';
     case BarOrdersTakeover = 'bar.orders.takeover';
     case BarProductsManage = 'bar.products.manage';
+    case BarRestockingShop = 'bar.restocking.shop';
+    case BarStatsView = 'bar.stats.view';
     case BarStockManage = 'bar.stock.manage';
     case CashRegisterEntryCreate = 'cash_register.entry.create';
     case CashRegisterHolderChange = 'cash_register.holder.change';
@@ -50,12 +52,21 @@ enum Permission: string
     case ClubsManage = 'clubs.manage';
     case ClubUpdate = 'club.update';
     case CoachAreaAccess = 'coach_area.access';
+
+    // Communications : extraire les adresses du club et lui écrire. Un seul
+    // droit pour les deux, puisque qui peut écrire à 150 membres peut aussi
+    // bien copier leurs adresses.
+    case CommunicationsSend = 'communications.send';
     case ContactsManage = 'contacts.manage';
 
     // Contacts et CRM
     case ContactsView = 'contacts.view';
     case EquipmentHolderUpdate = 'equipment.holder.update';
     case EventPostsManage = 'event_posts.manage';
+
+    // Notes de frais : accepter, réduire, rejeter, annuler une acceptation.
+    // Lire les notes passe par PaymentsView, comme le reste de la trésorerie.
+    case ExpenseReportsProcess = 'expense_reports.process';
 
     // Installations
     case FacilitiesView = 'facilities.view';

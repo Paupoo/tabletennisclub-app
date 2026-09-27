@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Bar;
 
+use App\Actions\Bar\RecordBarOrderPayment;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\Bar\Models\BarOrderItem;
 use App\Domains\Bar\Services\StockService;
@@ -26,7 +27,7 @@ class BarOrderController extends Controller
         $this->middleware('auth');
     }
 
-    public function destroy(BarOrder $order): RedirectResponse
+    public function destroy(BarOrder $order, RecordBarOrderPayment $recordPayment): RedirectResponse
     {
         // La suppression reste à son auteur, elle : elle est irréversible — elle
         // restitue le stock et détruit les lignes — et `bar.orders.manage` la garde
@@ -40,7 +41,9 @@ class BarOrderController extends Controller
             return back()->with('error', 'Impossible de supprimer une commande payée.');
         }
 
-        DB::transaction(function () use ($order): void {
+        DB::transaction(function () use ($order, $recordPayment): void {
+            // Un QR affiché avait peut-être réservé une ligne chez le trésorier.
+            $recordPayment->release($order);
             $order->load('items');
             foreach ($order->items as $item) {
                 $this->stockService->restoreFromOrderItem(

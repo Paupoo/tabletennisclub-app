@@ -30,6 +30,7 @@ enum Feature: string
     case Bar = 'bar';
     case CashRegister = 'cash_register';
     case Contacts = 'contacts';
+    case ExpenseReports = 'expense_reports';
     case HelpCentre = 'help_centre';
     case Interclubs = 'interclubs';
     case Meetings = 'meetings';
@@ -75,6 +76,12 @@ enum Feature: string
 
     public function enabled(): bool
     {
+        // A part of the treasury, like the cash register is not: expense
+        // reports end in a refund the treasury pays, so they vanish with it.
+        if ($this === self::ExpenseReports && self::Treasury->disabled()) {
+            return false;
+        }
+
         return (bool) config('features.' . $this->value, true);
     }
 
@@ -85,6 +92,7 @@ enum Feature: string
             self::Bar => __('Bar'),
             self::CashRegister => __('Cash register'),
             self::Contacts => __('Contacts'),
+            self::ExpenseReports => __('Expense reports'),
             self::HelpCentre => __('Help centre'),
             self::Interclubs => __('Interclubs'),
             self::Meetings => __('Meetings'),

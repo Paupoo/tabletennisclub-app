@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Mail\InviteNewUserMail;
@@ -21,7 +22,7 @@ beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->create();
     actingAs($this->admin);
 
-    Season::factory()->create(['is_active' => true]);
+    $this->season = Season::factory()->create(['is_active' => true]);
 });
 
 describe('rendering and display', function (): void {
@@ -621,8 +622,16 @@ describe('bulk subscription', function (): void {
 });
 
 describe('teams dropdown', function (): void {
+    beforeEach(function (): void {
+        // The picker lists our own teams of the active season only.
+        $this->ownTeam = [
+            'club_id' => Club::factory()->ownClub()->create()->id,
+            'season_id' => $this->season->id,
+        ];
+    });
+
     it('loads teams correctly', function (): void {
-        $team = Team::factory()->create(['name' => 'Team A']);
+        $team = Team::factory()->create(['name' => 'Team A', ...$this->ownTeam]);
 
         $component = Livewire::test(USER_INDEX_COMPONENT);
         $teams = $component->get('teams');
@@ -633,7 +642,7 @@ describe('teams dropdown', function (): void {
 
     it('formats teams with captain avatar', function (): void {
         $captain = User::factory()->create(['photo' => 'captain.jpg']);
-        $team = Team::factory()->create(['captain_id' => $captain->id]);
+        $team = Team::factory()->create(['captain_id' => $captain->id, ...$this->ownTeam]);
 
         $component = Livewire::test(USER_INDEX_COMPONENT);
         $teams = $component->get('teams');
@@ -643,7 +652,7 @@ describe('teams dropdown', function (): void {
 
     it('uses default avatar when captain has no photo', function (): void {
         $captain = User::factory()->create(['photo' => null]);
-        $team = Team::factory()->create(['captain_id' => $captain->id]);
+        $team = Team::factory()->create(['captain_id' => $captain->id, ...$this->ownTeam]);
 
         $component = Livewire::test(USER_INDEX_COMPONENT);
         $teams = $component->get('teams');

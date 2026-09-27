@@ -1659,11 +1659,12 @@ new class extends Component
         }
 
         // Un mailable ne passe pas par `routeNotificationForMail()` : sans
-        // `contactEmail()`, l'invitation part vers `email`, null pour un compte
-        // géré, et le bouton annonce quand même un envoi.
-        $recipient = $payment->payable->user->contactEmail();
+        // `contactEmails()`, l'invitation part vers `email`, null pour un compte
+        // géré, et le bouton annonce quand même un envoi. Un mineur est joint
+        // avec chacun de ses tuteurs, un message par adresse.
+        $recipients = $payment->payable->user->contactEmails();
 
-        if ($recipient === null) {
+        if ($recipients === []) {
             $this->error(__('No email address on file for :name — hand them the payment details.', [
                 'name' => $payment->payable->user->first_name . ' ' . $payment->payable->user->last_name,
             ]));
@@ -1671,12 +1672,14 @@ new class extends Component
             return;
         }
 
-        Mail::to($recipient)->send(new PaymentInvitationEmail($payment));
+        foreach ($recipients as $recipient) {
+            Mail::to($recipient)->send(new PaymentInvitationEmail($payment));
+        }
 
         $payment->increment('invitation_counter');
         $this->paymentData['invitation_counter'] = $payment->invitation_counter;
 
-        $this->success(__('Payment invitation sent to :email.', ['email' => $recipient]));
+        $this->success(__('Payment invitation sent to :email.', ['email' => implode(', ', $recipients)]));
     }
 
     /**
@@ -1990,11 +1993,11 @@ new class extends Component
 
         foreach ($registered as $entry) {
             // Un mailable ne passe pas par `routeNotificationForMail()` : sans
-            // `contactEmail()`, l'invitation part vers `email`, null pour le
+            // `contactEmails()`, l'invitation part vers `email`, null pour le
             // compte géré qui fait justement l'ordinaire de ce drawer.
-            $recipient = $entry['user']->contactEmail();
+            $recipients = $entry['user']->contactEmails();
 
-            if ($recipient === null) {
+            if ($recipients === []) {
                 $unreachable[] = $entry['user']->first_name . ' ' . $entry['user']->last_name;
 
                 continue;
@@ -2005,7 +2008,9 @@ new class extends Component
             // Une demande retombée en attente n'a pas de paiement : réclamer de
             // l'argent pour une affiliation non validée serait faux.
             if ($entry['payment'] !== null) {
-                Mail::to($recipient)->send(new PaymentInvitationEmail($entry['payment']));
+                foreach ($recipients as $recipient) {
+                    Mail::to($recipient)->send(new PaymentInvitationEmail($entry['payment']));
+                }
                 $entry['payment']->increment('invitation_counter');
             }
         }

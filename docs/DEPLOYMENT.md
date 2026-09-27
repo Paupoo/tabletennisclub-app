@@ -17,11 +17,19 @@ Procédure de mise en production sur un serveur classique (VPS / hébergement), 
 | Accès | SSH avec les droits d'écriture sur le répertoire applicatif |
 | `ghostscript` | Convertit les formulaires mutuelle publiés en PDF 1.7 vers 1.4, seule version que sait lire le moteur de remplissage |
 | `poppler-utils` | Fournit `pdftotext`, qui localise les champs d'un formulaire à partir de ses intitulés |
+| Extension PHP `zip` | Construit l'archive ZIP des notes de frais (`php -m \| grep zip`) |
 
 Les deux derniers ne servent qu'aux attestations mutuelle. Tant que le secrétariat
 n'a pas téléversé le cachet et le paraphe, posez `FEATURE_ATTESTATIONS=false` dans
 le `.env` **de production** — comme tous les domaines, le défaut est actif, et
 l'éteindre est une décision propre à cet environnement. Sans eux, la fonctionnalité échoue au moment où un membre clique, pas au téléversement du formulaire — installez-les avant d'allumer `FEATURE_ATTESTATIONS`.
+
+Les notes de frais se déploient **éteintes** (`FEATURE_EXPENSE_REPORTS=false`) : lancer
+le `RoleSeeder` (nouvelle permission `expense_reports.process`, délégations *Notes de
+frais* et *Vérification des comptes*), attribuer les délégations, vérifier l'extension
+`zip`, puis allumer. `ghostscript`, s'il est installé, sert aussi à imprimer les
+justificatifs PDF que mPDF refuse tels quels ; sans lui, la page d'export renvoie à
+l'original du ZIP.
 
 Trois éléments doivent tourner **en permanence**, en plus du serveur web :
 
@@ -121,8 +129,12 @@ Une seule entrée crontab suffit :
 | `payment:send-refund-reminder` | lundi 08 h 00 | Rappel de remboursement au trésorier et au secrétaire |
 | `season:provision` | 1er juillet, 06 h 00 | Provisionne les deux saisons suivantes (idempotent) |
 | `queue:check-health` | horaire | Alerte les admins par e-mail si le worker semble mort |
+| `expense-reports:send-digest` | dimanche 19 h 00 | Récapitulatif des notes de frais en attente, à chaque valideur |
+| `expense-reports:remind-archiving` | 1er avril, juillet, octobre 08 h 00 ; 5 janvier (`--year-end`) | Rappel d'archivage des notes de frais payées |
+| `expense-reports:purge-files` | 03 h 30 | Efface les justificatifs des notes rejetées ou retirées depuis deux ans |
+| `expense-reports:prune-exports` | 03 h 40 | Efface les exports de notes de frais de plus de 7 jours |
 
-Chaque tâche est conditionnée au *feature flag* de son domaine : un domaine éteint dans cet environnement n'envoie plus rien.
+Chaque tâche est conditionnée au *feature flag* de son domaine : un domaine éteint dans cet environnement n'envoie plus rien. Les deux purges font exception : éteindre les notes de frais ne doit pas prolonger la vie des justificatifs ni des exports.
 
 ---
 

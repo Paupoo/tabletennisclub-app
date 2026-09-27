@@ -402,6 +402,6 @@ it('opens the QR code in a modal instead of the page flow', function (): void {
     // d'un wire:model, absent ici, donc Alpine le fournit. Et showModal() plutôt
     // que l'attribut `open` — le drawer du layout porte un transform, qui
     // deviendrait le bloc conteneur de cette boîte en position:fixed.
-    $response->assertSee('x-data="{ open: true }"', escape: false);
+    $response->assertSee('x-data="{ open: true, manual: false }"', escape: false);
     $response->assertSee('x-init="$el.showModal()"', escape: false);
 });

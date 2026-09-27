@@ -6,12 +6,17 @@ namespace Resources\views\Pages\Bar\Products;
 
 use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarProduct;
+use App\Domains\Bar\Services\BarRestockingSettings;
+use App\Domains\Bar\Services\RestockingAutomation;
+use App\Domains\Bar\Services\RestockingSuggestions;
 use App\Domains\Bar\Services\StockService;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use App\Support\LocaleSort;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -50,12 +55,24 @@ new class extends Component
 
     public ?int $categoryId = null;
 
+    /** Réglages du bar : nombre de semaines de ventes couvertes par le max. */
+    public string $coverageMaxWeeks = '';
+
+    /** Réglages du bar : nombre de semaines de ventes couvertes par le min. */
+    public string $coverageMinWeeks = '';
+
     public bool $deleteModal = false;
 
     public bool $drawer = false;
 
     /** Produit ouvert dans le tiroir ; null = création. */
     public ?int $editingId = null;
+
+    /** Le max du produit dans le tiroir ; vide = hors réassort. */
+    public string $maxStock = '';
+
+    /** Le min (seuil d'alerte) du produit dans le tiroir ; vide = le défaut du bar. */
+    public string $minStock = '';
 
     public string $name = '';
 
@@ -70,9 +87,72 @@ new class extends Component
     #[Url]
     public string $order = 'category';
 
+    public string $packLabel = '';
+
+    public string $packSize = '1';
+
     public string $price = '';
 
+    /** Réglages du bar : le réassort automatique est-il allumé ? */
+    public bool $restockingAutomatic = false;
+
+    /** Le plafond du produit, que l'automatique ne dépasse jamais ; vide = aucun. */
+    public string $restockingCap = '';
+
+    /** `auto`, `manual`, ou vide pour suivre le bar. */
+    public string $restockingMode = '';
+
+    public bool $restockingSettingsDrawer = false;
+
+    /** Les semaines couvertes par le max de ce produit ; vide = celles du bar. */
+    public string $restockingWeeks = '';
+
     public string $search = '';
+
+    /**
+     * Reprendre les suggestions pour tous les produits qu'on n'a pas encore réglés.
+     *
+     * « Pas encore réglé » veut dire sans max : c'est le max qui fait entrer un
+     * produit dans le réassort. Un réglage posé à la main n'est jamais écrasé en
+     * masse — il a peut-être une raison que les ventes ignorent.
+     */
+    public function applyAllSuggestions(RestockingSuggestions $restockingSuggestions): void
+    {
+        $applied = 0;
+
+        foreach ($this->unsetProductsWithSuggestion($restockingSuggestions->all()) as $product => $suggestion) {
+            BarProduct::query()->whereKey($product)->update([
+                'low_stock_threshold' => $suggestion['min'],
+                'max_stock' => $suggestion['max'],
+            ]);
+            $applied++;
+        }
+
+        $this->success(trans_choice('{0} No suggestion to apply.|{1} Suggestion applied to one product.|[2,*] Suggestions applied to :count products.', $applied));
+    }
+
+    /**
+     * Reprendre pour un produit le min et le max que suggèrent ses ventes.
+     *
+     * Jamais automatique : c'est le magasinier qui sait ce que les ventes ignorent,
+     * la place au frigo ou une date de péremption.
+     */
+    public function applySuggestion(int $productId, RestockingSuggestions $restockingSuggestions, RestockingAutomation $automation): void
+    {
+        $suggestion = $restockingSuggestions->all()[$productId] ?? null;
+        $product = BarProduct::query()->findOrFail($productId);
+
+        if ($suggestion === null || $automation->isAutomatic($product)) {
+            return;
+        }
+
+        $product->update([
+            'low_stock_threshold' => $suggestion['min'],
+            'max_stock' => $suggestion['max'],
+        ]);
+
+        $this->success(__('Suggestion applied.'));
+    }
 
     public function delete(): void
     {
@@ -99,6 +179,13 @@ new class extends Component
         $this->editingId = null;
         $this->name = '';
         $this->price = '';
+        $this->packSize = '1';
+        $this->packLabel = '';
+        $this->minStock = '';
+        $this->maxStock = '';
+        $this->restockingMode = '';
+        $this->restockingWeeks = '';
+        $this->restockingCap = '';
         $this->categoryId = BarCategory::query()->orderBy('name')->value('id');
         $this->resetValidation();
         $this->drawer = true;
@@ -112,8 +199,43 @@ new class extends Component
         $this->name = $product->name;
         $this->price = number_format($product->sale_price / 100, 2, ',', '');
         $this->categoryId = $product->category_id;
+        $this->packSize = (string) $product->pack_size;
+        $this->packLabel = (string) $product->pack_label;
+        $this->minStock = (string) $product->low_stock_threshold;
+        $this->maxStock = (string) $product->max_stock;
+        $this->restockingMode = (string) $product->restocking_mode;
+        $this->restockingWeeks = (string) $product->restocking_weeks;
+        $this->restockingCap = (string) $product->restocking_cap;
         $this->resetValidation();
         $this->drawer = true;
+    }
+
+    public function openRestockingSettings(BarRestockingSettings $settings): void
+    {
+        $this->restockingAutomatic = $settings->isAutomatic();
+        $this->coverageMinWeeks = (string) $settings->minWeeks();
+        $this->coverageMaxWeeks = (string) $settings->maxWeeks();
+        $this->resetValidation();
+        $this->restockingSettingsDrawer = true;
+    }
+
+    /**
+     * Lancer tout de suite le calcul du vendredi, sur les réglages enregistrés.
+     *
+     * Mêmes règles que la tâche planifiée : seuls les produits en automatique
+     * bougent, et seulement au-delà du seuil anti-agitation.
+     */
+    public function recalculateRestocking(RestockingAutomation $automation): void
+    {
+        abort_unless(Gate::allows('bar.stock.manage'), 403);
+
+        $count = count($automation->recalculate());
+
+        $this->restockingSettingsDrawer = false;
+
+        $count === 0
+            ? $this->info(__('Nothing to adjust: the automatic products already follow their sales.'))
+            : $this->success(trans_choice('{1} :count product adjusted.|[2,*] :count products adjusted.', $count, ['count' => $count]));
     }
 
     public function render(): View
@@ -121,7 +243,7 @@ new class extends Component
         return $this->view();
     }
 
-    public function save(): void
+    public function save(RestockingAutomation $automation): void
     {
         $validated = $this->validate([
             'name' => [
@@ -130,12 +252,26 @@ new class extends Component
             ],
             'price' => ['required', 'string', 'regex:/^\d+(?:[\.,]\d{1,2})?$/'],
             'categoryId' => ['required', 'exists:bar_categories,id'],
+            'packSize' => ['required', 'integer', 'min:1', 'max:1000'],
+            'packLabel' => ['nullable', 'string', 'max:30'],
+            'restockingMode' => ['nullable', Rule::in(['auto', 'manual'])],
+            'restockingWeeks' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'restockingCap' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'minStock' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'maxStock' => ['nullable', 'integer', 'min:0', 'max:9999'],
         ]);
 
         $payload = [
             'name' => $validated['name'],
             'sale_price' => cents($validated['price']),
             'category_id' => (int) $validated['categoryId'],
+            'pack_size' => (int) $validated['packSize'],
+            'pack_label' => trim((string) $validated['packLabel']) ?: null,
+            'restocking_mode' => ($validated['restockingMode'] ?? '') ?: null,
+            'restocking_weeks' => filled($validated['restockingWeeks'] ?? null) ? (int) $validated['restockingWeeks'] : null,
+            'restocking_cap' => filled($validated['restockingCap'] ?? null) ? (int) $validated['restockingCap'] : null,
+            'low_stock_threshold' => filled($validated['minStock'] ?? null) ? (int) $validated['minStock'] : null,
+            'max_stock' => filled($validated['maxStock'] ?? null) ? (int) $validated['maxStock'] : null,
         ];
 
         if ($this->editingId === null) {
@@ -143,11 +279,46 @@ new class extends Component
             BarProduct::query()->create($payload);
             $this->success(__('Product created.'));
         } else {
-            BarProduct::query()->findOrFail($this->editingId)->update($payload);
-            $this->success(__('Product updated.'));
+            $product = BarProduct::query()->findOrFail($this->editingId)->fill($payload);
+
+            // Même règle que les champs du tableau : un min ou un max corrigé à la
+            // main sur un produit automatique le fait passer en manuel.
+            if ($product->isDirty(['low_stock_threshold', 'max_stock']) && $automation->isAutomatic($product)) {
+                $product->restocking_mode = 'manual';
+                $product->save();
+                $this->warning(__(':product is now manual: the automatic restocking leaves it alone.', ['product' => $product->name]));
+            } else {
+                $product->save();
+                $this->success(__('Product updated.'));
+            }
         }
 
         $this->drawer = false;
+    }
+
+    /**
+     * Allumer ou éteindre le réassort automatique, et régler la couverture du bar.
+     *
+     * Le réglage du stock, pas celui des produits : c'est `bar.stock.manage` qui
+     * décide combien de semaines le bar garde en réserve.
+     */
+    public function saveRestockingSettings(BarRestockingSettings $settings): void
+    {
+        abort_unless(Gate::allows('bar.stock.manage'), 403);
+
+        $this->validate([
+            'coverageMinWeeks' => ['required', 'integer', 'min:1', 'max:12'],
+            'coverageMaxWeeks' => ['required', 'integer', 'min:1', 'max:12', 'gte:coverageMinWeeks'],
+        ], [], [
+            'coverageMinWeeks' => __('Min coverage'),
+            'coverageMaxWeeks' => __('Max coverage'),
+        ]);
+
+        $settings->setAutomatic($this->restockingAutomatic);
+        $settings->setCoverage((int) $this->coverageMinWeeks, (int) $this->coverageMaxWeeks);
+
+        $this->restockingSettingsDrawer = false;
+        $this->success(__('Restocking settings saved.'));
     }
 
     /**
@@ -161,6 +332,19 @@ new class extends Component
         BarProduct::query()->findOrFail($productId)->update(['is_available' => $available ? 1 : 0]);
 
         $this->success($available ? __('Product available again.') : __('Product set unavailable.'));
+    }
+
+    /**
+     * Jusqu'où remonter le stock quand on fait les courses.
+     *
+     * Vidé, le produit sort du réassort : au contraire du seuil, un max absent ne
+     * retombe sur aucun défaut, il dit « on ne rachète pas ».
+     */
+    public function updateMaxStock(int $productId, ?string $maxStock, RestockingAutomation $automation): void
+    {
+        $value = ($maxStock === null || trim($maxStock) === '') ? null : max(0, (int) $maxStock);
+
+        $this->correctByHand(BarProduct::query()->findOrFail($productId), ['max_stock' => $value], __('Restocking target updated.'), $automation);
     }
 
     /**
@@ -212,24 +396,45 @@ new class extends Component
      * vide, là où le stock ne l'accepte pas : « pas de seuil propre » est une
      * réponse, « pas de stock » n'en est pas une.
      */
-    public function updateThreshold(int $productId, ?string $threshold): void
+    public function updateThreshold(int $productId, ?string $threshold, RestockingAutomation $automation): void
     {
         $value = ($threshold === null || trim($threshold) === '') ? null : max(0, (int) $threshold);
 
-        BarProduct::query()->findOrFail($productId)->update(['low_stock_threshold' => $value]);
-
-        $this->success(__('Alert threshold updated.'));
+        $this->correctByHand(BarProduct::query()->findOrFail($productId), ['low_stock_threshold' => $value], __('Alert threshold updated.'), $automation);
     }
 
     public function with(): array
     {
+        // Un produit automatique n'a pas de suggestion à montrer : c'est
+        // l'automatique qui le règle, et un tap la poserait à la main.
+        $automaticIds = $this->automaticIds();
+        $suggestions = array_diff_key(app(RestockingSuggestions::class)->all(), $automaticIds);
+
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
             'categories' => $this->categoriesForSelect(),
             'groups' => $this->groups(),
             'headers' => $this->headers(),
+            'automaticIds' => $automaticIds,
+            'suggestions' => $suggestions,
+            'unsetWithSuggestionCount' => count($this->unsetProductsWithSuggestion($suggestions)),
             'lowStockCount' => $this->products()->filter(fn (BarProduct $p): bool => $p->is_low_stock)->count(),
         ];
+    }
+
+    /**
+     * Les produits que l'automatique règle, pour les marquer dans le tableau.
+     *
+     * @return array<int, true>
+     */
+    protected function automaticIds(): array
+    {
+        $automation = app(RestockingAutomation::class);
+
+        return $this->products()
+            ->filter(fn (BarProduct $product): bool => $automation->isAutomatic($product))
+            ->mapWithKeys(fn (BarProduct $product): array => [$product->id => true])
+            ->all();
     }
 
     protected function breadcrumbChain(): Breadcrumb
@@ -246,6 +451,28 @@ new class extends Component
             BarCategory::query()->get()->map(fn (BarCategory $c): array => ['id' => $c->id, 'name' => $c->name]),
             'name'
         );
+    }
+
+    /**
+     * Écrire une correction faite à la main.
+     *
+     * Sur un produit que l'automatique règle, la correction le fait passer en
+     * manuel, et l'écran le dit : sans ça, le vendredi suivant l'effacerait sans
+     * que personne comprenne pourquoi (décidé le 2026-09-27).
+     *
+     * @param  array<string, int|null>  $values
+     */
+    protected function correctByHand(BarProduct $product, array $values, string $message, RestockingAutomation $automation): void
+    {
+        if ($automation->isAutomatic($product)) {
+            $product->update([...$values, 'restocking_mode' => 'manual']);
+            $this->warning(__(':product is now manual: the automatic restocking leaves it alone.', ['product' => $product->name]));
+
+            return;
+        }
+
+        $product->update($values);
+        $this->success($message);
     }
 
     /**
@@ -301,7 +528,10 @@ new class extends Component
             ['key' => 'name', 'label' => __('Product'), 'sortable' => false, 'class' => 'max-w-0 w-full'],
             ['key' => 'price', 'label' => __('Price'), 'sortable' => false, 'class' => 'hidden lg:table-cell text-end w-1'],
             ['key' => 'stock', 'label' => __('Stock'), 'sortable' => false, 'class' => 'text-end w-1'],
-            ['key' => 'threshold', 'label' => __('Threshold'), 'sortable' => false, 'class' => 'hidden lg:table-cell text-end w-1'],
+            // « Min » plutôt que « Seuil » : le même chiffre déclenche l'alerte au
+            // comptoir et l'entrée dans la liste de courses, et il fait paire avec Max.
+            ['key' => 'threshold', 'label' => __('Min'), 'sortable' => false, 'class' => 'hidden lg:table-cell text-end w-1'],
+            ['key' => 'max', 'label' => __('Max'), 'sortable' => false, 'class' => 'hidden lg:table-cell text-end w-1'],
             ['key' => 'available', 'label' => __('On menu'), 'sortable' => false, 'class' => 'text-end w-1'],
         ];
     }
@@ -318,5 +548,18 @@ new class extends Component
             ->with('category')
             ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"))
             ->get();
+    }
+
+    /**
+     * Les suggestions des produits sans max, c'est-à-dire pas encore réglés.
+     *
+     * @param  array<int, array{min: int, max: int}>  $suggestions
+     * @return array<int, array{min: int, max: int}>
+     */
+    protected function unsetProductsWithSuggestion(array $suggestions): array
+    {
+        $unset = BarProduct::query()->whereNull('max_stock')->pluck('id')->all();
+
+        return array_intersect_key($suggestions, array_flip($unset));
     }
 };

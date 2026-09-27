@@ -231,3 +231,13 @@ Your Belgian mutual insurer reimburses part of your club cotisation. **My space 
 **For your children.** Sign in as your ward and follow the same steps; the national register number asked for is the child's.
 
 Every attestation carries a reference and a QR code pointing at a public page that confirms the club issued it, and whether it still stands.
+
+---
+
+## 13. Expense Reports
+
+Paid for something on the club's behalf (balls, supplies, parking on an away trip)? **My space → My expense reports → Declare an expense**: nature, description, amount VAT included, date, refund IBAN and 1 to 5 proofs (PDF, JPG, PNG or WebP, 10 MB each at most).
+
+**Adult members only**, with their birthdate on file; a parent declares from their own account, never from their child's.
+
+The treasury accepts or rejects the report, with a reason you receive by email. An accepted report is refunded **by bank transfer**; it turns "paid" once the club finds the transfer on its statement. While it is in progress you may change or withdraw it; a rejected report can be **resumed** into a new one already filled in. The detail is in the help article *Déclarer une note de frais*.

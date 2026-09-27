@@ -12,13 +12,16 @@ class StockService
     /**
      * Create a new incoming stock movement.
      * For FIFO, remaining_quantity starts equal to quantity.
+     *
+     * `$restockingId` relie l'entrée à la tournée de courses qui l'a rapportée.
      */
     public function addIncomingStock(
         int $productId,
         int $quantity,
         ?string $reason = null,
         ?int $createdBy = null,
-        ?int $modifiedBy = null
+        ?int $modifiedBy = null,
+        ?int $restockingId = null,
     ): BarStockMovement {
         if ($quantity <= 0) {
             throw new RuntimeException('La quantité entrante doit être supérieure à 0.');
@@ -32,6 +35,7 @@ class StockService
             'reason' => $reason,
             'created_by' => $createdBy,
             'modified_by' => $modifiedBy,
+            'restocking_id' => $restockingId,
         ]);
     }
 

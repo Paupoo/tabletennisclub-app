@@ -6,6 +6,7 @@ namespace App\Support\Help;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Feature;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Role;
 use App\Http\Controllers\ClubAdmin\DashboardController;
@@ -49,6 +50,24 @@ final class HelpAudience
 
         if ($user->can(Permission::FinesIssue->value)) {
             $tags[] = 'treasurer';
+        }
+
+        // Expense reports: declaring is for adults — a minor is never
+        // answerable for the club's money, so the article does not even show —
+        // deciding follows its own right, which the backup délégation holds
+        // without the fines, and reading follows the treasury.
+        if (Feature::ExpenseReports->enabled()) {
+            if ($user->isAdult()) {
+                $tags[] = 'adult';
+            }
+
+            if ($user->can(Permission::ExpenseReportsProcess->value)) {
+                $tags[] = 'expense_approver';
+            }
+
+            if ($user->can(Permission::PaymentsView->value)) {
+                $tags[] = 'auditor';
+            }
         }
 
         if (Team::where('captain_id', $user->id)->exists()) {

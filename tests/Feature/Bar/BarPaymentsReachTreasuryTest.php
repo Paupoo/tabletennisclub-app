@@ -121,8 +121,8 @@ it('sends a QR payment to the treasurer, waiting to be reconciled', function ():
         ->and($payment->amount_paid)->toBe(0.0)
         ->and($payment->transaction_id)->toBeNull()
         ->and($payment->payment_method)->toBe('QRCode')
-        // La communication que le client a sous les yeux en scannant le QR.
-        ->and($payment->reference)->toBe("Bar order #{$order->id}");
+        // Une communication structurée : « Bar order #12 » bloquait des virements.
+        ->and($payment->reference)->toMatch('#^\d{3}/\d{4}/\d{5}$#');
 });
 
 it('leaves cash and offered rounds out of the bank list', function (string $method): void {
@@ -269,13 +269,13 @@ it('describes a bar order in the treasurer list, without inventing a payer', fun
         'payment_method' => 'qr',
     ]);
 
-    (new RecordBarOrderPayment)($order);
+    $payment = (new RecordBarOrderPayment)($order);
 
     $rows = Livewire::actingAs($this->treasurer)
         ->test('pages::club-admin.treasury.payments')
         ->viewData('payments');
 
-    $row = collect($rows->items())->firstWhere('reference', "Bar order #{$order->id}");
+    $row = collect($rows->items())->firstWhere('reference', $payment->reference);
 
     expect($row)->not->toBeNull()
         // Le bar ne sait pas qui a payé : le nom de l'ardoise est tout ce qu'on a,
@@ -403,7 +403,7 @@ it('lets the treasurer single out what came from the bar', function (): void {
         'paid_at' => now(),
         'payment_method' => 'qr',
     ]);
-    (new RecordBarOrderPayment)($order);
+    $payment = (new RecordBarOrderPayment)($order);
 
     $screen = Livewire::actingAs($this->treasurer)->test('pages::club-admin.treasury.payments');
 
@@ -412,5 +412,5 @@ it('lets the treasurer single out what came from the bar', function (): void {
 
     $rows = $screen->set('eventType', BarOrder::class)->viewData('payments');
 
-    expect(collect($rows->items())->pluck('reference')->all())->toBe(["Bar order #{$order->id}"]);
+    expect(collect($rows->items())->pluck('reference')->all())->toBe([$payment->reference]);
 });

@@ -6,6 +6,10 @@ use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\League;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 
 /*
 |--------------------------------------------------------------------------
@@ -177,4 +181,32 @@ it('spells out the transfer in the QR modal, for a bank app that cannot read the
         ->toContain('BE23 7323 3320 8791')
         ->toContain(euros(750))
         ->toContain('+++' . barPaymentConfirmationLine($order)->reference . '+++');
+});
+
+it('names our own club in the transfer, even on a night a visiting club is expected', function (): void {
+    // La liste des clubs visiteurs de l'offert est rendue plus haut sur la même
+    // page : un nom de variable partagé y remplaçait notre club par le visiteur.
+    $season = Season::factory()->create(['is_active' => true]);
+    $league = League::create(['division' => '1A', 'level' => 'PROVINCIAL_BW', 'category' => 'MEN', 'season_id' => $season->id]);
+    $team = fn (Club $club, string $name): Team => Team::create(['name' => $name, 'season_id' => $season->id, 'league_id' => $league->id, 'club_id' => $club->id]);
+    Interclub::create([
+        'address' => 'Clubhouse',
+        'start_date_time' => now()->setTime(20, 0),
+        'total_players' => 4,
+        'visited_team_id' => $team(Club::query()->where('is_own_club', true)->sole(), 'A')->id,
+        'visiting_team_id' => $team(Club::factory()->create(['name' => 'Visiting Club']), 'B')->id,
+        'season_id' => $season->id,
+        'league_id' => $league->id,
+    ]);
+    $order = barPaymentConfirmationOrder($this->barman);
+
+    $html = $this->actingAs($this->barman)
+        ->get(route('bar.payment.show', ['order' => $order->id, 'method' => 'qr']))
+        ->assertOk()
+        ->getContent();
+
+    expect($html)->toContain('Visiting Club')
+        ->and(barPaymentConfirmationDialog($html, 'bar-qr-modal'))
+        ->toContain('C.T.T Ottignies-Blocry')
+        ->toContain('BE23 7323 3320 8791');
 });

@@ -261,11 +261,11 @@
                 <dl x-show="manual" x-cloak class="space-y-3">
                     <div>
                         <dt class="text-muted text-xs font-bold uppercase tracking-widest">Bénéficiaire</dt>
-                        <dd class="text-lg font-semibold">{{ $club?->name }}</dd>
+                        <dd class="text-lg font-semibold">{{ $ownClub?->name }}</dd>
                     </div>
                     <div>
                         <dt class="text-muted text-xs font-bold uppercase tracking-widest">IBAN</dt>
-                        <dd class="font-mono text-xl font-semibold">{{ $club?->bank_account_formatted }}</dd>
+                        <dd class="font-mono text-xl font-semibold">{{ $ownClub?->bank_account_formatted }}</dd>
                     </div>
                     <div>
                         <dt class="text-muted text-xs font-bold uppercase tracking-widest">Montant</dt>

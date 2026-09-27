@@ -123,11 +123,13 @@ class BarPaymentController extends Controller
         $method = $request->input('method');
         $qrCode = null;
         $payment = null;
-        $club = null;
+        $ownClub = null;
         if ($method === 'qr') {
             // Pour le virement manuel : certaines applis bancaires ne lisent pas
             // l'EPC, et le client recopie alors ce que l'écran lui montre.
-            $club = Club::ourClub()->first();
+            // `$ownClub` et non `$club` : la vue boucle déjà sur les clubs visiteurs
+            // sous ce nom-là, et la boucle l'écrasait.
+            $ownClub = Club::ourClub()->first();
             $payment = $recordPayment->reserve($order);
             $qrCode = $generatePaymentQR($payment);
         }
@@ -138,7 +140,7 @@ class BarPaymentController extends Controller
                 'method',
                 'qrCode',
                 'payment',
-                'club',
+                'ownClub',
                 'visitingClubs',
                 'offeredOrderLimitReached',
             ))

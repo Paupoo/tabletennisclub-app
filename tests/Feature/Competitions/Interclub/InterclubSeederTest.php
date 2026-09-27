@@ -19,7 +19,10 @@ uses(RefreshDatabase::class);
  * last team the weakest, and each category only fields players it admits.
  */
 beforeEach(function (): void {
-    Club::factory()->ownClub()->create();
+    // Le matricule réel du club, celui de ClubSeeder. Tiré au hasard, il
+    // tombait parfois sur celui d'un adversaire du seeder, qui prenait alors
+    // notre club pour cet adversaire et lui créait une équipe en double.
+    Club::factory()->ownClub()->create(['licence' => 'BBW214']);
     $this->aurelien = User::factory()->create(['email' => 'aurelien.paulus@gmail.com', 'ranking' => Ranking::E4]);
 
     $this->seed(InterclubSeeder::class);

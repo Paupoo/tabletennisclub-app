@@ -201,6 +201,16 @@ Route::prefix('admin/club-admin/users/')
     });
 // Season planning board — visible to the whole committee, mutations reserved to managers (decision #18).
 /*
+ * Club-wide communications — the committee. Taking every member's address out
+ * of the application is the most sensitive thing it does, hence one explicit
+ * permission rather than the committee's reading baseline.
+ */
+Route::prefix('admin/club-admin/communications/')
+    ->middleware(['auth', 'verified', 'can:communications.send'])
+    ->group(function (): void {
+        Route::livewire('/', 'pages::club-admin.communications.index')->name('admin.communications.index');
+    });
+/*
  * Mutual attestations — the attestations délégation, and nobody else.
  *
  * Deliberately not the members duty: whoever reaches this screen holds the club

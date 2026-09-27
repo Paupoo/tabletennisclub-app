@@ -122,7 +122,7 @@
     </x-menu-sub>
     @endcanany
 
-    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'trainings.view'])
+    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'trainings.view', 'communications.send'])
     <x-menu-sub icon="o-user-group" :title="__('Members Admin')">
         @can('users.view')
             <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
@@ -140,6 +140,9 @@
         @endcan
         @can('subscriptions.view')
             <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
+        @endcan
+        @can('communications.send')
+            <x-menu-item icon="o-envelope" link="{{ route('admin.communications.index') }}" :title="__('Communications')" />
         @endcan
         @feature('training_planning')
         @can('trainings.view')

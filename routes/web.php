@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\Shared\Enums\InvitationTarget;
 use App\Http\Controllers\Attestations\AttestationDownloadController;
 use App\Http\Controllers\Attestations\AttestationVerificationController;
 use App\Http\Controllers\Bar\PublicBarMenuController;
@@ -217,14 +218,18 @@ Route::prefix('admin/club-admin/communications/')
     });
 /*
  * Where the button of an invitation leads: "for whom?", then the member's own
- * registration screen, from the right seat. Any signed-in member.
+ * registration screen, from the right seat. Any signed-in member. The type is
+ * pinned to InvitationTarget: left open, it swallowed /invitation/accept/{user}
+ * and /invitation/guardian/{guardian}, declared further down.
  */
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/invitation/{type}/{id}', [InvitationRedirectController::class, 'show'])
         ->whereNumber('id')
+        ->whereIn('type', array_column(InvitationTarget::cases(), 'value'))
         ->name('communications.invitation');
     Route::post('/invitation/{type}/{id}', [InvitationRedirectController::class, 'choose'])
         ->whereNumber('id')
+        ->whereIn('type', array_column(InvitationTarget::cases(), 'value'))
         ->name('communications.invitation.choose');
 });
 /*

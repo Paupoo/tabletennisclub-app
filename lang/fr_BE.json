@@ -5144,7 +5144,7 @@
     "Settings adjusted this week": "Réglages ajustés cette semaine",
     "The automatic restocking followed the sales.": "Le réassort automatique a suivi les ventes.",
     "Recalculate now": "Recalculer maintenant",
-    "Does now what Friday would do, with the saved settings: only the automatic products move.": "Fait maintenant ce que ferait le vendredi, avec les réglages enregistrés : seuls les produits en automatique bougent.",
+    "Updates the min and max of the automatic products right away, from their sales.": "Met à jour tout de suite le min et le max des produits automatiques, d'après leurs ventes.",
     "Nothing to adjust: the automatic products already follow their sales.": "Rien à ajuster : les produits en automatique suivent déjà leurs ventes.",
     "{1} :count product adjusted.|[2,*] :count products adjusted.": "{1} :count produit ajusté.|[2,*] :count produits ajustés.",
     "No longer selling": "Ne se vendent plus",

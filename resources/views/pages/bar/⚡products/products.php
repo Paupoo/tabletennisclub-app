@@ -137,15 +137,16 @@ new class extends Component
      * Jamais automatique : c'est le magasinier qui sait ce que les ventes ignorent,
      * la place au frigo ou une date de péremption.
      */
-    public function applySuggestion(int $productId, RestockingSuggestions $restockingSuggestions): void
+    public function applySuggestion(int $productId, RestockingSuggestions $restockingSuggestions, RestockingAutomation $automation): void
     {
         $suggestion = $restockingSuggestions->all()[$productId] ?? null;
+        $product = BarProduct::query()->findOrFail($productId);
 
-        if ($suggestion === null) {
+        if ($suggestion === null || $automation->isAutomatic($product)) {
             return;
         }
 
-        BarProduct::query()->findOrFail($productId)->update([
+        $product->update([
             'low_stock_threshold' => $suggestion['min'],
             'max_stock' => $suggestion['max'],
         ]);
@@ -404,13 +405,18 @@ new class extends Component
 
     public function with(): array
     {
+        // Un produit automatique n'a pas de suggestion à montrer : c'est
+        // l'automatique qui le règle, et un tap la poserait à la main.
+        $automaticIds = $this->automaticIds();
+        $suggestions = array_diff_key(app(RestockingSuggestions::class)->all(), $automaticIds);
+
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
             'categories' => $this->categoriesForSelect(),
             'groups' => $this->groups(),
             'headers' => $this->headers(),
-            'automaticIds' => $this->automaticIds(),
-            'suggestions' => $suggestions = app(RestockingSuggestions::class)->all(),
+            'automaticIds' => $automaticIds,
+            'suggestions' => $suggestions,
             'unsetWithSuggestionCount' => count($this->unsetProductsWithSuggestion($suggestions)),
             'lowStockCount' => $this->products()->filter(fn (BarProduct $p): bool => $p->is_low_stock)->count(),
         ];

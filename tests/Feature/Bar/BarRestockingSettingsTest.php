@@ -266,3 +266,20 @@ it('turns an automatic product manual when its drawer changes the min or max, an
         ->max_stock->toBe(60)
         ->restocking_mode->toBe('manual');
 });
+
+it('offers no suggestion on an automatic product, since the automatic restocking sets it', function (): void {
+    $this->jupiler->update(['low_stock_threshold' => 6, 'max_stock' => 20, 'restocking_mode' => 'auto']);
+    restockingSettingsSale($this->jupiler, 14);
+
+    Livewire::actingAs($this->storeKeeper)
+        ->test('pages::bar.products')
+        ->assertDontSee(__('Suggested: :min – :max', ['min' => 14, 'max' => 42]))
+        ->call('openProduct', $this->jupiler->id)
+        ->assertDontSee(__('Suggested: :min – :max', ['min' => 14, 'max' => 42]))
+        ->call('applySuggestion', $this->jupiler->id);
+
+    expect($this->jupiler->fresh())
+        ->low_stock_threshold->toBe(6)
+        ->max_stock->toBe(20)
+        ->restocking_mode->toBe('auto');
+});

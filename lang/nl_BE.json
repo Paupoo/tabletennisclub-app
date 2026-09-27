@@ -5144,7 +5144,7 @@
     "Settings adjusted this week": "Deze week aangepaste instellingen",
     "The automatic restocking followed the sales.": "De automatische aanvulling volgde de verkoop.",
     "Recalculate now": "Nu herberekenen",
-    "Does now what Friday would do, with the saved settings: only the automatic products move.": "Doet nu wat vrijdag zou doen, met de opgeslagen instellingen: alleen de automatische producten veranderen.",
+    "Updates the min and max of the automatic products right away, from their sales.": "Werkt het min en max van de automatische producten meteen bij, op basis van hun verkoop.",
     "Nothing to adjust: the automatic products already follow their sales.": "Niets aan te passen: de automatische producten volgen hun verkoop al.",
     "{1} :count product adjusted.|[2,*] :count products adjusted.": "{1} :count product aangepast.|[2,*] :count producten aangepast.",
     "No longer selling": "Verkopen niet meer",

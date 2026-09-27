@@ -346,7 +346,7 @@
                 wire:click="recalculateRestocking" spinner="recalculateRestocking" />
 
             <p class="text-subtle mt-2 text-xs">
-                {{ __('Does now what Friday would do, with the saved settings: only the automatic products move.') }}
+                {{ __('Updates the min and max of the automatic products right away, from their sales.') }}
             </p>
         </div>
     </x-drawer>

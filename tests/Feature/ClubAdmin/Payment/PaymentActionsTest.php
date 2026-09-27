@@ -6,7 +6,9 @@ use App\Actions\ClubAdmin\Payments\GeneratePayment;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Actions\ClubAdmin\Payments\ProcessPaymentAction;
 use App\Actions\ClubAdmin\Payments\SendPayementInvite;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\Tournament;
@@ -23,6 +25,33 @@ use Illuminate\Support\Facades\Notification;
 beforeEach(function (): void {
     Club::factory()->ownClub()->create();
 });
+
+/** A pending payment owed for a 15-year-old spoken for by two separated parents. */
+function paymentActionsMinorPayment(): Payment
+{
+    $teen = User::factory()->create(['email' => 'teen@example.com', 'birthdate' => now()->subYears(15)]);
+    $teen->guardians()->attach(Guardian::factory()->create(['email' => 'mum@example.com']));
+    $teen->guardians()->attach(Guardian::factory()->create(['email' => 'dad@example.com']));
+    $subscription = Subscription::factory()->create(['user_id' => $teen->id, 'status' => 'confirmed', 'amount_due' => 125]);
+
+    return $subscription->payments()->create([
+        'reference' => '100/2505/00909',
+        'amount_due' => 125,
+        'amount_paid' => 0,
+        'status' => 'pending',
+        'invitation_counter' => 0,
+    ]);
+}
+
+/** One message per address, and never two addresses on the same message. */
+function paymentActionsExpectOneInvitationPerAddress(): void
+{
+    Mail::assertQueuedCount(3);
+
+    foreach (['teen@example.com', 'mum@example.com', 'dad@example.com'] as $address) {
+        Mail::assertQueued(PaymentInvitationEmail::class, fn ($mail): bool => $mail->hasTo($address) && count($mail->to) === 1);
+    }
+}
 
 // ============================================================
 // GeneratePaymentQR
@@ -229,6 +258,16 @@ describe('SendPayementInvite', function (): void {
         expect($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('payments', 'invite');
 
+    test('writes to a minor and to each of their guardians separately', function (): void {
+        Mail::fake();
+        $payment = paymentActionsMinorPayment();
+
+        (new SendPayementInvite)($payment);
+
+        paymentActionsExpectOneInvitationPerAddress();
+        expect($payment->fresh()->invitation_counter)->toBe(1);
+    })->group('payments', 'invite');
+
 })->group('payments');
 
 // ============================================================
@@ -273,6 +312,16 @@ describe('ProcessPaymentAction', function (): void {
 // ============================================================
 
 describe('SendPaymentReminderJob', function (): void {
+
+    test('reminds a minor and each of their guardians separately', function (): void {
+        Mail::fake();
+        $payment = paymentActionsMinorPayment();
+
+        new SendPaymentReminderJob($payment->id)->handle();
+
+        paymentActionsExpectOneInvitationPerAddress();
+        expect($payment->fresh()->invitation_counter)->toBe(1);
+    })->group('payments', 'reminder');
 
     test('sends PaymentInvitationEmail for a pending subscription payment', function (): void {
         Mail::fake();

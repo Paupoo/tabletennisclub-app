@@ -95,6 +95,8 @@ When creating or editing a **minor** (under 18), the **Guardian/Dependents** sec
 
 One guardian can cover multiple siblings. A guardian who is also a club member can be searched from the existing member list.
 
+**Who receives a minor's emails?** Every guardian with an address, plus the minor if they have one. Each address gets **its own message**: two separated parents never see each other's address. An adult without an address is reached the same way, through their guardians.
+
 **Note:** A minor cannot complete affiliation without a guardian linked. The system warns on save if missing, and blocks affiliation until added.
 
 ---
@@ -489,3 +491,33 @@ The **Mutual attestations** screen carries three things: how the club signs them
 **Issuing on a member's behalf.** Possible from the member's file, with the same checks — useful for a phone call or a managed account.
 
 **Retention.** PDFs are deleted automatically after twelve months, because they carry a national register number. The record is kept.
+
+---
+
+## 15. Club Communications
+
+**Menu:** Members Admin → Communications (`communications.send` permission, granted to the committee).
+
+The screen answers "who must I write to, without forgetting anyone and without writing to those who left?".
+
+### Choosing the audience
+
+- **Who**: active members (default), pending affiliations, or last season's members who have not come back. Never several at once.
+- **Filters**: licence (competitors, recreational players), gender, age (youth under 18 today, adults, veterans at the season's end), and an **activity** (registered for a tournament, enrolled in a pack, coming to a meeting, playing in a team). Several boxes of one kind widen; different kinds narrow.
+- **Invite, then remind**: for a tournament, a pack or a meeting, three modes. "Registered for it" warns the participants; "Not invited yet" leaves out whoever a communication already invited and whoever already registered — so nobody is invited twice; "Invited, not registered yet" keeps only those who received the invitation and have not registered since.
+
+### Checking nobody is missing
+
+- **Unreachable** (red): no address, neither theirs nor a guardian's. Complete their file or warn them another way — their phone number is shown.
+- **Unclassified** (orange): no birthdate, an age filter cannot place them. Tick the ones the message is for.
+- **Leave out** removes a member from this message only.
+
+### Taking the addresses
+
+**Copy** puts the list on the clipboard: paste it **in Bcc**. The mail client buttons put the club in To and the members in Bcc, 50 addresses per batch. Each export is recorded in the audit log.
+
+### Writing from the application
+
+Write in markdown with the preview; **Insert** an invitation (tournament, pack, meeting) to add a block with a "Register" link. That link leads to a "For whom?" page: a parent picks their child and lands on their registrations. **Send me a test** sends it to you alone.
+
+The message is sent from the club; replies go to the chosen address (yours by default). Each address gets its own message, 15 per minute. The communication's page follows the progress, lists the failures and retries them; **Write it again** starts from the same text and filters. Addresses are deleted after two seasons; the message is kept.

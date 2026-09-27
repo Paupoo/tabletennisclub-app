@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Communications\Models\CommunicationRecipient;
 use App\Domains\Shared\Enums\Feature;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -106,6 +107,14 @@ Schedule::command('expense-reports:remind-archiving --year-end')
 
 Schedule::command('expense-reports:prune-exports')
     ->dailyAt('03:40')
+    ->withoutOverlapping();
+
+/*
+ * Communications: the addresses each one went to are personal data, pruned
+ * two seasons after the sending. What the club said is kept.
+ */
+Schedule::command('model:prune', ['--model' => [CommunicationRecipient::class]])
+    ->dailyAt('03:50')
     ->withoutOverlapping();
 
 /*

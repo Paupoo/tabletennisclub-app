@@ -16,16 +16,12 @@ class SendPayementInvite
         $payment = $payment->load('payable.user');
 
         // Send an email with payment instructions. A minor's invitation has to
-        // reach whoever actually pays it, hence the contact address and not the
-        // login one.
-        $recipient = $payment->payable->user->contactEmail();
+        // reach whoever actually pays it — every guardian, one message each so
+        // that no parent sees the other's address.
+        $payment->load('payable.user', 'payable.season');
 
-        if ($recipient !== null) {
-            Mail::to($recipient)
-                ->send(
-                    new PaymentInvitationEmail($payment
-                        ->load('payable.user', 'payable.season'))
-                );
+        foreach ($payment->payable->user->contactEmails() as $recipient) {
+            Mail::to($recipient)->send(new PaymentInvitationEmail($payment));
         }
 
         // Increment invitation counter

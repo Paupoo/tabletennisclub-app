@@ -367,13 +367,39 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function contactEmail(): ?string
     {
-        if ($this->email !== null) {
-            return $this->email;
+        return $this->contactEmails()[0] ?? null;
+    }
+
+    /**
+     * Every address a message to this member must reach, the member's own first.
+     *
+     * A minor is spoken for by all their guardians — two separated parents must
+     * both hear from the club — and keeps their own address alongside, since they
+     * are the one who plays. An adult without an address is still reached through
+     * their guardians; an adult with one is reached on their own.
+     *
+     * Addresses are trimmed, lowercased and listed once, so a family sharing a
+     * mailbox receives a single message. Each address is written to separately —
+     * see {@see PerRecipientMailChannel} — so no recipient sees the others.
+     *
+     * @return list<string>
+     */
+    public function contactEmails(): array
+    {
+        $addresses = [$this->email];
+
+        if ($this->email === null || $this->isMinor()) {
+            foreach ($this->guardians as $guardian) {
+                $addresses[] = $guardian->email;
+            }
         }
 
-        return $this->guardians
-            ->first(fn (Guardian $guardian): bool => $guardian->email !== null)
-            ?->email;
+        return collect($addresses)
+            ->filter(fn (?string $address): bool => filled($address))
+            ->map(fn (string $address): string => mb_strtolower(trim($address)))
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**
@@ -916,10 +942,15 @@ class User extends Authenticatable implements MustVerifyEmail
      * Mailables sent through `Mail::to($user)` do *not* pass through here: they
      * read the `email` attribute directly, so those call sites resolve their
      * recipient with {@see self::contactEmail()} themselves.
+     *
+     * Several addresses may come back; {@see PerRecipientMailChannel} writes to
+     * each of them separately.
+     *
+     * @return list<string>
      */
-    public function routeNotificationForMail(?Notification $notification = null): ?string
+    public function routeNotificationForMail(?Notification $notification = null): array
     {
-        return $this->contactEmail();
+        return $this->contactEmails();
     }
 
     public function scopeActive(EloquentBuilder $query): EloquentBuilder

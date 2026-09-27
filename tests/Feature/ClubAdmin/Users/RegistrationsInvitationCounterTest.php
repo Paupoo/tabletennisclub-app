@@ -72,3 +72,39 @@ it('sends the payment invitation of a managed member to their guardian', functio
         fn (PaymentInvitationEmail $mail): bool => $mail->hasTo('marie.dupont@example.com'),
     );
 });
+
+it('sends the payment invitation of a minor to them and to each guardian separately', function (): void {
+    Mail::fake();
+
+    $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
+
+    $member = User::factory()->create([
+        'email' => 'teen@example.com',
+        'birthdate' => now()->subYears(15),
+        'licence' => '123456',
+        'ranking' => 'D6',
+    ]);
+    $member->guardians()->attach(Guardian::factory()->create(['email' => 'mum@example.com']));
+    $member->guardians()->attach(Guardian::factory()->create(['email' => 'dad@example.com']));
+
+    $subscription = Subscription::factory()->for($member)->create([
+        'season_id' => $season->id,
+        'status' => 'pending',
+    ]);
+
+    $component = Livewire::test(REGISTRATIONS_COMPONENT)
+        ->call('review', $subscription->id)
+        ->call('approve')
+        ->call('sendPaymentEmail');
+
+    Mail::assertQueuedCount(3);
+    foreach (['teen@example.com', 'mum@example.com', 'dad@example.com'] as $address) {
+        Mail::assertQueued(
+            PaymentInvitationEmail::class,
+            fn (PaymentInvitationEmail $mail): bool => $mail->hasTo($address) && count($mail->to) === 1,
+        );
+    }
+
+    // One invitation, however many mailboxes it reached.
+    expect($component->get('paymentData')['invitation_counter'])->toBe(1);
+});

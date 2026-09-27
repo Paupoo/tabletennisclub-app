@@ -22,10 +22,16 @@ describe('matrix invariants', function (): void {
             ->toHaveCount(count(Permission::cases()));
     });
 
+    /*
+     * One exception, decided on 2026-09-27: writing to the club. It manages no
+     * record — it is the committee speaking to the members — and it is a
+     * committee duty rather than a délégation. Any other entry is a mistake.
+     */
     it('never lets the committee baseline grant a management permission', function (): void {
         $managing = array_filter(
             Role::COMMITTEE->permissions(),
-            static fn (Permission $p): bool => ! str_ends_with($p->value, '.view'),
+            static fn (Permission $p): bool => ! str_ends_with($p->value, '.view')
+                && $p !== Permission::CommunicationsSend,
         );
 
         expect($managing)->toBe([]);
@@ -75,6 +81,9 @@ describe('the committee reads the club', function (): void {
                 'seasons.view',
                 'facilities.view',
                 'bar.stats.view',
+                // Not a reading right: the one duty the whole committee shares
+                // (decided 2026-09-27).
+                'communications.send',
             ]);
     });
 

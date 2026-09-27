@@ -52,6 +52,11 @@ enum Permission: string
     case ClubsManage = 'clubs.manage';
     case ClubUpdate = 'club.update';
     case CoachAreaAccess = 'coach_area.access';
+
+    // Communications : extraire les adresses du club et lui écrire. Un seul
+    // droit pour les deux, puisque qui peut écrire à 150 membres peut aussi
+    // bien copier leurs adresses.
+    case CommunicationsSend = 'communications.send';
     case ContactsManage = 'contacts.manage';
 
     // Contacts et CRM

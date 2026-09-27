@@ -257,6 +257,9 @@ enum Role: string
                 Permission::SeasonsView,
                 Permission::FacilitiesView,
                 Permission::BarStatsView,
+                // Writing to the club is a committee duty, not a délégation
+                // (decided 2026-09-27).
+                Permission::CommunicationsSend,
             ],
 
             // The auditors the general assembly elects are, by design, outside

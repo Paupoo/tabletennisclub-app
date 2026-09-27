@@ -8,12 +8,19 @@ erDiagram
     BarOrderItem
     BarPayment
     BarProduct
+    BarRestocking
+    BarRestockingAdjustment
+    BarRestockingLine
     BarStockMovement
 
     %% ClubAdmin/Club
     KeyRing
     Room
     Table
+
+    %% ClubAdmin/Communications
+    Communication
+    CommunicationRecipient
 
     %% ClubAdmin/Contact
     Contact
@@ -101,6 +108,7 @@ erDiagram
     BarOrder ||--o{ BarOrderItem : "items"
     BarOrder ||--o| Payment : "payment"
     BarProduct ||--o{ BarStockMovement : "stockMovements"
+    BarRestocking ||--o{ BarRestockingLine : "lines"
     Room }o--o{ Club : "clubs"
     Room ||--o{ Interclub : "interclubs"
     Room ||--o{ Table : "tables"
@@ -109,9 +117,11 @@ erDiagram
     Room ||--o{ Training : "trainings"
     Table }o--o{ TournamentMatch : "match"
     Table }o--o{ Tournament : "tournaments"
+    Communication ||--o{ CommunicationRecipient : "recipients"
     ExpenseReport ||--o{ ExpenseReportFile : "files"
     ExpenseReport ||--o{ Payment : "payments"
     ExpenseReport ||--o| Payment : "refund"
+    ExpenseReport ||--o| BarRestocking : "restocking"
     Fine ||--o| Payment : "payment"
     BankImport ||--o{ Transaction : "transactions"
     CashRegister ||--o{ CashRegisterEntry : "entries"

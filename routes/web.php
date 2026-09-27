@@ -5,9 +5,11 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\Shared\Enums\InvitationTarget;
 use App\Http\Controllers\Attestations\AttestationDownloadController;
 use App\Http\Controllers\Attestations\AttestationVerificationController;
 use App\Http\Controllers\Bar\PublicBarMenuController;
+use App\Http\Controllers\ClubAdmin\Communications\InvitationRedirectController;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\GuardianInvitationController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
@@ -200,6 +202,36 @@ Route::prefix('admin/club-admin/users/')
         Route::get('payments', fn () => redirect()->route('admin.treasury.payments'))->name('admin.users.payments');
     });
 // Season planning board — visible to the whole committee, mutations reserved to managers (decision #18).
+/*
+ * Club-wide communications — the committee. Taking every member's address out
+ * of the application is the most sensitive thing it does, hence one explicit
+ * permission rather than the committee's reading baseline.
+ */
+Route::prefix('admin/club-admin/communications/')
+    ->middleware(['auth', 'verified', 'can:communications.send'])
+    ->group(function (): void {
+        Route::livewire('/', 'pages::club-admin.communications.index')->name('admin.communications.index');
+        Route::livewire('history', 'pages::club-admin.communications.history')->name('admin.communications.history');
+        Route::livewire('{communication}', 'pages::club-admin.communications.show')
+            ->whereNumber('communication')
+            ->name('admin.communications.show');
+    });
+/*
+ * Where the button of an invitation leads: "for whom?", then the member's own
+ * registration screen, from the right seat. Any signed-in member. The type is
+ * pinned to InvitationTarget: left open, it swallowed /invitation/accept/{user}
+ * and /invitation/guardian/{guardian}, declared further down.
+ */
+Route::middleware(['auth', 'verified'])->group(function (): void {
+    Route::get('/invitation/{type}/{id}', [InvitationRedirectController::class, 'show'])
+        ->whereNumber('id')
+        ->whereIn('type', array_column(InvitationTarget::cases(), 'value'))
+        ->name('communications.invitation');
+    Route::post('/invitation/{type}/{id}', [InvitationRedirectController::class, 'choose'])
+        ->whereNumber('id')
+        ->whereIn('type', array_column(InvitationTarget::cases(), 'value'))
+        ->name('communications.invitation.choose');
+});
 /*
  * Mutual attestations — the attestations délégation, and nobody else.
  *

@@ -15,6 +15,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\Permission;
 use App\Jobs\SendGuardianInvitationJob;
 use App\Jobs\SendMemberInvitationJob;
@@ -714,11 +715,17 @@ new class extends Component
     #[Computed]
     public function teams(): Collection
     {
-        $teams = Team::with('captain')
+        // The table holds the whole league and every past season: our own teams
+        // of the active season only — "add to a team" must never reach another
+        // club's — named with their category, since letters repeat across them.
+        $teams = Team::with(['captain', 'league:id,category'])
+            ->inClub()
+            ->where('season_id', Season::current()?->id)
             ->get()
             ->map(fn (Team $team): array => [
                 'id' => $team->id,
-                'name' => __('Team') . ' ' . $team->name,
+                'name' => __('Team') . ' ' . $team->name
+                    . (($category = LeagueCategory::fromName($team->league?->category)) !== null ? ' · ' . $category->label() : ''),
                 'avatar' => $team->captain->photo ?? '/images/empty-user.jpg',
             ]);
 

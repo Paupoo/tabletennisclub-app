@@ -38,13 +38,51 @@ erDiagram
         int sale_price
         int is_available
         int low_stock_threshold "nullable"
+        int max_stock "nullable"
+        int pack_size
+        string pack_label "nullable"
+        string restocking_mode "nullable"
+        int restocking_weeks "nullable"
+        int restocking_cap "nullable"
+        datetime restocking_adjusted_at "nullable"
         int created_by "nullable"
         int modified_by "nullable"
+    }
+    BarRestocking {
+        int id PK
+        string status
+        int shopper_id FK
+        int abandoned_by "nullable"
+        datetime started_at
+        datetime closed_at "nullable"
+        string paid_by "nullable"
+        int expense_report_id FK "nullable"
+    }
+    BarRestockingAdjustment {
+        int id PK
+        int product_id FK
+        int old_min "nullable"
+        int new_min
+        int old_max "nullable"
+        int new_max
+    }
+    BarRestockingLine {
+        int id PK
+        int restocking_id FK
+        int product_id FK
+        string section
+        int stock_at_start
+        int pack_size
+        string pack_label "nullable"
+        int proposed_packs
+        bool in_cart
+        int bought_packs "nullable"
     }
     BarStockMovement {
         int id PK
         int product_id FK
         int batch_id FK "nullable"
+        int restocking_id FK "nullable"
         int quantity
         string movement_type
         string reason "nullable"
@@ -56,4 +94,5 @@ erDiagram
     BarOrder ||--o{ BarOrderItem : "items"
     BarOrder ||--o| Payment : "payment"
     BarProduct ||--o{ BarStockMovement : "stockMovements"
+    BarRestocking ||--o{ BarRestockingLine : "lines"
 ```

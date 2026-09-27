@@ -114,7 +114,13 @@ describe('writing', function (): void {
         $past = Communication::factory()->create([
             'subject' => 'Reaffiliation 2025',
             'body' => 'Come back!',
-            'criteria' => ['base' => 'former', 'licences' => ['competitive'], 'genders' => [], 'age_bands' => []],
+            'criteria' => [
+                'base' => 'former',
+                'licences' => ['competitive'],
+                'genders' => [],
+                'age_bands' => [],
+                'activity' => ['kind' => 'tournament', 'id' => 7, 'mode' => 'invited_not_registered'],
+            ],
         ]);
 
         Livewire::withQueryParams(['from' => $past->id])
@@ -122,7 +128,10 @@ describe('writing', function (): void {
             ->assertSet('subject', 'Reaffiliation 2025')
             ->assertSet('body', 'Come back!')
             ->assertSet('base', 'former')
-            ->assertSet('licences', ['competitive']);
+            ->assertSet('licences', ['competitive'])
+            ->assertSet('activityKind', 'tournament')
+            ->assertSet('activityId', 7)
+            ->assertSet('activityMode', 'invited_not_registered');
     });
 });
 

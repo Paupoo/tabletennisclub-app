@@ -6,15 +6,21 @@ namespace App\Domains\ClubAdmin\Communications\Services;
 
 use App\Domains\ClubAdmin\Communications\Data\Audience;
 use App\Domains\ClubAdmin\Communications\Data\AudienceCriteria;
+use App\Domains\ClubAdmin\Communications\Models\Communication;
+use App\Domains\ClubAdmin\Communications\Models\CommunicationRecipient;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\AudienceActivityKind;
+use App\Domains\Shared\Enums\AudienceActivityMode;
 use App\Domains\Shared\Enums\AudienceAgeBand;
 use App\Domains\Shared\Enums\AudienceBase;
 use App\Domains\Shared\Enums\AudienceLicence;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Computes who a club-wide message reaches, from the affiliations.
@@ -79,7 +85,62 @@ class AudienceBuilder
                 ->whereIn('status', ['pending', 'confirmed', 'paid']));
         }
 
+        $this->whereActivity($query, $criteria);
+
         return $query;
+    }
+
+    /**
+     * Members a communication invited to this activity — the recipients whose
+     * message carried its "for whom?" link.
+     *
+     * @return list<int>
+     */
+    private function invitedUserIds(AudienceActivityKind $kind, int $id): array
+    {
+        $invitations = Communication::query()
+            ->whereJsonContains('invitation_targets', $kind->value . ':' . $id)
+            ->pluck('id');
+
+        return CommunicationRecipient::query()
+            ->whereIn('communication_id', $invitations)
+            ->pluck('user_ids')
+            ->flatten()
+            ->map(fn (mixed $userId): int => (int) $userId)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Who takes part: registered for the tournament (a cancellation is not),
+     * enrolled in the pack (neither cancelled nor left), coming to the meeting,
+     * or on the team sheet.
+     *
+     * @return list<int>
+     */
+    private function participantIds(AudienceActivityKind $kind, int $id): array
+    {
+        $ids = match ($kind) {
+            AudienceActivityKind::Tournament => DB::table('tournament_user')
+                ->where('tournament_id', $id)
+                ->where('registration_status', '!=', 'cancelled')
+                ->pluck('user_id'),
+            AudienceActivityKind::TrainingPack => DB::table('subscription_training_pack')
+                ->join('subscriptions', 'subscriptions.id', '=', 'subscription_training_pack.subscription_id')
+                ->where('subscription_training_pack.training_pack_id', $id)
+                ->whereNotIn('subscription_training_pack.status', ['cancelled', 'left'])
+                ->pluck('subscriptions.user_id'),
+            AudienceActivityKind::Meeting => DB::table('meeting_user')
+                ->where('meeting_id', $id)
+                ->whereIn('status', [MeetingUserStatusEnum::CONFIRMED->value, MeetingUserStatusEnum::ATTENDED->value])
+                ->pluck('user_id'),
+            AudienceActivityKind::Team => DB::table('team_user')
+                ->where('team_id', $id)
+                ->pluck('user_id'),
+        };
+
+        return $ids->filter()->map(fn (mixed $userId): int => (int) $userId)->unique()->values()->all();
     }
 
     /**
@@ -158,6 +219,25 @@ class AudienceBuilder
         $this->whereGender($query, $criteria->genders);
 
         return $query->whereNull('birthdate');
+    }
+
+    /** @param  Builder<User>  $query */
+    private function whereActivity(Builder $query, AudienceCriteria $criteria): void
+    {
+        if (! $criteria->hasActivity()) {
+            return;
+        }
+
+        $participants = $this->participantIds($criteria->activityKind, $criteria->activityId);
+
+        if ($criteria->activityMode === AudienceActivityMode::Registered || ! $criteria->activityKind->isInvitable()) {
+            $query->whereIn('users.id', $participants);
+
+            return;
+        }
+
+        $query->whereIn('users.id', $this->invitedUserIds($criteria->activityKind, $criteria->activityId))
+            ->whereNotIn('users.id', $participants);
     }
 
     /**

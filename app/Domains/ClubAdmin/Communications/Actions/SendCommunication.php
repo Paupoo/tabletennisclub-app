@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Communications\Data\AudienceCriteria;
 use App\Domains\ClubAdmin\Communications\Models\Communication;
 use App\Domains\ClubAdmin\Communications\Models\CommunicationRecipient;
 use App\Domains\ClubAdmin\Communications\Services\AudienceBuilder;
+use App\Domains\ClubAdmin\Communications\Services\InvitationBlock;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Jobs\SendCommunicationJob;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +23,10 @@ use Illuminate\Support\Facades\DB;
  */
 class SendCommunication
 {
-    public function __construct(private readonly AudienceBuilder $audiences) {}
+    public function __construct(
+        private readonly AudienceBuilder $audiences,
+        private readonly InvitationBlock $invitations,
+    ) {}
 
     public function __invoke(User $author, AudienceCriteria $criteria, string $subject, string $body, ?string $replyTo): Communication
     {
@@ -35,6 +39,7 @@ class SendCommunication
                 'body' => $body,
                 'reply_to' => filled($replyTo) ? $replyTo : null,
                 'criteria' => $criteria->toArray(),
+                'invitation_targets' => $this->invitations->targetsIn($body),
                 'member_count' => $audience->members->count(),
                 'recipient_count' => count($audience->recipients),
                 'sent_at' => now(),

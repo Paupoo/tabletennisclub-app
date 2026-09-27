@@ -7,10 +7,13 @@ use App\Domains\ClubAdmin\Communications\Actions\SendTestCommunication;
 use App\Domains\ClubAdmin\Communications\Data\Audience;
 use App\Domains\ClubAdmin\Communications\Data\AudienceCriteria;
 use App\Domains\ClubAdmin\Communications\Models\Communication;
+use App\Domains\ClubAdmin\Communications\Services\AudienceActivityOptions;
 use App\Domains\ClubAdmin\Communications\Services\AudienceBuilder;
 use App\Domains\ClubAdmin\Communications\Services\InvitationBlock;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Shared\Enums\AudienceActivityKind;
+use App\Domains\Shared\Enums\AudienceActivityMode;
 use App\Domains\Shared\Enums\AudienceAgeBand;
 use App\Domains\Shared\Enums\AudienceBase;
 use App\Domains\Shared\Enums\AudienceLicence;
@@ -50,6 +53,12 @@ new class extends Component
     /** How many addresses one mailto link carries: longer links get cut by some clients. */
     public const int MAILTO_BATCH_SIZE = 50;
 
+    public ?int $activityId = null;
+
+    public string $activityKind = '';
+
+    public string $activityMode = AudienceActivityMode::Registered->value;
+
     /** @var list<string> */
     public array $ageBands = [];
 
@@ -77,6 +86,21 @@ new class extends Component
 
     public string $subject = '';
 
+    /** Whether the reminder mode makes sense for the chosen activity. */
+    public function activityIsInvitable(): bool
+    {
+        return AudienceActivityKind::tryFrom($this->activityKind)?->isInvitable() ?? false;
+    }
+
+    /** @return list<array{id: int, name: string}> */
+    #[Computed]
+    public function activityOptions(): array
+    {
+        $kind = AudienceActivityKind::tryFrom($this->activityKind);
+
+        return $kind === null ? [] : app(AudienceActivityOptions::class)->for($kind);
+    }
+
     #[Computed]
     public function addressCount(): int
     {
@@ -98,6 +122,11 @@ new class extends Component
             'age_bands' => $this->ageBands,
             'excluded_user_ids' => $this->excludedUserIds,
             'included_unclassified_ids' => $this->includedUnclassifiedIds,
+            'activity' => $this->activityKind !== '' && $this->activityId !== null ? [
+                'kind' => $this->activityKind,
+                'id' => $this->activityId,
+                'mode' => $this->activityMode,
+            ] : null,
         ]);
     }
 
@@ -174,6 +203,9 @@ new class extends Component
         $this->licences = $criteria['licences'];
         $this->genders = $criteria['genders'];
         $this->ageBands = $criteria['age_bands'];
+        $this->activityKind = $criteria['activity']['kind'] ?? '';
+        $this->activityId = $criteria['activity']['id'] ?? null;
+        $this->activityMode = $criteria['activity']['mode'] ?? AudienceActivityMode::Registered->value;
     }
 
     #[Computed]
@@ -247,6 +279,11 @@ new class extends Component
         $this->includedUnclassifiedIds = $this->toggled($this->includedUnclassifiedIds, $userId);
     }
 
+    public function updatedActivityKind(): void
+    {
+        $this->reset('activityId', 'activityMode');
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -258,6 +295,8 @@ new class extends Component
             'licenceOptions' => array_map(fn (AudienceLicence $licence): array => ['id' => $licence->value, 'name' => $licence->label()], AudienceLicence::cases()),
             'genderOptions' => Gender::options(),
             'ageBandOptions' => array_map(fn (AudienceAgeBand $band): array => ['id' => $band->value, 'name' => $band->label()], AudienceAgeBand::cases()),
+            'activityKindOptions' => array_map(fn (AudienceActivityKind $kind): array => ['id' => $kind->value, 'name' => $kind->label()], AudienceActivityKind::cases()),
+            'activityModeOptions' => array_map(fn (AudienceActivityMode $mode): array => ['id' => $mode->value, 'name' => $mode->label()], [AudienceActivityMode::Registered, AudienceActivityMode::InvitedNotRegistered]),
             'invitationTargetOptions' => array_map(fn (InvitationTarget $target): array => ['id' => $target->value, 'name' => $target->label()], InvitationTarget::cases()),
         ];
     }

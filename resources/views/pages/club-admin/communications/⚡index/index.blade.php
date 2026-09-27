@@ -43,6 +43,17 @@
                     </div>
                 </div>
 
+                <div class="space-y-2">
+                    <p class="text-sm font-semibold">{{ __('Activity') }}</p>
+                    <x-select wire:model.live="activityKind" :options="$activityKindOptions" :placeholder="__('Any')" />
+                    @if ($activityKind !== '')
+                        <x-select wire:model.live="activityId" :options="$this->activityOptions" :placeholder="__('Choose')" />
+                        @if ($this->activityIsInvitable())
+                            <x-radio wire:model.live="activityMode" :options="$activityModeOptions" />
+                        @endif
+                    @endif
+                </div>
+
                 <p class="text-xs text-muted">
                     {{ __('Ticking several boxes of one kind widens the audience; ticking boxes of different kinds narrows it.') }}
                 </p>

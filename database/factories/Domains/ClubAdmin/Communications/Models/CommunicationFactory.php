@@ -23,6 +23,7 @@ class CommunicationFactory extends Factory
             'body' => fake()->paragraph(),
             'reply_to' => fake()->safeEmail(),
             'criteria' => ['base' => 'active', 'licences' => [], 'genders' => [], 'age_bands' => []],
+            'invitation_targets' => [],
             'member_count' => 0,
             'recipient_count' => 0,
             'sent_at' => now(),

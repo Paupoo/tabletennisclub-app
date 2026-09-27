@@ -7,6 +7,8 @@ use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 use Spatie\Activitylog\Models\Activity;
@@ -181,4 +183,43 @@ it('lets the author take back a member they had included by hand', function (): 
         ->call('toggleUnclassifiedInclusion', $member->id)
         ->assertSet('addressCount', 0)
         ->assertSeeHtml('wire:key="unclassified-' . $member->id . '"');
+});
+
+describe('aiming at an activity', function (): void {
+
+    beforeEach(function (): void {
+        actingAs(User::factory()->isCommitteeMember()->create(['birthdate' => null]));
+    });
+
+    it('narrows the audience to those registered for a tournament', function (): void {
+        $tournament = Tournament::factory()->create(['name' => 'Sunday tournament', 'status' => TournamentStatusEnum::LOCKED]);
+        $registered = communicationsMember($this->season, ['email' => 'registered@example.com']);
+        communicationsMember($this->season, ['email' => 'elsewhere@example.com']);
+        $registered->tournaments()->attach($tournament, ['registration_status' => 'confirmed']);
+
+        Livewire::test(COMMUNICATIONS_COMPONENT)
+            ->set('activityKind', 'tournament')
+            ->assertSee('Sunday tournament')
+            ->set('activityId', $tournament->id)
+            ->assertSet('addressCount', 1)
+            ->assertSee('registered@example.com');
+    });
+
+    it('offers the reminder mode only for what members can be invited to', function (): void {
+        Livewire::test(COMMUNICATIONS_COMPONENT)
+            ->set('activityKind', 'tournament')
+            ->assertSee(__('Invited, not registered yet'))
+            ->set('activityKind', 'team')
+            ->assertDontSee(__('Invited, not registered yet'));
+    });
+
+    it('forgets the chosen item when the kind changes', function (): void {
+        $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        Livewire::test(COMMUNICATIONS_COMPONENT)
+            ->set('activityKind', 'tournament')
+            ->set('activityId', $tournament->id)
+            ->set('activityKind', 'meeting')
+            ->assertSet('activityId', null);
+    });
 });

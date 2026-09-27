@@ -8,13 +8,18 @@ use App\Domains\ClubAdmin\Communications\Actions\SendTestCommunication;
 use App\Domains\ClubAdmin\Communications\Data\AudienceCriteria;
 use App\Domains\ClubAdmin\Communications\Models\Communication;
 use App\Domains\ClubAdmin\Communications\Models\CommunicationRecipient;
+use App\Domains\ClubAdmin\Communications\Services\InvitationBlock;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\AudienceLicence;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\InvitationTarget;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Domains\Trainings\Models\TrainingPack;
 use App\Jobs\SendCommunicationJob;
 use Illuminate\Support\Carbon;
 use Symfony\Component\Mime\Email;
@@ -208,4 +213,19 @@ it('sends a test to the author alone, and records nothing', function (): void {
         ->and($sent['claire@example.com']->getSubject())->toBe('[' . __('Test') . '] Club dinner')
         ->and($sent['claire@example.com']->getHtmlBody())->toContain(__('Hello :names,', ['names' => 'Claire']))
         ->and(Communication::count())->toBe(0);
+});
+
+it('remembers what the message invited to, for the reminder', function (): void {
+    sendCommunicationMember($this->season, ['email' => 'arthur@example.com']);
+    $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PUBLISHED]);
+    $pack = TrainingPack::factory()->create(['season_id' => $this->season->id]);
+
+    $body = "Two things:\n\n"
+        . app(InvitationBlock::class)->markdown(InvitationTarget::Tournament, $tournament->id) . "\n\n"
+        . app(InvitationBlock::class)->markdown(InvitationTarget::TrainingPack, $pack->id);
+
+    $communication = sendCommunicationSend($this->author, body: $body);
+
+    expect($communication->fresh()->invitation_targets)
+        ->toEqualCanonicalizing(['tournament:' . $tournament->id, 'training_pack:' . $pack->id]);
 });

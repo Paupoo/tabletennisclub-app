@@ -26,6 +26,7 @@ use Illuminate\Support\Carbon;
  * @property string $body
  * @property string|null $reply_to
  * @property array<string, mixed> $criteria
+ * @property list<string>|null $invitation_targets
  * @property int $member_count
  * @property int $recipient_count
  * @property Carbon|null $sent_at
@@ -40,6 +41,7 @@ class Communication extends Model
 
     protected $casts = [
         'criteria' => 'array',
+        'invitation_targets' => 'array',
         'member_count' => 'integer',
         'recipient_count' => 'integer',
         'sent_at' => 'datetime',
@@ -51,6 +53,7 @@ class Communication extends Model
         'body',
         'reply_to',
         'criteria',
+        'invitation_targets',
         'member_count',
         'recipient_count',
         'sent_at',

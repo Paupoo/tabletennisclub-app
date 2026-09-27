@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Communications\Data;
 
+use App\Domains\Shared\Enums\AudienceActivityKind;
+use App\Domains\Shared\Enums\AudienceActivityMode;
 use App\Domains\Shared\Enums\AudienceAgeBand;
 use App\Domains\Shared\Enums\AudienceBase;
 use App\Domains\Shared\Enums\AudienceLicence;
@@ -24,6 +26,7 @@ final readonly class AudienceCriteria
      * @param  list<AudienceAgeBand>  $ageBands
      * @param  list<int>  $excludedUserIds  Members left out of this one message by hand.
      * @param  list<int>  $includedUnclassifiedIds  Members the filters could not place, kept in by hand.
+     * @param  AudienceActivityKind|null  $activityKind  With $activityId: one activity, narrowing like any other filter.
      */
     public function __construct(
         public AudienceBase $base = AudienceBase::Active,
@@ -32,6 +35,9 @@ final readonly class AudienceCriteria
         public array $ageBands = [],
         public array $excludedUserIds = [],
         public array $includedUnclassifiedIds = [],
+        public ?AudienceActivityKind $activityKind = null,
+        public ?int $activityId = null,
+        public AudienceActivityMode $activityMode = AudienceActivityMode::Registered,
     ) {}
 
     /**
@@ -49,14 +55,23 @@ final readonly class AudienceCriteria
             ageBands: self::enums(AudienceAgeBand::class, $stored['age_bands'] ?? []),
             excludedUserIds: array_values(array_map(intval(...), $stored['excluded_user_ids'] ?? [])),
             includedUnclassifiedIds: array_values(array_map(intval(...), $stored['included_unclassified_ids'] ?? [])),
+            activityKind: AudienceActivityKind::tryFrom((string) ($stored['activity']['kind'] ?? '')),
+            activityId: isset($stored['activity']['id']) ? (int) $stored['activity']['id'] : null,
+            activityMode: AudienceActivityMode::tryFrom((string) ($stored['activity']['mode'] ?? '')) ?? AudienceActivityMode::Registered,
         );
+    }
+
+    /** Whether an activity narrows the audience down. */
+    public function hasActivity(): bool
+    {
+        return $this->activityKind !== null && $this->activityId !== null;
     }
 
     /**
      * The filters as plain values: what the audit trail and a communication
      * keep, rather than the list of people they produced.
      *
-     * @return array{base: string, licences: list<string>, genders: list<string>, age_bands: list<string>, excluded_user_ids: list<int>, included_unclassified_ids: list<int>}
+     * @return array{base: string, licences: list<string>, genders: list<string>, age_bands: list<string>, excluded_user_ids: list<int>, included_unclassified_ids: list<int>, activity: array{kind: string, id: int, mode: string}|null}
      */
     public function toArray(): array
     {
@@ -67,6 +82,11 @@ final readonly class AudienceCriteria
             'age_bands' => array_map(fn (AudienceAgeBand $band): string => $band->value, $this->ageBands),
             'excluded_user_ids' => $this->excludedUserIds,
             'included_unclassified_ids' => $this->includedUnclassifiedIds,
+            'activity' => $this->hasActivity() ? [
+                'kind' => $this->activityKind->value,
+                'id' => $this->activityId,
+                'mode' => $this->activityMode->value,
+            ] : null,
         ];
     }
 

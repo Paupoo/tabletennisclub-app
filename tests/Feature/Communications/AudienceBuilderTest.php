@@ -4,15 +4,25 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Communications\Data\Audience;
 use App\Domains\ClubAdmin\Communications\Data\AudienceCriteria;
+use App\Domains\ClubAdmin\Communications\Models\Communication;
+use App\Domains\ClubAdmin\Communications\Models\CommunicationRecipient;
 use App\Domains\ClubAdmin\Communications\Services\AudienceBuilder;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Enums\AudienceActivityKind;
+use App\Domains\Shared\Enums\AudienceActivityMode;
 use App\Domains\Shared\Enums\AudienceAgeBand;
 use App\Domains\Shared\Enums\AudienceBase;
 use App\Domains\Shared\Enums\AudienceLicence;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Support\Carbon;
 
 /*
@@ -236,5 +246,99 @@ describe('the addresses', function (): void {
         $minor->guardians()->attach(Guardian::factory()->create(['email' => ' same@example.com']));
 
         expect(audienceBuild()->addresses())->toBe(['same@example.com']);
+    });
+});
+
+describe('narrowing by activity', function (): void {
+
+    it('keeps the members registered for a tournament', function (): void {
+        $tournament = Tournament::factory()->create();
+        $registered = audienceMember($this->currentSeason);
+        $cancelled = audienceMember($this->currentSeason);
+        audienceMember($this->currentSeason);
+        $registered->tournaments()->attach($tournament, ['registration_status' => 'registered']);
+        $cancelled->tournaments()->attach($tournament, ['registration_status' => 'cancelled']);
+
+        expect(audienceIds(audienceBuild([
+            'activityKind' => AudienceActivityKind::Tournament,
+            'activityId' => $tournament->id,
+        ])->members))->toBe([$registered->id]);
+    });
+
+    it('keeps the members enrolled in a training pack', function (): void {
+        $pack = TrainingPack::factory()->create(['season_id' => $this->currentSeason->id]);
+        $enrolled = audienceMember($this->currentSeason);
+        $left = audienceMember($this->currentSeason);
+        $enrolled->subscriptions()->sole()->trainingPacks()->attach($pack, ['status' => 'enrolled']);
+        $left->subscriptions()->sole()->trainingPacks()->attach($pack, ['status' => 'left']);
+
+        expect(audienceIds(audienceBuild([
+            'activityKind' => AudienceActivityKind::TrainingPack,
+            'activityId' => $pack->id,
+        ])->members))->toBe([$enrolled->id]);
+    });
+
+    it('keeps the members who confirmed they attend a meeting', function (): void {
+        $meeting = Meeting::factory()->confirmed()->create();
+        $coming = audienceMember($this->currentSeason);
+        $declined = audienceMember($this->currentSeason);
+        $coming->meetings()->attach($meeting, ['status' => MeetingUserStatusEnum::CONFIRMED->value]);
+        $declined->meetings()->attach($meeting, ['status' => MeetingUserStatusEnum::DECLINED->value]);
+
+        expect(audienceIds(audienceBuild([
+            'activityKind' => AudienceActivityKind::Meeting,
+            'activityId' => $meeting->id,
+        ])->members))->toBe([$coming->id]);
+    });
+
+    it('keeps the players of a team', function (): void {
+        Club::factory()->ownClub()->create();
+        $team = Team::factory()->create(['season_id' => $this->currentSeason->id]);
+        $player = audienceMember($this->currentSeason);
+        audienceMember($this->currentSeason);
+        $player->teams()->attach($team);
+
+        expect(audienceIds(audienceBuild([
+            'activityKind' => AudienceActivityKind::Team,
+            'activityId' => $team->id,
+        ])->members))->toBe([$player->id]);
+    });
+
+    it('combines an activity with the other filters', function (): void {
+        $pack = TrainingPack::factory()->create(['season_id' => $this->currentSeason->id]);
+        $youth = audienceMember($this->currentSeason, attributes: ['birthdate' => '2012-01-01']);
+        $adult = audienceMember($this->currentSeason);
+        foreach ([$youth, $adult] as $member) {
+            $member->subscriptions()->sole()->trainingPacks()->attach($pack, ['status' => 'enrolled']);
+        }
+
+        expect(audienceIds(audienceBuild([
+            'ageBands' => [AudienceAgeBand::Youth],
+            'activityKind' => AudienceActivityKind::TrainingPack,
+            'activityId' => $pack->id,
+        ])->members))->toBe([$youth->id]);
+    });
+
+    /*
+     * The reminder: whoever a communication invited to the tournament, and who
+     * has not registered since. Nobody who was never invited is chased.
+     */
+    it('finds those an invitation reached who have not registered yet', function (): void {
+        $tournament = Tournament::factory()->create();
+        $invitedAndRegistered = audienceMember($this->currentSeason);
+        $invitedOnly = audienceMember($this->currentSeason);
+        audienceMember($this->currentSeason);
+        $invitedAndRegistered->tournaments()->attach($tournament, ['registration_status' => 'registered']);
+
+        $invitation = Communication::factory()->create(['invitation_targets' => ['tournament:' . $tournament->id]]);
+        foreach ([$invitedAndRegistered, $invitedOnly] as $member) {
+            CommunicationRecipient::factory()->create(['communication_id' => $invitation->id, 'user_ids' => [$member->id]]);
+        }
+
+        expect(audienceIds(audienceBuild([
+            'activityKind' => AudienceActivityKind::Tournament,
+            'activityId' => $tournament->id,
+            'activityMode' => AudienceActivityMode::InvitedNotRegistered,
+        ])->members))->toBe([$invitedOnly->id]);
     });
 });

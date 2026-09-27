@@ -28,6 +28,9 @@ return new class extends Migration
             $table->string('reply_to')->nullable();
             // The filters the audience was computed from, not the list itself.
             $table->json('criteria');
+            // What the body invites to, as "tournament:12": the reminder filter
+            // finds who was invited without reading every message again.
+            $table->json('invitation_targets')->nullable();
             $table->unsignedInteger('member_count');
             $table->unsignedInteger('recipient_count');
             $table->timestamp('sent_at')->nullable();

@@ -74,6 +74,21 @@ class InvitationBlock
             ->all();
     }
 
+    /**
+     * What a message invites to, read back from its "for whom?" links — as
+     * "tournament:12", the form the reminder filter looks for.
+     *
+     * @return list<string>
+     */
+    public function targetsIn(string $markdown): array
+    {
+        $kinds = implode('|', array_map(fn (InvitationTarget $target): string => preg_quote($target->value, '#'), InvitationTarget::cases()));
+
+        preg_match_all('#' . preg_quote(url('invitation'), '#') . '/(' . $kinds . ')/(\d+)#', $markdown, $matches, PREG_SET_ORDER);
+
+        return array_values(array_unique(array_map(fn (array $match): string => $match[1] . ':' . $match[2], $matches)));
+    }
+
     private function formatPrice(float $amount): string
     {
         return number_format($amount, 2, ',', ' ') . ' €';

@@ -41,4 +41,5 @@ erDiagram
     ExpenseReport ||--o{ ExpenseReportFile : "files"
     ExpenseReport ||--o{ Payment : "payments"
     ExpenseReport ||--o| Payment : "refund"
+    ExpenseReport ||--o| BarRestocking : "restocking"
 ```

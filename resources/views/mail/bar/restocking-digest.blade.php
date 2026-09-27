@@ -24,6 +24,15 @@
 @endif
 
 @if ($adjustments !== [])
+@php
+    // Une flèche grise, sans couleur : un ajustement n'est ni bon ni mauvais, seul
+    // le sens compte. U+FE0E la garde en texte, sinon iOS la dessine en emoji.
+    $arrow = fn (?string $trend): string => match ($trend) {
+        'up' => ' <span style="color: #6b7280;">&#x2197;&#xFE0E;</span>',
+        'down' => ' <span style="color: #6b7280;">&#x2198;&#xFE0E;</span>',
+        default => '',
+    };
+@endphp
 ## {{ __('Settings adjusted this week') }}
 
 {{ __('The automatic restocking followed the sales.') }}
@@ -32,7 +41,7 @@
 | {{ __('Product') }} | {{ __('Min') }} | {{ __('Max') }} |
 |:-----|-----:|-----:|
 @foreach ($adjustments as $adjustment)
-| {{ $adjustment['name'] }} | {{ $adjustment['min'] }} | {{ $adjustment['max'] }} |
+| {{ $adjustment['name'] }} | {{ $adjustment['min'] }}{!! $arrow($adjustment['min_trend'] ?? null) !!} | {{ $adjustment['max'] }}{!! $arrow($adjustment['max_trend'] ?? null) !!} |
 @endforeach
 </x-mail::table>
 @endif

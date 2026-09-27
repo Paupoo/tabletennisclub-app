@@ -48,6 +48,8 @@ class SendBarRestockingDigestJob implements ShouldQueue
                 'name' => $adjustment->product->name,
                 'min' => ($adjustment->old_min ?? '—') . ' → ' . $adjustment->new_min,
                 'max' => ($adjustment->old_max ?? '—') . ' → ' . $adjustment->new_max,
+                'min_trend' => $this->trend($adjustment->old_min, $adjustment->new_min),
+                'max_trend' => $this->trend($adjustment->old_max, $adjustment->new_max),
             ])->values()->all(),
             $digest->sleepingProducts()->pluck('name')->values()->all(),
         ));
@@ -61,5 +63,19 @@ class SendBarRestockingDigestJob implements ShouldQueue
     public function middleware(): array
     {
         return [new RateLimited('invitations')];
+    }
+
+    /**
+     * Le sens d'un ajustement ; rien quand il n'y avait pas de valeur avant.
+     *
+     * @return 'up'|'down'|null
+     */
+    private function trend(?int $old, ?int $new): ?string
+    {
+        if ($old === null || $new === null || $old === $new) {
+            return null;
+        }
+
+        return $new > $old ? 'up' : 'down';
     }
 }

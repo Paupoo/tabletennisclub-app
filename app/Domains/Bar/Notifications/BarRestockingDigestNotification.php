@@ -31,7 +31,7 @@ class BarRestockingDigestNotification extends Notification
 
     /**
      * @param  list<RestockingLine>  $toBuy
-     * @param  list<array{name: string, min: string, max: string}>  $adjustments  ce que l'automatique a changé cette semaine
+     * @param  list<array{name: string, min: string, max: string, min_trend?: 'up'|'down'|null, max_trend?: 'up'|'down'|null}>  $adjustments  ce que l'automatique a changé cette semaine
      * @param  list<string>  $sleeping  les produits au réassort qui ne se vendent plus
      */
     public function __construct(

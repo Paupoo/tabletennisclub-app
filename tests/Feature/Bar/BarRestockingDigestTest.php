@@ -173,3 +173,26 @@ it('reports the week\'s adjustments and the products that no longer sell', funct
             && str_contains($html, 'Fanta');
     });
 });
+
+it('points each adjustment up or down with a grey arrow, and says nothing when there was no value before', function (): void {
+    $notification = new BarRestockingDigestNotification([], null, [
+        ['name' => 'Coca-Cola', 'min' => '6 → 8', 'max' => '30 → 24', 'min_trend' => 'up', 'max_trend' => 'down'],
+        ['name' => 'Fanta', 'min' => '— → 4', 'max' => '— → 12', 'min_trend' => null, 'max_trend' => null],
+    ]);
+
+    $html = (string) $notification->toMail($this->storeKeeper)->render();
+
+    expect(substr_count($html, "\u{2197}\u{FE0E}"))->toBe(1)
+        ->and(substr_count($html, "\u{2198}\u{FE0E}"))->toBe(1)
+        ->and($html)->toContain('color: #6b7280;');
+});
+
+it('reads the direction of each automatic adjustment', function (): void {
+    BarRestockingAdjustment::query()->create(['product_id' => $this->coca->id, 'old_min' => 6, 'new_min' => 8, 'old_max' => 30, 'new_max' => 24]);
+
+    Notification::fake();
+    new SendBarRestockingDigestJob($this->storeKeeper->id)->handle(app(RestockingList::class), app(RestockingDigest::class));
+
+    Notification::assertSentTo($this->storeKeeper, BarRestockingDigestNotification::class, fn (BarRestockingDigestNotification $notification): bool => $notification->adjustments[0]['min_trend'] === 'up'
+        && $notification->adjustments[0]['max_trend'] === 'down');
+});

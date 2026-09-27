@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Communications\Services;
 
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\AudienceActivityKind;
+use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\TrainingPack;
@@ -54,14 +56,34 @@ class AudienceActivityOptions
                     'id' => $meeting->id,
                     'name' => $meeting->title . ($meeting->scheduled_at ? ' — ' . $meeting->scheduled_at->format('d/m/Y') : ''),
                 ]),
+            // The table holds the whole league, opponents included: our own
+            // teams only, and named so that the men's A and the veterans' A
+            // are told apart.
             AudienceActivityKind::Team => Team::query()
+                ->with('league')
                 ->where('season_id', $seasonId)
-                ->orderBy('name')
-                ->orderBy('id')
+                ->where('club_id', Club::own()?->id)
                 ->get()
-                ->map(fn (Team $team): array => ['id' => $team->id, 'name' => __('Team :name', ['name' => $team->name])]),
+                ->sortBy([
+                    fn (Team $a, Team $b): int => (LeagueCategory::fromName($a->league?->category)?->sortOrder() ?? 99)
+                        <=> (LeagueCategory::fromName($b->league?->category)?->sortOrder() ?? 99),
+                    ['name', 'asc'],
+                    ['id', 'asc'],
+                ])
+                ->map(fn (Team $team): array => ['id' => $team->id, 'name' => $this->teamName($team)]),
         };
 
         return $options->values()->all();
+    }
+
+    /** "Team A — Veterans · 3B" */
+    private function teamName(Team $team): string
+    {
+        $details = array_filter([
+            LeagueCategory::fromName($team->league?->category)?->label(),
+            $team->league?->division,
+        ]);
+
+        return __('Team :name', ['name' => $team->name]) . ($details !== [] ? ' — ' . implode(' · ', $details) : '');
     }
 }

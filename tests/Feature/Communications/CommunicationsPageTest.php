@@ -208,8 +208,10 @@ describe('aiming at an activity', function (): void {
     it('offers the reminder mode only for what members can be invited to', function (): void {
         Livewire::test(COMMUNICATIONS_COMPONENT)
             ->set('activityKind', 'tournament')
+            ->assertSee(__('Not invited yet'))
             ->assertSee(__('Invited, not registered yet'))
             ->set('activityKind', 'team')
+            ->assertDontSee(__('Not invited yet'))
             ->assertDontSee(__('Invited, not registered yet'));
     });
 

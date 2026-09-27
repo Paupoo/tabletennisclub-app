@@ -30,6 +30,10 @@ Pour un mineur, le message part vers **chacun de ses tuteurs** et vers le jeune 
 
 Le bouton *S'inscrire* d'une invitation demande « Pour qui ? » : un parent choisit son enfant et arrive sur ses inscriptions.
 
-## 4. Relancer
+## 4. Inviter, puis relancer
 
-Choisissez l'activité, puis **Invités, pas encore inscrits** : seuls ceux qui ont reçu l'invitation et ne se sont pas inscrits depuis restent dans le public.
+Une fois l'activité choisie, trois modes :
+
+- **Inscrits** — pour prévenir les participants (changement d'horaire, rappel).
+- **Pas encore invités** — pour la première invitation : ni ceux déjà invités, ni ceux déjà inscrits ne la reçoivent.
+- **Invités, pas encore inscrits** — pour la relance : seuls ceux qui ont reçu l'invitation et ne se sont pas inscrits depuis.

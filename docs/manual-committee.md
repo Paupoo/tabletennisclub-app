@@ -504,7 +504,7 @@ The screen answers "who must I write to, without forgetting anyone and without w
 
 - **Who**: active members (default), pending affiliations, or last season's members who have not come back. Never several at once.
 - **Filters**: licence (competitors, recreational players), gender, age (youth under 18 today, adults, veterans at the season's end), and an **activity** (registered for a tournament, enrolled in a pack, coming to a meeting, playing in a team). Several boxes of one kind widen; different kinds narrow.
-- **Reminder**: for a tournament, a pack or a meeting, the "Invited, not registered yet" mode keeps only those a communication invited and who have not registered since.
+- **Invite, then remind**: for a tournament, a pack or a meeting, three modes. "Registered for it" warns the participants; "Not invited yet" leaves out whoever a communication already invited and whoever already registered — so nobody is invited twice; "Invited, not registered yet" keeps only those who received the invitation and have not registered since.
 
 ### Checking nobody is missing
 

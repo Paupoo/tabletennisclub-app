@@ -296,7 +296,7 @@ new class extends Component
             'genderOptions' => Gender::options(),
             'ageBandOptions' => array_map(fn (AudienceAgeBand $band): array => ['id' => $band->value, 'name' => $band->label(), 'hint' => $band->hint()], AudienceAgeBand::cases()),
             'activityKindOptions' => array_map(fn (AudienceActivityKind $kind): array => ['id' => $kind->value, 'name' => $kind->label()], AudienceActivityKind::cases()),
-            'activityModeOptions' => array_map(fn (AudienceActivityMode $mode): array => ['id' => $mode->value, 'name' => $mode->label()], [AudienceActivityMode::Registered, AudienceActivityMode::InvitedNotRegistered]),
+            'activityModeOptions' => array_map(fn (AudienceActivityMode $mode): array => ['id' => $mode->value, 'name' => $mode->label()], [AudienceActivityMode::Registered, AudienceActivityMode::NotInvited, AudienceActivityMode::InvitedNotRegistered]),
             'invitationTargetOptions' => array_map(fn (InvitationTarget $target): array => ['id' => $target->value, 'name' => $target->label()], InvitationTarget::cases()),
         ];
     }

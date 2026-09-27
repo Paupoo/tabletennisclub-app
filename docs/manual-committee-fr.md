@@ -505,7 +505,7 @@ L'écran répond à « à qui dois-je écrire, sans oublier personne et sans éc
 
 - **Qui** : membres actifs (par défaut), affiliations en attente, ou membres de la saison passée qui ne sont pas revenus. Jamais plusieurs à la fois.
 - **Filtres** : licence (compétiteurs, récréatifs), genre, âge (jeunes de moins de 18 ans aujourd'hui, adultes, vétérans à la fin de la saison), et une **activité** (inscrits à un tournoi, à un pack, présents à une réunion, joueurs d'une équipe). Plusieurs cases d'un même bloc élargissent ; des blocs différents resserrent.
-- **Relance** : pour un tournoi, un pack ou une réunion, le mode « Invités, pas encore inscrits » ne garde que ceux qu'une communication a invités et qui ne se sont pas inscrits depuis.
+- **Inviter puis relancer** : pour un tournoi, un pack ou une réunion, trois modes. « Inscrits » prévient les participants ; « Pas encore invités » écarte ceux qu'une communication a déjà invités et ceux déjà inscrits — pour ne jamais inviter deux fois ; « Invités, pas encore inscrits » ne garde que ceux qui ont reçu l'invitation sans s'inscrire depuis.
 
 ### Vérifier que personne ne manque
 

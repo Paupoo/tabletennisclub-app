@@ -342,3 +342,24 @@ describe('narrowing by activity', function (): void {
         ])->members))->toBe([$invitedOnly->id]);
     });
 });
+
+/*
+ * The first invitation: whoever is in the audience but has neither been
+ * invited yet nor registered on their own. Nobody receives it twice.
+ */
+it('finds those not invited yet, leaving out the invited and the registered', function (): void {
+    $tournament = Tournament::factory()->create();
+    $registered = audienceMember($this->currentSeason);
+    $invited = audienceMember($this->currentSeason);
+    $notInvited = audienceMember($this->currentSeason);
+    $registered->tournaments()->attach($tournament, ['registration_status' => 'registered']);
+
+    $invitation = Communication::factory()->create(['invitation_targets' => ['tournament:' . $tournament->id]]);
+    CommunicationRecipient::factory()->create(['communication_id' => $invitation->id, 'user_ids' => [$invited->id]]);
+
+    expect(audienceIds(audienceBuild([
+        'activityKind' => AudienceActivityKind::Tournament,
+        'activityId' => $tournament->id,
+        'activityMode' => AudienceActivityMode::NotInvited,
+    ])->members))->toBe([$notInvited->id]);
+});

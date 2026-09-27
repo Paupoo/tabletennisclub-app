@@ -236,8 +236,12 @@ class AudienceBuilder
             return;
         }
 
-        $query->whereIn('users.id', $this->invitedUserIds($criteria->activityKind, $criteria->activityId))
-            ->whereNotIn('users.id', $participants);
+        $invited = $this->invitedUserIds($criteria->activityKind, $criteria->activityId);
+
+        match ($criteria->activityMode) {
+            AudienceActivityMode::InvitedNotRegistered => $query->whereIn('users.id', $invited)->whereNotIn('users.id', $participants),
+            AudienceActivityMode::NotInvited => $query->whereNotIn('users.id', [...$invited, ...$participants]),
+        };
     }
 
     /**

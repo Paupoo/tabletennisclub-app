@@ -332,24 +332,48 @@ describe('state 3 — rights only, the access manager', function (): void {
     });
 });
 
-describe('nobody edits their own rights', function (): void {
+describe('nobody edits their own rights, bar an administrator\'s délégations', function (): void {
     it('stops an access manager on their own file', function (): void {
         $this->actingAs($this->accessManager)
             ->get(route('admin.users.edit', $this->accessManager))
             ->assertForbidden();
     });
 
-    it('leaves an administrator their data and takes away their rights', function (): void {
+    it('lets an administrator pick their own délégations along with their data', function (): void {
         Livewire::actingAs($this->admin)
             ->test(MEMBER_FORM, ['user' => $this->admin])
             ->set('first_name', 'Renomme')
-            ->set('delegations', [Role::BARMAN->value])
+            ->set('delegations', [Role::BARMAN->value, Role::ACCESS->value])
             ->call('save');
 
         expect($this->admin->fresh())
             ->first_name->toBe('Renomme')
-            ->hasRole(Role::BARMAN->value)->toBeFalse()
+            ->hasRole(Role::BARMAN->value)->toBeTrue()
+            ->hasRole(Role::ACCESS->value)->toBeTrue()
             ->hasRole(Role::ADMINISTRATOR->value)->toBeTrue();
+    });
+
+    it('shows an administrator the délégations grid on their own file, and the seat read-only', function (): void {
+        $admin = User::factory()->isAdmin()->isCommitteeMember()->create();
+
+        Livewire::actingAs($admin)
+            ->test(MEMBER_FORM, ['user' => $admin])
+            ->assertSee(__('Operational duties. Anyone can hold them, and they stack.'))
+            ->assertSee(__('Held rights, read-only. Handing them out is its own delegation.'))
+            ->assertDontSee(__('Is a committee member'))
+            ->assertDontSee(__('Is an administrator'));
+    });
+
+    it('never lets an administrator seat themselves on the committee', function (): void {
+        Livewire::actingAs($this->admin)
+            ->test(MEMBER_FORM, ['user' => $this->admin])
+            ->set('is_committee_member', true)
+            ->set('committee_role', CommitteeRolesEnum::PRESIDENT->value)
+            ->call('save');
+
+        expect($this->admin->fresh())
+            ->hasRole(Role::COMMITTEE->value)->toBeFalse()
+            ->committee_role->toBeNull();
     });
 
     it('never lets an administrator strip their own administrator role', function (): void {

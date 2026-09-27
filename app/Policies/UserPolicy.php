@@ -61,9 +61,9 @@ class UserPolicy
      *
      * Never on your own file, administrators included — the same doctrine as
      * delete() and anonymize(). Someone who can widen their own rights is bounded
-     * by nothing, so an administrator wanting a right removed asks another one.
-     * With a single administrator in the club that is a deliberate cost, weighed
-     * against an escalation path that no matrix change could close.
+     * by nothing, so the committee seat and its title are always handed over by
+     * somebody else. The délégations alone have an exception: see
+     * manageDelegations().
      *
      * Deliberately narrower than the administrator checkbox, which stays on
      * promoteAdmin(): handing over the whole application is not a délégation.
@@ -71,6 +71,21 @@ class UserPolicy
     public function manageAccess(User $user, User $model): bool
     {
         return $user->can(Permission::AccessManage->value) && $user->isNot($model);
+    }
+
+    /**
+     * Writing the délégations of a member's file, and nothing else of its rights.
+     *
+     * Everything manageAccess() allows, plus an administrator on their own file.
+     * An administrator already holds every permission, so their délégations
+     * widen nothing: they only say which duties they actually carry for the club
+     * (the coach list reads one by name). Asking another administrator for that
+     * was a cost with nothing on the other side of the scale.
+     */
+    public function manageDelegations(User $user, User $model): bool
+    {
+        return $this->manageAccess($user, $model)
+            || ($user->hasRole(Role::ADMINISTRATOR->value) && $user->is($model));
     }
 
     /**

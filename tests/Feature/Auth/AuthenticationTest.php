@@ -40,3 +40,14 @@ test('users can not authenticate with invalid password', function (): void {
 
     $this->assertGuest();
 });
+test('an authenticated member opening a guest-only page lands on the dashboard', function (string $uri): void {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->get($uri);
+
+    $response->assertRedirect(route('dashboard'));
+})->with([
+    'login' => '/login',
+    'forgot password' => '/forgot-password',
+    'reset password' => '/reset-password/some-token',
+]);

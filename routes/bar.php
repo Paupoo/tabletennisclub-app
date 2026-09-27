@@ -109,6 +109,27 @@ Route::prefix('products')->middleware('can:bar.products.manage')->name('products
 
 /*
 |--------------------------------------------------------------------------
+| Restocking — les courses
+|--------------------------------------------------------------------------
+*/
+Route::livewire('/restocking', 'pages::bar.restocking')
+    ->middleware('can:bar.restocking.shop')
+    ->name('restocking.index');
+
+/*
+|--------------------------------------------------------------------------
+| Sales — l'écran du comité
+|--------------------------------------------------------------------------
+*/
+// Le seul écran du bar qui ne demande pas `bar.access` : le comité lit les ventes
+// pour guider les achats, mais n'a rien à faire au comptoir.
+Route::livewire('/stats', 'pages::bar.stats')
+    ->withoutMiddleware('can:bar.access')
+    ->middleware('can:bar.stats.view')
+    ->name('stats.index');
+
+/*
+|--------------------------------------------------------------------------
 | Cash sheet
 |--------------------------------------------------------------------------
 */

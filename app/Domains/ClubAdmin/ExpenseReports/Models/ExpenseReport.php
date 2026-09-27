@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\ClubAdmin\ExpenseReports\Models;
 
 use App\Contracts\DescribesPayment;
+use App\Domains\Bar\Models\BarRestocking;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Casts\IbanCast;
@@ -21,6 +22,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
@@ -232,6 +234,18 @@ class ExpenseReport extends Model implements DescribesPayment
     /**
      * @return BelongsTo<self, $this>
      */
+    /**
+     * La tournée de courses du bar dont la note est issue, quand elle en vient une.
+     *
+     * Ce qu'elle a fait entrer en stock est ce que le valideur rapproche du ticket.
+     *
+     * @return HasOne<BarRestocking, $this>
+     */
+    public function restocking(): HasOne
+    {
+        return $this->hasOne(BarRestocking::class);
+    }
+
     public function resumedFrom(): BelongsTo
     {
         return $this->belongsTo(self::class, 'resumed_from_id');

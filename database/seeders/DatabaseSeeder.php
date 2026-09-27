@@ -399,6 +399,11 @@ class DatabaseSeeder extends Seeder
 
         $this->call(DirectedTrainingDemoSeeder::class);
 
+        // Un bar qui a vécu : ventes, tournées de courses et une note de frais, pour
+        // tester le réassort et les stats sans rien saisir. Relançable seul :
+        // `php artisan db:seed --class=BarDemoSeeder` vide le bar et le re-sème.
+        $this->call(BarDemoSeeder::class);
+
         $this->call(SpamSeeder::class);
 
         // Development only. It installs a seal and a signature watermarked

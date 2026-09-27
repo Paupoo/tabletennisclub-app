@@ -70,15 +70,19 @@
         <x-card class="shadow-sm" x-data="{ offered: false }">
             <h2 class="text-muted mb-3 text-xs font-bold uppercase tracking-widest">Mode de paiement</h2>
 
+            {{--
+                Deux boutons de même poids, et aucun n'enregistre au premier tap :
+                le cash ouvre sa confirmation comme le QR ouvre sa modale. Un Cash
+                en bouton principal, posé à côté, attirait le doigt, et un tap de
+                travers réglait la commande sans retour possible (retour de Jean,
+                2026-09-27).
+            --}}
             <div class="flex flex-wrap gap-2.5">
-                <form method="POST" action="{{ route('bar.payment.pay', $order) }}" class="min-w-[8rem] flex-1">
-                    @csrf
-                    <input type="hidden" name="method" value="cash">
-                    <button type="submit" class="btn btn-primary tap-comfort w-full gap-2">
-                        <x-icon name="o-banknotes" class="h-4 w-4" />
-                        Cash
-                    </button>
-                </form>
+                <button type="button" x-on:click="$dispatch('bar-open-cash')"
+                    class="btn btn-outline tap-comfort min-w-[8rem] flex-1 gap-2">
+                    <x-icon name="o-banknotes" class="h-4 w-4" />
+                    Cash
+                </button>
 
                 {{--
                     Un lien, pas un POST : afficher le QR ne change rien côté
@@ -175,6 +179,47 @@
             Les deux boutons vivent chacun dans leur formulaire : `method="dialog"`
             ferme nativement, le POST enregistre le paiement.
         --}}
+        {{--
+            La confirmation du cash : même boîte que le QR, fermée au départ. Son
+            état `open` part à faux et suit le dialogue natif, que ce soit Retour,
+            Échap ou le voile qui le ferme.
+        --}}
+        <x-app-modal
+            id="bar-cash-modal"
+            title="Payer en cash"
+            :subtitle="$order->name ?? 'Commande #' . $order->id"
+            :open="true"
+            separator
+            x-data="{ open: false }"
+            x-on:bar-open-cash.window="open = true; $el.showModal()"
+            x-on:close="open = false">
+
+            <div class="flex flex-col items-center gap-2">
+                <x-icon name="o-banknotes" class="text-muted h-10 w-10" />
+                <p class="text-4xl font-black tabular-nums tracking-tight">{{ euros($order->total_price) }}</p>
+                <p class="text-muted text-center text-sm">Encaissez le montant en espèces, puis confirmez.</p>
+                <a href="{{ route('bar.payment.show', ['order' => $order->id, 'method' => 'qr']) }}"
+                    class="text-primary tap-min mt-2 inline-flex items-center gap-1.5 text-sm font-semibold hover:underline">
+                    <x-icon name="o-qr-code" class="h-4 w-4" />
+                    Plutôt par QR code ?
+                </a>
+            </div>
+
+            <x-slot:actions>
+                <form method="dialog">
+                    <button class="btn btn-ghost tap-comfort">Retour</button>
+                </form>
+                <form method="POST" action="{{ route('bar.payment.pay', $order) }}">
+                    @csrf
+                    <input type="hidden" name="method" value="cash">
+                    <button type="submit" class="btn btn-primary tap-comfort gap-2">
+                        <x-icon name="o-check" class="h-4 w-4" />
+                        Cash reçu
+                    </button>
+                </form>
+            </x-slot:actions>
+        </x-app-modal>
+
         @if ($method === 'qr' && $qrCode)
             <x-app-modal
                 id="bar-qr-modal"
@@ -182,15 +227,55 @@
                 :subtitle="$order->name ?? 'Commande #' . $order->id"
                 :open="true"
                 separator
-                x-data="{ open: true }"
+                x-data="{ open: true, manual: false }"
                 x-init="$el.showModal()">
 
-                <div class="flex flex-col items-center gap-4">
+                {{--
+                    Le virement manuel remplace le QR au lieu de s'ajouter dessous :
+                    qui ne peut pas scanner n'a plus besoin du code, et la boîte
+                    garde sa hauteur, donc « Paiement reçu » ne descend jamais sous
+                    la ligne de flottaison.
+                --}}
+                <div class="join mb-4 flex">
+                    <button type="button" class="join-item btn btn-sm tap-min flex-1"
+                        x-bind:class="manual ? 'btn-outline' : 'btn-primary'" x-on:click="manual = false">
+                        <x-icon name="o-qr-code" class="h-4 w-4" />
+                        QR code
+                    </button>
+                    <button type="button" class="join-item btn btn-sm tap-min flex-1"
+                        x-bind:class="manual ? 'btn-primary' : 'btn-outline'" x-on:click="manual = true">
+                        <x-icon name="o-building-library" class="h-4 w-4" />
+                        Virement manuel
+                    </button>
+                </div>
+
+                <div x-show="! manual" class="flex flex-col items-center gap-4">
                     <img src="{{ $qrCode }}" alt="QR code de paiement"
                         class="bg-base-100 border-base-300 h-56 w-56 rounded-xl border p-3">
                     <p class="text-4xl font-black tabular-nums tracking-tight">{{ euros($order->total_price) }}</p>
                     <p class="text-muted text-center text-sm">Présentez ce code au client.</p>
                 </div>
+
+                {{-- Pas de bouton « copier » : c'est le client qui recopie, sur son
+                téléphone, ce qu'il lit sur celui du barman. --}}
+                <dl x-show="manual" x-cloak class="space-y-3">
+                    <div>
+                        <dt class="text-muted text-xs font-bold uppercase tracking-widest">Bénéficiaire</dt>
+                        <dd class="text-lg font-semibold">{{ $ownClub?->name }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-muted text-xs font-bold uppercase tracking-widest">IBAN</dt>
+                        <dd class="font-mono text-xl font-semibold">{{ $ownClub?->bank_account_formatted }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-muted text-xs font-bold uppercase tracking-widest">Montant</dt>
+                        <dd class="text-3xl font-black tabular-nums tracking-tight">{{ euros($order->total_price) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-muted text-xs font-bold uppercase tracking-widest">Communication structurée</dt>
+                        <dd class="font-mono text-xl font-semibold">+++{{ $payment?->reference }}+++</dd>
+                    </div>
+                </dl>
 
                 <x-slot:actions>
                     <form method="dialog">

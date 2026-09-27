@@ -256,6 +256,7 @@ enum Role: string
                 Permission::MeetingsView,
                 Permission::SeasonsView,
                 Permission::FacilitiesView,
+                Permission::BarStatsView,
             ],
 
             // The auditors the general assembly elects are, by design, outside
@@ -389,6 +390,8 @@ enum Role: string
                 Permission::BarCategoriesManage,
                 Permission::BarProductsManage,
                 Permission::BarStockManage,
+                Permission::BarRestockingShop,
+                Permission::BarStatsView,
             ],
             self::FACILITIES => [
                 Permission::FacilitiesView,

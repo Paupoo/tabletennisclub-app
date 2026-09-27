@@ -223,3 +223,12 @@ describe('aiming at an activity', function (): void {
             ->assertSet('activityId', null);
     });
 });
+
+it('says what each age band means', function (): void {
+    actingAs(User::factory()->isCommitteeMember()->create(['birthdate' => null]));
+
+    Livewire::test(COMMUNICATIONS_COMPONENT)
+        ->assertSee(__('Under 18 today'))
+        ->assertSee(__('18 or older, not a veteran'))
+        ->assertSee(__(':age by the end of the season (:date)', ['age' => 40, 'date' => '30/06/2027']));
+});

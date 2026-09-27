@@ -38,7 +38,8 @@
                     <p class="mb-2 text-sm font-semibold">{{ __('Age') }}</p>
                     <div class="space-y-2">
                         @foreach ($ageBandOptions as $option)
-                            <x-checkbox :label="$option['name']" :value="$option['id']" wire:model.live="ageBands" />
+                            <x-checkbox :label="$option['name']" :value="$option['id']" :hint="$option['hint']"
+                                wire:model.live="ageBands" />
                         @endforeach
                     </div>
                 </div>

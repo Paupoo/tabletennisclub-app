@@ -294,7 +294,7 @@ new class extends Component
             'baseOptions' => array_map(fn (AudienceBase $base): array => ['id' => $base->value, 'name' => $base->label()], AudienceBase::cases()),
             'licenceOptions' => array_map(fn (AudienceLicence $licence): array => ['id' => $licence->value, 'name' => $licence->label()], AudienceLicence::cases()),
             'genderOptions' => Gender::options(),
-            'ageBandOptions' => array_map(fn (AudienceAgeBand $band): array => ['id' => $band->value, 'name' => $band->label()], AudienceAgeBand::cases()),
+            'ageBandOptions' => array_map(fn (AudienceAgeBand $band): array => ['id' => $band->value, 'name' => $band->label(), 'hint' => $band->hint()], AudienceAgeBand::cases()),
             'activityKindOptions' => array_map(fn (AudienceActivityKind $kind): array => ['id' => $kind->value, 'name' => $kind->label()], AudienceActivityKind::cases()),
             'activityModeOptions' => array_map(fn (AudienceActivityMode $mode): array => ['id' => $mode->value, 'name' => $mode->label()], [AudienceActivityMode::Registered, AudienceActivityMode::InvitedNotRegistered]),
             'invitationTargetOptions' => array_map(fn (InvitationTarget $target): array => ['id' => $target->value, 'name' => $target->label()], InvitationTarget::cases()),

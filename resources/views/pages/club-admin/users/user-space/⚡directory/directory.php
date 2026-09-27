@@ -151,7 +151,7 @@ new class extends Component
     }
 
     /**
-     * Teams of the selected season, for the team filter. Each option carries the
+     * Our own teams of the selected season, for the team filter. Each option carries the
      * category ("A · Veterans") because team names alone (A, B, …) repeat across
      * men/women/veterans.
      *
@@ -160,7 +160,9 @@ new class extends Component
     #[Computed]
     public function teamsForFilter(): Collection
     {
+        // The table holds the whole league, opponents included.
         $teams = Team::query()
+            ->inClub()
             ->when($this->seasonFilter, fn (EloquentBuilder $q) => $q->where('season_id', $this->seasonFilter))
             ->with('league:id,category')
             ->get(['id', 'name', 'league_id'])

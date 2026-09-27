@@ -245,3 +245,73 @@ it('shows the whole QR modal without scrolling on a phone', function (): void {
     expect($box['open'])->toBeTrue('la modale ne s\'ouvre pas');
     expect($box['inView'])->toBeTrue('« Paiement reçu » est hors de l\'écran : il faut encore faire défiler');
 });
+
+it('opens the cash confirmation on a tap, and records nothing until it is confirmed', function (): void {
+    $state = json_decode(
+        (string) visit(route('bar.payment.show', $this->order))
+            ->resize(390, 844)
+            ->script(<<<'JS_WRAP'
+            (async () => {
+              const dialog = document.getElementById('bar-cash-modal');
+              const cash = [...document.querySelectorAll('main button')].find(b => b.textContent.trim() === 'Cash');
+              if (!dialog || !cash) return JSON.stringify({found: false});
+
+              const closedBefore = !dialog.open;
+              cash.click();
+              await new Promise(resolve => setTimeout(resolve, 150));
+
+              const confirm = [...dialog.querySelectorAll('button')].find(b => b.textContent.trim().includes('Cash reçu'));
+              const r = confirm.getBoundingClientRect();
+
+              return JSON.stringify({
+                found: true,
+                closedBefore,
+                open: dialog.open,
+                inert: dialog.inert,
+                inView: r.top >= 0 && r.bottom <= window.innerHeight,
+              });
+            })()
+            JS_WRAP),
+        true,
+    );
+
+    expect($state['found'])->toBeTrue('le bouton Cash ou sa modale est introuvable');
+    expect($state['closedBefore'])->toBeTrue('la confirmation ne doit pas s\'ouvrir seule');
+    expect($state['open'])->toBeTrue('un tap sur Cash n\'ouvre pas la confirmation');
+    expect($state['inert'])->toBeFalse('la confirmation s\'ouvre inerte : on ne peut rien y toucher');
+    expect($state['inView'])->toBeTrue('« Cash reçu » est hors de l\'écran');
+    expect($this->order->fresh()->is_paid)->toBeFalsy();
+});
+
+it('swaps the QR for the transfer details, and keeps the confirmation in view', function (): void {
+    Club::factory()->ownClub()->create();
+    Club::forgetOwnClub();
+
+    $state = json_decode(
+        (string) visit(route('bar.payment.show', ['order' => $this->order, 'method' => 'qr']))
+            ->resize(390, 844)
+            ->script(<<<'JS_WRAP'
+            (async () => {
+              const dialog = document.getElementById('bar-qr-modal');
+              const manual = [...dialog.querySelectorAll('button')].find(b => b.textContent.trim() === 'Virement manuel');
+              manual.click();
+              await new Promise(resolve => setTimeout(resolve, 150));
+
+              const confirm = [...dialog.querySelectorAll('button')].find(b => b.textContent.trim().includes('Paiement reçu'));
+              const r = confirm.getBoundingClientRect();
+              const shown = el => el && el.getClientRects().length > 0;
+
+              return JSON.stringify({
+                qrHidden: !shown(dialog.querySelector('img')),
+                iban: shown([...dialog.querySelectorAll('dd')].find(d => d.textContent.includes('BE23 7323 3320 8791'))),
+                inView: r.top >= 0 && r.bottom <= window.innerHeight,
+              });
+            })()
+            JS_WRAP),
+        true,
+    );
+
+    expect($state['qrHidden'])->toBeTrue('le QR reste affiché sous les coordonnées');
+    expect($state['iban'])->toBeTrue('l\'IBAN n\'apparaît pas');
+    expect($state['inView'])->toBeTrue('« Paiement reçu » est hors de l\'écran');
+});

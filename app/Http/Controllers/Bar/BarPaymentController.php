@@ -7,7 +7,7 @@ namespace App\Http\Controllers\Bar;
 use App\Actions\Bar\RecordBarOrderPayment;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\Bar\Models\BarOrder;
-use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Shared\Enums\Permission;
 use App\Http\Controllers\Controller;
@@ -97,7 +97,7 @@ class BarPaymentController extends Controller
             ->with('success', 'Paiement enregistré.');
     }
 
-    public function show(Request $request, BarOrder $order, GeneratePaymentQR $generatePaymentQR): Response
+    public function show(Request $request, BarOrder $order, GeneratePaymentQR $generatePaymentQR, RecordBarOrderPayment $recordPayment): Response
     {
         // `bar.orders.takeover` : un bar tourne en équipe, et celui qui encaisse n'est
         // presque jamais celui qui a servi. La permission existait, elle est accordée
@@ -122,11 +122,13 @@ class BarPaymentController extends Controller
         // Get selected payment method
         $method = $request->input('method');
         $qrCode = null;
+        $payment = null;
+        $club = null;
         if ($method === 'qr') {
-            $payment = new Payment([
-                'amount_due' => $order->total_price / 100,
-                'reference' => "Bar order #{$order->id}",
-            ]);
+            // Pour le virement manuel : certaines applis bancaires ne lisent pas
+            // l'EPC, et le client recopie alors ce que l'écran lui montre.
+            $club = Club::ourClub()->first();
+            $payment = $recordPayment->reserve($order);
             $qrCode = $generatePaymentQR($payment);
         }
 
@@ -135,6 +137,8 @@ class BarPaymentController extends Controller
                 'order',
                 'method',
                 'qrCode',
+                'payment',
+                'club',
                 'visitingClubs',
                 'offeredOrderLimitReached',
             ))

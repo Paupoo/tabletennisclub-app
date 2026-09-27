@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Bar;
 
+use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 
@@ -41,6 +42,8 @@ class RecordBarOrderPayment
     public function __invoke(BarOrder $order): ?Payment
     {
         if ($order->payment_method !== self::BANKED_METHOD) {
+            $this->release($order);
+
             return null;
         }
 
@@ -50,15 +53,51 @@ class RecordBarOrderPayment
             return null;
         }
 
-        return $order->payment()->create([
-            // La communication que le QR bancaire montre déjà au client. La ligne
-            // du relevé et celle du trésorier portent ainsi le même texte, au
-            // lieu de se chercher au montant et à la date.
-            'reference' => "Bar order #{$order->id}",
-            'amount_due' => $order->total_price / 100,
-            'amount_paid' => 0,
-            'status' => 'pending',
-            'payment_method' => self::TREASURY_METHOD,
-        ]);
+        // D'ordinaire le QR affiché a déjà réservé la ligne ; ici, une commande
+        // réglée par QR sans que l'écran l'ait montré (une reprise, un rattrapage).
+        return $this->reserve($order);
+    }
+
+    /**
+     * Rendre la ligne qu'un QR affiché avait réservée, quand la commande se règle
+     * autrement ou disparaît.
+     *
+     * Seulement tant que rien n'est arrivé sur le compte : une ligne déjà
+     * rapprochée dit qu'un virement a eu lieu, et c'est au trésorier d'en décider.
+     */
+    public function release(BarOrder $order): void
+    {
+        $order->payment()
+            ->where('status', 'pending')
+            ->whereNull('transaction_id')
+            ->where('amount_paid', 0)
+            ->delete();
+    }
+
+    /**
+     * La ligne qu'un QR affiché fait naître, en attente, avec sa communication.
+     *
+     * Dès l'affichage et non au « Paiement reçu » : le générateur de communication
+     * ne réserve une référence que par la ligne qui la porte, et un client qui a
+     * scanné puis payé sans que le barman valide doit quand même trouver sa ligne
+     * chez le trésorier. Rouvrir le QR rend la même ligne, au montant du moment.
+     */
+    public function reserve(BarOrder $order): Payment
+    {
+        $payment = $order->payment()->first();
+
+        if ($payment === null) {
+            return $order->payment()->create([
+                'reference' => (new GeneratePaymentReference)(),
+                'amount_due' => $order->total_price / 100,
+                'amount_paid' => 0,
+                'status' => 'pending',
+                'payment_method' => self::TREASURY_METHOD,
+            ]);
+        }
+
+        $payment->update(['amount_due' => $order->total_price / 100]);
+
+        return $payment;
     }
 }

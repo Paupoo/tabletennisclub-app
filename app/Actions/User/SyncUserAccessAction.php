@@ -20,8 +20,9 @@ use App\Domains\Shared\Enums\Role;
  * Defensive on purpose. The screens gate themselves through the policy, but a
  * Livewire property stays writable from the client even when the markup never
  * renders it, so the rules that matter are enforced again here, where the write
- * actually happens: the layer belongs to whoever may manage the target's access,
- * the administrator flag to promoteAdmin alone, and a délégation the matrix
+ * actually happens: the layer belongs to whoever may manage the target's access
+ * (an administrator on their own file reaches the délégations alone), the
+ * administrator flag to promoteAdmin alone, and a délégation the matrix
  * reserves to administrators moves in neither direction for anybody else.
  */
 class SyncUserAccessAction
@@ -31,9 +32,14 @@ class SyncUserAccessAction
         // Two refusals, one silence: a caller with nothing to say about rights,
         // and a caller with no standing to say it. Neither is an error worth
         // interrupting a save that is otherwise legitimate.
-        if (! $access instanceof AccessData || ! $actor->can('manageAccess', $user)) {
+        if (! $access instanceof AccessData || ! $actor->can('manageDelegations', $user)) {
             return;
         }
+
+        // An administrator on their own file writes the délégations and nothing
+        // else: the seat and its title stay what they are.
+        $mayManageSeat = $actor->can('manageAccess', $user);
+        $isCommitteeMember = $mayManageSeat ? $access->isCommitteeMember : $user->hasRole(Role::COMMITTEE->value);
 
         $before = self::roleNames($user);
 
@@ -47,7 +53,7 @@ class SyncUserAccessAction
             $roles[] = Role::ADMINISTRATOR->value;
         }
 
-        if ($access->isCommitteeMember) {
+        if ($isCommitteeMember) {
             $roles[] = Role::COMMITTEE->value;
         }
 
@@ -57,7 +63,11 @@ class SyncUserAccessAction
         // A statutory title only belongs to a committee member. Enforced here
         // rather than in a saving() observer, because the roles this reads are
         // only written once the row exists.
-        $title = $access->isCommitteeMember ? $access->committeeRole : null;
+        $title = match (true) {
+            ! $mayManageSeat => $user->committee_role,
+            $access->isCommitteeMember => $access->committeeRole,
+            default => null,
+        };
 
         if ($user->committee_role !== $title) {
             $user->forceFill(['committee_role' => $title])->save();

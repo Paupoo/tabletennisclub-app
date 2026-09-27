@@ -409,14 +409,17 @@
                             {{ $rights['title'] ?? __('Committee member') }}
                         </span>
                     @endif
-                    @foreach ($rights['delegations'] as $held)
-                        <span class="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold text-base-content">
-                            {{ $held->label() }}
-                        </span>
-                    @endforeach
+                    {{-- An administrator on their own file edits these in the grid below. --}}
+                    @unless ($this->canManageDelegations)
+                        @foreach ($rights['delegations'] as $held)
+                            <span class="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold text-base-content">
+                                {{ $held->label() }}
+                            </span>
+                        @endforeach
+                    @endunless
                 </div>
 
-                @if (! $rights['isAdmin'] && ! $rights['isCommitteeMember'] && $rights['delegations'] === [])
+                @if (! $this->canManageDelegations && ! $rights['isAdmin'] && ! $rights['isCommitteeMember'] && $rights['delegations'] === [])
                     <p class="mt-3 text-xs text-base-content/60">
                         {{ __('No delegation: this member holds no management right.') }}
                     </p>
@@ -424,7 +427,7 @@
             </div>
             @endif
 
-            @if ($this->canManageAccess)
+            @if ($this->canManageDelegations)
             <div class="col-span-6">
                 <x-menu-separator />
             </div>

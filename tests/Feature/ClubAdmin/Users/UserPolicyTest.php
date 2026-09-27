@@ -202,6 +202,26 @@ describe('manageAccess', function (): void {
     });
 });
 
+// ── manageDelegations (the délégations alone) ───────────────────────────────
+
+describe('manageDelegations', function (): void {
+    it('follows manageAccess on somebody else', function (): void {
+        $target = User::factory()->create();
+
+        expect($this->accessManager->can('manageDelegations', $target))->toBeTrue()
+            ->and($this->admin->can('manageDelegations', $target))->toBeTrue()
+            ->and($this->member->can('manageDelegations', $target))->toBeFalse();
+    });
+
+    it('lets an administrator pick their own délégations', function (): void {
+        expect($this->admin->can('manageDelegations', $this->admin))->toBeTrue();
+    });
+
+    it('still stops an access manager on their own file', function (): void {
+        expect($this->accessManager->can('manageDelegations', $this->accessManager))->toBeFalse();
+    });
+});
+
 // ── selfDelete (own account only) ────────────────────────────────────────────
 
 describe('selfDelete', function (): void {

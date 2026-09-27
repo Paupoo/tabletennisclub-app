@@ -7,8 +7,11 @@ use App\Domains\Bar\Models\BarOrder;
 use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Models\BarRestockingAdjustment;
 use App\Domains\Bar\Services\BarRestockingSettings;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Carbon;
+use Livewire\Livewire;
 use Spatie\Activitylog\Models\Activity;
 
 /*
@@ -116,4 +119,27 @@ it('is scheduled on Friday at 6:05, once Thursday evening is closed', function (
 
     expect($event)->not->toBeNull()
         ->and($event->expression)->toBe('5 6 * * 5');
+});
+
+it('recalculates on demand from the restocking settings, as Friday would', function (): void {
+    app(BarRestockingSettings::class)->setAutomatic(true);
+    $jupiler = restockingRecalculationProduct('Jupiler', $this->beers, min: 6, max: 20);
+    restockingRecalculationSale($jupiler, 10);
+
+    Livewire::actingAs(User::factory()->withRole(Role::STORE_KEEPER)->create())
+        ->test('pages::bar.products')
+        ->call('recalculateRestocking')
+        ->assertHasNoErrors();
+
+    expect($jupiler->fresh())
+        ->low_stock_threshold->toBe(10)
+        ->max_stock->toBe(30)
+        ->and(BarRestockingAdjustment::query()->count())->toBe(1);
+});
+
+it('leaves the on-demand recalculation to whoever manages the stock', function (): void {
+    Livewire::actingAs(User::factory()->withRole(Role::BARMAN)->create())
+        ->test('pages::bar.products')
+        ->call('recalculateRestocking')
+        ->assertForbidden();
 });

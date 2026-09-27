@@ -218,6 +218,25 @@ new class extends Component
         $this->restockingSettingsDrawer = true;
     }
 
+    /**
+     * Lancer tout de suite le calcul du vendredi, sur les réglages enregistrés.
+     *
+     * Mêmes règles que la tâche planifiée : seuls les produits en automatique
+     * bougent, et seulement au-delà du seuil anti-agitation.
+     */
+    public function recalculateRestocking(RestockingAutomation $automation): void
+    {
+        abort_unless(Gate::allows('bar.stock.manage'), 403);
+
+        $count = count($automation->recalculate());
+
+        $this->restockingSettingsDrawer = false;
+
+        $count === 0
+            ? $this->info(__('Nothing to adjust: the automatic products already follow their sales.'))
+            : $this->success(trans_choice('{1} :count product adjusted.|[2,*] :count products adjusted.', $count, ['count' => $count]));
+    }
+
     public function render(): View
     {
         return $this->view();

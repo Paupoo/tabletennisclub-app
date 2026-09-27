@@ -337,6 +337,18 @@
                 <x-button :label="__('Save')" type="submit" class="btn-primary" spinner="saveRestockingSettings" />
             </x-slot:actions>
         </x-form>
+
+        {{-- Hors du formulaire : le calcul part des réglages enregistrés, pas de
+        ceux qu'on est en train de taper. --}}
+        <div class="border-base-300 mt-6 border-t pt-4">
+            <x-button :label="__('Recalculate now')" icon="o-arrow-path"
+                class="btn-outline btn-sm w-full"
+                wire:click="recalculateRestocking" spinner="recalculateRestocking" />
+
+            <p class="text-subtle mt-2 text-xs">
+                {{ __('Does now what Friday would do, with the saved settings: only the automatic products move.') }}
+            </p>
+        </div>
     </x-drawer>
 
     <x-confirm-modal model="deleteModal" :title="__('Delete this product permanently?')"

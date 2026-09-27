@@ -36,8 +36,9 @@ class TournamentPaymentRequestNotification extends Notification
 
     public function toMail(object $notifiable): TournamentPaymentRequestMail
     {
-        return new TournamentPaymentRequestMail($this->tournament, $this->payment, $this->deadline)
-            ->to($notifiable->email, $notifiable->full_name);
+        // Addressed by PerRecipientMailChannel: one message per contact address,
+        // so a minor's guardians are reached rather than a null login.
+        return new TournamentPaymentRequestMail($this->tournament, $this->payment, $this->deadline);
     }
 
     /** @return array<int, string> */

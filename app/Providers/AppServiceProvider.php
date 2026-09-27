@@ -10,12 +10,14 @@ use App\Domains\Shared\Enums\Feature;
 use App\Domains\Trainings\Services\TrainingBuilder;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
 use App\Support\AccountProxy;
+use App\Support\PerRecipientMailChannel;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Channels\MailChannel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
@@ -133,5 +135,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(TrainingBuilder::class, fn (Application $app): TrainingBuilder => new TrainingBuilder);
 
         $this->app->singleton(InterclubService::class, fn (Application $app): InterclubService => new InterclubService);
+
+        // A member spoken for by several addresses gets one message per address.
+        $this->app->bind(MailChannel::class, PerRecipientMailChannel::class);
     }
 }

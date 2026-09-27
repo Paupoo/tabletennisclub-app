@@ -61,6 +61,60 @@ describe('reaching a member', function (): void {
 });
 
 /*
+ * Every address a message to this member must reach. A minor is spoken for by
+ * all their guardians — two separated parents must both hear from the club — and
+ * keeps their own address alongside when they have one, since they are the one
+ * who plays.
+ */
+describe('reaching every address that speaks for a member', function (): void {
+
+    it('reaches an adult through their own address only', function (): void {
+        $member = User::factory()->create(['email' => 'adult@example.com', 'birthdate' => now()->subYears(30)]);
+        $member->guardians()->attach(Guardian::factory()->create(['email' => 'former.guardian@example.com']));
+
+        expect($member->fresh()->contactEmails())->toBe(['adult@example.com']);
+    });
+
+    it('reaches a minor through their own address and every guardian', function (): void {
+        $member = User::factory()->create(['email' => 'teen@example.com', 'birthdate' => now()->subYears(15)]);
+        $member->guardians()->attach(Guardian::factory()->create(['email' => 'mum@example.com']));
+        $member->guardians()->attach(Guardian::factory()->create(['email' => 'dad@example.com']));
+
+        expect($member->fresh()->contactEmails())
+            ->toEqualCanonicalizing(['teen@example.com', 'mum@example.com', 'dad@example.com']);
+    });
+
+    it('reaches every guardian of a member without an address', function (): void {
+        $member = User::factory()->create(['email' => null, 'birthdate' => now()->subYears(9)]);
+        $member->guardians()->attach(Guardian::factory()->create(['email' => 'mum@example.com']));
+        $member->guardians()->attach(Guardian::factory()->create(['email' => null]));
+        $member->guardians()->attach(Guardian::factory()->create(['email' => 'dad@example.com']));
+
+        expect($member->fresh()->contactEmails())->toEqualCanonicalizing(['mum@example.com', 'dad@example.com']);
+    });
+
+    it('lists an address shared by the minor and a guardian once', function (): void {
+        $member = User::factory()->create(['email' => 'family@example.com', 'birthdate' => now()->subYears(12)]);
+        $member->guardians()->attach(Guardian::factory()->create(['email' => ' Family@Example.com ']));
+
+        expect($member->fresh()->contactEmails())->toBe(['family@example.com']);
+    });
+
+    it('reaches nobody when no address is on file', function (): void {
+        $member = User::factory()->create(['email' => null]);
+
+        expect($member->contactEmails())->toBe([]);
+    });
+
+    it('keeps the member own address as the primary one', function (): void {
+        $member = User::factory()->create(['email' => 'teen@example.com', 'birthdate' => now()->subYears(15)]);
+        $member->guardians()->attach(Guardian::factory()->create(['email' => 'mum@example.com']));
+
+        expect($member->fresh()->contactEmail())->toBe('teen@example.com');
+    });
+});
+
+/*
  * How the secretary finds the members an import brought in and has not written to
  * yet. The states are the ones User::invitationStatus() already names — no new
  * status was introduced for the import, and none was needed.
@@ -210,14 +264,14 @@ describe('routing notifications', function (): void {
     it('routes to the member own address when they have one', function (): void {
         $member = User::factory()->create(['email' => 'member@example.com']);
 
-        expect($member->routeNotificationForMail())->toBe('member@example.com');
+        expect($member->routeNotificationForMail())->toBe(['member@example.com']);
     });
 
     it('routes to the guardian when the member has no address', function (): void {
         $member = User::factory()->create(['email' => null]);
         $member->guardians()->attach(Guardian::factory()->create(['email' => 'guardian@example.com']));
 
-        expect($member->fresh()->routeNotificationForMail())->toBe('guardian@example.com');
+        expect($member->fresh()->routeNotificationForMail())->toBe(['guardian@example.com']);
     });
 });
 

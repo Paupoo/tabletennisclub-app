@@ -877,7 +877,7 @@ it('reaches a member who has no address of their own through their guardian', fu
     Notification::assertSentTo(
         $child,
         SubscriptionCreatedNotification::class,
-        fn (object $notification, array $channels, User $notifiable): bool => $notifiable->routeNotificationFor('mail') === 'marie.dupont@example.com',
+        fn (object $notification, array $channels, User $notifiable): bool => $notifiable->routeNotificationFor('mail') === ['marie.dupont@example.com'],
     );
     Mail::assertQueued(
         PaymentInvitationEmail::class,

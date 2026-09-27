@@ -28,16 +28,19 @@ class SendPaymentReminderJob implements ShouldQueue
             return;
         }
 
-        // A minor's payment reminder has to reach whoever actually pays it.
-        $recipient = $payment->payable->user->contactEmail();
+        // A minor's payment reminder has to reach whoever actually pays it —
+        // every guardian, one message each.
+        $recipients = $payment->payable->user->contactEmails();
 
-        if ($recipient === null) {
+        if ($recipients === []) {
             return;
         }
 
-        Mail::to($recipient)->send(
-            new PaymentInvitationEmail($payment, __('Please settle your payment as soon as possible.'))
-        );
+        foreach ($recipients as $recipient) {
+            Mail::to($recipient)->send(
+                new PaymentInvitationEmail($payment, __('Please settle your payment as soon as possible.'))
+            );
+        }
         // One write, not two: the counter and the date describe the same event, and
         // an increment followed by a separate save can leave the count raised with
         // no date behind it.

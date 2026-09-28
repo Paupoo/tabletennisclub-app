@@ -8,8 +8,10 @@ use App\Contracts\DescribesPayment;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\MeetingUser;
+use App\Domains\Shared\Support\IbanNormalizer;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Carbon;
@@ -636,6 +638,13 @@ final class BankStatementFixture
 
         $balance = 2000.00;
 
+        // Le compte du club, sinon l'import refuse le relevé comme celui d'un
+        // autre compte.
+        $account = IbanNormalizer::normalize(Club::ourClub()->value('bank_account')) ?: 'BE11000000000001';
+
+        // Virgule décimale, sans séparateur de milliers : c'est ce que CBC écrit.
+        $money = fn (float $value): string => number_format($value, 2, ',', '');
+
         // Le rang de chaque ligne dans la fenêtre. Une copie emprunte celui de
         // sa source, donc les rangs ne suivent pas l'ordre des lignes — et la
         // fenêtre se cale sur le plus grand d'entre eux, sinon le dernier jour
@@ -657,7 +666,7 @@ final class BankStatementFixture
             $date = $start->copy()->addDays($offsets[$index])->format('d/m/Y');
 
             $lines[] = implode(';', [
-                'BE11 0000 0000 0001',
+                $account,
                 'Extrait',
                 'Club Tennis de Table Ottignies-Blocry',
                 'EUR',
@@ -665,10 +674,10 @@ final class BankStatementFixture
                 $date,
                 $row['description'],
                 $date,
-                number_format($amount, 2, '.', ''),
-                number_format($balance, 2, '.', ''),
-                $amount > 0 ? number_format($amount, 2, '.', '') : '',
-                $amount < 0 ? number_format(abs($amount), 2, '.', '') : '',
+                $money($amount),
+                $money($balance),
+                $amount > 0 ? $money($amount) : '',
+                $amount < 0 ? $money($amount) : '',
                 $row['counterparty_ac'],
                 'BBRUBEBB',
                 $row['counterparty'],
@@ -678,7 +687,9 @@ final class BankStatementFixture
             ]);
         }
 
-        return implode("\r\n", $lines) . "\r\n";
+        // Un CR seul en fin de ligne, comme l'export rapide de CBC depuis juin
+        // 2026 : la variante qui a cassé l'import, donc celle qu'on rejoue.
+        return implode("\r", $lines) . "\r";
     }
 
     private function renderManifest(Carbon $end): string

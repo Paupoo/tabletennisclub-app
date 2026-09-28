@@ -19,7 +19,7 @@ La casse et les accents n'ont pas d'importance. Le nom, si.
 
 Le rapport vous dit ce qui s'est passé : les nouvelles, les doublons écartés, et les erreurs éventuelles — celles-là sont détaillées dans l'historique d'import, ligne par ligne, avec le motif du rejet. **Vous pouvez réimporter le même extrait sans crainte** : les lignes déjà connues sont reconnues et ignorées.
 
-Un import qui annonce **0 nouvelle et 0 doublon** est presque toujours un problème d'en-têtes : mauvaise langue d'export, ou colonnes renommées.
+Un fichier dont les en-têtes ne sont pas reconnus est **refusé en rouge**, avec le nom de la colonne manquante : rien n'est importé à moitié.
 
 ## 2. Le rapprochement automatique
 

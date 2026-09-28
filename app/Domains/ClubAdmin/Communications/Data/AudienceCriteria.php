@@ -8,6 +8,7 @@ use App\Domains\Shared\Enums\AudienceActivityKind;
 use App\Domains\Shared\Enums\AudienceActivityMode;
 use App\Domains\Shared\Enums\AudienceAgeBand;
 use App\Domains\Shared\Enums\AudienceBase;
+use App\Domains\Shared\Enums\AudienceFunction;
 use App\Domains\Shared\Enums\AudienceLicence;
 use App\Domains\Shared\Enums\Gender;
 
@@ -27,6 +28,7 @@ final readonly class AudienceCriteria
      * @param  list<int>  $excludedUserIds  Members left out of this one message by hand.
      * @param  list<int>  $includedUnclassifiedIds  Members the filters could not place, kept in by hand.
      * @param  AudienceActivityKind|null  $activityKind  With $activityId: one activity, narrowing like any other filter.
+     * @param  list<AudienceFunction>  $functions  Read with the active members only: a coach is one of them, affiliated or not.
      */
     public function __construct(
         public AudienceBase $base = AudienceBase::Active,
@@ -38,6 +40,7 @@ final readonly class AudienceCriteria
         public ?AudienceActivityKind $activityKind = null,
         public ?int $activityId = null,
         public AudienceActivityMode $activityMode = AudienceActivityMode::Registered,
+        public array $functions = [],
     ) {}
 
     /**
@@ -58,6 +61,7 @@ final readonly class AudienceCriteria
             activityKind: AudienceActivityKind::tryFrom((string) ($stored['activity']['kind'] ?? '')),
             activityId: isset($stored['activity']['id']) ? (int) $stored['activity']['id'] : null,
             activityMode: AudienceActivityMode::tryFrom((string) ($stored['activity']['mode'] ?? '')) ?? AudienceActivityMode::Registered,
+            functions: self::enums(AudienceFunction::class, $stored['functions'] ?? []),
         );
     }
 
@@ -71,7 +75,7 @@ final readonly class AudienceCriteria
      * The filters as plain values: what the audit trail and a communication
      * keep, rather than the list of people they produced.
      *
-     * @return array{base: string, licences: list<string>, genders: list<string>, age_bands: list<string>, excluded_user_ids: list<int>, included_unclassified_ids: list<int>, activity: array{kind: string, id: int, mode: string}|null}
+     * @return array{base: string, licences: list<string>, genders: list<string>, age_bands: list<string>, excluded_user_ids: list<int>, included_unclassified_ids: list<int>, activity: array{kind: string, id: int, mode: string}|null, functions: list<string>}
      */
     public function toArray(): array
     {
@@ -87,6 +91,7 @@ final readonly class AudienceCriteria
                 'id' => $this->activityId,
                 'mode' => $this->activityMode->value,
             ] : null,
+            'functions' => array_map(fn (AudienceFunction $function): string => $function->value, $this->functions),
         ];
     }
 

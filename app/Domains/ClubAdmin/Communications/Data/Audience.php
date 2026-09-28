@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\ClubAdmin\Communications\Data;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\AudienceFunction;
 use Illuminate\Support\Collection;
 
 /**
@@ -21,12 +22,14 @@ final readonly class Audience
      * @param  Collection<int, User>  $unreachable  Targeted, but no address on file for them or a guardian.
      * @param  Collection<int, User>  $unclassified  In the base, but missing what a filter needs.
      * @param  array<string, list<User>>  $recipients  Each address, with the members it speaks for.
+     * @param  list<AudienceFunction>  $vacantFunctions  Functions asked for that nobody holds this season.
      */
     public function __construct(
         public Collection $members,
         public Collection $unreachable,
         public Collection $unclassified,
         public array $recipients,
+        public array $vacantFunctions = [],
     ) {}
 
     /** @return list<string> */

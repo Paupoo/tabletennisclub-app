@@ -503,6 +503,7 @@ The screen answers "who must I write to, without forgetting anyone and without w
 ### Choosing the audience
 
 - **Who**: active members (default), pending affiliations, or last season's members who have not come back. Never several at once.
+- **Function**: the **coaches** (leading a pack or a session of the active season) and/or the **captains** of our teams of the active season. Whoever holds a function counts as an active member even without an affiliation, so the function only combines with "active members". When nobody is assigned yet (right after the season switch), the screen says so rather than falling back on last year's coaches.
 - **Filters**: licence (competitors, recreational players), gender, age (youth under 18 today, adults, veterans at the season's end), and an **activity** (registered for a tournament, enrolled in a pack, coming to a meeting, playing in a team). Several boxes of one kind widen; different kinds narrow.
 - **Invite, then remind**: for a tournament, a pack or a meeting, three modes. "Registered for it" warns the participants; "Not invited yet" leaves out whoever a communication already invited and whoever already registered — so nobody is invited twice; "Invited, not registered yet" keeps only those who received the invitation and have not registered since.
 

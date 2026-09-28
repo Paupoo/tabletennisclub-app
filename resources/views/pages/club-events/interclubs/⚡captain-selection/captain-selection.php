@@ -488,11 +488,6 @@ new class extends Component
         $this->drawerSelection = false;
     }
 
-    public function toggleDayAvailability(): void
-    {
-        $this->dayAvailabilityOpen = ! $this->dayAvailabilityOpen;
-    }
-
     /**
      * Switching team is a navigation, so it authorises like one: a captain only
      * reaches the teams they lead, whatever id arrives from the client.
@@ -606,6 +601,11 @@ new class extends Component
             __('Lineup saved, not sent: your team does not know it yet.'),
             position: 'toast-bottom toast-end'
         );
+    }
+
+    public function toggleDayAvailability(): void
+    {
+        $this->dayAvailabilityOpen = ! $this->dayAvailabilityOpen;
     }
 
     public function togglePlayer(int $userId): void

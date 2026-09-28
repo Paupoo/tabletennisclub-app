@@ -9,11 +9,13 @@ use App\Domains\ClubAdmin\Communications\Data\AudienceCriteria;
 use App\Domains\ClubAdmin\Communications\Models\Communication;
 use App\Domains\ClubAdmin\Communications\Models\CommunicationRecipient;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\AudienceActivityKind;
 use App\Domains\Shared\Enums\AudienceActivityMode;
 use App\Domains\Shared\Enums\AudienceAgeBand;
 use App\Domains\Shared\Enums\AudienceBase;
+use App\Domains\Shared\Enums\AudienceFunction;
 use App\Domains\Shared\Enums\AudienceLicence;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
@@ -55,6 +57,10 @@ class AudienceBuilder
             unreachable: $unreachable->values(),
             unclassified: $this->sorted($unclassified->whereNotIn('id', $criteria->includedUnclassifiedIds)),
             recipients: $this->recipients($reachable),
+            vacantFunctions: array_values(array_filter(
+                $this->readableFunctions($criteria),
+                fn (AudienceFunction $function): bool => $this->holderIds([$function]) === [],
+            )),
         );
     }
 
@@ -73,9 +79,17 @@ class AudienceBuilder
             return User::query()->whereRaw('1 = 0');
         }
 
-        $query = User::query()->whereHas('subscriptions', function (Builder $subscription) use ($placingAffiliation, $criteria): void {
-            $placingAffiliation($subscription);
-            $this->whereLicence($subscription, $criteria->licences);
+        $query = User::query()->where(function (Builder $inBase) use ($placingAffiliation, $criteria): void {
+            $inBase->whereHas('subscriptions', function (Builder $subscription) use ($placingAffiliation, $criteria): void {
+                $placingAffiliation($subscription);
+                $this->whereLicence($subscription, $criteria->licences);
+            });
+
+            // Whoever holds a function this season is part of the club, affiliated
+            // or not — but holds no licence a licence filter could read.
+            if ($criteria->base === AudienceBase::Active && $criteria->licences === []) {
+                $inBase->orWhereIn('users.id', $this->holderIds(AudienceFunction::cases()));
+            }
         });
 
         if ($criteria->base === AudienceBase::FormerMembers) {
@@ -87,7 +101,36 @@ class AudienceBuilder
 
         $this->whereActivity($query, $criteria);
 
+        if ($this->readableFunctions($criteria) !== []) {
+            $query->whereIn('users.id', $this->holderIds($criteria->functions));
+        }
+
         return $query;
+    }
+
+    /**
+     * Who holds any of the functions this season: leads one of its packs or
+     * sessions, or captains one of our own teams.
+     *
+     * @param  list<AudienceFunction>  $functions
+     * @return list<int>
+     */
+    private function holderIds(array $functions): array
+    {
+        $seasonId = Season::current()?->id;
+
+        $ids = collect($functions)->flatMap(fn (AudienceFunction $function) => match ($function) {
+            AudienceFunction::Coaches => DB::table('training_packs')
+                ->where('season_id', $seasonId)
+                ->pluck('trainer_id')
+                ->merge(DB::table('trainings')->where('season_id', $seasonId)->pluck('trainer_id')),
+            AudienceFunction::Captains => DB::table('teams')
+                ->where('season_id', $seasonId)
+                ->where('club_id', Club::own()?->id)
+                ->pluck('captain_id'),
+        });
+
+        return $ids->filter()->map(fn (mixed $userId): int => (int) $userId)->unique()->values()->all();
     }
 
     /**
@@ -168,6 +211,17 @@ class AudienceBuilder
         return fn (Builder $subscription) => $subscription
             ->where('season_id', $current->id)
             ->whereIn('status', $statuses);
+    }
+
+    /**
+     * The functions asked for, when they can be read: only among the active
+     * members, since a coach does not make anyone a pending or a former member.
+     *
+     * @return list<AudienceFunction>
+     */
+    private function readableFunctions(AudienceCriteria $criteria): array
+    {
+        return $criteria->base === AudienceBase::Active ? $criteria->functions : [];
     }
 
     /**

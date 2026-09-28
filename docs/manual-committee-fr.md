@@ -504,6 +504,7 @@ L'écran répond à « à qui dois-je écrire, sans oublier personne et sans éc
 ### Choisir le public
 
 - **Qui** : membres actifs (par défaut), affiliations en attente, ou membres de la saison passée qui ne sont pas revenus. Jamais plusieurs à la fois.
+- **Fonction** : les **coaches** (entraîneurs d'un pack ou d'une séance de la saison active) et/ou les **capitaines** de nos équipes de la saison active. Une personne en fonction fait partie des membres actifs même sans affiliation ; la fonction ne se combine donc qu'avec « membres actifs ». Si personne n'est encore désigné (juste après le changement de saison), l'écran le signale au lieu de reprendre les coaches de l'an dernier.
 - **Filtres** : licence (compétiteurs, récréatifs), genre, âge (jeunes de moins de 18 ans aujourd'hui, adultes, vétérans à la fin de la saison), et une **activité** (inscrits à un tournoi, à un pack, présents à une réunion, joueurs d'une équipe). Plusieurs cases d'un même bloc élargissent ; des blocs différents resserrent.
 - **Inviter puis relancer** : pour un tournoi, un pack ou une réunion, trois modes. « Inscrits » prévient les participants ; « Pas encore invités » écarte ceux qu'une communication a déjà invités et ceux déjà inscrits — pour ne jamais inviter deux fois ; « Invités, pas encore inscrits » ne garde que ceux qui ont reçu l'invitation sans s'inscrire depuis.
 

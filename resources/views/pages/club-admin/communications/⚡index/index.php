@@ -16,6 +16,7 @@ use App\Domains\Shared\Enums\AudienceActivityKind;
 use App\Domains\Shared\Enums\AudienceActivityMode;
 use App\Domains\Shared\Enums\AudienceAgeBand;
 use App\Domains\Shared\Enums\AudienceBase;
+use App\Domains\Shared\Enums\AudienceFunction;
 use App\Domains\Shared\Enums\AudienceLicence;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\InvitationTarget;
@@ -68,6 +69,14 @@ new class extends Component
 
     /** @var list<int> */
     public array $excludedUserIds = [];
+
+    /**
+     * Coaches, captains: read among the active members only, and dropped as
+     * soon as the audience starts from anyone else.
+     *
+     * @var list<string>
+     */
+    public array $functions = [];
 
     /** @var list<string> */
     public array $genders = [];
@@ -127,6 +136,7 @@ new class extends Component
                 'id' => $this->activityId,
                 'mode' => $this->activityMode,
             ] : null,
+            'functions' => $this->functions,
         ]);
     }
 
@@ -140,6 +150,12 @@ new class extends Component
             ->orderBy('first_name')
             ->orderBy('id')
             ->get();
+    }
+
+    /** Whether the functions can narrow the audience: only the active members hold one. */
+    public function functionsApply(): bool
+    {
+        return $this->base === AudienceBase::Active->value;
     }
 
     /** Appends the chosen "invite to…" block to the message. */
@@ -206,6 +222,7 @@ new class extends Component
         $this->activityKind = $criteria['activity']['kind'] ?? '';
         $this->activityId = $criteria['activity']['id'] ?? null;
         $this->activityMode = $criteria['activity']['mode'] ?? AudienceActivityMode::Registered->value;
+        $this->functions = $criteria['functions'];
     }
 
     #[Computed]
@@ -284,6 +301,13 @@ new class extends Component
         $this->reset('activityId', 'activityMode');
     }
 
+    public function updatedBase(): void
+    {
+        if (! $this->functionsApply()) {
+            $this->reset('functions');
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -293,6 +317,7 @@ new class extends Component
             'breadcrumbs' => $this->getBreadcrumbs(),
             'baseOptions' => array_map(fn (AudienceBase $base): array => ['id' => $base->value, 'name' => $base->label()], AudienceBase::cases()),
             'licenceOptions' => array_map(fn (AudienceLicence $licence): array => ['id' => $licence->value, 'name' => $licence->label()], AudienceLicence::cases()),
+            'functionOptions' => array_map(fn (AudienceFunction $function): array => ['id' => $function->value, 'name' => $function->label()], [AudienceFunction::Coaches, AudienceFunction::Captains]),
             'genderOptions' => Gender::options(),
             'ageBandOptions' => array_map(fn (AudienceAgeBand $band): array => ['id' => $band->value, 'name' => $band->label(), 'hint' => $band->hint()], AudienceAgeBand::cases()),
             'activityKindOptions' => array_map(fn (AudienceActivityKind $kind): array => ['id' => $kind->value, 'name' => $kind->label()], AudienceActivityKind::cases()),

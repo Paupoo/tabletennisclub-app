@@ -17,6 +17,21 @@
                 <x-radio :label="__('Who')" wire:model.live="base" :options="$baseOptions" />
 
                 <div>
+                    <p class="mb-2 text-sm font-semibold">{{ __('Function') }}</p>
+                    @if ($this->functionsApply())
+                        <div class="space-y-2">
+                            @foreach ($functionOptions as $option)
+                                <x-checkbox :label="$option['name']" :value="$option['id']" wire:model.live="functions" />
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-xs text-muted" wire:key="functions-disabled">
+                            {{ __('Functions are read among the active members only.') }}
+                        </p>
+                    @endif
+                </div>
+
+                <div>
                     <p class="mb-2 text-sm font-semibold">{{ __('Licence') }}</p>
                     <div class="space-y-2">
                         @foreach ($licenceOptions as $option)
@@ -69,6 +84,11 @@
                 <x-admin.shared.stat-card :label="__('Unreachable')" :value="(string) $this->audience->unreachable->count()" icon="o-no-symbol" color="error" />
                 <x-admin.shared.stat-card :label="__('Unclassified')" :value="(string) $this->audience->unclassified->count()" icon="o-question-mark-circle" color="warning" />
             </div>
+
+            @foreach ($this->audience->vacantFunctions as $function)
+                <x-alert :title="$function->vacancyWarning()" icon="o-exclamation-triangle" class="alert-warning"
+                    wire:key="vacant-{{ $function->value }}" />
+            @endforeach
 
             <x-card :title="__('Take the addresses')" shadow separator>
                 @if ($this->addressCount === 0)

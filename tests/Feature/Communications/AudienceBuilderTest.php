@@ -19,9 +19,11 @@ use App\Domains\Shared\Enums\AudienceActivityKind;
 use App\Domains\Shared\Enums\AudienceActivityMode;
 use App\Domains\Shared\Enums\AudienceAgeBand;
 use App\Domains\Shared\Enums\AudienceBase;
+use App\Domains\Shared\Enums\AudienceFunction;
 use App\Domains\Shared\Enums\AudienceLicence;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Support\Carbon;
 
@@ -362,4 +364,139 @@ it('finds those not invited yet, leaving out the invited and the registered', fu
         'activityId' => $tournament->id,
         'activityMode' => AudienceActivityMode::NotInvited,
     ])->members))->toBe([$notInvited->id]);
+});
+
+/*
+| Writing to the coaches, or to the captains: the people who hold the function
+| this season, read on the packs, the sessions and our own teams — never on a
+| role someone forgot to grant or to take back. A coach is part of the club
+| whether they are affiliated or not.
+*/
+describe('the club functions', function (): void {
+
+    beforeEach(function (): void {
+        $this->ownClub = Club::factory()->ownClub()->create();
+    });
+
+    it('keeps the coaches of this season, affiliated or not', function (): void {
+        $affiliated = audienceMember($this->currentSeason);
+        $external = User::factory()->create();
+        $formerCoach = audienceMember($this->currentSeason);
+        audienceMember($this->currentSeason);
+        TrainingPack::factory()->create(['season_id' => $this->currentSeason->id, 'trainer_id' => $affiliated->id]);
+        TrainingPack::factory()->create(['season_id' => $this->currentSeason->id, 'trainer_id' => $external->id]);
+        TrainingPack::factory()->create(['season_id' => $this->previousSeason->id, 'trainer_id' => $formerCoach->id]);
+
+        expect(audienceIds(audienceBuild(['functions' => [AudienceFunction::Coaches]])->members))
+            ->toBe(audienceIds([$affiliated, $external]));
+    });
+
+    it('counts whoever leads a session of this season as a coach', function (): void {
+        $substitute = audienceMember($this->currentSeason);
+        Training::factory()->create(['season_id' => $this->currentSeason->id, 'trainer_id' => $substitute->id]);
+
+        expect(audienceIds(audienceBuild(['functions' => [AudienceFunction::Coaches]])->members))
+            ->toBe([$substitute->id]);
+    });
+
+    it('keeps the captains of our own teams of this season', function (): void {
+        $captain = audienceMember($this->currentSeason);
+        $opponentCaptain = audienceMember($this->currentSeason);
+        $formerCaptain = audienceMember($this->currentSeason);
+        Team::factory()->create(['season_id' => $this->currentSeason->id, 'club_id' => $this->ownClub->id, 'captain_id' => $captain->id]);
+        Team::factory()->create(['season_id' => $this->currentSeason->id, 'club_id' => Club::factory()->create()->id, 'captain_id' => $opponentCaptain->id]);
+        Team::factory()->create(['season_id' => $this->previousSeason->id, 'club_id' => $this->ownClub->id, 'captain_id' => $formerCaptain->id]);
+
+        expect(audienceIds(audienceBuild(['functions' => [AudienceFunction::Captains]])->members))
+            ->toBe([$captain->id]);
+    });
+
+    it('widens to both when coaches and captains are ticked, each person once', function (): void {
+        $coach = audienceMember($this->currentSeason);
+        $captain = audienceMember($this->currentSeason);
+        $both = audienceMember($this->currentSeason);
+        audienceMember($this->currentSeason);
+        TrainingPack::factory()->create(['season_id' => $this->currentSeason->id, 'trainer_id' => $coach->id]);
+        TrainingPack::factory()->create(['season_id' => $this->currentSeason->id, 'trainer_id' => $both->id]);
+        Team::factory()->create(['season_id' => $this->currentSeason->id, 'club_id' => $this->ownClub->id, 'captain_id' => $captain->id]);
+        Team::factory()->create(['season_id' => $this->currentSeason->id, 'club_id' => $this->ownClub->id, 'captain_id' => $both->id]);
+
+        $audience = audienceBuild(['functions' => [AudienceFunction::Coaches, AudienceFunction::Captains]]);
+
+        expect($audience->members->pluck('id')->all())->toHaveCount(3)
+            ->and(audienceIds($audience->members))->toBe(audienceIds([$coach, $captain, $both]));
+    });
+
+    it('counts a coach who is not affiliated among the active members', function (): void {
+        $member = audienceMember($this->currentSeason);
+        $external = User::factory()->create();
+        TrainingPack::factory()->create(['season_id' => $this->currentSeason->id, 'trainer_id' => $external->id]);
+
+        expect(audienceIds(audienceBuild()->members))->toBe(audienceIds([$member, $external]));
+    });
+
+    it('does not bring the coaches into the pending affiliations or the former members', function (): void {
+        $pending = audienceMember($this->currentSeason, 'pending');
+        $former = audienceMember($this->previousSeason);
+        $external = User::factory()->create();
+        TrainingPack::factory()->create(['season_id' => $this->currentSeason->id, 'trainer_id' => $external->id]);
+
+        expect(audienceIds(audienceBuild(['base' => AudienceBase::Pending])->members))->toBe([$pending->id])
+            ->and(audienceIds(audienceBuild(['base' => AudienceBase::FormerMembers])->members))->toBe([$former->id]);
+    });
+
+    /*
+     * A licence is read on the affiliation: a coach who has none holds no
+     * licence, and a licence filter cannot keep them.
+     */
+    it('narrows the coaches with the other filters', function (): void {
+        $youngCoach = audienceMember($this->currentSeason, attributes: ['birthdate' => '2010-03-01']);
+        $adultCoach = audienceMember($this->currentSeason);
+        $external = User::factory()->create(['birthdate' => '2009-01-01']);
+        foreach ([$youngCoach, $adultCoach, $external] as $coach) {
+            TrainingPack::factory()->create(['season_id' => $this->currentSeason->id, 'trainer_id' => $coach->id]);
+        }
+
+        expect(audienceIds(audienceBuild([
+            'functions' => [AudienceFunction::Coaches],
+            'ageBands' => [AudienceAgeBand::Youth],
+        ])->members))->toBe(audienceIds([$youngCoach, $external]))
+            ->and(audienceIds(audienceBuild([
+                'functions' => [AudienceFunction::Coaches],
+                'licences' => [AudienceLicence::Competitive],
+            ])->members))->toBe(audienceIds([$youngCoach, $adultCoach]));
+    });
+
+    it('writes to the guardians of a coach who is a minor', function (): void {
+        $youngCoach = audienceMember($this->currentSeason, attributes: ['birthdate' => '2010-03-01', 'email' => 'coach@example.com']);
+        $youngCoach->guardians()->attach(Guardian::factory()->create(['email' => 'parent@example.com']));
+        TrainingPack::factory()->create(['season_id' => $this->currentSeason->id, 'trainer_id' => $youngCoach->id]);
+
+        expect(audienceBuild(['functions' => [AudienceFunction::Coaches]])->addresses())
+            ->toEqualCanonicalizing(['coach@example.com', 'parent@example.com']);
+    });
+
+    /*
+     * Right after the season switches, nobody leads a pack or captains a team
+     * yet: the author is told, rather than falling back on last season's
+     * coaches, some of whom have left.
+     */
+    it('says which function nobody holds this season', function (): void {
+        $formerCoach = audienceMember($this->currentSeason);
+        TrainingPack::factory()->create(['season_id' => $this->previousSeason->id, 'trainer_id' => $formerCoach->id]);
+        $captain = audienceMember($this->currentSeason);
+        Team::factory()->create(['season_id' => $this->currentSeason->id, 'club_id' => $this->ownClub->id, 'captain_id' => $captain->id]);
+
+        $audience = audienceBuild(['functions' => [AudienceFunction::Coaches, AudienceFunction::Captains]]);
+
+        expect($audience->vacantFunctions)->toBe([AudienceFunction::Coaches])
+            ->and(audienceIds($audience->members))->toBe([$captain->id]);
+    });
+
+    it('keeps the functions with the criteria of a communication', function (): void {
+        $criteria = new AudienceCriteria(functions: [AudienceFunction::Captains]);
+
+        expect($criteria->toArray()['functions'])->toBe(['captains'])
+            ->and(AudienceCriteria::fromArray($criteria->toArray())->functions)->toBe([AudienceFunction::Captains]);
+    });
 });

@@ -19,6 +19,7 @@ use App\Support\Breadcrumb;
 use App\Support\LocaleSort;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
@@ -150,6 +151,42 @@ new class extends Component
         $this->rejectModal = false;
         $this->refreshLists();
         $this->success(__('Rejected. The member has been told why.'));
+    }
+
+    /**
+     * The requester's own exports still worth showing: those being built, and
+     * those finished within the week a file is kept. The page polls while one
+     * is being built, so "ready" appears without a reload.
+     *
+     * @return Collection<int, ExpenseReportExport>
+     */
+    #[Computed]
+    public function myExports(): Collection
+    {
+        return ExpenseReportExport::query()
+            ->where('requested_by', Auth::id())
+            ->where('created_at', '>=', now()->subDays(ExpenseReportExport::KEPT_FOR_DAYS))
+            ->latest()
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
+    }
+
+    /**
+     * Build again an export that failed, on the same reports.
+     */
+    public function retryExport(int $exportId): void
+    {
+        Gate::authorize('export', ExpenseReport::class);
+
+        $export = ExpenseReportExport::query()
+            ->where('requested_by', Auth::id())
+            ->where('status', 'failed')
+            ->find($exportId);
+
+        abort_if($export === null, 404);
+
+        $this->queueExport($export->format, $export->report_ids);
     }
 
     /**
@@ -392,7 +429,8 @@ new class extends Component
 
         GenerateExpenseReportExport::dispatch($export->id);
 
-        $this->success(__('The export is being prepared. The bell will ring when it is ready.'));
+        unset($this->myExports);
+        $this->success(__('The export is being prepared. You will get an email with the link when it is ready.'));
     }
 
     private function refreshLists(): void

@@ -54,6 +54,6 @@ Dans le tiroir **Filtres**, choisissez l'**Exercice**. Seules les notes payées 
 - **PDF imprimable** : un récapitulatif avec les totaux par nature, puis une page par note avec ses justificatifs imprimés.
 - **Archive ZIP** : le même récapitulatif, un tableur **CSV** (séparateur point-virgule, pour Excel) et un dossier par note contenant les **justificatifs originaux**, intacts.
 
-L'export se prépare en arrière-plan : la **cloche** sonne quand il est prêt. Le lien n'est valable que **7 jours** et seulement pour vous ; ensuite, relancez l'export.
+L'export se prépare en arrière-plan. Quand il est prêt, vous recevez un **e-mail** avec le lien, la **cloche** le signale, et le bandeau **Mes exports**, en haut de la page, affiche un bouton **Télécharger** — il suit l'avancement tout seul, inutile de recharger. Le lien n'est valable que **7 jours** et seulement pour vous ; ensuite, relancez l'export. Si la préparation échoue, vous en êtes aussi prévenu, et **Le relancer** reprend exactement les mêmes notes.
 
 Si un justificatif ne peut pas être imprimé dans le PDF (image abîmée, PDF protégé), la page le signale : l'original est dans le ZIP.

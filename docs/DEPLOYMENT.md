@@ -138,29 +138,56 @@ Chaque tâche est conditionnée au *feature flag* de son domaine : un domaine é
 
 ---
 
+## Comptes du serveur
+
+Trois comptes interviennent sur le VPS de production, chacun pour un rôle :
+
+| Compte | Rôle | `sudo` |
+|---|---|---|
+| `laravel` | Déployer : `git pull`, `composer`, `npm`, `artisan`. Propriétaire du code. | non |
+| `debian` | Administrer le système : supervisor, `chown`, paquets. | oui |
+| `www-data` | Exécuter l'application : Apache **et** le worker de queue. | — |
+
+`laravel` appartient au groupe `www-data`, et `storage/` porte le bit *setgid* et des ACL de groupe : ce qu'Apache écrit reste lisible par `laravel`, et inversement pour ce qui est accessible au groupe. Pour toute commande `sudo`, passer d'abord sur `debian` (`su - debian`, ou une connexion SSH dédiée) ; `laravel` n'y a pas droit.
+
+---
+
 ## Worker de queue
 
-`QUEUE_CONNECTION=sync` (la valeur par défaut de `.env.example`) exécute les jobs dans la requête HTTP : **à proscrire en production**. Utilisez `database` ou `redis`, et faites superviser le worker.
-
-Exemple avec systemd :
+`QUEUE_CONNECTION=sync` (la valeur par défaut de `.env.example`) exécute les jobs dans la requête HTTP : **à proscrire en production**. La production utilise `database`, avec un worker supervisé par **supervisor** :
 
 ```ini
-# /etc/systemd/system/ttc-queue.service
-[Unit]
-Description=Table Tennis Club queue worker
-After=network.target
-
-[Service]
-User=<utilisateur-web>
-Restart=always
-WorkingDirectory=/chemin/vers/application
-ExecStart=/usr/bin/php artisan queue:work --tries=3 --timeout=120 --sleep=3
-
-[Install]
-WantedBy=multi-user.target
+# /etc/supervisor/conf.d/laravel-worker.conf
+[program:laravel-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=/usr/bin/php /var/www/tabletennisclub-app/artisan queue:work --sleep=3 --tries=3
+user=www-data
+autostart=true
+autorestart=true
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/var/www/tabletennisclub-app/storage/logs/worker.log
+stopwaitsecs=3600
 ```
 
-`php artisan queue:restart` demande au worker de s'arrêter proprement à la fin du job courant ; c'est le superviseur qui le relance avec le nouveau code. D'où sa présence à l'étape 9 — sans elle, le worker continue d'exécuter l'ancienne version.
+> ## ⚠️ `user=www-data` n'est pas facultatif
+>
+> Sans cette ligne, supervisor lance le worker en **`root`**. Tout ce que le worker écrit lui appartient alors — et Laravel crée ses dossiers privés en `0700`. Apache (`www-data`) ne peut plus y entrer : le fichier existe, mais l'application le déclare absent et répond **404**. C'est arrivé le 2026-09-29 sur les exports de notes de frais (`storage/app/expense-report-exports/`), générés par le worker et téléchargés via Apache.
+>
+> Vérifier : `ps -eo user,cmd | grep "[q]ueue:work"` doit afficher `www-data`.
+>
+> Réparer, en tant que `debian` :
+>
+> ```bash
+> sudo nano /etc/supervisor/conf.d/laravel-worker.conf     # ajouter user=www-data
+> sudo chown -R www-data:www-data /var/www/tabletennisclub-app/storage/app/expense-report-exports
+> sudo supervisorctl reread && sudo supervisorctl update   # relance le worker avec la nouvelle config
+> sudo supervisorctl status                                # RUNNING
+> ```
+
+`php artisan queue:restart` demande au worker de s'arrêter proprement à la fin du job courant ; c'est supervisor qui le relance avec le nouveau code. D'où sa présence à l'étape 9 — sans elle, le worker continue d'exécuter l'ancienne version. `queue:restart` ne recharge pas la configuration de supervisor : un changement du fichier `.conf` demande `supervisorctl reread && supervisorctl update`.
+
+Pour savoir ce qui lance un worker sur une machine inconnue, son cgroup le dit : `cat /proc/$(pgrep -f "artisan queue:work" | head -1)/cgroup` (`supervisor.service`, une unité systemd, `cron.service`, ou une session SSH — auquel cas rien ne le relance après un redémarrage).
 
 ---
 
@@ -175,7 +202,7 @@ Deux disques, aux rôles distincts :
 
 Les documents des membres sont délibérément servis par une route contrôlée, jamais par une URL directe. Ne déplacez rien vers `public` et ne créez pas de lien symbolique vers `storage/app`.
 
-`storage/` et `bootstrap/cache/` doivent être accessibles en écriture à l'utilisateur du serveur web.
+`storage/` et `bootstrap/cache/` doivent être accessibles en écriture à l'utilisateur du serveur web — et le worker doit tourner sous ce même utilisateur (voir [Worker de queue](#worker-de-queue)) : un fichier que le worker écrit, Apache doit pouvoir le lire.
 
 ---
 

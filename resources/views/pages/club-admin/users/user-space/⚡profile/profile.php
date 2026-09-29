@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Actions\User\StoreUserDocumentAction;
 use App\Actions\User\UpdateUserAction;
 use App\Data\User\UpdateUserData;
+use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\ClubAdmin\Fines\Models\Fine;
+use App\Domains\ClubAdmin\Fines\Services\FineCreditor;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
@@ -78,6 +80,35 @@ new class extends Component
     public User $user;
 
     /**
+     * The transfer QR of each fine the member can still pay, keyed by fine.
+     * Empty while the committee's account is unknown: a QR without it would
+     * send the money nowhere.
+     *
+     * @return array<int, string>
+     */
+    #[Computed]
+    public function fineQrCodes(): array
+    {
+        $creditor = app(FineCreditor::class);
+
+        if (! $creditor->isConfigured()) {
+            return [];
+        }
+
+        return $this->fines
+            ->filter(fn (Fine $fine): bool => $fine->isPayable())
+            ->mapWithKeys(fn (Fine $fine): array => [
+                $fine->id => 'data:image/png;base64,' . base64_encode((new GeneratePaymentQR)->transferPng(
+                    (string) $creditor->name(),
+                    (string) $creditor->iban(),
+                    $fine->amount,
+                    $fine->transferCommunication(),
+                )),
+            ])
+            ->all();
+    }
+
+    /**
      * This member's own fines, newest first. Almost always empty — the section
      * renders nothing at all in that case, so it costs no space.
      *
@@ -87,7 +118,7 @@ new class extends Component
     public function fines(): Collection
     {
         return Fine::query()
-            ->with('payment')
+            ->with('user')
             ->where('user_id', $this->user->id)
             ->latest()
             ->get();

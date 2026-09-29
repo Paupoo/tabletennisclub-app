@@ -4,20 +4,25 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Fines\Actions;
 
-use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Domains\ClubAdmin\Fines\Models\Fine;
 use App\Domains\ClubAdmin\Fines\Notifications\FineIssuedNotification;
+use App\Domains\ClubAdmin\Fines\Services\FineCreditor;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\FineReason;
-use Illuminate\Support\Facades\DB;
+use DomainException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 
 class IssueFine
 {
     /**
-     * Record a federation fine for a member, generate the pending payment that
-     * carries it, and send the educational notification to the member (and to
-     * their guardians when the member is a minor).
+     * Record a provincial committee fine for a member and send them (and their
+     * guardians when the member is a minor) what they need to pay it directly.
+     *
+     * No payment of the club's is created: the club collects nothing, and a
+     * claim no transfer to the club would ever settle would stay open forever.
+     *
+     * @throws DomainException when the committee's account is not configured yet
      */
     public function __invoke(
         User $member,
@@ -25,31 +30,30 @@ class IssueFine
         FineReason $reason,
         float $amount,
         string $pedagogicalMessage,
-        ?string $federationReference = null,
+        Carbon $eventDate,
+        string $eventLabel,
+        Carbon $paymentDeadline,
+        ?int $provincialCode = null,
         ?string $description = null,
     ): Fine {
-        $fine = DB::transaction(function () use ($member, $issuer, $reason, $amount, $pedagogicalMessage, $federationReference, $description): Fine {
-            $fine = Fine::create([
-                'user_id' => $member->id,
-                'issued_by' => $issuer->id,
-                'amount' => $amount,
-                'reason' => $reason,
-                'federation_reference' => $federationReference,
-                'description' => $description,
-                'pedagogical_message' => $pedagogicalMessage,
-            ]);
+        if (! app(FineCreditor::class)->isConfigured()) {
+            throw new DomainException('The provincial committee account must be configured before issuing a fine.');
+        }
 
-            $fine->payment()->create([
-                'reference' => (new GeneratePaymentReference)(),
-                'amount_due' => $amount,
-                'amount_paid' => 0,
-                'status' => 'pending',
-            ]);
+        $fine = Fine::create([
+            'user_id' => $member->id,
+            'issued_by' => $issuer->id,
+            'amount' => $amount,
+            'reason' => $reason,
+            'provincial_code' => $provincialCode,
+            'event_date' => $eventDate,
+            'event_label' => $eventLabel,
+            'payment_deadline' => $paymentDeadline,
+            'description' => $description,
+            'pedagogical_message' => $pedagogicalMessage,
+        ]);
 
-            return $fine;
-        });
-
-        $fine->load('payment', 'user.guardians');
+        $fine->load('user.guardians');
 
         $fine->user->notify(new FineIssuedNotification($fine));
 

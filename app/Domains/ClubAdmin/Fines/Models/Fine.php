@@ -16,18 +16,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
- * A federation fine passed on to a member. Acts as a payable: issuing it
- * generates a pending {@see Payment}, so it surfaces in the member's payments
- * hub and the treasurer view like any other due.
+ * A provincial committee fine passed on to a member, who pays the committee
+ * directly: the club collects nothing and does not know whether it was paid.
+ *
+ * Fines issued before that rule carried a {@see Payment} of the club's, since
+ * cancelled; the relation stays so those payments still name what they were.
  *
  * @property int $id
  * @property int $user_id
  * @property int|null $issued_by
  * @property float $amount
  * @property FineReason $reason
- * @property string|null $federation_reference
+ * @property int|null $provincial_code
+ * @property Carbon|null $event_date
+ * @property string|null $event_label
+ * @property Carbon|null $payment_deadline
  * @property string|null $description
  * @property string $pedagogical_message
  * @property-read Payment|null $payment
@@ -45,6 +51,9 @@ class Fine extends Model implements DescribesPayment
 
     protected $casts = [
         'reason' => FineReason::class,
+        'provincial_code' => 'integer',
+        'event_date' => 'date',
+        'payment_deadline' => 'date',
     ];
 
     protected $fillable = [
@@ -52,7 +61,10 @@ class Fine extends Model implements DescribesPayment
         'issued_by',
         'amount',
         'reason',
-        'federation_reference',
+        'provincial_code',
+        'event_date',
+        'event_label',
+        'payment_deadline',
         'description',
         'pedagogical_message',
     ];
@@ -73,6 +85,16 @@ class Fine extends Model implements DescribesPayment
         ];
     }
 
+    /**
+     * Whether the member can still pay before losing their qualification. The
+     * deadline day itself still counts: the committee reads it as "on our
+     * account by then".
+     */
+    public function isPayable(): bool
+    {
+        return $this->payment_deadline !== null && ! $this->payment_deadline->isBefore(today());
+    }
+
     public function issuer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'issued_by');
@@ -81,6 +103,22 @@ class Fine extends Model implements DescribesPayment
     public function payment(): MorphOne
     {
         return $this->morphOne(Payment::class, 'payable');
+    }
+
+    /**
+     * What the member writes on the transfer. The committee hands out no
+     * reference, so its treasurer matches a payment by who, when and why —
+     * cut to the 140 characters a SEPA transfer carries.
+     */
+    public function transferCommunication(): string
+    {
+        $parts = array_filter([
+            trim(mb_strtoupper((string) $this->user?->last_name) . ' ' . $this->user?->first_name),
+            $this->event_date?->format('d/m/Y'),
+            $this->reason->label(),
+        ]);
+
+        return mb_substr(implode(' – ', $parts), 0, 140);
     }
 
     public function user(): BelongsTo

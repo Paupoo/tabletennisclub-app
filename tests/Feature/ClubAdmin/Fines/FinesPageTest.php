@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Domains\ClubAdmin\Fines\Actions\IssueFine;
 use App\Domains\ClubAdmin\Fines\Models\Fine;
 use App\Domains\ClubAdmin\Fines\Notifications\FineCancelledNotification;
 use App\Domains\ClubAdmin\Fines\Notifications\FineIssuedNotification;
+use App\Domains\ClubAdmin\Fines\Services\FineCreditor;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\FineReason;
@@ -23,6 +23,10 @@ function treasurer(): User
     ]);
 }
 
+beforeEach(function (): void {
+    fineCreditorConfigured();
+});
+
 it('lets a treasurer issue a fine which notifies the member', function (): void {
     Notification::fake();
     $treasurer = treasurer();
@@ -33,7 +37,10 @@ it('lets a treasurer issue a fine which notifies the member', function (): void 
         ->call('openFineDrawer', $member->id)
         ->assertSet('fineDrawer', true)
         ->set('amount', 25)
-        ->set('reason', FineReason::MISCONDUCT->value)
+        ->set('reason', FineReason::REFEREEING->value)
+        ->set('eventLabel', 'LA HULPE RIXENSART')
+        ->set('eventDate', '2026-03-22')
+        ->set('paymentDeadline', '2026-04-15')
         ->set('pedagogicalMessage', 'Please be careful next time, we are here to help.')
         ->call('issueFine')
         ->assertHasNoErrors()
@@ -43,9 +50,86 @@ it('lets a treasurer issue a fine which notifies the member', function (): void 
     expect($fine)->not->toBeNull()
         ->and($fine->user_id)->toBe($member->id)
         ->and($fine->issued_by)->toBe($treasurer->id)
-        ->and($fine->payment->status)->toBe('pending');
+        ->and($fine->provincial_code)->toBe(67)
+        ->and($fine->event_label)->toBe('LA HULPE RIXENSART')
+        ->and($fine->payment_deadline->toDateString())->toBe('2026-04-15')
+        ->and($fine->payment)->toBeNull();
 
     Notification::assertSentTo($member, FineIssuedNotification::class);
+});
+
+it('suggests the provincial code of the reason picked', function (): void {
+    Livewire::actingAs(treasurer())
+        ->test(FINES_COMPONENT)
+        ->call('openFineDrawer', User::factory()->create()->id)
+        ->assertSet('provincialCode', '65')
+        ->set('reason', FineReason::INTERCLUB_MATCH_NOT_PLAYED->value)
+        ->assertSet('provincialCode', '16')
+        ->set('reason', FineReason::YELLOW_CARD->value)
+        ->assertSet('provincialCode', '');
+});
+
+it('refuses a deadline before the event', function (): void {
+    Livewire::actingAs(treasurer())
+        ->test(FINES_COMPONENT)
+        ->call('openFineDrawer', User::factory()->create()->id)
+        ->set('amount', 25)
+        ->set('eventLabel', 'CHAMP. SEN.')
+        ->set('eventDate', '2026-03-22')
+        ->set('paymentDeadline', '2026-03-01')
+        ->call('issueFine')
+        ->assertHasErrors(['paymentDeadline']);
+});
+
+it('sends the treasurer to the committee account before any fine', function (): void {
+    app(FineCreditor::class)->update('', '', null, null, null);
+
+    Livewire::actingAs(treasurer())
+        ->test(FINES_COMPONENT)
+        ->assertSee(__('Enter the provincial committee account before issuing a fine.'))
+        ->call('openFineDrawer', User::factory()->create()->id)
+        ->assertSet('fineDrawer', false)
+        ->assertSet('creditorDrawer', true);
+});
+
+it('saves the committee account typed by the treasurer', function (): void {
+    Livewire::actingAs(treasurer())
+        ->test(FINES_COMPONENT)
+        ->call('openCreditorDrawer')
+        ->set('creditorName', 'CPBBW')
+        ->set('creditorIban', 'be50 2100 3624 5518')
+        ->set('contactName', 'Didier Tourneur')
+        ->set('contactEmail', 'didier@example.com')
+        ->set('contactPhone', '')
+        ->call('saveCreditor')
+        ->assertHasNoErrors()
+        ->assertSet('creditorDrawer', false);
+
+    $creditor = app(FineCreditor::class);
+    expect($creditor->iban())->toBe('BE50210036245518')
+        ->and($creditor->contactEmail())->toBe('didier@example.com')
+        ->and($creditor->contactPhone())->toBeNull();
+});
+
+it('refuses an invalid committee IBAN', function (): void {
+    Livewire::actingAs(treasurer())
+        ->test(FINES_COMPONENT)
+        ->call('openCreditorDrawer')
+        ->set('creditorName', 'CPBBW')
+        ->set('creditorIban', 'BE00 1234 5678 9012')
+        ->call('saveCreditor')
+        ->assertHasErrors(['creditorIban']);
+});
+
+it('keeps the committee account away from a reader', function (): void {
+    $secretary = User::factory()->isCommitteeMember()->create([
+        'committee_role' => CommitteeRolesEnum::SECRETARY,
+    ]);
+
+    Livewire::actingAs($secretary)
+        ->test(FINES_COMPONENT)
+        ->call('saveCreditor')
+        ->assertForbidden();
 });
 
 it('pre-fills an editable suggested message when the drawer opens', function (): void {
@@ -66,7 +150,7 @@ it('stops overwriting the message once the committee edits it', function (): voi
         ->test(FINES_COMPONENT)
         ->call('openFineDrawer', $member->id)
         ->set('pedagogicalMessage', 'My own wording.')
-        ->set('reason', FineReason::FORFEIT->value);
+        ->set('reason', FineReason::CLUB_SHIRT->value);
 
     expect($component->get('pedagogicalMessage'))->toBe('My own wording.');
 });
@@ -77,7 +161,7 @@ it('requires a member, an amount and a message', function (): void {
         ->call('openFineDrawer')
         ->set('pedagogicalMessage', '')
         ->call('issueFine')
-        ->assertHasErrors(['memberId', 'amount', 'pedagogicalMessage']);
+        ->assertHasErrors(['memberId', 'amount', 'eventDate', 'eventLabel', 'paymentDeadline', 'pedagogicalMessage']);
 });
 
 it('opens the drawer pre-filled from a member deep link', function (): void {
@@ -116,12 +200,13 @@ it('keeps the selected member in the picker options after a narrowing search', f
 });
 
 it('lists issued fines', function (): void {
-    $fine = Fine::factory()->create(['reason' => FineReason::LATE, 'amount' => 15]);
+    $fine = Fine::factory()->create(['reason' => FineReason::REFEREEING, 'amount' => 15, 'event_label' => 'CHAMP. SEN.']);
 
     Livewire::actingAs(treasurer())
         ->test(FINES_COMPONENT)
         ->assertSee($fine->user->full_name)
-        ->assertSee(__('Late arrival'))
+        ->assertSee(FineReason::REFEREEING->label())
+        ->assertSee('CHAMP. SEN.')
         ->assertSee('15,00');
 });
 
@@ -129,7 +214,7 @@ it('lets a treasurer cancel a pending fine and notifies the member', function ()
     Notification::fake();
     makeActiveSeason();
     $member = User::factory()->create();
-    $fine = (new IssueFine)($member, treasurer(), FineReason::MISCONDUCT, 25, 'A note about it.');
+    $fine = fineIssuedTo($member);
 
     Livewire::actingAs(treasurer())
         ->test(FINES_COMPONENT)
@@ -140,17 +225,21 @@ it('lets a treasurer cancel a pending fine and notifies the member', function ()
         ->assertSet('cancelModal', false)
         ->assertDontSee($member->full_name);
 
-    expect(Fine::find($fine->id))->toBeNull()
-        ->and($fine->payment->fresh()->status)->toBe('cancelled');
+    expect(Fine::find($fine->id))->toBeNull();
 
     Notification::assertSentTo($member, FineCancelledNotification::class);
 });
 
-it('refuses to cancel a fine that has already been paid', function (): void {
+it('refuses to cancel a legacy fine the club already collected', function (): void {
     Notification::fake();
     makeActiveSeason();
-    $fine = (new IssueFine)(User::factory()->create(), treasurer(), FineReason::LATE, 15, 'A note about it.');
-    $fine->payment->update(['status' => 'paid']);
+    $fine = Fine::factory()->create();
+    $fine->payment()->create([
+        'reference' => '001/2026/00042',
+        'amount_due' => $fine->amount,
+        'amount_paid' => $fine->amount,
+        'status' => 'paid',
+    ]);
 
     Livewire::actingAs(treasurer())
         ->test(FINES_COMPONENT)

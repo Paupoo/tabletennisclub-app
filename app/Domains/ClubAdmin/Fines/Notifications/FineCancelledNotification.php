@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\ClubAdmin\Fines\Notifications;
 
 use App\Domains\ClubAdmin\Fines\Models\Fine;
-use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\ClubAdmin\Fines\Services\FineCreditor;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -24,7 +24,7 @@ class FineCancelledNotification extends Notification implements ShouldQueue
         return [
             'title' => __('A fine has been cancelled'),
             'body' => $this->fine->reason->label(),
-            'url' => route('admin.user.payments', $this->fine->user_id),
+            'url' => route('admin.user.profile', $this->fine->user_id),
             'category' => 'payment',
             'icon' => 'o-check-circle',
         ];
@@ -37,7 +37,7 @@ class FineCancelledNotification extends Notification implements ShouldQueue
             ->markdown('mail.fine-cancelled', [
                 'fine' => $this->fine,
                 'member' => $this->fine->user,
-                'club' => Club::ourClub()->first(),
+                'creditor' => app(FineCreditor::class),
             ]);
     }
 

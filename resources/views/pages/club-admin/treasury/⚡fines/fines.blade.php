@@ -3,15 +3,28 @@
         <x-breadcrumbs :items="$breadcrumbs" />
     </x-slot:breadcrumbs>
 
-    <x-header progress-indicator separator :subtitle="__('Federation fines passed on to members')" :title="__('Fines')">
+    <x-header progress-indicator separator :subtitle="__('Provincial committee fines passed on to members, who pay the committee directly')" :title="__('Fines')">
         <x-slot:actions>
             <x-admin.shared.filters-button :count="count($filterChips)" class="btn-sm" />
             @can('fines.issue')
+                <x-button class="btn-ghost btn-sm" icon="o-building-library" :label="__('Provincial committee')"
+                    wire:click="openCreditorDrawer" />
                 <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Issue a fine')"
                     wire:click="openFineDrawer" />
             @endcan
         </x-slot:actions>
     </x-header>
+
+    @can('fines.issue')
+        @if (! $this->creditor->isConfigured())
+            <x-alert class="alert-warning mb-4" icon="o-exclamation-triangle"
+                :title="__('Enter the provincial committee account before issuing a fine.')">
+                <x-slot:actions>
+                    <x-button class="btn-sm" :label="__('Enter it')" wire:click="openCreditorDrawer" />
+                </x-slot:actions>
+            </x-alert>
+        @endif
+    @endcan
 
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
@@ -33,14 +46,17 @@
                                 <x-badge :value="$fine->reason->label()" class="badge-warning badge-soft badge-sm" />
                             </div>
                             <div class="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-base-content/60">
-                                <span>{{ $fine->created_at?->format('d/m/Y') }}</span>
-                                @if ($fine->issuer)
+                                @if ($fine->event_label || $fine->event_date)
+                                    <span>{{ collect([$fine->event_label, $fine->event_date?->format('d/m/Y')])->filter()->implode(' – ') }}</span>
                                     <span class="text-base-content/30">·</span>
-                                    <span>{{ __('by') }} {{ $fine->issuer->full_name }}</span>
                                 @endif
-                                @if ($fine->federation_reference)
+                                @if ($fine->provincial_code)
+                                    <span>{{ __('code :code', ['code' => $fine->provincial_code]) }}</span>
                                     <span class="text-base-content/30">·</span>
-                                    <span class="font-mono">{{ $fine->federation_reference }}</span>
+                                @endif
+                                <span>{{ __('issued on :date', ['date' => $fine->created_at?->format('d/m/Y')]) }}</span>
+                                @if ($fine->issuer)
+                                    <span>{{ __('by') }} {{ $fine->issuer->full_name }}</span>
                                 @endif
                             </div>
                         </div>
@@ -48,14 +64,14 @@
                         <div class="flex items-center gap-3 sm:justify-end">
                             <div class="text-right">
                                 <div class="font-bold tabular-nums">{{ number_format($fine->amount, 2, ',', ' ') }} €</div>
-                                @if ($fine->payment)
-                                    <x-badge
-                                        :value="$fine->payment->status === 'paid' ? __('Paid') : __('Pending')"
-                                        class="badge-sm {{ $fine->payment->status === 'paid' ? 'badge-success badge-soft' : 'badge-warning badge-soft' }}" />
+                                @if ($fine->payment_deadline)
+                                    <div @class(['text-xs', 'text-base-content/60' => $fine->isPayable(), 'text-base-content/40' => ! $fine->isPayable()])>
+                                        {{ __('deadline :date', ['date' => $fine->payment_deadline->format('d/m/Y')]) }}
+                                    </div>
                                 @endif
                             </div>
 
-                            @if ((! $fine->payment || $fine->payment->status !== 'paid') && auth()->user()->can('fines.cancel'))
+                            @if ($fine->payment?->status !== 'paid' && auth()->user()->can('fines.cancel'))
                                 <x-dropdown icon="o-ellipsis-vertical" class="btn-ghost btn-sm btn-circle" right>
                                     <x-menu-item icon="o-x-circle" :title="__('Cancel this fine')"
                                         wire:click="confirmCancel({{ $fine->id }})" />
@@ -74,9 +90,9 @@
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
             <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">{{ __('Status') }}</p>
-                <x-select wire:model.live="statusFilter" :placeholder="__('All statuses')"
-                    :options="[['id' => 'pending', 'name' => __('Pending')], ['id' => 'paid', 'name' => __('Paid')]]" />
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">{{ __('Reason') }}</p>
+                <x-select wire:model.live="reasonFilter" :placeholder="__('All reasons')"
+                    :options="\App\Domains\Shared\Enums\FineReason::getOptions()" />
             </div>
         </x-slot:filters>
     </x-admin.shared.filter-drawer>
@@ -87,12 +103,27 @@
             <x-choices wire:model.live="memberId" :label="__('Member')" single searchable
                 :options="$memberOptions" />
 
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <x-select wire:model.live="reason" :label="__('Reason')" :options="\App\Domains\Shared\Enums\FineReason::getOptions()" />
-                <x-input wire:model.live="amount" :label="__('Amount')" type="number" step="0.01" min="0" suffix="€" />
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div class="sm:col-span-2">
+                    <x-select wire:model.live="reason" :label="__('Reason')" :options="\App\Domains\Shared\Enums\FineReason::getOptions()" />
+                </div>
+                <x-input wire:model="provincialCode" :label="__('Provincial code')" type="number" min="1"
+                    :hint="__('From the committee list')" />
             </div>
 
-            <x-input wire:model="federationReference" :label="__('Federation reference')" :placeholder="__('Optional')" />
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div class="sm:col-span-2">
+                    <x-input wire:model="eventLabel" :label="__('Tournament or match')" :placeholder="__('As written by the committee')" />
+                </div>
+                <x-input wire:model="eventDate" :label="__('Event date')" type="date" />
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <x-input wire:model.live="amount" :label="__('Total to pay')" type="number" step="0.01" min="0" suffix="€"
+                    :hint="__('Fine and entry fee included, as the committee asks')" />
+                <x-input wire:model="paymentDeadline" :label="__('Payment deadline')" type="date"
+                    :hint="__('Past it, the player loses their qualification')" />
+            </div>
             <x-textarea wire:model="description" :label="__('Internal note')"
                 :hint="__('Not sent to the member — for the committee only.')" rows="2" />
 
@@ -126,11 +157,35 @@
         </x-form>
     </x-drawer>
 
+    {{-- Provincial committee details --}}
+    <x-drawer wire:model="creditorDrawer" :title="__('Provincial committee')" right with-close-button class="w-full max-w-xl">
+        <x-form wire:submit="saveCreditor">
+            <p class="text-sm text-base-content/70">
+                {{ __('Members pay their fines to this account directly. Copy it from the committee mail; it only changes when the committee changes bank.') }}
+            </p>
+
+            <x-input wire:model="creditorName" :label="__('Beneficiary')" placeholder="CPBBW" />
+            <x-input wire:model="creditorIban" label="IBAN" placeholder="BE00 0000 0000 0000" />
+
+            <p class="pt-2 text-xs font-semibold uppercase tracking-widest text-muted">{{ __('Contact for questions') }}</p>
+            <x-input wire:model="contactName" :label="__('Name')" :placeholder="__('Optional')" />
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <x-input wire:model="contactEmail" :label="__('Email')" type="email" :placeholder="__('Optional')" />
+                <x-input wire:model="contactPhone" :label="__('Phone')" :placeholder="__('Optional')" />
+            </div>
+
+            <x-slot:actions>
+                <x-button :label="__('Cancel')" wire:click="$set('creditorDrawer', false)" />
+                <x-button class="btn-primary" :label="__('Save')" type="submit" spinner="saveCreditor" />
+            </x-slot:actions>
+        </x-form>
+    </x-drawer>
+
     {{-- Cancel confirmation --}}
     <x-app-modal wire:model="cancelModal" :title="__('Cancel this fine?')" separator :open="$cancelModal">
         <div class="space-y-3">
             <p class="text-sm text-base-content/80">
-                {{ __('The fine will be removed and its pending payment cancelled. The member will be notified that they no longer owe anything.') }}
+                {{ __('The fine will be removed. The member will be notified that they no longer owe anything for it.') }}
             </p>
             @if ($this->cancelTarget)
                 <div class="rounded-xl border border-base-300 bg-base-200/40 p-3 text-sm">

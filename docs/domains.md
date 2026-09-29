@@ -56,9 +56,9 @@ des rôles : ils changent au fil de la saison et sont des scopes Eloquent.
 ### Trésorerie
 `app/Domains/ClubAdmin/Payment`, `app/Domains/ClubAdmin/Fines`
 
-Paiements polymorphes (affiliation, amende, inscription tournoi, repas de réunion),
+Paiements polymorphes (affiliation, inscription tournoi, repas de réunion),
 transactions bancaires et leur pointage, imports CODA, caisses physiques, amendes
-disciplinaires.
+du comité provincial — transmises au membre, qui les paie directement au comité.
 
 **Trois délégations distinctes** : `tresorerie` (pointer, importer, rembourser),
 `caisse` (détenir et équilibrer une caisse) et `amendes`. Détenir la caisse du bar
@@ -155,7 +155,8 @@ La liste des clés est dans [permissions.md](permissions.md#domaines-extinguible
 ## Points d'intégration transverses
 
 - **`Payment`** (`morphTo payable`) est le pivot de la trésorerie : affiliations,
-  amendes, inscriptions aux tournois, repas de réunion. Toute nouvelle chose
+  inscriptions aux tournois, repas de réunion (plus les amendes émises avant le
+  paiement direct au comité provincial). Toute nouvelle chose
   facturable implémente `App\Contracts\PayableInterface`.
 - **`EventPost`** (`morphTo eventable`) est le pivot du calendrier public.
 - **`Season`** est la colonne vertébrale temporelle : abonnements, entraînements,

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
-use App\Domains\ClubAdmin\Fines\Actions\IssueFine;
 use App\Domains\ClubAdmin\Fines\Notifications\FineIssuedNotification;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
@@ -91,9 +90,8 @@ it('sends the payment QR as an inline part a mail client will render', function 
  */
 it('attaches the QR exactly once, from a notification too', function (): void {
     $member = User::factory()->create();
-    $issuer = User::factory()->isAdmin()->create();
 
-    $fine = (new IssueFine)($member, $issuer, FineReason::MISCONDUCT, 30, 'An educational note.');
+    $fine = fineIssuedTo($member, FineReason::REFEREEING, 30);
 
     $member->notify(new FineIssuedNotification($fine));
 

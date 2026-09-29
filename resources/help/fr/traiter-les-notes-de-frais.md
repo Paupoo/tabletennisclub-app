@@ -56,7 +56,7 @@ C'est la **seule** façon de le faire. L'annulation groupée de l'écran **Paiem
 
 ## Archiver
 
-Les justificatifs ne vivent que sur le serveur de l'application. Pour qu'ils existent aussi dans les archives du club, **Exporter → Archiver les notes payées non archivées** prépare un **ZIP** de toutes les notes payées qui n'ont pas encore été archivées. Quand la cloche sonne, téléchargez-le et rangez-le avec la comptabilité : **c'est ce téléchargement qui marque les notes comme archivées**.
+Les justificatifs ne vivent que sur le serveur de l'application. Pour qu'ils existent aussi dans les archives du club, **Exporter → Archiver les notes payées non archivées** prépare un **ZIP** de toutes les notes payées qui n'ont pas encore été archivées. Quand il est prêt (e-mail, cloche, ou bouton **Télécharger** dans **Mes exports**), téléchargez-le et rangez-le avec la comptabilité : **c'est ce téléchargement qui marque les notes comme archivées**.
 
 Un rappel vous est envoyé le **1er de chaque trimestre** et le **5 janvier** pour l'exercice qui vient de se clôturer, tant qu'il reste des notes payées non archivées. Le tableau de bord le signale aussi.
 

@@ -7,6 +7,7 @@ use App\Domains\ClubAdmin\ExpenseReports\Actions\AcceptExpenseReport;
 use App\Domains\ClubAdmin\ExpenseReports\Jobs\GenerateExpenseReportExport;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReportExport;
+use App\Domains\ClubAdmin\ExpenseReports\Notifications\ExpenseReportExportFailedNotification;
 use App\Domains\ClubAdmin\ExpenseReports\Notifications\ExpenseReportExportReadyNotification;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -126,6 +127,101 @@ describe('what the export holds', function (): void {
 
         expect($export->status)->toBe('ready')
             ->and(Storage::disk('local')->get($export->path))->toStartWith('%PDF');
+    });
+});
+
+/*
+ * The bell does not refresh on its own, and nothing else pointed at the file:
+ * a treasurer waiting on the page never learnt the export was ready.
+ */
+describe('telling the requester', function (): void {
+    it('mails the link as well as ringing the bell', function (): void {
+        $report = exportablePaidReport('Balles');
+        $requester = User::factory()->isCommitteeMember()->create();
+
+        $export = runExpenseReportExport($requester, 'zip', [$report->id]);
+
+        Notification::assertSentTo(
+            $requester,
+            ExpenseReportExportReadyNotification::class,
+            fn (ExpenseReportExportReadyNotification $n, array $channels): bool => $channels === ['mail', 'database'],
+        );
+
+        $mail = new ExpenseReportExportReadyNotification($export)->toMail($requester);
+        expect($mail->actionUrl)->toBe(route('admin.expense-reports.export', $export));
+    });
+
+    it('marks a failed export and says so, instead of leaving the requester waiting', function (): void {
+        $requester = User::factory()->isCommitteeMember()->create();
+        $export = ExpenseReportExport::create([
+            'requested_by' => $requester->id,
+            'format' => 'pdf',
+            'report_ids' => [1],
+            'status' => 'pending',
+        ]);
+
+        new GenerateExpenseReportExport($export->id)->failed(new RuntimeException('mPDF ran out of memory'));
+
+        expect($export->refresh()->status)->toBe('failed');
+        Notification::assertSentTo(
+            $requester,
+            ExpenseReportExportFailedNotification::class,
+            fn (ExpenseReportExportFailedNotification $n, array $channels): bool => in_array('mail', $channels, true),
+        );
+    });
+
+    it('lists the requester\'s own exports on the page, with their state', function (): void {
+        $requester = User::factory()->isCommitteeMember()->create();
+        $ready = ExpenseReportExport::create(['requested_by' => $requester->id, 'format' => 'zip', 'report_ids' => [1, 2], 'status' => 'ready', 'path' => 'x.zip', 'expires_at' => now()->addDays(7)]);
+        $failed = ExpenseReportExport::create(['requested_by' => $requester->id, 'format' => 'pdf', 'report_ids' => [1], 'status' => 'failed']);
+        $someoneElses = ExpenseReportExport::create(['requested_by' => User::factory()->create()->id, 'format' => 'pdf', 'report_ids' => [1], 'status' => 'ready', 'path' => 'y.pdf', 'expires_at' => now()->addDays(7)]);
+
+        Livewire::actingAs($requester)
+            ->test('pages::club-admin.treasury.expense-reports')
+            ->assertSee(__('My exports'))
+            ->assertSeeHtml(route('admin.expense-reports.export', $ready))
+            ->assertSeeHtml('retryExport(' . $failed->id . ')')
+            ->assertDontSeeHtml(route('admin.expense-reports.export', $someoneElses))
+            ->assertDontSeeHtml('wire:poll');
+    });
+
+    it('keeps polling while an export is being prepared', function (): void {
+        $requester = User::factory()->isCommitteeMember()->create();
+        ExpenseReportExport::create(['requested_by' => $requester->id, 'format' => 'pdf', 'report_ids' => [1], 'status' => 'pending']);
+
+        Livewire::actingAs($requester)
+            ->test('pages::club-admin.treasury.expense-reports')
+            ->assertSee(__('Being prepared…'))
+            ->assertSeeHtml('wire:poll');
+    });
+
+    it('builds a failed export again on the same reports', function (): void {
+        Queue::fake();
+        $requester = User::factory()->isCommitteeMember()->create();
+        $failed = ExpenseReportExport::create(['requested_by' => $requester->id, 'format' => 'zip', 'report_ids' => [3, 5], 'status' => 'failed']);
+
+        Livewire::actingAs($requester)
+            ->test('pages::club-admin.treasury.expense-reports')
+            ->call('retryExport', $failed->id);
+
+        $retry = ExpenseReportExport::latest('id')->first();
+        expect($retry->id)->not->toBe($failed->id)
+            ->and($retry->format)->toBe('zip')
+            ->and($retry->report_ids)->toBe([3, 5])
+            ->and($retry->status)->toBe('pending');
+        Queue::assertPushed(GenerateExpenseReportExport::class);
+    });
+
+    it('never retries someone else\'s export', function (): void {
+        Queue::fake();
+        $failed = ExpenseReportExport::create(['requested_by' => User::factory()->create()->id, 'format' => 'zip', 'report_ids' => [3], 'status' => 'failed']);
+
+        Livewire::actingAs(User::factory()->isCommitteeMember()->create())
+            ->test('pages::club-admin.treasury.expense-reports')
+            ->call('retryExport', $failed->id)
+            ->assertNotFound();
+
+        Queue::assertNothingPushed();
     });
 });
 

@@ -6,7 +6,7 @@ namespace App\Domains\ClubAdmin\Fines\Notifications;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\ClubAdmin\Fines\Models\Fine;
-use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\ClubAdmin\Fines\Services\FineCreditor;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -25,7 +25,7 @@ class FineIssuedNotification extends Notification implements ShouldQueue
         return [
             'title' => __('A fine has been issued'),
             'body' => $this->fine->reason->label(),
-            'url' => route('admin.user.payments', $this->fine->user_id),
+            'url' => route('admin.user.profile', $this->fine->user_id),
             'category' => 'payment',
             'icon' => 'o-exclamation-triangle',
         ];
@@ -33,25 +33,30 @@ class FineIssuedNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $payment = $this->fine->payment;
-        $club = Club::ourClub()->first();
+        $creditor = app(FineCreditor::class);
+        $payable = $this->fine->isPayable() && $creditor->isConfigured();
 
         $mail = (new MailMessage)
             ->subject(__('A fine has been issued'))
             ->markdown('mail.fine-issued', [
                 'fine' => $this->fine,
                 'member' => $this->fine->user,
-                'payment' => $payment,
-                'club' => $club,
+                'creditor' => $creditor,
+                'payable' => $payable,
             ]);
 
         // Attached by name, and referenced as `cid:qr-paiement.png` in the view:
         // Gmail drops a `data:` source from an <img>, and embedding from the view
         // would attach a second copy, since a notification renders its text part
         // through the same Blade without the guard a mailable gets.
-        if ($payment) {
+        if ($payable) {
             $mail->attachData(
-                (new GeneratePaymentQR)->png($payment),
+                (new GeneratePaymentQR)->transferPng(
+                    (string) $creditor->name(),
+                    (string) $creditor->iban(),
+                    $this->fine->amount,
+                    $this->fine->transferCommunication(),
+                ),
                 'qr-paiement.png',
                 ['mime' => 'image/png'],
             );

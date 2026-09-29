@@ -3,47 +3,56 @@
 
 {{ __('Hello :name,', ['name' => $member->first_name]) }}
 
-{{ __('The committee has passed on a fine concerning you. Here is what it is about:') }}
+{{ __('The provincial committee has fined you. The club passes the information on to you, but collects nothing: you pay the committee directly.') }}
 
 **{{ __('Reason') }}:** {{ $fine->reason->label() }}
-@if($fine->federation_reference)
-**{{ __('Federation reference') }}:** {{ $fine->federation_reference }}
+
+@if($fine->event_label || $fine->event_date)
+**{{ __('Event') }}:** {{ collect([$fine->event_label, $fine->event_date?->format('d/m/Y')])->filter()->implode(' – ') }}
 @endif
+
+**{{ __('Amount due') }}:** {{ number_format($fine->amount, 2, ',', ' ') }} €
 
 ---
 
 {{-- The committee's personalised, educational message --}}
 {{ $fine->pedagogical_message }}
 
-@if($payment)
+@if($payable)
 ---
 
-**{{ __('Amount due') }}:** {{ number_format($payment->amount_due, 2, ',', ' ') }} €
-
-@if($club)
 <x-mail::panel>
-- {{ __('Beneficiary') }}: {{ $club->name }}
-- IBAN: {{ $club->bank_account_formatted }}
-- BIC: {{ $club->bic }}
-- {{ __('Reference') }}: **{{ $payment->reference }}**
-</x-mail::panel>
-@endif
+**{{ __('To be paid by :date at the latest', ['date' => $fine->payment_deadline->format('d/m/Y')]) }}**
 
-@if($payment)
-**{{ __('QR code for payment') }}:**
+{{ __('Past that date, you lose your qualification: you can no longer play any competition, individual or in a team, until the committee has received the payment.') }}
+</x-mail::panel>
+
+**{{ __('How to pay') }}**
+
+- {{ __('Beneficiary') }}: {{ $creditor->name() }}
+- IBAN: {{ $creditor->ibanFormatted() }}
+- {{ __('Amount') }}: {{ number_format($fine->amount, 2, ',', ' ') }} €
+- {{ __('Communication') }}: **{{ $fine->transferCommunication() }}**
 
 {{-- Référencée par son nom : Symfony retrouve la pièce jointe qui le porte,
      réécrit le cid et la bascule en inline. Une « data: » URI serait plus
-     courte, et Gmail la retirerait — le message n'a longtemps montré que
-     son texte alternatif en production. --}}
+     courte, et Gmail la retirerait. --}}
 <img src="cid:qr-paiement.png" alt="{{ __('Payment QR code') }}" style="max-width: 160px; display: block;" />
+
+{{ __('Paying on time is your sole responsibility: the club is not told whether you paid, and will not remind you.') }}
 @endif
 
-<x-mail::button :url="route('admin.user.payments', $member->id)">
-{{ __('View my payments') }}
+<x-mail::button :url="route('admin.user.profile', $member->id)">
+{{ __('View my fines') }}
 </x-mail::button>
-@endif
 
 {{ __('Thanks for your understanding,') }}
 {{ __('The committee') }}
+
+@if($creditor->hasContact())
+<small style="color: #6b7280;">
+{{ __('A question about this fine? Only the provincial committee can answer it:') }}
+{{ collect([$creditor->contactName(), $creditor->contactEmail(), $creditor->contactPhone()])->filter()->implode(' · ') }}
+</small>
+@endif
 </x-mail::message>

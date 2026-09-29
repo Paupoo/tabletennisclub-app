@@ -18,8 +18,8 @@
             </div>
             @can('export', \App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport::class)
                 {{-- What the screen shows — tab, search and filters — is what
-                     the file holds. Prepared in the background; the bell
-                     rings with the link. --}}
+                     the file holds. Prepared in the background; the link
+                     arrives by mail, in the bell and under « My exports ». --}}
                 <x-dropdown :label="__('Export')" icon="o-arrow-down-tray" right class="btn-ghost btn-sm">
                     <x-menu-item icon="o-printer" :title="__('Printable PDF')" wire:click="export('pdf')" spinner="export" />
                     <x-menu-item icon="o-archive-box-arrow-down" :title="__('ZIP archive (original proofs)')" wire:click="export('zip')" spinner="export" />
@@ -50,6 +50,50 @@
     </div>
 
     <x-admin.shared.filter-chips :chips="$filterChips" />
+
+    {{-- Mes exports : la cloche ne se rafraîchit pas d'elle-même, et rien
+         d'autre ne menait au fichier une fois prêt. La page interroge le
+         serveur tant qu'un export se prépare, puis s'arrête. --}}
+    @if ($this->myExports->isNotEmpty())
+        @php
+            $exportsPending = $this->myExports->contains('status', 'pending');
+        @endphp
+        <div class="mb-6 rounded-xl border border-base-300 bg-base-100" data-my-exports
+            @if ($exportsPending) wire:poll.3s @endif>
+            <p class="border-b border-base-300 px-4 py-2 text-xs font-bold uppercase tracking-widest text-base-content/60">
+                {{ __('My exports') }}
+            </p>
+            <div class="divide-y divide-base-200">
+                @foreach ($this->myExports as $export)
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 text-sm" wire:key="export-{{ $export->id }}">
+                        <x-icon :name="$export->isZip() ? 'o-archive-box-arrow-down' : 'o-printer'" class="h-5 w-5 shrink-0 text-base-content/60" />
+                        <div class="min-w-0 flex-1">
+                            <span class="font-semibold">{{ $export->isZip() ? __('ZIP archive') : __('Printable PDF') }}</span>
+                            <span class="text-base-content/60">
+                                · {{ trans_choice(':count report|:count reports', count($export->report_ids)) }}
+                                · {{ $export->created_at?->format('d/m/Y H:i') }}
+                            </span>
+                        </div>
+                        @if ($export->status === 'pending')
+                            <span class="flex items-center gap-2 text-base-content/70">
+                                <span class="loading loading-spinner loading-xs"></span>
+                                {{ __('Being prepared…') }}
+                            </span>
+                        @elseif ($export->status === 'failed')
+                            <x-badge :value="__('Failed')" class="badge-error badge-soft badge-sm" />
+                            <x-button :label="__('Run it again')" icon="o-arrow-path" class="btn-ghost btn-sm"
+                                wire:click="retryExport({{ $export->id }})" spinner="retryExport({{ $export->id }})" />
+                        @elseif ($export->isExpired())
+                            <span class="text-base-content/60">{{ __('Expired') }}</span>
+                        @else
+                            <x-button :label="__('Download')" icon="o-arrow-down-tray" class="btn-primary btn-sm"
+                                :link="route('admin.expense-reports.export', $export)" no-wire-navigate />
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     {{-- Stats --}}
     <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">

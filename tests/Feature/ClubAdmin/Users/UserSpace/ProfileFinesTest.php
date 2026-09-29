@@ -9,6 +9,10 @@ use Livewire\Livewire;
 
 const PROFILE_FINES_COMPONENT = 'pages::club-admin.users.user-space.profile';
 
+beforeEach(function (): void {
+    fineCreditorConfigured();
+});
+
 /** Almost nobody has a fine — the section must cost zero space for them. */
 it('shows no fines section when the member has none', function (): void {
     $user = User::factory()->create();
@@ -19,30 +23,65 @@ it('shows no fines section when the member has none', function (): void {
         ->assertDontSee(__('My fines'));
 });
 
-it('shows the fine with its reason, amount and the committee message', function (): void {
+it('shows the fine with its reason, event, amount and the committee message', function (): void {
     $user = User::factory()->create();
-    $fine = Fine::factory()->create([
+    Fine::factory()->create([
         'user_id' => $user->id,
-        'reason' => FineReason::UNJUSTIFIED_ABSENCE,
-        'amount' => 15,
+        'reason' => FineReason::UNANNOUNCED_ABSENCE,
+        'amount' => 35,
+        'event_label' => 'LA HULPE RIXENSART',
         'pedagogical_message' => 'Prevenez votre capitaine la prochaine fois.',
-        'federation_reference' => 'AFTTB-2026-0042',
-    ]);
-    $fine->payment()->create([
-        'reference' => '001/2026/00042',
-        'amount_due' => 15,
-        'amount_paid' => 0,
-        'status' => 'pending',
     ]);
 
     Livewire::actingAs($user)
         ->test(PROFILE_FINES_COMPONENT, ['user' => $user])
         ->assertSee(__('My fines'))
-        ->assertSee(__('Unjustified absence'))
-        ->assertSee('15,00')
-        ->assertSee('Prevenez votre capitaine la prochaine fois.')
-        ->assertSee('AFTTB-2026-0042')
-        ->assertSee(__('Pending'));
+        ->assertSee(FineReason::UNANNOUNCED_ABSENCE->label())
+        ->assertSee('LA HULPE RIXENSART')
+        ->assertSee('35,00')
+        ->assertSee('Prevenez votre capitaine la prochaine fois.');
+});
+
+/*
+ * The member who lost the mail finds everything to pay the committee here, as
+ * long as paying still keeps their qualification.
+ */
+it('shows how to pay the committee until the deadline', function (): void {
+    $user = User::factory()->create(['first_name' => 'Jeremy', 'last_name' => 'Denil']);
+    $fine = Fine::factory()->create(['user_id' => $user->id, 'payment_deadline' => today()]);
+
+    Livewire::actingAs($user)
+        ->test(PROFILE_FINES_COMPONENT, ['user' => $user])
+        ->assertSee(__('How to pay'))
+        ->assertSee('CPBBW')
+        ->assertSee('BE50 2100 3624 5518')
+        ->assertSee($fine->transferCommunication())
+        ->assertSee('data:image/png;base64,', false);
+});
+
+it('keeps a fine past its deadline as history only', function (): void {
+    $user = User::factory()->create();
+    Fine::factory()->pastDeadline()->create(['user_id' => $user->id]);
+
+    Livewire::actingAs($user)
+        ->test(PROFILE_FINES_COMPONENT, ['user' => $user])
+        ->assertSee(__('My fines'))
+        ->assertDontSee(__('How to pay'))
+        ->assertDontSee('BE50 2100 3624 5518');
+});
+
+/*
+ * The club is never told whether the member paid: a "pending" badge would stay
+ * wrong forever, and a "paid" one could never be earned.
+ */
+it('shows no payment status the club could not know', function (): void {
+    $user = User::factory()->create();
+    Fine::factory()->create(['user_id' => $user->id]);
+
+    Livewire::actingAs($user)
+        ->test(PROFILE_FINES_COMPONENT, ['user' => $user])
+        ->assertDontSee(__('Pending'))
+        ->assertDontSee(__('all settled'));
 });
 
 it('never shows another members fine', function (): void {
@@ -57,35 +96,4 @@ it('never shows another members fine', function (): void {
         ->test(PROFILE_FINES_COMPONENT, ['user' => $user])
         ->assertDontSee(__('My fines'))
         ->assertDontSee('Secret message for someone else.');
-});
-
-it('summarises the outstanding amount', function (): void {
-    $user = User::factory()->create();
-    $fine = Fine::factory()->create(['user_id' => $user->id, 'amount' => 20]);
-    $fine->payment()->create([
-        'reference' => '001/2026/00043',
-        'amount_due' => 20,
-        'amount_paid' => 0,
-        'status' => 'pending',
-    ]);
-
-    Livewire::actingAs($user)
-        ->test(PROFILE_FINES_COMPONENT, ['user' => $user])
-        ->assertSee(__(':amount € still to pay', ['amount' => '20,00']));
-});
-
-it('shows fines as settled once paid', function (): void {
-    $user = User::factory()->create();
-    $fine = Fine::factory()->create(['user_id' => $user->id, 'amount' => 20]);
-    $fine->payment()->create([
-        'reference' => '001/2026/00044',
-        'amount_due' => 20,
-        'amount_paid' => 20,
-        'status' => 'paid',
-    ]);
-
-    Livewire::actingAs($user)
-        ->test(PROFILE_FINES_COMPONENT, ['user' => $user])
-        ->assertSee(__('all settled'))
-        ->assertSee(__('Paid'));
 });

@@ -7,6 +7,7 @@ namespace App\Domains\ClubAdmin\ExpenseReports\Jobs;
 use App\Domains\ClubAdmin\ExpenseReports\Export\ExpenseReportExporter;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReportExport;
+use App\Domains\ClubAdmin\ExpenseReports\Notifications\ExpenseReportExportFailedNotification;
 use App\Domains\ClubAdmin\ExpenseReports\Notifications\ExpenseReportExportReadyNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -28,7 +29,15 @@ class GenerateExpenseReportExport implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
-        ExpenseReportExport::whereKey($this->exportId)->update(['status' => 'failed']);
+        $export = ExpenseReportExport::with('requester')->find($this->exportId);
+
+        if ($export === null) {
+            return;
+        }
+
+        $export->update(['status' => 'failed']);
+
+        $export->requester?->notify(new ExpenseReportExportFailedNotification($export));
     }
 
     public function handle(): void

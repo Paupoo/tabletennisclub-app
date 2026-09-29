@@ -8,7 +8,10 @@ erDiagram
         int issued_by "nullable"
         float amount
         FineReason reason
-        string federation_reference "nullable"
+        int provincial_code "nullable"
+        datetime event_date "nullable"
+        string event_label "nullable"
+        datetime payment_deadline "nullable"
         string description "nullable"
         string pedagogical_message
     }

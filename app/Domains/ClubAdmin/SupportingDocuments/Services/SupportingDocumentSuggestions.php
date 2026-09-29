@@ -30,30 +30,6 @@ final class SupportingDocumentSuggestions
     private const int SEARCH_LIMIT = 20;
 
     /**
-     * Movements of the till a document may have been paid with: free of any
-     * payable, deposit or document.
-     *
-     * @return Collection<int, CashRegisterEntry>
-     */
-    public function cashEntriesFor(SupportingDocument $document): Collection
-    {
-        $cents = (int) round($document->amount * 100);
-
-        return CashRegisterEntry::query()
-            ->with('cashRegister')
-            ->whereNull('payable_type')
-            ->whereNull('transaction_id')
-            ->whereDoesntHave('supportingDocuments')
-            ->where('amount', $document->isExpense() ? -$cents : $cents)
-            ->whereBetween('created_at', $this->window($document->date, withTime: true))
-            ->orderBy('created_at')
-            ->orderBy('id')
-            ->get()
-            ->sortBy(fn (CashRegisterEntry $entry): int => abs((int) $entry->created_at?->diffInDays($document->date)))
-            ->values();
-    }
-
-    /**
      * Bank lines a movement of the till may have gone to or come from: the
      * same money the other way round, within the window, on a line nothing
      * else explains yet.
@@ -74,6 +50,30 @@ final class SupportingDocumentSuggestions
             ->orderBy('id')
             ->get()
             ->sortBy(fn (Transaction $transaction): int => abs((int) $transaction->date->diffInDays($date)))
+            ->values();
+    }
+
+    /**
+     * Movements of the till a document may have been paid with: free of any
+     * payable, deposit or document.
+     *
+     * @return Collection<int, CashRegisterEntry>
+     */
+    public function cashEntriesFor(SupportingDocument $document): Collection
+    {
+        $cents = (int) round($document->amount * 100);
+
+        return CashRegisterEntry::query()
+            ->with('cashRegister')
+            ->whereNull('payable_type')
+            ->whereNull('transaction_id')
+            ->whereDoesntHave('supportingDocuments')
+            ->where('amount', $document->isExpense() ? -$cents : $cents)
+            ->whereBetween('created_at', $this->window($document->date, withTime: true))
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get()
+            ->sortBy(fn (CashRegisterEntry $entry): int => abs((int) $entry->created_at?->diffInDays($document->date)))
             ->values();
     }
 

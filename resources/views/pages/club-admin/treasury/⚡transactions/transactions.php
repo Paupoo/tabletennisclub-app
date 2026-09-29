@@ -258,6 +258,7 @@ new class extends Component
                 'reconciled' => __('Settled'),
                 'partial' => __('Partly allocated'),
                 'internal' => __('Internal'),
+                'justified' => __('Justified'),
                 default => __('Unreconciled'),
             };
             $chips[] = ['key' => 'reconciledFilter', 'label' => $label];
@@ -484,6 +485,7 @@ new class extends Component
                 ['id' => 'unreconciled', 'name' => __('Unreconciled')],
                 ['id' => 'partial',      'name' => __('Partly allocated')],
                 ['id' => 'reconciled',   'name' => __('Settled')],
+                ['id' => 'justified',    'name' => __('Justified by a document')],
                 ['id' => 'internal',     'name' => __('Internal transfer')],
             ],
             'amountDirectionOptions' => [
@@ -621,7 +623,7 @@ new class extends Component
         $col = $this->sortBy['column'];
         $dir = $this->sortBy['direction'];
 
-        return $this->applyFilters(Transaction::with(['credits', 'bankAccount']))
+        return $this->applyFilters(Transaction::with(['credits', 'bankAccount', 'supportingDocuments']))
             ->orderBy($col, $dir)
             ->orderBy('transactions.id', $dir)
             ->paginate(25);
@@ -712,6 +714,7 @@ new class extends Component
             ->when($this->reconciledFilter === 'partial', fn (Builder $q): Builder => $q->partiallyAllocated())
             ->when($this->reconciledFilter === 'unreconciled', fn (Builder $q): Builder => $q->unallocated())
             ->when($this->reconciledFilter === 'internal', fn (Builder $q): Builder => $q->internal())
+            ->when($this->reconciledFilter === 'justified', fn (Builder $q): Builder => $q->justified())
             ->when($this->accountFilter, fn (Builder $q): Builder => $q->where('bank_account_id', (int) $this->accountFilter))
             ->when($this->amountDirection === 'credit', fn (Builder $q): Builder => $q->where('amount', '>', 0))
             ->when($this->amountDirection === 'debit', fn (Builder $q): Builder => $q->where('amount', '<', 0));

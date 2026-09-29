@@ -62,7 +62,7 @@
         <x-admin.shared.stat-card
             :label="__('Settled')"
             :value="$this->stats['reconciled']"
-            :hint="__('fully allocated, written off or internal')"
+            :hint="__('allocated, justified, written off or internal')"
             icon="o-check-badge"
             color="success" />
 
@@ -138,6 +138,9 @@
             @if($transaction->is_internal)
             {{-- D'un compte du club à un autre : ni recette ni dépense, rien à rapprocher. --}}
             <x-badge value="{{ __('Internal') }}" class="badge-neutral badge-sm badge-soft" />
+            @elseif($transaction->isJustified())
+            {{-- Hors site : une pièce dit ce qu'était cet argent. --}}
+            <x-badge value="{{ __('Justified') }}" class="badge-success badge-sm badge-soft" />
             @elseif($transaction->isSettled())
             <x-badge value="{{ __('Settled') }}" class="badge-success badge-sm badge-soft" />
             @elseif($transaction->allocated_amount != 0)

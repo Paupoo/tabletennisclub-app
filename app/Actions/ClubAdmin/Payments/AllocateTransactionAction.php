@@ -32,6 +32,7 @@ final class AllocateTransactionAction
     public function __invoke(Transaction $transaction, array $allocations): void
     {
         DB::transaction(function () use ($transaction, $allocations): void {
+            $this->assertNotJustified($transaction);
             $this->assertSomethingToAllocate($allocations);
             $this->assertFitsWithinTransaction($transaction, $allocations);
 
@@ -123,6 +124,20 @@ final class AllocateTransactionAction
             throw new \DomainException(__('This allocation exceeds the transaction: only :amount € remain to allocate.', [
                 'amount' => number_format(($capacity - $already) / 100, 2, ',', ' '),
             ]));
+        }
+    }
+
+    /**
+     * Une ligne justifiée par une pièce est de l'argent hors site : y placer
+     * aussi le paiement d'un membre mêlerait les deux sur une même ligne, et
+     * le rapport financier la compterait deux fois.
+     *
+     * @throws \DomainException
+     */
+    private function assertNotJustified(Transaction $transaction): void
+    {
+        if ($transaction->supportingDocuments()->exists()) {
+            throw new \DomainException(__('This transaction is justified by a supporting document: no payment of the website can be allocated to it.'));
         }
     }
 

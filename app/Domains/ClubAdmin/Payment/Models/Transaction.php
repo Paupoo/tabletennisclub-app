@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace App\Domains\ClubAdmin\Payment\Models;
 
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatch;
+use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
 use App\Domains\Shared\Enums\BankAccountType;
+use App\Domains\Shared\Enums\ExpenseCategory;
+use App\Domains\Shared\Enums\IncomeCategory;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -43,6 +48,8 @@ use Illuminate\Support\Carbon;
  * @property-read Payment|null $refundPayment
  * @property-read BankImport|null $bankImport
  * @property-read BankAccount|null $bankAccount
+ * @property-read Collection<int, SupportingDocument> $supportingDocuments
+ * @property-read CashRegisterEntry|null $cashRegisterEntry The till movement this line deposited or withdrew, when it is one.
  * @property TransactionMatch|null $match Verdict de rapprochement, posé à la volée par TransactionMatcher::rank() — jamais persisté.
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction newModelQuery()
@@ -50,6 +57,7 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction partiallyAllocated()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction settled()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction internal()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction justified()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction reconcilable()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction onlyTrashed()
@@ -100,6 +108,30 @@ class Transaction extends Model
     }
 
     /**
+     * The till movement this line brought to the bank or took from it, when
+     * the treasurer linked them: money moving between the till and the bank.
+     *
+     * @return HasOne<CashRegisterEntry, $this>
+     */
+    public function cashRegisterEntry(): HasOne
+    {
+        return $this->hasOne(CashRegisterEntry::class);
+    }
+
+    /**
+     * What this line paid or brought in, category by category: the documents
+     * that justify it share its amount pro rata of their own amounts.
+     *
+     * Empty when no document justifies the line. Signed like the line.
+     *
+     * @return list<array{category: ExpenseCategory|IncomeCategory, amount: float}>
+     */
+    public function categoryShares(): array
+    {
+        return SupportingDocument::splitAcrossCategories($this->justifyingDocuments(), (float) $this->amount);
+    }
+
+    /**
      * Les affectations de cette ligne de relevé.
      *
      * @return HasMany<PaymentCredit, $this>
@@ -110,15 +142,25 @@ class Transaction extends Model
     }
 
     /**
+     * Closed by a supporting document: money the website never saw, an
+     * invoice or a subsidy letter that says what it was.
+     */
+    public function isJustified(): bool
+    {
+        return $this->justifyingDocuments()->isNotEmpty();
+    }
+
+    /**
      * Cette ligne de relevé est-elle close ?
      *
-     * Trois façons de l'être, et elles se valent pour le trésorier : tout est
-     * affecté, ce qui restait a été délibérément abandonné, ou l'argent n'a
-     * fait que passer d'un compte du club à un autre.
+     * Quatre façons de l'être, et elles se valent pour le trésorier : tout est
+     * affecté, ce qui restait a été délibérément abandonné, l'argent n'a
+     * fait que passer d'un compte du club à un autre, ou une pièce
+     * justificative dit ce qu'il était.
      */
     public function isSettled(): bool
     {
-        return $this->is_internal || $this->settled_at !== null || $this->residueInCents() === 0;
+        return $this->is_internal || $this->settled_at !== null || $this->residueInCents() === 0 || $this->isJustified();
     }
 
     public function payment(): HasOne
@@ -156,6 +198,17 @@ class Transaction extends Model
     }
 
     /**
+     * Closed by at least one supporting document.
+     *
+     * @param  Builder<Transaction>  $query
+     * @return Builder<Transaction>
+     */
+    public function scopeJustified(Builder $query): Builder
+    {
+        return $query->whereHas('supportingDocuments');
+    }
+
+    /**
      * Une partie a trouvé son paiement, le reste attend.
      *
      * @param  Builder<Transaction>  $query
@@ -166,7 +219,8 @@ class Transaction extends Model
         return $query->whereNull('settled_at')
             ->where('is_internal', false)
             ->where('allocated_amount', '!=', 0)
-            ->whereColumn('allocated_amount', '!=', 'amount');
+            ->whereColumn('allocated_amount', '!=', 'amount')
+            ->whereDoesntHave('supportingDocuments');
     }
 
     /**
@@ -175,7 +229,9 @@ class Transaction extends Model
      * plusieurs —, qui n'est pas un mouvement interne.
      *
      * Un compte d'épargne ne reçoit jamais le virement d'un membre ; lui
-     * proposer des créances, c'est inviter le trésorier à se tromper.
+     * proposer des créances, c'est inviter le trésorier à se tromper. Une
+     * ligne justifiée par une pièce non plus : c'est de l'argent hors site, et
+     * mêler les deux sur une ligne est interdit.
      *
      * @param  Builder<Transaction>  $query
      * @return Builder<Transaction>
@@ -184,6 +240,7 @@ class Transaction extends Model
     {
         return $query
             ->where('is_internal', false)
+            ->whereDoesntHave('supportingDocuments')
             ->where(fn (Builder $q): Builder => $q
                 ->whereNull('bank_account_id')
                 ->orWhereHas('bankAccount', fn (Builder $account): Builder => $account->where('type', BankAccountType::Current->value)));
@@ -191,7 +248,7 @@ class Transaction extends Model
 
     /**
      * Close : tout est affecté, ce qui restait a été délibérément abandonné,
-     * ou c'est un mouvement interne.
+     * c'est un mouvement interne, ou une pièce la justifie.
      *
      * Le groupe autour des `OR` n'est pas décoratif — à plat, il s'évaderait
      * des filtres de date et de recherche que l'écran applique autour. Une
@@ -205,7 +262,8 @@ class Transaction extends Model
         return $query->where(fn (Builder $q): Builder => $q
             ->whereColumn('allocated_amount', 'amount')
             ->orWhereNotNull('settled_at')
-            ->orWhere('is_internal', true));
+            ->orWhere('is_internal', true)
+            ->orWhereHas('supportingDocuments'));
     }
 
     /**
@@ -221,7 +279,20 @@ class Transaction extends Model
      */
     public function scopeUnallocated(Builder $query): Builder
     {
-        return $query->where('allocated_amount', 0)->whereNull('settled_at')->where('is_internal', false);
+        return $query->where('allocated_amount', 0)
+            ->whereNull('settled_at')
+            ->where('is_internal', false)
+            ->whereDoesntHave('supportingDocuments');
+    }
+
+    /**
+     * The supporting documents that justify this line.
+     *
+     * @return BelongsToMany<SupportingDocument, $this>
+     */
+    public function supportingDocuments(): BelongsToMany
+    {
+        return $this->belongsToMany(SupportingDocument::class, 'supporting_document_transaction')->withTimestamps();
     }
 
     /**
@@ -254,6 +325,14 @@ class Transaction extends Model
             get: fn (?int $value): ?float => $value === null ? null : round($value / 100, 2),
             set: fn (int|float|null $value): ?int => $value === null ? null : (int) round($value * 100),
         );
+    }
+
+    /**
+     * @return Collection<int, SupportingDocument>
+     */
+    private function justifyingDocuments(): Collection
+    {
+        return $this->relationLoaded('supportingDocuments') ? $this->supportingDocuments : $this->supportingDocuments()->get();
     }
 
     /**

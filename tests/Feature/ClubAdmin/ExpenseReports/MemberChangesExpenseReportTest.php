@@ -46,7 +46,7 @@ it('lets the member correct a report in progress, adding and removing proofs', f
 
     (new UpdateExpenseReport)(
         report: $report,
-        category: ExpenseCategory::Administrative,
+        category: ExpenseCategory::Operations,
         description: 'Rouleaux de scotch',
         amount: 7.8,
         spentOn: Carbon::parse('2026-09-13'),
@@ -57,7 +57,7 @@ it('lets the member correct a report in progress, adding and removing proofs', f
 
     $report->refresh();
 
-    expect($report->category)->toBe(ExpenseCategory::Administrative)
+    expect($report->category)->toBe(ExpenseCategory::Operations)
         ->and($report->description)->toBe('Rouleaux de scotch')
         ->and($report->amount)->toBe(7.8)
         ->and($report->spent_on->toDateString())->toBe('2026-09-13')

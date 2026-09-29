@@ -4,19 +4,22 @@ declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Actions\ClubAdmin\Payments\ImportBankStatementAction;
+use App\Actions\ClubAdmin\Payments\RegisterBankAccountAction;
 use App\Actions\ClubAdmin\Payments\ResolveSuspectedDuplicateAction;
 use App\Actions\ClubAdmin\Payments\SettleTransactionResidueAction;
 use App\Contracts\DescribesPayment;
+use App\Domains\ClubAdmin\Payment\Models\BankAccount;
 use App\Domains\ClubAdmin\Payment\Models\BankImport;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\PaymentCredit;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
-use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\MeetingUser;
+use App\Domains\Shared\Enums\BankAccountType;
 use App\Domains\Shared\Enums\Permission;
+use App\Exceptions\UnknownBankAccount;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
@@ -26,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -37,6 +41,8 @@ new class extends Component
 {
     use HasBreadcrumbs, Toast, WithFileUploads, WithPagination;
     use HasBulkActions, HasFilterDrawer;
+
+    public string $accountFilter = '';
 
     public bool $allocationModal = false;
 
@@ -60,6 +66,10 @@ new class extends Component
 
     public bool $importModal = false;
 
+    public string $newAccountName = '';
+
+    public string $newAccountType = 'current';
+
     public string $reconciledFilter = '';
 
     public int $reconciledInSelection = 0;
@@ -69,6 +79,12 @@ new class extends Component
     public string $search = '';
 
     public array $sortBy = ['column' => 'date', 'direction' => 'desc'];
+
+    /**
+     * L'IBAN d'un relevé que le club n'a pas encore enregistré : l'import
+     * s'arrête et demande au trésorier ce qu'est ce compte.
+     */
+    public ?string $unknownAccountIban = null;
 
     /**
      * Les paiements que cette ligne de relevé pourrait solder, les plus
@@ -87,7 +103,9 @@ new class extends Component
     {
         $transaction = $this->allocationTransaction();
 
-        if (! $transaction instanceof Transaction) {
+        // Une ligne d'épargne ou un mouvement interne n'est le paiement de
+        // personne : le rapprochement ne regarde que les comptes courants.
+        if (! $transaction instanceof Transaction || ! Transaction::reconcilable()->whereKey($transaction->id)->exists()) {
             return collect();
         }
 
@@ -144,6 +162,17 @@ new class extends Component
             : null;
     }
 
+    /**
+     * Les comptes du club, pour le filtre et pour nommer le compte d'une ligne.
+     *
+     * @return Collection<int, BankAccount>
+     */
+    #[Computed]
+    public function bankAccounts(): Collection
+    {
+        return BankAccount::orderBy('type')->orderBy('name')->orderBy('id')->get();
+    }
+
     public function bulkDelete(): void
     {
         Gate::authorize(Permission::TransactionsDelete->value);
@@ -164,7 +193,7 @@ new class extends Component
 
     public function clearFilters(): void
     {
-        $this->reset(['dateFrom', 'dateTo', 'reconciledFilter', 'amountDirection']);
+        $this->reset(['dateFrom', 'dateTo', 'reconciledFilter', 'amountDirection', 'accountFilter']);
         $this->resetPage();
     }
 
@@ -228,6 +257,7 @@ new class extends Component
             $label = match ($this->reconciledFilter) {
                 'reconciled' => __('Settled'),
                 'partial' => __('Partly allocated'),
+                'internal' => __('Internal'),
                 default => __('Unreconciled'),
             };
             $chips[] = ['key' => 'reconciledFilter', 'label' => $label];
@@ -236,6 +266,10 @@ new class extends Component
         if ($this->amountDirection) {
             $label = $this->amountDirection === 'credit' ? __('Credit') : __('Debit');
             $chips[] = ['key' => 'amountDirection', 'label' => $label];
+        }
+
+        if ($this->accountFilter) {
+            $chips[] = ['key' => 'accountFilter', 'label' => $this->bankAccounts()->firstWhere('id', (int) $this->accountFilter)->name ?? '—'];
         }
 
         return $chips;
@@ -321,6 +355,14 @@ new class extends Component
 
         try {
             $import = (new ImportBankStatementAction)($this->importFile->getRealPath());
+        } catch (UnknownBankAccount $e) {
+            // Rien n'est importé : le modal reste ouvert, fichier compris, et
+            // demande ce qu'est ce compte avant de recommencer.
+            $this->unknownAccountIban = $e->ibans[0];
+            $this->newAccountName = '';
+            $this->newAccountType = BankAccountType::Current->value;
+
+            return;
         } catch (Throwable $e) {
             $this->error(__('Error reading file: :message', ['message' => $e->getMessage()]), timeout: 10000);
 
@@ -329,6 +371,7 @@ new class extends Component
 
         $this->importModal = false;
         $this->importFile = null;
+        $this->unknownAccountIban = null;
 
         $suspectedCount = count($import->suspectedDuplicates());
 
@@ -352,11 +395,7 @@ new class extends Component
             $message .= ' ' . __(':count error(s) — see import history.', ['count' => $import->error_count]);
         }
 
-        if (blank(Club::ourClub()->value('bank_account'))) {
-            $message .= ' ' . __('The club IBAN is not set: the statement account could not be checked.');
-        }
-
-        if ($import->error_count > 0 || $suspectedCount > 0 || blank(Club::ourClub()->value('bank_account'))) {
+        if ($import->error_count > 0 || $suspectedCount > 0) {
             $this->warning($message, timeout: 10000);
         } else {
             $this->success($message);
@@ -390,6 +429,33 @@ new class extends Component
     }
 
     /**
+     * Enregistre le compte que l'import vient de rencontrer, puis reprend
+     * l'import du même fichier.
+     */
+    public function registerAccountAndImport(): void
+    {
+        Gate::authorize(Permission::TransactionsImport->value);
+
+        if ($this->unknownAccountIban === null) {
+            return;
+        }
+
+        $this->validate([
+            'newAccountName' => 'required|string|max:255',
+            'newAccountType' => ['required', Rule::enum(BankAccountType::class)],
+        ]);
+
+        (new RegisterBankAccountAction)($this->unknownAccountIban, $this->newAccountName, BankAccountType::from($this->newAccountType));
+
+        $this->unknownAccountIban = null;
+        unset($this->bankAccounts);
+
+        if ($this->importFile !== null) {
+            $this->processImport();
+        }
+    }
+
+    /**
      * Le reste à placer sur la ligne courante, en euros.
      */
     #[Computed]
@@ -418,11 +484,15 @@ new class extends Component
                 ['id' => 'unreconciled', 'name' => __('Unreconciled')],
                 ['id' => 'partial',      'name' => __('Partly allocated')],
                 ['id' => 'reconciled',   'name' => __('Settled')],
+                ['id' => 'internal',     'name' => __('Internal transfer')],
             ],
             'amountDirectionOptions' => [
                 ['id' => 'credit', 'name' => __('Credit (incoming)')],
                 ['id' => 'debit',  'name' => __('Debit (outgoing)')],
             ],
+            'accountOptions' => $this->bankAccounts->map(fn (BankAccount $account): array => ['id' => (string) $account->id, 'name' => $account->label()])->all(),
+            'accountTypeOptions' => BankAccountType::options(),
+            'showAccount' => $this->bankAccounts->count() > 1,
             'recentImports' => $recentImports,
             // Les transactions que chaque doublon probable recoupe, pour que le
             // trésorier compare les deux lignes avant de trancher.
@@ -551,9 +621,15 @@ new class extends Component
         $col = $this->sortBy['column'];
         $dir = $this->sortBy['direction'];
 
-        return $this->applyFilters(Transaction::with('credits'))
+        return $this->applyFilters(Transaction::with(['credits', 'bankAccount']))
             ->orderBy($col, $dir)
+            ->orderBy('transactions.id', $dir)
             ->paginate(25);
+    }
+
+    public function updatedAccountFilter(): void
+    {
+        $this->resetPage();
     }
 
     public function updatedAmountDirection(): void
@@ -635,6 +711,8 @@ new class extends Component
             ->when($this->reconciledFilter === 'reconciled', fn (Builder $q): Builder => $q->settled())
             ->when($this->reconciledFilter === 'partial', fn (Builder $q): Builder => $q->partiallyAllocated())
             ->when($this->reconciledFilter === 'unreconciled', fn (Builder $q): Builder => $q->unallocated())
+            ->when($this->reconciledFilter === 'internal', fn (Builder $q): Builder => $q->internal())
+            ->when($this->accountFilter, fn (Builder $q): Builder => $q->where('bank_account_id', (int) $this->accountFilter))
             ->when($this->amountDirection === 'credit', fn (Builder $q): Builder => $q->where('amount', '>', 0))
             ->when($this->amountDirection === 'debit', fn (Builder $q): Builder => $q->where('amount', '<', 0));
     }

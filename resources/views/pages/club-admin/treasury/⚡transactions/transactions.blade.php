@@ -62,7 +62,7 @@
         <x-admin.shared.stat-card
             :label="__('Settled')"
             :value="$this->stats['reconciled']"
-            :hint="__('fully allocated or written off')"
+            :hint="__('fully allocated, written off or internal')"
             icon="o-check-badge"
             color="success" />
 
@@ -85,8 +85,19 @@
         {{-- Selecting only ever leads to deleting: a reader gets no checkboxes. --}}
         <x-table :headers="$headers" :rows="$transactions" :sort-by="$sortBy" wire:model.live="selected" :selectable="auth()->user()->can('transactions.delete')" hover>
 
-            @scope('cell_date', $transaction)
-            <span class="text-sm tabular-nums">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</span>
+            @scope('cell_date', $transaction, $showAccount)
+            <div>
+                <span class="text-sm tabular-nums">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</span>
+                {{-- Le compte n'a de sens que quand le club en a plusieurs ; le
+                     numéro d'extrait est celui qu'on cherche dans le relevé papier. --}}
+                @if(($showAccount && $transaction->bankAccount) || $transaction->statement_number)
+                <div class="text-xs text-muted whitespace-nowrap">
+                    @if($showAccount && $transaction->bankAccount){{ $transaction->bankAccount->name }}@endif
+                    @if($showAccount && $transaction->bankAccount && $transaction->statement_number) · @endif
+                    @if($transaction->statement_number){{ __('Stmt :number', ['number' => $transaction->statement_number]) }}@endif
+                </div>
+                @endif
+            </div>
             @endscope
 
             @scope('cell_counterparty_name', $transaction)
@@ -116,10 +127,18 @@
             ])>
                 {{ number_format($transaction->amount, 2, ',', ' ') }} €
             </span>
+            @if($transaction->balance_after !== null)
+            <div class="text-xs text-muted tabular-nums whitespace-nowrap">
+                {{ __('Balance :amount €', ['amount' => number_format($transaction->balance_after, 2, ',', ' ')]) }}
+            </div>
+            @endif
             @endscope
 
             @scope('cell_status', $transaction)
-            @if($transaction->isSettled())
+            @if($transaction->is_internal)
+            {{-- D'un compte du club à un autre : ni recette ni dépense, rien à rapprocher. --}}
+            <x-badge value="{{ __('Internal') }}" class="badge-neutral badge-sm badge-soft" />
+            @elseif($transaction->isSettled())
             <x-badge value="{{ __('Settled') }}" class="badge-success badge-sm badge-soft" />
             @elseif($transaction->allocated_amount != 0)
             {{-- Ce qui reste à placer : c'est le seul chiffre qui dit au trésorier ce qu'il lui reste à faire sur cette ligne. --}}
@@ -342,6 +361,17 @@
                 :placeholder="__('All')"
                 clearable />
 
+            @if($this->bankAccounts->count() > 1)
+            <x-select
+                :label="__('Bank account')"
+                wire:model.live="accountFilter"
+                :options="$accountOptions"
+                option-value="id"
+                option-label="name"
+                :placeholder="__('All accounts')"
+                clearable />
+            @endif
+
             <x-select
                 :label="__('Direction')"
                 wire:model.live="amountDirection"
@@ -359,6 +389,21 @@
     {{-- ========================================== --}}
     <x-app-modal wire:model="importModal" :title="__('Import Bank Statement')" separator :open="$importModal">
         <div class="space-y-4">
+            @if($unknownAccountIban)
+            {{-- Jamais d'import silencieux d'un compte inconnu : l'export d'un
+                 compte personnel traîne dans le même dossier que ceux du club. --}}
+            <div class="space-y-3 rounded-xl border border-warning/30 bg-warning/10 p-3 text-sm" wire:key="unknown-account">
+                <div class="font-bold">
+                    {{ __('This statement is for account :account, which the club has not registered yet.', ['account' => \App\Domains\Shared\Support\IbanNormalizer::format($unknownAccountIban)]) }}
+                </div>
+                <p class="text-xs">
+                    {{ __('If it is a club account, register it to import the statement. Otherwise, cancel: nothing has been imported.') }}
+                </p>
+                <x-input :label="__('Account name')" wire:model="newAccountName" :placeholder="__('Savings account')" />
+                <x-select :label="__('Account type')" wire:model="newAccountType" :options="$accountTypeOptions"
+                    option-value="id" option-label="name" />
+            </div>
+            @else
             <p class="text-sm opacity-70">
                 {{ __('Upload your bank export (ODS, XLSX, CSV). Transactions will be imported and available for reconciliation.') }}
             </p>
@@ -371,10 +416,19 @@
                 :aria-label="__('Bank file')"
                 accept=".ods,.xlsx,.xls,.csv,.txt"
                 hint="ODS · XLSX · CSV" />
+            @endif
         </div>
 
         <x-slot:actions>
-            <x-button :label="__('Cancel')" @click="$wire.importModal = false" class="btn-ghost" />
+            <x-button :label="__('Cancel')" @click="$wire.importModal = false; $wire.unknownAccountIban = null" class="btn-ghost" />
+            @if($unknownAccountIban)
+            <x-button
+                :label="__('Register and import')"
+                icon="o-building-library"
+                class="btn-primary"
+                wire:click="registerAccountAndImport"
+                spinner />
+            @else
             <x-button
                 :label="__('Start Import')"
                 icon="o-arrow-up-tray"
@@ -382,6 +436,7 @@
                 wire:click="processImport"
                 :disabled="! $importFile"
                 spinner />
+            @endif
         </x-slot:actions>
     </x-app-modal>
 

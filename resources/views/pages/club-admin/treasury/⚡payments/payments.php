@@ -1010,9 +1010,26 @@ new class extends Component
             return;
         }
 
-        Mail::to($payment->payable->user)->send(
-            new PaymentInvitationEmail($payment, __('Please settle your payment as soon as possible.'))
-        );
+        // A managed account has no address of its own: the reminder goes to
+        // whoever answers for the member, one message each, as every other
+        // payment mail does. Handing the user to Mail::to() read a null email and
+        // queued a message the worker could only fail on.
+        $member = $payment->payable->user;
+        $recipients = $member->contactEmails();
+
+        if ($recipients === []) {
+            $this->error(__(':name has no address of their own, and no guardian the club can write to.', [
+                'name' => $member->first_name,
+            ]));
+
+            return;
+        }
+
+        foreach ($recipients as $recipient) {
+            Mail::to($recipient)->send(
+                new PaymentInvitationEmail($payment, __('Please settle your payment as soon as possible.'))
+            );
+        }
         // One write, not two: the counter and the date describe the same event, and
         // an increment followed by a separate save can leave the count raised with
         // no date behind it.
@@ -1021,7 +1038,7 @@ new class extends Component
             'last_reminded_at' => now(),
         ])->save();
 
-        $this->success(__('Reminder sent to :email.', ['email' => $payment->payable->user->email]));
+        $this->success(__('Reminder sent to :email.', ['email' => implode(', ', $recipients)]));
     }
 
     // ==================== Data ====================

@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
+use App\Actions\ClubAdmin\Payments\ImportBankStatementAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Support\Treasury\BankStatementFixture;
 use Database\Seeders\FamilySeeder;
@@ -116,7 +118,7 @@ it('dates the statement on the days leading up to today', function (): void {
 it('carries a duplicate of one of its own rows', function (): void {
     seededClubForStatement();
 
-    $lines = array_filter(explode("\r\n", (new BankStatementFixture)->build()->csv));
+    $lines = array_filter(explode("\r", (new BankStatementFixture)->build()->csv));
     $body = array_slice($lines, 1);
 
     // Les six colonnes sur lesquelles l'import calcule son empreinte : date,
@@ -240,6 +242,34 @@ it('produces the transfer that completes a claim already partly settled', functi
 
     expect($result->covered)->toContain('completes_partial')
         // Le solde, pas le montant plein.
-        ->and($result->csv)->toContain(';' . number_format($target->balance(), 2, '.', '') . ';')
-        ->and($result->csv)->not->toContain(';' . number_format((float) $target->amount_due, 2, '.', '') . ';' . number_format((float) $target->amount_due, 2, '.', '') . ';');
+        ->and($result->csv)->toContain(';' . number_format($target->balance(), 2, ',', '') . ';')
+        ->and($result->csv)->not->toContain(';' . number_format((float) $target->amount_due, 2, ',', '') . ';' . number_format((float) $target->amount_due, 2, ',', '') . ';');
+})->group('payments', 'fixture');
+
+/**
+ * Le relevé de démonstration imitait un format qu'aucune banque n'émet —
+ * UTF-8 en mémoire, CRLF, point décimal —, si bien qu'il n'a jamais emprunté
+ * le chemin qui a cassé en juin 2026 : le CR seul de l'export rapide de CBC.
+ */
+it('writes the statement the way the CBC quick export does, and it imports cleanly', function (): void {
+    seededClubForStatement();
+    Club::ourClub()->exists()
+        ? Club::ourClub()->update(['bank_account' => 'BE68539007547034'])
+        : Club::factory()->ownClub()->create(['bank_account' => 'BE68539007547034']);
+    test()->actingAs(User::factory()->isAdmin()->create());
+
+    $fixture = new BankStatementFixture;
+    $result = $fixture->build();
+    $path = $fixture->write($result, sys_get_temp_dir() . '/bank-demo-' . uniqid())['csv'];
+    $raw = (string) file_get_contents($path);
+
+    expect($raw)->not->toContain("\n")
+        ->and($raw)->toContain("\r")
+        ->and($raw)->toMatch('/;-?\d+,\d{2};/')
+        ->and($raw)->toContain('BE68539007547034');
+
+    $import = (new ImportBankStatementAction)($path);
+
+    expect($import->error_count)->toBe(0)
+        ->and($import->new_count + $import->duplicate_count + count($import->suspectedDuplicates()))->toBe($result->rowCount);
 })->group('payments', 'fixture');

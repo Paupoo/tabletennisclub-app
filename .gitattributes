@@ -6,6 +6,9 @@
 *.md diff=markdown
 *.php diff=php
 
+# Relevés bancaires réels : leurs fins de ligne (CR seul, CRLF) sont ce qu'on teste.
+tests/Fixtures/BankStatements/** -text
+
 /.github export-ignore
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore

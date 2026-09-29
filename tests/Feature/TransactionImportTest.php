@@ -6,6 +6,8 @@ use App\Domains\ClubAdmin\Payment\Models\BankImport;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -196,6 +198,77 @@ describe('Transaction import', function (): void {
 
         expect($transaction->bank_import_id)->toBe($import->id);
         expect($import->transactions()->count())->toBe(1);
+    });
+});
+
+/**
+ * Le dernier toast que le composant a confié au navigateur : son titre, et la
+ * classe qui le colore.
+ *
+ * @return array{title: string, css: string}
+ */
+function lastToast(Testable $component): array
+{
+    $expression = collect($component->effects['xjs'] ?? [])->pluck('expression')->last() ?? '';
+    $toast = json_decode(Str::beforeLast(Str::after($expression, 'toast('), ')'), true);
+
+    return ['title' => $toast['toast']['title'] ?? '', 'css' => $toast['toast']['css'] ?? ''];
+}
+
+describe('Bank statement import screen', function (): void {
+    it('refuses in red a file whose header lacks what the import needs, and records nothing', function (): void {
+        $file = UploadedFile::fake()->createWithContent('bank.csv', "Datum;Bedrag\n28/09/2026;40,00\n");
+
+        $component = Livewire::actingAs(adminUser())
+            ->test('pages::club-admin.treasury.transactions')
+            ->set('importFile', $file)
+            ->call('processImport');
+
+        expect(lastToast($component)['title'])->toContain('Datum, Bedrag')
+            ->and(lastToast($component)['css'])->toBe('alert-error')
+            ->and(BankImport::count())->toBe(0);
+    });
+
+    it('warns in orange when a valid statement carries no movement', function (): void {
+        $file = UploadedFile::fake()->createWithContent('bank.csv', makeCsvContent([]));
+
+        $component = Livewire::actingAs(adminUser())
+            ->test('pages::club-admin.treasury.transactions')
+            ->set('importFile', $file)
+            ->call('processImport');
+
+        expect(lastToast($component))->toBe([
+            'title' => __('This statement carries no movement.'),
+            'css' => 'alert-warning',
+        ]);
+    });
+
+    it('counts apart the look-alikes set aside, and lets the treasurer settle them', function (): void {
+        $admin = adminUser();
+        $first = [['15/07/2026', '25,00', 'VIREMENT DE BE06', 'JEAN', 'BE06 6528 1505 5922', '', 'T-shirt']];
+        $second = [['15/07/2026', '25,00', 'VIREMENT DE          15-07 BE06', 'JEAN', 'BE06 6528 1505 5922', '', 'T-shirt']];
+
+        Livewire::actingAs($admin)->test('pages::club-admin.treasury.transactions')
+            ->set('importFile', makeCsvFile($first))->call('processImport');
+
+        $component = Livewire::actingAs($admin)->test('pages::club-admin.treasury.transactions')
+            ->set('importFile', makeCsvFile($second))->call('processImport');
+
+        expect(lastToast($component)['title'])->toContain(__(':count probable duplicate(s) to check — see import history.', ['count' => 1]))
+            ->and(lastToast($component)['css'])->toBe('alert-warning');
+
+        $import = BankImport::latest('id')->first();
+
+        $component->assertSee(__('Import anyway'))
+            ->assertSee(__('Line :n of this file', ['n' => 2]))
+            ->assertSee('VIREMENT DE BE06');
+
+        $component->call('keepSuspectedDuplicate', $import->id, 2);
+
+        expect(Transaction::count())->toBe(2)
+            ->and($import->refresh()->suspectedDuplicates())->toBe([]);
+
+        $component->assertDontSee(__('Import anyway'));
     });
 });
 

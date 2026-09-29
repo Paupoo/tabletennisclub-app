@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\ExpenseReports\Notifications;
 
+use App\Domains\Shared\ValueObjects\FiscalYear;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -11,8 +12,9 @@ use Illuminate\Notifications\Notification;
 /**
  * Paid reports whose proofs still live on the server only.
  *
- * Quarterly, and once more in January when the closed year goes to the
- * auditors: a server that dies takes the receipts of the accounts with it.
+ * Quarterly, and once more the month after the financial year closes, when
+ * it goes to the auditors: a server that dies takes the receipts of the
+ * accounts with it.
  */
 class ExpenseReportsToArchiveNotification extends Notification
 {
@@ -27,7 +29,7 @@ class ExpenseReportsToArchiveNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $subject = $this->yearEnd
-            ? __('Financial year :year closed: expense reports to archive', ['year' => now()->year - 1])
+            ? __('Financial year :year closed: expense reports to archive', ['year' => FiscalYear::current()->previous()->label()])
             : __('Expense reports to archive');
 
         return (new MailMessage)

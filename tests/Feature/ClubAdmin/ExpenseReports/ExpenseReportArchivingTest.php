@@ -10,10 +10,12 @@ use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReportExport;
 use App\Domains\ClubAdmin\ExpenseReports\Notifications\ExpenseReportsToArchiveNotification;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\Role;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 beforeEach(function (): void {
@@ -75,12 +77,24 @@ describe('the reminder to archive', function (): void {
     });
 
     it('speaks of the closed financial year in January', function (): void {
+        $this->travelTo('2027-01-05 08:00');
         $treasurer = User::factory()->withRole(Role::TREASURY)->create();
         paidUnarchivedExpenseReport();
 
         $this->artisan('expense-reports:remind-archiving', ['--year-end' => true])->assertSuccessful();
 
-        Notification::assertSentTo($treasurer, ExpenseReportsToArchiveNotification::class, fn (ExpenseReportsToArchiveNotification $n): bool => $n->yearEnd && str_contains((string) $n->toMail($treasurer)->subject, (string) (now()->year - 1)));
+        Notification::assertSentTo($treasurer, ExpenseReportsToArchiveNotification::class, fn (ExpenseReportsToArchiveNotification $n): bool => $n->yearEnd && str_contains((string) $n->toMail($treasurer)->subject, 'Exercice 2026 clôturé'));
+    });
+
+    it('names a closed financial year that straddles two calendar years', function (): void {
+        Club::factory()->ownClub()->create(['fiscal_year_start_month' => 9]);
+        $this->travelTo('2026-09-05 08:00');
+        $treasurer = User::factory()->withRole(Role::TREASURY)->create();
+        paidUnarchivedExpenseReport();
+
+        $this->artisan('expense-reports:remind-archiving', ['--year-end' => true])->assertSuccessful();
+
+        Notification::assertSentTo($treasurer, ExpenseReportsToArchiveNotification::class, fn (ExpenseReportsToArchiveNotification $n): bool => str_contains((string) $n->toMail($treasurer)->subject, 'Exercice 2025-2026 clôturé'));
     });
 
     it('stays silent when everything paid is archived', function (): void {
@@ -92,17 +106,35 @@ describe('the reminder to archive', function (): void {
         Notification::assertSentTimes(ExpenseReportsToArchiveNotification::class, 0);
     });
 
-    it('runs on the first of each quarter, and on the fifth of January for the closed year', function (): void {
-        $events = collect(app(Schedule::class)->events())
-            ->filter(fn ($event): bool => str_contains((string) $event->command, 'expense-reports:remind-archiving'));
+    it('runs each quarter, and on the fifth of the month after the year closes', function (string $at, ?string $expected): void {
+        $this->travelTo($at);
 
-        expect($events->map(fn ($event): string => $event->expression)->sort()->values()->all())
-            ->toBe(['0 8 1 4,7,10 *', '0 8 5 1 *'])
-            ->and($events->first(fn ($event): bool => $event->expression === '0 8 5 1 *')->command)->toContain('--year-end');
+        expect(archivingRemindersDueNow())->toBe($expected === null ? [] : [$expected]);
+    })->with([
+        'a calendar year closes' => ['2027-01-05 08:00', 'expense-reports:remind-archiving --year-end'],
+        'the first quarter ends' => ['2026-04-01 08:00', 'expense-reports:remind-archiving'],
+        'the third quarter ends' => ['2026-10-01 08:00', 'expense-reports:remind-archiving'],
+        'the year-end reminder already covers January' => ['2027-01-01 08:00', null],
+        'any other month' => ['2026-02-05 08:00', null],
+    ]);
 
+    it('follows a financial year that starts in September', function (string $at, ?string $expected): void {
+        Club::factory()->ownClub()->create(['fiscal_year_start_month' => 9]);
+        $this->travelTo($at);
+
+        expect(archivingRemindersDueNow())->toBe($expected === null ? [] : [$expected]);
+    })->with([
+        'the year closes in August' => ['2026-09-05 08:00', 'expense-reports:remind-archiving --year-end'],
+        'the first quarter ends in November' => ['2026-12-01 08:00', 'expense-reports:remind-archiving'],
+        'January is no longer a closing' => ['2027-01-05 08:00', null],
+        'October is no longer a quarter' => ['2026-10-01 08:00', null],
+    ]);
+
+    it('stays off when expense reports are switched off', function (): void {
+        $this->travelTo('2027-01-05 08:00');
         config(['features.expense_reports' => false]);
 
-        expect($events->every(fn ($event): bool => ! $event->filtersPass(app())))->toBeTrue();
+        expect(archivingRemindersDueNow())->toBe([]);
     });
 
     it('shows the dashboard alert to whoever may archive', function (): void {
@@ -114,3 +146,18 @@ describe('the reminder to archive', function (): void {
         expect($alerts->pluck('label'))->toContain('1 note de frais payée à archiver');
     });
 });
+
+/**
+ * The archiving reminders the scheduler would start at this very minute.
+ *
+ * @return array<int, string>
+ */
+function archivingRemindersDueNow(): array
+{
+    return collect(app(Schedule::class)->events())
+        ->filter(fn ($event): bool => str_contains((string) $event->command, 'expense-reports:remind-archiving'))
+        ->filter(fn ($event): bool => $event->isDue(app()) && $event->filtersPass(app()))
+        ->map(fn ($event): string => trim(Str::after((string) $event->command, "'artisan'")))
+        ->values()
+        ->all();
+}

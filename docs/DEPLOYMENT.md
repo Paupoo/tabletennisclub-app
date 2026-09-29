@@ -130,7 +130,7 @@ Une seule entrée crontab suffit :
 | `season:provision` | 1er juillet, 06 h 00 | Provisionne les deux saisons suivantes (idempotent) |
 | `queue:check-health` | horaire | Alerte les admins par e-mail si le worker semble mort |
 | `expense-reports:send-digest` | dimanche 19 h 00 | Récapitulatif des notes de frais en attente, à chaque valideur |
-| `expense-reports:remind-archiving` | 1er avril, juillet, octobre 08 h 00 ; 5 janvier (`--year-end`) | Rappel d'archivage des notes de frais payées |
+| `expense-reports:remind-archiving` | 1er du mois, 08 h 00, aux 3e, 6e et 9e mois de l'exercice ; le 5 du mois qui suit sa clôture (`--year-end`) — 1er avril, juillet, octobre et 5 janvier avec l'exercice civil par défaut | Rappel d'archivage des notes de frais payées |
 | `expense-reports:purge-files` | 03 h 30 | Efface les justificatifs des notes rejetées ou retirées depuis deux ans |
 | `expense-reports:prune-exports` | 03 h 40 | Efface les exports de notes de frais de plus de 7 jours |
 

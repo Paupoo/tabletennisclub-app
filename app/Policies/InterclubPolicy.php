@@ -45,6 +45,12 @@ class InterclubPolicy
      */
     public function selectLineup(User $user, Interclub $interclub): bool
     {
+        // A bye has no opponent and no match: nothing to compose, nobody to
+        // ask for availability, for anyone.
+        if ($interclub->is_bye) {
+            return false;
+        }
+
         // A club-wide selector composes anywhere; a captain only where they
         // captain — and a captain holds no délégation, so the relation is the
         // only thing that grants it.

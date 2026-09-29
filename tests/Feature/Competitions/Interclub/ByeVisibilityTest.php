@@ -9,7 +9,11 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Competitions\Interclub\Services\InterclubAvailabilityService;
+use App\Domains\Competitions\Interclub\Services\InterclubPreparationService;
+use App\Jobs\SendInterclubAvailabilityRequestJob;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Tests\Trait\CreateUser;
 
@@ -138,4 +142,67 @@ it('keeps a bye out of the calendar feed', function (): void {
     expect($events)->toHaveCount(1)
         ->and($events->first()['startDateTime'])
         ->toBe($this->played->start_date_time->format('Y-m-d H:i:s'));
+});
+
+/*
+ * The captain's screen keeps the bye in the sequence of match days, so the gap
+ * explains itself — but as a row that asks nothing: no lineup, no poll.
+ */
+describe('on the captain selection screen', function (): void {
+    beforeEach(function (): void {
+        $this->team->update(['captain_id' => $this->player->id]);
+    });
+
+    it('says there is no match that week and offers no action', function (): void {
+        Livewire::actingAs($this->player)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->assertSee(__('No match scheduled this week for your team'))
+            ->assertSeeHtml('openSelection(' . $this->played->id . ')')
+            ->assertDontSeeHtml('openSelection(' . $this->bye->id . ')')
+            ->assertDontSeeHtml('confirmAvailabilityRequest(' . $this->bye->id . ')');
+    });
+
+    it('refuses to compose a lineup for a bye', function (): void {
+        Livewire::actingAs($this->player)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->call('openSelection', $this->bye->id)
+            ->assertForbidden();
+    });
+
+    it('refuses to ask the team whether they are free for a bye', function (): void {
+        Queue::fake();
+
+        Livewire::actingAs($this->player)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->call('confirmAvailabilityRequest', $this->bye->id)
+            ->assertForbidden();
+
+        app(InterclubAvailabilityService::class)->requestAvailability($this->bye);
+
+        Queue::assertNotPushed(SendInterclubAvailabilityRequestJob::class);
+    });
+});
+
+/*
+ * Fourteen days out, a fixture nobody composed turns red. A bye is fourteen
+ * days out too, and used to turn red with it.
+ */
+it('never rates a bye as needing attention', function (): void {
+    $this->bye->update(['start_date_time' => now()->addDays(3)]);
+
+    expect(app(InterclubPreparationService::class)->fixtureStatus($this->bye->fresh()))->toBe('bye');
+});
+
+it('leaves a bye out of the preparation score', function (): void {
+    $this->bye->update(['start_date_time' => now()->addDays(3), 'week_number' => now()->addDays(3)->isoWeek]);
+    $this->played->update(['week_number' => now()->addDays(7)->isoWeek]);
+
+    $summary = app(InterclubPreparationService::class)->summary(
+        Team::whereKey($this->team->id)->with('league')->get(),
+        Interclub::with(['league', 'users'])->orderBy('start_date_time')->get(),
+    );
+
+    expect($summary['total'])->toBe(1)
+        ->and($summary['matrix'][$this->team->id][$this->bye->fresh()->week_number])->toBe('bye')
+        ->and($summary['kpi']['todo'])->toBe(1);
 });

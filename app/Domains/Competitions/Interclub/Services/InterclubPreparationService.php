@@ -21,6 +21,12 @@ use Illuminate\Support\Collection;
 class InterclubPreparationService
 {
     /**
+     * Neither prepared nor behind: a round without an opponent. Like a match
+     * already played, it asks nothing and leaves the preparation score.
+     */
+    public const array OUT_OF_PLAY = ['past', 'bye'];
+
+    /**
      * The statuses that count as settled: a full lineup sent, or one the
      * captain declared short-handed and sent at the minimum the rules allow.
      */
@@ -49,6 +55,13 @@ class InterclubPreparationService
      */
     public function fixtureStatus(Interclub $interclub): string
     {
+        // A bye has no match to compose for. Its date is only inferred from the
+        // rest of the division, and fourteen days before it the red of 'urgent'
+        // used to ask a captain for a lineup nobody would play.
+        if ($interclub->is_bye) {
+            return 'bye';
+        }
+
         if ($interclub->start_date_time < now()) {
             return 'past';
         }
@@ -97,7 +110,7 @@ class InterclubPreparationService
         // leaves the score entirely rather than counting as ready. The score
         // therefore reads "ready out of what is left", and its denominator
         // shrinks as the season goes.
-        $scored = collect($weeks)->reject(fn (array $w): bool => $w['status'] === 'past');
+        $scored = collect($weeks)->reject(fn (array $w): bool => in_array($w['status'], self::OUT_OF_PLAY, true));
 
         $total = $scored->count();
         $ok = $scored->whereIn('status', self::SETTLED)->count();
@@ -155,6 +168,7 @@ class InterclubPreparationService
     {
         $liveStatus = null;
         $sawPlayedFixture = false;
+        $sawBye = false;
 
         foreach ($teams as $team) {
             // Fixtures are ordered by kick-off, so a team playing twice in one
@@ -175,6 +189,12 @@ class InterclubPreparationService
                 continue;
             }
 
+            if ($status === 'bye') {
+                $sawBye = true;
+
+                continue;
+            }
+
             $liveStatus = $this->worstOf($liveStatus ?? 'confirmed', $status);
         }
 
@@ -184,7 +204,11 @@ class InterclubPreparationService
             return $liveStatus;
         }
 
-        return $sawPlayedFixture ? 'past' : 'confirmed';
+        return match (true) {
+            $sawPlayedFixture => 'past',
+            $sawBye => 'bye',
+            default => 'confirmed',
+        };
     }
 
     /**
@@ -241,11 +265,13 @@ class InterclubPreparationService
 
         foreach ($standings as $category => &$standing) {
             $rows = array_values(array_filter($weekRows, fn (array $r): bool => $r['category'] === $category));
-            $live = array_filter($rows, fn (array $r): bool => $r['status'] !== 'past');
+            $live = array_filter($rows, fn (array $r): bool => ! in_array($r['status'], self::OUT_OF_PLAY, true));
             $next = collect($live)->sortBy('starts_at')->first();
 
-            $standing['total'] = count($rows);
-            $standing['played'] = count($rows) - count($live);
+            // A bye is neither played nor to play: it stays out of both counts,
+            // and only shows as its own segment of the bar.
+            $standing['total'] = count(array_filter($rows, fn (array $r): bool => $r['status'] !== 'bye'));
+            $standing['played'] = count(array_filter($rows, fn (array $r): bool => $r['status'] === 'past'));
             $standing['todo'] = count(array_filter($live, fn (array $r): bool => in_array($r['status'], self::TO_DO, true)));
             $standing['controlled'] = count(array_filter($live, fn (array $r): bool => in_array($r['status'], self::SETTLED, true)));
             // Les segments de la barre de progression, dans l'ordre du calendrier.
@@ -300,7 +326,7 @@ class InterclubPreparationService
      */
     private function kpi(array $weekRows): array
     {
-        $live = array_filter($weekRows, fn (array $r): bool => $r['status'] !== 'past');
+        $live = array_filter($weekRows, fn (array $r): bool => ! in_array($r['status'], self::OUT_OF_PLAY, true));
 
         return [
             'todo' => count(array_filter($live, fn (array $r): bool => in_array($r['status'], self::TO_DO, true))),
@@ -459,10 +485,10 @@ class InterclubPreparationService
     /** @param array<int, string> $statuses */
     private function worstOfMany(array $statuses): string
     {
-        $live = array_values(array_filter($statuses, fn (string $s): bool => $s !== 'past'));
+        $live = array_values(array_filter($statuses, fn (string $s): bool => ! in_array($s, self::OUT_OF_PLAY, true)));
 
         if ($live === []) {
-            return 'past';
+            return in_array('past', $statuses, true) ? 'past' : 'bye';
         }
 
         return array_reduce($live, fn (string $carry, string $s): string => $this->worstOf($carry, $s), 'confirmed');

@@ -13,6 +13,7 @@ use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\ExpenseReportDisplayStatus;
 use App\Domains\Shared\Enums\ExpenseReportStatus;
 use App\Domains\Shared\Traits\HasAuditLog;
+use App\Domains\Shared\ValueObjects\FiscalYear;
 use Carbon\CarbonInterface;
 use Database\Factories\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReportFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -60,7 +61,7 @@ use Illuminate\Support\Carbon;
  *
  * @method static ExpenseReportFactory factory($count = null, $state = [])
  * @method static Builder<static>|ExpenseReport whereDisplayStatus(ExpenseReportDisplayStatus $status)
- * @method static Builder<static>|ExpenseReport paidInYear(int $year)
+ * @method static Builder<static>|ExpenseReport paidInYear(FiscalYear $year)
  */
 class ExpenseReport extends Model implements DescribesPayment
 {
@@ -252,15 +253,17 @@ class ExpenseReport extends Model implements DescribesPayment
     }
 
     /**
-     * Reports whose refund left the club's account during a calendar year —
-     * the club's financial year runs from January to December.
+     * Reports whose refund left the club's account during a financial year —
+     * the money counts on the day it moved, whatever the date on the receipt.
      *
      * @param  Builder<self>  $query
      */
-    public function scopePaidInYear(Builder $query, int $year): void
+    public function scopePaidInYear(Builder $query, FiscalYear $year): void
     {
         $query->whereDisplayStatus(ExpenseReportDisplayStatus::Paid)
-            ->whereHas('refund.credits.transaction', fn (Builder $q): Builder => $q->whereYear('date', $year));
+            ->whereHas('refund.credits.transaction', fn (Builder $q): Builder => $q
+                ->whereDate('date', '>=', $year->start()->toDateString())
+                ->whereDate('date', '<=', $year->end()->toDateString()));
     }
 
     /**

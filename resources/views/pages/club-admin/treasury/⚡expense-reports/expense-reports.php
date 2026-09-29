@@ -13,6 +13,7 @@ use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\ExpenseReportDisplayStatus;
 use App\Domains\Shared\Enums\ExpenseReportStatus;
 use App\Domains\Shared\Support\IbanNormalizer;
+use App\Domains\Shared\ValueObjects\FiscalYear;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
@@ -54,6 +55,9 @@ new class extends Component
 
     public string $decisionReason = '';
 
+    /**
+     * The calendar year the chosen financial year starts in, see {@see FiscalYear::startingIn()}.
+     */
     #[Url(as: 'year')]
     public ?int $fiscalYear = null;
 
@@ -176,7 +180,7 @@ new class extends Component
         return array_values(array_filter([
             $this->userId !== null ? ['key' => 'userId', 'label' => User::find($this->userId)?->full_name ?? (string) $this->userId] : null,
             $this->categoryFilter !== '' ? ['key' => 'categoryFilter', 'label' => ExpenseCategory::tryFrom($this->categoryFilter)?->label() ?? $this->categoryFilter] : null,
-            $this->fiscalYear !== null ? ['key' => 'fiscalYear', 'label' => __('Financial year :year', ['year' => $this->fiscalYear])] : null,
+            $this->fiscalYear !== null ? ['key' => 'fiscalYear', 'label' => __('Financial year :year', ['year' => FiscalYear::startingIn($this->fiscalYear)->label()])] : null,
             $this->dateFrom !== '' ? ['key' => 'dateFrom', 'label' => __('Spent from :date', ['date' => $this->dateFrom])] : null,
             $this->dateTo !== '' ? ['key' => 'dateTo', 'label' => __('Spent until :date', ['date' => $this->dateTo])] : null,
             $this->unarchivedOnly ? ['key' => 'unarchivedOnly', 'label' => __('Not archived yet')] : null,
@@ -328,12 +332,12 @@ new class extends Component
     }
 
     /**
-     * @return array{submitted_count: int, submitted_total: float, unpaid_total: float, unpaid_count: int, paid_year_total: float, paid_year_count: int, year: int}
+     * @return array{submitted_count: int, submitted_total: float, unpaid_total: float, unpaid_count: int, paid_year_total: float, paid_year_count: int, year: string}
      */
     #[Computed]
     public function stats(): array
     {
-        $year = (int) now()->year;
+        $year = FiscalYear::current();
         $submitted = ExpenseReport::query()->where('status', ExpenseReportStatus::Submitted);
         $unpaid = ExpenseReport::query()->whereDisplayStatus(ExpenseReportDisplayStatus::Accepted);
         $paid = ExpenseReport::query()->paidInYear($year);
@@ -345,7 +349,7 @@ new class extends Component
             'unpaid_total' => round((int) (clone $unpaid)->sum('accepted_amount') / 100, 2),
             'paid_year_count' => (clone $paid)->count(),
             'paid_year_total' => round((int) (clone $paid)->sum('accepted_amount') / 100, 2),
-            'year' => $year,
+            'year' => $year->label(),
         ];
     }
 
@@ -366,7 +370,9 @@ new class extends Component
             'breadcrumbs' => $this->getBreadcrumbs(),
             'filterChips' => $this->getFilterChips(),
             'headers' => $this->headers(),
-            'yearOptions' => collect(range((int) now()->year, 2024))->map(fn (int $year): array => ['id' => $year, 'name' => (string) $year])->all(),
+            'yearOptions' => collect(range(FiscalYear::current()->startYear(), 2024))
+                ->map(fn (int $year): array => ['id' => $year, 'name' => FiscalYear::startingIn($year)->label()])
+                ->all(),
         ];
     }
 
@@ -405,7 +411,7 @@ new class extends Component
             ->when($this->categoryFilter !== '', fn (Builder $q): Builder => $q->where('category', $this->categoryFilter))
             ->when($this->dateFrom !== '', fn (Builder $q): Builder => $q->whereDate('spent_on', '>=', $this->dateFrom))
             ->when($this->dateTo !== '', fn (Builder $q): Builder => $q->whereDate('spent_on', '<=', $this->dateTo))
-            ->when($this->fiscalYear !== null, fn (Builder $q): Builder => $q->paidInYear((int) $this->fiscalYear))
+            ->when($this->fiscalYear !== null, fn (Builder $q): Builder => $q->paidInYear(FiscalYear::startingIn((int) $this->fiscalYear)))
             ->when($this->unarchivedOnly, fn (Builder $q): Builder => $q->whereNull('archived_at'));
     }
 

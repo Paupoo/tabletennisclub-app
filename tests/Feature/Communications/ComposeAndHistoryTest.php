@@ -133,6 +133,14 @@ describe('writing', function (): void {
             ->assertSet('activityId', 7)
             ->assertSet('activityMode', 'invited_not_registered');
     });
+
+    it('starts from a past communication aimed at a function', function (): void {
+        $past = Communication::factory()->create(['criteria' => ['base' => 'active', 'functions' => ['coaches', 'captains']]]);
+
+        Livewire::withQueryParams(['from' => $past->id])
+            ->test(COMPOSE_COMPONENT)
+            ->assertSet('functions', ['coaches', 'captains']);
+    });
 });
 
 describe('the history', function (): void {

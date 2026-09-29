@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
+use App\Actions\ClubAdmin\Payments\ImportBankStatementAction;
+use App\Actions\ClubAdmin\Payments\ResolveSuspectedDuplicateAction;
 use App\Actions\ClubAdmin\Payments\SettleTransactionResidueAction;
 use App\Contracts\DescribesPayment;
 use App\Domains\ClubAdmin\Payment\Models\BankImport;
@@ -11,6 +13,7 @@ use App\Domains\ClubAdmin\Payment\Models\PaymentCredit;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Shared\Enums\Permission;
@@ -18,13 +21,10 @@ use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -32,9 +32,6 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Reader\Csv;
-use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 new class extends Component
 {
@@ -205,6 +202,14 @@ new class extends Component
         $this->success(__(':count allocation(s) recorded.', ['count' => count($wanted)]));
     }
 
+    /**
+     * Écarte une ligne que l'import avait mise de côté : c'est bien le même virement.
+     */
+    public function dismissSuspectedDuplicate(int $bankImportId, int $line): void
+    {
+        $this->resolveSuspectedDuplicate($bankImportId, $line, keep: false);
+    }
+
     // ==================== HasFilterDrawer ====================
 
     public function getFilterChips(): array
@@ -253,6 +258,16 @@ new class extends Component
         ];
     }
 
+    // ==================== Actions ====================
+
+    /**
+     * Garde une ligne que l'import avait mise de côté : c'est un autre virement.
+     */
+    public function keepSuspectedDuplicate(int $bankImportId, int $line): void
+    {
+        $this->resolveSuspectedDuplicate($bankImportId, $line, keep: true);
+    }
+
     /**
      * Ouvre directement le tiroir quand on arrive avec `?allocate=`.
      *
@@ -298,128 +313,53 @@ new class extends Component
         $this->confirmDeleteModal = true;
     }
 
-    // ==================== Actions ====================
-
     public function processImport(): void
     {
         Gate::authorize(Permission::TransactionsImport->value);
 
         $this->validate(['importFile' => 'required|file|mimes:ods,xlsx,xls,csv,txt']);
 
-        $path = $this->importFile->getRealPath();
-
         try {
-            $reader = IOFactory::createReaderForFile($path);
-            if ($reader instanceof Csv) {
-                $reader->setInputEncoding(Csv::GUESS_ENCODING);
-            }
-            $spreadsheet = $reader->load($path);
-            $sheet = $spreadsheet->getActiveSheet();
-            $rows = $sheet->toArray(null, true, true, true);
+            $import = (new ImportBankStatementAction)($this->importFile->getRealPath());
+        } catch (Throwable $e) {
+            $this->error(__('Error reading file: :message', ['message' => $e->getMessage()]), timeout: 10000);
 
-            if ($rows === []) {
-                $this->error(__('Empty or invalid file.'));
+            return;
+        }
 
-                return;
-            }
+        $this->importModal = false;
+        $this->importFile = null;
 
-            $headerRow = array_shift($rows);
-            $header = array_map(fn ($h): string => $this->normalizeHeader($h ?? ''), $headerRow);
+        $suspectedCount = count($import->suspectedDuplicates());
 
-            $newCount = 0;
-            $duplicateCount = 0;
-            $errorCount = 0;
-            $failedRows = [];
-            $lineNumber = 1;
+        if ($import->new_count + $import->duplicate_count + $import->error_count + $suspectedCount === 0) {
+            $this->warning(__('This statement carries no movement.'));
 
-            DB::transaction(function () use ($rows, $header, &$newCount, &$duplicateCount, &$errorCount, &$failedRows, &$lineNumber): void {
-                $bankImport = BankImport::create([
-                    'user_id' => Auth::id(),
-                    'new_count' => 0,
-                    'duplicate_count' => 0,
-                    'error_count' => 0,
-                ]);
+            return;
+        }
 
-                foreach ($rows as $row) {
-                    $lineNumber++;
+        $message = __(':count new transaction(s) imported.', ['count' => $import->new_count]);
 
-                    $row = array_map(fn ($v): ?string => ($v === null || trim((string) $v) === '') ? null : trim((string) $v), $row);
-                    $row = array_pad(array_slice($row, 0, count($header)), count($header), null);
-                    $rowAssoc = array_combine($header, $row);
+        if ($import->duplicate_count > 0) {
+            $message .= ' ' . __(':count duplicate(s) skipped.', ['count' => $import->duplicate_count]);
+        }
 
-                    if ($rowAssoc === false) {
-                        continue;
-                    }
+        if ($suspectedCount > 0) {
+            $message .= ' ' . __(':count probable duplicate(s) to check — see import history.', ['count' => $suspectedCount]);
+        }
 
-                    // Raw strings for fingerprinting (before any type conversion)
-                    $rawDate = $rowAssoc['date'] ?? '';
-                    $rawAmount = $rowAssoc['montant'] ?? $rowAssoc['amount'] ?? '';
-                    $rawCounterpartyIban = $rowAssoc['numero de compte contrepartie'] ?? '';
-                    $rawStructuredRef = $rowAssoc['communication structuree'] ?? '';
-                    $rawFreeRef = $rowAssoc['communication libre'] ?? '';
-                    $rawDescription = $rowAssoc['description'] ?? '';
+        if ($import->error_count > 0) {
+            $message .= ' ' . __(':count error(s) — see import history.', ['count' => $import->error_count]);
+        }
 
-                    $fingerprint = hash('sha256', implode('|', [
-                        $rawDate,
-                        $rawAmount,
-                        $rawCounterpartyIban,
-                        $rawStructuredRef,
-                        $rawFreeRef,
-                        $rawDescription,
-                    ]));
+        if (blank(Club::ourClub()->value('bank_account'))) {
+            $message .= ' ' . __('The club IBAN is not set: the statement account could not be checked.');
+        }
 
-                    if (Transaction::where('import_fingerprint', $fingerprint)->exists()) {
-                        $duplicateCount++;
-
-                        continue;
-                    }
-
-                    try {
-                        Transaction::create([
-                            'date' => $this->parseDate($rawDate),
-                            'description' => $rawDescription ?: null,
-                            'amount' => $this->parseAmount($rawAmount),
-                            'counterparty_name' => $rowAssoc['nom contrepartie'] ?? null,
-                            'counterparty_bank_account' => $rawCounterpartyIban ?: null,
-                            'structured_reference' => $rawStructuredRef ?: null,
-                            'free_reference' => $rawFreeRef ?: null,
-                            'import_fingerprint' => $fingerprint,
-                            'bank_import_id' => $bankImport->id,
-                        ]);
-                        $newCount++;
-                    } catch (Exception $e) {
-                        $errorCount++;
-                        $failedRows[] = [
-                            'line' => $lineNumber,
-                            'data' => $rowAssoc,
-                            'reason' => $e->getMessage(),
-                        ];
-                    }
-                }
-
-                $bankImport->update([
-                    'new_count' => $newCount,
-                    'duplicate_count' => $duplicateCount,
-                    'error_count' => $errorCount,
-                    'failed_rows' => $failedRows ?: null,
-                ]);
-            });
-
-            $this->importModal = false;
-            $this->importFile = null;
-
-            $message = __(':count new transaction(s) imported.', ['count' => $newCount]);
-            if ($duplicateCount > 0) {
-                $message .= ' ' . __(':count duplicate(s) skipped.', ['count' => $duplicateCount]);
-            }
-
-            if ($errorCount > 0) {
-                $this->warning($message . ' ' . __(':count error(s) — see import history.', ['count' => $errorCount]));
-            } else {
-                $this->success($message);
-            }
-        } catch (Exception $e) {
-            $this->error(__('Error reading file: :message', ['message' => $e->getMessage()]));
+        if ($import->error_count > 0 || $suspectedCount > 0 || blank(Club::ourClub()->value('bank_account'))) {
+            $this->warning($message, timeout: 10000);
+        } else {
+            $this->success($message);
         }
     }
 
@@ -468,6 +408,8 @@ new class extends Component
 
     public function render(): View
     {
+        $recentImports = BankImport::with('user')->latest()->limit(10)->get();
+
         return $this->view([
             'headers' => $this->headers(),
             'transactions' => $this->transactions(),
@@ -481,7 +423,13 @@ new class extends Component
                 ['id' => 'credit', 'name' => __('Credit (incoming)')],
                 ['id' => 'debit',  'name' => __('Debit (outgoing)')],
             ],
-            'recentImports' => BankImport::with('user')->latest()->limit(10)->get(),
+            'recentImports' => $recentImports,
+            // Les transactions que chaque doublon probable recoupe, pour que le
+            // trésorier compare les deux lignes avant de trancher.
+            'lookAlikes' => Transaction::whereIn(
+                'id',
+                $recentImports->flatMap(fn (BankImport $import): array => array_column($import->suspectedDuplicates(), 'transaction_id')),
+            )->get()->keyBy('id'),
             'breadcrumbs' => $this->getBreadcrumbs(),
         ]);
     }
@@ -698,14 +646,6 @@ new class extends Component
         unset($this->allocationTransaction, $this->allocationCandidates, $this->remainingToAllocate, $this->stats);
     }
 
-    private function normalizeHeader(string $h): string
-    {
-        $h = strtolower(trim($h));
-        $accents = ['é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'à' => 'a', 'â' => 'a', 'ä' => 'a', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ô' => 'o', 'ö' => 'o', 'î' => 'i', 'ï' => 'i', 'ç' => 'c'];
-
-        return str_replace(array_keys($accents), array_values($accents), $h);
-    }
-
     private function outstandingOf(Payment $payment): float
     {
         // Sur un remboursement, ce qui reste à faire est ce qui n'est pas
@@ -725,52 +665,26 @@ new class extends Component
         return max(0.0, round((float) $payment->amount_due - (float) $payment->amount_paid, 2));
     }
 
-    private function parseAmount(mixed $v): float
-    {
-        if (empty($v)) {
-            return 0;
-        }
-
-        if (is_numeric($v)) {
-            return (float) $v;
-        }
-
-        return (float) str_replace([' ', ','], ['', '.'], (string) $v);
-    }
-
-    private function parseDate(mixed $v): ?string
-    {
-        if (empty($v)) {
-            return null;
-        }
-
-        if (is_numeric($v)) {
-            try {
-                return ExcelDate::excelToDateTimeObject($v)->format('Y-m-d');
-            } catch (Exception) {
-                return null;
-            }
-        }
-
-        foreach (['d/m/Y', 'Y-m-d', 'd-m-Y', 'd.m.Y'] as $fmt) {
-            try {
-                $d = Carbon::createFromFormat($fmt, (string) $v);
-                if ($d) {
-                    return $d->format('Y-m-d');
-                }
-            } catch (Exception) {
-                continue;
-            }
-        }
-
-        return null;
-    }
-
     private function payerNameOf(Payment $payment): string
     {
         $payable = $payment->payable;
 
         return $payable instanceof DescribesPayment ? $payable->getPayerName() : '—';
+    }
+
+    private function resolveSuspectedDuplicate(int $bankImportId, int $line, bool $keep): void
+    {
+        Gate::authorize(Permission::TransactionsImport->value);
+
+        try {
+            (new ResolveSuspectedDuplicateAction)(BankImport::findOrFail($bankImportId), $line, $keep);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->success($keep ? __('Transaction imported.') : __('Duplicate discarded.'));
     }
 
     /**

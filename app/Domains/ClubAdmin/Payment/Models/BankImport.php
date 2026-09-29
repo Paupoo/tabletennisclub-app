@@ -28,6 +28,13 @@ class BankImport extends Model
 {
     use HasAuditLog;
 
+    /**
+     * Le genre d'une ligne mise de côté parce qu'elle ressemble à une
+     * transaction déjà en base. Les lignes en erreur, plus anciennes, n'en
+     * portent aucun.
+     */
+    public const string SUSPECTED_DUPLICATE = 'suspected_duplicate';
+
     protected $casts = [
         'failed_rows' => 'array',
     ];
@@ -39,6 +46,34 @@ class BankImport extends Model
         'error_count',
         'failed_rows',
     ];
+
+    /**
+     * Les lignes en erreur, sans les doublons probables qui partagent la
+     * même colonne.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function failedLines(): array
+    {
+        return array_values(array_filter(
+            $this->failed_rows ?? [],
+            fn (array $row): bool => ($row['kind'] ?? null) !== self::SUSPECTED_DUPLICATE,
+        ));
+    }
+
+    /**
+     * Les lignes mises de côté parce qu'elles ressemblent à une transaction
+     * déjà en base, et que le trésorier n'a pas encore tranchées.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function suspectedDuplicates(): array
+    {
+        return array_values(array_filter(
+            $this->failed_rows ?? [],
+            fn (array $row): bool => ($row['kind'] ?? null) === self::SUSPECTED_DUPLICATE,
+        ));
+    }
 
     public function transactions(): HasMany
     {

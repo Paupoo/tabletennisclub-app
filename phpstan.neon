@@ -35,6 +35,7 @@ parameters:
             identifier: property.notFound
             message: '#User::\$registration\.#'
             paths:
+                - app/Domains/Competitions/Interclub/Services/InterclubDayAvailabilityService.php
                 - app/Domains/Competitions/Interclub/Services/InterclubPreparationService.php
                 - app/Domains/Competitions/Interclub/Services/InterclubPoolService.php
                 - app/Domains/Competitions/Interclub/Services/InterclubLineupLegalityService.php

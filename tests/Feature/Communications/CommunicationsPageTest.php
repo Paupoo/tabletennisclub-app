@@ -7,8 +7,10 @@ use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 use Spatie\Activitylog\Models\Activity;
@@ -223,6 +225,47 @@ describe('aiming at an activity', function (): void {
             ->set('activityId', $tournament->id)
             ->set('activityKind', 'meeting')
             ->assertSet('activityId', null);
+    });
+});
+
+describe('writing to a function', function (): void {
+
+    beforeEach(function (): void {
+        actingAs(User::factory()->isCommitteeMember()->create(['birthdate' => null]));
+    });
+
+    it('narrows the audience to the coaches, or to the captains', function (): void {
+        $coach = communicationsMember($this->season, ['email' => 'coach@example.com']);
+        $captain = communicationsMember($this->season, ['email' => 'captain@example.com']);
+        communicationsMember($this->season, ['email' => 'player@example.com']);
+        TrainingPack::factory()->create(['season_id' => $this->season->id, 'trainer_id' => $coach->id]);
+        Team::factory()->create(['season_id' => $this->season->id, 'club_id' => Club::own()->id, 'captain_id' => $captain->id]);
+
+        Livewire::test(COMMUNICATIONS_COMPONENT)
+            ->assertSee(__('Coaches'))
+            ->assertSee(__('Team captains'))
+            ->set('functions', ['coaches'])
+            ->assertSet('addressCount', 1)
+            ->assertSee('coach@example.com')
+            ->set('functions', ['captains'])
+            ->assertSet('addressCount', 1)
+            ->assertSee('captain@example.com')
+            ->set('functions', ['coaches', 'captains'])
+            ->assertSet('addressCount', 2);
+    });
+
+    it('drops the functions when the audience no longer starts from the active members', function (): void {
+        Livewire::test(COMMUNICATIONS_COMPONENT)
+            ->set('functions', ['coaches'])
+            ->set('base', 'pending')
+            ->assertSet('functions', [])
+            ->assertSeeHtml('wire:key="functions-disabled"');
+    });
+
+    it('says when nobody holds the function yet this season', function (): void {
+        Livewire::test(COMMUNICATIONS_COMPONENT)
+            ->set('functions', ['coaches'])
+            ->assertSee(__('No coach assigned for this season yet: assign the trainers to the training packs first.'));
     });
 });
 

@@ -11,6 +11,8 @@ L'écran **Communications** (menu *Administration des membres*) calcule le publi
 
 Commencez par **Qui** — les membres actifs, les affiliations en attente, ou ceux de la saison passée qui ne sont pas revenus. Resserrez ensuite avec la licence, le genre, l'âge ou une **activité** (un tournoi, un pack, une réunion, une équipe).
 
+Pour écrire aux **coaches** ou aux **capitaines**, cochez-les sous **Fonction** : ce sont ceux qui entraînent un pack ou une séance, ou capitainent une de nos équipes, **cette saison**. Un coach non affilié les reçoit aussi. Juste après le changement de saison, tant que personne n'est désigné, l'écran vous le signale : désignez d'abord les entraîneurs et les capitaines.
+
 Cocher deux cases d'un même bloc **élargit** (jeunes *ou* vétérans) ; cocher dans deux blocs différents **resserre** (dames *et* compétitrices).
 
 ## 2. Vérifier que personne ne manque

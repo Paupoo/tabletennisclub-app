@@ -200,13 +200,61 @@
                             @endif
                         </td>
                     </tr>
-                    @if($import->error_count > 0 && $import->failed_rows)
+                    @if($import->error_count > 0 && $import->failedLines() !== [])
                     <tr>
                         <td colspan="5" class="bg-error/5 text-xs p-3">
                             <div class="font-semibold text-error mb-1">{{ __('Failed rows:') }}</div>
-                            @foreach($import->failed_rows as $failed)
+                            @foreach($import->failedLines() as $failed)
                             <div class="opacity-70">
                                 {{ __('Line :n', ['n' => $failed['line']]) }} — {{ $failed['reason'] }}
+                            </div>
+                            @endforeach
+                        </td>
+                    </tr>
+                    @endif
+                    @if($import->suspectedDuplicates() !== [])
+                    <tr wire:key="suspected-{{ $import->id }}">
+                        <td colspan="5" class="bg-warning/10 text-xs p-3 space-y-3">
+                            <div class="font-semibold">
+                                <x-icon name="o-exclamation-triangle" class="size-4 text-warning" />
+                                {{ __('Probable duplicates: same date, amount and counterparty as a transaction already imported.') }}
+                            </div>
+                            @foreach($import->suspectedDuplicates() as $suspected)
+                            @php
+                                $existing = $lookAlikes->get($suspected['transaction_id']);
+                            @endphp
+                            <div wire:key="suspected-{{ $import->id }}-{{ $suspected['line'] }}" class="rounded-lg border border-base-300 bg-base-100 p-3 space-y-2">
+                                <div class="grid gap-2 md:grid-cols-2">
+                                    <div class="min-w-0">
+                                        <div class="text-muted uppercase tracking-widest">{{ __('Line :n of this file', ['n' => $suspected['line']]) }}</div>
+                                        <div class="tabular-nums">{{ $suspected['data']['date'] }} · {{ $suspected['data']['amount'] }} €</div>
+                                        <div class="truncate">{{ $suspected['data']['counterparty_name'] ?? '—' }}</div>
+                                        <div class="truncate opacity-70">{{ $suspected['data']['structured_reference'] ?? $suspected['data']['free_reference'] ?? $suspected['data']['description'] }}</div>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-muted uppercase tracking-widest">{{ __('Already imported') }}</div>
+                                        @if($existing)
+                                        <div class="tabular-nums">{{ $existing->date->format('d/m/Y') }} · {{ number_format($existing->amount, 2, ',', ' ') }} €</div>
+                                        <div class="truncate">{{ $existing->counterparty_name ?? '—' }}</div>
+                                        <div class="truncate opacity-70">{{ $existing->structured_reference ?? $existing->free_reference ?? $existing->description }}</div>
+                                        @else
+                                        <div class="opacity-70">{{ __('Deleted since.') }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+                                @can('transactions.import')
+                                <div class="flex flex-wrap gap-2 justify-end">
+                                    <x-button
+                                        wire:click="dismissSuspectedDuplicate({{ $import->id }}, {{ $suspected['line'] }})"
+                                        :label="__('It is a duplicate')"
+                                        class="btn-ghost btn-sm" />
+                                    <x-button
+                                        wire:click="keepSuspectedDuplicate({{ $import->id }}, {{ $suspected['line'] }})"
+                                        :label="__('Import anyway')"
+                                        icon="o-plus"
+                                        class="btn-outline btn-sm" />
+                                </div>
+                                @endcan
                             </div>
                             @endforeach
                         </td>

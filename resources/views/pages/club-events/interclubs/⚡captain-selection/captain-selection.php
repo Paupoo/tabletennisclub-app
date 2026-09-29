@@ -10,6 +10,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Services\InterclubAvailabilityService;
+use App\Domains\Competitions\Interclub\Services\InterclubDayAvailabilityService;
 use App\Domains\Competitions\Interclub\Services\InterclubPoolService;
 use App\Domains\Competitions\Interclub\Services\InterclubPreparationService;
 use App\Domains\Shared\Enums\Gender;
@@ -41,6 +42,13 @@ new class extends Component
 
     #[Locked]
     public ?int $currentUserId = null;
+
+    /**
+     * L'accordéon des disponibilités de la journée. Replié, il ne calcule que
+     * ses compteurs : les verdicts C.22 de la colonne « Peut dépanner » coûtent
+     * des requêtes, et le tiroir fait un rendu à chaque case cochée.
+     */
+    public bool $dayAvailabilityOpen = false;
 
     public bool $drawerSelection = false;
 
@@ -595,6 +603,11 @@ new class extends Component
         );
     }
 
+    public function toggleDayAvailability(): void
+    {
+        $this->dayAvailabilityOpen = ! $this->dayAvailabilityOpen;
+    }
+
     public function togglePlayer(int $userId): void
     {
         abort_if($this->isReadOnly, 403);
@@ -765,6 +778,22 @@ new class extends Component
             ->all();
 
         $dayGroups = $this->groupMatches($dayMatches);
+
+        // ── La journée vue d'en haut : pour qui arbitre entre les équipes, donc
+        // pour qui les voit toutes. Un capitaine a le pool de son tiroir.
+        $canSeeDayAvailability = $isAdminOrCommittee || $canSearchSubstitute;
+        $dayAvailability = $canSeeDayAvailability && $season && $this->selectedMatchDay !== null
+            ? app(InterclubDayAvailabilityService::class)->forFixtures(
+                $fixtures->where('week_number', $this->selectedMatchDay)->values(),
+                withFillIns: $this->dayAvailabilityOpen,
+            )
+            : collect();
+
+        // Une pastille d'équipe ouvre le tiroir comme le ferait la ligne de la
+        // rencontre : pour composer si on le peut, pour lire sinon.
+        $mayComposeFixture = $teamsData
+            ->flatMap(fn (array $t): array => collect($t['matches'])->mapWithKeys(fn (array $m): array => [$m['id'] => $m['may_compose'] && ! $m['is_past']])->all())
+            ->all();
 
         // Drawer data: roster for the selected match
         $drawerInterclub = null;
@@ -1023,6 +1052,11 @@ new class extends Component
                 ? app(InterclubPreparationService::class)->summary($teams, $fixtures)
                 : null,
             'alertMatches' => $alertMatches,
+            'canSeeDayAvailability' => $canSeeDayAvailability,
+            'dayAvailability' => $dayAvailability,
+            // Une journée jouée n'a plus personne à dépanner : la colonne se tait.
+            'dayIsPlayed' => $dayMatches !== [] && collect($dayMatches)->every('is_past'),
+            'mayComposeFixture' => $mayComposeFixture,
             'roster' => $roster,
             'poolRows' => $poolRows,
             'poolWaiting' => $poolWaiting,

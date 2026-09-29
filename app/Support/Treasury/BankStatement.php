@@ -15,7 +15,7 @@ namespace App\Support\Treasury;
 final readonly class BankStatement
 {
     /**
-     * @param  list<array{line: int, account: ?string, date: ?string, amount: ?string, description: ?string, counterparty_account: ?string, counterparty_name: ?string, structured_reference: ?string, free_reference: ?string}>  $rows
+     * @param  list<array{line: int, account: ?string, date: ?string, amount: ?string, description: ?string, counterparty_account: ?string, counterparty_name: ?string, structured_reference: ?string, free_reference: ?string, balance: ?string, statement_number: ?string}>  $rows
      * @param  list<string>  $columns  Les en-têtes tels que le fichier les écrit.
      */
     public function __construct(

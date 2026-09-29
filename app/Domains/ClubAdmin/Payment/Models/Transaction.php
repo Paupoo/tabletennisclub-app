@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\ClubAdmin\Payment\Models;
 
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatch;
+use App\Domains\Shared\Enums\BankAccountType;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -31,18 +32,25 @@ use Illuminate\Support\Carbon;
  * @property string|null $free_reference
  * @property string|null $import_fingerprint
  * @property int|null $bank_import_id
+ * @property int|null $bank_account_id
+ * @property float|null $balance_after Account balance right after this line, in euros, as the bank printed it.
+ * @property string|null $statement_number Without the bank's zero padding.
+ * @property bool $is_internal Money moving between the club's own accounts (or, later, its till).
  * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Payment|null $payment
  * @property-read Payment|null $refundPayment
  * @property-read BankImport|null $bankImport
+ * @property-read BankAccount|null $bankAccount
  * @property TransactionMatch|null $match Verdict de rapprochement, posé à la volée par TransactionMatcher::rank() — jamais persisté.
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction unallocated()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction partiallyAllocated()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction settled()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction internal()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction reconcilable()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction query()
@@ -59,6 +67,7 @@ class Transaction extends Model
     protected $casts = [
         'date' => 'date',
         'settled_at' => 'datetime',
+        'is_internal' => 'boolean',
     ];
 
     protected $fillable = [
@@ -71,7 +80,19 @@ class Transaction extends Model
         'free_reference',
         'import_fingerprint',
         'bank_import_id',
+        'bank_account_id',
+        'balance_after',
+        'statement_number',
+        'is_internal',
     ];
+
+    /**
+     * @return BelongsTo<BankAccount, $this>
+     */
+    public function bankAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class);
+    }
 
     public function bankImport(): BelongsTo
     {
@@ -91,12 +112,13 @@ class Transaction extends Model
     /**
      * Cette ligne de relevé est-elle close ?
      *
-     * Deux façons de l'être, et elles se valent pour le trésorier : tout est
-     * affecté, ou ce qui restait a été délibérément abandonné.
+     * Trois façons de l'être, et elles se valent pour le trésorier : tout est
+     * affecté, ce qui restait a été délibérément abandonné, ou l'argent n'a
+     * fait que passer d'un compte du club à un autre.
      */
     public function isSettled(): bool
     {
-        return $this->settled_at !== null || $this->residueInCents() === 0;
+        return $this->is_internal || $this->settled_at !== null || $this->residueInCents() === 0;
     }
 
     public function payment(): HasOne
@@ -118,6 +140,22 @@ class Transaction extends Model
     }
 
     /**
+     * Mouvement interne : l'argent passe d'un compte du club à un autre.
+     *
+     * Ni recette ni dépense, et personne ne l'a payé : la ligne est close dès
+     * l'import. Posé aujourd'hui quand la contrepartie est un autre compte du
+     * club ; un versement de la caisse vers la banque (ou l'inverse) le sera
+     * au même titre, par le geste qui relie la ligne à l'écriture de caisse.
+     *
+     * @param  Builder<Transaction>  $query
+     * @return Builder<Transaction>
+     */
+    public function scopeInternal(Builder $query): Builder
+    {
+        return $query->where('is_internal', true);
+    }
+
+    /**
      * Une partie a trouvé son paiement, le reste attend.
      *
      * @param  Builder<Transaction>  $query
@@ -126,15 +164,38 @@ class Transaction extends Model
     public function scopePartiallyAllocated(Builder $query): Builder
     {
         return $query->whereNull('settled_at')
+            ->where('is_internal', false)
             ->where('allocated_amount', '!=', 0)
             ->whereColumn('allocated_amount', '!=', 'amount');
     }
 
     /**
-     * Close : tout est affecté, ou ce qui restait a été délibérément abandonné.
+     * Ce que le rapprochement automatique a le droit de regarder : une ligne
+     * d'un compte courant — ou d'un relevé sans compte, d'avant qu'il y en ait
+     * plusieurs —, qui n'est pas un mouvement interne.
      *
-     * Le groupe autour du `OR` n'est pas décoratif — à plat, il s'évaderait des
-     * filtres de date et de recherche que l'écran applique autour.
+     * Un compte d'épargne ne reçoit jamais le virement d'un membre ; lui
+     * proposer des créances, c'est inviter le trésorier à se tromper.
+     *
+     * @param  Builder<Transaction>  $query
+     * @return Builder<Transaction>
+     */
+    public function scopeReconcilable(Builder $query): Builder
+    {
+        return $query
+            ->where('is_internal', false)
+            ->where(fn (Builder $q): Builder => $q
+                ->whereNull('bank_account_id')
+                ->orWhereHas('bankAccount', fn (Builder $account): Builder => $account->where('type', BankAccountType::Current->value)));
+    }
+
+    /**
+     * Close : tout est affecté, ce qui restait a été délibérément abandonné,
+     * ou c'est un mouvement interne.
+     *
+     * Le groupe autour des `OR` n'est pas décoratif — à plat, il s'évaderait
+     * des filtres de date et de recherche que l'écran applique autour. Une
+     * nouvelle façon d'être close s'ajoute **dans** ce groupe.
      *
      * @param  Builder<Transaction>  $query
      * @return Builder<Transaction>
@@ -143,7 +204,8 @@ class Transaction extends Model
     {
         return $query->where(fn (Builder $q): Builder => $q
             ->whereColumn('allocated_amount', 'amount')
-            ->orWhereNotNull('settled_at'));
+            ->orWhereNotNull('settled_at')
+            ->orWhere('is_internal', true));
     }
 
     /**
@@ -159,7 +221,7 @@ class Transaction extends Model
      */
     public function scopeUnallocated(Builder $query): Builder
     {
-        return $query->where('allocated_amount', 0)->whereNull('settled_at');
+        return $query->where('allocated_amount', 0)->whereNull('settled_at')->where('is_internal', false);
     }
 
     /**
@@ -182,6 +244,15 @@ class Transaction extends Model
         return Attribute::make(
             get: fn (int $value): float => round($value / 100, 2),
             set: fn (int|float $value): int => (int) round($value * 100),
+        );
+    }
+
+    /** Balance stored in cents, exposed as euros; unknown on lines imported before it was read. */
+    protected function balanceAfter(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?int $value): ?float => $value === null ? null : round($value / 100, 2),
+            set: fn (int|float|null $value): ?int => $value === null ? null : (int) round($value * 100),
         );
     }
 

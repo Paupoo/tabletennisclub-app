@@ -81,6 +81,10 @@ it('never sends a member to a page the committee alone can open', function (): v
         'ExpenseReportSubmittedNotification.php',
         'ExpenseReportsDigestNotification.php',
         'ExpenseReportsToArchiveNotification.php',
+        // Goes to the requester of the export only, and asking for one takes the
+        // `export` policy — payments.view, the permission the linked page asks
+        // for — ExpenseReportExportTest.
+        'ExpenseReportExportFailedNotification.php',
     ];
 
     $files = (new Finder)

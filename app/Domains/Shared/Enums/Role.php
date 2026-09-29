@@ -127,8 +127,8 @@ enum Role: string
             self::ADMINISTRATOR => __('Unrestricted access to the whole application.'),
             self::ATTESTATIONS => __('Issue the mutual-insurer attestations, and hold the club seal and the signature they carry.'),
             self::COMMITTEE => __('Baseline back-office access: consult the club data without managing it.'),
-            self::TREASURY => __('Reconcile payments, import bank statements, handle refunds.'),
-            self::CASH_REGISTER => __('Hold and balance the cash register, record movements.'),
+            self::TREASURY => __('Reconcile payments, import bank statements, handle refunds, file supporting documents.'),
+            self::CASH_REGISTER => __('Hold and balance the cash register, record movements and their supporting documents.'),
             self::FINES => __('Issue and cancel disciplinary fines.'),
             self::MEMBERS => __('Create and update members, handle affiliations and enrolments.'),
             self::CONTACTS => __('Handle incoming leads, reply templates and spam.'),
@@ -292,6 +292,7 @@ enum Role: string
                 Permission::TransactionsView,
                 Permission::TransactionsImport,
                 Permission::TransactionsDelete,
+                Permission::SupportingDocumentsManage,
             ],
 
             self::CASH_REGISTER => [

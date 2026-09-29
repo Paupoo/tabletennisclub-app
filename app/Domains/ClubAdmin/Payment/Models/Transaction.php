@@ -24,7 +24,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
- * @property string $date
+ * @property Carbon $date
  * @property string $description
  * @property float $amount
  * @property float $allocated_amount

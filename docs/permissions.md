@@ -20,7 +20,7 @@ Trois familles cohabitent, et une seule décide :
 
 Accès sans restriction à toute l'application.
 
-Détient les 74 permissions. Accordées explicitement plutôt que
+Détient les 75 permissions. Accordées explicitement plutôt que
 par un court-circuit `Gate::before`, car certaines policies encodent des règles qui
 doivent survivre à un administrateur — il ne peut toujours pas supprimer son propre
 compte.
@@ -91,7 +91,7 @@ Servir les boissons et collations, fermer les commandes et reprendre celles d'au
 
 ### Caisse — `caisse`
 
-Détenir la caisse, l'équilibrer et enregistrer les mouvements.
+Détenir la caisse, l'équilibrer, enregistrer les mouvements et leurs pièces justificatives.
 
 - `cash_register.view`
 - `cash_register.manage`
@@ -221,7 +221,7 @@ Construire l'offre d'entraînement, les packs et la planification de la saison.
 
 ### Trésorerie — `tresorerie`
 
-Pointer les paiements, importer les extraits bancaires, gérer les remboursements.
+Pointer les paiements, importer les extraits bancaires, gérer les remboursements, classer les pièces justificatives.
 
 - `payments.view`
 - `payments.reconcile`
@@ -231,6 +231,7 @@ Pointer les paiements, importer les extraits bancaires, gérer les remboursement
 - `transactions.view`
 - `transactions.import`
 - `transactions.delete`
+- `supporting_documents.manage`
 
 ### Site web — `site-web`
 

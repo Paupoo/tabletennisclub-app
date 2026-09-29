@@ -175,6 +175,7 @@
         @endcan
         @can('transactions.view')
             <x-menu-item icon="o-building-library" link="{{ route('admin.treasury.transactions') }}" :title="__('Bank Transactions')" />
+            <x-menu-item icon="o-document-check" link="{{ route('admin.treasury.supporting-documents') }}" :title="__('Supporting documents')" />
         @endcan
         @endfeature
         @feature('cash_register')

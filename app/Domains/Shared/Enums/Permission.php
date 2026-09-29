@@ -116,6 +116,12 @@ enum Permission: string
 
     case SubscriptionsManage = 'subscriptions.manage';
     case SubscriptionsView = 'subscriptions.view';
+
+    // Pièces justificatives : créer, corriger, supprimer et lier les pièces
+    // de l'argent hors site. Les lire passe par TransactionsView. La
+    // délégation Caisse les crée aussi, mais seulement pour ses mouvements de
+    // caisse — c'est la policy qui le dit, pas ce droit.
+    case SupportingDocumentsManage = 'supporting_documents.manage';
     case TablesManage = 'tables.manage';
     case TeamsManage = 'teams.manage';
     case TournamentsLiveManage = 'tournaments.live.manage';

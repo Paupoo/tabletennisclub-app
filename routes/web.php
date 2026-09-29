@@ -27,6 +27,7 @@ use App\Http\Controllers\ClubPosts\PublicNewsPostController;
 use App\Http\Controllers\ExpenseReports\ExpenseReportExportController;
 use App\Http\Controllers\ExpenseReports\ExpenseReportFileController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\SupportingDocuments\SupportingDocumentFileController;
 use App\Http\Middleware\ProtectAgainstSpam;
 use Illuminate\Support\Facades\Route;
 
@@ -270,6 +271,17 @@ Route::prefix('admin/treasury/')
         Route::livewire('expense-reports', 'pages::club-admin.treasury.expense-reports')
             ->middleware(['feature:expense_reports', 'can:payments.view'])
             ->name('admin.treasury.expense-reports');
+
+        // Off-site money and its proofs. Read by whoever reads the bank lines;
+        // filing and linking is checked in the component, against the policy.
+        Route::livewire('supporting-documents', 'pages::club-admin.treasury.supporting-documents')
+            ->middleware('can:transactions.view')
+            ->name('admin.treasury.supporting-documents');
+
+        // The file behind a document — authorised in the controller, since the
+        // cash register délégation reads the tickets of its own till too.
+        Route::get('supporting-documents/files/{file}', [SupportingDocumentFileController::class, 'show'])
+            ->name('admin.treasury.supporting-documents.file');
 
         Route::livewire('fines', 'pages::club-admin.treasury.fines')
             ->middleware('can:fines.view')

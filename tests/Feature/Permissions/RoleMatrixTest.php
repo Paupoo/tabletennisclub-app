@@ -121,6 +121,20 @@ describe('what a délégation actually grants', function (): void {
             ->can(Permission::UsersCreate->value)->toBeFalse();
     });
 
+    /*
+     * Filing and linking the off-site money's proofs is the treasury's. The
+     * cash register délégation files the tickets of its till too, but through
+     * the policy, which keeps it off the bank lines — not through this right.
+     */
+    it('hands the supporting documents to the treasury alone', function (): void {
+        $holders = array_values(array_filter(
+            Role::delegations(),
+            static fn (Role $role): bool => in_array(Permission::SupportingDocumentsManage, $role->permissions(), true),
+        ));
+
+        expect($holders)->toBe([Role::TREASURY]);
+    });
+
     it('lets a plain member hold the cash register without joining the committee', function (): void {
         $xavier = User::factory()->withRole(Role::CASH_REGISTER)->create();
 

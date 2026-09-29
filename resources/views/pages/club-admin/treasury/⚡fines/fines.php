@@ -49,8 +49,6 @@ new class extends Component
 
     public string $creditorName = '';
 
-    public string $description = '';
-
     public string $eventDate = '';
 
     public string $eventLabel = '';
@@ -69,9 +67,6 @@ new class extends Component
     public string $paymentDeadline = '';
 
     public string $pedagogicalMessage = '';
-
-    /** Suggested from the reason; the treasurer corrects it when it differs. */
-    public string $provincialCode = '';
 
     public string $reason = '';
 
@@ -182,8 +177,7 @@ new class extends Component
             Carbon::parse($this->eventDate),
             trim($this->eventLabel),
             Carbon::parse($this->paymentDeadline),
-            $this->provincialCode !== '' ? (int) $this->provincialCode : null,
-            $this->description ?: null,
+            FineReason::from($this->reason)->provincialCode(),
         );
 
         $this->fineDrawer = false;
@@ -194,6 +188,12 @@ new class extends Component
     public function mount(): void
     {
         Gate::authorize(Permission::FinesView->value);
+
+        // The picker's first options belong in the first render. Filled only
+        // when the drawer opened, they were morphed in outside the picker's
+        // Alpine scope: `isActive is not defined`, and a click on a name did
+        // nothing until something was typed.
+        $this->search();
 
         // Deep link from a member row: /admin/treasury/fines?member=123
         if ($memberId = request()->integer('member')) {
@@ -227,11 +227,10 @@ new class extends Component
             return;
         }
 
-        $this->reset(['amount', 'description', 'eventDate', 'eventLabel', 'paymentDeadline', 'pedagogicalMessage', 'reason', 'messageEdited']);
+        $this->reset(['amount', 'eventDate', 'eventLabel', 'paymentDeadline', 'pedagogicalMessage', 'reason', 'messageEdited']);
         $this->resetValidation();
         $this->memberId = $memberId;
         $this->reason = FineReason::UNANNOUNCED_ABSENCE->value;
-        $this->provincialCode = (string) FineReason::UNANNOUNCED_ABSENCE->provincialCode();
         $this->pedagogicalMessage = $this->suggestedMessage();
         $this->search();
         $this->fineDrawer = true;
@@ -255,9 +254,7 @@ new class extends Component
             'eventDate' => ['required', 'date'],
             'eventLabel' => ['required', 'string', 'max:255'],
             'paymentDeadline' => ['required', 'date', 'after_or_equal:eventDate'],
-            'provincialCode' => ['nullable', 'integer', 'min:1', 'max:999'],
             'pedagogicalMessage' => ['required', 'string', 'min:10'],
-            'description' => ['nullable', 'string'],
         ];
     }
 
@@ -311,10 +308,6 @@ new class extends Component
             $this->messageEdited = true;
 
             return;
-        }
-
-        if ($property === 'reason') {
-            $this->provincialCode = (string) (FineReason::tryFrom($this->reason)?->provincialCode() ?? '');
         }
 
         // Keep the suggestion in sync until the committee takes over the wording.

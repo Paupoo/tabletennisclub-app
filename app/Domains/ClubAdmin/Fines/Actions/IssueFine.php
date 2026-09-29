@@ -34,7 +34,6 @@ class IssueFine
         string $eventLabel,
         Carbon $paymentDeadline,
         ?int $provincialCode = null,
-        ?string $description = null,
     ): Fine {
         if (! app(FineCreditor::class)->isConfigured()) {
             throw new DomainException('The provincial committee account must be configured before issuing a fine.');
@@ -49,7 +48,6 @@ class IssueFine
             'event_date' => $eventDate,
             'event_label' => $eventLabel,
             'payment_deadline' => $paymentDeadline,
-            'description' => $description,
             'pedagogical_message' => $pedagogicalMessage,
         ]);
 

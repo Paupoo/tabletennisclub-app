@@ -51,7 +51,6 @@ class FineSeeder extends Seeder
             'event_date' => today()->subDays(10),
             'event_label' => 'LA HULPE RIXENSART',
             'payment_deadline' => today()->addDays(14),
-            'description' => 'Amende 25 € + droit d\'inscription 10 €.',
         ]);
 
         $this->fine($member, $issuer, [
@@ -85,7 +84,6 @@ class FineSeeder extends Seeder
             'event_date' => today()->subWeeks(5),
             'event_label' => 'IC PBBWH15/027',
             'payment_deadline' => today()->subWeek(),
-            'description' => 'Émise par erreur : le certificat médical était rentré à temps.',
         ])->delete();
     }
 

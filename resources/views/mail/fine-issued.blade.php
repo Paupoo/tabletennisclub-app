@@ -5,7 +5,7 @@
 
 {{ __('The provincial committee has fined you. The club passes the information on to you, but collects nothing: you pay the committee directly.') }}
 
-**{{ __('Reason') }}:** {{ $fine->reason->label() }}{{ $fine->provincial_code ? ' (' . __('code :code', ['code' => $fine->provincial_code]) . ')' : '' }}
+**{{ __('Reason') }}:** {{ $fine->reason->label() }}
 
 @if($fine->event_label || $fine->event_date)
 **{{ __('Event') }}:** {{ collect([$fine->event_label, $fine->event_date?->format('d/m/Y')])->filter()->implode(' – ') }}

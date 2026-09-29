@@ -33,13 +33,11 @@ Deux chemins, le second est plus sûr :
 
 Recopiez ensuite la ligne du tableau du comité :
 
-- **Le motif**. Le **code provincial** (16, 65, 67…) se propose tout seul ; corrigez-le s'il diffère — un tournoi de club utilise les codes 68 à 70 là où un championnat provincial utilise 65 à 67.
+- **Le motif**, parmi ceux que la liste provinciale impute à un joueur (absence, arbitrage, match d'interclubs non joué, carte jaune…).
 - **Le tournoi ou le match**, tel qu'écrit par le comité, et **sa date**.
 - **Le total à payer** — amende **et** droit d'inscription compris, la colonne « Total » du comité.
 - **La date limite de paiement**. Passé cette date, le joueur **perd sa qualification** : il ne peut plus jouer, ni en individuel ni en interclubs.
 - **Le message au membre** — obligatoire, minimum 10 caractères.
-
-La liste officielle des codes est publiée chaque saison par le comité provincial (« Liste des amendes »).
 
 ## Le message n'est pas une formalité
 

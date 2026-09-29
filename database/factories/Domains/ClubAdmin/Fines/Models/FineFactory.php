@@ -33,7 +33,6 @@ class FineFactory extends Factory
             'event_date' => $eventDate,
             'event_label' => fake()->randomElement(['LA HULPE RIXENSART', 'CHAMP. SEN.', 'SET JET FLEUR BLEUE', 'IC PBBWH15/027']),
             'payment_deadline' => now()->addWeeks(2)->startOfDay(),
-            'description' => fake()->optional()->sentence(),
             'pedagogical_message' => fake()->paragraph(),
         ];
     }

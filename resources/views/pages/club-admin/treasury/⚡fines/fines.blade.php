@@ -50,10 +50,6 @@
                                     <span>{{ collect([$fine->event_label, $fine->event_date?->format('d/m/Y')])->filter()->implode(' – ') }}</span>
                                     <span class="text-base-content/30">·</span>
                                 @endif
-                                @if ($fine->provincial_code)
-                                    <span>{{ __('code :code', ['code' => $fine->provincial_code]) }}</span>
-                                    <span class="text-base-content/30">·</span>
-                                @endif
                                 <span>{{ __('issued on :date', ['date' => $fine->created_at?->format('d/m/Y')]) }}</span>
                                 @if ($fine->issuer)
                                     <span>{{ __('by') }} {{ $fine->issuer->full_name }}</span>
@@ -103,13 +99,7 @@
             <x-choices wire:model.live="memberId" :label="__('Member')" single searchable
                 :options="$memberOptions" />
 
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div class="sm:col-span-2">
-                    <x-select wire:model.live="reason" :label="__('Reason')" :options="\App\Domains\Shared\Enums\FineReason::getOptions()" />
-                </div>
-                <x-input wire:model="provincialCode" :label="__('Provincial code')" type="number" min="1"
-                    :hint="__('From the committee list')" />
-            </div>
+            <x-select wire:model.live="reason" :label="__('Reason')" :options="\App\Domains\Shared\Enums\FineReason::getOptions()" />
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div class="sm:col-span-2">
@@ -124,8 +114,6 @@
                 <x-input wire:model="paymentDeadline" :label="__('Payment deadline')" type="date"
                     :hint="__('Past it, the player loses their qualification')" />
             </div>
-            <x-textarea wire:model="description" :label="__('Internal note')"
-                :hint="__('Not sent to the member — for the committee only.')" rows="2" />
 
             <div>
                 <x-textarea wire:model.live.debounce.500ms="pedagogicalMessage" :label="__('Message to the member')"

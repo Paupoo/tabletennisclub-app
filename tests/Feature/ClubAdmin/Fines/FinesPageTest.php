@@ -58,15 +58,39 @@ it('lets a treasurer issue a fine which notifies the member', function (): void 
     Notification::assertSentTo($member, FineIssuedNotification::class);
 });
 
-it('suggests the provincial code of the reason picked', function (): void {
+/*
+ * The treasurer is never asked for the code: it follows the reason, and is kept
+ * for the club-level fines to come, which will be grouped by it.
+ */
+it('records the provincial code of the reason without asking for it', function (): void {
+    Notification::fake();
+
     Livewire::actingAs(treasurer())
         ->test(FINES_COMPONENT)
         ->call('openFineDrawer', User::factory()->create()->id)
-        ->assertSet('provincialCode', '65')
         ->set('reason', FineReason::INTERCLUB_MATCH_NOT_PLAYED->value)
-        ->assertSet('provincialCode', '16')
-        ->set('reason', FineReason::YELLOW_CARD->value)
-        ->assertSet('provincialCode', '');
+        ->set('amount', 10)
+        ->set('eventLabel', 'IC PBBWH15/027')
+        ->set('eventDate', '2026-02-06')
+        ->set('paymentDeadline', '2026-03-04')
+        ->call('issueFine')
+        ->assertHasNoErrors()
+        ->assertDontSeeHtml('wire:model="provincialCode"');
+
+    expect(Fine::sole()->provincial_code)->toBe(16);
+});
+
+/*
+ * The picker's options were filled only when the drawer opened, and morphed in
+ * outside its Alpine scope: clicking a name did nothing until something was
+ * typed. They now come with the first render.
+ */
+it('offers members in the picker from the first render', function (): void {
+    $member = User::factory()->create(['first_name' => 'Raphaël', 'last_name' => 'André']);
+
+    $component = Livewire::actingAs(treasurer())->test(FINES_COMPONENT);
+
+    expect(collect($component->get('memberOptions'))->pluck('id'))->toContain($member->id);
 });
 
 it('refuses a deadline before the event', function (): void {
@@ -223,7 +247,7 @@ it('lets a treasurer cancel a pending fine and notifies the member', function ()
         ->call('cancelFine')
         ->assertHasNoErrors()
         ->assertSet('cancelModal', false)
-        ->assertDontSee($member->full_name);
+        ->assertDontSeeHtml('confirmCancel(' . $fine->id . ')');
 
     expect(Fine::find($fine->id))->toBeNull();
 

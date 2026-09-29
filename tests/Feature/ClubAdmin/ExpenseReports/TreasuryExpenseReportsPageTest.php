@@ -281,6 +281,18 @@ describe('what the drawer shows', function (): void {
             ->assertSee(route('admin.expense-reports.file', $pdf));
     });
 
+    it('invites to open a proof with a verb, not a status', function (): void {
+        app()->setLocale('fr_BE');
+        $report = ExpenseReport::factory()->create();
+        $report->files()->create(['path' => 'a', 'original_name' => 'ticket.jpg', 'mime_type' => 'image/jpeg', 'size' => 1, 'sha256' => str_repeat('a', 64)]);
+
+        Livewire::actingAs(expenseTreasurer())
+            ->test(TREASURY_EXPENSES)
+            ->call('show', $report->id)
+            ->assertSee('Ouvrir')
+            ->assertDontSee('Ouvert');
+    });
+
     it('masks the IBAN from whoever does not wire refunds', function (): void {
         $report = ExpenseReport::factory()->create(['refund_iban' => 'BE68539007547034']);
 

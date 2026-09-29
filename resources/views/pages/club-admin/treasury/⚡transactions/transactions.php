@@ -15,11 +15,16 @@ use App\Domains\ClubAdmin\Payment\Models\PaymentCredit;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\SupportingDocuments\Actions\LinkSupportingDocument;
+use App\Domains\ClubAdmin\SupportingDocuments\Actions\UnlinkSupportingDocument;
+use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
+use App\Domains\ClubAdmin\SupportingDocuments\Services\SupportingDocumentSuggestions;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Shared\Enums\BankAccountType;
 use App\Domains\Shared\Enums\Permission;
 use App\Exceptions\UnknownBankAccount;
+use App\Livewire\Concerns\EditsSupportingDocument;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
@@ -39,8 +44,8 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
+    use EditsSupportingDocument, HasBulkActions, HasFilterDrawer;
     use HasBreadcrumbs, Toast, WithFileUploads, WithPagination;
-    use HasBulkActions, HasFilterDrawer;
 
     public string $accountFilter = '';
 
@@ -65,6 +70,14 @@ new class extends Component
     public mixed $importFile = null;
 
     public bool $importModal = false;
+
+    /** « Justifier » : the drawer that files or links a supporting document to one line. */
+    public bool $justifyDrawer = false;
+
+    /** Free search for a document the suggestions do not catch. */
+    public string $justifySearch = '';
+
+    public ?int $justifyTransactionId = null;
 
     public string $newAccountName = '';
 
@@ -232,11 +245,69 @@ new class extends Component
     }
 
     /**
+     * File a new document from the line — prefilled with its date, amount and
+     * counterparty — and link it at once.
+     */
+    public function createAndLinkDocument(): void
+    {
+        Gate::authorize('linkTransaction', SupportingDocument::class);
+        Gate::authorize('create', SupportingDocument::class);
+
+        $transaction = $this->justificationTransactionOrFail();
+
+        try {
+            $document = $this->saveDocumentForm();
+            (new LinkSupportingDocument)($document, $transaction);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->afterJustifying(__('Supporting document :reference filed and linked: the transaction is justified.', ['reference' => $document->reference()]));
+    }
+
+    /**
      * Écarte une ligne que l'import avait mise de côté : c'est bien le même virement.
      */
     public function dismissSuspectedDuplicate(int $bankImportId, int $line): void
     {
         $this->resolveSuspectedDuplicate($bankImportId, $line, keep: false);
+    }
+
+    /**
+     * Documents found by the free search.
+     *
+     * @return Illuminate\Database\Eloquent\Collection<int, SupportingDocument>
+     */
+    #[Computed]
+    public function documentSearchResults(): Illuminate\Database\Eloquent\Collection
+    {
+        $transaction = $this->justificationTransaction();
+
+        if (! $transaction instanceof Transaction) {
+            return new Illuminate\Database\Eloquent\Collection;
+        }
+
+        return (new SupportingDocumentSuggestions)->searchDocuments($this->justifySearch, $transaction->supportingDocuments->modelKeys());
+    }
+
+    /**
+     * Documents still to settle that this line may pay: same direction, same
+     * amount to the cent, dated within the window.
+     *
+     * @return Illuminate\Database\Eloquent\Collection<int, SupportingDocument>
+     */
+    #[Computed]
+    public function documentSuggestions(): Illuminate\Database\Eloquent\Collection
+    {
+        $transaction = $this->justificationTransaction();
+
+        if (! $transaction instanceof Transaction) {
+            return new Illuminate\Database\Eloquent\Collection;
+        }
+
+        return (new SupportingDocumentSuggestions)->documentsFor($transaction);
     }
 
     // ==================== HasFilterDrawer ====================
@@ -293,6 +364,17 @@ new class extends Component
         ];
     }
 
+    /**
+     * The line open in the « Justifier » drawer, with its documents.
+     */
+    #[Computed]
+    public function justificationTransaction(): ?Transaction
+    {
+        return $this->justifyTransactionId === null
+            ? null
+            : Transaction::with(['supportingDocuments.files', 'bankAccount'])->find($this->justifyTransactionId);
+    }
+
     // ==================== Actions ====================
 
     /**
@@ -301,6 +383,21 @@ new class extends Component
     public function keepSuspectedDuplicate(int $bankImportId, int $line): void
     {
         $this->resolveSuspectedDuplicate($bankImportId, $line, keep: true);
+    }
+
+    public function linkDocument(int $documentId): void
+    {
+        Gate::authorize('linkTransaction', SupportingDocument::class);
+
+        try {
+            (new LinkSupportingDocument)(SupportingDocument::findOrFail($documentId), $this->justificationTransactionOrFail());
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->afterJustifying(__('Transaction linked: it is justified.'));
     }
 
     /**
@@ -346,6 +443,24 @@ new class extends Component
             ->whereNot(fn (Builder $q): Builder => $q->unallocated())
             ->count();
         $this->confirmDeleteModal = true;
+    }
+
+    /**
+     * Open the documents of a line: to justify it, or to read what justifies
+     * it. Readers of the bank lines see them; linking is checked per gesture.
+     */
+    public function openJustification(int $transactionId): void
+    {
+        Gate::authorize(Permission::TransactionsView->value);
+
+        $transaction = Transaction::findOrFail($transactionId);
+
+        $this->justifyTransactionId = $transaction->id;
+        $this->justifySearch = '';
+        $this->prefillDocumentFormFrom($transaction);
+        $this->justifyDrawer = true;
+
+        unset($this->justificationTransaction, $this->documentSuggestions, $this->documentSearchResults);
     }
 
     public function processImport(): void
@@ -629,6 +744,15 @@ new class extends Component
             ->paginate(25);
     }
 
+    public function unlinkDocument(int $documentId): void
+    {
+        Gate::authorize('linkTransaction', SupportingDocument::class);
+
+        (new UnlinkSupportingDocument)(SupportingDocument::findOrFail($documentId), $this->justificationTransactionOrFail());
+
+        $this->afterJustifying(__('Document unlinked.'));
+    }
+
     public function updatedAccountFilter(): void
     {
         $this->resetPage();
@@ -647,6 +771,11 @@ new class extends Component
     public function updatedDateTo(): void
     {
         $this->resetPage();
+    }
+
+    public function updatedJustifySearch(): void
+    {
+        unset($this->documentSearchResults);
     }
 
     public function updatedReconciledFilter(): void
@@ -676,6 +805,15 @@ new class extends Component
     protected function getPageIds(): array
     {
         return $this->transactions()->pluck('id')->map(fn ($id): string => (string) $id)->toArray();
+    }
+
+    private function afterJustifying(string $message): void
+    {
+        $this->prefillDocumentFormFrom($this->justificationTransactionOrFail());
+
+        unset($this->justificationTransaction, $this->documentSuggestions, $this->documentSearchResults, $this->stats);
+
+        $this->success($message);
     }
 
     private function allMatchingTransactionIds(): array
@@ -725,6 +863,15 @@ new class extends Component
         $this->reset(['allocationModal', 'allocationTransactionId', 'allocations', 'allocationSearch', 'residueReason']);
 
         unset($this->allocationTransaction, $this->allocationCandidates, $this->remainingToAllocate, $this->stats);
+    }
+
+    private function justificationTransactionOrFail(): Transaction
+    {
+        $transaction = $this->justificationTransaction();
+
+        abort_if($transaction === null, 404);
+
+        return $transaction;
     }
 
     private function outstandingOf(Payment $payment): float

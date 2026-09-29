@@ -6,7 +6,9 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
+use App\Domains\Shared\ValueObjects\FiscalYear;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -316,6 +318,41 @@ describe('Test Club Settings', function (): void {
                 ->call('save')
                 ->assertHasErrors(['bank_account']);
         });
+
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SAVE (fiscal_year_start_month)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    describe('save(fiscal_year_start_month)', function (): void {
+
+        it('closes the accounts on the calendar year until told otherwise', function (): void {
+            Club::factory()->ownClub()->create(['email_contact' => 'club@example.com']);
+
+            Livewire::test(clubSettingsComponent())
+                ->assertSet('fiscal_year_start_month', 1);
+        });
+
+        it('makes the financial year start in the chosen month', function (): void {
+            Club::factory()->ownClub()->create(['email_contact' => 'club@example.com']);
+
+            Livewire::test(clubSettingsComponent())
+                ->set('fiscal_year_start_month', 9)
+                ->call('save')
+                ->assertHasNoErrors();
+
+            expect(FiscalYear::for(Carbon::parse('2026-09-29'))->label())->toBe('2026-2027');
+        });
+
+        it('refuses a month that does not exist', function (int $month): void {
+            Club::factory()->ownClub()->create(['email_contact' => 'club@example.com']);
+
+            Livewire::test(clubSettingsComponent())
+                ->set('fiscal_year_start_month', $month)
+                ->call('save')
+                ->assertHasErrors(['fiscal_year_start_month']);
+        })->with([0, 13]);
 
     });
 

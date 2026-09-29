@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Actions\User\StoreUserDocumentAction;
 use App\Actions\User\UpdateUserAction;
 use App\Data\User\UpdateUserData;
-use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\ClubAdmin\Fines\Models\Fine;
 use App\Domains\ClubAdmin\Fines\Services\FineCreditor;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;

@@ -154,42 +154,6 @@ new class extends Component
     }
 
     /**
-     * The requester's own exports still worth showing: those being built, and
-     * those finished within the week a file is kept. The page polls while one
-     * is being built, so "ready" appears without a reload.
-     *
-     * @return Collection<int, ExpenseReportExport>
-     */
-    #[Computed]
-    public function myExports(): Collection
-    {
-        return ExpenseReportExport::query()
-            ->where('requested_by', Auth::id())
-            ->where('created_at', '>=', now()->subDays(ExpenseReportExport::KEPT_FOR_DAYS))
-            ->latest()
-            ->orderByDesc('id')
-            ->limit(5)
-            ->get();
-    }
-
-    /**
-     * Build again an export that failed, on the same reports.
-     */
-    public function retryExport(int $exportId): void
-    {
-        Gate::authorize('export', ExpenseReport::class);
-
-        $export = ExpenseReportExport::query()
-            ->where('requested_by', Auth::id())
-            ->where('status', 'failed')
-            ->find($exportId);
-
-        abort_if($export === null, 404);
-
-        $this->queueExport($export->format, $export->report_ids);
-    }
-
-    /**
      * Queue a PDF or ZIP of exactly what the screen shows — the tab, the
      * search and the filters — and tell the requester when it is ready.
      */
@@ -274,6 +238,25 @@ new class extends Component
         }
     }
 
+    /**
+     * The requester's own exports still worth showing: those being built, and
+     * those finished within the week a file is kept. The page polls while one
+     * is being built, so "ready" appears without a reload.
+     *
+     * @return Collection<int, ExpenseReportExport>
+     */
+    #[Computed]
+    public function myExports(): Collection
+    {
+        return ExpenseReportExport::query()
+            ->where('requested_by', Auth::id())
+            ->where('created_at', '>=', now()->subDays(ExpenseReportExport::KEPT_FOR_DAYS))
+            ->latest()
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
+    }
+
     public function openAccept(): void
     {
         $report = $this->shownOrFail();
@@ -306,6 +289,23 @@ new class extends Component
             ->orderBy('expense_reports.created_at', $this->statusFilter === 'submitted' ? 'asc' : 'desc')
             ->orderBy('expense_reports.id')
             ->paginate(25);
+    }
+
+    /**
+     * Build again an export that failed, on the same reports.
+     */
+    public function retryExport(int $exportId): void
+    {
+        Gate::authorize('export', ExpenseReport::class);
+
+        $export = ExpenseReportExport::query()
+            ->where('requested_by', Auth::id())
+            ->where('status', 'failed')
+            ->find($exportId);
+
+        abort_if($export === null, 404);
+
+        $this->queueExport($export->format, $export->report_ids);
     }
 
     public function show(int $reportId): void

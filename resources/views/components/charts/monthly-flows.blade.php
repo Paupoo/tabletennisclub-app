@@ -54,7 +54,7 @@
 @endphp
 
 <x-charts.tooltip-frame :interactive="$interactive" {{ $attributes }}>
-    <x-charts.legend class="mb-2" :items="[
+    <x-charts.legend class="mb-2" :print="! $interactive" :items="[
         ['label' => $labels['income'] ?? __('Income'), 'colour' => $palette['income']],
         ['label' => $labels['expenses'] ?? __('Expenses'), 'colour' => $palette['expense']],
         ['label' => $labels['cumulative'] ?? __('Cumulative result'), 'colour' => $palette['result'], 'shape' => 'line'],
@@ -63,7 +63,7 @@
     {{-- Drawn at 12px for a 720px width: narrower, the chart scrolls rather than shrink its labels below the DS-B floor. --}}
     <div style="overflow-x:auto">
     <svg viewBox="0 0 {{ $width }} {{ $height }}" width="100%" role="img" aria-labelledby="{{ $id }}-title {{ $id }}-desc"
-        style="display:block;min-width:720px;max-width:1080px;height:auto;overflow:visible" font-family="system-ui, sans-serif" font-size="12">
+        style="display:block;{{ $interactive ? 'min-width:720px;max-width:1080px;' : '' }}height:auto;overflow:visible" font-family="{{ $interactive ? 'system-ui, sans-serif' : 'dejavusans, sans-serif' }}" font-size="12">
         <title id="{{ $id }}-title">{{ $title }}</title>
         <desc id="{{ $id }}-desc">{{ $description }}</desc>
 
@@ -83,7 +83,7 @@
                     . ' · ' . ($labels['expenses'] ?? __('Expenses')) . ' ' . ChartFormat::euros($month['expenses'], 2)
                     . ' · ' . ($labels['cumulative'] ?? __('Cumulative result')) . ' ' . ChartFormat::euros($month['cumulative'], 2);
             @endphp
-            <g data-chart-mark
+            <g data-chart-mark=""
                 @if ($interactive) tabindex="0" aria-label="{{ $tip }}" @mouseenter="show($el, @js($tip))" @focus="show($el, @js($tip))" @blur="hide()" @endif>
                 <title>{{ $tip }}</title>
                 {{-- The whole month is the hit target, wider than its two columns. --}}

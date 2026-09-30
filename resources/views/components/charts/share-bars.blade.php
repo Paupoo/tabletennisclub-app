@@ -40,7 +40,7 @@
 
 <x-charts.tooltip-frame :interactive="$interactive" {{ $attributes }}>
     <svg viewBox="0 0 {{ $width }} {{ max(1, $height) }}" width="100%" role="img" aria-labelledby="{{ $id }}-title {{ $id }}-desc"
-        style="display:block;max-width:100%;height:auto" font-family="system-ui, sans-serif" font-size="12">
+        style="display:block;max-width:100%;height:auto" font-family="{{ $interactive ? 'system-ui, sans-serif' : 'dejavusans, sans-serif' }}" font-size="12">
         <title id="{{ $id }}-title">{{ $title }}</title>
         <desc id="{{ $id }}-desc">{{ $description }}</desc>
 
@@ -66,7 +66,7 @@
                     $tip = $segment['label'] . ' — ' . $format($value, $row['format']) . ' (' . $percent . ' %)';
                     $colour = $palette[$segment['key']] ?? $palette['internal'];
                 @endphp
-                <g data-chart-mark
+                <g data-chart-mark=""
                     @if ($interactive) tabindex="0" aria-label="{{ $row['label'] }} — {{ $tip }}" @mouseenter="show($el, @js($tip))" @focus="show($el, @js($tip))" @blur="hide()" @endif>
                     <title>{{ $row['label'] }} — {{ $tip }}</title>
                     <rect class="chart-fill" x="{{ round($cursor, 2) }}" y="{{ $rowTop }}" width="{{ round($segmentWidth, 2) }}" height="{{ $barHeight }}"

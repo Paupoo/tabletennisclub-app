@@ -17,13 +17,13 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $meeting_id
  * @property array|null $announcements
- * @property array|null $decisions
  * @property string|null $notes
  * @property bool $is_published
  * @property Carbon|null $published_at
  * @property int|null $published_by
  * @property Carbon|null $sent_to_committee_at
  * @property Carbon|null $sent_to_all_at
+ * @property Carbon|null $corrected_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Meeting $meeting
@@ -56,23 +56,23 @@ class MeetingMinutes extends Model
 
     protected $casts = [
         'announcements' => 'array',
-        'decisions' => 'array',
         'is_published' => 'boolean',
         'published_at' => 'datetime',
         'sent_to_committee_at' => 'datetime',
         'sent_to_all_at' => 'datetime',
+        'corrected_at' => 'datetime',
     ];
 
     protected $fillable = [
         'meeting_id',
         'announcements',
-        'decisions',
         'notes',
         'is_published',
         'published_at',
         'published_by',
         'sent_to_committee_at',
         'sent_to_all_at',
+        'corrected_at',
     ];
 
     public function meeting(): BelongsTo

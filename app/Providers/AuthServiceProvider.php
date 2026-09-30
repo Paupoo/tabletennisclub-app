@@ -22,6 +22,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
@@ -32,6 +33,7 @@ use App\Policies\ContactPolicy;
 use App\Policies\ExpenseReportPolicy;
 use App\Policies\GuardianPolicy;
 use App\Policies\InterclubPolicy;
+use App\Policies\MeetingPolicy;
 use App\Policies\MutualAttestationPolicy;
 use App\Policies\RoomPolicy;
 use App\Policies\SeasonPolicy;
@@ -64,6 +66,7 @@ class AuthServiceProvider extends ServiceProvider
         ExpenseReport::class => ExpenseReportPolicy::class,
         Guardian::class => GuardianPolicy::class,
         Interclub::class => InterclubPolicy::class,
+        Meeting::class => MeetingPolicy::class,
         NewsPost::class => NewsPostPolicy::class,
         Room::class => RoomPolicy::class,
         Season::class => SeasonPolicy::class,

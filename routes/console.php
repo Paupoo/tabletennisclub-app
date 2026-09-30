@@ -116,6 +116,14 @@ Schedule::command('financial-exports:prune')
     ->withoutOverlapping();
 
 /*
+ * Images put in an article body are filed as soon as they are inserted; the
+ * ones no stored text points to any more go after a week.
+ */
+Schedule::command('articles:prune-content-images')
+    ->dailyAt('03:50')
+    ->withoutOverlapping();
+
+/*
  * Communications: the addresses each one went to are personal data, pruned
  * two seasons after the sending. What the club said is kept.
  */

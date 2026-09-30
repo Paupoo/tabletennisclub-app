@@ -43,3 +43,41 @@ it('shows the notes read-only while another member holds the pen', function (): 
         ->assertSeeIn('.markdown-editor-surface', 'Julie')
         ->assertNoJavaScriptErrors();
 });
+
+it('saves an announcement typed in its editor when the author leaves it', function (): void {
+    $meeting = Meeting::factory()->confirmed()->create();
+    $meeting->minutes()->create(['announcements' => ['Sponsor']]);
+
+    $page = visit(route('admin.meetings.minutes', $meeting))->wait(1);
+    $page->script(<<<'JS'
+        (() => {
+          const surface = document.querySelector('.markdown-editor-surface');
+          surface.focus();
+          const end = document.createRange();
+          end.selectNodeContents(surface);
+          end.collapse(false);
+          getSelection().removeAllRanges();
+          getSelection().addRange(end);
+        })()
+    JS);
+    $page->keys('.markdown-editor-surface >> nth=0', [' ', 'B', 'r', 'a', 's', 's', 'e', 'r', 'i', 'e']);
+    $page->script("document.querySelector('.markdown-editor-surface').blur()");
+    $page->wait(1.5);
+
+    expect($meeting->fresh()->minutes->announcements)->toBe(['Sponsor Brasserie']);
+    $page->assertNoJavaScriptErrors();
+});
+
+it('makes every minutes editor read-only while another member holds the pen', function (): void {
+    $holder = User::factory()->isAdmin()->isCommitteeMember()->create();
+    $meeting = Meeting::factory()->confirmed()->create();
+    $meeting->minutes()->create(['announcements' => ['Sponsor'], 'decisions' => ['Prix gelé']]);
+    $meeting->acquireMinutesLock($holder);
+
+    $page = visit(route('admin.meetings.minutes', $meeting))->wait(1);
+
+    $editable = $page->script("[...document.querySelectorAll('.markdown-editor-surface')].map((s) => s.getAttribute('contenteditable'))");
+    $editable = is_array($editable[0] ?? null) ? $editable[0] : $editable;
+
+    expect($editable)->not->toBeEmpty()->each->toBe('false');
+});

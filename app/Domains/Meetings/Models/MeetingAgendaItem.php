@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -18,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property int $sort_order
  * @property string $title
  * @property string|null $description
+ * @property string|null $discussion what was said on the point, markdown
  * @property Carbon|null $discussed_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -53,8 +55,21 @@ class MeetingAgendaItem extends Model
         'sort_order',
         'title',
         'description',
+        'discussion',
         'discussed_at',
     ];
+
+    /** @return HasMany<MeetingActionItem, $this> */
+    public function actionItems(): HasMany
+    {
+        return $this->hasMany(MeetingActionItem::class, 'agenda_item_id');
+    }
+
+    /** @return HasMany<MeetingDecision, $this> */
+    public function decisions(): HasMany
+    {
+        return $this->hasMany(MeetingDecision::class, 'agenda_item_id')->orderBy('sort_order');
+    }
 
     public function meeting(): BelongsTo
     {

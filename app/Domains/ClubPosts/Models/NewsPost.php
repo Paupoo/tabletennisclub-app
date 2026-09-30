@@ -62,6 +62,13 @@ class NewsPost extends Model
     use HasFactory, SoftDeletes;
 
     /**
+     * Where images put in an article body are filed, on the public disk.
+     *
+     * Shared by the editor's upload and articles:prune-content-images.
+     */
+    public const string CONTENT_IMAGES_DIRECTORY = 'clubPosts/content';
+
+    /**
      * Centre the focal point until an author moves it.
      *
      * The column carries the same default, but a model built in PHP never

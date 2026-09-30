@@ -276,7 +276,12 @@ Add agenda items to the meeting. Agenda is visible to all invited members.
 
 ### Minutes
 
-After the meeting, add meeting minutes (free text). Click **Send minutes** to email minutes to all attendees.
+Write the minutes from the meeting page (**Write the minutes**), live during the meeting: one block per agenda point — what was said, the decisions (type, then Enter; numbered D1, D2… across the minutes) and the actions (type, then Enter; then who and when) — plus a block for what came up outside the agenda. Attendance is checked in at the top: every confirmed member at once, then corrections name by name, and a member who came without being on the list is added by search. **Mark discussed** closes a point and opens the next. Everything is saved as you go; **Preview** shows the minutes and their PDF before you **Publish** them once the meeting is over. A change made after sending shows as "Corrected on …".
+
+- **Send to committee** mails them to the committee — the usual first step, to read them over.
+- **Send to all members** exists for a **general assembly only**: a committee meeting's minutes never leave the committee, since they can name a member in debt or a conflict. Sending to all is also what opens a general assembly's minutes to every active member.
+
+The mail is short — the decisions, the reader's own actions, a **Read the minutes** button — and carries the minutes as a PDF. The reading page puts decisions and actions first; the member an action is assigned to ticks it done there. **Download PDF** renders the minutes as they stand at that moment.
 
 ### Action items
 
@@ -329,7 +334,7 @@ Go to **Website** in the navigation.
 Create and edit news articles published on the public club website:
 - Title, content, featured image
 - The content is written as it will look: the toolbar sets headings, bold, italic, links, lists and quotes — no syntax to learn
-- **Images in the text**: the image button, a drag and drop or a paste; the image is shrunk before upload, and you are asked to **describe it** (read aloud to visitors who cannot see it) before it is inserted
+- **Images in the text**: the image button, a drag and drop or a paste; the image is shrunk before upload, and you are asked to **describe it** (read aloud to visitors who cannot see it) before it is inserted. An image removed from the text is deleted from the server after a week
 - Publish immediately or save as draft
 - Set a "featured until" date for pinned articles
 
@@ -474,7 +479,7 @@ As a committee member, the following emails are sent automatically — you do no
 | Training session cancelled | Enrolled members |
 | Meeting invitation | Invited members |
 | Meeting RSVP confirmation | Member |
-| Meeting minutes | All attendees |
+| Meeting minutes | The committee; every active member for a general assembly sent to all |
 | Meeting cancelled/postponed | All invited members |
 | Refund requested | Admin |
 | Expense report accepted, rejected (with reason) or paid | The report's author |

@@ -313,6 +313,7 @@ new class extends Component
             'eventPost',
             'users',
             'minutes',
+            'decisions',
             'actionItems.assignedTo',
             'creator',
         ])->findOrFail($this->meetingId);

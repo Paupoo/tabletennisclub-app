@@ -88,6 +88,10 @@ it('never sends a member to a page the committee alone can open', function (): v
         // financial_report.view, the permission the linked report asks for —
         // FinancialExportTest.
         'FinancialExportFailedNotification.php',
+        // Not committee-only, but gated by MeetingPolicy::readMinutes(), which
+        // admits exactly whom sendMinutes() mails: the committee, or — for a
+        // general assembly sent to all — every active member. MinutesReaderTest.
+        'MeetingMinutesNotification.php',
     ];
 
     $files = (new Finder)

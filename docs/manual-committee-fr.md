@@ -277,7 +277,12 @@ Ajoutez des points à l'ordre du jour de la réunion. L'ordre du jour est visibl
 
 ### Procès-verbal
 
-Après la réunion, ajoutez le procès-verbal (texte libre). Cliquez sur **Envoyer le PV** pour envoyer le procès-verbal par email à tous les participants.
+Rédigez le PV depuis la fiche de la réunion (**Rédiger le PV**), en direct pendant la réunion : un bloc par point de l'ordre du jour — ce qui s'est dit, les décisions (tapez, puis Entrée ; numérotées D1, D2… sur tout le PV) et les actions (tapez, puis Entrée ; puis qui et pour quand) — plus un bloc pour ce qui sort de l'ordre du jour. Les présences se pointent en haut : tous les confirmés d'un coup, puis les corrections nom par nom, et un membre venu sans être sur la liste s'ajoute par la recherche. **Marquer abordé** clôt un point et ouvre le suivant. Tout s'enregistre au fur et à mesure ; **Aperçu** montre le PV et son PDF avant de le **Publier** une fois la réunion passée. Une modification faite après l'envoi apparaît « Corrigé le … ».
+
+- **Envoyer au comité** le transmet au comité — la première étape habituelle, pour le relire.
+- **Envoyer à tous les membres** n'existe que pour une **assemblée générale** : le PV d'une réunion de comité ne sort jamais du comité, puisqu'il peut nommer un membre en dette ou un conflit. C'est aussi l'envoi à tous qui ouvre le PV d'une AG à chaque membre actif.
+
+Le mail est court — les décisions, les actions du destinataire, un bouton **Lire le PV** — et joint le PV en PDF. La page de lecture met décisions et actions en tête ; le responsable d'une action la coche « faite » depuis cette page. **Télécharger le PDF** produit le PV tel qu'il est à ce moment.
 
 ### Points d'action
 
@@ -330,7 +335,7 @@ Allez dans **Site web** dans la navigation.
 Créez et modifiez des articles d'actualité publiés sur le site web public du club :
 - Titre, contenu, image à la une
 - Le contenu s'écrit tel qu'il sera publié : la barre d'outils pose titres, gras, italique, liens, listes et citations — aucune syntaxe à apprendre
-- **Images dans le texte** : bouton image, glisser-déposer ou coller ; l'image est réduite avant l'envoi, et on vous demande de **la décrire** (lu à voix haute aux visiteurs qui ne la voient pas) avant de l'insérer
+- **Images dans le texte** : bouton image, glisser-déposer ou coller ; l'image est réduite avant l'envoi, et on vous demande de **la décrire** (lu à voix haute aux visiteurs qui ne la voient pas) avant de l'insérer. Une image retirée du texte est effacée du serveur après une semaine
 - Publier immédiatement ou enregistrer comme brouillon
 - Définir une date "à la une jusqu'au" pour les articles épinglés
 
@@ -475,7 +480,7 @@ En tant que membre du comité, les emails suivants sont envoyés automatiquement
 | Séance d'entraînement annulée | Membres inscrits |
 | Invitation à une réunion | Membres invités |
 | Confirmation de RSVP réunion | Membre |
-| Procès-verbal de réunion | Tous les participants |
+| Procès-verbal de réunion | Le comité ; tous les membres actifs pour une AG envoyée à tous |
 | Réunion annulée/reportée | Tous les membres invités |
 | Demande de remboursement | Administrateur |
 | Note de frais acceptée, rejetée (avec motif) ou payée | Membre auteur de la note |

@@ -147,6 +147,7 @@ Une seule entrée crontab suffit :
 | `expense-reports:remind-archiving` | 1er du mois, 08 h 00, aux 3e, 6e et 9e mois de l'exercice ; le 5 du mois qui suit sa clôture (`--year-end`) — 1er avril, juillet, octobre et 5 janvier avec l'exercice civil par défaut | Rappel d'archivage des notes de frais payées |
 | `expense-reports:purge-files` | 03 h 30 | Efface les justificatifs des notes rejetées ou retirées depuis deux ans |
 | `financial-exports:prune` | 03 h 40 | Efface les exports du rapport financier (PDF, ZIP) de plus de 7 jours |
+| `articles:prune-content-images` | 03 h 50 | Efface les images insérées dans un article qu'aucun texte n'utilise plus, après 7 jours |
 
 Chaque tâche est conditionnée au *feature flag* de son domaine : un domaine éteint dans cet environnement n'envoie plus rien. Les deux purges font exception : éteindre les notes de frais ne doit pas prolonger la vie des justificatifs, ni la trésorerie celle des exports.
 

@@ -116,6 +116,10 @@ Make the bank transfer manually. The treasurer reconciles payments and marks you
 
 If you are invited to a club meeting, your invitation appears here. Click **RSVP** to confirm your attendance. You may also indicate whether you want to reserve a meal (if applicable). The committee sees your response automatically.
 
+### General assembly minutes
+
+Once the committee has sent them, the minutes of the general assemblies are listed on this page: **Read** opens them, **PDF** downloads them. You also receive them by mail, with the PDF attached.
+
 ---
 
 ## 7. Registration Management

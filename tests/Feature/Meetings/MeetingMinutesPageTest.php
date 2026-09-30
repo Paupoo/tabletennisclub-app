@@ -171,6 +171,31 @@ describe('Minutes page — drafting', function (): void {
         expect($item->fresh()->discussion)->toBe('Le trésorier présente les **comptes**.');
     });
 
+    // A browser's form filler sets every field at once: Livewire then sends a
+    // whole array under its bare name, with no index to go by.
+    test('fields filled all at once are saved, whole arrays and whole rows included', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+        $first = $meeting->agendaItems()->create(['sort_order' => 0, 'title' => 'Budget']);
+        $second = $meeting->agendaItems()->create(['sort_order' => 1, 'title' => 'Tournoi']);
+        $decision = $meeting->decisions()->create(['body' => 'Avant']);
+        $action = MeetingActionItem::factory()->for($meeting)->create(['title' => 'Avant', 'assigned_to_id' => null, 'due_date' => null]);
+
+        Livewire::actingAs($admin)
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set('discussions', [$first->id => 'Sur le budget', $second->id => 'Sur le tournoi'])
+            ->set('decisionBodies', [$decision->id => 'Après'])
+            ->set('actions', [$action->id => ['title' => 'Relancer', 'description' => 'Par mail', 'assigned_to_id' => (string) $admin->id, 'due_date' => '2026-12-01']]);
+
+        expect($first->fresh()->discussion)->toBe('Sur le budget')
+            ->and($second->fresh()->discussion)->toBe('Sur le tournoi')
+            ->and($decision->fresh()->body)->toBe('Après')
+            ->and($action->fresh()->title)->toBe('Relancer')
+            ->and($action->fresh()->description)->toBe('Par mail')
+            ->and($action->fresh()->assigned_to_id)->toBe($admin->id)
+            ->and($action->fresh()->due_date->toDateString())->toBe('2026-12-01');
+    });
+
     test('a regular member cannot open the minutes page', function (): void {
         $member = User::factory()->create();
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => minutesAdmin()->id]);

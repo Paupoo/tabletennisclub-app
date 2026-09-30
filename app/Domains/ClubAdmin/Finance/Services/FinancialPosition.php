@@ -199,7 +199,8 @@ final class FinancialPosition
 
     /**
      * The treasury tile: what is held on `$day`, how much it moved since the
-     * eve of the financial year, and the bank balances too old to trust —
+     * eve of the financial year (over the accounts and tills whose balance is
+     * known on both days), and the bank balances too old to trust —
      * none known, or the last one more than {@see self::STALE_AFTER_DAYS}
      * days before `$day`. A till is never stale: every movement is recorded
      * as it happens.
@@ -218,9 +219,23 @@ final class FinancialPosition
                 && ($holder['as_of'] === null || $holder['as_of']->lessThan($limit))),
         ));
 
+        // Only what is known on both days: an account first imported during
+        // the year would otherwise count its whole balance as a gain.
+        $change = 0.0;
+
+        foreach ($now['holders'] as $index => $holder) {
+            // A till with no entry yet held nothing; a bank account never
+            // imported is unknown.
+            $before = $eve['holders'][$index]['balance'] ?? ($holder['kind'] === 'cash' ? 0.0 : null);
+
+            if ($holder['balance'] !== null && $before !== null) {
+                $change += $holder['balance'] - $before;
+            }
+        }
+
         return [
             'total' => $now['total'],
-            'change' => round($now['total'] - $eve['total'], 2),
+            'change' => round($change, 2),
             'stale' => $stale,
         ];
     }

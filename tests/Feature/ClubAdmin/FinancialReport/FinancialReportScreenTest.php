@@ -196,9 +196,10 @@ it('sums the treasury up in one line, and flags only a balance too old to trust'
     $html = frsScreen()->html();
     $tile = Str::before(Str::after($html, 'data-tile="treasury"'), 'data-chart');
 
-    // 24 240 € today against 8 000 € on the 31st of December.
+    // 24 240 € today. Since the 31st of December the current account went
+    // 8 000 → 9 240 €; the savings account, first imported in July, is no gain.
     expect($tile)->toContain('24 240,00 €')
-        ->toContain('+16 240,00 € depuis le 1er janvier')
+        ->toContain('+1 240,00 € depuis le 1er janvier')
         ->toContain(__(':name: last known balance on :date', ['name' => 'Épargne', 'date' => '02/07/2026']))
         ->not->toContain('Compte courant');
 });

@@ -157,10 +157,11 @@ it('says how much the treasury moved since the year began, and which balance is 
 
     $summary = (new FinancialPosition)->treasurySummary(FiscalYear::startingIn(2026), Carbon::parse('2026-03-20'));
 
-    // 31 December 2025: 7 000 € + nothing known on savings + 150 € of till.
-    // 20 March 2026: 23 425 €.
+    // 20 March 2026: 23 425 €. Since the 31st of December, the current
+    // account went 7 000 → 8 200 € and the tills 150 → 215 €: +1 265 €. The
+    // savings account, first imported in January, is no gain of the year.
     expect($summary['total'])->toBe(23425.0)
-        ->and($summary['change'])->toBe(16275.0)
+        ->and($summary['change'])->toBe(1265.0)
         ->and(array_map(fn (array $holder): array => [$holder['name'], $holder['as_of']?->toDateString()], $summary['stale']))
         ->toBe([['Compte épargne', '2026-01-02']]);
 });

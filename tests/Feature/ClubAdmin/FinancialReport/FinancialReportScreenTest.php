@@ -73,15 +73,32 @@ it('shows the year\'s flows next to the year before, judged for the club', funct
     frsJustified(-1400.0, '2026-01-05', ExpenseCategory::Hall);
     frsJustified(500.0, '2026-04-08', IncomeCategory::Subsidies);
     frsJustified(-1250.0, '2025-01-05', ExpenseCategory::Hall);
+    // After the 30th of September 2025: not due yet, this year.
+    frsJustified(-700.0, '2025-11-05', ExpenseCategory::Hall);
 
     $html = frsScreen()->html();
+    $sameDate = __(':year at the same date', ['year' => '2025']);
 
-    // Expenses 1 400 € against 1 250 €: +12 %, and spending more is bad news.
+    // Expenses 1 400 € against the 1 250 € of 2025 until the 30th of
+    // September: +12 %, and spending more is bad news.
     expect($html)->toContain('1 400,00 €')
-        ->toContain('+12 % ' . __('vs :year', ['year' => '2025']))
+        ->toContain('+12 % ' . __('vs :year', ['year' => $sameDate]))
         ->toContain('data-change="up"')
         ->toContain('−900,00 €')
-        ->toContain(__('Nothing to compare with in :year', ['year' => '2025']));
+        ->toContain(__('Nothing to compare with in :year', ['year' => $sameDate]))
+        ->not->toContain('1 950,00 €');
+});
+
+it('compares a closed year with the whole year before it', function (): void {
+    frsJustified(-1250.0, '2025-01-05', ExpenseCategory::Hall);
+    frsJustified(-700.0, '2024-11-05', ExpenseCategory::Hall);
+    frsJustified(-100.0, '2024-01-05', ExpenseCategory::Hall);
+
+    // 1 250 € against the 800 € of the whole of 2024: +56 %.
+    frsScreen()
+        ->set('fiscalYear', 2025)
+        ->assertSee('+56 % ' . __('vs :year', ['year' => '2024']))
+        ->assertDontSee(__(':year at the same date', ['year' => '2024']));
 });
 
 it('moves to another financial year from the year navigation', function (): void {

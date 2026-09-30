@@ -100,10 +100,14 @@ new class extends Component
         return new FinancialPosition;
     }
 
+    /**
+     * The year before, whole once the shown year has closed, up to the same
+     * day while it runs — see {@see FinancialReport::previousFor()}.
+     */
     #[Computed]
     public function previousReport(): FinancialReport
     {
-        return FinancialReport::for($this->year()->previous());
+        return FinancialReport::previousFor($this->year());
     }
 
     public function render(): View
@@ -117,7 +121,9 @@ new class extends Component
         return $this->view([
             'breadcrumbs' => $this->getBreadcrumbs(),
             'yearLabel' => $year->label(),
-            'previousLabel' => $year->previous()->label(),
+            'previousLabel' => $previous->cutOffAt() === null
+                ? $year->previous()->label()
+                : __(':year at the same date', ['year' => $year->previous()->label()]),
             'yearOptions' => collect(range(FiscalYear::current()->startYear(), $this->firstYear()))
                 ->map(fn (int $start): array => ['id' => $start, 'name' => FiscalYear::startingIn($start)->label()])
                 ->all(),

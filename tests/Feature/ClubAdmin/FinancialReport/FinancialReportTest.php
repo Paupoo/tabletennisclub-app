@@ -22,6 +22,7 @@ use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\IncomeCategory;
 use App\Domains\Shared\ValueObjects\FiscalYear;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -235,4 +236,50 @@ it('keeps a journal of every movement, with its poste, its state and what justif
             ['2026-02-10', 'bank', -300.0, 'justified', ['expense:hall'], [sprintf('P-2026-%04d', $document->id)], []],
             ['2026-03-20', 'bank', -45.5, 'reconciled', ['expense:travel'], [], [$expenseReport->id]],
         ]);
+});
+
+/*
+ * A year still running is compared with the same stretch of the year before:
+ * against a whole year, a quarterly hall rent not due yet reads as a drop.
+ */
+describe('the year it is compared with', function (): void {
+    beforeEach(function (): void {
+        // 2025: 300 € of hall in March, 900 € in November.
+        frJustify(frLine(-300.0, '2025-03-01'), ExpenseCategory::Hall, 300.0);
+        frJustify(frLine(-900.0, '2025-11-15'), ExpenseCategory::Hall, 900.0);
+        frJustify(frLine(-50.0, '2025-09-30'), ExpenseCategory::Hall, 50.0);
+    });
+
+    it('stops the year before at the same day while the year runs', function (): void {
+        $previous = FinancialReport::previousFor(FiscalYear::startingIn(2026), CarbonImmutable::parse('2026-09-30 10:00'));
+
+        expect($previous->year()->label())->toBe('2025')
+            ->and($previous->expensesByCategory())->toBe(['hall' => 350.0])
+            ->and($previous->cutOffAt()?->toDateString())->toBe('2025-09-30');
+    });
+
+    it('compares a closed year with the whole year before', function (): void {
+        $previous = FinancialReport::previousFor(FiscalYear::startingIn(2026), CarbonImmutable::parse('2027-01-02'));
+
+        expect($previous->expensesByCategory())->toBe(['hall' => 1250.0])
+            ->and($previous->cutOffAt())->toBeNull();
+    });
+
+    it('lands on the 28th of February when today is the 29th', function (): void {
+        $previous = FinancialReport::previousFor(FiscalYear::startingIn(2028), CarbonImmutable::parse('2028-02-29'));
+
+        expect($previous->cutOffAt()?->toDateString())->toBe('2027-02-28');
+    });
+
+    it('cuts a year that starts in September at the same day of its own stretch', function (): void {
+        Club::own()->update(['fiscal_year_start_month' => 9]);
+        Club::forgetOwnClub();
+
+        // 2025-2026 runs until 15 March 2026: 2024-2025 is read until 15 March 2025.
+        $previous = FinancialReport::previousFor(FiscalYear::startingIn(2025), CarbonImmutable::parse('2026-03-15'));
+
+        expect($previous->year()->label())->toBe('2024-2025')
+            ->and($previous->expensesByCategory())->toBe(['hall' => 300.0])
+            ->and($previous->cutOffAt()?->toDateString())->toBe('2025-03-15');
+    });
 });

@@ -124,6 +124,7 @@
     ":count event|:count events": ":count evenement|:count evenementen",
     ":name (guardian) IBAN": "IBAN van :name (voogd)",
     ":name (guardian) on the counterparty": ":name (voogd) bij de tegenpartij",
+    ":year at the same date": ":year op dezelfde datum",
     "A coach is required for this training type.": "Een coach is vereist voor dit trainingstype.",
     "A deposit takes out of the till exactly what enters the bank, or the other way round.": "Een storting haalt uit de kas precies wat op de bank binnenkomt, of omgekeerd.",
     "A deposit to or from the bank": "Een storting van/naar de bank",

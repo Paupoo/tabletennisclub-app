@@ -124,6 +124,7 @@
     ":count event|:count events": ":count événement|:count événements",
     ":name (guardian) IBAN": "IBAN de :name (tuteur)",
     ":name (guardian) on the counterparty": ":name (tuteur) sur la contrepartie",
+    ":year at the same date": ":year à la même date",
     "A coach is required for this training type.": "Un coach est requis pour ce type d'entraînement.",
     "A deposit takes out of the till exactly what enters the bank, or the other way round.": "Un versement sort de la caisse exactement ce qui entre en banque, ou l’inverse.",
     "A deposit to or from the bank": "Un versement de/vers la banque",

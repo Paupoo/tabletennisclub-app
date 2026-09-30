@@ -81,15 +81,14 @@ final class FinancialReport
      */
     private array $journal = [];
 
-    private function __construct(private readonly FiscalYear $year) {}
+    /**
+     * @param  CarbonImmutable|null  $cutOff  The last day read, when the year is read only up to it.
+     */
+    private function __construct(private readonly FiscalYear $year, private readonly ?CarbonImmutable $cutOff = null) {}
 
     public static function for(FiscalYear $year): self
     {
-        $report = new self($year);
-        $report->readBankLines();
-        $report->readCashMovements();
-
-        return $report;
+        return self::readUntil($year, null);
     }
 
     /**
@@ -107,6 +106,31 @@ final class FinancialReport
         $category = $direction === 'expense' ? ExpenseCategory::tryFrom($key) : IncomeCategory::tryFrom($key);
 
         return $category?->label() ?? $key;
+    }
+
+    /**
+     * The year to compare `$year` with: the one before it, whole once
+     * `$year` has closed, but only up to the same day one year earlier while
+     * `$year` still runs.
+     *
+     * Against a whole year, a year in progress shows drops that are only
+     * money not due yet — a quarterly hall rent, the second half of the
+     * affiliations. The 29th of February compares with the 28th.
+     */
+    public static function previousFor(FiscalYear $year, ?CarbonInterface $today = null): self
+    {
+        $today = CarbonImmutable::parse(($today ?? CarbonImmutable::today())->toDateString());
+
+        return self::readUntil($year->previous(), $today->greaterThan($year->end()) ? null : $today->subYearNoOverflow());
+    }
+
+    /**
+     * The last day read when the year was cut short to compare it with a
+     * year still running, null when it was read whole.
+     */
+    public function cutOffAt(): ?CarbonImmutable
+    {
+        return $this->cutOff;
     }
 
     public function expenses(): float
@@ -267,6 +291,15 @@ final class FinancialReport
     public function year(): FiscalYear
     {
         return $this->year;
+    }
+
+    private static function readUntil(FiscalYear $year, ?CarbonImmutable $cutOff): self
+    {
+        $report = new self($year, $cutOff);
+        $report->readBankLines();
+        $report->readCashMovements();
+
+        return $report;
     }
 
     /**
@@ -453,6 +486,14 @@ final class FinancialReport
     }
 
     /**
+     * The last day read: the end of the year, or the cut-off.
+     */
+    private function lastDay(): CarbonImmutable
+    {
+        return $this->cutOff === null ? $this->year->end() : $this->cutOff->min($this->year->end());
+    }
+
+    /**
      * Which fiscal month, 0 to 11, a day falls in.
      */
     private function monthOf(CarbonInterface $date): int
@@ -477,7 +518,7 @@ final class FinancialReport
     {
         $lines = Transaction::query()
             ->whereDate('date', '>=', $this->year->start()->toDateString())
-            ->whereDate('date', '<=', $this->year->end()->toDateString())
+            ->whereDate('date', '<=', $this->lastDay()->toDateString())
             ->with(['supportingDocuments', 'bankAccount', 'credits.payment', ...$this->payableWith('credits.payment.payable')])
             ->orderBy('date')
             ->orderBy('transactions.id')
@@ -509,7 +550,7 @@ final class FinancialReport
     {
         $entries = CashRegisterEntry::query()
             ->whereDate('created_at', '>=', $this->year->start()->toDateString())
-            ->whereDate('created_at', '<=', $this->year->end()->toDateString())
+            ->whereDate('created_at', '<=', $this->lastDay()->toDateString())
             ->with(['supportingDocuments', 'cashRegister' => fn ($query) => $query->withTrashed(), ...$this->payableWith('payable')])
             ->orderBy('created_at')
             ->orderBy('cash_register_entries.id')

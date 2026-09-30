@@ -103,9 +103,11 @@ final class FinancialPosition
      * The money held at the end of a day: every bank account, as the bank
      * printed its balance on the last line up to that day, and every till.
      *
-     * An account with no balance that old is shown without one — unknown is
-     * not zero — and left out of the total. Each holder carries the day its
-     * balance dates from, so a stale import shows as stale.
+     * An account whose first line is later holds its opening balance
+     * ({@see BankAccount::balanceAt()}), with no day it dates from; one with
+     * no balance at all is shown without one — unknown is not zero — and left
+     * out of the total. Each holder carries the day its balance dates from,
+     * so a stale import shows as stale.
      *
      * @return array{total: float, holders: list<array{name: string, kind: string, balance: float|null, as_of: CarbonImmutable|null}>}
      */
@@ -119,7 +121,7 @@ final class FinancialPosition
             $holders[] = [
                 'name' => $account->name,
                 'kind' => $account->type->value,
-                'balance' => $line?->balance_after,
+                'balance' => $account->balanceAt($day),
                 'as_of' => $line === null ? null : CarbonImmutable::parse($line->date),
             ];
         }
@@ -152,7 +154,8 @@ final class FinancialPosition
      *
      * A bank balance is the last imported one on or before the day — a
      * savings account imported twice a year steps, which is what it is. Its
-     * `as_of` says which day it dates from. A till's balance is the sum of its
+     * `as_of` says which day it dates from. Before an account's first line,
+     * its opening balance, the same one the treasury tile starts from. A till's balance is the sum of its
      * entries up to the day: its opening balance is an entry too, and the
      * `balance` column of `cash_registers` is read by nothing. Retired tills
      * count for the days they held money.
@@ -182,7 +185,7 @@ final class FinancialPosition
 
             foreach ($accounts as $account) {
                 $line = $account->balanceLineAt($day);
-                $values[] = ['balance' => $line?->balance_after, 'as_of' => $line === null ? null : CarbonImmutable::parse($line->date)];
+                $values[] = ['balance' => $account->balanceAt($day), 'as_of' => $line === null ? null : CarbonImmutable::parse($line->date)];
             }
 
             $values[] = ['balance' => $this->tillsAt($day), 'as_of' => null];
@@ -199,8 +202,9 @@ final class FinancialPosition
 
     /**
      * The treasury tile: what is held on `$day`, how much it moved since the
-     * eve of the financial year (over the accounts and tills whose balance is
-     * known on both days), and the bank balances too old to trust —
+     * eve of the financial year — the last month of the chart minus its
+     * opening, since both read {@see BankAccount::balanceAt()} — and the bank
+     * balances too old to trust —
      * none known, or the last one more than {@see self::STALE_AFTER_DAYS}
      * days before `$day`. A till is never stale: every movement is recorded
      * as it happens.
@@ -219,8 +223,9 @@ final class FinancialPosition
                 && ($holder['as_of'] === null || $holder['as_of']->lessThan($limit))),
         ));
 
-        // Only what is known on both days: an account first imported during
-        // the year would otherwise count its whole balance as a gain.
+        // An account first imported during the year still has a balance on
+        // the eve — its opening one. Only an account with no balance at all
+        // is left out.
         $change = 0.0;
 
         foreach ($now['holders'] as $index => $holder) {

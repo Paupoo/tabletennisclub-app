@@ -66,12 +66,31 @@ class BankAccount extends Model
 
     /**
      * The account's balance at the end of this day, in euros, as the bank
-     * printed it on the last line up to that day. Null when no line of that
-     * account carrying a balance is that old.
+     * printed it on the last line up to that day.
+     *
+     * Before the first line imported, the balance is still known exactly:
+     * the bank printed it on that line, one movement late — balance after
+     * minus amount. A savings account first imported in January thus holds
+     * on New Year's Eve what it held before that line, not an unknown that
+     * would make its whole balance look like a gain of the year. Null only
+     * when no line of that account carries a balance.
      */
     public function balanceAt(CarbonInterface $date): ?float
     {
-        return $this->balanceLineAt($date)?->balance_after;
+        $line = $this->balanceLineAt($date);
+
+        if ($line instanceof Transaction) {
+            return $line->balance_after;
+        }
+
+        $first = $this->transactions()
+            ->whereNotNull('balance_after')
+            ->orderBy('date')
+            ->orderBy('statement_number')
+            ->orderBy('transactions.id')
+            ->first();
+
+        return $first === null ? null : round((float) $first->balance_after - (float) $first->amount, 2);
     }
 
     /**

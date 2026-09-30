@@ -111,11 +111,33 @@ it('tells the balance of an account at a date from the last line on or before it
 
     $account = BankAccount::sole();
 
-    expect($account->balanceAt(Carbon::parse('2026-07-01')))->toBeNull()
+    // Before its first line (14 July, +125 € → 9 084,30 €) the account held
+    // 9 084,30 − 125 = 8 959,30 €: the bank printed it, one line late.
+    expect($account->balanceAt(Carbon::parse('2026-07-01')))->toBe(8959.3)
         ->and($account->balanceAt(Carbon::parse('2026-07-14')))->toBe(9084.3)
         ->and($account->balanceAt(Carbon::parse('2026-08-31')))->toBe(7813.3)
         ->and($account->balanceAt(Carbon::parse('2026-09-28')))->toBe(10043.3)
         ->and($account->balanceLineAt(Carbon::parse('2026-12-31'))?->date->toDateString())->toBe('2026-09-28');
+});
+
+it('derives the opening balance from the first line the bank lists, not the first one entered', function (): void {
+    $account = BankAccount::factory()->savings()->create(['iban' => 'BE71096123456769']);
+    // Both on the first day: statement 2 was entered first, but statement 1
+    // comes first at the bank — its balance before is the opening one.
+    Transaction::create(['date' => '2026-01-02', 'description' => 'B', 'amount' => 10.0, 'bank_account_id' => $account->id, 'statement_number' => '2026002', 'balance_after' => 15510.0]);
+    Transaction::create(['date' => '2026-01-02', 'description' => 'A', 'amount' => 500.0, 'bank_account_id' => $account->id, 'statement_number' => '2026001', 'balance_after' => 15500.0]);
+
+    // 15 500 − 500 = 15 000 € on New Year's Eve, and every day before.
+    expect($account->balanceAt(Carbon::parse('2025-12-31')))->toBe(15000.0)
+        ->and($account->balanceAt(Carbon::parse('2024-06-01')))->toBe(15000.0)
+        ->and($account->balanceAt(Carbon::parse('2026-01-02')))->toBe(15510.0);
+});
+
+it('knows no balance for an account with no line carrying one', function (): void {
+    $account = BankAccount::factory()->create(['iban' => 'BE71096123456769']);
+    Transaction::create(['date' => '2026-01-02', 'description' => 'A', 'amount' => 500.0, 'bank_account_id' => $account->id]);
+
+    expect($account->balanceAt(Carbon::parse('2026-03-01')))->toBeNull();
 });
 
 it('seeds the demo treasury on a current account whose balance is known at every line', function (): void {

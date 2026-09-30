@@ -95,11 +95,13 @@ it('reads the money held on a day from each account and each till, with the day 
 
     $treasury = (new FinancialPosition)->treasuryAt(Carbon::parse('2026-06-30'));
 
-    expect($treasury['total'])->toBe(8175.0)
+    // The savings account, first imported on 1 July (+2 000 € → 17 000 €),
+    // held 15 000 € before: known, though no line of it is that old.
+    expect($treasury['total'])->toBe(23175.0)
         ->and(array_map(fn (array $holder): array => [$holder['name'], $holder['kind'], $holder['balance'], $holder['as_of']?->toDateString()], $treasury['holders']))
         ->toBe([
             ['Compte courant', 'current', 8050.0, '2026-06-20'],
-            ['Compte épargne', 'savings', null, null],
+            ['Compte épargne', 'savings', 15000.0, null],
             ['Caisse du club', 'cash', 125.0, '2026-06-25'],
         ]);
 });
@@ -158,10 +160,11 @@ it('says how much the treasury moved since the year began, and which balance is 
     $summary = (new FinancialPosition)->treasurySummary(FiscalYear::startingIn(2026), Carbon::parse('2026-03-20'));
 
     // 20 March 2026: 23 425 €. Since the 31st of December, the current
-    // account went 7 000 → 8 200 € and the tills 150 → 215 €: +1 265 €. The
-    // savings account, first imported in January, is no gain of the year.
+    // account went 7 000 → 8 200 €, the tills 150 → 215 € (the tournament
+    // till, opened in March, held nothing) and the savings account, first
+    // imported on 2 January (+10 € → 15 010 €), 15 000 → 15 010 €: +1 275 €.
     expect($summary['total'])->toBe(23425.0)
-        ->and($summary['change'])->toBe(1265.0)
+        ->and($summary['change'])->toBe(1275.0)
         ->and(array_map(fn (array $holder): array => [$holder['name'], $holder['as_of']?->toDateString()], $summary['stale']))
         ->toBe([['Compte épargne', '2026-01-02']]);
 });

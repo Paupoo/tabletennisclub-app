@@ -65,7 +65,8 @@ final class ChartFormat
      */
     public static function euros(float $amount, int $decimals = 0): string
     {
-        return number_format($amount, $decimals, ',', ' ') . ' €';
+        // A true minus sign: a hyphen reads as a dash next to a figure.
+        return ($amount < 0 && round($amount, $decimals) !== 0 ? '−' : '') . number_format(abs($amount), $decimals, ',', ' ') . ' €';
     }
 
     /**

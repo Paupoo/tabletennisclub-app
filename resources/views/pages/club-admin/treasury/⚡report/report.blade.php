@@ -131,7 +131,7 @@
                     </details>
                 </x-card>
 
-                <x-card :title="__('Expenses per poste')" class="shadow-sm" separator data-print-keep>
+                <x-card :title="__('Expenses per poste')" class="shadow-sm xl:col-span-2" separator data-print-keep>
                     @if ($expenseRows === [])
                         <p class="text-sm text-muted">{{ __('No expense in either year.') }}</p>
                     @else
@@ -142,7 +142,7 @@
                     @endif
                 </x-card>
 
-                <x-card :title="__('Income per poste')" class="shadow-sm" separator data-print-keep>
+                <x-card :title="__('Income per poste')" class="shadow-sm xl:col-span-2" separator data-print-keep>
                     @if ($incomeRows === [])
                         <p class="text-sm text-muted">{{ __('No income in either year.') }}</p>
                     @else
@@ -206,7 +206,7 @@
                                         <th>{{ __('Poste') }}</th>
                                         <th class="text-right">{{ $yearLabel }}</th>
                                         <th class="text-right">{{ $previousLabel }}</th>
-                                        <th class="text-right">{{ __('Change') }}</th>
+                                        <th class="text-right">{{ __('Evolution') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>

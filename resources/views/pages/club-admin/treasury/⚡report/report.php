@@ -132,13 +132,7 @@ new class extends Component
             'debts' => $position->openDebts(),
             'treasury' => $position->treasuryAt($treasuryDay),
             'treasuryDay' => $treasuryDay,
-            'months' => array_map(fn (array $month): array => [
-                'label' => $month['month']->translatedFormat('M'),
-                'long' => ucfirst($month['month']->translatedFormat('F Y')),
-                'income' => $month['income'],
-                'expenses' => $month['expenses'],
-                'cumulative' => $month['cumulative'],
-            ], $report->monthly()),
+            'months' => $this->months($report),
             'expenseRows' => $this->posteRows($report->expensesByCategory(), $previous->expensesByCategory(), 'expense'),
             'incomeRows' => $this->posteRows($report->incomeByCategory(), $previous->incomeByCategory(), 'income'),
             'trainings' => [
@@ -179,6 +173,34 @@ new class extends Component
         ])->filter()->min();
 
         return min(FiscalYear::current()->startYear(), $oldest === null ? PHP_INT_MAX : FiscalYear::for(CarbonImmutable::parse($oldest))->startYear());
+    }
+
+    /**
+     * The months of the year for the chart. A month not reached yet, with
+     * nothing booked in it nor after it, has no result to draw: the line
+     * stops there instead of running flat to December.
+     *
+     * @return list<array{label: string, long: string, income: float, expenses: float, cumulative: float, future: bool}>
+     */
+    private function months(FinancialReport $report): array
+    {
+        $months = [];
+        $quietFromHere = true;
+
+        foreach (array_reverse($report->monthly()) as $month) {
+            $quietFromHere = $quietFromHere && $month['income'] === 0.0 && $month['expenses'] === 0.0;
+
+            $months[] = [
+                'label' => $month['month']->translatedFormat('M'),
+                'long' => ucfirst($month['month']->translatedFormat('F Y')),
+                'income' => $month['income'],
+                'expenses' => $month['expenses'],
+                'cumulative' => $month['cumulative'],
+                'future' => $quietFromHere && $month['month']->greaterThan(CarbonImmutable::today()),
+            ];
+        }
+
+        return array_reverse($months);
     }
 
     /**

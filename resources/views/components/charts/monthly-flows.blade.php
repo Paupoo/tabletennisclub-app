@@ -2,7 +2,7 @@
     'id',
     'title',
     'description' => '',
-    // list<array{label: string, long: string, income: float, expenses: float, cumulative: float}>
+    // list<array{label: string, long: string, income: float, expenses: float, cumulative: float, future?: bool}>
     'months' => [],
     // array{income: string, expenses: string, cumulative: string}
     'labels' => [],
@@ -45,9 +45,12 @@
     $barWidth = min(16, round(($band - 10) / 2, 2));
     $centre = fn (int $index): float => round($left + $band * $index + $band / 2, 2);
 
-    $points = collect($months)->values()->map(fn (array $m, int $i): string => $centre($i) . ',' . $y($m['cumulative']))->implode(' ');
-    $last = collect($months)->last();
-    $lastIndex = count($months) - 1;
+    // The line stops at the last month reached: a year in progress has no
+    // result yet for the months to come.
+    $reached = collect($months)->values()->reject(fn (array $m): bool => $m['future'] ?? false);
+    $points = $reached->map(fn (array $m, int $i): string => $centre($i) . ',' . $y($m['cumulative']))->implode(' ');
+    $last = $reached->last();
+    $lastIndex = $reached->count() - 1;
 @endphp
 
 <x-charts.tooltip-frame :interactive="$interactive" {{ $attributes }}>
@@ -57,8 +60,10 @@
         ['label' => $labels['cumulative'] ?? __('Cumulative result'), 'colour' => $palette['result'], 'shape' => 'line'],
     ]" />
 
+    {{-- Drawn at 12px for a 720px width: narrower, the chart scrolls rather than shrink its labels below the DS-B floor. --}}
+    <div style="overflow-x:auto">
     <svg viewBox="0 0 {{ $width }} {{ $height }}" width="100%" role="img" aria-labelledby="{{ $id }}-title {{ $id }}-desc"
-        style="display:block;max-width:100%;height:auto;overflow:visible" font-family="system-ui, sans-serif" font-size="12">
+        style="display:block;min-width:720px;max-width:1080px;height:auto;overflow:visible" font-family="system-ui, sans-serif" font-size="12">
         <title id="{{ $id }}-title">{{ $title }}</title>
         <desc id="{{ $id }}-desc">{{ $description }}</desc>
 
@@ -89,11 +94,12 @@
             <text x="{{ $x }}" y="{{ $height - 8 }}" text-anchor="middle" {!! ChartFormat::paint($palette['muted']) !!}>{{ $month['label'] }}</text>
         @endforeach
 
-        @if ($count > 0 && $last !== null)
+        @if ($last !== null)
             <polyline points="{{ $points }}" fill="none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" {!! ChartFormat::paint($palette['result'], 'stroke') !!} />
             <circle cx="{{ $centre($lastIndex) }}" cy="{{ $y($last['cumulative']) }}" r="6" {!! ChartFormat::paint($palette['surface']) !!} />
             <circle cx="{{ $centre($lastIndex) }}" cy="{{ $y($last['cumulative']) }}" r="4" {!! ChartFormat::paint($palette['result']) !!} />
             <text x="{{ $centre($lastIndex) + 10 }}" y="{{ $y($last['cumulative']) + 4 }}" font-weight="600" {!! ChartFormat::paint($palette['ink']) !!}>{{ ChartFormat::euros($last['cumulative']) }}</text>
         @endif
     </svg>
+    </div>
 </x-charts.tooltip-frame>

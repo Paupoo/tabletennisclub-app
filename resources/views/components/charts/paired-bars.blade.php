@@ -46,8 +46,10 @@
         ['label' => $previousLabel, 'colour' => $palette['previous']],
     ]" />
 
+    {{-- Drawn at 12px for a 720px width: narrower, the chart scrolls rather than shrink its labels below the DS-B floor. --}}
+    <div style="overflow-x:auto">
     <svg viewBox="0 0 {{ $width }} {{ $height }}" width="100%" role="img" aria-labelledby="{{ $id }}-title {{ $id }}-desc"
-        style="display:block;max-width:100%;height:auto" font-family="system-ui, sans-serif" font-size="12">
+        style="display:block;min-width:720px;max-width:1080px;height:auto" font-family="system-ui, sans-serif" font-size="12">
         <title id="{{ $id }}-title">{{ $title }}</title>
         <desc id="{{ $id }}-desc">{{ $description }}</desc>
 
@@ -73,4 +75,5 @@
             </g>
         @endforeach
     </svg>
+    </div>
 </x-charts.tooltip-frame>

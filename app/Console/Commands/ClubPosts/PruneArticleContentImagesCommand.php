@@ -29,7 +29,7 @@ class PruneArticleContentImagesCommand extends Command
 {
     /**
      * Every column written in <x-markdown-editor>. The minutes' announcements
-     * and decisions are JSON lists, where a `/` may be stored as `\/`.
+     * are a JSON list, where a `/` may be stored as `\/`.
      *
      * @var array<string, list<string>> table => columns
      */
@@ -38,9 +38,10 @@ class PruneArticleContentImagesCommand extends Command
         'communications' => ['body'],
         'email_templates' => ['body'],
         'meetings' => ['description'],
-        'meeting_agenda_items' => ['description'],
+        'meeting_agenda_items' => ['description', 'discussion'],
+        'meeting_decisions' => ['body'],
         'meeting_action_items' => ['description'],
-        'meeting_minutes' => ['notes', 'announcements', 'decisions'],
+        'meeting_minutes' => ['notes', 'announcements'],
     ];
 
     public function handle(): int

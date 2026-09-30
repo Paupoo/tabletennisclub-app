@@ -13,6 +13,11 @@
     @endphp
 
     <div class="mx-auto max-w-4xl space-y-6">
+        @unless ($minutes->is_published)
+            <x-alert icon="o-eye" class="alert-warning alert-soft"
+                :title="__('Draft — not published')"
+                :description="__('Only you and the other meeting managers can see this preview.')" />
+        @endunless
 
         {{-- ── Header ──────────────────────────────────────────────────── --}}
         <header class="rounded-xl border border-base-300 bg-base-100 p-5 sm:p-6">
@@ -47,9 +52,16 @@
                             <dt class="sr-only">{{ __('Published') }}</dt>
                             <x-icon name="o-pencil-square" class="h-4 w-4" />
                             <dd>
-                                {{ $minutes->publisher
-                                    ? __('Published on :date by :name', ['date' => $minutes->published_at?->translatedFormat('j M Y'), 'name' => $minutes->publisher->full_name])
-                                    : __('Published on :date', ['date' => $minutes->published_at?->translatedFormat('j M Y')]) }}
+                                @if ($minutes->is_published)
+                                    {{ $minutes->publisher
+                                        ? __('Published on :date by :name', ['date' => $minutes->published_at?->translatedFormat('j M Y'), 'name' => $minutes->publisher->full_name])
+                                        : __('Published on :date', ['date' => $minutes->published_at?->translatedFormat('j M Y')]) }}
+                                    @if ($minutes->corrected_at)
+                                        · <span class="font-semibold text-base-content">{{ __('Corrected on :date', ['date' => $minutes->corrected_at->translatedFormat('j M Y')]) }}</span>
+                                    @endif
+                                @else
+                                    {{ __('Draft') }}
+                                @endif
                             </dd>
                         </div>
                     </dl>
@@ -68,7 +80,7 @@
 
         {{-- ── At a glance ─────────────────────────────────────────────── --}}
         <section aria-label="{{ __('At a glance') }}" class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <x-admin.shared.stat-card :label="__('Decisions')" :value="count($report->decisions)"
+            <x-admin.shared.stat-card :label="__('Decisions')" :value="$report->decisions->count()"
                 icon="o-check-badge" color="primary" />
             <x-admin.shared.stat-card :label="__('Actions')" :value="$report->actions->count()"
                 icon="o-clipboard-document-check" :color="$report->overdueCount() > 0 ? 'error' : 'neutral'"
@@ -94,7 +106,8 @@
                 </h2>
                 <div class="grid gap-3 sm:grid-cols-2">
                     @foreach ($myActions as $action)
-                        <x-admin.club-events.meetings.minutes-action :action="$action" :can-toggle="true" />
+                        <x-admin.club-events.meetings.minutes-action :action="$action" :can-toggle="true"
+                            :point="$report->agenda->isNotEmpty() ? $report->pointLabel($action->item->agendaItem) : null" />
                     @endforeach
                 </div>
             </section>
@@ -102,10 +115,15 @@
 
         {{-- ── Decisions ───────────────────────────────────────────────── --}}
         <x-card :title="__('Decisions')" data-minutes-section="decisions" class="shadow-sm">
-            @forelse ($report->decisions as $i => $decision)
-                <div class="flex gap-3 border-base-300 py-3 first:pt-0 last:pb-0 [&:not(:last-child)]:border-b">
-                    <span class="flex h-7 min-w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-black text-primary">D{{ $i + 1 }}</span>
-                    <div class="{{ $proseClasses }} pt-0.5">{!! \App\Support\Markdown::safe($decision) !!}</div>
+            @forelse ($report->decisions as $decision)
+                <div class="flex gap-3 border-base-300 py-3 first:pt-0 last:pb-0 [&:not(:last-child)]:border-b" wire:key="decision-{{ $decision->id }}">
+                    <span class="flex h-7 min-w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-black text-primary">{{ $report->decisionNumber($decision) }}</span>
+                    <div class="min-w-0 flex-1 pt-0.5">
+                        <div class="{{ $proseClasses }}">{!! \App\Support\Markdown::safe($decision->body) !!}</div>
+                        @if ($report->agenda->isNotEmpty())
+                            <p class="mt-1 text-xs text-muted">{{ $report->pointLabel($decision->agendaItem) }}</p>
+                        @endif
+                    </div>
                 </div>
             @empty
                 <p class="text-sm italic text-muted">{{ __('No decision was recorded.') }}</p>
@@ -119,7 +137,8 @@
             @else
                 <div class="grid gap-3 sm:grid-cols-2">
                     @foreach ($report->actions as $action)
-                        <x-admin.club-events.meetings.minutes-action :action="$action" :can-toggle="$canToggle($action)" />
+                        <x-admin.club-events.meetings.minutes-action :action="$action" :can-toggle="$canToggle($action)"
+                            :point="$report->agenda->isNotEmpty() ? $report->pointLabel($action->item->agendaItem) : null" />
                     @endforeach
                 </div>
             @endif
@@ -157,8 +176,25 @@
                                         <span class="badge badge-outline badge-sm border-base-300 text-muted">{{ __('Not discussed') }}</span>
                                     @endif
                                 </div>
-                                @if (filled($item->description))
+                                @if (filled($item->discussion))
+                                    <div class="{{ $proseClasses }} mt-1">{!! \App\Support\Markdown::safe($item->discussion) !!}</div>
+                                @elseif (filled($item->description))
                                     <div class="{{ $proseClasses }} mt-1 text-muted">{!! \App\Support\Markdown::safe($item->description) !!}</div>
+                                @endif
+                                @php
+                                    $pointDecisions = $report->decisionsFor($item);
+                                    $pointActions = $report->actionsFor($item)->count();
+                                @endphp
+                                @if ($pointDecisions->isNotEmpty() || $pointActions > 0)
+                                    <p class="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                                        <x-icon name="o-arrow-turn-down-right" class="h-3.5 w-3.5" />
+                                        @foreach ($pointDecisions as $decision)
+                                            <span class="rounded bg-primary/10 px-1.5 font-bold text-primary">{{ $report->decisionNumber($decision) }}</span>
+                                        @endforeach
+                                        @if ($pointActions > 0)
+                                            <span>{{ trans_choice('{1}1 action|[2,*]:count actions', $pointActions, ['count' => $pointActions]) }}</span>
+                                        @endif
+                                    </p>
                                 @endif
                             </div>
                         </li>
@@ -169,7 +205,7 @@
 
         {{-- ── Notes ───────────────────────────────────────────────────── --}}
         @if ($report->notes)
-            <x-card :title="__('Additional notes')" data-minutes-section="notes" class="shadow-sm">
+            <x-card :title="__('Outside the agenda')" data-minutes-section="notes" class="shadow-sm">
                 <div class="{{ $proseClasses }}">{!! \App\Support\Markdown::safe($report->notes) !!}</div>
             </x-card>
         @endif

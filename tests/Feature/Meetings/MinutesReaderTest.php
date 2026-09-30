@@ -28,8 +28,14 @@ const READER = 'pages::club-events.meetings.reader';
 
 function publishedMinutes(Meeting $meeting, array $attributes = []): MeetingMinutes
 {
+    $decisions = $attributes['decisions'] ?? ['On garde **le prix**'];
+    unset($attributes['decisions']);
+
+    foreach ($decisions as $position => $body) {
+        $meeting->decisions()->create(['body' => $body, 'sort_order' => $position]);
+    }
+
     return MeetingMinutes::factory()->published()->for($meeting)->create(array_merge([
-        'decisions' => ['On garde **le prix**'],
         'announcements' => ['Nouveau sponsor'],
         'notes' => 'Rien à ajouter',
     ], $attributes));
@@ -81,13 +87,18 @@ describe('who may read', function (): void {
             ->assertForbidden();
     });
 
-    it('does not show minutes that are not published, not even to the committee', function (): void {
+    it('shows unpublished minutes to nobody but the meeting managers, as a preview', function (): void {
         $meeting = Meeting::factory()->committee()->completed()->create();
         MeetingMinutes::factory()->for($meeting)->create(['is_published' => false]);
 
-        $this->actingAs(User::factory()->isAdmin()->isCommitteeMember()->create())
+        $this->actingAs(User::factory()->isCommitteeMember()->create())
             ->get(route('meetings.minutes.read', $meeting))
             ->assertForbidden();
+
+        $this->actingAs(User::factory()->isAdmin()->isCommitteeMember()->create())
+            ->get(route('meetings.minutes.read', $meeting))
+            ->assertOk()
+            ->assertSee(__('Draft — not published'));
     });
 });
 
@@ -252,4 +263,18 @@ it('lists in the member\'s space the general assembly minutes sent to all, and n
         ->assertSee(route('meetings.minutes.pdf', $sent), false)
         ->assertDontSee('AG en relecture')
         ->assertDontSee('Comité confidentiel');
+});
+
+it('ties each decision to its point, and tells the agenda as what was said on each point', function (): void {
+    $meeting = Meeting::factory()->committee()->completed()->create();
+    $accounts = $meeting->agendaItems()->create(['sort_order' => 0, 'title' => 'Comptes 2025', 'discussion' => 'Le trésorier présente les **comptes**.', 'discussed_at' => now()]);
+    publishedMinutes($meeting, ['decisions' => []]);
+    $meeting->decisions()->create(['agenda_item_id' => $accounts->id, 'body' => 'Comptes approuvés', 'sort_order' => 0]);
+    $meeting->decisions()->create(['agenda_item_id' => null, 'body' => 'Prochaine réunion le 12', 'sort_order' => 1]);
+
+    $this->actingAs(User::factory()->isCommitteeMember()->create());
+
+    Livewire::test(READER, ['meeting' => $meeting])
+        ->assertSeeInOrder(['D1', 'Comptes approuvés', '1. Comptes 2025', 'D2', 'Prochaine réunion le 12', __('Outside the agenda')])
+        ->assertSeeHtml('<strong>comptes</strong>');
 });

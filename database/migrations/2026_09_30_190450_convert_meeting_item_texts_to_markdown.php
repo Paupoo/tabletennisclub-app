@@ -44,7 +44,8 @@ return new class extends Migration
                     $changes = [];
 
                     foreach (['announcements', 'decisions'] as $column) {
-                        $items = json_decode((string) $row->{$column}, true);
+                        // `decisions` left this table for meeting_decisions right after this migration.
+                        $items = json_decode((string) ($row->{$column} ?? ''), true);
 
                         if (is_array($items) && $items !== []) {
                             // Encoded as the model's `array` cast does.

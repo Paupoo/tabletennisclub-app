@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $meeting_id
+ * @property int|null $agenda_item_id the point it was decided on; null: outside the agenda
  * @property string $title
  * @property string|null $description
  * @property int|null $assigned_to_id
@@ -55,12 +56,19 @@ class MeetingActionItem extends Model
 
     protected $fillable = [
         'meeting_id',
+        'agenda_item_id',
         'title',
         'description',
         'assigned_to_id',
         'due_date',
         'is_completed',
     ];
+
+    /** @return BelongsTo<MeetingAgendaItem, $this> */
+    public function agendaItem(): BelongsTo
+    {
+        return $this->belongsTo(MeetingAgendaItem::class, 'agenda_item_id');
+    }
 
     public function assignedTo(): BelongsTo
     {

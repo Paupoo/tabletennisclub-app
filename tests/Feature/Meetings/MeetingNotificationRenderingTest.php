@@ -95,7 +95,8 @@ describe('The minutes mail points at the minutes', function (): void {
     test('the mail carries the decisions, the reader\'s actions and the minutes as a PDF', function (): void {
         $reader = User::factory()->isCommitteeMember()->create();
         $meeting = Meeting::factory()->committee()->completed()->create(['scheduled_at' => '2026-03-12 20:00']);
-        MeetingMinutes::factory()->published()->for($meeting)->create(['decisions' => ['On garde **le prix**']]);
+        MeetingMinutes::factory()->published()->for($meeting)->create();
+        $meeting->decisions()->create(['body' => 'On garde **le prix**']);
         MeetingActionItem::factory()->for($meeting)->create(['title' => 'Réserver la salle', 'assigned_to_id' => $reader->id, 'due_date' => now()->subDays(2), 'is_completed' => false]);
         MeetingActionItem::factory()->for($meeting)->create(['title' => 'Tâche d\'un autre', 'assigned_to_id' => User::factory(), 'is_completed' => false]);
 

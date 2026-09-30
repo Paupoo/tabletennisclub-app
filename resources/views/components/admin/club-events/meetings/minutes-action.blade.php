@@ -6,8 +6,9 @@
 
     @param \App\Domains\Meetings\Services\MinutesAction $action
     @param bool $canToggle the reader is the assignee, or runs the meetings
+    @param string|null $point the agenda point it was handed out on
 --}}
-@props(['action', 'canToggle' => false])
+@props(['action', 'canToggle' => false, 'point' => null])
 
 @php
     $item = $action->item;
@@ -36,6 +37,9 @@
 
     <div @class(['min-w-0', 'opacity-70' => $action->status === 'done'])>
         <h3 @class(['font-bold text-base-content', 'line-through' => $action->status === 'done'])>{{ $item->title }}</h3>
+        @if ($point)
+            <p class="text-xs text-muted">{{ $point }}</p>
+        @endif
         @if (filled($item->description))
             <div class="prose prose-sm mt-1 max-w-none text-muted [&>:first-child]:mt-0 [&>:last-child]:mb-0">
                 {!! \App\Support\Markdown::safe($item->description) !!}

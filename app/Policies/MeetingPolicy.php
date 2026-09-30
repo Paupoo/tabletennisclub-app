@@ -33,8 +33,13 @@ class MeetingPolicy
 
     public function readMinutes(User $user, Meeting $meeting): bool
     {
-        if (! $meeting->minutes?->is_published) {
+        if ($meeting->minutes === null) {
             return false;
+        }
+
+        // Before publishing, the page is the note taker's preview: theirs alone.
+        if (! $meeting->minutes->is_published) {
+            return $user->can(Permission::MeetingsManage->value);
         }
 
         if ($user->can(Permission::MeetingsView->value)) {

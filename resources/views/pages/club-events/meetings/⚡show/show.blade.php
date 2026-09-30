@@ -444,7 +444,7 @@
                                 @if ($minutes)
                                     {{ __(':a announcements · :d decisions · :t action items', [
                                         'a' => count($minutes->announcements ?? []),
-                                        'd' => count($minutes->decisions ?? []),
+                                        'd' => $meeting->decisions->count(),
                                         't' => $meeting->actionItems->count(),
                                     ]) }}
                                 @else
@@ -470,7 +470,7 @@
                             <p class="text-sm text-muted">
                                 {{ __(':a announcements · :d decisions · :t action items', [
                                     'a' => count($minutes->announcements ?? []),
-                                    'd' => count($minutes->decisions ?? []),
+                                    'd' => $meeting->decisions->count(),
                                     't' => $meeting->actionItems->count(),
                                 ]) }}
                             </p>

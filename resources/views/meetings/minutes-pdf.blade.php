@@ -63,12 +63,13 @@
 </table>
 
 {{-- ── Title ────────────────────────────────────────────────────────── --}}
-<div class="eyebrow">{{ __('Minutes') }} · {{ $meeting->type->getLabel() }}</div>
+<div class="eyebrow">{{ __('Minutes') }} · {{ $meeting->type->getLabel() }}@unless ($minutes->is_published) · <span class="overdue">{{ __('Draft — not published') }}</span>@endunless</div>
 <h1>{{ $meeting->title }}</h1>
 <div class="meta">
     @if ($meeting->scheduled_at){{ ucfirst($meeting->scheduled_at->translatedFormat('l j F Y · H:i')) }}@endif
     @if (filled($meeting->location)) · {{ $meeting->location }}@endif
     @if ($minutes->publisher) · {{ __('Written by :name', ['name' => $minutes->publisher->full_name]) }}@endif
+    @if ($minutes->corrected_at) · <strong>{{ __('Corrected on :date', ['date' => $minutes->corrected_at->format('d/m/Y')]) }}</strong>@endif
 </div>
 
 {{-- ── At a glance ──────────────────────────────────────────────────── --}}
@@ -76,7 +77,7 @@
     <tr>
         <td>
             <div class="tile-label">{{ __('Decisions') }}</div>
-            <div class="tile-value">{{ count($report->decisions) }}</div>
+            <div class="tile-value">{{ $report->decisions->count() }}</div>
         </td>
         <td>
             <div class="tile-label">{{ __('Actions') }}</div>
@@ -106,14 +107,19 @@
 
 {{-- ── Decisions ────────────────────────────────────────────────────── --}}
 <h2>{{ __('Decisions') }}</h2>
-@if ($report->decisions === [])
+@if ($report->decisions->isEmpty())
     <p class="empty">{{ __('No decision was recorded.') }}</p>
 @else
     <table class="rows">
-        @foreach ($report->decisions as $i => $decision)
+        @foreach ($report->decisions as $decision)
             <tr>
-                <td class="ref">D{{ $i + 1 }}</td>
-                <td class="content">{!! \App\Support\Markdown::safe($decision) !!}</td>
+                <td class="ref">{{ $report->decisionNumber($decision) }}</td>
+                <td class="content">
+                    {!! \App\Support\Markdown::safe($decision->body) !!}
+                    @if ($report->agenda->isNotEmpty())
+                        <div class="muted" style="font-size: 8pt;">{{ $report->pointLabel($decision->agendaItem) }}</div>
+                    @endif
+                </td>
             </tr>
         @endforeach
     </table>
@@ -139,6 +145,9 @@
                     <td class="status {{ $action->status }}">{{ mb_strtoupper($action->label()) }}</td>
                     <td>
                         <div class="title">{{ $action->item->title }}</div>
+                        @if ($report->agenda->isNotEmpty())
+                            <div class="muted" style="font-size: 8pt;">{{ $report->pointLabel($action->item->agendaItem) }}</div>
+                        @endif
                         @if (filled($action->item->description))
                             <div class="details">{!! \App\Support\Markdown::safe($action->item->description) !!}</div>
                         @endif
@@ -173,8 +182,17 @@
                 <td class="num">{{ $i + 1 }}.</td>
                 <td>
                     <div class="title">{{ $item->title }}</div>
-                    @if (filled($item->description))
+                    @if (filled($item->discussion))
+                        <div class="content">{!! \App\Support\Markdown::safe($item->discussion) !!}</div>
+                    @elseif (filled($item->description))
                         <div class="details">{!! \App\Support\Markdown::safe($item->description) !!}</div>
+                    @endif
+                    @php
+                        $refs = $report->decisionsFor($item)->map(fn ($decision) => $report->decisionNumber($decision));
+                        $pointActions = $report->actionsFor($item)->count();
+                    @endphp
+                    @if ($refs->isNotEmpty() || $pointActions > 0)
+                        <div class="muted" style="font-size: 8pt;">→ {{ $refs->implode(', ') }}@if ($refs->isNotEmpty() && $pointActions > 0) · @endif @if ($pointActions > 0){{ trans_choice('{1}1 action|[2,*]:count actions', $pointActions, ['count' => $pointActions]) }}@endif</div>
                     @endif
                 </td>
                 <td class="status {{ $item->discussed_at ? 'done' : 'muted' }}" style="width: 26mm; text-align: right;">
@@ -187,7 +205,7 @@
 
 {{-- ── Notes ────────────────────────────────────────────────────────── --}}
 @if ($report->notes)
-    <h2>{{ __('Additional notes') }}</h2>
+    <h2>{{ __('Outside the agenda') }}</h2>
     <div class="content">{!! \App\Support\Markdown::safe($report->notes) !!}</div>
 @endif
 

@@ -6,6 +6,7 @@ namespace App\Domains\Meetings\Notifications;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Models\MeetingDecision;
 use App\Domains\Meetings\Pdf\MinutesPdf;
 use App\Domains\Meetings\Services\MinutesAction;
 use App\Domains\Meetings\Services\MinutesReport;
@@ -57,7 +58,7 @@ class MeetingMinutesNotification extends Notification
             $report = MinutesReport::for($meeting, $notifiable instanceof User ? $notifiable : null);
 
             $mail->line(__('At a glance: :decisions · :actions · :present', [
-                'decisions' => trans_choice('{0}no decision|{1}1 decision|[2,*]:count decisions', count($report->decisions), ['count' => count($report->decisions)]),
+                'decisions' => trans_choice('{0}no decision|{1}1 decision|[2,*]:count decisions', $report->decisions->count(), ['count' => $report->decisions->count()]),
                 'actions' => trans_choice('{0}no action|{1}1 action|[2,*]:count actions', $report->actions->count(), ['count' => $report->actions->count()]),
                 'present' => trans_choice('{0}nobody present|{1}1 present|[2,*]:count present', $report->present->count(), ['count' => $report->present->count()]),
             ]));
@@ -67,8 +68,8 @@ class MeetingMinutesNotification extends Notification
                     ->line($this->yourActions($report));
             }
 
-            if ($report->decisions !== []) {
-                $mail->line('**' . __('Decisions') . '**')->line($this->decisions($report->decisions));
+            if ($report->decisions->isNotEmpty()) {
+                $mail->line('**' . __('Decisions') . '**')->line($this->decisions($report));
             }
 
             $mail->attachData(app(MinutesPdf::class)->render($report), $report->pdfFilename(), ['mime' => 'application/pdf']);
@@ -86,15 +87,12 @@ class MeetingMinutesNotification extends Notification
         return ['mail', 'database'];
     }
 
-    /**
-     * Numbered as on the reading page, rendered rather than bulleted as text.
-     *
-     * @param  list<string>  $decisions
-     */
-    private function decisions(array $decisions): HtmlString
+    /** Numbered as on the reading page, rendered rather than bulleted as text. */
+    private function decisions(MinutesReport $report): HtmlString
     {
-        return new HtmlString('<table role="presentation" style="width: 100%;">' . collect($decisions)
-            ->map(fn (string $decision, int $i): string => '<tr><td style="width: 36px; vertical-align: top; font-weight: bold; color: #1e40af;">D' . ($i + 1) . '</td><td>' . Markdown::safe($decision) . '</td></tr>')
+        return new HtmlString('<table role="presentation" style="width: 100%;">' . $report->decisions
+            ->map(fn (MeetingDecision $decision): string => '<tr><td style="width: 36px; vertical-align: top; font-weight: bold; color: #1e40af;">'
+                . $report->decisionNumber($decision) . '</td><td>' . Markdown::safe($decision->body) . '</td></tr>')
             ->implode('') . '</table>');
     }
 

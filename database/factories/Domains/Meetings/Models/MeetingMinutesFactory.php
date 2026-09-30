@@ -21,7 +21,6 @@ class MeetingMinutesFactory extends Factory
         return [
             'meeting_id' => Meeting::factory(),
             'announcements' => null,
-            'decisions' => null,
             'notes' => null,
             'is_published' => false,
             'published_at' => null,

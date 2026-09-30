@@ -106,7 +106,9 @@ class MoveMemberBetweenTrainingPacksAction
         // fois : sa cotisation initiale couvrira déjà le nouveau pack.
         $alreadyInvoiced = $subscription->payments()->exists();
 
-        DB::transaction(function () use ($subscription, $from, $to, $destination, $today, $billableFrom): void {
+        // One piece, the complement included: were it to fail, the member would
+        // sit in the new pack at the new price with nothing asked of them.
+        [$delta, $payment] = DB::transaction(function () use ($subscription, $from, $to, $destination, $today, $billableFrom, $familyMembersCount, $amountDueBefore, $alreadyInvoiced): array {
             // La ligne quittée est datée, jamais supprimée : le membre a bien
             // suivi ce pack jusqu'à aujourd'hui, et le pro rata le facture.
             $subscription->trainingPacks()->updateExistingPivot($from->id, [
@@ -131,29 +133,31 @@ class MoveMemberBetweenTrainingPacksAction
             } else {
                 $subscription->trainingPacks()->attach($to->id, $attributes);
             }
+
+            (new CalculatePriceAction)($subscription, $familyMembersCount);
+
+            $subscription->refresh();
+
+            $delta = round((float) $subscription->amount_due - $amountDueBefore, 2);
+
+            $payment = null;
+
+            if ($alreadyInvoiced && $delta > 0) {
+                $payment = $subscription->payments()->create([
+                    'reference' => (new GeneratePaymentReference)(),
+                    'amount_due' => $delta,
+                    'amount_paid' => 0,
+                    'status' => 'pending',
+                    'covers' => PaymentCovers::packs([$to], PaymentCovers::PACK_CHANGE),
+                ]);
+            }
+
+            return [$delta, $payment];
         });
 
-        (new CalculatePriceAction)($subscription, $familyMembersCount);
-
-        // La place rendue dans l'ancien pack appelle la file d'attente. Le
-        // service décide seul s'il y a quelqu'un à appeler et combien.
+        // La place rendue dans l'ancien pack appelle la file d'attente — une fois
+        // le déplacement acquis, puisque le service peut prévenir le suivant.
         app(TrainingWaitlistService::class)->releaseSpot($from);
-
-        $subscription->refresh();
-
-        $delta = round((float) $subscription->amount_due - $amountDueBefore, 2);
-
-        $payment = null;
-
-        if ($alreadyInvoiced && $delta > 0) {
-            $payment = $subscription->payments()->create([
-                'reference' => (new GeneratePaymentReference)(),
-                'amount_due' => $delta,
-                'amount_paid' => 0,
-                'status' => 'pending',
-                'covers' => PaymentCovers::packs([$to], PaymentCovers::PACK_CHANGE),
-            ]);
-        }
 
         $subscription->user->notify(
             new TrainingPackMovedNotification($from, $to, $subscription, $payment?->reference)

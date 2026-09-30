@@ -256,45 +256,51 @@ new class extends Component
             return;
         }
 
-        $subscription->user->update(['licence' => $licence, 'ranking' => $ranking]);
+        // One piece: were the invoice to fail, the member would be confirmed with
+        // packs enrolled and a price raised, and nothing asked of them.
+        $payment = DB::transaction(function () use ($subscription, $licence, $ranking): Payment {
+            $subscription->user->update(['licence' => $licence, 'ranking' => $ranking]);
 
-        // La remise famille se lit sur le lien tuteur, pas sur le drapeau
-        // `has_other_family_members` que rien n'a jamais renseigné. Sans ce
-        // comptage, une affiliation acceptée ici facturait le plein tarif à un
-        // membre dont un frère était déjà affilié.
-        $familyMembersCount = (new FamilyDiscount)->membersCount($subscription->user, $subscription->season);
-        $subscription->has_other_family_members = $familyMembersCount > 1;
+            // La remise famille se lit sur le lien tuteur, pas sur le drapeau
+            // `has_other_family_members` que rien n'a jamais renseigné. Sans ce
+            // comptage, une affiliation acceptée ici facturait le plein tarif à un
+            // membre dont un frère était déjà affilié.
+            $familyMembersCount = (new FamilyDiscount)->membersCount($subscription->user, $subscription->season);
+            $subscription->has_other_family_members = $familyMembersCount > 1;
 
-        (new CalculatePriceAction)($subscription, $familyMembersCount);
-        $subscription->confirm();
+            (new CalculatePriceAction)($subscription, $familyMembersCount);
+            $subscription->confirm();
 
-        // Approve selected training packs (pending → enrolled)
-        if ($this->approvedPackIds !== []) {
-            (new ApproveTrainingPacksAction)($subscription, $this->approvedPackIds, $familyMembersCount);
-        }
+            // Approve selected training packs (pending → enrolled)
+            if ($this->approvedPackIds !== []) {
+                (new ApproveTrainingPacksAction)($subscription, $this->approvedPackIds, $familyMembersCount);
+            }
 
-        // Avant la facture, et non après : ici le paiement naît de
-        // `getAmountDue()`, donc la communication doit déjà porter le montant
-        // remisé. À l'inverse du raccourci de la demande de pack, où le
-        // complément existe avant qu'on puisse le raboter.
-        $discount = $this->applyInlineDiscount($subscription);
-        $subscription->refresh();
+            // Avant la facture, et non après : ici le paiement naît de
+            // `getAmountDue()`, donc la communication doit déjà porter le montant
+            // remisé. À l'inverse du raccourci de la demande de pack, où le
+            // complément existe avant qu'on puisse le raboter.
+            $discount = $this->applyInlineDiscount($subscription);
+            $subscription->refresh();
 
-        // Génère le Payment si aucun n'existe déjà pour cette subscription
-        $payment = $subscription->payments()->where('status', 'pending')->first();
-        if (! $payment) {
-            $payment = $subscription->payments()->create([
-                'reference' => (new GeneratePaymentReference)(),
-                'amount_due' => $subscription->getAmountDue(),
-                'amount_paid' => 0,
-                'status' => 'pending',
-                'covers' => PaymentCovers::affiliation($subscription),
-            ]);
+            // Génère le Payment si aucun n'existe déjà pour cette subscription
+            $payment = $subscription->payments()->where('status', 'pending')->first();
+            if (! $payment) {
+                $payment = $subscription->payments()->create([
+                    'reference' => (new GeneratePaymentReference)(),
+                    'amount_due' => $subscription->getAmountDue(),
+                    'amount_paid' => 0,
+                    'status' => 'pending',
+                    'covers' => PaymentCovers::affiliation($subscription),
+                ]);
 
-            // Accordée avant que la facture existe, la remise n'a rien pu
-            // réduire : c'est cette facture-ci qu'elle explique.
-            $discount?->update(['payment_id' => $payment->id]);
-        }
+                // Accordée avant que la facture existe, la remise n'a rien pu
+                // réduire : c'est cette facture-ci qu'elle explique.
+                $discount?->update(['payment_id' => $payment->id]);
+            }
+
+            return $payment;
+        });
 
         $this->paymentData = [
             'payment_id' => $payment->id,
@@ -328,33 +334,39 @@ new class extends Component
             ->pluck('id')
             ->toArray();
 
-        // Capture before approval so we can compute the correct discount-aware delta
-        $previousAmountDue = $subscription->amount_due;
+        // One piece: were the complement to fail, the packs would stay enrolled
+        // and the price raised with nothing asked of the member.
+        $payment = DB::transaction(function () use ($subscription): ?Payment {
+            // Capture before approval so we can compute the correct discount-aware delta
+            $previousAmountDue = $subscription->amount_due;
 
-        (new ApproveTrainingPacksAction)(
-            $subscription,
-            $this->approvedPackIds,
-            $subscription->has_other_family_members ? 2 : 1,
-        );
+            (new ApproveTrainingPacksAction)(
+                $subscription,
+                $this->approvedPackIds,
+                $subscription->has_other_family_members ? 2 : 1,
+            );
 
-        $subscription->refresh();
+            $subscription->refresh();
 
-        // Delta = new total − what was already owed (CalculatePriceAction applied discount inside)
-        $deltaCost = max(0.0, $subscription->amount_due - $previousAmountDue);
+            // Delta = new total − what was already owed (CalculatePriceAction applied discount inside)
+            $deltaCost = max(0.0, $subscription->amount_due - $previousAmountDue);
 
-        $payment = $deltaCost > 0
-            ? $subscription->payments()->create([
-                'reference' => (new GeneratePaymentReference)(),
-                'amount_due' => $deltaCost,
-                'amount_paid' => 0,
-                'status' => 'pending',
-                'covers' => PaymentCovers::packs(TrainingPack::query()->whereIn('id', $this->approvedPackIds)->orderBy('id')->get()),
-            ])
-            : null;
+            $payment = $deltaCost > 0
+                ? $subscription->payments()->create([
+                    'reference' => (new GeneratePaymentReference)(),
+                    'amount_due' => $deltaCost,
+                    'amount_paid' => 0,
+                    'status' => 'pending',
+                    'covers' => PaymentCovers::packs(TrainingPack::query()->whereIn('id', $this->approvedPackIds)->orderBy('id')->get()),
+                ])
+                : null;
 
-        // Après le complément, qu'elle rabote ; mais avant la fenêtre de
-        // paiement, qui doit montrer ce que le membre recevra réellement.
-        $this->applyInlineDiscount($subscription->fresh(), $deltaCost);
+            // Après le complément, qu'elle rabote ; mais avant la fenêtre de
+            // paiement, qui doit montrer ce que le membre recevra réellement.
+            $this->applyInlineDiscount($subscription->fresh(), $deltaCost);
+
+            return $payment;
+        });
 
         // Remisé à 100 %, le complément est annulé : plus rien à communiquer.
         if ($payment instanceof Payment && $payment->refresh()->status === 'pending') {
@@ -597,22 +609,27 @@ new class extends Component
         // about this: before that, nothing has been announced to them yet.
         $wasInvoiced = $subscription->payments()->exists();
 
-        $delta = (new ChangeSubscriptionFormulaAction)(
-            $subscription,
-            $subscription->has_other_family_members ? 2 : 1,
-        );
+        // One piece: the new formula and the complement it calls for.
+        [$delta, $complement] = DB::transaction(function () use ($subscription, $wasInvoiced): array {
+            $delta = (new ChangeSubscriptionFormulaAction)(
+                $subscription,
+                $subscription->has_other_family_members ? 2 : 1,
+            );
 
-        $complement = null;
+            $complement = null;
 
-        if ($wasInvoiced && $delta > 0) {
-            $complement = $subscription->payments()->create([
-                'reference' => (new GeneratePaymentReference)(),
-                'amount_due' => $delta,
-                'amount_paid' => 0,
-                'status' => 'pending',
-                'covers' => PaymentCovers::formulaChange(),
-            ]);
-        }
+            if ($wasInvoiced && $delta > 0) {
+                $complement = $subscription->payments()->create([
+                    'reference' => (new GeneratePaymentReference)(),
+                    'amount_due' => $delta,
+                    'amount_paid' => 0,
+                    'status' => 'pending',
+                    'covers' => PaymentCovers::formulaChange(),
+                ]);
+            }
+
+            return [$delta, $complement];
+        });
 
         // A refund is capped by what actually came in: we never hand back a euro
         // that was never received (same reasoning as LeaveTrainingPackAction).

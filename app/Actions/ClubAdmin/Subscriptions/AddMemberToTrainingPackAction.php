@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Support\PaymentCovers;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
@@ -43,54 +44,59 @@ class AddMemberToTrainingPackAction
             throw new \DomainException(__('This member has no active membership for the season.'));
         }
 
-        $existing = DB::table('subscription_training_pack')
-            ->where('subscription_id', $subscription->id)
-            ->where('training_pack_id', $pack->id)
-            ->first();
+        // One piece: were the complement to fail, the member would be in the
+        // pack at a raised price with nothing asked of them.
+        $payment = DB::transaction(function () use ($subscription, $pack, $startsOn, $familyMembersCount): ?Payment {
+            $existing = DB::table('subscription_training_pack')
+                ->where('subscription_id', $subscription->id)
+                ->where('training_pack_id', $pack->id)
+                ->first();
 
-        $attributes = [
-            'status' => 'enrolled',
-            'waitlist_position' => null,
-            'confirmation_deadline' => null,
-            'starts_on' => $this->prorata->enrolmentStart($pack, $startsOn),
-            'ends_on' => null,
-            'override_amount' => null,
-            'override_reason' => null,
-        ];
+            $attributes = [
+                'status' => 'enrolled',
+                'waitlist_position' => null,
+                'confirmation_deadline' => null,
+                'starts_on' => $this->prorata->enrolmentStart($pack, $startsOn),
+                'ends_on' => null,
+                'override_amount' => null,
+                'override_reason' => null,
+            ];
 
-        if ($existing !== null) {
-            $subscription->trainingPacks()->updateExistingPivot($pack->id, $attributes);
-        } else {
-            $subscription->trainingPacks()->attach($pack->id, $attributes);
-        }
+            if ($existing !== null) {
+                $subscription->trainingPacks()->updateExistingPivot($pack->id, $attributes);
+            } else {
+                $subscription->trainingPacks()->attach($pack->id, $attributes);
+            }
 
-        // Ce que le membre devait avant : le complément est la différence, pas
-        // le prix du pack — l'ajout peut faire jouer la remise multi-packs et
-        // faire baisser un pack déjà facturé.
-        $amountDueBefore = (float) $subscription->amount_due;
+            // Ce que le membre devait avant : le complément est la différence, pas
+            // le prix du pack — l'ajout peut faire jouer la remise multi-packs et
+            // faire baisser un pack déjà facturé.
+            $amountDueBefore = (float) $subscription->amount_due;
 
-        // Facturer un membre à qui rien n'a encore été réclamé ferait payer
-        // deux fois : sa cotisation initiale couvrira déjà ce pack.
-        $alreadyInvoiced = $subscription->payments()->exists();
+            // Facturer un membre à qui rien n'a encore été réclamé ferait payer
+            // deux fois : sa cotisation initiale couvrira déjà ce pack.
+            $alreadyInvoiced = $subscription->payments()->exists();
 
-        (new CalculatePriceAction)($subscription, $familyMembersCount);
+            (new CalculatePriceAction)($subscription, $familyMembersCount);
 
-        // Le montant annoncé au membre doit être celui d'après recalcul, pas
-        // celui d'avant : c'est la seule chose qui l'intéresse dans ce mail.
-        $subscription->refresh();
+            // Le montant annoncé au membre doit être celui d'après recalcul, pas
+            // celui d'avant : c'est la seule chose qui l'intéresse dans ce mail.
+            $subscription->refresh();
 
-        $complement = round((float) $subscription->amount_due - $amountDueBefore, 2);
-        $payment = null;
+            $complement = round((float) $subscription->amount_due - $amountDueBefore, 2);
 
-        if ($alreadyInvoiced && $complement > 0) {
-            $payment = $subscription->payments()->create([
-                'reference' => (new GeneratePaymentReference)(),
-                'amount_due' => $complement,
-                'amount_paid' => 0,
-                'status' => 'pending',
-                'covers' => PaymentCovers::packs([$pack]),
-            ]);
-        }
+            if ($alreadyInvoiced && $complement > 0) {
+                return $subscription->payments()->create([
+                    'reference' => (new GeneratePaymentReference)(),
+                    'amount_due' => $complement,
+                    'amount_paid' => 0,
+                    'status' => 'pending',
+                    'covers' => PaymentCovers::packs([$pack]),
+                ]);
+            }
+
+            return null;
+        });
 
         $subscription->user->notify(
             new TrainingPackAddedByClubNotification($pack, $subscription, $payment?->reference)

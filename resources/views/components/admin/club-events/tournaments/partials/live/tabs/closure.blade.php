@@ -71,10 +71,8 @@
 
                     <x-input wire:model="thankYouSubject" :label="__('Subject')" />
 
-                    <x-textarea wire:model="thankYouBody"
-                        :label="__('Message')"
-                        :hint="__('Rankings are automatically appended at the bottom of the email.')"
-                        rows="7" />
+                    <x-markdown-editor model="thankYouBody" :label="__('Message')"
+                        :hint="__('Rankings are automatically appended at the bottom of the email.')" />
                 </div>
             @else
                 <p class="text-sm text-muted italic">{{ __('No email will be sent.') }}</p>
@@ -129,47 +127,7 @@
                         @enderror
                     </div>
 
-                    {{-- Markdown editor --}}
-                    <div>
-                        {{-- Syntax guide --}}
-                        <div x-data="{ open: false }" class="mb-3">
-                            <button type="button"
-                                class="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200"
-                                @click="open = !open">
-                                <x-icon name="o-question-mark-circle" class="w-3.5 h-3.5" />
-                                <span x-text="open ? '{{ __('Hide Markdown guide') }}' : '{{ __('Markdown guide') }}'"></span>
-                            </button>
-                            <div x-show="open" x-transition
-                                class="mt-2 rounded-lg border border-blue-100 bg-blue-50 p-3 dark:border-blue-900/50 dark:bg-blue-900/25">
-                                <div class="grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-xs text-base-content/80">
-                                    <div><span class="text-blue-700 dark:text-blue-300"># Titre 1</span></div>
-                                    <div><span class="text-blue-700 dark:text-blue-300">**gras**</span> → <strong>gras</strong></div>
-                                    <div><span class="text-blue-700 dark:text-blue-300">## Titre 2</span></div>
-                                    <div><span class="text-blue-700 dark:text-blue-300">*italique*</span> → <em>italique</em></div>
-                                    <div><span class="text-blue-700 dark:text-blue-300">- item</span> → liste</div>
-                                    <div><span class="text-blue-700 dark:text-blue-300">[lien](https://…)</span></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="grid gap-4 lg:grid-cols-2" style="min-height:340px">
-                            <div class="flex flex-col">
-                                <label class="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">{{ __('Edit') }}</label>
-                                <textarea
-                                    wire:model.live.debounce.400ms="newsPostContent"
-                                    class="flex-1 resize-none rounded-lg border border-base-300 bg-base-200/50 p-3 font-mono text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                                    placeholder="## {{ $tournament->name }}&#10;&#10;**Podium :**&#10;&#10;1. &#10;2. &#10;3. "
-                                    style="min-height:320px"></textarea>
-                            </div>
-                            <div class="flex flex-col">
-                                <label class="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">{{ __('Preview') }}</label>
-                                <div class="prose prose-sm flex-1 overflow-y-auto rounded-lg border border-base-300 bg-base-100 p-4"
-                                    style="min-height:320px; max-height:480px">
-                                    {!! $this->newsPostMarkdownPreview !!}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <x-markdown-editor model="newsPostContent" :label="__('Content')" />
                 </div>
             @else
                 <p class="text-sm text-muted italic">{{ __('No news post will be created.') }}</p>

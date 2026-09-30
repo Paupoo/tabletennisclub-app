@@ -174,8 +174,11 @@
 
         {{-- ── 5. Notes ──────────────────────────────────────────────── --}}
         <x-card :title="__('Additional notes')">
-            <x-textarea wire:model.blur="notes" rows="5"
-                :placeholder="__('Free-form notes, observations…')" />
+            {{-- Re-keyed on the lock: Alpine does not re-read `editable` on a morph. --}}
+            <x-markdown-editor model="notes" commit-on-blur
+                :editable="! ($this->lockHolder && ! $this->holdsLock)"
+                wire:key="minutes-notes-{{ $this->lockHolder && ! $this->holdsLock ? 'read' : 'write' }}"
+                :hint="__('Free-form notes, observations…')" />
         </x-card>
 
         </fieldset>

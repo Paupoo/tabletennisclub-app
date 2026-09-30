@@ -155,7 +155,7 @@ Certains modèles appliquent **automatiquement un statut** au contact lors de l'
 Allez dans **Site web → Modèles d'email** (réservé au groupe gestionnaire). Vous y créez et modifiez librement les modèles de réponse, sans dépendre d'un développeur :
 
 - **Nom**, **clé**, **objet**, **corps** du message
-- **Variables** disponibles à insérer dans l'objet/corps : `{{first_name}}`, `{{last_name}}`, `{{full_name}}`, `{{interest}}`, `{{club_name}}`
+- **Variables** : dans le corps, **Insérer une variable** ajoute une pastille (Prénom, Nom, Nom complet, Intérêt, Nom du club) qui s'insère et s'efface d'un bloc ; dans l'objet, tapez `{{first_name}}`, `{{last_name}}`, `{{full_name}}`, `{{interest}}` ou `{{club_name}}`. Une variable inconnue reste visible dans sa propre pastille : une faute de frappe se voit avant l'envoi
 - **Statut appliqué** (optionnel) : statut donné au contact quand le modèle est envoyé
 - **Questionnaire d'information** : marque les modèles destinés à *récolter* des informations manquantes
 - **Actif/inactif** : un modèle inactif n'apparaît plus dans la liste d'envoi
@@ -328,7 +328,9 @@ Allez dans **Site web** dans la navigation.
 ### Articles (actualités)
 
 Créez et modifiez des articles d'actualité publiés sur le site web public du club :
-- Titre, contenu (texte enrichi), image à la une
+- Titre, contenu, image à la une
+- Le contenu s'écrit tel qu'il sera publié : la barre d'outils pose titres, gras, italique, liens, listes et citations — aucune syntaxe à apprendre
+- **Images dans le texte** : bouton image, glisser-déposer ou coller ; l'image est réduite avant l'envoi, et on vous demande de **la décrire** (lu à voix haute aux visiteurs qui ne la voient pas) avant de l'insérer
 - Publier immédiatement ou enregistrer comme brouillon
 - Définir une date "à la une jusqu'au" pour les articles épinglés
 
@@ -535,6 +537,6 @@ L'écran répond à « à qui dois-je écrire, sans oublier personne et sans éc
 
 ### Écrire depuis l'application
 
-Rédigez en markdown avec l'aperçu, **Insérer** une invitation (tournoi, pack, réunion) ajoute un bloc avec un lien « S'inscrire ». Ce lien mène à une page « Pour qui ? » : un parent y choisit son enfant et arrive sur ses inscriptions. **M'envoyer un test** vous l'envoie à vous seul.
+Rédigez le message tel qu'il sera reçu (barre d'outils pour titres, gras, listes, liens) ; **Insérer** une invitation (tournoi, pack, réunion) ajoute un bloc avec un lien « S'inscrire ». Ce lien mène à une page « Pour qui ? » : un parent y choisit son enfant et arrive sur ses inscriptions. **M'envoyer un test** vous l'envoie à vous seul.
 
 L'envoi part au nom du club, les réponses arrivent à l'adresse choisie (la vôtre par défaut). Chaque adresse reçoit son propre message, au rythme de 15 par minute. La page de la communication suit l'avancement, liste les échecs et permet de les relancer ; **Réécrire** repart du même texte et des mêmes filtres. Les adresses sont effacées après deux saisons, le message reste.

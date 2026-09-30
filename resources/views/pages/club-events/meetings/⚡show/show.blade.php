@@ -121,8 +121,8 @@
                         @endif
                         <x-datepicker :label="__('RSVP deadline')" wire:model="detailsRsvpDeadline"
                             :placeholder="__('Optional')" />
-                        <x-textarea :label="__('Description')" wire:model="detailsDescription"
-                            :placeholder="__('Optional context for attendees')" rows="3" />
+                        <x-markdown-editor model="detailsDescription" :label="__('Description')"
+                            :hint="__('Optional context for attendees')" />
                         <div class="flex justify-end gap-2">
                             <x-button :label="__('Cancel')" class="btn-ghost btn-sm" wire:click="cancelEditing" />
                             <x-button :label="__('Save')" icon="o-check" class="btn-primary btn-sm"
@@ -180,8 +180,8 @@
                     @endif
 
                     @if ($meeting->description)
-                        <div class="border-t border-base-300 pt-3 text-base-content/70">
-                            <span class="whitespace-pre-line">{{ $meeting->description }}</span>
+                        <div class="prose prose-sm max-w-none border-t border-base-300 pt-3 text-base-content/70">
+                            {!! \App\Support\Markdown::safe($meeting->description) !!}
                         </div>
                     @endif
                 </div>
@@ -483,7 +483,7 @@
                             @if ($minutes->notes)
                                 <div>
                                     <p class="mb-1 font-semibold">{{ __('Additional notes') }}</p>
-                                    <p class="whitespace-pre-line text-base-content/70">{{ $minutes->notes }}</p>
+                                    <div class="prose prose-sm max-w-none text-base-content/70">{!! \App\Support\Markdown::safe($minutes->notes) !!}</div>
                                 </div>
                             @endif
                         </div>

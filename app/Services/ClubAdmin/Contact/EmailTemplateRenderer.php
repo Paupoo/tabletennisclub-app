@@ -7,6 +7,7 @@ namespace App\Services\ClubAdmin\Contact;
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Contact\Models\EmailTemplate;
 use App\Domains\Competitions\Interclub\Models\Club;
+use App\Support\Markdown;
 use InvalidArgumentException;
 
 /**
@@ -38,7 +39,8 @@ class EmailTemplateRenderer
 
         return [
             'subject' => $this->substitute($template->subject, $variables),
-            'body' => $this->substitute($template->body, $variables),
+            // The body is markdown: a value must stay text, whatever the visitor typed.
+            'body' => $this->substitute($template->body, array_map(Markdown::escape(...), $variables)),
             'apply_status' => $template->apply_status,
         ];
     }

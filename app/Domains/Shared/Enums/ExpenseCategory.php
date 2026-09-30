@@ -33,8 +33,18 @@ enum ExpenseCategory: string
     {
         return array_map(
             fn (self $case): array => ['id' => $case->value, 'name' => $case->label()],
-            [self::Federation, self::Hall, self::SportsEquipment, self::Training, self::Event, self::Bar, self::Operations, self::Travel, self::Other],
+            self::ordered(),
         );
+    }
+
+    /**
+     * In reading order, "Other" last.
+     *
+     * @return list<self>
+     */
+    public static function ordered(): array
+    {
+        return [self::Federation, self::Hall, self::SportsEquipment, self::Training, self::Event, self::Bar, self::Operations, self::Travel, self::Other];
     }
 
     public function label(): string

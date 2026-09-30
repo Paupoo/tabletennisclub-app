@@ -218,3 +218,21 @@ it('lists the internal movements apart, from both sides', function (): void {
     expect(array_map(fn (array $movement): array => [$movement['date']->toDateString(), $movement['amount']], $internal))
         ->toBe([['2026-07-02', -2000.0], ['2026-09-18', -300.0], ['2026-09-19', 300.0]]);
 });
+
+it('keeps a journal of every movement, with its poste, its state and what justifies it', function (): void {
+    $document = SupportingDocument::factory()->expense(ExpenseCategory::Hall)->create(['amount' => 300.0, 'date' => '2026-02-01']);
+    $hall = frLine(-300.0, '2026-02-10');
+    (new LinkSupportingDocument)($document, $hall);
+    $expenseReport = ExpenseReport::factory()->accepted(45.5)->create(['category' => ExpenseCategory::Travel, 'amount' => 45.5]);
+    frAllocate(frLine(-45.5, '2026-03-20'), (new OpenRefundAction)->forPayable($expenseReport, 45.5), 45.5);
+    frCash(500, '2026-01-05 10:00:00');
+
+    $journal = FinancialReport::for(FiscalYear::startingIn(2026))->journal();
+
+    expect(array_map(fn (array $row): array => [$row['date']->toDateString(), $row['kind'], $row['amount'], $row['closure']->value, $row['postes'], $row['documents'], $row['expense_reports']], $journal))
+        ->toBe([
+            ['2026-01-05', 'cash', 5.0, 'to_process', ['income:uncategorised'], [], []],
+            ['2026-02-10', 'bank', -300.0, 'justified', ['expense:hall'], [sprintf('P-2026-%04d', $document->id)], []],
+            ['2026-03-20', 'bank', -45.5, 'reconciled', ['expense:travel'], [], [$expenseReport->id]],
+        ]);
+});

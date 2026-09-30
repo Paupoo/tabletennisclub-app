@@ -70,6 +70,10 @@ enum Permission: string
 
     // Installations
     case FacilitiesView = 'facilities.view';
+
+    // Rapport financier : les comptes d'un exercice, et leur export. Lecture
+    // seule, pour ceux qui en répondent devant l'assemblée générale.
+    case FinancialReportView = 'financial_report.view';
     case FinesCancel = 'fines.cancel';
     case FinesIssue = 'fines.issue';
 

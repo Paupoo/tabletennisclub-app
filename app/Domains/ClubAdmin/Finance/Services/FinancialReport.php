@@ -13,6 +13,7 @@ use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\BuildAttestationData;
 use App\Domains\ClubAdmin\Subscriptions\Models\Registration;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\Meeting;
@@ -73,17 +74,12 @@ final class FinancialReport
     private array $flows = [];
 
     /**
-     * @var list<array{date: CarbonImmutable, source: string, description: string, amount: float}>
-     */
-    private array $internalMovements = [];
-
-    /**
-     * Every movement of the year, however it was closed, with its absolute
-     * amount in cents.
+     * Every movement of the year, however it was closed, oldest first — see
+     * {@see self::journal()}. `cents` is the absolute amount.
      *
-     * @var list<array{closure: MovementClosure, cents: int}>
+     * @var list<array{kind: string, id: int, date: CarbonImmutable, source: string, statement: string|null, counterparty: string|null, description: string, documents: list<string>, expense_reports: list<int>, amount: float, cents: int, closure: MovementClosure, postes: list<string>}>
      */
-    private array $movements = [];
+    private array $journal = [];
 
     private function __construct(private readonly FiscalYear $year) {}
 
@@ -94,6 +90,23 @@ final class FinancialReport
         $report->readCashMovements();
 
         return $report;
+    }
+
+    /**
+     * The label of a poste key as the journal gives it (`income:trainings`,
+     * `expense:hall`, `expense:uncategorised`).
+     */
+    public static function posteLabel(string $poste): string
+    {
+        [$direction, $key] = array_pad(explode(':', $poste, 2), 2, '');
+
+        if ($key === self::UNCATEGORISED) {
+            return __('Uncategorised — to process');
+        }
+
+        $category = $direction === 'expense' ? ExpenseCategory::tryFrom($key) : IncomeCategory::tryFrom($key);
+
+        return $category?->label() ?? $key;
     }
 
     public function expenses(): float
@@ -146,10 +159,26 @@ final class FinancialReport
      */
     public function internalMovements(): array
     {
-        $movements = $this->internalMovements;
-        usort($movements, static fn (array $a, array $b): int => $a['date'] <=> $b['date']);
+        return array_map(
+            static fn (array $row): array => ['date' => $row['date'], 'source' => $row['source'], 'description' => $row['description'], 'amount' => $row['amount']],
+            array_values(array_filter($this->journal(), static fn (array $row): bool => $row['closure'] === MovementClosure::Internal)),
+        );
+    }
 
-        return $movements;
+    /**
+     * Every bank line and cash movement of the year, oldest first: where it
+     * was seen, what it says, how it was closed, the postes it fed (`income:…`
+     * / `expense:…` keys) and the documents and expense reports behind it.
+     * The journal the auditors tick off against the statements.
+     *
+     * @return list<array{kind: string, id: int, date: CarbonImmutable, source: string, statement: string|null, counterparty: string|null, description: string, documents: list<string>, expense_reports: list<int>, amount: float, cents: int, closure: MovementClosure, postes: list<string>}>
+     */
+    public function journal(): array
+    {
+        $journal = $this->journal;
+        usort($journal, static fn (array $a, array $b): int => [$a['date'], $a['kind'], $a['id']] <=> [$b['date'], $b['kind'], $b['id']]);
+
+        return $journal;
     }
 
     /**
@@ -171,7 +200,7 @@ final class FinancialReport
             $amount[$closure->value] = 0;
         }
 
-        foreach ($this->movements as $movement) {
+        foreach ($this->journal as $movement) {
             $count[$movement['closure']->value]++;
             $amount[$movement['closure']->value] += $movement['cents'];
         }
@@ -289,6 +318,78 @@ final class FinancialReport
     }
 
     /**
+     * File one bank line and say how it was closed.
+     */
+    private function fileBankLine(Transaction $line, int $money, int $month): MovementClosure
+    {
+        if ($line->is_internal) {
+            return MovementClosure::Internal;
+        }
+
+        if ($line->supportingDocuments->isNotEmpty()) {
+            foreach ($line->categoryShares() as $share) {
+                $this->fileUnder($share['category'], $this->cents($share['amount']), $month);
+            }
+
+            return MovementClosure::Justified;
+        }
+
+        $sign = $money < 0 ? -1 : 1;
+        $allocated = 0;
+
+        foreach ($line->credits as $credit) {
+            /** @var PaymentCredit $credit */
+            $creditMoney = $sign * abs($this->cents((float) $credit->amount));
+            $allocated += $creditMoney;
+            $this->fileSiteMoney($credit->payment?->payable, $creditMoney, $month);
+        }
+
+        $residue = $money - $allocated;
+
+        if ($residue === 0 && $line->credits->isNotEmpty()) {
+            return MovementClosure::Reconciled;
+        }
+
+        if ($line->settled_at !== null) {
+            $this->fileUnder($residue > 0 ? IncomeCategory::Other : ExpenseCategory::Other, $residue, $month);
+
+            return MovementClosure::WrittenOff;
+        }
+
+        $this->fileUncategorised($residue, $month);
+
+        return MovementClosure::ToProcess;
+    }
+
+    /**
+     * File one cash movement and say how it was closed.
+     */
+    private function fileCashMovement(CashRegisterEntry $entry, int $money, int $month): MovementClosure
+    {
+        if ($entry->isInternal()) {
+            return MovementClosure::Internal;
+        }
+
+        if ($entry->payable_type !== null) {
+            $this->fileSiteMoney($entry->payable, $money, $month);
+
+            return MovementClosure::Reconciled;
+        }
+
+        if ($entry->supportingDocuments->isNotEmpty()) {
+            foreach ($entry->categoryShares() as $share) {
+                $this->fileUnder($share['category'], $this->cents($share['amount']), $month);
+            }
+
+            return MovementClosure::Justified;
+        }
+
+        $this->fileUncategorised($money, $month);
+
+        return MovementClosure::ToProcess;
+    }
+
+    /**
      * Money the website accounts for, filed from what was paid.
      *
      * Read from the payable's class, not from `payment_method` nor from the
@@ -384,57 +485,24 @@ final class FinancialReport
 
         foreach ($lines as $line) {
             $money = $this->cents((float) $line->amount);
-            $month = $this->monthOf($line->date);
+            $filedBefore = count($this->flows);
+            $closure = $this->fileBankLine($line, $money, $this->monthOf($line->date));
 
-            if ($line->is_internal) {
-                $this->record(MovementClosure::Internal, $money);
-                $this->internalMovements[] = [
-                    'date' => CarbonImmutable::parse($line->date),
-                    'source' => $line->bankAccount?->name ?? __('Bank'),
-                    'description' => (string) $line->description,
-                    'amount' => $this->euros($money),
-                ];
-
-                continue;
-            }
-
-            if ($line->supportingDocuments->isNotEmpty()) {
-                $this->record(MovementClosure::Justified, $money);
-
-                foreach ($line->categoryShares() as $share) {
-                    $this->fileUnder($share['category'], $this->cents($share['amount']), $month);
-                }
-
-                continue;
-            }
-
-            $sign = $money < 0 ? -1 : 1;
-            $allocated = 0;
-
-            foreach ($line->credits as $credit) {
-                /** @var PaymentCredit $credit */
-                $creditMoney = $sign * abs($this->cents((float) $credit->amount));
-                $allocated += $creditMoney;
-                $this->fileSiteMoney($credit->payment?->payable, $creditMoney, $month);
-            }
-
-            $residue = $money - $allocated;
-
-            if ($residue === 0 && $line->credits->isNotEmpty()) {
-                $this->record(MovementClosure::Reconciled, $money);
-
-                continue;
-            }
-
-            if ($line->settled_at !== null) {
-                $this->record(MovementClosure::WrittenOff, $money);
-                $this->fileUnder($residue > 0 ? IncomeCategory::Other : ExpenseCategory::Other, $residue, $month);
-
-                continue;
-            }
-
-            $this->record(MovementClosure::ToProcess, $money);
-            $this->fileUncategorised($residue, $month);
+            $this->record($closure, $money, $filedBefore, [
+                'kind' => 'bank',
+                'id' => $line->id,
+                'date' => CarbonImmutable::parse($line->date),
+                'source' => $line->bankAccount?->name ?? __('Bank'),
+                'statement' => $line->statement_number,
+                'counterparty' => $line->counterparty_name,
+                'description' => (string) $line->description,
+                'documents' => $line->supportingDocuments->map(fn (SupportingDocument $document): string => $document->reference())->values()->all(),
+                'expense_reports' => $line->credits
+                    ->map(fn (PaymentCredit $credit): ?Model => $credit->payment?->payable)
+                    ->filter(fn (?Model $payable): bool => $payable instanceof ExpenseReport)
+                    ->map(fn (Model $payable): int => (int) $payable->getKey())
+                    ->values()->all(),
+            ]);
         }
     }
 
@@ -452,45 +520,37 @@ final class FinancialReport
             $money = (int) $entry->amount;
             /** @var CarbonInterface $recordedAt */
             $recordedAt = $entry->created_at;
-            $month = $this->monthOf($recordedAt);
+            $filedBefore = count($this->flows);
+            $closure = $this->fileCashMovement($entry, $money, $this->monthOf($recordedAt));
 
-            if ($entry->isInternal()) {
-                $this->record(MovementClosure::Internal, $money);
-                $this->internalMovements[] = [
-                    'date' => CarbonImmutable::parse($recordedAt->toDateString()),
-                    'source' => $entry->cashRegister->name ?? __('Cash register'),
-                    'description' => (string) $entry->reason,
-                    'amount' => $this->euros($money),
-                ];
-
-                continue;
-            }
-
-            if ($entry->payable_type !== null) {
-                $this->record(MovementClosure::Reconciled, $money);
-                $this->fileSiteMoney($entry->payable, $money, $month);
-
-                continue;
-            }
-
-            if ($entry->supportingDocuments->isNotEmpty()) {
-                $this->record(MovementClosure::Justified, $money);
-
-                foreach ($entry->categoryShares() as $share) {
-                    $this->fileUnder($share['category'], $this->cents($share['amount']), $month);
-                }
-
-                continue;
-            }
-
-            $this->record(MovementClosure::ToProcess, $money);
-            $this->fileUncategorised($money, $month);
+            $this->record($closure, $money, $filedBefore, [
+                'kind' => 'cash',
+                'id' => $entry->id,
+                'date' => CarbonImmutable::parse($recordedAt->toDateString()),
+                'source' => $entry->cashRegister->name ?? __('Cash register'),
+                'statement' => null,
+                'counterparty' => null,
+                'description' => (string) $entry->reason,
+                'documents' => $entry->supportingDocuments->map(fn (SupportingDocument $document): string => $document->reference())->values()->all(),
+                'expense_reports' => [],
+            ]);
         }
     }
 
-    private function record(MovementClosure $closure, int $moneyCents): void
+    /**
+     * Keep the movement in the journal, with the postes it fed.
+     *
+     * @param  array{kind: string, id: int, date: CarbonImmutable, source: string, statement: string|null, counterparty: string|null, description: string, documents: list<string>, expense_reports: list<int>}  $movement
+     */
+    private function record(MovementClosure $closure, int $moneyCents, int $filedBefore, array $movement): void
     {
-        $this->movements[] = ['closure' => $closure, 'cents' => abs($moneyCents)];
+        $this->journal[] = [
+            ...$movement,
+            'amount' => $this->euros($moneyCents),
+            'cents' => abs($moneyCents),
+            'closure' => $closure,
+            'postes' => array_values(array_unique(array_column(array_slice($this->flows, $filedBefore), 'poste'))),
+        ];
     }
 
     /**

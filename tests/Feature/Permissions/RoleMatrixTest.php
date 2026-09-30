@@ -81,6 +81,7 @@ describe('the committee reads the club', function (): void {
                 'seasons.view',
                 'facilities.view',
                 'bar.stats.view',
+                'financial_report.view',
                 // Not a reading right: the one duty the whole committee shares
                 // (decided 2026-09-27).
                 'communications.send',
@@ -133,6 +134,20 @@ describe('what a délégation actually grants', function (): void {
         ));
 
         expect($holders)->toBe([Role::TREASURY]);
+    });
+
+    /*
+     * The year's accounts are read by those who answer for them at the general
+     * assembly: the committee, the auditors it elects, and the treasury.
+     */
+    it('opens the financial report to the committee, the accounts auditors and the treasury', function (): void {
+        $holders = array_values(array_filter(
+            Role::cases(),
+            static fn (Role $role): bool => $role !== Role::ADMINISTRATOR
+                && in_array(Permission::FinancialReportView, $role->permissions(), true),
+        ));
+
+        expect($holders)->toEqualCanonicalizing([Role::COMMITTEE, Role::ACCOUNTS_AUDIT, Role::TREASURY]);
     });
 
     it('lets a plain member hold the cash register without joining the committee', function (): void {

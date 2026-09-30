@@ -153,9 +153,12 @@
     @endcanany
 
     @feature('treasury', 'cash_register')
-    @canany(['payments.view', 'fines.view', 'transactions.view', 'cash_register.view'])
+    @canany(['financial_report.view', 'payments.view', 'fines.view', 'transactions.view', 'cash_register.view'])
     <x-menu-sub icon="o-banknotes" :title="__('Treasury')">
         @feature('treasury')
+        @can('financial_report.view')
+            <x-menu-item icon="o-presentation-chart-bar" link="{{ route('admin.treasury.report') }}" :title="__('Financial report')" />
+        @endcan
         @can('payments.view')
             <x-menu-item icon="o-credit-card" link="{{ route('admin.treasury.payments') }}" :title="__('Payments')" />
         @endcan

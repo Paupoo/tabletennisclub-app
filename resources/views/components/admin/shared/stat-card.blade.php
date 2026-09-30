@@ -31,6 +31,9 @@
     composant ne marche pas — Blade coupe l'expression sur `->` et l'appelant
     perd sa classe (`col-span-2` était muet sur quatre écrans).
 
+    Un slot `extra` facultatif s'ajoute sous la précision : une comparaison avec
+    l'exercice précédent, le détail d'un total (rapport financier).
+
     Purement informatif : le filtrage passe par les onglets, jamais par la carte.
 --}}
 @props([
@@ -65,6 +68,7 @@
             @if ($hint)
                 <div data-stat-hint class="mt-0.5 text-xs text-subtle">{{ $hint }}</div>
             @endif
+            {{ $extra ?? '' }}
         </div>
     </div>
 </x-card>

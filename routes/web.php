@@ -258,6 +258,13 @@ Route::prefix('admin/treasury/')
         // Each screen answers to the délégation that owns it, not to committee
         // membership: holding the cash box and reconciling the accounts are two
         // distinct duties, and someone may well hold one without the other.
+
+        // The year's accounts, read-only: the committee, the accounts auditors
+        // and the treasury — those who answer for them at the general assembly.
+        Route::livewire('report', 'pages::club-admin.treasury.report')
+            ->middleware('can:financial_report.view')
+            ->name('admin.treasury.report');
+
         Route::livewire('payments', 'pages::club-admin.treasury.payments')
             ->middleware('can:payments.view')
             ->name('admin.treasury.payments');

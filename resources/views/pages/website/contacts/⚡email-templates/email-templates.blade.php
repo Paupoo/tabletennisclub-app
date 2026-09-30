@@ -125,19 +125,7 @@
 
             <x-input :label="__('Subject')" wire:model="formSubject" />
 
-            <div>
-                <x-textarea :label="__('Body')" wire:model="formBody" rows="10" />
-
-                {{-- Variable helper near the body field --}}
-                <div class="mt-2 rounded-lg border border-base-300 bg-base-200/40 p-3 text-xs text-base-content/70">
-                    <p class="mb-1 font-medium">{{ __('Available variables:') }}</p>
-                    <div class="flex flex-wrap gap-2">
-                        @foreach ($availableVariables as $variable)
-                            <code class="rounded bg-base-300/60 px-1.5 py-0.5">{{ $variable }}</code>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
+            <x-markdown-editor model="formBody" :label="__('Body')" :variables="$availableVariables" :sticky-toolbar="false" />
 
             <x-select :label="__('Applied status')" :options="$statusOptions"
                 wire:model="formApplyStatus"

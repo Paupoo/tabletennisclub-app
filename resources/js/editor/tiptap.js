@@ -4,6 +4,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import { TableKit } from "@tiptap/extension-table";
 import { Markdown } from "@tiptap/markdown";
+import { TemplateVariable } from "./template-variable";
 
 /**
  * The Tiptap engine behind <x-markdown-editor>, in a chunk of its own.
@@ -18,8 +19,9 @@ import { Markdown } from "@tiptap/markdown";
  *   H2 and H3: an article written with `#` must survive being re-saved.
  * - Tables have no button, but their extension is loaded for the same reason.
  * - Underline is off: markdown cannot say it.
+ * - `variables` (name → label) turns `{{name}}` placeholders into pills.
  */
-export function createMarkdownEditor(element, { markdown, label, onChange, onTransaction, onImageFile }) {
+export function createMarkdownEditor(element, { markdown, label, variables = null, onChange, onTransaction, onImageFile }) {
     const imageFrom = (items) =>
         [...(items ?? [])].find((file) => file.type?.startsWith("image/")) ?? null;
 
@@ -36,6 +38,7 @@ export function createMarkdownEditor(element, { markdown, label, onChange, onTra
             }),
             Image,
             TableKit.configure({ table: { resizable: false } }),
+            ...(variables ? [TemplateVariable.configure({ labels: variables })] : []),
             Markdown,
         ],
         content: markdown,

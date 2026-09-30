@@ -142,7 +142,7 @@ new class extends Component
     }
 
     /**
-     * File an image the author put in the body, and hand its URL to the editor.
+     * File an image the author put in the body, and hand its path to the editor.
      *
      * The editor uploads through Livewire (already downscaled to a JPEG in the
      * browser), then calls this: the folder is fixed here, and only an image
@@ -160,7 +160,9 @@ new class extends Component
 
         $this->reset('contentImage');
 
-        return Storage::disk('public')->url($path);
+        // A path, not a URL: the markdown must not carry APP_URL, which differs
+        // between a laptop, the staging copy and production.
+        return (string) parse_url(Storage::disk('public')->url($path), PHP_URL_PATH);
     }
 
     public function updatedTitle(): void

@@ -17,6 +17,7 @@ export default function markdownEditor({
     imageModel = null,
     imageAction = null,
     label = "",
+    variables = null,
     maxEdge = 1600,
 } = {}) {
     let editor = null;
@@ -34,12 +35,27 @@ export default function markdownEditor({
         async init() {
             const { createMarkdownEditor } = await import("../editor/tiptap");
 
+            let written = this.$wire.get(model) ?? "";
+
             editor = createMarkdownEditor(this.$refs.surface, {
-                markdown: this.$wire.get(model) ?? "",
+                markdown: written,
                 label,
-                onChange: (markdown) => this.$wire.set(model, markdown, false),
+                variables,
+                onChange: (markdown) => {
+                    written = markdown;
+                    this.$wire.set(model, markdown, false);
+                },
                 onTransaction: () => this.revision++,
                 onImageFile: (file) => this.askAlt(file),
+            });
+
+            // The surface is wire:ignore'd, so a value the server sets (a block
+            // inserted, a past message reused, a form reset) has to be pushed in.
+            this.$wire.$watch(model, (value) => {
+                if ((value ?? "") !== written) {
+                    written = value ?? "";
+                    editor?.commands.setContent(written, { contentType: "markdown", emitUpdate: false });
+                }
             });
 
             this.ready = true;
@@ -68,6 +84,10 @@ export default function markdownEditor({
 
         heading(level) {
             this.run("toggleHeading", { level });
+        },
+
+        insertVariable(name) {
+            this.run("insertTemplateVariable", name);
         },
 
         // ── Links ─────────────────────────────────────────────────────────

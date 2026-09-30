@@ -20,7 +20,6 @@ use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\ReadsTournamentLiveState;
 use App\Mail\TournamentResultsMail;
 use App\Support\Breadcrumb;
-use App\Support\Markdown;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -266,12 +265,6 @@ new class extends Component
             . '**' . __('Podium') . " :**\n\n"
             . "1. \n2. \n3. \n\n"
             . __('Congratulations to all participants!');
-    }
-
-    #[Computed]
-    public function newsPostMarkdownPreview(): string
-    {
-        return Markdown::safe($this->newsPostContent ?: '');
     }
 
     // ── Actions: launch match

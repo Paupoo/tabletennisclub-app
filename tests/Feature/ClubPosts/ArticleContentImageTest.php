@@ -18,7 +18,7 @@ describe('Images in an article body', function (): void {
         $this->admin = User::factory()->isAdmin()->create();
     });
 
-    it('files an image in the article content folder and returns its URL', function (): void {
+    it('files an image in the article content folder and returns its public path', function (): void {
         $url = Livewire::actingAs($this->admin)
             ->test('pages::website.articles.edit')
             ->set('contentImage', UploadedFile::fake()->image('cup.jpg', 800, 600))
@@ -30,7 +30,7 @@ describe('Images in an article body', function (): void {
         $stored = Storage::disk('public')->allFiles('clubPosts/content');
 
         expect($stored)->toHaveCount(1)
-            ->and($url)->toBe(Storage::disk('public')->url($stored[0]));
+            ->and($url)->toBe('/storage/' . $stored[0]);
     });
 
     it('refuses a file that is not an image', function (): void {

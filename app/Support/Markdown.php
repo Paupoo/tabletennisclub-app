@@ -34,4 +34,71 @@ final class Markdown
             'allow_unsafe_links' => false,
         ]);
     }
+
+    /**
+     * Make a value read as plain text once dropped into markdown.
+     *
+     * A contact's name substituted into a template must stay a name: without
+     * this, a visitor typing `[click](https://…)` in the contact form would put
+     * a link in the club's reply. CommonMark lets any ASCII punctuation be
+     * backslash-escaped, so escaping all of it is always safe.
+     */
+    public static function escape(string $text): string
+    {
+        return (string) preg_replace('/[!-\/:-@\[-`{-~]/', '\\\\$0', $text);
+    }
+
+    /**
+     * Turn text typed in a plain textarea into markdown that renders the same.
+     *
+     * Used once, when a field moved from a textarea to the markdown editor: a
+     * blank line still separates paragraphs, a single line break becomes a hard
+     * break (markdown would fold it into the paragraph), and characters that
+     * would start a list, a heading or emphasis are escaped. `{{placeholder}}`
+     * template variables are left untouched, `_` included.
+     */
+    public static function fromPlainText(string $text): string
+    {
+        $text = trim(str_replace(["\r\n", "\r"], "\n", $text));
+
+        $paragraphs = preg_split('/\n\s*\n/', $text) ?: [];
+
+        return implode("\n\n", array_map(
+            static fn (string $paragraph): string => implode("\\\n", array_map(
+                self::escapeLine(...),
+                explode("\n", $paragraph),
+            )),
+            $paragraphs,
+        ));
+    }
+
+    /**
+     * Escape one line of plain text, placeholders excepted.
+     *
+     * Only what would format is escaped — emphasis, links, code, raw HTML,
+     * entities, and a block marker opening the line — so a URL keeps its `:`
+     * and `/` and is still turned into a link.
+     */
+    private static function escapeLine(string $line): string
+    {
+        $parts = preg_split('/(\{\{\s*\w+\s*\}\})/', trim($line), flags: PREG_SPLIT_DELIM_CAPTURE) ?: [];
+
+        $escaped = implode('', array_map(
+            static fn (string $part, int $index): string => $index % 2 === 1
+                ? $part
+                : (string) preg_replace('/[\\\\`*_\[\]<>|~&]/', '\\\\$0', $part),
+            $parts,
+            array_keys($parts),
+        ));
+
+        // A line opening with `#`, `>`, `-`, `+`, `=` or `1.` would become a
+        // heading, a quote, a list or a setext underline.
+        return (string) preg_replace_callback(
+            '/^(?:([#>+\-=])|(\d+)([.)]))/',
+            static fn (array $marker): string => ($marker[1] ?? '') !== ''
+                ? '\\' . $marker[1]
+                : $marker[2] . '\\' . $marker[3],
+            $escaped,
+        );
+    }
 }

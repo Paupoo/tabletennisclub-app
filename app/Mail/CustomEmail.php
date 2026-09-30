@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
+use App\Support\Markdown;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -64,23 +65,18 @@ class CustomEmail extends Mailable implements ShouldQueue
     }
 
     /**
-     * Convertit les URLs en liens cliquables
-     */
-    private function linkifyUrls(string $text): string
-    {
-        $pattern = '/((http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?)/';
-
-        return preg_replace($pattern, '<a href="$1" target="_blank" style="color: #2980b9;">$1</a>', $text);
-    }
-
-    /**
-     * Traite le message pour remplacer les variables et formater le texte
+     * Render the markdown body and resolve the legacy `{{ $contact->… }}` variables.
+     *
+     * The body comes from <x-markdown-editor>: Markdown::safe() escapes raw HTML
+     * and drops unsafe links, and turns bare URLs into links. The variables
+     * carry data a visitor typed in the contact form, so they are swapped for
+     * inert tokens first and replaced by their escaped values after rendering:
+     * substituted before, a name like `[click](https://…)` would become a link.
      */
     private function processMessage(string $message): string
     {
         $contact = $this->emailData['contact'];
 
-        // Remplacement des variables courantes
         $replacements = [
             '{{ $contact->first_name }}' => $contact->first_name,
             '{{ $contact->last_name }}' => $contact->last_name,
@@ -92,25 +88,14 @@ class CustomEmail extends Mailable implements ShouldQueue
             '{{ date(\'d/m/Y\') }}' => date('d/m/Y'),
         ];
 
-        // Remplacements plus avancés
-        $message = str_replace(array_keys($replacements), array_values($replacements), $message);
+        $tokens = [];
 
-        /*
-         * Le corps est rédigé par un administrateur, mais les variables ci-dessus
-         * y injectent des données saisies par un visiteur anonyme du formulaire de
-         * contact. Tout est échappé ici, avant que nl2br() et linkifyUrls()
-         * n'ajoutent le seul HTML légitime du message : les vues affichent ensuite
-         * ce résultat avec {!! !!}, et Illuminate\Mail\Markdown::parse() laisse
-         * passer le HTML brut (html_input reste sur « allow »).
-         */
-        $message = e($message);
+        foreach ($replacements as $placeholder => $value) {
+            $token = 'CUSTOMEMAILVARIABLE' . count($tokens) . 'END';
+            $tokens[$token] = e((string) $value);
+            $message = str_replace($placeholder, $token, $message);
+        }
 
-        // Formatage basique : convertir les sauts de ligne en <br>
-        $message = nl2br($message);
-
-        // Détection et formatage des URLs
-        $message = $this->linkifyUrls($message);
-
-        return $message;
+        return strtr(Markdown::safe($message), $tokens);
     }
 }

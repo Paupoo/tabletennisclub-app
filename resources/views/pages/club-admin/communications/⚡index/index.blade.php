@@ -139,16 +139,7 @@
                         @endif
                     </div>
 
-                    <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                        <x-textarea :label="__('Message (markdown)')" wire:model.live.debounce.500ms="body" rows="14"
-                            :hint="__('**bold**, *italic*, [link](https://…), blank line for a new paragraph.')" />
-                        <div>
-                            <p class="mb-2 text-sm font-semibold">{{ __('Preview') }}</p>
-                            <div class="prose prose-sm max-w-none rounded-box border border-base-300 p-4">
-                                {!! $this->previewHtml !!}
-                            </div>
-                        </div>
-                    </div>
+                    <x-markdown-editor model="body" :label="__('Message')" />
 
                     <div class="flex flex-wrap justify-end gap-2">
                         <x-button icon="o-beaker" :label="__('Send me a test')" wire:click="sendTest" spinner="sendTest" class="btn-outline" />

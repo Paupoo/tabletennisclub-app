@@ -6,16 +6,24 @@
 
     @param string $model Livewire property holding the markdown
     @param string|null $label field label, also the editor's accessible name
+    @param string|null $hint help shown under the field
     @param string|null $imageModel Livewire property an image is uploaded to;
         no image button without it
     @param string|null $imageAction Livewire method that stores that upload and
-        returns its public URL
+        returns its public path
+    @param bool $stickyToolbar keep the toolbar in view down a long page; off
+        in a modal, whose own box scrolls
+    @param array<string, string>|null $variables template placeholders offered
+        as pills, name => label (`first_name` => "First name" for `{{first_name}}`)
 --}}
 @props([
     'model',
     'label' => null,
+    'hint' => null,
     'imageModel' => null,
     'imageAction' => null,
+    'variables' => null,
+    'stickyToolbar' => true,
 ])
 
 @php
@@ -39,6 +47,7 @@
         imageModel: @js($imageModel),
         imageAction: @js($imageAction),
         label: @js($label ?? ''),
+        variables: @js($variables),
     })"
     data-invalid-image="{{ __('Please choose an image file.') }}"
     data-failed-image="{{ __('The image could not be added. Please try again.') }}">
@@ -50,7 +59,10 @@
     <div class="rounded-field border border-base-300 bg-base-100 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary">
         {{-- ── Toolbar: stays in reach down a long article; below the phone's sticky nav ── --}}
         <div role="toolbar" aria-label="{{ __('Formatting') }}"
-            class="sticky top-16 z-10 flex lg:top-0 flex-wrap items-center gap-0.5 rounded-t-[var(--radius-field)] border-b border-base-300 bg-base-200/60 p-1 backdrop-blur">
+            @class([
+                'flex flex-wrap items-center gap-0.5 rounded-t-[var(--radius-field)] border-b border-base-300 bg-base-200/60 p-1 backdrop-blur',
+                'sticky top-16 z-10 lg:top-0' => $stickyToolbar,
+            ])>
             @foreach ($buttons as $button)
                 @if ($button === null)
                     <span class="mx-1 h-5 w-px bg-base-300" aria-hidden="true"></span>
@@ -73,6 +85,24 @@
                     <x-icon name="o-photo" class="h-4 w-4" />
                 </button>
                 <input type="file" x-ref="imageInput" accept="image/*" class="hidden" @change="imageChosen($event)">
+            @endif
+
+            @if ($variables)
+                <span class="mx-1 h-5 w-px bg-base-300" aria-hidden="true"></span>
+                <div x-data="{ open: false }" class="relative" @click.outside="open = false" @keydown.escape="open = false">
+                    <button type="button" class="btn btn-ghost btn-sm gap-1"
+                        x-bind:disabled="!ready" x-bind:aria-expanded="open" @click="open = !open">
+                        <x-icon name="o-variable" class="h-4 w-4" /> {{ __('Insert a variable') }}
+                    </button>
+                    <ul x-show="open" x-cloak x-transition.opacity
+                        class="menu absolute start-0 top-full z-20 mt-1 w-56 rounded-box border border-base-300 bg-base-100 p-1 shadow-lg">
+                        @foreach ($variables as $name => $variableLabel)
+                            <li>
+                                <button type="button" @click="insertVariable(@js($name)); open = false">{{ $variableLabel }}</button>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
             @endif
 
             <span class="ms-auto flex gap-0.5">
@@ -132,6 +162,10 @@
             </div>
         </div>
     </div>
+
+    @if ($hint)
+        <p class="fieldset-label mt-1 text-xs">{{ $hint }}</p>
+    @endif
 
     @error($model)
         <p class="mt-1 text-xs text-error">{{ $message }}</p>

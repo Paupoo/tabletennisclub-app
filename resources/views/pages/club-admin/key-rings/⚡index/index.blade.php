@@ -46,7 +46,7 @@
                 @endif
 
                 @if ($keyRing->notes)
-                    <span class="text-sm text-base-content/60">{{ $keyRing->notes }}</span>
+                    <span class="whitespace-pre-line text-sm text-base-content/60">{{ $keyRing->notes }}</span>
                 @endif
 
                 @if ($this->mayManage)

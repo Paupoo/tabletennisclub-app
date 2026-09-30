@@ -181,7 +181,7 @@
 
                     @if ($meeting->description)
                         <div class="border-t border-base-300 pt-3 text-base-content/70">
-                            {{ $meeting->description }}
+                            <span class="whitespace-pre-line">{{ $meeting->description }}</span>
                         </div>
                     @endif
                 </div>
@@ -245,7 +245,7 @@
                                     <div>
                                         <p class="text-sm font-medium">{{ $item->title }}</p>
                                         @if ($item->description)
-                                            <p class="mt-0.5 text-xs text-base-content/60">{{ $item->description }}</p>
+                                            <p class="mt-0.5 whitespace-pre-line text-xs text-base-content/60">{{ $item->description }}</p>
                                         @endif
                                     </div>
                                 </li>
@@ -465,7 +465,7 @@
                                     <p class="mb-1 font-semibold">{{ __('Announcements') }}</p>
                                     <ul class="list-inside list-disc space-y-1 text-base-content/70">
                                         @foreach ($minutes->announcements as $ann)
-                                            <li>{{ $ann }}</li>
+                                            <li class="whitespace-pre-line">{{ $ann }}</li>
                                         @endforeach
                                     </ul>
                                 </div>
@@ -475,7 +475,7 @@
                                     <p class="mb-1 font-semibold">{{ __('Decisions') }}</p>
                                     <ul class="list-inside list-disc space-y-1 text-base-content/70">
                                         @foreach ($minutes->decisions as $dec)
-                                            <li>{{ $dec }}</li>
+                                            <li class="whitespace-pre-line">{{ $dec }}</li>
                                         @endforeach
                                     </ul>
                                 </div>
@@ -483,7 +483,7 @@
                             @if ($minutes->notes)
                                 <div>
                                     <p class="mb-1 font-semibold">{{ __('Additional notes') }}</p>
-                                    <p class="text-base-content/70">{{ $minutes->notes }}</p>
+                                    <p class="whitespace-pre-line text-base-content/70">{{ $minutes->notes }}</p>
                                 </div>
                             @endif
                         </div>
@@ -650,7 +650,8 @@
             <x-alert icon="o-exclamation-triangle" class="alert-error alert-soft"
                 :title="__('All invited members will be notified.')" />
             <x-textarea :label="__('Reason / message (optional)')"
-                wire:model="cancellationNote" rows="3" />
+                wire:model="cancellationNote" rows="3" maxlength="1000" />
+            <x-char-counter model="cancellationNote" max="1000" />
         </div>
         <x-slot:actions>
             <x-button :label="__('Back')" wire:click="$set('showCancelModal', false)" />
@@ -664,7 +665,8 @@
         <div class="space-y-4">
             <x-datetime type="datetime-local" :label="__('New proposed date (optional)')" wire:model="postponedTo" />
             <x-textarea :label="__('Reason / message (optional)')"
-                wire:model="postponedNote" rows="3" />
+                wire:model="postponedNote" rows="3" maxlength="1000" />
+            <x-char-counter model="postponedNote" max="1000" />
         </div>
         <x-slot:actions>
             <x-button :label="__('Back')" wire:click="$set('showPostponeModal', false)" />

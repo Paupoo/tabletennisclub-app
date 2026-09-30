@@ -286,7 +286,7 @@
                         <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-muted">
                             {{ __('Message') }}
                         </p>
-                        <p class="text-sm leading-relaxed">{{ $selectedContact->message }}</p>
+                        <p class="whitespace-pre-line text-sm leading-relaxed">{{ $selectedContact->message }}</p>
                     </div>
                 @endif
 

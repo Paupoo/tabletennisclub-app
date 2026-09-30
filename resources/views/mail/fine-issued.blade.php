@@ -16,7 +16,7 @@
 ---
 
 {{-- The committee's personalised, educational message --}}
-{{ $fine->pedagogical_message }}
+{{ \App\Support\MailText::keepingLineBreaks($fine->pedagogical_message) }}
 
 @if($payable)
 ---

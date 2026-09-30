@@ -219,7 +219,7 @@
                                 @endif
                             </div>
                             @if (! empty($player['availability_note']))
-                                <div class="mt-0.5 text-xs italic opacity-60">"{{ $player['availability_note'] }}"</div>
+                                <div class="mt-0.5 whitespace-pre-line text-xs italic opacity-60">"{{ $player['availability_note'] }}"</div>
                             @endif
                             @if ($ruleNote)
                                 <div @class([
@@ -354,7 +354,7 @@
                                          capitaine, pour une autre rencontre. --}}
                                     <div class="mt-0.5 text-xs italic opacity-60">
                                         {{ __('Note left to team :team', ['team' => $candidate['origin_team']]) }} :
-                                        "{{ $candidate['availability_note'] }}"
+                                        "<span class="whitespace-pre-line">{{ $candidate['availability_note'] }}</span>"
                                     </div>
                                 @endif
 

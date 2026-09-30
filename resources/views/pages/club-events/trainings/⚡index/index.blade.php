@@ -129,7 +129,7 @@
 
             @if (filled($selectedPack?->description))
                 <p class="mt-4 border-t border-base-300 pt-3 text-sm text-base-content/70">
-                    {{ $selectedPack->description }}
+                    <span class="whitespace-pre-line">{{ $selectedPack->description }}</span>
                 </p>
             @endif
         </div>

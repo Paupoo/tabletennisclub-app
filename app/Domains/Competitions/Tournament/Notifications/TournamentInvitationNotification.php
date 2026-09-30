@@ -7,6 +7,7 @@ namespace App\Domains\Competitions\Tournament\Notifications;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
+use App\Support\MailText;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -79,7 +80,7 @@ class TournamentInvitationNotification extends Notification implements ShouldQue
         }
 
         if ($this->customMessage !== '' && $this->customMessage !== '0') {
-            $mail->line('---')->line($this->customMessage);
+            $mail->line('---')->line(MailText::keepingLineBreaks($this->customMessage));
         }
 
         if ($this->includeArticleLink && $this->newsPostId !== null) {

@@ -6,6 +6,7 @@ namespace App\Domains\Subscriptions\Notifications;
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Support\MailText;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -54,7 +55,7 @@ class TrainingPackRejectedNotification extends Notification
         if ($this->message !== '' && $this->message !== '0') {
             $mail->line('---')
                 ->line(__('**Message from the secretariat:**'))
-                ->line($this->message);
+                ->line(MailText::keepingLineBreaks($this->message));
         }
 
         return $mail

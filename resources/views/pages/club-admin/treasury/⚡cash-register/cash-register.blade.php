@@ -267,7 +267,9 @@
                 :label="__('Notes')"
                 wire:model="entryNotes"
                 rows="2"
+                maxlength="500"
                 :placeholder="__('Optional notes...')" />
+            <x-char-counter model="entryNotes" max="500" />
         </div>
         <x-slot:actions>
             <x-button :label="__('Cancel')" @click="$wire.manualEntryModal = false" class="btn-ghost" />

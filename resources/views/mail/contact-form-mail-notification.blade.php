@@ -16,7 +16,7 @@ Vous avez reçu un message depuis le formulaire de contact du site {{ config('ap
 
 # Message :
 
-<x-mail::panel>{{ $message }}</x-mail::panel>
+<x-mail::panel>{{ \App\Support\MailText::keepingLineBreaks($message) }}</x-mail::panel>
 
 @if($interest == ContactReasonEnum::JOIN_US)
 

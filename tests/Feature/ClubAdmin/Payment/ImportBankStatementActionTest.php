@@ -42,7 +42,7 @@ it('imports the quick export whose lines end with a lone carriage return', funct
         ]);
 });
 
-it('refuses a statement of another account, and writes nothing', function (): void {
+it('refuses a statement of an account the club has not registered, and writes nothing', function (): void {
     Club::ourClub()->first()->update(['bank_account' => 'BE71096123456769']);
 
     expect(fn (): mixed => (new ImportBankStatementAction)(statementSample('cbc-quick-export.csv')))

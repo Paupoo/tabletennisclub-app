@@ -220,7 +220,8 @@ class DashboardController extends Controller
                     'type' => 'info',
                     'icon' => 'o-archive-box',
                     'label' => $toArchive === 1 ? '1 note de frais payée à archiver' : "{$toArchive} notes de frais payées à archiver",
-                    'route' => route('admin.treasury.expense-reports', ['tab' => 'paid', 'unarchived' => 1]),
+                    // Archiving is downloading a year's ZIP from the report.
+                    'route' => route('admin.treasury.report', ['tab' => 'pieces']),
                 ];
             }
         }

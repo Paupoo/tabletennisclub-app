@@ -10,6 +10,7 @@ use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\MutualAttestation;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\EventPost;
@@ -35,6 +36,7 @@ use App\Policies\MutualAttestationPolicy;
 use App\Policies\RoomPolicy;
 use App\Policies\SeasonPolicy;
 use App\Policies\SubscriptionPolicy;
+use App\Policies\SupportingDocumentPolicy;
 use App\Policies\TablePolicy;
 use App\Policies\TeamPolicy;
 use App\Policies\TournamentPolicy;
@@ -67,6 +69,7 @@ class AuthServiceProvider extends ServiceProvider
         Season::class => SeasonPolicy::class,
         MutualAttestation::class => MutualAttestationPolicy::class,
         Subscription::class => SubscriptionPolicy::class,
+        SupportingDocument::class => SupportingDocumentPolicy::class,
         Table::class => TablePolicy::class,
         Team::class => TeamPolicy::class,
         Tournament::class => TournamentPolicy::class,

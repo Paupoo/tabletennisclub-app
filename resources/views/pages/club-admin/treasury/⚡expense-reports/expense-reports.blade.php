@@ -16,19 +16,12 @@
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
             </div>
-            @can('export', \App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport::class)
-                {{-- What the screen shows — tab, search and filters — is what
-                     the file holds. Prepared in the background; the link
-                     arrives by mail, in the bell and under « My exports ». --}}
-                <x-dropdown :label="__('Export')" icon="o-arrow-down-tray" right class="btn-ghost btn-sm">
-                    <x-menu-item icon="o-printer" :title="__('Printable PDF')" wire:click="export('pdf')" spinner="export" />
-                    <x-menu-item icon="o-archive-box-arrow-down" :title="__('ZIP archive (original proofs)')" wire:click="export('zip')" spinner="export" />
-                    @can('archive', \App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport::class)
-                        <x-menu-separator />
-                        <x-menu-item icon="o-archive-box" :title="__('Archive the paid reports not archived yet')"
-                            wire:click="archiveUnarchived" spinner="archiveUnarchived" />
-                    @endcan
-                </x-dropdown>
+            {{-- The export moved to the financial report, per financial year,
+                 with the documents: the link opens its « Pièces & exports » tab
+                 on the year filtered here, if any. --}}
+            @can(\App\Domains\Shared\Enums\Permission::FinancialReportView->value)
+                <x-button :label="__('Export from the financial report')" icon="o-arrow-down-tray" class="btn-ghost btn-sm" data-export-link
+                    :link="route('admin.treasury.report', array_filter(['tab' => 'pieces', 'year' => $fiscalYear]))" />
             @endcan
         </x-slot:actions>
     </x-header>
@@ -50,50 +43,6 @@
     </div>
 
     <x-admin.shared.filter-chips :chips="$filterChips" />
-
-    {{-- Mes exports : la cloche ne se rafraîchit pas d'elle-même, et rien
-         d'autre ne menait au fichier une fois prêt. La page interroge le
-         serveur tant qu'un export se prépare, puis s'arrête. --}}
-    @if ($this->myExports->isNotEmpty())
-        @php
-            $exportsPending = $this->myExports->contains('status', 'pending');
-        @endphp
-        <div class="mb-6 rounded-xl border border-base-300 bg-base-100" data-my-exports
-            @if ($exportsPending) wire:poll.3s @endif>
-            <p class="border-b border-base-300 px-4 py-2 text-xs font-bold uppercase tracking-widest text-base-content/60">
-                {{ __('My exports') }}
-            </p>
-            <div class="divide-y divide-base-200">
-                @foreach ($this->myExports as $export)
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 text-sm" wire:key="export-{{ $export->id }}">
-                        <x-icon :name="$export->isZip() ? 'o-archive-box-arrow-down' : 'o-printer'" class="h-5 w-5 shrink-0 text-base-content/60" />
-                        <div class="min-w-0 flex-1">
-                            <span class="font-semibold">{{ $export->isZip() ? __('ZIP archive') : __('Printable PDF') }}</span>
-                            <span class="text-base-content/60">
-                                · {{ trans_choice(':count report|:count reports', count($export->report_ids)) }}
-                                · {{ $export->created_at?->format('d/m/Y H:i') }}
-                            </span>
-                        </div>
-                        @if ($export->status === 'pending')
-                            <span class="flex items-center gap-2 text-base-content/70">
-                                <span class="loading loading-spinner loading-xs"></span>
-                                {{ __('Being prepared…') }}
-                            </span>
-                        @elseif ($export->status === 'failed')
-                            <x-badge :value="__('Failed')" class="badge-error badge-soft badge-sm" />
-                            <x-button :label="__('Run it again')" icon="o-arrow-path" class="btn-ghost btn-sm"
-                                wire:click="retryExport({{ $export->id }})" spinner="retryExport({{ $export->id }})" />
-                        @elseif ($export->isExpired())
-                            <span class="text-base-content/60">{{ __('Expired') }}</span>
-                        @else
-                            <x-button :label="__('Download')" icon="o-arrow-down-tray" class="btn-primary btn-sm"
-                                :link="route('admin.expense-reports.export', $export)" no-wire-navigate />
-                        @endif
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
 
     {{-- Stats --}}
     <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -266,14 +215,14 @@
                         <x-icon name="o-exclamation-triangle" class="me-1 size-4 text-warning" />
                         {{ __('Possible duplicate of report #:id', ['id' => $duplicate->id]) }}
                         — {{ $duplicate->description }}, {{ number_format($duplicate->amount, 2, ',', ' ') }} €, {{ $duplicate->spent_on->format('d/m/Y') }}
-                        <button type="button" class="link ms-1" wire:click="show({{ $duplicate->id }})">{{ __('Open') }}</button>
+                        <button type="button" class="link ms-1" wire:click="show({{ $duplicate->id }})">{{ __('Open it') }}</button>
                     </div>
                 @endforeach
                 @foreach ($sharedProofs as $sharing)
                     <div class="rounded-lg border border-error/30 bg-error/10 p-3 text-sm">
                         <x-icon name="o-document-duplicate" class="me-1 size-4 text-error" />
                         {{ __('The same file was already used on report #:id', ['id' => $sharing->id]) }}
-                        <button type="button" class="link ms-1" wire:click="show({{ $sharing->id }})">{{ __('Open') }}</button>
+                        <button type="button" class="link ms-1" wire:click="show({{ $sharing->id }})">{{ __('Open it') }}</button>
                     </div>
                 @endforeach
 
@@ -381,7 +330,7 @@
                             <div class="flex items-center justify-between gap-2 bg-base-200/40 px-3 py-2 text-sm">
                                 <span class="truncate">{{ $file->original_name }}</span>
                                 <span class="flex shrink-0 gap-1">
-                                    <a class="btn btn-ghost btn-xs" href="{{ $fileUrl }}" target="_blank">{{ __('Open') }}</a>
+                                    <a class="btn btn-ghost btn-xs" href="{{ $fileUrl }}" target="_blank">{{ __('Open it') }}</a>
                                     <a class="btn btn-ghost btn-xs" href="{{ $fileUrl }}?download=1">{{ __('Download') }}</a>
                                 </span>
                             </div>

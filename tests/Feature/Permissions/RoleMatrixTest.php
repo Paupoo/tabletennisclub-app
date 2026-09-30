@@ -81,6 +81,7 @@ describe('the committee reads the club', function (): void {
                 'seasons.view',
                 'facilities.view',
                 'bar.stats.view',
+                'financial_report.view',
                 // Not a reading right: the one duty the whole committee shares
                 // (decided 2026-09-27).
                 'communications.send',
@@ -119,6 +120,34 @@ describe('what a délégation actually grants', function (): void {
             // the cash box is a separate duty — that is the whole point of the split
             ->can(Permission::CashRegisterHolderChange->value)->toBeFalse()
             ->can(Permission::UsersCreate->value)->toBeFalse();
+    });
+
+    /*
+     * Filing and linking the off-site money's proofs is the treasury's. The
+     * cash register délégation files the tickets of its till too, but through
+     * the policy, which keeps it off the bank lines — not through this right.
+     */
+    it('hands the supporting documents to the treasury alone', function (): void {
+        $holders = array_values(array_filter(
+            Role::delegations(),
+            static fn (Role $role): bool => in_array(Permission::SupportingDocumentsManage, $role->permissions(), true),
+        ));
+
+        expect($holders)->toBe([Role::TREASURY]);
+    });
+
+    /*
+     * The year's accounts are read by those who answer for them at the general
+     * assembly: the committee, the auditors it elects, and the treasury.
+     */
+    it('opens the financial report to the committee, the accounts auditors and the treasury', function (): void {
+        $holders = array_values(array_filter(
+            Role::cases(),
+            static fn (Role $role): bool => $role !== Role::ADMINISTRATOR
+                && in_array(Permission::FinancialReportView, $role->permissions(), true),
+        ));
+
+        expect($holders)->toEqualCanonicalizing([Role::COMMITTEE, Role::ACCOUNTS_AUDIT, Role::TREASURY]);
     });
 
     it('lets a plain member hold the cash register without joining the committee', function (): void {

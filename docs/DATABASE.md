@@ -193,6 +193,42 @@ erDiagram
 - `payable_type`, `payable_id` (polymorphe: Subscription, Registration, Interclub, etc.)
 - `payment_method`, `invitation_counter`, `refund_transaction_id`
 
+### TRÉSORERIE ET FINANCES
+
+Montants en **centimes** (entiers) en base, exposés en euros par les accesseurs.
+Détail colonne par colonne : [erd/clubadmin-payment.md](erd/clubadmin-payment.md),
+[erd/clubadmin-supportingdocuments.md](erd/clubadmin-supportingdocuments.md),
+[erd/clubadmin-finance.md](erd/clubadmin-finance.md).
+
+#### `bank_accounts`
+- `id`, `iban` (unique, normalisé sans espaces), `name`, `type` (current/savings)
+- Enregistré par le trésorier au premier import d'un relevé de ce compte ; le compte de la fiche club l'est d'office comme compte courant
+
+#### `transactions` (lignes d'extrait bancaire)
+- `bank_account_id` (nullable), `balance_after` (solde imprimé par la banque), `statement_number`
+- `is_internal` : virement entre deux comptes du club, ou ligne reliée à un versement de caisse — ni recette ni dépense
+- `allocated_amount`, `settled_at` / `settled_reason` (reliquat abandonné)
+- Une ligne est clôturée si elle est affectée à des paiements du site, justifiée par une pièce, soldée ou interne
+
+#### `cash_register_entries`
+- `amount` (centimes, signé), `payable_type` / `payable_id` (argent du site), `transaction_id` (nullable, unique : versement caisse ↔ banque)
+- La date d'un mouvement de caisse est son `created_at`
+
+#### `supporting_documents` (Pièces justificatives)
+- `id`, `date` (date de la pièce), `amount` (centimes, positif), `counterparty`, `label`, `created_by_id`, `deleted_at`
+- `expense_category` **ou** `income_category` (l'une des deux) : la catégorie porte le sens
+- Référence affichée `P-<année>-<id sur 4 chiffres>`, jamais stockée ; l'état (à régler / réglée) est dérivé des liens
+
+#### `supporting_document_files`
+- `supporting_document_id`, `path` (disque privé `local`), `original_name`, `mime_type`, `size`, `sha256`
+
+#### `supporting_document_transaction`, `cash_register_entry_supporting_document`
+- Pivots sans montant : une pièce peut couvrir plusieurs mouvements et inversement ; un mouvement lié à plusieurs catégories est réparti au prorata des pièces
+
+#### `financial_exports` (anciennement `expense_report_exports`)
+- `requested_by`, `format` (pdf/zip), `fiscal_year`, `poste`, `scope` (documents et notes de frais / pièces seules / notes seules), `include_report` (rapport financier en tête, sur demande), `status`, `path`, `expires_at` (7 jours)
+- Purgé par `financial-exports:prune`
+
 #### `registrations` (Inscriptions à des événements payants)
 - `id`, `event_post_id`, `user_id`
 - `amount_due`, `amount_paid`, `status`
@@ -259,6 +295,7 @@ erDiagram
 - `id`, `name`, `is_active`, `licence`, `email_contact`, `phone_contact`
 - `street`, `city_code`, `city_name`, `building_name`
 - `latitude`, `longitude`, `bank_account`, `website_url`, `enterprise_number`
+- `fiscal_year_start_month` (1–12, défaut 1) : premier mois de l'exercice comptable
 
 #### `seasons`
 - `id`, `name`, `start_at`, `end_at`, `is_active`, `registrations_open`
@@ -305,6 +342,7 @@ erDiagram
 
 ### Polymorphiques
 - **`payments.payable`**: peut pointer vers `subscriptions`, `registrations`, `interclubs`, etc.
+- **`cash_register_entries.payable`**: argent du site encaissé en caisse (commande du bar, etc.)
 - **`event_posts.eventable`**: peut pointer vers `tournaments`, `trainings`, `meetings`, `interclubs`
 - **`interclub_user`**: représente le polymorphe "selection" (joueur candidat, sélectionné, a joué)
 

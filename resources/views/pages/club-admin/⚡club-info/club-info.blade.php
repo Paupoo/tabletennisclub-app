@@ -47,6 +47,8 @@
             <x-input icon="o-finger-print" :label="__('BIC Code')" wire:model="bic" required />
             <x-input icon="o-currency-euro" :label="__('Bank Account (IBAN)')" wire:model="bank_account" required/>
             <x-input icon="o-identification" :label="__('Enterprise Number (Optional)')" wire:model="enterprise_number" />
+            <x-select icon="o-calendar" :label="__('Financial year starts in')" wire:model="fiscal_year_start_month" :options="$monthOptions"
+                :hint="__('January closes the accounts on the calendar year; any other month makes years such as 2025-2026.')" required />
         </x-admin.shared.form-section>
 
         {{-- Committee --}}

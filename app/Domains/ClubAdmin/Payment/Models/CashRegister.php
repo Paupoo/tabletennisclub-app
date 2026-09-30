@@ -58,6 +58,24 @@ class CashRegister extends Model
         'held_by_user_id',
     ];
 
+    /**
+     * Every till's name as a list shows it: its own name, and who holds it
+     * when another till — retired ones included — bears the same name.
+     *
+     * @return array<int, string> keyed by id
+     */
+    public static function displayNames(): array
+    {
+        $registers = self::withTrashed()->with('heldBy')->orderBy('id')->get();
+        $counts = $registers->countBy('name');
+
+        return $registers->mapWithKeys(fn (self $register): array => [
+            $register->id => $counts[$register->name] > 1 && $register->heldBy !== null
+                ? $register->name . ' (' . $register->heldBy->full_name . ')'
+                : $register->name,
+        ])->all();
+    }
+
     public function currentBalance(): int
     {
         return (int) $this->entries()->sum('amount');

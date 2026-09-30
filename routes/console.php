@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Communications\Models\CommunicationRecipient;
 use App\Domains\Shared\Enums\Feature;
+use App\Domains\Shared\ValueObjects\FiscalYear;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -92,20 +93,25 @@ Schedule::command('expense-reports:purge-files')
     ->dailyAt('03:30')
     ->withoutOverlapping();
 
-// Le rappel d'archivage : chaque trimestre, et le 5 janvier plutôt que le 1er,
-// pour l'exercice qui vient de se clôturer — c'est le moment où le trésorier
-// prépare les comptes pour les vérificateurs.
+// Le rappel d'archivage : chaque trimestre de l'exercice, et le 5 du mois qui
+// suit sa clôture plutôt que le 1er — c'est le moment où le trésorier prépare
+// les comptes pour les vérificateurs. Les mois se lisent sur le club à chaque
+// passage (et non en dur dans le cron) : l'exercice peut commencer n'importe
+// quel mois, et lire la base au chargement des routes casserait toute
+// commande lancée avant les migrations.
 Schedule::command('expense-reports:remind-archiving')
-    ->cron('0 8 1 4,7,10 *')
+    ->monthlyOn(1, '08:00')
     ->withoutOverlapping()
-    ->when(Feature::ExpenseReports->enabled(...));
+    ->when(Feature::ExpenseReports->enabled(...))
+    ->when(fn (): bool => in_array((now()->month - FiscalYear::startMonth() + 12) % 12, [3, 6, 9], true));
 
 Schedule::command('expense-reports:remind-archiving --year-end')
-    ->cron('0 8 5 1 *')
+    ->monthlyOn(5, '08:00')
     ->withoutOverlapping()
-    ->when(Feature::ExpenseReports->enabled(...));
+    ->when(Feature::ExpenseReports->enabled(...))
+    ->when(fn (): bool => now()->month === FiscalYear::startMonth());
 
-Schedule::command('expense-reports:prune-exports')
+Schedule::command('financial-exports:prune')
     ->dailyAt('03:40')
     ->withoutOverlapping();
 

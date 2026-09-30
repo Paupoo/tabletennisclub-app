@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Domains\ClubAdmin\ExpenseReports\Notifications;
+namespace App\Domains\ClubAdmin\Finance\Notifications;
 
-use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReportExport;
+use App\Domains\ClubAdmin\Finance\Models\FinancialExport;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -17,11 +17,11 @@ use Illuminate\Notifications\Notification;
  * waited on the page never saw it ring, and nothing else pointed at the file.
  * The link still requires signing in as the requester.
  */
-class ExpenseReportExportReadyNotification extends Notification
+class FinancialExportReadyNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(public ExpenseReportExport $export) {}
+    public function __construct(public FinancialExport $export) {}
 
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
@@ -29,7 +29,7 @@ class ExpenseReportExportReadyNotification extends Notification
         return [
             'title' => $this->title(),
             'body' => __('Available until :date.', ['date' => $this->export->expires_at?->format('d/m/Y')]),
-            'url' => route('admin.expense-reports.export', $this->export),
+            'url' => route('admin.treasury.exports.download', $this->export),
             'category' => 'payment',
             'icon' => 'o-arrow-down-tray',
         ];
@@ -39,10 +39,8 @@ class ExpenseReportExportReadyNotification extends Notification
     {
         return (new MailMessage)
             ->subject($this->title())
-            ->line($this->export->isZip()
-                ? __('The expense reports archive you asked for is ready.')
-                : __('The expense reports PDF you asked for is ready.'))
-            ->action(__('Download'), route('admin.expense-reports.export', $this->export))
+            ->line(__('What it holds: :summary.', ['summary' => $this->export->summary()]))
+            ->action(__('Download'), route('admin.treasury.exports.download', $this->export))
             ->line(__('Available until :date.', ['date' => $this->export->expires_at?->format('d/m/Y')]))
             ->line(__('The link only works for you, once signed in.'));
     }
@@ -55,6 +53,10 @@ class ExpenseReportExportReadyNotification extends Notification
 
     private function title(): string
     {
-        return $this->export->isZip() ? __('Your expense reports archive is ready') : __('Your expense reports PDF is ready');
+        $year = (string) $this->export->year()?->label();
+
+        return $this->export->isZip()
+            ? __('Your :year financial archive is ready', ['year' => $year])
+            : __('Your :year financial report PDF is ready', ['year' => $year]);
     }
 }

@@ -385,23 +385,38 @@ La liste de force classe les joueurs compétitifs par niveau pour la sélection 
 
 ## 10. Trésorerie
 
+### Rapport financier
+
+Allez dans **Trésorerie → Rapport financier**, en tête du menu. Le comité, les vérificateurs aux comptes et la trésorerie y lisent, un **exercice** à la fois, tout ce que le club a reçu et dépensé : ce que le site comptabilise (cotisations, entraînements, tournois, bar) et ce que la trésorerie a justifié par des pièces. Huit cartes (recettes, dépenses et résultat comparés à l'exercice précédent, part des mouvements justifiés, membres qui doivent encore de l'argent, argent encore attendu, ce que le club doit encore, trésorerie détenue par compte et par caisse), des graphiques mois par mois et par poste, et les mouvements internes.
+
+L'exercice commence le mois fixé dans **Paramètres du club → Informations** (janvier par défaut) ; l'argent compte le jour où il bouge, jamais à la date de la facture.
+
+L'onglet **Pièces & exports** liste les pièces justificatives, les notes de frais et les paiements du site de l'exercice, et **exporte l'exercice** : un PDF imprimable (journal de tous les mouvements de banque et de caisse, puis chaque pièce et chaque note de frais avec ses justificatifs) ou un ZIP avec les fichiers originaux. Le rapport lui-même, déjà affiché dans l'onglet **Vue d'ensemble**, n'y entre que si l'on coche **Inclure le rapport financier**. Télécharger le ZIP d'un exercice **archive ses notes de frais payées** — quand c'est la trésorerie qui le télécharge, ou un membre du comité qui traite aussi les notes de frais. Le détail est dans l'article d'aide *Lire le rapport financier*.
+
 ### Paiements
 
 Allez dans **Trésorerie → Paiements**. Consultez tous les paiements des membres (inscriptions à des tournois, packs d'entraînement, affiliations) :
 - Filtrer par statut : en attente, payé, partiellement payé, remboursé
 - Cliquez sur un paiement pour voir les détails et le marquer comme payé
 
-### Transactions
+### Transactions bancaires
 
-Allez dans **Trésorerie → Transactions**. Enregistrez les transactions bancaires (depuis votre relevé de compte) :
-- Ajouter une transaction (montant, date, communication structurée, payeur)
-- Réconcilier : associer les transactions aux paiements en attente
+Allez dans **Trésorerie → Transactions bancaires**. Importez les extraits bancaires (les deux exports de CBC sont lus tels quels), puis clôturez chaque ligne :
+- **rapprochez-la** des paiements du site qu'elle paie ou rembourse ;
+- **justifiez-la** par une pièce quand le site ne la connaît pas (location de la salle, balles, subside, frais de banque) ;
+- **abandonnez** un reliquat que le club garde.
+
+Le club peut avoir **plusieurs comptes** (courant, épargne) : un numéro de compte inconnu fait l'objet d'une **question** avant tout import. Les virements entre comptes du club sont reconnus à l'import et marqués **internes** : ni recette ni dépense. Le filtre **À traiter** montre ce qu'il reste à faire ; le filtre **Compte bancaire** montre un compte à la fois. Articles d'aide : *Importer et gérer les extraits bancaires*, *Rapprocher les paiements avec la banque*.
+
+### Pièces justificatives
+
+Allez dans **Trésorerie → Pièces justificatives**. Chaque facture, ticket ou courrier derrière l'argent que le site ne voit pas : date, montant, catégorie (c'est elle qui dit s'il s'agit d'une dépense ou d'une recette), tiers, libellé et au moins un fichier ; une référence comme **P-2026-0042** est attribuée. Une pièce liée à rien est **à régler** — une dette du club, ou de l'argent encore attendu ; liée à une ligne de banque ou à un mouvement de caisse, elle est **réglée**. La délégation **Trésorerie** classe et lie les pièces ; la délégation **Caisse** classe les tickets payés avec la caisse, depuis l'écran de la caisse ; le comité et les vérificateurs consultent. Le versement de la caisse à la banque (ou le retrait d'un fonds de caisse) se relie depuis l'écran de la caisse : les deux mouvements deviennent internes. Article d'aide : *Classer les pièces justificatives*.
 
 ### Notes de frais
 
 Allez dans **Trésorerie → Notes de frais**. Les membres majeurs y déclarent ce qu'ils ont avancé pour le club, avec leurs justificatifs. Tout le comité **consulte** les notes ; les **accepter** (éventuellement pour un montant inférieur, avec un motif) ou les **rejeter** (motif obligatoire) relève de la délégation **Trésorerie**, de la délégation **Notes de frais** (le relais du trésorier) et des administrateurs, et **personne ne traite sa propre note**. Une note acceptée devient un remboursement ordinaire dans **Paiements → À rembourser** ; elle passe en « payée » au rapprochement du débit.
 
-**Exporter** prépare en arrière-plan un PDF imprimable ou un ZIP (CSV + justificatifs originaux) de ce que l'écran affiche. Un rappel trimestriel invite la trésorerie à archiver les notes payées. Les vérificateurs aux comptes reçoivent la délégation **Vérification des comptes** : toute la trésorerie en lecture seule. Le détail est dans les articles d'aide *Traiter les notes de frais* et *Vérifier les notes de frais*.
+L'export a rejoint le **rapport financier** (**Exporter depuis le rapport financier**), pour tout un exercice. Archiver les notes payées — en téléchargeant le ZIP de l'exercice — revient à la trésorerie et au comité : la délégation **Notes de frais** seule n'ouvre pas le rapport financier, le relais du trésorier décide donc des notes sans les exporter ni les archiver. Un rappel à chaque trimestre de l'exercice, et le 5 du mois qui suit sa clôture, invite à archiver. Les vérificateurs aux comptes reçoivent la délégation **Vérification des comptes** : toute la trésorerie et le rapport financier en lecture seule. Le détail est dans les articles d'aide *Traiter les notes de frais*, *Vérifier les notes de frais* et *Lire le rapport financier*.
 
 ### Caisse (bar)
 
@@ -464,7 +479,7 @@ En tant que membre du comité, les emails suivants sont envoyés automatiquement
 | Note de frais acceptée, rejetée (avec motif) ou payée | Membre auteur de la note |
 | Nouvelle note de frais (cloche uniquement) | Délégations Trésorerie et Notes de frais, sauf l'auteur |
 | Récapitulatif des notes de frais en attente (dimanche 19 h) | Délégations Trésorerie et Notes de frais |
-| Notes de frais payées à archiver (chaque trimestre, et le 5 janvier) | Trésorerie et délégation Notes de frais |
+| Notes de frais payées à archiver (chaque trimestre de l'exercice, et le 5 du mois qui suit sa clôture) | Qui peut traiter ou rembourser les notes de frais **et** ouvrir le rapport financier : délégation Trésorerie, administrateurs |
 
 ---
 

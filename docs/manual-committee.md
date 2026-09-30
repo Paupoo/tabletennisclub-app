@@ -384,23 +384,38 @@ The force list ranks competitive players by strength for interclub team selectio
 
 ## 10. Treasury
 
+### Financial report
+
+Go to **Treasury → Financial report**, first in the menu. The committee, the accounts auditors and the treasury read there, for one **financial year** at a time, everything the club received and spent: what the website accounts for (fees, trainings, tournaments, bar) and what the treasury justified with supporting documents. Eight tiles (income, expenses and result compared with the year before, share of movements accounted for, members who still owe money, money still expected, money the club still owes, treasury held per account and till), month-by-month and per-poste charts, and the internal movements.
+
+The financial year starts in the month set in **Club Settings → Informations** (January by default); money counts on the day it moves, never on the invoice date.
+
+The **Documents & exports** tab lists the year's supporting documents, expense reports and website payments, and **exports the year**: a printable PDF (journal of every bank and cash movement, then each document and expense report with its proofs) or a ZIP with the original files. The report itself, already shown on the **Overview** tab, only joins them when **Include the financial report** is ticked. Downloading a year's ZIP **archives its paid expense reports** — when the treasury downloads it, or a committee member who also decides on expense reports. The help article *Lire le rapport financier* has the detail.
+
 ### Payments
 
 Go to **Treasury → Payments**. View all member payments (tournament registrations, training packs, affiliations):
 - Filter by status: pending, paid, partially paid, refunded
 - Click a payment to view details and mark as paid
 
-### Transactions
+### Bank transactions
 
-Go to **Treasury → Transactions**. Record bank transactions (from your bank statement):
-- Add a transaction (amount, date, communication reference, payer)
-- Reconcile: match transactions to pending payments
+Go to **Treasury → Bank transactions**. Import the bank statements (both CBC exports are read as they are), then close each line:
+- **reconcile** it with the website payments it pays or refunds;
+- **justify** it with a supporting document when the website does not know it (hall rental, balls, a subsidy, bank fees);
+- **write off** a residue the club keeps.
+
+The club can have **several accounts** (current, savings): an unknown account number is **asked about** before anything is imported. Transfers between the club's own accounts are recognised at import and marked **internal**: neither income nor expense. The **To process** filter shows what is left to do; the **Bank account** filter shows one account at a time. Help articles: *Importer et gérer les extraits bancaires*, *Rapprocher les paiements avec la banque*.
+
+### Supporting documents
+
+Go to **Treasury → Supporting documents**. Every invoice, ticket or letter behind money the website does not see: date, amount, category (the category says whether it is an expense or an income), counterparty, label and at least one file; a reference such as **P-2026-0042** is given. A document linked to nothing is **to settle** — a debt of the club, or money still expected; linked to a bank line or a cash movement, it is **settled**. The **Treasury** délégation files and links documents; the **Cash register** délégation files the tickets paid from the till, from the cash register screen; the committee and the auditors read. Depositing the till at the bank (or withdrawing a float) is linked from the cash register screen: both movements become internal. Help article: *Classer les pièces justificatives*.
 
 ### Expense reports
 
 Go to **Treasury → Expense reports**. Adult members declare there what they paid for the club, with their proofs. The whole committee **reads** the reports; **accepting** them (possibly for a lower amount, with a reason) or **rejecting** them (reason required) belongs to the **Treasury** délégation, the **Expense reports** délégation (the treasurer's backup) and the administrators, and **nobody decides on their own report**. An accepted report becomes an ordinary refund in **Payments → To refund**; it turns "paid" when the debit is reconciled.
 
-**Export** prepares in the background a printable PDF or a ZIP (CSV + original proofs) of what the screen shows. A quarterly reminder asks the treasury to archive the paid reports. The accounts auditors are given the **Accounts audit** délégation: the whole treasury, read-only. The detail lives in the help articles *Traiter les notes de frais* and *Vérifier les notes de frais*.
+The export moved to the **financial report** (**Export from the financial report**), for a whole financial year. Archiving the paid reports — by downloading that year's ZIP — is the job of the treasury and the committee: the **Expense reports** délégation alone does not open the financial report, so the treasurer's backup decides on reports but neither exports nor archives them. A reminder every quarter of the financial year, and on the 5th of the month after it closes, asks for the archiving. The accounts auditors are given the **Accounts audit** délégation: the whole treasury and the financial report, read-only. The detail lives in the help articles *Traiter les notes de frais*, *Vérifier les notes de frais* and *Lire le rapport financier*.
 
 ### Cash register (bar)
 
@@ -463,7 +478,7 @@ As a committee member, the following emails are sent automatically — you do no
 | Expense report accepted, rejected (with reason) or paid | The report's author |
 | New expense report (bell only) | Treasury and Expense reports délégations, except the author |
 | Digest of expense reports waiting (Sunday 19:00) | Treasury and Expense reports délégations |
-| Paid expense reports to archive (quarterly, and on 5 January) | Treasury and Expense reports délégation |
+| Paid expense reports to archive (every quarter of the financial year, and on the 5th of the month after it closes) | Who can decide on or refund expense reports **and** open the financial report: the Treasury délégation, administrators |
 
 ---
 

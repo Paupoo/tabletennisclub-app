@@ -661,7 +661,8 @@ new class extends Component
         // Ce qui reste à placer, pas ce qui n'a pas de paiement attaché : depuis
         // que le geste passe par l'action, le lien `payment` n'est plus écrit,
         // et une ligne déjà entièrement affectée reviendrait dans la liste.
-        $candidates = Transaction::where('amount', '>', 0)
+        $candidates = Transaction::reconcilable()
+            ->where('amount', '>', 0)
             ->whereNull('settled_at')
             ->orderBy('date', 'desc')
             ->get()
@@ -693,7 +694,8 @@ new class extends Component
         // Une ligne sans communication structurée n'entre pas : le masse ne
         // tranche que sur l'identifiant que le club a lui-même émis. Les
         // rapprochements par nom ou IBAN se choisissent, ils ne se décident pas.
-        $byReference = Transaction::where('amount', '>', 0)
+        $byReference = Transaction::reconcilable()
+            ->where('amount', '>', 0)
             ->whereNull('settled_at')
             ->whereNotNull('structured_reference')
             ->get()
@@ -835,7 +837,8 @@ new class extends Component
         // Un virement sortant qui a encore quelque chose à placer. Le lien
         // `refundPayment` ne dit plus rien : personne ne l'écrit depuis que le
         // geste passe par l'action.
-        $outgoingTransactions = Transaction::where('amount', '<', 0)
+        $outgoingTransactions = Transaction::reconcilable()
+            ->where('amount', '<', 0)
             ->whereNull('settled_at')
             ->get()
             ->filter(fn (Transaction $transaction): bool => abs($transaction->residue()) > 0.001)
@@ -903,7 +906,8 @@ new class extends Component
         // Un remboursement sort du compte du club : les candidates sont les
         // débits, mais le barème est le même — c'est le même membre qu'on
         // cherche au bout du virement.
-        $candidates = Transaction::where('amount', '<', 0)
+        $candidates = Transaction::reconcilable()
+            ->where('amount', '<', 0)
             ->whereNull('settled_at')
             ->orderBy('date', 'desc')
             ->get()

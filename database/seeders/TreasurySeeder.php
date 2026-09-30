@@ -7,20 +7,25 @@ namespace Database\Seeders;
 use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Actions\ClubAdmin\Payments\OpenRefundAction;
+use App\Domains\ClubAdmin\Payment\Models\BankAccount;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingUser;
+use App\Domains\Shared\Enums\BankAccountType;
+use App\Domains\Shared\Support\IbanNormalizer;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class TreasurySeeder extends Seeder
 {
@@ -56,6 +61,8 @@ class TreasurySeeder extends Seeder
         $this->seedMiscCashEntries($cashRegister, $treasurer);
 
         $this->seedRefunds();
+
+        $this->fileUnderTheCurrentAccount();
     }
 
     /**
@@ -83,6 +90,35 @@ class TreasurySeeder extends Seeder
         $account = str_pad((string) random_int(0, 999999999999), 12, '0', STR_PAD_LEFT);
 
         return 'BE' . $check . $account;
+    }
+
+    /**
+     * Every demo line on the club's current account, with the balance and
+     * statement number a real statement would have given it.
+     *
+     * The balance runs from an opening balance through the lines in date
+     * order, one statement a month. Written straight to the table: these are
+     * the bank's figures, nothing the audit log should narrate.
+     */
+    private function fileUnderTheCurrentAccount(): void
+    {
+        $account = BankAccount::firstOrCreate(
+            ['iban' => IbanNormalizer::normalize(Club::ourClub()->value('bank_account')) ?? 'BE23732333208791'],
+            ['name' => 'Compte courant', 'type' => BankAccountType::Current],
+        );
+
+        $balance = 800_000;
+
+        Transaction::query()->whereNull('bank_account_id')->orderBy('date')->orderBy('id')->get()
+            ->each(function (Transaction $transaction) use ($account, &$balance): void {
+                $balance += (int) round($transaction->amount * 100);
+
+                DB::table('transactions')->where('id', $transaction->id)->update([
+                    'bank_account_id' => $account->id,
+                    'balance_after' => $balance,
+                    'statement_number' => $transaction->date->format('Y') . str_pad((string) $transaction->date->month, 3, '0', STR_PAD_LEFT),
+                ]);
+            });
     }
 
     private function generateRef(): string

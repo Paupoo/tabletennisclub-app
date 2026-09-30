@@ -13,6 +13,7 @@ use App\Domains\Shared\Models\AppSetting;
 use App\Domains\Shared\Rules\ValidIban;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\Validation\ValidationException;
@@ -49,6 +50,12 @@ new class extends Component
 
     #[Validate('nullable|string|max:13')]
     public ?string $enterprise_number;
+
+    /**
+     * The month the financial year starts in, 1 for January (a calendar year).
+     */
+    #[Validate('required|integer|between:1,12')]
+    public int $fiscal_year_start_month = 1;
 
     #[Validate('nullable|string|max:100')]
     public ?string $interclubDay = 'Vendredi';
@@ -119,6 +126,7 @@ new class extends Component
         $this->bank_account = $club->bank_account ?? '';
         $this->bic = $club->bic ?? '';
         $this->enterprise_number = $club->enterprise_number ?? '';
+        $this->fiscal_year_start_month = $club->fiscal_year_start_month ?? 1;
 
         $this->interclubEnabled = AppSetting::get('interclub_schedule_enabled', '1') === '1';
         $this->interclubDay = AppSetting::get('interclub_schedule_day', 'Vendredi');
@@ -217,6 +225,9 @@ new class extends Component
                 ")
                 ->orderBy('last_name')
                 ->get(['id', 'first_name', 'last_name', 'committee_role']),
+            'monthOptions' => collect(range(1, 12))
+                ->map(fn (int $month): array => ['id' => $month, 'name' => ucfirst(Carbon::create(2000, $month, 1)->locale(app()->getLocale())->translatedFormat('F'))])
+                ->all(),
             'keyRings' => KeyRing::with('heldBy')
                 ->orderBy('number')
                 ->get(),

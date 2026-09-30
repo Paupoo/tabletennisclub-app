@@ -31,12 +31,20 @@
     composant ne marche pas — Blade coupe l'expression sur `->` et l'appelant
     perd sa classe (`col-span-2` était muet sur quatre écrans).
 
+    Un slot `extra` facultatif s'ajoute sous la précision : une comparaison avec
+    l'exercice précédent, le détail d'un total (rapport financier).
+
+    Une `help` facultative explique ce que le chiffre compte, pour qui ne parle
+    pas le jargon comptable : une icône d'information à côté de l'intitulé, dont
+    le texte sort au survol (`title`) et reste lu par un lecteur d'écran.
+
     Purement informatif : le filtrage passe par les onglets, jamais par la carte.
 --}}
 @props([
     'label',
     'value',
     'hint' => null,
+    'help' => null,
     'icon' => null,
     'color' => 'neutral',
     'emphasis' => false,
@@ -60,11 +68,20 @@
             </div>
         @endif
         <div class="min-w-0">
-            <div class="text-xs font-bold uppercase tracking-widest text-muted">{{ $label }}</div>
+            <div class="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-muted">
+                <span>{{ $label }}</span>
+                @if ($help)
+                    <span data-stat-help title="{{ $help }}" class="inline-flex cursor-help">
+                        <x-icon name="o-information-circle" class="h-4 w-4" />
+                        <span class="sr-only">{{ $help }}</span>
+                    </span>
+                @endif
+            </div>
             <div data-stat-value class="{{ $emphasis ? 'text-3xl' : 'text-2xl' }} font-black tabular-nums">{{ $value }}</div>
             @if ($hint)
                 <div data-stat-hint class="mt-0.5 text-xs text-subtle">{{ $hint }}</div>
             @endif
+            {{ $extra ?? '' }}
         </div>
     </div>
 </x-card>

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Payment\Models\BankAccount;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\SupportingDocuments\Actions\LinkSupportingDocument;
 use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
@@ -183,4 +184,33 @@ it('opens the transactions still to process from the report, for the year shown'
         ->assertSee('Non traité')
         ->assertDontSee('An dernier')
         ->assertDontSee('Interne');
+});
+
+it('sums the treasury up in one line, and flags only a balance too old to trust', function (): void {
+    $current = BankAccount::factory()->create(['name' => 'Compte courant', 'iban' => 'BE68539007547034']);
+    $savings = BankAccount::factory()->savings()->create(['name' => 'Épargne', 'iban' => 'BE71096123456769']);
+    Transaction::create(['date' => '2025-12-20', 'description' => 'L', 'amount' => 1.0, 'bank_account_id' => $current->id, 'balance_after' => 8000.0]);
+    Transaction::create(['date' => '2026-09-25', 'description' => 'L', 'amount' => 1.0, 'bank_account_id' => $current->id, 'balance_after' => 9240.0]);
+    Transaction::create(['date' => '2026-07-02', 'description' => 'L', 'amount' => 1.0, 'bank_account_id' => $savings->id, 'balance_after' => 15000.0]);
+
+    $html = frsScreen()->html();
+    $tile = Str::before(Str::after($html, 'data-tile="treasury"'), 'data-chart');
+
+    // 24 240 € today against 8 000 € on the 31st of December.
+    expect($tile)->toContain('24 240,00 €')
+        ->toContain('+16 240,00 € depuis le 1er janvier')
+        ->toContain(__(':name: last known balance on :date', ['name' => 'Épargne', 'date' => '02/07/2026']))
+        ->not->toContain('Compte courant');
+});
+
+it('draws the treasury month by month, from the first month end of the year to today', function (): void {
+    $current = BankAccount::factory()->create(['name' => 'Compte courant', 'iban' => 'BE68539007547034']);
+    Transaction::create(['date' => '2026-01-10', 'description' => 'L', 'amount' => 1.0, 'bank_account_id' => $current->id, 'balance_after' => 8000.0]);
+
+    $html = frsScreen()->html();
+
+    expect($html)->toContain('aria-labelledby="chart-treasury-title chart-treasury-desc"')
+        ->and(Str::before($html, 'chart-monthly-title'))->toContain('chart-treasury-title')
+        // Nine month ends, September's being today.
+        ->and(substr_count(Str::before(Str::after($html, 'data-treasury-figures'), '</table>'), '<tr'))->toBe(10);
 });

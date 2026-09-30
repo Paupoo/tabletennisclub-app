@@ -138,7 +138,9 @@ new class extends Component
             'members' => $position->membersWithOpenDebt(),
             'receivables' => $position->openReceivables(),
             'debts' => $position->openDebts(),
-            'treasury' => $position->treasuryAt($treasuryDay),
+            'treasury' => $position->treasurySummary($year, $treasuryDay),
+            'yearStartLabel' => __('the 1st of :month', ['month' => $year->start()->translatedFormat('F')]),
+            'holdings' => $this->holdings($position, $treasuryDay),
             'treasuryDay' => $treasuryDay,
             'months' => $this->months($report),
             'expenseRows' => $this->posteRows($report->expensesByCategory(), $previous->expensesByCategory(), 'expense'),
@@ -181,6 +183,35 @@ new class extends Component
         ])->filter()->min();
 
         return min(FiscalYear::current()->startYear(), $oldest === null ? PHP_INT_MAX : FiscalYear::for(CarbonImmutable::parse($oldest))->startYear());
+    }
+
+    /**
+     * The money held at each month end, for the treasury chart: bank
+     * accounts in the categorical order, the tills on top in their own
+     * colour.
+     *
+     * @return array{series: list<array{key: string, label: string, role: string}>, columns: list<array<string, mixed>>}
+     */
+    private function holdings(FinancialPosition $position, CarbonImmutable $until): array
+    {
+        $history = $position->treasuryByMonth($this->year(), $until);
+        $accountRoles = ['holding_1', 'holding_2', 'holding_3'];
+        $series = [];
+
+        foreach ($history['series'] as $index => $serie) {
+            $series[] = [...$serie, 'role' => $serie['key'] === 'cash' ? 'holding_cash' : $accountRoles[min($index, 2)]];
+        }
+
+        return [
+            'series' => $series,
+            'columns' => array_map(static fn (array $month): array => [
+                ...$month,
+                'label' => $month['day']->translatedFormat('M'),
+                'long' => $month['day']->isLastOfMonth()
+                    ? ucfirst($month['day']->translatedFormat('F Y'))
+                    : $month['day']->translatedFormat('j F Y'),
+            ], $history['months']),
+        ];
     }
 
     /**

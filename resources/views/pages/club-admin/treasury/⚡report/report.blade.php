@@ -95,26 +95,68 @@
                     :hint="trans_choice(':count amount the club still has to pay|:count amounts the club still has to pay', $debts['count'])"
                     icon="o-arrow-up-circle" :color="$debts['count'] > 0 ? 'warning' : 'neutral'" />
 
-                <x-admin.shared.stat-card :label="__('Treasury')" :value="$euros($treasury['total'])"
+{{-- The total and how it moved since the year began; an account shows up
+                     only when its balance is too old to trust. The detail is
+                     the chart below. --}}
+                <x-admin.shared.stat-card :label="__('Treasury')" :value="$euros($treasury['total'])" data-tile="treasury"
                     :hint="__('Held on :date', ['date' => $treasuryDay->format('d/m/Y')])" icon="o-building-library" color="primary">
                     <x-slot:extra>
-                        <ul class="mt-2 space-y-0.5 text-xs" data-treasury-holders>
-                            @foreach ($treasury['holders'] as $holder)
-                                <li class="flex flex-wrap items-baseline gap-x-1.5">
-                                    <span class="text-muted">{{ $holder['name'] }}</span>
-                                    <span class="font-semibold tabular-nums">{{ $holder['balance'] === null ? '—' : $euros($holder['balance']) }}</span>
-                                    <span class="text-subtle">
-                                        {{ $holder['as_of'] === null ? __('no balance known') : __('as of :date', ['date' => $holder['as_of']->format('d/m/Y')]) }}
-                                    </span>
-                                </li>
-                            @endforeach
-                        </ul>
+                        <div class="mt-1 text-xs font-semibold text-muted tabular-nums" data-treasury-change>
+                            {{ __(':amount since :date', ['amount' => ($treasury['change'] > 0 ? '+' : '') . $euros($treasury['change']), 'date' => $yearStartLabel]) }}
+                        </div>
+                        @foreach ($treasury['stale'] as $stale)
+                            <div class="mt-1 flex items-start gap-1 text-xs text-warning-content" data-treasury-stale>
+                                <x-icon name="o-exclamation-triangle" class="h-4 w-4 shrink-0" />
+                                <span>{{ $stale['as_of'] === null
+                                    ? __(':name: no balance known', ['name' => $stale['name']])
+                                    : __(':name: last known balance on :date', ['name' => $stale['name'], 'date' => $stale['as_of']->format('d/m/Y')]) }}</span>
+                            </div>
+                        @endforeach
                     </x-slot:extra>
                 </x-admin.shared.stat-card>
             </div>
 
             {{-- Charts --}}
             <div class="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+                <x-card :title="__('Treasury through the year')" class="shadow-sm xl:col-span-2" separator data-print-keep>
+                    <x-charts.stacked-columns id="chart-treasury" :series="$holdings['series']" :columns="$holdings['columns']" :palette="$palette"
+                        :title="__('Money held at each month end, :year', ['year' => $yearLabel])"
+                        :description="__('One column per month end, stacked by bank account with the tills on top; a year in progress stops today.')" />
+
+                    <details class="mt-3 text-sm" data-print-hide>
+                        <summary class="cursor-pointer text-muted">{{ __('Show the figures') }}</summary>
+                        <div class="mt-2 overflow-x-auto">
+                            <table class="table table-sm" data-treasury-figures>
+                                <thead>
+                                    <tr>
+                                        <th>{{ __('Date') }}</th>
+                                        @foreach ($holdings['series'] as $serie)
+                                            <th class="text-right">{{ $serie['label'] }}</th>
+                                        @endforeach
+                                        <th class="text-right">{{ __('Total') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($holdings['columns'] as $column)
+                                        <tr>
+                                            <td class="tabular-nums">{{ $column['day']->format('d/m/Y') }}</td>
+                                            @foreach ($column['values'] as $value)
+                                                <td class="text-right tabular-nums">
+                                                    {{ $value['balance'] === null ? '—' : $euros($value['balance']) }}
+                                                    @if ($value['as_of'] !== null && ! $value['as_of']->isSameDay($column['day']))
+                                                        <div class="text-xs text-subtle">{{ __('balance of :date', ['date' => $value['as_of']->format('d/m/Y')]) }}</div>
+                                                    @endif
+                                                </td>
+                                            @endforeach
+                                            <td class="text-right font-semibold tabular-nums">{{ $euros($column['total']) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+                </x-card>
+
                 <x-card :title="__('Income and expenses per month')" class="shadow-sm xl:col-span-2" separator data-print-keep>
                     <x-charts.monthly-flows id="chart-monthly" :months="$months" :palette="$palette"
                         :title="__('Income and expenses per month, :year', ['year' => $yearLabel])"

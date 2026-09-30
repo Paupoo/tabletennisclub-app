@@ -6,6 +6,7 @@ namespace App\Domains\ClubAdmin\Finance\Services;
 
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
+use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\PaymentCredit;
@@ -551,10 +552,12 @@ final class FinancialReport
         $entries = CashRegisterEntry::query()
             ->whereDate('created_at', '>=', $this->year->start()->toDateString())
             ->whereDate('created_at', '<=', $this->lastDay()->toDateString())
-            ->with(['supportingDocuments', 'cashRegister' => fn ($query) => $query->withTrashed(), ...$this->payableWith('payable')])
+            ->with(['supportingDocuments', ...$this->payableWith('payable')])
             ->orderBy('created_at')
             ->orderBy('cash_register_entries.id')
             ->get();
+
+        $tills = CashRegister::displayNames();
 
         foreach ($entries as $entry) {
             $money = (int) $entry->amount;
@@ -567,7 +570,7 @@ final class FinancialReport
                 'kind' => 'cash',
                 'id' => $entry->id,
                 'date' => CarbonImmutable::parse($recordedAt->toDateString()),
-                'source' => $entry->cashRegister->name ?? __('Cash register'),
+                'source' => $tills[$entry->cash_register_id] ?? __('Cash register'),
                 'statement' => null,
                 'counterparty' => null,
                 'description' => (string) $entry->reason,

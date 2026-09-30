@@ -272,9 +272,11 @@ class DatabaseSeeder extends Seeder
 
         Model::preventLazyLoading(! app()->isProduction());
 
+        // The tournaments' till; TreasurySeeder opens « Caisse du club ». Two
+        // tills of the same name could not be told apart in the report.
         $gilles = User::where('email', 'gilles.herpigny@test.com')->first();
         CashRegister::create([
-            'name' => 'Caisse du club',
+            'name' => 'Caisse des tournois',
             'held_by_user_id' => $gilles?->id,
         ]);
 

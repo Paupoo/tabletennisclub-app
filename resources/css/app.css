@@ -568,6 +568,10 @@ select:focus-visible {
   --chart-written-off: #4a3aa7;
   --chart-internal: #b8b6ae;
   --chart-to-process: #fab219;
+  --chart-holding-1: #2a78d6;
+  --chart-holding-2: #eb6834;
+  --chart-holding-3: #1baf7a;
+  --chart-holding-cash: #4a3aa7;
   --chart-ink: color-mix(in oklab, var(--color-base-content) 92%, var(--color-base-100));
   --chart-muted: color-mix(in oklab, var(--color-base-content) 70%, var(--color-base-100));
   --chart-grid: color-mix(in oklab, var(--color-base-content) 10%, var(--color-base-100));
@@ -576,6 +580,10 @@ select:focus-visible {
 }
 
 [data-theme='dark'] {
+  --chart-holding-1: #3987e5;
+  --chart-holding-2: #d95926;
+  --chart-holding-3: #199e70;
+  --chart-holding-cash: #9085e9;
   --chart-income: #3987e5;
   --chart-expense: #d95926;
   --chart-current: #3987e5;
@@ -589,6 +597,10 @@ select:focus-visible {
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
+    --chart-holding-1: #3987e5;
+    --chart-holding-2: #d95926;
+    --chart-holding-3: #199e70;
+    --chart-holding-cash: #9085e9;
     --chart-income: #3987e5;
     --chart-expense: #d95926;
     --chart-current: #3987e5;

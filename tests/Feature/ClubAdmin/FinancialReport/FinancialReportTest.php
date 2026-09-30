@@ -283,3 +283,19 @@ describe('the year it is compared with', function (): void {
             ->and($previous->cutOffAt()?->toDateString())->toBe('2025-03-15');
     });
 });
+
+it('tells two tills of the same name apart by who holds them', function (): void {
+    $gilles = User::factory()->create(['first_name' => 'Gilles', 'last_name' => 'Herpigny']);
+    $manon = User::factory()->create(['first_name' => 'Manon', 'last_name' => 'Patigny']);
+    CashRegister::create(['name' => 'Caisse des tournois']);
+    foreach ([$gilles, $manon] as $holder) {
+        $till = CashRegister::create(['name' => 'Caisse du club', 'held_by_user_id' => $holder->id]);
+        $entry = CashRegisterEntry::create(['cash_register_id' => $till->id, 'amount' => 500, 'reason' => 'Mouvement', 'recorded_by_id' => $holder->id]);
+        $entry->forceFill(['created_at' => '2026-03-01 10:00:00'])->saveQuietly();
+    }
+
+    $sources = array_column(FinancialReport::for(FiscalYear::startingIn(2026))->journal(), 'source');
+
+    expect($sources)->toBe(['Caisse du club (Gilles Herpigny)', 'Caisse du club (Manon Patigny)'])
+        ->and(CashRegister::displayNames()[CashRegister::where('name', 'Caisse des tournois')->value('id')])->toBe('Caisse des tournois');
+});

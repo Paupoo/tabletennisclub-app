@@ -498,9 +498,8 @@ final class FinancialReport
                 'description' => (string) $line->description,
                 'documents' => $line->supportingDocuments->map(fn (SupportingDocument $document): string => $document->reference())->values()->all(),
                 'expense_reports' => $line->credits
-                    ->map(fn (PaymentCredit $credit): ?Model => $credit->payment?->payable)
-                    ->filter(fn (?Model $payable): bool => $payable instanceof ExpenseReport)
-                    ->map(fn (Model $payable): int => (int) $payable->getKey())
+                    ->filter(fn (PaymentCredit $credit): bool => $credit->payment?->payable instanceof ExpenseReport)
+                    ->map(fn (PaymentCredit $credit): int => (int) $credit->payment->payable_id)
                     ->values()->all(),
             ]);
         }

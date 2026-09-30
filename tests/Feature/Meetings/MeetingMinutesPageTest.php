@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Models\MeetingActionItem;
 use App\Domains\Meetings\Notifications\MeetingMinutesNotification;
+use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Jobs\SendMeetingMinutesJob;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Support\Facades\Bus;
@@ -14,62 +17,158 @@ use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
+const MINUTES_PAGE = 'pages::club-events.meetings.minutes';
+
 function minutesAdmin(): User
 {
     return User::factory()->isAdmin()->isCommitteeMember()->create();
 }
 
+function attendanceOf(Meeting $meeting, User $user): string
+{
+    return $meeting->users()->where('users.id', $user->id)->first()->registration->status->value;
+}
+
 describe('Minutes page — drafting', function (): void {
-    test('announcements, decisions and notes are saved as a draft on blur', function (): void {
+    test('announcements and what was said outside the agenda are saved on blur', function (): void {
         $admin = minutesAdmin();
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
             ->set('announcements', ['Nouvelle salle dès septembre'])
-            ->set('decisions', ['Budget buvette approuvé'])
             ->set('notes', 'RAS');
 
         $minutes = $meeting->fresh()->minutes;
         expect($minutes)->not->toBeNull()
             ->and($minutes->announcements)->toContain('Nouvelle salle dès septembre')
-            ->and($minutes->decisions)->toContain('Budget buvette approuvé')
             ->and($minutes->notes)->toBe('RAS')
             ->and($minutes->is_published)->toBeFalse();
     });
 
-    test('action items are saved as part of the draft', function (): void {
+    test('a decision typed then Enter is recorded on its point, numbered across the meeting', function (): void {
         $admin = minutesAdmin();
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+        $budget = $meeting->agendaItems()->create(['sort_order' => 0, 'title' => 'Budget']);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
-            ->set('actionItems', [[
-                'title' => 'Réserver la salle',
-                'description' => '',
-                'assigned_to_id' => (string) $admin->id,
-                'due_date' => now()->addWeek()->format('Y-m-d'),
-                'is_completed' => false,
-            ]]);
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set("newDecision.{$budget->id}", 'Budget buvette approuvé')
+            ->call('addDecision', (string) $budget->id)
+            ->assertSet("newDecision.{$budget->id}", '')
+            ->set('newDecision.outside', 'Prochaine réunion le 12')
+            ->call('addDecision', 'outside')
+            ->assertSee('D2');
 
-        $items = $meeting->fresh()->actionItems;
-        expect($items)->toHaveCount(1)
-            ->and($items->first()->title)->toBe('Réserver la salle')
-            ->and($items->first()->assigned_to_id)->toBe($admin->id);
+        $decisions = $meeting->fresh()->decisions;
+        expect($decisions->pluck('body')->all())->toBe(['Budget buvette approuvé', 'Prochaine réunion le 12'])
+            ->and($decisions[0]->agenda_item_id)->toBe($budget->id)
+            ->and($decisions[1]->agenda_item_id)->toBeNull();
     });
 
-    test('attendance can be recorded from the minutes page', function (): void {
+    test('an empty decision is not recorded', function (): void {
         $admin = minutesAdmin();
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
-        $member = User::factory()->create([]);
-        $meeting->users()->attach($member->id, ['status' => 'confirmed']);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
-            ->call('markAttended', $member->id);
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set('newDecision.outside', '   ')
+            ->call('addDecision', 'outside');
 
-        expect($meeting->users()->where('users.id', $member->id)->first()->registration->status->value)
-            ->toBe('attended');
+        expect($meeting->fresh()->decisions)->toBeEmpty();
+    });
+
+    test('a decision cannot be tied to another meeting\'s point', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+        $foreign = Meeting::factory()->create()->agendaItems()->create(['sort_order' => 0, 'title' => 'Ailleurs']);
+
+        expect(fn () => Livewire::actingAs($admin)
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set("newDecision.{$foreign->id}", 'Détournement')
+            ->call('addDecision', (string) $foreign->id))
+            ->toThrow(ModelNotFoundException::class);
+
+        expect($meeting->fresh()->decisions)->toBeEmpty();
+    });
+
+    test('an action typed then Enter is recorded on its point; who and when come after', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+        $item = $meeting->agendaItems()->create(['sort_order' => 0, 'title' => 'Tournoi']);
+
+        $component = Livewire::actingAs($admin)
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set("newAction.{$item->id}", 'Réserver la salle')
+            ->call('addAction', (string) $item->id);
+
+        $action = $meeting->fresh()->actionItems->first();
+        expect($action->title)->toBe('Réserver la salle')
+            ->and($action->agenda_item_id)->toBe($item->id);
+
+        $component
+            ->set("actions.{$action->id}.assigned_to_id", (string) $admin->id)
+            ->set("actions.{$action->id}.due_date", now()->addWeek()->format('Y-m-d'));
+
+        expect($action->fresh()->assigned_to_id)->toBe($admin->id)
+            ->and($action->fresh()->due_date->isSameDay(now()->addWeek()))->toBeTrue();
+    });
+
+    // The draft used to delete and recreate every action on each save: an
+    // assignee ticking theirs done from the reading page lost it to the next
+    // keystroke of the note taker.
+    test('an action keeps its id while the minutes are written around it', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+        $action = MeetingActionItem::factory()->for($meeting)->create(['title' => 'Relancer', 'is_completed' => false]);
+
+        Livewire::actingAs($admin)
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set('notes', 'On avance')
+            ->set("actions.{$action->id}.title", 'Relancer les cotisations')
+            ->set('announcements', ['Nouveau sponsor']);
+
+        expect($meeting->fresh()->actionItems->modelKeys())->toBe([$action->id])
+            ->and($action->fresh()->title)->toBe('Relancer les cotisations');
+    });
+
+    test('an action title cannot be emptied', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+        $action = MeetingActionItem::factory()->for($meeting)->create(['title' => 'Relancer']);
+
+        Livewire::actingAs($admin)
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set("actions.{$action->id}.title", '  ')
+            ->assertSet("actions.{$action->id}.title", 'Relancer');
+
+        expect($action->fresh()->title)->toBe('Relancer');
+    });
+
+    test('quick due dates set a week, two weeks or the end of the month', function (string $preset, Closure $expected): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+        $action = MeetingActionItem::factory()->for($meeting)->create(['due_date' => null]);
+
+        Livewire::actingAs($admin)->test(MINUTES_PAGE, ['meeting' => $meeting])->call('setDue', $action->id, $preset);
+
+        expect($action->fresh()->due_date->toDateString())->toBe($expected()->toDateString());
+    })->with([
+        'a week' => ['week', fn () => now()->addWeek()],
+        'two weeks' => ['two_weeks', fn () => now()->addWeeks(2)],
+        'end of the month' => ['month_end', fn () => now()->endOfMonth()],
+    ]);
+
+    test('what was said on a point is saved with the point', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+        $item = $meeting->agendaItems()->create(['sort_order' => 0, 'title' => 'Comptes']);
+
+        Livewire::actingAs($admin)
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set("discussions.{$item->id}", 'Le trésorier présente les **comptes**.');
+
+        expect($item->fresh()->discussion)->toBe('Le trésorier présente les **comptes**.');
     });
 
     test('a regular member cannot open the minutes page', function (): void {
@@ -77,8 +176,70 @@ describe('Minutes page — drafting', function (): void {
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => minutesAdmin()->id]);
 
         Livewire::actingAs($member)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
             ->assertForbidden();
+    });
+});
+
+describe('Minutes page — attendance', function (): void {
+    test('every confirmed member is marked present in one go', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+        [$yes, $no, $silent] = User::factory()->count(3)->create();
+        $meeting->users()->attach([
+            $yes->id => ['status' => MeetingUserStatusEnum::CONFIRMED->value, 'response_at' => now()],
+            $no->id => ['status' => MeetingUserStatusEnum::DECLINED->value, 'response_at' => now()],
+            $silent->id => ['status' => MeetingUserStatusEnum::INVITED->value],
+        ]);
+
+        Livewire::actingAs($admin)->test(MINUTES_PAGE, ['meeting' => $meeting])->call('markAllConfirmedPresent');
+
+        expect(attendanceOf($meeting, $yes))->toBe('attended')
+            ->and(attendanceOf($meeting, $no))->toBe('declined')
+            ->and(attendanceOf($meeting, $silent))->toBe('invited');
+    });
+
+    test('a tap moves a member from their answer to present, absent, and back', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+        $member = User::factory()->create();
+        $meeting->users()->attach($member->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value, 'response_at' => now()]);
+
+        $component = Livewire::actingAs($admin)->test(MINUTES_PAGE, ['meeting' => $meeting]);
+
+        $component->call('cycleAttendance', $member->id);
+        expect(attendanceOf($meeting, $member))->toBe('attended');
+        $component->call('cycleAttendance', $member->id);
+        expect(attendanceOf($meeting, $member))->toBe('absent');
+        $component->call('cycleAttendance', $member->id);
+        expect(attendanceOf($meeting, $member))->toBe('confirmed');
+    });
+
+    test('an active member who came without being on the list is added as present', function (): void {
+        $season = makeActiveSeason();
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->generalAssembly()->completed()->create(['created_by' => $admin->id]);
+        $walkIn = activeMember($season, ['first_name' => 'Zoé', 'last_name' => 'Surprise']);
+
+        Livewire::actingAs($admin)
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set('walkInSearch', 'Surpr')
+            ->assertSee('Zoé Surprise')
+            ->call('addWalkIn', $walkIn->id);
+
+        expect(attendanceOf($meeting, $walkIn))->toBe('attended');
+    });
+
+    test('only an active member can be added from the walk-in search', function (): void {
+        makeActiveSeason();
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->generalAssembly()->completed()->create(['created_by' => $admin->id]);
+        $former = User::factory()->create();
+
+        expect(fn () => Livewire::actingAs($admin)->test(MINUTES_PAGE, ['meeting' => $meeting])->call('addWalkIn', $former->id))
+            ->toThrow(ModelNotFoundException::class);
+
+        expect($meeting->users()->count())->toBe(0);
     });
 });
 
@@ -87,8 +248,7 @@ describe('Minutes page — note-taking lock', function (): void {
         $admin = minutesAdmin();
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
 
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting]);
+        Livewire::actingAs($admin)->test(MINUTES_PAGE, ['meeting' => $meeting]);
 
         // Merely opening to read must not claim the pen — the free pen stays free.
         expect($meeting->fresh()->minutes_editor_id)->toBeNull();
@@ -98,8 +258,7 @@ describe('Minutes page — note-taking lock', function (): void {
         $admin = minutesAdmin();
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
 
-        $component = Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting]);
+        $component = Livewire::actingAs($admin)->test(MINUTES_PAGE, ['meeting' => $meeting]);
 
         expect($meeting->fresh()->minutes_editor_id)->toBeNull();
 
@@ -118,8 +277,7 @@ describe('Minutes page — note-taking lock', function (): void {
             'minutes_editor_at' => now()->subMinutes(20),
         ]);
 
-        $component = Livewire::actingAs($arriving)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting]);
+        $component = Livewire::actingAs($arriving)->test(MINUTES_PAGE, ['meeting' => $meeting]);
 
         // Opening a page whose previous holder went stale must not grab the pen.
         expect($meeting->fresh()->minutes_editor_id)->toBe($away->id);
@@ -136,11 +294,14 @@ describe('Minutes page — note-taking lock', function (): void {
         $meeting->acquireMinutesLock($holder);
 
         Livewire::actingAs($other)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
             ->assertSeeText(__(':name is taking notes', ['name' => $holder->full_name]))
-            ->set('notes', 'tentative pirate');
+            ->set('notes', 'tentative pirate')
+            ->set('newDecision.outside', 'décision pirate')
+            ->call('addDecision', 'outside');
 
         expect($meeting->fresh()->minutes?->notes)->not->toBe('tentative pirate')
+            ->and($meeting->fresh()->decisions)->toBeEmpty()
             ->and($meeting->fresh()->minutes_editor_id)->toBe($holder->id);
     });
 
@@ -151,7 +312,7 @@ describe('Minutes page — note-taking lock', function (): void {
         $meeting->acquireMinutesLock($holder);
 
         Livewire::actingAs($other)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
             ->call('takeOver')
             ->set('notes', 'notes reprises');
 
@@ -159,7 +320,6 @@ describe('Minutes page — note-taking lock', function (): void {
         expect($fresh->minutes_editor_id)->toBe($other->id)
             ->and($fresh->minutes->notes)->toBe('notes reprises');
     });
-
 });
 
 describe('Minutes page — live reading', function (): void {
@@ -171,15 +331,16 @@ describe('Minutes page — live reading', function (): void {
         $meeting->minutes()->create(['notes' => 'version initiale']);
 
         $component = Livewire::actingAs($viewer)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
             ->assertSet('notes', 'version initiale');
 
         // The note taker keeps writing from their own session.
-        $meeting->minutes->update(['notes' => 'version en direct', 'decisions' => ['Décision live']]);
+        $meeting->minutes->update(['notes' => 'version en direct']);
+        $decision = $meeting->decisions()->create(['body' => 'Décision live']);
 
         $component->call('syncDraft')
             ->assertSet('notes', 'version en direct')
-            ->assertSet('decisions', ['Décision live']);
+            ->assertSet("decisionBodies.{$decision->id}", 'Décision live');
     });
 
     test('the note taker own draft is never overwritten by the poll', function (): void {
@@ -188,7 +349,7 @@ describe('Minutes page — live reading', function (): void {
         $meeting->minutes()->create(['notes' => 'ancienne version']);
 
         Livewire::actingAs($holder)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
             ->set('notes', 'je tape en ce moment')
             ->call('syncDraft')
             ->assertSet('notes', 'je tape en ce moment');
@@ -202,7 +363,7 @@ describe('Minutes page — live reading (holder side)', function (): void {
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $holder->id]);
 
         $component = Livewire::actingAs($holder)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
             ->set('notes', 'je prends le stylo') // claim the pen by writing (I4)
             ->assertSeeText(__('You are taking the notes'));
 
@@ -221,13 +382,24 @@ describe('Minutes page — live agenda', function (): void {
         $item = $meeting->agendaItems()->create(['sort_order' => 0, 'title' => 'Budget']);
 
         $component = Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
             ->call('toggleDiscussed', $item->id);
 
         expect($item->fresh()->discussed_at)->not->toBeNull();
 
         $component->call('toggleDiscussed', $item->id);
         expect($item->fresh()->discussed_at)->toBeNull();
+    });
+
+    test('ticking a point off moves the page on to the next one', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+        $first = $meeting->agendaItems()->create(['sort_order' => 0, 'title' => 'Budget']);
+        $second = $meeting->agendaItems()->create(['sort_order' => 1, 'title' => 'Tournoi']);
+
+        $component = Livewire::actingAs($admin)->test(MINUTES_PAGE, ['meeting' => $meeting])->call('toggleDiscussed', $first->id);
+
+        expect($component->effects['returns'][0] ?? null)->toBe($second->id);
     });
 });
 
@@ -237,26 +409,28 @@ describe('Minutes page — publish & send', function (): void {
         $meeting = Meeting::factory()->committee()->confirmed()->create(['created_by' => $admin->id]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
-            ->set('decisions', ['Décision anticipée'])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set('newDecision.outside', 'Décision anticipée')
+            ->call('addDecision', 'outside')
             ->call('publishMinutes');
 
         expect($meeting->fresh()->minutes?->is_published ?? false)->toBeFalse();
     });
 
-    test('publishing persists the draft and marks it published', function (): void {
+    test('publishing marks the minutes published, with what was written', function (): void {
         $admin = minutesAdmin();
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
-            ->set('decisions', ['Décision A'])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set('newDecision.outside', 'Décision A')
+            ->call('addDecision', 'outside')
             ->call('publishMinutes');
 
-        $minutes = $meeting->fresh()->minutes;
-        expect($minutes->is_published)->toBeTrue()
-            ->and($minutes->published_by)->toBe($admin->id)
-            ->and($minutes->decisions)->toContain('Décision A');
+        $fresh = $meeting->fresh();
+        expect($fresh->minutes->is_published)->toBeTrue()
+            ->and($fresh->minutes->published_by)->toBe($admin->id)
+            ->and($fresh->decisions->pluck('body')->all())->toBe(['Décision A']);
     });
 
     test('minutes cannot be sent before being published', function (): void {
@@ -266,7 +440,7 @@ describe('Minutes page — publish & send', function (): void {
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
             ->call('sendMinutes', false);
 
         expect($meeting->fresh()->minutes?->sent_to_committee_at)->toBeNull();
@@ -281,16 +455,32 @@ describe('Minutes page — publish & send', function (): void {
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
-            ->set('decisions', ['Décision A'])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set('newDecision.outside', 'Décision A')
+            ->call('addDecision', 'outside')
             ->call('publishMinutes')
             ->call('sendMinutes', false);
 
         expect($meeting->fresh()->minutes->sent_to_committee_at)->not->toBeNull();
-        Notification::assertSentTo(
-            $committee,
-            MeetingMinutesNotification::class,
-        );
+        Notification::assertSentTo($committee, MeetingMinutesNotification::class);
+    });
+
+    test('a change made once the minutes were sent is recorded as a correction, not before', function (): void {
+        Bus::fake();
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+
+        $component = Livewire::actingAs($admin)
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set('notes', 'Premier jet')
+            ->call('publishMinutes')
+            ->set('notes', 'Coquille corrigée avant envoi');
+
+        expect($meeting->fresh()->minutes->corrected_at)->toBeNull();
+
+        $component->call('sendMinutes', false)->set('notes', 'Coquille corrigée après envoi');
+
+        expect($meeting->fresh()->minutes->corrected_at)->not->toBeNull();
     });
 });
 
@@ -301,8 +491,9 @@ describe('Minutes page — who the minutes are sent to', function (): void {
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
-            ->set('decisions', ['Membre en retard de cotisation'])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set('newDecision.outside', 'Membre en retard de cotisation')
+            ->call('addDecision', 'outside')
             ->call('publishMinutes')
             ->call('sendMinutes', true)
             ->assertForbidden();
@@ -319,8 +510,9 @@ describe('Minutes page — who the minutes are sent to', function (): void {
         $meeting = Meeting::factory()->generalAssembly()->completed()->create(['created_by' => $admin->id]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
-            ->set('decisions', ['Cotisation gelée'])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set('newDecision.outside', 'Cotisation gelée')
+            ->call('addDecision', 'outside')
             ->call('publishMinutes')
             ->call('sendMinutes', true);
 
@@ -334,19 +526,19 @@ describe('Minutes page — who the minutes are sent to', function (): void {
 });
 
 describe('Minutes page — a free pen never loses a draft to the poll', function (): void {
-    test('a row added but not yet typed into survives the poll tick', function (): void {
+    test('a row added, or a line typed but not yet entered, survives the poll tick', function (): void {
         $admin = minutesAdmin();
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
             ->call('addAnnouncement')
-            ->call('addDecision')
-            ->call('addActionItem')
+            ->set('newDecision.outside', 'en cours de frappe')
+            ->set('newAction.outside', 'action en cours')
             ->call('syncDraft')
             ->assertCount('announcements', 1)
-            ->assertCount('decisions', 1)
-            ->assertCount('actionItems', 1);
+            ->assertSet('newDecision.outside', 'en cours de frappe')
+            ->assertSet('newAction.outside', 'action en cours');
     });
 
     test('adding a row claims the pen so other members go read-only', function (): void {
@@ -354,7 +546,7 @@ describe('Minutes page — a free pen never loses a draft to the poll', function
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
             ->call('addAnnouncement');
 
         expect($meeting->fresh()->minutes_editor_id)->toBe($admin->id);
@@ -367,7 +559,7 @@ describe('Minutes page — a free pen never loses a draft to the poll', function
         $meeting->acquireMinutesLock($holder);
 
         Livewire::actingAs($other)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
             ->call('addAnnouncement')
             ->assertCount('announcements', 0);
 
@@ -383,31 +575,25 @@ describe('Minutes page — a free pen never loses a draft to the poll', function
         $meeting->update(['minutes_editor_id' => minutesAdmin()->id, 'minutes_editor_at' => now()->subMinutes(20)]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
             ->call('addAnnouncement')
             ->call('syncDraft')
             ->assertCount('announcements', 2);
     });
 });
 
-describe('Minutes page — the poll leaves the date picker alone', function (): void {
+describe('Minutes page — the poll leaves the page alone', function (): void {
+    // A re-render would rebuild the field being typed in, open pickers and all.
     test('a poll tick with nothing to sync does not re-render the page', function (): void {
         $admin = minutesAdmin();
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
 
         $component = Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
-            ->call('addActionItem');
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->call('addAnnouncement')
+            ->call('syncDraft');
 
-        // Mary keys its date picker on rand(), so a re-render hands the morph a new
-        // key and the field — flatpickr instance, open calendar and all — is rebuilt
-        // from scratch. A stable key across a tick means no morph happened at all.
-        preg_match('/datepicker-\d+/', $component->html(), $beforeTick);
-        $component->call('syncDraft');
-        preg_match('/datepicker-\d+/', $component->html(), $afterTick);
-
-        expect($beforeTick)->not->toBeEmpty()
-            ->and($afterTick[0])->toBe($beforeTick[0]);
+        expect($component->effects['html'] ?? null)->toBeNull();
     });
 
     test('a read-only viewer still gets the note taker updates on a tick', function (): void {
@@ -417,8 +603,7 @@ describe('Minutes page — the poll leaves the date picker alone', function (): 
         $meeting->acquireMinutesLock($holder);
         $meeting->minutes()->create(['notes' => 'première version']);
 
-        $component = Livewire::actingAs($viewer)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting]);
+        $component = Livewire::actingAs($viewer)->test(MINUTES_PAGE, ['meeting' => $meeting]);
 
         $meeting->minutes->update(['notes' => 'version en direct']);
 

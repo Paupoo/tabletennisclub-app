@@ -239,6 +239,16 @@ class Meeting extends Model
         return $this->hasMany(MeetingDateProposal::class)->orderBy('proposed_at');
     }
 
+    /**
+     * Numbered D1, D2… across the meeting, in this order.
+     *
+     * @return HasMany<MeetingDecision, $this>
+     */
+    public function decisions(): HasMany
+    {
+        return $this->hasMany(MeetingDecision::class)->orderBy('sort_order')->orderBy('id');
+    }
+
     public function eventPost(): MorphOne
     {
         return $this->morphOne(EventPost::class, 'eventable');

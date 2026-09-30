@@ -277,7 +277,7 @@ Ajoutez des points à l'ordre du jour de la réunion. L'ordre du jour est visibl
 
 ### Procès-verbal
 
-Rédigez le PV depuis la fiche de la réunion (**Rédiger le PV**), puis **Publiez-le** une fois la réunion passée.
+Rédigez le PV depuis la fiche de la réunion (**Rédiger le PV**), en direct pendant la réunion : un bloc par point de l'ordre du jour — ce qui s'est dit, les décisions (tapez, puis Entrée ; numérotées D1, D2… sur tout le PV) et les actions (tapez, puis Entrée ; puis qui et pour quand) — plus un bloc pour ce qui sort de l'ordre du jour. Les présences se pointent en haut : tous les confirmés d'un coup, puis les corrections nom par nom, et un membre venu sans être sur la liste s'ajoute par la recherche. **Marquer abordé** clôt un point et ouvre le suivant. Tout s'enregistre au fur et à mesure ; **Aperçu** montre le PV et son PDF avant de le **Publier** une fois la réunion passée. Une modification faite après l'envoi apparaît « Corrigé le … ».
 
 - **Envoyer au comité** le transmet au comité — la première étape habituelle, pour le relire.
 - **Envoyer à tous les membres** n'existe que pour une **assemblée générale** : le PV d'une réunion de comité ne sort jamais du comité, puisqu'il peut nommer un membre en dette ou un conflit. C'est aussi l'envoi à tous qui ouvre le PV d'une AG à chaque membre actif.

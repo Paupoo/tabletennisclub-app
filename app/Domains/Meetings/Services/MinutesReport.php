@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingActionItem;
 use App\Domains\Meetings\Models\MeetingAgendaItem;
+use App\Domains\Meetings\Models\MeetingDecision;
 use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
@@ -34,7 +35,7 @@ final readonly class MinutesReport
     private const array URGENCY = ['overdue' => 0, 'todo' => 1, 'done' => 2];
 
     /**
-     * @param  list<string>  $decisions  markdown, in the order they were taken
+     * @param  Collection<int, MeetingDecision>  $decisions  numbered D1… in this order
      * @param  list<string>  $announcements  markdown
      * @param  Collection<int, MinutesAction>  $actions
      * @param  Collection<int, MeetingAgendaItem>  $agenda
@@ -45,7 +46,7 @@ final readonly class MinutesReport
     private function __construct(
         public Meeting $meeting,
         public MeetingMinutes $minutes,
-        public array $decisions,
+        public Collection $decisions,
         public array $announcements,
         public ?string $notes,
         public Collection $actions,
@@ -63,7 +64,7 @@ final readonly class MinutesReport
      */
     public static function for(Meeting $meeting, ?User $reader = null): self
     {
-        $meeting->loadMissing(['minutes.publisher', 'agendaItems', 'actionItems.assignedTo', 'users']);
+        $meeting->loadMissing(['minutes.publisher', 'agendaItems', 'decisions.agendaItem', 'actionItems.assignedTo', 'actionItems.agendaItem', 'users']);
 
         $minutes = $meeting->minutes;
         abort_if($minutes === null, 404);
@@ -109,9 +110,9 @@ final readonly class MinutesReport
         return new self(
             meeting: $meeting,
             minutes: $minutes,
-            decisions: array_values(array_filter($minutes->decisions ?? [], filled(...))),
+            decisions: $meeting->decisions->filter(fn (MeetingDecision $decision): bool => filled($decision->body))->values(),
             announcements: array_values(array_filter($minutes->announcements ?? [], filled(...))),
-            notes: filled($minutes->notes) ? $minutes->notes : null,
+            notes: filled($minutes->notes) ? $minutes->notes : null, // discussed outside the agenda
             actions: $actions,
             agenda: $meeting->agendaItems,
             present: $present,
@@ -121,6 +122,24 @@ final readonly class MinutesReport
             attendanceRecorded: $attendanceRecorded,
             asOf: now(),
         );
+    }
+
+    /** @return Collection<int, MinutesAction> the actions handed out on a point, or outside the agenda when null */
+    public function actionsFor(?MeetingAgendaItem $item): Collection
+    {
+        return $this->actions->filter(fn (MinutesAction $action): bool => $action->item->agenda_item_id === $item?->id)->values();
+    }
+
+    /** "D3": decisions are numbered across the whole meeting. */
+    public function decisionNumber(MeetingDecision $decision): string
+    {
+        return 'D' . ($this->decisions->search(fn (MeetingDecision $candidate): bool => $candidate->is($decision)) + 1);
+    }
+
+    /** @return Collection<int, MeetingDecision> the decisions taken on a point, or outside the agenda when null */
+    public function decisionsFor(?MeetingAgendaItem $item): Collection
+    {
+        return $this->decisions->filter(fn (MeetingDecision $decision): bool => $decision->agenda_item_id === $item?->id)->values();
     }
 
     public function isAssembly(): bool
@@ -147,6 +166,18 @@ final readonly class MinutesReport
             $this->isAssembly() ? 'AG' : 'comite',
             $this->meeting->scheduled_at?->format('Y-m-d') ?? $this->minutes->published_at?->format('Y-m-d') ?? 'sans-date',
         );
+    }
+
+    /** "2. Comptes 2025": where a decision or an action was taken, as the agenda numbers it. */
+    public function pointLabel(?MeetingAgendaItem $item): string
+    {
+        if ($item === null) {
+            return __('Outside the agenda');
+        }
+
+        $position = $this->agenda->search(fn (MeetingAgendaItem $candidate): bool => $candidate->is($item));
+
+        return ($position === false ? '' : ($position + 1) . '. ') . $item->title;
     }
 
     /** Null when no quorum was set; otherwise whether the people present reach it. */

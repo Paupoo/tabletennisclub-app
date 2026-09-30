@@ -276,7 +276,12 @@ Add agenda items to the meeting. Agenda is visible to all invited members.
 
 ### Minutes
 
-After the meeting, add meeting minutes (free text). Click **Send minutes** to email minutes to all attendees.
+Write the minutes from the meeting page (**Write the minutes**), then **Publish** them once the meeting is over.
+
+- **Send to committee** mails them to the committee — the usual first step, to read them over.
+- **Send to all members** exists for a **general assembly only**: a committee meeting's minutes never leave the committee, since they can name a member in debt or a conflict. Sending to all is also what opens a general assembly's minutes to every active member.
+
+The mail is short — the decisions, the reader's own actions, a **Read the minutes** button — and carries the minutes as a PDF. The reading page puts decisions and actions first; the member an action is assigned to ticks it done there. **Download PDF** renders the minutes as they stand at that moment.
 
 ### Action items
 
@@ -474,7 +479,7 @@ As a committee member, the following emails are sent automatically — you do no
 | Training session cancelled | Enrolled members |
 | Meeting invitation | Invited members |
 | Meeting RSVP confirmation | Member |
-| Meeting minutes | All attendees |
+| Meeting minutes | The committee; every active member for a general assembly sent to all |
 | Meeting cancelled/postponed | All invited members |
 | Refund requested | Admin |
 | Expense report accepted, rejected (with reason) or paid | The report's author |

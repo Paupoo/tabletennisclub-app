@@ -277,7 +277,12 @@ Ajoutez des points à l'ordre du jour de la réunion. L'ordre du jour est visibl
 
 ### Procès-verbal
 
-Après la réunion, ajoutez le procès-verbal (texte libre). Cliquez sur **Envoyer le PV** pour envoyer le procès-verbal par email à tous les participants.
+Rédigez le PV depuis la fiche de la réunion (**Rédiger le PV**), puis **Publiez-le** une fois la réunion passée.
+
+- **Envoyer au comité** le transmet au comité — la première étape habituelle, pour le relire.
+- **Envoyer à tous les membres** n'existe que pour une **assemblée générale** : le PV d'une réunion de comité ne sort jamais du comité, puisqu'il peut nommer un membre en dette ou un conflit. C'est aussi l'envoi à tous qui ouvre le PV d'une AG à chaque membre actif.
+
+Le mail est court — les décisions, les actions du destinataire, un bouton **Lire le PV** — et joint le PV en PDF. La page de lecture met décisions et actions en tête ; le responsable d'une action la coche « faite » depuis cette page. **Télécharger le PDF** produit le PV tel qu'il est à ce moment.
 
 ### Points d'action
 
@@ -475,7 +480,7 @@ En tant que membre du comité, les emails suivants sont envoyés automatiquement
 | Séance d'entraînement annulée | Membres inscrits |
 | Invitation à une réunion | Membres invités |
 | Confirmation de RSVP réunion | Membre |
-| Procès-verbal de réunion | Tous les participants |
+| Procès-verbal de réunion | Le comité ; tous les membres actifs pour une AG envoyée à tous |
 | Réunion annulée/reportée | Tous les membres invités |
 | Demande de remboursement | Administrateur |
 | Note de frais acceptée, rejetée (avec motif) ou payée | Membre auteur de la note |

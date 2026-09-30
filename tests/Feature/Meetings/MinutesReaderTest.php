@@ -234,3 +234,22 @@ it('keeps the logo and the stored images of the PDF, and never lets it fetch a r
         ->toContain('<em>[Distante]</em>')
         ->not->toContain('.env"');
 });
+
+it('lists in the member\'s space the general assembly minutes sent to all, and nothing else', function (): void {
+    $season = makeActiveSeason();
+    $member = activeMember($season);
+    $sent = Meeting::factory()->generalAssembly()->completed()->create(['title' => 'AG envoyée à tous']);
+    publishedMinutes($sent, ['sent_to_all_at' => now()]);
+    $notSent = Meeting::factory()->generalAssembly()->completed()->create(['title' => 'AG en relecture']);
+    publishedMinutes($notSent, ['sent_to_committee_at' => now()]);
+    $committee = Meeting::factory()->committee()->completed()->create(['title' => 'Comité confidentiel']);
+    publishedMinutes($committee, ['sent_to_all_at' => now()]);
+
+    $this->actingAs($member)
+        ->get(route('admin.user.event-subscription', $member))
+        ->assertOk()
+        ->assertSee('AG envoyée à tous')
+        ->assertSee(route('meetings.minutes.pdf', $sent), false)
+        ->assertDontSee('AG en relecture')
+        ->assertDontSee('Comité confidentiel');
+});

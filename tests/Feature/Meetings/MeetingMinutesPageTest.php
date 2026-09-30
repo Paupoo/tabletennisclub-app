@@ -5,7 +5,10 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Notifications\MeetingMinutesNotification;
+use App\Jobs\SendMeetingMinutesJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Middleware\RateLimited;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
@@ -288,6 +291,45 @@ describe('Minutes page — publish & send', function (): void {
             $committee,
             MeetingMinutesNotification::class,
         );
+    });
+});
+
+describe('Minutes page — who the minutes are sent to', function (): void {
+    test('a committee meeting\'s minutes cannot be sent to all members', function (): void {
+        Bus::fake();
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->set('decisions', ['Membre en retard de cotisation'])
+            ->call('publishMinutes')
+            ->call('sendMinutes', true)
+            ->assertForbidden();
+
+        expect($meeting->fresh()->minutes->sent_to_all_at)->toBeNull();
+        Bus::assertNotDispatched(SendMeetingMinutesJob::class);
+    });
+
+    test('a general assembly\'s minutes go to every active member, one throttled job each', function (): void {
+        Bus::fake();
+        $season = makeActiveSeason();
+        $members = collect(range(1, 3))->map(fn (): User => activeMember($season));
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->generalAssembly()->completed()->create(['created_by' => $admin->id]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->set('decisions', ['Cotisation gelée'])
+            ->call('publishMinutes')
+            ->call('sendMinutes', true);
+
+        expect($meeting->fresh()->minutes->sent_to_all_at)->not->toBeNull();
+        foreach ($members as $member) {
+            Bus::assertDispatched(SendMeetingMinutesJob::class, fn ($job): bool => $job->userId === $member->id);
+        }
+        expect(new SendMeetingMinutesJob($meeting->id, $admin->id)->middleware()[0])
+            ->toBeInstanceOf(RateLimited::class);
     });
 });
 

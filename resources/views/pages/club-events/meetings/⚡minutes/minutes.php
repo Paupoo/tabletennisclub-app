@@ -5,13 +5,13 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingMinutes;
-use App\Domains\Meetings\Notifications\MeetingMinutesNotification;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\Role;
+use App\Jobs\SendMeetingMinutesJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
@@ -191,14 +191,22 @@ new class extends Component
             return;
         }
 
+        // A committee meeting's minutes never leave the committee: they can name
+        // a member in debt or a conflict. Only a general assembly's go to all.
+        abort_if($toAll && $meeting->type !== MeetingTypeEnum::GENERAL_ASSEMBLY, 403);
+
         $recipients = $toAll
             ? User::active()->get()
             : User::role([Role::ADMINISTRATOR->value, Role::COMMITTEE->value])->get();
 
-        Notification::send($recipients, new MeetingMinutesNotification($meeting));
-
+        // Recorded before the mails leave: sending to all is what opens a general
+        // assembly's minutes, and the link must work from the first mail.
         $field = $toAll ? 'sent_to_all_at' : 'sent_to_committee_at';
         $meeting->minutes->update([$field => now()]);
+
+        foreach ($recipients as $recipient) {
+            SendMeetingMinutesJob::dispatch($meeting->id, $recipient->id);
+        }
 
         $this->toast(type: 'success', title: __('Minutes sent to :n members', ['n' => $recipients->count()]));
         unset($this->meeting);

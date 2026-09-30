@@ -15,6 +15,7 @@ use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
+use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\Training;
@@ -25,6 +26,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Mary\Traits\Toast;
@@ -63,6 +65,27 @@ new class extends Component
     public ?int $selectedPaymentId = null;
 
     public User $user;
+
+    /**
+     * The general assemblies' minutes this member may read: sent to all, and
+     * opened by MeetingPolicy::readMinutes() — a mail gets lost, the minutes
+     * should not.
+     *
+     * @return Illuminate\Support\Collection<int, Meeting>
+     */
+    #[Computed]
+    public function assemblyMinutes(): Illuminate\Support\Collection
+    {
+        return Meeting::query()
+            ->with('minutes')
+            ->where('type', MeetingTypeEnum::GENERAL_ASSEMBLY)
+            ->whereHas('minutes', fn ($minutes) => $minutes->where('is_published', true)->whereNotNull('sent_to_all_at'))
+            ->orderByDesc('scheduled_at')
+            ->orderByDesc('meetings.id')
+            ->get()
+            ->filter(fn (Meeting $meeting): bool => Gate::allows('readMinutes', $meeting))
+            ->values();
+    }
 
     #[Computed]
     public function availablePartners(): array

@@ -37,4 +37,11 @@ Une fois le PV publié, vous pouvez le **diffuser sur le site** : le formulaire 
 
 ## Qui peut faire tout ça
 
-Tout le comité et les administrateurs. Les réunions ne sont pas visibles des membres ordinaires — ni la page, ni les PV, tant qu'ils ne sont pas diffusés sur le site.
+Tout le comité et les administrateurs. Les réunions ne sont pas visibles des membres ordinaires.
+
+## Envoyer le PV
+
+- **Envoyer au comité** : pour la relecture, et pour toute réunion de comité. Le PV d'une réunion de comité ne sort jamais du comité.
+- **Envoyer à tous les membres** : seulement pour une **assemblée générale**. C'est cet envoi qui ouvre le PV aux membres actifs ; ils le retrouvent ensuite dans leurs événements.
+
+Le mail donne les décisions, les actions de chacun, un bouton **Lire le PV** et le PV en PDF. Sur la page de lecture, le responsable d'une action la coche « faite ».

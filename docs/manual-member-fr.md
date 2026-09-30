@@ -116,6 +116,10 @@ Effectuez le virement bancaire manuellement. Le trésorier rapproche les paiemen
 
 Si vous êtes invité à une réunion du club, votre invitation apparaît ici. Cliquez sur **RSVP** pour confirmer votre présence. Vous pouvez également indiquer si vous souhaitez réserver un repas (le cas échéant). Le comité voit votre réponse automatiquement.
 
+### Procès-verbaux des assemblées générales
+
+Une fois envoyés par le comité, les PV des assemblées générales sont listés sur cette page : **Lire** les ouvre, **PDF** les télécharge. Vous les recevez aussi par mail, PDF joint.
+
 ---
 
 ## 7. Gestion des inscriptions

@@ -188,7 +188,6 @@ class SupportingDocument extends Model
 
     public function category(): ExpenseCategory|IncomeCategory
     {
-        /** @var ExpenseCategory|IncomeCategory */
         return $this->expense_category ?? $this->income_category;
     }
 

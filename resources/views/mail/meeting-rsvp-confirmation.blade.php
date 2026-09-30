@@ -21,7 +21,7 @@
 **{{ __('Meal payment') }}**
 
 @if($meeting->meal_description)
-{{ $meeting->meal_description }}
+{{ \App\Support\MailText::keepingLineBreaks($meeting->meal_description) }}
 @endif
 
 **{{ __('Amount due') }}:** {{ number_format($payment->amount_due, 2, ',', ' ') }} €

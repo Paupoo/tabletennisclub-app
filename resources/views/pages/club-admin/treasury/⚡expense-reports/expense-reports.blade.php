@@ -316,7 +316,7 @@
                 @if (filled($shown->decision_reason))
                     <div class="rounded-xl border border-base-300 bg-base-200/40 p-3 text-sm">
                         <div class="mb-1 font-semibold">{{ __('Reason sent to the member') }}</div>
-                        {{ $shown->decision_reason }}
+                        <span class="whitespace-pre-line">{{ $shown->decision_reason }}</span>
                     </div>
                 @endif
 
@@ -368,8 +368,9 @@
                 {{ __('A refund is opened to the member\'s account. You may accept less than declared — never more — and then say why.') }}
             </p>
             <x-input wire:model.live.blur="acceptedAmount" :label="__('Amount to refund')" inputmode="decimal" suffix="€" />
-            <x-textarea wire:model="decisionReason" :label="__('Reason for a lower amount')" rows="2"
+            <x-textarea wire:model="decisionReason" :label="__('Reason for a lower amount')" rows="2" maxlength="1000"
                 :hint="__('Sent to the member. Required only when the amount is lower than declared.')" />
+            <x-char-counter model="decisionReason" max="1000" />
         </div>
         <x-slot:actions>
             <x-button :label="__('Cancel')" wire:click="$set('acceptModal', false)" />
@@ -383,9 +384,10 @@
             <p class="text-sm text-base-content/80">
                 {{ __('Final: the member can resume it into a new report if they can fix it.') }}
             </p>
-            <x-textarea wire:model="decisionReason" :label="__('Reason')" rows="3"
+            <x-textarea wire:model="decisionReason" :label="__('Reason')" rows="3" maxlength="1000"
                 :placeholder="__('e.g. the receipt is unreadable, the proof of payment is missing')"
                 :hint="__('Sent to the member as is.')" />
+            <x-char-counter model="decisionReason" max="1000" />
         </div>
         <x-slot:actions>
             <x-button :label="__('Cancel')" wire:click="$set('rejectModal', false)" />

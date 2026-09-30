@@ -234,8 +234,9 @@
 
 
             <div class="lg:col-span-2">
-                <x-textarea wire:model="description" :label="__('Additional information')" rows="4"
+                <x-textarea wire:model="description" :label="__('Additional information')" rows="4" maxlength="2000"
                     :placeholder="__('Specific rules, dress code...')" />
+                <x-char-counter model="description" max="2000" />
             </div>
 
         </x-admin.shared.form-section>

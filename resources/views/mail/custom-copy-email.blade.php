@@ -37,7 +37,7 @@ Ceci est une copie de l'email envoyé au contact.
 @if($contact->message)
 ## 💬 Message original du contact
 
-> *"{{ $contact->message }}"*
+> *"{{ \App\Support\MailText::keepingLineBreaks($contact->message) }}"*
 @endif
 
 <x-mail::button :url="route('admin.website.contacts.index')" color="primary">

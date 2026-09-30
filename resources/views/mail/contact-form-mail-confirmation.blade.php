@@ -34,7 +34,7 @@
 
 ### Votre message :
 
-> *"{{ $contact->message }}"*
+> *"{{ \App\Support\MailText::keepingLineBreaks($contact->message) }}"*
 
 @endif
 

@@ -116,7 +116,7 @@
                                             </div>
                                             @if ($match['availability_note'])
                                                 <div class="text-base-content/50 mt-1 text-xs italic">
-                                                    "{{ $match['availability_note'] }}"
+                                                    "<span class="whitespace-pre-line">{{ $match['availability_note'] }}</span>"
                                                 </div>
                                             @endif
                                         </div>

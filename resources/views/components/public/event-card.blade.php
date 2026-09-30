@@ -16,7 +16,7 @@
         </div>
 
         <h3 class="text-xl font-bold mb-2 text-base-content">{{ $event['title'] }}</h3>
-        <p class="text-muted mb-4 flex-1">{{ $event['description'] }}</p>
+        <p class="text-muted mb-4 flex-1 whitespace-pre-line">{{ $event['description'] }}</p>
 
         <div class="space-y-2 mb-6">
             <div class="flex items-center text-sm text-muted">

@@ -46,7 +46,7 @@
                     </span>
                     @if (filled($report->decision_reason))
                         <span class="mt-1 block text-sm text-base-content/80">
-                            <span class="font-semibold">{{ __('Treasury') }} —</span> {{ $report->decision_reason }}
+                            <span class="font-semibold">{{ __('Treasury') }} —</span> <span class="whitespace-pre-line">{{ $report->decision_reason }}</span>
                         </span>
                     @endif
                 </button>
@@ -159,7 +159,7 @@
                 @if (filled($shown->decision_reason))
                     <div class="rounded-xl border border-warning/30 bg-warning/10 p-3 text-sm">
                         <div class="mb-1 font-semibold">{{ __('Treasury') }}</div>
-                        {{ $shown->decision_reason }}
+                        <span class="whitespace-pre-line">{{ $shown->decision_reason }}</span>
                     </div>
                 @endif
 

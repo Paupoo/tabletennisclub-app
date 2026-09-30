@@ -149,7 +149,7 @@
                     @if ($room->access_description)
                         <div class="flex items-start gap-2">
                             <x-icon name="o-information-circle" class="mt-0.5 h-4 w-4 shrink-0 text-base-content/40" />
-                            <span class="text-base-content/70">{{ $room->access_description }}</span>
+                            <span class="whitespace-pre-line text-base-content/70">{{ $room->access_description }}</span>
                         </div>
                     @endif
                 </div>

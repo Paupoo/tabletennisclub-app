@@ -2085,7 +2085,7 @@
     "{1} :count winning set|[2,*] :count winning sets": "{1} :count winnende set|[2,*] :count winnende sets",
     "{1} Team :team is still holding :count available player.|[2,*] Team :team is still holding :count available players.": "{1} Team :team houdt nog :count beschikbare speler vast.|[2,*] Team :team houdt nog :count beschikbare spelers vast.",
     "{1} match before yours|[2,*] matches before yours": "{1} wedstrijd voor de jouwe|[2,*] wedstrijden voor de jouwe",
-    "{1}1 member absent, not named in the minutes of a general assembly.|[2,*]:count members absent, not named in the minutes of a general assembly.": "{1}1 lid afwezig, niet vermeld in het verslag van een algemene vergadering.|[2,*]:count leden afwezig, niet vermeld in het verslag van een algemene vergadering.",
+    "{1}1 member absent.|[2,*]:count members absent.": "{1}1 lid afwezig.|[2,*]:count leden afwezig.",
     "{1}1 overdue|[2,*]:count overdue": "{1}1 te laat|[2,*]:count te laat",
     "{1}Overdue by a day|[2,*]Overdue by :count days": "{1}Eén dag te laat|[2,*]:count dagen te laat",
     "{1}To do · tomorrow|[2,*]To do · in :count days": "{1}Te doen · morgen|[2,*]Te doen · binnen :count dagen",

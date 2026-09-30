@@ -208,5 +208,5 @@
     @endif
 @endforeach
 @if ($report->isAssembly() && $report->absentCount > 0)
-    <p class="muted">{{ trans_choice('{1}1 member absent, not named in the minutes of a general assembly.|[2,*]:count members absent, not named in the minutes of a general assembly.', $report->absentCount, ['count' => $report->absentCount]) }}</p>
+    <p class="muted">{{ trans_choice('{1}1 member absent.|[2,*]:count members absent.', $report->absentCount, ['count' => $report->absentCount]) }}</p>
 @endif

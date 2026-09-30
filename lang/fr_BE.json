@@ -2079,7 +2079,7 @@
     "{1} :count winning set|[2,*] :count winning sets": "{1} :count set gagnant|[2,*] :count sets gagnants",
     "{1} Team :team is still holding :count available player.|[2,*] Team :team is still holding :count available players.": "{1} L'équipe :team retient encore :count joueur disponible.|[2,*] L'équipe :team retient encore :count joueurs disponibles.",
     "{1} match before yours|[2,*] matches before yours": "{1} match avant le vôtre|[2,*] matchs avant le vôtre",
-    "{1}1 member absent, not named in the minutes of a general assembly.|[2,*]:count members absent, not named in the minutes of a general assembly.": "{1}1 membre absent, non nommé dans le PV d’une assemblée générale.|[2,*]:count membres absents, non nommés dans le PV d’une assemblée générale.",
+    "{1}1 member absent.|[2,*]:count members absent.": "{1}1 membre absent.|[2,*]:count membres absents.",
     "{1}1 overdue|[2,*]:count overdue": "{1}1 en retard|[2,*]:count en retard",
     "{1}Overdue by a day|[2,*]Overdue by :count days": "{1}En retard d’un jour|[2,*]En retard de :count jours",
     "{1}To do · tomorrow|[2,*]To do · in :count days": "{1}À faire · demain|[2,*]À faire · dans :count jours",

@@ -17,6 +17,7 @@ use App\Http\Controllers\ClubAdmin\DashboardController;
 use App\Http\Controllers\ClubAdmin\Users\UserDocumentController;
 use App\Http\Controllers\ClubEvents\Interclub\InterclubIcsController;
 use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
+use App\Http\Controllers\ClubEvents\Meeting\MeetingMinutesPdfController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingRsvpController;
 use App\Http\Controllers\ClubEvents\Tournament\TableScoreController;
@@ -397,6 +398,18 @@ Route::prefix('admin/club-events/meetings')
             ->name('admin.meetings.create');
         Route::livewire('/{meeting}', 'pages::club-events.meetings.show')->name('admin.meetings.show');
         Route::livewire('/{meeting}/minutes', 'pages::club-events.meetings.minutes')->name('admin.meetings.minutes');
+    });
+
+/*
+ * Reading published minutes sits outside the committee's group: a general
+ * assembly's minutes, once sent to all, are every active member's to read.
+ * MeetingPolicy::readMinutes() draws the line, committee minutes included.
+ */
+Route::prefix('admin/meetings/{meeting}/minutes')
+    ->middleware(['auth', 'verified', 'feature:meetings', 'can:readMinutes,meeting'])
+    ->group(function (): void {
+        Route::livewire('/', 'pages::club-events.meetings.reader')->name('meetings.minutes.read');
+        Route::get('/pdf', MeetingMinutesPdfController::class)->name('meetings.minutes.pdf');
     });
 
 // Meeting signed-URL actions (no auth required)

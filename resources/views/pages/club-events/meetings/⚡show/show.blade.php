@@ -451,41 +451,31 @@
                                     {{ __('Nothing written yet.') }}
                                 @endif
                             </p>
-                            <x-button icon="o-document-text"
-                                :label="$minutes ? __('Open the minutes') : ($isPast ? __('Write the minutes') : __('Prepare the minutes'))"
-                                class="btn-outline btn-sm shrink-0"
-                                link="{{ route('admin.meetings.minutes', $meeting) }}" />
+                            <div class="flex shrink-0 flex-wrap gap-2">
+                                @if ($minutes?->is_published)
+                                    <x-button icon="o-eye" :label="__('Read the minutes')" class="btn-primary btn-sm"
+                                        link="{{ route('meetings.minutes.read', $meeting) }}" />
+                                @endif
+                                <x-button icon="o-document-text"
+                                    :label="$minutes ? __('Open the minutes') : ($isPast ? __('Write the minutes') : __('Prepare the minutes'))"
+                                    class="btn-outline btn-sm"
+                                    link="{{ route('admin.meetings.minutes', $meeting) }}" />
+                            </div>
                         </div>
                     </x-card>
                 @elseif ($minutes?->is_published)
+                    {{-- The reading page is the one rendering of published minutes. --}}
                     <x-card :title="__('Minutes')">
-                        <div class="space-y-4 text-sm">
-                            @if (filled($minutes->announcements))
-                                <div>
-                                    <p class="mb-1 font-semibold">{{ __('Announcements') }}</p>
-                                    <ul class="list-outside list-disc space-y-1 ps-5 text-base-content/70">
-                                        @foreach ($minutes->announcements as $ann)
-                                            <li class="prose prose-sm max-w-none text-base-content/70 [&>:first-child]:mt-0 [&>:last-child]:mb-0">{!! \App\Support\Markdown::safe($ann) !!}</li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            @endif
-                            @if (filled($minutes->decisions))
-                                <div>
-                                    <p class="mb-1 font-semibold">{{ __('Decisions') }}</p>
-                                    <ul class="list-outside list-disc space-y-1 ps-5 text-base-content/70">
-                                        @foreach ($minutes->decisions as $dec)
-                                            <li class="prose prose-sm max-w-none text-base-content/70 [&>:first-child]:mt-0 [&>:last-child]:mb-0">{!! \App\Support\Markdown::safe($dec) !!}</li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            @endif
-                            @if ($minutes->notes)
-                                <div>
-                                    <p class="mb-1 font-semibold">{{ __('Additional notes') }}</p>
-                                    <div class="prose prose-sm max-w-none text-base-content/70">{!! \App\Support\Markdown::safe($minutes->notes) !!}</div>
-                                </div>
-                            @endif
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <p class="text-sm text-muted">
+                                {{ __(':a announcements · :d decisions · :t action items', [
+                                    'a' => count($minutes->announcements ?? []),
+                                    'd' => count($minutes->decisions ?? []),
+                                    't' => $meeting->actionItems->count(),
+                                ]) }}
+                            </p>
+                            <x-button icon="o-eye" :label="__('Read the minutes')" class="btn-primary btn-sm shrink-0"
+                                link="{{ route('meetings.minutes.read', $meeting) }}" />
                         </div>
                     </x-card>
                 @endif

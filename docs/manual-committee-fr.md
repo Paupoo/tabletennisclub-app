@@ -330,7 +330,7 @@ Allez dans **Site web** dans la navigation.
 Créez et modifiez des articles d'actualité publiés sur le site web public du club :
 - Titre, contenu, image à la une
 - Le contenu s'écrit tel qu'il sera publié : la barre d'outils pose titres, gras, italique, liens, listes et citations — aucune syntaxe à apprendre
-- **Images dans le texte** : bouton image, glisser-déposer ou coller ; l'image est réduite avant l'envoi, et on vous demande de **la décrire** (lu à voix haute aux visiteurs qui ne la voient pas) avant de l'insérer
+- **Images dans le texte** : bouton image, glisser-déposer ou coller ; l'image est réduite avant l'envoi, et on vous demande de **la décrire** (lu à voix haute aux visiteurs qui ne la voient pas) avant de l'insérer. Une image retirée du texte est effacée du serveur après une semaine
 - Publier immédiatement ou enregistrer comme brouillon
 - Définir une date "à la une jusqu'au" pour les articles épinglés
 

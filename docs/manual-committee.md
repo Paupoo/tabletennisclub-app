@@ -329,7 +329,7 @@ Go to **Website** in the navigation.
 Create and edit news articles published on the public club website:
 - Title, content, featured image
 - The content is written as it will look: the toolbar sets headings, bold, italic, links, lists and quotes — no syntax to learn
-- **Images in the text**: the image button, a drag and drop or a paste; the image is shrunk before upload, and you are asked to **describe it** (read aloud to visitors who cannot see it) before it is inserted
+- **Images in the text**: the image button, a drag and drop or a paste; the image is shrunk before upload, and you are asked to **describe it** (read aloud to visitors who cannot see it) before it is inserted. An image removed from the text is deleted from the server after a week
 - Publish immediately or save as draft
 - Set a "featured until" date for pinned articles
 

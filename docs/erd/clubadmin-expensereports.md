@@ -19,15 +19,6 @@ erDiagram
         datetime archived_at "nullable"
         datetime files_purged_at "nullable"
     }
-    ExpenseReportExport {
-        int id PK
-        int requested_by
-        string format
-        list<int> report_ids
-        string status
-        string path "nullable"
-        datetime expires_at "nullable"
-    }
     ExpenseReportFile {
         int id PK
         int expense_report_id FK

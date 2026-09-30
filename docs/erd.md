@@ -28,13 +28,16 @@ erDiagram
 
     %% ClubAdmin/ExpenseReports
     ExpenseReport
-    ExpenseReportExport
     ExpenseReportFile
+
+    %% ClubAdmin/Finance
+    FinancialExport
 
     %% ClubAdmin/Fines
     Fine
 
     %% ClubAdmin/Payment
+    BankAccount
     BankImport
     CashRegister
     CashRegisterEntry
@@ -52,6 +55,10 @@ erDiagram
     AttestationSetting
     AttestationTemplate
     MutualAttestation
+
+    %% ClubAdmin/SupportingDocuments
+    SupportingDocument
+    SupportingDocumentFile
 
     %% ClubAdmin/Users
     CharterSignature
@@ -123,17 +130,24 @@ erDiagram
     ExpenseReport ||--o| Payment : "refund"
     ExpenseReport ||--o| BarRestocking : "restocking"
     Fine ||--o| Payment : "payment"
+    BankAccount ||--o{ Transaction : "transactions"
     BankImport ||--o{ Transaction : "transactions"
     CashRegister ||--o{ CashRegisterEntry : "entries"
+    CashRegisterEntry }o--o{ SupportingDocument : "supportingDocuments"
     Payment ||--o{ PaymentCredit : "credits"
     Payment ||--o{ SubscriptionDiscount : "discounts"
+    Transaction ||--o| CashRegisterEntry : "cashRegisterEntry"
     Transaction ||--o{ PaymentCredit : "credits"
     Transaction ||--o| Payment : "payment"
     Transaction ||--o| Payment : "refundPayment"
+    Transaction }o--o{ SupportingDocument : "supportingDocuments"
     Registration ||--o{ Payment : "payments"
     Subscription ||--o{ SubscriptionDiscount : "discounts"
     Subscription ||--o{ Payment : "payments"
     Subscription }o--o{ TrainingPack : "trainingPacks"
+    SupportingDocument }o--o{ CashRegisterEntry : "cashRegisterEntries"
+    SupportingDocument ||--o{ SupportingDocumentFile : "files"
+    SupportingDocument }o--o{ Transaction : "transactions"
     FamilyGroup }o--o{ User : "users"
     Guardian }o--o{ User : "users"
     MemberImport ||--o{ User : "members"

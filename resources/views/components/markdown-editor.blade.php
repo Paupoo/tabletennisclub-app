@@ -11,6 +11,11 @@
         no image button without it
     @param string|null $imageAction Livewire method that stores that upload and
         returns its public path
+    @param bool $editable false shows the text read-only, toolbar disabled;
+        give the component a wire:key that changes with it, since Alpine does
+        not re-read it on a morph
+    @param bool $commitOnBlur send the value to the server when the author
+        leaves the field, for screens that autosave on `updated`
     @param bool $stickyToolbar keep the toolbar in view down a long page; off
         in a modal, whose own box scrolls
     @param array<string, string>|null $variables template placeholders offered
@@ -24,6 +29,8 @@
     'imageAction' => null,
     'variables' => null,
     'stickyToolbar' => true,
+    'editable' => true,
+    'commitOnBlur' => false,
 ])
 
 @php
@@ -48,6 +55,8 @@
         imageAction: @js($imageAction),
         label: @js($label ?? ''),
         variables: @js($variables),
+        editable: @js((bool) $editable),
+        commitOnBlur: @js((bool) $commitOnBlur),
     })"
     data-invalid-image="{{ __('Please choose an image file.') }}"
     data-failed-image="{{ __('The image could not be added. Please try again.') }}">
@@ -69,7 +78,7 @@
                 @else
                     <button type="button" class="btn btn-ghost btn-sm btn-square"
                         title="{{ $button['label'] }}" aria-label="{{ $button['label'] }}"
-                        x-bind:disabled="!ready"
+                        x-bind:disabled="!ready || !editable"
                         x-bind:aria-pressed="{{ $button['active'] }} ? 'true' : 'false'"
                         x-bind:class="{{ $button['active'] }} && 'btn-active'"
                         @click="{{ $button['click'] }}">
@@ -81,7 +90,7 @@
             @if ($imageModel && $imageAction)
                 <button type="button" class="btn btn-ghost btn-sm btn-square"
                     title="{{ __('Image') }}" aria-label="{{ __('Image') }}"
-                    x-bind:disabled="!ready || uploading" @click="pickImage()">
+                    x-bind:disabled="!ready || !editable || uploading" @click="pickImage()">
                     <x-icon name="o-photo" class="h-4 w-4" />
                 </button>
                 <input type="file" x-ref="imageInput" accept="image/*" class="hidden" @change="imageChosen($event)">
@@ -91,11 +100,12 @@
                 <span class="mx-1 h-5 w-px bg-base-300" aria-hidden="true"></span>
                 <div x-data="{ open: false }" class="relative" @click.outside="open = false" @keydown.escape="open = false">
                     <button type="button" class="btn btn-ghost btn-sm gap-1"
-                        x-bind:disabled="!ready" x-bind:aria-expanded="open" @click="open = !open">
+                        x-bind:disabled="!ready || !editable" x-bind:aria-expanded="open" @click="open = !open">
                         <x-icon name="o-variable" class="h-4 w-4" /> {{ __('Insert a variable') }}
                     </button>
+                    {{-- Opens leftwards from sm up, where the button ends the toolbar: a modal clips what spills past its edge. --}}
                     <ul x-show="open" x-cloak x-transition.opacity
-                        class="menu absolute start-0 top-full z-20 mt-1 w-56 rounded-box border border-base-300 bg-base-100 p-1 shadow-lg">
+                        class="menu absolute start-0 top-full z-20 sm:start-auto sm:end-0 mt-1 w-56 rounded-box border border-base-300 bg-base-100 p-1 shadow-lg">
                         @foreach ($variables as $name => $variableLabel)
                             <li>
                                 <button type="button" @click="insertVariable(@js($name)); open = false">{{ $variableLabel }}</button>
@@ -108,12 +118,12 @@
             <span class="ms-auto flex gap-0.5">
                 <button type="button" class="btn btn-ghost btn-sm btn-square"
                     title="{{ __('Undo') }}" aria-label="{{ __('Undo') }}"
-                    x-bind:disabled="!ready || !can('undo')" @click="run('undo')">
+                    x-bind:disabled="!ready || !editable || !can('undo')" @click="run('undo')">
                     <x-icon name="o-arrow-uturn-left" class="h-4 w-4" />
                 </button>
                 <button type="button" class="btn btn-ghost btn-sm btn-square"
                     title="{{ __('Redo') }}" aria-label="{{ __('Redo') }}"
-                    x-bind:disabled="!ready || !can('redo')" @click="run('redo')">
+                    x-bind:disabled="!ready || !editable || !can('redo')" @click="run('redo')">
                     <x-icon name="o-arrow-uturn-right" class="h-4 w-4" />
                 </button>
             </span>

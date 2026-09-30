@@ -21,7 +21,10 @@ import { TemplateVariable } from "./template-variable";
  * - Underline is off: markdown cannot say it.
  * - `variables` (name → label) turns `{{name}}` placeholders into pills.
  */
-export function createMarkdownEditor(element, { markdown, label, variables = null, onChange, onTransaction, onImageFile }) {
+export function createMarkdownEditor(
+    element,
+    { markdown, label, variables = null, editable = true, onChange, onTransaction, onImageFile, onBlur = () => {} },
+) {
     const imageFrom = (items) =>
         [...(items ?? [])].find((file) => file.type?.startsWith("image/")) ?? null;
 
@@ -43,6 +46,7 @@ export function createMarkdownEditor(element, { markdown, label, variables = nul
         ],
         content: markdown,
         contentType: "markdown",
+        editable,
         editorProps: {
             attributes: {
                 class: "markdown-editor-surface",
@@ -83,5 +87,6 @@ export function createMarkdownEditor(element, { markdown, label, variables = nul
         },
         onUpdate: ({ editor }) => onChange(editor.getMarkdown()),
         onTransaction: () => onTransaction(),
+        onBlur: () => onBlur(),
     });
 }

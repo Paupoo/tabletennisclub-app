@@ -6,12 +6,14 @@ namespace App\Domains\Meetings\Notifications;
 
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
+use App\Support\Markdown;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\HtmlString;
 
 class MeetingDatePollNotification extends Notification implements ShouldQueue
 {
@@ -41,7 +43,7 @@ class MeetingDatePollNotification extends Notification implements ShouldQueue
             ->line(__('We need your availability to schedule the meeting **:title**.', ['title' => $meeting->title]));
 
         if ($meeting->description) {
-            $mail->line($meeting->description);
+            $mail->line(new HtmlString(Markdown::safe($meeting->description)));
         }
 
         foreach ($meeting->dateProposals as $i => $proposal) {

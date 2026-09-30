@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Mail\CustomEmail;
 use App\Services\ClubAdmin\Contact\ContactEmailService;
+use App\Support\Markdown;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -115,7 +116,8 @@ describe('sendTemplate()', function (): void {
         Mail::assertQueued(CustomEmail::class, fn (CustomEmail $mail): bool => $mail->hasTo($contact->email)
             && $mail->emailData['subject'] === 'Bienvenue Alice'
             && str_contains($mail->emailData['message'], 'bienvenue chez Mon Club TT')
-            && str_contains($mail->emailData['message'], ContactReasonEnum::JOIN_US->getLabel()));
+            // The body is markdown: the value is escaped (Rejoignez\-nous) and renders as typed.
+            && str_contains($mail->emailData['message'], Markdown::escape(ContactReasonEnum::JOIN_US->getLabel())));
     });
 
     it('returns a success message string', function (): void {
@@ -288,13 +290,32 @@ describe('CustomEmail rendering', function (): void {
         });
     });
 
+    it('does not let a visitor\'s value become a link once the body is markdown', function (): void {
+        $contact = Contact::factory()->create(['first_name' => '[clic](https://evil.test)']);
+        $user = User::factory()->create();
+
+        $this->service->sendCustom($contact, [
+            'subject' => 'Sujet',
+            'body' => 'Bonjour {{ $contact->first_name }}',
+        ], $user);
+
+        Mail::assertQueued(CustomEmail::class, function (CustomEmail $mail): true {
+            expect($mail->render())
+                ->not->toContain('href="https://evil.test"')
+                ->toContain('[clic](https://evil.test)');
+
+            return true;
+        });
+    });
+
+    // The body comes from the markdown editor, where Shift+Enter writes a hard break as `\`.
     it('still turns line breaks into <br> and bare URLs into links', function (): void {
         $contact = Contact::factory()->create();
         $user = User::factory()->create();
 
         $this->service->sendCustom($contact, [
             'subject' => 'Sujet',
-            'body' => "Première ligne\nSeconde ligne https://ctt-ottignies.be/inscription",
+            'body' => "Première ligne\\\nSeconde ligne https://ctt-ottignies.be/inscription",
         ], $user);
 
         Mail::assertQueued(CustomEmail::class, function (CustomEmail $mail): true {

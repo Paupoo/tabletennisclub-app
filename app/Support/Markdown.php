@@ -24,18 +24,6 @@ use Illuminate\Support\Str;
 final class Markdown
 {
     /**
-     * Render member-authored markdown with raw HTML escaped and unsafe link
-     * schemes dropped.
-     */
-    public static function safe(string $markdown): string
-    {
-        return Str::markdown($markdown, [
-            'html_input' => 'escape',
-            'allow_unsafe_links' => false,
-        ]);
-    }
-
-    /**
      * Make a value read as plain text once dropped into markdown.
      *
      * A contact's name substituted into a template must stay a name: without
@@ -73,6 +61,33 @@ final class Markdown
     }
 
     /**
+     * Render member-authored markdown with raw HTML escaped and unsafe link
+     * schemes dropped.
+     */
+    public static function safe(string $markdown): string
+    {
+        return Str::markdown($markdown, [
+            'html_input' => 'escape',
+            'allow_unsafe_links' => false,
+        ]);
+    }
+
+    /**
+     * Reduce markdown to readable plain text, for a place that shows no HTML
+     * (a calendar file's description).
+     */
+    public static function toPlainText(string $markdown): string
+    {
+        // CommonMark already ends every tag with a line break; a block gets one
+        // more, so paragraphs stay apart and list items stay together.
+        $html = (string) preg_replace('#</(p|h[1-6]|ul|ol|blockquote|table|pre)>#i', "$0\n", self::safe($markdown));
+
+        $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5);
+
+        return trim((string) preg_replace("/\n{3,}/", "\n\n", $text));
+    }
+
+    /**
      * Escape one line of plain text, placeholders excepted.
      *
      * Only what would format is escaped — emphasis, links, code, raw HTML,
@@ -95,7 +110,7 @@ final class Markdown
         // heading, a quote, a list or a setext underline.
         return (string) preg_replace_callback(
             '/^(?:([#>+\-=])|(\d+)([.)]))/',
-            static fn (array $marker): string => ($marker[1] ?? '') !== ''
+            static fn (array $marker): string => $marker[1] !== ''
                 ? '\\' . $marker[1]
                 : $marker[2] . '\\' . $marker[3],
             $escaped,

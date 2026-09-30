@@ -9,6 +9,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingAgendaItem;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
+use App\Support\Markdown;
 use Illuminate\Support\Carbon;
 
 class IcsGenerator
@@ -83,7 +84,8 @@ class IcsGenerator
         };
 
         $description = collect([
-            $meeting->description,
+            // Written in the markdown editor; a calendar shows no HTML.
+            $meeting->description ? Markdown::toPlainText($meeting->description) : null,
             $meeting->format === MeetingFormatEnum::VIRTUAL && $meeting->meeting_link
                 ? __('Meeting link: :link', ['link' => $meeting->meeting_link])
                 : null,

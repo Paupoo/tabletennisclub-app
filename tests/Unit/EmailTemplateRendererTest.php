@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Contact\Models\EmailTemplate;
 use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Services\ClubAdmin\Contact\EmailTemplateRenderer;
+use App\Support\Markdown;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -33,7 +34,8 @@ it('substitutes contact variables in subject and body', function (): void {
     $result = $this->renderer->render('greet', $contact);
 
     expect($result['subject'])->toBe('Bonjour Alice (Alice Martin)')
-        ->and($result['body'])->toBe('Alice Martin, intérêt : ' . ContactReasonEnum::JOIN_US->getLabel() . ' chez Mon Club TT.')
+        // The body is markdown: values arrive escaped (Rejoignez\-nous), and render as typed.
+        ->and($result['body'])->toBe('Alice Martin, intérêt : ' . Markdown::escape(ContactReasonEnum::JOIN_US->getLabel()) . ' chez Mon Club TT.')
         ->and($result['apply_status'])->toBeNull();
 });
 
@@ -74,4 +76,21 @@ it('throws when the template is inactive', function (): void {
 
     expect(fn () => $this->renderer->render('archived', $contact))
         ->toThrow(InvalidArgumentException::class, 'archived');
+});
+
+it('keeps a contact\'s values as text in the markdown body, not in the subject', function (): void {
+    EmailTemplate::factory()->create([
+        'key' => 'sneaky',
+        'subject' => 'Bonjour {{first_name}}',
+        'body' => 'Bonjour {{first_name}}',
+        'apply_status' => null,
+    ]);
+
+    $contact = Contact::factory()->create(['first_name' => '[clic](https://evil.test)']);
+
+    $result = $this->renderer->render('sneaky', $contact);
+
+    expect($result['subject'])->toBe('Bonjour [clic](https://evil.test)')
+        ->and(Markdown::safe($result['body']))->not->toContain('<a ')
+        ->and(Markdown::safe($result['body']))->toContain('[clic](https://evil.test)');
 });

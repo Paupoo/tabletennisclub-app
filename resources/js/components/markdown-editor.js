@@ -18,12 +18,15 @@ export default function markdownEditor({
     imageAction = null,
     label = "",
     variables = null,
+    editable = true,
+    commitOnBlur = false,
     maxEdge = 1600,
 } = {}) {
     let editor = null;
 
     return {
         ready: false,
+        editable,
         revision: 0,
         panel: null,
         linkUrl: "",
@@ -41,6 +44,14 @@ export default function markdownEditor({
                 markdown: written,
                 label,
                 variables,
+                editable,
+                onBlur: () => {
+                    // Screens that autosave on `updated` (the minutes) need the
+                    // value sent when the author leaves the field.
+                    if (commitOnBlur) {
+                        this.$wire.$commit();
+                    }
+                },
                 onChange: (markdown) => {
                     written = markdown;
                     this.$wire.set(model, markdown, false);

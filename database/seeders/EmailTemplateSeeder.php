@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Domains\ClubAdmin\Contact\Models\EmailTemplate;
+use App\Support\Markdown;
 use Illuminate\Database\Seeder;
 
 class EmailTemplateSeeder extends Seeder
@@ -15,6 +16,11 @@ class EmailTemplateSeeder extends Seeder
     public function run(): void
     {
         foreach ($this->templates() as $template) {
+            // The bodies below read as plain text; the template editor stores
+            // markdown, so they go through the same conversion as the rows
+            // migrated when the editor arrived.
+            $template['body'] = Markdown::fromPlainText($template['body']);
+
             EmailTemplate::updateOrCreate(
                 ['key' => $template['key']],
                 $template,

@@ -60,6 +60,7 @@ use Illuminate\Support\Facades\Cache;
  * @property string|null $bank_account
  * @property string|null $website_url
  * @property string|null $enterprise_number
+ * @property int $fiscal_year_start_month
  *
  * @method static Builder<static>|Club whereBankAccount($value)
  * @method static Builder<static>|Club whereBuildingName($value)
@@ -93,6 +94,7 @@ class Club extends Model
         'bank_account' => IbanCast::class,
         'website_url' => 'string',
         'enterprise_number' => 'string',
+        'fiscal_year_start_month' => 'integer',
     ];
 
     protected $fillable = [
@@ -111,6 +113,7 @@ class Club extends Model
         'bank_account',
         'website_url',
         'enterprise_number',
+        'fiscal_year_start_month',
     ];
 
     public static function forgetOwnClub(): void

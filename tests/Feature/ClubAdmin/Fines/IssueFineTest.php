@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\ClubAdmin\Fines\Actions\IssueFine;
 use App\Domains\ClubAdmin\Fines\Models\Fine;
 use App\Domains\ClubAdmin\Fines\Notifications\FineIssuedNotification;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\FineReason;
 use App\Domains\Shared\Enums\Permission;
@@ -19,40 +20,57 @@ beforeEach(function (): void {
     $this->season = makeActiveSeason();
 });
 
-it('creates a fine and its pending payment', function (): void {
+it('records the fine with its event and deadline', function (): void {
     Notification::fake();
     $member = User::factory()->create();
-    $issuer = User::factory()->isAdmin()->create();
 
-    $fine = (new IssueFine)($member, $issuer, FineReason::MISCONDUCT, 25, 'Please be more careful next time.');
+    $fine = fineIssuedTo($member, FineReason::REFEREEING, 15);
 
-    expect($fine->amount)->toBe(25.0)
-        ->and($fine->payment)->not->toBeNull()
-        ->and($fine->payment->status)->toBe('pending')
-        ->and($fine->payment->amount_due)->toBe(25.0);
-
-    $this->assertDatabaseHas('fines', [
-        'user_id' => $member->id,
-        'issued_by' => $issuer->id,
-        'reason' => 'misconduct',
-    ]);
+    expect($fine->amount)->toBe(15.0)
+        ->and($fine->reason)->toBe(FineReason::REFEREEING)
+        ->and($fine->provincial_code)->toBe(67)
+        ->and($fine->event_label)->toBe('LA HULPE RIXENSART')
+        ->and($fine->event_date->toDateString())->toBe(today()->subWeek()->toDateString())
+        ->and($fine->payment_deadline->toDateString())->toBe(today()->addWeeks(2)->toDateString());
 });
 
-it('labels the payment as a fine with its reason', function (): void {
-    $fine = Fine::factory()->create(['reason' => FineReason::UNJUSTIFIED_ABSENCE]);
+/*
+ * The member pays the provincial committee directly. A claim of the club's
+ * would stay open forever: no transfer to the club will ever settle it.
+ */
+it('creates no payment of the club for the fine', function (): void {
+    Notification::fake();
 
-    expect($fine->getPaymentLabel())->toBe([
-        'type' => __('Fine'),
-        'name' => __('Unjustified absence'),
-    ]);
+    $fine = fineIssuedTo(User::factory()->create());
+
+    expect($fine->payment)->toBeNull()
+        ->and(Payment::count())->toBe(0);
+});
+
+it('refuses to issue a fine while the committee account is unknown', function (): void {
+    Notification::fake();
+    $member = User::factory()->create();
+
+    expect(fn () => (new IssueFine)(
+        $member,
+        User::factory()->isAdmin()->create(),
+        FineReason::REFEREEING,
+        15,
+        'A note.',
+        today()->subWeek(),
+        'CHAMP. SEN.',
+        today()->addWeeks(2),
+    ))->toThrow(DomainException::class);
+
+    expect(Fine::count())->toBe(0);
+    Notification::assertNothingSent();
 });
 
 it('notifies the fined member', function (): void {
     Notification::fake();
     $member = User::factory()->create();
-    $issuer = User::factory()->isAdmin()->create();
 
-    (new IssueFine)($member, $issuer, FineReason::LATE, 15, 'A note.');
+    fineIssuedTo($member);
 
     Notification::assertSentTo($member, FineIssuedNotification::class);
 });
@@ -60,41 +78,80 @@ it('notifies the fined member', function (): void {
 it('also notifies the guardians of a minor', function (): void {
     Notification::fake();
     $minor = User::factory()->create(['birthdate' => now()->subYears(12)]);
-    $issuer = User::factory()->isAdmin()->create();
     $guardian = Guardian::factory()->create(['email' => 'parent@example.com']);
     $minor->guardians()->attach($guardian->id);
 
-    (new IssueFine)($minor, $issuer, FineReason::FORFEIT, 20, 'A note.');
+    fineIssuedTo($minor);
 
     Notification::assertSentOnDemand(FineIssuedNotification::class);
 });
 
-it('renders the pedagogical message, amount and reference in the email', function (): void {
-    Club::factory()->ownClub()->create();
-    $member = User::factory()->create();
-    $issuer = User::factory()->isAdmin()->create();
+it('tells the member to pay the committee, not the club, before the deadline', function (): void {
+    Notification::fake();
+    $member = User::factory()->create(['first_name' => 'Jeremy', 'last_name' => 'Denil']);
 
-    $fine = (new IssueFine)($member, $issuer, FineReason::MISCONDUCT, 30, 'This is your educational note.');
+    $fine = fineIssuedTo($member, FineReason::UNANNOUNCED_ABSENCE, 35);
 
     $rendered = (string) new FineIssuedNotification($fine)->toMail($member)->render();
 
-    expect($rendered)->toContain('This is your educational note.')
-        ->and($rendered)->toContain($fine->payment->reference)
-        ->and($rendered)->toContain('30,00');
+    expect($rendered)->toContain('Please be careful next time, we are here to help.')
+        ->and($rendered)->toContain('CPBBW')
+        ->and($rendered)->toContain('BE50 2100 3624 5518')
+        ->and($rendered)->toContain('35,00')
+        ->and($rendered)->toContain(today()->addWeeks(2)->format('d/m/Y'))
+        ->and($rendered)->toContain(e($fine->transferCommunication()))
+        ->and($rendered)->toContain('tresorier@cpbbw.test');
 });
 
-it('surfaces the fine in the members payments hub', function (): void {
+it('builds the transfer communication from who, when and why', function (): void {
+    Notification::fake();
+    $member = User::factory()->create(['first_name' => 'Jeremy', 'last_name' => 'Denil']);
+
+    $fine = fineIssuedTo($member, FineReason::UNANNOUNCED_ABSENCE);
+
+    expect($fine->transferCommunication())
+        ->toBe('DENIL Jeremy – ' . today()->subWeek()->format('d/m/Y') . ' – ' . FineReason::UNANNOUNCED_ABSENCE->label());
+});
+
+it('encodes the committee account and the communication in the QR payload', function (): void {
+    $payload = (new GeneratePaymentQR)->transferText('CPBBW', 'BE50 2100 3624 5518', 35, 'DENIL Jeremy – 22/03/2026 – Absence');
+
+    expect(explode("\n", $payload))->toBe([
+        'BCD', '002', '1', 'SCT', '', 'CPBBW', 'BE50210036245518', 'EUR35.00', '', '', 'DENIL Jeremy – 22/03/2026 – Absence',
+    ]);
+});
+
+it('leaves the payment instructions out once the deadline has passed', function (): void {
+    fineCreditorConfigured();
+    $member = User::factory()->create();
+    $fine = Fine::factory()->pastDeadline()->create(['user_id' => $member->id]);
+
+    $mail = new FineIssuedNotification($fine)->toMail($member);
+
+    expect((string) $mail->render())->not->toContain('BE50 2100 3624 5518')
+        ->and($mail->rawAttachments)->toBeEmpty();
+});
+
+it('no longer surfaces the fine in the members payments hub', function (): void {
     Notification::fake();
     $member = User::factory()->create();
-    $issuer = User::factory()->isAdmin()->create();
 
-    (new IssueFine)($member, $issuer, FineReason::MISCONDUCT, 42, 'A note.');
+    fineIssuedTo($member, FineReason::REFEREEING, 42);
 
     Livewire::actingAs($member)
         ->test('pages::club-admin.users.user-space.payments', ['user' => $member])
-        ->assertSee(__('Fine'))
-        ->assertSee('42,00');
+        ->assertDontSee('42,00');
 });
+
+it('suggests the provincial code of each reason', function (FineReason $reason, ?int $code): void {
+    expect($reason->provincialCode())->toBe($code);
+})->with([
+    [FineReason::INTERCLUB_MATCH_NOT_PLAYED, 16],
+    [FineReason::UNANNOUNCED_ABSENCE, 65],
+    [FineReason::ANNOUNCED_ABSENCE, 66],
+    [FineReason::REFEREEING, 67],
+    [FineReason::YELLOW_CARD, null],
+]);
 
 /*
 | canManageFinances() used to answer this, and it was one of three divergent

@@ -102,7 +102,7 @@
 
                         {{-- Notes (optionnel) --}}
                         @if ($event->notes)
-                            <p class="mt-4 text-xs text-subtle italic">{{ $event->notes }}</p>
+                            <p class="mt-4 whitespace-pre-line text-xs text-subtle italic">{{ $event->notes }}</p>
                         @endif
 
                     </div>

@@ -62,7 +62,7 @@
         <x-admin.shared.stat-card
             :label="__('Settled')"
             :value="$this->stats['reconciled']"
-            :hint="__('fully allocated or written off')"
+            :hint="__('allocated, justified, written off or internal')"
             icon="o-check-badge"
             color="success" />
 
@@ -83,10 +83,22 @@
 
     <x-card class="bg-base-100 shadow-sm">
         {{-- Selecting only ever leads to deleting: a reader gets no checkboxes. --}}
-        <x-table :headers="$headers" :rows="$transactions" :sort-by="$sortBy" wire:model.live="selected" :selectable="auth()->user()->can('transactions.delete')" hover>
+        <x-table :headers="$headers" :rows="$transactions" :sort-by="$sortBy" wire:model.live="selected" :selectable="auth()->user()->can('transactions.delete')" hover
+            container-class="overflow-x-auto lg:overflow-x-visible">
 
-            @scope('cell_date', $transaction)
-            <span class="text-sm tabular-nums">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</span>
+            @scope('cell_date', $transaction, $showAccount)
+            <div>
+                <span class="text-sm tabular-nums">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</span>
+                {{-- Le compte n'a de sens que quand le club en a plusieurs ; le
+                     numéro d'extrait est celui qu'on cherche dans le relevé papier. --}}
+                @if(($showAccount && $transaction->bankAccount) || $transaction->statement_number)
+                <div class="text-xs text-muted whitespace-nowrap">
+                    @if($showAccount && $transaction->bankAccount){{ $transaction->bankAccount->name }}@endif
+                    @if($showAccount && $transaction->bankAccount && $transaction->statement_number) · @endif
+                    @if($transaction->statement_number){{ __('Stmt :number', ['number' => $transaction->statement_number]) }}@endif
+                </div>
+                @endif
+            </div>
             @endscope
 
             @scope('cell_counterparty_name', $transaction)
@@ -116,10 +128,21 @@
             ])>
                 {{ number_format($transaction->amount, 2, ',', ' ') }} €
             </span>
+            @if($transaction->balance_after !== null)
+            <div class="text-xs text-muted tabular-nums whitespace-nowrap">
+                {{ __('Balance :amount €', ['amount' => number_format($transaction->balance_after, 2, ',', ' ')]) }}
+            </div>
+            @endif
             @endscope
 
             @scope('cell_status', $transaction)
-            @if($transaction->isSettled())
+            @if($transaction->is_internal)
+            {{-- D'un compte du club à un autre : ni recette ni dépense, rien à rapprocher. --}}
+            <x-badge value="{{ __('Internal') }}" class="badge-neutral badge-sm badge-soft" />
+            @elseif($transaction->isJustified())
+            {{-- Hors site : une pièce dit ce qu'était cet argent. --}}
+            <x-badge value="{{ __('Justified') }}" class="badge-success badge-sm badge-soft" />
+            @elseif($transaction->isSettled())
             <x-badge value="{{ __('Settled') }}" class="badge-success badge-sm badge-soft" />
             @elseif($transaction->allocated_amount != 0)
             {{-- Ce qui reste à placer : c'est le seul chiffre qui dit au trésorier ce qu'il lui reste à faire sur cette ligne. --}}
@@ -133,18 +156,51 @@
             @endscope
 
             @scope('cell_allocate', $transaction)
-            @can('payments.reconcile')
-                @unless($transaction->isSettled())
-                    {{-- Le geste naturel part du virement : une ligne peut solder
-                         plusieurs paiements, et l'ouvrir depuis chaque fiche
-                         obligerait à retrouver deux fois le même relevé. --}}
-                    <x-button
-                        :label="__('Allocate')"
-                        icon="o-arrows-pointing-in"
-                        wire:click="openAllocation({{ $transaction->id }})"
-                        class="btn-xs btn-outline" />
-                @endunless
-            @endcan
+            @php
+                // Le geste naturel part du virement : une ligne peut solder
+                // plusieurs paiements, et l'ouvrir depuis chaque fiche
+                // obligerait à retrouver deux fois le même relevé. Une ligne
+                // sans un euro du site peut aussi recevoir une pièce — jamais
+                // les deux à la fois.
+                $canAllocate = auth()->user()->can('payments.reconcile') && ! $transaction->isSettled();
+                $canJustify = auth()->user()->can('linkTransaction', \App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument::class)
+                    && ! $transaction->is_internal
+                    && (float) $transaction->allocated_amount == 0.0
+                    && ! $transaction->isJustified();
+                // Un débit hors site est d'abord une facture à retrouver ; un
+                // crédit, d'abord un membre qui paie.
+                $justifyFirst = $canJustify && ($transaction->amount < 0 || ! $canAllocate);
+            @endphp
+            @if($transaction->isJustified())
+                <x-button
+                    :label="__('Documents')"
+                    icon="o-document-check"
+                    wire:click="openJustification({{ $transaction->id }})"
+                    class="btn-xs btn-ghost" />
+            @elseif($canAllocate && $canJustify)
+                <x-admin.shared.row-menu
+                    :label="$justifyFirst ? __('Justify') : __('Allocate')"
+                    :icon="$justifyFirst ? 'o-document-check' : 'o-arrows-pointing-in'"
+                    :wire-click="$justifyFirst ? 'openJustification(' . $transaction->id . ')' : 'openAllocation(' . $transaction->id . ')'">
+                    @if($justifyFirst)
+                        <x-menu-item icon="o-arrows-pointing-in" :title="__('Allocate to a payment')" wire:click="openAllocation({{ $transaction->id }})" />
+                    @else
+                        <x-menu-item icon="o-document-check" :title="__('Justify with a document')" wire:click="openJustification({{ $transaction->id }})" />
+                    @endif
+                </x-admin.shared.row-menu>
+            @elseif($canAllocate)
+                <x-button
+                    :label="__('Allocate')"
+                    icon="o-arrows-pointing-in"
+                    wire:click="openAllocation({{ $transaction->id }})"
+                    class="btn-xs btn-outline" />
+            @elseif($canJustify)
+                <x-button
+                    :label="__('Justify')"
+                    icon="o-document-check"
+                    wire:click="openJustification({{ $transaction->id }})"
+                    class="btn-xs btn-outline" />
+            @endif
             @endscope
 
         </x-table>
@@ -342,6 +398,17 @@
                 :placeholder="__('All')"
                 clearable />
 
+            @if($this->bankAccounts->count() > 1)
+            <x-select
+                :label="__('Bank account')"
+                wire:model.live="accountFilter"
+                :options="$accountOptions"
+                option-value="id"
+                option-label="name"
+                :placeholder="__('All accounts')"
+                clearable />
+            @endif
+
             <x-select
                 :label="__('Direction')"
                 wire:model.live="amountDirection"
@@ -359,6 +426,21 @@
     {{-- ========================================== --}}
     <x-app-modal wire:model="importModal" :title="__('Import Bank Statement')" separator :open="$importModal">
         <div class="space-y-4">
+            @if($unknownAccountIban)
+            {{-- Jamais d'import silencieux d'un compte inconnu : l'export d'un
+                 compte personnel traîne dans le même dossier que ceux du club. --}}
+            <div class="space-y-3 rounded-xl border border-warning/30 bg-warning/10 p-3 text-sm" wire:key="unknown-account">
+                <div class="font-bold">
+                    {{ __('This statement is for account :account, which the club has not registered yet.', ['account' => \App\Domains\Shared\Support\IbanNormalizer::format($unknownAccountIban)]) }}
+                </div>
+                <p class="text-xs">
+                    {{ __('If it is a club account, register it to import the statement. Otherwise, cancel: nothing has been imported.') }}
+                </p>
+                <x-input :label="__('Account name')" wire:model="newAccountName" :placeholder="__('Savings account')" />
+                <x-select :label="__('Account type')" wire:model="newAccountType" :options="$accountTypeOptions"
+                    option-value="id" option-label="name" />
+            </div>
+            @else
             <p class="text-sm opacity-70">
                 {{ __('Upload your bank export (ODS, XLSX, CSV). Transactions will be imported and available for reconciliation.') }}
             </p>
@@ -371,10 +453,19 @@
                 :aria-label="__('Bank file')"
                 accept=".ods,.xlsx,.xls,.csv,.txt"
                 hint="ODS · XLSX · CSV" />
+            @endif
         </div>
 
         <x-slot:actions>
-            <x-button :label="__('Cancel')" @click="$wire.importModal = false" class="btn-ghost" />
+            <x-button :label="__('Cancel')" @click="$wire.importModal = false; $wire.unknownAccountIban = null" class="btn-ghost" />
+            @if($unknownAccountIban)
+            <x-button
+                :label="__('Register and import')"
+                icon="o-building-library"
+                class="btn-primary"
+                wire:click="registerAccountAndImport"
+                spinner />
+            @else
             <x-button
                 :label="__('Start Import')"
                 icon="o-arrow-up-tray"
@@ -382,6 +473,7 @@
                 wire:click="processImport"
                 :disabled="! $importFile"
                 spinner />
+            @endif
         </x-slot:actions>
     </x-app-modal>
 
@@ -453,7 +545,7 @@
                             @foreach ($this->servedCredits as $credit)
                                 @php
                                     $served = $credit->payment?->payable;
-                                    $servedLabel = $served instanceof \App\Contracts\DescribesPayment ? $served->getPaymentLabel() : null;
+                                    $servedLabel = $credit->payment?->label();
                                 @endphp
                                 <div class="flex items-center gap-3 rounded-lg border border-success/20 bg-success/5 p-2.5 text-sm"
                                     wire:key="served-{{ $credit->id }}">
@@ -642,4 +734,86 @@
                 wire:click="confirmAllocation" spinner="confirmAllocation" />
         </x-slot:actions>
     </x-app-modal>
+    {{-- Justifier une ligne : lier une pièce existante, ou en classer une préremplie --}}
+    <x-drawer wire:model="justifyDrawer" :title="__('Supporting documents of this transaction')" right with-close-button class="w-full max-w-2xl">
+        @if($this->justificationTransaction)
+            @php
+                $jtx = $this->justificationTransaction;
+                $canLink = auth()->user()->can('linkTransaction', \App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument::class)
+                    && ! $jtx->is_internal
+                    && (float) $jtx->allocated_amount == 0.0;
+            @endphp
+            <div class="space-y-5" wire:key="justify-{{ $jtx->id }}">
+                <div class="rounded-lg border border-base-300 bg-base-200/60 p-3 text-sm">
+                    <div class="flex flex-wrap items-baseline justify-between gap-x-2">
+                        <span class="font-semibold">{{ $jtx->counterparty_name ?: __('Unknown counterparty') }}</span>
+                        <span @class(['font-black tabular-nums', 'text-success' => $jtx->amount > 0, 'text-error' => $jtx->amount < 0])>{{ number_format($jtx->amount, 2, ',', ' ') }} €</span>
+                    </div>
+                    <div class="text-xs text-muted">{{ $jtx->date->format('d/m/Y') }} · {{ $jtx->description }}</div>
+                </div>
+
+                @if($jtx->supportingDocuments->isNotEmpty())
+                    <div class="space-y-2">
+                        <p class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Justified by') }}</p>
+                        @foreach($jtx->supportingDocuments as $linked)
+                            <div wire:key="justify-linked-{{ $linked->id }}" class="flex items-center gap-3 rounded-lg border border-success/20 bg-success/5 p-2.5 text-sm">
+                                <x-icon name="o-document-check" class="h-4 w-4 shrink-0 text-success" />
+                                <div class="min-w-0 flex-1">
+                                    <div class="truncate font-semibold">{{ $linked->counterparty }} — {{ $linked->label }}</div>
+                                    <div class="text-xs text-muted"><span class="font-mono">{{ $linked->reference() }}</span> · {{ $linked->category()->label() }} · {{ number_format($linked->amount, 2, ',', ' ') }} €</div>
+                                </div>
+                                @foreach($linked->files as $file)
+                                    <a class="btn btn-ghost btn-xs" href="{{ route('admin.treasury.supporting-documents.file', $file) }}" target="_blank">{{ __('Open it') }}</a>
+                                    @break
+                                @endforeach
+                                @if($canLink)
+                                    <x-button :label="__('Unlink')" class="btn-ghost btn-xs" wire:click="unlinkDocument({{ $linked->id }})" spinner="unlinkDocument({{ $linked->id }})" />
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+                @if($canLink)
+                    <div class="space-y-2" data-document-suggestions>
+                        <p class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Link an existing document') }}</p>
+                        @foreach($this->documentSuggestions as $candidate)
+                            <div wire:key="justify-suggested-{{ $candidate->id }}" class="flex items-center gap-3 rounded-lg border border-success/30 bg-success/5 p-2.5 text-sm">
+                                <div class="min-w-0 flex-1">
+                                    <div class="truncate font-semibold">{{ $candidate->counterparty }} — {{ $candidate->label }}</div>
+                                    <div class="text-xs text-muted"><span class="font-mono">{{ $candidate->reference() }}</span> · {{ $candidate->date->format('d/m/Y') }} · {{ $candidate->category()->label() }}</div>
+                                </div>
+                                <span class="shrink-0 font-bold tabular-nums">{{ number_format($candidate->amount, 2, ',', ' ') }} €</span>
+                                <x-button :label="__('Link')" icon="o-link" class="btn-outline btn-xs" wire:click="linkDocument({{ $candidate->id }})" spinner="linkDocument({{ $candidate->id }})" />
+                            </div>
+                        @endforeach
+                        @if($this->documentSuggestions->isEmpty())
+                            <p class="text-xs text-muted">{{ __('No document to settle of the same amount within :days days. Search below, or file it.', ['days' => \App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument::SUGGESTION_WINDOW_DAYS]) }}</p>
+                        @endif
+                        <x-input :placeholder="__('Search a counterparty, a label, a reference...')" icon="o-magnifying-glass"
+                            wire:model.live.debounce.300ms="justifySearch" clearable />
+                        @foreach($this->documentSearchResults as $candidate)
+                            <div wire:key="justify-found-{{ $candidate->id }}" class="flex items-center gap-3 rounded-lg border border-base-300 p-2.5 text-sm">
+                                <div class="min-w-0 flex-1">
+                                    <div class="truncate font-semibold">{{ $candidate->counterparty }} — {{ $candidate->label }}</div>
+                                    <div class="text-xs text-muted"><span class="font-mono">{{ $candidate->reference() }}</span> · {{ $candidate->date->format('d/m/Y') }} · {{ $candidate->state()->label() }}</div>
+                                </div>
+                                <span class="shrink-0 font-bold tabular-nums">{{ number_format($candidate->amount, 2, ',', ' ') }} €</span>
+                                <x-button :label="__('Link')" icon="o-link" class="btn-ghost btn-xs" wire:click="linkDocument({{ $candidate->id }})" spinner="linkDocument({{ $candidate->id }})" />
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="space-y-3 rounded-xl border border-base-300 p-3" data-new-document>
+                        <p class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Or file a new document') }}</p>
+                        <x-admin.treasury.supporting-document-form :files="$documentFiles" />
+                        <div class="flex justify-end">
+                            <x-button :label="__('File and link')" icon="o-document-plus" class="btn-primary btn-sm"
+                                wire:click="createAndLinkDocument" spinner="createAndLinkDocument" />
+                        </div>
+                    </div>
+                @endif
+            </div>
+        @endif
+    </x-drawer>
 </div>

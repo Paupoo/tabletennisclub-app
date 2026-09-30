@@ -20,6 +20,12 @@
     },
     "dependencies": {
         "@alpinejs/sort": "^3.14.9",
+        "@tiptap/core": "^3.31.4",
+        "@tiptap/extension-image": "^3.31.4",
+        "@tiptap/extension-table": "^3.31.4",
+        "@tiptap/markdown": "^3.31.4",
+        "@tiptap/pm": "^3.31.4",
+        "@tiptap/starter-kit": "^3.31.4",
         "alpinejs": "^3.4.2",
         "axios": "^1.6.1",
         "cropperjs": "^1.6.2",

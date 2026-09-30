@@ -10,6 +10,7 @@ use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\MutualAttestation;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\EventPost;
@@ -21,6 +22,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
@@ -31,10 +33,12 @@ use App\Policies\ContactPolicy;
 use App\Policies\ExpenseReportPolicy;
 use App\Policies\GuardianPolicy;
 use App\Policies\InterclubPolicy;
+use App\Policies\MeetingPolicy;
 use App\Policies\MutualAttestationPolicy;
 use App\Policies\RoomPolicy;
 use App\Policies\SeasonPolicy;
 use App\Policies\SubscriptionPolicy;
+use App\Policies\SupportingDocumentPolicy;
 use App\Policies\TablePolicy;
 use App\Policies\TeamPolicy;
 use App\Policies\TournamentPolicy;
@@ -62,11 +66,13 @@ class AuthServiceProvider extends ServiceProvider
         ExpenseReport::class => ExpenseReportPolicy::class,
         Guardian::class => GuardianPolicy::class,
         Interclub::class => InterclubPolicy::class,
+        Meeting::class => MeetingPolicy::class,
         NewsPost::class => NewsPostPolicy::class,
         Room::class => RoomPolicy::class,
         Season::class => SeasonPolicy::class,
         MutualAttestation::class => MutualAttestationPolicy::class,
         Subscription::class => SubscriptionPolicy::class,
+        SupportingDocument::class => SupportingDocumentPolicy::class,
         Table::class => TablePolicy::class,
         Team::class => TeamPolicy::class,
         Tournament::class => TournamentPolicy::class,

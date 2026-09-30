@@ -36,18 +36,7 @@ class GeneratePaymentQR
      */
     public function png(Payment $payment): string
     {
-        $builder = new Builder(
-            writer: new PngWriter,
-            data: $this->qrText($payment),
-            encoding: new Encoding('UTF-8'),
-            errorCorrectionLevel: ErrorCorrectionLevel::High,
-            size: 300,
-            margin: 10
-        );
-
-        $result = $builder->build();
-
-        return $result->getString();
+        return $this->render($this->qrText($payment));
     }
 
     /**
@@ -75,5 +64,49 @@ class GeneratePaymentQR
             number_format($balance, 2, '.', ''),
             $payment->reference,
         );
+    }
+
+    /**
+     * A transfer to someone other than the club, as PNG bytes.
+     *
+     * @throws ValidationException
+     */
+    public function transferPng(string $beneficiary, string $iban, float $amount, string $communication): string
+    {
+        return $this->render($this->transferText($beneficiary, $iban, $amount, $communication));
+    }
+
+    /**
+     * The EPC069-12 payload of a transfer to a third party — a provincial
+     * committee, say — in version 002, which lets the BIC go unstated: the
+     * committee publishes none, and every bank in the SEPA zone resolves it
+     * from the IBAN.
+     */
+    public function transferText(string $beneficiary, string $iban, float $amount, string $communication): string
+    {
+        return sprintf(
+            "BCD\n002\n1\nSCT\n\n%s\n%s\nEUR%s\n\n\n%s",
+            mb_substr($beneficiary, 0, 70),
+            str_replace(' ', '', $iban),
+            number_format(max(0.0, $amount), 2, '.', ''),
+            mb_substr($communication, 0, 140),
+        );
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function render(string $data): string
+    {
+        $builder = new Builder(
+            writer: new PngWriter,
+            data: $data,
+            encoding: new Encoding('UTF-8'),
+            errorCorrectionLevel: ErrorCorrectionLevel::High,
+            size: 300,
+            margin: 10
+        );
+
+        return $builder->build()->getString();
     }
 }

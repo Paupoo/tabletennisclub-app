@@ -74,13 +74,24 @@ it('never sends a member to a page the committee alone can open', function (): v
         // SendBarRestockingDigestCommand sends it to User::permission('bar.restocking.shop')
         // only, the permission the linked screen asks for — BarRestockingDigestTest.
         'BarRestockingDigestNotification.php',
-        // The three go to User::permission('expense_reports.process') — plus
-        // 'payments.refund' for the last — and every délégation holding either
+        // Both go to User::permission('expense_reports.process') — plus
+        // 'payments.refund' for the digest — and every délégation holding either
         // also holds payments.view, which the page asks for. The member's own
         // expense report notifications link to their member space instead.
         'ExpenseReportSubmittedNotification.php',
         'ExpenseReportsDigestNotification.php',
+        // RemindExpenseReportsArchivingCommand keeps only those the `archive`
+        // policy admits, which asks for financial_report.view — the permission
+        // the linked report asks for — ExpenseReportArchivingTest.
         'ExpenseReportsToArchiveNotification.php',
+        // Goes to the requester of the export only, and asking for one takes
+        // financial_report.view, the permission the linked report asks for —
+        // FinancialExportTest.
+        'FinancialExportFailedNotification.php',
+        // Not committee-only, but gated by MeetingPolicy::readMinutes(), which
+        // admits exactly whom sendMinutes() mails: the committee, or — for a
+        // general assembly sent to all — every active member. MinutesReaderTest.
+        'MeetingMinutesNotification.php',
     ];
 
     $files = (new Finder)

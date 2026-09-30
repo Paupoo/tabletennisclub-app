@@ -22,7 +22,6 @@ use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\InvitationTarget;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
-use App\Support\Markdown;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -223,12 +222,6 @@ new class extends Component
         $this->activityId = $criteria['activity']['id'] ?? null;
         $this->activityMode = $criteria['activity']['mode'] ?? AudienceActivityMode::Registered->value;
         $this->functions = $criteria['functions'];
-    }
-
-    #[Computed]
-    public function previewHtml(): string
-    {
-        return Markdown::safe($this->body);
     }
 
     /**

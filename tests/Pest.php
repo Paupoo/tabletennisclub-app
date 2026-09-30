@@ -3,11 +3,15 @@
 declare(strict_types=1);
 
 use App\Data\User\FederationRow;
+use App\Domains\ClubAdmin\Fines\Actions\IssueFine;
+use App\Domains\ClubAdmin\Fines\Models\Fine;
+use App\Domains\ClubAdmin\Fines\Services\FineCreditor;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Enums\FineReason;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\Enums\TrainingType;
@@ -254,6 +258,33 @@ function smokeableGetRoutes(): array
     ksort($routes);
 
     return $routes;
+}
+
+/** The provincial committee's account, without which no fine can be issued. */
+function fineCreditorConfigured(): FineCreditor
+{
+    $creditor = app(FineCreditor::class);
+    $creditor->update('CPBBW', 'BE50 2100 3624 5518', 'Didier Tourneur', 'tresorier@cpbbw.test', '+32 477 89 54 30');
+
+    return $creditor;
+}
+
+/** A fine issued the way the treasury screen issues one, notification included. */
+function fineIssuedTo(User $member, FineReason $reason = FineReason::REFEREEING, float $amount = 25, ?User $issuer = null): Fine
+{
+    fineCreditorConfigured();
+
+    return (new IssueFine)(
+        $member,
+        $issuer ?? User::factory()->isAdmin()->create(),
+        $reason,
+        $amount,
+        'Please be careful next time, we are here to help.',
+        today()->subWeek(),
+        'LA HULPE RIXENSART',
+        today()->addWeeks(2),
+        $reason->provincialCode(),
+    );
 }
 
 function paymentTournament(array $overrides = []): Tournament

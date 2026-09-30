@@ -286,7 +286,7 @@
                         <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-muted">
                             {{ __('Message') }}
                         </p>
-                        <p class="text-sm leading-relaxed">{{ $selectedContact->message }}</p>
+                        <p class="whitespace-pre-line text-sm leading-relaxed">{{ $selectedContact->message }}</p>
                     </div>
                 @endif
 
@@ -378,7 +378,7 @@
     <x-app-modal wire:model="emailModal" :title="__('Custom email')" :open="$emailModal">
         <div class="space-y-4">
             <x-input :label="__('Subject')" wire:model="emailSubject" />
-            <x-textarea :label="__('Message')" wire:model="emailBody" rows="6" />
+            <x-markdown-editor model="emailBody" :label="__('Message')" :sticky-toolbar="false" />
             <div class="flex items-center gap-2">
                 <x-toggle wire:model="emailCopy" />
                 <span class="text-sm">{{ __('Receive a copy') }}</span>

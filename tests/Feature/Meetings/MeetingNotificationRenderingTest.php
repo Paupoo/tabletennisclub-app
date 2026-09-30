@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Models\MeetingActionItem;
+use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Domains\Meetings\Notifications\MeetingCancelledNotification;
 use App\Domains\Meetings\Notifications\MeetingDatePollNotification;
 use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
@@ -66,42 +68,46 @@ describe('Meeting mails are rendered in French', function (): void {
 });
 
 describe('The minutes mail points at the minutes', function (): void {
-    test('a note taker is sent straight to the minutes page', function (): void {
-        $noteTaker = User::factory()->withRole(Role::MEETINGS)->create();
-        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $noteTaker->id]);
+    // It used to send a note taker to the writing desk and a member to a page
+    // without the minutes: everyone now lands on the reading page, which
+    // MeetingPolicy::readMinutes() guards.
+    test('every reader is sent to the reading page', function (User $reader): void {
+        $meeting = Meeting::factory()->generalAssembly()->completed()->create();
+        MeetingMinutes::factory()->published()->for($meeting)->create();
 
-        $mail = new MeetingMinutesNotification($meeting)->toMail($noteTaker);
+        $mail = new MeetingMinutesNotification($meeting)->toMail($reader);
 
-        expect($mail->actionUrl)->toBe(route('admin.meetings.minutes', $meeting));
-    });
+        expect($mail->actionUrl)->toBe(route('meetings.minutes.read', $meeting));
+    })->with([
+        'note taker' => fn (): User => User::factory()->withRole(Role::MEETINGS)->create(),
+        'committee member' => fn (): User => User::factory()->isCommitteeMember()->create(),
+        'member' => fn (): User => User::factory()->create(),
+    ]);
 
     test('the bell notification points at the same page as the mail', function (): void {
-        $noteTaker = User::factory()->withRole(Role::MEETINGS)->create();
-        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $noteTaker->id]);
+        $meeting = Meeting::factory()->committee()->completed()->create();
 
-        $payload = new MeetingMinutesNotification($meeting)->toArray($noteTaker);
+        $payload = new MeetingMinutesNotification($meeting)->toArray(User::factory()->create());
 
-        expect($payload['url'])->toBe(route('admin.meetings.minutes', $meeting));
+        expect($payload['url'])->toBe(route('meetings.minutes.read', $meeting));
     });
 
-    test('a committee member keeps the meeting page, which renders the minutes inline', function (): void {
-        // The minutes page writes on every action and aborts on `meetings.view`
-        // alone: sending the committee there would be issue #39 all over again.
-        $committee = User::factory()->isCommitteeMember()->create();
-        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $committee->id]);
+    test('the mail carries the decisions, the reader\'s actions and the minutes as a PDF', function (): void {
+        $reader = User::factory()->isCommitteeMember()->create();
+        $meeting = Meeting::factory()->committee()->completed()->create(['scheduled_at' => '2026-03-12 20:00']);
+        MeetingMinutes::factory()->published()->for($meeting)->create();
+        $meeting->decisions()->create(['body' => 'On garde **le prix**']);
+        MeetingActionItem::factory()->for($meeting)->create(['title' => 'Réserver la salle', 'assigned_to_id' => $reader->id, 'due_date' => now()->subDays(2), 'is_completed' => false]);
+        MeetingActionItem::factory()->for($meeting)->create(['title' => 'Tâche d\'un autre', 'assigned_to_id' => User::factory(), 'is_completed' => false]);
 
-        $mail = new MeetingMinutesNotification($meeting)->toMail($committee);
+        $mail = new MeetingMinutesNotification($meeting)->toMail($reader);
+        $html = (string) $mail->render();
 
-        expect($mail->actionUrl)->toBe(route('admin.meetings.show', $meeting));
-    });
-
-    test('an ordinary member still lands in their own space', function (): void {
-        $member = User::factory()->create();
-        $meeting = Meeting::factory()->generalAssembly()->completed()->create(['created_by' => $member->id]);
-
-        $mail = new MeetingMinutesNotification($meeting)->toMail($member);
-
-        expect($mail->actionUrl)->toBe(route('admin.user.event-subscription', $member))
-            ->and($mail->actionUrl)->not->toContain('/minutes');
+        expect($html)->toContain('>le prix</strong>')
+            ->toContain('Réserver la salle')
+            ->not->toContain('Tâche d')
+            ->and($mail->rawAttachments)->toHaveCount(1)
+            ->and($mail->rawAttachments[0]['name'])->toBe('PV-comite-2026-03-12.pdf')
+            ->and($mail->rawAttachments[0]['data'])->toStartWith('%PDF');
     });
 });

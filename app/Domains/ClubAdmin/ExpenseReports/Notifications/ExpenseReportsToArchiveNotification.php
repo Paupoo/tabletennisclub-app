@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\ExpenseReports\Notifications;
 
+use App\Domains\Shared\ValueObjects\FiscalYear;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -11,8 +12,9 @@ use Illuminate\Notifications\Notification;
 /**
  * Paid reports whose proofs still live on the server only.
  *
- * Quarterly, and once more in January when the closed year goes to the
- * auditors: a server that dies takes the receipts of the accounts with it.
+ * Quarterly, and once more the month after the financial year closes, when
+ * it goes to the auditors: a server that dies takes the receipts of the
+ * accounts with it.
  */
 class ExpenseReportsToArchiveNotification extends Notification
 {
@@ -27,7 +29,7 @@ class ExpenseReportsToArchiveNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $subject = $this->yearEnd
-            ? __('Financial year :year closed: expense reports to archive', ['year' => now()->year - 1])
+            ? __('Financial year :year closed: expense reports to archive', ['year' => FiscalYear::current()->previous()->label()])
             : __('Expense reports to archive');
 
         return (new MailMessage)
@@ -38,8 +40,13 @@ class ExpenseReportsToArchiveNotification extends Notification
                 $this->count,
                 ['amount' => number_format($this->total, 2, ',', ' ')],
             ))
-            ->line(__('Their proofs only exist on the application\'s server. Download the ZIP archive and keep it with the club\'s accounts.'))
-            ->action(__('Archive the paid expense reports'), route('admin.treasury.expense-reports', ['tab' => 'paid', 'unarchived' => 1]));
+            ->line(__('Their proofs only exist on the application\'s server. Download the ZIP archive of the financial year from the financial report and keep it with the club\'s accounts.'))
+            ->action(__('Archive the paid expense reports'), route('admin.treasury.report', [
+                'tab' => 'pieces',
+                // The year that just closed; otherwise the running one, whose
+                // tab also lists the other years still to archive.
+                'year' => $this->yearEnd ? FiscalYear::current()->previous()->startYear() : FiscalYear::current()->startYear(),
+            ]));
     }
 
     /** @return array<int, string> */

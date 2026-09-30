@@ -2,6 +2,12 @@
 
 ```mermaid
 erDiagram
+    BankAccount {
+        int id PK
+        string iban
+        string name
+        BankAccountType type
+    }
     BankImport {
         int id PK
         int user_id FK
@@ -23,6 +29,7 @@ erDiagram
         string reason
         string payable_type "nullable"
         int payable_id FK "nullable"
+        int transaction_id FK "nullable"
         int recorded_by_id FK
         string notes "nullable"
     }
@@ -53,7 +60,7 @@ erDiagram
     }
     Transaction {
         int id PK
-        string date
+        datetime date
         string description
         float amount
         float allocated_amount
@@ -66,14 +73,22 @@ erDiagram
         string free_reference "nullable"
         string import_fingerprint "nullable"
         int bank_import_id FK "nullable"
+        int bank_account_id FK "nullable"
+        float balance_after "nullable"
+        string statement_number "nullable"
+        bool is_internal
         TransactionMatch match "nullable"
     }
 
+    BankAccount ||--o{ Transaction : "transactions"
     BankImport ||--o{ Transaction : "transactions"
     CashRegister ||--o{ CashRegisterEntry : "entries"
+    CashRegisterEntry }o--o{ SupportingDocument : "supportingDocuments"
     Payment ||--o{ PaymentCredit : "credits"
     Payment ||--o{ SubscriptionDiscount : "discounts"
+    Transaction ||--o| CashRegisterEntry : "cashRegisterEntry"
     Transaction ||--o{ PaymentCredit : "credits"
     Transaction ||--o| Payment : "payment"
     Transaction ||--o| Payment : "refundPayment"
+    Transaction }o--o{ SupportingDocument : "supportingDocuments"
 ```

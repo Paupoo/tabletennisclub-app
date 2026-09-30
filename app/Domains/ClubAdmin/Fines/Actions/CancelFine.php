@@ -13,14 +13,14 @@ use Illuminate\Support\Facades\Notification;
 class CancelFine
 {
     /**
-     * Reverse a fine issued by mistake: cancel its pending payment, soft-delete
-     * the fine, and reassure the member (and their guardians when the member is
-     * a minor) that they no longer owe anything.
+     * Reverse a fine issued by mistake: soft-delete it and tell the member (and
+     * their guardians when the member is a minor) to disregard it.
      *
-     * A fine whose payment has already been collected cannot be cancelled here —
+     * Fines issued before members paid the committee directly may still carry a
+     * payment of the club's. One already collected cannot be cancelled here —
      * it would leave the money unaccounted for; use the refund flow instead.
      *
-     * @throws DomainException when the fine's payment has already been paid
+     * @throws DomainException when the fine's legacy payment has already been paid
      */
     public function __invoke(Fine $fine): void
     {

@@ -121,8 +121,8 @@
                         @endif
                         <x-datepicker :label="__('RSVP deadline')" wire:model="detailsRsvpDeadline"
                             :placeholder="__('Optional')" />
-                        <x-textarea :label="__('Description')" wire:model="detailsDescription"
-                            :placeholder="__('Optional context for attendees')" rows="3" />
+                        <x-markdown-editor model="detailsDescription" :label="__('Description')"
+                            :hint="__('Optional context for attendees')" />
                         <div class="flex justify-end gap-2">
                             <x-button :label="__('Cancel')" class="btn-ghost btn-sm" wire:click="cancelEditing" />
                             <x-button :label="__('Save')" icon="o-check" class="btn-primary btn-sm"
@@ -180,8 +180,8 @@
                     @endif
 
                     @if ($meeting->description)
-                        <div class="border-t border-base-300 pt-3 text-base-content/70">
-                            {{ $meeting->description }}
+                        <div class="prose prose-sm max-w-none border-t border-base-300 pt-3 text-base-content/70">
+                            {!! \App\Support\Markdown::safe($meeting->description) !!}
                         </div>
                     @endif
                 </div>
@@ -208,8 +208,8 @@
                                     <div class="flex-1 space-y-2">
                                         <x-input wire:model="agendaDraft.{{ $i }}.title"
                                             :placeholder="__('Point :n', ['n' => $i + 1])" />
-                                        <x-textarea wire:model="agendaDraft.{{ $i }}.description"
-                                            :placeholder="__('Optional details…')" rows="2" />
+                                        <x-markdown-editor model="agendaDraft.{{ $i }}.description" compact
+                                            :label="__('Details')" :sticky-toolbar="false" />
                                     </div>
                                     <x-button icon="o-trash" class="btn-ghost btn-xs btn-circle mt-1"
                                         wire:click="removeAgendaDraftItem({{ $i }})" />
@@ -245,7 +245,7 @@
                                     <div>
                                         <p class="text-sm font-medium">{{ $item->title }}</p>
                                         @if ($item->description)
-                                            <p class="mt-0.5 text-xs text-base-content/60">{{ $item->description }}</p>
+                                            <div class="prose prose-sm mt-0.5 max-w-none text-xs text-base-content/60 [&>:first-child]:mt-0 [&>:last-child]:mb-0">{!! \App\Support\Markdown::safe($item->description) !!}</div>
                                         @endif
                                     </div>
                                 </li>
@@ -444,48 +444,38 @@
                                 @if ($minutes)
                                     {{ __(':a announcements · :d decisions · :t action items', [
                                         'a' => count($minutes->announcements ?? []),
-                                        'd' => count($minutes->decisions ?? []),
+                                        'd' => $meeting->decisions->count(),
                                         't' => $meeting->actionItems->count(),
                                     ]) }}
                                 @else
                                     {{ __('Nothing written yet.') }}
                                 @endif
                             </p>
-                            <x-button icon="o-document-text"
-                                :label="$minutes ? __('Open the minutes') : ($isPast ? __('Write the minutes') : __('Prepare the minutes'))"
-                                class="btn-outline btn-sm shrink-0"
-                                link="{{ route('admin.meetings.minutes', $meeting) }}" />
+                            <div class="flex shrink-0 flex-wrap gap-2">
+                                @if ($minutes?->is_published)
+                                    <x-button icon="o-eye" :label="__('Read the minutes')" class="btn-primary btn-sm"
+                                        link="{{ route('meetings.minutes.read', $meeting) }}" />
+                                @endif
+                                <x-button icon="o-document-text"
+                                    :label="$minutes ? __('Open the minutes') : ($isPast ? __('Write the minutes') : __('Prepare the minutes'))"
+                                    class="btn-outline btn-sm"
+                                    link="{{ route('admin.meetings.minutes', $meeting) }}" />
+                            </div>
                         </div>
                     </x-card>
                 @elseif ($minutes?->is_published)
+                    {{-- The reading page is the one rendering of published minutes. --}}
                     <x-card :title="__('Minutes')">
-                        <div class="space-y-4 text-sm">
-                            @if (filled($minutes->announcements))
-                                <div>
-                                    <p class="mb-1 font-semibold">{{ __('Announcements') }}</p>
-                                    <ul class="list-inside list-disc space-y-1 text-base-content/70">
-                                        @foreach ($minutes->announcements as $ann)
-                                            <li>{{ $ann }}</li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            @endif
-                            @if (filled($minutes->decisions))
-                                <div>
-                                    <p class="mb-1 font-semibold">{{ __('Decisions') }}</p>
-                                    <ul class="list-inside list-disc space-y-1 text-base-content/70">
-                                        @foreach ($minutes->decisions as $dec)
-                                            <li>{{ $dec }}</li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            @endif
-                            @if ($minutes->notes)
-                                <div>
-                                    <p class="mb-1 font-semibold">{{ __('Additional notes') }}</p>
-                                    <p class="text-base-content/70">{{ $minutes->notes }}</p>
-                                </div>
-                            @endif
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <p class="text-sm text-muted">
+                                {{ __(':a announcements · :d decisions · :t action items', [
+                                    'a' => count($minutes->announcements ?? []),
+                                    'd' => $meeting->decisions->count(),
+                                    't' => $meeting->actionItems->count(),
+                                ]) }}
+                            </p>
+                            <x-button icon="o-eye" :label="__('Read the minutes')" class="btn-primary btn-sm shrink-0"
+                                link="{{ route('meetings.minutes.read', $meeting) }}" />
                         </div>
                     </x-card>
                 @endif
@@ -650,7 +640,8 @@
             <x-alert icon="o-exclamation-triangle" class="alert-error alert-soft"
                 :title="__('All invited members will be notified.')" />
             <x-textarea :label="__('Reason / message (optional)')"
-                wire:model="cancellationNote" rows="3" />
+                wire:model="cancellationNote" rows="3" maxlength="1000" />
+            <x-char-counter model="cancellationNote" max="1000" />
         </div>
         <x-slot:actions>
             <x-button :label="__('Back')" wire:click="$set('showCancelModal', false)" />
@@ -664,7 +655,8 @@
         <div class="space-y-4">
             <x-datetime type="datetime-local" :label="__('New proposed date (optional)')" wire:model="postponedTo" />
             <x-textarea :label="__('Reason / message (optional)')"
-                wire:model="postponedNote" rows="3" />
+                wire:model="postponedNote" rows="3" maxlength="1000" />
+            <x-char-counter model="postponedNote" max="1000" />
         </div>
         <x-slot:actions>
             <x-button :label="__('Back')" wire:click="$set('showPostponeModal', false)" />

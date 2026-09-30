@@ -19,6 +19,7 @@ erDiagram
         string bank_account "nullable"
         string website_url "nullable"
         string enterprise_number "nullable"
+        int fiscal_year_start_month
     }
     Interclub {
         int id PK

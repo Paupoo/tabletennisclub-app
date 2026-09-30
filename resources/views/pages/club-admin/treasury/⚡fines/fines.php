@@ -5,14 +5,17 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Fines\Actions\CancelFine;
 use App\Domains\ClubAdmin\Fines\Actions\IssueFine;
 use App\Domains\ClubAdmin\Fines\Models\Fine;
+use App\Domains\ClubAdmin\Fines\Services\FineCreditor;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\FineReason;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Rules\ValidIban;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -33,9 +36,22 @@ new class extends Component
     // ── Cancel modal
     public bool $cancelModal = false;
 
-    public string $description = '';
+    public string $contactEmail = '';
 
-    public string $federationReference = '';
+    public string $contactName = '';
+
+    public string $contactPhone = '';
+
+    // ── Provincial committee drawer
+    public bool $creditorDrawer = false;
+
+    public string $creditorIban = '';
+
+    public string $creditorName = '';
+
+    public string $eventDate = '';
+
+    public string $eventLabel = '';
 
     // ── Issue drawer
     public bool $fineDrawer = false;
@@ -48,12 +64,14 @@ new class extends Component
     /** Set once the committee edits the message, so we stop overwriting it. */
     public bool $messageEdited = false;
 
+    public string $paymentDeadline = '';
+
     public string $pedagogicalMessage = '';
 
     public string $reason = '';
 
     #[Url]
-    public string $statusFilter = '';
+    public string $reasonFilter = '';
 
     public function cancelFine(CancelFine $cancelFine): void
     {
@@ -61,8 +79,8 @@ new class extends Component
 
         $fine = Fine::with('payment', 'user.guardians')->findOrFail($this->cancelFineId);
 
-        // A paid fine would leave collected money unaccounted for — block it here
-        // (the action guards this too). Use the refund flow for paid fines.
+        // A fine from before the direct-payment rule may carry a payment the club
+        // collected — block it here (the action guards this too).
         if ($fine->payment?->status === 'paid') {
             $this->cancelModal = false;
             $this->cancelFineId = null;
@@ -92,7 +110,7 @@ new class extends Component
 
     public function clearFilters(): void
     {
-        $this->reset(['statusFilter']);
+        $this->reset(['reasonFilter']);
         $this->resetPage();
     }
 
@@ -104,6 +122,12 @@ new class extends Component
         $this->cancelModal = true;
     }
 
+    #[Computed]
+    public function creditor(): FineCreditor
+    {
+        return app(FineCreditor::class);
+    }
+
     /**
      * @return LengthAwarePaginator<int, Fine>
      */
@@ -112,11 +136,9 @@ new class extends Component
     {
         return Fine::query()
             ->with(['user', 'issuer', 'payment'])
-            ->when($this->statusFilter, fn (EloquentBuilder $q) => $q->whereHas(
-                'payment',
-                fn (EloquentBuilder $p) => $p->where('status', $this->statusFilter)
-            ))
+            ->when($this->reasonFilter, fn (EloquentBuilder $q) => $q->where('reason', $this->reasonFilter))
             ->latest()
+            ->orderByDesc('fines.id')
             ->paginate(20);
     }
 
@@ -126,9 +148,9 @@ new class extends Component
     public function getFilterChips(): array
     {
         return array_values(array_filter([
-            $this->statusFilter !== '' ? [
-                'key' => 'statusFilter',
-                'label' => $this->statusFilter === 'paid' ? __('Paid') : __('Pending'),
+            $this->reasonFilter !== '' ? [
+                'key' => 'reasonFilter',
+                'label' => FineReason::tryFrom($this->reasonFilter)?->label() ?? $this->reasonFilter,
             ] : null,
         ]));
     }
@@ -136,6 +158,13 @@ new class extends Component
     public function issueFine(IssueFine $issueFine): void
     {
         Gate::authorize(Permission::FinesIssue->value);
+
+        if (! $this->creditor->isConfigured()) {
+            $this->fineDrawer = false;
+            $this->error(__('Enter the provincial committee account before issuing a fine.'));
+
+            return;
+        }
 
         $this->validate();
 
@@ -145,8 +174,10 @@ new class extends Component
             FineReason::from($this->reason),
             (float) $this->amount,
             $this->pedagogicalMessage,
-            $this->federationReference ?: null,
-            $this->description ?: null,
+            Carbon::parse($this->eventDate),
+            trim($this->eventLabel),
+            Carbon::parse($this->paymentDeadline),
+            FineReason::from($this->reason)->provincialCode(),
         );
 
         $this->fineDrawer = false;
@@ -158,19 +189,48 @@ new class extends Component
     {
         Gate::authorize(Permission::FinesView->value);
 
+        // The picker's first options belong in the first render. Filled only
+        // when the drawer opened, they were morphed in outside the picker's
+        // Alpine scope: `isActive is not defined`, and a click on a name did
+        // nothing until something was typed.
+        $this->search();
+
         // Deep link from a member row: /admin/treasury/fines?member=123
         if ($memberId = request()->integer('member')) {
             $this->openFineDrawer($memberId);
         }
     }
 
+    public function openCreditorDrawer(): void
+    {
+        Gate::authorize(Permission::FinesIssue->value);
+
+        $creditor = $this->creditor;
+        $this->creditorName = $creditor->name() ?? '';
+        $this->creditorIban = $creditor->ibanFormatted() ?? '';
+        $this->contactName = $creditor->contactName() ?? '';
+        $this->contactEmail = $creditor->contactEmail() ?? '';
+        $this->contactPhone = $creditor->contactPhone() ?? '';
+        $this->resetValidation();
+        $this->creditorDrawer = true;
+    }
+
     public function openFineDrawer(?int $memberId = null): void
     {
         Gate::authorize(Permission::FinesIssue->value);
 
-        $this->reset(['amount', 'description', 'federationReference', 'pedagogicalMessage', 'reason', 'messageEdited']);
+        // Without the committee's account the mail could not say where to pay:
+        // send the treasurer to it first rather than let them fill a form in vain.
+        if (! $this->creditor->isConfigured()) {
+            $this->openCreditorDrawer();
+
+            return;
+        }
+
+        $this->reset(['amount', 'eventDate', 'eventLabel', 'paymentDeadline', 'pedagogicalMessage', 'reason', 'messageEdited']);
+        $this->resetValidation();
         $this->memberId = $memberId;
-        $this->reason = FineReason::UNJUSTIFIED_ABSENCE->value;
+        $this->reason = FineReason::UNANNOUNCED_ABSENCE->value;
         $this->pedagogicalMessage = $this->suggestedMessage();
         $this->search();
         $this->fineDrawer = true;
@@ -191,10 +251,30 @@ new class extends Component
             'memberId' => ['required', 'exists:users,id'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'reason' => ['required', 'string', 'in:' . implode(',', array_column(FineReason::cases(), 'value'))],
+            'eventDate' => ['required', 'date'],
+            'eventLabel' => ['required', 'string', 'max:255'],
+            'paymentDeadline' => ['required', 'date', 'after_or_equal:eventDate'],
             'pedagogicalMessage' => ['required', 'string', 'min:10'],
-            'federationReference' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
         ];
+    }
+
+    public function saveCreditor(FineCreditor $creditor): void
+    {
+        Gate::authorize(Permission::FinesIssue->value);
+
+        $this->validate([
+            'creditorName' => ['required', 'string', 'max:70'],
+            'creditorIban' => ['required', 'string', 'max:50', new ValidIban],
+            'contactName' => ['nullable', 'string', 'max:255'],
+            'contactEmail' => ['nullable', 'email', 'max:255'],
+            'contactPhone' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $creditor->update($this->creditorName, $this->creditorIban, $this->contactName, $this->contactEmail, $this->contactPhone);
+
+        unset($this->creditor);
+        $this->creditorDrawer = false;
+        $this->success(__('Provincial committee details saved.'));
     }
 
     /**
@@ -262,11 +342,11 @@ new class extends Component
 
         $lines = [
             __('Hello :name,', ['name' => $member?->first_name ?? '']),
-            __('The federation has issued a fine concerning you (:reason). The club has to pass it on, but we mainly want to help you avoid it next time.', [
+            __('The provincial committee has issued a fine concerning you (:reason). The club passes it on, but we mainly want to help you avoid it next time.', [
                 'reason' => $reason?->label() ?? '—',
             ]),
             __('A quick message to your captain or the committee as soon as you know about a problem is usually enough to avoid this kind of situation.'),
-            __('You will find the payment details in your payments space. The committee stays available if you want to talk about it.'),
+            __('How to pay the committee is explained below. The club stays available if you want to talk about it.'),
         ];
 
         return implode("\n\n", $lines);

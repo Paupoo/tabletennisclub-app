@@ -155,7 +155,7 @@ Certains modèles appliquent **automatiquement un statut** au contact lors de l'
 Allez dans **Site web → Modèles d'email** (réservé au groupe gestionnaire). Vous y créez et modifiez librement les modèles de réponse, sans dépendre d'un développeur :
 
 - **Nom**, **clé**, **objet**, **corps** du message
-- **Variables** disponibles à insérer dans l'objet/corps : `{{first_name}}`, `{{last_name}}`, `{{full_name}}`, `{{interest}}`, `{{club_name}}`
+- **Variables** : dans le corps, **Insérer une variable** ajoute une pastille (Prénom, Nom, Nom complet, Intérêt, Nom du club) qui s'insère et s'efface d'un bloc ; dans l'objet, tapez `{{first_name}}`, `{{last_name}}`, `{{full_name}}`, `{{interest}}` ou `{{club_name}}`. Une variable inconnue reste visible dans sa propre pastille : une faute de frappe se voit avant l'envoi
 - **Statut appliqué** (optionnel) : statut donné au contact quand le modèle est envoyé
 - **Questionnaire d'information** : marque les modèles destinés à *récolter* des informations manquantes
 - **Actif/inactif** : un modèle inactif n'apparaît plus dans la liste d'envoi
@@ -277,7 +277,12 @@ Ajoutez des points à l'ordre du jour de la réunion. L'ordre du jour est visibl
 
 ### Procès-verbal
 
-Après la réunion, ajoutez le procès-verbal (texte libre). Cliquez sur **Envoyer le PV** pour envoyer le procès-verbal par email à tous les participants.
+Rédigez le PV depuis la fiche de la réunion (**Rédiger le PV**), en direct pendant la réunion : un bloc par point de l'ordre du jour — ce qui s'est dit, les décisions (tapez, puis Entrée ; numérotées D1, D2… sur tout le PV) et les actions (tapez, puis Entrée ; puis qui et pour quand) — plus un bloc pour ce qui sort de l'ordre du jour. Les présences se pointent en haut : tous les confirmés d'un coup, puis les corrections nom par nom, et un membre venu sans être sur la liste s'ajoute par la recherche. **Marquer abordé** clôt un point et ouvre le suivant. Tout s'enregistre au fur et à mesure ; **Aperçu** montre le PV et son PDF avant de le **Publier** une fois la réunion passée. Une modification faite après l'envoi apparaît « Corrigé le … ».
+
+- **Envoyer au comité** le transmet au comité — la première étape habituelle, pour le relire.
+- **Envoyer à tous les membres** n'existe que pour une **assemblée générale** : le PV d'une réunion de comité ne sort jamais du comité, puisqu'il peut nommer un membre en dette ou un conflit. C'est aussi l'envoi à tous qui ouvre le PV d'une AG à chaque membre actif.
+
+Le mail est court — les décisions, les actions du destinataire, un bouton **Lire le PV** — et joint le PV en PDF. La page de lecture met décisions et actions en tête ; le responsable d'une action la coche « faite » depuis cette page. **Télécharger le PDF** produit le PV tel qu'il est à ce moment.
 
 ### Points d'action
 
@@ -328,7 +333,9 @@ Allez dans **Site web** dans la navigation.
 ### Articles (actualités)
 
 Créez et modifiez des articles d'actualité publiés sur le site web public du club :
-- Titre, contenu (texte enrichi), image à la une
+- Titre, contenu, image à la une
+- Le contenu s'écrit tel qu'il sera publié : la barre d'outils pose titres, gras, italique, liens, listes et citations — aucune syntaxe à apprendre
+- **Images dans le texte** : bouton image, glisser-déposer ou coller ; l'image est réduite avant l'envoi, et on vous demande de **la décrire** (lu à voix haute aux visiteurs qui ne la voient pas) avant de l'insérer. Une image retirée du texte est effacée du serveur après une semaine
 - Publier immédiatement ou enregistrer comme brouillon
 - Définir une date "à la une jusqu'au" pour les articles épinglés
 
@@ -385,23 +392,38 @@ La liste de force classe les joueurs compétitifs par niveau pour la sélection 
 
 ## 10. Trésorerie
 
+### Rapport financier
+
+Allez dans **Trésorerie → Rapport financier**, en tête du menu. Le comité, les vérificateurs aux comptes et la trésorerie y lisent, un **exercice** à la fois, tout ce que le club a reçu et dépensé : ce que le site comptabilise (cotisations, entraînements, tournois, bar) et ce que la trésorerie a justifié par des pièces. Huit cartes (recettes, dépenses et résultat comparés à l'exercice précédent, part des mouvements justifiés, membres qui doivent encore de l'argent, argent encore attendu, ce que le club doit encore, trésorerie détenue par compte et par caisse), des graphiques mois par mois et par poste, et les mouvements internes.
+
+L'exercice commence le mois fixé dans **Paramètres du club → Informations** (janvier par défaut) ; l'argent compte le jour où il bouge, jamais à la date de la facture.
+
+L'onglet **Pièces & exports** liste les pièces justificatives, les notes de frais et les paiements du site de l'exercice, et **exporte l'exercice** : un PDF imprimable (journal de tous les mouvements de banque et de caisse, puis chaque pièce et chaque note de frais avec ses justificatifs) ou un ZIP avec les fichiers originaux. Le rapport lui-même, déjà affiché dans l'onglet **Vue d'ensemble**, n'y entre que si l'on coche **Inclure le rapport financier**. Télécharger le ZIP d'un exercice **archive ses notes de frais payées** — quand c'est la trésorerie qui le télécharge, ou un membre du comité qui traite aussi les notes de frais. Le détail est dans l'article d'aide *Lire le rapport financier*.
+
 ### Paiements
 
 Allez dans **Trésorerie → Paiements**. Consultez tous les paiements des membres (inscriptions à des tournois, packs d'entraînement, affiliations) :
 - Filtrer par statut : en attente, payé, partiellement payé, remboursé
 - Cliquez sur un paiement pour voir les détails et le marquer comme payé
 
-### Transactions
+### Transactions bancaires
 
-Allez dans **Trésorerie → Transactions**. Enregistrez les transactions bancaires (depuis votre relevé de compte) :
-- Ajouter une transaction (montant, date, communication structurée, payeur)
-- Réconcilier : associer les transactions aux paiements en attente
+Allez dans **Trésorerie → Transactions bancaires**. Importez les extraits bancaires (les deux exports de CBC sont lus tels quels), puis clôturez chaque ligne :
+- **rapprochez-la** des paiements du site qu'elle paie ou rembourse ;
+- **justifiez-la** par une pièce quand le site ne la connaît pas (location de la salle, balles, subside, frais de banque) ;
+- **abandonnez** un reliquat que le club garde.
+
+Le club peut avoir **plusieurs comptes** (courant, épargne) : un numéro de compte inconnu fait l'objet d'une **question** avant tout import. Les virements entre comptes du club sont reconnus à l'import et marqués **internes** : ni recette ni dépense. Le filtre **À traiter** montre ce qu'il reste à faire ; le filtre **Compte bancaire** montre un compte à la fois. Articles d'aide : *Importer et gérer les extraits bancaires*, *Rapprocher les paiements avec la banque*.
+
+### Pièces justificatives
+
+Allez dans **Trésorerie → Pièces justificatives**. Chaque facture, ticket ou courrier derrière l'argent que le site ne voit pas : date, montant, catégorie (c'est elle qui dit s'il s'agit d'une dépense ou d'une recette), tiers, libellé et au moins un fichier ; une référence comme **P-2026-0042** est attribuée. Une pièce liée à rien est **à régler** — une dette du club, ou de l'argent encore attendu ; liée à une ligne de banque ou à un mouvement de caisse, elle est **réglée**. La délégation **Trésorerie** classe et lie les pièces ; la délégation **Caisse** classe les tickets payés avec la caisse, depuis l'écran de la caisse ; le comité et les vérificateurs consultent. Le versement de la caisse à la banque (ou le retrait d'un fonds de caisse) se relie depuis l'écran de la caisse : les deux mouvements deviennent internes. Article d'aide : *Classer les pièces justificatives*.
 
 ### Notes de frais
 
 Allez dans **Trésorerie → Notes de frais**. Les membres majeurs y déclarent ce qu'ils ont avancé pour le club, avec leurs justificatifs. Tout le comité **consulte** les notes ; les **accepter** (éventuellement pour un montant inférieur, avec un motif) ou les **rejeter** (motif obligatoire) relève de la délégation **Trésorerie**, de la délégation **Notes de frais** (le relais du trésorier) et des administrateurs, et **personne ne traite sa propre note**. Une note acceptée devient un remboursement ordinaire dans **Paiements → À rembourser** ; elle passe en « payée » au rapprochement du débit.
 
-**Exporter** prépare en arrière-plan un PDF imprimable ou un ZIP (CSV + justificatifs originaux) de ce que l'écran affiche. Un rappel trimestriel invite la trésorerie à archiver les notes payées. Les vérificateurs aux comptes reçoivent la délégation **Vérification des comptes** : toute la trésorerie en lecture seule. Le détail est dans les articles d'aide *Traiter les notes de frais* et *Vérifier les notes de frais*.
+L'export a rejoint le **rapport financier** (**Exporter depuis le rapport financier**), pour tout un exercice. Archiver les notes payées — en téléchargeant le ZIP de l'exercice — revient à la trésorerie et au comité : la délégation **Notes de frais** seule n'ouvre pas le rapport financier, le relais du trésorier décide donc des notes sans les exporter ni les archiver. Un rappel à chaque trimestre de l'exercice, et le 5 du mois qui suit sa clôture, invite à archiver. Les vérificateurs aux comptes reçoivent la délégation **Vérification des comptes** : toute la trésorerie et le rapport financier en lecture seule. Le détail est dans les articles d'aide *Traiter les notes de frais*, *Vérifier les notes de frais* et *Lire le rapport financier*.
 
 ### Caisse (bar)
 
@@ -458,13 +480,13 @@ En tant que membre du comité, les emails suivants sont envoyés automatiquement
 | Séance d'entraînement annulée | Membres inscrits |
 | Invitation à une réunion | Membres invités |
 | Confirmation de RSVP réunion | Membre |
-| Procès-verbal de réunion | Tous les participants |
+| Procès-verbal de réunion | Le comité ; tous les membres actifs pour une AG envoyée à tous |
 | Réunion annulée/reportée | Tous les membres invités |
 | Demande de remboursement | Administrateur |
 | Note de frais acceptée, rejetée (avec motif) ou payée | Membre auteur de la note |
 | Nouvelle note de frais (cloche uniquement) | Délégations Trésorerie et Notes de frais, sauf l'auteur |
 | Récapitulatif des notes de frais en attente (dimanche 19 h) | Délégations Trésorerie et Notes de frais |
-| Notes de frais payées à archiver (chaque trimestre, et le 5 janvier) | Trésorerie et délégation Notes de frais |
+| Notes de frais payées à archiver (chaque trimestre de l'exercice, et le 5 du mois qui suit sa clôture) | Qui peut traiter ou rembourser les notes de frais **et** ouvrir le rapport financier : délégation Trésorerie, administrateurs |
 
 ---
 
@@ -520,6 +542,6 @@ L'écran répond à « à qui dois-je écrire, sans oublier personne et sans éc
 
 ### Écrire depuis l'application
 
-Rédigez en markdown avec l'aperçu, **Insérer** une invitation (tournoi, pack, réunion) ajoute un bloc avec un lien « S'inscrire ». Ce lien mène à une page « Pour qui ? » : un parent y choisit son enfant et arrive sur ses inscriptions. **M'envoyer un test** vous l'envoie à vous seul.
+Rédigez le message tel qu'il sera reçu (barre d'outils pour titres, gras, listes, liens) ; **Insérer** une invitation (tournoi, pack, réunion) ajoute un bloc avec un lien « S'inscrire ». Ce lien mène à une page « Pour qui ? » : un parent y choisit son enfant et arrive sur ses inscriptions. **M'envoyer un test** vous l'envoie à vous seul.
 
 L'envoi part au nom du club, les réponses arrivent à l'adresse choisie (la vôtre par défaut). Chaque adresse reçoit son propre message, au rythme de 15 par minute. La page de la communication suit l'avancement, liste les échecs et permet de les relancer ; **Réécrire** repart du même texte et des mêmes filtres. Les adresses sont effacées après deux saisons, le message reste.

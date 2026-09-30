@@ -29,7 +29,7 @@ combinent le droit et l'appartenance.
 
 ---
 
-## Les douze domaines
+## Les quatorze domaines
 
 ### Membres et identité
 `app/Domains/ClubAdmin/Users`
@@ -56,14 +56,52 @@ des rôles : ils changent au fil de la saison et sont des scopes Eloquent.
 ### Trésorerie
 `app/Domains/ClubAdmin/Payment`, `app/Domains/ClubAdmin/Fines`
 
-Paiements polymorphes (affiliation, amende, inscription tournoi, repas de réunion),
-transactions bancaires et leur pointage, imports CODA, caisses physiques, amendes
-disciplinaires.
+Paiements polymorphes (affiliation, inscription tournoi, repas de réunion),
+comptes bancaires du club (courant, épargne), transactions bancaires et leur
+pointage, imports des extraits CBC (solde et numéro d'extrait gardés par ligne,
+virements entre comptes du club marqués internes), caisses physiques, amendes
+du comité provincial — transmises au membre, qui les paie directement au comité.
+Les notes de frais (`app/Domains/ClubAdmin/ExpenseReports`) y aboutissent comme
+des remboursements ordinaires.
 
 **Trois délégations distinctes** : `tresorerie` (pointer, importer, rembourser),
 `caisse` (détenir et équilibrer une caisse) et `amendes`. Détenir la caisse du bar
 n'implique pas de toucher aux comptes — c'est ce découpage qui permet de confier la
-caisse à quelqu'un hors comité.
+caisse à quelqu'un hors comité. `notes-de-frais` est le relais du trésorier pour
+décider des notes : il n'exporte ni n'archive.
+
+### Pièces justificatives
+`app/Domains/ClubAdmin/SupportingDocuments`
+
+L'argent que le site ne voit pas — location de salle, matériel, subsides,
+sponsors, frais bancaires — et la pièce qui le prouve (`SupportingDocument`,
+référence `P-<année>-<id>`, au moins un fichier). La catégorie porte le sens
+(dépense ou recette) ; les dépenses partagent l'énumération des notes de frais.
+Une pièce est liée, sans montant, à des lignes de banque et à des mouvements de
+caisse : non liée, elle est **à régler** (dette ou créance) ; liée, elle est
+**réglée**, et la ligne est **justifiée** — troisième façon de clôturer une
+transaction, à côté du pointage et de l'abandon du reliquat. Une ligne affectée à
+des paiements du site ne reçoit jamais de pièce.
+
+**Permission** `supporting_documents.manage` (délégation `tresorerie`). La
+délégation `caisse` classe les tickets payés avec sa caisse et les lie à des
+mouvements de caisse, jamais à une ligne de banque. Lecture : `transactions.view`.
+
+### Rapport financier
+`app/Domains/ClubAdmin/Finance`
+
+Un exercice comptable (`FiscalYear`, mois de début réglé sur le club, janvier
+par défaut) vu en un écran, en comptabilité de caisse : recettes et dépenses par
+poste — celles du site dérivées du `payable` du paiement, les autres des pièces —,
+huit indicateurs comparés à l'exercice précédent, graphiques SVG rendus côté
+serveur. Un seul calcul (`FinancialReport`, `FinancialPosition`) sert l'écran et
+l'export. L'export (`FinancialExport`, PDF ou ZIP, préparé en file d'attente)
+reprend le rapport, le journal de tous les mouvements et les pièces ; télécharger
+le ZIP d'un exercice archive ses notes de frais payées.
+
+**Permission** `financial_report.view` : `comite`, `verification-comptes`,
+`tresorerie`. N'écrit rien, sauf l'archivage des notes de frais, réservé à qui
+peut aussi les traiter ou les rembourser.
 
 ### Installations
 `app/Domains/ClubAdmin/Club`
@@ -155,8 +193,11 @@ La liste des clés est dans [permissions.md](permissions.md#domaines-extinguible
 ## Points d'intégration transverses
 
 - **`Payment`** (`morphTo payable`) est le pivot de la trésorerie : affiliations,
-  amendes, inscriptions aux tournois, repas de réunion. Toute nouvelle chose
-  facturable implémente `App\Contracts\PayableInterface`.
+  inscriptions aux tournois, repas de réunion (plus les amendes émises avant le
+  paiement direct au comité provincial). Toute nouvelle chose
+  facturable implémente `App\Contracts\PayableInterface` — et doit trouver son
+  poste de recette dans `FinancialReport`, qui range l'argent du site d'après le
+  type du `payable`.
 - **`EventPost`** (`morphTo eventable`) est le pivot du calendrier public.
 - **`Season`** est la colonne vertébrale temporelle : abonnements, entraînements,
   équipes et rencontres s'y rattachent.

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Mail\PaymentInvitationEmail;
 use Illuminate\Support\Facades\Mail;
@@ -62,4 +63,40 @@ test('a pending payment is still chased', function (): void {
     Mail::assertQueued(PaymentInvitationEmail::class);
 
     expect($payment->fresh()->invitation_counter)->toBe(1);
+});
+
+/*
+ * A managed account has no address of its own (#56): the reminder has to go to
+ * whoever answers for the member. Handing the user itself to Mail::to() read a
+ * null email, queued a message with no recipient, and let the worker fail on it
+ * while the screen said the reminder had gone and the counter went up.
+ */
+test('a managed account is chased through its guardian', function (): void {
+    $payment = paymentWithStatus('pending');
+    $member = $payment->payable->user;
+    $member->forceFill(['email' => null])->save();
+    $member->guardians()->attach(Guardian::factory()->create(['email' => 'parent@example.test']));
+
+    Livewire::actingAs($this->treasurer)
+        ->test('pages::club-admin.treasury.payments')
+        ->call('sendReminder', $payment->id);
+
+    Mail::assertQueued(PaymentInvitationEmail::class, fn (PaymentInvitationEmail $mail): bool => $mail->hasTo('parent@example.test'));
+    Mail::assertQueuedCount(1);
+
+    expect($payment->fresh()->invitation_counter)->toBe(1);
+});
+
+test('a managed account nobody can be written to is not counted as chased', function (): void {
+    $payment = paymentWithStatus('pending');
+    $payment->payable->user->forceFill(['email' => null])->save();
+
+    Livewire::actingAs($this->treasurer)
+        ->test('pages::club-admin.treasury.payments')
+        ->call('sendReminder', $payment->id);
+
+    Mail::assertNothingOutgoing();
+
+    expect($payment->fresh()->invitation_counter)->toBe(0)
+        ->and($payment->fresh()->last_reminded_at)->toBeNull();
 });

@@ -56,6 +56,7 @@
             'actionable' => __('Ready to compose'),
             'urgent' => __('Needs attention'),
             'past' => __('Played'),
+            'bye' => __('Bye'),
             default => __('Upcoming'),
         };
     @endphp
@@ -161,7 +162,11 @@
                                     {{-- Semaine de repos de la catégorie : la case est teintée,
                                          pas vide. C'est la semaine où une autre catégorie joue. --}}
                                     <td @class(['w-7 min-w-7 py-1 text-center align-middle', 'bg-base-300/60' => ! $playsThisWeek])>
-                                        @if ($class)
+                                        @if ($status === 'bye')
+                                            {{-- Pas de rencontre : ni une couleur à lire, ni un point à préparer. --}}
+                                            <span class="text-xs font-bold text-base-content/60"
+                                                title="{{ $t['name'] }} {{ $t['division'] }} — {{ __('Match day') }} {{ $matchDayMap[$wk['wk']] ?? $wk['wk'] }} : {{ __('No match scheduled this week for your team') }}">{{ __('Bye') }}</span>
+                                        @elseif ($class)
                                             <span class="inline-block h-3 w-3 rounded-sm {{ $class }}"
                                                 title="{{ $t['name'] }} {{ $t['division'] }} — {{ __('Match day') }} {{ $matchDayMap[$wk['wk']] ?? $wk['wk'] }} : {{ $statusLabel($status) }}"></span>
                                             <span class="sr-only">{{ $statusLabel($status) }}</span>
@@ -254,6 +259,7 @@
                                     'bg-success' => in_array($segment, ['confirmed', 'short'], true),
                                     'ring-2 ring-inset ring-warning' => $segment === 'short',
                                     'bg-base-200' => $segment === 'future',
+                                    'border border-dashed border-base-300' => $segment === 'bye',
                                 ])></span>
                             @endforeach
                         </div>

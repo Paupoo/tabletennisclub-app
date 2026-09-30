@@ -52,11 +52,12 @@ describe('writing', function (): void {
         Livewire::test(COMPOSE_COMPONENT)->assertSet('replyTo', 'author@example.com');
     });
 
-    it('previews the message as it will be rendered, html escaped', function (): void {
+    // The side-by-side preview is gone: the editor shows the message formatted
+    // as it is typed. Escaping on send is covered by SendCommunicationTest.
+    it('writes the message in the WYSIWYG editor, bound to the body', function (): void {
         Livewire::test(COMPOSE_COMPONENT)
-            ->set('body', 'Hello **everyone** <b>bold</b>')
-            ->assertSeeHtml('<strong>everyone</strong>')
-            ->assertDontSeeHtml('<b>bold</b>');
+            ->assertSeeHtml('x-data="markdownEditor({')
+            ->assertSeeHtml('model: \'body\'');
     });
 
     it('drops an invitation block into the message', function (): void {

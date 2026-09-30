@@ -218,12 +218,13 @@ new class extends Component
             'templates' => $this->templates,
             'statusOptions' => $statusOptions,
             'headers' => $headers,
+            // The placeholders EmailTemplateRenderer resolves, offered as pills.
             'availableVariables' => [
-                '{{first_name}}',
-                '{{last_name}}',
-                '{{full_name}}',
-                '{{interest}}',
-                '{{club_name}}',
+                'first_name' => __('First name'),
+                'last_name' => __('Last name'),
+                'full_name' => __('Full name'),
+                'interest' => __('Interest'),
+                'club_name' => __('Club name'),
             ],
         ];
     }

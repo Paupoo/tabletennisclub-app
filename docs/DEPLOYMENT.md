@@ -17,7 +17,7 @@ Procédure de mise en production sur un serveur classique (VPS / hébergement), 
 | Accès | SSH avec les droits d'écriture sur le répertoire applicatif |
 | `ghostscript` | Convertit les formulaires mutuelle publiés en PDF 1.7 vers 1.4, seule version que sait lire le moteur de remplissage |
 | `poppler-utils` | Fournit `pdftotext`, qui localise les champs d'un formulaire à partir de ses intitulés |
-| Extension PHP `zip` | Construit l'archive ZIP des notes de frais (`php -m \| grep zip`) |
+| Extension PHP `zip` | Construit l'archive ZIP de l'export financier (`php -m \| grep zip`) |
 
 Les deux derniers ne servent qu'aux attestations mutuelle. Tant que le secrétariat
 n'a pas téléversé le cachet et le paraphe, posez `FEATURE_ATTESTATIONS=false` dans
@@ -30,6 +30,20 @@ frais* et *Vérification des comptes*), attribuer les délégations, vérifier l
 `zip`, puis allumer. `ghostscript`, s'il est installé, sert aussi à imprimer les
 justificatifs PDF que mPDF refuse tels quels ; sans lui, la page d'export renvoie à
 l'original du ZIP.
+
+Les pièces justificatives et le rapport financier vivent sous le drapeau `treasury`,
+sans drapeau propre. Leur déploiement demande le `RoleSeeder` (nouvelles permissions
+`supporting_documents.manage` pour la *Trésorerie*, `financial_report.view` pour le
+*Comité*, la *Vérification des comptes* et la *Trésorerie*) et les migrations : table
+`bank_accounts` (le compte de la fiche club y est repris comme compte courant),
+colonnes de solde, de numéro d'extrait et de mouvement interne sur `transactions`,
+tables des pièces et de leurs liens, catégories des notes de frais existantes
+reprises sur les neuf catégories de dépense, `clubs.fiscal_year_start_month` — **janvier par
+défaut**, donc rien ne change pour les notes de frais tant que personne ne modifie
+l'exercice dans *Paramètres du club → Informations* — et renommage de
+`expense_report_exports` en `financial_exports`. La commande
+`financial-exports:prune` remplace `expense-reports:prune-exports`, qui n'existe
+plus : une crontab ou un script qui l'appelait nommément est à corriger.
 
 Trois éléments doivent tourner **en permanence**, en plus du serveur web :
 
@@ -113,7 +127,7 @@ php artisan up
 
 ## Tâches planifiées
 
-L'application définit **6 tâches récurrentes** dans `app/Console/Kernel.php`. Sans cron, elles ne s'exécutent jamais — silencieusement.
+L'application définit ses tâches récurrentes dans `routes/console.php` (les principales ci-dessous). Sans cron, elles ne s'exécutent jamais — silencieusement.
 
 Une seule entrée crontab suffit :
 
@@ -130,37 +144,65 @@ Une seule entrée crontab suffit :
 | `season:provision` | 1er juillet, 06 h 00 | Provisionne les deux saisons suivantes (idempotent) |
 | `queue:check-health` | horaire | Alerte les admins par e-mail si le worker semble mort |
 | `expense-reports:send-digest` | dimanche 19 h 00 | Récapitulatif des notes de frais en attente, à chaque valideur |
-| `expense-reports:remind-archiving` | 1er avril, juillet, octobre 08 h 00 ; 5 janvier (`--year-end`) | Rappel d'archivage des notes de frais payées |
+| `expense-reports:remind-archiving` | 1er du mois, 08 h 00, aux 3e, 6e et 9e mois de l'exercice ; le 5 du mois qui suit sa clôture (`--year-end`) — 1er avril, juillet, octobre et 5 janvier avec l'exercice civil par défaut | Rappel d'archivage des notes de frais payées |
 | `expense-reports:purge-files` | 03 h 30 | Efface les justificatifs des notes rejetées ou retirées depuis deux ans |
-| `expense-reports:prune-exports` | 03 h 40 | Efface les exports de notes de frais de plus de 7 jours |
+| `financial-exports:prune` | 03 h 40 | Efface les exports du rapport financier (PDF, ZIP) de plus de 7 jours |
+| `articles:prune-content-images` | 03 h 50 | Efface les images insérées dans un article qu'aucun texte n'utilise plus, après 7 jours |
 
-Chaque tâche est conditionnée au *feature flag* de son domaine : un domaine éteint dans cet environnement n'envoie plus rien. Les deux purges font exception : éteindre les notes de frais ne doit pas prolonger la vie des justificatifs ni des exports.
+Chaque tâche est conditionnée au *feature flag* de son domaine : un domaine éteint dans cet environnement n'envoie plus rien. Les deux purges font exception : éteindre les notes de frais ne doit pas prolonger la vie des justificatifs, ni la trésorerie celle des exports.
+
+---
+
+## Comptes du serveur
+
+Trois comptes interviennent sur le VPS de production, chacun pour un rôle :
+
+| Compte | Rôle | `sudo` |
+|---|---|---|
+| `laravel` | Déployer : `git pull`, `composer`, `npm`, `artisan`. Propriétaire du code. | non |
+| `debian` | Administrer le système : supervisor, `chown`, paquets. | oui |
+| `www-data` | Exécuter l'application : Apache **et** le worker de queue. | — |
+
+`laravel` appartient au groupe `www-data`, et `storage/` porte le bit *setgid* et des ACL de groupe : ce qu'Apache écrit reste lisible par `laravel`, et inversement pour ce qui est accessible au groupe. Pour toute commande `sudo`, passer d'abord sur `debian` (`su - debian`, ou une connexion SSH dédiée) ; `laravel` n'y a pas droit.
 
 ---
 
 ## Worker de queue
 
-`QUEUE_CONNECTION=sync` (la valeur par défaut de `.env.example`) exécute les jobs dans la requête HTTP : **à proscrire en production**. Utilisez `database` ou `redis`, et faites superviser le worker.
-
-Exemple avec systemd :
+`QUEUE_CONNECTION=sync` (la valeur par défaut de `.env.example`) exécute les jobs dans la requête HTTP : **à proscrire en production**. La production utilise `database`, avec un worker supervisé par **supervisor** :
 
 ```ini
-# /etc/systemd/system/ttc-queue.service
-[Unit]
-Description=Table Tennis Club queue worker
-After=network.target
-
-[Service]
-User=<utilisateur-web>
-Restart=always
-WorkingDirectory=/chemin/vers/application
-ExecStart=/usr/bin/php artisan queue:work --tries=3 --timeout=120 --sleep=3
-
-[Install]
-WantedBy=multi-user.target
+# /etc/supervisor/conf.d/laravel-worker.conf
+[program:laravel-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=/usr/bin/php /var/www/tabletennisclub-app/artisan queue:work --sleep=3 --tries=3
+user=www-data
+autostart=true
+autorestart=true
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/var/www/tabletennisclub-app/storage/logs/worker.log
+stopwaitsecs=3600
 ```
 
-`php artisan queue:restart` demande au worker de s'arrêter proprement à la fin du job courant ; c'est le superviseur qui le relance avec le nouveau code. D'où sa présence à l'étape 9 — sans elle, le worker continue d'exécuter l'ancienne version.
+> ## ⚠️ `user=www-data` n'est pas facultatif
+>
+> Sans cette ligne, supervisor lance le worker en **`root`**. Tout ce que le worker écrit lui appartient alors — et Laravel crée ses dossiers privés en `0700`. Apache (`www-data`) ne peut plus y entrer : le fichier existe, mais l'application le déclare absent et répond **404**. C'est arrivé le 2026-09-29 sur les exports de notes de frais (alors `storage/app/expense-report-exports/`, aujourd'hui `storage/app/financial-exports/`), générés par le worker et téléchargés via Apache.
+>
+> Vérifier : `ps -eo user,cmd | grep "[q]ueue:work"` doit afficher `www-data`.
+>
+> Réparer, en tant que `debian` :
+>
+> ```bash
+> sudo nano /etc/supervisor/conf.d/laravel-worker.conf     # ajouter user=www-data
+> sudo chown -R www-data:www-data /var/www/tabletennisclub-app/storage/app/financial-exports
+> sudo supervisorctl reread && sudo supervisorctl update   # relance le worker avec la nouvelle config
+> sudo supervisorctl status                                # RUNNING
+> ```
+
+`php artisan queue:restart` demande au worker de s'arrêter proprement à la fin du job courant ; c'est supervisor qui le relance avec le nouveau code. D'où sa présence à l'étape 9 — sans elle, le worker continue d'exécuter l'ancienne version. `queue:restart` ne recharge pas la configuration de supervisor : un changement du fichier `.conf` demande `supervisorctl reread && supervisorctl update`.
+
+Pour savoir ce qui lance un worker sur une machine inconnue, son cgroup le dit : `cat /proc/$(pgrep -f "artisan queue:work" | head -1)/cgroup` (`supervisor.service`, une unité systemd, `cron.service`, ou une session SSH — auquel cas rien ne le relance après un redémarrage).
 
 ---
 
@@ -175,7 +217,7 @@ Deux disques, aux rôles distincts :
 
 Les documents des membres sont délibérément servis par une route contrôlée, jamais par une URL directe. Ne déplacez rien vers `public` et ne créez pas de lien symbolique vers `storage/app`.
 
-`storage/` et `bootstrap/cache/` doivent être accessibles en écriture à l'utilisateur du serveur web.
+`storage/` et `bootstrap/cache/` doivent être accessibles en écriture à l'utilisateur du serveur web — et le worker doit tourner sous ce même utilisateur (voir [Worker de queue](#worker-de-queue)) : un fichier que le worker écrit, Apache doit pouvoir le lire.
 
 ---
 

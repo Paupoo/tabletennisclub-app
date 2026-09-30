@@ -10,7 +10,6 @@ use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
-use App\Support\Markdown;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -29,6 +28,9 @@ new class extends Component
     public string $category = '';
 
     public string $content = '';
+
+    /** An image dropped into the body, until storeContentImage() files it. */
+    public mixed $contentImage = null;
 
     public ?string $existingImage = null;
 
@@ -139,6 +141,30 @@ new class extends Component
         $this->success($label, redirectTo: route('admin.website.articles.index'));
     }
 
+    /**
+     * File an image the author put in the body, and hand its path to the editor.
+     *
+     * The editor uploads through Livewire (already downscaled to a JPEG in the
+     * browser), then calls this: the folder is fixed here, and only an image
+     * reaches it.
+     */
+    public function storeContentImage(): string
+    {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
+        $this->validate([
+            'contentImage' => ['required', 'image', 'mimes:jpeg,png,webp', 'max:4096'],
+        ]);
+
+        $path = $this->contentImage->store(NewsPost::CONTENT_IMAGES_DIRECTORY, 'public');
+
+        $this->reset('contentImage');
+
+        // A path, not a URL: the markdown must not carry APP_URL, which differs
+        // between a laptop, the staging copy and production.
+        return (string) parse_url(Storage::disk('public')->url($path), PHP_URL_PATH);
+    }
+
     public function updatedTitle(): void
     {
         if (! $this->newsPostId) {
@@ -163,7 +189,6 @@ new class extends Component
                 ->toArray(),
             'categoryOptions' => $categoryOptions,
             'statusOptions' => $statusOptions,
-            'markdownPreview' => Markdown::safe($this->content ?: ''),
         ];
     }
 

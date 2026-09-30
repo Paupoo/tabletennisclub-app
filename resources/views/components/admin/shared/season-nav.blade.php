@@ -4,6 +4,7 @@
     'label' => __('Season'),
     'optionLabel' => 'name',
     'optionValue' => 'id',
+    'placeholder' => __('Select a season'),
 ])
 
 {{--
@@ -30,6 +31,6 @@
         :option-label="$optionLabel"
         :option-value="$optionValue"
         wire:model.live="{{ $model }}"
-        :placeholder="__('Select a season')"
+        :placeholder="$placeholder"
         class="select-sm w-56 font-semibold" />
 </div>

@@ -610,7 +610,7 @@ new class extends Component
         )
             ->get()
             ->map(function (Payment $p) {
-                $label = $p->payable instanceof DescribesPayment ? $p->payable->getPaymentLabel() : null;
+                $label = $p->label();
 
                 return (object) [
                     'id' => $p->id,
@@ -661,7 +661,8 @@ new class extends Component
         // Ce qui reste à placer, pas ce qui n'a pas de paiement attaché : depuis
         // que le geste passe par l'action, le lien `payment` n'est plus écrit,
         // et une ligne déjà entièrement affectée reviendrait dans la liste.
-        $candidates = Transaction::where('amount', '>', 0)
+        $candidates = Transaction::reconcilable()
+            ->where('amount', '>', 0)
             ->whereNull('settled_at')
             ->orderBy('date', 'desc')
             ->get()
@@ -693,7 +694,8 @@ new class extends Component
         // Une ligne sans communication structurée n'entre pas : le masse ne
         // tranche que sur l'identifiant que le club a lui-même émis. Les
         // rapprochements par nom ou IBAN se choisissent, ils ne se décident pas.
-        $byReference = Transaction::where('amount', '>', 0)
+        $byReference = Transaction::reconcilable()
+            ->where('amount', '>', 0)
             ->whereNull('settled_at')
             ->whereNotNull('structured_reference')
             ->get()
@@ -729,7 +731,7 @@ new class extends Component
             // laissé.
             $openingBalance = $balance;
 
-            $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
+            $label = $payment->label();
 
             // Les lignes de cette créance, mises de côté : ce qu'il restera se
             // sait une fois la répartition faite, et c'est la dernière d'entre
@@ -835,7 +837,8 @@ new class extends Component
         // Un virement sortant qui a encore quelque chose à placer. Le lien
         // `refundPayment` ne dit plus rien : personne ne l'écrit depuis que le
         // geste passe par l'action.
-        $outgoingTransactions = Transaction::where('amount', '<', 0)
+        $outgoingTransactions = Transaction::reconcilable()
+            ->where('amount', '<', 0)
             ->whereNull('settled_at')
             ->get()
             ->filter(fn (Transaction $transaction): bool => abs($transaction->residue()) > 0.001)
@@ -864,7 +867,7 @@ new class extends Component
                 $amountMatch = abs(abs($transaction->amount) - $payment->amount_due) < 0.01;
 
                 if ($ibanMatch && $amountMatch) {
-                    $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
+                    $label = $payment->label();
 
                     $this->refundBatchMatches[] = [
                         'payment_id' => $payment->id,
@@ -903,7 +906,8 @@ new class extends Component
         // Un remboursement sort du compte du club : les candidates sont les
         // débits, mais le barème est le même — c'est le même membre qu'on
         // cherche au bout du virement.
-        $candidates = Transaction::where('amount', '<', 0)
+        $candidates = Transaction::reconcilable()
+            ->where('amount', '<', 0)
             ->whereNull('settled_at')
             ->orderBy('date', 'desc')
             ->get()
@@ -1010,9 +1014,26 @@ new class extends Component
             return;
         }
 
-        Mail::to($payment->payable->user)->send(
-            new PaymentInvitationEmail($payment, __('Please settle your payment as soon as possible.'))
-        );
+        // A managed account has no address of its own: the reminder goes to
+        // whoever answers for the member, one message each, as every other
+        // payment mail does. Handing the user to Mail::to() read a null email and
+        // queued a message the worker could only fail on.
+        $member = $payment->payable->user;
+        $recipients = $member->contactEmails();
+
+        if ($recipients === []) {
+            $this->error(__(':name has no address of their own, and no guardian the club can write to.', [
+                'name' => $member->first_name,
+            ]));
+
+            return;
+        }
+
+        foreach ($recipients as $recipient) {
+            Mail::to($recipient)->send(
+                new PaymentInvitationEmail($payment, __('Please settle your payment as soon as possible.'))
+            );
+        }
         // One write, not two: the counter and the date describe the same event, and
         // an increment followed by a separate save can leave the count raised with
         // no date behind it.
@@ -1021,7 +1042,7 @@ new class extends Component
             'last_reminded_at' => now(),
         ])->save();
 
-        $this->success(__('Reminder sent to :email.', ['email' => $payment->payable->user->email]));
+        $this->success(__('Reminder sent to :email.', ['email' => implode(', ', $recipients)]));
     }
 
     // ==================== Data ====================
@@ -1435,7 +1456,7 @@ new class extends Component
             return null;
         }
 
-        $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
+        $label = $payment->label();
 
         return [
             'member' => $payment->payable instanceof DescribesPayment ? $payment->payable->getPayerName() : '—',

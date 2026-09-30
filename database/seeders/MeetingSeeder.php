@@ -320,7 +320,6 @@ class MeetingSeeder extends Seeder
         MeetingMinutes::create([
             'meeting_id' => $meeting->id,
             'announcements' => $data['announcements'] ?? null,
-            'decisions' => $data['decisions'] ?? null,
             'notes' => $data['notes'] ?? null,
             'is_published' => true,
             'published_at' => $meeting->scheduled_at?->addDay(),
@@ -328,5 +327,9 @@ class MeetingSeeder extends Seeder
             'sent_to_committee_at' => $sentToCommittee ? $meeting->scheduled_at?->addDays(2) : null,
             'sent_to_all_at' => $sentToAll ? $meeting->scheduled_at?->addDays(3) : null,
         ]);
+
+        foreach ($data['decisions'] ?? [] as $position => $body) {
+            $meeting->decisions()->create(['body' => $body, 'sort_order' => $position]);
+        }
     }
 }

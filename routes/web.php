@@ -17,6 +17,7 @@ use App\Http\Controllers\ClubAdmin\DashboardController;
 use App\Http\Controllers\ClubAdmin\Users\UserDocumentController;
 use App\Http\Controllers\ClubEvents\Interclub\InterclubIcsController;
 use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
+use App\Http\Controllers\ClubEvents\Meeting\MeetingMinutesPdfController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingRsvpController;
 use App\Http\Controllers\ClubEvents\Tournament\TableScoreController;
@@ -24,9 +25,10 @@ use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentPrintController;
 use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\ClubPosts\PublicNewsPostController;
-use App\Http\Controllers\ExpenseReports\ExpenseReportExportController;
 use App\Http\Controllers\ExpenseReports\ExpenseReportFileController;
+use App\Http\Controllers\Finance\FinancialExportController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\SupportingDocuments\SupportingDocumentFileController;
 use App\Http\Middleware\ProtectAgainstSpam;
 use Illuminate\Support\Facades\Route;
 
@@ -136,10 +138,9 @@ Route::prefix('admin/my-space/')
         Route::get('expense-reports/files/{file}', [ExpenseReportFileController::class, 'show'])
             ->name('admin.expense-reports.file')
             ->middleware('feature:expense_reports');
-        // An export: only its requester, only for a week.
-        Route::get('expense-reports/exports/{export}', [ExpenseReportExportController::class, 'download'])
-            ->name('admin.expense-reports.export')
-            ->middleware('feature:expense_reports');
+        // An expense reports export asked for before the financial report
+        // existed: its link, in a mail or the bell, still leads to the file.
+        Route::redirect('expense-reports/exports/{export}', '/admin/treasury/exports/{export}');
 
         // Private member documents — authorization handled in the controller
         // (self, admin, committee, guardians), not limited to the my-space owner.
@@ -257,6 +258,17 @@ Route::prefix('admin/treasury/')
         // Each screen answers to the délégation that owns it, not to committee
         // membership: holding the cash box and reconciling the accounts are two
         // distinct duties, and someone may well hold one without the other.
+
+        // The year's accounts, read-only: the committee, the accounts auditors
+        // and the treasury — those who answer for them at the general assembly.
+        Route::livewire('report', 'pages::club-admin.treasury.report')
+            ->middleware('can:financial_report.view')
+            ->name('admin.treasury.report');
+        // An export of the report: only its requester, only for a week —
+        // checked in the controller.
+        Route::get('exports/{export}', [FinancialExportController::class, 'download'])
+            ->name('admin.treasury.exports.download');
+
         Route::livewire('payments', 'pages::club-admin.treasury.payments')
             ->middleware('can:payments.view')
             ->name('admin.treasury.payments');
@@ -270,6 +282,17 @@ Route::prefix('admin/treasury/')
         Route::livewire('expense-reports', 'pages::club-admin.treasury.expense-reports')
             ->middleware(['feature:expense_reports', 'can:payments.view'])
             ->name('admin.treasury.expense-reports');
+
+        // Off-site money and its proofs. Read by whoever reads the bank lines;
+        // filing and linking is checked in the component, against the policy.
+        Route::livewire('supporting-documents', 'pages::club-admin.treasury.supporting-documents')
+            ->middleware('can:transactions.view')
+            ->name('admin.treasury.supporting-documents');
+
+        // The file behind a document — authorised in the controller, since the
+        // cash register délégation reads the tickets of its own till too.
+        Route::get('supporting-documents/files/{file}', [SupportingDocumentFileController::class, 'show'])
+            ->name('admin.treasury.supporting-documents.file');
 
         Route::livewire('fines', 'pages::club-admin.treasury.fines')
             ->middleware('can:fines.view')
@@ -375,6 +398,18 @@ Route::prefix('admin/club-events/meetings')
             ->name('admin.meetings.create');
         Route::livewire('/{meeting}', 'pages::club-events.meetings.show')->name('admin.meetings.show');
         Route::livewire('/{meeting}/minutes', 'pages::club-events.meetings.minutes')->name('admin.meetings.minutes');
+    });
+
+/*
+ * Reading published minutes sits outside the committee's group: a general
+ * assembly's minutes, once sent to all, are every active member's to read.
+ * MeetingPolicy::readMinutes() draws the line, committee minutes included.
+ */
+Route::prefix('admin/meetings/{meeting}/minutes')
+    ->middleware(['auth', 'verified', 'feature:meetings', 'can:readMinutes,meeting'])
+    ->group(function (): void {
+        Route::livewire('/', 'pages::club-events.meetings.reader')->name('meetings.minutes.read');
+        Route::get('/pdf', MeetingMinutesPdfController::class)->name('meetings.minutes.pdf');
     });
 
 // Meeting signed-URL actions (no auth required)
@@ -611,5 +646,19 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('seasons/{season}/subscribe/', SubscribeToSeasonAction::class)->name('clubEvents.interclubs.seasons.subscribe');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Mary's upload endpoint, closed
+|--------------------------------------------------------------------------
+|
+| Mary registers `POST /mary/upload` for <x-markdown> and <x-editor>, behind
+| `auth` only: no file validation, disk and folder taken from the query string.
+| The app uses neither component (file fields go through Livewire's upload
+| endpoint), so this later registration of the same URI replaces it with a 404.
+| The name is kept so a stray route('mary.upload') still resolves.
+|
+*/
+Route::post('mary/upload', fn () => abort(404))->name('mary.upload');
 
 require __DIR__ . '/auth.php';

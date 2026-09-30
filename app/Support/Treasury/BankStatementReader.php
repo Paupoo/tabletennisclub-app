@@ -36,6 +36,8 @@ final class BankStatementReader
         'counterparty_name' => ['nom contrepartie'],
         'structured_reference' => ['communication structuree'],
         'free_reference' => ['communication libre'],
+        'balance' => ['solde'],
+        'statement_number' => ['numero extrait', "numero de l'extrait"],
     ];
 
     /**

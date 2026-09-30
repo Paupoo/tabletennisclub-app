@@ -1235,6 +1235,8 @@ new class extends Component
 
             return [
                 'id' => $ic->id,
+                // No opponent, no match: the row says so and offers nothing.
+                'is_bye' => (bool) $ic->is_bye,
                 'wk' => $ic->week_number,
                 'date' => $ic->start_date_time->format('d/m/Y'),
                 'starts_at' => $ic->start_date_time->getTimestamp(),
@@ -1257,7 +1259,7 @@ new class extends Component
                 'awaits_sending' => $awaitsSending,
                 'max_players' => $ic->total_players,
                 'selected_player_names' => $selectedPlayerNames,
-                'may_compose' => $mayCompose,
+                'may_compose' => $mayCompose && ! $ic->is_bye,
             ];
         });
 

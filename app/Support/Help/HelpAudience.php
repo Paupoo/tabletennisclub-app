@@ -70,6 +70,21 @@ final class HelpAudience
             }
         }
 
+        // Money the website does not see: the report follows its own right
+        // — the backup expense-report decider does not hold it — and the
+        // supporting documents follow whoever reads the bank lines, files
+        // them, or keeps a till, which files the tickets it pays.
+        if (Feature::Treasury->enabled()) {
+            if ($user->can(Permission::FinancialReportView->value)) {
+                $tags[] = 'financial_report';
+            }
+
+            if ($user->canAny([Permission::TransactionsView->value, Permission::SupportingDocumentsManage->value])
+                || (Feature::CashRegister->enabled() && $user->can(Permission::CashRegisterEntryCreate->value))) {
+                $tags[] = 'supporting_documents';
+            }
+        }
+
         if (Team::where('captain_id', $user->id)->exists()) {
             $tags[] = 'captain';
         }

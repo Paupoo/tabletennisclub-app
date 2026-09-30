@@ -1,7 +1,7 @@
 @php $unreadNotificationsCount = auth()->user()->unreadNotifications()->count(); @endphp
 
 <x-menu activate-by-route class="mt-10">
-    <x-menu-sub icon="o-user" title="{{ $user->first_name }}">
+    <x-menu-sub icon="o-user" title="{{ $user->first_name }}" open>
         {{-- L'avatar et l'email s'affichent mieux ici dans un menu-item spécial ou le titre du sub-menu --}}
         <x-slot:title>
             <div class="flex items-center gap-3">
@@ -153,14 +153,49 @@
     @endcanany
 
     @feature('treasury', 'cash_register')
-    @canany(['payments.view', 'fines.view', 'transactions.view', 'cash_register.view'])
+    @canany(['financial_report.view', 'payments.view', 'fines.view', 'transactions.view', 'cash_register.view'])
     <x-menu-sub icon="o-banknotes" :title="__('Treasury')">
-        @feature('treasury')
-        @can('payments.view')
+        {{-- Three groups, following the money from the whole to the detail:
+             the report; the money that moves (bank, till) and what justifies
+             it; what is owed — by the members, to the members, and the fines
+             the club only follows. Split by separators, drawn only between
+             two groups that show something: see TreasuryMenuOrderTest. --}}
+        @php
+            $treasuryOn = \App\Domains\Shared\Enums\Feature::Treasury->enabled();
+            $seesReport = $treasuryOn && auth()->user()->can('financial_report.view');
+            $seesTransactions = $treasuryOn && auth()->user()->can('transactions.view');
+            $seesCash = \App\Domains\Shared\Enums\Feature::CashRegister->enabled() && auth()->user()->can('cash_register.view');
+            $seesPayments = $treasuryOn && auth()->user()->can('payments.view');
+            $seesExpenseReports = $seesPayments && \App\Domains\Shared\Enums\Feature::ExpenseReports->enabled();
+            $seesFines = $treasuryOn && auth()->user()->can('fines.view');
+            $seesAccounts = $seesTransactions || $seesCash;
+            $seesDues = $seesPayments || $seesFines;
+        @endphp
+
+        @if ($seesReport)
+            <x-menu-item icon="o-presentation-chart-bar" link="{{ route('admin.treasury.report') }}" :title="__('Financial report')" />
+        @endif
+
+        @if ($seesReport && $seesAccounts)
+            <li data-menu-group="separator-treasury-accounts"><x-menu-separator /></li>
+        @endif
+        @if ($seesTransactions)
+            <x-menu-item icon="o-building-library" link="{{ route('admin.treasury.transactions') }}" :title="__('Bank Transactions')" />
+        @endif
+        @if ($seesCash)
+            <x-menu-item icon="o-currency-euro" link="{{ route('admin.treasury.cash') }}" :title="__('Cash Register')" />
+        @endif
+        @if ($seesTransactions)
+            <x-menu-item icon="o-document-check" link="{{ route('admin.treasury.supporting-documents') }}" :title="__('Supporting documents')" />
+        @endif
+
+        @if (($seesReport || $seesAccounts) && $seesDues)
+            <li data-menu-group="separator-treasury-dues"><x-menu-separator /></li>
+        @endif
+        @if ($seesPayments)
             <x-menu-item icon="o-credit-card" link="{{ route('admin.treasury.payments') }}" :title="__('Payments')" />
-        @endcan
-        @feature('expense_reports')
-        @can('payments.view')
+        @endif
+        @if ($seesExpenseReports)
             @php
                 $expenseReportsToDecide = auth()->user()->can('expense_reports.process')
                     ? \App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport::where('status', 'submitted')->where('user_id', '!=', auth()->id())->count()
@@ -168,20 +203,10 @@
             @endphp
             <x-menu-item icon="o-receipt-percent" link="{{ route('admin.treasury.expense-reports') }}" :title="__('Expense reports')"
                 :badge="$expenseReportsToDecide > 0 ? (string) $expenseReportsToDecide : null" badge-classes="badge-warning" />
-        @endcan
-        @endfeature
-        @can('fines.view')
+        @endif
+        @if ($seesFines)
             <x-menu-item icon="o-scale" link="{{ route('admin.treasury.fines') }}" :title="__('Fines')" />
-        @endcan
-        @can('transactions.view')
-            <x-menu-item icon="o-building-library" link="{{ route('admin.treasury.transactions') }}" :title="__('Bank Transactions')" />
-        @endcan
-        @endfeature
-        @feature('cash_register')
-        @can('cash_register.view')
-            <x-menu-item icon="o-currency-euro" link="{{ route('admin.treasury.cash') }}" :title="__('Cash Register')" />
-        @endcan
-        @endfeature
+        @endif
     </x-menu-sub>
     @endcanany
     @endfeature

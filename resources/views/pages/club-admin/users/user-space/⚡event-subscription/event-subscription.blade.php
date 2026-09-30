@@ -246,6 +246,28 @@
                 </x-card>
             @endif
 
+            {{-- Section : PV des assemblées générales ─────────────────────── --}}
+            @if (($eventType === '' || $eventType === 'meeting') && $this->assemblyMinutes->isNotEmpty())
+                <x-card icon="o-document-text" separator :title="__('General assembly minutes')">
+                    <ul class="divide-y divide-base-300">
+                        @foreach ($this->assemblyMinutes as $assembly)
+                            <li class="flex flex-wrap items-center justify-between gap-2 py-2.5" wire:key="assembly-minutes-{{ $assembly->id }}">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold">{{ $assembly->title }}</p>
+                                    <p class="text-xs text-muted">{{ $assembly->scheduled_at?->translatedFormat('j F Y') }}</p>
+                                </div>
+                                <div class="flex gap-1">
+                                    <x-button icon="o-eye" :label="__('Read')" class="btn-ghost btn-xs"
+                                        :link="route('meetings.minutes.read', $assembly)" />
+                                    <x-button icon="o-arrow-down-tray" label="PDF" class="btn-ghost btn-xs"
+                                        :link="route('meetings.minutes.pdf', $assembly)" no-wire-navigate external />
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </x-card>
+            @endif
+
             {{-- Section : Mes entraînements ────────────────────────────────── --}}
             @if (($eventType === '' || $eventType === 'training') && $this->upcomingTrainingSessions->isNotEmpty())
                 <x-card icon="o-academic-cap" separator :title="__('My upcoming sessions')">

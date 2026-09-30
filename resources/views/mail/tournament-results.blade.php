@@ -3,7 +3,8 @@
 
 Bonjour **{{ $recipient->first_name }}**,
 
-{!! nl2br(e($emailBody)) !!}
+{{-- Written in <x-markdown-editor>; Markdown::safe() escapes raw HTML and drops unsafe links. --}}
+{!! \App\Support\Markdown::safe($emailBody) !!}
 
 ---
 

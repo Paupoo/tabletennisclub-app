@@ -272,9 +272,11 @@ class DatabaseSeeder extends Seeder
 
         Model::preventLazyLoading(! app()->isProduction());
 
+        // The tournaments' till; TreasurySeeder opens « Caisse du club ». Two
+        // tills of the same name could not be told apart in the report.
         $gilles = User::where('email', 'gilles.herpigny@test.com')->first();
         CashRegister::create([
-            'name' => 'Caisse du club',
+            'name' => 'Caisse des tournois',
             'held_by_user_id' => $gilles?->id,
         ]);
 
@@ -403,6 +405,19 @@ class DatabaseSeeder extends Seeder
         // tester le réassort et les stats sans rien saisir. Relançable seul :
         // `php artisan db:seed --class=BarDemoSeeder` vide le bar et le re-sème.
         $this->call(BarDemoSeeder::class);
+
+        // L'argent que le site ne voit pas, et ses pièces : deux exercices,
+        // un compte d'épargne, des dettes et une créance ouvertes. Après la
+        // trésorerie et le bar, dont il complète les comptes. Relançable seul.
+        // Un seeder qui ajoute ensuite des lignes de banque (l'historique du
+        // lot 3) rappelle SupportingDocumentSeeder::fillBalances().
+        $this->call(SupportingDocumentSeeder::class);
+
+        // L'argent du site sur deux exercices — cotisations, remboursements,
+        // notes de frais, tournoi — pour que le rapport financier ait une
+        // année à comparer. Après les pièces, dont il recalcule les soldes du
+        // compte courant ; les deux se relancent seuls sans se marcher dessus.
+        $this->call(FinancialHistorySeeder::class);
 
         $this->call(SpamSeeder::class);
 

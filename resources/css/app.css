@@ -329,6 +329,41 @@
   }
 }
 
+/*
+  Mary's <x-textarea> grows with what is typed in it (`field-sizing: content`,
+  Chrome 123, Firefox 152, Safari 26.2). An older browser keeps today's fixed
+  box: nothing breaks, the field just scrolls.
+
+  Content sizing ignores `rows`, so `rows` becomes the floor — never below
+  daisyUI's own 5rem — and 60vh the ceiling, past which the field scrolls
+  instead of pushing the save button off screen.
+
+  daisyUI sits in a sub-layer of `utilities`, so rules written straight in
+  `utilities` beat it whatever their specificity; `:where()` keeps that
+  specificity at zero, so a view's own `min-h-*` still wins.
+*/
+@layer utilities {
+  :where(textarea.textarea) {
+    field-sizing: content;
+    max-height: 60vh;
+  }
+
+  :where(textarea.textarea[rows]) {
+    min-height: max(5rem, calc(var(--textarea-rows) * 1lh + 1rem + 2 * var(--border, 1px)));
+  }
+
+  :where(textarea.textarea[rows="2"]) { --textarea-rows: 2; }
+  :where(textarea.textarea[rows="3"]) { --textarea-rows: 3; }
+  :where(textarea.textarea[rows="4"]) { --textarea-rows: 4; }
+  :where(textarea.textarea[rows="5"]) { --textarea-rows: 5; }
+  :where(textarea.textarea[rows="6"]) { --textarea-rows: 6; }
+  :where(textarea.textarea[rows="7"]) { --textarea-rows: 7; }
+  :where(textarea.textarea[rows="8"]) { --textarea-rows: 8; }
+  :where(textarea.textarea[rows="10"]) { --textarea-rows: 10; }
+  :where(textarea.textarea[rows="12"]) { --textarea-rows: 12; }
+  :where(textarea.textarea[rows="14"]) { --textarea-rows: 14; }
+}
+
 /* Smooth scroll pour les ancres */
 html {
   scroll-behavior: smooth;
@@ -546,5 +581,108 @@ select:focus-visible {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* =============================================================================
+   Charts — the colours of the server-drawn SVG charts, by role.
+   Mirrored as hex in App\Support\Charts\ChartPalette::print() for mPDF, which
+   resolves no custom property inside an SVG: change one, change the other.
+   Hues from the validated dataviz reference palette (blue / orange, then
+   aqua / violet), each stepped for its surface; dark values are chosen for
+   the dark card (base-100, oklch 25 %), not flipped.
+   ============================================================================= */
+:root {
+  --chart-income: #2a78d6;
+  --chart-expense: #eb6834;
+  --chart-current: #2a78d6;
+  --chart-previous: #b8b6ae;
+  --chart-result: #1f1f1f;
+  --chart-reconciled: #2a78d6;
+  --chart-justified: #1baf7a;
+  --chart-written-off: #4a3aa7;
+  --chart-internal: #b8b6ae;
+  --chart-to-process: #fab219;
+  --chart-holding-1: #2a78d6;
+  --chart-holding-2: #eb6834;
+  --chart-holding-3: #1baf7a;
+  --chart-holding-cash: #4a3aa7;
+  --chart-ink: color-mix(in oklab, var(--color-base-content) 92%, var(--color-base-100));
+  --chart-muted: color-mix(in oklab, var(--color-base-content) 70%, var(--color-base-100));
+  --chart-grid: color-mix(in oklab, var(--color-base-content) 10%, var(--color-base-100));
+  --chart-axis: color-mix(in oklab, var(--color-base-content) 28%, var(--color-base-100));
+  --chart-surface: var(--color-base-100);
+}
+
+[data-theme='dark'] {
+  --chart-holding-1: #3987e5;
+  --chart-holding-2: #d95926;
+  --chart-holding-3: #199e70;
+  --chart-holding-cash: #9085e9;
+  --chart-income: #3987e5;
+  --chart-expense: #d95926;
+  --chart-current: #3987e5;
+  --chart-previous: #6b6a65;
+  --chart-result: #f2f2f2;
+  --chart-reconciled: #3987e5;
+  --chart-justified: #199e70;
+  --chart-written-off: #9085e9;
+  --chart-internal: #6b6a65;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --chart-holding-1: #3987e5;
+    --chart-holding-2: #d95926;
+    --chart-holding-3: #199e70;
+    --chart-holding-cash: #9085e9;
+    --chart-income: #3987e5;
+    --chart-expense: #d95926;
+    --chart-current: #3987e5;
+    --chart-previous: #6b6a65;
+    --chart-result: #f2f2f2;
+    --chart-reconciled: #3987e5;
+    --chart-justified: #199e70;
+    --chart-written-off: #9085e9;
+    --chart-internal: #6b6a65;
+  }
+}
+
+/* A focused mark lifts, the way a hovered one does. */
+[data-chart] [data-chart-mark]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+[data-chart] [data-chart-mark]:hover > .chart-fill,
+[data-chart] [data-chart-mark]:focus-visible > .chart-fill {
+  opacity: 0.8;
+}
+
+/* =============================================================================
+   Print — the financial report's overview on paper: no sidebar, no menu, no
+   tabs, no tooltip; cards kept whole, colours kept.
+   ============================================================================= */
+@media print {
+  body:has([data-financial-report]) .drawer-side,
+  body:has([data-financial-report]) nav,
+  body:has([data-financial-report]) .breadcrumb-trail,
+  body:has([data-financial-report]) .toast,
+  [data-financial-report] .tabs,
+  [data-financial-report] [data-print-hide] {
+    display: none !important;
+  }
+
+  body:has([data-financial-report]) {
+    background: #fff;
+  }
+
+  [data-financial-report] {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  [data-financial-report] [data-print-keep] {
+    break-inside: avoid;
   }
 }

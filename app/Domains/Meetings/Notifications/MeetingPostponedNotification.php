@@ -7,6 +7,7 @@ namespace App\Domains\Meetings\Notifications;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Services\IcsGenerator;
+use App\Support\MailText;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -48,7 +49,7 @@ class MeetingPostponedNotification extends Notification implements ShouldQueue
         }
 
         if (filled($this->message)) {
-            $mail->line('---')->line($this->message);
+            $mail->line('---')->line(MailText::keepingLineBreaks($this->message));
         }
 
         // ICS mis à jour avec la nouvelle date proposée (si connue)

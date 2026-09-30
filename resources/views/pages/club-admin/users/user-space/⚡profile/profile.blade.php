@@ -214,57 +214,59 @@
                 </x-card>
             @endif
 
-            {{-- Amendes — n'apparaît que si le membre en a (quasiment jamais) --}}
+            {{-- Amendes — n'apparaît que si le membre en a (quasiment jamais).
+                 Le club ne sait pas si elles sont payées : le membre règle le
+                 comité provincial directement, d'où l'absence de statut. --}}
             @if ($this->fines->isNotEmpty())
-                @php $finesDue = $this->fines->filter(fn ($f) => $f->payment?->status === 'pending'); @endphp
+                @php
+                    $creditor = app(\App\Domains\ClubAdmin\Fines\Services\FineCreditor::class);
+                @endphp
                 <x-card :title="__('My fines')" icon="o-scale" separator>
-                    <x-slot:menu>
-                        @if ($finesDue->isNotEmpty())
-                            <x-button :label="__('Pay')" icon-right="o-arrow-right" class="btn-ghost btn-sm"
-                                link="{{ route('admin.user.payments', $user) }}" />
-                        @endif
-                    </x-slot:menu>
-
-                    {{-- Vue d'ensemble en une ligne --}}
                     <p class="mb-3 text-sm text-base-content/70">
                         {{ trans_choice(':count fine|:count fines', $this->fines->count()) }}
-                        @if ($finesDue->isNotEmpty())
-                            — <span class="font-semibold text-warning-content">{{ __(':amount € still to pay', ['amount' => number_format($finesDue->sum(fn ($f) => $f->payment->amount_due), 2, ',', ' ')]) }}</span>
-                        @else
-                            — <span class="font-semibold text-success">{{ __('all settled') }}</span>
-                        @endif
+                        — {{ __('paid directly to the provincial committee') }}
                     </p>
 
                     <div class="space-y-2">
                         @foreach ($this->fines as $fine)
-                            @php $isPending = $fine->payment?->status === 'pending'; @endphp
-                            <x-collapse class="border border-base-300 bg-base-100">
+                            <x-collapse class="border border-base-300 bg-base-100" wire:key="fine-{{ $fine->id }}">
                                 <x-slot:heading>
                                     <div class="flex flex-wrap items-center gap-2 text-sm">
                                         <span class="font-semibold">{{ $fine->reason->label() }}</span>
-                                        <span class="text-xs text-base-content/50">{{ $fine->created_at?->format('d/m/Y') }}</span>
+                                        <span class="text-xs text-base-content/50">{{ ($fine->event_date ?? $fine->created_at)?->format('d/m/Y') }}</span>
                                         <span class="font-bold tabular-nums">{{ number_format($fine->amount, 2, ',', ' ') }} €</span>
-                                        <x-badge :value="$isPending ? __('Pending') : __('Paid')"
-                                            class="badge-sm {{ $isPending ? 'badge-warning badge-soft' : 'badge-success badge-soft' }}" />
+                                        @if ($fine->isPayable())
+                                            <x-badge :value="__('to pay by :date', ['date' => $fine->payment_deadline->format('d/m/Y')])"
+                                                class="badge-warning badge-soft badge-sm" />
+                                        @endif
                                     </div>
                                 </x-slot:heading>
                                 <x-slot:content>
+                                    @if ($fine->event_label)
+                                        <p class="mb-2 text-xs text-base-content/60">{{ $fine->event_label }}</p>
+                                    @endif
+
                                     {{-- Le message du comité : c'est ce qui permet de comprendre --}}
                                     <p class="whitespace-pre-line text-sm text-base-content/80">{{ $fine->pedagogical_message }}</p>
 
-                                    <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-base-300 pt-3 text-xs text-base-content/60">
-                                        @if ($fine->federation_reference)
-                                            <span>{{ __('Federation reference') }}: <span class="font-mono">{{ $fine->federation_reference }}</span></span>
-                                        @endif
-                                        @if ($fine->payment)
-                                            <span>{{ __('Reference') }}: <span class="font-mono">{{ $fine->payment->reference }}</span></span>
-                                        @endif
-                                    </div>
-
-                                    @if ($isPending)
-                                        <x-button :label="__('Go to my payments')" icon-right="o-arrow-right"
-                                            class="btn-primary btn-sm mt-3"
-                                            link="{{ route('admin.user.payments', $user) }}" />
+                                    @if ($fine->isPayable() && isset($this->fineQrCodes[$fine->id]))
+                                        <div class="mt-3 rounded-xl border border-warning/40 bg-warning/5 p-3 text-sm">
+                                            <p class="font-semibold">{{ __('How to pay') }}</p>
+                                            <div class="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start">
+                                                <dl class="grid min-w-0 flex-1 grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+                                                    <dt class="text-base-content/60">{{ __('Beneficiary') }}</dt>
+                                                    <dd>{{ $creditor->name() }}</dd>
+                                                    <dt class="text-base-content/60">IBAN</dt>
+                                                    <dd class="font-mono">{{ $creditor->ibanFormatted() }}</dd>
+                                                    <dt class="text-base-content/60">{{ __('Communication') }}</dt>
+                                                    <dd class="break-words font-mono">{{ $fine->transferCommunication() }}</dd>
+                                                </dl>
+                                                <img src="{{ $this->fineQrCodes[$fine->id] }}" alt="{{ __('Payment QR code') }}" class="size-32 shrink-0" />
+                                            </div>
+                                            <p class="mt-2 text-xs text-base-content/70">
+                                                {{ __('Past the deadline, you lose your qualification. Paying on time is your sole responsibility.') }}
+                                            </p>
+                                        </div>
                                     @endif
                                 </x-slot:content>
                             </x-collapse>

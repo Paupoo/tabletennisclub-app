@@ -4,19 +4,27 @@ declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Actions\ClubAdmin\Payments\ImportBankStatementAction;
+use App\Actions\ClubAdmin\Payments\RegisterBankAccountAction;
 use App\Actions\ClubAdmin\Payments\ResolveSuspectedDuplicateAction;
 use App\Actions\ClubAdmin\Payments\SettleTransactionResidueAction;
 use App\Contracts\DescribesPayment;
+use App\Domains\ClubAdmin\Payment\Models\BankAccount;
 use App\Domains\ClubAdmin\Payment\Models\BankImport;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\PaymentCredit;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
-use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\ClubAdmin\SupportingDocuments\Actions\LinkSupportingDocument;
+use App\Domains\ClubAdmin\SupportingDocuments\Actions\UnlinkSupportingDocument;
+use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
+use App\Domains\ClubAdmin\SupportingDocuments\Services\SupportingDocumentSuggestions;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\MeetingUser;
+use App\Domains\Shared\Enums\BankAccountType;
 use App\Domains\Shared\Enums\Permission;
+use App\Exceptions\UnknownBankAccount;
+use App\Livewire\Concerns\EditsSupportingDocument;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
@@ -26,8 +34,10 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -35,8 +45,10 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
+    use EditsSupportingDocument, HasBulkActions, HasFilterDrawer;
     use HasBreadcrumbs, Toast, WithFileUploads, WithPagination;
-    use HasBulkActions, HasFilterDrawer;
+
+    public string $accountFilter = '';
 
     public bool $allocationModal = false;
 
@@ -51,15 +63,31 @@ new class extends Component
 
     public bool $confirmDeleteModal = false;
 
-    // Drawer filters
+    // Drawer filters — in the URL, so the financial report can open the
+    // movements of a year still to process.
+    #[Url(as: 'from')]
     public string $dateFrom = '';
 
+    #[Url(as: 'to')]
     public string $dateTo = '';
 
     public mixed $importFile = null;
 
     public bool $importModal = false;
 
+    /** « Justifier » : the drawer that files or links a supporting document to one line. */
+    public bool $justifyDrawer = false;
+
+    /** Free search for a document the suggestions do not catch. */
+    public string $justifySearch = '';
+
+    public ?int $justifyTransactionId = null;
+
+    public string $newAccountName = '';
+
+    public string $newAccountType = 'current';
+
+    #[Url(as: 'state')]
     public string $reconciledFilter = '';
 
     public int $reconciledInSelection = 0;
@@ -69,6 +97,12 @@ new class extends Component
     public string $search = '';
 
     public array $sortBy = ['column' => 'date', 'direction' => 'desc'];
+
+    /**
+     * L'IBAN d'un relevé que le club n'a pas encore enregistré : l'import
+     * s'arrête et demande au trésorier ce qu'est ce compte.
+     */
+    public ?string $unknownAccountIban = null;
 
     /**
      * Les paiements que cette ligne de relevé pourrait solder, les plus
@@ -87,7 +121,9 @@ new class extends Component
     {
         $transaction = $this->allocationTransaction();
 
-        if (! $transaction instanceof Transaction) {
+        // Une ligne d'épargne ou un mouvement interne n'est le paiement de
+        // personne : le rapprochement ne regarde que les comptes courants.
+        if (! $transaction instanceof Transaction || ! Transaction::reconcilable()->whereKey($transaction->id)->exists()) {
             return collect();
         }
 
@@ -144,6 +180,17 @@ new class extends Component
             : null;
     }
 
+    /**
+     * Les comptes du club, pour le filtre et pour nommer le compte d'une ligne.
+     *
+     * @return Collection<int, BankAccount>
+     */
+    #[Computed]
+    public function bankAccounts(): Collection
+    {
+        return BankAccount::orderBy('type')->orderBy('name')->orderBy('id')->get();
+    }
+
     public function bulkDelete(): void
     {
         Gate::authorize(Permission::TransactionsDelete->value);
@@ -164,7 +211,7 @@ new class extends Component
 
     public function clearFilters(): void
     {
-        $this->reset(['dateFrom', 'dateTo', 'reconciledFilter', 'amountDirection']);
+        $this->reset(['dateFrom', 'dateTo', 'reconciledFilter', 'amountDirection', 'accountFilter']);
         $this->resetPage();
     }
 
@@ -203,11 +250,69 @@ new class extends Component
     }
 
     /**
+     * File a new document from the line — prefilled with its date, amount and
+     * counterparty — and link it at once.
+     */
+    public function createAndLinkDocument(): void
+    {
+        Gate::authorize('linkTransaction', SupportingDocument::class);
+        Gate::authorize('create', SupportingDocument::class);
+
+        $transaction = $this->justificationTransactionOrFail();
+
+        try {
+            $document = $this->saveDocumentForm();
+            (new LinkSupportingDocument)($document, $transaction);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->afterJustifying(__('Supporting document :reference filed and linked: the transaction is justified.', ['reference' => $document->reference()]));
+    }
+
+    /**
      * Écarte une ligne que l'import avait mise de côté : c'est bien le même virement.
      */
     public function dismissSuspectedDuplicate(int $bankImportId, int $line): void
     {
         $this->resolveSuspectedDuplicate($bankImportId, $line, keep: false);
+    }
+
+    /**
+     * Documents found by the free search.
+     *
+     * @return Illuminate\Database\Eloquent\Collection<int, SupportingDocument>
+     */
+    #[Computed]
+    public function documentSearchResults(): Illuminate\Database\Eloquent\Collection
+    {
+        $transaction = $this->justificationTransaction();
+
+        if (! $transaction instanceof Transaction) {
+            return new Illuminate\Database\Eloquent\Collection;
+        }
+
+        return (new SupportingDocumentSuggestions)->searchDocuments($this->justifySearch, $transaction->supportingDocuments->modelKeys());
+    }
+
+    /**
+     * Documents still to settle that this line may pay: same direction, same
+     * amount to the cent, dated within the window.
+     *
+     * @return Illuminate\Database\Eloquent\Collection<int, SupportingDocument>
+     */
+    #[Computed]
+    public function documentSuggestions(): Illuminate\Database\Eloquent\Collection
+    {
+        $transaction = $this->justificationTransaction();
+
+        if (! $transaction instanceof Transaction) {
+            return new Illuminate\Database\Eloquent\Collection;
+        }
+
+        return (new SupportingDocumentSuggestions)->documentsFor($transaction);
     }
 
     // ==================== HasFilterDrawer ====================
@@ -228,6 +333,9 @@ new class extends Component
             $label = match ($this->reconciledFilter) {
                 'reconciled' => __('Settled'),
                 'partial' => __('Partly allocated'),
+                'internal' => __('Internal'),
+                'justified' => __('Justified'),
+                'to_process' => __('To process'),
                 default => __('Unreconciled'),
             };
             $chips[] = ['key' => 'reconciledFilter', 'label' => $label];
@@ -236,6 +344,10 @@ new class extends Component
         if ($this->amountDirection) {
             $label = $this->amountDirection === 'credit' ? __('Credit') : __('Debit');
             $chips[] = ['key' => 'amountDirection', 'label' => $label];
+        }
+
+        if ($this->accountFilter) {
+            $chips[] = ['key' => 'accountFilter', 'label' => $this->bankAccounts()->firstWhere('id', (int) $this->accountFilter)->name ?? '—'];
         }
 
         return $chips;
@@ -258,6 +370,17 @@ new class extends Component
         ];
     }
 
+    /**
+     * The line open in the « Justifier » drawer, with its documents.
+     */
+    #[Computed]
+    public function justificationTransaction(): ?Transaction
+    {
+        return $this->justifyTransactionId === null
+            ? null
+            : Transaction::with(['supportingDocuments.files', 'bankAccount'])->find($this->justifyTransactionId);
+    }
+
     // ==================== Actions ====================
 
     /**
@@ -266,6 +389,21 @@ new class extends Component
     public function keepSuspectedDuplicate(int $bankImportId, int $line): void
     {
         $this->resolveSuspectedDuplicate($bankImportId, $line, keep: true);
+    }
+
+    public function linkDocument(int $documentId): void
+    {
+        Gate::authorize('linkTransaction', SupportingDocument::class);
+
+        try {
+            (new LinkSupportingDocument)(SupportingDocument::findOrFail($documentId), $this->justificationTransactionOrFail());
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->afterJustifying(__('Transaction linked: it is justified.'));
     }
 
     /**
@@ -313,6 +451,24 @@ new class extends Component
         $this->confirmDeleteModal = true;
     }
 
+    /**
+     * Open the documents of a line: to justify it, or to read what justifies
+     * it. Readers of the bank lines see them; linking is checked per gesture.
+     */
+    public function openJustification(int $transactionId): void
+    {
+        Gate::authorize(Permission::TransactionsView->value);
+
+        $transaction = Transaction::findOrFail($transactionId);
+
+        $this->justifyTransactionId = $transaction->id;
+        $this->justifySearch = '';
+        $this->prefillDocumentFormFrom($transaction);
+        $this->justifyDrawer = true;
+
+        unset($this->justificationTransaction, $this->documentSuggestions, $this->documentSearchResults);
+    }
+
     public function processImport(): void
     {
         Gate::authorize(Permission::TransactionsImport->value);
@@ -321,6 +477,14 @@ new class extends Component
 
         try {
             $import = (new ImportBankStatementAction)($this->importFile->getRealPath());
+        } catch (UnknownBankAccount $e) {
+            // Rien n'est importé : le modal reste ouvert, fichier compris, et
+            // demande ce qu'est ce compte avant de recommencer.
+            $this->unknownAccountIban = $e->ibans[0];
+            $this->newAccountName = '';
+            $this->newAccountType = BankAccountType::Current->value;
+
+            return;
         } catch (Throwable $e) {
             $this->error(__('Error reading file: :message', ['message' => $e->getMessage()]), timeout: 10000);
 
@@ -329,6 +493,7 @@ new class extends Component
 
         $this->importModal = false;
         $this->importFile = null;
+        $this->unknownAccountIban = null;
 
         $suspectedCount = count($import->suspectedDuplicates());
 
@@ -352,11 +517,7 @@ new class extends Component
             $message .= ' ' . __(':count error(s) — see import history.', ['count' => $import->error_count]);
         }
 
-        if (blank(Club::ourClub()->value('bank_account'))) {
-            $message .= ' ' . __('The club IBAN is not set: the statement account could not be checked.');
-        }
-
-        if ($import->error_count > 0 || $suspectedCount > 0 || blank(Club::ourClub()->value('bank_account'))) {
+        if ($import->error_count > 0 || $suspectedCount > 0) {
             $this->warning($message, timeout: 10000);
         } else {
             $this->success($message);
@@ -390,6 +551,33 @@ new class extends Component
     }
 
     /**
+     * Enregistre le compte que l'import vient de rencontrer, puis reprend
+     * l'import du même fichier.
+     */
+    public function registerAccountAndImport(): void
+    {
+        Gate::authorize(Permission::TransactionsImport->value);
+
+        if ($this->unknownAccountIban === null) {
+            return;
+        }
+
+        $this->validate([
+            'newAccountName' => 'required|string|max:255',
+            'newAccountType' => ['required', Rule::enum(BankAccountType::class)],
+        ]);
+
+        (new RegisterBankAccountAction)($this->unknownAccountIban, $this->newAccountName, BankAccountType::from($this->newAccountType));
+
+        $this->unknownAccountIban = null;
+        unset($this->bankAccounts);
+
+        if ($this->importFile !== null) {
+            $this->processImport();
+        }
+    }
+
+    /**
      * Le reste à placer sur la ligne courante, en euros.
      */
     #[Computed]
@@ -415,14 +603,20 @@ new class extends Component
             'transactions' => $this->transactions(),
             'filterChips' => $this->getFilterChips(),
             'reconciledOptions' => [
+                ['id' => 'to_process',   'name' => __('To process')],
                 ['id' => 'unreconciled', 'name' => __('Unreconciled')],
                 ['id' => 'partial',      'name' => __('Partly allocated')],
                 ['id' => 'reconciled',   'name' => __('Settled')],
+                ['id' => 'justified',    'name' => __('Justified by a document')],
+                ['id' => 'internal',     'name' => __('Internal transfer')],
             ],
             'amountDirectionOptions' => [
                 ['id' => 'credit', 'name' => __('Credit (incoming)')],
                 ['id' => 'debit',  'name' => __('Debit (outgoing)')],
             ],
+            'accountOptions' => $this->bankAccounts->map(fn (BankAccount $account): array => ['id' => (string) $account->id, 'name' => $account->label()])->all(),
+            'accountTypeOptions' => BankAccountType::options(),
+            'showAccount' => $this->bankAccounts->count() > 1,
             'recentImports' => $recentImports,
             // Les transactions que chaque doublon probable recoupe, pour que le
             // trésorier compare les deux lignes avant de trancher.
@@ -551,9 +745,24 @@ new class extends Component
         $col = $this->sortBy['column'];
         $dir = $this->sortBy['direction'];
 
-        return $this->applyFilters(Transaction::with('credits'))
+        return $this->applyFilters(Transaction::with(['credits', 'bankAccount', 'supportingDocuments']))
             ->orderBy($col, $dir)
+            ->orderBy('transactions.id', $dir)
             ->paginate(25);
+    }
+
+    public function unlinkDocument(int $documentId): void
+    {
+        Gate::authorize('linkTransaction', SupportingDocument::class);
+
+        (new UnlinkSupportingDocument)(SupportingDocument::findOrFail($documentId), $this->justificationTransactionOrFail());
+
+        $this->afterJustifying(__('Document unlinked.'));
+    }
+
+    public function updatedAccountFilter(): void
+    {
+        $this->resetPage();
     }
 
     public function updatedAmountDirection(): void
@@ -569,6 +778,11 @@ new class extends Component
     public function updatedDateTo(): void
     {
         $this->resetPage();
+    }
+
+    public function updatedJustifySearch(): void
+    {
+        unset($this->documentSearchResults);
     }
 
     public function updatedReconciledFilter(): void
@@ -598,6 +812,15 @@ new class extends Component
     protected function getPageIds(): array
     {
         return $this->transactions()->pluck('id')->map(fn ($id): string => (string) $id)->toArray();
+    }
+
+    private function afterJustifying(string $message): void
+    {
+        $this->prefillDocumentFormFrom($this->justificationTransactionOrFail());
+
+        unset($this->justificationTransaction, $this->documentSuggestions, $this->documentSearchResults, $this->stats);
+
+        $this->success($message);
     }
 
     private function allMatchingTransactionIds(): array
@@ -635,6 +858,12 @@ new class extends Component
             ->when($this->reconciledFilter === 'reconciled', fn (Builder $q): Builder => $q->settled())
             ->when($this->reconciledFilter === 'partial', fn (Builder $q): Builder => $q->partiallyAllocated())
             ->when($this->reconciledFilter === 'unreconciled', fn (Builder $q): Builder => $q->unallocated())
+            ->when($this->reconciledFilter === 'internal', fn (Builder $q): Builder => $q->internal())
+            ->when($this->reconciledFilter === 'justified', fn (Builder $q): Builder => $q->justified())
+            // Everything not closed yet, partly allocated lines included: what
+            // the financial report counts as still to process.
+            ->when($this->reconciledFilter === 'to_process', fn (Builder $q): Builder => $q->whereNot(fn (Builder $q): Builder => $q->settled()))
+            ->when($this->accountFilter, fn (Builder $q): Builder => $q->where('bank_account_id', (int) $this->accountFilter))
             ->when($this->amountDirection === 'credit', fn (Builder $q): Builder => $q->where('amount', '>', 0))
             ->when($this->amountDirection === 'debit', fn (Builder $q): Builder => $q->where('amount', '<', 0));
     }
@@ -644,6 +873,15 @@ new class extends Component
         $this->reset(['allocationModal', 'allocationTransactionId', 'allocations', 'allocationSearch', 'residueReason']);
 
         unset($this->allocationTransaction, $this->allocationCandidates, $this->remainingToAllocate, $this->stats);
+    }
+
+    private function justificationTransactionOrFail(): Transaction
+    {
+        $transaction = $this->justificationTransaction();
+
+        abort_if($transaction === null, 404);
+
+        return $transaction;
     }
 
     private function outstandingOf(Payment $payment): float

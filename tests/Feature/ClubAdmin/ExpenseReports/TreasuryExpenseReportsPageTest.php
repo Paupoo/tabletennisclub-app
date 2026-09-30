@@ -7,6 +7,7 @@ use App\Domains\ClubAdmin\ExpenseReports\Actions\AcceptExpenseReport;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\ExpenseReportStatus;
 use App\Domains\Shared\Enums\Role;
@@ -122,6 +123,34 @@ describe('the list', function (): void {
             ->set('fiscalYear', 2026)
             ->assertSee('Payé début 2026')
             ->assertDontSee('Payé fin 2025');
+    });
+
+    it('filters on a financial year that starts in September', function (): void {
+        Club::factory()->ownClub()->create(['fiscal_year_start_month' => 9]);
+        paidExpenseReport('2025-08-29', ['description' => 'Payé en août 2025']);
+        paidExpenseReport('2026-08-20', ['description' => 'Payé en août 2026']);
+        paidExpenseReport('2026-09-02', ['description' => 'Payé en septembre 2026']);
+
+        Livewire::actingAs(expenseTreasurer())
+            ->test(TREASURY_EXPENSES)
+            ->set('statusFilter', 'all')
+            ->set('fiscalYear', 2025)
+            ->assertSee('Payé en août 2026')
+            ->assertDontSee('Payé en août 2025')
+            ->assertDontSee('Payé en septembre 2026')
+            ->assertSee('Exercice 2025-2026');
+    });
+
+    it('totals what was paid in the running financial year', function (): void {
+        Club::factory()->ownClub()->create(['fiscal_year_start_month' => 9]);
+        $this->travelTo('2026-10-05');
+        paidExpenseReport('2026-08-20', ['amount' => 30]);
+        paidExpenseReport('2026-09-02', ['amount' => 12.5]);
+
+        Livewire::actingAs(expenseTreasurer())
+            ->test(TREASURY_EXPENSES)
+            ->assertSet('stats.paid_year_total', 12.5)
+            ->assertSee('Payées en 2026-2027');
     });
 
     it('filters on the member, the nature and what is still to archive', function (): void {
@@ -250,6 +279,18 @@ describe('what the drawer shows', function (): void {
             ->assertSeeHtml('<iframe')
             ->assertSee(route('admin.expense-reports.file', $image))
             ->assertSee(route('admin.expense-reports.file', $pdf));
+    });
+
+    it('invites to open a proof with a verb, not a status', function (): void {
+        app()->setLocale('fr_BE');
+        $report = ExpenseReport::factory()->create();
+        $report->files()->create(['path' => 'a', 'original_name' => 'ticket.jpg', 'mime_type' => 'image/jpeg', 'size' => 1, 'sha256' => str_repeat('a', 64)]);
+
+        Livewire::actingAs(expenseTreasurer())
+            ->test(TREASURY_EXPENSES)
+            ->call('show', $report->id)
+            ->assertSee('Ouvrir')
+            ->assertDontSee('Ouvert');
     });
 
     it('masks the IBAN from whoever does not wire refunds', function (): void {

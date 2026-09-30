@@ -122,13 +122,13 @@ enum Role: string
     {
         return match ($this) {
             self::ACCESS => __('Hand out the délégations and the committee seat. Does not open the member file itself.'),
-            self::ACCOUNTS_AUDIT => __('Read the whole treasury to audit the accounts, without changing anything.'),
+            self::ACCOUNTS_AUDIT => __('Read the whole treasury and the financial report to audit the accounts, without changing anything.'),
             self::EXPENSE_REPORTS => __('Accept or reject the members\' expense reports, as a backup to the treasurer.'),
             self::ADMINISTRATOR => __('Unrestricted access to the whole application.'),
             self::ATTESTATIONS => __('Issue the mutual-insurer attestations, and hold the club seal and the signature they carry.'),
             self::COMMITTEE => __('Baseline back-office access: consult the club data without managing it.'),
-            self::TREASURY => __('Reconcile payments, import bank statements, handle refunds.'),
-            self::CASH_REGISTER => __('Hold and balance the cash register, record movements.'),
+            self::TREASURY => __('Reconcile payments, import bank statements, handle refunds, file supporting documents, present the financial report.'),
+            self::CASH_REGISTER => __('Hold and balance the cash register, record movements and their supporting documents.'),
             self::FINES => __('Issue and cancel disciplinary fines.'),
             self::MEMBERS => __('Create and update members, handle affiliations and enrolments.'),
             self::CONTACTS => __('Handle incoming leads, reply templates and spam.'),
@@ -257,6 +257,7 @@ enum Role: string
                 Permission::SeasonsView,
                 Permission::FacilitiesView,
                 Permission::BarStatsView,
+                Permission::FinancialReportView,
                 // Writing to the club is a committee duty, not a délégation
                 // (decided 2026-09-27).
                 Permission::CommunicationsSend,
@@ -273,6 +274,7 @@ enum Role: string
                 Permission::FinesView,
                 Permission::CashRegisterView,
                 Permission::SubscriptionsView,
+                Permission::FinancialReportView,
             ],
 
             // A backup decider, so the treasurer's own reports find someone to
@@ -292,6 +294,8 @@ enum Role: string
                 Permission::TransactionsView,
                 Permission::TransactionsImport,
                 Permission::TransactionsDelete,
+                Permission::SupportingDocumentsManage,
+                Permission::FinancialReportView,
             ],
 
             self::CASH_REGISTER => [

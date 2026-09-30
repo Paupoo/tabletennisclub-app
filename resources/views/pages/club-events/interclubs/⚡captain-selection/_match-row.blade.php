@@ -10,6 +10,7 @@
 --}}
 @php
     $isPast = $ic['is_past'];
+    $isBye = $ic['is_bye'] ?? false;
     $avCount = $ic['available_count'];
 
     [$statusBarColor, $statusLabel] = match ($ic['status']) {
@@ -21,6 +22,7 @@
         'actionable' => ['bg-warning', __('Ready to compose')],
         'urgent' => ['bg-error', __('Needs attention')],
         'past' => ['bg-base-300', __('Played')],
+        'bye' => ['bg-base-300', __('Bye')],
         default => ['bg-base-300', __('Upcoming')],
     };
 @endphp
@@ -56,12 +58,17 @@
 
             <div class="min-w-0 flex-1">
                 <div class="flex min-w-0 items-center gap-1.5">
-                    @if ($ic['is_home'])
+                    @if ($isBye)
+                        <x-badge class="badge-ghost badge-sm shrink-0 border border-base-300 font-bold" value="{{ __('Bye') }}" />
+                        <span class="truncate text-sm text-base-content/70">{{ __('No match scheduled this week for your team') }}</span>
+                    @elseif ($ic['is_home'])
                         <x-badge class="badge-neutral badge-sm shrink-0 font-bold" value="{{ __('Home') }}" />
                     @else
                         <x-badge class="badge-ghost badge-sm shrink-0 border border-base-300 font-bold" value="{{ __('Away') }}" />
                     @endif
-                    <span class="truncate text-sm font-bold">{{ $ic['opponent'] }}</span>
+                    @if (! $isBye)
+                        <span class="truncate text-sm font-bold">{{ $ic['opponent'] }}</span>
+                    @endif
                 </div>
                 {{-- Le statut en phrase, pas en marge droite : « 3/4 dispo » se
                      déchiffre là où une phrase se lit.
@@ -70,6 +77,9 @@
                      répondu dispo », ce qui n'est pas ce que ça disait. Le
                      sondage et la capacité à composer sont deux questions, donc
                      deux nombres. --}}
+                {{-- Un bye n'a ni heure ni sondage : sa date n'est qu'inférée du
+                     reste de la division, et personne n'a à répondre. --}}
+                @if (! $isBye)
                 <div class="mt-1 text-sm text-base-content/70">
                     <span class="tabular-nums">{{ $ic['time'] }}</span>
                     @if ($mode === 'day')
@@ -91,7 +101,8 @@
                         @endif
                     @endif
                 </div>
-                @if (($isPast || ! $ic['may_compose']) && ! empty($ic['selected_player_names']))
+                @endif
+                @if (! $isBye && ($isPast || ! $ic['may_compose']) && ! empty($ic['selected_player_names']))
                     <div class="mt-1 text-sm text-base-content/60">
                         {{ implode(', ', $ic['selected_player_names']) }}
                     </div>
@@ -100,8 +111,9 @@
         </div>
 
         {{-- Une action nommée, le reste derrière un menu nommé : la règle de
-             row-menu, appliquée par 9 pages index. --}}
-        @if (! $isPast && $ic['may_compose'] && $ic['awaits_sending'])
+             row-menu, appliquée par 9 pages index. Un bye n'en porte aucune. --}}
+        @if ($isBye)
+        @elseif (! $isPast && $ic['may_compose'] && $ic['awaits_sending'])
             {{-- Composée, pas envoyée : l'action qui reste est « envoyer », et
                  composer passe dans le menu (problème 8, piste B1). --}}
             <div class="shrink-0">

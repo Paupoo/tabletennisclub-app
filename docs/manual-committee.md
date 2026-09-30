@@ -154,7 +154,7 @@ Some templates **automatically apply a status** to the contact when sent (e.g. t
 Go to **Website → Email templates** (managing group only). Create and edit your reply templates freely, without depending on a developer:
 
 - **Name**, **key**, **subject**, **body**
-- **Variables** to insert in subject/body: `{{first_name}}`, `{{last_name}}`, `{{full_name}}`, `{{interest}}`, `{{club_name}}`
+- **Variables**: in the body, **Insert a variable** adds a pill (First name, Last name, Full name, Interest, Club name) that is inserted and deleted in one piece; in the subject, type `{{first_name}}`, `{{last_name}}`, `{{full_name}}`, `{{interest}}` or `{{club_name}}`. An unknown variable stays visible as its own pill, so a typo shows before sending
 - **Applied status** (optional): status given to the contact when the template is sent
 - **Information questionnaire**: marks templates meant to *gather* missing information
 - **Active/inactive**: an inactive template no longer appears in the send list
@@ -276,7 +276,12 @@ Add agenda items to the meeting. Agenda is visible to all invited members.
 
 ### Minutes
 
-After the meeting, add meeting minutes (free text). Click **Send minutes** to email minutes to all attendees.
+Write the minutes from the meeting page (**Write the minutes**), live during the meeting: one block per agenda point — what was said, the decisions (type, then Enter; numbered D1, D2… across the minutes) and the actions (type, then Enter; then who and when) — plus a block for what came up outside the agenda. Attendance is checked in at the top: every confirmed member at once, then corrections name by name, and a member who came without being on the list is added by search. **Mark discussed** closes a point and opens the next. Everything is saved as you go; **Preview** shows the minutes and their PDF before you **Publish** them once the meeting is over. A change made after sending shows as "Corrected on …".
+
+- **Send to committee** mails them to the committee — the usual first step, to read them over.
+- **Send to all members** exists for a **general assembly only**: a committee meeting's minutes never leave the committee, since they can name a member in debt or a conflict. Sending to all is also what opens a general assembly's minutes to every active member.
+
+The mail is short — the decisions, the reader's own actions, a **Read the minutes** button — and carries the minutes as a PDF. The reading page puts decisions and actions first; the member an action is assigned to ticks it done there. **Download PDF** renders the minutes as they stand at that moment.
 
 ### Action items
 
@@ -327,7 +332,9 @@ Go to **Website** in the navigation.
 ### Articles (news)
 
 Create and edit news articles published on the public club website:
-- Title, content (rich text), featured image
+- Title, content, featured image
+- The content is written as it will look: the toolbar sets headings, bold, italic, links, lists and quotes — no syntax to learn
+- **Images in the text**: the image button, a drag and drop or a paste; the image is shrunk before upload, and you are asked to **describe it** (read aloud to visitors who cannot see it) before it is inserted. An image removed from the text is deleted from the server after a week
 - Publish immediately or save as draft
 - Set a "featured until" date for pinned articles
 
@@ -384,23 +391,38 @@ The force list ranks competitive players by strength for interclub team selectio
 
 ## 10. Treasury
 
+### Financial report
+
+Go to **Treasury → Financial report**, first in the menu. The committee, the accounts auditors and the treasury read there, for one **financial year** at a time, everything the club received and spent: what the website accounts for (fees, trainings, tournaments, bar) and what the treasury justified with supporting documents. Eight tiles (income, expenses and result compared with the year before, share of movements accounted for, members who still owe money, money still expected, money the club still owes, treasury held per account and till), month-by-month and per-poste charts, and the internal movements.
+
+The financial year starts in the month set in **Club Settings → Informations** (January by default); money counts on the day it moves, never on the invoice date.
+
+The **Documents & exports** tab lists the year's supporting documents, expense reports and website payments, and **exports the year**: a printable PDF (journal of every bank and cash movement, then each document and expense report with its proofs) or a ZIP with the original files. The report itself, already shown on the **Overview** tab, only joins them when **Include the financial report** is ticked. Downloading a year's ZIP **archives its paid expense reports** — when the treasury downloads it, or a committee member who also decides on expense reports. The help article *Lire le rapport financier* has the detail.
+
 ### Payments
 
 Go to **Treasury → Payments**. View all member payments (tournament registrations, training packs, affiliations):
 - Filter by status: pending, paid, partially paid, refunded
 - Click a payment to view details and mark as paid
 
-### Transactions
+### Bank transactions
 
-Go to **Treasury → Transactions**. Record bank transactions (from your bank statement):
-- Add a transaction (amount, date, communication reference, payer)
-- Reconcile: match transactions to pending payments
+Go to **Treasury → Bank transactions**. Import the bank statements (both CBC exports are read as they are), then close each line:
+- **reconcile** it with the website payments it pays or refunds;
+- **justify** it with a supporting document when the website does not know it (hall rental, balls, a subsidy, bank fees);
+- **write off** a residue the club keeps.
+
+The club can have **several accounts** (current, savings): an unknown account number is **asked about** before anything is imported. Transfers between the club's own accounts are recognised at import and marked **internal**: neither income nor expense. The **To process** filter shows what is left to do; the **Bank account** filter shows one account at a time. Help articles: *Importer et gérer les extraits bancaires*, *Rapprocher les paiements avec la banque*.
+
+### Supporting documents
+
+Go to **Treasury → Supporting documents**. Every invoice, ticket or letter behind money the website does not see: date, amount, category (the category says whether it is an expense or an income), counterparty, label and at least one file; a reference such as **P-2026-0042** is given. A document linked to nothing is **to settle** — a debt of the club, or money still expected; linked to a bank line or a cash movement, it is **settled**. The **Treasury** délégation files and links documents; the **Cash register** délégation files the tickets paid from the till, from the cash register screen; the committee and the auditors read. Depositing the till at the bank (or withdrawing a float) is linked from the cash register screen: both movements become internal. Help article: *Classer les pièces justificatives*.
 
 ### Expense reports
 
 Go to **Treasury → Expense reports**. Adult members declare there what they paid for the club, with their proofs. The whole committee **reads** the reports; **accepting** them (possibly for a lower amount, with a reason) or **rejecting** them (reason required) belongs to the **Treasury** délégation, the **Expense reports** délégation (the treasurer's backup) and the administrators, and **nobody decides on their own report**. An accepted report becomes an ordinary refund in **Payments → To refund**; it turns "paid" when the debit is reconciled.
 
-**Export** prepares in the background a printable PDF or a ZIP (CSV + original proofs) of what the screen shows. A quarterly reminder asks the treasury to archive the paid reports. The accounts auditors are given the **Accounts audit** délégation: the whole treasury, read-only. The detail lives in the help articles *Traiter les notes de frais* and *Vérifier les notes de frais*.
+The export moved to the **financial report** (**Export from the financial report**), for a whole financial year. Archiving the paid reports — by downloading that year's ZIP — is the job of the treasury and the committee: the **Expense reports** délégation alone does not open the financial report, so the treasurer's backup decides on reports but neither exports nor archives them. A reminder every quarter of the financial year, and on the 5th of the month after it closes, asks for the archiving. The accounts auditors are given the **Accounts audit** délégation: the whole treasury and the financial report, read-only. The detail lives in the help articles *Traiter les notes de frais*, *Vérifier les notes de frais* and *Lire le rapport financier*.
 
 ### Cash register (bar)
 
@@ -457,13 +479,13 @@ As a committee member, the following emails are sent automatically — you do no
 | Training session cancelled | Enrolled members |
 | Meeting invitation | Invited members |
 | Meeting RSVP confirmation | Member |
-| Meeting minutes | All attendees |
+| Meeting minutes | The committee; every active member for a general assembly sent to all |
 | Meeting cancelled/postponed | All invited members |
 | Refund requested | Admin |
 | Expense report accepted, rejected (with reason) or paid | The report's author |
 | New expense report (bell only) | Treasury and Expense reports délégations, except the author |
 | Digest of expense reports waiting (Sunday 19:00) | Treasury and Expense reports délégations |
-| Paid expense reports to archive (quarterly, and on 5 January) | Treasury and Expense reports délégation |
+| Paid expense reports to archive (every quarter of the financial year, and on the 5th of the month after it closes) | Who can decide on or refund expense reports **and** open the financial report: the Treasury délégation, administrators |
 
 ---
 
@@ -519,6 +541,6 @@ The screen answers "who must I write to, without forgetting anyone and without w
 
 ### Writing from the application
 
-Write in markdown with the preview; **Insert** an invitation (tournament, pack, meeting) to add a block with a "Register" link. That link leads to a "For whom?" page: a parent picks their child and lands on their registrations. **Send me a test** sends it to you alone.
+Write the message as it will look (toolbar for headings, bold, lists, links); **Insert** an invitation (tournament, pack, meeting) to add a block with a "Register" link. That link leads to a "For whom?" page: a parent picks their child and lands on their registrations. **Send me a test** sends it to you alone.
 
 The message is sent from the club; replies go to the chosen address (yours by default). Each address gets its own message, 15 per minute. The communication's page follows the progress, lists the failures and retries them; **Write it again** starts from the same text and filters. Addresses are deleted after two seasons; the message is kept.

@@ -33,7 +33,9 @@ class GenerateFinancialExport implements ShouldQueue
     {
         $export = FinancialExport::with('requester')->find($this->exportId);
 
-        if ($export === null) {
+        // A failure that lands after the file was built (a worker killed on
+        // its way out, say) must not throw away an export already handed out.
+        if ($export === null || $export->status !== 'pending') {
             return;
         }
 
@@ -60,6 +62,9 @@ class GenerateFinancialExport implements ShouldQueue
             'expires_at' => now()->addDays(FinancialExport::KEPT_FOR_DAYS),
         ]);
 
-        $export->requester->notify(new FinancialExportReadyNotification($export));
+        // The file is built and downloadable from the tab: a notice that
+        // cannot leave (mail down, a worker older than the download route) is
+        // reported, never a reason to mark the export failed.
+        rescue(fn () => $export->requester->notify(new FinancialExportReadyNotification($export)));
     }
 }

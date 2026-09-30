@@ -20,6 +20,7 @@ use App\Domains\Shared\Enums\IncomeCategory;
 use App\Domains\Shared\Enums\Role;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -322,6 +323,33 @@ describe('telling the requester', function (): void {
         $mail = new FinancialExportReadyNotification($export)->toMail($requester);
         expect($mail->actionUrl)->toBe(route('admin.treasury.exports.download', $export))
             ->and((string) $mail->subject)->toContain('2026');
+    });
+
+    /*
+     * Seen on a dev machine: a queue worker started before the download route
+     * existed could not build the mail's link, and a file already written was
+     * thrown away as "failed". A notice that cannot leave is no reason to lose it.
+     */
+    it('keeps a built export ready when its notice cannot be sent', function (): void {
+        $requester = fxTreasurer();
+        Notification::shouldReceive('send')->andThrow(new RuntimeException('Route not defined'));
+        $exceptions = Exceptions::fake();
+
+        $export = fxRun($requester, 'pdf');
+
+        expect($export->status)->toBe('ready')
+            ->and(Storage::disk('local')->exists($export->path))->toBeTrue();
+        $exceptions->assertReported(RuntimeException::class);
+    });
+
+    it('never turns a ready export into a failed one', function (): void {
+        $requester = fxTreasurer();
+        $export = fxRun($requester, 'pdf');
+
+        new GenerateFinancialExport($export->id)->failed(new RuntimeException('late failure'));
+
+        expect($export->refresh()->status)->toBe('ready');
+        Notification::assertNotSentTo($requester, FinancialExportFailedNotification::class);
     });
 
     it('marks a failed export and says so, instead of leaving the requester waiting', function (): void {

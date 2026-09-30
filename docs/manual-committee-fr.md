@@ -391,7 +391,7 @@ Allez dans **Trésorerie → Rapport financier**, en tête du menu. Le comité, 
 
 L'exercice commence le mois fixé dans **Paramètres du club → Informations** (janvier par défaut) ; l'argent compte le jour où il bouge, jamais à la date de la facture.
 
-L'onglet **Pièces & exports** liste les pièces justificatives, les notes de frais et les paiements du site de l'exercice, et **exporte l'exercice** : un PDF imprimable (rapport, journal de tous les mouvements de banque et de caisse, puis chaque pièce et chaque note de frais avec ses justificatifs) ou un ZIP avec les fichiers originaux. Télécharger le ZIP d'un exercice **archive ses notes de frais payées** — quand c'est la trésorerie qui le télécharge, ou un membre du comité qui traite aussi les notes de frais. Le détail est dans l'article d'aide *Lire le rapport financier*.
+L'onglet **Pièces & exports** liste les pièces justificatives, les notes de frais et les paiements du site de l'exercice, et **exporte l'exercice** : un PDF imprimable (journal de tous les mouvements de banque et de caisse, puis chaque pièce et chaque note de frais avec ses justificatifs) ou un ZIP avec les fichiers originaux. Le rapport lui-même, déjà affiché dans l'onglet **Vue d'ensemble**, n'y entre que si l'on coche **Inclure le rapport financier**. Télécharger le ZIP d'un exercice **archive ses notes de frais payées** — quand c'est la trésorerie qui le télécharge, ou un membre du comité qui traite aussi les notes de frais. Le détail est dans l'article d'aide *Lire le rapport financier*.
 
 ### Paiements
 

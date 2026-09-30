@@ -11,6 +11,12 @@
 
 @include('financial-export.styles')
 
+@if (($heading ?? []) !== [])
+    {{-- No report in front: the journal opens the file and says whose it is. --}}
+    <h1>{{ $heading['clubName'] }} — {{ __('Pieces') }} {{ $yearLabel }}</h1>
+    <div class="meta">{{ __('Exported on :date by :name', ['date' => $heading['exportedAt']->format('d/m/Y H:i'), 'name' => $heading['exportedBy']]) }}</div>
+@endif
+
 <h2>{{ __('Journal of :year', ['year' => $yearLabel]) }}</h2>
 <p class="caption">{{ trans_choice(':count movement|:count movements', count($journal)) }}@if ($filters !== []) · {{ implode(' · ', $filters) }}@endif</p>
 

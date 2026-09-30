@@ -380,12 +380,13 @@
 
         {{-- ── Documents & exports ────────────────────────────────────────── --}}
         <x-tab name="pieces" :label="__('Documents & exports')" icon="o-document-duplicate">
-            {{-- The export of the year — a PDF for the assembly, a ZIP of the
-                 originals for the archive — above the lists it will contain.
+            {{-- The export of the year — a PDF to read, a ZIP of the originals
+                 for the archive — above the lists it will contain. The report,
+                 already on the overview tab, comes on request.
                  Prepared in the background; the link arrives by mail, in the
                  bell and under « Mes exports ». --}}
             <x-card :title="__('Export :year', ['year' => $yearLabel])" class="mb-6 shadow-sm" separator data-print-hide data-export-form>
-                <p class="mb-4 text-sm text-muted">{{ __('The PDF holds the report, the journal of every bank and cash movement, then each supporting document and expense report with its proofs printed in. The ZIP holds the same report and journal, plus the original files of every piece.') }}</p>
+                <p class="mb-4 text-sm text-muted">{{ __('The export holds the journal of every bank and cash movement and each supporting document and expense report: printed in the PDF, as original files in the ZIP.') }}</p>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <x-select :label="__('Poste')" wire:model="exportPoste" :options="$this->posteOptions()"
                         :placeholder="__('Every poste')" />
@@ -395,6 +396,8 @@
                             :options="array_map(fn ($scope) => ['id' => $scope->value, 'name' => $scope->label()], $scopes)" />
                     @endif
                 </div>
+                <x-checkbox :label="__('Include the financial report')" wire:model="exportIncludesReport" class="mt-4"
+                    :hint="__('Tiles, charts and poste tables, as on the overview tab, in front of the file.')" />
                 <div class="mt-4 flex flex-wrap gap-2">
                     <x-button :label="__('Printable PDF')" icon="o-printer" class="btn-primary btn-sm" wire:click="export('pdf')" spinner="export" />
                     <x-button :label="__('ZIP archive (originals)')" icon="o-archive-box-arrow-down" class="btn-sm" wire:click="export('zip')" spinner="export" />

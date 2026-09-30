@@ -9,6 +9,7 @@ erDiagram
         int fiscal_year "nullable"
         string poste "nullable"
         FinancialExportScope scope
+        bool include_report
         list<int> report_ids
         string status
         string path "nullable"

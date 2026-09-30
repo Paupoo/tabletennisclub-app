@@ -31,6 +31,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $fiscal_year
  * @property string|null $poste
  * @property FinancialExportScope $scope
+ * @property bool $include_report
  * @property list<int> $report_ids
  * @property string $status
  * @property string|null $path
@@ -50,6 +51,7 @@ class FinancialExport extends Model
     protected $casts = [
         'fiscal_year' => 'integer',
         'scope' => FinancialExportScope::class,
+        'include_report' => 'boolean',
         'report_ids' => 'array',
         'expires_at' => 'datetime',
     ];
@@ -60,6 +62,7 @@ class FinancialExport extends Model
         'fiscal_year',
         'poste',
         'scope',
+        'include_report',
         'report_ids',
         'status',
         'path',
@@ -68,12 +71,17 @@ class FinancialExport extends Model
 
     /**
      * The name the file is downloaded under: the year it covers, so that two
-     * years side by side in a folder never get mixed up.
+     * years side by side in a folder never get mixed up, and whether the
+     * report opens it or only the pieces are in.
      */
     public function downloadName(): string
     {
         $year = $this->year();
-        $base = $year === null ? 'notes-de-frais' : 'rapport-financier-' . $year->label();
+        $base = match (true) {
+            $year === null => 'notes-de-frais',
+            $this->include_report => 'rapport-financier-' . $year->label(),
+            default => 'pieces-' . $year->label(),
+        };
 
         return $base . '.' . $this->format;
     }
@@ -112,6 +120,7 @@ class FinancialExport extends Model
             __('Financial year :year', ['year' => $year->label()]),
             $this->poste === null ? null : FinancialReport::posteLabel($this->poste),
             $this->scope === FinancialExportScope::All ? null : $this->scope->label(),
+            $this->include_report ? __('With the report') : null,
         ]));
     }
 

@@ -28,12 +28,14 @@ use ZipArchive;
  * Turns a financial year into what the general assembly reads and what the
  * club keeps.
  *
- * The PDF is for reading: the report (tiles, charts, postes), the journal of
- * every movement, then a page per supporting document and per expense report
- * with its proofs printed in. The ZIP is the archive: the same report and
- * journal, the journal as a spreadsheet, and every original file untouched —
- * `pieces/P-2026-0042 — AFTT/…` and the expense reports' tree under
- * `notes-de-frais/`, as their export always laid it out.
+ * The PDF is for reading: the journal of every movement, then a page per
+ * supporting document and per expense report with its proofs printed in. The
+ * ZIP is the archive: the journal as a spreadsheet, and every original file
+ * untouched — `pieces/P-2026-0042 — AFTT/…` and the expense reports' tree
+ * under `notes-de-frais/`, as their export always laid it out.
+ *
+ * The report (tiles, charts, postes) is already on the overview tab: it only
+ * opens the PDF, or joins the ZIP as `rapport-financier.pdf`, when asked for.
  */
 final class FinancialExporter
 {
@@ -61,7 +63,7 @@ final class FinancialExporter
         if ($this->export->isZip()) {
             $this->writeZip($disk->path($path), $report, $pieces, $expenseReports);
         } else {
-            $disk->put($path, $this->pdf($report, $pieces, $expenseReports, withPieces: true));
+            $disk->put($path, $this->pdf($report, $pieces, $expenseReports, withReport: $this->export->include_report, withPieces: true));
         }
 
         return $path;
@@ -173,7 +175,7 @@ final class FinancialExporter
     /**
      * @param  Collection<int, ExpenseReport>  $expenseReports
      */
-    private function pdf(FinancialReport $report, YearPieces $pieces, Collection $expenseReports, bool $withPieces): string
+    private function pdf(FinancialReport $report, YearPieces $pieces, Collection $expenseReports, bool $withReport, bool $withPieces): string
     {
         $mpdf = $this->newPdf();
         $meta = [
@@ -184,22 +186,35 @@ final class FinancialExporter
         ];
         $figures = FinancialReportFigures::of($report, FinancialReport::previousFor($report->year()), new FinancialPosition);
 
-        $mpdf->WriteHTML(View::make('financial-export.report', [...$figures, ...$meta])->render());
+        if ($withReport) {
+            $mpdf->WriteHTML(View::make('financial-export.report', [...$figures, ...$meta])->render());
+        }
+
+        // Without the report, the journal opens the file and carries the
+        // heading the report would have: whose accounts, when, by whom.
+        $heading = $withReport ? [] : $meta;
 
         // The journal goes in slices: mPDF's parser chokes on a single
         // string of several hundred rows.
         foreach (array_chunk($pieces->journal(), 150) as $index => $rows) {
-            $mpdf->AddPage();
+            if ($withReport || $index > 0) {
+                $mpdf->AddPage();
+            }
+
             $mpdf->WriteHTML(View::make('financial-export.journal', [
                 'journal' => $rows,
                 'yearLabel' => $figures['yearLabel'],
                 'filters' => $index === 0 ? $meta['filters'] : [],
+                'heading' => $index === 0 ? $heading : [],
             ])->render());
         }
 
         if ($pieces->journal() === []) {
-            $mpdf->AddPage();
-            $mpdf->WriteHTML(View::make('financial-export.journal', ['journal' => [], 'yearLabel' => $figures['yearLabel'], 'filters' => $meta['filters']])->render());
+            if ($withReport) {
+                $mpdf->AddPage();
+            }
+
+            $mpdf->WriteHTML(View::make('financial-export.journal', ['journal' => [], 'yearLabel' => $figures['yearLabel'], 'filters' => $meta['filters'], 'heading' => $heading])->render());
         }
 
         if ($withPieces) {
@@ -234,7 +249,10 @@ final class FinancialExporter
 
         $disk = Storage::disk('local');
 
-        $zip->addFromString('rapport-financier.pdf', $this->pdf($report, $pieces, $expenseReports, withPieces: false));
+        if ($this->export->include_report) {
+            $zip->addFromString('rapport-financier.pdf', $this->pdf($report, $pieces, $expenseReports, withReport: true, withPieces: false));
+        }
+
         $zip->addFromString('journal.csv', $this->csv($pieces->journal()));
 
         foreach ($pieces->documents() as $document) {

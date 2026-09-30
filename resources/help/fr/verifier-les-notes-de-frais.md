@@ -49,7 +49,7 @@ Dans le tiroir **Filtres**, choisissez l'**Exercice**. Seules les notes payées 
 
 ## Exporter
 
-L'export ne se fait plus depuis cet écran, mais pour tout un exercice depuis le **rapport financier** : **Exporter depuis le rapport financier** vous y mène. Le **PDF imprimable** contient le rapport, le journal de tous les mouvements, puis une page par pièce justificative et par note de frais, avec ses justificatifs imprimés ; l'**archive ZIP** contient les fichiers originaux, intacts. Vous pouvez limiter l'export aux seules notes de frais.
+L'export ne se fait plus depuis cet écran, mais pour tout un exercice depuis le **rapport financier** : **Exporter depuis le rapport financier** vous y mène. Le **PDF imprimable** contient le journal de tous les mouvements (le rapport financier en tête si vous le demandez), puis une page par pièce justificative et par note de frais, avec ses justificatifs imprimés ; l'**archive ZIP** contient les fichiers originaux, intacts. Vous pouvez limiter l'export aux seules notes de frais.
 
 Télécharger le ZIP en tant que vérificateur **n'archive rien** : l'archivage revient à la trésorerie. Tout est expliqué dans [Lire le rapport financier](lire-le-rapport-financier).
 

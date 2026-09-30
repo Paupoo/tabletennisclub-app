@@ -60,10 +60,12 @@ Le second onglet liste tout ce qui fonde les chiffres de l'exercice : les **pi�
 
 C'est aussi là que l'on **exporte** l'exercice :
 
-- **PDF imprimable** : le rapport, le journal de tous les mouvements (banque et caisses), puis chaque pièce et chaque note de frais avec ses justificatifs imprimés. C'est le document à remettre aux vérificateurs.
-- **Archive ZIP (originaux)** : le même rapport, le journal en tableur (CSV, pour Excel), et les **fichiers originaux** de chaque pièce et de chaque note de frais, intacts.
+- **PDF imprimable** : le journal de tous les mouvements (banque et caisses), puis chaque pièce et chaque note de frais avec ses justificatifs imprimés. C'est le document à remettre aux vérificateurs.
+- **Archive ZIP (originaux)** : le journal en tableur (CSV, pour Excel) et les **fichiers originaux** de chaque pièce et de chaque note de frais, intacts.
 
-Avant d'exporter, vous pouvez limiter l'export à un **poste**, ou aux seules pièces ou seules notes de frais.
+Le rapport lui-même (tuiles, graphiques, tableaux par poste) est déjà dans l'onglet **Vue d'ensemble** : il n'entre dans l'export que si vous cochez **Inclure le rapport financier**. Il ouvre alors le PDF, et rejoint le ZIP sous le nom `rapport-financier.pdf`. Pour l'assemblée générale, cochez-le.
+
+Avant d'exporter, vous pouvez aussi limiter l'export à un **poste**, ou aux seules pièces ou seules notes de frais.
 
 L'export se prépare en arrière-plan. Quand il est prêt, vous recevez un **e-mail** avec le lien, la **cloche** le signale, et **Mes exports** affiche un bouton **Télécharger**. Le lien n'est valable que **7 jours** et seulement pour vous ; ensuite, relancez l'export.
 

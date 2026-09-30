@@ -226,7 +226,7 @@ Détail colonne par colonne : [erd/clubadmin-payment.md](erd/clubadmin-payment.m
 - Pivots sans montant : une pièce peut couvrir plusieurs mouvements et inversement ; un mouvement lié à plusieurs catégories est réparti au prorata des pièces
 
 #### `financial_exports` (anciennement `expense_report_exports`)
-- `requested_by`, `format` (pdf/zip), `fiscal_year`, `poste`, `scope` (documents et notes de frais / pièces seules / notes seules), `status`, `path`, `expires_at` (7 jours)
+- `requested_by`, `format` (pdf/zip), `fiscal_year`, `poste`, `scope` (documents et notes de frais / pièces seules / notes seules), `include_report` (rapport financier en tête, sur demande), `status`, `path`, `expires_at` (7 jours)
 - Purgé par `financial-exports:prune`
 
 #### `registrations` (Inscriptions à des événements payants)

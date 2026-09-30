@@ -163,8 +163,21 @@ describe('asking for an export', function (): void {
 
     it('tells the reader what each file will hold', function (): void {
         fxReportTab(fxTreasurer())
-            ->assertSee('Le PDF contient le rapport, le journal de tous les mouvements (banque et caisses), puis chaque pièce justificative et note de frais avec ses justificatifs imprimés.')
-            ->assertSee('Le ZIP contient le même rapport et le même journal, plus les fichiers originaux de chaque pièce.');
+            ->assertSee("L'export contient le journal de tous les mouvements (banque et caisses) et chaque pièce justificative et note de frais\u{00A0}: imprimées dans le PDF, en fichiers originaux dans le ZIP.")
+            ->assertSee('Inclure le rapport financier');
+    });
+
+    /*
+     * The report is already on the other tab: asked for every time, it
+     * padded every archive with pages nobody opened. It comes on request.
+     */
+    it('leaves the report out unless asked for', function (): void {
+        Queue::fake();
+
+        fxReportTab(fxTreasurer())->call('export', 'zip');
+        fxReportTab(fxTreasurer())->set('exportIncludesReport', true)->call('export', 'pdf');
+
+        expect(FinancialExport::query()->orderBy('id')->pluck('include_report')->all())->toBe([false, true]);
     });
 
     it('lets whoever reads the report export', function (Role $role): void {
@@ -207,7 +220,7 @@ describe('what the ZIP holds', function (): void {
         $report = fxPaidReport('Balles Nittaku', 'TICKET-ORIGINAL');
         $requester = User::factory()->isCommitteeMember()->create();
 
-        $export = fxRun($requester, 'zip');
+        $export = fxRun($requester, 'zip', ['include_report' => true]);
         $entries = fxZipEntries($export);
         $piece = sprintf('pieces/P-2026-%04d — AFTT/facture.jpg', $document->id);
         $folder = "notes-de-frais/2026-09-12_Dupont-Jean_42,50€_#{$report->id}/";
@@ -222,6 +235,16 @@ describe('what the ZIP holds', function (): void {
             ->and($export->report_ids)->toBe([$report->id]);
 
         Notification::assertSentTo($requester, FinancialExportReadyNotification::class);
+    });
+
+    it('holds the report only when asked for, the journal always', function (): void {
+        fxDocument('AFTT', 350.0, '2026-02-10', ExpenseCategory::Federation);
+
+        $without = array_keys(fxZipEntries(fxRun(fxTreasurer(), 'zip')));
+        $with = array_keys(fxZipEntries(fxRun(fxTreasurer(), 'zip', ['include_report' => true])));
+
+        expect($without)->toContain('journal.csv')->not->toContain('rapport-financier.pdf')
+            ->and($with)->toContain('journal.csv', 'rapport-financier.pdf');
     });
 
     it('writes a journal Excel opens: byte-order mark, semicolons, decimal commas', function (): void {
@@ -267,12 +290,23 @@ describe('what the PDF holds', function (): void {
         fxDocument('AFTT', 350.0, '2026-02-10', ExpenseCategory::Federation, 'not-really-a-jpeg');
         fxPaidReport('Balles Nittaku', 'not-really-a-jpeg');
 
-        $export = fxRun(User::factory()->isCommitteeMember()->create(), 'pdf');
+        $export = fxRun(User::factory()->isCommitteeMember()->create(), 'pdf', ['include_report' => true]);
         $printed = (string) Storage::disk('local')->get((string) $export->path);
 
         expect($export->status)->toBe('ready')
             ->and($printed)->toStartWith('%PDF')
             ->and(preg_match_all('#/Type\s*/Page[^s]#', $printed))->toBeGreaterThanOrEqual(4);
+    });
+
+    it('prints the report\'s pages only when asked for', function (): void {
+        fxDocument('AFTT', 350.0, '2026-02-10', ExpenseCategory::Federation);
+        $pages = fn (FinancialExport $export): int => (int) preg_match_all('#/Type\s*/Page[^s]#', (string) Storage::disk('local')->get((string) $export->path));
+
+        $without = fxRun(fxTreasurer(), 'pdf');
+        $with = fxRun(fxTreasurer(), 'pdf', ['include_report' => true]);
+
+        expect($without->status)->toBe('ready')
+            ->and($pages($with))->toBeGreaterThan($pages($without));
     });
 
     it('prints the pages of a PDF proof, and falls back on a note for a broken one', function (): void {
@@ -295,12 +329,16 @@ describe('what the PDF holds', function (): void {
         Club::forgetOwnClub();
         $requester = fxTreasurer();
 
-        $export = fxRun($requester, 'pdf', ['fiscal_year' => 2025]);
+        $export = fxRun($requester, 'pdf', ['fiscal_year' => 2025, 'include_report' => true]);
+        $pieces = fxRun($requester, 'zip', ['fiscal_year' => 2025]);
 
         $this->actingAs($requester)
             ->get(route('admin.treasury.exports.download', $export))
             ->assertOk()
             ->assertDownload('rapport-financier-2025-2026.pdf');
+        $this->get(route('admin.treasury.exports.download', $pieces))
+            ->assertOk()
+            ->assertDownload('pieces-2025-2026.zip');
     });
 });
 
@@ -391,17 +429,17 @@ describe('telling the requester', function (): void {
             ->assertSeeHtml('wire:poll');
     });
 
-    it('builds a failed export again with the same year, poste and pieces', function (): void {
+    it('builds a failed export again with the same year, poste, pieces and report', function (): void {
         Queue::fake();
         $requester = fxTreasurer();
-        $failed = FinancialExport::create(['requested_by' => $requester->id, 'format' => 'zip', 'fiscal_year' => 2025, 'poste' => 'expense:hall', 'scope' => 'documents', 'report_ids' => [], 'status' => 'failed']);
+        $failed = FinancialExport::create(['requested_by' => $requester->id, 'format' => 'zip', 'fiscal_year' => 2025, 'poste' => 'expense:hall', 'scope' => 'documents', 'include_report' => true, 'report_ids' => [], 'status' => 'failed']);
 
         fxReportTab($requester)->call('retryExport', $failed->id);
 
         $retry = FinancialExport::latest('id')->first();
         expect($retry->id)->not->toBe($failed->id)
-            ->and([$retry->format, $retry->fiscal_year, $retry->poste, $retry->scope, $retry->status])
-            ->toBe(['zip', 2025, 'expense:hall', FinancialExportScope::Documents, 'pending']);
+            ->and([$retry->format, $retry->fiscal_year, $retry->poste, $retry->scope, $retry->include_report, $retry->status])
+            ->toBe(['zip', 2025, 'expense:hall', FinancialExportScope::Documents, true, 'pending']);
         Queue::assertPushed(GenerateFinancialExport::class);
     });
 

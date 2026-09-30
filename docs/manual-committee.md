@@ -390,7 +390,7 @@ Go to **Treasury → Financial report**, first in the menu. The committee, the a
 
 The financial year starts in the month set in **Club Settings → Informations** (January by default); money counts on the day it moves, never on the invoice date.
 
-The **Documents & exports** tab lists the year's supporting documents, expense reports and website payments, and **exports the year**: a printable PDF (report, journal of every bank and cash movement, then each document and expense report with its proofs) or a ZIP with the original files. Downloading a year's ZIP **archives its paid expense reports** — when the treasury downloads it, or a committee member who also decides on expense reports. The help article *Lire le rapport financier* has the detail.
+The **Documents & exports** tab lists the year's supporting documents, expense reports and website payments, and **exports the year**: a printable PDF (journal of every bank and cash movement, then each document and expense report with its proofs) or a ZIP with the original files. The report itself, already shown on the **Overview** tab, only joins them when **Include the financial report** is ticked. Downloading a year's ZIP **archives its paid expense reports** — when the treasury downloads it, or a committee member who also decides on expense reports. The help article *Lire le rapport financier* has the detail.
 
 ### Payments
 

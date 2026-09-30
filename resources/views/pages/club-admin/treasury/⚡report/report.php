@@ -48,6 +48,9 @@ new class extends Component
 {
     use HasBreadcrumbs, Toast;
 
+    /** The report is on the overview tab already: an export carries it on request. */
+    public bool $exportIncludesReport = false;
+
     /** `expense:hall`, `income:subsidies`… empty for every poste. */
     public string $exportPoste = '';
 
@@ -78,9 +81,10 @@ new class extends Component
         $this->validate([
             'exportPoste' => ['nullable', Rule::in(array_column($this->posteOptions(), 'id'))],
             'exportScope' => ['required', Rule::in(array_map(static fn (FinancialExportScope $scope): string => $scope->value, FinancialExportScope::offered()))],
+            'exportIncludesReport' => ['boolean'],
         ]);
 
-        $this->queueExport($format, $this->year()->startYear(), $this->exportPoste === '' ? null : $this->exportPoste, FinancialExportScope::from($this->exportScope));
+        $this->queueExport($format, $this->year()->startYear(), $this->exportPoste === '' ? null : $this->exportPoste, FinancialExportScope::from($this->exportScope), $this->exportIncludesReport);
     }
 
     public function mount(): void
@@ -164,7 +168,7 @@ new class extends Component
     }
 
     /**
-     * Build again an export that failed, with the same year, poste and pieces.
+     * Build again an export that failed, with the same year, poste, pieces and report.
      */
     public function retryExport(int $exportId): void
     {
@@ -178,7 +182,7 @@ new class extends Component
 
         abort_if($export === null, 404);
 
-        $this->queueExport($export->format, (int) $export->fiscal_year, $export->poste, $export->scope);
+        $this->queueExport($export->format, (int) $export->fiscal_year, $export->poste, $export->scope, $export->include_report);
     }
 
     /**
@@ -233,7 +237,7 @@ new class extends Component
         return min(FiscalYear::current()->startYear(), $oldest === null ? PHP_INT_MAX : FiscalYear::for(CarbonImmutable::parse($oldest))->startYear());
     }
 
-    private function queueExport(string $format, int $fiscalYear, ?string $poste, FinancialExportScope $scope): void
+    private function queueExport(string $format, int $fiscalYear, ?string $poste, FinancialExportScope $scope, bool $includeReport): void
     {
         $export = FinancialExport::create([
             'requested_by' => Auth::id(),
@@ -241,6 +245,7 @@ new class extends Component
             'fiscal_year' => $fiscalYear,
             'poste' => $poste,
             'scope' => $scope,
+            'include_report' => $includeReport,
             'report_ids' => [],
             'status' => 'pending',
         ]);

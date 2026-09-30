@@ -26,11 +26,13 @@ class ExpenseReportPolicy
     /**
      * Take the paid reports' originals off the server. Only a decider or
      * whoever wires refunds: their download is the one that counts as
-     * archiving.
+     * archiving. The ZIP comes from the financial report's export, so they
+     * must be able to open the report too.
      */
     public function archive(User $user): bool
     {
-        return $user->canAny([Permission::ExpenseReportsProcess->value, Permission::PaymentsRefund->value]);
+        return $user->canAny([Permission::ExpenseReportsProcess->value, Permission::PaymentsRefund->value])
+            && $user->can(Permission::FinancialReportView->value);
     }
 
     /** Undo an acceptance while the refund has not left the account. */
@@ -57,11 +59,6 @@ class ExpenseReportPolicy
     public function delete(User $user, ExpenseReport $report): bool
     {
         return false;
-    }
-
-    public function export(User $user): bool
-    {
-        return $user->can(Permission::PaymentsView->value);
     }
 
     /** Start a new report from a rejected one, filled in with what it said. */

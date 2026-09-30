@@ -40,8 +40,13 @@ class ExpenseReportsToArchiveNotification extends Notification
                 $this->count,
                 ['amount' => number_format($this->total, 2, ',', ' ')],
             ))
-            ->line(__('Their proofs only exist on the application\'s server. Download the ZIP archive and keep it with the club\'s accounts.'))
-            ->action(__('Archive the paid expense reports'), route('admin.treasury.expense-reports', ['tab' => 'paid', 'unarchived' => 1]));
+            ->line(__('Their proofs only exist on the application\'s server. Download the ZIP archive of the financial year from the financial report and keep it with the club\'s accounts.'))
+            ->action(__('Archive the paid expense reports'), route('admin.treasury.report', [
+                'tab' => 'pieces',
+                // The year that just closed; otherwise the running one, whose
+                // tab also lists the other years still to archive.
+                'year' => $this->yearEnd ? FiscalYear::current()->previous()->startYear() : FiscalYear::current()->startYear(),
+            ]));
     }
 
     /** @return array<int, string> */

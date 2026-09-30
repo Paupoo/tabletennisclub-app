@@ -5,9 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\ExpenseReports\Actions\AcceptExpenseReport;
 use App\Domains\ClubAdmin\ExpenseReports\Actions\CancelExpenseReportAcceptance;
 use App\Domains\ClubAdmin\ExpenseReports\Actions\RejectExpenseReport;
-use App\Domains\ClubAdmin\ExpenseReports\Jobs\GenerateExpenseReportExport;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
-use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReportExport;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\ExpenseReportDisplayStatus;
@@ -20,7 +18,6 @@ use App\Support\Breadcrumb;
 use App\Support\LocaleSort;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
@@ -79,21 +76,6 @@ new class extends Component
 
     #[Url(as: 'member')]
     public ?int $userId = null;
-
-    /** The quarterly gesture: a ZIP of every paid report not archived yet. */
-    public function archiveUnarchived(): void
-    {
-        Gate::authorize('archive', ExpenseReport::class);
-
-        $ids = ExpenseReport::query()
-            ->whereDisplayStatus(ExpenseReportDisplayStatus::Paid)
-            ->whereNull('archived_at')
-            ->orderBy('id')
-            ->pluck('id')
-            ->all();
-
-        $this->queueExport('zip', $ids);
-    }
 
     public function cancelAcceptance(): void
     {
@@ -155,21 +137,6 @@ new class extends Component
         $this->rejectModal = false;
         $this->refreshLists();
         $this->success(__('Rejected. The member has been told why.'));
-    }
-
-    /**
-     * Queue a PDF or ZIP of exactly what the screen shows — the tab, the
-     * search and the filters — and tell the requester when it is ready.
-     */
-    public function export(string $format): void
-    {
-        Gate::authorize('export', ExpenseReport::class);
-
-        if (! in_array($format, ['pdf', 'zip'], true)) {
-            return;
-        }
-
-        $this->queueExport($format, $this->filteredQuery()->orderBy('expense_reports.id')->pluck('expense_reports.id')->all());
     }
 
     /**
@@ -242,25 +209,6 @@ new class extends Component
         }
     }
 
-    /**
-     * The requester's own exports still worth showing: those being built, and
-     * those finished within the week a file is kept. The page polls while one
-     * is being built, so "ready" appears without a reload.
-     *
-     * @return Collection<int, ExpenseReportExport>
-     */
-    #[Computed]
-    public function myExports(): Collection
-    {
-        return ExpenseReportExport::query()
-            ->where('requested_by', Auth::id())
-            ->where('created_at', '>=', now()->subDays(ExpenseReportExport::KEPT_FOR_DAYS))
-            ->latest()
-            ->orderByDesc('id')
-            ->limit(5)
-            ->get();
-    }
-
     public function openAccept(): void
     {
         $report = $this->shownOrFail();
@@ -293,23 +241,6 @@ new class extends Component
             ->orderBy('expense_reports.created_at', $this->statusFilter === 'submitted' ? 'asc' : 'desc')
             ->orderBy('expense_reports.id')
             ->paginate(25);
-    }
-
-    /**
-     * Build again an export that failed, on the same reports.
-     */
-    public function retryExport(int $exportId): void
-    {
-        Gate::authorize('export', ExpenseReport::class);
-
-        $export = ExpenseReportExport::query()
-            ->where('requested_by', Auth::id())
-            ->where('status', 'failed')
-            ->find($exportId);
-
-        abort_if($export === null, 404);
-
-        $this->queueExport($export->format, $export->report_ids);
     }
 
     public function show(int $reportId): void
@@ -390,8 +321,7 @@ new class extends Component
     }
 
     /**
-     * The tab, the search and the drawer's filters — shared with the export,
-     * which must take exactly what the treasurer sees.
+     * The tab, the search and the drawer's filters.
      *
      * @return Builder<ExpenseReport>
      */
@@ -413,30 +343,6 @@ new class extends Component
             ->when($this->dateTo !== '', fn (Builder $q): Builder => $q->whereDate('spent_on', '<=', $this->dateTo))
             ->when($this->fiscalYear !== null, fn (Builder $q): Builder => $q->paidInYear(FiscalYear::startingIn((int) $this->fiscalYear)))
             ->when($this->unarchivedOnly, fn (Builder $q): Builder => $q->whereNull('archived_at'));
-    }
-
-    /**
-     * @param  list<int>  $reportIds
-     */
-    private function queueExport(string $format, array $reportIds): void
-    {
-        if ($reportIds === []) {
-            $this->warning(__('Nothing to export: no report matches the current filters.'));
-
-            return;
-        }
-
-        $export = ExpenseReportExport::create([
-            'requested_by' => $this->actor()->id,
-            'format' => $format,
-            'report_ids' => $reportIds,
-            'status' => 'pending',
-        ]);
-
-        GenerateExpenseReportExport::dispatch($export->id);
-
-        unset($this->myExports);
-        $this->success(__('The export is being prepared. You will get an email with the link when it is ready.'));
     }
 
     private function refreshLists(): void

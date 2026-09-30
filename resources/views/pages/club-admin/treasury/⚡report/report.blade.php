@@ -380,11 +380,99 @@
 
         {{-- ── Documents & exports ────────────────────────────────────────── --}}
         <x-tab name="pieces" :label="__('Documents & exports')" icon="o-document-duplicate">
-            {{-- The export of the year (PDF for the assembly, ZIP of the proofs)
-                 comes above these lists; they are what it will contain. --}}
-            <p class="mb-4 text-sm text-muted">{{ __('Everything behind the figures of :year: the supporting documents dated in the year, the expense reports and the website payments whose money moved in it.', ['year' => $yearLabel]) }}</p>
+            {{-- The export of the year — a PDF for the assembly, a ZIP of the
+                 originals for the archive — above the lists it will contain.
+                 Prepared in the background; the link arrives by mail, in the
+                 bell and under « Mes exports ». --}}
+            <x-card :title="__('Export :year', ['year' => $yearLabel])" class="mb-6 shadow-sm" separator data-print-hide data-export-form>
+                <p class="mb-4 text-sm text-muted">{{ __('The report, the journal of every movement, then the pieces: printed in the PDF, as originals in the ZIP.') }}</p>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <x-select :label="__('Poste')" wire:model="exportPoste" :options="$this->posteOptions()"
+                        :placeholder="__('Every poste')" />
+                    @php $scopes = \App\Domains\Shared\Enums\FinancialExportScope::offered(); @endphp
+                    @if (count($scopes) > 1)
+                        <x-select :label="__('Pieces')" wire:model="exportScope"
+                            :options="array_map(fn ($scope) => ['id' => $scope->value, 'name' => $scope->label()], $scopes)" />
+                    @endif
+                </div>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <x-button :label="__('Printable PDF')" icon="o-printer" class="btn-primary btn-sm" wire:click="export('pdf')" spinner="export" />
+                    <x-button :label="__('ZIP archive (originals)')" icon="o-archive-box-arrow-down" class="btn-sm" wire:click="export('zip')" spinner="export" />
+                </div>
 
-            @php $pieces = $this->pieces; @endphp
+                {{-- Whoever's ZIP download archives the expense reports: where
+                     paid reports still wait for it. --}}
+                @if ($this->unarchivedByYear !== [])
+                    <div class="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm" data-unarchived>
+                        <x-icon name="o-archive-box" class="me-1 size-4 text-warning-content" />
+                        {{ __('Paid expense reports not archived yet:') }}
+                        @foreach ($this->unarchivedByYear as $start => $count)
+                            @php $label = \App\Domains\Shared\ValueObjects\FiscalYear::startingIn($start)->label(); @endphp
+                            @if ($label === $yearLabel)
+                                <strong>{{ trans_choice(':count in :year|:count in :year', $count, ['year' => $label]) }}</strong>
+                            @else
+                                <a class="link" href="{{ route('admin.treasury.report', ['year' => $start, 'tab' => 'pieces']) }}" wire:navigate>{{ trans_choice(':count in :year|:count in :year', $count, ['year' => $label]) }}</a>
+                            @endif
+                            @unless ($loop->last) · @endunless
+                        @endforeach
+                        <div class="mt-1 text-xs text-muted">{{ __('Downloading the ZIP of a year archives its expense reports.') }}</div>
+                    </div>
+                @endif
+            </x-card>
+
+            {{-- Mes exports : la cloche ne se rafraîchit pas d'elle-même, et rien
+                 d'autre ne menait au fichier une fois prêt. L'onglet interroge le
+                 serveur tant qu'un export se prépare, puis s'arrête. --}}
+            @if ($this->myExports->isNotEmpty())
+                @php $exportsPending = $this->myExports->contains('status', 'pending'); @endphp
+                <div class="mb-6 rounded-xl border border-base-300 bg-base-100" data-my-exports data-print-hide
+                    @if ($exportsPending) wire:poll.3s @endif>
+                    <p class="border-b border-base-300 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted">
+                        {{ __('My exports') }}
+                    </p>
+                    <div class="divide-y divide-base-200">
+                        @foreach ($this->myExports as $export)
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 text-sm" wire:key="export-{{ $export->id }}">
+                                <x-icon :name="$export->isZip() ? 'o-archive-box-arrow-down' : 'o-printer'" class="h-5 w-5 shrink-0 text-muted" />
+                                <div class="min-w-0 flex-1">
+                                    <span class="font-semibold">{{ $export->isZip() ? __('ZIP archive') : __('Printable PDF') }}</span>
+                                    <span class="text-muted">
+                                        · {{ $export->summary() }}
+                                        · {{ $export->created_at?->format('d/m/Y H:i') }}
+                                    </span>
+                                </div>
+                                @if ($export->status === 'pending')
+                                    <span class="flex items-center gap-2 text-muted">
+                                        <span class="loading loading-spinner loading-xs"></span>
+                                        {{ __('Being prepared…') }}
+                                    </span>
+                                @elseif ($export->status === 'failed')
+                                    <x-badge :value="__('Failed')" class="badge-error badge-soft badge-sm" />
+                                    @if ($export->fiscal_year !== null)
+                                        <x-button :label="__('Run it again')" icon="o-arrow-path" class="btn-ghost btn-sm"
+                                            wire:click="retryExport({{ $export->id }})" spinner="retryExport({{ $export->id }})" />
+                                    @endif
+                                @elseif ($export->isExpired())
+                                    <span class="text-muted">{{ __('Expired') }}</span>
+                                @else
+                                    <x-button :label="__('Download')" icon="o-arrow-down-tray" class="btn-primary btn-sm"
+                                        :link="route('admin.treasury.exports.download', $export)" no-wire-navigate />
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            <p class="mb-4 text-sm text-muted">{{ __('Everything behind the figures of :year: the supporting documents dated in the year or paid in it, the expense reports and the website payments whose money moved in it.', ['year' => $yearLabel]) }}</p>
+
+            @php
+                $pieces = [
+                    'documents' => $this->pieces->documents(),
+                    'expenseReports' => $this->pieces->expenseReports(),
+                    'sitePayments' => $this->pieces->sitePayments(),
+                ];
+            @endphp
 
             <x-card :title="__('Supporting documents')" class="mb-6 shadow-sm" separator>
                 @if ($pieces['documents']->isEmpty())

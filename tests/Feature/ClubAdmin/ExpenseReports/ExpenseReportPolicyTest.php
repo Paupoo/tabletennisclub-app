@@ -141,8 +141,15 @@ describe('who decides', function (): void {
         expect($treasurer->can('cancelAcceptance', $report->refresh()))->toBeFalse();
     });
 
-    it('lets readers of the treasury export, not a plain member', function (): void {
-        expect(User::factory()->isCommitteeMember()->create()->can('export', ExpenseReport::class))->toBeTrue()
-            ->and(User::factory()->create()->can('export', ExpenseReport::class))->toBeFalse();
+    /*
+     * Archiving is downloading the ZIP of a financial year, which only the
+     * financial report exports: a backup decider who cannot open the report
+     * has nothing to download.
+     */
+    it('lets archive whoever decides or refunds and can export the financial report', function (): void {
+        expect(User::factory()->withRole(Role::TREASURY)->create()->can('archive', ExpenseReport::class))->toBeTrue()
+            ->and(User::factory()->isCommitteeMember()->withRole(Role::EXPENSE_REPORTS)->create()->can('archive', ExpenseReport::class))->toBeTrue()
+            ->and(User::factory()->withRole(Role::EXPENSE_REPORTS)->create()->can('archive', ExpenseReport::class))->toBeFalse()
+            ->and(User::factory()->isCommitteeMember()->create()->can('archive', ExpenseReport::class))->toBeFalse();
     });
 });

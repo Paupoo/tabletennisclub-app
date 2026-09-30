@@ -24,8 +24,8 @@ use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentPrintController;
 use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\ClubPosts\PublicNewsPostController;
-use App\Http\Controllers\ExpenseReports\ExpenseReportExportController;
 use App\Http\Controllers\ExpenseReports\ExpenseReportFileController;
+use App\Http\Controllers\Finance\FinancialExportController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\SupportingDocuments\SupportingDocumentFileController;
 use App\Http\Middleware\ProtectAgainstSpam;
@@ -137,10 +137,9 @@ Route::prefix('admin/my-space/')
         Route::get('expense-reports/files/{file}', [ExpenseReportFileController::class, 'show'])
             ->name('admin.expense-reports.file')
             ->middleware('feature:expense_reports');
-        // An export: only its requester, only for a week.
-        Route::get('expense-reports/exports/{export}', [ExpenseReportExportController::class, 'download'])
-            ->name('admin.expense-reports.export')
-            ->middleware('feature:expense_reports');
+        // An expense reports export asked for before the financial report
+        // existed: its link, in a mail or the bell, still leads to the file.
+        Route::redirect('expense-reports/exports/{export}', '/admin/treasury/exports/{export}');
 
         // Private member documents — authorization handled in the controller
         // (self, admin, committee, guardians), not limited to the my-space owner.
@@ -264,6 +263,10 @@ Route::prefix('admin/treasury/')
         Route::livewire('report', 'pages::club-admin.treasury.report')
             ->middleware('can:financial_report.view')
             ->name('admin.treasury.report');
+        // An export of the report: only its requester, only for a week —
+        // checked in the controller.
+        Route::get('exports/{export}', [FinancialExportController::class, 'download'])
+            ->name('admin.treasury.exports.download');
 
         Route::livewire('payments', 'pages::club-admin.treasury.payments')
             ->middleware('can:payments.view')

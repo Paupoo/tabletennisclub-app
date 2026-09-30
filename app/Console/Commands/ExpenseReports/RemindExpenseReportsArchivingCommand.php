@@ -40,10 +40,12 @@ class RemindExpenseReportsArchivingCommand extends Command
 
         $total = round((int) (clone $unarchived)->sum('accepted_amount') / 100, 2);
 
+        // The ZIP that archives comes from the financial report: a decider
+        // who cannot open it would be asked for a gesture out of reach.
         $recipients = User::permission([
             Permission::ExpenseReportsProcess->value,
             Permission::PaymentsRefund->value,
-        ])->get();
+        ])->get()->filter(fn (User $user): bool => $user->can('archive', ExpenseReport::class));
 
         foreach ($recipients as $recipient) {
             $recipient->notify(new ExpenseReportsToArchiveNotification($count, $total, (bool) $this->option('year-end')));

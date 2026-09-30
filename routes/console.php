@@ -111,7 +111,7 @@ Schedule::command('expense-reports:remind-archiving --year-end')
     ->when(Feature::ExpenseReports->enabled(...))
     ->when(fn (): bool => now()->month === FiscalYear::startMonth());
 
-Schedule::command('expense-reports:prune-exports')
+Schedule::command('financial-exports:prune')
     ->dailyAt('03:40')
     ->withoutOverlapping();
 

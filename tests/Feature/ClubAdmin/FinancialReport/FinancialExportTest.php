@@ -160,6 +160,12 @@ describe('asking for an export', function (): void {
         Queue::assertPushed(GenerateFinancialExport::class);
     });
 
+    it('tells the reader what each file will hold', function (): void {
+        fxReportTab(fxTreasurer())
+            ->assertSee('Le PDF contient le rapport, le journal de tous les mouvements (banque et caisses), puis chaque pièce justificative et note de frais avec ses justificatifs imprimés.')
+            ->assertSee('Le ZIP contient le même rapport et le même journal, plus les fichiers originaux de chaque pièce.');
+    });
+
     it('lets whoever reads the report export', function (Role $role): void {
         Queue::fake();
 

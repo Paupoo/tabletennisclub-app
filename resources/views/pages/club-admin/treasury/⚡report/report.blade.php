@@ -385,7 +385,7 @@
                  Prepared in the background; the link arrives by mail, in the
                  bell and under « Mes exports ». --}}
             <x-card :title="__('Export :year', ['year' => $yearLabel])" class="mb-6 shadow-sm" separator data-print-hide data-export-form>
-                <p class="mb-4 text-sm text-muted">{{ __('The report, the journal of every movement, then the pieces: printed in the PDF, as originals in the ZIP.') }}</p>
+                <p class="mb-4 text-sm text-muted">{{ __('The PDF holds the report, the journal of every bank and cash movement, then each supporting document and expense report with its proofs printed in. The ZIP holds the same report and journal, plus the original files of every piece.') }}</p>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <x-select :label="__('Poste')" wire:model="exportPoste" :options="$this->posteOptions()"
                         :placeholder="__('Every poste')" />

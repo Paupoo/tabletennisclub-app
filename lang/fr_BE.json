@@ -690,6 +690,7 @@
     "Statement": "Extrait",
     "Supporting documents only": "Pièces justificatives uniquement",
     "the 1st of :month": "1er :month",
+    "The PDF holds the report, the journal of every bank and cash movement, then each supporting document and expense report with its proofs printed in. The ZIP holds the same report and journal, plus the original files of every piece.": "Le PDF contient le rapport, le journal de tous les mouvements (banque et caisses), puis chaque pièce justificative et note de frais avec ses justificatifs imprimés. Le ZIP contient le même rapport et le même journal, plus les fichiers originaux de chaque pièce.",
     "The report, the journal of every movement, then the pieces: printed in the PDF, as originals in the ZIP.": "Le rapport, le journal de tous les mouvements, puis les pièces : imprimées dans le PDF, en originaux dans le ZIP.",
     "Their proofs only exist on the application's server. Download the ZIP archive of the financial year from the financial report and keep it with the club's accounts.": "Leurs justificatifs n'existent que sur le serveur de l'application. Téléchargez l'archive ZIP de l'exercice depuis le rapport financier et rangez-la avec la comptabilité du club.",
     "This export has expired: run it again from the financial report.": "Cet export a expiré : relancez-le depuis le rapport financier.",

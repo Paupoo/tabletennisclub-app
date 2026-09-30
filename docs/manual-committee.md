@@ -154,7 +154,7 @@ Some templates **automatically apply a status** to the contact when sent (e.g. t
 Go to **Website → Email templates** (managing group only). Create and edit your reply templates freely, without depending on a developer:
 
 - **Name**, **key**, **subject**, **body**
-- **Variables** to insert in subject/body: `{{first_name}}`, `{{last_name}}`, `{{full_name}}`, `{{interest}}`, `{{club_name}}`
+- **Variables**: in the body, **Insert a variable** adds a pill (First name, Last name, Full name, Interest, Club name) that is inserted and deleted in one piece; in the subject, type `{{first_name}}`, `{{last_name}}`, `{{full_name}}`, `{{interest}}` or `{{club_name}}`. An unknown variable stays visible as its own pill, so a typo shows before sending
 - **Applied status** (optional): status given to the contact when the template is sent
 - **Information questionnaire**: marks templates meant to *gather* missing information
 - **Active/inactive**: an inactive template no longer appears in the send list
@@ -327,7 +327,9 @@ Go to **Website** in the navigation.
 ### Articles (news)
 
 Create and edit news articles published on the public club website:
-- Title, content (rich text), featured image
+- Title, content, featured image
+- The content is written as it will look: the toolbar sets headings, bold, italic, links, lists and quotes — no syntax to learn
+- **Images in the text**: the image button, a drag and drop or a paste; the image is shrunk before upload, and you are asked to **describe it** (read aloud to visitors who cannot see it) before it is inserted
 - Publish immediately or save as draft
 - Set a "featured until" date for pinned articles
 
@@ -534,6 +536,6 @@ The screen answers "who must I write to, without forgetting anyone and without w
 
 ### Writing from the application
 
-Write in markdown with the preview; **Insert** an invitation (tournament, pack, meeting) to add a block with a "Register" link. That link leads to a "For whom?" page: a parent picks their child and lands on their registrations. **Send me a test** sends it to you alone.
+Write the message as it will look (toolbar for headings, bold, lists, links); **Insert** an invitation (tournament, pack, meeting) to add a block with a "Register" link. That link leads to a "For whom?" page: a parent picks their child and lands on their registrations. **Send me a test** sends it to you alone.
 
 The message is sent from the club; replies go to the chosen address (yours by default). Each address gets its own message, 15 per minute. The communication's page follows the progress, lists the failures and retries them; **Write it again** starts from the same text and filters. Addresses are deleted after two seasons; the message is kept.

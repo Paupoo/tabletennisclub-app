@@ -24,6 +24,7 @@ Si quelqu'un écrit déjà, vous **lisez en direct** : ses notes arrivent chez v
 - **Cochez les points de l'ordre du jour au fur et à mesure.** Ça enregistre quand chacun a été abordé, ce qui rend visible ce qu'on n'a pas eu le temps de traiter.
 - **Les échéances et les responsables des tâches se synchronisent en direct.** Vous pouvez les poser pendant la discussion sans craindre qu'un rafraîchissement les efface.
 - Tout est **enregistré automatiquement**. Il n'y a pas de bouton « sauvegarder », et il n'y a rien à perdre.
+- Les **notes libres** se mettent en forme avec leur barre d'outils (titres, gras, listes, liens) ; comme le reste, elles s'enregistrent quand vous quittez le champ.
 
 ## Publier
 

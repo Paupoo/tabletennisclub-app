@@ -404,6 +404,13 @@ class DatabaseSeeder extends Seeder
         // `php artisan db:seed --class=BarDemoSeeder` vide le bar et le re-sème.
         $this->call(BarDemoSeeder::class);
 
+        // L'argent que le site ne voit pas, et ses pièces : deux exercices,
+        // un compte d'épargne, des dettes et une créance ouvertes. Après la
+        // trésorerie et le bar, dont il complète les comptes. Relançable seul.
+        // Un seeder qui ajoute ensuite des lignes de banque (l'historique du
+        // lot 3) rappelle SupportingDocumentSeeder::fillBalances().
+        $this->call(SupportingDocumentSeeder::class);
+
         $this->call(SpamSeeder::class);
 
         // Development only. It installs a seal and a signature watermarked

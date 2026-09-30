@@ -411,6 +411,12 @@ class DatabaseSeeder extends Seeder
         // lot 3) rappelle SupportingDocumentSeeder::fillBalances().
         $this->call(SupportingDocumentSeeder::class);
 
+        // L'argent du site sur deux exercices — cotisations, remboursements,
+        // notes de frais, tournoi — pour que le rapport financier ait une
+        // année à comparer. Après les pièces, dont il recalcule les soldes du
+        // compte courant ; les deux se relancent seuls sans se marcher dessus.
+        $this->call(FinancialHistorySeeder::class);
+
         $this->call(SpamSeeder::class);
 
         // Development only. It installs a seal and a signature watermarked

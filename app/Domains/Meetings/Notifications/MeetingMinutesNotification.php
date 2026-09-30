@@ -6,11 +6,13 @@ namespace App\Domains\Meetings\Notifications;
 
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
+use App\Support\Markdown;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\HtmlString;
 
 class MeetingMinutesNotification extends Notification implements ShouldQueue
 {
@@ -44,17 +46,11 @@ class MeetingMinutesNotification extends Notification implements ShouldQueue
             ]));
 
         if ($minutes?->announcements) {
-            $mail->line('---')->line('**' . __('Announcements') . '**');
-            foreach ($minutes->announcements as $ann) {
-                $mail->line('• ' . $ann);
-            }
+            $mail->line('---')->line('**' . __('Announcements') . '**')->line($this->markdownList($minutes->announcements));
         }
 
         if ($minutes?->decisions) {
-            $mail->line('---')->line('**' . __('Decisions') . '**');
-            foreach ($minutes->decisions as $dec) {
-                $mail->line('• ' . $dec);
-            }
+            $mail->line('---')->line('**' . __('Decisions') . '**')->line($this->markdownList($minutes->decisions));
         }
 
         return $mail
@@ -66,5 +62,17 @@ class MeetingMinutesNotification extends Notification implements ShouldQueue
     public function via(object $notifiable): array
     {
         return ['mail', 'database'];
+    }
+
+    /**
+     * The items are written in the markdown editor: rendered, not bulleted as text.
+     *
+     * @param  array<int, string>  $items
+     */
+    private function markdownList(array $items): HtmlString
+    {
+        return new HtmlString('<ul>' . collect($items)
+            ->map(fn (string $item): string => '<li>' . Markdown::safe($item) . '</li>')
+            ->implode('') . '</ul>');
     }
 }

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Models\MeetingAgendaItem;
+use App\Domains\Meetings\Models\MeetingMinutes;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 /*
@@ -70,4 +73,24 @@ it('only lists what it would delete on a dry run', function (): void {
         ->assertSuccessful();
 
     Storage::disk('public')->assertExists($orphan);
+});
+
+it('keeps an image pasted into an agenda point', function (): void {
+    $path = contentImage('agenda.jpg', 30);
+    MeetingAgendaItem::factory()->create(['description' => "![plan](/storage/{$path})"]);
+
+    $this->artisan('articles:prune-content-images')->assertSuccessful();
+
+    Storage::disk('public')->assertExists($path);
+});
+
+it('finds an image in a minutes announcement, stored in JSON with escaped slashes', function (): void {
+    $path = contentImage('announced.jpg', 30);
+    MeetingMinutes::factory()->create(['announcements' => ["![sponsor](/storage/{$path})"]]);
+
+    expect(DB::table('meeting_minutes')->value('announcements'))->toContain('\\/');
+
+    $this->artisan('articles:prune-content-images')->assertSuccessful();
+
+    Storage::disk('public')->assertExists($path);
 });

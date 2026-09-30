@@ -16,6 +16,7 @@
         not re-read it on a morph
     @param bool $commitOnBlur send the value to the server when the author
         leaves the field, for screens that autosave on `updated`
+    @param bool $compact a short field (an agenda point) rather than a page of text
     @param bool $stickyToolbar keep the toolbar in view down a long page; off
         in a modal, whose own box scrolls
     @param array<string, string>|null $variables template placeholders offered
@@ -31,6 +32,7 @@
     'stickyToolbar' => true,
     'editable' => true,
     'commitOnBlur' => false,
+    'compact' => false,
 ])
 
 @php
@@ -162,12 +164,20 @@
         <div wire:ignore>
             {{-- Same prose treatment as the public article page: what is typed looks like what is published. --}}
             <div x-ref="surface" x-show="ready"
-                class="prose prose-sm max-w-none px-4 py-3
-                    prose-headings:text-base-content prose-p:text-muted prose-li:text-muted
-                    prose-strong:text-base-content prose-blockquote:border-primary prose-blockquote:text-muted
-                    prose-a:text-primary [&_.ProseMirror]:min-h-72 [&_.ProseMirror]:outline-none
-                    [&_.ProseMirror>:first-child]:mt-0 [&_td>p]:my-0 [&_th>p]:my-0"></div>
-            <div x-show="!ready" class="flex min-h-80 items-center justify-center text-sm text-subtle">
+                @class([
+                    'prose prose-sm max-w-none',
+                    'prose-headings:text-base-content prose-p:text-muted prose-li:text-muted',
+                    'prose-strong:text-base-content prose-blockquote:border-primary prose-blockquote:text-muted',
+                    'prose-a:text-primary [&_.ProseMirror]:outline-none',
+                    '[&_.ProseMirror>:first-child]:mt-0 [&_.ProseMirror>:last-child]:mb-0 [&_td>p]:my-0 [&_th>p]:my-0',
+                    'px-4 py-3 [&_.ProseMirror]:min-h-72' => ! $compact,
+                    'px-3 py-2 [&_.ProseMirror]:min-h-12' => $compact,
+                ])></div>
+            <div x-show="!ready" @class([
+                'flex items-center justify-center text-sm text-subtle',
+                'min-h-80' => ! $compact,
+                'min-h-16' => $compact,
+            ])>
                 <span class="loading loading-spinner loading-sm"></span>
             </div>
         </div>

@@ -28,16 +28,19 @@ use Illuminate\Support\Facades\Storage;
 class PruneArticleContentImagesCommand extends Command
 {
     /**
-     * Every column written in <x-markdown-editor>.
+     * Every column written in <x-markdown-editor>. The minutes' announcements
+     * and decisions are JSON lists, where a `/` may be stored as `\/`.
      *
-     * @var array<string, string> table => column
+     * @var array<string, list<string>> table => columns
      */
     private const array MARKDOWN_COLUMNS = [
-        'news_posts' => 'content',
-        'communications' => 'body',
-        'email_templates' => 'body',
-        'meetings' => 'description',
-        'meeting_minutes' => 'notes',
+        'news_posts' => ['content'],
+        'communications' => ['body'],
+        'email_templates' => ['body'],
+        'meetings' => ['description'],
+        'meeting_agenda_items' => ['description'],
+        'meeting_action_items' => ['description'],
+        'meeting_minutes' => ['notes', 'announcements', 'decisions'],
     ];
 
     public function handle(): int
@@ -83,20 +86,27 @@ class PruneArticleContentImagesCommand extends Command
      */
     private function referencedFilenames(): array
     {
-        $pattern = '#' . preg_quote(NewsPost::CONTENT_IMAGES_DIRECTORY, '#') . '/([A-Za-z0-9._-]+)#';
+        $directory = explode('/', NewsPost::CONTENT_IMAGES_DIRECTORY);
+        $pattern = '#' . implode('\\\\?/', array_map(fn (string $part): string => preg_quote($part, '#'), $directory)) . '\\\\?/([A-Za-z0-9._-]+)#';
         $referenced = [];
 
-        foreach (self::MARKDOWN_COLUMNS as $table => $column) {
+        foreach (self::MARKDOWN_COLUMNS as $table => $columns) {
             DB::table($table)
-                ->where($column, 'like', '%' . NewsPost::CONTENT_IMAGES_DIRECTORY . '/%')
+                ->where(function ($query) use ($columns, $directory): void {
+                    foreach ($columns as $column) {
+                        $query->orWhere($column, 'like', '%' . end($directory) . '%');
+                    }
+                })
                 ->orderBy('id')
-                ->select(['id', $column])
-                ->chunkById(200, function ($rows) use ($column, $pattern, &$referenced): void {
+                ->select(['id', ...$columns])
+                ->chunkById(200, function ($rows) use ($columns, $pattern, &$referenced): void {
                     foreach ($rows as $row) {
-                        preg_match_all($pattern, (string) $row->{$column}, $matches);
+                        foreach ($columns as $column) {
+                            preg_match_all($pattern, (string) $row->{$column}, $matches);
 
-                        foreach ($matches[1] as $filename) {
-                            $referenced[$filename] = true;
+                            foreach ($matches[1] as $filename) {
+                                $referenced[$filename] = true;
+                            }
                         }
                     }
                 });

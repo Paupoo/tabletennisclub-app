@@ -208,8 +208,8 @@
                                     <div class="flex-1 space-y-2">
                                         <x-input wire:model="agendaDraft.{{ $i }}.title"
                                             :placeholder="__('Point :n', ['n' => $i + 1])" />
-                                        <x-textarea wire:model="agendaDraft.{{ $i }}.description"
-                                            :placeholder="__('Optional details…')" rows="2" />
+                                        <x-markdown-editor model="agendaDraft.{{ $i }}.description" compact
+                                            :label="__('Details')" :sticky-toolbar="false" />
                                     </div>
                                     <x-button icon="o-trash" class="btn-ghost btn-xs btn-circle mt-1"
                                         wire:click="removeAgendaDraftItem({{ $i }})" />
@@ -245,7 +245,7 @@
                                     <div>
                                         <p class="text-sm font-medium">{{ $item->title }}</p>
                                         @if ($item->description)
-                                            <p class="mt-0.5 whitespace-pre-line text-xs text-base-content/60">{{ $item->description }}</p>
+                                            <div class="prose prose-sm mt-0.5 max-w-none text-xs text-base-content/60 [&>:first-child]:mt-0 [&>:last-child]:mb-0">{!! \App\Support\Markdown::safe($item->description) !!}</div>
                                         @endif
                                     </div>
                                 </li>
@@ -463,9 +463,9 @@
                             @if (filled($minutes->announcements))
                                 <div>
                                     <p class="mb-1 font-semibold">{{ __('Announcements') }}</p>
-                                    <ul class="list-inside list-disc space-y-1 text-base-content/70">
+                                    <ul class="list-outside list-disc space-y-1 ps-5 text-base-content/70">
                                         @foreach ($minutes->announcements as $ann)
-                                            <li class="whitespace-pre-line">{{ $ann }}</li>
+                                            <li class="prose prose-sm max-w-none text-base-content/70 [&>:first-child]:mt-0 [&>:last-child]:mb-0">{!! \App\Support\Markdown::safe($ann) !!}</li>
                                         @endforeach
                                     </ul>
                                 </div>
@@ -473,9 +473,9 @@
                             @if (filled($minutes->decisions))
                                 <div>
                                     <p class="mb-1 font-semibold">{{ __('Decisions') }}</p>
-                                    <ul class="list-inside list-disc space-y-1 text-base-content/70">
+                                    <ul class="list-outside list-disc space-y-1 ps-5 text-base-content/70">
                                         @foreach ($minutes->decisions as $dec)
-                                            <li class="whitespace-pre-line">{{ $dec }}</li>
+                                            <li class="prose prose-sm max-w-none text-base-content/70 [&>:first-child]:mt-0 [&>:last-child]:mb-0">{!! \App\Support\Markdown::safe($dec) !!}</li>
                                         @endforeach
                                     </ul>
                                 </div>

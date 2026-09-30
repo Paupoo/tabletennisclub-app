@@ -105,13 +105,15 @@
         @endif
 
         {{-- ── 2. Announcements ──────────────────────────────────────── --}}
+        {{-- The editors below are re-keyed on the lock, like the notes: Alpine does not re-read `editable` on a morph. --}}
         <x-card :title="__('Announcements')">
             <div class="space-y-2">
                 @foreach ($announcements as $i => $ann)
                     <div class="flex items-start gap-2" wire:key="ann-{{ $i }}">
-                        <x-textarea wire:model.blur="announcements.{{ $i }}"
-                            :placeholder="__('Announcement :n', ['n' => $i + 1])"
-                            rows="2" class="flex-1" />
+                        <x-markdown-editor model="announcements.{{ $i }}" compact commit-on-blur class="flex-1"
+                            :label="__('Announcement :n', ['n' => $i + 1])" :sticky-toolbar="false"
+                            :editable="! ($this->lockHolder && ! $this->holdsLock)"
+                            wire:key="ann-editor-{{ $i }}-{{ $this->lockHolder && ! $this->holdsLock ? 'read' : 'write' }}" />
                         <x-button icon="o-trash" class="btn-ghost btn-xs btn-circle mt-2"
                             wire:click="removeAnnouncement({{ $i }})" />
                     </div>
@@ -126,9 +128,10 @@
             <div class="space-y-2">
                 @foreach ($decisions as $i => $dec)
                     <div class="flex items-start gap-2" wire:key="dec-{{ $i }}">
-                        <x-textarea wire:model.blur="decisions.{{ $i }}"
-                            :placeholder="__('Decision :n', ['n' => $i + 1])"
-                            rows="2" class="flex-1" />
+                        <x-markdown-editor model="decisions.{{ $i }}" compact commit-on-blur class="flex-1"
+                            :label="__('Decision :n', ['n' => $i + 1])" :sticky-toolbar="false"
+                            :editable="! ($this->lockHolder && ! $this->holdsLock)"
+                            wire:key="dec-editor-{{ $i }}-{{ $this->lockHolder && ! $this->holdsLock ? 'read' : 'write' }}" />
                         <x-button icon="o-trash" class="btn-ghost btn-xs btn-circle mt-2"
                             wire:click="removeDecision({{ $i }})" />
                     </div>
@@ -149,8 +152,10 @@
                                 <x-input wire:model.blur="actionItems.{{ $i }}.title"
                                     :placeholder="__('Action to take…')"
                                     @class(['line-through opacity-60' => $item['is_completed']]) />
-                                <x-textarea wire:model.blur="actionItems.{{ $i }}.description"
-                                    rows="2" :placeholder="__('Details…')" />
+                                <x-markdown-editor model="actionItems.{{ $i }}.description" compact commit-on-blur
+                                    :label="__('Details')" :sticky-toolbar="false"
+                                    :editable="! ($this->lockHolder && ! $this->holdsLock)"
+                                    wire:key="action-editor-{{ $i }}-{{ $this->lockHolder && ! $this->holdsLock ? 'read' : 'write' }}" />
                                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                     {{-- .live: discrete pickers lose focus on selection — a .blur value
                                          still pending when the poll ticks would be wiped by the morph. --}}

@@ -634,4 +634,18 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('seasons/{season}/subscribe/', SubscribeToSeasonAction::class)->name('clubEvents.interclubs.seasons.subscribe');
 });
 
+/*
+|--------------------------------------------------------------------------
+| Mary's upload endpoint, closed
+|--------------------------------------------------------------------------
+|
+| Mary registers `POST /mary/upload` for <x-markdown> and <x-editor>, behind
+| `auth` only: no file validation, disk and folder taken from the query string.
+| The app uses neither component (file fields go through Livewire's upload
+| endpoint), so this later registration of the same URI replaces it with a 404.
+| The name is kept so a stray route('mary.upload') still resolves.
+|
+*/
+Route::post('mary/upload', fn () => abort(404))->name('mary.upload');
+
 require __DIR__ . '/auth.php';

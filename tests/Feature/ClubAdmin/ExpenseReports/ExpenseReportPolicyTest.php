@@ -56,6 +56,7 @@ describe('the new délégations', function (): void {
                 'fines.view',
                 'cash_register.view',
                 'subscriptions.view',
+                'financial_report.view',
             ]);
     });
 });

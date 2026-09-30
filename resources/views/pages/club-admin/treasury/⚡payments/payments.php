@@ -610,7 +610,7 @@ new class extends Component
         )
             ->get()
             ->map(function (Payment $p) {
-                $label = $p->payable instanceof DescribesPayment ? $p->payable->getPaymentLabel() : null;
+                $label = $p->label();
 
                 return (object) [
                     'id' => $p->id,
@@ -731,7 +731,7 @@ new class extends Component
             // laissé.
             $openingBalance = $balance;
 
-            $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
+            $label = $payment->label();
 
             // Les lignes de cette créance, mises de côté : ce qu'il restera se
             // sait une fois la répartition faite, et c'est la dernière d'entre
@@ -867,7 +867,7 @@ new class extends Component
                 $amountMatch = abs(abs($transaction->amount) - $payment->amount_due) < 0.01;
 
                 if ($ibanMatch && $amountMatch) {
-                    $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
+                    $label = $payment->label();
 
                     $this->refundBatchMatches[] = [
                         'payment_id' => $payment->id,
@@ -1456,7 +1456,7 @@ new class extends Component
             return null;
         }
 
-        $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
+        $label = $payment->label();
 
         return [
             'member' => $payment->payable instanceof DescribesPayment ? $payment->payable->getPayerName() : '—',

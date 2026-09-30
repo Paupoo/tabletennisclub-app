@@ -17,6 +17,7 @@ use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Actions\User\CreateUserAction;
 use App\Data\User\CreateUserData;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Payment\Support\PaymentCovers;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionDiscount;
 use App\Domains\ClubAdmin\Subscriptions\Services\FamilyDiscount;
@@ -287,6 +288,7 @@ new class extends Component
                 'amount_due' => $subscription->getAmountDue(),
                 'amount_paid' => 0,
                 'status' => 'pending',
+                'covers' => PaymentCovers::affiliation($subscription),
             ]);
 
             // Accordée avant que la facture existe, la remise n'a rien pu
@@ -346,6 +348,7 @@ new class extends Component
                 'amount_due' => $deltaCost,
                 'amount_paid' => 0,
                 'status' => 'pending',
+                'covers' => PaymentCovers::packs(TrainingPack::query()->whereIn('id', $this->approvedPackIds)->orderBy('id')->get()),
             ])
             : null;
 
@@ -607,6 +610,7 @@ new class extends Component
                 'amount_due' => $delta,
                 'amount_paid' => 0,
                 'status' => 'pending',
+                'covers' => PaymentCovers::formulaChange(),
             ]);
         }
 
@@ -1566,6 +1570,7 @@ new class extends Component
                             'amount_due' => $subscription->getAmountDue(),
                             'amount_paid' => 0,
                             'status' => 'pending',
+                            'covers' => PaymentCovers::affiliation($subscription),
                         ]);
                     }
 

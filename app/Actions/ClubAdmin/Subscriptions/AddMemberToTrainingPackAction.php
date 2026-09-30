@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
+use App\Domains\ClubAdmin\Payment\Support\PaymentCovers;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingPackAddedByClubNotification;
@@ -87,6 +88,7 @@ class AddMemberToTrainingPackAction
                 'amount_due' => $complement,
                 'amount_paid' => 0,
                 'status' => 'pending',
+                'covers' => PaymentCovers::packs([$pack]),
             ]);
         }
 

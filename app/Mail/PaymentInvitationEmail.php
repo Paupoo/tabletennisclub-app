@@ -32,7 +32,7 @@ class PaymentInvitationEmail extends Mailable implements ShouldQueue
     ) {
         $this->BIC = Club::ourClub()->first()->bic;
         $this->IBAN = Club::ourClub()->first()->bank_account_formatted;
-        $this->instructions ??= __('Please make the payment before ' . today()->addDays(30)->format('d/m/Y'));
+        $this->instructions ??= __('Please make the payment before :date.', ['date' => today()->addDays(30)->format('d/m/Y')]);
     }
 
     /**

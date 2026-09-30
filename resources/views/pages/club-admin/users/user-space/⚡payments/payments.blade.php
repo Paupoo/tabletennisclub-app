@@ -37,7 +37,7 @@
         <x-card class="!p-0">
             <div class="divide-y divide-base-200">
                 @foreach ($this->payments as $payment)
-                    @php $label = $payment->payable instanceof \App\Contracts\DescribesPayment ? $payment->payable->getPaymentLabel() : null; @endphp
+                    @php $label = $payment->label(); @endphp
                     @php $isPending = $payment->status === 'pending'; @endphp
                     <div class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                         <div class="min-w-0 flex-1">
@@ -115,7 +115,7 @@
     <x-app-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm" :open="$paymentModal">
         @if ($paymentQr && $selectedPaymentId)
             @php $payment = \App\Domains\ClubAdmin\Payment\Models\Payment::with('discounts')->find($selectedPaymentId); @endphp
-            @php $label = $payment?->payable instanceof \App\Contracts\DescribesPayment ? $payment->payable->getPaymentLabel() : null; @endphp
+            @php $label = $payment?->label(); @endphp
             <div class="flex flex-col items-center gap-5">
                 @if ($label)
                     <div class="w-full rounded-xl border border-primary/10 bg-primary/5 px-4 py-3 text-center">

@@ -3,7 +3,7 @@
 
 Bonjour **{{ $payment->payable->user->first_name ?? '' }}**,
 
-@php $label = $payment->payable->getPaymentLabel(); @endphp
+@php $label = $payment->label() ?? ['type' => '', 'name' => '']; @endphp
 Vous avez un paiement en attente pour **{{ $label['type'] }}** : **{{ $label['name'] }}**.
 
 Montant à régler : **{{ number_format($payment->balance(), 2, ',', ' ') }} €**

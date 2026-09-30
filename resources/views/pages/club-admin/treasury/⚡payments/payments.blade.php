@@ -536,7 +536,7 @@
         <div class="flex items-center gap-4 p-4 rounded-xl bg-base-200/60 border border-base-300 mb-6">
             <x-icon name="o-document-text" class="w-8 h-8 text-primary shrink-0" />
             <div class="flex-1 min-w-0">
-                @php $label = $currentPayment->payable instanceof \App\Contracts\DescribesPayment ? $currentPayment->payable->getPaymentLabel() : null; @endphp
+                @php $label = $currentPayment->label(); @endphp
                 <div class="font-bold text-sm">{{ $currentPayment->payable instanceof \App\Contracts\DescribesPayment ? $currentPayment->payable->getPayerName() : '—' }}</div>
                 @if ($label)
                     <div class="text-xs text-primary/70 mt-0.5">
@@ -757,7 +757,7 @@
         <div class="flex items-center gap-4 p-4 rounded-xl bg-error/5 border border-error/20 mb-6">
             <x-icon name="o-arrow-uturn-left" class="w-8 h-8 text-error shrink-0" />
             <div class="flex-1 min-w-0">
-                @php $label = $currentRefundPayment->payable instanceof \App\Contracts\DescribesPayment ? $currentRefundPayment->payable->getPaymentLabel() : null; @endphp
+                @php $label = $currentRefundPayment->label(); @endphp
                 <div class="font-bold text-sm">{{ $currentRefundPayment->payable instanceof \App\Contracts\DescribesPayment ? $currentRefundPayment->payable->getPayerName() : '—' }}</div>
                 @if ($label)
                     <div class="text-xs text-primary/70 mt-0.5">

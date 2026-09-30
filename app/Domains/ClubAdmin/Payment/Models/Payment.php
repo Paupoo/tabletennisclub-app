@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Payment\Models;
 
+use App\Contracts\DescribesPayment;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatch;
+use App\Domains\ClubAdmin\Payment\Support\PaymentCovers;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionDiscount;
 use App\Domains\Shared\Traits\HasAuditLog;
@@ -35,6 +37,7 @@ use Illuminate\Support\Facades\DB;
  * @property int|null $refund_transaction_id
  * @property string $payment_method
  * @property string|null $refund_iban
+ * @property array<string, mixed>|null $covers what a subscription payment bills, see PaymentCovers
  * @property TransactionMatch|null $match Verdict de rapprochement, posé à la volée — jamais persisté.
  * @property-read Model|\Eloquent $payable
  * @property-read Transaction|null $refundTransaction
@@ -70,6 +73,7 @@ class Payment extends Model
         'amount_paid' => 'integer',  // stocké en centimes
         'last_reminded_at' => 'datetime',
         'refund_wired_at' => 'datetime',
+        'covers' => 'array',
     ];
 
     protected $fillable = [
@@ -81,6 +85,7 @@ class Payment extends Model
         'refund_iban',
         'transaction_id',
         'refund_transaction_id',
+        'covers',
     ];
 
     /**
@@ -173,6 +178,27 @@ class Payment extends Model
     public function isPartiallyPaid(): bool
     {
         return (float) $this->amount_paid > 0.0 && $this->balance() > 0.0;
+    }
+
+    /**
+     * What this payment is for, as the member reads it: "Affiliation
+     * 2026-2027 + Mini-ping", or only the pack added afterwards.
+     *
+     * Falls back on the payable's own label when the payment does not say
+     * what it covers (another kind of payable, or an old payment the backfill
+     * could not place).
+     *
+     * @return array{type: string, name: string}|null
+     */
+    public function label(): ?array
+    {
+        $payable = $this->payable;
+
+        if ($payable instanceof Subscription && is_array($this->covers)) {
+            return PaymentCovers::label($this->covers, $payable);
+        }
+
+        return $payable instanceof DescribesPayment ? $payable->getPaymentLabel() : null;
     }
 
     /**

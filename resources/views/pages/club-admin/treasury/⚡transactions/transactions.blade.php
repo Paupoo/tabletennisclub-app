@@ -545,7 +545,7 @@
                             @foreach ($this->servedCredits as $credit)
                                 @php
                                     $served = $credit->payment?->payable;
-                                    $servedLabel = $served instanceof \App\Contracts\DescribesPayment ? $served->getPaymentLabel() : null;
+                                    $servedLabel = $credit->payment?->label();
                                 @endphp
                                 <div class="flex items-center gap-3 rounded-lg border border-success/20 bg-success/5 p-2.5 text-sm"
                                     wire:key="served-{{ $credit->id }}">

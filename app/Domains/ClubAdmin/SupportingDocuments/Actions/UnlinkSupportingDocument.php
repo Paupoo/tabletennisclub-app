@@ -19,10 +19,12 @@ final class UnlinkSupportingDocument
     {
         if ($movement instanceof Transaction) {
             $document->transactions()->detach($movement->id);
+            LinkSupportingDocument::audit($document, $movement, 'supporting_document_unlinked');
 
             return;
         }
 
         $document->cashRegisterEntries()->detach($movement->id);
+        LinkSupportingDocument::audit($document, $movement, 'supporting_document_unlinked');
     }
 }

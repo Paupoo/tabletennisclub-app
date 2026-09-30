@@ -21,6 +21,10 @@ final class UnlinkCashDepositAction
         DB::transaction(function () use ($entry, $transaction): void {
             $entry->forceFill(['transaction_id' => null])->save();
             $transaction?->update(['is_internal' => false]);
+
+            if ($transaction instanceof Transaction) {
+                LinkCashDepositAction::audit($entry, $transaction->id, 'cash_deposit_unlinked');
+            }
         });
     }
 }

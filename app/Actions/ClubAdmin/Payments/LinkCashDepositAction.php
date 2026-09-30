@@ -31,7 +31,28 @@ final class LinkCashDepositAction
         DB::transaction(function () use ($transaction, $entry): void {
             $entry->forceFill(['transaction_id' => $transaction->id])->save();
             $transaction->update(['is_internal' => true]);
+            self::audit($entry, $transaction->id, 'cash_deposit_linked');
         });
+    }
+
+    /**
+     * `transaction_id` is kept out of the entry's fillable columns, so the
+     * model log never saw the link — only the bank line turning internal,
+     * without saying which till movement made it so. Logged on the cash
+     * movement, in the shape the audit screen renders.
+     */
+    public static function audit(CashRegisterEntry $entry, int $transactionId, string $event): void
+    {
+        $linked = $event === 'cash_deposit_linked';
+
+        activity()
+            ->performedOn($entry)
+            ->event($event)
+            ->withChanges([
+                'attributes' => ['transaction' => $linked ? $transactionId : null],
+                'old' => ['transaction' => $linked ? null : $transactionId],
+            ])
+            ->log($event);
     }
 
     /**

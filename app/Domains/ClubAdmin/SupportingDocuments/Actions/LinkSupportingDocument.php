@@ -30,6 +30,7 @@ final class LinkSupportingDocument
         if ($movement instanceof Transaction) {
             $this->assertJustifiable($movement);
             $document->transactions()->syncWithoutDetaching([$movement->id]);
+            self::audit($document, $movement, 'supporting_document_linked');
 
             return;
         }
@@ -43,6 +44,29 @@ final class LinkSupportingDocument
         }
 
         $document->cashRegisterEntries()->syncWithoutDetaching([$movement->id]);
+        self::audit($document, $movement, 'supporting_document_linked');
+    }
+
+    /**
+     * The link lives in a pivot the model log never sees, and it is exactly
+     * what the accounts auditors check: which money a document justifies,
+     * and who said so. Logged on the document, in the `attribute_changes`
+     * shape the audit screen renders — the new link under `attributes`, a
+     * removed one under `old`.
+     */
+    public static function audit(SupportingDocument $document, Transaction|CashRegisterEntry $movement, string $event): void
+    {
+        $key = $movement instanceof Transaction ? 'transaction' : 'cash_register_entry';
+        $linked = $event === 'supporting_document_linked';
+
+        activity()
+            ->performedOn($document)
+            ->event($event)
+            ->withChanges([
+                'attributes' => [$key => $linked ? $movement->id : null],
+                'old' => [$key => $linked ? null : $movement->id],
+            ])
+            ->log($event);
     }
 
     /**

@@ -156,7 +156,7 @@ new class extends Component
             'contentImage' => ['required', 'image', 'mimes:jpeg,png,webp', 'max:4096'],
         ]);
 
-        $path = $this->contentImage->store('clubPosts/content', 'public');
+        $path = $this->contentImage->store(NewsPost::CONTENT_IMAGES_DIRECTORY, 'public');
 
         $this->reset('contentImage');
 

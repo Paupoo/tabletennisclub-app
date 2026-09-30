@@ -121,6 +121,8 @@ new class extends Component
         return $this->view([
             'breadcrumbs' => $this->getBreadcrumbs(),
             'yearLabel' => $year->label(),
+            'yearStart' => $year->start()->toDateString(),
+            'yearEnd' => $year->end()->toDateString(),
             'previousLabel' => $previous->cutOffAt() === null
                 ? $year->previous()->label()
                 : __(':year at the same date', ['year' => $year->previous()->label()]),

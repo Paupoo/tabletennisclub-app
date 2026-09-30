@@ -45,37 +45,54 @@
                     </x-slot:extra>
                 </x-admin.shared.stat-card>
 
-                <x-admin.shared.stat-card :label="__('Result')" :value="$euros($flows['result'][0])" icon="o-scale"
+                <x-admin.shared.stat-card :label="__('Result')" :value="$euros($flows['result'][0])" :hint="__('Income minus expenses')" icon="o-scale"
                     :color="$flows['result'][0] >= 0 ? 'success' : 'error'">
                     <x-slot:extra>
                         <x-admin.finance.change :current="$flows['result'][0]" :previous="$flows['result'][1]" :previous-label="$previousLabel" good-when="up" as="euros" />
                     </x-slot:extra>
                 </x-admin.shared.stat-card>
 
-                <x-admin.shared.stat-card :label="__('Movements justified')"
+                {{-- One percentage — the money — and the rest in words: two
+                     percentages side by side read as jargon. --}}
+                @php
+                    $toProcessCount = $justification['count'][MovementClosure::ToProcess->value];
+                    $closedCount = $closureCount - $toProcessCount;
+                @endphp
+                <x-admin.shared.stat-card :label="__('Money accounted for')" data-tile="accounted-for"
                     :value="$justification['closed_amount_share'] === null ? '—' : str_replace('.', ',', (string) $justification['closed_amount_share']) . ' %'"
-                    :hint="$justification['closed_count_share'] === null
+                    :hint="$closureCount === 0
                         ? __('No movement this year')
-                        : __(':share % of the movements (:closed of :total), in amount above', [
-                            'share' => str_replace('.', ',', (string) $justification['closed_count_share']),
-                            'closed' => $closureCount - $justification['count'][MovementClosure::ToProcess->value],
-                            'total' => $closureCount,
-                        ])"
+                        : trans_choice(':closed movement of :total has its supporting evidence|:closed movements of :total have their supporting evidence', $closedCount, ['closed' => $closedCount, 'total' => $closureCount])"
+                    :help="__('A movement is accounted for when it is reconciled with a website payment, covered by a supporting document, or is an internal transfer.')"
                     icon="o-check-badge"
-                    :color="($justification['closed_amount_share'] ?? 100) >= 95 ? 'success' : 'warning'" />
+                    :color="($justification['closed_amount_share'] ?? 100) >= 95 ? 'success' : 'warning'">
+                    @if ($toProcessCount > 0)
+                        <x-slot:extra>
+                            @php $toProcessText = trans_choice(':count is still to process|:count are still to process', $toProcessCount); @endphp
+                            <div class="mt-1 text-xs font-semibold text-warning-content" data-to-process>
+                                @can('transactions.view')
+                                    <a class="link link-hover" wire:navigate
+                                        href="{{ route('admin.treasury.transactions', ['state' => 'to_process', 'from' => $yearStart, 'to' => $yearEnd]) }}">{{ $toProcessText }}</a>
+                                @else
+                                    {{ $toProcessText }}
+                                @endcan
+                            </div>
+                        </x-slot:extra>
+                    @endif
+                </x-admin.shared.stat-card>
 
                 {{-- States: where the club stands today, never compared --}}
-                <x-admin.shared.stat-card :label="__('Members with an open debt')"
+                <x-admin.shared.stat-card :label="__('Members who still owe money')"
                     :value="$members['active'] === 0 ? '—' : round(100 * $members['count'] / $members['active']) . ' %'"
                     :hint="__(':count of :active active members, today', ['count' => $members['count'], 'active' => $members['active']])"
                     icon="o-user-group" :color="$members['count'] > 0 ? 'warning' : 'neutral'" />
 
-                <x-admin.shared.stat-card :label="__('Open receivables')" :value="$euros($receivables['amount'])"
-                    :hint="trans_choice(':count item still expected, today|:count items still expected, today', $receivables['count'])"
+                <x-admin.shared.stat-card :label="__('Money still expected')" :value="$euros($receivables['amount'])"
+                    :hint="trans_choice(':count amount the club is still waiting for|:count amounts the club is still waiting for', $receivables['count'])"
                     icon="o-arrow-down-circle" :color="$receivables['count'] > 0 ? 'warning' : 'neutral'" />
 
-                <x-admin.shared.stat-card :label="__('Open debts')" :value="$euros($debts['amount'])"
-                    :hint="trans_choice(':count item still to pay, today|:count items still to pay, today', $debts['count'])"
+                <x-admin.shared.stat-card :label="__('Money the club still owes')" :value="$euros($debts['amount'])"
+                    :hint="trans_choice(':count amount the club still has to pay|:count amounts the club still has to pay', $debts['count'])"
                     icon="o-arrow-up-circle" :color="$debts['count'] > 0 ? 'warning' : 'neutral'" />
 
                 <x-admin.shared.stat-card :label="__('Treasury')" :value="$euros($treasury['total'])"

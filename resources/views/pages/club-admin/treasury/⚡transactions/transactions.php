@@ -37,6 +37,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -62,9 +63,12 @@ new class extends Component
 
     public bool $confirmDeleteModal = false;
 
-    // Drawer filters
+    // Drawer filters — in the URL, so the financial report can open the
+    // movements of a year still to process.
+    #[Url(as: 'from')]
     public string $dateFrom = '';
 
+    #[Url(as: 'to')]
     public string $dateTo = '';
 
     public mixed $importFile = null;
@@ -83,6 +87,7 @@ new class extends Component
 
     public string $newAccountType = 'current';
 
+    #[Url(as: 'state')]
     public string $reconciledFilter = '';
 
     public int $reconciledInSelection = 0;
@@ -330,6 +335,7 @@ new class extends Component
                 'partial' => __('Partly allocated'),
                 'internal' => __('Internal'),
                 'justified' => __('Justified'),
+                'to_process' => __('To process'),
                 default => __('Unreconciled'),
             };
             $chips[] = ['key' => 'reconciledFilter', 'label' => $label];
@@ -597,6 +603,7 @@ new class extends Component
             'transactions' => $this->transactions(),
             'filterChips' => $this->getFilterChips(),
             'reconciledOptions' => [
+                ['id' => 'to_process',   'name' => __('To process')],
                 ['id' => 'unreconciled', 'name' => __('Unreconciled')],
                 ['id' => 'partial',      'name' => __('Partly allocated')],
                 ['id' => 'reconciled',   'name' => __('Settled')],
@@ -853,6 +860,9 @@ new class extends Component
             ->when($this->reconciledFilter === 'unreconciled', fn (Builder $q): Builder => $q->unallocated())
             ->when($this->reconciledFilter === 'internal', fn (Builder $q): Builder => $q->internal())
             ->when($this->reconciledFilter === 'justified', fn (Builder $q): Builder => $q->justified())
+            // Everything not closed yet, partly allocated lines included: what
+            // the financial report counts as still to process.
+            ->when($this->reconciledFilter === 'to_process', fn (Builder $q): Builder => $q->whereNot(fn (Builder $q): Builder => $q->settled()))
             ->when($this->accountFilter, fn (Builder $q): Builder => $q->where('bank_account_id', (int) $this->accountFilter))
             ->when($this->amountDirection === 'credit', fn (Builder $q): Builder => $q->where('amount', '>', 0))
             ->when($this->amountDirection === 'debit', fn (Builder $q): Builder => $q->where('amount', '<', 0));

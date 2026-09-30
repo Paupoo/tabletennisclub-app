@@ -14,6 +14,7 @@ use App\Support\Charts\ChartPalette;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
@@ -145,4 +146,41 @@ it('renders a chart mPDF can read: plain colours, no script, when asked to', fun
         ->not->toContain('x-data')
         ->not->toContain('tabindex')
         ->toContain('<title>Salle — 2026 : 1 400,00 € (+12 %) · 2025 : 1 250,00 €</title>');
+});
+
+/*
+ * « 97 % » then « 90,6 % des mouvements (126 sur 139), en montant ci-dessus »
+ * read as jargon: one percentage per tile, and the rest in words.
+ */
+it('says in plain words how much of the money is accounted for, and what is left to process', function (): void {
+    frsJustified(-300.0, '2026-02-10', ExpenseCategory::Hall);
+    frsJustified(-500.0, '2026-03-10', ExpenseCategory::Hall);
+    frsJustified(-100.0, '2026-04-10', ExpenseCategory::Hall);
+    Transaction::create(['date' => '2026-05-02', 'description' => 'VIREMENT', 'amount' => 100.0]);
+
+    $html = frsScreen()->html();
+    $tile = Str::before(Str::after($html, 'data-tile="accounted-for"'), 'data-stat-card');
+
+    // 900 € of 1 000 € accounted for: 90 %.
+    expect($tile)->toContain(__('Money accounted for'))
+        ->toContain('90 %')
+        ->toContain('3 mouvements sur 4 ont leur justificatif')
+        ->toContain('1 reste à traiter')
+        ->toContain(e(route('admin.treasury.transactions', ['state' => 'to_process', 'from' => '2026-01-01', 'to' => '2026-12-31'])))
+        ->toContain(e(__('A movement is accounted for when it is reconciled with a website payment, covered by a supporting document, or is an internal transfer.')))
+        ->not->toContain('90,0 %')
+        ->not->toContain('75 %');
+});
+
+it('opens the transactions still to process from the report, for the year shown', function (): void {
+    Transaction::create(['date' => '2026-05-02', 'description' => 'VIREMENT', 'counterparty_name' => 'Non traité', 'amount' => 100.0]);
+    Transaction::create(['date' => '2025-05-02', 'description' => 'VIREMENT', 'counterparty_name' => 'An dernier', 'amount' => 100.0]);
+    Transaction::create(['date' => '2026-06-02', 'description' => 'VIREMENT', 'counterparty_name' => 'Interne', 'amount' => -100.0, 'is_internal' => true]);
+
+    $this->actingAs(User::factory()->withRole(Role::TREASURY)->create())
+        ->get(route('admin.treasury.transactions', ['state' => 'to_process', 'from' => '2026-01-01', 'to' => '2026-12-31']))
+        ->assertOk()
+        ->assertSee('Non traité')
+        ->assertDontSee('An dernier')
+        ->assertDontSee('Interne');
 });

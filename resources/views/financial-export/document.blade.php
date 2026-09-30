@@ -4,7 +4,7 @@
 <h1>{{ $document->reference() }} — {{ $document->counterparty }}</h1>
 
 <table class="facts">
-    <tr><th>{{ __('Label') }}</th><td>{{ $document->label }}</td></tr>
+    <tr><th>{{ __('Wording') }}</th><td>{{ $document->label }}</td></tr>
     <tr><th>{{ __('Date') }}</th><td>{{ $document->date->format('d/m/Y') }}</td></tr>
     <tr><th>{{ __('Category') }}</th><td>{{ $document->isExpense() ? __('Expense') : __('Income') }} — {{ $document->category()->label() }}</td></tr>
     <tr><th>{{ __('Amount') }}</th><td>{{ number_format($document->amount, 2, ',', ' ') }} €</td></tr>

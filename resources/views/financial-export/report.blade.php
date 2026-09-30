@@ -164,6 +164,9 @@
             </tr>
         </tfoot>
     </table>
+    @unless ($loop->last)
+        <pagebreak />
+    @endunless
 @endforeach
 
 <pagebreak />
@@ -211,7 +214,7 @@
     <tbody>
         @foreach ($closures as $closure)
             <tr>
-                <td>{{ $closure->label() }}</td>
+                <td><span style="color:{{ $palette[$closure->value] }}">■</span> {{ $closure->label() }}</td>
                 <td class="num">{{ $justification['count'][$closure->value] }}</td>
                 <td class="num">{{ $euros($justification['amount'][$closure->value]) }}</td>
             </tr>

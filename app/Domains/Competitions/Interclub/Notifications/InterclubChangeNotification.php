@@ -38,6 +38,22 @@ class InterclubChangeNotification extends Notification
     ) {}
 
     /**
+     * A moment and a hall as a reader says them: "vendredi 18 septembre 2026 à 19:45 — Hall…".
+     *
+     * @param  array{start: string|null, address: string|null}|null  $moment
+     */
+    public static function moment(?array $moment): string
+    {
+        $start = $moment['start'] ?? null;
+
+        $when = $start === null
+            ? '—'
+            : Carbon::parse($start)->translatedFormat('l j F Y') . ' ' . __('at') . ' ' . Carbon::parse($start)->format('H:i');
+
+        return trim($when . (($moment['address'] ?? '') !== '' ? ' — ' . $moment['address'] : ''));
+    }
+
+    /**
      * The words a reader sees first: what happened, to whom, when.
      */
     public function subject(): string
@@ -115,20 +131,6 @@ class InterclubChangeNotification extends Notification
     }
 
     /**
-     * @param  array{start: string|null, address: string|null}|null  $moment
-     */
-    private function moment(?array $moment): string
-    {
-        $start = $moment['start'] ?? null;
-
-        $when = $start === null
-            ? '—'
-            : Carbon::parse($start)->translatedFormat('l j F Y') . ' ' . __('at') . ' ' . Carbon::parse($start)->format('H:i');
-
-        return trim($when . (($moment['address'] ?? '') !== '' ? ' — ' . $moment['address'] : ''));
-    }
-
-    /**
      * One fixture as the mail lists it: the moment and the hall before and after.
      *
      * @return array{before: string, after: string}
@@ -136,8 +138,8 @@ class InterclubChangeNotification extends Notification
     private function row(InterclubChange $change): array
     {
         return [
-            'before' => $this->moment($change->before),
-            'after' => $this->moment($change->after),
+            'before' => self::moment($change->before),
+            'after' => self::moment($change->after),
         ];
     }
 

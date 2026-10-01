@@ -23,6 +23,15 @@
         </x-slot:actions>
     </x-header>
 
+    @if ($heldChanges > 0)
+        <x-alert class="alert-warning alert-soft mb-4" icon="o-pause-circle"
+            :title="trans_choice('{1} 1 federation change is waiting before the teams are told.|[2,*] :count federation changes are waiting before the teams are told.', $heldChanges, ['count' => $heldChanges])">
+            <x-slot:actions>
+                <x-button :label="__('Review the changes')" class="btn-sm" :link="route('admin.interclubs.changes')" />
+            </x-slot:actions>
+        </x-alert>
+    @endif
+
     {{-- ── Season: navigation, not a filter (DS-A) ──────────────────────────── --}}
     <x-admin.shared.season-nav model="seasonId" :options="$seasons" class="mt-4" />
 

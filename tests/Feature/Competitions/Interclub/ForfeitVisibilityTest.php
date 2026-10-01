@@ -6,11 +6,14 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubAdmin\Users\Services\UserCalendarService;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\InterclubChange;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Services\InterclubAvailabilityService;
 use App\Domains\Competitions\Interclub\Services\InterclubPreparationService;
+use App\Domains\Shared\Enums\InterclubChangeKind;
+use App\Domains\Shared\Enums\InterclubChangeStatus;
 use App\Domains\Shared\Enums\InterclubForfeit;
 use App\Jobs\SendInterclubAvailabilityRequestJob;
 use Illuminate\Support\Facades\Queue;
@@ -135,4 +138,17 @@ it('marks the forfeit on the captain’s screen, with nothing to do', function (
         ->assertSee(__('Opponent forfeit'))
         ->assertDontSeeHtml('openSelection(' . $this->cancelled->id . ')')
         ->assertDontSeeHtml('confirmAvailabilityRequest(' . $this->cancelled->id . ')');
+});
+
+it('points the interclubs managers to federation changes held for review', function (): void {
+    InterclubChange::create([
+        'interclub_id' => $this->cancelled->id,
+        'kind' => InterclubChangeKind::FORFEIT,
+        'forfeit' => InterclubForfeit::OPPONENT_FORFEIT,
+        'status' => InterclubChangeStatus::HELD,
+    ]);
+
+    Livewire::actingAs($this->createFakeAdmin())
+        ->test('pages::club-events.interclubs.interclubs')
+        ->assertSee(route('admin.interclubs.changes'));
 });

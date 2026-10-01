@@ -112,8 +112,11 @@ class ImportAfttCalendarCommand extends Command
         if ($this->option('silent')) {
             InterclubChange::whereKey($pending->modelKeys())->update(['status' => InterclubChangeStatus::SILENT]);
         } elseif ($pending->isNotEmpty()) {
-            $notifier->notify($pending);
-            $this->info(sprintf('Told the teams about %d change(s).', $pending->count()));
+            $held = $notifier->deliver($pending);
+
+            $held
+                ? $this->warn(sprintf('%d changes in one run: nothing sent, held for review.', $pending->count()))
+                : $this->info(sprintf('Told the teams about %d change(s).', $pending->count()));
         }
 
         $this->summarise($report->created_count, $report->updated_count, $report->unchanged_count,

@@ -9,6 +9,7 @@ use App\Domains\Competitions\Interclub\Models\InterclubChange;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Notifications\InterclubChangeNotification;
+use App\Domains\Competitions\Interclub\Notifications\InterclubChangesHeldNotification;
 use App\Domains\Competitions\Interclub\Notifications\InterclubOwnForfeitAlertNotification;
 use App\Domains\Competitions\Interclub\Services\AfttCalendarImporter;
 use App\Domains\Shared\Enums\InterclubChangeStatus;
@@ -16,6 +17,7 @@ use App\Domains\Shared\Enums\Role;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
+use Livewire\Livewire;
 
 /*
  * The team hears what the federation changed from the application, not from
@@ -154,4 +156,91 @@ it('tells nobody when the run is silent', function (): void {
     sync(['--silent' => true]);
 
     Notification::assertNothingSent();
+});
+
+/*
+ * Six changes in one hour match nothing the federation ordinarily does: a
+ * forfeit or a postponement touches one or two fixtures. A batch like that is
+ * an error, or a correction that will be followed by its own — two waves of
+ * contradicting mails to the whole club. It is written, held, and put in front
+ * of a person.
+ */
+describe('when one run changes too much', function (): void {
+    beforeEach(function (): void {
+        $this->duty = User::factory()->withRole(Role::INTERCLUBS)->create();
+
+        foreach (['PBBWH01/113', 'PBBWH02/115', 'PBBWH03/111', 'PBBWH04/114', 'PBBWH07/115', 'PBBWH08/115'] as $matchId) {
+            afttPatchMatch($matchId, ['Time' => '21:00:00']);
+        }
+    });
+
+    it('holds every message and alerts the interclubs duty once', function (): void {
+        sync();
+
+        Notification::assertNotSentTo([$this->rosterPlayer, $this->reinforcement, $this->captain], InterclubChangeNotification::class);
+        Notification::assertSentToTimes($this->duty, InterclubChangesHeldNotification::class, 1);
+
+        expect(InterclubChange::pluck('status')->unique()->all())->toBe([InterclubChangeStatus::HELD]);
+    });
+
+    it('lets the interclubs duty tell the teams once the changes are checked', function (): void {
+        sync();
+
+        $first = InterclubChange::orderBy('id')->first();
+        $key = 'change:' . $first->id;
+
+        Livewire::actingAs($this->duty)
+            ->test('pages::club-events.interclubs.changes')
+            ->assertSee(__('Match moved — :team vs :opponent', [
+                'team' => $first->interclub->ourTeam()->fullName(),
+                'opponent' => $first->interclub->opponentTeam()->fullName(),
+            ]))
+            ->set('selected', [$key])
+            ->call('notifySelected');
+
+        Notification::assertSentTo([$this->rosterPlayer, $this->reinforcement], InterclubChangeNotification::class);
+        Notification::assertSentTo($this->captain, InterclubChangeNotification::class);
+
+        expect($first->fresh()->status)->toBe(InterclubChangeStatus::SENT)
+            ->and($first->fresh()->notified_by)->toBe($this->duty->id)
+            ->and(InterclubChange::where('status', InterclubChangeStatus::HELD)->count())->toBe(5);
+    });
+
+    it('lets the interclubs duty let changes go untold', function (): void {
+        sync();
+
+        $keys = InterclubChange::pluck('id')->map(fn (int $id): string => 'change:' . $id)->all();
+
+        Livewire::actingAs($this->duty)
+            ->test('pages::club-events.interclubs.changes')
+            ->set('selected', $keys)
+            ->call('dismissSelected');
+
+        Notification::assertNotSentTo([$this->rosterPlayer, $this->captain], InterclubChangeNotification::class);
+        expect(InterclubChange::pluck('status')->unique()->all())->toBe([InterclubChangeStatus::DISMISSED]);
+    });
+
+    it('keeps the review screen to those who manage the interclubs', function (): void {
+        $this->actingAs($this->rosterPlayer)
+            ->get(route('admin.interclubs.changes'))
+            ->assertForbidden();
+    });
+
+    it('counts a withdrawal once against the limit', function (): void {
+        afttPatchMatch(reset: true);
+
+        $withdrawn = ['Score' => '0-0 fg', 'IsHomeForfeited' => 'true', 'IsAwayForfeited' => 'true'];
+        afttPatchMatch('PBBWH01/113', $withdrawn + ['IsAwayWithdrawn' => '1']);
+        afttPatchMatch('PBBWH12/113', $withdrawn + ['IsHomeWithdrawn' => '1']);
+
+        foreach (['PBBWH02/115', 'PBBWH03/111', 'PBBWH04/114', 'PBBWH07/115'] as $matchId) {
+            afttPatchMatch($matchId, ['Time' => '21:00:00']);
+        }
+
+        sync();
+
+        // Six fixtures, five messages: under the limit.
+        Notification::assertNothingSentTo($this->duty);
+        expect(InterclubChange::where('status', InterclubChangeStatus::HELD)->count())->toBe(0);
+    });
 });

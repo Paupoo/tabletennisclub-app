@@ -6,6 +6,8 @@ namespace Resources\views\Pages\ClubEvents\Interclubs\Interclubs;
 
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Shared\Enums\InterclubChangeStatus;
+use App\Domains\Competitions\Interclub\Models\InterclubChange;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Permission;
@@ -269,6 +271,9 @@ new class extends Component
             ]), 'name')->toArray(),
             'opponentTeams' => $opponentTeams->toArray(),
             'grouped' => $grouped,
+            'heldChanges' => auth()->user()?->can(Permission::InterclubsManage->value)
+                ? InterclubChange::where('status', InterclubChangeStatus::HELD)->count()
+                : 0,
             'total' => $interclubs->count(),
             'matchDayMap' => $matchDayMap,
         ];

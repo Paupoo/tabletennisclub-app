@@ -500,6 +500,7 @@ Route::prefix('admin/club-events/interclubs/')
             Route::livewire('teams/builder', 'pages::club-events.interclubs.teams.builder')->name('admin.interclubs.teams.builder');
             Route::livewire('teams/{team}/edit', 'pages::club-events.interclubs.teams.edit')->name('admin.interclubs.teams.edit');
             Route::livewire('division-setup', 'pages::club-events.interclubs.division-setup')->name('admin.interclubs.division-setup');
+            Route::livewire('changes', 'pages::club-events.interclubs.changes')->name('admin.interclubs.changes');
         });
 
         // Who plays where, and against whom: readable at the committee baseline.

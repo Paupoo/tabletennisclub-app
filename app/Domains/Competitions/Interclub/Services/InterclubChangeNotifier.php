@@ -7,6 +7,7 @@ namespace App\Domains\Competitions\Interclub\Services;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\InterclubChange;
+use App\Domains\Competitions\Interclub\Notifications\InterclubChangesHeldNotification;
 use App\Domains\Competitions\Interclub\Notifications\InterclubOwnForfeitAlertNotification;
 use App\Domains\Shared\Enums\InterclubChangeKind;
 use App\Domains\Shared\Enums\InterclubChangeStatus;
@@ -30,6 +31,40 @@ use Illuminate\Support\Facades\Notification;
 class InterclubChangeNotifier
 {
     /**
+     * More messages than this in one run, and none is sent until somebody looks.
+     *
+     * A forfeit or a postponement touches one or two fixtures; a batch larger
+     * than this is a federation error, or a correction that will be followed
+     * by its own — two waves of contradicting mails to the whole club.
+     * Decided on 2026-10-01.
+     */
+    public const int HOLD_ABOVE = 5;
+
+    /**
+     * Send what one sync noticed, unless there is too much of it to trust.
+     *
+     * Counted in messages, not fixtures: a withdrawal is one piece of news,
+     * however many evenings it cancels.
+     *
+     * @param  Collection<int, InterclubChange>  $changes
+     * @return bool Whether the changes were held for review instead of sent.
+     */
+    public function deliver(Collection $changes): bool
+    {
+        if ($this->groups($changes)->count() <= self::HOLD_ABOVE) {
+            $this->notify($changes);
+
+            return false;
+        }
+
+        InterclubChange::whereKey($changes->modelKeys())->update(['status' => InterclubChangeStatus::HELD]);
+
+        Notification::send($this->interclubsDuty(), new InterclubChangesHeldNotification($changes->count()));
+
+        return true;
+    }
+
+    /**
      * The changes as the team will receive them: one message each, except the
      * fixtures a single withdrawal cancels, which travel together.
      *
@@ -39,6 +74,7 @@ class InterclubChangeNotifier
     public function groups(Collection $changes): Collection
     {
         return $changes
+            ->toBase()
             ->sortBy('id')
             ->groupBy(fn (InterclubChange $change): string => $change->group_key ?? 'change:' . $change->id);
     }

@@ -109,19 +109,29 @@ describe('reviewing a federation listing before importing it', function (): void
 
     /*
      * A listing of two hundred lines where every one of them shouts as loudly as
-     * the next is a listing nobody reads. The handful that ask something are held
-     * apart from the ones that only have to be known about.
+     * the next is a listing nobody reads. The newcomers come first, whatever they
+     * ask; then the members that ask something; then the ones that only have to
+     * be known about.
      */
-    it('holds apart the affiliates that ask something from the ones that do not', function (): void {
+    it('holds apart the newcomers, the affiliates that ask something and the ones that do not', function (): void {
         User::factory()->create(['licence' => '166036', 'first_name' => 'Marc', 'last_name' => 'Dupont']);
+        User::factory()->create([
+            'first_name' => 'Paul',
+            'last_name' => 'Martin',
+            'birthdate' => '1980-01-01',
+            'email' => 'autre@example.com',
+            'licence' => null,
+        ]);
 
         $component = Livewire::test(IMPORT_COMPONENT)
             ->set('importFile', importListing([
                 '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
                 '166037;DE CLERCQ ANNE;1985-03-02;D4;D4;N;N;SE;LR;2021-09-01;anne@example.com;;0475987654;RUE DU TEST;15;1348;LOUVAIN-LA-NEUVE',
                 '166038;PETIT LEA;2014-05-08;NC;;N;N;PU;JO;2023-09-01;papa@example.com;;0475111222;RUE DU TEST;17;1348;LOUVAIN-LA-NEUVE',
+                '166039;MARTIN PAUL;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;paul@example.com;;0475123457;RUE DU TEST;19;1348;LOUVAIN-LA-NEUVE',
             ]))
             ->call('parse')
+            ->assertSee(__('New affiliates'))
             ->assertSee(__('Needs your attention'))
             ->assertSee(__('Nothing to report'))
             // The roster answered, the parser did not guess: nothing to look at.
@@ -129,9 +139,12 @@ describe('reviewing a federation listing before importing it', function (): void
             // Past two words the split of the name is a guess.
             ->assertSet('rows.3.needsReview', true)
             // A child's address is usually a parent's, and the file rarely proves it.
-            ->assertSet('rows.4.needsReview', true);
+            ->assertSet('rows.4.needsReview', true)
+            // A namesake with another birthdate: is it them?
+            ->assertSet('rows.5.outcome', 'suspect');
 
-        expect(array_keys($component->instance()->linesToReview))->toBe([3, 4])
+        expect(array_keys($component->instance()->linesNew))->toBe([3, 4])
+            ->and(array_keys($component->instance()->linesToReview))->toBe([5])
             ->and(array_keys($component->instance()->linesReadToImport))->toBe([2]);
     });
 
@@ -191,7 +204,15 @@ describe('reviewing a federation listing before importing it', function (): void
      * looks — so the line cannot sit in the folded section.
      */
     it('files a line whose columns look shifted among the ones that ask something', function (): void {
-        User::factory()->create(['licence' => '166036', 'first_name' => 'Marc', 'last_name' => 'Dupont']);
+        // No address on file: the reviewer is the only one who can put the file's right.
+        User::factory()->create([
+            'licence' => '166036',
+            'first_name' => 'Marc',
+            'last_name' => 'Dupont',
+            'street' => null,
+            'city_code' => null,
+            'city_name' => null,
+        ]);
 
         Livewire::test(IMPORT_COMPONENT)
             ->set('importFile', importListing([
@@ -633,11 +654,12 @@ describe('the affiliates the listing has nothing new to say about', function ():
     });
 
     /*
-     * The other half of the same rule. A child nobody answers for is a loose end,
-     * and folding them away would bury it for good.
+     * The other answer the reviewer could have given: the address is the child's
+     * own. Imported that way, the child holds it as their login, and the question
+     * is settled just as surely as by a guardian.
      */
-    it('keeps asking about a child no guardian answers for', function (): void {
-        $line = '166042;CARTIAUX PAUL;2014-02-08;NC;NC;N;N;PO;LR;2025-09-01;olivier.cartiaux@example.com;;0470445566;RUE DU TEST;42;1348;LOUVAIN-LA-NEUVE';
+    it('stops asking about a child who holds a login of their own', function (): void {
+        $line = '166042;CARTIAUX PAUL;2014-02-08;NC;NC;N;N;PO;LR;2025-09-01;paul.cartiaux@example.com;;0470445566;RUE DU TEST;42;1348;LOUVAIN-LA-NEUVE';
 
         Livewire::test(IMPORT_COMPONENT)
             ->set('importFile', importListing([$line]))
@@ -645,13 +667,94 @@ describe('the affiliates the listing has nothing new to say about', function ():
             ->call('import')
             ->assertSet('step', 3);
 
-        expect(User::query()->where('licence', '166042')->first()->guardians()->exists())->toBeFalse();
+        expect(User::query()->where('licence', '166042')->first())
+            ->email->toBe('paul.cartiaux@example.com')
+            ->guardians->toBeEmpty();
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->assertSet('rows.2.unchanged', true)
+            ->assertSet('rows.2.needsReview', false);
+    });
+
+    /*
+     * The other half of the same rule. A child nobody answers for and who has no
+     * login is a loose end, and folding them away would bury it for good.
+     */
+    it('keeps asking about a child no guardian answers for', function (): void {
+        $line = '166042;CARTIAUX PAUL;2014-02-08;NC;NC;N;N;PO;LR;2025-09-01;olivier.cartiaux@example.com;;0470445566;RUE DU TEST;42;1348;LOUVAIN-LA-NEUVE';
+
+        User::factory()->create([
+            'licence' => '166042',
+            'first_name' => 'Paul',
+            'last_name' => 'Cartiaux',
+            'birthdate' => '2014-02-08',
+            'email' => null,
+        ]);
 
         Livewire::test(IMPORT_COMPONENT)
             ->set('importFile', importListing([$line]))
             ->call('parse')
             ->assertSet('rows.2.unchanged', false)
             ->assertSet('rows.2.needsReview', true);
+    });
+
+    /*
+     * Past two words the split of the name is a guess, but only a creation uses
+     * it: an update never writes names. Asked again every August, the question
+     * buried the one newcomer of the year under members reviewed long ago.
+     */
+    it('stops asking how to split the name of a member the club holds', function (): void {
+        $line = '166037;DE CLERCQ ANNE MARIE;1985-03-02;D4;D4;N;N;SE;LR;2021-09-01;anne@example.com;;0475987654;RUE DU TEST;15;1348;LOUVAIN-LA-NEUVE';
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->assertSet('rows.2.needsNameReview', true)
+            ->set('rows.2.lastName', 'De Clercq')
+            ->set('rows.2.firstName', 'Anne-Marie')
+            ->call('import')
+            ->assertSet('step', 3);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->assertSet('rows.2.needsNameReview', false)
+            ->assertSet('rows.2.needsReview', false)
+            ->assertSet('rows.2.unchanged', true);
+
+        expect(User::query()->where('licence', '166037')->first())
+            ->first_name->toBe('Anne-Marie')
+            ->last_name->toBe('De Clercq');
+    });
+
+    /*
+     * A shifted address is never written as it stands, so for a member whose
+     * address the club holds there is nothing to decide: the club keeps its own.
+     */
+    it('stops asking about a shifted address the club would keep anyway', function (): void {
+        $member = User::factory()->create([
+            'licence' => '166036',
+            'first_name' => 'Marc',
+            'last_name' => 'Dupont',
+            'street' => 'Rue du Club 1',
+            'city_code' => '1340',
+            'city_name' => 'Ottignies',
+        ]);
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([SHIFTED_LINE]))
+            ->call('parse')
+            ->assertSet('rows.2.needsAddressReview', false)
+            ->assertSet('rows.2.needsReview', false)
+            ->call('import')
+            ->assertSet('step', 3);
+
+        expect($member->fresh())
+            ->street->toBe('Rue du Club 1')
+            ->city_code->toBe('1340')
+            ->city_name->toBe('Ottignies');
     });
 
     /*
@@ -738,7 +841,7 @@ describe('answering a whole section at once', function (): void {
             ->assertSet('rows.2.outcome', 'suspect')
             ->assertSet('rows.2.action', '')
             ->assertSet('tally.undecided', 1)
-            ->call('skipUndecided')
+            ->call('applyToReview', 'skip')
             ->assertSet('rows.2.action', 'skip')
             ->assertSet('rows.3.action', 'create')
             ->assertSet('tally.undecided', 0)
@@ -751,19 +854,67 @@ describe('answering a whole section at once', function (): void {
     });
 
     it('sets aside every line it was ready to write, and takes it back', function (): void {
+        User::factory()->create(['licence' => '166036', 'first_name' => 'Marc', 'last_name' => 'Dupont']);
+        User::factory()->create(['licence' => '166037', 'first_name' => 'Anne', 'last_name' => 'Legrand']);
+
         Livewire::test(IMPORT_COMPONENT)
             ->set('importFile', importListing([
                 '166036;DUPONT MARC;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;marc@example.com;;0475123456;RUE DU TEST;13;1348;LOUVAIN-LA-NEUVE',
                 '166037;LEGRAND ANNE;1985-03-02;D4;D4;N;N;SE;LR;2021-09-01;anne@example.com;;0475987654;RUE DU TEST;15;1348;LOUVAIN-LA-NEUVE',
+                '166038;PETIT LEA;1985-05-08;NC;;N;N;SE;JO;2023-09-01;lea@example.com;;0475111222;RUE DU TEST;17;1348;LOUVAIN-LA-NEUVE',
             ]))
             ->call('parse')
-            ->assertSet('tally.create', 2)
+            ->assertSet('tally.update', 2)
+            ->assertSet('tally.create', 1)
             ->call('skipReady')
-            ->assertSet('tally.create', 0)
+            ->assertSet('tally.update', 0)
             ->assertSet('tally.skip', 2)
+            // The newcomer is held in its own section, out of this one's reach.
+            ->assertSet('tally.create', 1)
             ->call('restoreReady')
-            ->assertSet('tally.create', 2)
+            ->assertSet('tally.update', 2)
             ->assertSet('tally.skip', 0);
+    });
+
+    /*
+     * Updating in bulk is the one answer the namesakes never get: it would write
+     * the federation's data onto somebody who may be somebody else. They keep
+     * their answer, and the reviewer is told how many were left.
+     */
+    it('updates the known members of the section in bulk and leaves the namesakes alone', function (): void {
+        User::factory()->create([
+            'licence' => '166036',
+            'first_name' => 'Marc',
+            'last_name' => 'Dupont',
+            'street' => null,
+            'city_code' => null,
+            'city_name' => null,
+        ]);
+        User::factory()->create([
+            'first_name' => 'Paul',
+            'last_name' => 'Martin',
+            'birthdate' => '1980-01-01',
+            'email' => 'autre@example.com',
+            'licence' => null,
+        ]);
+
+        $component = Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                SHIFTED_LINE,
+                '166039;MARTIN PAUL;1990-06-05;C2;*;N;N;SE;JO;2020-09-24;paul@example.com;;0475123457;RUE DU TEST;19;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->call('applyToReview', 'skip')
+            ->assertSet('rows.2.action', 'skip')
+            ->assertSet('rows.3.action', 'skip')
+            ->call('applyToReview', 'update')
+            ->assertSet('rows.2.action', 'update')
+            ->assertSet('rows.3.action', 'skip')
+            ->call('applyToReview', 'reset')
+            ->assertSet('rows.2.action', 'update')
+            ->assertSet('rows.3.action', '');
+
+        expect(array_keys($component->instance()->linesToReview))->toBe([2, 3]);
     });
 
     /*

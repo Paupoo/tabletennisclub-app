@@ -43,6 +43,8 @@ Quand la fédération publie son listing, ne le recopiez pas : **Admin membres �
 
 L'écran vous montre **chaque ligne et ce qu'il propose d'en faire** avant d'écrire quoi que ce soit. Vous arbitrez, puis vous validez.
 
+Les **nouveaux affiliés** sont en tête, dans leur propre section. Viennent ensuite les lignes qui **demandent votre attention** (homonymes, membres archivés, questions que seul le comité peut trancher). Trois boutons y appliquent la même réponse à toute la section ; « Tout mettre à jour » saute les homonymes et les archivés, qui se tranchent un par un. Un membre déjà connu n'est plus interrogé sur ce que vous avez tranché la première fois.
+
 > **Aucune invitation n'est envoyée par l'import.** Les fiches sont créées ou mises à jour, rien de plus. C'est le comité qui décide, plus tard, à qui ouvrir un accès.
 
 ## 6. Charger le calendrier interclubs

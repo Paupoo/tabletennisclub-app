@@ -70,20 +70,35 @@
                 </x-alert>
             @endif
 
+            {{-- What a yearly import is usually run for, held first: the affiliates
+                 the club does not hold yet, whatever they ask. --}}
+            @if (count($this->linesNew) > 0)
+                <x-section-accordion :label="__('New affiliates')" :count="count($this->linesNew)"
+                    color="emerald" :open="true">
+                    <div class="space-y-3">
+                        @foreach ($this->linesNew as $line => $row)
+                            @include('pages::club-admin.users.⚡import._line-card', ['line' => $line, 'row' => $row])
+                        @endforeach
+                    </div>
+                </x-section-accordion>
+            @endif
+
             {{-- What the reviewer has to look at, and what they only have to know about --}}
             @if (count($this->linesToReview) > 0)
                 <x-section-accordion :label="__('Needs your attention')" :count="count($this->linesToReview)"
                     color="amber" :open="true">
-                    {{-- The only bulk action these lines get, and it only ever sets
-                         aside. Writing a namesake or an archived member in bulk is
-                         how the federation's data lands on somebody else's file. --}}
-                    @if ($this->tally['undecided'] > 0)
-                        <div class="mb-3 flex justify-end">
-                            <x-button class="btn-ghost btn-sm" icon="o-no-symbol"
-                                :label="__('Ignore the :count undecided line(s)', ['count' => $this->tally['undecided']])"
-                                wire:click="skipUndecided" />
-                        </div>
-                    @endif
+                    {{-- Updating in bulk skips the namesakes and the archived members:
+                         writing them blind is how the federation's data lands on
+                         somebody else's file. --}}
+                    <div class="mb-3 flex flex-wrap items-center justify-end gap-2">
+                        <span class="text-sm text-muted">{{ __('Apply to the whole section') }}</span>
+                        <x-button class="btn-ghost btn-sm" icon="o-no-symbol" :label="__('Ignore them all')"
+                            wire:click="applyToReview('skip')" />
+                        <x-button class="btn-ghost btn-sm" icon="o-arrow-path" :label="__('Update them all')"
+                            wire:click="applyToReview('update')" />
+                        <x-button class="btn-ghost btn-sm" icon="o-arrow-uturn-left" :label="__('Back to undecided')"
+                            wire:click="applyToReview('reset')" />
+                    </div>
 
                     <div class="space-y-3">
                         @foreach ($this->linesToReview as $line => $row)

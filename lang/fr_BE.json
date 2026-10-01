@@ -5299,7 +5299,6 @@
     "Training — you now train with :pack": "Entraînement — vous vous entraînez désormais avec :pack",
     "The club has enrolled you in pack **:pack** for season **:season**. Your spot is confirmed — there is nothing for you to do.": "Le club vous a inscrit au pack **:pack** pour la saison **:season**. Votre place est confirmée — vous n'avez aucune démarche à faire.",
     "The club moved you from pack **:from** to pack **:to** for season **:season**. Your spot in the new pack is confirmed — there is nothing for you to do.": "Le club vous a déplacé du pack **:from** vers le pack **:to** pour la saison **:season**. Votre place dans le nouveau pack est confirmée — vous n'avez rien à faire.",
-    "The amount now due for your membership is **:amount €**.": "Le montant désormais dû pour votre affiliation est de **:amount €**.",
     "If this enrolment is a mistake, contact the club secretariat and we will undo it.": "Si cette inscription est une erreur, contactez le secrétariat du club et nous la défaisons.",
     "If this move is a mistake, contact the club secretariat and we will undo it.": "Si ce déplacement est une erreur, contactez le secrétariat du club et nous l'annulerons.",
     "Club charter": "Charte du club",

@@ -16,7 +16,11 @@ use Illuminate\Notifications\Notification;
  *
  * Distincte de {@see TrainingPackRequestedNotification}, qui annonce « votre
  * demande a bien été reçue » : ici le membre n'a rien demandé, et le message
- * doit lui dire ce qu'on a fait à sa place — et ce que ça lui coûte.
+ * doit lui dire ce qu'on a fait à sa place.
+ *
+ * Ce que ça lui coûte part dans l'invitation au paiement, jamais ici :
+ * `amount_due` est le prix de la saison entière, et le citer réclamait à une
+ * famille à jour ce qu'elle avait déjà payé.
  */
 class TrainingPackAddedByClubNotification extends Notification
 {
@@ -25,7 +29,6 @@ class TrainingPackAddedByClubNotification extends Notification
     public function __construct(
         public readonly TrainingPack $pack,
         public readonly Subscription $subscription,
-        public readonly ?string $paymentReference = null,
     ) {}
 
     /** @return array<string, mixed> */
@@ -49,15 +52,6 @@ class TrainingPackAddedByClubNotification extends Notification
                 'pack' => $this->pack->name,
                 'season' => $this->subscription->season->name,
             ]))
-            ->line(__('The amount now due for your membership is **:amount €**.', [
-                'amount' => number_format((float) $this->subscription->amount_due, 2),
-            ]))
-            ->when(
-                $this->paymentReference !== null,
-                fn (MailMessage $mail): MailMessage => $mail->line(__('Please quote the structured reference :reference with your transfer.', [
-                    'reference' => $this->paymentReference,
-                ])),
-            )
             ->line(__('If this enrolment is a mistake, contact the club secretariat and we will undo it.'));
     }
 

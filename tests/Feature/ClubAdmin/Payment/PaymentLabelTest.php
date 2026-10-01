@@ -140,6 +140,7 @@ describe('what a new payment records', function (): void {
 
     it('records the pack a member moves to, as a change of pack', function (): void {
         Notification::fake();
+        Club::factory()->ownClub()->create();
         $from = TrainingPack::factory()->started()->create(['max_participants' => 5, 'price' => 90]);
         $to = TrainingPack::factory()->started()->for($from->season, 'season')->create(['max_participants' => 5, 'price' => 150, 'name' => 'Compétition']);
         $subscription = invoicedFor($from);

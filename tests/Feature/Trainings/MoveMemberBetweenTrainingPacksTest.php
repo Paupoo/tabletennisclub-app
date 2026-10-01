@@ -8,6 +8,7 @@ use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\MoveMemberBetweenTrainingPacksAction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingPackAddedByClubNotification;
 use App\Domains\Trainings\Notifications\TrainingPackCancelledNotification;
@@ -17,6 +18,11 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Notification;
 
 describe('MoveMemberBetweenTrainingPacksAction', function (): void {
+    // Un complément part en invitation au paiement, qui lit l'IBAN du club.
+    beforeEach(function (): void {
+        Club::factory()->ownClub()->create();
+    });
+
     /**
      * Une affiliation déjà facturée, non compétitrice pour que la licence soit
      * un nombre connu : sur de l'argent, aucun tirage de la factory ne doit

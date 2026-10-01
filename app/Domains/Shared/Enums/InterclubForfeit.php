@@ -28,6 +28,19 @@ enum InterclubForfeit: string
     }
 
     /**
+     * What a member reads on the fixture.
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::OPPONENT_FORFEIT => __('Opponent forfeit'),
+            self::OPPONENT_WITHDRAWAL => __('Opponent withdrawn from the division'),
+            self::OUR_FORFEIT => __('Forfeit of our team'),
+            self::OUR_WITHDRAWAL => __('Our team withdrawn from the division'),
+        };
+    }
+
+    /**
      * The result the forfeit gives our side once the federation has locked it.
      */
     public function verdict(): InterclubResultEnum

@@ -10,6 +10,7 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Services\InterclubPoolService;
 use App\Domains\Shared\Enums\InterclubAvailability;
+use App\Domains\Shared\Enums\InterclubForfeit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
@@ -126,6 +127,23 @@ it('drops a player the moment someone lines them up elsewhere', function (): voi
     $fixtureC->select($leftOut);
 
     expect($this->pool->freePlayersFor($fixtureB))->toBeEmpty();
+});
+
+it('keeps a player in the pool when the fixture lining them up is cancelled by forfeit', function (): void {
+    $leftOut = User::factory()->isCompetitor()->create();
+
+    [, $fixtureA] = teamPlayingWeek('A', [$leftOut, User::factory()->isCompetitor()->create()]);
+    [, $fixtureB] = teamPlayingWeek('B', [User::factory()->isCompetitor()->create()]);
+    [, $fixtureC] = teamPlayingWeek('C', [User::factory()->isCompetitor()->create()]);
+
+    declareAvailable($fixtureA, $leftOut);
+    publishLineup($fixtureA, [$fixtureA->visitedTeam->users->firstWhere('id', '!=', $leftOut->id)]);
+    $fixtureC->select($leftOut);
+
+    // C ne jouera pas : la sélection y dort, elle ne le retient plus.
+    $fixtureC->update(['forfeit' => InterclubForfeit::OPPONENT_FORFEIT]);
+
+    expect($this->pool->freePlayersFor($fixtureB)->pluck('user.id')->all())->toBe([$leftOut->id]);
 });
 
 it('never offers a player already ticked on the fixture being composed', function (): void {

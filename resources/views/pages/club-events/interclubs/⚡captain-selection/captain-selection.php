@@ -1259,7 +1259,10 @@ new class extends Component
                 'awaits_sending' => $awaitsSending,
                 'max_players' => $ic->total_players,
                 'selected_player_names' => $selectedPlayerNames,
-                'may_compose' => $mayCompose && ! $ic->is_bye,
+                // Un forfait ne se compose plus : la compo qu'il portait se
+                // consulte, et revient telle quelle si la fédération se rétracte.
+                'may_compose' => $mayCompose && ! $ic->is_bye && $ic->forfeit === null,
+                'forfeit' => $ic->forfeit?->label(),
             ];
         });
 

@@ -23,6 +23,7 @@
         'urgent' => ['bg-error', __('Needs attention')],
         'past' => ['bg-base-300', __('Played')],
         'bye' => ['bg-base-300', __('Bye')],
+        'forfeit' => ['bg-error', $ic['forfeit'] ?? __('Forfeit')],
         default => ['bg-base-300', __('Upcoming')],
     };
 @endphp
@@ -68,6 +69,9 @@
                     @endif
                     @if (! $isBye)
                         <span class="truncate text-sm font-bold">{{ $ic['opponent'] }}</span>
+                    @endif
+                    @if (! empty($ic['forfeit']))
+                        <x-badge data-forfeit class="badge-error badge-soft badge-sm shrink-0 font-bold" :value="$ic['forfeit']" />
                     @endif
                 </div>
                 {{-- Le statut en phrase, pas en marge droite : « 3/4 dispo » se

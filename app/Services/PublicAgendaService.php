@@ -257,6 +257,24 @@ class PublicAgendaService
 
         $entries = [];
 
+        // Un forfait reste annoncé, sur sa propre ligne : fondu dans « 2 matches
+        // à domicile », il ferait venir quelqu'un pour une rencontre qui n'a pas
+        // lieu.
+        [$cancelled, $matches] = $matches->partition(fn (Interclub $match): bool => $match->forfeit !== null);
+
+        foreach ($cancelled as $match) {
+            $entries[] = new AgendaEntry(
+                startsAt: CarbonImmutable::parse($match->start_date_time),
+                endsAt: null,
+                family: AgendaFamily::COMPETITION,
+                title: __('Interclubs · :team v. :opponent', [
+                    'team' => $match->visitedTeam?->name ?? '',
+                    'opponent' => $match->visitingTeam?->club?->name ?? '',
+                ]) . ' · ' . $match->forfeit->label(),
+                location: $match->address,
+            );
+        }
+
         // Nine teams share one hall: two or three of them receiving on the same
         // Saturday is the ordinary case, not the exception. Listed one by one
         // they fill the square and crowd out everything else, so a busy day

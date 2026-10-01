@@ -11,6 +11,7 @@ use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Enums\InterclubForfeit;
 use App\Domains\Shared\Enums\InterclubResultEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\Role;
@@ -59,6 +60,25 @@ describe('AgendaBlockBuilder', function (): void {
             ->and($block->rows[0]->label)->toBe('C — C.T.T. Rebecq B')
             ->and($block->rows[0]->badge)->toBe('À domicile')
             ->and($block->seeAllRoute)->toBeNull();
+    });
+
+    it('says a coming match is cancelled by forfeit instead of where it is played', function (): void {
+        $season = makeActiveSeason();
+        $ours = Team::factory()->create(['name' => 'F', 'club_id' => Club::factory()->ownClub()->create()->id, 'season_id' => $season->id]);
+        $theirs = Team::factory()->create(['name' => 'I', 'club_id' => Club::factory()->create(['name' => 'La Hulpe-Rixensart'])->id, 'season_id' => $season->id]);
+
+        Interclub::factory()->create([
+            'start_date_time' => now()->addDay(),
+            'is_bye' => false,
+            'season_id' => $season->id,
+            'visited_team_id' => $ours->id,
+            'visiting_team_id' => $theirs->id,
+            'forfeit' => InterclubForfeit::OPPONENT_FORFEIT,
+        ]);
+
+        $block = collect(app(AgendaBlockBuilder::class)->for(User::factory()->create()))->firstWhere('key', 'interclubs');
+
+        expect($block->rows[0]->badge)->toBe(__('Opponent forfeit'));
     });
 
     it('leads the interclubs block with the last result', function (): void {

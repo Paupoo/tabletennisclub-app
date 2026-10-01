@@ -12,6 +12,7 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\AgendaFamily;
+use App\Domains\Shared\Enums\InterclubForfeit;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
@@ -509,6 +510,32 @@ it('nomme l’adversaire quand un seul match a lieu ce jour-là', function (): v
 
     expect($day->entries)->toHaveCount(1)
         ->and($day->entries[0]->title)->toContain('Arc-en-Ciel');
+});
+
+it('garde à l’agenda un match à domicile annulé par forfait, en le disant', function (): void {
+    $ourClub = Club::factory()->ownClub()->create(['name' => 'CTT Ottignies-Blocry']);
+    $rival = Club::factory()->create(['name' => 'La Hulpe-Rixensart']);
+    $teamC = Team::factory()->create(['club_id' => $ourClub->id, 'season_id' => $this->season->id, 'name' => 'C']);
+    $teamF = Team::factory()->create(['club_id' => $ourClub->id, 'season_id' => $this->season->id, 'name' => 'F']);
+    $theirs = Team::factory()->create(['club_id' => $rival->id, 'season_id' => $this->season->id, 'name' => 'I']);
+
+    Interclub::factory()->create([
+        'season_id' => $this->season->id, 'visited_team_id' => $teamC->id,
+        'visiting_team_id' => $theirs->id, 'start_date_time' => '2026-09-19 14:00:00', 'is_bye' => false,
+    ]);
+    Interclub::factory()->create([
+        'season_id' => $this->season->id, 'visited_team_id' => $teamF->id,
+        'visiting_team_id' => $theirs->id, 'start_date_time' => '2026-09-19 19:45:00', 'is_bye' => false,
+        'forfeit' => InterclubForfeit::OPPONENT_FORFEIT,
+    ]);
+
+    $day = dayOn(app(PublicAgendaService::class)->forHomepage($this->season), '2026-09-19');
+
+    // Le match annulé ne se fond pas dans « 2 matches à domicile » : il a sa
+    // propre ligne, qui dit pourquoi personne ne jouera.
+    expect($day->entries)->toHaveCount(2)
+        ->and($day->entries[1]->title)->toContain('La Hulpe-Rixensart')
+        ->and($day->entries[1]->title)->toContain(__('Opponent forfeit'));
 });
 
 it('retire le préfixe du jour que le club met dans le nom de ses packs', function (): void {

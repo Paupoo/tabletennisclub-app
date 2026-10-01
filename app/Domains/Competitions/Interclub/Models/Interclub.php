@@ -259,6 +259,19 @@ class Interclub extends Model
         $query->where('is_bye', false);
     }
 
+    /**
+     * Fixtures that will still be played.
+     *
+     * A forfeit leaves the fixture on the calendar, marked, with whatever its
+     * members said about it kept dormant: it asks nobody for anything and
+     * engages nobody for the week, but it must come back whole if the
+     * federation retracts it.
+     */
+    public function scopeWithoutForfeits(Builder $query): void
+    {
+        $query->whereNull('interclubs.forfeit');
+    }
+
     public function season(): BelongsTo
     {
         return $this->belongsTo(Season::class);

@@ -10,6 +10,7 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Services\InterclubDayAvailabilityService;
 use App\Domains\Shared\Enums\InterclubAvailability;
+use App\Domains\Shared\Enums\InterclubForfeit;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\TeamLineupNeed;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -188,6 +189,20 @@ it('tells which teams are short, and whether their own players can cover it', fu
         [$coverable->id, 'B', 2, 4, TeamLineupNeed::COVERABLE, false],
         [$uncovered->id, 'C', 2, 4, TeamLineupNeed::UNCOVERED, true],
     ]);
+});
+
+it('leaves a team out of the day once its fixture is cancelled by forfeit', function (): void {
+    [, $playing] = dayAvailabilitySquad('A', [1, 2, 3, 4]);
+    [, $cancelled] = dayAvailabilitySquad('B', [5, 6, 7, 8]);
+    settleDayAvailabilityForce();
+
+    $cancelled->update(['forfeit' => InterclubForfeit::OPPONENT_FORFEIT]);
+
+    $fixtureIds = $this->dayAvailability->forWeek($this->season, 42)->first()->teams
+        ->map(fn ($team): int => $team->fixtureId)
+        ->all();
+
+    expect($fixtureIds)->toBe([$playing->id]);
 });
 
 /**

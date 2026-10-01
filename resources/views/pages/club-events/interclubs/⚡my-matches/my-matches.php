@@ -36,6 +36,7 @@ new class extends Component
         $teamIds = $user->teams()->pluck('teams.id');
 
         Interclub::withoutByes()
+            ->withoutForfeits()
             ->where('start_date_time', '>=', now())
             ->where(fn ($q) => $q->whereIn('visited_team_id', $teamIds)
                 ->orWhereIn('visiting_team_id', $teamIds))
@@ -60,6 +61,12 @@ new class extends Component
 
         if (! $team) {
             $this->error(__('You are not part of this team.'));
+
+            return;
+        }
+
+        if ($interclub->forfeit !== null) {
+            $this->error(__('Your availability can no longer be changed for this match.'));
 
             return;
         }
@@ -134,6 +141,7 @@ new class extends Component
                     'team_name' => $teamLabel,
                     'opponent' => $opponent,
                     'is_home' => $isHome,
+                    'forfeit' => $interclub->forfeit?->label(),
                     'division' => $division,
                     'date' => $interclub->start_date_time->format('d/m/Y'),
                     'time' => $interclub->start_date_time->format('H:i'),

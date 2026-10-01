@@ -318,6 +318,7 @@ new class extends Component
             'date_sort' => $ic->start_date_time->format('Y-m-d H:i:s'),
             'time' => $ic->start_date_time->format('H:i'),
             'is_home' => $isHome,
+            'forfeit' => $ic->forfeit?->label(),
             'opponent' => trim(($opponentTeam?->club?->name ?? '') . ' ' . ($opponentTeam?->name ?? '')) ?: '—',
             'address' => $ic->address ?? '—',
             'division' => $ic->league?->division ?? '',

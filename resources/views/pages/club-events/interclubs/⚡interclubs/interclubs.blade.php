@@ -106,6 +106,9 @@
                                                                     <x-badge class="badge-ghost badge-xs border border-base-300 font-bold" value="{{ __('Away') }}" />
                                                                 @endif
                                                                 <span class="font-bold">{{ $match['opponent'] }}</span>
+                                                                @if ($match['forfeit'])
+                                                                    <x-badge data-forfeit class="badge-error badge-soft badge-xs font-bold" :value="$match['forfeit']" />
+                                                                @endif
                                                                 @if ($match['division'])
                                                                     <span class="text-base-content/40 text-xs">{{ $match['division'] }}</span>
                                                                 @endif

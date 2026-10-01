@@ -153,6 +153,7 @@ trait ComposesInterclubLineup
         return Interclub::where('season_id', $interclub->season_id)
             ->where('week_number', $interclub->week_number)
             ->where('id', '!=', $interclub->id)
+            ->withoutForfeits()
             ->whereHas('league', $this->sameCategoryAs($interclub))
             ->whereHas('users', fn ($q) => $q
                 ->where('users.id', $userId)
@@ -229,6 +230,9 @@ trait ComposesInterclubLineup
         return $this->weekFixturesCache[$interclub->id] ??= Interclub::query()
             ->where('season_id', $interclub->season_id)
             ->where('week_number', $interclub->week_number)
+            // Une rencontre forfait n'engage plus personne, mais celle qu'on
+            // compose reste dans le lot, forfait ou non.
+            ->where(fn ($query) => $query->whereNull('forfeit')->orWhere('id', $interclub->id))
             ->whereHas('league', $this->sameCategoryAs($interclub))
             ->with(['visitedTeam.club', 'visitingTeam.club', 'users'])
             ->orderBy('interclubs.id')

@@ -1130,14 +1130,16 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $seasonId = Season::current()->id ?? 0;
 
-        $competitiveLicence = fn (EloquentBuilder $subscription): EloquentBuilder => $subscription
+        $affiliatedThisSeason = fn (EloquentBuilder $subscription): EloquentBuilder => $subscription
             ->where('season_id', $seasonId)
-            ->whereIn('status', Subscription::AFFILIATED_STATUSES)
+            ->whereIn('status', Subscription::AFFILIATED_STATUSES);
+
+        $competitiveLicence = fn (EloquentBuilder $subscription): EloquentBuilder => $affiliatedThisSeason($subscription)
             ->where('is_competitive', true);
 
         return $competitive
             ? $query->whereHas('subscriptions', $competitiveLicence)
-            : $query->affiliatedForCurrentSeason()->whereDoesntHave('subscriptions', $competitiveLicence);
+            : $query->whereHas('subscriptions', $affiliatedThisSeason)->whereDoesntHave('subscriptions', $competitiveLicence);
     }
 
     public function scopePaid(EloquentBuilder $query): EloquentBuilder
@@ -1519,6 +1521,17 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Normalize a category given as an enum or as its raw case-name (as stored
+     * on leagues and used by the team builder) to a {@see LeagueCategory}.
+     */
+    private static function resolveCategory(LeagueCategory|string|null $category): ?LeagueCategory
+    {
+        return $category instanceof LeagueCategory
+            ? $category
+            : LeagueCategory::fromName($category);
+    }
+
+    /**
      * The running season, the one before it, and the seasons before the running
      * one, the last included.
      *
@@ -1536,17 +1549,6 @@ class User extends Authenticatable implements MustVerifyEmail
             $current?->previous()->id ?? 0,
             Season::query()->select('id')->where('start_at', '<', $current->start_at ?? now()),
         ];
-    }
-
-    /**
-     * Normalize a category given as an enum or as its raw case-name (as stored
-     * on leagues and used by the team builder) to a {@see LeagueCategory}.
-     */
-    private static function resolveCategory(LeagueCategory|string|null $category): ?LeagueCategory
-    {
-        return $category instanceof LeagueCategory
-            ? $category
-            : LeagueCategory::fromName($category);
     }
 
     /**

@@ -460,6 +460,19 @@ select:focus-visible {
 }
 
 /*
+  The soft alert paints its text in the alert colour itself, on that colour
+  mixed 8 % into base-100. For warning that is an 82 %-lightness amber on
+  near-white: the "some affiliates could not be told apart" banner of the
+  federation import, and a dozen others, could not be read in light mode. The
+  text takes the foreground the theme defines for warning (amber, 41 %), which
+  is what the token is for. Scoped to the light theme: on the dark ground the
+  same token is the warning colour itself and already reads.
+*/
+:root:not([data-theme='dark']) .alert-soft.alert-warning {
+  color: var(--color-warning-content);
+}
+
+/*
   WCAG 2.5.8 puts the floor for a pointer target at 24x24 CSS pixels; the Apple
   HIG asks 44x44 for anything used one-handed. Both are about the *hit area*, not
   the drawing, so these grow the box with padding and leave the icon alone.

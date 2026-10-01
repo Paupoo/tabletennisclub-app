@@ -79,6 +79,15 @@ Go to **Members Admin → Users → More actions → Import the federation listi
 
 The screen shows you **every line and what it proposes to do with it** before writing anything: create, update, skip. You arbitrate, then confirm. Nothing is sent to members at that point: **the import triggers no invitation** — the committee decides later when to grant access.
 
+The lines come in four sections:
+
+- **New affiliates** — the people the club does not hold yet, first and open. This is usually what the import is run for.
+- **Needs your attention** — namesakes (same name, other birthdate), archived members, and known members with a question only you can answer (a shifted address when the club holds none, a minor with neither a login nor a guardian). Three buttons apply one answer to the whole section: ignore them all, update them all, back to undecided. **Update them all skips the namesakes and the archived members**: those are settled one by one.
+- **Nothing to report** — known members the import will update (a new ranking, typically).
+- **Already up to date** — folded; nothing will be written.
+
+A member the club already holds is never asked again what was settled the first time: how to split a long name (an update never writes names), a shifted address when the club holds one (the club keeps its own), or whose address a minor's is once they have a guardian or a login of their own.
+
 See the [Committee Manual](manual-committee.md) for the review screen in detail.
 
 ---

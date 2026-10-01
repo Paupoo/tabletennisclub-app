@@ -134,6 +134,46 @@ new class extends Component
     }
 
     /**
+     * Give every line of "Needs your attention" the same answer.
+     *
+     * Setting aside and taking back are offered on every line. Updating is not:
+     * a namesake and an archived member are exactly the two answers the matcher
+     * would not commit to, and writing them in bulk is how the federation's data
+     * lands on somebody else's file. Those lines keep their answer, and the
+     * reviewer is told how many were left for them to settle one by one.
+     */
+    public function applyToReview(string $choice): void
+    {
+        $inSection = static fn (array $row): bool => $row['needsReview'] && ! self::isNewcomer($row);
+
+        if ($choice === ImportLineAction::UPDATE->value) {
+            $this->setActionWhere(
+                static fn (array $row): bool => $inSection($row) && $row['outcome'] === MemberMatchOutcome::MATCHED->value,
+                static fn (): string => ImportLineAction::UPDATE->value,
+            );
+
+            $leftAlone = count(array_filter(
+                $this->rows,
+                static fn (array $row): bool => $inSection($row) && $row['outcome'] !== MemberMatchOutcome::MATCHED->value,
+            ));
+
+            if ($leftAlone > 0) {
+                $this->warning(__(':count namesake or archived line(s) left to settle one by one.', ['count' => $leftAlone]));
+            }
+
+            return;
+        }
+
+        $this->setActionWhere(
+            $inSection,
+            match ($choice) {
+                ImportLineAction::SKIP->value => static fn (): string => ImportLineAction::SKIP->value,
+                default => fn (array $row): string => $this->proposedAction(MemberMatchOutcome::from($row['outcome'])),
+            },
+        );
+    }
+
+    /**
      * Write a line the screen had classed as already up to date after all.
      *
      * The line does not move: it was filed under the unchanged when the file was
@@ -191,6 +231,21 @@ new class extends Component
     }
 
     /**
+     * The affiliates the club does not hold yet, whatever they ask.
+     *
+     * The one line a yearly import is usually run for, held first and apart: it
+     * used to sit somewhere among two hundred others, filed by what it asked
+     * rather than by what it is.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    #[Computed]
+    public function linesNew(): array
+    {
+        return array_filter($this->rows, self::isNewcomer(...));
+    }
+
+    /**
      * The lines nobody has to look at, but which still have something to write:
      * an affiliate the club does not hold, or one whose file the listing moves.
      *
@@ -201,19 +256,22 @@ new class extends Component
     {
         return array_filter(
             $this->rows,
-            static fn (array $row): bool => ! $row['needsReview'] && ! $row['unchanged'],
+            static fn (array $row): bool => ! $row['needsReview'] && ! $row['unchanged'] && ! self::isNewcomer($row),
         );
     }
 
     /**
-     * The lines that ask the reviewer something.
+     * The members the club holds, or may hold, that ask the reviewer something.
      *
      * @return array<int, array<string, mixed>>
      */
     #[Computed]
     public function linesToReview(): array
     {
-        return array_filter($this->rows, static fn (array $row): bool => $row['needsReview']);
+        return array_filter(
+            $this->rows,
+            static fn (array $row): bool => $row['needsReview'] && ! self::isNewcomer($row),
+        );
     }
 
     /**
@@ -296,7 +354,7 @@ new class extends Component
     public function restoreReady(): void
     {
         $this->setActionWhere(
-            static fn (array $row): bool => ! $row['needsReview'] && ! $row['unchanged'],
+            static fn (array $row): bool => ! $row['needsReview'] && ! $row['unchanged'] && ! self::isNewcomer($row),
             fn (array $row): string => $this->proposedAction(MemberMatchOutcome::from($row['outcome'])),
         );
     }
@@ -310,25 +368,7 @@ new class extends Component
     public function skipReady(): void
     {
         $this->setActionWhere(
-            static fn (array $row): bool => ! $row['needsReview'] && ! $row['unchanged'],
-            static fn (): string => ImportLineAction::SKIP->value,
-        );
-    }
-
-    /**
-     * Set aside the lines nobody has answered for.
-     *
-     * The one bulk action the screen needs, because those lines are what holds
-     * the import back. It only ever sets aside: a namesake and an archived
-     * member are exactly the two answers the matcher would not commit to, and
-     * writing them in bulk is how the federation's data lands on somebody else's
-     * file. Setting a line aside costs the club a line; writing it onto the
-     * wrong person costs them a member.
-     */
-    public function skipUndecided(): void
-    {
-        $this->setActionWhere(
-            static fn (array $row): bool => $row['action'] === '',
+            static fn (array $row): bool => ! $row['needsReview'] && ! $row['unchanged'] && ! self::isNewcomer($row),
             static fn (): string => ImportLineAction::SKIP->value,
         );
     }
@@ -415,6 +455,45 @@ new class extends Component
             ->home()
             ->users()
             ->current(__('Federation import'));
+    }
+
+    /**
+     * An affiliate nobody on the roster answered for.
+     *
+     * @param  array<string, mixed>  $row
+     */
+    private static function isNewcomer(array $row): bool
+    {
+        return $row['outcome'] === MemberMatchOutcome::NEW->value;
+    }
+
+    /**
+     * Whether a shifted address is still a question.
+     *
+     * A shifted address is never written as it stands: {@see ImportLine()} hands
+     * it over empty and the club keeps its own. When the club holds one, there is
+     * nothing to decide — only a member the club has no address for needs the
+     * reviewer to put the file's right.
+     */
+    private function asksAboutAddress(MemberMatch $match): bool
+    {
+        return $match->row->needsAddressReview
+            && ($match->outcome !== MemberMatchOutcome::MATCHED || ! filled($match->existing?->street));
+    }
+
+    /**
+     * Whether the split of the name is still a question.
+     *
+     * Past two words the parser guesses, but only a new affiliate is created with
+     * the guess: an update never writes names. For a member the club holds, the
+     * question was settled the first time the file was read, and asking it again
+     * every August is what buried the real newcomers under a list of members
+     * already reviewed. A namesake or an archived member is a doubt about who the
+     * line is, and the name is part of that doubt.
+     */
+    private function asksAboutName(MemberMatch $match): bool
+    {
+        return $match->row->needsNameReview && $match->outcome !== MemberMatchOutcome::MATCHED;
     }
 
     /**
@@ -532,16 +611,16 @@ new class extends Component
             return false;
         }
 
-        if ($match->row->needsNameReview || $match->row->needsAddressReview) {
+        if ($this->asksAboutName($match) || $this->asksAboutAddress($match)) {
             return false;
         }
 
-        if ($minor && ! $hasGuardian) {
+        if ($minor && ! $this->minorIsSettled($match, $hasGuardian)) {
             return false;
         }
 
         $line = new ImportLine(
-            row: $match->row,
+            row: $this->withoutShiftedAddress($match->row),
             action: ImportLineAction::UPDATE,
             existingUserId: $existing->id,
             keepsEmail: $this->keepsEmail($decision, $hasGuardian),
@@ -562,6 +641,18 @@ new class extends Component
     private function keepsEmail(?SharedAddressDecision $decision, bool $hasGuardian): bool
     {
         return ! $hasGuardian && ($decision?->keepsEmail ?? true);
+    }
+
+    /**
+     * Whether the club already knows whose address a minor's is.
+     *
+     * A guardian on file answers it; so does a login of their own, which is the
+     * other answer the reviewer could have given the first time.
+     */
+    private function minorIsSettled(MemberMatch $match, bool $hasGuardian): bool
+    {
+        return $hasGuardian
+            || ($match->outcome === MemberMatchOutcome::MATCHED && filled($match->existing?->email));
     }
 
     /**
@@ -613,16 +704,16 @@ new class extends Component
             'street' => $row->street,
             'cityCode' => $row->cityCode,
             'cityName' => $row->cityName,
-            'needsNameReview' => $row->needsNameReview,
-            'needsAddressReview' => $row->needsAddressReview,
+            'needsNameReview' => $this->asksAboutName($match),
+            'needsAddressReview' => $this->asksAboutAddress($match),
             // Settled once, when the file is read, and never recomputed: a line that
             // moved to the other section the moment it was answered would shift the
             // grid under the pointer and hand the next click to the wrong affiliate.
             'needsReview' => ! $unchanged && (
                 $this->proposedAction($match->outcome) === ''
-                || $row->needsNameReview
-                || $row->needsAddressReview
-                || $minor
+                || $this->asksAboutName($match)
+                || $this->asksAboutAddress($match)
+                || ($minor && ! $this->minorIsSettled($match, $hasGuardian))
             ),
             'unchanged' => $unchanged,
             'outcome' => $match->outcome->value,
@@ -660,5 +751,35 @@ new class extends Component
                 $this->rows[$line]['action'] = $action($row);
             }
         }
+    }
+
+    /**
+     * The row as {@see ImportLine()} would hand it over: a shifted address
+     * dropped, so that a member is not called changed over an address that will
+     * never be written.
+     */
+    private function withoutShiftedAddress(FederationRow $row): FederationRow
+    {
+        if (! AddressNormalizer::looksShifted($row->street, $row->cityCode, $row->cityName)) {
+            return $row;
+        }
+
+        return new FederationRow(
+            lineNumber: $row->lineNumber,
+            licence: $row->licence,
+            lastName: $row->lastName,
+            firstName: $row->firstName,
+            birthdate: $row->birthdate,
+            ranking: $row->ranking,
+            gender: $row->gender,
+            federationLicenceType: $row->federationLicenceType,
+            email: $row->email,
+            phone: $row->phone,
+            street: null,
+            cityCode: null,
+            cityName: null,
+            needsNameReview: $row->needsNameReview,
+            needsAddressReview: $row->needsAddressReview,
+        );
     }
 };

@@ -79,6 +79,15 @@ Allez dans **Admin membres → Utilisateurs → Actions supplémentaires → Imp
 
 L'écran vous présente **chaque ligne avec ce qu'il propose d'en faire** avant d'écrire quoi que ce soit : créer, mettre à jour, ignorer. Vous arbitrez, puis vous validez. Rien n'est envoyé aux membres à ce moment-là : **l'import ne déclenche aucune invitation**, c'est le comité qui décide plus tard quand donner un accès.
 
+Les lignes sont rangées en quatre sections :
+
+- **Nouveaux affiliés** : les personnes que le club ne connaît pas encore, en premier et ouvertes. C'est en général pour elles qu'on lance l'import.
+- **Demande votre attention** : homonymes (même nom, autre date de naissance), membres archivés, et membres connus avec une question à laquelle vous seul pouvez répondre (adresse décalée alors que le club n'en a aucune, mineur sans accès ni tuteur). Trois boutons appliquent la même réponse à toute la section : tout ignorer, tout mettre à jour, remettre à décider. **« Tout mettre à jour » saute les homonymes et les membres archivés** : ceux-là se tranchent un par un.
+- **Rien à signaler** : membres connus que l'import mettra à jour (un nouveau classement, typiquement).
+- **Déjà à jour** : repliée ; rien ne sera écrit.
+
+Un membre que le club connaît déjà n'est plus interrogé sur ce qui a été tranché la première fois : la découpe d'un nom long (une mise à jour n'écrit jamais les noms), une adresse décalée quand le club en a une (il garde la sienne), ou l'adresse d'un mineur qui a déjà un tuteur ou son propre accès.
+
 Voyez le [Manuel membre du comité](manual-committee-fr.md) pour le détail de l'écran de revue.
 
 ---

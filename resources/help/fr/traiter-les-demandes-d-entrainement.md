@@ -55,7 +55,7 @@ Cela vaut aussi quand **vous relevez le plafond** d'un pack complet : passer de 
 
 Depuis **Entraînements**, ouvrez **Séances** sur le pack, puis **Ajouter un membre**. C'est le pendant de la fermeture des inscriptions : les membres ne peuvent plus entrer seuls, vous si.
 
-La place **arrive validée** — vous n'allez pas approuver votre propre décision — et le membre reçoit un e-mail lui disant que le club l'a inscrit, avec le montant désormais dû. Le calcul est le même que ci-dessus, remises comprises.
+La place **arrive validée** — vous n'allez pas approuver votre propre décision — et le membre reçoit un e-mail lui disant que le club l'a inscrit. Le complément se calcule comme ci-dessus, remises comprises, et part dans une invitation au paiement distincte, une fois la remise éventuelle appliquée. Si le membre n'a aucune adresse e-mail, l'écran vous le signale : remettez-lui les informations de paiement.
 
 **La date d'entrée se choisit.** Vide, la facturation part d'aujourd'hui. Antérieure, elle régularise quelqu'un qui venait déjà sans être inscrit — le cas que la grille de présences fait apparaître. Sans cette date, vous lui offririez les mois déjà consommés.
 

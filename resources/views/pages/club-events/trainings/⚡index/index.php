@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Payments\InviteToPayAction;
 use App\Actions\ClubAdmin\Subscriptions\AddMemberToTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\DiscontinueTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\MoveMemberBetweenTrainingPacksAction;
 use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -262,7 +264,7 @@ new class extends Component
         $previousAmountDue = (float) $subscription->amount_due;
 
         try {
-            (new AddMemberToTrainingPackAction)(
+            $complement = (new AddMemberToTrainingPackAction)(
                 $subscription,
                 $pack,
                 $this->addMemberStartsOn ?: null,
@@ -279,6 +281,13 @@ new class extends Component
 
             return;
         }
+
+        // Réclamé une fois la remise posée : l'invitation lit le solde net.
+        if ($complement instanceof Payment) {
+            (new InviteToPayAction)($complement->fresh());
+        }
+
+        $this->warnWhenUnreachable($subscription->user);
 
         $this->addMemberModal = false;
         $this->addMemberUserId = 0;
@@ -501,6 +510,8 @@ new class extends Component
         }
 
         $userName = $subscription->user->first_name . ' ' . $subscription->user->last_name;
+
+        $this->warnWhenUnreachable($subscription->user);
 
         $this->moveMemberModal = false;
         $this->moveMemberUserId = 0;
@@ -1819,5 +1830,20 @@ new class extends Component
             ->where('user_id', $userId)
             ->where('season_id', $pack->season_id)
             ->first();
+    }
+
+    /**
+     * Ni l'annonce ni l'invitation au paiement ne sont parties : le comité est
+     * le seul canal qui reste pour prévenir le membre.
+     */
+    private function warnWhenUnreachable(User $member): void
+    {
+        if ($member->contactEmails() !== []) {
+            return;
+        }
+
+        $this->warning(__('No email address on file for :name — hand them the payment details.', [
+            'name' => $member->first_name . ' ' . $member->last_name,
+        ]));
     }
 };

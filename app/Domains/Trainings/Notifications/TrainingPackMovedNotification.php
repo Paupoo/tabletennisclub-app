@@ -20,9 +20,10 @@ use Illuminate\Notifications\Notification;
  * {@see TrainingPackAddedByClubNotification} lui annoncerait un départ qu'il
  * n'a pas subi, suivi d'une inscription qu'il n'a pas demandée.
  *
- * Le solde annoncé est celui d'après recalcul : un déplacement peut ne rien
- * coûter, réclamer un complément ou ouvrir un remboursement, et c'est la seule
- * chose que le membre a besoin de lire.
+ * Aucun montant ici : `amount_due` est le prix de la saison entière, et le
+ * citer réclamait à une famille à jour ce qu'elle avait déjà payé. Un
+ * complément part dans sa propre invitation au paiement, qui lit le solde de
+ * sa ligne.
  */
 class TrainingPackMovedNotification extends Notification
 {
@@ -32,7 +33,6 @@ class TrainingPackMovedNotification extends Notification
         public readonly TrainingPack $from,
         public readonly TrainingPack $to,
         public readonly Subscription $subscription,
-        public readonly ?string $paymentReference = null,
     ) {}
 
     /** @return array<string, mixed> */
@@ -60,15 +60,6 @@ class TrainingPackMovedNotification extends Notification
                 'to' => $this->to->name,
                 'season' => $this->subscription->season->name,
             ]))
-            ->line(__('The amount now due for your membership is **:amount €**.', [
-                'amount' => number_format((float) $this->subscription->amount_due, 2),
-            ]))
-            ->when(
-                $this->paymentReference !== null,
-                fn (MailMessage $mail): MailMessage => $mail->line(__('Please quote the structured reference :reference with your transfer.', [
-                    'reference' => $this->paymentReference,
-                ])),
-            )
             ->line(__('If this move is a mistake, contact the club secretariat and we will undo it.'));
     }
 

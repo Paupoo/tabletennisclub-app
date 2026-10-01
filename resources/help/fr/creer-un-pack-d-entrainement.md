@@ -82,7 +82,7 @@ Côté membre, le pack **reste affiché**, avec *Pack fermé aux inscriptions* �
 
 Ouvrez **Séances** sur le pack, puis **Ajouter un membre**.
 
-Contrairement à une demande de membre, **la place arrive validée** : rien à approuver ensuite, ce serait valider votre propre décision. Le membre est prévenu par e-mail que le club l'a inscrit, avec le montant désormais dû.
+Contrairement à une demande de membre, **la place arrive validée** : rien à approuver ensuite, ce serait valider votre propre décision. Le membre est prévenu par e-mail que le club l'a inscrit. Si un complément est réclamé, il reçoit aussi une invitation au paiement pour ce seul complément.
 
 Deux points qui comptent :
 

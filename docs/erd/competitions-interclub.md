@@ -25,6 +25,7 @@ erDiagram
         int id PK
         string address
         string captain_message "nullable"
+        InterclubForfeit forfeit "nullable"
         datetime short_handed_confirmed_at "nullable"
         int short_handed_confirmed_by "nullable"
         datetime start_date_time
@@ -35,6 +36,17 @@ erDiagram
         int room_id FK "nullable"
         int league_id FK "nullable"
         int season_id FK "nullable"
+    }
+    InterclubChange {
+        int id PK
+        int interclub_id FK
+        int interclub_import_id FK "nullable"
+        InterclubChangeKind kind
+        InterclubForfeit forfeit "nullable"
+        string group_key "nullable"
+        InterclubChangeStatus status
+        datetime notified_at "nullable"
+        int notified_by "nullable"
     }
     InterclubImport {
         int id PK

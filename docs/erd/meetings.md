@@ -27,6 +27,7 @@ erDiagram
     MeetingActionItem {
         int id PK
         int meeting_id FK
+        int agenda_item_id FK "nullable"
         string title
         string description "nullable"
         int assigned_to_id FK "nullable"
@@ -39,6 +40,7 @@ erDiagram
         int sort_order
         string title
         string description "nullable"
+        string discussion "nullable"
         datetime discussed_at "nullable"
     }
     MeetingDateProposal {
@@ -53,17 +55,24 @@ erDiagram
         int user_id FK
         MeetingDateVoteEnum vote
     }
+    MeetingDecision {
+        int id PK
+        int meeting_id FK
+        int agenda_item_id FK "nullable"
+        string body
+        int sort_order
+    }
     MeetingMinutes {
         int id PK
         int meeting_id FK
         array announcements "nullable"
-        array decisions "nullable"
         string notes "nullable"
         bool is_published
         datetime published_at "nullable"
         int published_by "nullable"
         datetime sent_to_committee_at "nullable"
         datetime sent_to_all_at "nullable"
+        datetime corrected_at "nullable"
     }
     MeetingUser {
         int id PK
@@ -79,9 +88,12 @@ erDiagram
     Meeting ||--o{ MeetingActionItem : "actionItems"
     Meeting ||--o{ MeetingAgendaItem : "agendaItems"
     Meeting ||--o{ MeetingDateProposal : "dateProposals"
+    Meeting ||--o{ MeetingDecision : "decisions"
     Meeting ||--o| EventPost : "eventPost"
     Meeting ||--o| MeetingMinutes : "minutes"
     Meeting }o--o{ User : "users"
+    MeetingAgendaItem ||--o{ MeetingActionItem : "actionItems"
+    MeetingAgendaItem ||--o{ MeetingDecision : "decisions"
     MeetingDateProposal ||--o{ MeetingDateVote : "votes"
     MeetingUser ||--o| Payment : "payment"
 ```

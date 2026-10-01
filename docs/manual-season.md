@@ -129,11 +129,42 @@ Importing 2026-2027 for BBW214 from the federation…
 
 **It is in fact the normal mode.** Fixtures are recognised by the federation's own identifier: a fixture that moved is **corrected in place**, not recreated. Availability answers already given, selections and recorded results all stay attached.
 
-So run it whenever you suspect a change — a postponement, a change of hall, a recomputed division.
+### The hourly sync
+
+Once the season is imported, **the server re-runs the command every hour, from 7:05 to 22:05**. Nobody has to think about it any more. On every run, whatever changed on a fixture the club already knew is **recorded, with its state before the change**, and **announced to the team**:
+
+- a **forfeit** of the opponent or of the club, which the federation publishes before the match (it does: on 1 October 2026 the next day's forfeit was already online);
+- a **withdrawal from the division**: a single message for every fixture it cancels;
+- the federation **retracting a forfeit**: the fixture is to be played again;
+- a **new day, time or hall**: the message says "before → now".
+
+The recipients are the lineup mail's: the **selected players** (reinforcements included) and the **whole team roster**. The **captain** gets a message of their own, saying how many players were told. The message always sends the reader to the captain with any question. A forfeit **of the club** also alerts the **Interclubs** duty (or the administrators when nobody holds it): if it was not declared, now is the time to contact the federation, before the fine.
+
+Nothing is announced for a fixture **already under way**: the data is updated, no mail is sent.
+
+### What becomes of a forfeited fixture
+
+It **stays on the calendar**, marked "Opponent forfeit", "Forfeit of our team"… The calendar feed publishes it as **cancelled**. Once the federation has locked the forfeit, **the result is recorded** (16-0, for instance), without waiting for a match sheet that will never come. That result overrides anything typed by hand.
+
+Availability answers, the selection and the lineup already made **are not erased**: they are **kept dormant**. The fixture no longer engages anyone (a selected player may play elsewhere the same week), sets no C.22 threshold and asks nothing more of the captain. If the federation **retracts the forfeit**, everything comes back as it was, and only the result the import wrote is removed.
+
+### Too many changes at once: the review
+
+If one run produces **more than five messages** (a withdrawal counts as one), **none is sent**. The calendar is still updated, and the **Interclubs** duty is alerted. A volume like that matches nothing ordinary: it is a federation error, or a correction that will be followed by its own.
+
+The **Federation changes** screen (`/admin/interclubs/changes`, pointed to by a banner on the schedule and linked from the alert) lists the held messages. Tick the ones you have checked, then **Tell the teams** or **Do not tell**. A fixture that has started in the meantime is no longer announced.
+
+### The very first run in production — `--silent`
+
+```bash
+php artisan interclubs:import-aftt --silent
+```
+
+Until now the command only ran by hand. The first scheduled run would announce **everything that changed since the last manual run**. So run it **once by hand with `--silent`** before the schedule takes over: the changes are recorded and applied, and nobody is told.
 
 ### What happens when the federation drops a fixture
 
-This really does occur, when a team withdraws and the division is recomputed.
+A **withdrawal does not drop fixtures**: the federation keeps them and marks them (see above). A fixture can, however, disappear from the federation calendar when a division is recomputed before the season starts.
 
 - If **nobody has touched it**, the fixture is deleted silently: it was never seen.
 - If **somebody answered on it** (availability, selection, result), it is **kept** and flagged in the report. You decide.
@@ -192,7 +223,7 @@ Useful when the federation already publishes the following season without having
 
 ### What the import does not do
 
-- **It does not load results or scores.** Those are entered by hand in **Interclubs → Results**. The federation publishes them and the application will read them in a future version.
+- **It does not load the results of matches played.** That is `interclubs:import-results`, every morning at 5:40. Only the result of a **forfeit** is written by the calendar import, since no match sheet will ever come.
 - **It does not compose the teams.** It creates the teams and their letter; who plays in them stays a club decision.
 
 ### If something goes wrong

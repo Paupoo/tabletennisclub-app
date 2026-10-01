@@ -6,6 +6,7 @@
     $subscription = $this->currentSubscription;
     $delegations = $this->heldDelegations;
     $guardians = $user->guardians;
+    $wards = $this->wards;
     $family = $user->familyMembers();
 @endphp
 
@@ -105,6 +106,36 @@
                 </x-card>
             @endif
 
+            {{-- The mirror of the block above: on a parent's file, the members they answer for. --}}
+            @if ($wards->isNotEmpty())
+                <x-card class="shadow-sm" :title="__('Responsible for')">
+                    <ul class="space-y-2">
+                        @foreach ($wards as $ward)
+                            <li class="flex items-center gap-3 rounded-lg border border-base-300 p-3">
+                                <x-icon name="o-user" class="h-5 w-5 shrink-0 text-primary" />
+                                <div class="min-w-0">
+                                    @can('users.view')
+                                        <a href="{{ route('admin.users.show', $ward) }}"
+                                            class="block truncate text-sm font-semibold hover:underline">{{ $ward->full_name }}</a>
+                                    @else
+                                        <p class="truncate text-sm font-semibold">{{ $ward->full_name }}</p>
+                                    @endif
+                                    @if ($ward->birthdate)
+                                        <p class="truncate text-xs text-base-content/70">
+                                            {{ __(':age years', ['age' => $ward->birthdate->age]) }}
+                                        </p>
+                                    @endif
+                                </div>
+                                <div class="ml-auto shrink-0">
+                                    <x-admin.users.membership-status-badge :user="$ward"
+                                        :last-season="$this->previousSeason?->name" />
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </x-card>
+            @endif
+
             @if ($family->isNotEmpty())
                 <x-card class="shadow-sm" :title="__('Family')">
                     <ul class="flex flex-wrap gap-2">
@@ -159,8 +190,11 @@
                     @endphp
                     <div class="flex flex-wrap items-center gap-2">
                         <x-badge :value="$status['label']" class="{{ $status['class'] }} badge-sm" />
-                        <x-badge :value="$subscription->is_competitive ? __('Competitive') : __('Recreational')"
-                            class="{{ $subscription->is_competitive ? 'badge-primary badge-soft' : 'badge-ghost' }} badge-sm" />
+                        {{-- A licence belongs to an affiliation under way: a cancelled one holds none. --}}
+                        @if (in_array($subscription->status, \App\Domains\ClubAdmin\Subscriptions\Models\Subscription::AFFILIATED_STATUSES, true))
+                            <x-badge :value="$subscription->is_competitive ? __('Competitive') : __('Recreational')"
+                                class="{{ $subscription->is_competitive ? 'badge-primary badge-soft' : 'badge-ghost' }} badge-sm" />
+                        @endif
                     </div>
                 @endif
             </x-card>

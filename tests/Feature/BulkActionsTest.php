@@ -115,8 +115,10 @@ describe('HasFilterDrawer', function (): void {
             ->assertSet('categories', []);
     });
 
+    // The default view carries a chip of its own; these count the others.
     it('filterChips is empty when no filters are active', function (): void {
         $component = Livewire::actingAs($this->admin)
+            ->withQueryParams(['allMembers' => true])
             ->test(USERS_COMPONENT);
 
         expect($component->get('filterChips'))->toBeEmpty();
@@ -124,6 +126,7 @@ describe('HasFilterDrawer', function (): void {
 
     it('filterChips includes a chip for active licence type filter', function (): void {
         $component = Livewire::actingAs($this->admin)
+            ->withQueryParams(['allMembers' => true])
             ->test(USERS_COMPONENT)
             ->set('selectedLicenceType', 'competitive');
 
@@ -133,6 +136,7 @@ describe('HasFilterDrawer', function (): void {
 
     it('filterChips includes one chip per selected gender', function (): void {
         $component = Livewire::actingAs($this->admin)
+            ->withQueryParams(['allMembers' => true])
             ->test(USERS_COMPONENT)
             ->set('categories', ['MEN', 'WOMEN']);
 

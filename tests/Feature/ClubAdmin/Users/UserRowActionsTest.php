@@ -8,6 +8,10 @@ use Tests\Trait\CreateUser;
 
 uses(CreateUser::class);
 
+/*
+ * The members below are affiliated nowhere, so the list is opened with its
+ * default view dismissed: the row actions are the same in either view.
+ */
 beforeEach(function (): void {
     $this->admin = $this->createFakeAdmin();
 });
@@ -27,6 +31,7 @@ test('a member who cannot be invited is told why, not shown a dead control', fun
         ->forceFill(['email_verified_at' => null])->save();
 
     $html = Livewire::actingAs($this->admin)
+        ->withQueryParams(['allMembers' => true])
         ->test('pages::club-admin.users.index')
         ->html();
 
@@ -46,6 +51,7 @@ test('a member with an address keeps the invitation among the secondary actions'
         ->forceFill(['email_verified_at' => null])->save();
 
     $html = Livewire::actingAs($this->admin)
+        ->withQueryParams(['allMembers' => true])
         ->test('pages::club-admin.users.index')
         ->html();
 

@@ -56,7 +56,8 @@ it('reads a compound member name in full on a phone', function (): void {
         'email' => 'jc.vandenbroecke@example.com',
     ]);
 
-    $reading = json_decode((string) visit(route('admin.users.index'))->resize(375, 812)->script(CARD_IDENTITY), true);
+    // Affiliated nowhere: the list opens on the current members, so the default view is dismissed.
+    $reading = json_decode((string) visit(route('admin.users.index', ['allMembers' => 1]))->resize(375, 812)->script(CARD_IDENTITY), true);
 
     expect($reading['cartes'])->toBeGreaterThan(0, 'the phone list should render member cards')
         ->and($reading['coupes'])->toBe([], 'a member name belongs on the card in full, wrapped if need be');

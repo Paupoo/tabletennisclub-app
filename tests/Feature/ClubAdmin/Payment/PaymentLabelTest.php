@@ -155,9 +155,11 @@ describe('what a new payment records', function (): void {
 
 describe('the invitation mail', function (): void {
     it('names the pack a parent is asked to pay, and the deadline in French', function (): void {
-        makeActiveSeason();
+        $season = makeActiveSeason();
         Club::factory()->ownClub()->create();
-        $pack = TrainingPack::factory()->create(['name' => 'Mini-ping du mercredi']);
+        // Tied to the active season: a pack left to its factory draws a season of
+        // its own, which overlaps the active one often enough to fail one run in two.
+        $pack = TrainingPack::factory()->for($season, 'season')->create(['name' => 'Mini-ping du mercredi']);
 
         $html = new PaymentInvitationEmail(coveredPayment(labelSubscription(), PaymentCovers::packs([$pack])))->render();
 

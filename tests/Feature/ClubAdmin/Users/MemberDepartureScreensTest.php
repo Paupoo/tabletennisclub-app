@@ -102,6 +102,28 @@ describe('the member file', function (): void {
         expect(MemberDeparture::count())->toBe(0);
     });
 
+    it('declines without a running season instead of failing', function (): void {
+        $this->season->update(['is_active' => false]);
+        cache()->forget('season.current');
+
+        Livewire::actingAs($this->delegate)
+            ->test(DEPARTURE_FILE, ['user' => $this->member])
+            ->set('departureReason', DepartureReason::Moving->value)
+            ->set('departureLeftOn', now()->toDateString())
+            ->call('declareDeparture')
+            ->assertOk();
+
+        Livewire::actingAs($this->delegate)
+            ->test(DEPARTURE_LIST)
+            ->set('selected', [(string) $this->member->id])
+            ->set('departureReason', DepartureReason::Moving->value)
+            ->set('departureLeftOn', now()->toDateString())
+            ->call('bulkDeclareDeparture')
+            ->assertOk();
+
+        expect(MemberDeparture::count())->toBe(0);
+    });
+
     it('says the affiliation still runs, and where to cancel it', function (): void {
         MemberDeparture::factory()->for($this->member)->for($this->season)->create();
 

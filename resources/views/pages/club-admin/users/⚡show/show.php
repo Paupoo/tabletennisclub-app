@@ -106,7 +106,7 @@ new class extends Component
                 $this->departureNote,
                 auth()->user(),
             );
-        } catch (\DomainException $e) {
+        } catch (DomainException $e) {
             $this->error($e->getMessage());
 
             return;
@@ -161,6 +161,14 @@ new class extends Component
         return Gate::allows('update', $this->user) || Gate::allows('manageAccess', $this->user);
     }
 
+    public function mount(User $user): void
+    {
+        // Defense in depth: the route already gates this.
+        abort_unless(auth()->user()?->can(Permission::UsersView->value), 403);
+
+        $this->user = $user;
+    }
+
     public function openDepartureModal(): void
     {
         Gate::authorize(Permission::UsersUpdate->value);
@@ -168,14 +176,6 @@ new class extends Component
         $this->resetValidation();
         $this->departureLeftOn = today()->toDateString();
         $this->departureModal = true;
-    }
-
-    public function mount(User $user): void
-    {
-        // Defense in depth: the route already gates this.
-        abort_unless(auth()->user()?->can(Permission::UsersView->value), 403);
-
-        $this->user = $user;
     }
 
     /**

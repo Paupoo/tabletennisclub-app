@@ -260,7 +260,7 @@ new class extends Component
                 ->unique()
                 ->values()
                 ->all();
-        } catch (\DomainException $e) {
+        } catch (DomainException $e) {
             $this->error($e->getMessage());
 
             return;
@@ -630,15 +630,6 @@ new class extends Component
         return Gate::allows('update', $user) || Gate::allows('manageAccess', $user);
     }
 
-    public function openBulkDeparture(): void
-    {
-        Gate::authorize(Permission::UsersUpdate->value);
-
-        $this->resetValidation();
-        $this->departureLeftOn = today()->toDateString();
-        $this->departureModal = true;
-    }
-
     public function openAnonymizeModal(int $userId): void
     {
         $user = User::findOrFail($userId);
@@ -647,6 +638,15 @@ new class extends Component
         $this->anonymizeUserId = $userId;
         $this->anonymizeConfirmText = '';
         $this->anonymizeModal = true;
+    }
+
+    public function openBulkDeparture(): void
+    {
+        Gate::authorize(Permission::UsersUpdate->value);
+
+        $this->resetValidation();
+        $this->departureLeftOn = today()->toDateString();
+        $this->departureModal = true;
     }
 
     /**

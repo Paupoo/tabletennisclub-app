@@ -23,6 +23,7 @@ use App\Domains\Shared\Casts\IbanCast;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\MembershipStatus;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Support\AddressNormalizer;
@@ -32,6 +33,7 @@ use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Observers\UserObserver;
 use Carbon\Carbon;
+use Closure;
 use Database\Factories\Domains\ClubAdmin\Users\Models\UserFactory;
 use Eloquent;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -694,6 +696,19 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(CashRegister::class, 'held_by_user_id');
     }
 
+    /**
+     * Whether the member holds a competitive licence for the running season.
+     *
+     * Read off the affiliation itself, pending ones included: the licence is
+     * what the member asked for, and the list shows it next to the affiliation
+     * it belongs to. Nobody holds a licence without being affiliated, so a
+     * member of last season reads false — there is nothing to show for them.
+     */
+    public function holdsCompetitiveLicence(): bool
+    {
+        return (bool) $this->membershipFact('competitive_this_season');
+    }
+
     public function interclubs(): BelongsToMany
     {
         return $this->belongsToMany(Interclub::class)
@@ -780,6 +795,19 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Whether this account answers for at least one member: a parent who holds
+     * a guardian sheet with a ward on it.
+     *
+     * Orthogonal to the membership status. A parent may play, have played, or
+     * never have touched a racket; the list keeps them in sight either way,
+     * because the club writes to them about their child.
+     */
+    public function isResponsibleAdult(): bool
+    {
+        return (bool) $this->membershipFact('is_responsible_adult');
+    }
+
+    /**
      * Whether the member qualifies for the veterans' force list, i.e. turns
      * {@see self::VETERAN_AGE} on or before the given season's end (defaults to
      * the current season). Mirrors {@see self::scopeVeteran()} for in-memory use.
@@ -835,6 +863,21 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Meeting::class)
             ->withPivot(['status', 'invitation_sent_at', 'response_at'])
             ->withTimestamps();
+    }
+
+    /**
+     * Where the member stands with the club across seasons.
+     *
+     * Reads the facts the list loaded with {@see self::scopeWithMembershipFacts()};
+     * a model fetched any other way loads them in one query on first use.
+     */
+    public function membershipStatus(): MembershipStatus
+    {
+        return MembershipStatus::fromAffiliations(
+            thisSeason: (bool) $this->membershipFact('affiliated_this_season'),
+            lastSeason: (bool) $this->membershipFact('affiliated_last_season'),
+            beforeThisSeason: (bool) $this->membershipFact('affiliated_before_this_season'),
+        );
     }
 
     /**
@@ -1016,6 +1059,56 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Members in any of the given statuses — the SQL half of the rule written
+     * in {@see MembershipStatus::fromAffiliations()}.
+     *
+     * Every status is its own group of `EXISTS`, and the groups are ORed inside
+     * one pair of parentheses: a bare `orWhere` would let a status escape the
+     * filters chained next to it.
+     */
+    public function scopeInMembershipStatus(EloquentBuilder $query, MembershipStatus ...$statuses): EloquentBuilder
+    {
+        [$thisSeason, $lastSeason, $earlierSeasons] = self::affiliationSeasons();
+
+        $affiliated = fn (string $method, int|EloquentBuilder $season): Closure => fn (EloquentBuilder $member): EloquentBuilder => $member->{$method}(
+            'subscriptions',
+            fn (EloquentBuilder $subscription): EloquentBuilder => $subscription
+                ->whereIn('status', Subscription::AFFILIATED_STATUSES)
+                ->when(
+                    $season instanceof EloquentBuilder,
+                    fn (EloquentBuilder $q): EloquentBuilder => $q->whereIn('season_id', $season),
+                    fn (EloquentBuilder $q): EloquentBuilder => $q->where('season_id', $season),
+                ),
+        );
+
+        $now = $affiliated('whereHas', $thisSeason);
+        $notNow = $affiliated('whereDoesntHave', $thisSeason);
+        $last = $affiliated('whereHas', $lastSeason);
+        $notLast = $affiliated('whereDoesntHave', $lastSeason);
+        $before = $affiliated('whereHas', $earlierSeasons);
+        $notBefore = $affiliated('whereDoesntHave', $earlierSeasons);
+
+        return $query->where(function (EloquentBuilder $any) use ($statuses, $now, $notNow, $last, $notLast, $before, $notBefore): void {
+            foreach ($statuses as $status) {
+                $any->orWhere(function (EloquentBuilder $one) use ($status, $now, $notNow, $last, $notLast, $before, $notBefore): void {
+                    $conditions = match ($status) {
+                        MembershipStatus::New => [$now, $notBefore],
+                        MembershipStatus::Renewed => [$now, $last],
+                        MembershipStatus::Returning => [$now, $notLast, $before],
+                        MembershipStatus::ToFollowUp => [$notNow, $last],
+                        MembershipStatus::Former => [$notNow, $notLast, $before],
+                        MembershipStatus::Never => [$notNow, $notBefore],
+                    };
+
+                    foreach ($conditions as $condition) {
+                        $condition($one);
+                    }
+                });
+            }
+        });
+    }
+
+    /**
      * Members eligible for interclub team building: those holding a validated
      * (confirmed) or paid *competitive* licence for the current season — via
      * {@see self::scopeCompetitor()} — and carrying an actual ranking. NA
@@ -1061,6 +1154,17 @@ class User extends Authenticatable implements MustVerifyEmail
             ->where('season_id', $seasonId)
             ->where('status', 'paid')
         );
+    }
+
+    /**
+     * The accounts that answer for at least one member.
+     *
+     * A guardian with no account of their own is not a user and never appears
+     * here; an archived ward no longer counts.
+     */
+    public function scopeResponsibleAdults(EloquentBuilder $query): EloquentBuilder
+    {
+        return $query->whereHas('guardianRecord', fn (EloquentBuilder $guardian): EloquentBuilder => $guardian->whereHas('users'));
     }
 
     /** Scopes */
@@ -1289,6 +1393,16 @@ class User extends Authenticatable implements MustVerifyEmail
         };
     }
 
+    /**
+     * Load, in the same query as the members, every fact their status and
+     * badges are read from — one `EXISTS` sub-select each, so a page of
+     * fifteen rows costs no extra query.
+     */
+    public function scopeWithMembershipFacts(EloquentBuilder $query): EloquentBuilder
+    {
+        return $query->withExists($this->membershipFactQueries());
+    }
+
     public function seasons(): BelongsToMany
     {
         return $this->belongsToMany(Season::class, 'subscriptions')
@@ -1411,6 +1525,45 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * The running season, the one before it, and the seasons before the running
+     * one, the last included.
+     *
+     * With no season running nobody is affiliated now, and every affiliation
+     * that started before today belongs to the past. Id 0 matches no season.
+     *
+     * @return array{0: int, 1: int, 2: EloquentBuilder<Season>}
+     */
+    private static function affiliationSeasons(): array
+    {
+        $current = Season::current();
+
+        return [
+            $current->id ?? 0,
+            $current?->previous()->id ?? 0,
+            Season::query()->select('id')->where('start_at', '<', $current->start_at ?? now()),
+        ];
+    }
+
+    /**
+     * @return array<string, Closure>
+     */
+    private function membershipFactQueries(): array
+    {
+        [$thisSeason, $lastSeason, $earlierSeasons] = self::affiliationSeasons();
+
+        $affiliated = fn (EloquentBuilder $subscription): EloquentBuilder => $subscription
+            ->whereIn('status', Subscription::AFFILIATED_STATUSES);
+
+        return [
+            'subscriptions as affiliated_this_season' => fn (EloquentBuilder $s): EloquentBuilder => $affiliated($s)->where('season_id', $thisSeason),
+            'subscriptions as affiliated_last_season' => fn (EloquentBuilder $s): EloquentBuilder => $affiliated($s)->where('season_id', $lastSeason),
+            'subscriptions as affiliated_before_this_season' => fn (EloquentBuilder $s): EloquentBuilder => $affiliated($s)->whereIn('season_id', $earlierSeasons),
+            'subscriptions as competitive_this_season' => fn (EloquentBuilder $s): EloquentBuilder => $affiliated($s)->where('season_id', $thisSeason)->where('is_competitive', true),
+            'guardianRecord as is_responsible_adult' => fn (EloquentBuilder $guardian): EloquentBuilder => $guardian->whereHas('users'),
+        ];
+    }
+
+    /**
      * Normalize a category given as an enum or as its raw case-name (as stored
      * on leagues and used by the team builder) to a {@see LeagueCategory}.
      */
@@ -1419,5 +1572,18 @@ class User extends Authenticatable implements MustVerifyEmail
         return $category instanceof LeagueCategory
             ? $category
             : LeagueCategory::fromName($category);
+    }
+
+    /**
+     * One of the facts {@see self::scopeWithMembershipFacts()} loads, fetched
+     * for this model alone when the query that built it did not.
+     */
+    private function membershipFact(string $fact): mixed
+    {
+        if (! array_key_exists($fact, $this->attributes)) {
+            $this->loadExists($this->membershipFactQueries());
+        }
+
+        return $this->attributes[$fact];
     }
 }

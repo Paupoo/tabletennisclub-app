@@ -147,6 +147,20 @@ class Season extends Model
         Cache::forget('season.current');
     }
 
+    /**
+     * The season that came just before this one, by start date.
+     *
+     * By date rather than by id: seasons are not always created in the order
+     * they are played — an imported history lands after the running season.
+     */
+    public function previous(): ?self
+    {
+        return static::query()
+            ->where('start_at', '<', $this->start_at)
+            ->orderByDesc('start_at')
+            ->first();
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);

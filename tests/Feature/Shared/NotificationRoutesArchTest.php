@@ -92,6 +92,11 @@ it('never sends a member to a page the committee alone can open', function (): v
         // admits exactly whom sendMinutes() mails: the committee, or — for a
         // general assembly sent to all — every active member. MinutesReaderTest.
         'MeetingMinutesNotification.php',
+        // InterclubChangeNotifier::interclubsDuty() sends it to the interclubs
+        // délégation, or to the administrators when nobody holds it: both
+        // carry interclubs.view, the permission the schedule asks for —
+        // AfttChangeNotificationTest.
+        'InterclubOwnForfeitAlertNotification.php',
     ];
 
     $files = (new Finder)

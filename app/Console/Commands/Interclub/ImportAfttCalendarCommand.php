@@ -12,6 +12,7 @@ use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Services\AfttCalendarImporter;
+use App\Domains\Competitions\Interclub\Services\InterclubChangeNotifier;
 use App\Domains\Competitions\Interclub\Services\TabtClient;
 use App\Domains\Shared\Enums\InterclubChangeStatus;
 use Illuminate\Console\Command;
@@ -39,7 +40,7 @@ class ImportAfttCalendarCommand extends Command
                             {--force : Skip the confirmation, and override the refusal to destroy member data.}
                             {--silent : Record what changed without telling any team. For the first scheduled run, which would otherwise announce every change made since the last manual one.}';
 
-    public function handle(TabtClient $client, AfttCalendarImporter $importer): int
+    public function handle(TabtClient $client, AfttCalendarImporter $importer, InterclubChangeNotifier $notifier): int
     {
         if (! $this->schemaIsReady()) {
             return self::FAILURE;
@@ -104,10 +105,15 @@ class ImportAfttCalendarCommand extends Command
             return self::FAILURE;
         }
 
+        $pending = InterclubChange::where('interclub_import_id', $report->id)
+            ->where('status', InterclubChangeStatus::PENDING)
+            ->get();
+
         if ($this->option('silent')) {
-            InterclubChange::where('interclub_import_id', $report->id)
-                ->where('status', InterclubChangeStatus::PENDING)
-                ->update(['status' => InterclubChangeStatus::SILENT]);
+            InterclubChange::whereKey($pending->modelKeys())->update(['status' => InterclubChangeStatus::SILENT]);
+        } elseif ($pending->isNotEmpty()) {
+            $notifier->notify($pending);
+            $this->info(sprintf('Told the teams about %d change(s).', $pending->count()));
         }
 
         $this->summarise($report->created_count, $report->updated_count, $report->unchanged_count,

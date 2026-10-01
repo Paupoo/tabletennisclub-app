@@ -235,6 +235,7 @@ new class extends Component
     private function canAnswer(Interclub $interclub, User $user): bool
     {
         return $interclub->playerTeam($user) !== null
+            && $interclub->forfeit === null
             && ! $interclub->start_date_time->isPast()
             && ! $interclub->isLineupPublished();
     }

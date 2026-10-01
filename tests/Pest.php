@@ -355,8 +355,65 @@ function afttFaultOn(?int $divisionId = null, bool $reset = false): ?int
     return $current;
 }
 
+/**
+ * Fields the fake rewrites on given fixtures, keyed by federation match id.
+ *
+ * The committed responses are a September snapshot: nothing in them has been
+ * forfeited, moved or withdrawn. A test describes the federation's change of
+ * mind as a patch on the real entry, so the rest of the response stays the
+ * federation's own. Reset each time fakeTabt() is registered.
+ *
+ * @param  array<string, string>|null  $fields
+ * @return array<string, array<string, string>>
+ */
+function afttPatchMatch(?string $matchId = null, ?array $fields = null, bool $reset = false): array
+{
+    static $patches = [];
+
+    if ($reset) {
+        $patches = [];
+    }
+
+    if ($matchId !== null && $fields !== null) {
+        $patches[$matchId] = array_merge($patches[$matchId] ?? [], $fields);
+    }
+
+    return $patches;
+}
+
+/**
+ * Apply afttPatchMatch() to one GetMatches response.
+ */
+function afttApplyPatches(string $xml): string
+{
+    foreach (afttPatchMatch() as $matchId => $fields) {
+        $xml = (string) preg_replace_callback(
+            '#<ns1:TeamMatchesEntries><ns1:MatchId>' . preg_quote($matchId, '#') . '</ns1:MatchId>.*?</ns1:TeamMatchesEntries>#s',
+            function (array $entry) use ($fields): string {
+                $patched = $entry[0];
+
+                foreach ($fields as $name => $value) {
+                    $element = '<ns1:' . $name . '>' . htmlspecialchars($value, ENT_XML1) . '</ns1:' . $name . '>';
+                    $pattern = '#<ns1:' . $name . '>.*?</ns1:' . $name . '>#s';
+
+                    $patched = preg_match($pattern, $patched) === 1
+                        ? (string) preg_replace_callback($pattern, fn (): string => $element, $patched, 1)
+                        : str_replace('</ns1:TeamMatchesEntries>', $element . '</ns1:TeamMatchesEntries>', $patched);
+                }
+
+                return $patched;
+            },
+            $xml,
+        );
+    }
+
+    return $xml;
+}
+
 function fakeTabt(): void
 {
+    afttPatchMatch(reset: true);
+
     Http::fake(function (Request $request): PromiseInterface {
         $body = $request->body();
 
@@ -383,6 +440,10 @@ function fakeTabt(): void
         };
 
         $xml = file_get_contents(base_path('tests/Fixtures/Aftt/' . $fixture));
+
+        if (str_starts_with($fixture, 'get-matches-')) {
+            $xml = afttApplyPatches($xml);
+        }
 
         // A club lookup answers about the club it was asked about. Only the code
         // is substituted; every other field stays the federation's own, which is

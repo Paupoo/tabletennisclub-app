@@ -129,11 +129,42 @@ Importing 2026-2027 for BBW214 from the federation…
 
 **C'est même le mode normal.** Les rencontres sont reconnues par l'identifiant de la fédération : une rencontre déplacée est **corrigée sur place**, sans être recréée. Les disponibilités déjà répondues, les sélections et les résultats saisis restent attachés.
 
-Lancez-la donc à chaque fois que vous soupçonnez un changement — report, changement de salle, division recomposée.
+### La synchronisation horaire
+
+Une fois la saison importée, **le serveur relance la commande toutes les heures, de 7 h 05 à 22 h 05**. Personne n'a plus à y penser. À chaque passage, ce qui a changé sur une rencontre que le club connaissait déjà est **consigné, avec l'état d'avant**, puis **annoncé à l'équipe** :
+
+- un **forfait** de l'adversaire ou du club, publié par la fédération avant la rencontre (elle le fait : le 1er octobre 2026, le forfait du lendemain était déjà en ligne) ;
+- un **retrait du championnat** (forfait général) : une seule annonce pour toutes les rencontres qu'il annule ;
+- le **retrait d'un forfait** par la fédération : la rencontre redevient « à jouer » ;
+- une **nouvelle date, heure ou salle** : le message dit « avant → désormais ».
+
+Les destinataires sont ceux du mail de composition : les **joueurs sélectionnés** (renforts compris) et **tout le noyau de l'équipe**. Le **capitaine** reçoit un message à part, qui lui dit combien de joueurs ont été prévenus. Le message renvoie toujours vers le capitaine en cas de question. Un forfait **du club** déclenche en plus une alerte à la délégation **Interclubs** (à défaut, aux administrateurs) : s'il n'a pas été déclaré, c'est le moment de contacter la fédération, avant l'amende.
+
+Rien n'est annoncé pour une rencontre **déjà commencée** : la donnée est mise à jour, sans mail.
+
+### Ce que devient une rencontre forfait
+
+Elle **reste au calendrier**, marquée « Forfait de l'adversaire », « Forfait de notre équipe »… Le flux d'agenda la publie comme **annulée**. Une fois le forfait verrouillé par la fédération, **le résultat est enregistré** (16-0, par exemple), sans attendre une feuille de match qui ne viendra jamais. Ce résultat remplace une éventuelle saisie manuelle.
+
+Les disponibilités, la sélection et la composition déjà faites **ne sont pas effacées** : elles sont **mises en sommeil**. La rencontre n'engage plus personne (un joueur sélectionné peut jouer ailleurs la même semaine), ne fixe aucun seuil C.22 et ne demande plus rien au capitaine. Si la fédération **retire le forfait**, tout revient tel quel, et seul le résultat écrit par l'import est effacé.
+
+### Trop de changements d'un coup : la revue
+
+Si un passage produit **plus de cinq messages** (un retrait compte pour un), **aucun n'est envoyé**. Le calendrier est quand même mis à jour, et la délégation **Interclubs** reçoit une alerte. Un tel volume ne correspond à rien de normal : c'est une erreur de la fédération, ou une correction qui sera suivie de la sienne.
+
+L'écran **Changements de la fédération** (`/admin/interclubs/changes`, signalé par un bandeau sur le planning et lié depuis l'alerte) liste les messages retenus. On coche ceux qu'on a vérifiés, puis **Prévenir les équipes** ou **Ne pas prévenir**. Une rencontre commencée entre-temps n'est plus annoncée.
+
+### Le tout premier passage en production : `--silent`
+
+```bash
+php artisan interclubs:import-aftt --silent
+```
+
+Jusqu'ici la commande ne tournait qu'à la main. Le premier passage automatique annoncerait **tout ce qui a changé depuis le dernier passage manuel**. Lancez-la donc **une fois à la main avec `--silent`** avant que la planification ne prenne le relais : les changements sont consignés et appliqués, et personne n'est prévenu.
 
 ### Ce qui arrive quand la fédération retire une rencontre
 
-Cela se produit réellement, quand une équipe déclare forfait général et que la division est recalculée.
+Un **forfait général ne retire pas les rencontres** : la fédération les garde et les marque (voir plus haut). Une rencontre peut en revanche disparaître du calendrier fédéral quand une division est recalculée avant le début de la saison.
 
 - Si **personne n'y a touché**, la rencontre est supprimée en silence : elle n'a jamais été vue.
 - Si **quelqu'un y a répondu** (disponibilité, sélection, résultat), elle est **conservée** et signalée dans le rapport. À vous de décider.
@@ -192,7 +223,7 @@ Utile si la fédération publie déjà la saison suivante sans l'avoir basculée
 
 ### Ce que l'import ne fait pas
 
-- **Il ne charge pas les résultats ni les scores.** Ils se saisissent à la main dans **Interclubs → Résultats**. La fédération les publie et l'application saura les lire dans une prochaine version.
+- **Il ne charge pas les résultats des rencontres jouées.** C'est le rôle de `interclubs:import-results`, chaque matin à 5 h 40. Seul le résultat d'un **forfait** est écrit par l'import du calendrier, puisqu'aucune feuille de match ne viendra.
 - **Il ne compose pas les équipes.** Il crée les équipes et leur lettre ; qui joue dedans reste une décision du club.
 
 ### Si quelque chose se passe mal

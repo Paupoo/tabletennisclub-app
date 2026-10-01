@@ -21,10 +21,11 @@ use Illuminate\Support\Collection;
 class InterclubPreparationService
 {
     /**
-     * Neither prepared nor behind: a round without an opponent. Like a match
-     * already played, it asks nothing and leaves the preparation score.
+     * Neither prepared nor behind: a round without an opponent, or a fixture
+     * the federation has cancelled by forfeit. Like a match already played, it
+     * asks nothing and leaves the preparation score.
      */
-    public const array OUT_OF_PLAY = ['past', 'bye'];
+    public const array OUT_OF_PLAY = ['past', 'bye', 'forfeit'];
 
     /**
      * The statuses that count as settled: a full lineup sent, or one the
@@ -60,6 +61,11 @@ class InterclubPreparationService
         // used to ask a captain for a lineup nobody would play.
         if ($interclub->is_bye) {
             return 'bye';
+        }
+
+        // Decided without a lineup: nothing left to compose, whatever the date.
+        if ($interclub->forfeit !== null) {
+            return 'forfeit';
         }
 
         if ($interclub->start_date_time < now()) {
@@ -183,7 +189,7 @@ class InterclubPreparationService
 
             $status = $this->fixtureStatus($interclub);
 
-            if ($status === 'past') {
+            if ($status === 'past' || $status === 'forfeit') {
                 $sawPlayedFixture = true;
 
                 continue;
@@ -271,7 +277,8 @@ class InterclubPreparationService
             // A bye is neither played nor to play: it stays out of both counts,
             // and only shows as its own segment of the bar.
             $standing['total'] = count(array_filter($rows, fn (array $r): bool => $r['status'] !== 'bye'));
-            $standing['played'] = count(array_filter($rows, fn (array $r): bool => $r['status'] === 'past'));
+            // Un forfait est une rencontre réglée : elle compte comme jouée.
+            $standing['played'] = count(array_filter($rows, fn (array $r): bool => in_array($r['status'], ['past', 'forfeit'], true)));
             $standing['todo'] = count(array_filter($live, fn (array $r): bool => in_array($r['status'], self::TO_DO, true)));
             $standing['controlled'] = count(array_filter($live, fn (array $r): bool => in_array($r['status'], self::SETTLED, true)));
             // Les segments de la barre de progression, dans l'ordre du calendrier.
@@ -488,7 +495,7 @@ class InterclubPreparationService
         $live = array_values(array_filter($statuses, fn (string $s): bool => ! in_array($s, self::OUT_OF_PLAY, true)));
 
         if ($live === []) {
-            return in_array('past', $statuses, true) ? 'past' : 'bye';
+            return in_array('past', $statuses, true) || in_array('forfeit', $statuses, true) ? 'past' : 'bye';
         }
 
         return array_reduce($live, fn (string $carry, string $s): string => $this->worstOf($carry, $s), 'confirmed');

@@ -12,6 +12,7 @@
      * nothing at all to a délégation reading over their shoulder.
      */
     $bandState = match (true) {
+        $interclub->forfeit !== null && ! $isPast => 'forfeit',
         $isPast && $result?->result === null => 'awaiting',
         $isPast => 'result',
         ! $isOnRoster => null,
@@ -37,6 +38,7 @@
         'selected' => ['bg-success/10 border-success/30', 'o-check-badge', 'text-success'],
         'not-selected' => ['bg-base-200/60 border-base-300', 'o-user-minus', 'text-base-content/40'],
         'awaiting' => ['bg-base-200/60 border-base-300', 'o-clock', 'text-base-content/40'],
+        'forfeit' => ['bg-error/10 border-error/30', 'o-no-symbol', 'text-error'],
         'result' => match ($result?->result?->value) {
             'Win', 'ForfeitWin', 'WithdrawalOpponent' => ['bg-success/10 border-success/30', 'o-trophy', 'text-success'],
             'Draw' => ['bg-base-200/60 border-base-300', 'o-equals', 'text-base-content/40'],
@@ -55,7 +57,14 @@
             <x-icon :name="$bandIcon" class="mt-0.5 h-7 w-7 shrink-0 {{ $bandIconTone }}" />
 
             <div class="min-w-0 flex-1">
-                @if ($bandState === 'no-answer')
+                @if ($bandState === 'forfeit')
+                    <p class="text-lg font-bold leading-tight text-base-content">
+                        {{ $interclub->forfeit->label() }}
+                    </p>
+                    <p class="mt-1 text-sm text-base-content/70">
+                        {{ __('This match will not be played. Contact your captain if you have any question.') }}
+                    </p>
+                @elseif ($bandState === 'no-answer')
                     <p class="text-lg font-bold leading-tight text-base-content">
                         {{ __('Please tell us if you are available') }}
                     </p>

@@ -45,6 +45,7 @@
             'actionable' => 'bg-warning',
             'urgent' => 'bg-error',
             'past' => 'border border-base-300',
+            'forfeit' => 'border border-error',
             'future' => 'bg-base-300',
             default => null,
         };
@@ -57,6 +58,7 @@
             'urgent' => __('Needs attention'),
             'past' => __('Played'),
             'bye' => __('Bye'),
+            'forfeit' => __('Forfeit'),
             default => __('Upcoming'),
         };
     @endphp
@@ -253,6 +255,7 @@
                                 <span @class([
                                     'h-2 flex-1 rounded-sm',
                                     'bg-base-content/30' => $segment === 'past',
+                                    'bg-error/40' => $segment === 'forfeit',
                                     'bg-error' => $segment === 'urgent',
                                     'bg-info' => $segment === 'to_send',
                                     'bg-warning' => $segment === 'actionable',

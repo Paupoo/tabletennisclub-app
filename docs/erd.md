@@ -74,6 +74,7 @@ erDiagram
     %% Competitions/Interclub
     Club
     Interclub
+    InterclubChange
     InterclubImport
     InterclubIndividualMatch
     InterclubResult
@@ -97,6 +98,7 @@ erDiagram
     MeetingAgendaItem
     MeetingDateProposal
     MeetingDateVote
+    MeetingDecision
     MeetingMinutes
     MeetingUser
 
@@ -204,9 +206,12 @@ erDiagram
     Meeting ||--o{ MeetingActionItem : "actionItems"
     Meeting ||--o{ MeetingAgendaItem : "agendaItems"
     Meeting ||--o{ MeetingDateProposal : "dateProposals"
+    Meeting ||--o{ MeetingDecision : "decisions"
     Meeting ||--o| EventPost : "eventPost"
     Meeting ||--o| MeetingMinutes : "minutes"
     Meeting }o--o{ User : "users"
+    MeetingAgendaItem ||--o{ MeetingActionItem : "actionItems"
+    MeetingAgendaItem ||--o{ MeetingDecision : "decisions"
     MeetingDateProposal ||--o{ MeetingDateVote : "votes"
     MeetingUser ||--o| Payment : "payment"
     Training }o--o{ User : "trainees"

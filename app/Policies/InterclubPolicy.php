@@ -51,6 +51,12 @@ class InterclubPolicy
             return false;
         }
 
+        // A forfeit cancels the evening: the lineup it carried stays dormant,
+        // and nobody composes a new one unless the federation retracts.
+        if ($interclub->forfeit !== null) {
+            return false;
+        }
+
         // A club-wide selector composes anywhere; a captain only where they
         // captain — and a captain holds no délégation, so the relation is the
         // only thing that grants it.

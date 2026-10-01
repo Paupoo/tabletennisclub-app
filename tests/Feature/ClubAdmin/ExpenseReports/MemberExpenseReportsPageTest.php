@@ -208,7 +208,10 @@ describe('the member\'s own reports', function (): void {
 
     it('corrects a report in progress', function (): void {
         $member = User::factory()->create();
-        $report = ExpenseReport::factory()->for($member)->create(['description' => 'Scoth']);
+        // Date fixée : la factory tire « entre il y a deux mois et maintenant », et
+        // en CI ce tirage a dépassé ce que `before_or_equal:today` appelle
+        // aujourd'hui — deux échecs de suite, jamais reproduits en local.
+        $report = ExpenseReport::factory()->for($member)->create(['description' => 'Scoth', 'spent_on' => today()->subDay()]);
         $report->files()->create(['path' => 'expense-reports/x.jpg', 'original_name' => 'x.jpg', 'mime_type' => 'image/jpeg', 'size' => 1, 'sha256' => str_repeat('a', 64)]);
 
         Livewire::actingAs($member)

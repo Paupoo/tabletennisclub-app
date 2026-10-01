@@ -73,6 +73,12 @@ Rouvrez le panneau et changez ce que vous voulez. À l'envoi, l'application est 
 
 **Un joueur se désiste et vous restez à 3 ?** Décochez-le, puis désignez-le **joueur WO** dans le bloc du bas avant d'enregistrer : il reste sur la feuille, marqué WO, et toute l'équipe reçoit une nouvelle convocation qui dit qu'on joue à 3. Sans joueur WO, seul le joueur retiré est prévenu, et le match repasse **à traiter** : une sélection amputée n'est jamais considérée comme réglée. Vous pouvez revenir désigner le WO plus tard : l'enregistrement rouvre alors la fenêtre d'envoi.
 
+## Forfait ou rencontre déplacée par la fédération
+
+L'application relit le calendrier de la fédération toutes les heures. Si une de vos rencontres est **annulée par un forfait** ou **déplacée**, vos joueurs (sélectionnés et noyau) sont prévenus par mail, et vous recevez un message qui vous le confirme.
+
+Une rencontre forfait garde sa ligne, avec un badge **Forfait…** et le bouton **Consulter** : il n'y a plus rien à composer, et votre sélection est mise de côté, pas effacée. Si la fédération revient sur le forfait, elle réapparaît telle quelle. Pour une rencontre déplacée, vérifiez que vos joueurs sont toujours disponibles à la nouvelle date : les joueurs ont pour consigne de vous contacter.
+
 ## Qui d'autre voit cet écran
 
 Vous n'êtes pas seul : les **sélectionneurs** et les **administrateurs** y ont accès pour toutes les équipes, et peuvent intervenir à votre place si vous êtes injoignable. Si une de vos sélections a changé sans vous, c'est là qu'il faut chercher — pas dans un bug.

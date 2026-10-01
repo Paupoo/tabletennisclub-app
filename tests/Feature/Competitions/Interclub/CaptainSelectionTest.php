@@ -10,6 +10,7 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\InterclubAvailability;
+use App\Domains\Shared\Enums\InterclubForfeit;
 use App\Domains\Shared\Enums\Ranking;
 use App\Jobs\SendInterclubLineupBroadcastJob;
 use App\Jobs\SendInterclubPlayerRemovedJob;
@@ -905,6 +906,35 @@ it('blocks a player already lined up in another team of the same category that w
         ->call('openSelection', $this->interclub->id)
         ->call('togglePlayer', $this->player1->id)
         ->assertSet('selectedPlayerIds', []);
+});
+
+it('frees a player whose other fixture that week was cancelled by forfeit', function (): void {
+    $sameCategoryTeam = Team::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'captain_id' => $this->captain->id,
+        'club_id' => $this->ownClub->id,
+        'name' => 'ZZ',
+    ]);
+
+    // Sa sélection y est gardée en sommeil, au cas où la fédération se
+    // rétracte ; elle ne doit plus l'empêcher de jouer ailleurs.
+    $cancelled = Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $sameCategoryTeam->id,
+        'week_number' => $this->interclub->week_number,
+        'total_players' => 4,
+        'start_date_time' => $this->interclub->start_date_time,
+        'forfeit' => InterclubForfeit::OPPONENT_FORFEIT,
+    ]);
+    $cancelled->users()->attach($this->player1->id, ['is_selected' => true]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->assertSet('selectedPlayerIds', [$this->player1->id]);
 });
 
 it('lets a woman play in her ladies team and a senior team the same week', function (): void {

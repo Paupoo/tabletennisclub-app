@@ -1,6 +1,6 @@
 ---
 title: Importer le calendrier interclubs
-summary: Équipes, divisions, adversaires et rencontres, chargés depuis la fédération au lieu d'être recopiés. Ce que ça fait, et ce qu'il faut vérifier après.
+summary: Équipes, divisions, adversaires et rencontres, chargés depuis la fédération au lieu d'être recopiés, puis tenus à jour toutes les heures. Forfaits et changements annoncés aux équipes.
 audience: committee, secretary
 order: 20
 ---
@@ -27,17 +27,42 @@ Le résultat s'affiche en tableau : combien de rencontres créées, combien dép
 
 **C'est même l'usage normal.** Les rencontres sont reconnues par leur identifiant fédéral : une rencontre déplacée est **corrigée sur place**, pas recréée. Les disponibilités déjà données, les sélections et les résultats saisis **restent attachés**.
 
-Relancez donc dès que vous soupçonnez un changement : un report, un changement de salle, une division recomposée. Les rencontres modifiées sont listées sous **Moved** — prévenez ensuite les joueurs concernés, l'application ne le fait pas encore toute seule.
+## Ensuite, tout se fait seul, toutes les heures
+
+Une fois la saison chargée, **l'application relit le calendrier de la fédération toutes les heures, de 7 h à 22 h**. Quand quelque chose change sur une de nos rencontres, **l'équipe est prévenue par mail** : les joueurs sélectionnés (renforts compris) et tout le noyau de l'équipe. Le capitaine reçoit un message à part, qui lui confirme que son équipe a été prévenue.
+
+Quatre cas sont annoncés :
+
+- **un forfait**, de l'adversaire ou de notre équipe. La fédération le publie souvent **avant** la rencontre ;
+- **un retrait du championnat** (forfait général) : un seul message pour toutes les rencontres concernées ;
+- **le retrait d'un forfait** par la fédération : la rencontre a finalement lieu ;
+- **une nouvelle date, heure ou salle** : le message dit ce qui était prévu et ce qui l'est désormais.
+
+Le message invite toujours à **contacter le capitaine au plus vite** en cas de question. Rien n'est envoyé la nuit, ni pour une rencontre déjà commencée.
+
+> **Un forfait de notre équipe** vous est aussi signalé directement. S'il n'a pas été déclaré par le club, contactez la fédération avant que l'amende ne tombe.
+
+## Une rencontre forfait
+
+Elle **reste visible partout**, marquée « Forfait de l'adversaire » ou « Forfait de notre équipe ». Dans l'agenda du téléphone, elle apparaît comme **annulée**. Le résultat (16-0, par exemple) s'enregistre dès que la fédération l'a validé.
+
+Les réponses de disponibilité et la composition déjà faites **ne sont pas effacées**, juste mises de côté : les joueurs sont libres ailleurs cette semaine-là. Si la fédération revient sur le forfait, tout réapparaît tel quel.
+
+## Quand la fédération change trop de choses d'un coup
+
+Au-delà de **cinq messages** en un seul passage, **aucun n'est envoyé** : un tel volume est presque toujours une erreur de la fédération, souvent suivie de sa correction. Le calendrier est mis à jour, mais les équipes ne sont pas prévenues. Vous recevez une alerte, et un bandeau apparaît sur le **planning des interclubs**.
+
+L'écran **Changements de la fédération** liste alors les messages retenus. Vérifiez-les par rapport à ce que la fédération a annoncé, cochez-les, puis choisissez **Prévenir les équipes** ou **Ne pas prévenir**.
 
 ## Ce que l'import respecte
 
 - **Une rencontre encodée à la main n'est jamais touchée.** L'import ne se reconnaît que dans ce qu'il a lui-même écrit.
 - **Un club adverse déjà enregistré n'est jamais renommé.** Les clubs sont reconnus par leur numéro de licence, pas par leur nom — vos coordonnées, IBAN et contacts sont donc à l'abri. Seule une adresse manquante est complétée.
-- Si la fédération **retire** une rencontre — un forfait général, une division recalculée — elle est supprimée chez nous **si personne n'y a répondu**. Si quelqu'un y a répondu, elle est **conservée** et signalée : à vous de trancher.
+- Si la fédération **retire** une rencontre de son calendrier — une division recalculée en début de saison —, elle est supprimée chez nous **si personne n'y a répondu**. Si quelqu'un y a répondu, elle est **conservée** et signalée : à vous de trancher. Un forfait général, lui, ne retire rien : les rencontres restent, marquées.
 
 ## Ce qu'il ne fait pas
 
-- **Il ne charge pas les résultats ni les scores.** Ils se saisissent à la main dans **Interclubs → Résultats**. La fédération les publie, l'application saura les lire dans une prochaine version.
+- **Il ne charge pas les résultats des rencontres jouées.** Ils arrivent chaque matin depuis les feuilles de match de la fédération. Seul le résultat d'un forfait est écrit ici, puisqu'aucune feuille ne viendra.
 - **Il ne compose pas les équipes.** Il crée les équipes et leur lettre ; qui joue dedans reste une décision du club.
 
 ## Deux messages qui méritent une explication

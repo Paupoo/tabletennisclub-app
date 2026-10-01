@@ -23,6 +23,15 @@
         </x-slot:actions>
     </x-header>
 
+    @if ($heldChanges > 0)
+        <x-alert class="alert-warning alert-soft mb-4" icon="o-pause-circle"
+            :title="trans_choice('{1} 1 federation change is waiting before the teams are told.|[2,*] :count federation changes are waiting before the teams are told.', $heldChanges, ['count' => $heldChanges])">
+            <x-slot:actions>
+                <x-button :label="__('Review the changes')" class="btn-sm" :link="route('admin.interclubs.changes')" />
+            </x-slot:actions>
+        </x-alert>
+    @endif
+
     {{-- ── Season: navigation, not a filter (DS-A) ──────────────────────────── --}}
     <x-admin.shared.season-nav model="seasonId" :options="$seasons" class="mt-4" />
 
@@ -106,6 +115,9 @@
                                                                     <x-badge class="badge-ghost badge-xs border border-base-300 font-bold" value="{{ __('Away') }}" />
                                                                 @endif
                                                                 <span class="font-bold">{{ $match['opponent'] }}</span>
+                                                                @if ($match['forfeit'])
+                                                                    <x-badge data-forfeit class="badge-error badge-soft badge-xs font-bold" :value="$match['forfeit']" />
+                                                                @endif
                                                                 @if ($match['division'])
                                                                     <span class="text-base-content/40 text-xs">{{ $match['division'] }}</span>
                                                                 @endif

@@ -271,6 +271,8 @@ class InterclubLineupLegalityService
             ->where('season_id', $fixture->season_id)
             ->where('week_number', $fixture->week_number)
             ->where('id', '!=', $fixture->id)
+            // Personne ne joue une rencontre forfait : elle ne fixe aucun seuil.
+            ->withoutForfeits()
             ->where(fn ($query) => $query
                 ->whereIn('visited_team_id', $teamIds)
                 ->orWhereIn('visiting_team_id', $teamIds))

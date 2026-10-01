@@ -121,7 +121,8 @@ class AgendaBlockBuilder
             ->map(fn (Interclub $match): AgendaRow => new AgendaRow(
                 label: $this->fixtureLabel($match),
                 sub: $this->fixtureSub($match),
-                badge: $match->isHome() ? __('At home') : __('Away game'),
+                // Un forfait reste listé : c'est la nouvelle à donner.
+                badge: $match->forfeit?->label() ?? ($match->isHome() ? __('At home') : __('Away game')),
             ))
             ->all();
 

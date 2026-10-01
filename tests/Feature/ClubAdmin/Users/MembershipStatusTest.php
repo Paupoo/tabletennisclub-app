@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
+use App\Domains\ClubAdmin\Users\Models\MemberDeparture;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\MembershipStatus;
@@ -68,16 +69,62 @@ beforeEach(function (): void {
     $never = User::factory()->create();
     ($this->affiliate)($never, $this->current, 'cancelled');
     $this->members['never'] = $never;
+
+    // Affiliated this season and the one before, and gone all the same: the
+    // declared departure outweighs every affiliation.
+    $left = User::factory()->create();
+    ($this->affiliate)($left, $this->current, 'paid');
+    ($this->affiliate)($left, $this->previous, 'paid');
+    MemberDeparture::factory()->for($left)->for($this->current)->create();
+    $this->members['left'] = $left;
 });
 
 it('reads every status the same way in SQL and on the row', function (): void {
     $rows = User::query()->withMembershipFacts()->get()->keyBy('id');
+
+    expect(array_keys($this->members))->toEqualCanonicalizing(array_map(
+        fn (MembershipStatus $status): string => $status->value,
+        MembershipStatus::cases(),
+    ));
 
     foreach ($this->members as $expected => $member) {
         expect($rows[$member->id]->membershipStatus())->toBe(MembershipStatus::from($expected), "row of {$expected}")
             ->and(User::inMembershipStatus(MembershipStatus::from($expected))->pluck('id')->all())
             ->toBe([$member->id], "scope of {$expected}");
     }
+});
+
+it('forgets a departure once its season is over', function (): void {
+    // Whoever left and never came back is a former member; whoever came back is back.
+    $leftLongAgo = User::factory()->create();
+    ($this->affiliate)($leftLongAgo, $this->older, 'paid');
+    MemberDeparture::factory()->for($leftLongAgo)->for($this->older)->create();
+    $this->formerAfterDeparture = $leftLongAgo;
+
+    $cameBack = User::factory()->create();
+    ($this->affiliate)($cameBack, $this->older, 'paid');
+    ($this->affiliate)($cameBack, $this->current, 'confirmed');
+    MemberDeparture::factory()->for($cameBack)->for($this->older)->create();
+    $this->returningAfterDeparture = $cameBack;
+
+    $rows = User::query()->withMembershipFacts()->get()->keyBy('id');
+
+    expect($rows[$this->formerAfterDeparture->id]->membershipStatus())->toBe(MembershipStatus::Former)
+        ->and($rows[$this->returningAfterDeparture->id]->membershipStatus())->toBe(MembershipStatus::Returning)
+        ->and(User::inMembershipStatus(MembershipStatus::Former)->pluck('id')->all())
+        ->toEqualCanonicalizing([$this->members['former']->id, $this->formerAfterDeparture->id])
+        ->and(User::inMembershipStatus(MembershipStatus::Returning)->pluck('id')->all())
+        ->toEqualCanonicalizing([$this->members['returning']->id, $this->returningAfterDeparture->id]);
+});
+
+it('does not follow up a member who declared they left', function (): void {
+    expect(User::inMembershipStatus(MembershipStatus::ToFollowUp)->pluck('id')->all())
+        ->toBe([$this->members['to_follow_up']->id]);
+
+    MemberDeparture::factory()->for($this->members['to_follow_up'])->for($this->current)->create();
+
+    expect(User::inMembershipStatus(MembershipStatus::ToFollowUp)->count())->toBe(0)
+        ->and(User::findOrFail($this->members['to_follow_up']->id)->membershipStatus())->toBe(MembershipStatus::Left);
 });
 
 it('works the status out on its own when the list did not load the facts', function (): void {

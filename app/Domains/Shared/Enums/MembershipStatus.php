@@ -6,7 +6,7 @@ namespace App\Domains\Shared\Enums;
 
 /**
  * Where a member stands with the club, read off their affiliations across
- * seasons — never stored.
+ * seasons and the departure they may have declared — never stored.
  *
  * "Affiliated in a season" means a subscription of that season still under way
  * (pending, confirmed or paid): the same rule as
@@ -15,15 +15,18 @@ namespace App\Domains\Shared\Enums;
  *
  * The rule lives twice, and on purpose: once in PHP ({@see self::fromAffiliations()})
  * for the row, once in SQL (`User::scopeInMembershipStatus()`) for the filter.
- * Both read the same three facts — affiliated this season, last season, before
- * this season — and a test holds them to the same answer on every case.
+ * Both read the same four facts — left this season, affiliated this season,
+ * last season, before this season — and a test holds them to the same answer
+ * on every case.
  *
- * A member who declared their departure is not modelled yet: the case will
- * take precedence over all the others when it is.
+ * A departure declared for the running season outweighs everything else: the
+ * member may well still be affiliated, they are gone all the same. One declared
+ * for an earlier season says nothing any more.
  */
 enum MembershipStatus: string
 {
     case Former = 'former';
+    case Left = 'left';
     case Never = 'never';
     case New = 'new';
     case Renewed = 'renewed';
@@ -45,10 +48,12 @@ enum MembershipStatus: string
      * @param  bool  $thisSeason  affiliated in the running season
      * @param  bool  $lastSeason  affiliated in the season before it
      * @param  bool  $beforeThisSeason  affiliated in any season before the running one, the last included
+     * @param  bool  $leftThisSeason  declared their departure for the running season
      */
-    public static function fromAffiliations(bool $thisSeason, bool $lastSeason, bool $beforeThisSeason): self
+    public static function fromAffiliations(bool $thisSeason, bool $lastSeason, bool $beforeThisSeason, bool $leftThisSeason = false): self
     {
         return match (true) {
+            $leftThisSeason => self::Left,
             $thisSeason && ! $beforeThisSeason => self::New,
             $thisSeason && $lastSeason => self::Renewed,
             $thisSeason => self::Returning,
@@ -66,7 +71,7 @@ enum MembershipStatus: string
      */
     public static function inReadingOrder(): array
     {
-        return [self::New, self::Renewed, self::Returning, self::ToFollowUp, self::Former, self::Never];
+        return [self::New, self::Renewed, self::Returning, self::ToFollowUp, self::Left, self::Former, self::Never];
     }
 
     /**
@@ -91,6 +96,7 @@ enum MembershipStatus: string
             self::Renewed => 'badge-success badge-soft',
             self::Returning => 'badge-primary badge-soft',
             self::ToFollowUp => 'badge-warning badge-soft',
+            self::Left => 'badge-error badge-soft',
             self::Former, self::Never => 'badge-ghost',
         };
     }
@@ -107,6 +113,7 @@ enum MembershipStatus: string
             self::Renewed => __('Renewed'),
             self::Returning => __('Returning'),
             self::ToFollowUp => __('To follow up'),
+            self::Left => __('Left the club'),
             self::Former => __('Former member'),
             self::Never => __('Never affiliated'),
         };

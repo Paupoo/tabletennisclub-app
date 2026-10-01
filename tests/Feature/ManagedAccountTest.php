@@ -176,6 +176,8 @@ describe('filtering members by where they stand with their account', function ()
  * the secretary can close it, by asking them for an address. Nothing happens on
  * their eighteenth birthday — this is what makes them findable.
  */
+// The fixtures are affiliated nowhere: the list is opened with its default view
+// dismissed, which the filters below do not depend on.
 describe('finding the adults who still have no address of their own', function (): void {
 
     it('lists an adult member with no address', function (): void {
@@ -221,6 +223,7 @@ describe('finding the adults who still have no address of their own', function (
         ]);
 
         Livewire::actingAs(User::factory()->withRole(Role::MEMBERS)->create())
+            ->withQueryParams(['allMembers' => true])
             ->test('pages::club-admin.users.index')
             ->set('adultWithoutAddress', true)
             ->assertSee($adult->last_name)
@@ -240,6 +243,7 @@ describe('offering to invite a member', function (): void {
         $managed = User::factory()->unverified()->create(['email' => null, 'birthdate' => now()->subYears(12)]);
 
         Livewire::actingAs(User::factory()->withRole(Role::MEMBERS)->create())
+            ->withQueryParams(['allMembers' => true])
             ->test('pages::club-admin.users.index')
             ->assertDontSee("sendInvitation({$managed->id})", escape: false)
             ->assertSee(__('This member has no address of their own, and no guardian the club can write to.'));
@@ -249,6 +253,7 @@ describe('offering to invite a member', function (): void {
         $member = User::factory()->unverified()->create(['email' => 'member@example.com']);
 
         Livewire::actingAs(User::factory()->withRole(Role::MEMBERS)->create())
+            ->withQueryParams(['allMembers' => true])
             ->test('pages::club-admin.users.index')
             ->assertSee("sendInvitation({$member->id})", escape: false);
     });

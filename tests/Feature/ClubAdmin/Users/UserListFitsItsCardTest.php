@@ -19,14 +19,16 @@ it('reads the address beneath the name rather than in a column of its own', func
     User::factory()->create(['first_name' => 'Lena', 'last_name' => 'Adam', 'email' => 'lena.adam@example.com']);
 
     $component = Livewire::actingAs($this->createFakeAdmin())
+        ->withQueryParams(['allMembers' => true])
         ->test('pages::club-admin.users.index')
         ->assertSee('lena.adam@example.com');
 
     $headers = collect($component->instance()->headers())->keyBy('key');
 
+    // The photo gave its place to the affiliation, read on every row at any width.
     expect($headers->keys()->all())->not->toContain('email')
-        ->and($headers['photo']['class'])->toBe('hidden 2xl:table-cell')
-        ->and($headers['is_competitive']['class'])->toBe('hidden xl:table-cell')
+        ->not->toContain('photo')
+        ->and($headers['affiliation'])->not->toHaveKey('class')
         ->and($headers['ranking']['class'])->toBe('hidden xl:table-cell');
 });
 

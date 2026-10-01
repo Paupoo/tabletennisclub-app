@@ -42,7 +42,8 @@ it('lets a phone reach the second page of the member list', function (): void {
 
     User::factory()->count(40)->create();
 
-    $probe = visit(route('admin.users.index'))->resize(375, 812)->script(VISIBLE_PAGER);
+    // Affiliated nowhere: the list opens on the current members, so the default view is dismissed.
+    $probe = visit(route('admin.users.index', ['allMembers' => 1]))->resize(375, 812)->script(VISIBLE_PAGER);
     $result = $probe[0] ?? $probe;
 
     expect($result['visible'])->toBeGreaterThan(0, 'the member list must be pageable from a phone');
@@ -75,7 +76,7 @@ it('writes the pagination summary in French', function (): void {
 
     User::factory()->count(40)->create();
 
-    $probe = visit(route('admin.users.index'))->resize(1440, 900)->script(VISIBLE_PAGER);
+    $probe = visit(route('admin.users.index', ['allMembers' => 1]))->resize(1440, 900)->script(VISIBLE_PAGER);
     $result = $probe[0] ?? $probe;
 
     expect($result['text'])

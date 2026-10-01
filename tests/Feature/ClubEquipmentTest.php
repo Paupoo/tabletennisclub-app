@@ -200,6 +200,8 @@ describe('Cash register creation with holder', function (): void {
 
 // ── User list filters ─────────────────────────────────────────────────────────
 
+// The fixtures are affiliated nowhere: the list is opened with its default view
+// dismissed, which the filters below do not depend on.
 describe('User list filters', function (): void {
     it('hasKey filter returns only key holders', function (): void {
         $admin = User::factory()->isAdmin()->create();
@@ -208,6 +210,7 @@ describe('User list filters', function (): void {
         User::factory()->create();
 
         $component = Livewire::actingAs($admin)
+            ->withQueryParams(['allMembers' => true])
             ->test('pages::club-admin.users.index')
             ->set('hasKey', true);
 
@@ -223,6 +226,7 @@ describe('User list filters', function (): void {
         CashRegister::create(['name' => 'Test', 'held_by_user_id' => $holder->id]);
 
         $component = Livewire::actingAs($admin)
+            ->withQueryParams(['allMembers' => true])
             ->test('pages::club-admin.users.index')
             ->set('hasCashRegister', true);
 

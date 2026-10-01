@@ -1068,7 +1068,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function scopeInMembershipStatus(EloquentBuilder $query, MembershipStatus ...$statuses): EloquentBuilder
     {
-        [$thisSeason, $lastSeason, $earlierSeasons] = self::affiliationSeasons();
+        [$thisSeason, $lastSeason, $earlierSeasons] = $this->affiliationSeasons();
 
         $affiliated = fn (string $method, int|EloquentBuilder $season): Closure => fn (EloquentBuilder $member): EloquentBuilder => $member->{$method}(
             'subscriptions',
@@ -1120,30 +1120,24 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Order the members by whether they hold a competitive licence this season.
+     * Members affiliated this season with — or without — a competitive licence.
      *
-     * There is no `users.is_competitive` to sort on, and there never was: what
-     * makes a member a competitor lives on their subscription for the current
-     * season, which is also why {@see self::scopeCompetitor()} has to join. The
-     * list's "Licence" header is keyed on that name all the same, and handing it
-     * to `orderBy()` reached MySQL as an unknown column.
-     *
-     * `withExists()` carries the same predicate as {@see self::scopeCompetitor()}
-     * — one rule, written once — and keeps the ordering in a single query with
-     * one row per member: a join would multiply members by their subscriptions
-     * and paginate fifteen rows that are not fifteen people.
+     * The licence only means something next to an affiliation of the running
+     * season: a member of last season is neither, and matches neither side. The
+     * same reading as {@see self::holdsCompetitiveLicence()}.
      */
-    public function scopeOrderByCompetitiveStatus(EloquentBuilder $query, string $direction): EloquentBuilder
+    public function scopeLicensedThisSeason(EloquentBuilder $query, bool $competitive): EloquentBuilder
     {
-        $seasonId = Season::current()?->id;
+        $seasonId = Season::current()->id ?? 0;
 
-        return $query
-            ->withExists(['subscriptions as holds_competitive_licence' => fn (EloquentBuilder $subscription) => $subscription
-                ->where('season_id', $seasonId)
-                ->whereIn('status', ['confirmed', 'paid'])
-                ->where('is_competitive', true),
-            ])
-            ->orderBy('holds_competitive_licence', $direction);
+        $competitiveLicence = fn (EloquentBuilder $subscription): EloquentBuilder => $subscription
+            ->where('season_id', $seasonId)
+            ->whereIn('status', Subscription::AFFILIATED_STATUSES)
+            ->where('is_competitive', true);
+
+        return $competitive
+            ? $query->whereHas('subscriptions', $competitiveLicence)
+            : $query->affiliatedForCurrentSeason()->whereDoesntHave('subscriptions', $competitiveLicence);
     }
 
     public function scopePaid(EloquentBuilder $query): EloquentBuilder
@@ -1533,7 +1527,7 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @return array{0: int, 1: int, 2: EloquentBuilder<Season>}
      */
-    private static function affiliationSeasons(): array
+    private function affiliationSeasons(): array
     {
         $current = Season::current();
 
@@ -1541,25 +1535,6 @@ class User extends Authenticatable implements MustVerifyEmail
             $current->id ?? 0,
             $current?->previous()->id ?? 0,
             Season::query()->select('id')->where('start_at', '<', $current->start_at ?? now()),
-        ];
-    }
-
-    /**
-     * @return array<string, Closure>
-     */
-    private function membershipFactQueries(): array
-    {
-        [$thisSeason, $lastSeason, $earlierSeasons] = self::affiliationSeasons();
-
-        $affiliated = fn (EloquentBuilder $subscription): EloquentBuilder => $subscription
-            ->whereIn('status', Subscription::AFFILIATED_STATUSES);
-
-        return [
-            'subscriptions as affiliated_this_season' => fn (EloquentBuilder $s): EloquentBuilder => $affiliated($s)->where('season_id', $thisSeason),
-            'subscriptions as affiliated_last_season' => fn (EloquentBuilder $s): EloquentBuilder => $affiliated($s)->where('season_id', $lastSeason),
-            'subscriptions as affiliated_before_this_season' => fn (EloquentBuilder $s): EloquentBuilder => $affiliated($s)->whereIn('season_id', $earlierSeasons),
-            'subscriptions as competitive_this_season' => fn (EloquentBuilder $s): EloquentBuilder => $affiliated($s)->where('season_id', $thisSeason)->where('is_competitive', true),
-            'guardianRecord as is_responsible_adult' => fn (EloquentBuilder $guardian): EloquentBuilder => $guardian->whereHas('users'),
         ];
     }
 
@@ -1585,5 +1560,24 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return $this->attributes[$fact];
+    }
+
+    /**
+     * @return array<string, Closure>
+     */
+    private function membershipFactQueries(): array
+    {
+        [$thisSeason, $lastSeason, $earlierSeasons] = $this->affiliationSeasons();
+
+        $affiliated = fn (EloquentBuilder $subscription): EloquentBuilder => $subscription
+            ->whereIn('status', Subscription::AFFILIATED_STATUSES);
+
+        return [
+            'subscriptions as affiliated_this_season' => fn (EloquentBuilder $s): EloquentBuilder => $affiliated($s)->where('season_id', $thisSeason),
+            'subscriptions as affiliated_last_season' => fn (EloquentBuilder $s): EloquentBuilder => $affiliated($s)->where('season_id', $lastSeason),
+            'subscriptions as affiliated_before_this_season' => fn (EloquentBuilder $s): EloquentBuilder => $affiliated($s)->whereIn('season_id', $earlierSeasons),
+            'subscriptions as competitive_this_season' => fn (EloquentBuilder $s): EloquentBuilder => $affiliated($s)->where('season_id', $thisSeason)->where('is_competitive', true),
+            'guardianRecord as is_responsible_adult' => fn (EloquentBuilder $guardian): EloquentBuilder => $guardian->whereHas('users'),
+        ];
     }
 }

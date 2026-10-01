@@ -24,6 +24,7 @@ describe('Users admin index page', function (): void {
         User::factory()->create(['first_name' => 'Alice', 'last_name' => 'Dupont']);
 
         Livewire::actingAs($this->admin)
+            ->withQueryParams(['allMembers' => true])
             ->test('pages::club-admin.users.index')
             ->assertSee('Alice');
     });
@@ -33,6 +34,7 @@ describe('Users admin index page', function (): void {
         User::factory()->create(['first_name' => 'Bob', 'last_name' => 'Dupont']);
 
         Livewire::actingAs($this->admin)
+            ->withQueryParams(['allMembers' => true])
             ->test('pages::club-admin.users.index')
             ->set('search', 'Alice')
             ->assertSee('Alice')

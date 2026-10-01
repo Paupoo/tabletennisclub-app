@@ -16,6 +16,7 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\MembershipStatus;
 use App\Domains\Shared\Enums\Permission;
 use App\Jobs\SendGuardianInvitationJob;
 use App\Jobs\SendMemberInvitationJob;
@@ -46,6 +47,22 @@ new class extends Component
     /** The grown members the club still cannot hand a login to. */
     #[Url]
     public bool $adultWithoutAddress = false;
+
+    /**
+     * The statuses ticked in the drawer. Empty is not "nobody": it is the view
+     * the list opens on — see {@see self::defaultViewApplies()}. A value no
+     * status answers to, from an old or tampered link, is ignored.
+     *
+     * @var array<int, string>
+     */
+    #[Url]
+    public array $affiliation = [];
+
+    /**
+     * The default view was dismissed: everybody on file, the archived aside.
+     */
+    #[Url]
+    public bool $allMembers = false;
 
     public string $anonymizeConfirmText = '';
 
@@ -103,10 +120,18 @@ new class extends Component
 
     public int $remindGuardianUserId = 0;
 
+    /** Only the accounts that answer for a ward. */
+    #[Url]
+    public bool $responsibleAdultsOnly = false;
+
     // ── Filters & sort ───────────────────────────────────────────────────────
     #[Url]
     public string $search = '';
 
+    /**
+     * Competitive or recreational licence of the running season. Any other
+     * value, including one from an older link, reads as "all".
+     */
     #[Url]
     public string $selectedLicenceType = 'both';
 
@@ -141,11 +166,9 @@ new class extends Component
      * not listed here — including a tampered `sortBy` URL value — falls back to a
      * safe default instead of reaching `orderBy()` with a raw, unknown column.
      *
-     * `is_competitive` is deliberately absent: the "Licence" header is keyed on
-     * that name, but no such column exists on `users` — holding a competitive
-     * licence is a fact of the subscription for the current season. Listing it
-     * here is what let a header click reach MySQL as an unknown column; it is
-     * ordered by {@see User::scopeOrderByCompetitiveStatus()} instead.
+     * The affiliation column is not sortable: its status is read across
+     * seasons, and an order on it would buy little for a costly query. An old
+     * link still sorting on the retired `is_competitive` falls back here.
      *
      * @var array<string, array<int, string>>
      */
@@ -222,8 +245,14 @@ new class extends Component
         $this->success(__('Users subscribed.'));
     }
 
+    /**
+     * Back to the view the list opens on, not to "everybody".
+     */
     public function clearFilters(): void
     {
+        $this->affiliation = [];
+        $this->allMembers = false;
+        $this->responsibleAdultsOnly = false;
         $this->selectedLicenceType = 'both';
         $this->categories = [];
         $this->invitationState = '';
@@ -325,6 +354,19 @@ new class extends Component
         ]));
     }
 
+    /**
+     * Whether the list stands on the view it opens on: this season's members,
+     * last season's still to hear from, and the responsible adults.
+     *
+     * Suspended while a search is typed — a name is looked for among everybody,
+     * and a member who left two seasons ago is exactly who one searches for —
+     * and in the archive, which holds former members by definition.
+     */
+    public function defaultViewApplies(): bool
+    {
+        return $this->standsOnDefaultView() && trim($this->search) === '';
+    }
+
     public function delete(): void
     {
         $user = User::findOrFail($this->userToDelete);
@@ -368,11 +410,23 @@ new class extends Component
     {
         $chips = [];
 
-        if ($this->selectedLicenceType !== 'both') {
+        if ($this->defaultViewApplies()) {
+            $chips[] = ['key' => 'currentMembers', 'label' => __('Current members + to follow up')];
+        }
+
+        foreach ($this->chosenStatuses() as $status) {
+            $chips[] = ['key' => "affiliation_{$status->value}", 'label' => $status->label()];
+        }
+
+        if ($this->licenceFilter() !== null) {
             $chips[] = [
                 'key' => 'selectedLicenceType',
-                'label' => $this->selectedLicenceType === 'competitive' ? __('Competitive') : __('Recreational'),
+                'label' => $this->licenceFilter() ? __('Competitive') : __('Recreational'),
             ];
+        }
+
+        if ($this->responsibleAdultsOnly) {
+            $chips[] = ['key' => 'responsibleAdultsOnly', 'label' => __('Responsible adults')];
         }
 
         foreach (Gender::cases() as $gender) {
@@ -444,9 +498,9 @@ new class extends Component
      *
      * Toutes ensemble, elles demandaient 1140 px : la carte n'en offre que 634
      * à 1024 et 890 à 1280, et le tableau débordait à droite, emportant le
-     * bouton de chaque ligne. L'e-mail est passé sous le nom ; Licence et
-     * Classement attendent `xl`, la photo — un avatar générique pour presque
-     * tout le monde — attend `2xl`.
+     * bouton de chaque ligne. L'e-mail est passé sous le nom ; le classement
+     * attend `xl`. La photo — un avatar générique pour presque tout le monde —
+     * a laissé sa place à l'affiliation, que la secrétaire lit à chaque ligne.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -454,11 +508,10 @@ new class extends Component
     public function headers(): array
     {
         return [
-            ['key' => 'photo',          'label' => '',            'sortable' => false, 'class' => 'hidden 2xl:table-cell'],
-            ['key' => 'name',           'label' => __('Name'),    'sortable' => true],
-            ['key' => 'is_competitive', 'label' => __('Licence'), 'sortable' => true,  'class' => 'hidden xl:table-cell'],
-            ['key' => 'ranking',        'label' => __('Ranking'), 'sortable' => true,  'class' => 'hidden xl:table-cell'],
-            ['key' => 'status',         'label' => __('Status'),  'sortable' => false],
+            ['key' => 'name',        'label' => __('Name'),        'sortable' => true],
+            ['key' => 'affiliation', 'label' => __('Affiliation'), 'sortable' => false],
+            ['key' => 'ranking',     'label' => __('Ranking'),     'sortable' => true,  'class' => 'hidden xl:table-cell'],
+            ['key' => 'status',      'label' => __('Account'),     'sortable' => false],
         ];
     }
 
@@ -495,9 +548,9 @@ new class extends Component
     public function licenceTypes(): array
     {
         return [
-            ['id' => 'both',        'name' => __('Both')],
+            ['id' => 'both',        'name' => __('All')],
             ['id' => 'competitive', 'name' => __('Competitive')],
-            ['id' => 'recreative',  'name' => __('Recreative')],
+            ['id' => 'recreative',  'name' => __('Recreational')],
         ];
     }
 
@@ -553,6 +606,16 @@ new class extends Component
         $this->remindGuardianModal = true;
     }
 
+    /**
+     * The season the "to follow up" members were last affiliated to, named
+     * once for the whole page rather than once per row.
+     */
+    #[Computed]
+    public function previousSeason(): ?Season
+    {
+        return Season::current()?->previous();
+    }
+
     public function quickInvite(): void
     {
         // Creating the member and inviting them are one gesture here, so the
@@ -596,7 +659,14 @@ new class extends Component
 
     public function removeFilter(string $key): void
     {
-        if (str_starts_with($key, 'categories_')) {
+        if ($key === 'currentMembers') {
+            $this->allMembers = true;
+        } elseif (str_starts_with($key, 'affiliation_')) {
+            $value = substr($key, strlen('affiliation_'));
+            $this->affiliation = array_values(
+                array_filter($this->affiliation, fn (string $v): bool => $v !== $value)
+            );
+        } elseif (str_starts_with($key, 'categories_')) {
             $value = substr($key, strlen('categories_'));
             $this->categories = array_values(
                 array_filter($this->categories, fn (string $v): bool => $v !== $value)
@@ -631,6 +701,18 @@ new class extends Component
         RestoreUserAction::handle($user);
 
         $this->success(__('User restored.'));
+    }
+
+    // ── Computed ──────────────────────────────────────────────────────────────
+
+    /**
+     * Whether a search is reaching past the default view, which the page says
+     * under the search field so that nobody wonders where the other rows came
+     * from.
+     */
+    public function searchesPastDefaultView(): bool
+    {
+        return $this->standsOnDefaultView() && trim($this->search) !== '';
     }
 
     /**
@@ -684,17 +766,21 @@ new class extends Component
         $this->success(__('Invitation sent to :email.', ['email' => $user->email]));
     }
 
-    // ── Computed ──────────────────────────────────────────────────────────────
-
-    /** @return array<string, int> */
+    /**
+     * Bare counts, never filtered: they are the witness the list is checked
+     * against. Each card carries the same word as the filter that finds its
+     * members.
+     *
+     * @return array{affiliated: int, new: int, to_follow_up: int, responsible_adults: int}
+     */
     #[Computed]
     public function stats(): array
     {
         return [
-            'total' => User::count(),
-            'registered' => User::affiliatedForCurrentSeason()->count(),
-            'competitive' => User::competitor()->count(),
-            'unregistered' => User::count() - User::affiliatedForCurrentSeason()->count(),
+            'affiliated' => User::affiliatedForCurrentSeason()->count(),
+            'new' => User::inMembershipStatus(MembershipStatus::New)->count(),
+            'to_follow_up' => User::inMembershipStatus(MembershipStatus::ToFollowUp)->count(),
+            'responsible_adults' => User::responsibleAdults()->count(),
         ];
     }
 
@@ -734,6 +820,11 @@ new class extends Component
 
     // ── Pagination hooks ──────────────────────────────────────────────────────
 
+    public function updatedAffiliation(): void
+    {
+        $this->resetPage();
+    }
+
     public function updatedCategories(): void
     {
         $this->resetPage();
@@ -750,6 +841,11 @@ new class extends Component
     }
 
     public function updatedIncompleteProfile(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedResponsibleAdultsOnly(): void
     {
         $this->resetPage();
     }
@@ -787,28 +883,33 @@ new class extends Component
         // tampered value reaches `orderBy()` and throws rather than falling back.
         $direction = $this->sortBy['direction'] === 'desc' ? 'desc' : 'asc';
 
+        $statuses = $this->chosenStatuses();
+        $licence = $this->licenceFilter();
+
         return $query
             // Guardians carry the account state of every managed member on the
             // page — see {@see User::guardianshipStatus()} — so the badge, the
             // note and the row menu would each lazy load without this.
             ->with('guardians.member')
+            // Status, licence and responsible-adult badge, read in this query.
+            ->withMembershipFacts()
+            // The paid badge of both twins, mobile and desktop: two queries a
+            // row without it. Read by User::getHasPaidAttribute().
+            ->withExists(['subscriptions as has_paid' => fn ($subscription) => $subscription
+                ->where('season_id', Season::current()->id ?? 0)
+                ->where('status', 'paid'),
+            ])
             ->when($this->search, fn ($q) => $q->searchName($this->search))
             ->when(
-                ! $this->showArchived && $this->selectedLicenceType === 'competitive',
-                fn ($q) => $q->competitor()
-            )
-            ->when(
-                // Complément exact de competitor() : une inscription compétitive
-                // annulée ne fait plus classer le membre en compétiteur.
-                // Volontairement sans filtre d'appartenance : la liste inclut
-                // aussi les utilisateurs sans inscription, comme avant.
-                ! $this->showArchived && $this->selectedLicenceType === 'recreative',
-                fn ($q) => $q->whereDoesntHave('subscriptions', fn ($s) => $s
-                    ->where('season_id', Season::current()?->id)
-                    ->active()
-                    ->where('is_competitive', true)
+                $this->defaultViewApplies(),
+                fn ($q) => $q->where(fn ($view) => $view
+                    ->inMembershipStatus(...MembershipStatus::currentMembers())
+                    ->orWhere(fn ($adults) => $adults->responsibleAdults())
                 )
             )
+            ->when($statuses !== [], fn ($q) => $q->inMembershipStatus(...$statuses))
+            ->when($licence !== null, fn ($q) => $q->licensedThisSeason((bool) $licence))
+            ->when($this->responsibleAdultsOnly, fn ($q) => $q->responsibleAdults())
             ->when(
                 $this->categories,
                 fn ($q) => $q->whereIn('gender', $this->categories)
@@ -826,15 +927,14 @@ new class extends Component
             ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
             ->when($this->hasKey, fn ($q) => $q->whereHas('keyRings'))
             ->when($this->hasCashRegister, fn ($q) => $q->whereHas('heldCashRegisters'))
-            ->when(
-                $this->sortBy['column'] === 'is_competitive',
-                fn ($q) => $q->orderByCompetitiveStatus($direction),
-                fn ($q) => $q->tap(function ($query) use ($sortColumns, $direction): void {
-                    foreach ($sortColumns as $column) {
-                        $query->orderBy($column, $direction);
-                    }
-                })
-            )
+            ->tap(function ($query) use ($sortColumns, $direction): void {
+                foreach ($sortColumns as $column) {
+                    $query->orderBy($column, $direction);
+                }
+            })
+            // A total order: two namesakes tie, and MySQL may then serve them
+            // in a different order on each page — some rows on none of them.
+            ->orderBy('users.id')
             ->paginate(15);
     }
 
@@ -846,8 +946,6 @@ new class extends Component
             ->current(__('List'));
     }
 
-    // ── HasBulkActions ────────────────────────────────────────────────────────
-
     /** @return array<int, string> */
     protected function getPageIds(): array
     {
@@ -855,6 +953,21 @@ new class extends Component
             ->pluck('id')
             ->map(fn (int $id): string => (string) $id)
             ->toArray();
+    }
+
+    // ── HasBulkActions ────────────────────────────────────────────────────────
+
+    /**
+     * The statuses ticked in the drawer that name a real status.
+     *
+     * @return list<MembershipStatus>
+     */
+    private function chosenStatuses(): array
+    {
+        return array_values(array_filter(array_map(
+            fn (mixed $value): ?MembershipStatus => is_string($value) ? MembershipStatus::tryFrom($value) : null,
+            $this->affiliation,
+        )));
     }
 
     /**
@@ -958,6 +1071,26 @@ new class extends Component
         sort($freedTeams);
 
         return ' ' . __('Teams left without a captain: :teams', ['teams' => implode(', ', $freedTeams)]);
+    }
+
+    /**
+     * True for competitive, false for recreational, null for no filter.
+     */
+    private function licenceFilter(): ?bool
+    {
+        return match ($this->selectedLicenceType) {
+            'competitive' => true,
+            'recreative' => false,
+            default => null,
+        };
+    }
+
+    /**
+     * Nothing ticked, nothing dismissed, and not in the archive.
+     */
+    private function standsOnDefaultView(): bool
+    {
+        return $this->chosenStatuses() === [] && ! $this->allMembers && ! $this->showArchived;
     }
 
     /**

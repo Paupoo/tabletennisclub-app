@@ -26,7 +26,8 @@ it('displays users in the list', function (): void {
 
     $this->actingAs($this->admin);
 
-    visit(route('admin.users.index'))
+    // Affiliated nowhere: the list opens on the current members, so the default view is dismissed.
+    visit(route('admin.users.index', ['allMembers' => 1]))
         ->assertSee('Juliette')
         ->assertSee('Bernard');
 });
@@ -48,7 +49,7 @@ it('search filters users via Livewire reactive update', function (): void {
      * `assertDontSee` voyait encore la ligne. La seule attente réelle offerte est
      * `wait()`, donc on l'utilise, largement au-dessus du debounce.
      */
-    visit(route('admin.users.index'))
+    visit(route('admin.users.index', ['allMembers' => 1]))
         ->assertSee('Juliette')
         ->assertSee('ZzzZzz')
         ->type('input[id$="search"]', 'Juliette')
@@ -69,7 +70,14 @@ it('shows competitive badge for competitor users', function (): void {
 });
 
 it('shows recreational badge for non-competitor users', function (): void {
-    User::factory()->isNotCompetitor()->create(['first_name' => 'Luc', 'last_name' => 'Loisir']);
+    // The licence is shown next to an affiliation of the running season only.
+    $luc = User::factory()->isNotCompetitor()->create(['first_name' => 'Luc', 'last_name' => 'Loisir']);
+    Subscription::create([
+        'user_id' => $luc->id,
+        'season_id' => $this->season->id,
+        'status' => 'confirmed',
+        'is_competitive' => false,
+    ]);
 
     $this->actingAs($this->admin);
 

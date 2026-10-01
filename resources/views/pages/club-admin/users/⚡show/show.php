@@ -10,6 +10,7 @@ use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Support\IbanNormalizer;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -94,9 +95,34 @@ new class extends Component
         $this->user = $user;
     }
 
+    /**
+     * The season the "to follow up" wards were last affiliated to.
+     */
+    #[Computed]
+    public function previousSeason(): ?Season
+    {
+        return Season::current()?->previous();
+    }
+
     public function render(): View
     {
         return $this->view()->title($this->user->full_name);
+    }
+
+    /**
+     * The members this account answers for, when it holds a guardian sheet —
+     * each with the facts their status is read from, in the same query.
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function wards(): Collection
+    {
+        $guardianSheet = $this->user->guardianRecord()->first();
+
+        return $guardianSheet === null
+            ? new Collection
+            : $guardianSheet->users()->withMembershipFacts()->orderBy('first_name')->orderBy('last_name')->get();
     }
 
     /**

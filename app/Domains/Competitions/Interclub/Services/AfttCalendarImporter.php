@@ -10,11 +10,14 @@ use App\Data\Interclub\AfttMatch;
 use App\Data\Interclub\AfttVenue;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\InterclubChange;
 use App\Domains\Competitions\Interclub\Models\InterclubImport;
 use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\InterclubChangeKind;
+use App\Domains\Shared\Enums\InterclubChangeStatus;
 use App\Domains\Shared\Enums\InterclubForfeit;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
@@ -69,6 +72,13 @@ class AfttCalendarImporter
     private array $changes = [];
 
     /**
+     * Changes to tell the team about, written once the run's audit row exists.
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    private array $journal = [];
+
+    /**
      * Federation identifiers seen in this run, which is what makes anything else
      * carrying one an orphan.
      *
@@ -82,6 +92,7 @@ class AfttCalendarImporter
     {
         $this->seen = [];
         $this->changes = [];
+        $this->journal = [];
 
         $plan = $this->fetch($afttSeason, $clubCode);
 
@@ -112,7 +123,7 @@ class AfttCalendarImporter
 
             $this->reconcileOrphans($season);
 
-            return InterclubImport::create([
+            $import = InterclubImport::create([
                 'season_id' => $season->id,
                 'is_fresh' => $fresh,
                 'created_count' => count($this->changes['created'] ?? []),
@@ -125,6 +136,12 @@ class AfttCalendarImporter
                     + count($this->changes['refused_teams'] ?? []),
                 'changes' => $this->changes,
             ]);
+
+            foreach ($this->journal as $change) {
+                InterclubChange::create($change + ['interclub_import_id' => $import->id]);
+            }
+
+            return $import;
         });
     }
 
@@ -403,6 +420,16 @@ class AfttCalendarImporter
         );
 
         $this->writeForfeitResult($fixture, $existing?->forfeit, $forfeit, $match);
+
+        if ($existing instanceof Interclub) {
+            $weAreHome = $match->homeClub === $clubCode;
+
+            $this->noteChange($existing, $fixture, match ($forfeit) {
+                InterclubForfeit::OPPONENT_WITHDRAWAL => $weAreHome ? $away : $home,
+                InterclubForfeit::OUR_WITHDRAWAL => $weAreHome ? $home : $away,
+                default => null,
+            });
+        }
     }
 
     /**
@@ -488,6 +515,60 @@ class AfttCalendarImporter
             'category' => $category->name,
             'level' => $level->name,
         ]);
+    }
+
+    /**
+     * @return array{start: string|null, address: string|null}
+     */
+    private function moment(Interclub $fixture): array
+    {
+        return [
+            'start' => $fixture->start_date_time?->toDateTimeString(),
+            'address' => $fixture->address,
+        ];
+    }
+
+    /**
+     * Keep what changed on a fixture the club already knew, for the team to be told.
+     *
+     * A forfeit outweighs a move: nobody needs a new time for an evening that
+     * will not be played. A fixture already under way, or over, is recorded
+     * but never announced — telling a team about a match that has started
+     * helps nobody.
+     *
+     * The fixtures one withdrawal cancels share a group, so the team hears
+     * about the withdrawal once rather than about each evening it cancels.
+     */
+    private function noteChange(Interclub $before, Interclub $after, ?Team $withdrawn): void
+    {
+        $kind = match (true) {
+            $before->forfeit !== $after->forfeit && $after->forfeit instanceof InterclubForfeit => InterclubChangeKind::FORFEIT,
+            $before->forfeit !== $after->forfeit => InterclubChangeKind::FORFEIT_LIFTED,
+            $after->forfeit instanceof InterclubForfeit => null,
+            $before->start_date_time?->toDateTimeString() !== $after->start_date_time?->toDateTimeString(),
+            $before->address !== $after->address => InterclubChangeKind::RESCHEDULED,
+            default => null,
+        };
+
+        if (! $kind instanceof InterclubChangeKind) {
+            return;
+        }
+
+        $groupKey = $kind === InterclubChangeKind::FORFEIT && $withdrawn instanceof Team
+            ? 'withdrawal:' . $withdrawn->id
+            : null;
+
+        $this->journal[] = [
+            'interclub_id' => $after->id,
+            'kind' => $kind,
+            'forfeit' => $kind === InterclubChangeKind::FORFEIT_LIFTED ? $before->forfeit : $after->forfeit,
+            'before' => $this->moment($before),
+            'after' => $this->moment($after),
+            'group_key' => $groupKey,
+            'status' => $after->start_date_time?->isPast()
+                ? InterclubChangeStatus::SILENT
+                : InterclubChangeStatus::PENDING,
+        ];
     }
 
     /**

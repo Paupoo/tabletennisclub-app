@@ -132,6 +132,17 @@ Schedule::command('model:prune', ['--model' => [CommunicationRecipient::class]])
     ->withoutOverlapping();
 
 /*
+ * Le calendrier de la fédération, relu toutes les heures en journée : un
+ * forfait se publie parfois l'après-midi d'un match du soir. Ce qui a changé
+ * est consigné et annoncé aux équipes — jamais la nuit, et jamais pour une
+ * rencontre déjà commencée. Décidé le 2026-10-01.
+ */
+Schedule::command('interclubs:import-aftt')
+    ->cron('5 7-22 * * *')
+    ->withoutOverlapping()
+    ->when(Feature::Interclubs->enabled(...));
+
+/*
  * Les feuilles de match de la fédération : le score officiel de chaque
  * rencontre et le détail joueur par joueur.
  *

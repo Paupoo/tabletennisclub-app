@@ -70,7 +70,7 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
-    <div class="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div class="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
         @php
             /*
              * La couleur vit sur la pastille, jamais sur le chiffre : voir l'en-tête de `stat-card`.
@@ -83,6 +83,7 @@
                 ],
                 ['label' => __('New'),                'key' => 'new',                'icon' => 'o-sparkles',     'color' => 'primary', 'hint' => null],
                 ['label' => __('To follow up'),       'key' => 'to_follow_up',       'icon' => 'o-bell-alert',   'color' => 'warning', 'hint' => null],
+                ['label' => __('Left the club'),      'key' => 'left',               'icon' => 'o-arrow-right-start-on-rectangle', 'color' => 'error', 'hint' => __('This season')],
                 ['label' => __('Responsible adults'), 'key' => 'responsible_adults', 'icon' => 'o-user-group',   'color' => 'neutral', 'hint' => null],
             ];
         @endphp
@@ -375,6 +376,10 @@
                 <x-button class="btn-ghost btn-sm" icon="o-envelope" :label="__('Invite')"
                     wire:click="bulkInvite" spinner="bulkInvite" />
             @endcan
+            @can('users.update')
+                <x-button class="btn-ghost btn-sm" icon="o-arrow-right-start-on-rectangle" :label="__('Mark as left')"
+                    wire:click="openBulkDeparture" />
+            @endcan
             <span class="text-base-content/20">|</span>
             @can('users.delete')
                 <x-button class="btn-ghost btn-sm text-error" icon="o-archive-box" :label="__('Archive')"
@@ -471,7 +476,35 @@
         <x-confirm-modal model="confirmArchiveModal" :title="__('Archive selected members?')"
             :confirmLabel="__('Archive')" confirmAction="bulkArchive" :open="$confirmArchiveModal">
             <p>{{ __('Selected members will be archived. Your own account is automatically excluded. Members can be restored later.') }}</p>
+            {{-- Archiver retire un membre de la liste ; quelqu'un qui quitte le club
+                 y reste, avec son historique. Le bureau confond les deux gestes,
+                 d'où ce détour proposé au moment de confirmer. --}}
+            <p class="mt-3 text-sm text-base-content/70">
+                {{ __('Archiving is for a mistake or a duplicate, before an anonymisation. A member who leaves the club is marked as left: they stay on file with their history.') }}
+            </p>
+            @can('users.update')
+                <x-button class="btn-outline btn-sm mt-3" icon="o-arrow-right-start-on-rectangle"
+                    :label="__('Mark as left instead')" wire:click="markAsLeftInstead" />
+            @endcan
         </x-confirm-modal>
+    @endcan
+
+    @can('users.update')
+        <x-app-modal wire:model="departureModal" :title="__('Mark as left')" :open="$departureModal">
+            <div class="space-y-4">
+                <p class="text-sm text-base-content/70">
+                    {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
+                    {{ __('The affiliation stays as it is. The member is taken off this season’s teams and no longer receives the club’s mailings.') }}
+                </p>
+                <x-select :label="__('Reason for leaving')" :options="\App\Domains\Shared\Enums\DepartureReason::options()"
+                    :placeholder="__('Choose a reason')" wire:model="departureReason" />
+                <x-input :label="__('Left on')" type="date" wire:model="departureLeftOn" />
+            </div>
+            <x-slot:actions>
+                <x-button :label="__('Cancel')" wire:click="$set('departureModal', false)" />
+                <x-button class="btn-primary" :label="__('Mark as left')" wire:click="bulkDeclareDeparture" spinner="bulkDeclareDeparture" />
+            </x-slot:actions>
+        </x-app-modal>
     @endcan
 
     {{-- Deux raisons de demander confirmation avant un envoi groupé : renvoyer

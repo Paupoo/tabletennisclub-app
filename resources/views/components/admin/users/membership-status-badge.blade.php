@@ -11,6 +11,9 @@
     Un membre « à relancer » porte le nom de la saison où on l'a vu pour la
     dernière fois : c'est la phrase que la secrétaire lui écrira.
 
+    Un membre parti porte son motif et sa date en infobulle : la liste ne
+    lui consacre pas de colonne, la fiche les écrit en toutes lettres.
+
     Les attributs `data-*` servent aux tests : le tiroir de filtres imprime les
     mêmes mots que les badges, le texte seul ne dit pas d'où il vient.
 --}}
@@ -26,8 +29,17 @@
 @endphp
 
 <span class="inline-flex flex-wrap items-center gap-1.5" data-membership-status="{{ $membershipStatus->value }}">
-    <x-badge :value="$membershipStatus->label()"
-        class="shrink-0 whitespace-nowrap {{ $membershipStatus->badgeClass() }} {{ $size }}" />
+    @if ($membershipStatus === \App\Domains\Shared\Enums\MembershipStatus::Left && ($departure = $user->currentDeparture()) !== null)
+        <span class="tooltip inline-flex" data-departure-reason="{{ $departure->reason->value }}"
+            data-tip="{{ __('Left on :date — :reason', ['date' => $departure->left_on->format('d/m'), 'reason' => $departure->reason->label()]) }}">
+            <x-badge :value="$membershipStatus->label()"
+                class="shrink-0 whitespace-nowrap {{ $membershipStatus->badgeClass() }} {{ $size }}" />
+            <span class="sr-only">{{ $departure->reason->label() }}</span>
+        </span>
+    @else
+        <x-badge :value="$membershipStatus->label()"
+            class="shrink-0 whitespace-nowrap {{ $membershipStatus->badgeClass() }} {{ $size }}" />
+    @endif
     @if ($membershipStatus->isAffiliatedThisSeason())
         @if ($user->holdsCompetitiveLicence())
             <span data-licence="competitive" class="inline-flex">

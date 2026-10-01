@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\User\AnonymizeUserAction;
 use App\Actions\User\CreateUserAction;
+use App\Actions\User\DeclareMemberDepartureAction;
 use App\Actions\User\RecalculateForceListAction;
 use App\Actions\User\RestoreUserAction;
 use App\Actions\User\SendGuardianInvitationAction;
@@ -14,6 +15,7 @@ use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\DepartureReason;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\MembershipStatus;
@@ -26,6 +28,7 @@ use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use App\Support\LocaleSort;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Bus;
@@ -82,6 +85,13 @@ new class extends Component
 
     // ── Modals ───────────────────────────────────────────────────────────────
     public bool $deleteModal = false;
+
+    public string $departureLeftOn = '';
+
+    // ── Departure (bulk) ─────────────────────────────────────────────────────
+    public bool $departureModal = false;
+
+    public string $departureReason = '';
 
     /** How many parents the selection is about to write to on a ward's behalf. */
     public int $guardiansToInvite = 0;
@@ -221,6 +231,48 @@ new class extends Component
         } else {
             $this->success(__('Selected users archived.') . $this->freedTeamsNotice($freedTeams));
         }
+    }
+
+    /**
+     * Record one departure, with one reason and one date, for every member of
+     * the selection — the end-of-season round of those who said goodbye.
+     */
+    public function bulkDeclareDeparture(): void
+    {
+        Gate::authorize(Permission::UsersUpdate->value);
+
+        $this->validate([
+            'departureReason' => ['required', ValidationRule::enum(DepartureReason::class)],
+            'departureLeftOn' => ['required', 'date'],
+        ]);
+
+        $members = User::query()->whereIn('id', $this->selected)->get();
+
+        try {
+            $freedTeams = $members
+                ->flatMap(fn (User $member): array => DeclareMemberDepartureAction::handle(
+                    $member,
+                    Carbon::parse($this->departureLeftOn),
+                    DepartureReason::from($this->departureReason),
+                    null,
+                    Auth::user(),
+                ))
+                ->unique()
+                ->values()
+                ->all();
+        } catch (\DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->reset(['departureModal', 'departureReason']);
+        $this->clearSelection();
+
+        $this->success(
+            trans_choice('{1} :count member marked as left.|[2,*] :count members marked as left.', $members->count(), ['count' => $members->count()])
+            . $this->freedTeamsNotice($freedTeams)
+        );
     }
 
     public function bulkInvite(): void
@@ -555,6 +607,16 @@ new class extends Component
     }
 
     /**
+     * From the archive confirmation to the gesture the office usually meant:
+     * the selection is kept, only the modal changes.
+     */
+    public function markAsLeftInstead(): void
+    {
+        $this->confirmArchiveModal = false;
+        $this->openBulkDeparture();
+    }
+
+    /**
      * Whether the visitor may edit a member's file — for their data, for their
      * rights, or for both.
      *
@@ -566,6 +628,15 @@ new class extends Component
     public function mayEditMemberFile(User $user): bool
     {
         return Gate::allows('update', $user) || Gate::allows('manageAccess', $user);
+    }
+
+    public function openBulkDeparture(): void
+    {
+        Gate::authorize(Permission::UsersUpdate->value);
+
+        $this->resetValidation();
+        $this->departureLeftOn = today()->toDateString();
+        $this->departureModal = true;
     }
 
     public function openAnonymizeModal(int $userId): void
@@ -771,7 +842,10 @@ new class extends Component
      * against. Each card carries the same word as the filter that finds its
      * members.
      *
-     * @return array{affiliated: int, new: int, to_follow_up: int, responsible_adults: int}
+     * Those who left this season stay among the affiliated: the departure
+     * cancels nothing, and the federation counts them all the same.
+     *
+     * @return array{affiliated: int, new: int, to_follow_up: int, left: int, responsible_adults: int}
      */
     #[Computed]
     public function stats(): array
@@ -780,6 +854,7 @@ new class extends Component
             'affiliated' => User::affiliatedForCurrentSeason()->count(),
             'new' => User::inMembershipStatus(MembershipStatus::New)->count(),
             'to_follow_up' => User::inMembershipStatus(MembershipStatus::ToFollowUp)->count(),
+            'left' => User::inMembershipStatus(MembershipStatus::Left)->count(),
             'responsible_adults' => User::responsibleAdults()->count(),
         ];
     }
@@ -893,6 +968,8 @@ new class extends Component
             ->with('guardians.member')
             // Status, licence and responsible-adult badge, read in this query.
             ->withMembershipFacts()
+            // The reason the "left" badge names, for the whole page at once.
+            ->with('departureThisSeason')
             // The paid badge of both twins, mobile and desktop: two queries a
             // row without it. Read by User::getHasPaidAttribute().
             ->withExists(['subscriptions as has_paid' => fn ($subscription) => $subscription

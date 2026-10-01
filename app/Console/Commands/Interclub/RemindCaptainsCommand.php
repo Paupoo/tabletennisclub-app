@@ -31,6 +31,7 @@ class RemindCaptainsCommand extends Command
         $pending = Interclub::query()
             ->with(['users', 'visitedTeam.club', 'visitingTeam.club'])
             ->withoutByes()
+            ->withoutForfeits()
             ->where('start_date_time', '>', now())
             ->where('start_date_time', '<=', now()->addDays(self::HORIZON_DAYS))
             ->orderBy('start_date_time')

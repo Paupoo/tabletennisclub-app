@@ -69,7 +69,7 @@
                                         @foreach ($matches as $match)
                             @php
                                 $avail = $match['availability'];
-                                $urgency = $match['days_until'] <= 7 && $avail === null;
+                                $urgency = $match['days_until'] <= 7 && $avail === null && $match['forfeit'] === null;
                             @endphp
                             <div @class([
                                 'p-4 bg-base-100 transition-colors',
@@ -95,6 +95,9 @@
                                                     <x-badge class="badge-ghost badge-xs border border-base-300 font-bold" value="{{ __('Away') }}" />
                                                 @endif
                                                 <span class="font-bold">vs {{ $match['opponent'] }}</span>
+                                                @if ($match['forfeit'])
+                                                    <x-badge data-forfeit class="badge-error badge-soft badge-xs font-bold" :value="$match['forfeit']" />
+                                                @endif
                                                 @if ($match['is_selected'])
                                                     <x-admin.shared.status-badge status="selected" />
                                                     @if ($match['short_handed_count'])
@@ -124,6 +127,8 @@
 
                                     {{-- Contrôles disponibilité --}}
                                     <div class="flex shrink-0 items-center gap-2">
+                                        {{-- Un forfait ne demande plus rien : la réponse donnée reste en sommeil. --}}
+                                        @if ($match['forfeit'] === null)
                                         @if ($avail !== null)
                                             <x-badge :class="$avail->color() . ' badge-sm font-bold'"
                                                 :value="$avail->label()" />
@@ -173,6 +178,7 @@
                                                 :title="__('Add a note')"
                                                 icon="o-pencil-square" />
                                         </x-dropdown>
+                                        @endif
 
                                         {{-- Zone dédiée : la ligne porte des actions,
                                         la rendre cliquable entière volerait leurs clics. --}}

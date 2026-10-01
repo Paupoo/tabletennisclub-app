@@ -22,6 +22,11 @@ use Carbon\CarbonImmutable;
  *
  * A bye has no opponent, no date and no venue. TabT writes it as the club `-`
  * and the team name `'Bye '` — with the trailing space.
+ *
+ * A forfeit is published before the evening it cancels, with its score
+ * ("16-0 ff") and its flag. A withdrawal flags both sides as forfeited and
+ * sets `IsHomeWithdrawn`/`IsAwayWithdrawn` to "1" or "2" on the side that
+ * left ("N" otherwise): the withdrawal flags are what tell the two apart.
  */
 readonly class AfttMatch
 {
@@ -39,5 +44,11 @@ readonly class AfttMatch
         public int $divisionCategory,
         public ?AfttVenue $venue,
         public bool $isBye,
+        public ?string $score = null,
+        public bool $isHomeForfeited = false,
+        public bool $isAwayForfeited = false,
+        public bool $isHomeWithdrawn = false,
+        public bool $isAwayWithdrawn = false,
+        public bool $isLocked = false,
     ) {}
 }

@@ -127,8 +127,8 @@ class InterclubAvailabilityService
         // calendar. Same rule as confirmSelection() and notifySelectionChange().
         $team = $interclub->ourTeam();
 
-        // A bye has no match to be available for.
-        if (! $team || $interclub->is_bye) {
+        // A bye has no match to be available for, nor has a forfeit.
+        if (! $team || $interclub->is_bye || $interclub->forfeit !== null) {
             return;
         }
 

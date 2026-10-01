@@ -7,11 +7,14 @@ namespace App\Console\Commands\Interclub;
 use App\Data\Interclub\AfttSeasons;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\InterclubChange;
 use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Services\AfttCalendarImporter;
+use App\Domains\Competitions\Interclub\Services\InterclubChangeNotifier;
 use App\Domains\Competitions\Interclub\Services\TabtClient;
+use App\Domains\Shared\Enums\InterclubChangeStatus;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -34,9 +37,10 @@ class ImportAfttCalendarCommand extends Command
     protected $signature = 'interclubs:import-aftt
                             {--season= : Season name as the club writes it, e.g. 2026-2027. Defaults to the one the federation calls current.}
                             {--fresh : Empty the season and rebuild it. Destroys captains and rosters.}
-                            {--force : Skip the confirmation, and override the refusal to destroy member data.}';
+                            {--force : Skip the confirmation, and override the refusal to destroy member data.}
+                            {--silent : Record what changed without telling any team. For the first scheduled run, which would otherwise announce every change made since the last manual one.}';
 
-    public function handle(TabtClient $client, AfttCalendarImporter $importer): int
+    public function handle(TabtClient $client, AfttCalendarImporter $importer, InterclubChangeNotifier $notifier): int
     {
         if (! $this->schemaIsReady()) {
             return self::FAILURE;
@@ -99,6 +103,20 @@ class ImportAfttCalendarCommand extends Command
             $this->error('Nothing was written; the import was rolled back. ' . $e->getMessage());
 
             return self::FAILURE;
+        }
+
+        $pending = InterclubChange::where('interclub_import_id', $report->id)
+            ->where('status', InterclubChangeStatus::PENDING)
+            ->get();
+
+        if ($this->option('silent')) {
+            InterclubChange::whereKey($pending->modelKeys())->update(['status' => InterclubChangeStatus::SILENT]);
+        } elseif ($pending->isNotEmpty()) {
+            $held = $notifier->deliver($pending);
+
+            $held
+                ? $this->warn(sprintf('%d changes in one run: nothing sent, held for review.', $pending->count()))
+                : $this->info(sprintf('Told the teams about %d change(s).', $pending->count()));
         }
 
         $this->summarise($report->created_count, $report->updated_count, $report->unchanged_count,

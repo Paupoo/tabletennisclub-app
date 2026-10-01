@@ -6,6 +6,7 @@ namespace App\Domains\Competitions\Interclub\Models;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\InterclubForfeit;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Shared\Traits\HasAvailability;
@@ -28,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $id
  * @property string $address
  * @property string|null $captain_message
+ * @property InterclubForfeit|null $forfeit
  * @property \Illuminate\Support\Carbon|null $short_handed_confirmed_at
  * @property int|null $short_handed_confirmed_by
  * @property \Illuminate\Support\Carbon $start_date_time
@@ -83,6 +85,7 @@ class Interclub extends Model
     protected $casts = [
         'start_date_time' => 'datetime',
         'is_bye' => 'boolean',
+        'forfeit' => InterclubForfeit::class,
         'short_handed_confirmed_at' => 'datetime',
     ];
 
@@ -90,6 +93,7 @@ class Interclub extends Model
         'address',
         'aftt_match_id',
         'captain_message',
+        'forfeit',
         'is_bye',
         'league_id',
         'season_id',
@@ -253,6 +257,19 @@ class Interclub extends Model
     public function scopeWithoutByes(Builder $query): void
     {
         $query->where('is_bye', false);
+    }
+
+    /**
+     * Fixtures that will still be played.
+     *
+     * A forfeit leaves the fixture on the calendar, marked, with whatever its
+     * members said about it kept dormant: it asks nobody for anything and
+     * engages nobody for the week, but it must come back whole if the
+     * federation retracts it.
+     */
+    public function scopeWithoutForfeits(Builder $query): void
+    {
+        $query->whereNull('interclubs.forfeit');
     }
 
     public function season(): BelongsTo

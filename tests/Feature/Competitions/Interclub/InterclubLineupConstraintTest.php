@@ -9,6 +9,7 @@ use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Services\InterclubLineupLegalityService;
+use App\Domains\Shared\Enums\InterclubForfeit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -148,6 +149,27 @@ it('never counts the walkover player of the superior team', function (): void {
     // Jouent : #2, #5, #8 → troisième effectif = #8. Avec le WO, on lirait #5.
     expect($constraint->strongest)->toBe(8)
         ->and($constraint->weakest)->toBe(8);
+});
+
+it('reads no threshold from a superior lineup cancelled by forfeit', function (): void {
+    $men = leagueFor('MEN');
+    [, $fixtureA, $playersA] = squad('A', $men, [1, 2, 5, 8, 11, 14, 17]);
+    [, $fixtureB] = squad('B', $men, [20, 22, 24, 26]);
+
+    settleForceLists();
+
+    foreach (array_slice($playersA, 0, 4) as $selected) {
+        $fixtureA->select($selected);
+    }
+
+    // La compo reste en sommeil sur la rencontre, mais personne n'y jouera un
+    // point : comme si l'équipe A n'avait pas composé.
+    $fixtureA->update(['forfeit' => InterclubForfeit::OPPONENT_FORFEIT]);
+
+    $constraint = $this->rule->constraintFor($fixtureB);
+
+    expect($constraint->strongest)->toBe(5)
+        ->and($constraint->weakest)->toBe(14);
 });
 
 it('falls back to the squad bounds while the superior team has not composed', function (): void {

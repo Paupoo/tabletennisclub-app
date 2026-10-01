@@ -214,6 +214,7 @@ class InterclubPoolService
         return Interclub::query()
             ->where('season_id', $fixture->season_id)
             ->where('week_number', $fixture->week_number)
+            ->where(fn ($query) => $query->whereNull('forfeit')->orWhere('id', $fixture->id))
             ->whereHas('league', fn ($query) => $category === null
                 ? $query->whereNull('category')
                 : $query->where('category', $category))

@@ -10,11 +10,15 @@ use App\Data\Interclub\AfttMatch;
 use App\Data\Interclub\AfttVenue;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\InterclubChange;
 use App\Domains\Competitions\Interclub\Models\InterclubImport;
 use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\InterclubChangeKind;
+use App\Domains\Shared\Enums\InterclubChangeStatus;
+use App\Domains\Shared\Enums\InterclubForfeit;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
 use App\Domains\Shared\Support\AddressNormalizer;
@@ -68,6 +72,13 @@ class AfttCalendarImporter
     private array $changes = [];
 
     /**
+     * Changes to tell the team about, written once the run's audit row exists.
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    private array $journal = [];
+
+    /**
      * Federation identifiers seen in this run, which is what makes anything else
      * carrying one an orphan.
      *
@@ -81,6 +92,7 @@ class AfttCalendarImporter
     {
         $this->seen = [];
         $this->changes = [];
+        $this->journal = [];
 
         $plan = $this->fetch($afttSeason, $clubCode);
 
@@ -105,13 +117,13 @@ class AfttCalendarImporter
 
                     $match->isBye
                         ? $this->bye($season, $league, $division, $match, $matches, $clubCode, $afttSeason)
-                        : $this->fixture($season, $league, $division, $match, $afttSeason);
+                        : $this->fixture($season, $league, $division, $match, $afttSeason, $clubCode);
                 }
             }
 
             $this->reconcileOrphans($season);
 
-            return InterclubImport::create([
+            $import = InterclubImport::create([
                 'season_id' => $season->id,
                 'is_fresh' => $fresh,
                 'created_count' => count($this->changes['created'] ?? []),
@@ -124,6 +136,12 @@ class AfttCalendarImporter
                     + count($this->changes['refused_teams'] ?? []),
                 'changes' => $this->changes,
             ]);
+
+            foreach ($this->journal as $change) {
+                InterclubChange::create($change + ['interclub_import_id' => $import->id]);
+            }
+
+            return $import;
         });
     }
 
@@ -368,7 +386,7 @@ class AfttCalendarImporter
     /**
      * Write one fixture, creating whichever teams it needs.
      */
-    private function fixture(Season $season, League $league, AfttDivision $division, AfttMatch $match, int $afttSeason): void
+    private function fixture(Season $season, League $league, AfttDivision $division, AfttMatch $match, int $afttSeason, string $clubCode): void
     {
         $home = $this->team($season, $league, $match->homeClub, $match->homeTeam, $afttSeason);
         $away = $this->team($season, $league, $match->awayClub, $match->awayTeam, $afttSeason);
@@ -379,9 +397,10 @@ class AfttCalendarImporter
 
         $start = $match->date?->setTimeFromTimeString($match->time ?? '00:00:00');
 
-        $this->record($match->matchId, $season, $start, $this->address($match));
+        $existing = $this->record($match->matchId, $season, $start, $this->address($match));
+        $forfeit = $this->forfeitOf($match, $clubCode);
 
-        Interclub::updateOrCreate(
+        $fixture = Interclub::updateOrCreate(
             [
                 'season_id' => $season->id,
                 'aftt_match_id' => $match->matchId,
@@ -396,8 +415,46 @@ class AfttCalendarImporter
                 'week_number' => $start?->isoWeek,
                 'total_players' => $this->totalPlayers($division),
                 'is_bye' => false,
+                'forfeit' => $forfeit,
             ],
         );
+
+        $this->writeForfeitResult($fixture, $existing?->forfeit, $forfeit, $match);
+
+        if ($existing instanceof Interclub) {
+            $weAreHome = $match->homeClub === $clubCode;
+
+            $this->noteChange($existing, $fixture, match ($forfeit) {
+                InterclubForfeit::OPPONENT_WITHDRAWAL => $weAreHome ? $away : $home,
+                InterclubForfeit::OUR_WITHDRAWAL => $weAreHome ? $home : $away,
+                default => null,
+            });
+        }
+    }
+
+    /**
+     * Which side, if either, the federation has declared will not play.
+     *
+     * The withdrawal is read before the forfeit: a team leaving the division
+     * flags both sides of its fixtures as forfeited, and only the withdrawal
+     * flag says which of the two actually left.
+     */
+    private function forfeitOf(AfttMatch $match, string $clubCode): ?InterclubForfeit
+    {
+        $weAreHome = $match->homeClub === $clubCode;
+
+        $weWithdrew = $weAreHome ? $match->isHomeWithdrawn : $match->isAwayWithdrawn;
+        $theyWithdrew = $weAreHome ? $match->isAwayWithdrawn : $match->isHomeWithdrawn;
+        $weForfeited = $weAreHome ? $match->isHomeForfeited : $match->isAwayForfeited;
+        $theyForfeited = $weAreHome ? $match->isAwayForfeited : $match->isHomeForfeited;
+
+        return match (true) {
+            $weWithdrew => InterclubForfeit::OUR_WITHDRAWAL,
+            $theyWithdrew => InterclubForfeit::OPPONENT_WITHDRAWAL,
+            $weForfeited => InterclubForfeit::OUR_FORFEIT,
+            $theyForfeited => InterclubForfeit::OPPONENT_FORFEIT,
+            default => null,
+        };
     }
 
     private function involvesUs(AfttMatch $match, string $clubCode): bool
@@ -461,6 +518,60 @@ class AfttCalendarImporter
     }
 
     /**
+     * @return array{start: string|null, address: string|null}
+     */
+    private function moment(Interclub $fixture): array
+    {
+        return [
+            'start' => $fixture->start_date_time?->toDateTimeString(),
+            'address' => $fixture->address,
+        ];
+    }
+
+    /**
+     * Keep what changed on a fixture the club already knew, for the team to be told.
+     *
+     * A forfeit outweighs a move: nobody needs a new time for an evening that
+     * will not be played. A fixture already under way, or over, is recorded
+     * but never announced — telling a team about a match that has started
+     * helps nobody.
+     *
+     * The fixtures one withdrawal cancels share a group, so the team hears
+     * about the withdrawal once rather than about each evening it cancels.
+     */
+    private function noteChange(Interclub $before, Interclub $after, ?Team $withdrawn): void
+    {
+        $kind = match (true) {
+            $before->forfeit !== $after->forfeit && $after->forfeit instanceof InterclubForfeit => InterclubChangeKind::FORFEIT,
+            $before->forfeit !== $after->forfeit => InterclubChangeKind::FORFEIT_LIFTED,
+            $after->forfeit instanceof InterclubForfeit => null,
+            $before->start_date_time?->toDateTimeString() !== $after->start_date_time?->toDateTimeString(),
+            $before->address !== $after->address => InterclubChangeKind::RESCHEDULED,
+            default => null,
+        };
+
+        if (! $kind instanceof InterclubChangeKind) {
+            return;
+        }
+
+        $groupKey = $kind === InterclubChangeKind::FORFEIT && $withdrawn instanceof Team
+            ? 'withdrawal:' . $withdrawn->id
+            : null;
+
+        $this->journal[] = [
+            'interclub_id' => $after->id,
+            'kind' => $kind,
+            'forfeit' => $kind === InterclubChangeKind::FORFEIT_LIFTED ? $before->forfeit : $after->forfeit,
+            'before' => $this->moment($before),
+            'after' => $this->moment($after),
+            'group_key' => $groupKey,
+            'status' => $after->start_date_time?->isPast()
+                ? InterclubChangeStatus::SILENT
+                : InterclubChangeStatus::PENDING,
+        ];
+    }
+
+    /**
      * Deal with fixtures we once imported and the federation no longer lists.
      *
      * It happens for real: a team withdraws, the division is recomputed, and the
@@ -501,7 +612,7 @@ class AfttCalendarImporter
      * would have to be told about, and the reason the list is kept rather than
      * just counted.
      */
-    private function record(string $matchId, Season $season, ?CarbonImmutable $start, string $address): void
+    private function record(string $matchId, Season $season, ?CarbonImmutable $start, string $address): ?Interclub
     {
         $existing = Interclub::where('season_id', $season->id)
             ->where('aftt_match_id', $matchId)
@@ -510,7 +621,7 @@ class AfttCalendarImporter
         if (! $existing instanceof Interclub) {
             $this->changes['created'][] = $matchId;
 
-            return;
+            return null;
         }
 
         $movedInTime = $existing->start_date_time?->toDateTimeString() !== $start?->toDateTimeString();
@@ -518,6 +629,8 @@ class AfttCalendarImporter
         if ($movedInTime || $existing->address !== $address) {
             $this->changes['moved'][] = $matchId;
         }
+
+        return $existing;
     }
 
     /**
@@ -644,5 +757,43 @@ class AfttCalendarImporter
         Interclub::where('season_id', $season->id)->get()->each->delete();
         Team::where('season_id', $season->id)->get()->each->delete();
         League::where('season_id', $season->id)->delete();
+    }
+
+    /**
+     * Write the result a forfeit decides, or take it back when the federation does.
+     *
+     * Written only once the federation has locked the fixture: a locked forfeit
+     * is a result even though no sheet will ever be encoded for it, and the
+     * results import — which waits for a sheet — would never see it. Like a
+     * sheet, it overrules whatever a captain typed.
+     *
+     * Taken back only if it is still the result this import wrote: a forfeit
+     * the federation retracts gives the fixture back to be played, but a score
+     * somebody entered since is theirs.
+     */
+    private function writeForfeitResult(Interclub $fixture, ?InterclubForfeit $previous, ?InterclubForfeit $current, AfttMatch $match): void
+    {
+        $result = InterclubResult::where('interclub_id', $fixture->id)->first();
+
+        if (! $result instanceof InterclubResult) {
+            return;
+        }
+
+        if ($current instanceof InterclubForfeit && $match->isLocked) {
+            $result->update([
+                // Stored home-first and numeric, like the results import does.
+                'score' => preg_match('/^\s*(\d+)\s*-\s*(\d+)/', (string) $match->score, $pair) === 1
+                    ? $pair[1] . '-' . $pair[2]
+                    : null,
+                'result' => $current->verdict()->value,
+            ]);
+
+            return;
+        }
+
+        if ($previous instanceof InterclubForfeit && ! $current instanceof InterclubForfeit
+            && $result->result === $previous->verdict()) {
+            $result->update(['score' => null, 'result' => null]);
+        }
     }
 }

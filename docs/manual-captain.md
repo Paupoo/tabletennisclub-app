@@ -36,6 +36,7 @@ Each row represents one interclub match. From left to right:
 | 🔴 Red | **Urgent** | Match within 14 days whose lineup has not gone out: the club aims to send by two weeks before |
 | ⚪ Light grey | **Upcoming** | Match is far away, no urgency |
 | ◼ Dark grey | **Past** | Match has been played |
+| 🔴 Red, "Forfeit…" badge | **Forfeit** | The federation recorded a forfeit or a withdrawal: the match will not be played. Nothing to compose |
 
 An urgent row also has a light red background to draw your attention.
 
@@ -128,6 +129,16 @@ Click the send button. The match status changes to **Confirmed** (green). The ac
 ### Not sending now
 
 If you want to save without notifying the team, click **Send later**. The selection is saved but no email is sent, and an orange message reminds you so. The status stays **Lineup to send** (blue) until you send it.
+
+---
+
+## 5 bis. A forfeit or a change announced by the federation
+
+The application re-reads the federation calendar **every hour, from 7:00 to 22:00**. When one of your fixtures changes, **your players are told without you**: the selected players (reinforcements included) and your whole roster. You get a message of your own, saying how many players received it. Players are asked to contact you as soon as possible with any question: expect a few calls.
+
+- **Opponent forfeit, forfeit of our team, withdrawal from the division**: the fixture stays on your screen with a **Forfeit…** badge and a **Consult** button instead of **Compose**. Your lineup is not erased, only set aside, and your players are free again that week. The result is recorded on its own.
+- **The federation retracts a forfeit**: the fixture is to be played again, with the lineup as you left it. Check it still holds.
+- **New day, time or hall**: the fixture moves in place, availability answers and selection included. The players' mail says "before → now". Checking that your players are still available on the new date is up to you.
 
 ---
 

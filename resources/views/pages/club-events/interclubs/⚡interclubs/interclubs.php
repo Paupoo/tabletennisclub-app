@@ -6,8 +6,10 @@ namespace Resources\views\Pages\ClubEvents\Interclubs\Interclubs;
 
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\InterclubChange;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\InterclubChangeStatus;
 use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
@@ -269,6 +271,9 @@ new class extends Component
             ]), 'name')->toArray(),
             'opponentTeams' => $opponentTeams->toArray(),
             'grouped' => $grouped,
+            'heldChanges' => auth()->user()?->can(Permission::InterclubsManage->value)
+                ? InterclubChange::where('status', InterclubChangeStatus::HELD)->count()
+                : 0,
             'total' => $interclubs->count(),
             'matchDayMap' => $matchDayMap,
         ];
@@ -318,6 +323,7 @@ new class extends Component
             'date_sort' => $ic->start_date_time->format('Y-m-d H:i:s'),
             'time' => $ic->start_date_time->format('H:i'),
             'is_home' => $isHome,
+            'forfeit' => $ic->forfeit?->label(),
             'opponent' => trim(($opponentTeam?->club?->name ?? '') . ' ' . ($opponentTeam?->name ?? '')) ?: '—',
             'address' => $ic->address ?? '—',
             'division' => $ic->league?->division ?? '',

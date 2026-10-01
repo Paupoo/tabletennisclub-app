@@ -80,6 +80,7 @@ class InterclubDayAvailabilityService
         return Interclub::query()
             ->where('season_id', $season->id)
             ->where('week_number', $weekNumber)
+            ->withoutForfeits()
             ->orderBy('interclubs.id')
             ->get();
     }

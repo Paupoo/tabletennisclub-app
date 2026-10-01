@@ -36,6 +36,7 @@ Chaque ligne correspond à un match interclub. De gauche à droite :
 | 🔴 Rouge | **Attention** | Match dans les 14 jours dont la compo n'est pas partie : le club vise un envoi à J-14 au plus tard |
 | ⚪ Gris clair | **À venir** | Match lointain, sans urgence |
 | ◼ Gris foncé | **Passé** | Match terminé |
+| 🔴 Rouge, badge « Forfait… » | **Forfait** | La fédération a enregistré un forfait ou un retrait : la rencontre n'aura pas lieu. Rien à composer |
 
 Une ligne rouge a aussi un fond légèrement teinté pour attirer l'œil.
 
@@ -128,6 +129,16 @@ Cliquez sur le bouton d'envoi. Le statut du match passe à **Confirmée** (vert)
 ### Ne pas envoyer maintenant
 
 Si vous voulez sauvegarder sans notifier l'équipe, cliquez sur **Envoyer plus tard**. La sélection est enregistrée mais aucun email n'est envoyé, et un message orange vous le rappelle. Le statut reste **Compo à envoyer** (bleu) jusqu'à l'envoi.
+
+---
+
+## 5 bis. Forfait ou changement annoncé par la fédération
+
+L'application relit le calendrier de la fédération **toutes les heures, de 7 h à 22 h**. Quand une de vos rencontres change, **vos joueurs sont prévenus sans vous** : les sélectionnés (renforts compris) et tout votre noyau. Vous recevez un message à part, qui vous dit combien de joueurs l'ont reçu. Les joueurs sont invités à vous contacter au plus vite en cas de question : attendez-vous à quelques appels.
+
+- **Forfait de l'adversaire ou de notre équipe, retrait du championnat** : la rencontre reste sur votre écran avec un badge **Forfait…** et un bouton **Consulter** à la place de **Composer**. Votre composition n'est pas effacée, juste mise de côté, et vos joueurs redeviennent libres cette semaine-là. Le résultat s'enregistre seul.
+- **Retrait d'un forfait par la fédération** : la rencontre redevient « à jouer », avec la composition telle que vous l'aviez laissée. Vérifiez qu'elle tient toujours.
+- **Nouvelle date, heure ou salle** : la rencontre est déplacée sur place, disponibilités et sélection comprises. Le mail aux joueurs dit « avant → désormais ». C'est à vous de vérifier que vos joueurs sont toujours disponibles à la nouvelle date.
 
 ---
 

@@ -9,6 +9,7 @@ use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Notifications\CaptainLineupReminderNotification;
+use App\Domains\Shared\Enums\InterclubForfeit;
 use App\Jobs\SendCaptainLineupReminderJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -75,6 +76,16 @@ it('sends nothing to a captain whose lineups have all gone out', function (): vo
     $this->artisan('interclubs:remind-captains')->assertSuccessful();
 
     Queue::assertNothingPushed();
+});
+
+it('does not ask for a lineup the federation has cancelled by forfeit', function (): void {
+    $cancelled = reminderFixture($this->team, 10);
+    $cancelled->update(['forfeit' => InterclubForfeit::OPPONENT_FORFEIT]);
+    $pending = reminderFixture($this->team, 12);
+
+    $this->artisan('interclubs:remind-captains')->assertSuccessful();
+
+    Queue::assertPushed(SendCaptainLineupReminderJob::class, fn (SendCaptainLineupReminderJob $job): bool => $job->interclubIds === [$pending->id]);
 });
 
 it('is scheduled on Sunday at 18:00', function (): void {

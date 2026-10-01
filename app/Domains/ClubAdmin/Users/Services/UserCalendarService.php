@@ -81,9 +81,15 @@ class UserCalendarService
         $pivot = $ic->users->first()?->registration;
         $availability = $pivot?->availability ? InterclubAvailability::from($pivot->availability) : null;
 
+        $title = ($ourTeam?->name ?? '') . ' vs ' . $opponent;
+
         return [
             'startDateTime' => $ic->start_date_time->format('Y-m-d H:i:s'),
-            'title' => ($ourTeam?->name ?? '') . ' vs ' . $opponent,
+            // Une rencontre forfait reste à l'agenda : la voir disparaître ferait
+            // croire à un bug, alors qu'« annulé » répond tout seul.
+            'title' => $ic->forfeit === null ? $title : __('CANCELLED (forfeit)') . ' – ' . $title,
+            'isCancelled' => $ic->forfeit !== null,
+            'forfeit' => $ic->forfeit?->label(),
             'type' => 'interclub',
             'sourceId' => $ic->id,
             'updatedAt' => $ic->updated_at?->format('Y-m-d H:i:s'),

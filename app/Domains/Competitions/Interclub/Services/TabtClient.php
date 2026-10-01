@@ -160,6 +160,12 @@ class TabtClient
                     || $awayClub === self::NO_CLUB
                     || str_starts_with($homeTeam, self::BYE)
                     || str_starts_with($awayTeam, self::BYE),
+                score: $this->text($entry, 'Score') ?: null,
+                isHomeForfeited: $this->text($entry, 'IsHomeForfeited') === 'true',
+                isAwayForfeited: $this->text($entry, 'IsAwayForfeited') === 'true',
+                isHomeWithdrawn: $this->withdrawn($this->text($entry, 'IsHomeWithdrawn')),
+                isAwayWithdrawn: $this->withdrawn($this->text($entry, 'IsAwayWithdrawn')),
+                isLocked: $this->text($entry, 'IsLocked') === 'true',
             );
         }
 
@@ -453,12 +459,6 @@ class TabtClient
         return $results;
     }
 
-    /**
-     * Direct child of this element, as a trimmed string.
-     *
-     * Deliberately not a descendant search — see {@see find()}. TabT nests a
-     * `VenueEntry` inside a match entry and both carry a `Name`.
-     */
     private function text(SimpleXMLElement $xml, string $name): ?string
     {
         return $this->firstText($xml, './t:' . $name);
@@ -479,5 +479,22 @@ class TabtClient
             street: $this->text($venue[0], 'Street') ?? '',
             town: $this->text($venue[0], 'Town') ?? '',
         );
+    }
+
+    /**
+     * Direct child of this element, as a trimmed string.
+     *
+     * Deliberately not a descendant search — see {@see find()}. TabT nests a
+     * `VenueEntry` inside a match entry and both carry a `Name`.
+     */
+    /**
+     * Whether a side has left the division.
+     *
+     * "N" for a team still in it; "1" or "2" — the federation's own stage of
+     * the withdrawal, which nothing here needs — for one that has gone.
+     */
+    private function withdrawn(?string $value): bool
+    {
+        return ! in_array($value, [null, '', 'N'], true);
     }
 }

@@ -13,6 +13,7 @@ use App\Domains\Shared\Enums\InterclubChangeKind;
 use App\Domains\Shared\Enums\InterclubChangeStatus;
 use App\Domains\Shared\Enums\Role;
 use App\Jobs\SendInterclubChangeJob;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 
@@ -46,10 +47,10 @@ class InterclubChangeNotifier
      * Counted in messages, not fixtures: a withdrawal is one piece of news,
      * however many evenings it cancels.
      *
-     * @param  Collection<int, InterclubChange>  $changes
+     * @param  EloquentCollection<int, InterclubChange>  $changes
      * @return bool Whether the changes were held for review instead of sent.
      */
-    public function deliver(Collection $changes): bool
+    public function deliver(EloquentCollection $changes): bool
     {
         if ($this->groups($changes)->count() <= self::HOLD_ABOVE) {
             $this->notify($changes);
@@ -95,11 +96,11 @@ class InterclubChangeNotifier
     /**
      * Send the given changes and mark them sent.
      *
-     * @param  Collection<int, InterclubChange>  $changes
+     * @param  EloquentCollection<int, InterclubChange>  $changes
      */
-    public function notify(Collection $changes, ?User $by = null): void
+    public function notify(EloquentCollection $changes, ?User $by = null): void
     {
-        $changes->loadMissing(['interclub.visitedTeam.club', 'interclub.visitingTeam.club', 'interclub.users']);
+        $changes->loadMissing(['interclub.visitedTeam.club', 'interclub.visitingTeam.club']);
 
         foreach ($this->groups($changes) as $group) {
             $this->notifyGroup($group);
@@ -124,9 +125,9 @@ class InterclubChangeNotifier
             return;
         }
 
-        $selected = $fixtures->flatMap(fn (Interclub $fixture): Collection => $fixture->users
-            ->filter(fn (User $player): bool => (bool) $player->registration?->is_selected)
-            ->pluck('id'));
+        $selected = $fixtures->flatMap(fn (Interclub $fixture): Collection => $fixture->users()
+            ->wherePivot('is_selected', true)
+            ->pluck('users.id'));
 
         $recipientIds = $team->users()->pluck('users.id')
             ->merge($selected)

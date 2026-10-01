@@ -7,7 +7,6 @@ use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\InterclubChange;
 use App\Domains\Competitions\Interclub\Models\Season;
-use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Notifications\InterclubChangeNotification;
 use App\Domains\Competitions\Interclub\Notifications\InterclubChangesHeldNotification;
 use App\Domains\Competitions\Interclub\Notifications\InterclubOwnForfeitAlertNotification;

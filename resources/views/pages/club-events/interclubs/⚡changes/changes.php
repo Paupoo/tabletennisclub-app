@@ -113,7 +113,7 @@ new class extends Component
 
         return app(InterclubChangeNotifier::class)->groups($held)
             ->map(fn (Collection $group): array => [
-                'subject' => (new InterclubChangeNotification($group))->subject(),
+                'subject' => new InterclubChangeNotification($group)->subject(),
                 'rows' => $group->map(fn (InterclubChange $change): array => [
                     'before' => InterclubChangeNotification::moment($change->before),
                     'after' => InterclubChangeNotification::moment($change->after),

@@ -495,6 +495,6 @@ class TabtClient
      */
     private function withdrawn(?string $value): bool
     {
-        return $value !== null && $value !== '' && $value !== 'N';
+        return ! in_array($value, [null, '', 'N'], true);
     }
 }

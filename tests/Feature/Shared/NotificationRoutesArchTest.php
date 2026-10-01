@@ -97,6 +97,9 @@ it('never sends a member to a page the committee alone can open', function (): v
         // carry interclubs.view, the permission the schedule asks for —
         // AfttChangeNotificationTest.
         'InterclubOwnForfeitAlertNotification.php',
+        // Same recipients, and the review screen asks for interclubs.manage,
+        // which the interclubs délégation and the administrators both hold.
+        'InterclubChangesHeldNotification.php',
     ];
 
     $files = (new Finder)

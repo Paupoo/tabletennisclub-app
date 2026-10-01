@@ -22,7 +22,8 @@ beforeEach(function (): void {
 it('keeps a closed modal out of the page and brings its body back on opening', function (): void {
     User::factory()->create(['first_name' => 'Cible', 'last_name' => 'Anonymisable']);
 
-    $page = visit(route('admin.users.index'))->resize(1440, 1000);
+    // Affiliated nowhere: the list opens on the current members, so the default view is dismissed.
+    $page = visit(route('admin.users.index', ['allMembers' => 1]))->resize(1440, 1000);
 
     $page->assertDontSee('Tapez ANONYMIZE pour confirmer');
 

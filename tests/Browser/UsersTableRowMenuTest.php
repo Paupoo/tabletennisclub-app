@@ -31,7 +31,8 @@ it('opens a members-list row menu without the table clipping it', function (): v
 
     $this->actingAs($secretary);
 
-    $page = visit(route('admin.users.index'))->resize(1440, 900);
+    // Affiliated nowhere: the list opens on the current members, so the default view is dismissed.
+    $page = visit(route('admin.users.index', ['allMembers' => 1]))->resize(1440, 900);
 
     $page->assertNoJavaScriptErrors()
         ->wait(1)

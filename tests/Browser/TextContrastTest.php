@@ -534,3 +534,28 @@ it('keeps the warning banner readable in dark mode', function () use ($probe): v
         implode("\n", $failures),
     ));
 });
+
+/*
+ * The soft alert paints its text in the alert colour itself. For warning that
+ * is an 82 %-lightness amber on near-white, and a dozen banners — the federation
+ * import's "some affiliates could not be told apart" among them — could not be
+ * read in light mode. The minor without a guardian is the one that renders
+ * with nothing to set up.
+ */
+it('keeps the soft warning banner readable in light mode', function () use ($probe): void {
+    $minor = User::factory()->create(['birthdate' => now()->subYears(10)->toDateString()]);
+
+    $this->actingAs($this->admin);
+
+    $page = visit(route('admin.users.show', $minor))->inLightMode()->wait(1);
+
+    $page->assertSee(__('This member is a minor without a legal guardian.'));
+
+    $result = $page->script($probe('.alert-soft.alert-warning'));
+    $failures = is_array($result[0] ?? null) ? $result[0] : (array) $result;
+
+    expect($failures)->toBe([], sprintf(
+        "Text below the WCAG 1.4.3 threshold in the soft warning banner:\n%s",
+        implode("\n", $failures),
+    ));
+});

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
+use App\Actions\ClubAdmin\Payments\InviteToPayAction;
 use App\Domains\ClubAdmin\Payment\Support\PaymentCovers;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
@@ -50,9 +51,9 @@ class MoveMemberBetweenTrainingPacksAction
 
     /**
      * Renvoie le montant remboursable, en euros, ou 0 si le déplacement ne
-     * rend rien. Le complément éventuel, lui, est facturé ici : c'est la même
-     * politique que {@see AddMemberToTrainingPackAction}, qui crée sa ligne de
-     * paiement sans la déléguer à l'appelant.
+     * rend rien. Le complément éventuel, lui, est facturé et réclamé ici :
+     * aucune remise ne se pose sur ce geste, le solde de la ligne est déjà
+     * celui que le membre doit régler.
      */
     public function __invoke(
         Subscription $subscription,
@@ -159,9 +160,11 @@ class MoveMemberBetweenTrainingPacksAction
         // le déplacement acquis, puisque le service peut prévenir le suivant.
         app(TrainingWaitlistService::class)->releaseSpot($from);
 
-        $subscription->user->notify(
-            new TrainingPackMovedNotification($from, $to, $subscription, $payment?->reference)
-        );
+        $subscription->user->notify(new TrainingPackMovedNotification($from, $to, $subscription));
+
+        if ($payment !== null) {
+            (new InviteToPayAction)($payment);
+        }
 
         if ($delta >= 0) {
             return 0.0;

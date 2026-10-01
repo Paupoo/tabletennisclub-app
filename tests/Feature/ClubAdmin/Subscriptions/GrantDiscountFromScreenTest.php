@@ -322,6 +322,9 @@ it('bills a newly approved affiliation at the discounted price', function (): vo
  * s'y pose comme ailleurs.
  */
 it('discounts a pack the committee adds by hand', function (): void {
+    // Le complément part en invitation au paiement, qui lit l'IBAN du club.
+    Club::factory()->ownClub()->create();
+
     $member = User::factory()->create();
 
     $subscription = Subscription::factory()->create([
@@ -366,6 +369,9 @@ it('discounts a pack the committee adds by hand', function (): void {
 })->group('subscriptions', 'discount');
 
 it('takes a percentage of the pack the committee adds, not of the whole affiliation', function (): void {
+    // Le complément part en invitation au paiement, qui lit l'IBAN du club.
+    Club::factory()->ownClub()->create();
+
     $member = User::factory()->create();
 
     $subscription = Subscription::factory()->create([

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
+use App\Actions\ClubAdmin\Payments\InviteToPayAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Support\PaymentCovers;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
@@ -20,6 +21,10 @@ use Illuminate\Support\Facades\DB;
  * c'est une autre politique : la place arrive validée et non `pending` — le
  * comité n'a pas à valider sa propre décision —, le verrou d'inscription ne
  * s'applique pas, et le plafond peut être franchi en connaissance de cause.
+ *
+ * Le complément éventuel est créé ici, mais pas réclamé : l'écran peut encore
+ * poser une remise dessus, et l'invitation au paiement doit lire le solde net.
+ * C'est à l'appelant de l'envoyer, avec {@see InviteToPayAction}.
  */
 class AddMemberToTrainingPackAction
 {
@@ -32,12 +37,15 @@ class AddMemberToTrainingPackAction
 
     public function __construct(private readonly TrainingPackProrata $prorata = new TrainingPackProrata) {}
 
+    /**
+     * Renvoie le paiement complémentaire créé, ou null si rien n'est réclamé.
+     */
     public function __invoke(
         Subscription $subscription,
         TrainingPack $pack,
         ?string $startsOn = null,
         int $familyMembersCount = 1,
-    ): void {
+    ): ?Payment {
         // Aligné sur Subscription::scopeAffiliated() : une affiliation annulée
         // ou remboursée n'a plus de facture ouverte à laquelle rattacher le pack.
         if (! in_array($subscription->status, self::BILLABLE_STATUSES, true)) {
@@ -79,8 +87,6 @@ class AddMemberToTrainingPackAction
 
             (new CalculatePriceAction)($subscription, $familyMembersCount);
 
-            // Le montant annoncé au membre doit être celui d'après recalcul, pas
-            // celui d'avant : c'est la seule chose qui l'intéresse dans ce mail.
             $subscription->refresh();
 
             $complement = round((float) $subscription->amount_due - $amountDueBefore, 2);
@@ -98,8 +104,8 @@ class AddMemberToTrainingPackAction
             return null;
         });
 
-        $subscription->user->notify(
-            new TrainingPackAddedByClubNotification($pack, $subscription, $payment?->reference)
-        );
+        $subscription->user->notify(new TrainingPackAddedByClubNotification($pack, $subscription));
+
+        return $payment;
     }
 }

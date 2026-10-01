@@ -60,7 +60,7 @@ Quand vous partez, **la première personne en liste d'attente reçoit aussitôt 
 
 Il arrive que le club vous ajoute à un entraînement sans que vous l'ayez demandé — parce que vous y veniez déjà, ou parce qu'une place vous a été promise de vive voix.
 
-Vous recevez alors un e-mail disant que **le club vous a inscrit**, avec le pack, le montant désormais dû et sa communication. **La place est acquise** : il n'y a rien à confirmer de votre côté.
+Vous recevez alors un e-mail disant que **le club vous a inscrit** à ce pack. **La place est acquise** : il n'y a rien à confirmer de votre côté. Si votre affiliation était déjà facturée, une **invitation au paiement** suit : elle ne réclame que le prix du pack, avec sa communication et son QR code.
 
 Le montant peut couvrir des mois déjà écoulés si vous suiviez l'entraînement avant d'y être inscrit. Si l'inscription vous semble être une erreur, écrivez au secrétariat : elle se défait.
 

@@ -262,9 +262,10 @@ new class extends Component
     /**
      * Who actually turned out, once a result has been recorded.
      *
-     * `has_played` is stamped on the selected roster when the result is saved,
-     * so it is the honest answer for a played match — a published lineup can
-     * still have changed on the night.
+     * `has_played` is read off the federation's match sheet when the results
+     * are imported — stamped on the line-up when a score is typed before the
+     * sheet comes — so it is the honest answer for a played match: a published
+     * lineup can still have changed on the night.
      *
      * @return Collection<int, User>
      */

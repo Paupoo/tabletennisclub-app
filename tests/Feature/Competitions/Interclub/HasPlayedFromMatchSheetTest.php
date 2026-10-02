@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
+use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
@@ -87,6 +88,21 @@ function rosterRow(Interclub $interclub, User $member): ?object
         ->where('interclub_id', $interclub->id)
         ->where('user_id', $member->id)
         ->first();
+}
+
+/** Save a 10-6 for this fixture from the results screen, as a captain would. */
+function hasPlayedTypeScore(Interclub $match): void
+{
+    $result = InterclubResult::where('interclub_id', $match->id)->firstOrFail();
+
+    Livewire::actingAs(User::factory()->isAdmin()->create())
+        ->test('pages::club-events.interclubs.results')
+        ->call('openEditModal', $result->id)
+        ->set('matchType', 'normal')
+        ->set('scoreUs', 10)
+        ->set('scoreThem', 6)
+        ->call('save')
+        ->assertHasNoErrors();
 }
 
 describe('the import of a reported sheet', function (): void {
@@ -301,5 +317,35 @@ describe('the captain screen', function (): void {
 
         expect(collect($roster)->firstWhere('id', $member->id)['matches_played'])->toBe(1)
             ->and(collect($roster)->firstWhere('id', $captain->id)['matches_played'])->toBe(0);
+    });
+});
+
+describe('a score typed by hand', function (): void {
+    it('stands in for the sheet until it comes, without counting the named walkover', function (): void {
+        $match = hasPlayedFixture('PBBWH01/096');
+        $lined = User::factory()->create();
+        $walkover = User::factory()->create();
+        $match->users()->attach($lined->id, ['is_selected' => true, 'selection_confirmed_at' => now()->subDays(5)]);
+        $match->users()->attach($walkover->id, ['is_selected' => true, 'is_walkover' => true, 'selection_confirmed_at' => now()->subDays(5)]);
+
+        hasPlayedTypeScore($match);
+
+        expect((bool) rosterRow($match, $lined)->has_played)->toBeTrue()
+            ->and((bool) rosterRow($match, $walkover)->has_played)->toBeFalse();
+    });
+
+    it('never overrules the sheet once it is on file', function (): void {
+        $match = hasPlayedFixture('PBBWH01/095');
+        $played = User::factory()->create();
+        $benched = User::factory()->create();
+        $match->users()->attach($benched->id, ['is_selected' => true, 'selection_confirmed_at' => now()->subDays(5)]);
+        InterclubIndividualMatch::factory()->for($match)->for($played)->create(['position' => 1]);
+        InterclubIndividualMatch::factory()->for($match)->for($played)->create(['position' => 2]);
+        $this->artisan('interclubs:record-who-played')->assertSuccessful();
+
+        hasPlayedTypeScore($match);
+
+        expect((bool) rosterRow($match, $benched)->has_played)->toBeFalse()
+            ->and((bool) rosterRow($match, $played)->has_played)->toBeTrue();
     });
 });

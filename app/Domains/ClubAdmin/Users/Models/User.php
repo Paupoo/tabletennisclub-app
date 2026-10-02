@@ -26,6 +26,7 @@ use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\MembershipStatus;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Ranking;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\Support\AddressNormalizer;
 use App\Domains\Shared\Support\IbanNormalizer;
 use App\Domains\Shared\Traits\HasAuditLog;
@@ -48,11 +49,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 use Laravel\Sanctum\PersonalAccessToken;
 use Spatie\Permission\Traits\HasRoles;
@@ -73,6 +76,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property \Illuminate\Support\Carbon|null $birthdate
  * @property \Illuminate\Support\Carbon|null $renewal_reminded_at
  * @property \Illuminate\Support\Carbon|null $last_login_at Not fillable: written by RecordLastLogin, past Eloquent
+ * @property \Illuminate\Support\Carbon|null $last_activity_at Not a column: loaded by withLastActivity()
  * @property string|null $street
  * @property string|null $city_code
  * @property string|null $city_name
@@ -215,6 +219,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'last_invited_at' => 'datetime',
         'renewal_reminded_at' => 'datetime',
         'last_login_at' => 'datetime',
+        'last_activity_at' => 'datetime',
         'federation_synced_at' => 'datetime',
         'email_verified_at' => 'datetime',
         'gdpr_erasure_requested_at' => 'datetime',
@@ -1432,6 +1437,23 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * The day of the member's latest trace at the club, as `last_activity_at`
+     * — one sub-select in the members' own query, so a page costs no extra
+     * query and the column sorts like any other.
+     *
+     * A sign-in is not a trace: see {@see self::activityRecords()}.
+     */
+    public function scopeWithLastActivity(EloquentBuilder $query): EloquentBuilder
+    {
+        return $query->addSelect([
+            'last_activity_at' => DB::query()
+                ->fromSub($this->activityRecords(), 'activities')
+                ->selectRaw('max(activities.activity_at)')
+                ->whereColumn('activities.user_id', 'users.id'),
+        ]);
+    }
+
+    /**
      * Load, in the same query as the members, every fact their status and
      * badges are read from — one `EXISTS` sub-select each, so a page of
      * fifteen rows costs no extra query.
@@ -1571,6 +1593,56 @@ class User extends Authenticatable implements MustVerifyEmail
         return $category instanceof LeagueCategory
             ? $category
             : LeagueCategory::fromName($category);
+    }
+
+    /**
+     * Every trace a member leaves at the club, one row per trace: who, and on
+     * which day. The single definition the last activity and the activity
+     * filter both read.
+     *
+     * - a training session the trainer ticked them present at, once the
+     *   attendance was taken — dated by the session;
+     * - a past interclub match they played, or were in the published line-up
+     *   of. `is_selected` alone is the captain's draft, which may never have
+     *   been sent; `selection_confirmed_at` is only set when it was. A named
+     *   walkover is in the line-up and did not come;
+     * - a past tournament they were registered for and did not withdraw from
+     *   or miss, unless the tournament itself was cancelled.
+     *
+     * Union of plain selects with no reference to the outer query: the
+     * correlation lives in the callers, which keeps the SQL the same on MySQL
+     * and SQLite.
+     */
+    private function activityRecords(): QueryBuilder
+    {
+        $now = now();
+
+        $trainings = DB::table('training_user')
+            ->join('trainings', 'trainings.id', '=', 'training_user.training_id')
+            ->where('training_user.status', 'present')
+            ->whereNotNull('trainings.attendance_taken_at')
+            ->select(['training_user.user_id', 'trainings.start as activity_at']);
+
+        $interclubs = DB::table('interclub_user')
+            ->join('interclubs', 'interclubs.id', '=', 'interclub_user.interclub_id')
+            ->where('interclubs.start_date_time', '<', $now)
+            ->where(fn (QueryBuilder $took): QueryBuilder => $took
+                ->where('interclub_user.has_played', true)
+                ->orWhere(fn (QueryBuilder $lineup): QueryBuilder => $lineup
+                    ->whereNotNull('interclub_user.selection_confirmed_at')
+                    ->where('interclub_user.is_walkover', false)
+                )
+            )
+            ->select(['interclub_user.user_id', 'interclubs.start_date_time as activity_at']);
+
+        $tournaments = DB::table('tournament_user')
+            ->join('tournaments', 'tournaments.id', '=', 'tournament_user.tournament_id')
+            ->whereIn('tournament_user.registration_status', ['registered', 'confirmed'])
+            ->where('tournaments.status', '!=', TournamentStatusEnum::CANCELLED->value)
+            ->where('tournaments.start_date', '<', $now)
+            ->select(['tournament_user.user_id', 'tournaments.start_date as activity_at']);
+
+        return $trainings->unionAll($interclubs)->unionAll($tournaments);
     }
 
     /**

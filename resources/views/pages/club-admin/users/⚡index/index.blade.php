@@ -249,7 +249,7 @@
                             <x-admin.users.responsible-adult-badge :user="$user" />
                         </div>
                         @if ($user->email)
-                            <div class="max-w-56 truncate text-xs text-muted" title="{{ $user->email }}">{{ $user->email }}</div>
+                            <div class="max-w-56 truncate text-xs text-muted xl:max-w-48 2xl:max-w-56" title="{{ $user->email }}">{{ $user->email }}</div>
                         @endif
                     @endscope
                     @scope('cell_affiliation', $user)
@@ -262,6 +262,13 @@
                         @if ($user->holdsCompetitiveLicence())
                             <span class="text-sm font-mono">{{ $user->ranking->getLabel() }}</span>
                         @endif
+                    @endscope
+                    {{-- A dash, not "never": the club only knows what it recorded. --}}
+                    @scope('cell_last_activity_at', $user)
+                        <span class="text-sm whitespace-nowrap">{{ $user->last_activity_at?->format('d/m/Y') ?? '—' }}</span>
+                    @endscope
+                    @scope('cell_last_login_at', $user)
+                        <span class="text-sm whitespace-nowrap">{{ $user->last_login_at?->format('d/m/Y') ?? '—' }}</span>
                     @endscope
                     {{-- Where the member stands belongs to a column of its own. Sharing the
                          actions cell, "Compte créé" had 22px of text in a 14px badge-xs and

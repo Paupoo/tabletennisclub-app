@@ -375,6 +375,8 @@
             @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
                 <x-button class="btn-ghost btn-sm" icon="o-envelope" :label="__('Invite')"
                     wire:click="bulkInvite" spinner="bulkInvite" />
+                <x-button class="btn-ghost btn-sm" icon="o-bell-alert" :label="__('Remind')"
+                    wire:click="bulkRemindRenewal" spinner="bulkRemindRenewal" />
             @endcan
             @can('users.update')
                 <x-button class="btn-ghost btn-sm" icon="o-arrow-right-start-on-rectangle" :label="__('Mark as left')"

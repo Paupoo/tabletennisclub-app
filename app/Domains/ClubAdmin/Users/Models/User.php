@@ -71,6 +71,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $phone_number
  * @property string|null $iban
  * @property \Illuminate\Support\Carbon|null $birthdate
+ * @property \Illuminate\Support\Carbon|null $renewal_reminded_at
  * @property string|null $street
  * @property string|null $city_code
  * @property string|null $city_name
@@ -211,6 +212,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'committee_role' => CommitteeRolesEnum::class,
         'deleted_at' => 'datetime',
         'last_invited_at' => 'datetime',
+        'renewal_reminded_at' => 'datetime',
         'federation_synced_at' => 'datetime',
         'email_verified_at' => 'datetime',
         'gdpr_erasure_requested_at' => 'datetime',
@@ -249,6 +251,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'parental_consent_path',
         'updated_by',
         'last_invited_at',
+        'renewal_reminded_at',
         'gdpr_erasure_requested_at',
         'notification_preferences',
         'contact_visibility',

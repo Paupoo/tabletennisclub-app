@@ -11,6 +11,9 @@
     Un membre « à relancer » porte le nom de la saison où on l'a vu pour la
     dernière fois : c'est la phrase que la secrétaire lui écrira.
 
+    Un membre « à relancer » qu'on a déjà relancé porte la date de la dernière
+    relance : c'est ce qui dit à la secrétaire s'il faut recommencer.
+
     Un membre parti porte son motif et sa date en infobulle : la liste ne
     lui consacre pas de colonne, la fiche les écrit en toutes lettres.
 
@@ -53,5 +56,8 @@
     @endif
     @if ($membershipStatus === \App\Domains\Shared\Enums\MembershipStatus::ToFollowUp && filled($lastSeason))
         <span class="w-full text-xs text-muted">{{ __('Last season: :season', ['season' => $lastSeason]) }}</span>
+    @endif
+    @if ($membershipStatus === \App\Domains\Shared\Enums\MembershipStatus::ToFollowUp && $user->renewal_reminded_at !== null)
+        <span class="w-full text-xs text-muted" data-renewal-reminded>{{ __('Reminded on :date', ['date' => $user->renewal_reminded_at->format('d/m')]) }}</span>
     @endif
 </span>

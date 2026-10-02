@@ -9,6 +9,7 @@ use App\Actions\User\RecalculateForceListAction;
 use App\Actions\User\RestoreUserAction;
 use App\Actions\User\SendGuardianInvitationAction;
 use App\Actions\User\SendInvitationAction;
+use App\Actions\User\SendRenewalRemindersAction;
 use App\Actions\User\SoftDeleteUserAction;
 use App\Data\User\CreateUserData;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
@@ -280,6 +281,42 @@ new class extends Component
         Gate::authorize('sendEmail', User::class);
 
         $this->dispatchInvitations(confirmed: false);
+    }
+
+    /**
+     * Remind the members of the selection who have not registered again.
+     *
+     * The selection usually comes from the default view, where the members to
+     * follow up sit among everyone else: the others are counted, not written to.
+     */
+    public function bulkRemindRenewal(): void
+    {
+        Gate::authorize('sendEmail', User::class);
+
+        $result = SendRenewalRemindersAction::handle($this->selected);
+
+        $this->clearSelection();
+
+        $parts = array_filter([
+            $result['queued'] > 0 ? __(':count reminder(s) on their way.', ['count' => $result['queued']]) : null,
+            $result['recentlyReminded'] > 0 ? __(':count reminded less than :days days ago.', ['count' => $result['recentlyReminded'], 'days' => SendRenewalRemindersAction::REMINDER_INTERVAL_DAYS]) : null,
+            $result['unreachable'] > 0 ? __(':count have no address the club can write to.', ['count' => $result['unreachable']]) : null,
+            $result['queued'] > 0 && $result['notToFollowUp'] > 0 ? __(':count member(s) of the selection are not to follow up.', ['count' => $result['notToFollowUp']]) : null,
+        ]);
+
+        if ($parts === []) {
+            $this->warning(__('Nobody in this selection is waiting for a reminder.'));
+
+            return;
+        }
+
+        if ($result['queued'] === 0) {
+            $this->warning(implode(' ', $parts));
+
+            return;
+        }
+
+        $this->success(implode(' ', $parts));
     }
 
     public function bulkSubscribe(): void

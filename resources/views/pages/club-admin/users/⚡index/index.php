@@ -218,8 +218,7 @@ new class extends Component
     ];
 
     /**
-     * The activity filter's choices, worded like the card that counts the
-     * first of them.
+     * The activity filter's choices.
      *
      * @return array<int, array{id: string, name: string}>
      */
@@ -1016,16 +1015,17 @@ new class extends Component
 
     /**
      * Bare counts, never filtered: they are the witness the list is checked
-     * against. Each card carries the same word as the filter that finds its
-     * members.
+     * against. Every one of them reads this season's affiliates — pending
+     * included, as in the affiliation column — and the licence off that same
+     * affiliation.
      *
      * Those who left this season stay among the affiliated: the departure
      * cancels nothing, and the federation counts them all the same.
      *
-     * "No activity recorded" counts this season, as the first choice of the
-     * activity filter does.
+     * The other statuses, the responsible adults and the activity live in the
+     * drawer: a card that only repeats a filter costs the strip its width.
      *
-     * @return array{affiliated: int, new: int, to_follow_up: int, left: int, no_activity: int, responsible_adults: int}
+     * @return array{affiliated: int, new: int, competitors: int, recreational: int, minors: int, minors_without_guardian: int, women: int}
      */
     #[Computed]
     public function stats(): array
@@ -1033,12 +1033,11 @@ new class extends Component
         return [
             'affiliated' => User::affiliatedForCurrentSeason()->count(),
             'new' => User::inMembershipStatus(MembershipStatus::New)->count(),
-            'to_follow_up' => User::inMembershipStatus(MembershipStatus::ToFollowUp)->count(),
-            'left' => User::inMembershipStatus(MembershipStatus::Left)->count(),
-            'no_activity' => User::affiliatedForCurrentSeason()
-                ->withoutActivitySince(Season::current()->start_at ?? now())
-                ->count(),
-            'responsible_adults' => User::responsibleAdults()->count(),
+            'competitors' => User::licensedThisSeason(true)->count(),
+            'recreational' => User::licensedThisSeason(false)->count(),
+            'minors' => User::affiliatedForCurrentSeason()->minor()->count(),
+            'minors_without_guardian' => User::affiliatedForCurrentSeason()->minor()->withoutGuardian()->count(),
+            'women' => User::affiliatedForCurrentSeason()->where('gender', Gender::WOMEN->value)->count(),
         ];
     }
 

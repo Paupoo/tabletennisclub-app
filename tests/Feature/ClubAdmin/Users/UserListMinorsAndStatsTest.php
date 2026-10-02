@@ -29,6 +29,14 @@ function minorsListLastNames(Testable $component): array
 }
 
 /**
+ * Only the stat strip: the table below repeats these words in its own cells.
+ */
+function minorsListStatStrip(Testable $component): string
+{
+    return str($component->html())->after('data-stat-strip')->before('</section>')->toString();
+}
+
+/**
  * A member pinned on everything the filters and the cards read: age, gender,
  * guardian, licence and seasons. The factory draws the gender and the
  * birthdate at random, and either would move a count.
@@ -173,5 +181,81 @@ describe('the age filter', function (): void {
             ->set('age', 'minors')
             ->call('clearFilters')
             ->assertSet('age', '');
+    });
+});
+
+describe('the stat strip', function (): void {
+    it('draws four cards, all read off this season\'s affiliates', function (): void {
+        minorsListMember('Mineur-Seul', 12, Gender::WOMEN, [$this->current]);
+        minorsListMember('Mineur-Accompagne', 12, Gender::MEN, [$this->current, $this->previous], competitive: true, guarded: true);
+        minorsListMember('Adulte-Seul', 30, Gender::WOMEN, [$this->current], competitive: true);
+        minorsListMember('Age-Inconnu', null, Gender::MEN, [$this->current]);
+        // Neither of these counts anywhere: not affiliated this season.
+        minorsListMember('Mineur-Non-Affilie', 10, Gender::WOMEN);
+        minorsListMember('Ancienne-Joueuse', 14, Gender::WOMEN, [$this->previous], competitive: true);
+
+        $component = Livewire::test(MINORS_LIST);
+
+        expect($component->get('stats'))->toBe([
+            'affiliated' => 4,
+            'new' => 3,
+            'competitors' => 2,
+            'recreational' => 2,
+            'minors' => 2,
+            'minors_without_guardian' => 1,
+            'women' => 2,
+        ]);
+
+        $strip = minorsListStatStrip($component);
+
+        expect(substr_count($strip, 'data-stat-value'))->toBe(4)
+            ->and($strip)->toContain(e(__('Affiliated')))
+            ->toContain(e(trans_choice('Including :count newcomer|Including :count newcomers', 3, ['count' => 3])))
+            ->toContain(e(__('Competitors')))
+            ->toContain(e(trans_choice(':count recreational|:count recreational', 2, ['count' => 2])))
+            ->toContain(e(__('Minors')))
+            ->toContain(e(trans_choice('Including :count without a responsible adult|Including :count without a responsible adult', 1, ['count' => 1])))
+            ->toContain(e(__('Women')))
+            ->not->toContain(e(__('To follow up')))
+            ->not->toContain(e(__('Responsible adults')))
+            ->not->toContain(e(__('No activity recorded')));
+    });
+
+    it('words a single member in the singular', function (): void {
+        minorsListMember('Mineur-Seul', 12, Gender::WOMEN, [$this->current]);
+        minorsListMember('Adulte-Competiteur', 30, Gender::MEN, [$this->current, $this->previous], competitive: true);
+
+        $strip = minorsListStatStrip(Livewire::test(MINORS_LIST));
+
+        expect($strip)
+            ->toContain(e(trans_choice('Including :count newcomer|Including :count newcomers', 1, ['count' => 1])))
+            ->toContain(e(trans_choice(':count recreational|:count recreational', 1, ['count' => 1])))
+            ->toContain(e(trans_choice('Including :count without a responsible adult|Including :count without a responsible adult', 1, ['count' => 1])));
+    });
+
+    it('raises the minors without a responsible adult in a warning tone, without any gesture', function (): void {
+        minorsListMember('Mineur-Seul', 12, Gender::WOMEN, [$this->current]);
+        minorsListMember('Mineur-Seul-Bis', 13, Gender::MEN, [$this->current]);
+
+        $strip = minorsListStatStrip(Livewire::test(MINORS_LIST));
+        $alert = str($strip)->after('data-stat-alert')->before('</div>')->toString();
+
+        expect($alert)->toContain('badge-warning badge-soft')
+            ->toContain(e(trans_choice('Including :count without a responsible adult|Including :count without a responsible adult', 2, ['count' => 2])))
+            ->and($strip)->not->toContain('<a ')
+            ->not->toContain('<button')
+            ->not->toContain('wire:click');
+    });
+
+    it('says nothing about guardians when every minor has one', function (): void {
+        minorsListMember('Mineur-Accompagne', 12, Gender::MEN, [$this->current], guarded: true);
+        // Without a guardian, but not affiliated this season: the card ignores them.
+        minorsListMember('Mineur-Non-Affilie', 10, Gender::WOMEN);
+
+        $component = Livewire::test(MINORS_LIST);
+
+        expect($component->get('stats')['minors'])->toBe(1)
+            ->and($component->get('stats')['minors_without_guardian'])->toBe(0)
+            ->and(minorsListStatStrip($component))->not->toContain('data-stat-alert');
     });
 });

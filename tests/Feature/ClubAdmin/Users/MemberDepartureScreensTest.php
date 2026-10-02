@@ -271,7 +271,7 @@ describe('the members list', function (): void {
 
         $component = Livewire::actingAs($this->delegate)->test(DEPARTURE_LIST);
 
-        expect($component->get('stats'))->toMatchArray(['affiliated' => 3, 'left' => 1]);
+        expect($component->get('stats'))->toMatchArray(['affiliated' => 3]);
         $component->assertSee(MembershipStatus::Left->label());
     });
 });

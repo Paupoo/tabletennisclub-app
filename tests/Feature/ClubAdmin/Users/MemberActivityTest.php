@@ -300,11 +300,10 @@ describe('the activity filter', function (): void {
             ->assertSet('activity', '');
     });
 
-    it('counts the members without activity this season on a card worded like the filter', function (): void {
-        $component = Livewire::test(ACTIVITY_LIST);
+    it('finds the members without activity this season in the drawer, no longer on a card', function (): void {
+        $component = Livewire::withQueryParams(['activity' => 'season'])->test(ACTIVITY_LIST);
 
-        expect($component->viewData('stats')['no_activity'])->toBe(2);
-
-        $component->assertSee(__('No activity recorded'));
+        expect($component->viewData('stats'))->not->toHaveKey('no_activity')
+            ->and($component->viewData('users')->total())->toBe(2);
     });
 });

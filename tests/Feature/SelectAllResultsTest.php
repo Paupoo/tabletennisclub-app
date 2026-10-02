@@ -6,7 +6,12 @@ use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Enums\MeetingStatusEnum;
+use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\Role;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Jobs\SendPaymentReminderJob;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Features\SupportTesting\Testable;
@@ -121,5 +126,62 @@ describe('treasury transactions', function (): void {
         $component->call('openConfirmDeleteModal')->call('bulkDelete');
 
         expect(Transaction::query()->pluck('id')->all())->toBe([$debit->id]);
+    });
+});
+
+describe('tournaments', function (): void {
+    it('keeps every tournament of the chosen status', function (): void {
+        $matching = Tournament::factory()->count(21)->create(['status' => TournamentStatusEnum::PUBLISHED->value]);
+        $outsider = Tournament::factory()->create(['status' => TournamentStatusEnum::CLOSED->value]);
+
+        $component = Livewire::actingAs($this->admin)
+            ->test('pages::club-events.tournaments.index')
+            ->set('status', TournamentStatusEnum::PUBLISHED->value)
+            ->set('selectAll', true)
+            ->call('selectAllResults');
+
+        expect(selectedIdsAfterSelectingAll($component))->toBe($matching->pluck('id')->sort()->values()->all())
+            ->not->toContain($outsider->id);
+    });
+});
+
+describe('meetings', function (): void {
+    it('keeps every meeting of the chosen type and cancels them all', function (): void {
+        $matching = Meeting::factory()->count(21)->create([
+            'type' => MeetingTypeEnum::COMMITTEE,
+            'status' => MeetingStatusEnum::CONFIRMED,
+            'created_by' => $this->admin->id,
+        ]);
+        $outsider = Meeting::factory()->create([
+            'type' => MeetingTypeEnum::GENERAL_ASSEMBLY,
+            'status' => MeetingStatusEnum::CONFIRMED,
+            'created_by' => $this->admin->id,
+        ]);
+
+        $component = Livewire::actingAs($this->admin)
+            ->test('pages::club-events.meetings.index')
+            ->set('type', MeetingTypeEnum::COMMITTEE->value)
+            ->set('selectAll', true)
+            ->call('selectAllResults');
+
+        expect(selectedIdsAfterSelectingAll($component))->toBe($matching->pluck('id')->sort()->values()->all())
+            ->not->toContain($outsider->id);
+
+        $component->call('bulkCancel');
+
+        expect(Meeting::query()->where('status', MeetingStatusEnum::CANCELLED)->count())->toBe(21)
+            ->and($outsider->fresh()->status)->toBe(MeetingStatusEnum::CONFIRMED);
+    });
+
+    it('refuses to cancel meetings for a reader', function (): void {
+        $meeting = Meeting::factory()->create(['status' => MeetingStatusEnum::CONFIRMED, 'created_by' => $this->admin->id]);
+
+        Livewire::actingAs(User::factory()->isCommitteeMember()->create())
+            ->test('pages::club-events.meetings.index')
+            ->set('selected', [(string) $meeting->id])
+            ->call('bulkCancel')
+            ->assertForbidden();
+
+        expect($meeting->fresh()->status)->toBe(MeetingStatusEnum::CONFIRMED);
     });
 });

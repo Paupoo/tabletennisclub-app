@@ -65,6 +65,8 @@ new class extends Component
 
     public function bulkCancel(): void
     {
+        abort_unless($this->canManage, 403);
+
         $count = count($this->selected);
         Meeting::whereIn('id', $this->selected)->update(['status' => MeetingStatusEnum::CANCELLED]);
         $this->confirmBulkCancelModal = false;
@@ -123,11 +125,15 @@ new class extends Component
 
     public function confirmBulkCancel(): void
     {
+        abort_unless($this->canManage, 403);
+
         $this->confirmBulkCancelModal = true;
     }
 
     public function confirmBulkDelete(): void
     {
+        abort_unless($this->canManage, 403);
+
         $this->confirmBulkDeleteModal = true;
     }
 
@@ -179,6 +185,9 @@ new class extends Component
                 'users AS confirmed_count' => fn ($q) => $q->whereIn('meeting_user.status', ['confirmed', 'attended']),
             ])
             ->orderBy($this->sortBy['column'] ?? 'scheduled_at', $this->sortBy['direction'] ?? 'desc')
+            // A total order: meetings sharing a date would otherwise move
+            // between pages, some shown twice and some never.
+            ->orderBy('meetings.id')
             ->paginate(20);
     }
 

@@ -246,6 +246,9 @@ new class extends Component
             ])
             ->with('eventPost')
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
+            // A total order: rows tied on the sorted column would otherwise
+            // move between pages, some shown twice and some never.
+            ->orderBy('tournaments.id')
             ->paginate(20);
     }
 

@@ -35,6 +35,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule as ValidationRule;
 use Livewire\Attributes\Computed;
@@ -278,13 +279,16 @@ new class extends Component
         $members = User::query()->whereIn('id', $this->selected)->get();
 
         try {
-            $outcome = MemberDepartureOutcome::merge($members->map(fn (User $member): MemberDepartureOutcome => DeclareMemberDepartureAction::handle(
+            // One transaction for the whole selection: the captains' mails
+            // leave once every departure is recorded, so a captain leaving in
+            // the same gesture as one of their players is never told.
+            $outcome = MemberDepartureOutcome::merge(DB::transaction(fn (): Collection => $members->map(fn (User $member): MemberDepartureOutcome => DeclareMemberDepartureAction::handle(
                 $member,
                 Carbon::parse($this->departureLeftOn),
                 DepartureReason::from($this->departureReason),
                 null,
                 Auth::user(),
-            )));
+            ))), $members->modelKeys());
         } catch (DomainException $e) {
             $this->error($e->getMessage());
 

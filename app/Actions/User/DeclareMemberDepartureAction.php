@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\DB;
  * What the departure does hand back is what the member was holding for the
  * season: a place on a team sheet, a captaincy, a seat in a training plan, a
  * place in the interclub matches still to come — and the captain of each team
- * the member played in is told. The
+ * the member played in is told, along with the selector. The
  * sessions still to come and the club-wide mailings read the departure itself
  * ({@see TrainingPack::trainees()} and the
  * communications audience), so nothing has to be rewritten there.
@@ -65,7 +65,7 @@ class DeclareMemberDepartureAction
 
             $fixtures = LeaveUpcomingFixturesAction::handle($user, $leftOn);
 
-            $captainsTold = TellCaptainsOfDepartureAction::handle(
+            $told = TellCaptainsAndSelectorOfDepartureAction::handle(
                 $user,
                 $season,
                 $places->pluck('team_id')->all(),
@@ -76,7 +76,8 @@ class DeclareMemberDepartureAction
             return new MemberDepartureOutcome(
                 teamsWithoutCaptain: $teamsWithoutCaptain,
                 fixturesLeft: $fixtures['fixtures'],
-                captainsTold: $captainsTold,
+                captainsTold: $told['captains'],
+                selectorsTold: $told['selectors'],
             );
         });
     }

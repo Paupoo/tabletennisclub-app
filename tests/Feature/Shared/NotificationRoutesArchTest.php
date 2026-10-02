@@ -100,9 +100,11 @@ it('never sends a member to a page the committee alone can open', function (): v
         // Same recipients, and the review screen asks for interclubs.manage,
         // which the interclubs délégation and the administrators both hold.
         'InterclubChangesHeldNotification.php',
-        // TellCaptainsOfDepartureAction sends it to the captains of the
-        // member's teams only, and `access-selections` admits every captain —
-        // MemberDepartureFixturesTest.
+        // TellCaptainsAndSelectorOfDepartureAction sends it to the captains of
+        // the member's teams and to the interclubs duty: `access-selections`
+        // admits every captain, and both the interclubs délégation and the
+        // administrators — the fallback when nobody holds the duty — carry
+        // interclubs.view — MemberDepartureFixturesTest.
         'MemberLeftTeamNotification.php',
     ];
 

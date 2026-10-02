@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
  *
  * The office records the departure; the people who now have a gap to fill — a
  * team without a captain, a team one player short — learn it from the toast,
- * or from the mail sent to the captain.
+ * or from the mail sent to the captain and the selector.
  */
 final readonly class MemberDepartureOutcome
 {
@@ -19,18 +19,20 @@ final readonly class MemberDepartureOutcome
      * @param  list<string>  $teamsWithoutCaptain  the names of the teams the member captained
      * @param  int  $fixturesLeft  the upcoming interclub matches the member was taken off
      * @param  list<int>  $captainsTold  the ids of the captains mailed about the departure
+     * @param  list<int>  $selectorsTold  the ids of the selectors mailed about it — the interclubs duty, or the administrators when nobody holds it
      */
     public function __construct(
         public array $teamsWithoutCaptain = [],
         public int $fixturesLeft = 0,
         public array $captainsTold = [],
+        public array $selectorsTold = [],
     ) {}
 
     /**
      * Several departures recorded in one gesture, read as one.
      *
-     * A captain is counted once however many of their players left, and not
-     * at all when they left in the same gesture: their mail is never sent.
+     * A captain or a selector is counted once however many players left, and
+     * not at all when they left in the same gesture: their mail is never sent.
      *
      * @param  Collection<int, self>  $outcomes
      * @param  array<int, int>  $leaverIds  the members declared gone in that gesture
@@ -46,12 +48,18 @@ final readonly class MemberDepartureOutcome
                 ->sort()
                 ->values()
                 ->all(),
+            selectorsTold: $outcomes->flatMap(fn (self $outcome): array => $outcome->selectorsTold)
+                ->unique()
+                ->diff($leaverIds)
+                ->sort()
+                ->values()
+                ->all(),
         );
     }
 
     /**
      * The interclub half of the toast: the matches the member was taken off,
-     * then the captains told. Empty when there is neither; begins with a
+     * then who was told. Empty when there is neither; begins with a
      * space, to follow the rest of the message.
      */
     public function fixturesNotice(): string
@@ -66,10 +74,31 @@ final readonly class MemberDepartureOutcome
             );
         }
 
-        if ($this->captainsTold !== []) {
-            $notice .= ' ' . trans_choice('{1} Captain told.|[2,*] Captains told.', count($this->captainsTold));
+        $told = $this->toldNotice();
+
+        if ($told !== '') {
+            $notice .= ' ' . $told;
         }
 
         return $notice;
+    }
+
+    /**
+     * Who was mailed: the captains, the selector, or both — each in the
+     * plural when there are several (the administrators stand in for the
+     * selector when nobody holds the interclubs duty).
+     */
+    private function toldNotice(): string
+    {
+        $captains = count($this->captainsTold);
+        $selectors = count($this->selectorsTold);
+
+        return match (true) {
+            $captains > 0 && $selectors === 1 => trans_choice('{1} Captain and selector told.|[2,*] Captains and selector told.', $captains),
+            $captains > 0 && $selectors > 1 => trans_choice('{1} Captain and selectors told.|[2,*] Captains and selectors told.', $captains),
+            $captains > 0 => trans_choice('{1} Captain told.|[2,*] Captains told.', $captains),
+            $selectors > 0 => trans_choice('{1} Selector told.|[2,*] Selectors told.', $selectors),
+            default => '',
+        };
     }
 }

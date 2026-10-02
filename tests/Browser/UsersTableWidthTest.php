@@ -34,7 +34,7 @@ $tableProbe = <<<'JS'
 })()
 JS;
 
-it('keeps the members table inside its card', function (int $width, int $height, bool $showsActivity) use ($tableProbe): void {
+it('keeps the members table inside its card', function (int $width, int $height, bool $showsActivity, bool $newcomers = false) use ($tableProbe): void {
     $season = makeActiveSeason();
 
     $this->actingAs(User::factory()->withRole(Role::MEMBERS)->create());
@@ -48,7 +48,9 @@ it('keeps the members table inside its card', function (int $width, int $height,
     $member->forceFill(['last_login_at' => now()->subDay()])->saveQuietly();
     Subscription::factory()->for($member)->for($season)->create(['status' => 'confirmed', 'is_competitive' => true]);
 
-    $page = visit(route('admin.users.index'))->resize($width, $height);
+    // The member is new to the club: the list of the new members adds the
+    // onboarding column, five icons wide.
+    $page = visit(route('admin.users.index', $newcomers ? ['affiliation' => ['new']] : []))->resize($width, $height);
     $page->assertNoJavaScriptErrors();
 
     $probe = $page->script($tableProbe);
@@ -57,8 +59,11 @@ it('keeps the members table inside its card', function (int $width, int $height,
     expect($p['found'])->toBeTrue()
         ->and(in_array(__('Last activity'), $p['headers'], true))->toBe($showsActivity)
         ->and(in_array(__('Last sign-in'), $p['headers'], true))->toBe($showsActivity)
+        ->and(in_array(__('Onboarding'), $p['headers'], true))->toBe($newcomers)
         ->and($p['table'])->toBeLessThanOrEqual($p['card'], sprintf('the table ends at %d px, its card at %d px', $p['table'], $p['card']));
 })->with([
     'xl, without the dates' => [1280, 800, false],
     '2xl, with both dates' => [1536, 900, true],
+    'xl, the new members' => [1280, 800, false, true],
+    '2xl, the new members' => [1536, 900, false, true],
 ])->group('users');

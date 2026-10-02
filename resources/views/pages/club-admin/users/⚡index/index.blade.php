@@ -136,6 +136,9 @@
                             @else
                                 <x-badge :value="__('Unpaid')" class="badge-error badge-soft badge-xs" />
                             @endif
+                            @if ($this->showsOnboardingColumn())
+                                <x-admin.users.onboarding-steps :user="$user" compact />
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -257,6 +260,10 @@
                         <div class="max-w-56">
                             <x-admin.users.membership-status-badge :user="$user" :last-season="$this->previousSeasonName" />
                         </div>
+                    @endscope
+                    {{-- Only on the list of the new members: see showsOnboardingColumn(). --}}
+                    @scope('cell_onboarding', $user)
+                        <x-admin.users.onboarding-steps :user="$user" />
                     @endscope
                     {{-- A ranking only means something for a competitor of the running season. --}}
                     @scope('cell_ranking', $user)

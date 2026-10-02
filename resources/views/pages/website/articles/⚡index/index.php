@@ -14,6 +14,7 @@ use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use App\Support\Markdown;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -62,10 +63,8 @@ new class extends Component
     #[Computed]
     public function articles(): LengthAwarePaginator
     {
-        return NewsPost::with('user')
-            ->when($this->search, fn ($q) => $q->search($this->search))
-            ->when($this->status, fn ($q) => $q->where('status', $this->status))
-            ->when($this->category, fn ($q) => $q->where('category', $this->category))
+        return $this->matchingQuery()
+            ->with('user')
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
             ->paginate(15);
     }
@@ -280,5 +279,19 @@ new class extends Component
             ->pluck('id')
             ->map(fn (int $id): string => (string) $id)
             ->toArray();
+    }
+
+    /**
+     * The search and the drawer: what the list pages, and what "select all
+     * results" selects.
+     *
+     * @return Builder<NewsPost>
+     */
+    protected function matchingQuery(): Builder
+    {
+        return NewsPost::query()
+            ->when($this->search, fn ($q) => $q->search($this->search))
+            ->when($this->status, fn ($q) => $q->where('status', $this->status))
+            ->when($this->category, fn ($q) => $q->where('category', $this->category));
     }
 };

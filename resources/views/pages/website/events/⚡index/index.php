@@ -11,6 +11,7 @@ use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -155,10 +156,8 @@ new class extends Component
     #[Computed]
     public function events(): LengthAwarePaginator
     {
-        return EventPost::with('eventable')
-            ->when($this->search, fn ($q) => $q->where('title', 'like', "%{$this->search}%"))
-            ->when($this->status, fn ($q) => $q->where('status', $this->status))
-            ->when($this->type, fn ($q) => $q->where('type', $this->type))
+        return $this->matchingQuery()
+            ->with('eventable')
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
             ->paginate(20);
     }
@@ -360,5 +359,19 @@ new class extends Component
             ->pluck('id')
             ->map(fn (int $id): string => (string) $id)
             ->toArray();
+    }
+
+    /**
+     * The search and the drawer: what the list pages, and what "select all
+     * results" selects.
+     *
+     * @return Builder<EventPost>
+     */
+    protected function matchingQuery(): Builder
+    {
+        return EventPost::query()
+            ->when($this->search, fn ($q) => $q->where('title', 'like', "%{$this->search}%"))
+            ->when($this->status, fn ($q) => $q->where('status', $this->status))
+            ->when($this->type, fn ($q) => $q->where('type', $this->type));
     }
 };

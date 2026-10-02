@@ -19,6 +19,7 @@ use App\Services\ClubAdmin\Contact\EmailTemplateRenderer;
 use App\Support\Breadcrumb;
 use App\Support\LocaleSort;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -180,13 +181,7 @@ new class extends Component
     #[Computed]
     public function contacts(): LengthAwarePaginator
     {
-        return Contact::query()
-            ->when($this->search, fn ($q) => $q->search($this->search))
-            ->when($this->status, fn ($q) => $q->byStatus($this->status))
-            ->when($this->interest, fn ($q) => $q->where('interest', $this->interest))
-            ->when($this->ageCategory, fn ($q) => $q->where('age_category', $this->ageCategory))
-            ->when($this->experience, fn ($q) => $q->where('experience', $this->experience))
-            ->when($this->wantsCompetition !== '', fn ($q) => $q->where('wants_competition', $this->wantsCompetition === '1'))
+        return $this->matchingQuery()
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
             ->paginate(20);
     }
@@ -580,6 +575,23 @@ new class extends Component
             ->pluck('id')
             ->map(fn (int $id): string => (string) $id)
             ->toArray();
+    }
+
+    /**
+     * The search and the drawer: what the list pages, and what "select all
+     * results" selects.
+     *
+     * @return Builder<Contact>
+     */
+    protected function matchingQuery(): Builder
+    {
+        return Contact::query()
+            ->when($this->search, fn ($q) => $q->search($this->search))
+            ->when($this->status, fn ($q) => $q->byStatus($this->status))
+            ->when($this->interest, fn ($q) => $q->where('interest', $this->interest))
+            ->when($this->ageCategory, fn ($q) => $q->where('age_category', $this->ageCategory))
+            ->when($this->experience, fn ($q) => $q->where('experience', $this->experience))
+            ->when($this->wantsCompetition !== '', fn ($q) => $q->where('wants_competition', $this->wantsCompetition === '1'));
     }
 
     // ── Authorization (decision #18) ───────────────────────────────────────────

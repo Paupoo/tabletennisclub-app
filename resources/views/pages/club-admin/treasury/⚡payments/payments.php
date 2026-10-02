@@ -122,9 +122,7 @@ new class extends Component
     {
         Gate::authorize(Permission::PaymentsRefund->value);
 
-        $ids = $this->selectingAllResults
-            ? $this->allMatchingPaymentIds()
-            : array_map(intval(...), $this->selected);
+        $ids = array_map(intval(...), $this->selected);
 
         $payments = Payment::whereIn('id', $ids)->where('status', 'to_refund')->get();
 
@@ -170,9 +168,7 @@ new class extends Component
     {
         Gate::authorize(Permission::PaymentsRemind->value);
 
-        $ids = $this->selectingAllResults
-            ? $this->allMatchingPaymentIds()
-            : array_map(intval(...), $this->selected);
+        $ids = array_map(intval(...), $this->selected);
 
         foreach ($ids as $id) {
             SendPaymentReminderJob::dispatch($id);
@@ -604,10 +600,8 @@ new class extends Component
         $col = $this->sortColumn();
         $dir = $this->sortBy['direction'];
 
-        $rows = $this->applyFilters(
-            Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
-                ->tap(fn (Builder $q): Builder => $this->applyTab($q))
-        )
+        $rows = $this->matchingQuery()
+            ->with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
             ->get()
             ->map(function (Payment $p) {
                 $label = $p->label();
@@ -1138,11 +1132,15 @@ new class extends Component
             ->toArray();
     }
 
-    private function allMatchingPaymentIds(): array
+    /**
+     * The tab, the search and the drawer: what the list sorts and pages, and
+     * what "select all results" selects.
+     *
+     * @return Builder<Payment>
+     */
+    protected function matchingQuery(): Builder
     {
-        return $this->applyFilters($this->scopedToTab())
-            ->pluck('id')
-            ->toArray();
+        return $this->applyFilters($this->scopedToTab());
     }
 
     private function allocatableAmount(Payment $payment, Transaction $transaction): float

@@ -243,17 +243,22 @@
                          on one line: the status column added here costs width, and without
                          this every name of average length folded in two. The address sits
                          beneath it rather than in a column of its own, which cost 254px
-                         and pushed the row off the card. --}}
+                         and pushed the row off the card.
+                         Below xl, one line still cost too much: at 1024 a name of 28
+                         characters ran the table 79px past its card. The name is cut
+                         with an ellipsis there, the whole of it in the title. --}}
                     @scope('cell_name', $user)
                         {{-- The name opens the file, which everyone on this list may read. --}}
                         <div class="flex items-center gap-1.5">
-                            <a class="font-medium whitespace-nowrap hover:underline" href="{{ route('admin.users.show', $user) }}">
+                            <a class="block max-w-32 truncate font-medium whitespace-nowrap hover:underline xl:max-w-none"
+                                href="{{ route('admin.users.show', $user) }}"
+                                title="{{ $user->first_name }} {{ $user->last_name }}">
                                 {{ $user->first_name }} {{ $user->last_name }}
                             </a>
                             <x-admin.users.responsible-adult-badge :user="$user" />
                         </div>
                         @if ($user->email)
-                            <div class="max-w-56 truncate text-xs text-muted" title="{{ $user->email }}">{{ $user->email }}</div>
+                            <div class="max-w-32 truncate text-xs text-muted xl:max-w-56" title="{{ $user->email }}">{{ $user->email }}</div>
                         @endif
                     @endscope
                     @scope('cell_affiliation', $user)

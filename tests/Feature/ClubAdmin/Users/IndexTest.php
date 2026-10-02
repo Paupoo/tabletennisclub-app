@@ -51,6 +51,15 @@ describe('rendering and display', function (): void {
             ->assertSee(__('Ranking'));
     });
 
+    it('keeps the whole of a long name in the title of the link it cuts below xl', function (): void {
+        $member = User::factory()->create(['first_name' => 'Marie-Christine', 'last_name' => 'Vanderlinden-Dubois']);
+
+        allMembersList()
+            ->assertSeeHtml('class="block max-w-32 truncate font-medium whitespace-nowrap hover:underline xl:max-w-none"')
+            ->assertSeeHtml('href="' . route('admin.users.show', $member) . '"')
+            ->assertSeeHtml('title="Marie-Christine Vanderlinden-Dubois"');
+    });
+
     it('displays users in the table', function (): void {
         $users = User::factory()->count(3)->create();
 

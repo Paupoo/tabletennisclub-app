@@ -61,7 +61,7 @@ new class extends Component
         $this->user->refresh();
         $this->cancelDepartureModal = false;
 
-        $this->success(__('Departure cancelled. Team places and captaincies are not given back: assign them again if needed.'));
+        $this->success(__('Departure cancelled. Team places, captaincies and places in upcoming interclub matches are not given back: assign them again if needed.'));
     }
 
     /**

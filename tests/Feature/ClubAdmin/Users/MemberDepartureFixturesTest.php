@@ -321,4 +321,17 @@ describe('the screens', function (): void {
             ->toContain(__('Interclubs manager told.'))
             ->not->toContain(__('Captain and interclubs manager told.'));
     });
+
+    it('warns, when a departure is cancelled, that the matches are not given back', function (): void {
+        ($this->declare)($this->member);
+
+        $component = Livewire::actingAs($this->office)
+            ->test('pages::club-admin.users.show', ['user' => $this->member])
+            ->set('cancelDepartureModal', true)
+            ->assertSee(__('Use it for a departure recorded by mistake. Team places, captaincies and places in upcoming interclub matches are not given back.'))
+            ->call('cancelDeparture');
+
+        expect(departureFixturesToastTitle($component))
+            ->toBe(__('Departure cancelled. Team places, captaincies and places in upcoming interclub matches are not given back: assign them again if needed.'));
+    });
 });

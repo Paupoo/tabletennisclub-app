@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
+use App\Domains\ClubAdmin\Users\Models\MemberDeparture;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Ranking;
@@ -229,10 +230,11 @@ describe('the columns', function (): void {
     });
 
     it('reads every row from the page query, whatever the number of rows', function (): void {
+        // Everybody on file, so the departed members below are listed too.
         $count = function (): int {
             DB::flushQueryLog();
             DB::enableQueryLog();
-            Livewire::test(AFFILIATION_LIST)->set('selectedLicenceType', 'both');
+            Livewire::withQueryParams(['allMembers' => true])->test(AFFILIATION_LIST)->set('selectedLicenceType', 'both');
             $queries = count(DB::getQueryLog());
             DB::disableQueryLog();
 
@@ -246,6 +248,11 @@ describe('the columns', function (): void {
         foreach (range(1, 4) as $i) {
             $user = User::factory()->create(['ranking' => Ranking::C2->value]);
             Subscription::factory()->for($user)->for($this->current)->create(['status' => 'paid', 'is_competitive' => true]);
+
+            // Half of them left: their badge names a reason, read in the same query.
+            if ($i % 2 === 0) {
+                MemberDeparture::factory()->for($user)->for($this->current)->create();
+            }
         }
 
         expect($count())->toBe($few);
@@ -260,6 +267,7 @@ describe('the stat strip', function (): void {
             'affiliated' => 3,
             'new' => 1,
             'to_follow_up' => 1,
+            'left' => 0,
             'responsible_adults' => 1,
         ]);
 

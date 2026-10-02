@@ -442,6 +442,36 @@ class User extends Authenticatable implements MustVerifyEmail
         return $isCompetitive !== ($this->federation_licence_type === 'JO');
     }
 
+    /**
+     * The departure declared for the running season, if any: what the badge
+     * names and the file shows. The list loads it with the page; a model
+     * fetched any other way loads it on first use.
+     */
+    public function currentDeparture(): ?MemberDeparture
+    {
+        $this->loadMissing('departureThisSeason');
+
+        return $this->departureThisSeason;
+    }
+
+    /**
+     * Every departure the member declared, one per season at most.
+     *
+     * @return HasMany<MemberDeparture, $this>
+     */
+    public function departures(): HasMany
+    {
+        return $this->hasMany(MemberDeparture::class);
+    }
+
+    /**
+     * @return HasOne<MemberDeparture, $this>
+     */
+    public function departureThisSeason(): HasOne
+    {
+        return $this->hasOne(MemberDeparture::class)->where('season_id', Season::current()->id ?? 0);
+    }
+
     public function familyGroups(): BelongsToMany
     {
         return $this->belongsToMany(FamilyGroup::class, 'family_group_user');
@@ -877,6 +907,7 @@ class User extends Authenticatable implements MustVerifyEmail
             thisSeason: (bool) $this->membershipFact('affiliated_this_season'),
             lastSeason: (bool) $this->membershipFact('affiliated_last_season'),
             beforeThisSeason: (bool) $this->membershipFact('affiliated_before_this_season'),
+            leftThisSeason: (bool) $this->membershipFact('left_this_season'),
         );
     }
 
@@ -1088,16 +1119,22 @@ class User extends Authenticatable implements MustVerifyEmail
         $before = $affiliated('whereHas', $earlierSeasons);
         $notBefore = $affiliated('whereDoesntHave', $earlierSeasons);
 
-        return $query->where(function (EloquentBuilder $any) use ($statuses, $now, $notNow, $last, $notLast, $before, $notBefore): void {
+        // The departure outweighs every affiliation, so every other status
+        // starts by ruling it out.
+        $left = fn (EloquentBuilder $member): EloquentBuilder => $member->whereHas('departures', fn (EloquentBuilder $departure): EloquentBuilder => $departure->where('season_id', $thisSeason));
+        $stayed = fn (EloquentBuilder $member): EloquentBuilder => $member->whereDoesntHave('departures', fn (EloquentBuilder $departure): EloquentBuilder => $departure->where('season_id', $thisSeason));
+
+        return $query->where(function (EloquentBuilder $any) use ($statuses, $now, $notNow, $last, $notLast, $before, $notBefore, $left, $stayed): void {
             foreach ($statuses as $status) {
-                $any->orWhere(function (EloquentBuilder $one) use ($status, $now, $notNow, $last, $notLast, $before, $notBefore): void {
+                $any->orWhere(function (EloquentBuilder $one) use ($status, $now, $notNow, $last, $notLast, $before, $notBefore, $left, $stayed): void {
                     $conditions = match ($status) {
-                        MembershipStatus::New => [$now, $notBefore],
-                        MembershipStatus::Renewed => [$now, $last],
-                        MembershipStatus::Returning => [$now, $notLast, $before],
-                        MembershipStatus::ToFollowUp => [$notNow, $last],
-                        MembershipStatus::Former => [$notNow, $notLast, $before],
-                        MembershipStatus::Never => [$notNow, $notBefore],
+                        MembershipStatus::Left => [$left],
+                        MembershipStatus::New => [$stayed, $now, $notBefore],
+                        MembershipStatus::Renewed => [$stayed, $now, $last],
+                        MembershipStatus::Returning => [$stayed, $now, $notLast, $before],
+                        MembershipStatus::ToFollowUp => [$stayed, $notNow, $last],
+                        MembershipStatus::Former => [$stayed, $notNow, $notLast, $before],
+                        MembershipStatus::Never => [$stayed, $notNow, $notBefore],
                     };
 
                     foreach ($conditions as $condition) {
@@ -1580,6 +1617,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'subscriptions as affiliated_before_this_season' => fn (EloquentBuilder $s): EloquentBuilder => $affiliated($s)->whereIn('season_id', $earlierSeasons),
             'subscriptions as competitive_this_season' => fn (EloquentBuilder $s): EloquentBuilder => $affiliated($s)->where('season_id', $thisSeason)->where('is_competitive', true),
             'guardianRecord as is_responsible_adult' => fn (EloquentBuilder $guardian): EloquentBuilder => $guardian->whereHas('users'),
+            'departures as left_this_season' => fn (EloquentBuilder $departure): EloquentBuilder => $departure->where('season_id', $thisSeason),
         ];
     }
 }

@@ -34,13 +34,15 @@ use Illuminate\Support\Facades\DB;
 class DeclareMemberDepartureAction
 {
     /**
+     * @param  array<int, int>  $leavingTogether  the members declared gone in the same gesture, so a selector among them is never counted on
+     *
      * @throws \DomainException when no season is running
      */
-    public static function handle(User $user, CarbonInterface $leftOn, DepartureReason $reason, ?string $note, ?User $recordedBy): MemberDepartureOutcome
+    public static function handle(User $user, CarbonInterface $leftOn, DepartureReason $reason, ?string $note, ?User $recordedBy, array $leavingTogether = []): MemberDepartureOutcome
     {
         $season = Season::current() ?? throw new \DomainException(__('No season is running: a departure belongs to one.'));
 
-        return DB::transaction(function () use ($user, $season, $leftOn, $reason, $note, $recordedBy): MemberDepartureOutcome {
+        return DB::transaction(function () use ($user, $season, $leftOn, $reason, $note, $recordedBy, $leavingTogether): MemberDepartureOutcome {
             // Declared twice the same season, it is a correction, not a second departure.
             MemberDeparture::query()->updateOrCreate(
                 ['user_id' => $user->id, 'season_id' => $season->id],
@@ -71,6 +73,7 @@ class DeclareMemberDepartureAction
                 $places->pluck('team_id')->all(),
                 $fixtures['lineups'],
                 $fixtures['short_handed_withdrawn'],
+                $leavingTogether,
             );
 
             return new MemberDepartureOutcome(

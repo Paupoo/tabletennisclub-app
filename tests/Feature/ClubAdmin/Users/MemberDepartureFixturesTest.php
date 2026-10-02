@@ -732,20 +732,34 @@ describe('the selector', function (): void {
         Notification::assertCount(3);
     });
 
-    it('is not told of their own departure', function (): void {
+    it('is not told of their own departure: the administrators stand in when they were the only one', function (): void {
         $this->team->users()->attach($this->manager->id);
 
         $outcome = ($this->declare)($this->manager);
 
         expect($outcome->captainsTold)->toBe([$this->captain->id])
-            ->and($outcome->selectorsTold)->toBe([]);
+            ->and($outcome->selectorsTold)->toBe([$this->office->id]);
 
         Notification::assertSentTo($this->captain, MemberLeftTeamNotification::class);
+        Notification::assertSentTo($this->office, MemberLeftTeamNotification::class, fn (MemberLeftTeamNotification $notification): bool => $notification->teamNames === ['C']);
         Notification::assertNotSentTo($this->manager, MemberLeftTeamNotification::class);
-        Notification::assertCount(1);
+        Notification::assertCount(2);
     });
 
-    it('is not told when leaving in the same gesture as a player', function (): void {
+    it('leaves the other selector alone to hear of it when one of two leaves', function (): void {
+        $otherSelector = User::factory()->withRole(Role::INTERCLUBS)->create();
+        $this->team->users()->attach($this->manager->id);
+
+        $outcome = ($this->declare)($this->manager);
+
+        expect($outcome->selectorsTold)->toBe([$otherSelector->id]);
+
+        Notification::assertSentToTimes($otherSelector, MemberLeftTeamNotification::class, 1);
+        Notification::assertNotSentTo($this->manager, MemberLeftTeamNotification::class);
+        Notification::assertNotSentTo($this->office, MemberLeftTeamNotification::class);
+    });
+
+    it('is not told when leaving in the same gesture as a player: the administrators stand in', function (): void {
         Notification::swap(new ChannelManager(app()));
         Subscription::factory()->for($this->manager)->for($this->season)->create(['status' => 'paid', 'is_competitive' => true]);
 
@@ -758,10 +772,32 @@ describe('the selector', function (): void {
             ->assertHasNoErrors();
 
         expect($this->manager->notifications()->count())->toBe(0)
+            ->and($this->office->notifications()->count())->toBe(1)
             ->and($this->captain->notifications()->count())->toBe(1)
             ->and(departureFixturesToastTitle($component))
-            ->toContain(trans_choice('{1} Captain told.|[2,*] Captains told.', 2))
-            ->not->toContain(trans_choice('{1} Captain and selector told.|[2,*] Captains and selector told.', 2));
+            ->toContain(trans_choice('{1} Captain and selector told.|[2,*] Captains and selector told.', 2));
+    });
+
+    it('is not told when recorded after the player in the same gesture: the administrators stand in', function (): void {
+        // Created after the player, so declared gone after them: when the
+        // player's mail is addressed, this selector has no departure yet.
+        $this->manager->removeRole(Role::INTERCLUBS->value);
+        $lateSelector = User::factory()->withRole(Role::INTERCLUBS)->create();
+        Subscription::factory()->for($lateSelector)->for($this->season)->create(['status' => 'paid', 'is_competitive' => true]);
+
+        expect($lateSelector->id)->toBeGreaterThan($this->member->id);
+
+        Livewire::actingAs($this->office)
+            ->test('pages::club-admin.users.index')
+            ->set('selected', [(string) $this->member->id, (string) $lateSelector->id])
+            ->set('departureReason', DepartureReason::Moving->value)
+            ->set('departureLeftOn', now()->toDateString())
+            ->call('bulkDeclareDeparture')
+            ->assertHasNoErrors();
+
+        Notification::assertNotSentTo($lateSelector, MemberLeftTeamNotification::class);
+        Notification::assertSentToTimes($this->office, MemberLeftTeamNotification::class, 1);
+        Notification::assertSentTo($this->office, MemberLeftTeamNotification::class, fn (MemberLeftTeamNotification $notification): bool => $notification->memberName === 'Jeanne Depart-Interclub');
     });
 
     it('is told once per departure when a whole selection leaves', function (): void {

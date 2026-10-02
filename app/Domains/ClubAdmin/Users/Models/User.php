@@ -1681,10 +1681,10 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * - a training session the trainer ticked them present at, once the
      *   attendance was taken — dated by the session;
-     * - a past interclub match they played, or were in the published line-up
-     *   of. `is_selected` alone is the captain's draft, which may never have
-     *   been sent; `selection_confirmed_at` is only set when it was. A named
-     *   walkover is in the line-up and did not come;
+     * - a past interclub match they played. `has_played` is written from the
+     *   federation's match sheet when the results are imported: the line-up,
+     *   draft or published, only says who was meant to come, and a named
+     *   walkover is in it without playing;
      * - a past tournament they were registered for and did not withdraw from
      *   or miss, unless the tournament itself was cancelled.
      *
@@ -1705,13 +1705,7 @@ class User extends Authenticatable implements MustVerifyEmail
         $interclubs = DB::table('interclub_user')
             ->join('interclubs', 'interclubs.id', '=', 'interclub_user.interclub_id')
             ->where('interclubs.start_date_time', '<', $now)
-            ->where(fn (QueryBuilder $took): QueryBuilder => $took
-                ->where('interclub_user.has_played', true)
-                ->orWhere(fn (QueryBuilder $lineup): QueryBuilder => $lineup
-                    ->whereNotNull('interclub_user.selection_confirmed_at')
-                    ->where('interclub_user.is_walkover', false)
-                )
-            )
+            ->where('interclub_user.has_played', true)
             ->select(['interclub_user.user_id', 'interclubs.start_date_time as activity_at']);
 
         $tournaments = DB::table('tournament_user')

@@ -293,7 +293,7 @@
         <x-confirm-modal model="cancelDepartureModal" :title="__('Cancel this departure?')"
             :confirmLabel="__('Cancel the departure')" confirmClass="btn-primary"
             confirmAction="cancelDeparture" :open="$cancelDepartureModal">
-            <p>{{ __('Use it for a departure recorded by mistake. Team places and captaincies are not given back.') }}</p>
+            <p>{{ __('Use it for a departure recorded by mistake. Team places, captaincies and places in upcoming interclub matches are not given back.') }}</p>
         </x-confirm-modal>
     @endcan
 </div>

@@ -7,6 +7,7 @@ use App\Actions\User\DeclareMemberDepartureAction;
 use App\Domains\ClubAdmin\Communications\Data\AudienceCriteria;
 use App\Domains\ClubAdmin\Communications\Services\AudienceBuilder;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Data\MemberDepartureOutcome;
 use App\Domains\ClubAdmin\Users\Models\MemberDeparture;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
@@ -50,7 +51,7 @@ beforeEach(function (): void {
     $this->stays = User::factory()->create(['emails_notifications' => true]);
     Subscription::factory()->for($this->stays)->for($this->season)->create(['status' => 'paid', 'is_competitive' => true]);
 
-    $this->declare = fn (User $member, DepartureReason $reason = DepartureReason::Moving, ?string $note = null): array => DeclareMemberDepartureAction::handle(
+    $this->declare = fn (User $member, DepartureReason $reason = DepartureReason::Moving, ?string $note = null): MemberDepartureOutcome => DeclareMemberDepartureAction::handle(
         $member,
         now()->subDays(3),
         $reason,
@@ -122,9 +123,9 @@ describe('what the departure hands back', function (): void {
     });
 
     it('takes the member off this season’s team sheets and names the teams left without a captain', function (): void {
-        $freedTeams = ($this->declare)($this->member);
+        $outcome = ($this->declare)($this->member);
 
-        expect($freedTeams)->toBe(['C'])
+        expect($outcome->teamsWithoutCaptain)->toBe(['C'])
             ->and($this->team->fresh()->captain_id)->toBeNull()
             ->and($this->team->users()->pluck('users.id')->all())->toBe([$this->stays->id]);
     });

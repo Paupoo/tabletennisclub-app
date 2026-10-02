@@ -417,8 +417,10 @@ it('fills in the amount it suggests for a candidate', function (): void {
  * verdict se lit comme une liste de propositions, et c'est un contresens.
  */
 it('says plainly when the scale recognises nobody', function (): void {
+    // A name faker cannot draw: its fr_BE list holds « Dubois », and a member
+    // drawn with it matches the counterparty below.
     $subscription = Subscription::factory()->create([
-        'user_id' => User::factory()->create()->id,
+        'user_id' => User::factory()->create(['first_name' => 'Aline', 'last_name' => 'Sans-Rapport'])->id,
         'status' => 'confirmed',
         'amount_due' => 10,
     ]);

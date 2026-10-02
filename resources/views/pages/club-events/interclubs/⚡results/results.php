@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Resources\views\Pages\ClubEvents\Interclubs;
 
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
 use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
@@ -266,9 +267,16 @@ new class extends Component
                 ->whereDate('start_date_time', $this->matchDate)
                 ->first();
 
-            $interclub?->users()
-                ->wherePivot('is_selected', true)
-                ->each(fn ($u) => $interclub->users()->updateExistingPivot($u->id, ['has_played' => true]));
+            // A stand-in for the federation's sheet, for the days before the
+            // clubs encode it: the line-up played, bar the named walkover. Once
+            // the sheet is on file it alone says who played, and a score typed
+            // afterwards must not put the benched back on the team.
+            if ($interclub !== null && ! InterclubIndividualMatch::where('interclub_id', $interclub->id)->exists()) {
+                $interclub->users()
+                    ->wherePivot('is_selected', true)
+                    ->wherePivot('is_walkover', false)
+                    ->each(fn ($u) => $interclub->users()->updateExistingPivot($u->id, ['has_played' => true]));
+            }
         }
 
         $this->success(__('Match updated'));

@@ -57,6 +57,8 @@ class AfttResultsImporter
         'sheets_unknown' => 0,
     ];
 
+    public function __construct(private readonly InterclubPlayedRecorder $playedRecorder) {}
+
     /**
      * Import every sheet of every division our club plays in this season.
      *
@@ -174,6 +176,9 @@ class AfttResultsImporter
         DB::transaction(function () use ($interclub, $sheet, $weAreHome): void {
             $this->writeTeamScore($interclub, $sheet, $weAreHome);
             $this->writeIndividualMatches($interclub, $sheet, $weAreHome);
+            // Who played is read off the lines just written, never off the
+            // line-up: the sheet is the record of the evening.
+            $this->playedRecorder->record($interclub);
         });
 
         $this->tally['fixtures_updated']++;

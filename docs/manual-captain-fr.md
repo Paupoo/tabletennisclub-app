@@ -74,7 +74,7 @@ En dessous, la **liste des membres de l'équipe** s'affiche. Pour chaque joueur 
 | **Nom** | Nom du joueur |
 | **Badge de disponibilité** | Vert = disponible, rouge = indisponible, absent = pas de réponse |
 | **Note** | Message éventuel laissé par le joueur avec sa réponse |
-| **Joués / Sél.** | Nombre de matchs joués et de sélections cette saison |
+| **Joués / Sél.** | Nombre de matchs joués et de sélections cette saison. « Joués » se lit sur la feuille de match de l'AFTT, importée chaque matin : un joueur aligné qui n'apparaît pas sur la feuille, ou y figure seulement comme forfait, n'a pas joué |
 | **Case à cocher** | Indique si le joueur est dans la sélection actuelle |
 
 ### Sélectionner / désélectionner un joueur

@@ -99,23 +99,20 @@ describe('what counts as activity', function (): void {
         expect(lastActivityOf($member))->toBeNull();
     });
 
-    it('reads a past match the member played or was in the published line-up of', function (): void {
+    it('reads a past match the match sheet says the member played', function (): void {
         $played = affiliatedMember($this->season, 'Joueur-Joue');
-        interclubEntry($played, now()->subDays(20), ['has_played' => true]);
+        interclubEntry($played, now()->subDays(20), ['is_selected' => true, 'selection_confirmed_at' => now()->subDays(22), 'has_played' => true]);
 
-        $lineup = affiliatedMember($this->season, 'Joueur-Aligne');
-        interclubEntry($lineup, now()->subDays(12), ['is_selected' => true, 'selection_confirmed_at' => now()->subDays(14)]);
-
-        expect(lastActivityOf($played))->toBe(now()->subDays(20)->toDateString())
-            ->and(lastActivityOf($lineup))->toBe(now()->subDays(12)->toDateString());
+        expect(lastActivityOf($played))->toBe(now()->subDays(20)->toDateString());
     });
 
-    it('ignores a draft line-up, a mere availability, a named walkover and a match still to come', function (): void {
+    it('ignores a published line-up the member did not play, a draft, a mere availability, a named walkover and a match still to come', function (): void {
         $member = affiliatedMember($this->season, 'Joueur-Brouillon');
+        interclubEntry($member, now()->subDays(25), ['is_selected' => true, 'selection_confirmed_at' => now()->subDays(27)]);
         interclubEntry($member, now()->subDays(20), ['is_selected' => true]);
         interclubEntry($member, now()->subDays(13), ['is_subscribed' => true, 'availability' => 'available']);
         interclubEntry($member, now()->subDays(6), ['is_selected' => true, 'is_walkover' => true, 'selection_confirmed_at' => now()->subDays(8)]);
-        interclubEntry($member, now()->addDays(3), ['is_selected' => true, 'selection_confirmed_at' => now()->subDay()]);
+        interclubEntry($member, now()->addDays(3), ['is_selected' => true, 'selection_confirmed_at' => now()->subDay(), 'has_played' => true]);
 
         expect(lastActivityOf($member))->toBeNull();
     });

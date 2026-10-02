@@ -20,14 +20,24 @@ use Illuminate\Notifications\Notification;
  *
  * Carries the member's name rather than the member: the rows that tied them to
  * the matches are gone by the time the mail is written.
+ *
+ * A match that was declared to play with three has lost that declaration and
+ * its walkover player with the departure; the mail says so for that match, so
+ * the captain knows it is theirs to declare again.
  */
 class MemberLeftLineupNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    /** @param list<int> $interclubIds */
-    public function __construct(public readonly string $memberName, public readonly array $interclubIds)
-    {
+    /**
+     * @param  list<int>  $interclubIds
+     * @param  list<int>  $shortHandedWithdrawnIds  those of the matches no longer declared to play with three
+     */
+    public function __construct(
+        public readonly string $memberName,
+        public readonly array $interclubIds,
+        public readonly array $shortHandedWithdrawnIds = [],
+    ) {
         // Declared inside the departure's transaction: a departure rolled back
         // must not have told anybody.
         $this->afterCommit();
@@ -59,12 +69,23 @@ class MemberLeftLineupNotification extends Notification implements ShouldQueue
             ->greeting(__('Hello :name,', ['name' => $notifiable->first_name]));
 
         if ($fixtures->count() === 1) {
-            $mail->line(__(':name has left the club: their place in the lineup of team :team on :date against :opponent is free.', $this->describe($fixtures->first())));
+            $fixture = $fixtures->first();
+            $mail->line(__(':name has left the club: their place in the lineup of team :team on :date against :opponent is free.', $this->describe($fixture)));
+
+            if ($this->lostShortHandedDeclaration($fixture)) {
+                $mail->line(__('The declaration to play with :n has been withdrawn, along with the walkover player: declare it again if the team still plays with :n.', ['n' => $fixture->minimumPlayers()]));
+            }
         } else {
             $mail->line(__(':name has left the club: their place is free in these lineups:', ['name' => $this->memberName]));
 
             foreach ($fixtures as $fixture) {
-                $mail->line('• ' . __(':date — team :team against :opponent', $this->describe($fixture)));
+                $line = '• ' . __(':date — team :team against :opponent', $this->describe($fixture));
+
+                if ($this->lostShortHandedDeclaration($fixture)) {
+                    $line .= ' ' . __('(declaration to play with :n withdrawn: declare it again if needed)', ['n' => $fixture->minimumPlayers()]);
+                }
+
+                $mail->line($line);
             }
         }
 
@@ -88,5 +109,10 @@ class MemberLeftLineupNotification extends Notification implements ShouldQueue
             'date' => $fixture->start_date_time->format('d/m/Y'),
             'opponent' => $fixture->opponentTeam()?->fullName() ?? '—',
         ];
+    }
+
+    private function lostShortHandedDeclaration(Interclub $fixture): bool
+    {
+        return in_array($fixture->id, $this->shortHandedWithdrawnIds, true);
     }
 }

@@ -1,6 +1,7 @@
 {
     " slots remaining": " places restantes",
     "'Template not managed' : {$template}": "'Template non géré' : {$template}",
+    "(declaration to play with :n withdrawn: declare it again if needed)": "(déclaration à :n retirée : déclarez-la à nouveau si nécessaire)",
     "(you)": "(vous)",
     "**Amount to refund: :amount €**": "**Montant à rembourser : :amount €**",
     "**Date:** :date at :time": "**Date :** :date à :time",
@@ -302,6 +303,7 @@
     "Renew the affiliation for :season": "Renouveler l’affiliation pour :season",
     "The affiliation is still active.": "L’affiliation est toujours active.",
     "The affiliation stays as it is. The member is taken off this season’s teams and no longer receives the club’s mailings.": "L’affiliation reste telle quelle. Le membre est retiré des équipes de la saison et ne reçoit plus les envois du club.",
+    "The declaration to play with :n has been withdrawn, along with the walkover player: declare it again if the team still plays with :n.": "La déclaration à :n a été retirée, ainsi que le joueur WO : déclarez-la à nouveau si l'équipe joue toujours à :n.",
     "Transfer to another club": "Transfert vers un autre club",
     "Use it for a departure recorded by mistake. Team places, captaincies and places in upcoming interclub matches are not given back.": "À utiliser pour un départ encodé par erreur. Les places en équipe, les capitanats et les places dans les rencontres interclub à venir ne sont pas rendus.",
     "We have not seen you yet for the :season season": "On ne vous a pas encore vu pour la saison :season",

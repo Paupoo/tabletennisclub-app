@@ -11,6 +11,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Notifications\MemberLeftLineupNotification;
+use App\Domains\Competitions\Interclub\Services\InterclubPreparationService;
 use App\Domains\Shared\Enums\DepartureReason;
 use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Domains\Shared\Enums\Role;
@@ -333,5 +334,148 @@ describe('the screens', function (): void {
 
         expect(departureFixturesToastTitle($component))
             ->toBe(__('Departure cancelled. Team places, captaincies and places in upcoming interclub matches are not given back: assign them again if needed.'));
+    });
+});
+
+/**
+ * A lineup of three plus a walkover player, sent to the team and declared
+ * short-handed by its captain — what the selection screen leaves behind.
+ *
+ * @param  array<int, User>  $players  the three who play
+ */
+function departureShortHandedLineup(Interclub $fixture, array $players, User $walkover, User $declaredBy): void
+{
+    departureLineup($fixture, [...$players, $walkover], published: true);
+    $fixture->users()->updateExistingPivot($walkover->id, ['is_walkover' => true]);
+    $fixture->update(['short_handed_confirmed_at' => now()->subDay(), 'short_handed_confirmed_by' => $declaredBy->id]);
+}
+
+/**
+ * The ids of the players of the fixture still marked walkover.
+ *
+ * @return array<int, int>
+ */
+function departureWalkovers(Interclub $fixture): array
+{
+    return $fixture->users()->wherePivot('is_walkover', true)->pluck('users.id')->all();
+}
+
+describe('a lineup declared to play with three', function (): void {
+    beforeEach(function (): void {
+        $this->third = User::factory()->isCompetitor()->create(['first_name' => 'Paul', 'last_name' => 'Troisieme']);
+        $this->walkover = User::factory()->isCompetitor()->create(['first_name' => 'Marc', 'last_name' => 'Forfait']);
+        $this->team->users()->attach([$this->third->id, $this->walkover->id]);
+    });
+
+    it('withdraws the declaration and the walkover when one of the three leaves', function (): void {
+        $fixture = departureFixture($this->team, $this->opponent, 10);
+        departureShortHandedLineup($fixture, [$this->member, $this->stays, $this->third], $this->walkover, $this->captain);
+
+        ($this->declare)($this->member);
+
+        $fixture->refresh()->load('users');
+
+        expect($fixture->isShortHanded())->toBeFalse()
+            ->and($fixture->short_handed_confirmed_by)->toBeNull()
+            ->and(departureWalkovers($fixture))->toBe([])
+            ->and($fixture->users()->wherePivot('is_selected', true)->wherePivotNotNull('selection_confirmed_at')->orderBy('users.id')->pluck('users.id')->all())
+            ->toBe([$this->stays->id, $this->third->id, $this->walkover->id])
+            ->and(app(InterclubPreparationService::class)->fixtureStatus($fixture))
+            ->not->toBeIn(InterclubPreparationService::SETTLED);
+    });
+
+    it('withdraws the declaration and the walkover when the walkover player leaves', function (): void {
+        $fixture = departureFixture($this->team, $this->opponent, 10);
+        departureShortHandedLineup($fixture, [$this->stays, $this->third, $this->captain], $this->member, $this->captain);
+
+        ($this->declare)($this->member);
+
+        $fixture->refresh()->load('users');
+
+        expect($fixture->isShortHanded())->toBeFalse()
+            ->and(departureWalkovers($fixture))->toBe([])
+            ->and($fixture->users()->wherePivot('is_selected', true)->orderBy('users.id')->pluck('users.id')->all())
+            ->toBe([$this->captain->id, $this->stays->id, $this->third->id])
+            ->and(app(InterclubPreparationService::class)->fixtureStatus($fixture))
+            ->not->toBeIn(InterclubPreparationService::SETTLED);
+    });
+
+    it('changes nothing else on a lineup that was not declared short-handed', function (): void {
+        $fixture = departureFixture($this->team, $this->opponent, 10);
+        departureLineup($fixture, [$this->member, $this->stays, $this->third, $this->walkover], published: true);
+        $before = $fixture->users()->where('users.id', '!=', $this->member->id)->orderBy('users.id')->get()
+            ->map(fn (User $player): array => $player->registration->only(['is_selected', 'is_walkover', 'selection_confirmed_at']))->all();
+
+        ($this->declare)($this->member);
+
+        expect($fixture->refresh()->isShortHanded())->toBeFalse()
+            ->and($fixture->users()->orderBy('users.id')->get()
+                ->map(fn (User $player): array => $player->registration->only(['is_selected', 'is_walkover', 'selection_confirmed_at']))->all())
+            ->toBe($before);
+    });
+
+    it('keeps the declaration when the member was only available, not lined up', function (): void {
+        $fixture = departureFixture($this->team, $this->opponent, 10);
+        departureShortHandedLineup($fixture, [$this->stays, $this->third, $this->captain], $this->walkover, $this->captain);
+        $fixture->markAvailability($this->member, InterclubAvailability::AVAILABLE);
+
+        ($this->declare)($this->member);
+
+        expect($fixture->refresh()->isShortHanded())->toBeTrue()
+            ->and(departureWalkovers($fixture))->toBe([$this->walkover->id]);
+    });
+
+    it('leaves the declaration of another team untouched', function (): void {
+        $teamB = Team::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $this->league->id,
+            'club_id' => $this->team->club_id,
+            'name' => 'D',
+            'captain_id' => $this->captain->id,
+        ]);
+        $others = collect(['Alpha', 'Bravo', 'Charlie', 'Delta'])
+            ->map(fn (string $name): User => User::factory()->isCompetitor()->create(['first_name' => $name, 'last_name' => 'Equipe-D']));
+        $teamB->users()->attach($others->pluck('id')->all());
+        $ours = departureFixture($this->team, $this->opponent, 10);
+        departureShortHandedLineup($ours, [$this->member, $this->stays, $this->third], $this->walkover, $this->captain);
+        $theirs = departureFixture($teamB, $this->opponent, 12);
+        departureShortHandedLineup($theirs, $others->take(3)->all(), $others->last(), $this->captain);
+
+        ($this->declare)($this->member);
+
+        expect($ours->refresh()->isShortHanded())->toBeFalse()
+            ->and($theirs->refresh()->isShortHanded())->toBeTrue()
+            ->and($theirs->short_handed_confirmed_by)->toBe($this->captain->id)
+            ->and(departureWalkovers($theirs))->toBe([$others->last()->id]);
+    });
+
+    it('tells the captain which matches are no longer declared short-handed', function (): void {
+        $short = departureFixture($this->team, $this->opponent, 10);
+        departureShortHandedLineup($short, [$this->member, $this->stays, $this->third], $this->walkover, $this->captain);
+        $full = departureFixture($this->team, $this->opponent, 24);
+        departureLineup($full, [$this->member, $this->stays, $this->third, $this->walkover], published: true);
+
+        ($this->declare)($this->member);
+
+        Notification::assertSentTo($this->captain, MemberLeftLineupNotification::class, fn (MemberLeftLineupNotification $notification): bool => $notification->interclubIds === [$short->id, $full->id]
+            && $notification->shortHandedWithdrawnIds === [$short->id]);
+        Notification::assertSentTo($this->manager, MemberLeftLineupNotification::class, fn (MemberLeftLineupNotification $notification): bool => $notification->shortHandedWithdrawnIds === [$short->id]);
+    });
+
+    it('says in the mail that the declaration is to be made again', function (): void {
+        $short = departureFixture($this->team, $this->opponent, 10);
+        $full = departureFixture($this->team, $this->opponent, 24);
+
+        $single = implode(' ', new MemberLeftLineupNotification('Jeanne Depart-Interclub', [$short->id], [$short->id])->toMail($this->captain)->introLines);
+        $several = new MemberLeftLineupNotification('Jeanne Depart-Interclub', [$short->id, $full->id], [$short->id])->toMail($this->captain)->introLines;
+        $untouched = implode(' ', new MemberLeftLineupNotification('Jeanne Depart-Interclub', [$full->id])->toMail($this->captain)->introLines);
+
+        $declarationWithdrawn = __('The declaration to play with :n has been withdrawn, along with the walkover player: declare it again if the team still plays with :n.', ['n' => 3]);
+        $listedWithdrawn = __('(declaration to play with :n withdrawn: declare it again if needed)', ['n' => 3]);
+
+        expect($single)->toContain($declarationWithdrawn)
+            ->and(collect($several)->first(fn (string $line): bool => str_contains($line, $short->start_date_time->format('d/m/Y'))))->toContain($listedWithdrawn)
+            ->and(collect($several)->first(fn (string $line): bool => str_contains($line, $full->start_date_time->format('d/m/Y'))))->not->toContain($listedWithdrawn)
+            ->and($untouched)->not->toContain($declarationWithdrawn);
     });
 });

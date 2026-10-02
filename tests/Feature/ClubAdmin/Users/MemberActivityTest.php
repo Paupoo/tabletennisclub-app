@@ -229,3 +229,85 @@ describe('the members list', function (): void {
         expect($names)->toBe(['Connexion-Recente', 'Connexion-Ancienne']);
     });
 });
+
+describe('the activity filter', function (): void {
+    beforeEach(function (): void {
+        $this->recent = affiliatedMember($this->season, 'Venu-Recemment');
+        attendedTraining($this->recent, now()->subDays(5));
+
+        $this->earlier = affiliatedMember($this->season, 'Venu-Ce-Printemps');
+        attendedTraining($this->earlier, now()->subWeeks(10));
+
+        $this->lastSeasonOnly = affiliatedMember($this->season, 'Venu-Avant-Saison');
+        attendedTraining($this->lastSeasonOnly, $this->season->start_at->copy()->subDays(10));
+
+        $this->nothing = affiliatedMember($this->season, 'Jamais-Venu');
+
+        // Not affiliated this season: no activity is expected of them.
+        $this->notAffiliated = User::factory()->create(['last_name' => 'Pas-Affilie']);
+    });
+
+    it('finds the affiliated members with no trace since the season began', function (): void {
+        $names = Livewire::withQueryParams(['activity' => 'season'])
+            ->test(ACTIVITY_LIST)
+            ->viewData('users')
+            ->pluck('last_name')
+            ->sort()
+            ->values()
+            ->all();
+
+        expect($names)->toBe(['Jamais-Venu', 'Venu-Avant-Saison']);
+    });
+
+    it('finds the affiliated members with no trace for six weeks', function (): void {
+        $names = Livewire::withQueryParams(['activity' => 'six_weeks'])
+            ->test(ACTIVITY_LIST)
+            ->viewData('users')
+            ->pluck('last_name')
+            ->sort()
+            ->values()
+            ->all();
+
+        expect($names)->toBe(['Jamais-Venu', 'Venu-Avant-Saison', 'Venu-Ce-Printemps']);
+    });
+
+    it('keeps the filter around a search', function (): void {
+        $names = Livewire::withQueryParams(['activity' => 'season', 'search' => 'Venu'])
+            ->test(ACTIVITY_LIST)
+            ->viewData('users')
+            ->pluck('last_name')
+            ->sort()
+            ->values()
+            ->all();
+
+        expect($names)->toBe(['Jamais-Venu', 'Venu-Avant-Saison']);
+    });
+
+    it('reads any other value as no filter, and shows a removable chip', function (): void {
+        Livewire::withQueryParams(['activity' => 'tampered'])
+            ->test(ACTIVITY_LIST)
+            ->assertSee('Venu-Recemment');
+
+        Livewire::withQueryParams(['activity' => 'season'])
+            ->test(ACTIVITY_LIST)
+            ->assertSee(__('No activity recorded this season'))
+            ->call('removeFilter', 'activity')
+            ->assertSet('activity', '')
+            ->assertSee('Venu-Recemment');
+    });
+
+    it('is cleared with the other filters', function (): void {
+        Livewire::withQueryParams(['activity' => 'six_weeks'])
+            ->test(ACTIVITY_LIST)
+            ->call('clearFilters')
+            ->assertSet('activity', '');
+    });
+
+    it('counts the members without activity this season on a card worded like the filter', function (): void {
+        $component = Livewire::test(ACTIVITY_LIST);
+
+        expect($component->viewData('stats')['no_activity'])->toBe(2);
+
+        $component->assertSee(__('No activity recorded'));
+    });
+});

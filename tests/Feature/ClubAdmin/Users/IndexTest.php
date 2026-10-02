@@ -728,15 +728,15 @@ describe('the stat strip', function (): void {
     /** Only the stat strip: the table below repeats these words in its own cells. */
     function statStrip(string $html): string
     {
-        return str($html)->after('grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5')->before('</div>&#10;')->toString();
+        return str($html)->after('grid grid-cols-2 gap-4 sm:grid-cols-3 2xl:grid-cols-6')->before('</div>&#10;')->toString();
     }
 
-    it('draws its five figures with the shared stat card', function (): void {
+    it('draws its six figures with the shared stat card', function (): void {
         $html = allMembersList()->html();
 
         $strip = statStrip($html);
 
-        expect(substr_count($strip, 'font-black tabular-nums'))->toBe(5);
+        expect(substr_count($strip, 'font-black tabular-nums'))->toBe(6);
     });
 
     it('never colours the figure itself', function (): void {

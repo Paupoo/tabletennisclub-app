@@ -70,7 +70,7 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
-    <div class="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
+    <div class="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-3 2xl:grid-cols-6">
         @php
             /*
              * La couleur vit sur la pastille, jamais sur le chiffre : voir l'en-tête de `stat-card`.
@@ -84,6 +84,7 @@
                 ['label' => __('New'),                'key' => 'new',                'icon' => 'o-sparkles',     'color' => 'primary', 'hint' => null],
                 ['label' => __('To follow up'),       'key' => 'to_follow_up',       'icon' => 'o-bell-alert',   'color' => 'warning', 'hint' => null],
                 ['label' => __('Left the club'),      'key' => 'left',               'icon' => 'o-arrow-right-start-on-rectangle', 'color' => 'error', 'hint' => __('This season')],
+                ['label' => __('No activity recorded'), 'key' => 'no_activity',      'icon' => 'o-moon',         'color' => 'neutral', 'hint' => __('This season')],
                 ['label' => __('Responsible adults'), 'key' => 'responsible_adults', 'icon' => 'o-user-group',   'color' => 'neutral', 'hint' => null],
             ];
         @endphp
@@ -421,6 +422,12 @@
                     {{ __('Role') }}
                 </p>
                 <x-toggle :label="__('Responsible adults')" wire:model.live="responsibleAdultsOnly" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
+                    {{ __('Activity') }}
+                </p>
+                <x-radio wire:model.live="activity" :options="$activityOptions" />
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">

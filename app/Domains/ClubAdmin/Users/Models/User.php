@@ -34,6 +34,7 @@ use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Observers\UserObserver;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Closure;
 use Database\Factories\Domains\ClubAdmin\Users\Models\UserFactory;
 use Eloquent;
@@ -1461,6 +1462,20 @@ class User extends Authenticatable implements MustVerifyEmail
     public function scopeWithMembershipFacts(EloquentBuilder $query): EloquentBuilder
     {
         return $query->withExists($this->membershipFactQueries());
+    }
+
+    /**
+     * Members with no trace at the club since the given moment — the same
+     * records {@see self::scopeWithLastActivity()} reads.
+     */
+    public function scopeWithoutActivitySince(EloquentBuilder $query, CarbonInterface $since): EloquentBuilder
+    {
+        return $query->whereNotExists(fn (QueryBuilder $activity): QueryBuilder => $activity
+            ->fromSub($this->activityRecords(), 'activities')
+            ->selectRaw('1')
+            ->whereColumn('activities.user_id', 'users.id')
+            ->where('activities.activity_at', '>=', $since)
+        );
     }
 
     public function seasons(): BelongsToMany

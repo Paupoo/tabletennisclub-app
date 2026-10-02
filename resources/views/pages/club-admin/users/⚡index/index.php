@@ -48,6 +48,14 @@ new class extends Component
     use HasBreadcrumbs, Toast, WithPagination;
     use HasBulkActions, HasFilterDrawer;
 
+    /**
+     * The affiliated members with no trace at the club for a while: `season`
+     * since the running season began, `six_weeks` over the last six weeks.
+     * Any other value, including one from an old link, reads as no filter.
+     */
+    #[Url]
+    public string $activity = '';
+
     public bool $addToTeamModal = false;
 
     /** The grown members the club still cannot hand a login to. */
@@ -193,6 +201,22 @@ new class extends Component
         'last_activity_at' => ['last_activity_at'],
         'last_login_at' => ['last_login_at'],
     ];
+
+    /**
+     * The activity filter's choices, worded like the card that counts the
+     * first of them.
+     *
+     * @return array<int, array{id: string, name: string}>
+     */
+    #[Computed]
+    public function activityOptions(): array
+    {
+        return [
+            ['id' => '',          'name' => __('All')],
+            ['id' => 'season',    'name' => __('No activity recorded this season')],
+            ['id' => 'six_weeks', 'name' => __('No activity recorded for 6 weeks')],
+        ];
+    }
 
     // ── Bulk actions ──────────────────────────────────────────────────────────
 
@@ -353,6 +377,7 @@ new class extends Component
         $this->hasCashRegister = false;
         $this->team_ids = [];
         $this->showArchived = false;
+        $this->activity = '';
         $this->resetPage();
     }
 
@@ -517,6 +542,13 @@ new class extends Component
 
         if ($this->responsibleAdultsOnly) {
             $chips[] = ['key' => 'responsibleAdultsOnly', 'label' => __('Responsible adults')];
+        }
+
+        if ($this->activitySince() instanceof Carbon) {
+            $chips[] = [
+                'key' => 'activity',
+                'label' => collect($this->activityOptions())->firstWhere('id', $this->activity)['name'],
+            ];
         }
 
         foreach (Gender::cases() as $gender) {
@@ -806,6 +838,7 @@ new class extends Component
             'filterChips' => $this->filterChips,
             'licenceTypes' => $this->licenceTypes,
             'invitationStates' => $this->invitationStates,
+            'activityOptions' => $this->activityOptions,
             'stats' => $this->stats,
         ]);
     }
@@ -907,7 +940,10 @@ new class extends Component
      * Those who left this season stay among the affiliated: the departure
      * cancels nothing, and the federation counts them all the same.
      *
-     * @return array{affiliated: int, new: int, to_follow_up: int, left: int, responsible_adults: int}
+     * "No activity recorded" counts this season, as the first choice of the
+     * activity filter does.
+     *
+     * @return array{affiliated: int, new: int, to_follow_up: int, left: int, no_activity: int, responsible_adults: int}
      */
     #[Computed]
     public function stats(): array
@@ -917,6 +953,9 @@ new class extends Component
             'new' => User::inMembershipStatus(MembershipStatus::New)->count(),
             'to_follow_up' => User::inMembershipStatus(MembershipStatus::ToFollowUp)->count(),
             'left' => User::inMembershipStatus(MembershipStatus::Left)->count(),
+            'no_activity' => User::affiliatedForCurrentSeason()
+                ->withoutActivitySince(Season::current()->start_at ?? now())
+                ->count(),
             'responsible_adults' => User::responsibleAdults()->count(),
         ];
     }
@@ -956,6 +995,11 @@ new class extends Component
     }
 
     // ── Pagination hooks ──────────────────────────────────────────────────────
+
+    public function updatedActivity(): void
+    {
+        $this->resetPage();
+    }
 
     public function updatedAffiliation(): void
     {
@@ -1028,6 +1072,22 @@ new class extends Component
             ->pluck('id')
             ->map(fn (int $id): string => (string) $id)
             ->toArray();
+    }
+
+    /**
+     * Since when a member must have shown up to escape the activity filter,
+     * or null for no filter.
+     *
+     * Only the members affiliated this season are expected to show up: the
+     * filter keeps to them.
+     */
+    private function activitySince(): ?Carbon
+    {
+        return match ($this->activity) {
+            'season' => Carbon::parse(Season::current()->start_at ?? now()),
+            'six_weeks' => now()->subWeeks(6),
+            default => null,
+        };
     }
 
     // ── HasBulkActions ────────────────────────────────────────────────────────
@@ -1145,6 +1205,7 @@ new class extends Component
 
         $statuses = $this->chosenStatuses();
         $licence = $this->licenceFilter();
+        $since = $this->activitySince();
 
         return $query
             // Guardians carry the account state of every managed member on the
@@ -1174,6 +1235,10 @@ new class extends Component
             ->when($statuses !== [], fn ($q) => $q->inMembershipStatus(...$statuses))
             ->when($licence !== null, fn ($q) => $q->licensedThisSeason((bool) $licence))
             ->when($this->responsibleAdultsOnly, fn ($q) => $q->responsibleAdults())
+            ->when(
+                $since instanceof Carbon,
+                fn ($q) => $q->affiliatedForCurrentSeason()->withoutActivitySince($since)
+            )
             ->when(
                 $this->categories,
                 fn ($q) => $q->whereIn('gender', $this->categories)

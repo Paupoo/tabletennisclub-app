@@ -268,6 +268,7 @@ describe('the stat strip', function (): void {
             'new' => 1,
             'to_follow_up' => 1,
             'left' => 0,
+            'no_activity' => 3,
             'responsible_adults' => 1,
         ]);
 

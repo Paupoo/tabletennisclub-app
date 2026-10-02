@@ -453,6 +453,12 @@
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
+                    {{ __('Age') }}
+                </p>
+                <x-radio wire:model.live="age" :options="$ageOptions" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Account') }}
                 </p>
                 <x-radio wire:model.live="invitationState" :options="$invitationStates" />
@@ -465,6 +471,8 @@
                 <x-toggle class="mt-2" :label="__('Adult without an address')"
                     :hint="__('Grown members who cannot be invited yet — ask them for an address of their own.')"
                     wire:model.live="adultWithoutAddress" />
+                <x-toggle class="mt-2" :label="__('Minors without a responsible adult')"
+                    wire:model.live="minorsWithoutGuardian" />
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">

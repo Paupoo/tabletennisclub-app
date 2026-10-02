@@ -12,6 +12,7 @@ use App\Actions\User\SendInvitationAction;
 use App\Actions\User\SendRenewalRemindersAction;
 use App\Actions\User\SoftDeleteUserAction;
 use App\Data\User\CreateUserData;
+use App\Domains\ClubAdmin\Users\Data\MemberDepartureOutcome;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -250,17 +251,13 @@ new class extends Component
         $members = User::query()->whereIn('id', $this->selected)->get();
 
         try {
-            $freedTeams = $members
-                ->flatMap(fn (User $member): array => DeclareMemberDepartureAction::handle(
-                    $member,
-                    Carbon::parse($this->departureLeftOn),
-                    DepartureReason::from($this->departureReason),
-                    null,
-                    Auth::user(),
-                ))
-                ->unique()
-                ->values()
-                ->all();
+            $outcome = MemberDepartureOutcome::merge($members->map(fn (User $member): MemberDepartureOutcome => DeclareMemberDepartureAction::handle(
+                $member,
+                Carbon::parse($this->departureLeftOn),
+                DepartureReason::from($this->departureReason),
+                null,
+                Auth::user(),
+            )));
         } catch (DomainException $e) {
             $this->error($e->getMessage());
 
@@ -272,7 +269,8 @@ new class extends Component
 
         $this->success(
             trans_choice('{1} :count member marked as left.|[2,*] :count members marked as left.', $members->count(), ['count' => $members->count()])
-            . $this->freedTeamsNotice($freedTeams)
+            . $this->freedTeamsNotice($outcome->teamsWithoutCaptain)
+            . $outcome->fixturesNotice()
         );
     }
 

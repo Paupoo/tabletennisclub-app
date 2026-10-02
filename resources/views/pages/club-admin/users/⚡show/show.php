@@ -99,7 +99,7 @@ new class extends Component
         ]);
 
         try {
-            $freedTeams = DeclareMemberDepartureAction::handle(
+            $outcome = DeclareMemberDepartureAction::handle(
                 $this->user,
                 Carbon::parse($this->departureLeftOn),
                 DepartureReason::from($this->departureReason),
@@ -117,12 +117,13 @@ new class extends Component
 
         $message = __(':name is marked as left.', ['name' => $this->user->full_name]);
 
-        if ($freedTeams !== []) {
+        if ($outcome->teamsWithoutCaptain !== []) {
+            $freedTeams = $outcome->teamsWithoutCaptain;
             sort($freedTeams);
             $message .= ' ' . __('Teams left without a captain: :teams', ['teams' => implode(', ', $freedTeams)]);
         }
 
-        $this->success($message);
+        $this->success($message . $outcome->fixturesNotice());
     }
 
     #[Computed]

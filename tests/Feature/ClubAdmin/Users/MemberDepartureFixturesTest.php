@@ -10,7 +10,7 @@ use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Team;
-use App\Domains\Competitions\Interclub\Notifications\MemberLeftLineupNotification;
+use App\Domains\Competitions\Interclub\Notifications\MemberLeftTeamNotification;
 use App\Domains\Competitions\Interclub\Services\InterclubPreparationService;
 use App\Domains\Shared\Enums\DepartureReason;
 use App\Domains\Shared\Enums\InterclubAvailability;
@@ -24,10 +24,11 @@ pest()->group('club-admin', 'users');
 /*
 | A member who leaves is taken off the interclub matches still to come: their
 | availability, their place in a draft, their place in a lineup already sent.
-| A draft or an availability goes quietly. A lineup the team has received is
-| another matter: the captain must find somebody else, so the captain and the
-| interclubs manager are told — one mail each, whatever the number of matches.
 | The matches already played are never touched.
+|
+| Whoever captains a team the member played in is told, and nobody else: one
+| mail per captain and per departure, whether the member was in a lineup sent,
+| a draft, or no match at all. The interclubs manager is not mailed.
 */
 
 beforeEach(function (): void {
@@ -140,8 +141,7 @@ describe('the matches still to come', function (): void {
         $outcome = ($this->declare)($this->member);
 
         expect(departureFixturePlayers($fixture))->toBe([$this->stays->id])
-            ->and($outcome->fixturesLeft)->toBe(1)
-            ->and($outcome->lineupsLeft)->toBe(0);
+            ->and($outcome->fixturesLeft)->toBe(1);
     });
 
     it('leaves the matches already played as they were', function (): void {
@@ -154,7 +154,7 @@ describe('the matches still to come', function (): void {
         expect(departureFixturePlayers($played))->toBe([$this->member->id, $this->stays->id])
             ->and($outcome->fixturesLeft)->toBe(0);
 
-        Notification::assertNothingSent();
+        Notification::assertSentTo($this->captain, MemberLeftTeamNotification::class, fn (MemberLeftTeamNotification $notification): bool => $notification->interclubIds === []);
     });
 
     it('keeps the matches before a departure announced for later', function (): void {
@@ -169,39 +169,50 @@ describe('the matches still to come', function (): void {
             ->and(departureFixturePlayers($after))->toBe([$this->stays->id]);
     });
 
-    it('takes the member off a draft without telling anybody', function (): void {
+    it('takes the member off a draft, and names it to the captain alone', function (): void {
         $fixture = departureFixture($this->team, $this->opponent, 10);
         departureLineup($fixture, [$this->member, $this->stays], published: false);
 
         $outcome = ($this->declare)($this->member);
 
         expect(departureFixturePlayers($fixture))->toBe([$this->stays->id])
-            ->and($outcome->lineupsLeft)->toBe(0)
-            ->and($outcome->captainTold)->toBeFalse();
+            ->and($outcome->captainsTold)->toBe([$this->captain->id]);
 
-        Notification::assertNothingSent();
+        Notification::assertSentTo($this->captain, MemberLeftTeamNotification::class, fn (MemberLeftTeamNotification $notification): bool => $notification->interclubIds === [$fixture->id]
+            && $notification->teamNames === ['C']);
+        Notification::assertNotSentTo($this->manager, MemberLeftTeamNotification::class);
+        Notification::assertCount(1);
+    });
+
+    it('does not list a match the member was only available for', function (): void {
+        $fixture = departureFixture($this->team, $this->opponent, 10);
+        $fixture->markAvailability($this->member, InterclubAvailability::AVAILABLE);
+
+        ($this->declare)($this->member);
+
+        expect(departureFixturePlayers($fixture))->toBe([]);
+
+        Notification::assertSentTo($this->captain, MemberLeftTeamNotification::class, fn (MemberLeftTeamNotification $notification): bool => $notification->interclubIds === []);
     });
 });
 
 describe('a lineup the team has already received', function (): void {
-    it('tells the captain and the interclubs manager, and nobody else', function (): void {
+    it('tells the captain, and not the interclubs manager', function (): void {
         $fixture = departureFixture($this->team, $this->opponent, 10);
         departureLineup($fixture, [$this->member, $this->stays], published: true);
 
         $outcome = ($this->declare)($this->member);
 
         expect(departureFixturePlayers($fixture))->toBe([$this->stays->id])
-            ->and($outcome->lineupsLeft)->toBe(1)
-            ->and($outcome->captainTold)->toBeTrue();
+            ->and($outcome->captainsTold)->toBe([$this->captain->id]);
 
-        Notification::assertSentTo($this->captain, MemberLeftLineupNotification::class, fn (MemberLeftLineupNotification $notification): bool => $notification->interclubIds === [$fixture->id]
+        Notification::assertSentTo($this->captain, MemberLeftTeamNotification::class, fn (MemberLeftTeamNotification $notification): bool => $notification->interclubIds === [$fixture->id]
             && $notification->memberName === 'Jeanne Depart-Interclub');
-        Notification::assertSentTo($this->manager, MemberLeftLineupNotification::class);
-        Notification::assertNotSentTo([$this->stays, $this->member, $this->office], MemberLeftLineupNotification::class);
-        Notification::assertCount(2);
+        Notification::assertNotSentTo([$this->manager, $this->stays, $this->member, $this->office], MemberLeftTeamNotification::class);
+        Notification::assertCount(1);
     });
 
-    it('sends one mail per person for all the matches concerned', function (): void {
+    it('sends the captain one mail for all the matches concerned', function (): void {
         $first = departureFixture($this->team, $this->opponent, 10);
         $second = departureFixture($this->team, $this->opponent, 24);
         departureLineup($first, [$this->member, $this->stays], published: true);
@@ -209,9 +220,9 @@ describe('a lineup the team has already received', function (): void {
 
         ($this->declare)($this->member);
 
-        Notification::assertSentToTimes($this->captain, MemberLeftLineupNotification::class, 1);
-        Notification::assertSentToTimes($this->manager, MemberLeftLineupNotification::class, 1);
-        Notification::assertSentTo($this->captain, MemberLeftLineupNotification::class, fn (MemberLeftLineupNotification $notification): bool => $notification->interclubIds === [$first->id, $second->id]);
+        Notification::assertSentToTimes($this->captain, MemberLeftTeamNotification::class, 1);
+        Notification::assertSentTo($this->captain, MemberLeftTeamNotification::class, fn (MemberLeftTeamNotification $notification): bool => $notification->interclubIds === [$first->id, $second->id]);
+        Notification::assertCount(1);
     });
 
     it('sends a captain who is also the interclubs manager a single mail', function (): void {
@@ -222,22 +233,21 @@ describe('a lineup the team has already received', function (): void {
 
         ($this->declare)($this->member);
 
-        Notification::assertSentToTimes($this->captain, MemberLeftLineupNotification::class, 1);
+        Notification::assertSentToTimes($this->captain, MemberLeftTeamNotification::class, 1);
         Notification::assertCount(1);
     });
 
-    it('still tells the interclubs manager when the member was the captain', function (): void {
+    it('tells nobody when the member was the captain', function (): void {
         $this->team->update(['captain_id' => $this->member->id]);
         $fixture = departureFixture($this->team, $this->opponent, 10);
         departureLineup($fixture, [$this->member, $this->stays], published: true);
 
         $outcome = ($this->declare)($this->member);
 
-        expect($outcome->captainTold)->toBeFalse()
-            ->and($outcome->lineupsLeft)->toBe(1);
+        expect($outcome->captainsTold)->toBe([])
+            ->and($outcome->teamsWithoutCaptain)->toBe(['C']);
 
-        Notification::assertSentTo($this->manager, MemberLeftLineupNotification::class);
-        Notification::assertNotSentTo($this->member, MemberLeftLineupNotification::class);
+        Notification::assertNothingSent();
     });
 
     it('leaves the lineup published, and the stamps of the others, as they were', function (): void {
@@ -253,7 +263,7 @@ describe('a lineup the team has already received', function (): void {
     it('names the member, the date and the opponent in the mail', function (): void {
         $fixture = departureFixture($this->team, $this->opponent, 10);
 
-        $mail = new MemberLeftLineupNotification('Jeanne Depart-Interclub', [$fixture->id])->toMail($this->captain);
+        $mail = new MemberLeftTeamNotification('Jeanne Depart-Interclub', ['C'], [$fixture->id])->toMail($this->captain);
         $text = implode(' ', $mail->introLines);
 
         expect($text)->toContain('Jeanne Depart-Interclub')
@@ -280,7 +290,7 @@ describe('the screens', function (): void {
 
         expect(departureFixturesToastTitle($component))
             ->toContain(trans_choice('{1} Place freed in :count upcoming interclub match.|[2,*] Places freed in :count upcoming interclub matches.', 2, ['count' => 2]))
-            ->toContain(__('Captain and interclubs manager told.'));
+            ->toContain(trans_choice('{1} Captain told.|[2,*] Captains told.', 1));
     });
 
     it('takes a whole selection off their matches, one mail per departure', function (): void {
@@ -301,13 +311,13 @@ describe('the screens', function (): void {
             ->and(departureFixturePlayers($other))->toBe([])
             ->and(departureFixturesToastTitle($component))
             ->toContain(trans_choice('{1} Place freed in :count upcoming interclub match.|[2,*] Places freed in :count upcoming interclub matches.', 3, ['count' => 3]))
-            ->toContain(__('Captain and interclubs manager told.'));
+            ->toContain(trans_choice('{1} Captain told.|[2,*] Captains told.', 1));
 
-        Notification::assertSentToTimes($this->captain, MemberLeftLineupNotification::class, 2);
-        Notification::assertSentToTimes($this->manager, MemberLeftLineupNotification::class, 2);
+        Notification::assertSentToTimes($this->captain, MemberLeftTeamNotification::class, 2);
+        Notification::assertNotSentTo($this->manager, MemberLeftTeamNotification::class);
     });
 
-    it('says only the interclubs manager was told when the team has no captain', function (): void {
+    it('says nobody was told when the team has no captain', function (): void {
         $this->team->update(['captain_id' => null]);
         $fixture = departureFixture($this->team, $this->opponent, 10);
         departureLineup($fixture, [$this->member], published: true);
@@ -319,8 +329,22 @@ describe('the screens', function (): void {
             ->call('declareDeparture');
 
         expect(departureFixturesToastTitle($component))
-            ->toContain(__('Interclubs manager told.'))
-            ->not->toContain(__('Captain and interclubs manager told.'));
+            ->toContain(trans_choice('{1} Place freed in :count upcoming interclub match.|[2,*] Places freed in :count upcoming interclub matches.', 1, ['count' => 1]))
+            ->not->toContain(trans_choice('{1} Captain told.|[2,*] Captains told.', 1));
+
+        Notification::assertNothingSent();
+    });
+
+    it('says the captain was told when the member was on no match to come', function (): void {
+        $component = Livewire::actingAs($this->office)
+            ->test('pages::club-admin.users.show', ['user' => $this->member])
+            ->set('departureReason', DepartureReason::Moving->value)
+            ->set('departureLeftOn', now()->toDateString())
+            ->call('declareDeparture');
+
+        expect(departureFixturesToastTitle($component))
+            ->toContain(trans_choice('{1} Captain told.|[2,*] Captains told.', 1))
+            ->not->toContain(trans_choice('{1} Place freed in :count upcoming interclub match.|[2,*] Places freed in :count upcoming interclub matches.', 1, ['count' => 1]));
     });
 
     it('warns, when a departure is cancelled, that the matches are not given back', function (): void {
@@ -457,18 +481,18 @@ describe('a lineup declared to play with three', function (): void {
 
         ($this->declare)($this->member);
 
-        Notification::assertSentTo($this->captain, MemberLeftLineupNotification::class, fn (MemberLeftLineupNotification $notification): bool => $notification->interclubIds === [$short->id, $full->id]
+        Notification::assertSentTo($this->captain, MemberLeftTeamNotification::class, fn (MemberLeftTeamNotification $notification): bool => $notification->interclubIds === [$short->id, $full->id]
             && $notification->shortHandedWithdrawnIds === [$short->id]);
-        Notification::assertSentTo($this->manager, MemberLeftLineupNotification::class, fn (MemberLeftLineupNotification $notification): bool => $notification->shortHandedWithdrawnIds === [$short->id]);
+        Notification::assertNotSentTo($this->manager, MemberLeftTeamNotification::class);
     });
 
     it('says in the mail that the declaration is to be made again', function (): void {
         $short = departureFixture($this->team, $this->opponent, 10);
         $full = departureFixture($this->team, $this->opponent, 24);
 
-        $single = implode(' ', new MemberLeftLineupNotification('Jeanne Depart-Interclub', [$short->id], [$short->id])->toMail($this->captain)->introLines);
-        $several = new MemberLeftLineupNotification('Jeanne Depart-Interclub', [$short->id, $full->id], [$short->id])->toMail($this->captain)->introLines;
-        $untouched = implode(' ', new MemberLeftLineupNotification('Jeanne Depart-Interclub', [$full->id])->toMail($this->captain)->introLines);
+        $single = implode(' ', new MemberLeftTeamNotification('Jeanne Depart-Interclub', ['C'], [$short->id], [$short->id])->toMail($this->captain)->introLines);
+        $several = new MemberLeftTeamNotification('Jeanne Depart-Interclub', ['C'], [$short->id, $full->id], [$short->id])->toMail($this->captain)->introLines;
+        $untouched = implode(' ', new MemberLeftTeamNotification('Jeanne Depart-Interclub', ['C'], [$full->id])->toMail($this->captain)->introLines);
 
         $declarationWithdrawn = __('The declaration to play with :n has been withdrawn, along with the walkover player: declare it again if the team still plays with :n.', ['n' => 3]);
         $listedWithdrawn = __('(declaration to play with :n withdrawn: declare it again if needed)', ['n' => 3]);
@@ -477,5 +501,116 @@ describe('a lineup declared to play with three', function (): void {
             ->and(collect($several)->first(fn (string $line): bool => str_contains($line, $short->start_date_time->format('d/m/Y'))))->toContain($listedWithdrawn)
             ->and(collect($several)->first(fn (string $line): bool => str_contains($line, $full->start_date_time->format('d/m/Y'))))->not->toContain($listedWithdrawn)
             ->and($untouched)->not->toContain($declarationWithdrawn);
+    });
+});
+
+describe('the captain of each team the member played in', function (): void {
+    beforeEach(function (): void {
+        $this->otherCaptain = User::factory()->isCompetitor()->create(['first_name' => 'Luc', 'last_name' => 'Capitaine-E']);
+        // Another category: a player holds one place per category and season.
+        $veterans = League::factory()->create(['season_id' => $this->season->id, 'category' => 'VETERANS']);
+        $this->teamD = Team::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $veterans->id,
+            'club_id' => $this->team->club_id,
+            'name' => 'D',
+            'captain_id' => $this->captain->id,
+        ]);
+        $this->teamE = Team::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $veterans->id,
+            'club_id' => $this->team->club_id,
+            'name' => 'E',
+            'captain_id' => $this->otherCaptain->id,
+        ]);
+    });
+
+    it('is told even when the member was on no match to come', function (): void {
+        $outcome = ($this->declare)($this->member);
+
+        expect($outcome->captainsTold)->toBe([$this->captain->id]);
+
+        Notification::assertSentTo($this->captain, MemberLeftTeamNotification::class, fn (MemberLeftTeamNotification $notification): bool => $notification->teamNames === ['C']
+            && $notification->interclubIds === []
+            && $notification->memberName === 'Jeanne Depart-Interclub');
+        Notification::assertCount(1);
+    });
+
+    it('gets a single mail naming both teams when they captain two of them', function (): void {
+        $this->teamD->users()->attach($this->member->id);
+
+        ($this->declare)($this->member);
+
+        Notification::assertSentToTimes($this->captain, MemberLeftTeamNotification::class, 1);
+        Notification::assertSentTo($this->captain, MemberLeftTeamNotification::class, fn (MemberLeftTeamNotification $notification): bool => $notification->teamNames === ['C', 'D']);
+        Notification::assertCount(1);
+    });
+
+    it('gets their own mail, one per captain, each about their own team', function (): void {
+        $this->teamE->users()->attach($this->member->id);
+        $fixtureC = departureFixture($this->team, $this->opponent, 10);
+        departureLineup($fixtureC, [$this->member], published: true);
+        $fixtureE = departureFixture($this->teamE, $this->opponent, 12);
+        departureLineup($fixtureE, [$this->member], published: false);
+
+        $outcome = ($this->declare)($this->member);
+
+        expect($outcome->captainsTold)->toBe([$this->captain->id, $this->otherCaptain->id]);
+
+        Notification::assertSentTo($this->captain, MemberLeftTeamNotification::class, fn (MemberLeftTeamNotification $notification): bool => $notification->teamNames === ['C']
+            && $notification->interclubIds === [$fixtureC->id]);
+        Notification::assertSentTo($this->otherCaptain, MemberLeftTeamNotification::class, fn (MemberLeftTeamNotification $notification): bool => $notification->teamNames === ['E']
+            && $notification->interclubIds === [$fixtureE->id]);
+        Notification::assertCount(2);
+    });
+
+    it('tells the other captains when the member captained one of the teams', function (): void {
+        $this->teamE->users()->attach($this->member->id);
+        $this->teamE->update(['captain_id' => $this->member->id]);
+
+        $outcome = ($this->declare)($this->member);
+
+        expect($outcome->captainsTold)->toBe([$this->captain->id])
+            ->and($outcome->teamsWithoutCaptain)->toBe(['E']);
+
+        Notification::assertSentTo($this->captain, MemberLeftTeamNotification::class, fn (MemberLeftTeamNotification $notification): bool => $notification->teamNames === ['C']);
+        Notification::assertNotSentTo($this->member, MemberLeftTeamNotification::class);
+        Notification::assertCount(1);
+    });
+
+    it('is not there to tell for a member in no team', function (): void {
+        $loner = User::factory()->isCompetitor()->create(['first_name' => 'Sam', 'last_name' => 'Sans-Equipe']);
+
+        $outcome = ($this->declare)($loner);
+
+        expect($outcome->captainsTold)->toBe([]);
+
+        Notification::assertNothingSent();
+    });
+
+    it('says in the mail which team has a free place, even with no match listed', function (): void {
+        $mail = new MemberLeftTeamNotification('Jeanne Depart-Interclub', ['C', 'D'])->toMail($this->captain);
+        $text = implode(' ', $mail->introLines);
+
+        expect($text)->toContain(trans_choice('{1} :name has left the club: their place in team :teams is free.|[2,*] :name has left the club: their place in teams :teams is free.', 2, ['name' => 'Jeanne Depart-Interclub', 'teams' => 'C, D']))
+            ->and($mail->subject)->toBe(__(':name has left the club', ['name' => 'Jeanne Depart-Interclub']));
+    });
+
+    it('takes a whole selection off the teams, saying how many captains were told', function (): void {
+        $this->teamE->users()->attach($this->stays->id);
+
+        $component = Livewire::actingAs($this->office)
+            ->test('pages::club-admin.users.index')
+            ->set('selected', [(string) $this->member->id, (string) $this->stays->id])
+            ->set('departureReason', DepartureReason::Moving->value)
+            ->set('departureLeftOn', now()->toDateString())
+            ->call('bulkDeclareDeparture')
+            ->assertHasNoErrors();
+
+        expect(departureFixturesToastTitle($component))->toContain(trans_choice('{1} Captain told.|[2,*] Captains told.', 2));
+
+        Notification::assertSentToTimes($this->captain, MemberLeftTeamNotification::class, 2);
+        Notification::assertSentToTimes($this->otherCaptain, MemberLeftTeamNotification::class, 1);
+        Notification::assertNotSentTo($this->manager, MemberLeftTeamNotification::class);
     });
 });

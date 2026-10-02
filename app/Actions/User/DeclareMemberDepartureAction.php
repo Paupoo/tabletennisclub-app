@@ -25,7 +25,8 @@ use Illuminate\Support\Facades\DB;
  *
  * What the departure does hand back is what the member was holding for the
  * season: a place on a team sheet, a captaincy, a seat in a training plan, a
- * place in the interclub matches still to come. The
+ * place in the interclub matches still to come — and the captain of each team
+ * the member played in is told. The
  * sessions still to come and the club-wide mailings read the departure itself
  * ({@see TrainingPack::trainees()} and the
  * communications audience), so nothing has to be rewritten there.
@@ -53,21 +54,29 @@ class DeclareMemberDepartureAction
 
             // One by one through the pivot model, so the audit log records who
             // took the player off each sheet.
-            TeamUser::query()
+            $places = TeamUser::query()
                 ->where('user_id', $user->id)
                 ->whereIn('team_id', Team::query()->select('id')->whereIn('season_id', ReleaseClubPlacesAction::seasonsFrom($season)))
-                ->get()
-                ->each->delete();
+                ->get();
+
+            $places->each->delete();
 
             $teamsWithoutCaptain = ReleaseClubPlacesAction::handle($user, $season);
 
             $fixtures = LeaveUpcomingFixturesAction::handle($user, $leftOn);
 
+            $captainsTold = TellCaptainsOfDepartureAction::handle(
+                $user,
+                $season,
+                $places->pluck('team_id')->all(),
+                $fixtures['lineups'],
+                $fixtures['short_handed_withdrawn'],
+            );
+
             return new MemberDepartureOutcome(
                 teamsWithoutCaptain: $teamsWithoutCaptain,
                 fixturesLeft: $fixtures['fixtures'],
-                lineupsLeft: $fixtures['lineups'],
-                captainTold: $fixtures['captain_told'],
+                captainsTold: $captainsTold,
             );
         });
     }

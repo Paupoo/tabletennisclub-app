@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\User;
 
+use App\Domains\ClubAdmin\Users\Models\MemberDeparture;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -28,7 +29,8 @@ use App\Domains\Competitions\Interclub\Services\InterclubChangeNotifier;
  * A team whose captain was the member has no captain to tell: its captaincy
  * has just been handed back, and the screen names it among the teams left
  * without a captain. The selector still hears of it. The member is never told
- * of their own departure.
+ * of their own departure; a selector who leaves is replaced by the other
+ * selectors, or by the administrators when no selector is left.
  */
 class TellCaptainsAndSelectorOfDepartureAction
 {
@@ -36,9 +38,10 @@ class TellCaptainsAndSelectorOfDepartureAction
      * @param  array<int, int>  $teamIds  the teams the member held a place in
      * @param  list<int>  $lineupIds  the upcoming matches the member was lined up for, by date
      * @param  list<int>  $shortHandedWithdrawn  among them, those no longer declared to play with three
+     * @param  array<int, int>  $leavingTogether  the members declared gone in the same gesture, recorded or not yet
      * @return array{captains: list<int>, selectors: list<int>} the ids of the captains and of the selectors told, in ascending order
      */
-    public static function handle(User $leaver, Season $season, array $teamIds, array $lineupIds, array $shortHandedWithdrawn): array
+    public static function handle(User $leaver, Season $season, array $teamIds, array $lineupIds, array $shortHandedWithdrawn, array $leavingTogether = []): array
     {
         $fixtures = Interclub::query()
             ->with(['visitedTeam.club', 'visitingTeam.club'])
@@ -62,8 +65,19 @@ class TellCaptainsAndSelectorOfDepartureAction
             return ['captains' => [], 'selectors' => []];
         }
 
-        $selectors = app(InterclubChangeNotifier::class)->interclubsDuty()
-            ->reject(fn (User $selector): bool => $selector->is($leaver))
+        // Whoever leaves this season — this member, one declared earlier, or
+        // one declared in the same gesture but not recorded yet — will never
+        // read the mail: when that was every selector, the administrators
+        // stand in, as they do when nobody holds the duty.
+        $unreachable = MemberDeparture::query()
+            ->where('season_id', $season->id)
+            ->pluck('user_id')
+            ->merge([$leaver->id, ...$leavingTogether])
+            ->unique()
+            ->values()
+            ->all();
+
+        $selectors = app(InterclubChangeNotifier::class)->interclubsDuty($unreachable)
             ->sortBy('id')
             ->values();
 

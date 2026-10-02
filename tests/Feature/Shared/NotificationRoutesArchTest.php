@@ -103,7 +103,8 @@ it('never sends a member to a page the committee alone can open', function (): v
         // TellCaptainsAndSelectorOfDepartureAction sends it to the captains of
         // the member's teams and to the interclubs duty: `access-selections`
         // admits every captain, and both the interclubs délégation and the
-        // administrators — the fallback when nobody holds the duty — carry
+        // administrators — the fallback when nobody holds the duty, or when
+        // every holder is leaving — carry
         // interclubs.view — MemberDepartureFixturesTest.
         'MemberLeftTeamNotification.php',
     ];

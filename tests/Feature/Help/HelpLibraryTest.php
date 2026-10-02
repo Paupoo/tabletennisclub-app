@@ -160,3 +160,20 @@ test('the season pages cross-link to slugs that exist', function (): void {
         }
     }
 });
+
+/**
+ * « Profil incomplet » never counts a minor left without a responsible adult:
+ * the page has to send the office to the filter that does, by the name the
+ * members list gives it, rather than promise what the filter does not do.
+ */
+test('the member creation page finds minors without a responsible adult where the list does', function (): void {
+    app()->setLocale('fr_BE');
+
+    $article = HelpLibrary::find('creer-un-membre');
+
+    expect($article->markdown)
+        ->toContain(__('Minors without a responsible adult'))
+        ->toContain(__('Incomplete profile'))
+        ->toContain(__('Minors'))
+        ->not->toContain('rend le profil incomplet');
+});

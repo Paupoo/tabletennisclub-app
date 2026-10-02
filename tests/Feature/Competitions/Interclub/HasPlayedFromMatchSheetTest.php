@@ -321,17 +321,19 @@ describe('the captain screen', function (): void {
 });
 
 describe('a score typed by hand', function (): void {
-    it('stands in for the sheet until it comes, without counting the named walkover', function (): void {
+    it('marks nobody as played: the sheet alone says who did', function (): void {
         $match = hasPlayedFixture('PBBWH01/096');
         $lined = User::factory()->create();
+        $alsoLined = User::factory()->create();
         $walkover = User::factory()->create();
-        $match->users()->attach($lined->id, ['is_selected' => true, 'selection_confirmed_at' => now()->subDays(5)]);
-        $match->users()->attach($walkover->id, ['is_selected' => true, 'is_walkover' => true, 'selection_confirmed_at' => now()->subDays(5)]);
+        $match->users()->attach($lined->id, ['is_selected' => true, 'has_played' => false, 'selection_confirmed_at' => now()->subDays(5)]);
+        $match->users()->attach($alsoLined->id, ['is_selected' => true, 'has_played' => false, 'selection_confirmed_at' => now()->subDays(5)]);
+        $match->users()->attach($walkover->id, ['is_selected' => true, 'is_walkover' => true, 'has_played' => false, 'selection_confirmed_at' => now()->subDays(5)]);
 
         hasPlayedTypeScore($match);
 
-        expect((bool) rosterRow($match, $lined)->has_played)->toBeTrue()
-            ->and((bool) rosterRow($match, $walkover)->has_played)->toBeFalse();
+        expect(DB::table('interclub_user')->where('interclub_id', $match->id)->where('has_played', true)->count())->toBe(0)
+            ->and(InterclubResult::where('interclub_id', $match->id)->value('score'))->toBe('10-6');
     });
 
     it('never overrules the sheet once it is on file', function (): void {

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Resources\views\Pages\ClubEvents\Interclubs;
 
 use App\Domains\Competitions\Interclub\Models\Interclub;
-use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
 use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
@@ -223,6 +222,13 @@ new class extends Component
         ];
     }
 
+    /**
+     * Record the score of a match, typed by hand.
+     *
+     * Who played is not written here: the federation's match sheet alone says
+     * it, when the results are imported — the line-up can have changed on the
+     * night, and a score says nothing of who turned out.
+     */
     public function save(): void
     {
         $this->validate();
@@ -259,25 +265,6 @@ new class extends Component
         ];
 
         InterclubResult::findOrFail($this->editingInterclubResultId)->update($data);
-
-        if ($this->matchType === 'normal' && $this->matchDate) {
-            $interclub = Interclub::where('season_id', $this->seasonId)
-                ->where(fn ($q) => $q->where('visited_team_id', $this->editingTeamId)
-                    ->orWhere('visiting_team_id', $this->editingTeamId))
-                ->whereDate('start_date_time', $this->matchDate)
-                ->first();
-
-            // A stand-in for the federation's sheet, for the days before the
-            // clubs encode it: the line-up played, bar the named walkover. Once
-            // the sheet is on file it alone says who played, and a score typed
-            // afterwards must not put the benched back on the team.
-            if ($interclub !== null && ! InterclubIndividualMatch::where('interclub_id', $interclub->id)->exists()) {
-                $interclub->users()
-                    ->wherePivot('is_selected', true)
-                    ->wherePivot('is_walkover', false)
-                    ->each(fn ($u) => $interclub->users()->updateExistingPivot($u->id, ['has_played' => true]));
-            }
-        }
 
         $this->success(__('Match updated'));
 

@@ -19,7 +19,7 @@ final readonly class MemberDepartureOutcome
      * @param  list<string>  $teamsWithoutCaptain  the names of the teams the member captained
      * @param  int  $fixturesLeft  the upcoming interclub matches the member was taken off
      * @param  list<int>  $captainsTold  the ids of the captains mailed about the departure
-     * @param  list<int>  $selectorsTold  the ids of the selectors mailed about it — the interclubs duty, or the administrators when nobody holds it
+     * @param  list<int>  $selectorsTold  the ids of the selectors mailed about it — the interclubs duty, or the administrators when nobody holds it or every holder is leaving
      */
     public function __construct(
         public array $teamsWithoutCaptain = [],

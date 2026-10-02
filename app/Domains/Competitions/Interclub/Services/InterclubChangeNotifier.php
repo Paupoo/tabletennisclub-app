@@ -84,13 +84,20 @@ class InterclubChangeNotifier
      * Whoever holds the interclubs duty, or the administrators when nobody does:
      * an alert that reaches nobody is the one case worse than no alert.
      *
+     * The members to leave out — those leaving the club, who would never
+     * receive it — are left out before falling back: when they held the duty
+     * alone, the administrators hear of it in their place.
+     *
+     * @param  array<int, int>  $exceptIds  the members who cannot be reached
      * @return Collection<int, User>
      */
-    public function interclubsDuty(): Collection
+    public function interclubsDuty(array $exceptIds = []): Collection
     {
-        $holders = User::role(Role::INTERCLUBS->value)->get();
+        $holders = User::role(Role::INTERCLUBS->value)->whereNotIn('users.id', $exceptIds)->get();
 
-        return $holders->isNotEmpty() ? $holders : User::role(Role::ADMINISTRATOR->value)->get();
+        return $holders->isNotEmpty()
+            ? $holders
+            : User::role(Role::ADMINISTRATOR->value)->whereNotIn('users.id', $exceptIds)->get();
     }
 
     /**

@@ -232,7 +232,7 @@ Utile si la fédération publie déjà la saison suivante sans l'avoir basculée
 
 ### Ce que l'import ne fait pas
 
-- **Il ne charge pas les résultats des rencontres jouées.** C'est le rôle de `interclubs:import-results`, chaque matin à 5 h 40. Seul le résultat d'un **forfait** est écrit par l'import du calendrier, puisqu'aucune feuille de match ne viendra. C'est aussi `interclubs:import-results` qui note **qui a joué** chaque rencontre, d'après la feuille : un joueur nommé uniquement comme forfait n'a pas joué. Pour recalculer ce « a joué » depuis les feuilles déjà importées, sans appeler la fédération : `php artisan interclubs:record-who-played`.
+- **Il ne charge pas les résultats des rencontres jouées.** C'est le rôle de `interclubs:import-results`, chaque matin à 5 h 40. Seul le résultat d'un **forfait** est écrit par l'import du calendrier, puisqu'aucune feuille de match ne viendra. C'est aussi `interclubs:import-results` qui note **qui a joué** chaque rencontre, d'après la feuille : un joueur nommé uniquement comme forfait n'a pas joué. Seule la feuille fait foi : un score saisi à la main dans l'écran des résultats ne note personne. Pour recalculer ce « a joué » depuis les feuilles déjà importées, sans appeler la fédération : `php artisan interclubs:record-who-played`.
 - **Il ne compose pas les équipes.** Il crée les équipes et leur lettre ; qui joue dedans reste une décision du club.
 
 ### Si quelque chose se passe mal

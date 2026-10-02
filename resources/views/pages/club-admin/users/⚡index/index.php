@@ -317,6 +317,7 @@ new class extends Component
                 DepartureReason::from($this->departureReason),
                 null,
                 Auth::user(),
+                $members->modelKeys(),
             ))), $members->modelKeys());
         } catch (DomainException $e) {
             $this->error($e->getMessage());

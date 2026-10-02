@@ -16,6 +16,7 @@ use App\Domains\Shared\Enums\DepartureReason;
 use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Domains\Shared\Enums\Role;
 use Carbon\CarbonInterface;
+use Illuminate\Notifications\ChannelManager;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
@@ -263,7 +264,7 @@ describe('a lineup the team has already received', function (): void {
     it('names the member, the date and the opponent in the mail', function (): void {
         $fixture = departureFixture($this->team, $this->opponent, 10);
 
-        $mail = new MemberLeftTeamNotification('Jeanne Depart-Interclub', ['C'], [$fixture->id])->toMail($this->captain);
+        $mail = new MemberLeftTeamNotification('Jeanne Depart-Interclub', $this->season->id, ['C'], [$fixture->id])->toMail($this->captain);
         $text = implode(' ', $mail->introLines);
 
         expect($text)->toContain('Jeanne Depart-Interclub')
@@ -490,9 +491,9 @@ describe('a lineup declared to play with three', function (): void {
         $short = departureFixture($this->team, $this->opponent, 10);
         $full = departureFixture($this->team, $this->opponent, 24);
 
-        $single = implode(' ', new MemberLeftTeamNotification('Jeanne Depart-Interclub', ['C'], [$short->id], [$short->id])->toMail($this->captain)->introLines);
-        $several = new MemberLeftTeamNotification('Jeanne Depart-Interclub', ['C'], [$short->id, $full->id], [$short->id])->toMail($this->captain)->introLines;
-        $untouched = implode(' ', new MemberLeftTeamNotification('Jeanne Depart-Interclub', ['C'], [$full->id])->toMail($this->captain)->introLines);
+        $single = implode(' ', new MemberLeftTeamNotification('Jeanne Depart-Interclub', $this->season->id, ['C'], [$short->id], [$short->id])->toMail($this->captain)->introLines);
+        $several = new MemberLeftTeamNotification('Jeanne Depart-Interclub', $this->season->id, ['C'], [$short->id, $full->id], [$short->id])->toMail($this->captain)->introLines;
+        $untouched = implode(' ', new MemberLeftTeamNotification('Jeanne Depart-Interclub', $this->season->id, ['C'], [$full->id])->toMail($this->captain)->introLines);
 
         $declarationWithdrawn = __('The declaration to play with :n has been withdrawn, along with the walkover player: declare it again if the team still plays with :n.', ['n' => 3]);
         $listedWithdrawn = __('(declaration to play with :n withdrawn: declare it again if needed)', ['n' => 3]);
@@ -589,11 +590,33 @@ describe('the captain of each team the member played in', function (): void {
     });
 
     it('says in the mail which team has a free place, even with no match listed', function (): void {
-        $mail = new MemberLeftTeamNotification('Jeanne Depart-Interclub', ['C', 'D'])->toMail($this->captain);
+        $mail = new MemberLeftTeamNotification('Jeanne Depart-Interclub', $this->season->id, ['C', 'D'])->toMail($this->captain);
         $text = implode(' ', $mail->introLines);
 
         expect($text)->toContain(trans_choice('{1} :name has left the club: their place in team :teams is free.|[2,*] :name has left the club: their place in teams :teams is free.', 2, ['name' => 'Jeanne Depart-Interclub', 'teams' => 'C, D']))
             ->and($mail->subject)->toBe(__(':name has left the club', ['name' => 'Jeanne Depart-Interclub']));
+    });
+
+    it('never mails a captain who is leaving in the same gesture', function (): void {
+        Notification::swap(new ChannelManager(app()));
+        $leavingCaptain = User::factory()->isCompetitor()->create(['first_name' => 'Hugo', 'last_name' => 'Capitaine-Partant']);
+        Subscription::factory()->for($leavingCaptain)->for($this->season)->create(['status' => 'paid', 'is_competitive' => true]);
+        $this->team->update(['captain_id' => $leavingCaptain->id]);
+        $this->team->users()->attach($leavingCaptain->id);
+
+        // The member comes first, while the captain still holds the team.
+        expect($this->member->id)->toBeLessThan($leavingCaptain->id);
+
+        $component = Livewire::actingAs($this->office)
+            ->test('pages::club-admin.users.index')
+            ->set('selected', [(string) $this->member->id, (string) $leavingCaptain->id])
+            ->set('departureReason', DepartureReason::Moving->value)
+            ->set('departureLeftOn', now()->toDateString())
+            ->call('bulkDeclareDeparture')
+            ->assertHasNoErrors();
+
+        expect($leavingCaptain->notifications()->count())->toBe(0)
+            ->and(departureFixturesToastTitle($component))->not->toContain(trans_choice('{1} Captain told.|[2,*] Captains told.', 1));
     });
 
     it('takes a whole selection off the teams, saying how many captains were told', function (): void {

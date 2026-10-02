@@ -29,17 +29,20 @@ final readonly class MemberDepartureOutcome
     /**
      * Several departures recorded in one gesture, read as one.
      *
-     * A captain is counted once however many of their players left.
+     * A captain is counted once however many of their players left, and not
+     * at all when they left in the same gesture: their mail is never sent.
      *
      * @param  Collection<int, self>  $outcomes
+     * @param  array<int, int>  $leaverIds  the members declared gone in that gesture
      */
-    public static function merge(Collection $outcomes): self
+    public static function merge(Collection $outcomes, array $leaverIds = []): self
     {
         return new self(
             teamsWithoutCaptain: $outcomes->flatMap(fn (self $outcome): array => $outcome->teamsWithoutCaptain)->unique()->sort()->values()->all(),
             fixturesLeft: (int) $outcomes->sum('fixturesLeft'),
             captainsTold: $outcomes->flatMap(fn (self $outcome): array => $outcome->captainsTold)
                 ->unique()
+                ->diff($leaverIds)
                 ->sort()
                 ->values()
                 ->all(),

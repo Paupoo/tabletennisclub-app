@@ -71,6 +71,7 @@ class TellCaptainsOfDepartureAction
 
             $captain->notify(new MemberLeftTeamNotification(
                 $leaver->full_name,
+                $season->id,
                 $captainTeams->whereIn('id', $teamIds)->pluck('name')->values()->all(),
                 array_values($captainFixtureIds),
                 array_values(array_intersect($captainFixtureIds, $shortHandedWithdrawn)),

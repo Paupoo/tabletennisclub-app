@@ -757,13 +757,17 @@ new class extends Component
     }
 
     /**
-     * The season the "to follow up" members were last affiliated to, named
-     * once for the whole page rather than once per row.
+     * The name of the season the "to follow up" members were last affiliated
+     * to, read once for the whole page rather than once per row.
+     *
+     * A string, empty when there is none: a computed property that returns
+     * null is not memoised, and the first season of the club asked the
+     * database again on every row.
      */
     #[Computed]
-    public function previousSeason(): ?Season
+    public function previousSeasonName(): string
     {
-        return Season::current()?->previous();
+        return Season::current()?->previous()->name ?? '';
     }
 
     public function quickInvite(): void

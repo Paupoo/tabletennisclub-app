@@ -128,7 +128,7 @@
                         <div class="truncate text-xs text-muted">{{ $user->email }}</div>
                         <div class="mt-1 flex flex-wrap items-center gap-1.5">
                             <x-admin.users.membership-status-badge :user="$user"
-                                :last-season="$this->previousSeason?->name" size="badge-xs" />
+                                :last-season="$this->previousSeasonName" size="badge-xs" />
                             <x-admin.users.responsible-adult-badge :user="$user" size="badge-xs" />
                             <x-admin.users.account-status-badge :user="$user" size="badge-xs" />
                             @if ($user->has_paid)
@@ -255,7 +255,7 @@
                     @endscope
                     @scope('cell_affiliation', $user)
                         <div class="max-w-56">
-                            <x-admin.users.membership-status-badge :user="$user" :last-season="$this->previousSeason?->name" />
+                            <x-admin.users.membership-status-badge :user="$user" :last-season="$this->previousSeasonName" />
                         </div>
                     @endscope
                     {{-- A ranking only means something for a competitor of the running season. --}}

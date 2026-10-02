@@ -335,4 +335,22 @@ class Interclub extends Model
     {
         return $this->belongsTo(Team::class, 'visiting_team_id');
     }
+
+    /**
+     * Take back the captain's word that the team plays one player short.
+     *
+     * The declaration and the walkover player go together: a walkover only
+     * completes a lineup declared short, and a declaration without its
+     * walkover would read as settled on a lineup nobody has judged. The
+     * players stay selected and their lineup stays published; the fixture is
+     * simply to be settled again, by a full lineup or a new declaration.
+     */
+    public function withdrawShortHandedDeclaration(): void
+    {
+        $this->users()->newPivotQuery()
+            ->where('is_walkover', true)
+            ->update(['is_walkover' => false, 'updated_at' => now()]);
+
+        $this->update(['short_handed_confirmed_at' => null, 'short_handed_confirmed_by' => null]);
+    }
 }

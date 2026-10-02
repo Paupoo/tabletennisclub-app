@@ -25,10 +25,15 @@ use Illuminate\Support\Facades\DB;
  * each for the whole departure. A draft or an availability goes in silence:
  * nobody was counting on it yet.
  *
- * The fixture itself is left as it is, short-handed declaration included. The
- * lineup is still published for the players who remain, and it is the
- * captain's next send from the selection screen that judges what the lineup
- * has become — the same as when a captain drops a player.
+ * The fixture itself is left as it is: the lineup is still published for the
+ * players who remain, and it is the captain's next send from the selection
+ * screen that judges what the lineup has become — the same as when a captain
+ * drops a player. One exception: a lineup declared to play with three no
+ * longer describes itself once one of its players is gone — two and a
+ * walkover, or three without one — so the declaration and the walkover are
+ * withdrawn the way the selection screen withdraws them, and the captain is
+ * told to declare it again. An availability that was not in the lineup leaves
+ * the declaration standing.
  */
 class LeaveUpcomingFixturesAction
 {
@@ -44,13 +49,23 @@ class LeaveUpcomingFixturesAction
             ->where('interclub_user.user_id', $user->id)
             ->where('interclub_user.has_played', false)
             ->where('interclubs.start_date_time', '>=', $from)
-            ->get(['interclub_user.interclub_id', 'interclub_user.selection_confirmed_at']);
+            ->get(['interclub_user.interclub_id', 'interclub_user.is_selected', 'interclub_user.selection_confirmed_at']);
 
         if ($rows->isEmpty()) {
             return ['fixtures' => 0, 'lineups' => 0, 'captain_told' => false];
         }
 
         $user->interclubs()->detach($rows->pluck('interclub_id')->all());
+
+        $shortHanded = Interclub::query()
+            ->whereKey($rows->where('is_selected', true)->pluck('interclub_id')->all())
+            ->whereNotNull('short_handed_confirmed_at')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($shortHanded as $fixture) {
+            $fixture->withdrawShortHandedDeclaration();
+        }
 
         $published = Interclub::query()
             ->whereKey($rows->whereNotNull('selection_confirmed_at')->pluck('interclub_id')->all())
@@ -61,7 +76,7 @@ class LeaveUpcomingFixturesAction
         return [
             'fixtures' => $rows->count(),
             'lineups' => $published->count(),
-            'captain_told' => self::tellCaptainsAndManager($user, $published),
+            'captain_told' => self::tellCaptainsAndManager($user, $published, $shortHanded->modelKeys()),
         ];
     }
 
@@ -70,9 +85,10 @@ class LeaveUpcomingFixturesAction
      * of each team its own, the interclubs duty all of them.
      *
      * @param  EloquentCollection<int, Interclub>  $published
+     * @param  array<int, int>  $shortHandedWithdrawn  the fixtures whose declaration to play with three was withdrawn
      * @return bool whether a captain was among those told
      */
-    private static function tellCaptainsAndManager(User $leaver, EloquentCollection $published): bool
+    private static function tellCaptainsAndManager(User $leaver, EloquentCollection $published, array $shortHandedWithdrawn): bool
     {
         if ($published->isEmpty()) {
             return false;
@@ -100,9 +116,12 @@ class LeaveUpcomingFixturesAction
         $recipients = User::query()->whereKey(array_keys($fixturesByRecipient))->get();
 
         foreach ($recipients as $recipient) {
+            $fixtureIds = array_values(array_unique($fixturesByRecipient[$recipient->id]));
+
             $recipient->notify(new MemberLeftLineupNotification(
                 $leaver->full_name,
-                array_values(array_unique($fixturesByRecipient[$recipient->id])),
+                $fixtureIds,
+                array_values(array_intersect($fixtureIds, $shortHandedWithdrawn)),
             ));
         }
 

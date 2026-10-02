@@ -250,7 +250,7 @@
                             <x-admin.users.responsible-adult-badge :user="$user" />
                         </div>
                         @if ($user->email)
-                            <div class="max-w-56 truncate text-xs text-muted xl:max-w-48 2xl:max-w-56" title="{{ $user->email }}">{{ $user->email }}</div>
+                            <div class="max-w-56 truncate text-xs text-muted" title="{{ $user->email }}">{{ $user->email }}</div>
                         @endif
                     @endscope
                     @scope('cell_affiliation', $user)

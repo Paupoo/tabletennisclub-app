@@ -624,10 +624,11 @@ new class extends Component
      * attend `xl`. La photo — un avatar générique pour presque tout le monde —
      * a laissé sa place à l'affiliation, que la secrétaire lit à chaque ligne.
      *
-     * La dernière activité paraît à `xl`, la dernière connexion à `2xl`. Mesuré
-     * à 1280 sous un nom de 28 caractères, la date demandait 22 px de trop : son
-     * en-tête passe sur deux lignes (`whitespace-normal`, la ligne d'en-tête de
-     * daisyUI ne coupe jamais), et l'adresse sous le nom se resserre à `xl`.
+     * La dernière activité et la dernière connexion paraissent à `2xl`. À 1280,
+     * la seule date demandait 48 px de trop sous un nom de 28 caractères dans la
+     * police de repli de la CI (DejaVu Sans) : il ne restait que 53 px, et
+     * l'en-tête d'une date en prend une centaine même replié sur deux lignes
+     * (`whitespace-normal`, la ligne d'en-tête de daisyUI ne coupe jamais).
      * Voir tests/Browser/UsersTableWidthTest.php.
      *
      * @return array<int, array<string, mixed>>
@@ -639,7 +640,7 @@ new class extends Component
             ['key' => 'name',        'label' => __('Name'),        'sortable' => true],
             ['key' => 'affiliation', 'label' => __('Affiliation'), 'sortable' => false],
             ['key' => 'ranking',     'label' => __('Ranking'),     'sortable' => true,  'class' => 'hidden xl:table-cell'],
-            ['key' => 'last_activity_at', 'label' => __('Last activity'), 'sortable' => true, 'class' => 'hidden xl:table-cell whitespace-normal'],
+            ['key' => 'last_activity_at', 'label' => __('Last activity'), 'sortable' => true, 'class' => 'hidden 2xl:table-cell whitespace-normal'],
             ['key' => 'last_login_at',    'label' => __('Last sign-in'),  'sortable' => true, 'class' => 'hidden 2xl:table-cell whitespace-normal'],
             ['key' => 'status',      'label' => __('Account'),     'sortable' => false],
         ];

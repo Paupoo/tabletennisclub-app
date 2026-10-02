@@ -177,7 +177,7 @@ describe('the members list', function (): void {
     it('offers both columns from the widths that have room for them', function (): void {
         $headers = collect(Livewire::test(ACTIVITY_LIST)->instance()->headers())->keyBy('key');
 
-        expect($headers['last_activity_at']['class'])->toBe('hidden xl:table-cell whitespace-normal')
+        expect($headers['last_activity_at']['class'])->toBe('hidden 2xl:table-cell whitespace-normal')
             ->and($headers['last_activity_at']['sortable'])->toBeTrue()
             ->and($headers['last_login_at']['class'])->toBe('hidden 2xl:table-cell whitespace-normal')
             ->and($headers['last_login_at']['sortable'])->toBeTrue();

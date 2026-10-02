@@ -8,14 +8,19 @@ use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Enums\Role;
 
 /*
- * The members table grew a column at xl (last activity) and another at 2xl
- * (last sign-in). The card offers 888 px at 1280: a column too many pushes the
- * row off the card, and the row's button with it. Measured on a row that
- * fills every column, under a long name of 28 characters — at xl, its address
- * is capped tighter to make room for the date.
+ * The members table grew two columns at 2xl: last activity and last sign-in.
+ * The card offers 888 px at 1280: a column too many pushes the row off the
+ * card, and the row's button with it. Measured on a row that fills every
+ * column, under a long name of 28 characters.
+ *
+ * The page declares a font it never loads, so it renders in the machine's
+ * fallback — narrower on a workstation than DejaVu Sans on the CI runner,
+ * where a date column at xl overflowed by 48 px after passing locally. The
+ * probe sets DejaVu Sans on every element so both measure the same thing.
  */
 $tableProbe = <<<'JS'
 (() => {
+  document.querySelectorAll('*').forEach((el) => { el.style.fontFamily = '"DejaVu Sans"'; });
   const table = [...document.querySelectorAll('table')].find((t) => t.getClientRects().length > 0);
   if (!table) return { found: false };
   // Mary's wrapper around the table spans the card's content box.
@@ -29,7 +34,7 @@ $tableProbe = <<<'JS'
 })()
 JS;
 
-it('keeps the members table inside its card with the activity columns', function (int $width, int $height, string $column) use ($tableProbe): void {
+it('keeps the members table inside its card', function (int $width, int $height, bool $showsActivity) use ($tableProbe): void {
     $season = makeActiveSeason();
 
     $this->actingAs(User::factory()->withRole(Role::MEMBERS)->create());
@@ -50,9 +55,10 @@ it('keeps the members table inside its card with the activity columns', function
     $p = $probe[0] ?? $probe;
 
     expect($p['found'])->toBeTrue()
-        ->and($p['headers'])->toContain(__($column))
+        ->and(in_array(__('Last activity'), $p['headers'], true))->toBe($showsActivity)
+        ->and(in_array(__('Last sign-in'), $p['headers'], true))->toBe($showsActivity)
         ->and($p['table'])->toBeLessThanOrEqual($p['card'], sprintf('the table ends at %d px, its card at %d px', $p['table'], $p['card']));
 })->with([
-    'xl' => [1280, 800, 'Last activity'],
-    '2xl' => [1536, 900, 'Last sign-in'],
+    'xl, without the dates' => [1280, 800, false],
+    '2xl, with both dates' => [1536, 900, true],
 ])->group('users');

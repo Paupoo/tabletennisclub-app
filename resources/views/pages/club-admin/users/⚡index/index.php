@@ -935,22 +935,6 @@ new class extends Component
     }
 
     /**
-     * Every member the filters match, across all pages.
-     *
-     * The trait's version keeps the current page only, while the banner says
-     * "all N results": a reminder sent to the 48 members to follow up reached
-     * the first 15, and nothing said so.
-     */
-    public function selectAllResults(): void
-    {
-        $this->selectingAllResults = true;
-        $this->selected = $this->filteredUsers()
-            ->pluck('users.id')
-            ->map(fn (int $id): string => (string) $id)
-            ->all();
-    }
-
-    /**
      * Invite the people who answer for a member with no address of their own.
      *
      * All of them, not the first: separated parents are both on the file and a
@@ -1145,7 +1129,7 @@ new class extends Component
     #[Computed]
     public function users(): LengthAwarePaginator
     {
-        return $this->filteredUsers()->paginate(15);
+        return $this->matchingQuery()->paginate(15);
     }
 
     protected function breadcrumbChain(): Breadcrumb
@@ -1163,6 +1147,93 @@ new class extends Component
             ->pluck('id')
             ->map(fn (int $id): string => (string) $id)
             ->toArray();
+    }
+
+    /**
+     * The members the search, the default view and the drawer leave in, in
+     * the order the list shows them — the page and "select all results" both.
+     *
+     * @return Builder<User>
+     */
+    protected function matchingQuery(): Builder
+    {
+        $query = $this->showArchived
+            ? User::onlyTrashed()
+            : User::query();
+
+        $sortColumns = $this->sortableColumns[$this->sortBy['column']] ?? ['first_name', 'last_name'];
+
+        // The whitelist guarded the column and left the direction open, where a
+        // tampered value reaches `orderBy()` and throws rather than falling back.
+        $direction = $this->sortBy['direction'] === 'desc' ? 'desc' : 'asc';
+
+        $statuses = $this->chosenStatuses();
+        $licence = $this->licenceFilter();
+        $age = $this->ageFilter();
+        $since = $this->activitySince();
+
+        return $query
+            // Guardians carry the account state of every managed member on the
+            // page — see {@see User::guardianshipStatus()} — so the badge, the
+            // note and the row menu would each lazy load without this.
+            ->with('guardians.member')
+            // Status, licence and responsible-adult badge, read in this query.
+            ->withMembershipFacts()
+            // The reason the "left" badge names, for the whole page at once.
+            ->with('departureThisSeason')
+            // Sortable, hence a column of the query rather than a relation.
+            ->withLastActivity()
+            // Charter and profile, for the onboarding steps, only when shown.
+            ->when($this->showsOnboardingColumn(), fn ($q) => $q->withOnboardingFacts())
+            // The paid badge of both twins, mobile and desktop: two queries a
+            // row without it. Read by User::getHasPaidAttribute().
+            ->withExists(['subscriptions as has_paid' => fn ($subscription) => $subscription
+                ->where('season_id', Season::current()->id ?? 0)
+                ->where('status', 'paid'),
+            ])
+            ->when($this->search, fn ($q) => $q->searchName($this->search))
+            ->when(
+                $this->defaultViewApplies(),
+                fn ($q) => $q->where(fn ($view) => $view
+                    ->inMembershipStatus(...MembershipStatus::currentMembers())
+                    ->orWhere(fn ($adults) => $adults->responsibleAdults())
+                )
+            )
+            ->when($statuses !== [], fn ($q) => $q->inMembershipStatus(...$statuses))
+            ->when($licence !== null, fn ($q) => $q->licensedThisSeason((bool) $licence))
+            ->when($this->responsibleAdultsOnly, fn ($q) => $q->responsibleAdults())
+            ->when(
+                $since instanceof Carbon,
+                fn ($q) => $q->affiliatedForCurrentSeason()->withoutActivitySince($since)
+            )
+            ->when(
+                $this->categories,
+                fn ($q) => $q->whereIn('gender', $this->categories)
+            )
+            ->when($age === 'minors', fn ($q) => $q->minor())
+            ->when($age === 'adults', fn ($q) => $q->adult())
+            ->when(
+                count($this->team_ids) > 0,
+                fn ($q) => $q->whereHas(
+                    'teams',
+                    fn ($teamQuery) => $teamQuery->whereIn('teams.id', $this->team_ids)
+                )
+            )
+            ->when($this->invitationState !== '', fn ($q) => $q->withInvitationState($this->invitationState))
+            ->when($this->incompleteProfile, fn ($q) => $q->withIncompleteProfile())
+            ->when($this->adultWithoutAddress, fn ($q) => $q->adultWithoutOwnAddress())
+            ->when($this->minorsWithoutGuardian, fn ($q) => $q->minor()->withoutGuardian())
+            ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
+            ->when($this->hasKey, fn ($q) => $q->whereHas('keyRings'))
+            ->when($this->hasCashRegister, fn ($q) => $q->whereHas('heldCashRegisters'))
+            ->tap(function ($query) use ($sortColumns, $direction): void {
+                foreach ($sortColumns as $column) {
+                    $query->orderBy($column, $direction);
+                }
+            })
+            // A total order: two namesakes tie, and MySQL may then serve them
+            // in a different order on each page — some rows on none of them.
+            ->orderBy('users.id');
     }
 
     /**
@@ -1289,93 +1360,6 @@ new class extends Component
         }
 
         $this->success($message);
-    }
-
-    /**
-     * The members the search, the default view and the drawer leave in, in
-     * the order the list shows them.
-     *
-     * @return Builder<User>
-     */
-    private function filteredUsers(): Builder
-    {
-        $query = $this->showArchived
-            ? User::onlyTrashed()
-            : User::query();
-
-        $sortColumns = $this->sortableColumns[$this->sortBy['column']] ?? ['first_name', 'last_name'];
-
-        // The whitelist guarded the column and left the direction open, where a
-        // tampered value reaches `orderBy()` and throws rather than falling back.
-        $direction = $this->sortBy['direction'] === 'desc' ? 'desc' : 'asc';
-
-        $statuses = $this->chosenStatuses();
-        $licence = $this->licenceFilter();
-        $age = $this->ageFilter();
-        $since = $this->activitySince();
-
-        return $query
-            // Guardians carry the account state of every managed member on the
-            // page — see {@see User::guardianshipStatus()} — so the badge, the
-            // note and the row menu would each lazy load without this.
-            ->with('guardians.member')
-            // Status, licence and responsible-adult badge, read in this query.
-            ->withMembershipFacts()
-            // The reason the "left" badge names, for the whole page at once.
-            ->with('departureThisSeason')
-            // Sortable, hence a column of the query rather than a relation.
-            ->withLastActivity()
-            // Charter and profile, for the onboarding steps, only when shown.
-            ->when($this->showsOnboardingColumn(), fn ($q) => $q->withOnboardingFacts())
-            // The paid badge of both twins, mobile and desktop: two queries a
-            // row without it. Read by User::getHasPaidAttribute().
-            ->withExists(['subscriptions as has_paid' => fn ($subscription) => $subscription
-                ->where('season_id', Season::current()->id ?? 0)
-                ->where('status', 'paid'),
-            ])
-            ->when($this->search, fn ($q) => $q->searchName($this->search))
-            ->when(
-                $this->defaultViewApplies(),
-                fn ($q) => $q->where(fn ($view) => $view
-                    ->inMembershipStatus(...MembershipStatus::currentMembers())
-                    ->orWhere(fn ($adults) => $adults->responsibleAdults())
-                )
-            )
-            ->when($statuses !== [], fn ($q) => $q->inMembershipStatus(...$statuses))
-            ->when($licence !== null, fn ($q) => $q->licensedThisSeason((bool) $licence))
-            ->when($this->responsibleAdultsOnly, fn ($q) => $q->responsibleAdults())
-            ->when(
-                $since instanceof Carbon,
-                fn ($q) => $q->affiliatedForCurrentSeason()->withoutActivitySince($since)
-            )
-            ->when(
-                $this->categories,
-                fn ($q) => $q->whereIn('gender', $this->categories)
-            )
-            ->when($age === 'minors', fn ($q) => $q->minor())
-            ->when($age === 'adults', fn ($q) => $q->adult())
-            ->when(
-                count($this->team_ids) > 0,
-                fn ($q) => $q->whereHas(
-                    'teams',
-                    fn ($teamQuery) => $teamQuery->whereIn('teams.id', $this->team_ids)
-                )
-            )
-            ->when($this->invitationState !== '', fn ($q) => $q->withInvitationState($this->invitationState))
-            ->when($this->incompleteProfile, fn ($q) => $q->withIncompleteProfile())
-            ->when($this->adultWithoutAddress, fn ($q) => $q->adultWithoutOwnAddress())
-            ->when($this->minorsWithoutGuardian, fn ($q) => $q->minor()->withoutGuardian())
-            ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
-            ->when($this->hasKey, fn ($q) => $q->whereHas('keyRings'))
-            ->when($this->hasCashRegister, fn ($q) => $q->whereHas('heldCashRegisters'))
-            ->tap(function ($query) use ($sortColumns, $direction): void {
-                foreach ($sortColumns as $column) {
-                    $query->orderBy($column, $direction);
-                }
-            })
-            // A total order: two namesakes tie, and MySQL may then serve them
-            // in a different order on each page — some rows on none of them.
-            ->orderBy('users.id');
     }
 
     /**

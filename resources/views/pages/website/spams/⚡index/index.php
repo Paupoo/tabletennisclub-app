@@ -11,6 +11,7 @@ use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -156,35 +157,12 @@ new class extends Component
     #[Computed]
     public function spams(): LengthAwarePaginator
     {
-        $query = Spam::query()->orderBy($this->sortBy['column'], $this->sortBy['direction']);
-
-        if ($this->search) {
-            $term = '%' . $this->search . '%';
-            $query->where(fn ($q) => $q
-                ->where('ip', 'like', $term)
-                ->orWhere('user_agent', 'like', $term)
-            );
-        }
-
-        if ($this->period) {
-            match ($this->period) {
-                'today' => $query->whereDate('created_at', today()),
-                'week' => $query->where('created_at', '>=', now()->subWeek()),
-                'month' => $query->where('created_at', '>=', now()->subMonth()),
-                default => null,
-            };
-        }
-
-        if ($this->userAgentType) {
-            $query->where('user_agent', 'like', match ($this->userAgentType) {
-                'bot' => '%bot%',
-                'curl' => '%curl%',
-                'browser' => '%Mozilla%',
-                default => '%',
-            });
-        }
-
-        return $query->paginate(25);
+        return $this->matchingQuery()
+            ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
+            // A total order: rows tied on the sorted column would otherwise
+            // move between pages, some shown twice and some never.
+            ->orderBy('spams.id')
+            ->paginate(25);
     }
 
     public function updatedPeriod(): void
@@ -262,5 +240,44 @@ new class extends Component
             ->pluck('id')
             ->map(fn (int $id): string => (string) $id)
             ->toArray();
+    }
+
+    /**
+     * The search and the drawer: what the list pages, and what "select all
+     * results" selects.
+     *
+     * @return Builder<Spam>
+     */
+    protected function matchingQuery(): Builder
+    {
+        $query = Spam::query();
+
+        if ($this->search) {
+            $term = '%' . $this->search . '%';
+            $query->where(fn ($q) => $q
+                ->where('ip', 'like', $term)
+                ->orWhere('user_agent', 'like', $term)
+            );
+        }
+
+        if ($this->period) {
+            match ($this->period) {
+                'today' => $query->whereDate('created_at', today()),
+                'week' => $query->where('created_at', '>=', now()->subWeek()),
+                'month' => $query->where('created_at', '>=', now()->subMonth()),
+                default => null,
+            };
+        }
+
+        if ($this->userAgentType) {
+            $query->where('user_agent', 'like', match ($this->userAgentType) {
+                'bot' => '%bot%',
+                'curl' => '%curl%',
+                'browser' => '%Mozilla%',
+                default => '%',
+            });
+        }
+
+        return $query;
     }
 };

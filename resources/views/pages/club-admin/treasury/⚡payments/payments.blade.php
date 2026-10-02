@@ -447,7 +447,7 @@
         confirmClass="btn-primary"
         confirmAction="bulkSendReminder" :open="$bulkReminderModal">
         <p class="text-sm">
-            {{ trans_choice('{1} Send :count reminder?|[2,*] Send :count reminders?', count($selected), ['count' => $selectingAllResults ? $this->getTotalMatchingCount() : count($selected)]) }}
+            {{ trans_choice('{1} Send :count reminder?|[2,*] Send :count reminders?', count($selected), ['count' => count($selected)]) }}
         </p>
     </x-confirm-modal>
 
@@ -463,7 +463,7 @@
         confirmClass="btn-warning"
         confirmAction="bulkCancelRefund" :open="$bulkCancelRefundModal">
         <p class="text-sm">
-            {{ trans_choice('{1} Cancel :count refund?|[2,*] Cancel :count refunds?', count($selected), ['count' => $selectingAllResults ? $this->getTotalMatchingCount() : count($selected)]) }}
+            {{ trans_choice('{1} Cancel :count refund?|[2,*] Cancel :count refunds?', count($selected), ['count' => count($selected)]) }}
         </p>
     </x-confirm-modal>
 

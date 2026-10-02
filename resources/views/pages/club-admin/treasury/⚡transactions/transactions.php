@@ -197,10 +197,6 @@ new class extends Component
 
         $ids = array_map(intval(...), $this->selected);
 
-        if ($this->selectingAllResults) {
-            $ids = $this->allMatchingTransactionIds();
-        }
-
         Transaction::whereIn('id', $ids)->get()->each(fn (Transaction $transaction) => $transaction->delete());
 
         $this->confirmDeleteModal = false;
@@ -745,7 +741,8 @@ new class extends Component
         $col = $this->sortBy['column'];
         $dir = $this->sortBy['direction'];
 
-        return $this->applyFilters(Transaction::with(['credits', 'bankAccount', 'supportingDocuments']))
+        return $this->matchingQuery()
+            ->with(['credits', 'bankAccount', 'supportingDocuments'])
             ->orderBy($col, $dir)
             ->orderBy('transactions.id', $dir)
             ->paginate(25);
@@ -814,6 +811,17 @@ new class extends Component
         return $this->transactions()->pluck('id')->map(fn ($id): string => (string) $id)->toArray();
     }
 
+    /**
+     * The search and the drawer: what the list pages, and what "select all
+     * results" selects.
+     *
+     * @return Builder<Transaction>
+     */
+    protected function matchingQuery(): Builder
+    {
+        return $this->applyFilters(Transaction::query());
+    }
+
     private function afterJustifying(string $message): void
     {
         $this->prefillDocumentFormFrom($this->justificationTransactionOrFail());
@@ -821,13 +829,6 @@ new class extends Component
         unset($this->justificationTransaction, $this->documentSuggestions, $this->documentSearchResults, $this->stats);
 
         $this->success($message);
-    }
-
-    private function allMatchingTransactionIds(): array
-    {
-        return $this->applyFilters(Transaction::query())
-            ->pluck('id')
-            ->toArray();
     }
 
     /**

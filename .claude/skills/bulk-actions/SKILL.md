@@ -21,7 +21,16 @@ Must implement in the component:
 ```php
 protected function getPageIds(): array           // string IDs of current page
 public function getTotalMatchingCount(): int      // total matching filters
+protected function matchingQuery(): Builder       // the list's query, filters applied, NOT paginated
 ```
+
+**`matchingQuery()` is the single source of what the list shows.** The paginated computed is built on it (`$this->matchingQuery()->with(...)->orderBy(...)->orderBy('<table>.id')->paginate(N)`), and the trait's `selectAllResults()` plucks every key from it (order dropped). So "Select all N results" really puts the N ids in `$selected`, and every bulk action simply reads `$this->selected` — never re-query on `$selectingAllResults`, never override `selectAllResults()`.
+
+- Put search, filters, tabs and visibility rules (e.g. drafts hidden from readers) in `matchingQuery()`; put eager loads, `withCount`, ordering and `paginate()` in the computed.
+- Group every `orWhere` of a filter in a `where(fn)` — `when()` opens no parenthesis (see the treasury `applyFilters()`).
+- The paginated query ends with `->orderBy('<table>.id')`: without a total order, MySQL serves ties in a different order on each page.
+- Bulk actions receive ids the page never showed (and a client can send any id): re-check the permission server-side in the action **and** in its `confirm…()` opener (`Gate::authorize(...)` / `abort_unless($this->canManage, 403)`), and re-check per-row eligibility (`canBeDeleted()`, state machine…) inside the action. Hide the pill for readers.
+- Test each list with more matching rows than one page plus rows the filter excludes: `selectAllResults` must hold all of the former, none of the latter, and the bulk action must reach rows beyond page one (see `tests/Feature/SelectAllResultsTest.php`).
 
 **`App\Livewire\Concerns\HasFilterDrawer`**
 Provides: `$filterDrawer`, `removeFilter(string $key)`, `clearFilters()` (override)
@@ -52,6 +61,7 @@ Demo pages have been deleted after the variant was chosen.
 // In the component PHP:
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\WithPagination;
 
 new class extends Component
@@ -74,6 +84,25 @@ new class extends Component
         return $this->items->total();
     }
 
+    #[Computed]
+    public function items(): LengthAwarePaginator
+    {
+        return $this->matchingQuery()
+            ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
+            ->orderBy('my_models.id') // total order
+            ->paginate(20);
+    }
+
+    /** @return Builder<MyModel> */
+    protected function matchingQuery(): Builder
+    {
+        return MyModel::query()
+            ->when($this->search, fn ($q) => $q->where(fn ($q) => $q
+                ->where('title', 'like', "%{$this->search}%")
+                ->orWhere('body', 'like', "%{$this->search}%")))
+            ->when($this->status, fn ($q) => $q->where('status', $this->status));
+    }
+
     public function getFilterChips(): array
     {
         return array_filter([
@@ -90,6 +119,9 @@ new class extends Component
     // Bulk actions
     public function bulkDelete(): void
     {
+        Gate::authorize(Permission::MyModelsManage->value);
+
+        // $selected holds every matching id after "select all results".
         MyModel::whereIn('id', $this->selected)->delete();
         $this->clearSelection();
         $this->success(__('Deleted.'));

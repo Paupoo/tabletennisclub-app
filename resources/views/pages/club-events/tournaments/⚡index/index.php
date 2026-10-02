@@ -15,6 +15,7 @@ use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -238,30 +239,16 @@ new class extends Component
     #[Computed]
     public function tournaments(): LengthAwarePaginator
     {
-        return Tournament::withCount([
-            'users AS active_registrations_count' => fn ($q) => $q->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered']),
-            'users AS waiting_count' => fn ($q) => $q->where('tournament_user.registration_status', 'waiting'),
-        ])
+        return $this->matchingQuery()
+            ->withCount([
+                'users AS active_registrations_count' => fn ($q) => $q->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered']),
+                'users AS waiting_count' => fn ($q) => $q->where('tournament_user.registration_status', 'waiting'),
+            ])
             ->with('eventPost')
-            ->when(! $this->canManage, fn ($q) => $q->whereNotIn('status', [TournamentStatusEnum::DRAFT->value]))
-            ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%"))
-            ->when($this->status, fn ($q) => $q->where('status', $this->status))
-            ->when(
-                self::phaseStatuses()[$this->phase] ?? null,
-                fn ($q, array $statuses) => $q->whereIn('status', $statuses),
-            )
-            ->when($this->matchType, fn ($q) => $q->where('match_type', $this->matchType))
-            ->when($this->isFull === 'full', fn ($q) => $q->whereRaw(
-                '(SELECT COUNT(*) FROM tournament_user WHERE tournament_id = tournaments.id AND registration_status IN (?, ?, ?)) >= tournaments.max_users AND tournaments.max_users > 0',
-                ['registered', 'confirmed', 'spot_offered']
-            ))
-            ->when($this->isFull === 'not_full', fn ($q) => $q->whereRaw(
-                '((SELECT COUNT(*) FROM tournament_user WHERE tournament_id = tournaments.id AND registration_status IN (?, ?, ?)) < tournaments.max_users OR tournaments.max_users = 0)',
-                ['registered', 'confirmed', 'spot_offered']
-            ))
-            ->when($this->hasEvent === 'yes', fn ($q) => $q->whereHas('eventPost', fn ($eq) => $eq->where('status', EventPostStatusEnum::PUBLISHED)))
-            ->when($this->hasEvent === 'no', fn ($q) => $q->whereDoesntHave('eventPost', fn ($eq) => $eq->where('status', EventPostStatusEnum::PUBLISHED)))
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
+            // A total order: rows tied on the sorted column would otherwise
+            // move between pages, some shown twice and some never.
+            ->orderBy('tournaments.id')
             ->paginate(20);
     }
 
@@ -358,5 +345,34 @@ new class extends Component
             ->pluck('id')
             ->map(fn (int $id): string => (string) $id)
             ->toArray();
+    }
+
+    /**
+     * The search, the phase and the drawer — drafts hidden from whoever cannot
+     * manage them: what the list pages, and what "select all results" selects.
+     *
+     * @return Builder<Tournament>
+     */
+    protected function matchingQuery(): Builder
+    {
+        return Tournament::query()
+            ->when(! $this->canManage, fn ($q) => $q->whereNotIn('status', [TournamentStatusEnum::DRAFT->value]))
+            ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%"))
+            ->when($this->status, fn ($q) => $q->where('status', $this->status))
+            ->when(
+                self::phaseStatuses()[$this->phase] ?? null,
+                fn ($q, array $statuses) => $q->whereIn('status', $statuses),
+            )
+            ->when($this->matchType, fn ($q) => $q->where('match_type', $this->matchType))
+            ->when($this->isFull === 'full', fn ($q) => $q->whereRaw(
+                '(SELECT COUNT(*) FROM tournament_user WHERE tournament_id = tournaments.id AND registration_status IN (?, ?, ?)) >= tournaments.max_users AND tournaments.max_users > 0',
+                ['registered', 'confirmed', 'spot_offered']
+            ))
+            ->when($this->isFull === 'not_full', fn ($q) => $q->whereRaw(
+                '((SELECT COUNT(*) FROM tournament_user WHERE tournament_id = tournaments.id AND registration_status IN (?, ?, ?)) < tournaments.max_users OR tournaments.max_users = 0)',
+                ['registered', 'confirmed', 'spot_offered']
+            ))
+            ->when($this->hasEvent === 'yes', fn ($q) => $q->whereHas('eventPost', fn ($eq) => $eq->where('status', EventPostStatusEnum::PUBLISHED)))
+            ->when($this->hasEvent === 'no', fn ($q) => $q->whereDoesntHave('eventPost', fn ($eq) => $eq->where('status', EventPostStatusEnum::PUBLISHED)));
     }
 };

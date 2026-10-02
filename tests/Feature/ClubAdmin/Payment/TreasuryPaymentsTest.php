@@ -291,12 +291,13 @@ describe('treasury search — stays inside the active tab', function (): void {
             'status' => 'pending',
         ]);
 
-        // « Tout sélectionner » passe par allMatchingPaymentIds(), qui est privée :
-        // le seul point d'observation public est ce que l'action de masse enfile.
+        // « Tout sélectionner » lit la requête filtrée de la liste : ce que
+        // l'action de masse enfile dit ce que la sélection a retenu.
         mountTreasury($admin)
             ->set('statusFilter', 'pending')
             ->set('search', 'Lemoine')
-            ->set('selectingAllResults', true)
+            ->set('selectAll', true)
+            ->call('selectAllResults')
             ->call('bulkSendReminder');
 
         Queue::assertPushed(SendPaymentReminderJob::class, 1);

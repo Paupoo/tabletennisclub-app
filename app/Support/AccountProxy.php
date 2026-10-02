@@ -32,6 +32,9 @@ final class AccountProxy
     /** Where the id of the person who actually signed in is kept. */
     public const string ORIGIN_KEY = 'account_proxy.origin_user_id';
 
+    /** Raised while this class itself moves the seat — see {@see self::isSwitching()}. */
+    private static bool $switching = false;
+
     /**
      * Refuse a gesture that only an account's own holder may make.
      *
@@ -49,6 +52,16 @@ final class AccountProxy
     public static function isActing(): bool
     {
         return self::origin() instanceof User;
+    }
+
+    /**
+     * Whether the sign-in under way is a seat changing hands rather than a
+     * person signing in. `Auth::login()` fires the same event either way, and
+     * the last sign-in shown in the members list must only count the latter.
+     */
+    public static function isSwitching(): bool
+    {
+        return self::$switching;
     }
 
     /**
@@ -85,7 +98,7 @@ final class AccountProxy
 
         // `Auth::login()` migrates the session id (and carries its data over),
         // so the origin has to be written after the switch, not before.
-        Auth::login($ward);
+        self::switchTo($ward);
 
         session()->put(self::ORIGIN_KEY, $actor->id);
     }
@@ -103,10 +116,21 @@ final class AccountProxy
             return null;
         }
 
-        Auth::login($origin);
+        self::switchTo($origin);
 
         session()->forget(self::ORIGIN_KEY);
 
         return $origin;
+    }
+
+    private static function switchTo(User $user): void
+    {
+        self::$switching = true;
+
+        try {
+            Auth::login($user);
+        } finally {
+            self::$switching = false;
+        }
     }
 }

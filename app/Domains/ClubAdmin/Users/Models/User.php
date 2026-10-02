@@ -72,6 +72,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $iban
  * @property \Illuminate\Support\Carbon|null $birthdate
  * @property \Illuminate\Support\Carbon|null $renewal_reminded_at
+ * @property \Illuminate\Support\Carbon|null $last_login_at Not fillable: written by RecordLastLogin, past Eloquent
  * @property string|null $street
  * @property string|null $city_code
  * @property string|null $city_name
@@ -213,6 +214,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'deleted_at' => 'datetime',
         'last_invited_at' => 'datetime',
         'renewal_reminded_at' => 'datetime',
+        'last_login_at' => 'datetime',
         'federation_synced_at' => 'datetime',
         'email_verified_at' => 'datetime',
         'gdpr_erasure_requested_at' => 'datetime',

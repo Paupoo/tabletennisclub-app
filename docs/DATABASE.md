@@ -101,7 +101,7 @@ erDiagram
 
 #### `interclub_user` (Selection polymorphe)
 - `user_id`, `interclub_id`
-- `is_subscribed` (joueur s'est manifesté), `is_selected` (confirmé), `has_played`
+- `is_subscribed` (joueur s'est manifesté), `is_selected` (confirmé), `has_played` (lu sur la feuille de match AFTT par `interclubs:import-results` ; `interclubs:record-who-played` le recalcule depuis les feuilles déjà importées ; seule la feuille fait foi, un score saisi à la main dans l'écran des résultats ne le pose pas)
 - `availability` (available/unavailable/uncertain), `selection_confirmed_at`
 
 #### `match_results` (Résultats ligue)

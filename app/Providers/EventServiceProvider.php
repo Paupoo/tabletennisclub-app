@@ -10,11 +10,13 @@ use App\Domains\Shared\Events\Subscriptions\SubscriptionCreated;
 use App\Domains\Shared\Events\Tournament\NewTournamentPublished;
 use App\Domains\Shared\Events\Tournament\UserUnregisteredFromTournament;
 use App\Listeners\NotifyParticipantsOfMeeting;
+use App\Listeners\RecordLastLogin;
 use App\Listeners\SendSubscriptionConfirmationEmail;
 use App\Listeners\SendTeamCreatedNotification;
 use App\Listeners\SendWelcomeEmail;
 use App\Listeners\Tournament\SendPublishedTournamentNotification;
 use App\Listeners\Tournament\UserUnregisteredToTournamentToTournament;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Support\Facades\Event;
@@ -39,6 +41,9 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
             SendWelcomeEmail::class,
+        ],
+        Login::class => [
+            RecordLastLogin::class,
         ],
         NewTournamentPublished::class => [
             SendPublishedTournamentNotification::class,

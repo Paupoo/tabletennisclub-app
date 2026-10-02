@@ -315,6 +315,8 @@ describe('accepting a guardian invitation', function (): void {
 
 describe('inviting guardians from the members list', function (): void {
 
+    // The wards below are affiliated nowhere: the list is opened with its
+    // default view dismissed, the rows read the same either way.
     beforeEach(function (): void {
         actingAs(User::factory()->withRole(Role::MEMBERS)->create());
     });
@@ -323,7 +325,7 @@ describe('inviting guardians from the members list', function (): void {
         $ward = ward();
         $guardian = guardianOf($ward, ['first_name' => 'Cristina', 'last_name' => 'Decreton']);
 
-        Livewire::test('pages::club-admin.users.index')
+        Livewire::withQueryParams(['allMembers' => true])->test('pages::club-admin.users.index')
             ->assertDontSee("sendInvitation({$ward->id})", escape: false)
             ->assertSee("sendGuardianInvitation({$ward->id})", escape: false)
             ->assertSee($guardian->full_name);
@@ -335,7 +337,7 @@ describe('inviting guardians from the members list', function (): void {
         guardianOf($ward, ['email' => 'mother@example.com']);
         guardianOf($ward, ['email' => 'father@example.com']);
 
-        Livewire::test('pages::club-admin.users.index')
+        Livewire::withQueryParams(['allMembers' => true])->test('pages::club-admin.users.index')
             ->call('sendGuardianInvitation', $ward->id);
 
         Mail::assertQueued(InviteGuardianMail::class, 2);
@@ -346,7 +348,7 @@ describe('inviting guardians from the members list', function (): void {
         $ward = ward();
         guardianOf($ward, ['user_id' => User::factory()->create()->id]);
 
-        Livewire::test('pages::club-admin.users.index')
+        Livewire::withQueryParams(['allMembers' => true])->test('pages::club-admin.users.index')
             ->call('sendGuardianInvitation', $ward->id);
 
         Mail::assertNothingQueued();
@@ -361,7 +363,7 @@ describe('inviting guardians from the members list', function (): void {
         $member = User::factory()->create(['first_name' => 'Cristina', 'last_name' => 'Decreton']);
         guardianOf($ward, ['user_id' => $member->id, 'first_name' => 'Cristina', 'last_name' => 'Decreton']);
 
-        Livewire::test('pages::club-admin.users.index')
+        Livewire::withQueryParams(['allMembers' => true])->test('pages::club-admin.users.index')
             ->assertDontSee("sendGuardianInvitation({$ward->id})", escape: false)
             ->assertSee(__(':names answers for this member and manages their account.', ['names' => 'Cristina Decreton']));
     });
@@ -371,7 +373,7 @@ describe('inviting guardians from the members list', function (): void {
         $ward = ward();
         guardianOf($ward);
 
-        Livewire::test('pages::club-admin.users.index')
+        Livewire::withQueryParams(['allMembers' => true])->test('pages::club-admin.users.index')
             ->call('sendGuardianInvitation', $ward->id)
             ->assertForbidden();
     });
@@ -391,7 +393,7 @@ describe('inviting guardians from the members list', function (): void {
             'last_invited_at' => now()->subDay(),
         ]);
 
-        Livewire::test('pages::club-admin.users.index')
+        Livewire::withQueryParams(['allMembers' => true])->test('pages::club-admin.users.index')
             // Inviter et relancer ne se proposent jamais ensemble : le tuteur
             // est à un seul stade à la fois.
             ->assertDontSee("sendGuardianInvitation({$ward->id})", escape: false)
@@ -405,7 +407,7 @@ describe('inviting guardians from the members list', function (): void {
         guardianOf($ward, ['email' => 'mother@example.com', 'last_invited_at' => now()->subDay()]);
         guardianOf($ward, ['email' => 'father@example.com', 'last_invited_at' => now()->subDay()]);
 
-        Livewire::test('pages::club-admin.users.index')
+        Livewire::withQueryParams(['allMembers' => true])->test('pages::club-admin.users.index')
             ->call('openRemindGuardian', $ward->id)
             ->assertSet('remindGuardianModal', true)
             ->call('confirmRemindGuardian')
@@ -421,7 +423,7 @@ describe('inviting guardians from the members list', function (): void {
 
         // Le tuteur a déjà un compte : il n'est pas « en attente », donc la
         // modale ne s'ouvre même pas et rien ne part.
-        Livewire::test('pages::club-admin.users.index')
+        Livewire::withQueryParams(['allMembers' => true])->test('pages::club-admin.users.index')
             ->call('openRemindGuardian', $ward->id)
             ->assertSet('remindGuardianModal', false)
             ->call('confirmRemindGuardian');
@@ -434,7 +436,7 @@ describe('inviting guardians from the members list', function (): void {
         $ward = ward();
         guardianOf($ward, ['last_invited_at' => now()->subDay()]);
 
-        Livewire::test('pages::club-admin.users.index')
+        Livewire::withQueryParams(['allMembers' => true])->test('pages::club-admin.users.index')
             ->call('openRemindGuardian', $ward->id)
             ->assertForbidden();
     });

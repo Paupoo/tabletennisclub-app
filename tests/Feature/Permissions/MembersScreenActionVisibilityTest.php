@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
@@ -17,10 +18,12 @@ pest()->group('club-admin', 'users', 'permissions');
 */
 
 beforeEach(function (): void {
-    makeActiveSeason();
+    $season = makeActiveSeason();
 
-    // Unverified so the "Resend invitation" button is rendered at all.
+    // Unverified so the "Resend invitation" button is rendered at all, and
+    // affiliated so the list, which opens on the current members, shows them.
     $this->target = User::factory()->unverified()->create();
+    Subscription::factory()->for($this->target)->for($season)->create(['status' => 'confirmed']);
 
     $this->readOnly = User::factory()->isCommitteeMember()->create();
     $this->delegate = User::factory()->withRole(Role::MEMBERS)->create();

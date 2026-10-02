@@ -4,18 +4,23 @@ declare(strict_types=1);
 
 use App\Actions\User\AnonymizeUserAction;
 use App\Actions\User\CreateUserAction;
+use App\Actions\User\DeclareMemberDepartureAction;
 use App\Actions\User\RecalculateForceListAction;
 use App\Actions\User\RestoreUserAction;
 use App\Actions\User\SendGuardianInvitationAction;
 use App\Actions\User\SendInvitationAction;
+use App\Actions\User\SendRenewalRemindersAction;
 use App\Actions\User\SoftDeleteUserAction;
 use App\Data\User\CreateUserData;
+use App\Domains\ClubAdmin\Users\Data\MemberDepartureOutcome;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\DepartureReason;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\MembershipStatus;
 use App\Domains\Shared\Enums\Permission;
 use App\Jobs\SendGuardianInvitationJob;
 use App\Jobs\SendMemberInvitationJob;
@@ -25,9 +30,12 @@ use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use App\Support\LocaleSort;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule as ValidationRule;
 use Livewire\Attributes\Computed;
@@ -41,11 +49,43 @@ new class extends Component
     use HasBreadcrumbs, Toast, WithPagination;
     use HasBulkActions, HasFilterDrawer;
 
+    /**
+     * The affiliated members with no trace at the club for a while: `season`
+     * since the running season began, `six_weeks` over the last six weeks.
+     * Any other value, including one from an old link, reads as no filter.
+     */
+    #[Url]
+    public string $activity = '';
+
     public bool $addToTeamModal = false;
 
     /** The grown members the club still cannot hand a login to. */
     #[Url]
     public bool $adultWithoutAddress = false;
+
+    /**
+     * The statuses ticked in the drawer. Empty is not "nobody": it is the view
+     * the list opens on — see {@see self::defaultViewApplies()}. A value no
+     * status answers to, from an old or tampered link, is ignored.
+     *
+     * @var array<int, string>
+     */
+    #[Url]
+    public array $affiliation = [];
+
+    /**
+     * `minors` for the members under 18 today, `adults` for 18 and over. A
+     * member of unknown age is neither, as on the model. Any other value,
+     * including one from an old link, reads as no filter.
+     */
+    #[Url]
+    public string $age = '';
+
+    /**
+     * The default view was dismissed: everybody on file, the archived aside.
+     */
+    #[Url]
+    public bool $allMembers = false;
 
     public string $anonymizeConfirmText = '';
 
@@ -65,6 +105,13 @@ new class extends Component
 
     // ── Modals ───────────────────────────────────────────────────────────────
     public bool $deleteModal = false;
+
+    public string $departureLeftOn = '';
+
+    // ── Departure (bulk) ─────────────────────────────────────────────────────
+    public bool $departureModal = false;
+
+    public string $departureReason = '';
 
     /** How many parents the selection is about to write to on a ward's behalf. */
     public int $guardiansToInvite = 0;
@@ -92,6 +139,12 @@ new class extends Component
 
     public string $inviteLastName = '';
 
+    /**
+     * The minors nobody answers for: no guardian at all on their file.
+     */
+    #[Url]
+    public bool $minorsWithoutGuardian = false;
+
     // ── Quick invite ─────────────────────────────────────────────────────────
     public bool $quickInviteDrawer = false;
 
@@ -103,10 +156,18 @@ new class extends Component
 
     public int $remindGuardianUserId = 0;
 
+    /** Only the accounts that answer for a ward. */
+    #[Url]
+    public bool $responsibleAdultsOnly = false;
+
     // ── Filters & sort ───────────────────────────────────────────────────────
     #[Url]
     public string $search = '';
 
+    /**
+     * Competitive or recreational licence of the running season. Any other
+     * value, including one from an older link, reads as "all".
+     */
     #[Url]
     public string $selectedLicenceType = 'both';
 
@@ -141,11 +202,9 @@ new class extends Component
      * not listed here — including a tampered `sortBy` URL value — falls back to a
      * safe default instead of reaching `orderBy()` with a raw, unknown column.
      *
-     * `is_competitive` is deliberately absent: the "Licence" header is keyed on
-     * that name, but no such column exists on `users` — holding a competitive
-     * licence is a fact of the subscription for the current season. Listing it
-     * here is what let a header click reach MySQL as an unknown column; it is
-     * ordered by {@see User::scopeOrderByCompetitiveStatus()} instead.
+     * The affiliation column is not sortable: its status is read across
+     * seasons, and an order on it would buy little for a costly query. An old
+     * link still sorting on the retired `is_competitive` falls back here.
      *
      * @var array<string, array<int, string>>
      */
@@ -154,7 +213,39 @@ new class extends Component
         'last_name' => ['last_name', 'first_name'],
         'email' => ['email'],
         'ranking' => ['ranking'],
+        'last_activity_at' => ['last_activity_at'],
+        'last_login_at' => ['last_login_at'],
     ];
+
+    /**
+     * The activity filter's choices.
+     *
+     * @return array<int, array{id: string, name: string}>
+     */
+    #[Computed]
+    public function activityOptions(): array
+    {
+        return [
+            ['id' => '',          'name' => __('All')],
+            ['id' => 'season',    'name' => __('No activity recorded this season')],
+            ['id' => 'six_weeks', 'name' => __('No activity recorded for 6 weeks')],
+        ];
+    }
+
+    /**
+     * The age filter's choices.
+     *
+     * @return array<int, array{id: string, name: string}>
+     */
+    #[Computed]
+    public function ageOptions(): array
+    {
+        return [
+            ['id' => '',       'name' => __('All')],
+            ['id' => 'minors', 'name' => __('Minors')],
+            ['id' => 'adults', 'name' => __('Adults')],
+        ];
+    }
 
     // ── Bulk actions ──────────────────────────────────────────────────────────
 
@@ -200,11 +291,91 @@ new class extends Component
         }
     }
 
+    /**
+     * Record one departure, with one reason and one date, for every member of
+     * the selection — the end-of-season round of those who said goodbye.
+     */
+    public function bulkDeclareDeparture(): void
+    {
+        Gate::authorize(Permission::UsersUpdate->value);
+
+        $this->validate([
+            'departureReason' => ['required', ValidationRule::enum(DepartureReason::class)],
+            'departureLeftOn' => ['required', 'date'],
+        ]);
+
+        $members = User::query()->whereIn('id', $this->selected)->get();
+
+        try {
+            // One transaction for the whole selection: the captains' mails
+            // leave once every departure is recorded, so a captain leaving in
+            // the same gesture as one of their players — or a selector — is
+            // never told.
+            $outcome = MemberDepartureOutcome::merge(DB::transaction(fn (): Collection => $members->map(fn (User $member): MemberDepartureOutcome => DeclareMemberDepartureAction::handle(
+                $member,
+                Carbon::parse($this->departureLeftOn),
+                DepartureReason::from($this->departureReason),
+                null,
+                Auth::user(),
+                $members->modelKeys(),
+            ))), $members->modelKeys());
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->reset(['departureModal', 'departureReason']);
+        $this->clearSelection();
+
+        $this->success(
+            trans_choice('{1} :count member marked as left.|[2,*] :count members marked as left.', $members->count(), ['count' => $members->count()])
+            . $this->freedTeamsNotice($outcome->teamsWithoutCaptain)
+            . $outcome->fixturesNotice()
+        );
+    }
+
     public function bulkInvite(): void
     {
         Gate::authorize('sendEmail', User::class);
 
         $this->dispatchInvitations(confirmed: false);
+    }
+
+    /**
+     * Remind the members of the selection who have not registered again.
+     *
+     * The selection usually comes from the default view, where the members to
+     * follow up sit among everyone else: the others are counted, not written to.
+     */
+    public function bulkRemindRenewal(): void
+    {
+        Gate::authorize('sendEmail', User::class);
+
+        $result = SendRenewalRemindersAction::handle($this->selected);
+
+        $this->clearSelection();
+
+        $parts = array_filter([
+            $result['queued'] > 0 ? __(':count reminder(s) on their way.', ['count' => $result['queued']]) : null,
+            $result['recentlyReminded'] > 0 ? __(':count reminded less than :days days ago.', ['count' => $result['recentlyReminded'], 'days' => SendRenewalRemindersAction::REMINDER_INTERVAL_DAYS]) : null,
+            $result['unreachable'] > 0 ? __(':count have no address the club can write to.', ['count' => $result['unreachable']]) : null,
+            $result['queued'] > 0 && $result['notToFollowUp'] > 0 ? __(':count member(s) of the selection are not to follow up.', ['count' => $result['notToFollowUp']]) : null,
+        ]);
+
+        if ($parts === []) {
+            $this->warning(__('Nobody in this selection is waiting for a reminder.'));
+
+            return;
+        }
+
+        if ($result['queued'] === 0) {
+            $this->warning(implode(' ', $parts));
+
+            return;
+        }
+
+        $this->success(implode(' ', $parts));
     }
 
     public function bulkSubscribe(): void
@@ -222,18 +393,27 @@ new class extends Component
         $this->success(__('Users subscribed.'));
     }
 
+    /**
+     * Back to the view the list opens on, not to "everybody".
+     */
     public function clearFilters(): void
     {
+        $this->affiliation = [];
+        $this->allMembers = false;
+        $this->responsibleAdultsOnly = false;
         $this->selectedLicenceType = 'both';
         $this->categories = [];
+        $this->age = '';
         $this->invitationState = '';
         $this->incompleteProfile = false;
         $this->adultWithoutAddress = false;
+        $this->minorsWithoutGuardian = false;
         $this->unpaidSubscription = false;
         $this->hasKey = false;
         $this->hasCashRegister = false;
         $this->team_ids = [];
         $this->showArchived = false;
+        $this->activity = '';
         $this->resetPage();
     }
 
@@ -325,6 +505,19 @@ new class extends Component
         ]));
     }
 
+    /**
+     * Whether the list stands on the view it opens on: this season's members,
+     * last season's still to hear from, and the responsible adults.
+     *
+     * Suspended while a search is typed — a name is looked for among everybody,
+     * and a member who left two seasons ago is exactly who one searches for —
+     * and in the archive, which holds former members by definition.
+     */
+    public function defaultViewApplies(): bool
+    {
+        return $this->standsOnDefaultView() && trim($this->search) === '';
+    }
+
     public function delete(): void
     {
         $user = User::findOrFail($this->userToDelete);
@@ -368,10 +561,29 @@ new class extends Component
     {
         $chips = [];
 
-        if ($this->selectedLicenceType !== 'both') {
+        if ($this->defaultViewApplies()) {
+            $chips[] = ['key' => 'currentMembers', 'label' => __('Current members + to follow up')];
+        }
+
+        foreach ($this->chosenStatuses() as $status) {
+            $chips[] = ['key' => "affiliation_{$status->value}", 'label' => $status->label()];
+        }
+
+        if ($this->licenceFilter() !== null) {
             $chips[] = [
                 'key' => 'selectedLicenceType',
-                'label' => $this->selectedLicenceType === 'competitive' ? __('Competitive') : __('Recreational'),
+                'label' => $this->licenceFilter() ? __('Competitive') : __('Recreational'),
+            ];
+        }
+
+        if ($this->responsibleAdultsOnly) {
+            $chips[] = ['key' => 'responsibleAdultsOnly', 'label' => __('Responsible adults')];
+        }
+
+        if ($this->activitySince() instanceof Carbon) {
+            $chips[] = [
+                'key' => 'activity',
+                'label' => collect($this->activityOptions())->firstWhere('id', $this->activity)['name'],
             ];
         }
 
@@ -382,6 +594,13 @@ new class extends Component
                     'label' => $gender->getLabel(),
                 ];
             }
+        }
+
+        if ($this->ageFilter() !== null) {
+            $chips[] = [
+                'key' => 'age',
+                'label' => collect($this->ageOptions())->firstWhere('id', $this->age)['name'],
+            ];
         }
 
         if ($this->invitationState !== '') {
@@ -406,6 +625,10 @@ new class extends Component
 
         if ($this->incompleteProfile) {
             $chips[] = ['key' => 'incompleteProfile', 'label' => __('Incomplete profile')];
+        }
+
+        if ($this->minorsWithoutGuardian) {
+            $chips[] = ['key' => 'minorsWithoutGuardian', 'label' => __('Minors without a responsible adult')];
         }
 
         if ($this->unpaidSubscription) {
@@ -444,21 +667,46 @@ new class extends Component
      *
      * Toutes ensemble, elles demandaient 1140 px : la carte n'en offre que 634
      * à 1024 et 890 à 1280, et le tableau débordait à droite, emportant le
-     * bouton de chaque ligne. L'e-mail est passé sous le nom ; Licence et
-     * Classement attendent `xl`, la photo — un avatar générique pour presque
-     * tout le monde — attend `2xl`.
+     * bouton de chaque ligne. L'e-mail est passé sous le nom ; le classement
+     * attend `xl`. La photo — un avatar générique pour presque tout le monde —
+     * a laissé sa place à l'affiliation, que la secrétaire lit à chaque ligne.
+     *
+     * La dernière activité et la dernière connexion paraissent à `2xl`. À 1280,
+     * la seule date demandait 48 px de trop sous un nom de 28 caractères dans la
+     * police de repli de la CI (DejaVu Sans) : il ne restait que 53 px, et
+     * l'en-tête d'une date en prend une centaine même replié sur deux lignes
+     * (`whitespace-normal`, la ligne d'en-tête de daisyUI ne coupe jamais).
+     * Voir tests/Browser/UsersTableWidthTest.php.
+     *
+     * Sur la liste des nouveaux, l'accueil prend la place du classement et des
+     * deux dates : avec ses cinq icônes en plus, la table débordait de 116 px
+     * à 1280 et de 73 px à 1536. Rien de ce qui part ne manque ici — la
+     * première venue est la dernière activité d'un nouveau, le compte créé sa
+     * première connexion, et son classement reste sur sa fiche.
      *
      * @return array<int, array<string, mixed>>
      */
     #[Computed]
     public function headers(): array
     {
+        $headers = [
+            ['key' => 'name',        'label' => __('Name'),        'sortable' => true],
+            ['key' => 'affiliation', 'label' => __('Affiliation'), 'sortable' => false],
+            ['key' => 'ranking',     'label' => __('Ranking'),     'sortable' => true,  'class' => 'hidden xl:table-cell'],
+            ['key' => 'last_activity_at', 'label' => __('Last activity'), 'sortable' => true, 'class' => 'hidden 2xl:table-cell whitespace-normal'],
+            ['key' => 'last_login_at',    'label' => __('Last sign-in'),  'sortable' => true, 'class' => 'hidden 2xl:table-cell whitespace-normal'],
+            ['key' => 'status',      'label' => __('Account'),     'sortable' => false],
+        ];
+
+        if (! $this->showsOnboardingColumn()) {
+            return $headers;
+        }
+
         return [
-            ['key' => 'photo',          'label' => '',            'sortable' => false, 'class' => 'hidden 2xl:table-cell'],
-            ['key' => 'name',           'label' => __('Name'),    'sortable' => true],
-            ['key' => 'is_competitive', 'label' => __('Licence'), 'sortable' => true,  'class' => 'hidden xl:table-cell'],
-            ['key' => 'ranking',        'label' => __('Ranking'), 'sortable' => true,  'class' => 'hidden xl:table-cell'],
-            ['key' => 'status',         'label' => __('Status'),  'sortable' => false],
+            $headers[0],
+            $headers[1],
+            ['key' => 'onboarding', 'label' => __('Onboarding'), 'sortable' => false],
+            $headers[5],
         ];
     }
 
@@ -495,10 +743,20 @@ new class extends Component
     public function licenceTypes(): array
     {
         return [
-            ['id' => 'both',        'name' => __('Both')],
+            ['id' => 'both',        'name' => __('All')],
             ['id' => 'competitive', 'name' => __('Competitive')],
-            ['id' => 'recreative',  'name' => __('Recreative')],
+            ['id' => 'recreative',  'name' => __('Recreational')],
         ];
+    }
+
+    /**
+     * From the archive confirmation to the gesture the office usually meant:
+     * the selection is kept, only the modal changes.
+     */
+    public function markAsLeftInstead(): void
+    {
+        $this->confirmArchiveModal = false;
+        $this->openBulkDeparture();
     }
 
     /**
@@ -523,6 +781,15 @@ new class extends Component
         $this->anonymizeUserId = $userId;
         $this->anonymizeConfirmText = '';
         $this->anonymizeModal = true;
+    }
+
+    public function openBulkDeparture(): void
+    {
+        Gate::authorize(Permission::UsersUpdate->value);
+
+        $this->resetValidation();
+        $this->departureLeftOn = today()->toDateString();
+        $this->departureModal = true;
     }
 
     /**
@@ -551,6 +818,20 @@ new class extends Component
         $this->remindGuardianUserId = $userId;
         $this->remindGuardianNames = $guardians->pluck('full_name')->join(', ', ' ' . __('and') . ' ');
         $this->remindGuardianModal = true;
+    }
+
+    /**
+     * The name of the season the "to follow up" members were last affiliated
+     * to, read once for the whole page rather than once per row.
+     *
+     * A string, empty when there is none: a computed property that returns
+     * null is not memoised, and the first season of the club asked the
+     * database again on every row.
+     */
+    #[Computed]
+    public function previousSeasonName(): string
+    {
+        return Season::current()?->previous()->name ?? '';
     }
 
     public function quickInvite(): void
@@ -596,7 +877,14 @@ new class extends Component
 
     public function removeFilter(string $key): void
     {
-        if (str_starts_with($key, 'categories_')) {
+        if ($key === 'currentMembers') {
+            $this->allMembers = true;
+        } elseif (str_starts_with($key, 'affiliation_')) {
+            $value = substr($key, strlen('affiliation_'));
+            $this->affiliation = array_values(
+                array_filter($this->affiliation, fn (string $v): bool => $v !== $value)
+            );
+        } elseif (str_starts_with($key, 'categories_')) {
             $value = substr($key, strlen('categories_'));
             $this->categories = array_values(
                 array_filter($this->categories, fn (string $v): bool => $v !== $value)
@@ -619,6 +907,8 @@ new class extends Component
             'filterChips' => $this->filterChips,
             'licenceTypes' => $this->licenceTypes,
             'invitationStates' => $this->invitationStates,
+            'activityOptions' => $this->activityOptions,
+            'ageOptions' => $this->ageOptions,
             'stats' => $this->stats,
         ]);
     }
@@ -631,6 +921,18 @@ new class extends Component
         RestoreUserAction::handle($user);
 
         $this->success(__('User restored.'));
+    }
+
+    // ── Computed ──────────────────────────────────────────────────────────────
+
+    /**
+     * Whether a search is reaching past the default view, which the page says
+     * under the search field so that nobody wonders where the other rows came
+     * from.
+     */
+    public function searchesPastDefaultView(): bool
+    {
+        return $this->standsOnDefaultView() && trim($this->search) !== '';
     }
 
     /**
@@ -684,17 +986,43 @@ new class extends Component
         $this->success(__('Invitation sent to :email.', ['email' => $user->email]));
     }
 
-    // ── Computed ──────────────────────────────────────────────────────────────
+    /**
+     * Whether the list shows where each member stands on their way in: on
+     * the list of the new members, and on it alone. Anywhere else most rows
+     * would tick every step, and the column would cost its width for nothing.
+     */
+    public function showsOnboardingColumn(): bool
+    {
+        $chosen = array_unique(array_map(fn (MembershipStatus $status): string => $status->value, $this->chosenStatuses()));
 
-    /** @return array<string, int> */
+        return $chosen === [MembershipStatus::New->value];
+    }
+
+    /**
+     * Bare counts, never filtered: they are the witness the list is checked
+     * against. Every one of them reads this season's affiliates — pending
+     * included, as in the affiliation column — and the licence off that same
+     * affiliation.
+     *
+     * Those who left this season stay among the affiliated: the departure
+     * cancels nothing, and the federation counts them all the same.
+     *
+     * The other statuses, the responsible adults and the activity live in the
+     * drawer: a card that only repeats a filter costs the strip its width.
+     *
+     * @return array{affiliated: int, new: int, competitors: int, recreational: int, minors: int, minors_without_guardian: int, women: int}
+     */
     #[Computed]
     public function stats(): array
     {
         return [
-            'total' => User::count(),
-            'registered' => User::affiliatedForCurrentSeason()->count(),
-            'competitive' => User::competitor()->count(),
-            'unregistered' => User::count() - User::affiliatedForCurrentSeason()->count(),
+            'affiliated' => User::affiliatedForCurrentSeason()->count(),
+            'new' => User::inMembershipStatus(MembershipStatus::New)->count(),
+            'competitors' => User::licensedThisSeason(true)->count(),
+            'recreational' => User::licensedThisSeason(false)->count(),
+            'minors' => User::affiliatedForCurrentSeason()->minor()->count(),
+            'minors_without_guardian' => User::affiliatedForCurrentSeason()->minor()->withoutGuardian()->count(),
+            'women' => User::affiliatedForCurrentSeason()->where('gender', Gender::WOMEN->value)->count(),
         ];
     }
 
@@ -734,6 +1062,21 @@ new class extends Component
 
     // ── Pagination hooks ──────────────────────────────────────────────────────
 
+    public function updatedActivity(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedAffiliation(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedAge(): void
+    {
+        $this->resetPage();
+    }
+
     public function updatedCategories(): void
     {
         $this->resetPage();
@@ -750,6 +1093,16 @@ new class extends Component
     }
 
     public function updatedIncompleteProfile(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedMinorsWithoutGuardian(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedResponsibleAdultsOnly(): void
     {
         $this->resetPage();
     }
@@ -777,65 +1130,7 @@ new class extends Component
     #[Computed]
     public function users(): LengthAwarePaginator
     {
-        $query = $this->showArchived
-            ? User::onlyTrashed()
-            : User::query();
-
-        $sortColumns = $this->sortableColumns[$this->sortBy['column']] ?? ['first_name', 'last_name'];
-
-        // The whitelist guarded the column and left the direction open, where a
-        // tampered value reaches `orderBy()` and throws rather than falling back.
-        $direction = $this->sortBy['direction'] === 'desc' ? 'desc' : 'asc';
-
-        return $query
-            // Guardians carry the account state of every managed member on the
-            // page — see {@see User::guardianshipStatus()} — so the badge, the
-            // note and the row menu would each lazy load without this.
-            ->with('guardians.member')
-            ->when($this->search, fn ($q) => $q->searchName($this->search))
-            ->when(
-                ! $this->showArchived && $this->selectedLicenceType === 'competitive',
-                fn ($q) => $q->competitor()
-            )
-            ->when(
-                // Complément exact de competitor() : une inscription compétitive
-                // annulée ne fait plus classer le membre en compétiteur.
-                // Volontairement sans filtre d'appartenance : la liste inclut
-                // aussi les utilisateurs sans inscription, comme avant.
-                ! $this->showArchived && $this->selectedLicenceType === 'recreative',
-                fn ($q) => $q->whereDoesntHave('subscriptions', fn ($s) => $s
-                    ->where('season_id', Season::current()?->id)
-                    ->active()
-                    ->where('is_competitive', true)
-                )
-            )
-            ->when(
-                $this->categories,
-                fn ($q) => $q->whereIn('gender', $this->categories)
-            )
-            ->when(
-                count($this->team_ids) > 0,
-                fn ($q) => $q->whereHas(
-                    'teams',
-                    fn ($teamQuery) => $teamQuery->whereIn('teams.id', $this->team_ids)
-                )
-            )
-            ->when($this->invitationState !== '', fn ($q) => $q->withInvitationState($this->invitationState))
-            ->when($this->incompleteProfile, fn ($q) => $q->withIncompleteProfile())
-            ->when($this->adultWithoutAddress, fn ($q) => $q->adultWithoutOwnAddress())
-            ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
-            ->when($this->hasKey, fn ($q) => $q->whereHas('keyRings'))
-            ->when($this->hasCashRegister, fn ($q) => $q->whereHas('heldCashRegisters'))
-            ->when(
-                $this->sortBy['column'] === 'is_competitive',
-                fn ($q) => $q->orderByCompetitiveStatus($direction),
-                fn ($q) => $q->tap(function ($query) use ($sortColumns, $direction): void {
-                    foreach ($sortColumns as $column) {
-                        $query->orderBy($column, $direction);
-                    }
-                })
-            )
-            ->paginate(15);
+        return $this->matchingQuery()->paginate(15);
     }
 
     protected function breadcrumbChain(): Breadcrumb
@@ -846,8 +1141,6 @@ new class extends Component
             ->current(__('List'));
     }
 
-    // ── HasBulkActions ────────────────────────────────────────────────────────
-
     /** @return array<int, string> */
     protected function getPageIds(): array
     {
@@ -855,6 +1148,139 @@ new class extends Component
             ->pluck('id')
             ->map(fn (int $id): string => (string) $id)
             ->toArray();
+    }
+
+    /**
+     * The members the search, the default view and the drawer leave in, in
+     * the order the list shows them — the page and "select all results" both.
+     *
+     * @return Builder<User>
+     */
+    protected function matchingQuery(): Builder
+    {
+        $query = $this->showArchived
+            ? User::onlyTrashed()
+            : User::query();
+
+        $sortColumns = $this->sortableColumns[$this->sortBy['column']] ?? ['first_name', 'last_name'];
+
+        // The whitelist guarded the column and left the direction open, where a
+        // tampered value reaches `orderBy()` and throws rather than falling back.
+        $direction = $this->sortBy['direction'] === 'desc' ? 'desc' : 'asc';
+
+        $statuses = $this->chosenStatuses();
+        $licence = $this->licenceFilter();
+        $age = $this->ageFilter();
+        $since = $this->activitySince();
+
+        return $query
+            // Guardians carry the account state of every managed member on the
+            // page — see {@see User::guardianshipStatus()} — so the badge, the
+            // note and the row menu would each lazy load without this.
+            ->with('guardians.member')
+            // Status, licence and responsible-adult badge, read in this query.
+            ->withMembershipFacts()
+            // The reason the "left" badge names, for the whole page at once.
+            ->with('departureThisSeason')
+            // Sortable, hence a column of the query rather than a relation.
+            ->withLastActivity()
+            // Charter and profile, for the onboarding steps, only when shown.
+            ->when($this->showsOnboardingColumn(), fn ($q) => $q->withOnboardingFacts())
+            // The paid badge of both twins, mobile and desktop: two queries a
+            // row without it. Read by User::getHasPaidAttribute().
+            ->withExists(['subscriptions as has_paid' => fn ($subscription) => $subscription
+                ->where('season_id', Season::current()->id ?? 0)
+                ->where('status', 'paid'),
+            ])
+            ->when($this->search, fn ($q) => $q->searchName($this->search))
+            ->when(
+                $this->defaultViewApplies(),
+                fn ($q) => $q->where(fn ($view) => $view
+                    ->inMembershipStatus(...MembershipStatus::currentMembers())
+                    ->orWhere(fn ($adults) => $adults->responsibleAdults())
+                )
+            )
+            ->when($statuses !== [], fn ($q) => $q->inMembershipStatus(...$statuses))
+            ->when($licence !== null, fn ($q) => $q->licensedThisSeason((bool) $licence))
+            ->when($this->responsibleAdultsOnly, fn ($q) => $q->responsibleAdults())
+            ->when(
+                $since instanceof Carbon,
+                fn ($q) => $q->affiliatedForCurrentSeason()->withoutActivitySince($since)
+            )
+            ->when(
+                $this->categories,
+                fn ($q) => $q->whereIn('gender', $this->categories)
+            )
+            ->when($age === 'minors', fn ($q) => $q->minor())
+            ->when($age === 'adults', fn ($q) => $q->adult())
+            ->when(
+                count($this->team_ids) > 0,
+                fn ($q) => $q->whereHas(
+                    'teams',
+                    fn ($teamQuery) => $teamQuery->whereIn('teams.id', $this->team_ids)
+                )
+            )
+            ->when($this->invitationState !== '', fn ($q) => $q->withInvitationState($this->invitationState))
+            ->when($this->incompleteProfile, fn ($q) => $q->withIncompleteProfile())
+            ->when($this->adultWithoutAddress, fn ($q) => $q->adultWithoutOwnAddress())
+            ->when($this->minorsWithoutGuardian, fn ($q) => $q->minor()->withoutGuardian())
+            ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
+            ->when($this->hasKey, fn ($q) => $q->whereHas('keyRings'))
+            ->when($this->hasCashRegister, fn ($q) => $q->whereHas('heldCashRegisters'))
+            ->tap(function ($query) use ($sortColumns, $direction): void {
+                foreach ($sortColumns as $column) {
+                    $query->orderBy($column, $direction);
+                }
+            })
+            // A total order: two namesakes tie, and MySQL may then serve them
+            // in a different order on each page — some rows on none of them.
+            ->orderBy('users.id');
+    }
+
+    /**
+     * Since when a member must have shown up to escape the activity filter,
+     * or null for no filter.
+     *
+     * Only the members affiliated this season are expected to show up: the
+     * filter keeps to them.
+     */
+    private function activitySince(): ?Carbon
+    {
+        return match ($this->activity) {
+            'season' => Carbon::parse(Season::current()->start_at ?? now()),
+            'six_weeks' => now()->subWeeks(6),
+            default => null,
+        };
+    }
+
+    /**
+     * The age the drawer asks for, or null for no filter: an unknown value
+     * from an old or tampered link is ignored.
+     *
+     * @return 'minors'|'adults'|null
+     */
+    private function ageFilter(): ?string
+    {
+        return match ($this->age) {
+            'minors' => 'minors',
+            'adults' => 'adults',
+            default => null,
+        };
+    }
+
+    // ── HasBulkActions ────────────────────────────────────────────────────────
+
+    /**
+     * The statuses ticked in the drawer that name a real status.
+     *
+     * @return list<MembershipStatus>
+     */
+    private function chosenStatuses(): array
+    {
+        return array_values(array_filter(array_map(
+            fn (mixed $value): ?MembershipStatus => is_string($value) ? MembershipStatus::tryFrom($value) : null,
+            $this->affiliation,
+        )));
     }
 
     /**
@@ -958,6 +1384,26 @@ new class extends Component
         sort($freedTeams);
 
         return ' ' . __('Teams left without a captain: :teams', ['teams' => implode(', ', $freedTeams)]);
+    }
+
+    /**
+     * True for competitive, false for recreational, null for no filter.
+     */
+    private function licenceFilter(): ?bool
+    {
+        return match ($this->selectedLicenceType) {
+            'competitive' => true,
+            'recreative' => false,
+            default => null,
+        };
+    }
+
+    /**
+     * Nothing ticked, nothing dismissed, and not in the archive.
+     */
+    private function standsOnDefaultView(): bool
+    {
+        return $this->chosenStatuses() === [] && ! $this->allMembers && ! $this->showArchived;
     }
 
     /**

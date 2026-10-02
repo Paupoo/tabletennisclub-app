@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace App\Livewire\Concerns;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+
 /**
  * Provides bulk selection for Livewire list components.
  *
  * Implementing class must define:
- *   - getPageIds(): array         — string IDs of the current paginated page
+ *   - getPageIds(): array          — string IDs of the current paginated page
  *   - getTotalMatchingCount(): int — total records matching current filters
+ *   - matchingQuery(): Builder     — the list's query, filters applied, unpaginated
  *
  * Requires: Livewire\WithPagination (for selectAllResults to make sense)
  */
@@ -41,6 +45,18 @@ trait HasBulkActions
      */
     abstract public function getTotalMatchingCount(): int;
 
+    /**
+     * The records the list shows across all its pages: the same query as the
+     * paginated one, search and filters applied, before `paginate()`.
+     *
+     * "Select all results" reads its ids from here, so the list and the
+     * selection must share this query — two copies have drifted before, and a
+     * bulk action then touched rows the banner never counted.
+     *
+     * @return Builder<covariant Model>
+     */
+    abstract protected function matchingQuery(): Builder;
+
     public function clearSelection(): void
     {
         $this->selected = [];
@@ -49,14 +65,26 @@ trait HasBulkActions
     }
 
     /**
-     * Escalate selection to all results matching current filters (Gmail pattern).
-     * NOTE: The IDs returned here are page-only; each component may override
-     * this to fetch all matching IDs if the action requires it server-side.
+     * Escalate the selection to every record the filters match, on every page
+     * (Gmail pattern).
+     *
+     * The banner announces "all N results selected": the selection holds those
+     * N ids, so a bulk action reading `$selected` reaches every one of them.
+     * The order is dropped — it decides nothing here, and a sort on a computed
+     * column has no business in a list of keys.
      */
     public function selectAllResults(): void
     {
+        $query = $this->matchingQuery();
+
         $this->selectingAllResults = true;
-        $this->selected = $this->getPageIds();
+        $this->selected = $query
+            ->reorder()
+            ->pluck($query->getModel()->getQualifiedKeyName())
+            ->unique()
+            ->map(fn (int|string $id): string => (string) $id)
+            ->values()
+            ->all();
     }
 
     /** Toggle mobile selection mode; clears selection on exit. */

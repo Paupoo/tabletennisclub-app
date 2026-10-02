@@ -195,6 +195,20 @@
                 <x-menu-separator />
             </div>
 
+            {{-- The mirror of the section above: on a parent's form, the members they answer for. --}}
+            @if ($this->wards->isNotEmpty())
+                <div class="col-span-6 md:col-span-2">
+                    <x-header :subtitle="__('Members this adult answers for')" :title="__('Responsible for')" />
+                </div>
+                <div class="col-span-6 md:col-span-4">
+                    <x-admin.users.wards-list :wards="$this->wards" :last-season="$this->previousSeasonName" />
+                </div>
+
+                <div class="col-span-6">
+                    <x-menu-separator />
+                </div>
+            @endif
+
             <!-- Section Family -->
             <div class="col-span-6 md:col-span-2">
                 <x-header :subtitle="__('Members who can see and register each other')" :title="__('Family')" />

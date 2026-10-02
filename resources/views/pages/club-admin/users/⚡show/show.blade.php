@@ -6,12 +6,21 @@
     $subscription = $this->currentSubscription;
     $delegations = $this->heldDelegations;
     $guardians = $user->guardians;
+    $wards = $this->wards;
     $family = $user->familyMembers();
+    $departure = $user->currentDeparture();
 @endphp
 
 <div>
     <x-header :title="$user->full_name" separator progress-indicator>
         <x-slot:actions>
+            {{-- A departure belongs to the running season: none to declare without one. --}}
+            @can('users.update')
+                @if ($departure === null && \App\Domains\Competitions\Interclub\Models\Season::current() !== null)
+                    <x-button :label="__('Mark as left')" icon="o-arrow-right-start-on-rectangle" class="btn-ghost btn-sm"
+                        wire:click="openDepartureModal" />
+                @endif
+            @endcan
             @if ($this->mayEdit)
                 <x-button :label="__('Edit')" icon="o-pencil" class="btn-primary btn-sm"
                     link="{{ route('admin.users.edit', $user) }}" />
@@ -105,6 +114,13 @@
                 </x-card>
             @endif
 
+            {{-- The mirror of the block above: on a parent's file, the members they answer for. --}}
+            @if ($wards->isNotEmpty())
+                <x-card class="shadow-sm" :title="__('Responsible for')">
+                    <x-admin.users.wards-list :wards="$wards" :last-season="$this->previousSeason?->name" />
+                </x-card>
+            @endif
+
             @if ($family->isNotEmpty())
                 <x-card class="shadow-sm" :title="__('Family')">
                     <ul class="flex flex-wrap gap-2">
@@ -144,6 +160,35 @@
 
         <div class="space-y-6">
             <x-card class="shadow-sm" :title="__('Affiliation')">
+                {{-- Le départ n'annule rien : l'affiliation court toujours tant que
+                     personne ne l'annule, et la fiche le dit plutôt que de laisser
+                     croire que le geste s'en est chargé. --}}
+                @if ($departure !== null)
+                    <div class="mb-4 rounded-lg border border-base-300 p-3" data-departure>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <x-badge :value="\App\Domains\Shared\Enums\MembershipStatus::Left->label()"
+                                class="{{ \App\Domains\Shared\Enums\MembershipStatus::Left->badgeClass() }} badge-sm" />
+                            <p class="text-sm font-semibold">
+                                {{ __('Left on :date — :reason', ['date' => $departure->left_on->format('d/m'), 'reason' => $departure->reason->label()]) }}
+                            </p>
+                        </div>
+                        @if (filled($departure->note))
+                            <p class="mt-1 text-sm text-base-content/70">{{ $departure->note }}</p>
+                        @endif
+                        @if ($user->isAffiliatedForCurrentSeason())
+                            <p class="mt-2 text-sm text-base-content/70">
+                                {{ __('The affiliation is still active.') }}
+                                @can('subscriptions.manage')
+                                    <a href="{{ route('admin.users.registrations') }}" class="link link-primary">{{ __('Cancel it from the registrations') }}</a>
+                                @endcan
+                            </p>
+                        @endif
+                        @can('users.update')
+                            <x-button :label="__('Cancel the departure')" class="btn-ghost btn-sm mt-2"
+                                wire:click="$set('cancelDepartureModal', true)" />
+                        @endcan
+                    </div>
+                @endif
                 @if ($subscription === null)
                     <p class="text-sm text-base-content/70">{{ __('No affiliation for the current season.') }}</p>
                 @else
@@ -159,8 +204,11 @@
                     @endphp
                     <div class="flex flex-wrap items-center gap-2">
                         <x-badge :value="$status['label']" class="{{ $status['class'] }} badge-sm" />
-                        <x-badge :value="$subscription->is_competitive ? __('Competitive') : __('Recreational')"
-                            class="{{ $subscription->is_competitive ? 'badge-primary badge-soft' : 'badge-ghost' }} badge-sm" />
+                        {{-- A licence belongs to an affiliation under way: a cancelled one holds none. --}}
+                        @if (in_array($subscription->status, \App\Domains\ClubAdmin\Subscriptions\Models\Subscription::AFFILIATED_STATUSES, true))
+                            <x-badge :value="$subscription->is_competitive ? __('Competitive') : __('Recreational')"
+                                class="{{ $subscription->is_competitive ? 'badge-primary badge-soft' : 'badge-ghost' }} badge-sm" />
+                        @endif
                     </div>
                 @endif
             </x-card>
@@ -201,4 +249,28 @@
             </x-card>
         </div>
     </div>
+
+    @can('users.update')
+        <x-app-modal wire:model="departureModal" :title="__('Mark as left')" :open="$departureModal">
+            <div class="space-y-4">
+                <p class="text-sm text-base-content/70">
+                    {{ __('The affiliation stays as it is. The member is taken off this season’s teams and no longer receives the club’s mailings.') }}
+                </p>
+                <x-select :label="__('Reason for leaving')" :options="\App\Domains\Shared\Enums\DepartureReason::options()"
+                    :placeholder="__('Choose a reason')" wire:model="departureReason" />
+                <x-input :label="__('Left on')" type="date" wire:model="departureLeftOn" />
+                <x-textarea :label="__('Note')" wire:model="departureNote" rows="3" />
+            </div>
+            <x-slot:actions>
+                <x-button :label="__('Cancel')" wire:click="$set('departureModal', false)" />
+                <x-button class="btn-primary" :label="__('Mark as left')" wire:click="declareDeparture" spinner="declareDeparture" />
+            </x-slot:actions>
+        </x-app-modal>
+
+        <x-confirm-modal model="cancelDepartureModal" :title="__('Cancel this departure?')"
+            :confirmLabel="__('Cancel the departure')" confirmClass="btn-primary"
+            confirmAction="cancelDeparture" :open="$cancelDepartureModal">
+            <p>{{ __('Use it for a departure recorded by mistake. Team places, captaincies and places in upcoming interclub matches are not given back.') }}</p>
+        </x-confirm-modal>
+    @endcan
 </div>

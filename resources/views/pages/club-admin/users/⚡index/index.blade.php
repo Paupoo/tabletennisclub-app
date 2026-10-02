@@ -8,6 +8,9 @@
             <div class="hidden w-full lg:block">
                 <x-input class="w-full" clearable icon="o-magnifying-glass" :placeholder="__('Search...')"
                     wire:model.live.debounce.300ms="search" />
+                @if ($this->searchesPastDefaultView())
+                    <p class="mt-1 text-xs text-muted">{{ __('Searching all members') }}</p>
+                @endif
             </div>
         </x-slot:middle>
         <x-slot:actions>
@@ -58,30 +61,41 @@
                 <x-icon name="o-x-mark" class="h-5 w-5" />
             </button>
         </div>
+        @if ($this->searchesPastDefaultView())
+            <p class="px-4 pb-2 text-xs text-muted">{{ __('Searching all members') }}</p>
+        @endif
     </div>
 
     {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
-    <div class="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        @php
-            /** La couleur vit sur la pastille, jamais sur le chiffre : voir l'en-tête de `stat-card`. */
-            $statCards = [
-                ['label' => __('Total'),        'key' => 'total',        'icon' => 'o-users',        'color' => 'neutral'],
-                ['label' => __('Registered'),   'key' => 'registered',   'icon' => 'o-check-circle', 'color' => 'success'],
-                ['label' => __('Competitive'),  'key' => 'competitive',  'icon' => 'o-trophy',       'color' => 'primary'],
-                ['label' => __('Unregistered'), 'key' => 'unregistered', 'icon' => 'o-x-circle',     'color' => 'neutral'],
-            ];
-        @endphp
-        @foreach ($statCards as $card)
-            <x-admin.shared.stat-card
-                :label="$card['label']"
-                :value="$stats[$card['key']] ?? 0"
-                :icon="$card['icon']"
-                :color="$card['color']" />
-        @endforeach
-    </div>
+    {{-- Quatre chiffres, tous lus sur les affiliés de la saison : deux par ligne
+         sur un téléphone, les quatre d'une traite dès `lg`. Les statuts, les
+         adultes responsables et l'activité vivent dans le tiroir de filtres. --}}
+    <section data-stat-strip class="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {{-- La couleur vit sur la pastille, jamais sur le chiffre : voir l'en-tête de `stat-card`.
+             Elles ne filtrent pas. --}}
+        <x-admin.shared.stat-card :label="__('Affiliated')" :value="$stats['affiliated']"
+            :hint="trans_choice('Including :count newcomer|Including :count newcomers', $stats['new'], ['count' => $stats['new']])"
+            icon="o-check-circle" color="success" />
+        <x-admin.shared.stat-card :label="__('Competitors')" :value="$stats['competitors']"
+            :hint="trans_choice(':count recreational|:count recreational', $stats['recreational'], ['count' => $stats['recreational']])"
+            icon="o-trophy" color="primary" />
+        <x-admin.shared.stat-card :label="__('Minors')" :value="$stats['minors']" icon="o-face-smile" color="neutral">
+            {{-- Un constat, pas un geste : aucun lien, aucun bouton. Le filtre du même
+                 nom, section Profil, retrouve ces membres. --}}
+            @if ($stats['minors_without_guardian'] > 0)
+                <x-slot:extra>
+                    <div data-stat-alert class="mt-1">
+                        <x-badge class="badge-warning badge-soft badge-sm h-auto whitespace-normal"
+                            :value="trans_choice('Including :count without a responsible adult|Including :count without a responsible adult', $stats['minors_without_guardian'], ['count' => $stats['minors_without_guardian']])" />
+                    </div>
+                </x-slot:extra>
+            @endif
+        </x-admin.shared.stat-card>
+        <x-admin.shared.stat-card :label="__('Women')" :value="$stats['women']" icon="o-user" color="neutral" />
+    </section>
 
     {{-- ── Vue mobile ───────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
@@ -112,16 +126,17 @@
                         <div class="font-medium">{{ $user->first_name }} {{ $user->last_name }}</div>
                         <div class="truncate text-xs text-muted">{{ $user->email }}</div>
                         <div class="mt-1 flex flex-wrap items-center gap-1.5">
-                            @if ($user->is_competitor)
-                                <x-badge :value="__('Competitive')" class="badge-primary badge-soft badge-sm" />
-                            @else
-                                <x-badge :value="__('Recreational')" class="badge-ghost badge-sm" />
-                            @endif
+                            <x-admin.users.membership-status-badge :user="$user"
+                                :last-season="$this->previousSeasonName" size="badge-xs" />
+                            <x-admin.users.responsible-adult-badge :user="$user" size="badge-xs" />
                             <x-admin.users.account-status-badge :user="$user" size="badge-xs" />
                             @if ($user->has_paid)
                                 <x-badge :value="__('Paid')" class="badge-success badge-soft badge-xs" />
                             @else
                                 <x-badge :value="__('Unpaid')" class="badge-error badge-soft badge-xs" />
+                            @endif
+                            @if ($this->showsOnboardingColumn())
+                                <x-admin.users.onboarding-steps :user="$user" compact />
                             @endif
                         </div>
                     </div>
@@ -223,32 +238,49 @@
                     :create-href="auth()->user()->can('create', \App\Domains\ClubAdmin\Users\Models\User::class) ? route('admin.users.create') : null" />
             @else
                 <x-table container-class="overflow-x-auto lg:overflow-x-visible" :headers="$headers" :rows="$users" :sort-by="$sortBy" selectable wire:model.live="selected">
-                    @scope('cell_photo', $user)
-                        <x-avatar class="h-10 w-10" image="{{ $user->photo ?? '/images/empty-user.jpg' }}" />
-                    @endscope
                     {{-- A member's name is what the eye scans down the column, so it stays
                          on one line: the status column added here costs width, and without
                          this every name of average length folded in two. The address sits
                          beneath it rather than in a column of its own, which cost 254px
-                         and pushed the row off the card. --}}
+                         and pushed the row off the card.
+                         Below xl, one line still cost too much: at 1024 a name of 28
+                         characters ran the table 79px past its card. The name is cut
+                         with an ellipsis there, the whole of it in the title. --}}
                     @scope('cell_name', $user)
                         {{-- The name opens the file, which everyone on this list may read. --}}
-                        <a class="font-medium whitespace-nowrap hover:underline" href="{{ route('admin.users.show', $user) }}">
-                            {{ $user->first_name }} {{ $user->last_name }}
-                        </a>
+                        <div class="flex items-center gap-1.5">
+                            <a class="block max-w-32 truncate font-medium whitespace-nowrap hover:underline xl:max-w-none"
+                                href="{{ route('admin.users.show', $user) }}"
+                                title="{{ $user->first_name }} {{ $user->last_name }}">
+                                {{ $user->first_name }} {{ $user->last_name }}
+                            </a>
+                            <x-admin.users.responsible-adult-badge :user="$user" />
+                        </div>
                         @if ($user->email)
-                            <div class="max-w-56 truncate text-xs text-muted" title="{{ $user->email }}">{{ $user->email }}</div>
+                            <div class="max-w-32 truncate text-xs text-muted xl:max-w-56" title="{{ $user->email }}">{{ $user->email }}</div>
                         @endif
                     @endscope
-                    @scope('cell_is_competitive', $user)
-                        @if ($user->is_competitor)
-                            <x-badge :value="__('Competitive')" class="badge-primary badge-soft badge-sm" />
-                        @else
-                            <x-badge :value="__('Recreational')" class="badge-ghost badge-sm" />
-                        @endif
+                    @scope('cell_affiliation', $user)
+                        <div class="max-w-56">
+                            <x-admin.users.membership-status-badge :user="$user" :last-season="$this->previousSeasonName" />
+                        </div>
                     @endscope
+                    {{-- Only on the list of the new members: see showsOnboardingColumn(). --}}
+                    @scope('cell_onboarding', $user)
+                        <x-admin.users.onboarding-steps :user="$user" />
+                    @endscope
+                    {{-- A ranking only means something for a competitor of the running season. --}}
                     @scope('cell_ranking', $user)
-                        <span class="text-sm font-mono">{{ $user->ranking->getLabel() }}</span>
+                        @if ($user->holdsCompetitiveLicence())
+                            <span class="text-sm font-mono">{{ $user->ranking->getLabel() }}</span>
+                        @endif
+                    @endscope
+                    {{-- A dash, not "never": the club only knows what it recorded. --}}
+                    @scope('cell_last_activity_at', $user)
+                        <span class="text-sm whitespace-nowrap">{{ $user->last_activity_at?->format('d/m/Y') ?? '—' }}</span>
+                    @endscope
+                    @scope('cell_last_login_at', $user)
+                        <span class="text-sm whitespace-nowrap">{{ $user->last_login_at?->format('d/m/Y') ?? '—' }}</span>
                     @endscope
                     {{-- Where the member stands belongs to a column of its own. Sharing the
                          actions cell, "Compte créé" had 22px of text in a 14px badge-xs and
@@ -362,6 +394,12 @@
             @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
                 <x-button class="btn-ghost btn-sm" icon="o-envelope" :label="__('Invite')"
                     wire:click="bulkInvite" spinner="bulkInvite" />
+                <x-button class="btn-ghost btn-sm" icon="o-bell-alert" :label="__('Remind')"
+                    wire:click="bulkRemindRenewal" spinner="bulkRemindRenewal" />
+            @endcan
+            @can('users.update')
+                <x-button class="btn-ghost btn-sm" icon="o-arrow-right-start-on-rectangle" :label="__('Mark as left')"
+                    wire:click="openBulkDeparture" />
             @endcan
             <span class="text-base-content/20">|</span>
             @can('users.delete')
@@ -376,9 +414,31 @@
         <x-slot:filters>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
-                    {{ __('Licence type') }}
+                    {{ __('Affiliation') }}
+                </p>
+                <div class="space-y-1">
+                    @foreach (\App\Domains\Shared\Enums\MembershipStatus::options() as $membershipOption)
+                        <x-checkbox :label="$membershipOption['name']" :value="$membershipOption['id']" wire:model.live="affiliation" />
+                    @endforeach
+                </div>
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
+                    {{ __('Licence') }}
                 </p>
                 <x-radio wire:model.live="selectedLicenceType" :options="$licenceTypes" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
+                    {{ __('Role') }}
+                </p>
+                <x-toggle :label="__('Responsible adults')" wire:model.live="responsibleAdultsOnly" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
+                    {{ __('Activity') }}
+                </p>
+                <x-radio wire:model.live="activity" :options="$activityOptions" />
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
@@ -389,6 +449,12 @@
                         <x-checkbox :label="$gender['name']" :value="$gender['id']" wire:model.live="categories" />
                     @endforeach
                 </div>
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
+                    {{ __('Age') }}
+                </p>
+                <x-radio wire:model.live="age" :options="$ageOptions" />
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
@@ -404,6 +470,8 @@
                 <x-toggle class="mt-2" :label="__('Adult without an address')"
                     :hint="__('Grown members who cannot be invited yet — ask them for an address of their own.')"
                     wire:model.live="adultWithoutAddress" />
+                <x-toggle class="mt-2" :label="__('Minors without a responsible adult')"
+                    wire:model.live="minorsWithoutGuardian" />
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
@@ -443,7 +511,35 @@
         <x-confirm-modal model="confirmArchiveModal" :title="__('Archive selected members?')"
             :confirmLabel="__('Archive')" confirmAction="bulkArchive" :open="$confirmArchiveModal">
             <p>{{ __('Selected members will be archived. Your own account is automatically excluded. Members can be restored later.') }}</p>
+            {{-- Archiver retire un membre de la liste ; quelqu'un qui quitte le club
+                 y reste, avec son historique. Le bureau confond les deux gestes,
+                 d'où ce détour proposé au moment de confirmer. --}}
+            <p class="mt-3 text-sm text-base-content/70">
+                {{ __('Archiving is for a mistake or a duplicate, before an anonymisation. A member who leaves the club is marked as left: they stay on file with their history.') }}
+            </p>
+            @can('users.update')
+                <x-button class="btn-outline btn-sm mt-3" icon="o-arrow-right-start-on-rectangle"
+                    :label="__('Mark as left instead')" wire:click="markAsLeftInstead" />
+            @endcan
         </x-confirm-modal>
+    @endcan
+
+    @can('users.update')
+        <x-app-modal wire:model="departureModal" :title="__('Mark as left')" :open="$departureModal">
+            <div class="space-y-4">
+                <p class="text-sm text-base-content/70">
+                    {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
+                    {{ __('The affiliation stays as it is. The member is taken off this season’s teams and no longer receives the club’s mailings.') }}
+                </p>
+                <x-select :label="__('Reason for leaving')" :options="\App\Domains\Shared\Enums\DepartureReason::options()"
+                    :placeholder="__('Choose a reason')" wire:model="departureReason" />
+                <x-input :label="__('Left on')" type="date" wire:model="departureLeftOn" />
+            </div>
+            <x-slot:actions>
+                <x-button :label="__('Cancel')" wire:click="$set('departureModal', false)" />
+                <x-button class="btn-primary" :label="__('Mark as left')" wire:click="bulkDeclareDeparture" spinner="bulkDeclareDeparture" />
+            </x-slot:actions>
+        </x-app-modal>
     @endcan
 
     {{-- Deux raisons de demander confirmation avant un envoi groupé : renvoyer

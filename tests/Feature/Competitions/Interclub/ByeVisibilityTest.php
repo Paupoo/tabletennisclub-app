@@ -194,8 +194,10 @@ it('never rates a bye as needing attention', function (): void {
 });
 
 it('leaves a bye out of the preparation score', function (): void {
+    // Exactly one week apart, so the two never share an ISO week: +3 and +7
+    // days did from Friday to Sunday, and the bye then hid the played week.
     $this->bye->update(['start_date_time' => now()->addDays(3), 'week_number' => now()->addDays(3)->isoWeek]);
-    $this->played->update(['week_number' => now()->addDays(7)->isoWeek]);
+    $this->played->update(['start_date_time' => now()->addDays(10), 'week_number' => now()->addDays(10)->isoWeek]);
 
     $summary = app(InterclubPreparationService::class)->summary(
         Team::whereKey($this->team->id)->with('league')->get(),

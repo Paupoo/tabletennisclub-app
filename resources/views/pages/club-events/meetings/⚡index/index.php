@@ -13,6 +13,7 @@ use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -64,6 +65,8 @@ new class extends Component
 
     public function bulkCancel(): void
     {
+        abort_unless($this->canManage, 403);
+
         $count = count($this->selected);
         Meeting::whereIn('id', $this->selected)->update(['status' => MeetingStatusEnum::CANCELLED]);
         $this->confirmBulkCancelModal = false;
@@ -122,11 +125,15 @@ new class extends Component
 
     public function confirmBulkCancel(): void
     {
+        abort_unless($this->canManage, 403);
+
         $this->confirmBulkCancelModal = true;
     }
 
     public function confirmBulkDelete(): void
     {
+        abort_unless($this->canManage, 403);
+
         $this->confirmBulkDeleteModal = true;
     }
 
@@ -173,19 +180,14 @@ new class extends Component
     #[Computed]
     public function meetings(): LengthAwarePaginator
     {
-        return Meeting::withCount([
-            'users AS confirmed_count' => fn ($q) => $q->whereIn('meeting_user.status', ['confirmed', 'attended']),
-        ])
-            ->when($this->search, fn ($q) => $q->where('title', 'like', "%{$this->search}%"))
-            ->when($this->type, fn ($q) => $q->where('type', $this->type))
-            ->when($this->status, fn ($q) => $q->where('status', $this->status))
-            ->when($this->format, fn ($q) => $q->where('format', $this->format))
-            ->when(
-                $this->showArchived,
-                fn ($q) => $q->whereNotNull('archived_at'),
-                fn ($q) => $q->whereNull('archived_at'),
-            )
+        return $this->matchingQuery()
+            ->withCount([
+                'users AS confirmed_count' => fn ($q) => $q->whereIn('meeting_user.status', ['confirmed', 'attended']),
+            ])
             ->orderBy($this->sortBy['column'] ?? 'scheduled_at', $this->sortBy['direction'] ?? 'desc')
+            // A total order: meetings sharing a date would otherwise move
+            // between pages, some shown twice and some never.
+            ->orderBy('meetings.id')
             ->paginate(20);
     }
 
@@ -259,5 +261,25 @@ new class extends Component
             ->pluck('id')
             ->map(fn (int $id): string => (string) $id)
             ->toArray();
+    }
+
+    /**
+     * The search, the drawer and the archive switch: what the list pages,
+     * and what "select all results" selects.
+     *
+     * @return Builder<Meeting>
+     */
+    protected function matchingQuery(): Builder
+    {
+        return Meeting::query()
+            ->when($this->search, fn ($q) => $q->where('title', 'like', "%{$this->search}%"))
+            ->when($this->type, fn ($q) => $q->where('type', $this->type))
+            ->when($this->status, fn ($q) => $q->where('status', $this->status))
+            ->when($this->format, fn ($q) => $q->where('format', $this->format))
+            ->when(
+                $this->showArchived,
+                fn ($q) => $q->whereNotNull('archived_at'),
+                fn ($q) => $q->whereNull('archived_at'),
+            );
     }
 };

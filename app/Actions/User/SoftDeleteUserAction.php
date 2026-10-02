@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Actions\User;
 
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Competitions\Interclub\Models\Team;
-use App\Domains\Trainings\Models\TrainingPlanAssignment;
 
 class SoftDeleteUserAction
 {
@@ -24,21 +22,14 @@ class SoftDeleteUserAction
         }
 
         // An archived member no longer occupies a spot in future training
-        // packs/pool; the FK survives a soft delete, so drop it explicitly.
-        TrainingPlanAssignment::query()->where('user_id', $user->id)->delete();
-
-        // `teams.captain_id` est une clé étrangère `nullOnDelete` : elle ne se
-        // déclenche pas sur un soft delete. Sans ça, la colonne pointerait sur un
-        // archivé pendant que l'écran affiche « Non défini », la relation traversant
-        // SoftDeletes. Même raison que les assignations ci-dessus.
+        // packs/pool, nor captains a team: a soft delete fires no foreign key.
         //
         // Ce cas n'existait pas tant qu'un capitaine était forcément un compétiteur
         // affilié, donc inarchivable par le garde-fou du dessus.
-        $captained = Team::query()->where('captain_id', $user->id)->get();
-        Team::query()->where('captain_id', $user->id)->update(['captain_id' => null]);
+        $freedTeams = ReleaseClubPlacesAction::handle($user);
 
         $user->delete();
 
-        return $captained->pluck('name')->all();
+        return $freedTeams;
     }
 }

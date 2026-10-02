@@ -65,7 +65,9 @@ it('shows the unranked member as N/A rather than NA', function (): void {
     $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
     $admin = User::factory()->isAdmin()->create(['ranking' => Ranking::NA->value]);
-    Subscription::factory()->for($admin)->create(['season_id' => $season->id, 'status' => 'confirmed']);
+    // Competitive on purpose: the list shows a ranking for a competitor of the
+    // running season only, and the factory draws the licence at random.
+    Subscription::factory()->for($admin)->create(['season_id' => $season->id, 'status' => 'confirmed', 'is_competitive' => true]);
 
     $this->actingAs($admin)
         ->get(route('admin.users.index'))

@@ -232,7 +232,7 @@ Useful when the federation already publishes the following season without having
 
 ### What the import does not do
 
-- **It does not load the results of matches played.** That is `interclubs:import-results`, every morning at 5:40. Only the result of a **forfeit** is written by the calendar import, since no match sheet will ever come.
+- **It does not load the results of matches played.** That is `interclubs:import-results`, every morning at 5:40. Only the result of a **forfeit** is written by the calendar import, since no match sheet will ever come. `interclubs:import-results` is also what records **who played** each match, from the sheet: a player named only as a forfeit did not play. The sheet alone counts: a score typed by hand on the results screen records nobody. To recompute who played from the sheets already imported, without calling the federation: `php artisan interclubs:record-who-played`.
 - **It does not compose the teams.** It creates the teams and their letter; who plays in them stays a club decision.
 
 ### If something goes wrong

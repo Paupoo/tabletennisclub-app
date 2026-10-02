@@ -354,8 +354,8 @@
             <p class="text-sm">
                 {{ trans_choice(
                     '{1} Delete :count transaction?|[2,*] Delete :count transactions?',
-                    $selectingAllResults ? $this->getTotalMatchingCount() : count($selected),
-                    ['count' => $selectingAllResults ? $this->getTotalMatchingCount() : count($selected)]
+                    count($selected),
+                    ['count' => count($selected)]
                 ) }}
             </p>
             @if ($reconciledInSelection > 0)

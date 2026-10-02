@@ -424,7 +424,7 @@ new class extends Component
         // une équipe passée sous le minimum, ou le WO retiré. Elle survit à un
         // simple échange — on joue toujours à 3, et le capitaine l'a déjà dit.
         if ($interclub->isShortHanded() && ! $this->sendsShortHanded) {
-            $interclub->update(['short_handed_confirmed_at' => null, 'short_handed_confirmed_by' => null]);
+            $interclub->withdrawShortHandedDeclaration();
         }
 
         if ($previouslyConfirmedIds === []) {

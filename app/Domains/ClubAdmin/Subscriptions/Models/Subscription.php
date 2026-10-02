@@ -105,6 +105,12 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     /** @use HasFactory<SubscriptionFactory> */
     use HasFactory, SoftDeletes;
 
+    /**
+     * The statuses of a subscription still under way: they affiliate the member
+     * to its season. Cancelled and refunded ones no longer do.
+     */
+    public const array AFFILIATED_STATUSES = ['pending', 'confirmed', 'paid'];
+
     protected $casts = [
         'confirmed_at' => 'datetime',
         'is_competitive' => 'boolean',
@@ -371,7 +377,7 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
      */
     public function scopeAffiliated(Builder $query): Builder
     {
-        return $query->whereIn($query->qualifyColumn('status'), ['pending', 'confirmed', 'paid']);
+        return $query->whereIn($query->qualifyColumn('status'), self::AFFILIATED_STATUSES);
     }
 
     /**

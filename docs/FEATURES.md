@@ -301,7 +301,7 @@
 **A**: Non, au moins 2 dates doivent être proposées. Le système vote automatiquement sur la meilleure date.
 
 ### Q: Quel est le statut final d'une sélection (interclub)?
-**A**: `has_played: true` — le joueur a effectivement joué le match. Différent de `is_selected` (confirmé par le capitaine).
+**A**: `has_played: true` — le joueur a effectivement joué le match, d'après la feuille de match AFTT importée chaque matin — et seulement d'après elle : un score saisi à la main ne marque personne. Différent de `is_selected` (confirmé par le capitaine).
 
 ### Q: Comment voir les archives (anciennes réunions, anciens tournois)?
 **A**: Admin → (domaine) → Filter → Archivé → voir les archives

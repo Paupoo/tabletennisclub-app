@@ -92,6 +92,10 @@ class AudienceBuilder
             }
         });
 
+        // Whoever told the club they are leaving this season is written to by
+        // nobody: not as a member, and not as somebody to win back.
+        $query->whereDoesntHave('departures', fn (Builder $departure) => $departure->where('season_id', $current->id));
+
         if ($criteria->base === AudienceBase::FormerMembers) {
             // A pending member has already come back.
             $query->whereDoesntHave('subscriptions', fn (Builder $subscription) => $subscription

@@ -59,7 +59,8 @@ it('users index search updates list reactively', function (): void {
 
     $this->actingAs($this->admin);
 
-    visit(route('admin.users.index'))
+    // Affiliated nowhere: the list opens on the current members, so the default view is dismissed.
+    visit(route('admin.users.index', ['allMembers' => 1]))
         ->assertSee('ReactTest')
         ->type('input[id$="search"]', 'ReactTest')
         ->wait(2)

@@ -222,6 +222,13 @@ new class extends Component
         ];
     }
 
+    /**
+     * Record the score of a match, typed by hand.
+     *
+     * Who played is not written here: the federation's match sheet alone says
+     * it, when the results are imported — the line-up can have changed on the
+     * night, and a score says nothing of who turned out.
+     */
     public function save(): void
     {
         $this->validate();
@@ -258,18 +265,6 @@ new class extends Component
         ];
 
         InterclubResult::findOrFail($this->editingInterclubResultId)->update($data);
-
-        if ($this->matchType === 'normal' && $this->matchDate) {
-            $interclub = Interclub::where('season_id', $this->seasonId)
-                ->where(fn ($q) => $q->where('visited_team_id', $this->editingTeamId)
-                    ->orWhere('visiting_team_id', $this->editingTeamId))
-                ->whereDate('start_date_time', $this->matchDate)
-                ->first();
-
-            $interclub?->users()
-                ->wherePivot('is_selected', true)
-                ->each(fn ($u) => $interclub->users()->updateExistingPivot($u->id, ['has_played' => true]));
-        }
 
         $this->success(__('Match updated'));
 

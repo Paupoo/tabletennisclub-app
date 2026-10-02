@@ -52,6 +52,21 @@ describe('HasBulkActions', function (): void {
             ->assertSet('selectingAllResults', true);
     });
 
+    it('selectAllResults selects every member the filters match, beyond the page', function (): void {
+        User::factory()->count(20)->create(['last_name' => 'Zzrelance']);
+        $outsider = User::factory()->create(['last_name' => 'Ailleurs']);
+
+        $component = Livewire::actingAs($this->admin)
+            ->withQueryParams(['allMembers' => true])
+            ->test(USERS_COMPONENT)
+            ->set('search', 'Zzrelance')
+            ->set('selectAll', true)
+            ->call('selectAllResults');
+
+        expect($component->get('selected'))->toHaveCount(20)
+            ->not->toContain((string) $outsider->id);
+    });
+
     it('clearSelection resets selected, selectAll, and selectingAllResults', function (): void {
         User::factory()->count(2)->create();
 
@@ -115,8 +130,10 @@ describe('HasFilterDrawer', function (): void {
             ->assertSet('categories', []);
     });
 
+    // The default view carries a chip of its own; these count the others.
     it('filterChips is empty when no filters are active', function (): void {
         $component = Livewire::actingAs($this->admin)
+            ->withQueryParams(['allMembers' => true])
             ->test(USERS_COMPONENT);
 
         expect($component->get('filterChips'))->toBeEmpty();
@@ -124,6 +141,7 @@ describe('HasFilterDrawer', function (): void {
 
     it('filterChips includes a chip for active licence type filter', function (): void {
         $component = Livewire::actingAs($this->admin)
+            ->withQueryParams(['allMembers' => true])
             ->test(USERS_COMPONENT)
             ->set('selectedLicenceType', 'competitive');
 
@@ -133,6 +151,7 @@ describe('HasFilterDrawer', function (): void {
 
     it('filterChips includes one chip per selected gender', function (): void {
         $component = Livewire::actingAs($this->admin)
+            ->withQueryParams(['allMembers' => true])
             ->test(USERS_COMPONENT)
             ->set('categories', ['MEN', 'WOMEN']);
 

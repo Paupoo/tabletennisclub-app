@@ -141,6 +141,7 @@ describe('the way to the edit form', function (): void {
 describe('the members list', function (): void {
     it('leads a reader to the file, never to the edit form', function (): void {
         Livewire::actingAs($this->committeeOnly)
+            ->withQueryParams(['allMembers' => true])
             ->test('pages::club-admin.users.index')
             ->assertSee(route('admin.users.show', $this->target))
             ->assertDontSee(route('admin.users.edit', $this->target));
@@ -150,6 +151,7 @@ describe('the members list', function (): void {
     // opening onto an empty panel.
     it('offers a reader no menu of actions they may not take', function (): void {
         Livewire::actingAs($this->committeeOnly)
+            ->withQueryParams(['allMembers' => true])
             ->test('pages::club-admin.users.index')
             ->assertDontSee('data-row-menu-trigger', escape: false);
     });

@@ -366,16 +366,24 @@ class TrainingPack extends Model
     /**
      * Users enrolled (not waitlisted) in this pack via their subscription.
      *
+     * A member who declared their departure for the pack's season is not one
+     * any more: the coach no longer sees them on the sessions to come, nor
+     * counts them absent, nor writes to them. Their enrolment is left as it is
+     * — it is what they are billed for — and the attendance already taken
+     * stays on the sessions.
+     *
      * @return Builder<User>
      */
     public function trainees(): Builder
     {
-        return User::query()->whereHas('subscriptions', function (Builder $q): void {
-            $q->affiliated()->whereHas('trainingPacks', fn (Builder $q2) => $q2
-                ->where('training_packs.id', $this->id)
-                ->where('subscription_training_pack.status', 'enrolled')
-            );
-        });
+        return User::query()
+            ->whereHas('subscriptions', function (Builder $q): void {
+                $q->affiliated()->whereHas('trainingPacks', fn (Builder $q2) => $q2
+                    ->where('training_packs.id', $this->id)
+                    ->where('subscription_training_pack.status', 'enrolled')
+                );
+            })
+            ->whereDoesntHave('departures', fn (Builder $departure) => $departure->where('season_id', $this->season_id));
     }
 
     public function trainer(): BelongsTo

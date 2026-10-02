@@ -74,6 +74,14 @@ new class extends Component
     public array $affiliation = [];
 
     /**
+     * `minors` for the members under 18 today, `adults` for 18 and over. A
+     * member of unknown age is neither, as on the model. Any other value,
+     * including one from an old link, reads as no filter.
+     */
+    #[Url]
+    public string $age = '';
+
+    /**
      * The default view was dismissed: everybody on file, the archived aside.
      */
     #[Url]
@@ -130,6 +138,12 @@ new class extends Component
     public string $inviteFirstName = '';
 
     public string $inviteLastName = '';
+
+    /**
+     * The minors nobody answers for: no guardian at all on their file.
+     */
+    #[Url]
+    public bool $minorsWithoutGuardian = false;
 
     // ── Quick invite ─────────────────────────────────────────────────────────
     public bool $quickInviteDrawer = false;
@@ -204,8 +218,7 @@ new class extends Component
     ];
 
     /**
-     * The activity filter's choices, worded like the card that counts the
-     * first of them.
+     * The activity filter's choices.
      *
      * @return array<int, array{id: string, name: string}>
      */
@@ -216,6 +229,21 @@ new class extends Component
             ['id' => '',          'name' => __('All')],
             ['id' => 'season',    'name' => __('No activity recorded this season')],
             ['id' => 'six_weeks', 'name' => __('No activity recorded for 6 weeks')],
+        ];
+    }
+
+    /**
+     * The age filter's choices.
+     *
+     * @return array<int, array{id: string, name: string}>
+     */
+    #[Computed]
+    public function ageOptions(): array
+    {
+        return [
+            ['id' => '',       'name' => __('All')],
+            ['id' => 'minors', 'name' => __('Minors')],
+            ['id' => 'adults', 'name' => __('Adults')],
         ];
     }
 
@@ -374,9 +402,11 @@ new class extends Component
         $this->responsibleAdultsOnly = false;
         $this->selectedLicenceType = 'both';
         $this->categories = [];
+        $this->age = '';
         $this->invitationState = '';
         $this->incompleteProfile = false;
         $this->adultWithoutAddress = false;
+        $this->minorsWithoutGuardian = false;
         $this->unpaidSubscription = false;
         $this->hasKey = false;
         $this->hasCashRegister = false;
@@ -565,6 +595,13 @@ new class extends Component
             }
         }
 
+        if ($this->ageFilter() !== null) {
+            $chips[] = [
+                'key' => 'age',
+                'label' => collect($this->ageOptions())->firstWhere('id', $this->age)['name'],
+            ];
+        }
+
         if ($this->invitationState !== '') {
             $chips[] = [
                 'key' => 'invitationState',
@@ -587,6 +624,10 @@ new class extends Component
 
         if ($this->incompleteProfile) {
             $chips[] = ['key' => 'incompleteProfile', 'label' => __('Incomplete profile')];
+        }
+
+        if ($this->minorsWithoutGuardian) {
+            $chips[] = ['key' => 'minorsWithoutGuardian', 'label' => __('Minors without a responsible adult')];
         }
 
         if ($this->unpaidSubscription) {
@@ -866,6 +907,7 @@ new class extends Component
             'licenceTypes' => $this->licenceTypes,
             'invitationStates' => $this->invitationStates,
             'activityOptions' => $this->activityOptions,
+            'ageOptions' => $this->ageOptions,
             'stats' => $this->stats,
         ]);
     }
@@ -973,16 +1015,17 @@ new class extends Component
 
     /**
      * Bare counts, never filtered: they are the witness the list is checked
-     * against. Each card carries the same word as the filter that finds its
-     * members.
+     * against. Every one of them reads this season's affiliates — pending
+     * included, as in the affiliation column — and the licence off that same
+     * affiliation.
      *
      * Those who left this season stay among the affiliated: the departure
      * cancels nothing, and the federation counts them all the same.
      *
-     * "No activity recorded" counts this season, as the first choice of the
-     * activity filter does.
+     * The other statuses, the responsible adults and the activity live in the
+     * drawer: a card that only repeats a filter costs the strip its width.
      *
-     * @return array{affiliated: int, new: int, to_follow_up: int, left: int, no_activity: int, responsible_adults: int}
+     * @return array{affiliated: int, new: int, competitors: int, recreational: int, minors: int, minors_without_guardian: int, women: int}
      */
     #[Computed]
     public function stats(): array
@@ -990,12 +1033,11 @@ new class extends Component
         return [
             'affiliated' => User::affiliatedForCurrentSeason()->count(),
             'new' => User::inMembershipStatus(MembershipStatus::New)->count(),
-            'to_follow_up' => User::inMembershipStatus(MembershipStatus::ToFollowUp)->count(),
-            'left' => User::inMembershipStatus(MembershipStatus::Left)->count(),
-            'no_activity' => User::affiliatedForCurrentSeason()
-                ->withoutActivitySince(Season::current()->start_at ?? now())
-                ->count(),
-            'responsible_adults' => User::responsibleAdults()->count(),
+            'competitors' => User::licensedThisSeason(true)->count(),
+            'recreational' => User::licensedThisSeason(false)->count(),
+            'minors' => User::affiliatedForCurrentSeason()->minor()->count(),
+            'minors_without_guardian' => User::affiliatedForCurrentSeason()->minor()->withoutGuardian()->count(),
+            'women' => User::affiliatedForCurrentSeason()->where('gender', Gender::WOMEN->value)->count(),
         ];
     }
 
@@ -1045,6 +1087,11 @@ new class extends Component
         $this->resetPage();
     }
 
+    public function updatedAge(): void
+    {
+        $this->resetPage();
+    }
+
     public function updatedCategories(): void
     {
         $this->resetPage();
@@ -1061,6 +1108,11 @@ new class extends Component
     }
 
     public function updatedIncompleteProfile(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedMinorsWithoutGuardian(): void
     {
         $this->resetPage();
     }
@@ -1125,6 +1177,21 @@ new class extends Component
         return match ($this->activity) {
             'season' => Carbon::parse(Season::current()->start_at ?? now()),
             'six_weeks' => now()->subWeeks(6),
+            default => null,
+        };
+    }
+
+    /**
+     * The age the drawer asks for, or null for no filter: an unknown value
+     * from an old or tampered link is ignored.
+     *
+     * @return 'minors'|'adults'|null
+     */
+    private function ageFilter(): ?string
+    {
+        return match ($this->age) {
+            'minors' => 'minors',
+            'adults' => 'adults',
             default => null,
         };
     }
@@ -1244,6 +1311,7 @@ new class extends Component
 
         $statuses = $this->chosenStatuses();
         $licence = $this->licenceFilter();
+        $age = $this->ageFilter();
         $since = $this->activitySince();
 
         return $query
@@ -1284,6 +1352,8 @@ new class extends Component
                 $this->categories,
                 fn ($q) => $q->whereIn('gender', $this->categories)
             )
+            ->when($age === 'minors', fn ($q) => $q->minor())
+            ->when($age === 'adults', fn ($q) => $q->adult())
             ->when(
                 count($this->team_ids) > 0,
                 fn ($q) => $q->whereHas(
@@ -1294,6 +1364,7 @@ new class extends Component
             ->when($this->invitationState !== '', fn ($q) => $q->withInvitationState($this->invitationState))
             ->when($this->incompleteProfile, fn ($q) => $q->withIncompleteProfile())
             ->when($this->adultWithoutAddress, fn ($q) => $q->adultWithoutOwnAddress())
+            ->when($this->minorsWithoutGuardian, fn ($q) => $q->minor()->withoutGuardian())
             ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
             ->when($this->hasKey, fn ($q) => $q->whereHas('keyRings'))
             ->when($this->hasCashRegister, fn ($q) => $q->whereHas('heldCashRegisters'))

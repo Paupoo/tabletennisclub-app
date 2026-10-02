@@ -17,6 +17,11 @@ use App\Domains\Shared\Enums\Role;
  * fallback — narrower on a workstation than DejaVu Sans on the CI runner,
  * where a date column at xl overflowed by 48 px after passing locally. The
  * probe sets DejaVu Sans on every element so both measure the same thing.
+ *
+ * At 1024 the card offers 632 px, and the same long name ran the table 79 px
+ * past it: below xl, the name and the address beneath it are truncated. The
+ * list of the new members, with its onboarding column, still does not fit
+ * there — it is measured from xl.
  */
 $tableProbe = <<<'JS'
 (() => {
@@ -62,6 +67,7 @@ it('keeps the members table inside its card', function (int $width, int $height,
         ->and(in_array(__('Onboarding'), $p['headers'], true))->toBe($newcomers)
         ->and($p['table'])->toBeLessThanOrEqual($p['card'], sprintf('the table ends at %d px, its card at %d px', $p['table'], $p['card']));
 })->with([
+    'lg, the long name' => [1024, 768, false],
     'xl, without the dates' => [1280, 800, false],
     '2xl, with both dates' => [1536, 900, true],
     'xl, the new members' => [1280, 800, false, true],

@@ -1091,6 +1091,18 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Members known to be 18 or over today — the SQL half of
+     * {@see self::isAdult()}.
+     *
+     * A member whose birthdate nobody recorded is neither adult nor minor, as
+     * on the model: the "Incomplete profile" filter is the one that finds them.
+     */
+    public function scopeAdult(EloquentBuilder $query): EloquentBuilder
+    {
+        return $query->whereNotNull('birthdate')->whereDate('birthdate', '<=', now()->subYears(18));
+    }
+
+    /**
      * Grown members the club cannot hand a login to.
      *
      * A child reached through a parent is the arrangement working as intended;
@@ -1230,6 +1242,15 @@ class User extends Authenticatable implements MustVerifyEmail
         return $competitive
             ? $query->whereHas('subscriptions', $competitiveLicence)
             : $query->whereHas('subscriptions', $affiliatedThisSeason)->whereDoesntHave('subscriptions', $competitiveLicence);
+    }
+
+    /**
+     * Members known to be under 18 today — the SQL half of
+     * {@see self::isMinor()}. An unknown birthdate is not a minor's.
+     */
+    public function scopeMinor(EloquentBuilder $query): EloquentBuilder
+    {
+        return $query->whereNotNull('birthdate')->whereDate('birthdate', '>', now()->subYears(18));
     }
 
     public function scopePaid(EloquentBuilder $query): EloquentBuilder
@@ -1540,6 +1561,15 @@ class User extends Authenticatable implements MustVerifyEmail
             ->whereColumn('activities.user_id', 'users.id')
             ->where('activities.activity_at', '>=', $since)
         );
+    }
+
+    /**
+     * Members nobody answers for: not a single guardian on their file, with
+     * an account or without.
+     */
+    public function scopeWithoutGuardian(EloquentBuilder $query): EloquentBuilder
+    {
+        return $query->whereDoesntHave('guardians');
     }
 
     public function seasons(): BelongsToMany

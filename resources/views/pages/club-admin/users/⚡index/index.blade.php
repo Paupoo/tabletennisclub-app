@@ -70,33 +70,32 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
-    <div class="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-3 2xl:grid-cols-6">
-        @php
-            /*
-             * La couleur vit sur la pastille, jamais sur le chiffre : voir l'en-tête de `stat-card`.
-             * Chaque carte porte le mot du filtre qui retrouve ses membres ; elles ne filtrent pas.
-             */
-            $statCards = [
-                [
-                    'label' => __('Affiliated'), 'key' => 'affiliated', 'icon' => 'o-check-circle', 'color' => 'success',
-                    'hint' => trans_choice('Including :count newcomer|Including :count newcomers', $stats['new'], ['count' => $stats['new']]),
-                ],
-                ['label' => __('New'),                'key' => 'new',                'icon' => 'o-sparkles',     'color' => 'primary', 'hint' => null],
-                ['label' => __('To follow up'),       'key' => 'to_follow_up',       'icon' => 'o-bell-alert',   'color' => 'warning', 'hint' => null],
-                ['label' => __('Left the club'),      'key' => 'left',               'icon' => 'o-arrow-right-start-on-rectangle', 'color' => 'error', 'hint' => __('This season')],
-                ['label' => __('No activity recorded'), 'key' => 'no_activity',      'icon' => 'o-moon',         'color' => 'neutral', 'hint' => __('This season')],
-                ['label' => __('Responsible adults'), 'key' => 'responsible_adults', 'icon' => 'o-user-group',   'color' => 'neutral', 'hint' => null],
-            ];
-        @endphp
-        @foreach ($statCards as $card)
-            <x-admin.shared.stat-card
-                :label="$card['label']"
-                :value="$stats[$card['key']] ?? 0"
-                :hint="$card['hint']"
-                :icon="$card['icon']"
-                :color="$card['color']" />
-        @endforeach
-    </div>
+    {{-- Quatre chiffres, tous lus sur les affiliés de la saison : deux par ligne
+         sur un téléphone, les quatre d'une traite dès `lg`. Les statuts, les
+         adultes responsables et l'activité vivent dans le tiroir de filtres. --}}
+    <section data-stat-strip class="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {{-- La couleur vit sur la pastille, jamais sur le chiffre : voir l'en-tête de `stat-card`.
+             Elles ne filtrent pas. --}}
+        <x-admin.shared.stat-card :label="__('Affiliated')" :value="$stats['affiliated']"
+            :hint="trans_choice('Including :count newcomer|Including :count newcomers', $stats['new'], ['count' => $stats['new']])"
+            icon="o-check-circle" color="success" />
+        <x-admin.shared.stat-card :label="__('Competitors')" :value="$stats['competitors']"
+            :hint="trans_choice(':count recreational|:count recreational', $stats['recreational'], ['count' => $stats['recreational']])"
+            icon="o-trophy" color="primary" />
+        <x-admin.shared.stat-card :label="__('Minors')" :value="$stats['minors']" icon="o-face-smile" color="neutral">
+            {{-- Un constat, pas un geste : aucun lien, aucun bouton. Le filtre du même
+                 nom, section Profil, retrouve ces membres. --}}
+            @if ($stats['minors_without_guardian'] > 0)
+                <x-slot:extra>
+                    <div data-stat-alert class="mt-1">
+                        <x-badge class="badge-warning badge-soft badge-sm h-auto whitespace-normal"
+                            :value="trans_choice('Including :count without a responsible adult|Including :count without a responsible adult', $stats['minors_without_guardian'], ['count' => $stats['minors_without_guardian']])" />
+                    </div>
+                </x-slot:extra>
+            @endif
+        </x-admin.shared.stat-card>
+        <x-admin.shared.stat-card :label="__('Women')" :value="$stats['women']" icon="o-user" color="neutral" />
+    </section>
 
     {{-- ── Vue mobile ───────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
@@ -243,17 +242,22 @@
                          on one line: the status column added here costs width, and without
                          this every name of average length folded in two. The address sits
                          beneath it rather than in a column of its own, which cost 254px
-                         and pushed the row off the card. --}}
+                         and pushed the row off the card.
+                         Below xl, one line still cost too much: at 1024 a name of 28
+                         characters ran the table 79px past its card. The name is cut
+                         with an ellipsis there, the whole of it in the title. --}}
                     @scope('cell_name', $user)
                         {{-- The name opens the file, which everyone on this list may read. --}}
                         <div class="flex items-center gap-1.5">
-                            <a class="font-medium whitespace-nowrap hover:underline" href="{{ route('admin.users.show', $user) }}">
+                            <a class="block max-w-32 truncate font-medium whitespace-nowrap hover:underline xl:max-w-none"
+                                href="{{ route('admin.users.show', $user) }}"
+                                title="{{ $user->first_name }} {{ $user->last_name }}">
                                 {{ $user->first_name }} {{ $user->last_name }}
                             </a>
                             <x-admin.users.responsible-adult-badge :user="$user" />
                         </div>
                         @if ($user->email)
-                            <div class="max-w-56 truncate text-xs text-muted" title="{{ $user->email }}">{{ $user->email }}</div>
+                            <div class="max-w-32 truncate text-xs text-muted xl:max-w-56" title="{{ $user->email }}">{{ $user->email }}</div>
                         @endif
                     @endscope
                     @scope('cell_affiliation', $user)
@@ -448,6 +452,12 @@
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
+                    {{ __('Age') }}
+                </p>
+                <x-radio wire:model.live="age" :options="$ageOptions" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
                     {{ __('Account') }}
                 </p>
                 <x-radio wire:model.live="invitationState" :options="$invitationStates" />
@@ -460,6 +470,8 @@
                 <x-toggle class="mt-2" :label="__('Adult without an address')"
                     :hint="__('Grown members who cannot be invited yet — ask them for an address of their own.')"
                     wire:model.live="adultWithoutAddress" />
+                <x-toggle class="mt-2" :label="__('Minors without a responsible adult')"
+                    wire:model.live="minorsWithoutGuardian" />
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">

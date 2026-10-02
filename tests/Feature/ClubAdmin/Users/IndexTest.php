@@ -51,6 +51,15 @@ describe('rendering and display', function (): void {
             ->assertSee(__('Ranking'));
     });
 
+    it('keeps the whole of a long name in the title of the link it cuts below xl', function (): void {
+        $member = User::factory()->create(['first_name' => 'Marie-Christine', 'last_name' => 'Vanderlinden-Dubois']);
+
+        allMembersList()
+            ->assertSeeHtml('class="block max-w-32 truncate font-medium whitespace-nowrap hover:underline xl:max-w-none"')
+            ->assertSeeHtml('href="' . route('admin.users.show', $member) . '"')
+            ->assertSeeHtml('title="Marie-Christine Vanderlinden-Dubois"');
+    });
+
     it('displays users in the table', function (): void {
         $users = User::factory()->count(3)->create();
 
@@ -728,15 +737,15 @@ describe('the stat strip', function (): void {
     /** Only the stat strip: the table below repeats these words in its own cells. */
     function statStrip(string $html): string
     {
-        return str($html)->after('grid grid-cols-2 gap-4 sm:grid-cols-3 2xl:grid-cols-6')->before('</div>&#10;')->toString();
+        return str($html)->after('data-stat-strip')->before('</section>')->toString();
     }
 
-    it('draws its six figures with the shared stat card', function (): void {
+    it('draws its four figures with the shared stat card', function (): void {
         $html = allMembersList()->html();
 
         $strip = statStrip($html);
 
-        expect(substr_count($strip, 'font-black tabular-nums'))->toBe(6);
+        expect(substr_count($strip, 'font-black tabular-nums'))->toBe(4);
     });
 
     it('never colours the figure itself', function (): void {

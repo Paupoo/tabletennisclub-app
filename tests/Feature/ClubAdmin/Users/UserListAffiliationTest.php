@@ -260,21 +260,19 @@ describe('the columns', function (): void {
 });
 
 describe('the stat strip', function (): void {
-    it('counts with the same words as the filters', function (): void {
+    it('counts this season\'s affiliates only, whatever their status', function (): void {
         $component = Livewire::test(AFFILIATION_LIST);
 
-        expect($component->get('stats'))->toBe([
+        // New, renewed and returning; not the member to follow up, the former
+        // one, the one never affiliated, nor the responsible adult.
+        expect($component->get('stats'))->toMatchArray([
             'affiliated' => 3,
             'new' => 1,
-            'to_follow_up' => 1,
-            'left' => 0,
-            'no_activity' => 3,
-            'responsible_adults' => 1,
+            'competitors' => 1,
+            'recreational' => 2,
         ]);
 
         $component->assertSee(__('Affiliated'))
-            ->assertSee(__('To follow up'))
-            ->assertSee(__('Responsible adults'))
             ->assertSee(trans_choice('Including :count newcomer|Including :count newcomers', 1, ['count' => 1]));
     });
 });

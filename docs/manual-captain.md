@@ -74,7 +74,7 @@ Below it, the **team roster** is displayed. For each player:
 | **Name** | Player name |
 | **Availability badge** | Green = available, red = unavailable, absent = no response yet |
 | **Note** | Optional message left by the player with their response |
-| **Played / Sel.** | Number of matches played and selections this season |
+| **Played / Sel.** | Number of matches played and selections this season. "Played" is read off the AFTT match sheet, imported every morning: a player lined up who is not on the sheet, or only as a forfeit, did not play |
 | **Checkbox** | Whether the player is in the current selection |
 
 ### Selecting / deselecting a player

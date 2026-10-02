@@ -71,3 +71,26 @@ it('shows no licence for an affiliation that was cancelled', function (): void {
         ->assertSee(__('Cancelled'))
         ->assertDontSee(__('Recreational'));
 });
+
+it('lists the wards on the edit form too, linked to their file', function (): void {
+    $admin = User::factory()->isAdmin()->create();
+
+    $this->actingAs($admin)
+        ->get(route('admin.users.edit', $this->parent))
+        ->assertOk()
+        ->assertSee(__('Responsible for'))
+        ->assertSee('Pupille-Joueuse')
+        ->assertSee('Pupille-Absent')
+        ->assertSee(__(':age years', ['age' => 12]))
+        ->assertSee(route('admin.users.show', $this->player), escape: false)
+        ->assertSee('data-membership-status="to_follow_up"', escape: false);
+});
+
+it('leaves the wards block out of the edit form of a member who answers for nobody', function (): void {
+    $admin = User::factory()->isAdmin()->create();
+
+    $this->actingAs($admin)
+        ->get(route('admin.users.edit', $this->player))
+        ->assertOk()
+        ->assertDontSee(__('Responsible for'));
+});

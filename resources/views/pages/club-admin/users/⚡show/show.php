@@ -202,11 +202,7 @@ new class extends Component
     #[Computed]
     public function wards(): Collection
     {
-        $guardianSheet = $this->user->guardianRecord()->first();
-
-        return $guardianSheet === null
-            ? new Collection
-            : $guardianSheet->users()->withMembershipFacts()->with('departureThisSeason')->orderBy('first_name')->orderBy('last_name')->get();
+        return $this->user->wards();
     }
 
     /**

@@ -12,6 +12,7 @@ use App\Data\User\CreateUserData;
 use App\Data\User\UpdateUserData;
 use App\Domains\ClubAdmin\Users\Models\FamilyGroup;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Ranking;
@@ -23,6 +24,7 @@ use App\Livewire\Concerns\HasPhotoUpload;
 use App\Livewire\Concerns\ManagesGuardians;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -404,6 +406,18 @@ new class extends Component
         }
     }
 
+    /**
+     * The season a "to follow up" ward was last affiliated to, read once.
+     *
+     * A string rather than the season: Livewire memoises no null, and a club
+     * without a past season would query it again for every ward.
+     */
+    #[Computed]
+    public function previousSeasonName(): string
+    {
+        return Season::current()?->previous()?->name ?? '';
+    }
+
     public function render(): View
     {
         return $this->view()
@@ -717,6 +731,17 @@ new class extends Component
         );
 
         $this->delegations = array_values(array_unique([...$this->delegations, ...$suggested]));
+    }
+
+    /**
+     * The members this account answers for; empty while creating a member.
+     *
+     * @return EloquentCollection<int, User>
+     */
+    #[Computed]
+    public function wards(): EloquentCollection
+    {
+        return $this->user?->wards() ?? new EloquentCollection;
     }
 
     public function with(): array

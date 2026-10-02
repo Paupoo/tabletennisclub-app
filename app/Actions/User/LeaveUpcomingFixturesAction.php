@@ -18,9 +18,10 @@ use Illuminate\Support\Facades\DB;
  * match already played belongs to the results and the match sheets.
  *
  * Telling anybody is not done here: the captain of each team the member
- * played in is mailed by {@see TellCaptainsOfDepartureAction}, which lists the
- * matches this action hands back — those the member was lined up for, sent or
- * not. An availability alone is not listed: nobody was counting on it yet.
+ * played in, and the selector, are mailed by
+ * {@see TellCaptainsAndSelectorOfDepartureAction}, which lists the matches this
+ * action hands back — those the member was lined up for, sent or not. An
+ * availability alone is not listed: nobody was counting on it yet.
  *
  * The fixture itself is left as it is: the lineup is still published for the
  * players who remain, and it is the captain's next send from the selection

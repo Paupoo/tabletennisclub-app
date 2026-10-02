@@ -281,7 +281,8 @@ new class extends Component
         try {
             // One transaction for the whole selection: the captains' mails
             // leave once every departure is recorded, so a captain leaving in
-            // the same gesture as one of their players is never told.
+            // the same gesture as one of their players — or a selector — is
+            // never told.
             $outcome = MemberDepartureOutcome::merge(DB::transaction(fn (): Collection => $members->map(fn (User $member): MemberDepartureOutcome => DeclareMemberDepartureAction::handle(
                 $member,
                 Carbon::parse($this->departureLeftOn),

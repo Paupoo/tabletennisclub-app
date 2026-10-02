@@ -14,11 +14,13 @@ use Illuminate\Notifications\Notification;
 /**
  * A member who played in the captain's team has left the club.
  *
- * Sent to the captain alone, once per departure whatever the number of teams
- * and matches: the place in the team is theirs to fill. It names the teams,
- * then the upcoming matches the member was lined up for — in a lineup sent or
- * still a draft — and has now been taken off. The rest of the team hears of a
- * new lineup when the captain sends it.
+ * Sent to the captain and to the selector, once each per departure whatever
+ * the number of teams and matches: the place in the team is the captain's to
+ * fill, and the selector composes the club's teams. It names the teams, then
+ * the upcoming matches the member was lined up for — in a lineup sent or still
+ * a draft — and has now been taken off: the captain's own, or every one for
+ * the selector. The rest of the team hears of a new lineup when the captain
+ * sends it.
  *
  * Carries the member's name and the teams' names rather than the models: the
  * rows that tied them together are gone by the time the mail is written.
@@ -33,8 +35,8 @@ class MemberLeftTeamNotification extends Notification implements ShouldQueue
 
     /**
      * @param  int  $seasonId  the season the departure was declared for
-     * @param  list<string>  $teamNames  the captain's teams the member played in
-     * @param  list<int>  $interclubIds  the upcoming matches the member was lined up for
+     * @param  list<string>  $teamNames  the teams the member played in — the captain's own, or all of them for the selector
+     * @param  list<int>  $interclubIds  the upcoming matches the member was lined up for, among those the recipient hears of
      * @param  list<int>  $shortHandedWithdrawnIds  those of the matches no longer declared to play with three
      */
     public function __construct(
@@ -50,8 +52,8 @@ class MemberLeftTeamNotification extends Notification implements ShouldQueue
     }
 
     /**
-     * A captain declared gone in the same gesture as one of their players is
-     * not told: by the time the mail leaves, they have left too.
+     * A captain or a selector declared gone in the same gesture as one of the
+     * players is not told: by the time the mail leaves, they have left too.
      */
     public function shouldSend(object $notifiable, string $channel): bool
     {

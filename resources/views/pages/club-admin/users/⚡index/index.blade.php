@@ -128,13 +128,16 @@
                         <div class="truncate text-xs text-muted">{{ $user->email }}</div>
                         <div class="mt-1 flex flex-wrap items-center gap-1.5">
                             <x-admin.users.membership-status-badge :user="$user"
-                                :last-season="$this->previousSeason?->name" size="badge-xs" />
+                                :last-season="$this->previousSeasonName" size="badge-xs" />
                             <x-admin.users.responsible-adult-badge :user="$user" size="badge-xs" />
                             <x-admin.users.account-status-badge :user="$user" size="badge-xs" />
                             @if ($user->has_paid)
                                 <x-badge :value="__('Paid')" class="badge-success badge-soft badge-xs" />
                             @else
                                 <x-badge :value="__('Unpaid')" class="badge-error badge-soft badge-xs" />
+                            @endif
+                            @if ($this->showsOnboardingColumn())
+                                <x-admin.users.onboarding-steps :user="$user" compact />
                             @endif
                         </div>
                     </div>
@@ -255,8 +258,12 @@
                     @endscope
                     @scope('cell_affiliation', $user)
                         <div class="max-w-56">
-                            <x-admin.users.membership-status-badge :user="$user" :last-season="$this->previousSeason?->name" />
+                            <x-admin.users.membership-status-badge :user="$user" :last-season="$this->previousSeasonName" />
                         </div>
+                    @endscope
+                    {{-- Only on the list of the new members: see showsOnboardingColumn(). --}}
+                    @scope('cell_onboarding', $user)
+                        <x-admin.users.onboarding-steps :user="$user" />
                     @endscope
                     {{-- A ranking only means something for a competitor of the running season. --}}
                     @scope('cell_ranking', $user)

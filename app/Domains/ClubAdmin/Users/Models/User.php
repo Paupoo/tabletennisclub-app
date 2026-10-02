@@ -333,6 +333,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(Team::class, 'captain_id');
     }
 
+    /**
+     * The charter the member signed, one signature per season at most.
+     *
+     * @return HasMany<CharterSignature, $this>
+     */
+    public function charterSignatures(): HasMany
+    {
+        return $this->hasMany(CharterSignature::class);
+    }
+
     public function club(): BelongsTo
     {
         return $this->belongsTo(Club::class);
@@ -947,6 +957,38 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * The five steps a new member travels before they are settled at the
+     * club, in the order they usually take them, as step => done.
+     *
+     * Read off the facts the members list loads in its own query — see
+     * {@see self::scopeWithOnboardingFacts()}, {@see self::scopeWithLastActivity()}
+     * and the `has_paid` sub-select — and fetched for this model alone when
+     * the query that built it did not.
+     *
+     * The charter counts for the running season only, whatever its version:
+     * a signature is kept for the whole season, and an edit of the text
+     * mid-season does not ask anybody to sign again.
+     *
+     * @return array{account: bool, profile: bool, charter: bool, paid: bool, first_visit: bool}
+     */
+    public function onboardingSteps(): array
+    {
+        $facts = array_key_exists('signed_charter_this_season', $this->attributes)
+            && array_key_exists('has_incomplete_profile', $this->attributes)
+            && array_key_exists('last_activity_at', $this->attributes)
+                ? $this
+                : self::query()->withTrashed()->withLastActivity()->withOnboardingFacts()->findOrFail($this->getKey());
+
+        return [
+            'account' => $this->invitationStatus() === 'active',
+            'profile' => ! $facts->getAttribute('has_incomplete_profile'),
+            'charter' => (bool) $facts->getAttribute('signed_charter_this_season'),
+            'paid' => $this->has_paid,
+            'first_visit' => $facts->getAttribute('last_activity_at') !== null,
+        ];
+    }
+
+    /**
      * Retrieve the contact this user was onboarded from, if any.
      *
      * Phase 2 uses this to recover the carry-over seed via
@@ -1462,6 +1504,28 @@ class User extends Authenticatable implements MustVerifyEmail
     public function scopeWithMembershipFacts(EloquentBuilder $query): EloquentBuilder
     {
         return $query->withExists($this->membershipFactQueries());
+    }
+
+    /**
+     * Load, in the same query as the members, what their onboarding steps
+     * are read from beyond the activity and the payment — see
+     * {@see self::onboardingSteps()}.
+     *
+     * The profile is read through {@see self::scopeWithIncompleteProfile()},
+     * so that the list and the filter of the same name never disagree.
+     */
+    public function scopeWithOnboardingFacts(EloquentBuilder $query): EloquentBuilder
+    {
+        return $query
+            ->withExists(['charterSignatures as signed_charter_this_season' => fn (EloquentBuilder $signature): EloquentBuilder => $signature
+                ->where('season_id', Season::current()->id ?? 0),
+            ])
+            ->addSelect([
+                'has_incomplete_profile' => DB::query()
+                    ->fromSub(self::query()->withTrashed()->withIncompleteProfile()->select('users.id'), 'incomplete_profiles')
+                    ->selectRaw('count(*) > 0')
+                    ->whereColumn('incomplete_profiles.id', 'users.id'),
+            ]);
     }
 
     /**

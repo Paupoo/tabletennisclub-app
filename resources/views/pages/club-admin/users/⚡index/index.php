@@ -631,18 +631,35 @@ new class extends Component
      * (`whitespace-normal`, la ligne d'en-tête de daisyUI ne coupe jamais).
      * Voir tests/Browser/UsersTableWidthTest.php.
      *
+     * Sur la liste des nouveaux, l'accueil prend la place du classement et des
+     * deux dates : avec ses cinq icônes en plus, la table débordait de 116 px
+     * à 1280 et de 73 px à 1536. Rien de ce qui part ne manque ici — la
+     * première venue est la dernière activité d'un nouveau, le compte créé sa
+     * première connexion, et son classement reste sur sa fiche.
+     *
      * @return array<int, array<string, mixed>>
      */
     #[Computed]
     public function headers(): array
     {
-        return [
+        $headers = [
             ['key' => 'name',        'label' => __('Name'),        'sortable' => true],
             ['key' => 'affiliation', 'label' => __('Affiliation'), 'sortable' => false],
             ['key' => 'ranking',     'label' => __('Ranking'),     'sortable' => true,  'class' => 'hidden xl:table-cell'],
             ['key' => 'last_activity_at', 'label' => __('Last activity'), 'sortable' => true, 'class' => 'hidden 2xl:table-cell whitespace-normal'],
             ['key' => 'last_login_at',    'label' => __('Last sign-in'),  'sortable' => true, 'class' => 'hidden 2xl:table-cell whitespace-normal'],
             ['key' => 'status',      'label' => __('Account'),     'sortable' => false],
+        ];
+
+        if (! $this->showsOnboardingColumn()) {
+            return $headers;
+        }
+
+        return [
+            $headers[0],
+            $headers[1],
+            ['key' => 'onboarding', 'label' => __('Onboarding'), 'sortable' => false],
+            $headers[5],
         ];
     }
 
@@ -757,13 +774,17 @@ new class extends Component
     }
 
     /**
-     * The season the "to follow up" members were last affiliated to, named
-     * once for the whole page rather than once per row.
+     * The name of the season the "to follow up" members were last affiliated
+     * to, read once for the whole page rather than once per row.
+     *
+     * A string, empty when there is none: a computed property that returns
+     * null is not memoised, and the first season of the club asked the
+     * database again on every row.
      */
     #[Computed]
-    public function previousSeason(): ?Season
+    public function previousSeasonName(): string
     {
-        return Season::current()?->previous();
+        return Season::current()?->previous()->name ?? '';
     }
 
     public function quickInvite(): void
@@ -931,6 +952,18 @@ new class extends Component
         }
 
         $this->success(__('Invitation sent to :email.', ['email' => $user->email]));
+    }
+
+    /**
+     * Whether the list shows where each member stands on their way in: on
+     * the list of the new members, and on it alone. Anywhere else most rows
+     * would tick every step, and the column would cost its width for nothing.
+     */
+    public function showsOnboardingColumn(): bool
+    {
+        $chosen = array_unique(array_map(fn (MembershipStatus $status): string => $status->value, $this->chosenStatuses()));
+
+        return $chosen === [MembershipStatus::New->value];
     }
 
     /**
@@ -1219,6 +1252,8 @@ new class extends Component
             ->with('departureThisSeason')
             // Sortable, hence a column of the query rather than a relation.
             ->withLastActivity()
+            // Charter and profile, for the onboarding steps, only when shown.
+            ->when($this->showsOnboardingColumn(), fn ($q) => $q->withOnboardingFacts())
             // The paid badge of both twins, mobile and desktop: two queries a
             // row without it. Read by User::getHasPaidAttribute().
             ->withExists(['subscriptions as has_paid' => fn ($subscription) => $subscription

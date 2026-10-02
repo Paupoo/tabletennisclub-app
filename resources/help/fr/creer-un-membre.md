@@ -38,7 +38,7 @@ Le **numéro de licence** n'est exigé que si vous choisissez le type **compéti
 
 - **Décocher « membre du comité » efface son rôle.** Si vous décochez la case pour corriger autre chose puis la recochez, le rôle (secrétaire, trésorier…) est reparti à zéro, sans un mot. Repositionnez-le avant d'enregistrer.
 - **Le statut compétitif / récréatif peut être verrouillé.** Il l'est tant que le membre n'a pas d'inscription pour la saison courante : ce statut vit sur l'inscription, pas sur la fiche.
-- **Un mineur sans tuteur rattaché** rend le profil incomplet, même si tout le reste est rempli.
+- **Un mineur sans adulte responsable n'est pas un « Profil incomplet ».** Ce filtre de la liste des membres, comme l'alerte du tableau de bord, ne regarde que les champs de la fiche. Pour retrouver ces mineurs, ouvrez les filtres de la liste des membres et activez **Mineurs sans adulte responsable**, dans la section Profil. Pour les affiliés de la saison, la carte **Mineurs** en tête de liste l'indique aussi : « dont X sans adulte responsable » s'affiche sous le nombre dès qu'il y en a un. Le mineur lui-même, s'il se connecte, est renvoyé vers l'assistant de complétion tant qu'aucun adulte responsable ne lui est rattaché.
 
 ## Ensuite, il reste une étape
 

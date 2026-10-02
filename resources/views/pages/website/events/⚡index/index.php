@@ -159,6 +159,9 @@ new class extends Component
         return $this->matchingQuery()
             ->with('eventable')
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
+            // A total order: rows tied on the sorted column would otherwise
+            // move between pages, some shown twice and some never.
+            ->orderBy('event_posts.id')
             ->paginate(20);
     }
 

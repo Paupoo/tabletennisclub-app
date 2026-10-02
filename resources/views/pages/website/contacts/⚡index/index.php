@@ -129,6 +129,8 @@ new class extends Component
 
     public function bulkDelete(): void
     {
+        $this->authorizeManagement();
+
         $contacts = Contact::whereIn('id', $this->selected)->get();
         $count = $contacts->count();
         $contacts->each(fn (Contact $contact) => $contact->delete());
@@ -167,6 +169,8 @@ new class extends Component
 
     public function confirmBulkDelete(): void
     {
+        $this->authorizeManagement();
+
         $this->confirmBulkDeleteModal = true;
     }
 
@@ -183,11 +187,16 @@ new class extends Component
     {
         return $this->matchingQuery()
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
+            // A total order: rows tied on the sorted column would otherwise
+            // move between pages, some shown twice and some never.
+            ->orderBy('contacts.id')
             ->paginate(20);
     }
 
     public function delete(): void
     {
+        $this->authorizeManagement();
+
         Contact::findOrFail($this->deletingId)->delete();
         $this->deleteModal = false;
         $this->deletingId = null;

@@ -211,16 +211,18 @@
     </div>
 
     {{-- ── Floating Pill — bulk actions ───────────────────────────────── --}}
-    <x-admin.shared.selection-pill
-        :selected="$selected"
-        :total="$this->getTotalMatchingCount()"
-        :selecting-all-results="$selectingAllResults"
-        :select-all="$selectAll">
-        <x-slot:actions>
-            <x-button class="btn-ghost btn-sm text-error" icon="o-trash" :label="__('Delete')"
-                wire:click="confirmBulkDelete" />
-        </x-slot:actions>
-    </x-admin.shared.selection-pill>
+    @if ($canManage)
+        <x-admin.shared.selection-pill
+            :selected="$selected"
+            :total="$this->getTotalMatchingCount()"
+            :selecting-all-results="$selectingAllResults"
+            :select-all="$selectAll">
+            <x-slot:actions>
+                <x-button class="btn-ghost btn-sm text-error" icon="o-trash" :label="__('Delete')"
+                    wire:click="confirmBulkDelete" />
+            </x-slot:actions>
+        </x-admin.shared.selection-pill>
+    @endif
 
     {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
     <x-admin.shared.filter-drawer :title="__('Filters')">

@@ -2,14 +2,22 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Contact\Models\Contact;
+use App\Domains\ClubAdmin\Contact\Models\Spam;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\ClubPosts\Models\EventPost;
+use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Enums\ClubEventTypeEnum;
+use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
+use App\Domains\Shared\Enums\NewsPostCategoryEnum;
+use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Jobs\SendPaymentReminderJob;
@@ -183,5 +191,126 @@ describe('meetings', function (): void {
             ->assertForbidden();
 
         expect($meeting->fresh()->status)->toBe(MeetingStatusEnum::CONFIRMED);
+    });
+});
+
+describe('articles', function (): void {
+    it('keeps every article of the chosen category and archives them all', function (): void {
+        $author = User::factory()->create();
+        $matching = NewsPost::factory()->count(16)->create([
+            'category' => NewsPostCategoryEnum::NEWS->value,
+            'status' => NewsPostStatusEnum::PUBLISHED,
+            'user_id' => $author->id,
+        ]);
+        $outsider = NewsPost::factory()->create([
+            'category' => NewsPostCategoryEnum::PORTRAIT->value,
+            'status' => NewsPostStatusEnum::PUBLISHED,
+            'user_id' => $author->id,
+        ]);
+
+        $component = Livewire::actingAs($this->admin)
+            ->test('pages::website.articles.index')
+            ->set('category', NewsPostCategoryEnum::NEWS->value)
+            ->set('selectAll', true)
+            ->call('selectAllResults');
+
+        expect(selectedIdsAfterSelectingAll($component))->toBe($matching->pluck('id')->sort()->values()->all())
+            ->not->toContain($outsider->id);
+
+        $component->call('bulkArchive');
+
+        expect(NewsPost::query()->where('status', NewsPostStatusEnum::ARCHIVED)->count())->toBe(16)
+            ->and($outsider->fresh()->status)->toBe(NewsPostStatusEnum::PUBLISHED);
+    });
+});
+
+describe('contacts', function (): void {
+    it('keeps every contact of the chosen interest and deletes them all', function (): void {
+        $matching = Contact::factory()->count(21)->create(['interest' => 'TRIAL']);
+        $outsider = Contact::factory()->create(['interest' => 'PARTNERSHIP']);
+
+        $component = Livewire::actingAs($this->admin)
+            ->test('pages::website.contacts.index')
+            ->set('interest', 'TRIAL')
+            ->set('selectAll', true)
+            ->call('selectAllResults');
+
+        expect(selectedIdsAfterSelectingAll($component))->toBe($matching->pluck('id')->sort()->values()->all())
+            ->not->toContain($outsider->id);
+
+        $component->call('bulkDelete');
+
+        expect(Contact::query()->pluck('id')->all())->toBe([$outsider->id]);
+    });
+
+    it('refuses to delete contacts for a reader', function (): void {
+        $contact = Contact::factory()->create();
+
+        Livewire::actingAs(User::factory()->isCommitteeMember()->create())
+            ->test('pages::website.contacts.index')
+            ->set('selected', [(string) $contact->id])
+            ->call('bulkDelete')
+            ->assertForbidden();
+
+        expect($contact->fresh())->not->toBeNull();
+    });
+
+    it('refuses to delete a single contact for a reader', function (): void {
+        $contact = Contact::factory()->create();
+
+        Livewire::actingAs(User::factory()->isCommitteeMember()->create())
+            ->test('pages::website.contacts.index')
+            ->set('deletingId', $contact->id)
+            ->call('delete')
+            ->assertForbidden();
+
+        expect($contact->fresh())->not->toBeNull();
+    });
+});
+
+describe('spams', function (): void {
+    it('keeps every spam of the chosen agent type and deletes them all', function (): void {
+        $matching = Spam::factory()->count(26)->create(['user_agent' => 'curl/8.0']);
+        $outsider = Spam::factory()->create(['user_agent' => 'Mozilla/5.0 (X11; Linux x86_64)']);
+
+        $component = Livewire::actingAs($this->admin)
+            ->test('pages::website.spams.index')
+            ->set('userAgentType', 'curl')
+            ->set('selectAll', true)
+            ->call('selectAllResults');
+
+        expect(selectedIdsAfterSelectingAll($component))->toBe($matching->pluck('id')->sort()->values()->all())
+            ->not->toContain($outsider->id);
+
+        $component->call('bulkDelete');
+
+        expect(Spam::query()->pluck('id')->all())->toBe([$outsider->id]);
+    });
+});
+
+describe('website events', function (): void {
+    it('keeps every event of the chosen type and publishes them all', function (): void {
+        $matching = EventPost::factory()->count(21)->create([
+            'type' => ClubEventTypeEnum::TRAINING,
+            'status' => EventPostStatusEnum::DRAFT,
+        ]);
+        $outsider = EventPost::factory()->create([
+            'type' => ClubEventTypeEnum::INTERCLUB,
+            'status' => EventPostStatusEnum::DRAFT,
+        ]);
+
+        $component = Livewire::actingAs($this->admin)
+            ->test('pages::website.events.index')
+            ->set('type', ClubEventTypeEnum::TRAINING->value)
+            ->set('selectAll', true)
+            ->call('selectAllResults');
+
+        expect(selectedIdsAfterSelectingAll($component))->toBe($matching->pluck('id')->sort()->values()->all())
+            ->not->toContain($outsider->id);
+
+        $component->call('bulkPublish');
+
+        expect(EventPost::query()->where('status', EventPostStatusEnum::PUBLISHED)->count())->toBe(21)
+            ->and($outsider->fresh()->status)->toBe(EventPostStatusEnum::DRAFT);
     });
 });

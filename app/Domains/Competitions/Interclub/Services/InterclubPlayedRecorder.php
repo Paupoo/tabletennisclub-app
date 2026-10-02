@@ -13,8 +13,8 @@ use Illuminate\Support\Facades\DB;
  * Who of ours played a tie, as the federation's match sheet records it.
  *
  * The sheet is the official record of the evening, and it is the only source
- * of `interclub_user.has_played` once it has been imported: a published
- * line-up says who was meant to come, the sheet says who did. Everything here
+ * of `interclub_user.has_played` — a score typed by hand marks nobody: a
+ * published line-up says who was meant to come, the sheet says who did. Everything here
  * reads `interclub_individual_matches`, never the federation, so the same rule
  * serves the daily import and a backfill over sheets already on file.
  *

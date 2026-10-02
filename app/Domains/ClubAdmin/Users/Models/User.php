@@ -1674,6 +1674,24 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * The members this account answers for, when it holds a guardian sheet —
+     * each with the facts their status is read from, in the same query.
+     *
+     * Read by both halves of a member's file: the page that shows it and the
+     * form that edits it.
+     *
+     * @return Collection<int, User>
+     */
+    public function wards(): Collection
+    {
+        $guardianSheet = $this->guardianRecord()->first();
+
+        return $guardianSheet === null
+            ? new Collection
+            : $guardianSheet->users()->withMembershipFacts()->with('departureThisSeason')->orderBy('first_name')->orderBy('last_name')->get();
+    }
+
+    /**
      * Whether the member still has a subscription awaiting payment.
      * Signals the committee to reconcile finances before anonymizing.
      */

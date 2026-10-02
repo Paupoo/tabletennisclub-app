@@ -189,7 +189,7 @@ describe('the columns', function (): void {
     it('heads the table with the affiliation and the account', function (): void {
         $headers = collect(Livewire::test(AFFILIATION_LIST)->get('headers'));
 
-        expect($headers->pluck('key')->all())->toBe(['name', 'affiliation', 'ranking', 'status'])
+        expect($headers->pluck('key')->all())->toBe(['name', 'affiliation', 'ranking', 'last_activity_at', 'last_login_at', 'status'])
             ->and($headers->firstWhere('key', 'status')['label'])->toBe(__('Account'))
             ->and($headers->firstWhere('key', 'affiliation')['label'])->toBe(__('Affiliation'));
     });
@@ -268,6 +268,7 @@ describe('the stat strip', function (): void {
             'new' => 1,
             'to_follow_up' => 1,
             'left' => 0,
+            'no_activity' => 3,
             'responsible_adults' => 1,
         ]);
 

@@ -18,7 +18,7 @@ Menu de votre prénom → **Mes notes de frais** → **Déclarer une dépense**.
 - **Le montant TVAC**, tel qu'il figure sur le ticket.
 - **La date de la dépense**. Elle ne peut pas être dans le futur.
 - **Le compte de remboursement (IBAN)**. Il est repris de votre profil ; changez-le si l'argent doit aller ailleurs. Celui que vous indiquez ici est celui qui sera utilisé, même si vous modifiez votre profil ensuite.
-- **Les justificatifs** : de 1 à 5 fichiers, en PDF, JPG, PNG ou WebP, 10 Mo maximum chacun. Joignez le **ticket** et, si vous l'avez, la **preuve de paiement** (extrait de compte, reçu de carte).
+- **Les justificatifs** : de 1 à 5 fichiers, en PDF, JPG, PNG ou WebP, 5 Mo maximum chacun ; une photo prise au téléphone est allégée automatiquement. Joignez le **ticket** et, si vous l'avez, la **preuve de paiement** (extrait de compte, reçu de carte).
 
 > **Depuis un iPhone**, les photos sont souvent au format HEIC, qui n'est pas accepté. Faites une capture d'écran de la photo, ou réglez l'appareil photo sur « Le plus compatible ».
 

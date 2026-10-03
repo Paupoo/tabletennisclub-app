@@ -19,6 +19,7 @@ use App\Domains\Trainings\Services\TrainingPackProrata;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use App\Support\ClubCharter;
+use App\Support\UploadLimits;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -492,7 +493,7 @@ new class extends Component
         abort_unless(array_key_exists($userId, $this->registrations), 403);
 
         $this->validate([
-            'medicalCertificate' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
+            'medicalCertificate' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', UploadLimits::documentRule()],
         ]);
 
         $user = User::find($userId);
@@ -512,7 +513,7 @@ new class extends Component
         abort_unless(array_key_exists($userId, $this->registrations), 403);
 
         $this->validate([
-            'parentalConsent' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
+            'parentalConsent' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', UploadLimits::documentRule()],
         ]);
 
         $user = User::find($userId);

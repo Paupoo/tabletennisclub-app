@@ -663,7 +663,7 @@
                                             </div>
                                         @endif
                                     </div>
-                                    <div class="space-y-1">
+                                    <x-document-upload class="space-y-1">
                                         <div class="flex items-center gap-3">
                                             <input type="file" wire:model="medicalCertificate" id="medical-{{ $userId }}" class="hidden" accept=".jpg,.jpeg,.png,.pdf" />
                                             <label for="medical-{{ $userId }}" class="btn btn-outline btn-xs gap-1 cursor-pointer">
@@ -677,7 +677,7 @@
                                         @error('medicalCertificate')
                                             <p class="text-xs text-error">{{ $message }}</p>
                                         @enderror
-                                    </div>
+                                    </x-document-upload>
 
                                     @if(!empty($reg['is_minor']))
                                         <x-menu-separator />
@@ -700,7 +700,7 @@
                                                 </div>
                                             @endif
                                         </div>
-                                        <div class="space-y-1">
+                                        <x-document-upload class="space-y-1">
                                             <div class="flex items-center gap-3">
                                                 <input type="file" wire:model="parentalConsent" id="parental-{{ $userId }}" class="hidden" accept=".jpg,.jpeg,.png,.pdf" />
                                                 <label for="parental-{{ $userId }}" class="btn btn-outline btn-xs gap-1 cursor-pointer">
@@ -714,7 +714,7 @@
                                             @error('parentalConsent')
                                                 <p class="text-xs text-error">{{ $message }}</p>
                                             @enderror
-                                        </div>
+                                        </x-document-upload>
                                     @endif
                                 </div>
                             </div>

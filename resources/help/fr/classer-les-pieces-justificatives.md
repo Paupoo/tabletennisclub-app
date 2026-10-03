@@ -22,7 +22,7 @@ Tout se passe dans **Trésorerie → Pièces justificatives**.
 - **La catégorie**. C'est elle qui dit si la pièce est une **dépense** ou une **recette** : il n'y a pas d'autre case à cocher.
 - **Le tiers** : « AFTT », « Colruyt », « Commune d'Ottignies ».
 - **Un libellé** court : « 6 boîtes de balles pour l'école de jeunes ».
-- **De 1 à 5 fichiers**, en PDF, JPG, PNG ou WebP, 10 Mo maximum chacun. Une pièce sans fichier n'existe pas.
+- **De 1 à 5 fichiers**, en PDF, JPG, PNG ou WebP, 5 Mo maximum chacun ; une photo prise au téléphone est allégée automatiquement. Une pièce sans fichier n'existe pas.
 
 L'application lui donne une **référence**, par exemple **P-2026-0042** : c'est elle que vous retrouverez sur le journal et dans l'export.
 

@@ -18,6 +18,7 @@ use App\Domains\Shared\Rules\ValidPhone;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasPhotoUpload;
 use App\Support\Breadcrumb;
+use App\Support\UploadLimits;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -220,13 +221,13 @@ new class extends Component
                 'nullable',
                 'file',
                 'mimes:jpg,jpeg,png,pdf',
-                'max:4096',
+                UploadLimits::documentRule(),
             ],
             'parentalConsent' => [
                 'nullable',
                 'file',
                 'mimes:jpg,jpeg,png,pdf',
-                'max:4096',
+                UploadLimits::documentRule(),
             ],
         ];
     }

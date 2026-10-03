@@ -16,6 +16,7 @@ use App\Domains\Shared\Enums\Mutuality;
 use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use App\Support\UploadLimits;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
@@ -169,7 +170,7 @@ new class extends Component
 
         $this->validate([
             'templateFor' => ['required', 'string'],
-            'templateUpload' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+            'templateUpload' => ['required', 'file', 'mimes:pdf', UploadLimits::documentRule()],
         ]);
 
         $mutuality = Mutuality::from($this->templateFor);

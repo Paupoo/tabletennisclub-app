@@ -118,9 +118,11 @@
                             </div>
                         @endif
 
-                        <x-file wire:model="newsPostImage"
-                            label="{{ $newsPostImage ? __('Replace image') : __('Choose image') }}"
-                            accept="image/*" hint="JPG, PNG, WebP — max 4 Mo" />
+                        <x-document-upload :max-edge="1600">
+                            <x-file wire:model="newsPostImage"
+                                label="{{ $newsPostImage ? __('Replace image') : __('Choose image') }}"
+                                accept="image/*" :hint="__('JPG, PNG or WebP — max :size', ['size' => \App\Support\UploadLimits::documentLabel()])" />
+                        </x-document-upload>
 
                         @error('newsPostImage')
                             <p class="mt-1 text-xs text-error">{{ $message }}</p>

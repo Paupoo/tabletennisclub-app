@@ -346,9 +346,11 @@
                 </div>
                 <div class="col-span-6 md:col-span-4 space-y-4">
                     <div>
-                        <x-file :label="__('Medical certificate')" wire:model="medicalCertificate"
-                            accept="image/png, image/jpeg, application/pdf"
-                            :hint="__('JPG, PNG or PDF — max 4 MB')" />
+                        <x-document-upload>
+                            <x-file :label="__('Medical certificate')" wire:model="medicalCertificate"
+                                accept="image/png, image/jpeg, application/pdf"
+                                :hint="__('JPG, PNG or PDF — max :size', ['size' => \App\Support\UploadLimits::documentLabel()])" />
+                        </x-document-upload>
                         @if ($user->medical_certificate_path)
                             <a href="{{ route('admin.user.documents.download', [$user, 'medical']) }}" target="_blank"
                                 class="btn btn-ghost btn-xs gap-1 mt-1">
@@ -360,9 +362,11 @@
                     {{-- Parental consent only applies to minors --}}
                     @if ($this->isMinor)
                         <div>
-                            <x-file :label="__('Parental consent')" wire:model="parentalConsent"
-                                accept="image/png, image/jpeg, application/pdf"
-                                :hint="__('Required for minors — JPG, PNG or PDF, max 4 MB')" />
+                            <x-document-upload>
+                                <x-file :label="__('Parental consent')" wire:model="parentalConsent"
+                                    accept="image/png, image/jpeg, application/pdf"
+                                    :hint="__('Required for minors — JPG, PNG or PDF, max :size', ['size' => \App\Support\UploadLimits::documentLabel()])" />
+                            </x-document-upload>
                             @if ($user->parental_consent_path)
                                 <a href="{{ route('admin.user.documents.download', [$user, 'parental_consent']) }}" target="_blank"
                                     class="btn btn-ghost btn-xs gap-1 mt-1">

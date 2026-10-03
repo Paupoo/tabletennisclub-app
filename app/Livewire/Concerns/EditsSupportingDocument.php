@@ -12,6 +12,7 @@ use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\IncomeCategory;
+use App\Support\UploadLimits;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -121,7 +122,7 @@ trait EditsSupportingDocument
             'documentCounterparty' => ['required', 'string', 'max:255'],
             'documentLabel' => ['required', 'string', 'max:255'],
             'documentFiles' => [$editing === null ? 'required' : 'nullable', 'array', 'max:' . self::MAX_DOCUMENT_FILES],
-            'documentFiles.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
+            'documentFiles.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', UploadLimits::documentRule()],
         ], [], [
             'documentCategory' => __('Category'),
             'documentDate' => __('Date of the document'),

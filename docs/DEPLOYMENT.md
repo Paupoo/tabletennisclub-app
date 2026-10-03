@@ -11,6 +11,7 @@ Procédure de mise en production sur un serveur classique (VPS / hébergement), 
 | Composant | Version / contrainte |
 |---|---|
 | PHP | 8.5 (mêmes extensions que le dev : `pdo_mysql`, `mbstring`, `gd`, `zip`, `intl`) |
+| Limites d'envoi PHP | `upload_max_filesize = 6M`, `post_max_size = 32M` (voir [Stockage des fichiers](#stockage-des-fichiers)) |
 | Composer | 2.x |
 | Node / npm | pour compiler les assets (build sur le serveur ou artefact déposé) |
 | Base de données | MySQL / MariaDB |
@@ -217,6 +218,18 @@ Deux disques, aux rôles distincts :
 
 Les documents des membres sont délibérément servis par une route contrôlée, jamais par une URL directe. Ne déplacez rien vers `public` et ne créez pas de lien symbolique vers `storage/app`.
 
+### Taille des fichiers envoyés
+
+Un document joint (justificatif, certificat médical, ticket, formulaire de mutuelle) est limité à **5 Mo** (`App\Support\UploadLimits`), et les photos sont allégées dans le navigateur avant l'envoi. PHP, lui, refuse tout fichier au-delà de `upload_max_filesize` avant que Laravel le voie, avec pour seul message « n'a pas pu être envoyé » ; et Livewire envoie tous les fichiers d'un même champ dans **une seule requête**, plafonnée par `post_max_size`. D'où, dans le `php.ini` de **PHP-FPM** (pas celui d'Apache, absent) :
+
+```ini
+; /etc/php/8.5/fpm/php.ini
+upload_max_filesize = 6M   ; un peu au-dessus de la limite de 5 Mo
+post_max_size = 32M        ; 5 fichiers de 5 Mo + marge
+```
+
+puis `sudo systemctl reload php8.5-fpm` (compte `debian`). Le défaut de PHP (2M / 8M) fait échouer tout PDF de plus de 2 Mo.
+
 `storage/` et `bootstrap/cache/` doivent être accessibles en écriture à l'utilisateur du serveur web — et le worker doit tourner sous ce même utilisateur (voir [Worker de queue](#worker-de-queue)) : un fichier que le worker écrit, Apache doit pouvoir le lire.
 
 ---
@@ -299,6 +312,8 @@ Deux middlewares globaux dépendent de la topologie réseau du serveur. Ils sont
 Le middleware n'accepte que les requêtes dont l'en-tête `Host` correspond au domaine d'`APP_URL` et à ses sous-domaines. Il ferme l'empoisonnement de cache et des liens de réinitialisation de mot de passe.
 
 ⚠️ **`APP_URL` doit être renseigné correctement en production.** S'il est vide ou faux, le middleware rejette *toutes* les requêtes. Il est volontairement inerte en `local` et sous les tests, donc l'erreur ne se voit qu'une fois déployé — c'est le premier point à vérifier après un changement de domaine.
+
+Pas de barre finale (`https://<domaine>`, jamais `https://<domaine>/`) : le disque `public` construit ses URL en `APP_URL . '/storage'`, et la barre en trop se retrouve doublée dans chaque lien vers un fichier.
 
 ### `TrustProxies` — volontairement vide
 

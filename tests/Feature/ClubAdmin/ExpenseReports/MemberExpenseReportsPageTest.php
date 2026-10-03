@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\ExpenseReportStatus;
 use App\Support\AccountProxy;
+use App\Support\UploadLimits;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -135,6 +136,25 @@ describe('declaring', function (): void {
             ->set('newFiles', [UploadedFile::fake()->create('photo.heic', 100, 'image/heic')])
             ->call('save')
             ->assertHasErrors(['category', 'description', 'amount', 'spentOn', 'refundIban', 'newFiles.0']);
+
+        expect(ExpenseReport::count())->toBe(0);
+    });
+
+    it('refuses a proof above the document limit the hint announces', function (): void {
+        $member = User::factory()->create();
+
+        Livewire::actingAs($member)
+            ->test(MEMBER_EXPENSES, ['user' => $member])
+            ->call('openCreate')
+            ->set('category', ExpenseCategory::SportsEquipment->value)
+            ->set('description', 'Balles Nittaku')
+            ->set('amount', '42,50')
+            ->set('spentOn', '2026-09-12')
+            ->set('refundIban', 'BE68 5390 0754 7034')
+            ->set('newFiles', [UploadedFile::fake()->create('scan.pdf', UploadLimits::DOCUMENT_KILOBYTES + 1, 'application/pdf')])
+            ->call('save')
+            ->assertHasErrors(['newFiles.0' => 'max'])
+            ->assertSee(UploadLimits::documentLabel());
 
         expect(ExpenseReport::count())->toBe(0);
     });

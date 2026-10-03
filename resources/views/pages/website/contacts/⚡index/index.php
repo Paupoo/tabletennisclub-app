@@ -603,6 +603,23 @@ new class extends Component
             ->when($this->wantsCompetition !== '', fn ($q) => $q->where('wants_competition', $this->wantsCompetition === '1'));
     }
 
+    /**
+     * Search and filters: changing one drops the selection.
+     *
+     * @return array<int, string>
+     */
+    protected function selectionScope(): array
+    {
+        return [
+            'search',
+            'status',
+            'interest',
+            'ageCategory',
+            'experience',
+            'wantsCompetition',
+        ];
+    }
+
     // ── Authorization (decision #18) ───────────────────────────────────────────
 
     /**

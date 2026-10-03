@@ -6,6 +6,7 @@ namespace App\Livewire\Concerns;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Livewire\Attributes\Locked;
 
 /**
  * Provides bulk selection for Livewire list components.
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  *   - getPageIds(): array          — string IDs of the current paginated page
  *   - getTotalMatchingCount(): int — total records matching current filters
  *   - matchingQuery(): Builder     — the list's query, filters applied, unpaginated
+ *   - selectionScope(): array      — the properties that decide which rows the list holds
  *
  * Requires: Livewire\WithPagination (for selectAllResults to make sense)
  */
@@ -30,6 +32,14 @@ trait HasBulkActions
 
     /** Mobile: whether selection mode is active (shows checkboxes in list view) */
     public bool $selectionModeActive = false;
+
+    /**
+     * A digest of the selection scope's values at the last render: the next
+     * render compares against it to tell whether the list changed under the
+     * selection.
+     */
+    #[Locked]
+    public string $selectionScopeDigest = '';
 
     /**
      * Returns string IDs of all items on the current paginated page.
@@ -57,11 +67,46 @@ trait HasBulkActions
      */
     abstract protected function matchingQuery(): Builder;
 
+    /**
+     * The properties that decide which rows the list holds: search, filters,
+     * tab, default view. When one of them changes value, the selection is
+     * dropped — it was made on rows the screen may no longer show.
+     *
+     * Sorting and paging show the same rows in another order or slice: leave
+     * them out, as well as modal and form fields.
+     *
+     * @return array<int, string>
+     */
+    abstract protected function selectionScope(): array;
+
     public function clearSelection(): void
     {
         $this->selected = [];
         $this->selectAll = false;
         $this->selectingAllResults = false;
+    }
+
+    /**
+     * Drops the selection when the list changed since the last render.
+     *
+     * Compared at render rather than in an `updated` hook: a filter moves
+     * through `wire:model`, but also through a chip's `removeFilter()`, a
+     * `clearFilters()` or a tab method, none of which fires `updated`. The
+     * values are what decides, whatever path changed them. The first render
+     * only records them.
+     */
+    public function renderingHasBulkActions(): void
+    {
+        $digest = hash('xxh128', (string) json_encode(array_map(
+            fn (string $property): mixed => $this->{$property},
+            $this->selectionScope(),
+        )));
+
+        if ($this->selectionScopeDigest !== '' && $this->selectionScopeDigest !== $digest) {
+            $this->clearSelection();
+        }
+
+        $this->selectionScopeDigest = $digest;
     }
 
     /**

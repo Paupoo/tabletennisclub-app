@@ -35,7 +35,7 @@
         </x-confirm-modal>
 
         <div class="mb-4 flex flex-wrap gap-2" role="group" aria-label="{{ __('Show') }}">
-            @foreach (['all' => __('All · :count', ['count' => $productCount]), 'uncounted' => __('Not counted · :count', ['count' => $productCount - $summary['counted']]), 'gaps' => __('With a gap · :count', ['count' => $summary['gaps'] + ($summary['added'] > 0 ? 1 : 0)])] as $value => $label)
+            @foreach (['all' => __('All · :count', ['count' => $productCount]), 'uncounted' => __('Not counted · :count', ['count' => $productCount - $summary['counted']]), 'gaps' => __('With a gap · :count', ['count' => $summary['gap_lines']])] as $value => $label)
                 <button type="button" wire:click="$set('filter', '{{ $value }}')" aria-pressed="{{ $filter === $value ? 'true' : 'false' }}"
                     @class(['badge badge-lg cursor-pointer', 'badge-primary' => $filter === $value, 'badge-ghost' => $filter !== $value])>{{ $label }}</button>
             @endforeach

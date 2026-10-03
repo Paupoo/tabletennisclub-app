@@ -214,16 +214,18 @@ new class extends Component
      *
      * @param  Collection<int, BarInventoryLine>  $lines
      * @param  Collection<int, BarProduct>  $products
-     * @return array{counted: int, gaps: int, missing: int, surplus: int, added: int, value: int, unexplained: int}
+     * @return array{counted: int, gap_lines: int, gaps: int, missing: int, surplus: int, added: int, value: int, unexplained: int}
      */
     protected function summary(Collection $lines, Collection $products): array
     {
-        $summary = ['counted' => $lines->count(), 'gaps' => 0, 'missing' => 0, 'surplus' => 0, 'added' => 0, 'value' => 0, 'unexplained' => 0];
+        $summary = ['counted' => $lines->count(), 'gap_lines' => 0, 'gaps' => 0, 'missing' => 0, 'surplus' => 0, 'added' => 0, 'value' => 0, 'unexplained' => 0];
 
         foreach ($lines as $line) {
             if ($line->gap === 0) {
                 continue;
             }
+
+            $summary['gap_lines']++;
 
             if ($line->cause === BarInventoryCause::AddedToBar) {
                 $summary['added'] += $line->gap;

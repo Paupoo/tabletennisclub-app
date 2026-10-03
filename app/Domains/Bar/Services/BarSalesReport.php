@@ -77,7 +77,7 @@ class BarSalesReport
                 'previous_units' => $previousUnits,
                 'change' => $previousUnits === 0 ? null : (int) round(($units - $previousUnits) / $previousUnits * 100),
                 'losses' => array_sum($losses),
-                'losses_detail' => self::describe($losses),
+                'losses_detail' => $this->describe($losses),
             ];
         });
 
@@ -103,7 +103,7 @@ class BarSalesReport
      *
      * @param  array<string, int>  $losses  unités par valeur de cause
      */
-    private static function describe(array $losses): string
+    private function describe(array $losses): string
     {
         arsort($losses);
 

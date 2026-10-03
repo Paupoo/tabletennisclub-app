@@ -300,3 +300,17 @@ it('shows the inventory help to who counts and to who reads, never to the barman
         ->and($slugsFor(User::factory()->isCommitteeMember()->create()))->toContain('faire-l-inventaire-du-bar')
         ->and($slugsFor(User::factory()->withRole(Role::BARMAN)->create()))->not->toContain('faire-l-inventaire-du-bar');
 });
+
+it('counts every product with a gap in the filter, the ones added to the bar included', function (): void {
+    $softs = BarCategory::create(['name' => 'Softs']);
+    $lemonCoke = inventoryProduct('Coca-Cola citron', $softs, stock: 0);
+    $orangina = inventoryProduct('Orangina', $softs, stock: 0);
+
+    Livewire::actingAs($this->storeKeeper)
+        ->test('pages::bar.inventory')
+        ->call('open')
+        ->call('saveCount', $this->jupiler->id, '8')
+        ->call('saveCount', $lemonCoke->id, '24')
+        ->call('saveCount', $orangina->id, '12')
+        ->assertSee(__('With a gap · :count', ['count' => 3]));
+});

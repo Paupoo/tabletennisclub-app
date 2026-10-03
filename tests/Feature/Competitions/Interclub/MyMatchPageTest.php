@@ -14,6 +14,7 @@ use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Domains\Shared\Enums\InterclubResultEnum;
 use App\Domains\Shared\Enums\Permission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -364,9 +365,13 @@ it('shows the full sheet with opponents and rankings', function (): void {
         ->assertSee('3-1');
 });
 
-it('falls back to who played when no sheet has been imported', function (): void {
+it('calls the list a line-up while no sheet has been imported', function (): void {
+    // Nothing but the sheet says who played: until it comes, the names the
+    // club knows are the line-up, and the page says so.
     $match = aMatch(-7);
-    $match->users()->attach($this->player->id, ['is_selected' => true, 'has_played' => true]);
+    $mate = User::factory()->create(['first_name' => 'Zoé', 'last_name' => 'Compo']);
+    $match->users()->attach($this->player->id, ['is_selected' => true, 'selection_confirmed_at' => now()->subDays(9)]);
+    $match->users()->attach($mate->id, ['is_selected' => true, 'selection_confirmed_at' => now()->subDays(9)]);
 
     $component = Livewire::actingAs($this->player)
         ->test('pages::club-events.interclubs.my-match', ['interclub' => $match]);
@@ -374,8 +379,39 @@ it('falls back to who played when no sheet has been imported', function (): void
     expect($component->viewData('tally'))->toBeEmpty()
         ->and($component->viewData('sheet'))->toBeEmpty();
 
-    $component->assertSee(__('Played that day'))
+    // « Compo » is also the start of the card's own title, « Composition »:
+    // read the block itself.
+    $block = Str::of($component->html())->after('data-lineup-without-sheet')->before('</div>');
+
+    expect((string) $block)->toContain(__('Lineup'))
+        ->toContain(e($this->player->full_name))
+        ->toContain(e($mate->full_name));
+
+    $component->assertDontSee(__('Played that day'))
         ->assertDontSee(__('Match sheet'));
+});
+
+it('names who played from the sheet once it is imported, and no line-up fallback', function (): void {
+    $match = aMatch(-7);
+    $benched = User::factory()->create(['first_name' => 'Basile', 'last_name' => 'Banc']);
+    $match->users()->attach($benched->id, ['is_selected' => true, 'selection_confirmed_at' => now()->subDays(9)]);
+
+    InterclubIndividualMatch::factory()->create([
+        'interclub_id' => $match->id, 'position' => 1,
+        'user_id' => $this->player->id, 'we_won' => true,
+    ]);
+    InterclubIndividualMatch::factory()->create([
+        'interclub_id' => $match->id, 'position' => 2,
+        'user_id' => $this->player->id, 'we_won' => false,
+    ]);
+
+    $component = Livewire::actingAs($this->player)
+        ->test('pages::club-events.interclubs.my-match', ['interclub' => $match]);
+
+    expect($component->viewData('tally')->pluck('label')->all())->toBe([$this->player->full_name]);
+
+    $component->assertSeeInOrder([__('Individual results'), $this->player->full_name])
+        ->assertDontSeeHtml('data-lineup-without-sheet');
 });
 
 it('lets a member open a match they played for a team that has no roster', function (): void {

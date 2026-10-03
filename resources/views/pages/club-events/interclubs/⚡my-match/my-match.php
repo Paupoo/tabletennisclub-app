@@ -161,7 +161,7 @@ new class extends Component
                 : null,
             'myNote' => $registration?->availability_note,
             'opponent' => $opponent,
-            'players' => $isPast ? $this->playersWhoPlayed($interclub) : collect(),
+            'players' => $isPast ? $this->lineupWithoutSheet($interclub) : collect(),
             'sheet' => $isPast ? $this->matchSheet($interclub) : collect(),
             'tally' => $isPast ? $this->winTally($interclub) : collect(),
             'result' => $result,
@@ -260,6 +260,21 @@ new class extends Component
     }
 
     /**
+     * The names to show for a played match whose sheet has not come in.
+     *
+     * `has_played` is written off the federation's match sheet and nothing
+     * else, and the sheet, once there, is shown line by line instead. Without
+     * it nobody knows who turned out: the selected line-up is all there is,
+     * and the page calls it that rather than "played that day".
+     *
+     * @return Collection<int, User>
+     */
+    private function lineupWithoutSheet(Interclub $interclub): Collection
+    {
+        return $interclub->getSelectedPlayers();
+    }
+
+    /**
      * Every line of the federation's sheet, ours first, in playing order.
      *
      * @return Collection<int, InterclubIndividualMatch>
@@ -278,23 +293,6 @@ new class extends Component
             ->users()
             ->where('users.id', Auth::id())
             ->first()?->registration;
-    }
-
-    /**
-     * Who actually turned out, once a result has been recorded.
-     *
-     * `has_played` is read off the federation's match sheet, and nothing else
-     * writes it — not a score typed by hand: it is the honest answer for a
-     * played match, since a published lineup can still have changed on the
-     * night. Until the sheet is imported, the line-up is all there is to show.
-     *
-     * @return Collection<int, User>
-     */
-    private function playersWhoPlayed(Interclub $interclub): Collection
-    {
-        $played = $interclub->users()->wherePivot('has_played', true)->get();
-
-        return $played->isNotEmpty() ? $played : $interclub->getSelectedPlayers();
     }
 
     private function resultLabel(?InterclubResult $result): ?string

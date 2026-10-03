@@ -33,6 +33,20 @@ describe('Images in an article body', function (): void {
             ->and($url)->toBe('/storage/' . $stored[0]);
     });
 
+    it('returns a path the browser reads on this site when APP_URL ends with a slash', function (): void {
+        // The disk URL is APP_URL . '/storage': a trailing slash doubles it, and
+        // a path starting with `//` points the browser to a host named "storage".
+        Storage::fake('public', ['url' => 'https://club.test//storage']);
+
+        $url = Livewire::actingAs($this->admin)
+            ->test('pages::website.articles.edit')
+            ->set('contentImage', UploadedFile::fake()->image('cup.jpg', 800, 600))
+            ->call('storeContentImage')
+            ->effects['returns'][0] ?? null;
+
+        expect($url)->toBe('/storage/' . Storage::disk('public')->allFiles('clubPosts/content')[0]);
+    });
+
     it('refuses a file that is not an image', function (): void {
         Livewire::actingAs($this->admin)
             ->test('pages::website.articles.edit')

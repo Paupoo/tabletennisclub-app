@@ -161,8 +161,10 @@ new class extends Component
         $this->reset('contentImage');
 
         // A path, not a URL: the markdown must not carry APP_URL, which differs
-        // between a laptop, the staging copy and production.
-        return (string) parse_url(Storage::disk('public')->url($path), PHP_URL_PATH);
+        // between a laptop, the staging copy and production. An APP_URL ending
+        // with a slash doubles the one before `storage`, and a path opening with
+        // `//` sends the browser to a host named "storage".
+        return '/' . ltrim((string) parse_url(Storage::disk('public')->url($path), PHP_URL_PATH), '/');
     }
 
     public function updatedTitle(): void

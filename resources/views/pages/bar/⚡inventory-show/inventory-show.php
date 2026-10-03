@@ -31,7 +31,7 @@ new class extends Component
 
     public function mount(BarInventory $inventory): void
     {
-        abort_unless($inventory->isValidated(), 404);
+        abort_unless($inventory->hasCorrectedTheStock(), 404);
 
         $this->inventory = $inventory;
     }

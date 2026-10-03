@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Schema;
  *
  * `unit_price` est le prix de vente figé à la validation : une hausse de prix
  * l'an prochain ne doit pas réécrire la valeur des pertes d'aujourd'hui.
+ *
+ * `opened_by` accepte le vide pour les inventaires repris des corrections de
+ * l'ancien champ Stock, dont certaines n'ont pas d'auteur.
  */
 return new class extends Migration
 {
@@ -30,7 +33,7 @@ return new class extends Migration
         Schema::create('bar_inventories', function (Blueprint $table): void {
             $table->id();
             $table->string('status', 20)->index();
-            $table->foreignId('opened_by')->constrained('users')->restrictOnDelete();
+            $table->foreignId('opened_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('closed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('opened_at');
             $table->timestamp('closed_at')->nullable();

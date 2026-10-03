@@ -22,14 +22,14 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property string $status
- * @property int $opened_by
+ * @property int|null $opened_by
  * @property int|null $closed_by
  * @property Carbon $opened_at
  * @property Carbon|null $closed_at
  * @property string|null $comment
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read User $opener
+ * @property-read User|null $opener
  * @property-read User|null $closer
  * @property-read Collection<int, BarInventoryLine> $lines
  */
@@ -38,6 +38,9 @@ class BarInventory extends Model
     use HasAuditLog;
 
     public const string STATUS_CANCELLED = 'cancelled';
+
+    /** Repris des corrections de l'ancien champ Stock : figé comme un validé, cause inconnue. */
+    public const string STATUS_HISTORICAL = 'historical';
 
     public const string STATUS_IN_PROGRESS = 'in_progress';
 
@@ -73,6 +76,19 @@ class BarInventory extends Model
     public function closer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'closed_by');
+    }
+
+    /**
+     * Si l'inventaire a corrigé le stock : validé, ou repris de l'ancien champ.
+     */
+    public function hasCorrectedTheStock(): bool
+    {
+        return in_array($this->status, [self::STATUS_VALIDATED, self::STATUS_HISTORICAL], true);
+    }
+
+    public function isHistorical(): bool
+    {
+        return $this->status === self::STATUS_HISTORICAL;
     }
 
     public function isInProgress(): bool

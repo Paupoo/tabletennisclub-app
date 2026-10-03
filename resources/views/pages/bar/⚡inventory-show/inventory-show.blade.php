@@ -5,17 +5,20 @@
 
     <x-header progress-indicator separator
         :title="__('Inventory of :date', ['date' => $inventory->opened_at->translatedFormat('j F Y')])"
-        :subtitle="__('Opened by :opener on :opened, validated by :closer on :closed.', [
-            'opener' => $inventory->opener->full_name,
-            'opened' => $inventory->opened_at->translatedFormat('l j F, H:i'),
-            'closer' => $inventory->closer?->full_name,
-            'closed' => $inventory->closed_at?->translatedFormat('l j F, H:i'),
-        ])" />
+        :subtitle="$inventory->isHistorical()
+            ? __('Corrected from the former stock field by :name. What happened was not asked then.', ['name' => $inventory->opener?->full_name ?? '—'])
+            : __('Opened by :opener on :opened, validated by :closer on :closed.', [
+                'opener' => $inventory->opener?->full_name ?? '—',
+                'opened' => $inventory->opened_at->translatedFormat('l j F, H:i'),
+                'closer' => $inventory->closer?->full_name,
+                'closed' => $inventory->closed_at?->translatedFormat('l j F, H:i'),
+            ])" />
 
     <div class="mb-4 grid gap-3 sm:grid-cols-3">
         <x-stat :title="__('Missing')" :value="$totals['missing'] > 0 ? '−' . $totals['missing'] : '0'" icon="o-arrow-trending-down" />
         <x-stat :title="__('Surplus')" :value="$totals['surplus'] > 0 ? '+' . $totals['surplus'] : '0'" icon="o-arrow-trending-up" />
-        <x-stat :title="__('Value at the selling price')" :value="euros($totals['value'])" icon="o-banknotes" />
+        <x-stat :title="__('Value at the selling price')" :value="($inventory->isHistorical() ? '≈ ' : '') . euros($totals['value'])"
+            :description="$inventory->isHistorical() ? __('Estimated at today\'s price') : null" icon="o-banknotes" />
     </div>
 
     @if ($inventory->comment)

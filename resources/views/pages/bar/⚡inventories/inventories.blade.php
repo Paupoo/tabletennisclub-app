@@ -47,17 +47,17 @@
                             @php $total = $totals[$inventory->id]; @endphp
                             <tr wire:key="inventory-{{ $inventory->id }}">
                                 <td class="whitespace-nowrap">
-                                    @if ($inventory->status === \App\Domains\Bar\Models\BarInventory::STATUS_VALIDATED)
+                                    @if ($inventory->hasCorrectedTheStock())
                                         <a class="link link-primary" href="{{ route('bar.inventories.show', $inventory) }}" wire:navigate>{{ $inventory->opened_at->translatedFormat('D j M Y') }}</a>
                                     @else
                                         {{ $inventory->opened_at->translatedFormat('D j M Y') }}
                                     @endif
                                 </td>
-                                <td>{{ $inventory->opener->full_name }}</td>
+                                <td>{{ $inventory->opener?->full_name ?? '—' }}</td>
                                 <td class="text-end tabular-nums">{{ $inventory->lines_count }}</td>
                                 <td class="text-end tabular-nums {{ $total['missing'] > 0 ? 'text-error font-semibold' : 'text-subtle' }}">{{ $total['missing'] > 0 ? '−' . $total['missing'] : '—' }}</td>
                                 <td class="hidden text-end tabular-nums sm:table-cell {{ $total['surplus'] > 0 ? 'text-success font-semibold' : 'text-subtle' }}">{{ $total['surplus'] > 0 ? '+' . $total['surplus'] : '—' }}</td>
-                                <td class="hidden text-end tabular-nums md:table-cell">{{ $inventory->status === \App\Domains\Bar\Models\BarInventory::STATUS_VALIDATED ? euros($total['value']) : '—' }}</td>
+                                <td class="hidden text-end tabular-nums md:table-cell">{{ $inventory->hasCorrectedTheStock() ? ($inventory->isHistorical() ? '≈ ' : '') . euros($total['value']) : '—' }}</td>
                                 <td>
                                     @switch($inventory->status)
                                         @case(\App\Domains\Bar\Models\BarInventory::STATUS_IN_PROGRESS)
@@ -65,6 +65,9 @@
                                             @break
                                         @case(\App\Domains\Bar\Models\BarInventory::STATUS_CANCELLED)
                                             <span class="badge badge-ghost whitespace-nowrap">{{ __('Cancelled by :name', ['name' => $inventory->closer?->full_name]) }}</span>
+                                            @break
+                                        @case(\App\Domains\Bar\Models\BarInventory::STATUS_HISTORICAL)
+                                            <span class="badge badge-ghost whitespace-nowrap" title="{{ __('Taken over from the former stock field') }}">{{ __('Historical') }}</span>
                                             @break
                                         @default
                                             <span class="badge badge-ghost whitespace-nowrap">{{ __('Validated') }}</span>

@@ -86,7 +86,7 @@ class LegacyInventoryCorrections
             ]);
         }
 
-        BarStockMovement::query()->whereKey($movements->modelKeys())->update(['inventory_id' => $inventory->id]);
+        BarStockMovement::query()->whereKey($movements->pluck('id')->all())->update(['inventory_id' => $inventory->id]);
     }
 
     /**

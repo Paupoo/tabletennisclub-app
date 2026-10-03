@@ -88,7 +88,7 @@ class BarLosses
                 $weeks = collect([self::weekOf($line->counted_at)]);
             }
 
-            $share = -$line->gap / $weeks->count();
+            $share = (float) (-$line->gap / $weeks->count());
 
             return $weeks->map(fn (string $week): array => ['product_id' => $line->product_id, 'quantity' => $share, 'week' => $week])->all();
         })->values();

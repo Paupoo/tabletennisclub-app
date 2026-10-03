@@ -101,7 +101,7 @@ class RestockingSuggestions
      * La semaine se calcule ici et non en SQL : SQLite (les tests) et MySQL
      * (la production) n'ont pas les mêmes fonctions de date.
      *
-     * @return Collection<int, array{product_id: int, quantity: int|float, week: string}>
+     * @return Collection<int, array{product_id: int, quantity: int, week: string}>
      */
     private function paidSalesOfLastYear(): Collection
     {

@@ -15,13 +15,14 @@ This application uses a standardized system for bulk actions and filter drawers 
 ### Traits (implement these in each list component)
 
 **`App\Livewire\Concerns\HasBulkActions`**
-Provides: `$selected[]`, `$selectAll`, `$selectingAllResults`, `$selectionModeActive`, `clearSelection()`, `toggleSelectionMode()`, `selectAllResults()`
+Provides: `$selected[]`, `$selectAll`, `$selectingAllResults`, `$selectionModeActive`, `clearSelection()`, `toggleSelectionMode()`, `selectAllResults()`, and the selection reset when the list changes (`renderingHasBulkActions()`)
 
 Must implement in the component:
 ```php
 protected function getPageIds(): array           // string IDs of current page
 public function getTotalMatchingCount(): int      // total matching filters
 protected function matchingQuery(): Builder       // the list's query, filters applied, NOT paginated
+protected function selectionScope(): array        // names of the properties that decide which rows the list holds
 ```
 
 **`matchingQuery()` is the single source of what the list shows.** The paginated computed is built on it (`$this->matchingQuery()->with(...)->orderBy(...)->orderBy('<table>.id')->paginate(N)`), and the trait's `selectAllResults()` plucks every key from it (order dropped). So "Select all N results" really puts the N ids in `$selected`, and every bulk action simply reads `$this->selected` — never re-query on `$selectingAllResults`, never override `selectAllResults()`.
@@ -31,6 +32,12 @@ protected function matchingQuery(): Builder       // the list's query, filters a
 - The paginated query ends with `->orderBy('<table>.id')`: without a total order, MySQL serves ties in a different order on each page.
 - Bulk actions receive ids the page never showed (and a client can send any id): re-check the permission server-side in the action **and** in its `confirm…()` opener (`Gate::authorize(...)` / `abort_unless($this->canManage, 403)`), and re-check per-row eligibility (`canBeDeleted()`, state machine…) inside the action. Hide the pill for readers.
 - Test each list with more matching rows than one page plus rows the filter excludes: `selectAllResults` must hold all of the former, none of the latter, and the bulk action must reach rows beyond page one (see `tests/Feature/SelectAllResultsTest.php`).
+
+**`selectionScope()` drops a selection the list no longer matches.** List every property that changes *which rows* the list holds — search, each filter, the tab, the default-view toggle (`allMembers`). The trait's `renderingHasBulkActions()` hook digests their values at each render and calls `clearSelection()` when the digest differs from the previous render's (kept in the `#[Locked] $selectionScopeDigest`). Comparing values at render catches every path: `wire:model`, `removeFilter()`, `clearFilters()`, a tab method — an `updated` hook would miss all but the first. No component code to add for the reset itself, and no `clearSelection()` in `updatedX()` hooks.
+
+- Leave out `sortBy`, the paginator's page, `selected`/`selectAll`, modal flags and modal form fields: sorting and paging show the same rows, so the selection stays.
+- A new filter property that is not listed keeps the selection alive across its changes — add it to `selectionScope()` in the same change. A typo in the list fails loudly (undefined property).
+- Test: search → selection empty; filter → empty; sort → kept; page → kept (see `tests/Feature/SelectionResetTest.php`).
 
 **`App\Livewire\Concerns\HasFilterDrawer`**
 Provides: `$filterDrawer`, `removeFilter(string $key)`, `clearFilters()` (override)
@@ -101,6 +108,12 @@ new class extends Component
                 ->where('title', 'like', "%{$this->search}%")
                 ->orWhere('body', 'like', "%{$this->search}%")))
             ->when($this->status, fn ($q) => $q->where('status', $this->status));
+    }
+
+    /** @return array<int, string> */
+    protected function selectionScope(): array
+    {
+        return ['search', 'status'];
     }
 
     public function getFilterChips(): array

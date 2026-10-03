@@ -1238,6 +1238,35 @@ new class extends Component
     }
 
     /**
+     * Search, filters and the default view (`allMembers`): changing one drops
+     * the selection.
+     *
+     * @return array<int, string>
+     */
+    protected function selectionScope(): array
+    {
+        return [
+            'search',
+            'allMembers',
+            'showArchived',
+            'affiliation',
+            'responsibleAdultsOnly',
+            'selectedLicenceType',
+            'categories',
+            'age',
+            'activity',
+            'invitationState',
+            'incompleteProfile',
+            'adultWithoutAddress',
+            'minorsWithoutGuardian',
+            'unpaidSubscription',
+            'hasKey',
+            'hasCashRegister',
+            'team_ids',
+        ];
+    }
+
+    /**
      * Since when a member must have shown up to escape the activity filter,
      * or null for no filter.
      *

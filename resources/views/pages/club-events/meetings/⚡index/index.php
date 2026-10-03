@@ -210,7 +210,6 @@ new class extends Component
 
     public function updatedShowArchived(): void
     {
-        $this->clearSelection();
         $this->resetPage();
     }
 
@@ -281,5 +280,21 @@ new class extends Component
                 fn ($q) => $q->whereNotNull('archived_at'),
                 fn ($q) => $q->whereNull('archived_at'),
             );
+    }
+
+    /**
+     * Search and filters: changing one drops the selection.
+     *
+     * @return array<int, string>
+     */
+    protected function selectionScope(): array
+    {
+        return [
+            'search',
+            'showArchived',
+            'status',
+            'type',
+            'format',
+        ];
     }
 };

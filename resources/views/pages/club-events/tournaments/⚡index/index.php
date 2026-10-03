@@ -375,4 +375,21 @@ new class extends Component
             ->when($this->hasEvent === 'yes', fn ($q) => $q->whereHas('eventPost', fn ($eq) => $eq->where('status', EventPostStatusEnum::PUBLISHED)))
             ->when($this->hasEvent === 'no', fn ($q) => $q->whereDoesntHave('eventPost', fn ($eq) => $eq->where('status', EventPostStatusEnum::PUBLISHED)));
     }
+
+    /**
+     * Search and filters: changing one drops the selection.
+     *
+     * @return array<int, string>
+     */
+    protected function selectionScope(): array
+    {
+        return [
+            'search',
+            'status',
+            'phase',
+            'matchType',
+            'hasEvent',
+            'isFull',
+        ];
+    }
 };

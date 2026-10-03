@@ -822,6 +822,23 @@ new class extends Component
         return $this->applyFilters(Transaction::query());
     }
 
+    /**
+     * Search and filters: changing one drops the selection.
+     *
+     * @return array<int, string>
+     */
+    protected function selectionScope(): array
+    {
+        return [
+            'search',
+            'accountFilter',
+            'amountDirection',
+            'dateFrom',
+            'dateTo',
+            'reconciledFilter',
+        ];
+    }
+
     private function afterJustifying(string $message): void
     {
         $this->prefillDocumentFormFrom($this->justificationTransactionOrFail());

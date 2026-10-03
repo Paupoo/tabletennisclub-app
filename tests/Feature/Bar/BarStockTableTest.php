@@ -21,10 +21,8 @@ use Livewire\Livewire;
 |
 | Ce qui est verrouillé ici :
 |
-| - le champ porte un COMPTAGE, pas un mouvement : l'écart devient une entrée ou
-|   une sortie FIFO, et un compte juste n'écrit rien ;
-| - un champ vidé est ignoré — on ne compte pas « rien », et le lire comme 0
-|   viderait le rayon par accident ;
+| - le stock se lit ici et se corrige par l'inventaire (BarInventoryTest), qui
+|   reprend les cas de l'ancien champ : écart positif, négatif, nul, champ vidé ;
 | - le seuil d'alerte est par produit, avec repli sur le défaut du bar : le « <= 3 »
 |   écrit en dur dans deux vues ne décidait pour aucune ;
 | - le stock se charge en un nombre borné de requêtes, quel que soit le nombre de
@@ -88,63 +86,13 @@ it('filters products by name', function (): void {
         ->assertDontSee('Coca-Cola');
 });
 
-it('turns a count above the shelf into an incoming movement of the difference', function (): void {
+it('shows the stock without letting anyone type over it', function (): void {
+    // Le stock se corrige par un inventaire, plus d'un champ : sans trace de qui
+    // et pourquoi, un manque disparaissait sans que personne le voie.
     Livewire::actingAs($this->manager)
         ->test('pages::bar.products')
-        ->call('updateStock', $this->jupiler->id, '30');
-
-    expect($this->jupiler->fresh()->stock)->toBe(30);
-
-    $movement = BarStockMovement::query()
-        ->where('product_id', $this->jupiler->id)
-        ->where('reason', 'Inventory count')
-        ->sole();
-
-    expect($movement->movement_type)->toBe(BarStockMovement::TYPE_IN)
-        ->and((int) $movement->quantity)->toBe(6);
-});
-
-it('turns a count below the shelf into a consumption of the difference', function (): void {
-    Livewire::actingAs($this->manager)
-        ->test('pages::bar.products')
-        ->call('updateStock', $this->jupiler->id, '20');
-
-    expect($this->jupiler->fresh()->stock)->toBe(20)
-        ->and(BarStockMovement::query()
-            ->where('product_id', $this->jupiler->id)
-            ->where('movement_type', BarStockMovement::TYPE_OUT)
-            ->sum('quantity'))->toBe(4);
-});
-
-it('writes nothing when the count is already right', function (): void {
-    // Un inventaire où trente produits sur quarante tombent juste ne doit pas
-    // écrire trente mouvements nuls : l'historique deviendrait illisible.
-    $before = BarStockMovement::query()->count();
-
-    Livewire::actingAs($this->manager)
-        ->test('pages::bar.products')
-        ->call('updateStock', $this->jupiler->id, '24');
-
-    expect(BarStockMovement::query()->count())->toBe($before)
-        ->and($this->jupiler->fresh()->stock)->toBe(24);
-});
-
-it('ignores an emptied count instead of reading it as zero', function (): void {
-    // On ne compte pas « rien ». Lire un champ vidé comme 0 viderait le rayon
-    // parce que quelqu'un a effacé avant de se raviser.
-    Livewire::actingAs($this->manager)
-        ->test('pages::bar.products')
-        ->call('updateStock', $this->jupiler->id, '');
-
-    expect($this->jupiler->fresh()->stock)->toBe(24);
-});
-
-it('refuses a negative count', function (): void {
-    Livewire::actingAs($this->manager)
-        ->test('pages::bar.products')
-        ->call('updateStock', $this->jupiler->id, '-5');
-
-    expect($this->jupiler->fresh()->stock)->toBe(24);
+        ->assertSee(route('bar.inventories.current'))
+        ->assertDontSeeHtml('updateStock(');
 });
 
 it('flags low stock against the product threshold, not a number written in a view', function (): void {
@@ -238,8 +186,7 @@ it('keeps the price out of the grid, where a slip would reach every later sale',
     // sans que rien ne le dise. Il vit donc dans le tiroir, derrière Enregistrer.
     $html = Livewire::actingAs($this->manager)->test('pages::bar.products')->html();
 
-    expect($html)->toContain('updateStock')
-        ->and($html)->toContain('updateThreshold')
+    expect($html)->toContain('updateThreshold')
         ->and($html)->toContain('updateAvailability')
         ->and($html)->not->toContain('updatePrice');
 });

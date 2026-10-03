@@ -146,8 +146,8 @@ ordre du jour, quorum, repas, procès-verbaux, points de suivi.
 ### Bar
 `app/Domains/Bar`
 
-Catalogue, stock, commandes, feuille de caisse. Module semi-détaché, avec son
-propre gabarit. **Délégation** `bar`, avec des droits plus fins pour le catalogue
+Catalogue, stock, commandes, feuille de caisse, courses et inventaires — seule
+porte qui corrige le stock. Module semi-détaché, avec son propre gabarit. **Délégation** `bar`, avec des droits plus fins pour le catalogue
 et la feuille de caisse.
 
 ### Contenu et site public

@@ -14,6 +14,15 @@ erDiagram
     }
     Guardian {
     }
+    MemberDeparture {
+        int id PK
+        int user_id FK
+        int season_id FK
+        datetime left_on
+        DepartureReason reason
+        string note "nullable"
+        int recorded_by "nullable"
+    }
     MemberImport {
         int id PK
         int user_id FK
@@ -35,6 +44,9 @@ erDiagram
         string phone_number "nullable"
         string iban "nullable"
         datetime birthdate "nullable"
+        datetime renewal_reminded_at "nullable"
+        datetime last_login_at "nullable"
+        datetime last_activity_at "nullable"
         string street "nullable"
         string city_code "nullable"
         string city_name "nullable"
@@ -60,8 +72,11 @@ erDiagram
     MemberImport ||--o{ User : "members"
     User ||--o{ NewsPost : "articles"
     User ||--o| Team : "captainOf"
+    User ||--o{ CharterSignature : "charterSignatures"
     User ||--o| TrainingPack : "coachOf"
     User ||--o| Training : "coachOfSession"
+    User ||--o{ MemberDeparture : "departures"
+    User ||--o| MemberDeparture : "departureThisSeason"
     User }o--o{ FamilyGroup : "familyGroups"
     User ||--o| Guardian : "guardianRecord"
     User }o--o{ Guardian : "guardians"

@@ -33,7 +33,7 @@
     </div>
 
     <p class="text-subtle mb-4 text-xs">
-        {{ __('Paid orders and offered drinks. Compared with the :days days just before.', ['days' => $days]) }}
+        {{ __('Paid orders, offered drinks and losses found by the inventories. Compared with the :days days just before.', ['days' => $days]) }}
     </p>
 
     <div class="space-y-4">
@@ -50,6 +50,7 @@
                             <tr>
                                 <th class="w-full">{{ __('Product') }}</th>
                                 <th class="text-end">{{ __('Sold') }}</th>
+                                <th class="text-end">{{ __('Inventory losses') }}</th>
                                 <th class="hidden text-end sm:table-cell">{{ __('Per week') }}</th>
                                 <th class="text-end">{{ __('Trend') }}</th>
                                 <th class="hidden text-end lg:table-cell">{{ __('Takings') }}</th>
@@ -68,6 +69,16 @@
                                             <span class="badge badge-warning badge-soft badge-sm whitespace-nowrap">{{ __('Not sold') }}</span>
                                         @else
                                             <span class="font-bold">{{ $product['units'] }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end tabular-nums" data-losses="{{ $product['losses'] }}">
+                                        {{-- Un nombre, sans couleur ni légende : ce qui s'est passé se
+                                        lit en touchant le nombre, pas dans une règle à apprendre. --}}
+                                        @if ($product['losses'] > 0)
+                                            <button type="button" class="tooltip tooltip-left cursor-pointer underline decoration-dotted underline-offset-4"
+                                                data-tip="{{ $product['losses_detail'] }}" aria-label="{{ $product['losses_detail'] }}">−{{ $product['losses'] }}</button>
+                                        @else
+                                            <span class="text-subtle">—</span>
                                         @endif
                                     </td>
                                     <td class="hidden text-end tabular-nums sm:table-cell">

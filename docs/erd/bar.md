@@ -8,6 +8,27 @@ erDiagram
         int created_by "nullable"
         int modified_by "nullable"
     }
+    BarInventory {
+        int id PK
+        string status
+        int opened_by "nullable"
+        int closed_by "nullable"
+        datetime opened_at
+        datetime closed_at "nullable"
+        string comment "nullable"
+    }
+    BarInventoryLine {
+        int id PK
+        int inventory_id FK
+        int product_id FK
+        int expected
+        int counted
+        int counted_by "nullable"
+        datetime counted_at
+        BarInventoryCause cause "nullable"
+        string note "nullable"
+        int unit_price "nullable"
+    }
     BarOrder {
         int id PK
         string name "nullable"
@@ -83,6 +104,7 @@ erDiagram
         int product_id FK
         int batch_id FK "nullable"
         int restocking_id FK "nullable"
+        int inventory_id FK "nullable"
         int quantity
         string movement_type
         string reason "nullable"
@@ -91,6 +113,7 @@ erDiagram
     }
 
     BarCategory ||--o{ BarProduct : "products"
+    BarInventory ||--o{ BarInventoryLine : "lines"
     BarOrder ||--o{ BarOrderItem : "items"
     BarOrder ||--o| Payment : "payment"
     BarProduct ||--o{ BarStockMovement : "stockMovements"

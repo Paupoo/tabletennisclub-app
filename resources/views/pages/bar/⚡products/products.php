@@ -9,12 +9,10 @@ use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Services\BarRestockingSettings;
 use App\Domains\Bar\Services\RestockingAutomation;
 use App\Domains\Bar\Services\RestockingSuggestions;
-use App\Domains\Bar\Services\StockService;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use App\Support\LocaleSort;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -42,7 +40,11 @@ use Mary\Traits\Toast;
 |   rendraient précisément la densité qu'on est venu chercher. Voir docs/DESIGN.md.
 | - la saisie s'enregistre au `change` du champ, sans bouton. Motif de
 |   `subscriptions/⚡roster`. Au `change` et non à la frappe : taper « 48 » par
-|   dessus « 4 » ne doit écrire qu'un mouvement de stock, pas deux.
+|   dessus « 4 » ne doit écrire qu'un réglage, pas deux.
+|
+| Le stock, lui, se lit ici et ne s'y saisit plus : il se corrige par un
+| inventaire (`pages::bar.inventory`), qui garde qui a compté, quand, et ce qui
+| s'est passé. Corrigé d'un champ, un manque disparaissait sans laisser de trace.
 |
 | Ce qui coûte cher reste derrière le nom, dans un tiroir avec un bouton
 | Enregistrer : le prix, le nom, la catégorie, la suppression. Un prix mal frappé
@@ -345,48 +347,6 @@ new class extends Component
         $value = ($maxStock === null || trim($maxStock) === '') ? null : max(0, (int) $maxStock);
 
         $this->correctByHand(BarProduct::query()->findOrFail($productId), ['max_stock' => $value], __('Restocking target updated.'), $automation);
-    }
-
-    /**
-     * Aligner le stock sur ce qui a été compté sur l'étagère.
-     *
-     * Le champ porte un comptage, pas un mouvement : l'écart devient une entrée ou
-     * une sortie FIFO (StockService::adjustStockTo). Un champ vidé ne veut rien
-     * dire — on ne compte pas « rien », on compte zéro — donc on l'ignore plutôt
-     * que de le lire comme 0 et de vider le rayon par accident.
-     */
-    public function updateStock(int $productId, ?string $counted, StockService $stockService): void
-    {
-        if ($counted === null || trim($counted) === '') {
-            return;
-        }
-
-        $countedStock = (int) $counted;
-
-        if ($countedStock < 0) {
-            $this->error(__('A counted stock cannot be negative.'));
-
-            return;
-        }
-
-        $product = BarProduct::withStock()->findOrFail($productId);
-        $currentStock = $product->stock;
-
-        $written = DB::transaction(fn (): bool => $stockService->adjustStockTo(
-            $productId,
-            $countedStock,
-            $currentStock,
-            'Inventory count',
-            auth()->id(),
-        ));
-
-        if ($written) {
-            $this->success(__(':product: :from → :to', [
-                'product' => $product->name,
-                'from' => $currentStock,
-                'to' => $countedStock,
-            ]));
-        }
     }
 
     /**

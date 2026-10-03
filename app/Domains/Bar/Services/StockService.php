@@ -13,7 +13,8 @@ class StockService
      * Create a new incoming stock movement.
      * For FIFO, remaining_quantity starts equal to quantity.
      *
-     * `$restockingId` relie l'entrée à la tournée de courses qui l'a rapportée.
+     * `$restockingId` relie l'entrée à la tournée de courses qui l'a rapportée,
+     * `$inventoryId` à l'inventaire qui l'a constatée.
      */
     public function addIncomingStock(
         int $productId,
@@ -22,6 +23,7 @@ class StockService
         ?int $createdBy = null,
         ?int $modifiedBy = null,
         ?int $restockingId = null,
+        ?int $inventoryId = null,
     ): BarStockMovement {
         if ($quantity <= 0) {
             throw new RuntimeException('La quantité entrante doit être supérieure à 0.');
@@ -36,6 +38,7 @@ class StockService
             'created_by' => $createdBy,
             'modified_by' => $modifiedBy,
             'restocking_id' => $restockingId,
+            'inventory_id' => $inventoryId,
         ]);
     }
 
@@ -94,7 +97,8 @@ class StockService
         ?int $createdBy = null,
         ?int $modifiedBy = null,
         ?int $orderId = null,
-        ?int $orderItemId = null
+        ?int $orderItemId = null,
+        ?int $inventoryId = null,
     ): void {
         if ($quantity <= 0) {
             throw new RuntimeException('La quantité à sortir doit être supérieure à 0.');
@@ -138,6 +142,7 @@ class StockService
                 'source_movement_id' => $inMovement->id,
                 'order_id' => $orderId,
                 'order_item_id' => $orderItemId,
+                'inventory_id' => $inventoryId,
             ]);
 
             $qtyToConsume -= $consumed;

@@ -118,6 +118,28 @@ Route::livewire('/restocking', 'pages::bar.restocking')
 
 /*
 |--------------------------------------------------------------------------
+| Inventories — la seule porte qui corrige le stock
+|--------------------------------------------------------------------------
+*/
+// L'historique et le détail se lisent comme les ventes : le comité les consulte
+// sans avoir accès au comptoir. Compter et valider restent au stock.
+Route::prefix('inventories')->name('inventories.')->group(function (): void {
+    Route::livewire('/', 'pages::bar.inventories')
+        ->withoutMiddleware('can:bar.access')
+        ->middleware('can:bar.stats.view')
+        ->name('index');
+    Route::livewire('/current', 'pages::bar.inventory')
+        ->middleware('can:bar.stock.manage')
+        ->name('current');
+    Route::livewire('/{inventory}', 'pages::bar.inventory-show')
+        ->withoutMiddleware('can:bar.access')
+        ->middleware('can:bar.stats.view')
+        ->whereNumber('inventory')
+        ->name('show');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Sales — l'écran du comité
 |--------------------------------------------------------------------------
 */

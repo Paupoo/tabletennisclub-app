@@ -428,6 +428,10 @@ The export moved to the **financial report** (**Export from the financial report
 
 Go to **Treasury → Cash register**. Manage bar orders, cash sheet, and stock movements if the bar module is active.
 
+### Bar inventories
+
+The bar stock is no longer corrected in **Bar → Products**, it is only read there: you take an **inventory** (**Bar → Inventories**). The store keeper counts what is on the shelf and says, for each gap, what happened (drunk or eaten without the till, broken, expired, I don't know; received outside the shopping for a surplus). Validating aligns the stock and sends a summary to the **treasurer** (the committee function), the **store keepers** and whoever validated; with no treasurer appointed, the club address gets a copy. A validated inventory never changes. The **committee** reads the inventories without touching them. **Bar → Sales** shows the losses of the period; what went to someone counts in the shopping averages, broken and expired goods do not. Help article: *Faire l'inventaire du bar*.
+
 ---
 
 ## 11. Registrations

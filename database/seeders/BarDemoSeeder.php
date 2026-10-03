@@ -10,6 +10,7 @@ use App\Domains\Bar\Models\BarOrderItem;
 use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Models\BarRestocking;
 use App\Domains\Bar\Models\BarRestockingLine;
+use App\Domains\Bar\Services\LegacyInventoryCorrections;
 use App\Domains\Bar\Services\RestockingList;
 use App\Domains\Bar\Services\StockService;
 use App\Domains\ClubAdmin\ExpenseReports\Actions\StoreExpenseReportFiles;
@@ -151,8 +152,12 @@ class BarDemoSeeder extends Seeder
                 // L'inventaire du matin : chaque produit sur le stock décidé.
                 $this->at(CarbonImmutable::now()->min($today->setTime(9, 0)));
                 foreach (BarProduct::query()->withStock()->get() as $product) {
-                    $stockService->adjustStockTo($product->id, self::CATALOGUE[$product->name]['final'], $product->stock, 'Inventory count');
+                    $stockService->adjustStockTo($product->id, self::CATALOGUE[$product->name]['final'], $product->stock, LegacyInventoryCorrections::LEGACY_REASON);
                 }
+
+                // Ce que donnait l'ancien champ Stock, repris comme en production : un
+                // inventaire « Historique » à relire dans Bar → Inventaires.
+                app(LegacyInventoryCorrections::class)->import();
             });
         } finally {
             Carbon::setTestNow($realNow);
@@ -404,6 +409,8 @@ class BarDemoSeeder extends Seeder
         DB::table('bar_restocking_adjustments')->delete();
         DB::table('bar_stock_movements')->update(['source_movement_id' => null]);
         DB::table('bar_stock_movements')->delete();
+        DB::table('bar_inventory_lines')->delete();
+        DB::table('bar_inventories')->delete();
         DB::table('bar_order_items')->delete();
         DB::table('bar_orders')->delete();
         DB::table('bar_products')->delete();

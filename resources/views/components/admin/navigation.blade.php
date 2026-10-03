@@ -277,6 +277,8 @@
         @endcan
         @can('bar.stats.view')
         <x-menu-item icon="o-chart-bar" link="{{ route('bar.stats.index') }}" :title="__('Sales')" />
+        <x-menu-item icon="o-clipboard-document-check" link="{{ route('bar.inventories.index') }}" :title="__('Inventories')"
+            :active="request()->routeIs('bar.inventories.*')" />
         @endcan
         {{--
             De quoi installer la salle avant le service : l'écran à caster derrière

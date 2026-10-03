@@ -280,4 +280,18 @@ new class extends Component
 
         return $query;
     }
+
+    /**
+     * Search and filters: changing one drops the selection.
+     *
+     * @return array<int, string>
+     */
+    protected function selectionScope(): array
+    {
+        return [
+            'search',
+            'period',
+            'userAgentType',
+        ];
+    }
 };

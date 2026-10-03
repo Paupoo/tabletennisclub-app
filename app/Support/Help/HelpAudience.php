@@ -85,6 +85,12 @@ final class HelpAudience
             }
         }
 
+        // The bar inventory: who counts the shelf. The committee reads the
+        // inventories like the sales, through its own `committee` tag.
+        if (Feature::Bar->enabled() && $user->can(Permission::BarStockManage->value)) {
+            $tags[] = 'bar_stock';
+        }
+
         if (Team::where('captain_id', $user->id)->exists()) {
             $tags[] = 'captain';
         }

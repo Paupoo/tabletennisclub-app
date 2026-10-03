@@ -4,7 +4,7 @@
     </x-slot:breadcrumbs>
 
     <x-header progress-indicator separator :title="__('Products')"
-        :subtitle="__('Count the shelf, set the price, tune the alert threshold.')">
+        :subtitle="__('Set the price and the alert threshold. The stock is corrected by an inventory.')">
         <x-slot:actions>
             {{-- Seulement les produits sans max : un réglage posé à la main n'est
             jamais écrasé en masse. Le bouton disparaît quand il n'a rien à faire. --}}
@@ -14,6 +14,8 @@
                     wire:click="applyAllSuggestions" spinner="applyAllSuggestions" />
             @endif
             @can('bar.stock.manage')
+                <x-button class="btn-ghost btn-sm hidden lg:inline-flex" icon="o-clipboard-document-check" :label="__('Take an inventory')"
+                    :link="route('bar.inventories.current')" />
                 <x-button class="btn-ghost btn-sm hidden lg:inline-flex" icon="o-cog-6-tooth" :label="__('Restocking settings')"
                     wire:click="openRestockingSettings" />
             @endcan
@@ -27,6 +29,8 @@
                             wire:click="applyAllSuggestions" />
                     @endif
                     @can('bar.stock.manage')
+                        <x-menu-item icon="o-clipboard-document-check" :title="__('Take an inventory')"
+                            :link="route('bar.inventories.current')" />
                         <x-menu-item icon="o-cog-6-tooth" :title="__('Restocking settings')"
                             wire:click="openRestockingSettings" />
                     @endcan
@@ -154,14 +158,9 @@
                                             :title="__('At or below its alert threshold')" />
                                     @endif
 
-                                    {{-- `wire:change` et non `.live` : taper « 48 » par-dessus
-                                    « 4 » ne doit écrire qu'un seul mouvement de stock. --}}
-                                    <input type="number" min="0" inputmode="numeric"
-                                        wire:key="stock-{{ $product->id }}"
-                                        value="{{ $product->stock }}"
-                                        wire:change="updateStock({{ $product->id }}, $event.target.value)"
-                                        aria-label="{{ __('Counted stock for :product', ['product' => $product->name]) }}"
-                                        class="input input-bordered input-sm tap-comfort w-14 text-end tabular-nums lg:w-20">
+                                    {{-- Lu, jamais saisi : le stock se corrige par un inventaire,
+                                    qui garde qui a compté, quand, et ce qui s'est passé. --}}
+                                    <span class="font-semibold tabular-nums">{{ $product->stock }}</span>
                                 </div>
                             @endscope
 

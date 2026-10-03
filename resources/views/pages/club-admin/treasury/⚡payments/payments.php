@@ -1143,6 +1143,25 @@ new class extends Component
         return $this->applyFilters($this->scopedToTab());
     }
 
+    /**
+     * Search, tab and filters: changing one drops the selection.
+     *
+     * @return array<int, string>
+     */
+    protected function selectionScope(): array
+    {
+        return [
+            'search',
+            'statusFilter',
+            'dateFrom',
+            'dateTo',
+            'eventName',
+            'eventType',
+            'paymentMethod',
+            'userId',
+        ];
+    }
+
     private function allocatableAmount(Payment $payment, Transaction $transaction): float
     {
         $residue = abs($transaction->residue());

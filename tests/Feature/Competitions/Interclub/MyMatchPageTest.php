@@ -364,18 +364,51 @@ it('shows the full sheet with opponents and rankings', function (): void {
         ->assertSee('3-1');
 });
 
-it('falls back to who played when no sheet has been imported', function (): void {
+it('repeats no line-up under the result while no sheet has been imported', function (): void {
+    // The "Line-up" card above already names a published line-up; a second
+    // list under the result only said it twice.
     $match = aMatch(-7);
-    $match->users()->attach($this->player->id, ['is_selected' => true, 'has_played' => true]);
+    $mate = User::factory()->create(['first_name' => 'Zoé', 'last_name' => 'Compo']);
+    $match->users()->attach($this->player->id, ['is_selected' => true, 'selection_confirmed_at' => now()->subDays(9)]);
+    $match->users()->attach($mate->id, ['is_selected' => true, 'selection_confirmed_at' => now()->subDays(9)]);
+
+    Livewire::actingAs($this->player)
+        ->test('pages::club-events.interclubs.my-match', ['interclub' => $match])
+        ->assertDontSeeHtml('data-lineup-without-sheet')
+        ->assertDontSee(__('Match sheet'));
+});
+
+it('never shows a line-up the captain did not send', function (): void {
+    $match = aMatch(-7);
+    $drafted = User::factory()->create(['first_name' => 'Brouillon', 'last_name' => 'Jamais-Envoye']);
+    $match->users()->attach($drafted->id, ['is_selected' => true, 'selection_confirmed_at' => null]);
+
+    Livewire::actingAs($this->player)
+        ->test('pages::club-events.interclubs.my-match', ['interclub' => $match])
+        ->assertDontSee('Jamais-Envoye');
+});
+
+it('names who played from the sheet once it is imported, and no line-up fallback', function (): void {
+    $match = aMatch(-7);
+    $benched = User::factory()->create(['first_name' => 'Basile', 'last_name' => 'Banc']);
+    $match->users()->attach($benched->id, ['is_selected' => true, 'selection_confirmed_at' => now()->subDays(9)]);
+
+    InterclubIndividualMatch::factory()->create([
+        'interclub_id' => $match->id, 'position' => 1,
+        'user_id' => $this->player->id, 'we_won' => true,
+    ]);
+    InterclubIndividualMatch::factory()->create([
+        'interclub_id' => $match->id, 'position' => 2,
+        'user_id' => $this->player->id, 'we_won' => false,
+    ]);
 
     $component = Livewire::actingAs($this->player)
         ->test('pages::club-events.interclubs.my-match', ['interclub' => $match]);
 
-    expect($component->viewData('tally'))->toBeEmpty()
-        ->and($component->viewData('sheet'))->toBeEmpty();
+    expect($component->viewData('tally')->pluck('label')->all())->toBe([$this->player->full_name]);
 
-    $component->assertSee(__('Played that day'))
-        ->assertDontSee(__('Match sheet'));
+    $component->assertSeeInOrder([__('Individual results'), $this->player->full_name])
+        ->assertDontSeeHtml('data-lineup-without-sheet');
 });
 
 it('lets a member open a match they played for a team that has no roster', function (): void {

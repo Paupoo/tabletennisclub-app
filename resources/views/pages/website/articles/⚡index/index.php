@@ -297,4 +297,18 @@ new class extends Component
             ->when($this->status, fn ($q) => $q->where('status', $this->status))
             ->when($this->category, fn ($q) => $q->where('category', $this->category));
     }
+
+    /**
+     * Search and filters: changing one drops the selection.
+     *
+     * @return array<int, string>
+     */
+    protected function selectionScope(): array
+    {
+        return [
+            'search',
+            'status',
+            'category',
+        ];
+    }
 };

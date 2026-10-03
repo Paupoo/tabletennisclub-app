@@ -344,15 +344,6 @@
                         @endforeach
                     </div>
                 </div>
-            @elseif ($isPast && $players->isNotEmpty())
-                <div class="mt-5 border-t border-base-300 pt-4">
-                    <p class="mb-2 text-xs font-bold uppercase tracking-wide text-base-content/50">
-                        {{ __('Played that day') }}
-                    </p>
-                    <p class="text-sm text-base-content">
-                        {{ $players->map(fn ($player) => $player->full_name)->implode(', ') }}
-                    </p>
-                </div>
             @endif
         </x-card>
 

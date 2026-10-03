@@ -7,10 +7,15 @@ namespace App\Domains\Bar\Services;
 use App\Domains\Bar\Models\BarInventory;
 use App\Domains\Bar\Models\BarInventoryLine;
 use App\Domains\Bar\Models\BarProduct;
+use App\Domains\Bar\Notifications\BarInventoryValidatedNotification;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\BarInventoryCause;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * Les gestes d'un inventaire : ouvrir, compter, dire ce qui s'est passé, valider.
@@ -128,7 +133,7 @@ class BarInventories
             throw new \DomainException(trans_choice('Say what happened for :count product before validating.|Say what happened for :count products before validating.', $unexplained->count()));
         }
 
-        DB::transaction(function () use ($inventory, $by, $comment): void {
+        $inventory = DB::transaction(function () use ($inventory, $by, $comment): BarInventory {
             $inventory = BarInventory::query()->lockForUpdate()->findOrFail($inventory->id);
 
             if (! $inventory->isInProgress()) {
@@ -159,6 +164,41 @@ class BarInventories
                 'closed_at' => now(),
                 'comment' => filled($comment) ? trim($comment) : null,
             ]);
+
+            return $inventory;
         });
+
+        $this->tellTheTreasurer($inventory);
+    }
+
+    /**
+     * Le récapitulatif : au trésorier, aux magasiniers et à celui qui a validé.
+     *
+     * Le trésorier est la fonction au comité, pas la délégation Trésorerie : on vise
+     * qui en répond, pas qui en a le droit technique. Sans trésorier désigné, le
+     * récapitulatif part aussi à l'adresse du club, pour qu'il ne reste pas entre
+     * magasiniers.
+     */
+    private function tellTheTreasurer(BarInventory $inventory): void
+    {
+        $treasurers = User::role(Role::COMMITTEE->value)
+            ->where('committee_role', CommitteeRolesEnum::TREASURER->value)
+            ->get();
+
+        $recipients = $treasurers
+            ->merge(User::role(Role::STORE_KEEPER->value)->get())
+            ->push($inventory->closer)
+            ->filter()
+            ->unique('id');
+
+        $notification = new BarInventoryValidatedNotification($inventory);
+
+        Notification::send($recipients, $notification);
+
+        $clubAddress = Club::own()?->email_contact;
+
+        if ($treasurers->isEmpty() && filled($clubAddress)) {
+            Notification::route('mail', $clubAddress)->notify($notification);
+        }
     }
 }

@@ -74,6 +74,11 @@ it('never sends a member to a page the committee alone can open', function (): v
         // SendBarRestockingDigestCommand sends it to User::permission('bar.restocking.shop')
         // only, the permission the linked screen asks for — BarRestockingDigestTest.
         'BarRestockingDigestNotification.php',
+        // BarInventories sends it to the committee's treasurer, the store keepers
+        // and whoever validated (`bar.stock.manage`), all of whom hold
+        // `bar.stats.view`; the route drops `bar.access` for the committee —
+        // BarInventoryMailTest opens the link as each of them.
+        'BarInventoryValidatedNotification.php',
         // Both go to User::permission('expense_reports.process') — plus
         // 'payments.refund' for the digest — and every délégation holding either
         // also holds payments.view, which the page asks for. The member's own

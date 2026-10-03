@@ -20,6 +20,7 @@ use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\ReadsTournamentLiveState;
 use App\Mail\TournamentResultsMail;
 use App\Support\Breadcrumb;
+use App\Support\UploadLimits;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -145,7 +146,7 @@ new class extends Component
         }
 
         $this->validate([
-            'newsPostImage' => ['nullable', 'image', 'max:4096'],
+            'newsPostImage' => ['nullable', 'image', UploadLimits::documentRule()],
         ]);
 
         new TournamentStateMachine($this->tournament)->close();

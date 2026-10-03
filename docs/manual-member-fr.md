@@ -240,7 +240,7 @@ Chaque attestation porte une référence et un QR code renvoyant vers une page p
 
 ## 13. Notes de frais
 
-Vous avez payé quelque chose pour le club (balles, fournitures, parking d'un déplacement) ? **Mon espace → Mes notes de frais → Déclarer une dépense** : nature, description, montant TVAC, date, IBAN de remboursement et 1 à 5 justificatifs (PDF, JPG, PNG ou WebP, 10 Mo maximum chacun).
+Vous avez payé quelque chose pour le club (balles, fournitures, parking d'un déplacement) ? **Mon espace → Mes notes de frais → Déclarer une dépense** : nature, description, montant TVAC, date, IBAN de remboursement et 1 à 5 justificatifs (PDF, JPG, PNG ou WebP, 5 Mo maximum chacun ; une photo prise au téléphone est allégée automatiquement).
 
 **Réservé aux membres majeurs** dont la date de naissance est renseignée ; un parent déclare depuis son propre compte, jamais depuis celui de son enfant.
 

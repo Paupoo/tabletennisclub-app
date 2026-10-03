@@ -14,6 +14,7 @@ use App\Domains\Shared\Support\IbanNormalizer;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
+use App\Support\UploadLimits;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -371,7 +372,7 @@ new class extends Component
             'spentOn' => ['required', 'date', 'before_or_equal:today'],
             'refundIban' => ['required', new ValidIban],
             'newFiles' => [$isNew ? 'required' : 'nullable', 'array', 'max:' . self::MAX_FILES],
-            'newFiles.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
+            'newFiles.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', UploadLimits::documentRule()],
         ];
     }
 

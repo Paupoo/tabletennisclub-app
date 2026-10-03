@@ -11,6 +11,7 @@ Procédure de mise en production sur un serveur classique (VPS / hébergement), 
 | Composant | Version / contrainte |
 |---|---|
 | PHP | 8.5 (mêmes extensions que le dev : `pdo_mysql`, `mbstring`, `gd`, `zip`, `intl`) |
+| Limites d'envoi PHP | `upload_max_filesize = 6M`, `post_max_size = 32M` (voir [Stockage des fichiers](#stockage-des-fichiers)) |
 | Composer | 2.x |
 | Node / npm | pour compiler les assets (build sur le serveur ou artefact déposé) |
 | Base de données | MySQL / MariaDB |
@@ -216,6 +217,18 @@ Deux disques, aux rôles distincts :
 | `local` | `storage/app` | **non** | Documents des membres |
 
 Les documents des membres sont délibérément servis par une route contrôlée, jamais par une URL directe. Ne déplacez rien vers `public` et ne créez pas de lien symbolique vers `storage/app`.
+
+### Taille des fichiers envoyés
+
+Un document joint (justificatif, certificat médical, ticket, formulaire de mutuelle) est limité à **5 Mo** (`App\Support\UploadLimits`), et les photos sont allégées dans le navigateur avant l'envoi. PHP, lui, refuse tout fichier au-delà de `upload_max_filesize` avant que Laravel le voie, avec pour seul message « n'a pas pu être envoyé » ; et Livewire envoie tous les fichiers d'un même champ dans **une seule requête**, plafonnée par `post_max_size`. D'où, dans le `php.ini` de **PHP-FPM** (pas celui d'Apache, absent) :
+
+```ini
+; /etc/php/8.5/fpm/php.ini
+upload_max_filesize = 6M   ; un peu au-dessus de la limite de 5 Mo
+post_max_size = 32M        ; 5 fichiers de 5 Mo + marge
+```
+
+puis `sudo systemctl reload php8.5-fpm` (compte `debian`). Le défaut de PHP (2M / 8M) fait échouer tout PDF de plus de 2 Mo.
 
 `storage/` et `bootstrap/cache/` doivent être accessibles en écriture à l'utilisateur du serveur web — et le worker doit tourner sous ce même utilisateur (voir [Worker de queue](#worker-de-queue)) : un fichier que le worker écrit, Apache doit pouvoir le lire.
 

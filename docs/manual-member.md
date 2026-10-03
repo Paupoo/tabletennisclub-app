@@ -240,7 +240,7 @@ Every attestation carries a reference and a QR code pointing at a public page th
 
 ## 13. Expense Reports
 
-Paid for something on the club's behalf (balls, supplies, parking on an away trip)? **My space → My expense reports → Declare an expense**: nature, description, amount VAT included, date, refund IBAN and 1 to 5 proofs (PDF, JPG, PNG or WebP, 10 MB each at most).
+Paid for something on the club's behalf (balls, supplies, parking on an away trip)? **My space → My expense reports → Declare an expense**: nature, description, amount VAT included, date, refund IBAN and 1 to 5 proofs (PDF, JPG, PNG or WebP, 5 MB each at most; a phone photo is lightened automatically).
 
 **Adult members only**, with their birthdate on file; a parent declares from their own account, never from their child's.
 

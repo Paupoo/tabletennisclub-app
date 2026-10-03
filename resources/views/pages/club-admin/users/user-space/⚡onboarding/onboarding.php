@@ -9,6 +9,7 @@ use App\Domains\Shared\Rules\ValidIban;
 use App\Domains\Shared\Rules\ValidPhone;
 use App\Livewire\Concerns\HasPhotoUpload;
 use App\Livewire\Concerns\ManagesGuardians;
+use App\Support\UploadLimits;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule as ValidationRule;
@@ -123,8 +124,8 @@ new class extends Component
         $this->validate([
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2024'],
             'iban' => ['nullable', new ValidIban],
-            'medicalCertificate' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
-            'parentalConsent' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
+            'medicalCertificate' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', UploadLimits::documentRule()],
+            'parentalConsent' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', UploadLimits::documentRule()],
         ]);
 
         $this->handlePhotoUpload($this->user);

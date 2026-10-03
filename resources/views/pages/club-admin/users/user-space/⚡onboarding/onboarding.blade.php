@@ -261,14 +261,18 @@
                         placeholder="BE00 0000 0000 0000"
                         :hint="__('payment.iban_format_hint')" />
 
-                    <x-file :label="__('Medical certificate')" wire:model="medicalCertificate"
-                        accept="image/png, image/jpeg, application/pdf"
-                        :hint="__('JPG, PNG or PDF — max 4 MB')" />
+                    <x-document-upload>
+                        <x-file :label="__('Medical certificate')" wire:model="medicalCertificate"
+                            accept="image/png, image/jpeg, application/pdf"
+                            :hint="__('JPG, PNG or PDF — max :size', ['size' => \App\Support\UploadLimits::documentLabel()])" />
+                    </x-document-upload>
 
                     @if ($this->isMinor)
-                        <x-file :label="__('Parental consent')" wire:model="parentalConsent"
-                            accept="image/png, image/jpeg, application/pdf"
-                            :hint="__('Required for minors — JPG, PNG or PDF, max 4 MB')" />
+                        <x-document-upload>
+                            <x-file :label="__('Parental consent')" wire:model="parentalConsent"
+                                accept="image/png, image/jpeg, application/pdf"
+                                :hint="__('Required for minors — JPG, PNG or PDF, max :size', ['size' => \App\Support\UploadLimits::documentLabel()])" />
+                        </x-document-upload>
                     @endif
                 </div>
             </div>

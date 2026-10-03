@@ -34,8 +34,10 @@
 
     @unless ($disabled)
         <div>
-            <x-file wire:model="documentFiles" :label="__('Files')" multiple accept=".pdf,.jpg,.jpeg,.png,.webp"
-                :hint="__('The invoice, the ticket, the letter — or a screenshot of the statement for bank fees. PDF, JPG, PNG or WebP, 10 MB each.')" />
+            <x-document-upload>
+                <x-file wire:model="documentFiles" :label="__('Files')" multiple accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    :hint="__('The invoice, the ticket, the letter — or a screenshot of the statement for bank fees. PDF, JPG, PNG or WebP, :size each.', ['size' => \App\Support\UploadLimits::documentLabel()])" />
+            </x-document-upload>
             @error('documentFiles.*')
                 <p class="mt-1 text-sm text-error">{{ $message }}</p>
             @enderror

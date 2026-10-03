@@ -16,6 +16,7 @@ use App\Domains\Shared\Support\IbanNormalizer;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use App\Support\LocaleSort;
+use App\Support\UploadLimits;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -143,7 +144,7 @@ new class extends Component
             'ticketAmount' => $claims ? ['required', 'numeric', 'min:0.01', 'max:99999.99'] : ['nullable'],
             'refundIban' => $claims ? ['required', new ValidIban] : ['nullable'],
             'ticketFiles' => $claims ? ['required', 'array', 'min:1', 'max:' . self::MAX_TICKET_FILES] : ['nullable', 'array'],
-            'ticketFiles.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
+            'ticketFiles.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', UploadLimits::documentRule()],
         ], [], [
             'paidBy' => __('Who paid'),
             'ticketAmount' => __('Receipt total'),

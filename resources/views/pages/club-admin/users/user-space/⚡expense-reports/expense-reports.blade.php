@@ -219,8 +219,10 @@
                 :hint="__('Prefilled from your profile; change it if the money should go elsewhere.')" />
 
             <div>
-                <x-file wire:model="newFiles" :label="__('Proofs')" multiple accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    :hint="__('Receipt and proof of payment. PDF, JPG, PNG or WebP, 10 MB each, :count at most. From an iPhone, take a screenshot or export as JPG.', ['count' => $maxFiles])" />
+                <x-document-upload>
+                    <x-file wire:model="newFiles" :label="__('Proofs')" multiple accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        :hint="__('Receipt and proof of payment. PDF, JPG, PNG or WebP, :size each, :count at most. From an iPhone, take a screenshot or export as JPG.', ['size' => \App\Support\UploadLimits::documentLabel(), 'count' => $maxFiles])" />
+                </x-document-upload>
                 @error('newFiles.*')
                     <p class="mt-1 text-sm text-error">{{ $message }}</p>
                 @enderror

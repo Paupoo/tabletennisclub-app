@@ -135,8 +135,10 @@
                             :hint="__('VAT included, as on the receipt')" />
 
                         <div>
-                            <x-file wire:model="ticketFiles" :label="__('Receipt photo')" multiple accept=".pdf,.jpg,.jpeg,.png,.webp"
-                                :hint="__('A photo of the receipt is enough. PDF, JPG, PNG or WebP, 10 MB each.')" />
+                            <x-document-upload>
+                                <x-file wire:model="ticketFiles" :label="__('Receipt photo')" multiple accept=".pdf,.jpg,.jpeg,.png,.webp"
+                                    :hint="__('A photo of the receipt is enough. PDF, JPG, PNG or WebP, :size each.', ['size' => \App\Support\UploadLimits::documentLabel()])" />
+                            </x-document-upload>
                             @error('ticketFiles.*')
                                 <p class="text-error mt-1 text-sm">{{ $message }}</p>
                             @enderror

@@ -6,7 +6,6 @@ namespace App\Domains\Bar\Services;
 
 use App\Domains\Bar\Models\BarOrderItem;
 use App\Domains\Bar\Models\BarProduct;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -20,7 +19,8 @@ use Illuminate\Support\Collection;
  * chose, pas sur les dernières semaines du calendrier : juillet et août fermés
  * diviseraient sinon les ventes de septembre par deux. Elle est pondérée — les
  * semaines récentes comptent davantage — pour qu'une tendance se suive. Un offert compte, il vide
- * le frigo autant qu'une vente ; une ardoise encore ouverte ne compte pas.
+ * le frigo autant qu'une vente ; une ardoise encore ouverte ne compte pas. Une perte
+ * partie chez quelqu'un compte aussi ({@see BarLosses}) : il faudra la racheter.
  *
  * Pas d'arrondi au conditionnement : il se fait au moment d'acheter, et arrondir
  * ici donnerait min = max à tout produit lent vendu par carton.
@@ -38,13 +38,10 @@ class RestockingSuggestions
     /** Combien de semaines actives on regarde. */
     public const int WEEKS_OBSERVED = 12;
 
-    /**
-     * La journée d'exploitation commence à 6 h : une vente à 1 h du matin appartient
-     * à la soirée de la veille — la même frontière que la feuille de caisse.
-     */
-    private const int BUSINESS_DAY_STARTS_AT = 6;
-
-    public function __construct(private readonly BarRestockingSettings $settings) {}
+    public function __construct(
+        private readonly BarRestockingSettings $settings,
+        private readonly BarLosses $losses,
+    ) {}
 
     /**
      * Les suggestions des produits qui ont vendu, indexées par identifiant.
@@ -69,7 +66,10 @@ class RestockingSuggestions
         $minWeeks = $this->settings->minWeeks();
         $maxWeeks = $this->settings->maxWeeks();
 
+        // Ce que les inventaires ont trouvé parti chez quelqu'un s'ajoute aux ventes,
+        // dans les semaines actives où il a été étalé.
         return $sales
+            ->concat($this->losses->spreadDemand())
             ->whereIn('week', $activeWeeks->all())
             ->groupBy('product_id')
             ->filter(fn (Collection $rows, int $productId): bool => $products->has($productId))
@@ -101,7 +101,7 @@ class RestockingSuggestions
      * La semaine se calcule ici et non en SQL : SQLite (les tests) et MySQL
      * (la production) n'ont pas les mêmes fonctions de date.
      *
-     * @return Collection<int, array{product_id: int, quantity: int, week: string}>
+     * @return Collection<int, array{product_id: int, quantity: int|float, week: string}>
      */
     private function paidSalesOfLastYear(): Collection
     {
@@ -113,10 +113,7 @@ class RestockingSuggestions
             ->map(fn (BarOrderItem $item): array => [
                 'product_id' => (int) $item->product_id,
                 'quantity' => (int) $item->quantity,
-                'week' => Carbon::parse($item->getAttribute('sold_at'))
-                    ->subHours(self::BUSINESS_DAY_STARTS_AT)
-                    ->startOfWeek()
-                    ->toDateString(),
+                'week' => BarLosses::weekOf($item->getAttribute('sold_at')),
             ]);
     }
 }

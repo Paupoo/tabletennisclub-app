@@ -53,6 +53,18 @@ enum BarInventoryCause: string
         };
     }
 
+    /**
+     * Si la perte est partie chez quelqu'un, et qu'il faudra donc la racheter.
+     *
+     * Ce qui a été bu sans passer en caisse est une vraie demande ; ce dont on ne
+     * sait rien aussi, faute de mieux. La casse et le périmé n'en sont pas : les
+     * compter ferait racheter davantage de ce qui périme déjà.
+     */
+    public function isDemand(): bool
+    {
+        return in_array($this, [self::UnrecordedSale, self::Unknown], true);
+    }
+
     public function label(): string
     {
         return match ($this) {

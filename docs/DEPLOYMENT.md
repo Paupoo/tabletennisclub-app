@@ -300,6 +300,8 @@ Le middleware n'accepte que les requêtes dont l'en-tête `Host` correspond au d
 
 ⚠️ **`APP_URL` doit être renseigné correctement en production.** S'il est vide ou faux, le middleware rejette *toutes* les requêtes. Il est volontairement inerte en `local` et sous les tests, donc l'erreur ne se voit qu'une fois déployé — c'est le premier point à vérifier après un changement de domaine.
 
+Pas de barre finale (`https://<domaine>`, jamais `https://<domaine>/`) : le disque `public` construit ses URL en `APP_URL . '/storage'`, et la barre en trop se retrouve doublée dans chaque lien vers un fichier.
+
 ### `TrustProxies` — volontairement vide
 
 `protected $proxies;` reste à `null`. Apache passe le vrai `REMOTE_ADDR` à PHP : `$request->ip()` renvoie déjà l'IP du visiteur, et les limitations par IP (`throttle:10,1` sur le formulaire de contact) comptent bien par visiteur.

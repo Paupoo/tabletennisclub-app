@@ -4,6 +4,8 @@
 erDiagram
     %% Bar
     BarCategory
+    BarInventory
+    BarInventoryLine
     BarOrder
     BarOrderItem
     BarPayment
@@ -64,6 +66,7 @@ erDiagram
     CharterSignature
     FamilyGroup
     Guardian
+    MemberDeparture
     MemberImport
     User
 
@@ -114,6 +117,7 @@ erDiagram
     TrainingPlanPack
 
     BarCategory ||--o{ BarProduct : "products"
+    BarInventory ||--o{ BarInventoryLine : "lines"
     BarOrder ||--o{ BarOrderItem : "items"
     BarOrder ||--o| Payment : "payment"
     BarProduct ||--o{ BarStockMovement : "stockMovements"
@@ -155,8 +159,11 @@ erDiagram
     MemberImport ||--o{ User : "members"
     User ||--o{ NewsPost : "articles"
     User ||--o| Team : "captainOf"
+    User ||--o{ CharterSignature : "charterSignatures"
     User ||--o| TrainingPack : "coachOf"
     User ||--o| Training : "coachOfSession"
+    User ||--o{ MemberDeparture : "departures"
+    User ||--o| MemberDeparture : "departureThisSeason"
     User }o--o{ FamilyGroup : "familyGroups"
     User ||--o| Guardian : "guardianRecord"
     User }o--o{ Guardian : "guardians"

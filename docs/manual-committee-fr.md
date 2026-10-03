@@ -429,6 +429,10 @@ L'export a rejoint le **rapport financier** (**Exporter depuis le rapport financ
 
 Allez dans **Trésorerie → Caisse**. Gérez les commandes du bar, la feuille de caisse et les mouvements de stock si le module bar est actif.
 
+### Inventaires du bar
+
+Le stock du bar ne se corrige plus dans **Bar → Produits**, il s'y lit seulement : on fait un **inventaire** (**Bar → Inventaires**). Le magasinier compte ce qui est sur l'étagère et dit, pour chaque écart, ce qui s'est passé (bu ou mangé sans passer en caisse, cassé, périmé, je ne sais pas ; reçu sans passer par les courses pour un surplus). La validation aligne le stock et envoie un récapitulatif au **trésorier** (la fonction au comité), aux **magasiniers** et à celui qui a validé ; sans trésorier désigné, l'adresse du club en reçoit une copie. Un inventaire validé ne change plus. Le **comité** consulte les inventaires sans pouvoir y toucher. **Bar → Ventes** montre les pertes de la période ; ce qui est parti chez quelqu'un compte dans les moyennes des courses, pas la casse ni le périmé. Article d'aide : *Faire l'inventaire du bar*.
+
 ---
 
 ## 11. Inscriptions

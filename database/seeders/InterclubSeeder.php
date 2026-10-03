@@ -185,7 +185,7 @@ class InterclubSeeder extends Seeder
                 'email_verified_at' => now(),
                 'password' => bcrypt('password'),
                 'club_id' => $this->club->id,
-                'licence' => random_int(95000, 170000),
+                'licence' => $this->unusedLicence(),
                 'ranking' => Ranking::NC,
             ]
         );
@@ -756,6 +756,19 @@ class InterclubSeeder extends Seeder
         $team->update(['captain_id' => $captain->id]);
 
         return $team;
+    }
+
+    /**
+     * A licence no member holds yet: drawn blindly, a captain's licence met a
+     * player's about once in fifty runs and broke the unique index.
+     */
+    private function unusedLicence(): int
+    {
+        do {
+            $licence = random_int(95000, 170000);
+        } while (User::where('licence', $licence)->exists());
+
+        return $licence;
     }
 
     /**

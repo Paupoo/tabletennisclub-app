@@ -148,8 +148,7 @@
                             @endif
                             @if ($this->canManage)
                                 <livewire:admin.shared.event-post-button
-                                    :model-class="\App\Domains\Competitions\Tournament\Models\Tournament::class"
-                                    :model-id="$tournament->id"
+                                    :model="$tournament"
                                     event-type="TOURNAMENT"
                                     icon="🏆"
                                     :event-date="$tournament->start_date->toDateString()"
@@ -290,8 +289,7 @@
                                  ligne, où la vue mobile la plaçait déjà. --}}
                             @if ($this->canManage)
                                 <livewire:admin.shared.event-post-button
-                                    :model-class="\App\Domains\Competitions\Tournament\Models\Tournament::class"
-                                    :model-id="$tournament->id"
+                                    :model="$tournament"
                                     event-type="TOURNAMENT"
                                     icon="🏆"
                                     :event-date="$tournament->start_date->toDateString()"

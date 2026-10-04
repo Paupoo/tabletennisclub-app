@@ -612,8 +612,7 @@
 
                     @if ($meeting->scheduled_at)
                         <livewire:admin.shared.event-post-button
-                            :model-class="\App\Domains\Meetings\Models\Meeting::class"
-                            :model-id="$meeting->id"
+                            :model="$meeting"
                             event-type="MEETING"
                             icon="📋"
                             :event-date="$meeting->scheduled_at?->toDateString()"

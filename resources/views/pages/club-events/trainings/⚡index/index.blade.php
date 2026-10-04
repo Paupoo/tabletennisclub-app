@@ -650,8 +650,7 @@
                                                 :aria-label="__('Edit')"
                                                 wire:click="openEdit({{ $pack->id }})" />
                                             <livewire:admin.shared.event-post-button
-                                                :model-class="\App\Domains\Trainings\Models\TrainingPack::class"
-                                                :model-id="$pack->id"
+                                                :model="$pack"
                                                 event-type="TRAINING"
                                                 icon="🎯"
                                                 :event-date="$pack->pack_start_date?->toDateString()"

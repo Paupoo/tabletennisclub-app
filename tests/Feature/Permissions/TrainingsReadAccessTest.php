@@ -125,8 +125,7 @@ it('offers a reader no way to publish a pack on the website', function (): void 
 it('refuses to publish from a button its host did not allow', function (): void {
     Livewire::actingAs($this->reader)
         ->test('admin.shared.event-post-button', [
-            'modelClass' => TrainingPack::class,
-            'modelId' => $this->pack->id,
+            'model' => $this->pack,
             'eventType' => 'TRAINING',
             'icon' => '🎯',
             'canPublish' => false,

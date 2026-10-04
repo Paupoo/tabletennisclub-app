@@ -16,8 +16,7 @@ describe('EventPostButton mount — meeting prefill', function (): void {
 
         Livewire::actingAs($admin)
             ->test('admin.shared.event-post-button', [
-                'modelClass' => Meeting::class,
-                'modelId' => $meeting->id,
+                'model' => $meeting,
                 'eventType' => 'MEETING',
                 'icon' => '📋',
                 'eventDate' => $meeting->scheduled_at?->toDateString(),
@@ -40,8 +39,7 @@ describe('EventPostButton mount — meeting prefill', function (): void {
 
         Livewire::actingAs($admin)
             ->test('admin.shared.event-post-button', [
-                'modelClass' => Meeting::class,
-                'modelId' => $meeting->id,
+                'model' => $meeting,
                 'eventType' => 'MEETING',
                 'icon' => '📋',
                 'eventDate' => $meeting->scheduled_at?->toDateString(),
@@ -60,8 +58,7 @@ describe('EventPostButton mount — meeting prefill', function (): void {
 
         Livewire::actingAs($admin)
             ->test('admin.shared.event-post-button', [
-                'modelClass' => Meeting::class,
-                'modelId' => $meeting->id,
+                'model' => $meeting,
                 'eventType' => 'MEETING',
                 'icon' => '📋',
                 'defaultTitle' => $meeting->title,
@@ -71,10 +68,10 @@ describe('EventPostButton mount — meeting prefill', function (): void {
             ->set('eventLocation', 'Bar du club — changement de dernière minute')
             ->call('saveEventPost', 'draft');
 
+        // Une nouvelle visite de la page : l'hôte relit la réunion et son article.
         Livewire::actingAs($admin)
             ->test('admin.shared.event-post-button', [
-                'modelClass' => Meeting::class,
-                'modelId' => $meeting->id,
+                'model' => $meeting->fresh(),
                 'eventType' => 'MEETING',
                 'icon' => '📋',
                 'defaultTitle' => $meeting->title,

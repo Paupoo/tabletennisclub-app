@@ -13,6 +13,7 @@ use App\Data\Interclub\AfttSeasons;
 use App\Data\Interclub\AfttSheetPlayer;
 use App\Data\Interclub\AfttSheetResult;
 use App\Data\Interclub\AfttTeam;
+use App\Data\Interclub\AfttTournamentResult;
 use App\Data\Interclub\AfttVenue;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
@@ -112,6 +113,68 @@ class TabtClient
         }
 
         return $teams;
+    }
+
+    /**
+     * Every official tournament match the club's members played this season.
+     *
+     * `GetMembers` with results is the only place TabT lists a player's
+     * tournament matches; `GetMatches` knows interclub divisions and nothing
+     * else. The same list carries their interclub lines too (`C`), which are
+     * dropped here: the match sheets already give those with both sides, the
+     * double and the forfeits, and this list sees none of it.
+     *
+     * The heaviest call the club makes — around 11,000 quota ticks against an
+     * allowance of 8,000 — so it is made once a night and never twice in a row.
+     *
+     * @return array<int, AfttTournamentResult>
+     */
+    public function clubTournamentResults(string $club, int $season): array
+    {
+        $body = $this->call('GetMembers', 'GetMembersRequest', [
+            'Club' => $club,
+            'Season' => $season,
+            'WithResults' => 'true',
+        ]);
+
+        $results = [];
+
+        foreach ($body->xpath('//t:MemberEntries') ?: [] as $member) {
+            $member->registerXPathNamespace('t', self::NAMESPACE);
+
+            $licence = $this->text($member, 'UniqueIndex') ?? '';
+            $name = trim(($this->text($member, 'FirstName') ?? '') . ' ' . ($this->text($member, 'LastName') ?? ''));
+            $ranking = $this->text($member, 'Ranking') ?: null;
+
+            foreach ($member->xpath('./t:ResultEntries') ?: [] as $entry) {
+                $entry->registerXPathNamespace('t', self::NAMESPACE);
+
+                if ($this->text($entry, 'CompetitionType') !== 'T') {
+                    continue;
+                }
+
+                $for = $this->text($entry, 'SetFor');
+                $against = $this->text($entry, 'SetAgainst');
+
+                $results[] = new AfttTournamentResult(
+                    playerLicence: $licence,
+                    playerName: $name,
+                    playerRanking: $ranking,
+                    playedOn: CarbonImmutable::parse($this->text($entry, 'Date')),
+                    tournamentName: $this->text($entry, 'TournamentName') ?? '',
+                    serieName: $this->text($entry, 'TournamentSerieName') ?: null,
+                    opponentLicence: $this->licenceOrNull($this->text($entry, 'UniqueIndex')),
+                    opponentName: trim(($this->text($entry, 'FirstName') ?? '') . ' ' . ($this->text($entry, 'LastName') ?? '')),
+                    opponentRanking: $this->text($entry, 'Ranking') ?: null,
+                    opponentClub: $this->text($entry, 'Club') ?: null,
+                    ourSets: $for === null || $for === '' ? null : (int) $for,
+                    theirSets: $against === null || $against === '' ? null : (int) $against,
+                    won: $this->text($entry, 'Result') === 'V',
+                );
+            }
+        }
+
+        return $results;
     }
 
     /**
@@ -335,6 +398,12 @@ class TabtClient
         $fault = $xml->xpath('//faultstring');
 
         if ($fault !== [] && $fault !== null) {
+            $code = $xml->xpath('//faultcode');
+
+            if ($code !== [] && $code !== null && trim((string) $code[0]) === TabtQuotaExceeded::FAULT_CODE) {
+                throw new TabtQuotaExceeded('TabT refused ' . $action . ': ' . $fault[0]);
+            }
+
             throw new RuntimeException('TabT refused ' . $action . ': ' . $fault[0]);
         }
 

@@ -58,7 +58,7 @@ class ImportOfficialTournamentsCommand extends Command
 
         foreach ($seasons->values() as $index => $season) {
             if ($index > 0) {
-                Sleep::for(OfficialTournamentImporter::QUOTA_WAIT_MINUTES)->minutes();
+                $this->waitForQuota($season);
             }
 
             $failed = ! $this->importSeason($season, $published, $client, $importer) || $failed;
@@ -157,5 +157,48 @@ class ImportOfficialTournamentsCommand extends Command
             : Season::current();
 
         return collect($season === null ? [] : [$season]);
+    }
+
+    /**
+     * Let the TabT quota drain before the next season, counting down aloud.
+     *
+     * Eight silent minutes read as a command that hung; a clock that moves
+     * does not.
+     */
+    private function waitForQuota(Season $next): void
+    {
+        $seconds = OfficialTournamentImporter::QUOTA_WAIT_MINUTES * 60;
+
+        $this->newLine();
+
+        // Into a log rather than a terminal, a redrawn line becomes 480 lines.
+        if (! $this->output->isDecorated()) {
+            $this->line(sprintf(
+                'Waiting %d minutes for the TabT quota to drain before %s.',
+                OfficialTournamentImporter::QUOTA_WAIT_MINUTES,
+                $next->name,
+            ));
+            Sleep::for(OfficialTournamentImporter::QUOTA_WAIT_MINUTES)->minutes();
+
+            return;
+        }
+
+        $countdown = $this->output->createProgressBar($seconds);
+        $countdown->setFormat(' %message%');
+
+        for ($left = $seconds; $left > 0; $left--) {
+            $countdown->setMessage(sprintf(
+                'Waiting for the TabT quota to drain: %s in %d:%02d',
+                $next->name,
+                intdiv($left, 60),
+                $left % 60,
+            ));
+            $countdown->display();
+
+            Sleep::for(1)->second();
+            $countdown->advance();
+        }
+
+        $countdown->clear();
     }
 }

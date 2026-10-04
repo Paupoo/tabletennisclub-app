@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Resources\views\Pages\ClubAdmin\Users\UserSpace\InterclubRecord;
+namespace Resources\views\Pages\ClubAdmin\Users\UserSpace\Results;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
+use App\Domains\Competitions\Interclub\Models\OfficialTournamentMatch;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Services\MemberResults;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
@@ -17,17 +19,20 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
- * Everything a member has played in interclub, season by season.
+ * Everything a member has played, interclub and official tournaments.
  *
- * Reads the federation's own match sheets, which is what lets it reach back
- * further than the club's records do: an imported season brings teams with
- * nobody on their roster, so a line on a sheet is the only thing tying a
- * member to a match they played years ago.
+ * Reads the federation's own data, which is what lets it reach back further
+ * than the club's records do: an imported season brings teams with nobody on
+ * their roster, so a line on a sheet is the only thing tying a member to a
+ * match they played years ago.
  *
  * Nothing here is derived from the team score. A tie carries points a player
  * list cannot explain — the double, and every individual match forfeited by a
  * side that came up short — so the count is of lines this member is named on,
  * and nothing else.
+ *
+ * The two kinds are only ever added up on the "everything" tab, for the member
+ * alone, and the sum always shows what it is made of.
  */
 new class extends Component
 {
@@ -35,6 +40,9 @@ new class extends Component
 
     #[Url(as: 'season', except: 0)]
     public int $seasonId = 0;
+
+    #[Url(except: 'all')]
+    public string $tab = 'all';
 
     #[Locked]
     public int $userId;
@@ -50,22 +58,26 @@ new class extends Component
 
     public function render(): View
     {
-        return $this->view()->title(__('My interclub record'));
+        return $this->view()->title(__('My results'));
     }
 
     public function with(): array
     {
-        $lines = $this->lines();
+        $results = app(MemberResults::class);
+        $interclub = $results->interclubLines($this->userId, $this->seasonId);
+        $tournaments = $results->tournamentLines($this->userId, $this->seasonId);
 
         return [
             'breadcrumbs' => Breadcrumb::make()
                 ->home()
                 ->add(__('My profile'), route('admin.user.profile', $this->userId))
-                ->current(__('My interclub record'))
+                ->current(__('My results'))
                 ->toArray(),
-            'bySeason' => $this->groupBySeason($lines),
+            'bySeason' => $this->groupBySeason($interclub),
+            'feed' => $results->feed(Auth::user(), $interclub, $tournaments),
             'seasons' => $this->seasonsPlayed(),
-            'totals' => $this->totals($lines),
+            'totals' => $results->totals($interclub, $tournaments),
+            'tournamentsBySeason' => $results->tournamentsBySeason($tournaments),
         ];
     }
 
@@ -73,7 +85,7 @@ new class extends Component
     {
         return Breadcrumb::make()
             ->home()
-            ->current(__('My interclub record'));
+            ->current(__('My results'));
     }
 
     /**
@@ -108,53 +120,24 @@ new class extends Component
     }
 
     /**
-     * @return Collection<int, InterclubIndividualMatch>
-     */
-    private function lines(): Collection
-    {
-        return InterclubIndividualMatch::with([
-            'interclub.season',
-            'interclub.visitedTeam.club',
-            'interclub.visitingTeam.club',
-        ])
-            ->where('user_id', $this->userId)
-            ->when($this->seasonId > 0, fn ($query) => $query->whereHas(
-                'interclub', fn ($sub) => $sub->where('season_id', $this->seasonId)
-            ))
-            ->get()
-            ->sortByDesc(fn (InterclubIndividualMatch $line) => $line->interclub->start_date_time)
-            ->values();
-    }
-
-    /**
-     * Only the seasons this member actually played, newest first — a filter
-     * offering years somebody was not in the club is a filter that lies.
+     * Only the seasons this member actually played, of either kind, newest
+     * first — a filter offering years somebody was not in the club is a
+     * filter that lies.
      *
      * @return Collection<int, Season>
      */
     private function seasonsPlayed(): Collection
     {
-        return Season::whereHas('interclubs', fn ($query) => $query->whereHas(
-            'individualMatches', fn ($sub) => $sub->where('user_id', $this->userId)
-        ))
+        return Season::query()
+            ->where(fn ($query) => $query
+                ->whereHas('interclubs', fn ($sub) => $sub->whereHas(
+                    'individualMatches', fn ($lines) => $lines->where('user_id', $this->userId)
+                ))
+                ->orWhereIn('id', OfficialTournamentMatch::query()
+                    ->where('user_id', $this->userId)
+                    ->select('season_id')))
             ->orderByDesc('start_at')
+            ->orderByDesc('id')
             ->get();
-    }
-
-    /**
-     * @param  Collection<int, InterclubIndividualMatch>  $lines
-     * @return array<string, int>
-     */
-    private function totals(Collection $lines): array
-    {
-        $played = $lines->count();
-        $won = $lines->where('we_won', true)->count();
-
-        return [
-            'played' => $played,
-            'rate' => $played > 0 ? (int) round($won / $played * 100) : 0,
-            'ties' => $lines->pluck('interclub_id')->unique()->count(),
-            'won' => $won,
-        ];
     }
 };

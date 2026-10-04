@@ -95,6 +95,24 @@ erDiagram
         string category
         int season_id FK
     }
+    OfficialTournamentMatch {
+        int id PK
+        int season_id FK
+        string player_licence
+        string player_name
+        string player_ranking "nullable"
+        int user_id FK "nullable"
+        datetime played_on
+        string tournament_name
+        string serie_name "nullable"
+        string opponent_licence "nullable"
+        string opponent_name
+        string opponent_ranking "nullable"
+        string opponent_club "nullable"
+        int our_sets "nullable"
+        int their_sets "nullable"
+        bool we_won
+    }
     Season {
         int id PK
         string name

@@ -186,6 +186,16 @@ Avant chaque journée d'interclubs, le capitaine peut demander vos disponibilit�
 
 Lorsque vous êtes sélectionné pour une composition d'équipe, vous recevez une notification de sélection par email. La composition est publiée avant le match.
 
+### Mes résultats
+
+**Mes résultats** rassemble tous les matches où la fédération vous a inscrit, en trois onglets :
+
+- **Tout** (ouvert par défaut) : interclubs et tournois officiels ensemble, du plus récent au plus ancien. Le taux de victoire combiné s'affiche toujours avec sa répartition — interclubs d'un côté, tournois de l'autre — parce que l'adversité n'est pas la même.
+- **Interclubs** : saison par saison, rencontre par rencontre, d'après les feuilles de match de la fédération.
+- **Tournois officiels** : saison par saison, puis tournoi et série, avec le classement et le club de chaque adversaire. Ils arrivent la nuit qui suit leur publication par la fédération.
+
+Vous seul voyez cette page. Les tournois n'apparaissent jamais sur ce que voient les capitaines : votre bilan interclub reste un bilan interclub. La carte **Mes résultats** de votre profil reprend les mêmes totaux et vos cinq derniers matches.
+
 ---
 
 ## 10. Notifications

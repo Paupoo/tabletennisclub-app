@@ -335,6 +335,17 @@ function afttClubTeams(?string $fixture = null): string
 }
 
 /**
+ * What TabT answers once this address has spent its quota.
+ */
+function afttQuotaRefusal(): string
+{
+    return '<?xml version="1.0" encoding="UTF-8"?>'
+        . '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"><SOAP-ENV:Body><SOAP-ENV:Fault>'
+        . '<faultcode>34</faultcode><faultstring>Quota exceeded [11516 &gt; 8000], try again later or contact us to increase your quota.</faultstring>'
+        . '</SOAP-ENV:Fault></SOAP-ENV:Body></SOAP-ENV:Envelope>';
+}
+
+/**
  * The division the federation should fail on, if any.
  *
  * Same reason as afttClubTeams(): one stub, swapped from the outside, because a

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\Competitions\Interclub\Services\TabtClient;
+use App\Exceptions\TabtQuotaExceeded;
 use Illuminate\Support\Facades\Http;
 
 function afttFixture(string $name): string
@@ -130,3 +131,38 @@ it('reads the level of a division, which only the division list carries', functi
         ->and($divisions[9565]->level)->toBe(16)
         ->and($divisions[9824]->category)->toBe(41);
 });
+
+it('reads the tournament matches of every member of a club, and nothing else', function (): void {
+    Http::fake([
+        'api.aftt.be/*' => Http::response(afttFixture('get-members-with-results-bbw214.xml')),
+    ]);
+
+    $results = app(TabtClient::class)->clubTournamentResults('BBW214', 27);
+
+    // Three members in the fixture; the one who only played interclub brings
+    // nothing, because interclub lines come from the match sheets instead.
+    expect($results)->toHaveCount(11)
+        ->and(collect($results)->pluck('playerLicence')->unique()->values()->all())
+        ->toEqualCanonicalizing(['172446', '176409']);
+
+    $first = collect($results)->firstWhere('opponentLicence', '175901');
+
+    expect($first->playerName)->toBe('TOM VANDER VEKEN')
+        ->and($first->playedOn->toDateString())->toBe('2026-08-30')
+        ->and($first->tournamentName)->toBe('Critérium B - Limal-Wavre')
+        ->and($first->serieName)->toBe('Série NC')
+        ->and($first->opponentName)->toBe('ALESSIO KESTELEYN')
+        ->and($first->opponentRanking)->toBe('NC')
+        ->and($first->opponentClub)->toBe('Limal Wavre')
+        ->and($first->ourSets)->toBe(3)
+        ->and($first->theirSets)->toBe(2)
+        ->and($first->won)->toBeTrue();
+});
+
+it('tells a quota refusal apart from any other fault', function (): void {
+    Http::fake([
+        'api.aftt.be/*' => Http::response(afttQuotaRefusal()),
+    ]);
+
+    app(TabtClient::class)->clubTournamentResults('BBW214', 27);
+})->throws(TabtQuotaExceeded::class);

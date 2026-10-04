@@ -175,20 +175,21 @@
                 @endif
             </x-card>
 
-            {{-- Parcours interclub — absent pour qui n'a jamais figuré sur une feuille --}}
-            @php $record = $this->interclubRecord; @endphp
-            @if ($record['played'] > 0)
-                <x-card :title="__('My interclub record')" icon="o-trophy" separator>
+            {{-- Mes résultats — interclubs et tournois officiels ; absent pour qui n'a
+                 jamais joué. Le total combiné ne s'affiche jamais sans sa répartition. --}}
+            @php $results = $this->results; @endphp
+            @if ($results['totals']['all']['played'] > 0)
+                <x-card :title="__('My results')" icon="o-trophy" separator>
                     <x-slot:menu>
                         <x-button :label="__('See everything')" icon-right="o-arrow-right" class="btn-ghost btn-sm"
-                            link="{{ route('admin.user.interclub-record', $user) }}" />
+                            link="{{ route('admin.user.results', $user) }}" />
                     </x-slot:menu>
 
                     <div class="grid grid-cols-3 gap-4">
                         @foreach ([
-                            ['value' => $record['played'], 'label' => __('Matches played')],
-                            ['value' => $record['won'], 'label' => __('Matches won')],
-                            ['value' => $record['rate'] . '%', 'label' => __('Win rate')],
+                            ['value' => $results['totals']['all']['played'], 'label' => __('Matches played')],
+                            ['value' => $results['totals']['all']['won'], 'label' => __('Matches won')],
+                            ['value' => $results['totals']['all']['rate'] . '%', 'label' => __('Win rate')],
                         ] as $stat)
                             <div class="text-center">
                                 <div class="text-2xl font-bold text-base-content">{{ $stat['value'] }}</div>
@@ -199,16 +200,19 @@
                         @endforeach
                     </div>
 
+                    <x-admin.users.results-split :totals="$results['totals']" />
+
                     <div class="mt-5 flex flex-wrap items-center gap-2 border-t border-base-300 pt-4">
                         <span class="text-xs font-semibold uppercase tracking-wide text-base-content/50">
                             {{ __('Recent form') }}
                         </span>
-                        @foreach ($record['recent'] as $line)
+                        @foreach ($results['recent'] as $entry)
                             <span @class([
                                 'inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold',
-                                'bg-success/15 text-success' => $line->we_won,
-                                'bg-error/15 text-error' => ! $line->we_won,
-                            ])>{{ $line->we_won ? __('W') : __('L') }}</span>
+                                'bg-success/15 text-success' => $entry['won'],
+                                'bg-error/15 text-error' => ! $entry['won'],
+                                'ring-1 ring-current/40' => $entry['kind'] === 'tournament',
+                            ]) title="{{ $entry['kind'] === 'tournament' ? __('Official tournament') : __('Interclub') }}">{{ $entry['won'] ? __('W') : __('L') }}</span>
                         @endforeach
                     </div>
                 </x-card>

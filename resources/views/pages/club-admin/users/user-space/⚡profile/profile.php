@@ -10,8 +10,8 @@ use App\Domains\ClubAdmin\Fines\Models\Fine;
 use App\Domains\ClubAdmin\Fines\Services\FineCreditor;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Services\MemberResults;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Rules\ValidIban;
 use App\Domains\Shared\Rules\ValidPhone;
@@ -126,46 +126,6 @@ new class extends Component
     }
 
     /**
-     * What the member has done in interclub, in four numbers and a recent form.
-     *
-     * Counted from the federation's match sheets, so it reaches back as far as
-     * the club has imported — further than any roster goes. Empty for anyone
-     * who has never been on a sheet, which is what keeps the card off the
-     * profile of a member who does not play.
-     *
-     * @return array<string, mixed>
-     */
-    #[Computed]
-    public function interclubRecord(): array
-    {
-        $lines = InterclubIndividualMatch::query()
-            ->join('interclubs', 'interclubs.id', '=', 'interclub_individual_matches.interclub_id')
-            ->where('interclub_individual_matches.user_id', $this->user->id)
-            ->orderByDesc('interclubs.start_date_time')
-            // A tie is one evening: without a second key the five most recent
-            // lines come back in whatever order the engine feels like.
-            ->orderByDesc('interclub_individual_matches.id')
-            ->select('interclub_individual_matches.*')
-            ->get();
-
-        $played = $lines->count();
-
-        if ($played === 0) {
-            return ['played' => 0];
-        }
-
-        $won = $lines->where('we_won', true)->count();
-
-        return [
-            'played' => $played,
-            'rate' => (int) round($won / $played * 100),
-            // Oldest first, so the row reads left to right like a calendar.
-            'recent' => $lines->take(5)->reverse()->values(),
-            'won' => $won,
-        ];
-    }
-
-    /**
      * Whether the member is a minor (< 18y) based on the entered birthdate.
      * Drives whether the parental consent document is relevant.
      */
@@ -198,6 +158,30 @@ new class extends Component
     public function render(): View
     {
         return $this->view();
+    }
+
+    /**
+     * What the member has played, interclub and official tournaments, in a
+     * few numbers and a recent form.
+     *
+     * Counted from the federation's own data, so it reaches back as far as the
+     * club has imported. Empty for anyone who has never played either, which
+     * is what keeps the card off the profile of a member who does not play.
+     *
+     * @return array{totals: array<string, array<string, int>>, recent: Collection<int, array<string, mixed>>}
+     */
+    #[Computed]
+    public function results(): array
+    {
+        $results = app(MemberResults::class);
+        $interclub = $results->interclubLines($this->user->id);
+        $tournaments = $results->tournamentLines($this->user->id);
+
+        return [
+            // Oldest first, so the row reads left to right like a calendar.
+            'recent' => $results->feed($this->user, $interclub, $tournaments)->take(5)->reverse()->values(),
+            'totals' => $results->totals($interclub, $tournaments),
+        ];
     }
 
     public function rules(): array

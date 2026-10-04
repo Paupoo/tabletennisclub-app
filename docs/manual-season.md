@@ -233,6 +233,7 @@ Useful when the federation already publishes the following season without having
 ### What the import does not do
 
 - **It does not load the results of matches played.** That is `interclubs:import-results`, every morning at 5:40. Only the result of a **forfeit** is written by the calendar import, since no match sheet will ever come. `interclubs:import-results` is also what records **who played** each match, from the sheet: a player named only as a forfeit did not play. The sheet alone counts: a score typed by hand on the results screen records nobody. To recompute who played from the sheets already imported, without calling the federation: `php artisan interclubs:record-who-played`.
+- **It does not load official tournament matches.** That is `interclubs:import-tournaments`, every night at 4:30, for the active season. The federation lists them only per member (`GetMembers` with results); the call costs more than the address's whole TabT quota, which drains in a few minutes — hence the night, away from the two other imports, and one retry after a quota refusal. Each player's season is replaced by what the federation returns, but a player who comes back with nothing is kept and named. To load past seasons once, `php artisan interclubs:import-tournaments --history` takes exactly the seasons the interclub match sheets reach, waiting between seasons.
 - **It does not compose the teams.** It creates the teams and their letter; who plays in them stays a club decision.
 
 ### If something goes wrong

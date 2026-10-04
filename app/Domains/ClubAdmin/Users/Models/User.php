@@ -13,6 +13,7 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\OfficialTournamentMatch;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Models\TeamUser;
@@ -723,6 +724,15 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->guardians()->exists();
     }
 
+    /**
+     * Whether the federation has this member on at least one official
+     * tournament match — enough for "My results" to have something to show.
+     */
+    public function hasOfficialTournamentMatches(): bool
+    {
+        return $this->officialTournamentMatches()->exists();
+    }
+
     public function hasPendingPayments(): bool
     {
         return $this->subscriptions()->pendingPayment()->exists();
@@ -954,6 +964,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->guardians
             ->map(fn (Guardian $guardian): ?self => $guardian->member)
             ->first(fn (?self $member): bool => $member?->email !== null) ?? $this;
+    }
+
+    public function officialTournamentMatches(): HasMany
+    {
+        return $this->hasMany(OfficialTournamentMatch::class);
     }
 
     /**

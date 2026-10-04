@@ -32,7 +32,11 @@
              User::playsInterclub(). --}}
         @if($user->playsInterclub())
             <x-menu-item icon="o-calendar" link="{{ route('admin.interclubs.my-matches') }}" :title="__('My matches')" />
-            <x-menu-item icon="o-trophy" link="{{ route('admin.user.interclub-record', $user) }}" :title="__('My interclub record')" />
+        @endif
+        {{-- Interclub and official tournaments: a member who only plays
+             tournaments has results too. --}}
+        @if($user->playsInterclub() || $user->hasOfficialTournamentMatches())
+            <x-menu-item icon="o-trophy" link="{{ route('admin.user.results', $user) }}" :title="__('My results')" />
         @endif
         @endfeature
 

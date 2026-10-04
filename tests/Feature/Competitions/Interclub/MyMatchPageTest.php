@@ -8,6 +8,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
 use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\League;
+use App\Domains\Competitions\Interclub\Models\OfficialTournamentMatch;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubAvailability;
@@ -331,6 +332,28 @@ it('counts wins from the sheet, with the double on its own line', function (): v
 
     // The column has to add up to the team score, which is why the double is there.
     expect($tally->sum('wins'))->toBe(6);
+});
+
+it('counts no official tournament match in a tie\'s tally, even one played the same day', function (): void {
+    $match = aMatch(-7);
+
+    InterclubIndividualMatch::factory()->create([
+        'interclub_id' => $match->id, 'position' => 1,
+        'user_id' => $this->player->id, 'we_won' => false,
+    ]);
+    OfficialTournamentMatch::factory()->count(3)->playedBy($this->player)->create([
+        'season_id' => $match->season_id,
+        'played_on' => $match->start_date_time->toDateString(),
+        'we_won' => true,
+    ]);
+
+    $mine = Livewire::actingAs($this->player)
+        ->test('pages::club-events.interclubs.my-match', ['interclub' => $match])
+        ->viewData('tally')
+        ->firstWhere('is_me', true);
+
+    expect($mine['played'])->toBe(1)
+        ->and($mine['wins'])->toBe(0);
 });
 
 it('keeps an unmatched player visible in the tally under their federation name', function (): void {

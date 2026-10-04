@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
@@ -12,6 +13,7 @@ use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\Role;
 use App\Jobs\SendPaymentReminderJob;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Exceptions\MethodNotFoundException;
 use Livewire\Livewire;
@@ -51,6 +53,20 @@ function treasuryMeetingPayment(User $user, Meeting $meeting, string $status = '
         'amount_due' => 10,
         'amount_paid' => 0,
         'status' => $status,
+    ]);
+}
+
+/** Ouvre un remboursement de $amount euros sur la chose que $claim fait payer. */
+function treasuryOpenRefundOn(Payment $claim, float $amount): Payment
+{
+    return Payment::forceCreate([
+        'payable_type' => $claim->payable_type,
+        'payable_id' => $claim->payable_id,
+        'reference' => 'REF/' . $claim->reference,
+        'payment_method' => 'refund',
+        'amount_due' => $amount,
+        'amount_paid' => 0,
+        'status' => 'to_refund',
     ]);
 }
 
@@ -229,6 +245,118 @@ describe('reconcile modal — match verdict', function (): void {
 });
 
 // ── search stays inside the active tab ────────────────────────────────────────
+
+describe('cancelling an open refund', function (): void {
+    it('cancels the refund line, and the affiliation overpayment shows again', function (): void {
+        $subscription = Subscription::factory()->create(['amount_due' => 100]);
+        $claim = $subscription->payments()->create([
+            'reference' => 'AFF/2026/00001',
+            'amount_due' => 120,
+            'amount_paid' => 120,
+            'status' => 'paid',
+        ]);
+        $refund = treasuryOpenRefundOn($claim, 20);
+
+        expect($claim->overpayment())->toBe(0.0);
+
+        mountTreasury(User::factory()->create())
+            ->set('selected', [(string) $refund->id])
+            ->call('bulkCancelRefund');
+
+        expect($refund->refresh()->status)->toBe('cancelled')
+            ->and($claim->refresh()->overpayment())->toBe(20.0)
+            ->and($subscription->refresh()->netAmountPaid())->toBe(120.0);
+    });
+
+    it('cancels the refund line, and the tournament overpayment shows again', function (): void {
+        $claim = treasuryTournamentPayment(User::factory()->create(), Tournament::factory()->create());
+        $claim->update(['amount_paid' => 15, 'status' => 'paid']);
+        $refund = treasuryOpenRefundOn($claim, 5);
+
+        expect($claim->overpayment())->toBe(0.0);
+
+        mountTreasury(User::factory()->create())
+            ->set('selected', [(string) $refund->id])
+            ->call('bulkCancelRefund');
+
+        expect($refund->refresh()->status)->toBe('cancelled')
+            ->and($claim->refresh()->overpayment())->toBe(5.0);
+    });
+
+    it('lists the affiliation in the overpaid tab once its refund is cancelled', function (): void {
+        $subscription = Subscription::factory()->create(['amount_due' => 100]);
+        $claim = $subscription->payments()->create([
+            'reference' => 'AFF/2026/00002',
+            'amount_due' => 120,
+            'amount_paid' => 120,
+            'status' => 'paid',
+        ]);
+        $refund = treasuryOpenRefundOn($claim, 20);
+
+        $page = mountTreasury(User::factory()->create())
+            ->set('statusFilter', 'overpaid')
+            ->assertDontSee('AFF/2026/00002');
+
+        $page->set('selected', [(string) $refund->id])
+            ->call('bulkCancelRefund')
+            ->assertSee('AFF/2026/00002');
+    });
+});
+
+describe('treasury table — cost of a render', function (): void {
+    beforeEach(function (): void {
+        foreach (range(1, 3) as $index) {
+            Subscription::factory()->create()->payments()->create([
+                'reference' => sprintf('COST/2026/%05d', $index),
+                'amount_due' => 125,
+                'amount_paid' => 0,
+                'status' => 'pending',
+            ]);
+        }
+    });
+
+    it('costs as many queries for nine rows as for three, overpaid tab included', function (string $tab): void {
+        $addRowsTo = function (int $from, int $to) use ($tab): void {
+            foreach (range($from, $to) as $index) {
+                Subscription::factory()->create(['amount_due' => 100])->payments()->create([
+                    'reference' => sprintf('COST/2026/%05d', $index),
+                    'amount_due' => $tab === 'overpaid' ? 100 : 125,
+                    'amount_paid' => $tab === 'overpaid' ? 130 : 0,
+                    'status' => $tab === 'overpaid' ? 'paid' : 'pending',
+                ]);
+            }
+        };
+
+        $treasurer = User::factory()->create();
+        mountTreasury($treasurer);
+
+        $queriesFor = function () use ($tab, $treasurer): int {
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+
+            Livewire::actingAs($treasurer)
+                ->test('pages::club-admin.treasury.payments')
+                ->set('statusFilter', $tab);
+
+            return count(DB::getQueryLog());
+        };
+
+        $addRowsTo(4, 6);
+        $withThreeRows = $queriesFor();
+        $addRowsTo(7, 12);
+
+        // Le trop-perçu arrive calculé par la base, avec les lignes : il coûtait
+        // jusqu'à quatre requêtes par ligne d'affiliation.
+        expect($queriesFor())->toBe($withThreeRows);
+    })->with(['pending', 'overpaid']);
+
+    it('counts in SQL the rows the table lists', function (): void {
+        $page = mountTreasury(User::factory()->create());
+
+        expect($page->instance()->getTotalMatchingCount())->toBe(3)
+            ->and($page->instance()->payments()->total())->toBe(3);
+    });
+});
 
 describe('treasury search — stays inside the active tab', function (): void {
     it('does not leak a paid payment into the to-refund tab when searching by name', function (): void {

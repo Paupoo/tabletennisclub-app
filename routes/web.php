@@ -108,11 +108,13 @@ Route::prefix('admin/my-space/')
         Route::livewire('{user}/settings', 'pages::club-admin.users.user-space.settings')->name('admin.user.settings');
         Route::livewire('{user}/teams', 'pages::club-admin.users.user-space.user-teams')->name('admin.user.teams');
         /*
-         * Tout ce qu'un membre a joué en interclub, feuille de match par feuille
-         * de match. Hors du groupe `feature:interclubs` comme le reste de
-         * l'espace membre : la page se vide d'elle-même quand il n'y a rien.
+         * Tout ce qu'un membre a joué : interclubs et tournois officiels, côte
+         * à côte pour lui seul. Hors du groupe `feature:interclubs` comme le
+         * reste de l'espace membre : la page se vide d'elle-même quand il n'y a
+         * rien. L'ancienne adresse (« Mon parcours interclub ») redirige.
          */
-        Route::livewire('{user}/interclub-record', 'pages::club-admin.users.user-space.interclub-record')->name('admin.user.interclub-record');
+        Route::livewire('{user}/results', 'pages::club-admin.users.user-space.results')->name('admin.user.results');
+        Route::permanentRedirect('{user}/interclub-record', '/admin/my-space/{user}/results');
         Route::livewire('{user}/calendar', 'pages::club-admin.users.user-space.calendar')->name('admin.user.calendar');
         Route::livewire('{user}/event-subscription', 'pages::club-admin.users.user-space.event-subscription')->name('admin.user.event-subscription');
         Route::livewire('{user}/registration-management', 'pages::club-admin.users.user-space.registration-management')->name('admin.user.registration-management');

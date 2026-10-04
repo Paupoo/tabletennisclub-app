@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Communications\Services\AudienceBuilder;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -155,6 +156,19 @@ describe('handing the addresses over', function (): void {
 
         expect($bcc)->toHaveCount(120)
             ->and($bcc->unique())->toHaveCount(120);
+    });
+
+    it('computes the audience once per render, however many batches it shows', function (): void {
+        foreach (range(1, 120) as $index) {
+            communicationsMember($this->season, ['email' => "member{$index}@example.com"]);
+        }
+
+        $builder = Mockery::mock(AudienceBuilder::class)->makePartial();
+        $builder->shouldReceive('build')->once()->passthru();
+        app()->instance(AudienceBuilder::class, $builder);
+
+        Livewire::test(COMMUNICATIONS_COMPONENT)
+            ->assertSee(__('Open batch :number of :total', ['number' => 3, 'total' => 3]));
     });
 
     it('records who took the addresses out, and for which audience', function (): void {

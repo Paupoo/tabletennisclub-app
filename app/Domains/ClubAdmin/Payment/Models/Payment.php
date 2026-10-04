@@ -68,6 +68,15 @@ class Payment extends Model
     use HasAuditLog;
     use HasFactory;
 
+    /**
+     * Les statuts d'une ligne de remboursement dont l'argent est parti ou promis.
+     *
+     * Une demande ouverte compte déjà : la rejouer créerait un doublon. Une
+     * demande annulée (`cancelled`) ne compte pas, et son trop-perçu
+     * réapparaît — l'argent est toujours dû au membre.
+     */
+    public const array REFUND_COMMITTED_STATUSES = ['to_refund', 'refunded'];
+
     protected $casts = [
         'amount_due' => 'integer',   // stocké en centimes
         'amount_paid' => 'integer',  // stocké en centimes
@@ -212,9 +221,16 @@ class Payment extends Model
      * versé**, pas au membre : c'est celui-là qu'on rembourse.
      *
      * Une affiliation se compte entière : voir {@see affiliationOverpayment()}.
+     *
+     * Une ligne lue par {@see scopeWithOverpayment()} porte déjà son chiffre,
+     * calculé par la base : une liste ne paie plus quatre requêtes par ligne.
      */
     public function overpayment(): float
     {
+        if (array_key_exists('overpayment_cents', $this->attributes)) {
+            return round((int) $this->attributes['overpayment_cents'] / 100, 2);
+        }
+
         if ($this->isAffiliationClaim()) {
             return $this->affiliationOverpayment();
         }
@@ -257,7 +273,7 @@ class Payment extends Model
      * Les versements effectués comptent, et les demandes ouvertes aussi : entre
      * l'ouverture et le virement l'argent est déjà promis, et l'oublier ferait
      * rouvrir une seconde demande pour la même somme. Une demande annulée, elle,
-     * ne compte pas — elle ne porte plus ni `to_refund` ni `refunded`.
+     * ne compte pas : voir {@see self::REFUND_COMMITTED_STATUSES}.
      */
     public function refundsCommitted(): float
     {
@@ -265,7 +281,7 @@ class Payment extends Model
             ->where('payable_type', $this->payable_type)
             ->where('payable_id', $this->payable_id)
             ->where('payment_method', 'refund')
-            ->whereIn('status', ['to_refund', 'refunded'])
+            ->whereIn('status', self::REFUND_COMMITTED_STATUSES)
             ->sum('amount_due');
 
         return round($committed / 100, 2);
@@ -274,6 +290,42 @@ class Payment extends Model
     public function refundTransaction(): BelongsTo
     {
         return $this->belongsTo(Transaction::class, 'refund_transaction_id');
+    }
+
+    /**
+     * Les lignes dont le club détient de l'argent en trop — jamais une ligne
+     * de remboursement, qui est la sortie, pas l'excédent.
+     *
+     * Même règle que {@see overpayment()}, lue par la base.
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeOverpaid(Builder $query): Builder
+    {
+        [$sql, $bindings] = $this->overpaymentInCents();
+
+        return $query
+            ->where(fn (Builder $q): Builder => $q->where('payments.payment_method', '!=', 'refund')->orWhereNull('payments.payment_method'))
+            ->whereRaw("({$sql}) > 0", $bindings);
+    }
+
+    /**
+     * Ajoute à chaque ligne son trop-perçu, calculé par la base : c'est ce que
+     * {@see overpayment()} lit ensuite, sans requête de plus.
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeWithOverpayment(Builder $query): Builder
+    {
+        [$sql, $bindings] = $this->overpaymentInCents();
+
+        if ($query->getQuery()->columns === null) {
+            $query->select('payments.*');
+        }
+
+        return $query->selectRaw("({$sql}) as overpayment_cents", $bindings);
     }
 
     /**
@@ -338,11 +390,52 @@ class Payment extends Model
             ->where('payable_type', $this->payable_type)
             ->where('payable_id', $this->payable_id)
             ->where('payment_method', 'refund')
-            ->whereIn('status', ['to_refund', 'paid', 'refunded'])
+            ->whereIn('status', self::REFUND_COMMITTED_STATUSES)
             ->sum('amount_due');
 
         $due = (int) DB::table('subscriptions')->where('id', $this->payable_id)->value('amount_due');
 
         return max(0.0, round(($received - $committed - $due) / 100, 2));
+    }
+
+    /**
+     * Le trop-perçu d'une ligne en centimes, en SQL : les deux branches de
+     * {@see overpayment()}, sur la ligne `payments` de la requête englobante.
+     *
+     * Jamais de soustraction qui pourrait passer sous zéro : les montants sont
+     * `unsigned`, et MySQL refuse l'underflow même dans une branche qu'un CASE
+     * écarterait ensuite. On compare d'abord, on soustrait seulement quand le
+     * résultat est positif — vrai aussi sur SQLite, où la suite tourne.
+     *
+     * @return array{0: string, 1: list<mixed>}
+     */
+    private function overpaymentInCents(): array
+    {
+        $refunds = static fn (string $alias): string => "(select coalesce(sum({$alias}.amount_due), 0) from payments as {$alias}"
+            . " where {$alias}.payable_type = payments.payable_type and {$alias}.payable_id = payments.payable_id"
+            . " and {$alias}.payment_method = 'refund' and {$alias}.status in (?, ?))";
+        $claims = static fn (string $alias): string => "from payments as {$alias}"
+            . " where {$alias}.payable_type = payments.payable_type and {$alias}.payable_id = payments.payable_id"
+            . " and ({$alias}.payment_method is null or {$alias}.payment_method <> 'refund') and {$alias}.status <> 'cancelled'";
+
+        $lastCredited = '(select max(last_credited.id) ' . $claims('last_credited') . ' and last_credited.amount_paid > 0)';
+        $received = '(select coalesce(sum(received.amount_paid), 0) ' . $claims('received') . ')';
+        $due = '(select coalesce(max(subscriptions.amount_due), 0) from subscriptions where subscriptions.id = payments.payable_id)';
+        $committed = $refunds('committed');
+        $lineCommitted = $refunds('line_committed');
+
+        $sql = 'case'
+            . " when payments.payable_type = ? and (payments.payment_method is null or payments.payment_method <> 'refund') then"
+            . "   case when payments.id = {$lastCredited} and {$received} > {$due} + {$committed}"
+            . "     then {$received} - {$due} - {$committed} else 0 end"
+            . ' else'
+            . "   case when payments.amount_paid > payments.amount_due + {$lineCommitted}"
+            . "     then payments.amount_paid - payments.amount_due - {$lineCommitted} else 0 end"
+            . ' end';
+
+        $statuses = self::REFUND_COMMITTED_STATUSES;
+
+        // Dans l'ordre des `?` : le type, puis chaque sous-requête de remboursement.
+        return [$sql, [Subscription::class, ...$statuses, ...$statuses, ...$statuses, ...$statuses]];
     }
 }

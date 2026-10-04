@@ -103,12 +103,12 @@
                                 <span x-show="copied" x-cloak>{{ __('Copied — paste them in Bcc') }}</span>
                             </x-button>
 
-                            @foreach ($this->mailtoBatches() as $index => $link)
+                            @foreach ($this->mailtoBatches as $index => $link)
                                 <a href="{{ $link }}" class="btn btn-outline" wire:click="recordExport('mailto')"
                                     wire:key="mailto-{{ $index }}">
                                     <x-icon name="o-paper-airplane" class="h-4 w-4" />
-                                    {{ count($this->mailtoBatches()) > 1
-                                        ? __('Open batch :number of :total', ['number' => $index + 1, 'total' => count($this->mailtoBatches())])
+                                    {{ count($this->mailtoBatches) > 1
+                                        ? __('Open batch :number of :total', ['number' => $index + 1, 'total' => count($this->mailtoBatches)])
                                         : __('Open in my mail client') }}
                                 </a>
                             @endforeach

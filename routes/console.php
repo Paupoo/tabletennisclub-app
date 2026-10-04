@@ -156,6 +156,18 @@ Schedule::command('interclubs:import-results')
     ->withoutOverlapping()
     ->when(Feature::Interclubs->enabled(...));
 
+/*
+ * Les matches de tournois officiels des membres. Une nuit suffit : aucune
+ * décision de capitaine n'en dépend. 04h30, loin des deux autres imports :
+ * cet appel dépasse à lui seul le quota TabT de l'adresse, qui met quelques
+ * minutes à se vider. Décidé le 2026-10-04.
+ */
+Schedule::command('interclubs:import-tournaments')
+    ->dailyAt('04:30')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->when(Feature::Interclubs->enabled(...));
+
 Schedule::command('season:provision')
     ->yearlyOn(7, 1, '06:00')
     ->withoutOverlapping();

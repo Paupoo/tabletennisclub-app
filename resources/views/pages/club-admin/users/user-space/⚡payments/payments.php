@@ -96,6 +96,7 @@ new class extends Component
             ->whereHasMorph('payable', self::PAYABLE_TYPES, fn ($q) => $q->whereIn('user_id', $ids))
             ->where(fn ($q) => $q->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
             ->whereColumn('amount_paid', '>', 'amount_due')
+            ->withOverpayment()
             ->get()
             ->sum(fn (Payment $payment): float => $payment->overpayment());
     }

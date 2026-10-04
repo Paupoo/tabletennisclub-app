@@ -89,8 +89,8 @@ class LeaveTrainingPackAction
         $overpaid = (new ReduceOutstandingInvoiceAction)($subscription);
 
         // netAmountPaid() rather than totalPaid(): the latter counts refund
-        // payments as money coming in — a cancelled `to_refund` goes back to
-        // `paid` — so a second departure would refund the same euros twice.
+        // payments as money coming in, so a second departure would refund the
+        // same euros twice.
         return round(min($overpaid, $subscription->netAmountPaid()), 2);
     }
 }

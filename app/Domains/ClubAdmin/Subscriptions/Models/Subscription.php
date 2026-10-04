@@ -305,9 +305,8 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
      * Ce que le membre a réellement versé, net des remboursements déjà engagés.
      *
      * {@see totalPaid()} compte les paiements de remboursement comme de
-     * l'argent entrant : un `to_refund` annulé repasse en `paid`, et un
-     * remboursement exécuté finit lui aussi en `paid`/`refunded`. S'en servir
-     * pour décider d'un nouveau remboursement rembourserait deux fois.
+     * l'argent entrant : un remboursement exécuté finit en `refunded`. S'en
+     * servir pour décider d'un nouveau remboursement rembourserait deux fois.
      *
      * Le sens de l'argent est porté par `payment_method`, pas par le statut.
      */
@@ -330,7 +329,7 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
         // ReduceOutstandingInvoiceAction avait déjà choisi cette colonne.
         $refunded = (float) $this->payments()
             ->where('payment_method', 'refund')
-            ->whereIn('status', ['to_refund', 'paid', 'refunded'])
+            ->whereIn('status', Payment::REFUND_COMMITTED_STATUSES)
             ->sum('amount_due');
 
         return round(($received - $refunded) / 100, 2);

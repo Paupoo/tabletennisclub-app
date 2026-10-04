@@ -82,6 +82,7 @@ erDiagram
     InterclubIndividualMatch
     InterclubResult
     League
+    OfficialTournamentMatch
     Season
     Team
     TeamUser
@@ -171,6 +172,7 @@ erDiagram
     User }o--o{ Interclub : "interclubs"
     User ||--o{ KeyRing : "keyRings"
     User }o--o{ Meeting : "meetings"
+    User ||--o{ OfficialTournamentMatch : "officialTournamentMatches"
     User }o--o{ Pool : "pools"
     User }o--o{ Season : "seasons"
     User ||--o{ Subscription : "subscriptions"

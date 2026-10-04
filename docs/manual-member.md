@@ -186,6 +186,16 @@ Before each interclub round, the captain may request your availability. Respond 
 
 When you are selected for a lineup, you receive a selection notification by email. The lineup is published before the match.
 
+### My results
+
+**My results** gathers every match the federation has you on, in three tabs:
+
+- **Everything** (opens first): interclub and official tournaments together, newest first. The combined win rate is always shown with its split — interclub on one side, tournaments on the other — because the two are not played against the same opposition.
+- **Interclub**: season by season, tie by tie, from the federation's match sheets.
+- **Official tournaments**: season by season, then tournament and serie, with each opponent's ranking and club. They arrive the night after the federation publishes them.
+
+Only you see this page. Tournaments never appear on what captains see: your interclub record stays an interclub record. The **My results** card on your profile shows the same totals and your last five matches.
+
 ---
 
 ## 10. Notifications

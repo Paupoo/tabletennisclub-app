@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\Competitions\Interclub\Services\TabtClient;
-use App\Domains\Competitions\Interclub\Services\TabtQuotaExceeded;
+use App\Exceptions\TabtQuotaExceeded;
 use Illuminate\Support\Facades\Http;
 
 function afttFixture(string $name): string

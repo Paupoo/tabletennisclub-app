@@ -9,6 +9,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\OfficialTournamentMatch;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Exceptions\TabtQuotaExceeded;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Sleep;
 

@@ -8,7 +8,7 @@ use App\Domains\Competitions\Interclub\Models\OfficialTournamentMatch;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Services\OfficialTournamentImporter;
 use App\Domains\Competitions\Interclub\Services\TabtClient;
-use App\Domains\Competitions\Interclub\Services\TabtQuotaExceeded;
+use App\Exceptions\TabtQuotaExceeded;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;

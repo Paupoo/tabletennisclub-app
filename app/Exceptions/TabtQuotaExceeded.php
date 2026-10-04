@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domains\Competitions\Interclub\Services;
+namespace App\Exceptions;
 
 use RuntimeException;
 

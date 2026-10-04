@@ -8,6 +8,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Competitions\Interclub\Services\InterclubPreparationService;
 use App\Domains\Shared\Enums\InterclubAvailability;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -158,6 +159,21 @@ it('scores the preparation widget week by week', function (): void {
     expect($summary['total'])->toBe(3)
         ->and($summary['ok'])->toBe(0)
         ->and($summary['preparation_score'])->toBe(0);
+});
+
+it('rates each fixture once, whatever the number of teams and weeks', function (): void {
+    buildScenario();
+
+    // Une semaine se lit dans la colonne de la matrice : la recalculer équipe
+    // par équipe évaluait chaque rencontre deux fois et re-balayait toutes les
+    // rencontres pour chaque case.
+    $preparation = Mockery::mock(InterclubPreparationService::class)->makePartial();
+    $preparation->shouldReceive('fixtureStatus')->times(Interclub::count())->passthru();
+
+    $preparation->summary(
+        Team::with('league')->get(),
+        Interclub::with(['users', 'league'])->orderBy('start_date_time')->get(),
+    );
 });
 
 it('colours each cell of the team by week matrix', function (): void {

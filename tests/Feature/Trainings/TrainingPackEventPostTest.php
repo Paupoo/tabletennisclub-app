@@ -34,8 +34,7 @@ function mountEventPostButton(User $admin, TrainingPack $pack, array $propOverri
 
     return Livewire::actingAs($admin)
         ->test('admin.shared.event-post-button', array_merge([
-            'modelClass' => TrainingPack::class,
-            'modelId' => $pack->id,
+            'model' => $pack,
             'eventType' => 'TRAINING',
             'icon' => '🎯',
             'eventDate' => $pack->pack_start_date?->toDateString(),
@@ -99,8 +98,7 @@ describe('EventPostButton mount', function (): void {
 
         Livewire::actingAs($admin)
             ->test('admin.shared.event-post-button', [
-                'modelClass' => TrainingPack::class,
-                'modelId' => $pack->id,
+                'model' => $pack,
                 'eventType' => 'TRAINING',
                 'icon' => '🎯',
                 'defaultTitle' => $pack->name,

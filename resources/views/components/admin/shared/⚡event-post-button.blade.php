@@ -56,10 +56,18 @@ new class extends Component
     // ── State ─────────────────────────────────────────────────────────────
     public bool $showModal = false;
 
-    public function mount(): void
+    /**
+     * L'hôte passe le modèle qu'il a déjà chargé, article compris : le relire
+     * par sa classe et son id coûtait deux requêtes par bouton, et une liste en
+     * affiche un par ligne, deux fois (bureau et téléphone). La classe et l'id
+     * restent gardés pour les requêtes suivantes, où le modèle n'est plus là.
+     */
+    public function mount(Model $model): void
     {
-        /** @var Model $model */
-        $model = ($this->modelClass)::with('eventPost')->findOrFail($this->modelId);
+        $this->modelClass = $model::class;
+        $this->modelId = (int) $model->getKey();
+
+        $model->loadMissing('eventPost');
 
         /** @var EventPost|null $ep */
         $ep = $model->eventPost;

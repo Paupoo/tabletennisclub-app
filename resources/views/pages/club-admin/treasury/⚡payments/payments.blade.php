@@ -458,7 +458,7 @@
     <x-confirm-modal
         model="bulkCancelRefundModal"
         :title="__('Cancel refunds')"
-        :subtitle="__('Selected payments will be moved back to paid status. Payments already linked to a bank transaction will be skipped.')"
+        :subtitle="__('The selected refunds will be cancelled and the overpayment will be owed to the member again. Refunds already paid out, even partly, are skipped.')"
         :confirm-label="__('Confirm')"
         confirmClass="btn-warning"
         confirmAction="bulkCancelRefund" :open="$bulkCancelRefundModal">

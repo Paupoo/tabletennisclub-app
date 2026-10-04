@@ -46,7 +46,7 @@ class ReduceOutstandingInvoiceAction
         // {@see Subscription::netAmountPaid()}, sur les montants dus cette fois.
         $issued = round((float) $subscription->payments
             ->filter(fn (Payment $payment): bool => $payment->payment_method === 'refund'
-                && in_array($payment->status, ['to_refund', 'paid', 'refunded'], true))
+                && in_array($payment->status, Payment::REFUND_COMMITTED_STATUSES, true))
             ->sum(fn (Payment $payment): float => (float) $payment->amount_due), 2);
 
         $excess = round(

@@ -112,7 +112,7 @@ new class extends Component
     #[Computed]
     public function addressCount(): int
     {
-        return count($this->audience()->addresses());
+        return count($this->audience->addresses());
     }
 
     #[Computed]
@@ -187,11 +187,12 @@ new class extends Component
      *
      * @return list<string>
      */
+    #[Computed]
     public function mailtoBatches(): array
     {
         $club = Club::own()?->email_contact ?? (string) config('mail.from.address');
 
-        return collect($this->audience()->addresses())
+        return collect($this->audience->addresses())
             ->chunk(self::MAILTO_BATCH_SIZE)
             ->map(fn ($batch): string => 'mailto:' . $club . '?bcc=' . implode(',', $batch->all()))
             ->values()
@@ -238,7 +239,7 @@ new class extends Component
             ->withProperties([
                 'channel' => in_array($channel, ['copy', 'mailto'], true) ? $channel : 'copy',
                 'address_count' => $this->addressCount,
-                'member_count' => $this->audience()->members->count(),
+                'member_count' => $this->audience->members->count(),
                 'criteria' => $this->criteria()->toArray(),
             ])
             ->log('communication_addresses_exported');

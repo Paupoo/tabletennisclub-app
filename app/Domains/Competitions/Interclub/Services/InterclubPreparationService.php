@@ -106,10 +106,15 @@ class InterclubPreparationService
     public function summary(EloquentCollection $teams, EloquentCollection $fixtures): array
     {
         $weekNumbers = $this->weekNumbers($teams, $fixtures);
+        $matrix = $this->teamWeekMatrix($teams, $weekNumbers, $fixtures);
 
+        // Une semaine se lit dans sa colonne de la matrice : chaque case est
+        // déjà le statut de la rencontre que l'équipe joue cette semaine-là.
+        // La recalculer équipe par équipe re-balayait toutes les rencontres
+        // pour chaque case — semaines × équipes × rencontres.
         $weeks = $weekNumbers->map(fn (int $wk): array => [
             'wk' => $wk,
-            'status' => $this->weekStatus($wk, $teams, $fixtures),
+            'status' => $this->weekStatus(array_column($matrix, $wk)),
         ])->values()->all();
 
         // A week everyone has already played is behind us, not prepared: it
@@ -120,8 +125,6 @@ class InterclubPreparationService
 
         $total = $scored->count();
         $ok = $scored->whereIn('status', self::SETTLED)->count();
-
-        $matrix = $this->teamWeekMatrix($teams, $weekNumbers, $fixtures);
 
         $shortHanded = collect($matrix)->flatten()->filter(fn (?string $s): bool => $s === 'short')->count();
 
@@ -160,61 +163,6 @@ class InterclubPreparationService
             'kpi' => $this->kpi($weekRows),
             'categories' => $this->categoryStandings($teamRows, $weekRows),
         ];
-    }
-
-    /**
-     * Worst status across the teams playing that week. A week where every
-     * fixture has been played reports 'past' so it can leave the preparation
-     * score rather than inflate it.
-     *
-     * @param  EloquentCollection<int, Team>  $teams
-     * @param  EloquentCollection<int, Interclub>  $fixtures
-     */
-    public function weekStatus(int $weekNumber, EloquentCollection $teams, EloquentCollection $fixtures): string
-    {
-        $liveStatus = null;
-        $sawPlayedFixture = false;
-        $sawBye = false;
-
-        foreach ($teams as $team) {
-            // Fixtures are ordered by kick-off, so a team playing twice in one
-            // week is rated on its earliest fixture. The query this replaced
-            // had no ORDER BY and picked whichever row the engine returned.
-            $interclub = $this->fixturesForTeam($fixtures, $team->id)
-                ->firstWhere('week_number', $weekNumber);
-
-            if (! $interclub) {
-                continue;
-            }
-
-            $status = $this->fixtureStatus($interclub);
-
-            if ($status === 'past' || $status === 'forfeit') {
-                $sawPlayedFixture = true;
-
-                continue;
-            }
-
-            if ($status === 'bye') {
-                $sawBye = true;
-
-                continue;
-            }
-
-            $liveStatus = $this->worstOf($liveStatus ?? 'confirmed', $status);
-        }
-
-        // A single fixture still to play decides the week; 'past' is reserved
-        // for weeks where there is nothing left to prepare.
-        if ($liveStatus !== null) {
-            return $liveStatus;
-        }
-
-        return match (true) {
-            $sawPlayedFixture => 'past',
-            $sawBye => 'bye',
-            default => 'confirmed',
-        };
     }
 
     /**
@@ -474,6 +422,53 @@ class InterclubPreparationService
         }
 
         return $rows;
+    }
+
+    /**
+     * Worst status across the teams playing that week, from the status of
+     * each team's fixture — null for a team that does not play. A week where
+     * every fixture has been played reports 'past' so it can leave the
+     * preparation score rather than inflate it.
+     *
+     * @param  array<int, string|null>  $statuses
+     */
+    private function weekStatus(array $statuses): string
+    {
+        $liveStatus = null;
+        $sawPlayedFixture = false;
+        $sawBye = false;
+
+        foreach ($statuses as $status) {
+            if ($status === null) {
+                continue;
+            }
+
+            if ($status === 'past' || $status === 'forfeit') {
+                $sawPlayedFixture = true;
+
+                continue;
+            }
+
+            if ($status === 'bye') {
+                $sawBye = true;
+
+                continue;
+            }
+
+            $liveStatus = $this->worstOf($liveStatus ?? 'confirmed', $status);
+        }
+
+        // A single fixture still to play decides the week; 'past' is reserved
+        // for weeks where there is nothing left to prepare.
+        if ($liveStatus !== null) {
+            return $liveStatus;
+        }
+
+        return match (true) {
+            $sawPlayedFixture => 'past',
+            $sawBye => 'bye',
+            default => 'confirmed',
+        };
     }
 
     /**

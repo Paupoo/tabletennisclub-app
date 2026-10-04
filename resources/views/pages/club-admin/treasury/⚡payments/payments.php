@@ -27,7 +27,6 @@ use App\Support\LocaleSort;
 use App\Support\Treasury\SepaRemittance;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -127,8 +126,8 @@ new class extends Component
         $payments = Payment::whereIn('id', $ids)->where('status', 'to_refund')->get();
 
         // Une note de frais ne s'annule que depuis la note : ici, la ligne
-        // repasserait en `paid` sans encaissement derrière, et la note
-        // resterait acceptée sur un remboursement fantôme.
+        // serait annulée mais la note resterait acceptée, sans plus rien
+        // pour la payer.
         $expenseRefunds = $payments->filter(fn (Payment $p): bool => $p->payable_type === ExpenseReport::class);
         $payments = $payments->reject(fn (Payment $p): bool => $p->payable_type === ExpenseReport::class);
 
@@ -137,8 +136,12 @@ new class extends Component
         $blocked = $payments->filter(fn (Payment $p): bool => (float) $p->amount_paid > 0.0);
         $toCancel = $payments->filter(fn (Payment $p): bool => (float) $p->amount_paid <= 0.0);
 
+        // Annulée, pas « payée » : un remboursement qu'on ne fait pas laisse
+        // l'argent dû au membre, et son trop-perçu doit réapparaître. Repasser
+        // en `paid` date du temps où la demande basculait l'encaissement
+        // lui-même ; sur une ligne de remboursement, c'était un troisième sens.
         foreach ($toCancel as $payment) {
-            $payment->update(['status' => 'paid']);
+            $payment->update(['status' => 'cancelled']);
         }
 
         $this->bulkCancelRefundModal = false;
@@ -160,7 +163,7 @@ new class extends Component
                 'blocked' => $blocked->count(),
             ]));
         } else {
-            $this->success(__(':count refund(s) cancelled — payments moved back to paid.', ['count' => $toCancel->count()]));
+            $this->success(__(':count refund(s) cancelled — the overpayment is owed to the member again.', ['count' => $toCancel->count()]));
         }
     }
 
@@ -450,9 +453,13 @@ new class extends Component
         return $chips;
     }
 
+    /**
+     * Compté en SQL : passer par payments() recalculait chaque ligne, trop-perçu
+     * compris, pour n'en garder que le nombre.
+     */
     public function getTotalMatchingCount(): int
     {
-        return $this->payments()->total();
+        return $this->matchingQuery()->count();
     }
 
     public function headers(): array
@@ -600,7 +607,10 @@ new class extends Component
         $col = $this->sortColumn();
         $dir = $this->sortBy['direction'];
 
+        // Le trop-perçu arrive calculé par la base : overpayment() le lit sans
+        // les quatre requêtes par ligne d'affiliation qu'il coûtait.
         $rows = $this->matchingQuery()
+            ->withOverpayment()
             ->with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
             ->get()
             ->map(function (Payment $p) {
@@ -1060,7 +1070,7 @@ new class extends Component
             // Sommé sur les lignes plutôt qu'en SQL : c'est `overpayment()` qui
             // sait retrancher ce qui est déjà promis, et l'ensemble est court
             // par nature — un trop-perçu appelle une action, il ne s'accumule pas.
-            'overpaid_total' => round($this->overpaid()->get()->sum(fn (Payment $p): float => $p->overpayment()), 2),
+            'overpaid_total' => round($this->overpaid()->withOverpayment()->get()->sum(fn (Payment $p): float => $p->overpayment()), 2),
         ];
     }
 
@@ -1170,46 +1180,6 @@ new class extends Component
         return round(min($residue, $balance), 2);
     }
 
-    /**
-     * La traduction SQL de `Payment::affiliationOverpayment()`.
-     *
-     * Une affiliation se compte entière : la ligne n'apparaît que si elle est
-     * la dernière créditée, et que l'affiliation a reçu plus que son dû et ses
-     * remboursements engagés. Même forme additive que ci-dessus, pour la même
-     * raison — jamais de soustraction sur des colonnes `unsigned`.
-     *
-     * @param  Builder<Payment>  $query
-     * @return Builder<Payment>
-     */
-    private function applyAffiliationOverpaidConditions(Builder $query): Builder
-    {
-        $claims = fn (string $alias): QueryBuilder => DB::table("payments as {$alias}")
-            ->whereColumn("{$alias}.payable_type", 'payments.payable_type')
-            ->whereColumn("{$alias}.payable_id", 'payments.payable_id')
-            ->where(fn ($q) => $q->where("{$alias}.payment_method", '!=', 'refund')->orWhereNull("{$alias}.payment_method"))
-            ->where("{$alias}.status", '!=', 'cancelled');
-
-        $lastCredited = $claims('last_credited')->where('last_credited.amount_paid', '>', 0)->selectRaw('max(last_credited.id)');
-        $received = $claims('received')->selectRaw('coalesce(sum(received.amount_paid), 0)');
-
-        $committed = DB::table('payments as refunds')
-            ->selectRaw('coalesce(sum(refunds.amount_due), 0)')
-            ->whereColumn('refunds.payable_type', 'payments.payable_type')
-            ->whereColumn('refunds.payable_id', 'payments.payable_id')
-            ->where('refunds.payment_method', 'refund')
-            ->whereIn('refunds.status', ['to_refund', 'paid', 'refunded']);
-
-        $due = DB::table('subscriptions')->select('subscriptions.amount_due')->whereColumn('subscriptions.id', 'payments.payable_id');
-
-        return $query
-            ->where('payments.payable_type', Subscription::class)
-            ->whereRaw('payments.id = (' . $lastCredited->toSql() . ')', $lastCredited->getBindings())
-            ->whereRaw(
-                '(' . $received->toSql() . ') > (' . $due->toSql() . ') + (' . $committed->toSql() . ')',
-                [...$received->getBindings(), ...$due->getBindings(), ...$committed->getBindings()],
-            );
-    }
-
     private function applyEventNameFilter(Builder $q, string $name): Builder
     {
         return $q->where(function ($q) use ($name): void {
@@ -1272,39 +1242,16 @@ new class extends Component
     /**
      * Les lignes dont l'excédent n'a pas encore été rendu.
      *
-     * Le reste à rendre se compare en SQL à la somme des remboursements ouverts
-     * sur la même chose payée : une ligne entièrement remboursée doit quitter
-     * l'onglet, et la carte compter la même chose que lui.
+     * La règle vit dans {@see Payment::scopeOverpaid()}, la même que la colonne
+     * de la liste : une ligne entièrement remboursée quitte l'onglet, et la
+     * carte compte la même chose que lui.
      *
      * @param  Builder<Payment>  $query
      * @return Builder<Payment>
      */
     private function applyOverpaidConditions(Builder $query): Builder
     {
-        $committed = DB::table('payments as refunds')
-            ->selectRaw('coalesce(sum(refunds.amount_due), 0)')
-            ->whereColumn('refunds.payable_type', 'payments.payable_type')
-            ->whereColumn('refunds.payable_id', 'payments.payable_id')
-            ->where('refunds.payment_method', 'refund')
-            ->whereIn('refunds.status', ['to_refund', 'refunded']);
-
-        return $query
-            ->where(fn (Builder $q): Builder => $q
-                ->where('payment_method', '!=', 'refund')
-                ->orWhereNull('payment_method'))
-            // Additionner plutôt que soustraire : les deux colonnes sont
-            // `unsigned`, et « payé − dû » dans un WHERE s'évalue sur toutes les
-            // lignes — MySQL refuse l'underflow dès qu'une créance n'est pas
-            // soldée. `payé > dû + promis` dit la même chose sans jamais passer
-            // sous zéro, et reste vrai sur SQLite, où la suite tourne.
-            ->where(fn (Builder $q): Builder => $q
-                ->where(fn (Builder $line): Builder => $line
-                    ->where('payments.payable_type', '!=', Subscription::class)
-                    ->whereRaw(
-                        'payments.amount_paid > payments.amount_due + (' . $committed->toSql() . ')',
-                        $committed->getBindings(),
-                    ))
-                ->orWhere(fn (Builder $affiliation): Builder => $this->applyAffiliationOverpaidConditions($affiliation)));
+        return $query->overpaid();
     }
 
     private function applyTab(Builder $q): Builder

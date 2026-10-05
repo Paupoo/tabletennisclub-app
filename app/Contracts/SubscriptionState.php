@@ -23,4 +23,9 @@ interface SubscriptionState
     public function refund(Subscription $subscription): void;
 
     public function unconfirm(Subscription $subscription): void;
+
+    /**
+     * Ce qui soldait l'affiliation a été retiré : elle n'est plus payée.
+     */
+    public function unpay(Subscription $subscription): void;
 }

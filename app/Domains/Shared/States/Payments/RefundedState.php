@@ -55,4 +55,10 @@ class RefundedState implements SubscriptionState
         // État final : remboursée
         throw new \LogicException('Cannot set a refunded subscription back to pending.');
     }
+
+    public function unpay(Subscription $subscription): void
+    {
+        // État final : remboursée
+        throw new \LogicException('Cannot unpay a refunded subscription.');
+    }
 }

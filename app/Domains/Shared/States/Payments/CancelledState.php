@@ -53,4 +53,10 @@ class CancelledState implements SubscriptionState
         // État final : annulée
         throw new \LogicException('Cannot set a cancelled subscription back to pending.');
     }
+
+    public function unpay(Subscription $subscription): void
+    {
+        // État final : annulée
+        throw new \LogicException('Cannot unpay a cancelled subscription.');
+    }
 }

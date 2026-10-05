@@ -61,4 +61,10 @@ class ValidatedState implements SubscriptionState
         // Déjà confirmée
         $subscription->setState(new PendingState);
     }
+
+    public function unpay(Subscription $subscription): void
+    {
+        // Déjà confirmée et pas soldée
+        throw new \LogicException('Subscription is not paid.');
+    }
 }

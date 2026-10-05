@@ -56,4 +56,10 @@ class PendingState implements SubscriptionState
         // L'instance est déjà pending
         throw new \LogicException(__('The subscription is already pending'));
     }
+
+    public function unpay(Subscription $subscription): void
+    {
+        // Rien n'a été payé : il n'y a rien à retirer
+        throw new \LogicException('Cannot unpay a pending subscription.');
+    }
 }

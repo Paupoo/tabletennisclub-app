@@ -409,6 +409,7 @@ Go to **Treasury → Payments**. View all member payments (tournament registrati
 
 Go to **Treasury → Bank transactions**. Import the bank statements (both CBC exports are read as they are), then close each line:
 - **reconcile** it with the website payments it pays or refunds;
+- **remove** a reconciliation made with the wrong transfer (**See allocation**, or **Transfers** on a paid payment), then reconcile the right one;
 - **justify** it with a supporting document when the website does not know it (hall rental, balls, a subsidy, bank fees);
 - **write off** a residue the club keeps.
 

@@ -410,6 +410,7 @@ Allez dans **Trésorerie → Paiements**. Consultez tous les paiements des membr
 
 Allez dans **Trésorerie → Transactions bancaires**. Importez les extraits bancaires (les deux exports de CBC sont lus tels quels), puis clôturez chaque ligne :
 - **rapprochez-la** des paiements du site qu'elle paie ou rembourse ;
+- **retirez** un rapprochement fait sur le mauvais virement (**Voir l'affectation**, ou **Virements** sur un paiement payé), puis rapprochez le bon ;
 - **justifiez-la** par une pièce quand le site ne la connaît pas (location de la salle, balles, subside, frais de banque) ;
 - **abandonnez** un reliquat que le club garde.
 

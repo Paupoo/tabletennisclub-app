@@ -44,6 +44,17 @@ Sur un paiement en attente, ouvrez le rapprochement : vous choisissez vous-mêm
 
 Une transaction déjà rapprochée à un paiement ne sera plus proposée ailleurs — pas de risque de la compter deux fois.
 
+## Corriger un mauvais rapprochement
+
+Vous avez placé le mauvais virement sur un paiement ? Retirez-le, puis rapprochez le bon.
+
+- **Depuis le paiement** : dans **Paiements → Payés**, cliquez sur **Virements**. Sous **Déjà reçu**, cliquez sur **Retirer** à côté du virement fautif. La liste des transactions à rapprocher apparaît aussitôt : choisissez la bonne.
+- **Depuis le virement** : dans **Transactions**, cliquez sur **Voir l'affectation** sur la ligne concernée, puis sur **Retirer** sous **Déjà placé**.
+
+Avant de confirmer, l'application vous dit ce qui va changer : le virement revient parmi les lignes à traiter, le paiement redevient non payé, et un reliquat soldé sur ce virement est lui aussi remis à traiter. L'affiliation reste confirmée. Le retrait figure dans le **Journal d'audit**.
+
+Seul un virement bancaire se retire : l'argent reçu en espèces ou en ligne, non. Si un remboursement est engagé sur le paiement, annulez-le d'abord.
+
 ## Ce qui ne vient pas du site
 
 Le rapprochement ne concerne que l'argent que le site attend : cotisations, entraînements, inscriptions, remboursements. La facture de la salle, un subside, un sponsor ou les frais de banque ne correspondent à aucun paiement du site : ces lignes-là se **justifient par une pièce**. Voir [Classer les pièces justificatives](classer-les-pieces-justificatives).

@@ -255,11 +255,12 @@ class SupportingDocument extends Model
     }
 
     /**
-     * « P-2026-0042 »: the year the document is dated, then its number.
+     * « P-2627-0042 »: the financial year the document is dated in, then its
+     * number — « P-2026-0042 » for a club whose year is the calendar one.
      */
     public function reference(): string
     {
-        return sprintf('P-%d-%04d', $this->date->year, $this->id);
+        return sprintf('P-%s-%04d', FiscalYear::for($this->date)->code(), $this->id);
     }
 
     /**

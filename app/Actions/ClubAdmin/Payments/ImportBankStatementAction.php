@@ -112,9 +112,11 @@ final class ImportBankStatementAction
      */
     public function transactionFrom(array $row, BankImport $bankImport): Transaction
     {
+        $date = $this->parseDate($row['date']) ?? throw new \DomainException(__('Unreadable date: :date', ['date' => (string) $row['date']]));
+
         return Transaction::create([
             'bank_account_id' => $this->accountOf($row)?->id,
-            'date' => $this->parseDate($row['date']),
+            'date' => $date,
             'description' => $row['description'],
             'amount' => $this->parseAmount($row['amount']),
             'balance_after' => $this->parseBalance($row['balance'] ?? null),
@@ -296,7 +298,9 @@ final class ImportBankStatementAction
             try {
                 $date = Carbon::createFromFormat($format, $value);
 
-                if ($date) {
+                // « Y » and « y » both swallow a two-digit year: « 22-09-26 »
+                // would land in the year 22. No bank statement predates 2000.
+                if ($date && $date->year >= 2000) {
                     return $date->format('Y-m-d');
                 }
             } catch (Exception) {

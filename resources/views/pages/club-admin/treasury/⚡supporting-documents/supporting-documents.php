@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Finance\Services\FiscalYearsOnRecord;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
@@ -256,9 +257,7 @@ new class extends Component
             'headers' => $this->headers(),
             'stateOptions' => SupportingDocumentState::options(),
             'categoryOptions' => SupportingDocument::categoryOptions(),
-            'yearOptions' => collect(range(FiscalYear::current()->startYear(), 2024))
-                ->map(fn (int $year): array => ['id' => $year, 'name' => FiscalYear::startingIn($year)->label()])
-                ->all(),
+            'yearOptions' => FiscalYearsOnRecord::options(),
         ]);
     }
 

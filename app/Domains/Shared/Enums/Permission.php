@@ -51,6 +51,7 @@ enum Permission: string
     case CashRegisterView = 'cash_register.view';
     case ClubsManage = 'clubs.manage';
     case ClubUpdate = 'club.update';
+    case ClubView = 'club.view';
     case CoachAreaAccess = 'coach_area.access';
 
     // Communications : extraire les adresses du club et lui écrire. Un seul

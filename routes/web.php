@@ -321,7 +321,7 @@ Route::prefix('admin/club-admin/queue/')
     });
 
 Route::prefix('admin/club-admin/')
-    ->middleware(['auth', 'verified', 'can:update,App\Domains\Competitions\Interclub\Models\Club'])
+    ->middleware(['auth', 'verified', 'can:club.view'])
     ->group(function (): void {
         Route::livewire('club-info', 'pages::club-admin.club-info')->name('admin.club-info');
     });

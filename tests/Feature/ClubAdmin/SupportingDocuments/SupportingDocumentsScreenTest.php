@@ -164,3 +164,15 @@ it('guards every write against a reader who crafts the call', function (string $
 
     sdScreenAs(Role::COMMITTEE)->call('show', $document->id)->call($method)->assertForbidden();
 })->with(['create', 'edit', 'openDelete', 'confirmDelete', 'payInCash', 'save']);
+
+it('offers in its year picker the running year and the years money moved in only', function (): void {
+    $this->travelTo('2026-09-30 10:00:00');
+    Club::factory()->ownClub()->create(['fiscal_year_start_month' => 7]);
+    Club::forgetOwnClub();
+    Transaction::create(['date' => '2024-03-14', 'description' => 'VIREMENT', 'amount' => 25]);
+
+    expect(sdScreenAs(Role::TREASURY)->viewData('yearOptions'))->toBe([
+        ['id' => 2026, 'name' => '2026-2027'],
+        ['id' => 2023, 'name' => '2023-2024'],
+    ]);
+});

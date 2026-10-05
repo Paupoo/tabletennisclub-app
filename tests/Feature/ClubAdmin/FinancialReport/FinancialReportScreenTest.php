@@ -216,3 +216,27 @@ it('draws the treasury month by month, from the first month end of the year to t
         // Nine month ends, September's being today.
         ->and(substr_count(Str::before(Str::after($html, 'data-treasury-figures'), '</table>'), '<tr'))->toBe(10);
 });
+
+describe('the financial year picker', function (): void {
+    beforeEach(function (): void {
+        Club::own()->update(['fiscal_year_start_month' => 7]);
+        Club::forgetOwnClub();
+    });
+
+    it('offers the running year and the years money moved in, newest first, skipping the empty ones', function (): void {
+        Transaction::create(['date' => '2023-08-14', 'description' => 'VIREMENT', 'amount' => 25]);
+        SupportingDocument::factory()->create(['date' => '2025-02-03']);
+
+        expect(frsScreen()->viewData('yearOptions'))->toBe([
+            ['id' => 2026, 'name' => '2026-2027'],
+            ['id' => 2024, 'name' => '2024-2025'],
+            ['id' => 2023, 'name' => '2023-2024'],
+        ]);
+    });
+
+    it('offers the running year alone while nothing is on record', function (): void {
+        expect(frsScreen()->viewData('yearOptions'))->toBe([
+            ['id' => 2026, 'name' => '2026-2027'],
+        ]);
+    });
+});

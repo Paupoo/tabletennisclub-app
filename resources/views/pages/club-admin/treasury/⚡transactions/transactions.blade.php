@@ -200,6 +200,14 @@
                     icon="o-document-check"
                     wire:click="openJustification({{ $transaction->id }})"
                     class="btn-xs btn-outline" />
+            @elseif(auth()->user()->can('payments.reconcile') && (float) $transaction->allocated_amount != 0.0)
+                {{-- Une ligne soldée par des paiements du site s'ouvre encore :
+                     on y relit à qui elle est allée, et on peut l'en retirer. --}}
+                <x-button
+                    :label="__('See allocation')"
+                    icon="o-eye"
+                    wire:click="openAllocation({{ $transaction->id }})"
+                    class="btn-xs btn-ghost" />
             @endif
             @endscope
 
@@ -547,7 +555,7 @@
                                     $served = $credit->payment?->payable;
                                     $servedLabel = $credit->payment?->label();
                                 @endphp
-                                <div class="flex items-center gap-3 rounded-lg border border-success/20 bg-success/5 p-2.5 text-sm"
+                                <div class="flex flex-wrap items-center gap-3 rounded-lg border border-success/20 bg-success/5 p-2.5 text-sm"
                                     wire:key="served-{{ $credit->id }}">
                                     <x-icon name="o-check-circle" class="h-4 w-4 shrink-0 text-success" />
                                     <div class="min-w-0 flex-1">
@@ -561,6 +569,7 @@
                                     <span class="shrink-0 font-bold tabular-nums text-success">
                                         {{ number_format($credit->amount, 2, ',', ' ') }} €
                                     </span>
+                                    <x-admin.treasury.withdraw-credit :credit="$credit" :preview="$this->withdrawalPreview($credit)" />
                                 </div>
                             @endforeach
                         </div>

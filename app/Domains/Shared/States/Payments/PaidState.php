@@ -57,4 +57,11 @@ class PaidState implements SubscriptionState
         // Déjà confirmée et payée
         throw new \LogicException('Subscription is already paid.');
     }
+
+    public function unpay(Subscription $subscription): void
+    {
+        // Transition autorisée : paid → confirmed, quand l'argent qui la
+        // soldait est retiré. La confirmation, elle, reste acquise.
+        $subscription->setState(new ValidatedState);
+    }
 }

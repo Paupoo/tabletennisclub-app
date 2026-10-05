@@ -69,6 +69,7 @@ new class extends Component
             'supporting_document_unlinked' => __('Unlinked from a movement'),
             'cash_deposit_linked' => __('Linked to a bank deposit'),
             'cash_deposit_unlinked' => __('Unlinked from a bank deposit'),
+            'reconciliation_removed' => __('Bank transfer removed'),
             default => $event,
         };
     }

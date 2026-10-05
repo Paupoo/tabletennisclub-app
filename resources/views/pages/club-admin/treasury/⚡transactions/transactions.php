@@ -28,6 +28,7 @@ use App\Livewire\Concerns\EditsSupportingDocument;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
+use App\Livewire\Concerns\WithdrawsCredits;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -47,6 +48,7 @@ new class extends Component
 {
     use EditsSupportingDocument, HasBulkActions, HasFilterDrawer;
     use HasBreadcrumbs, Toast, WithFileUploads, WithPagination;
+    use WithdrawsCredits;
 
     public string $accountFilter = '';
 
@@ -426,6 +428,7 @@ new class extends Component
         $this->allocations = [];
         $this->allocationSearch = '';
         $this->residueReason = '';
+        $this->withdrawCreditId = null;
         $this->allocationModal = true;
 
         unset($this->allocationTransaction, $this->allocationCandidates, $this->servedCredits, $this->refundableClaim);
@@ -802,6 +805,17 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Treasury — Transactions'));
+    }
+
+    /**
+     * La modale reste ouverte : la ligne redevient à traiter, et sa bonne
+     * créance se choisit juste en dessous.
+     */
+    protected function creditWithdrawn(): void
+    {
+        $this->allocations = [];
+
+        unset($this->allocationTransaction, $this->allocationCandidates, $this->servedCredits, $this->refundableClaim, $this->stats);
     }
 
     // ==================== HasBulkActions ====================

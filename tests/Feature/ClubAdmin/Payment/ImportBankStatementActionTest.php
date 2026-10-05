@@ -88,6 +88,22 @@ it('imports two look-alike lines of the same file, since a statement never repea
         ->and($import->suspectedDuplicates())->toBe([]);
 });
 
+it('refuses a date written with a two-digit year instead of filing it in the year 22', function (string $date): void {
+    $path = tempnam(sys_get_temp_dir(), 'bank');
+    file_put_contents($path, implode("\n", [
+        'Date;Montant;Description;Numéro de compte contrepartie;Communication libre',
+        $date . ';4,50;VIREMENT;BE96 0015 1116 3505;BAR ORDER 20',
+        '22/09/2026;2,00;VIREMENT;BE49 0017 9604 9471;BAR ORDER 29',
+    ]));
+
+    $import = (new ImportBankStatementAction)($path);
+
+    expect($import->new_count)->toBe(1)
+        ->and($import->error_count)->toBe(1)
+        ->and($import->failed_rows[0]['line'])->toBe(2)
+        ->and(Transaction::sole()->date->format('Y-m-d'))->toBe('2026-09-22');
+})->with(['22-09-26', '22/09/26']);
+
 describe('settling a line set aside', function (): void {
     beforeEach(function (): void {
         (new ImportBankStatementAction)(statementSample('cbc-period-export.csv'));

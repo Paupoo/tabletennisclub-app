@@ -8,6 +8,7 @@
 
     <x-form wire:submit="save">
         {{-- Name & ID --}}
+        <fieldset @disabled(! $this->canUpdate) class="contents">
         <x-admin.shared.form-section :separator="true" :subtitle="__('Official name and federal affiliation')" :title="__('Club Identity')">
             <div class="grid gap-4">
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -23,8 +24,10 @@
 
             </div>
         </x-admin.shared.form-section>
+        </fieldset>
 
         {{-- Location --}}
+        <fieldset @disabled(! $this->canUpdate) class="contents">
         <x-admin.shared.form-section :separator="true" :subtitle="__('Information to help members and visitors to find our club.')" :title="__('Location Details')">
             <x-input icon="o-map-pin" :label="__('Street')" wire:model="street" required/>
             <x-input icon="o-map-pin" :label="__('City Code')" wire:model="city_code" required/>
@@ -34,15 +37,19 @@
             <x-input icon="o-map-pin" :label="__('Longitude (Optional)')" wire:model="longitude" numeric/>
 
         </x-admin.shared.form-section>
+        </fieldset>
 
         {{-- Contact --}}
+        <fieldset @disabled(! $this->canUpdate) class="contents">
         <x-admin.shared.form-section :separator="true" :subtitle="__('Information to facilitate people to contact us.')" :title="__('Contact Details')">
                     <x-input icon="o-phone" :label="__('Phone Contact (Optional)')" wire:model="phone_contact" />
                     <x-input icon="o-envelope-open" :label="__('Email Contact')" wire:model="email_contact" required/>
                     <x-input :label="__('Website URL')" prefix="https://" wire:model="website_url" />
         </x-admin.shared.form-section>
+        </fieldset>
 
         {{-- Accounting --}}
+        <fieldset @disabled(! $this->canUpdate) class="contents">
         <x-admin.shared.form-section :separator="true" :subtitle="__('Banking and accounting data')" :title="__('Accounting')">
             <x-input icon="o-finger-print" :label="__('BIC Code')" wire:model="bic" required />
             <x-input icon="o-currency-euro" :label="__('Bank Account (IBAN)')" wire:model="bank_account" required/>
@@ -50,6 +57,7 @@
             <x-select icon="o-calendar" :label="__('Financial year starts in')" wire:model="fiscal_year_start_month" :options="$monthOptions"
                 :hint="__('January closes the accounts on the calendar year; any other month makes years such as 2025-2026.')" required />
         </x-admin.shared.form-section>
+        </fieldset>
 
         {{-- Committee --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Manage board members and their roles')" :title="__('Committee')">
@@ -106,6 +114,7 @@
         </x-admin.shared.form-section>
 
         {{-- Interclub Schedule --}}
+        <fieldset @disabled(! $this->canUpdate) class="contents">
         <x-admin.shared.form-section :separator="true" :subtitle="__('Configure the interclub match entry displayed on the public schedule.')" :title="__('Interclub Schedule')">
             <x-toggle :label="__('Show interclub matches in the public schedule')" wire:model="interclubEnabled" />
             <x-select
@@ -129,6 +138,7 @@
             <x-input icon="o-map-pin" :label="__('Location')" wire:model="interclubLocation" />
             <x-input icon="o-information-circle" :label="__('Description')" wire:model="interclubDescription" />
         </x-admin.shared.form-section>
+        </fieldset>
 
         <x-admin.shared.form-section :separator="true" :subtitle="__('Members who hold club equipment')" :title="__('Equipment holders')">
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -176,10 +186,12 @@
             </div>
         </x-admin.shared.form-section>
 
+        @if ($this->canUpdate)
         <div class="mt-6 flex justify-end gap-3">
             <x-button :label="__('Cancel')" />
             <x-button class="btn-primary" :label="__('Save Changes')" spinner="save" type="submit" />
         </div>
+        @endif
     </x-form>
 
    <livewire:club-admin.committee-modal />

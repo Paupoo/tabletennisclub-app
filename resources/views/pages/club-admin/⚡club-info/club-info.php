@@ -108,6 +108,15 @@ new class extends Component
         return Gate::allows('manageAccess', new User);
     }
 
+    /**
+     * Whether the visitor may change the club record, rather than only read it.
+     */
+    #[Computed()]
+    public function canUpdate(): bool
+    {
+        return Gate::allows('update', Club::class);
+    }
+
     public function mount(): void
     {
         $club = Club::own();
@@ -175,6 +184,8 @@ new class extends Component
 
     public function save(): void
     {
+        Gate::authorize('update', Club::class);
+
         try {
             $validated = $this->validate();
         } catch (ValidationException $e) {

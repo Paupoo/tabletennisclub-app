@@ -82,6 +82,8 @@ describe('the committee reads the club', function (): void {
                 'facilities.view',
                 'bar.stats.view',
                 'financial_report.view',
+                // The club record (decided 2026-10-05).
+                'club.view',
                 // Not a reading right: the one duty the whole committee shares
                 // (decided 2026-09-27).
                 'communications.send',

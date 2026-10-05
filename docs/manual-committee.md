@@ -356,7 +356,7 @@ Go to **Website → Spam**. Review and manage flagged contact form submissions.
 
 ### Club information
 
-Go to **Club admin → Club info**. Update club details: name, address, contact email, phone, IBAN, enterprise number, website URL.
+Go to **Club admin → Club info**. Update club details: name, address, contact email, phone, IBAN, enterprise number, website URL. Every committee member reads this page; only the holders of `club.update` (supervision and attestations délégations) save it — the others see the fields locked and no save button.
 
 ### Rooms
 

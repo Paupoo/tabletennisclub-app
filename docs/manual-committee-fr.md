@@ -357,7 +357,7 @@ Allez dans **Site web → Spams**. Vérifiez et gérez les soumissions signalée
 
 ### Informations du club
 
-Allez dans **Administration club → Infos club**. Mettez à jour les coordonnées du club : nom, adresse, email de contact, téléphone, IBAN, numéro d'entreprise, URL du site web.
+Allez dans **Administration club → Infos club**. Mettez à jour les coordonnées du club : nom, adresse, email de contact, téléphone, IBAN, numéro d'entreprise, URL du site web. Tout membre du comité consulte cette page ; seuls les détenteurs de `club.update` (délégations supervision et attestations) l'enregistrent — les autres voient les champs verrouillés, sans bouton d'enregistrement.
 
 ### Salles
 

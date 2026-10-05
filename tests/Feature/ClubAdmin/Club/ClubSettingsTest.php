@@ -31,12 +31,20 @@ function committeeModalComponent(): string
 
 /**
  * Seating and unseating a committee member is a rights change, so it now needs
- * an actor holding the access délégation. The rest of this file exercises the
- * venue settings, which ask nothing of the visitor.
+ * an actor holding the access délégation.
  */
 function accessManager(): User
 {
     return User::factory()->withRole(Role::ACCESS)->create();
+}
+
+/**
+ * The rest of this file exercises the venue settings, which only whoever may
+ * update the club record saves.
+ */
+function clubUpdater(): User
+{
+    return User::factory()->withRole(Role::SUPERVISION)->create();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -47,14 +55,14 @@ describe('Test Club Settings', function (): void {
     describe('Mount & Render', function (): void {
 
         it('renders the component without errors', function (): void {
-            Livewire::test(clubSettingsComponent())
+            Livewire::actingAs(clubUpdater())->test(clubSettingsComponent())
                 ->assertStatus(200);
         });
 
         it('initialises licence from the own club in the database', function (): void {
             Club::factory()->ownClub()->create(['licence' => 'ABC123']);
 
-            Livewire::test(clubSettingsComponent())
+            Livewire::actingAs(clubUpdater())->test(clubSettingsComponent())
                 ->assertSet('licence', 'ABC123');
         });
 
@@ -65,7 +73,7 @@ describe('Test Club Settings', function (): void {
                 'committee_role' => CommitteeRolesEnum::PRESIDENT,
             ]);
 
-            Livewire::test(clubSettingsComponent())
+            Livewire::actingAs(clubUpdater())->test(clubSettingsComponent())
                 ->assertSee('Alice')
                 ->assertSee('Dumont');
         });
@@ -75,7 +83,7 @@ describe('Test Club Settings', function (): void {
                 fn (User $member): User => $member->removeRole(Role::COMMITTEE->value)
             );
 
-            Livewire::test(clubSettingsComponent())
+            Livewire::actingAs(clubUpdater())->test(clubSettingsComponent())
                 ->assertSee(__('No committee members defined yet.'));
         });
 
@@ -255,13 +263,13 @@ describe('Test Club Settings', function (): void {
         it('dispatches a success toast after removing', function (): void {
             $user = User::factory()->isCommitteeMember()->create();
 
-            Livewire::test(clubSettingsComponent())
+            Livewire::actingAs(clubUpdater())->test(clubSettingsComponent())
                 ->call('removeMember', $user->id)
                 ->assertDispatched('toast');
         })->skip('not able to test toasts');
 
         it('throws a 404 when user does not exist', function (): void {
-            Livewire::test(clubSettingsComponent())
+            Livewire::actingAs(clubUpdater())->test(clubSettingsComponent())
                 ->call('removeMember', 99999);
         })->throws(ModelNotFoundException::class);
 
@@ -294,7 +302,7 @@ describe('Test Club Settings', function (): void {
         it('normalizes a bank_account entered with spaces before saving', function (): void {
             Club::factory()->ownClub()->create(['bank_account' => 'BE23732333208791', 'email_contact' => 'club@example.com']);
 
-            Livewire::test(clubSettingsComponent())
+            Livewire::actingAs(clubUpdater())->test(clubSettingsComponent())
                 ->set('bank_account', 'be68 5390 0754 7034')
                 ->call('save');
 
@@ -304,7 +312,7 @@ describe('Test Club Settings', function (): void {
         it('rejects a bank_account that fails the IBAN checksum', function (): void {
             Club::factory()->ownClub()->create(['bank_account' => 'BE23732333208791', 'email_contact' => 'club@example.com']);
 
-            Livewire::test(clubSettingsComponent())
+            Livewire::actingAs(clubUpdater())->test(clubSettingsComponent())
                 ->set('bank_account', 'BE00539007547034')
                 ->call('save')
                 ->assertHasErrors(['bank_account']);
@@ -313,7 +321,7 @@ describe('Test Club Settings', function (): void {
         it('requires a bank_account', function (): void {
             Club::factory()->ownClub()->create(['bank_account' => 'BE23732333208791', 'email_contact' => 'club@example.com']);
 
-            Livewire::test(clubSettingsComponent())
+            Livewire::actingAs(clubUpdater())->test(clubSettingsComponent())
                 ->set('bank_account', '')
                 ->call('save')
                 ->assertHasErrors(['bank_account']);
@@ -330,14 +338,14 @@ describe('Test Club Settings', function (): void {
         it('closes the accounts on the calendar year until told otherwise', function (): void {
             Club::factory()->ownClub()->create(['email_contact' => 'club@example.com']);
 
-            Livewire::test(clubSettingsComponent())
+            Livewire::actingAs(clubUpdater())->test(clubSettingsComponent())
                 ->assertSet('fiscal_year_start_month', 1);
         });
 
         it('makes the financial year start in the chosen month', function (): void {
             Club::factory()->ownClub()->create(['email_contact' => 'club@example.com']);
 
-            Livewire::test(clubSettingsComponent())
+            Livewire::actingAs(clubUpdater())->test(clubSettingsComponent())
                 ->set('fiscal_year_start_month', 9)
                 ->call('save')
                 ->assertHasNoErrors();
@@ -348,7 +356,7 @@ describe('Test Club Settings', function (): void {
         it('refuses a month that does not exist', function (int $month): void {
             Club::factory()->ownClub()->create(['email_contact' => 'club@example.com']);
 
-            Livewire::test(clubSettingsComponent())
+            Livewire::actingAs(clubUpdater())->test(clubSettingsComponent())
                 ->set('fiscal_year_start_month', $month)
                 ->call('save')
                 ->assertHasErrors(['fiscal_year_start_month']);
@@ -367,7 +375,7 @@ describe('Test Club Settings', function (): void {
             User::factory()->isCommitteeMember()->create(['committee_role' => CommitteeRolesEnum::SECRETARY, 'last_name' => 'Abc']);
             User::factory()->isCommitteeMember()->create(['committee_role' => CommitteeRolesEnum::PRESIDENT, 'last_name' => 'Abc']);
 
-            $component = Livewire::test(clubSettingsComponent());
+            $component = Livewire::actingAs(clubUpdater())->test(clubSettingsComponent());
 
             $roles = $component->viewData('committeeMembers')
                 ->pluck('committee_role')

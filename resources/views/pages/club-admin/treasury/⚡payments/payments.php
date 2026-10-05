@@ -21,6 +21,7 @@ use App\Jobs\SendPaymentReminderJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
+use App\Livewire\Concerns\WithdrawsCredits;
 use App\Mail\PaymentInvitationEmail;
 use App\Support\Breadcrumb;
 use App\Support\LocaleSort;
@@ -42,6 +43,7 @@ new class extends Component
 {
     use HasBreadcrumbs, Toast, WithPagination;
     use HasBulkActions, HasFilterDrawer;
+    use WithdrawsCredits;
 
     public array $batchMatches = [];
 
@@ -548,6 +550,7 @@ new class extends Component
         $this->selectedTransactionId = null;
         $this->reconcileWholeTransfer = false;
         $this->residueNotice = null;
+        $this->withdrawCreditId = null;
         $this->reconcileModal = true;
     }
 
@@ -1130,6 +1133,16 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Treasury — Payments'));
+    }
+
+    /**
+     * La modale reste ouverte : le geste suivant est presque toujours de
+     * rapprocher le bon virement, et la liste des candidats est juste là.
+     */
+    protected function creditWithdrawn(): void
+    {
+        $this->selectedTransactionId = null;
+        $this->reconcileWholeTransfer = false;
     }
 
     // ==================== HasBulkActions ====================

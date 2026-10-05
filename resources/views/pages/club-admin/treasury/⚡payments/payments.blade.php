@@ -223,6 +223,14 @@
                                     wire:click="openRefundReconcile({{ $payment->id }})" />
                             </x-admin.shared.row-menu>
                         @endcan
+                    @elseif (in_array($this->statusFilter, ['paid', 'overpaid'], true))
+                        @can('payments.reconcile')
+                            <x-button
+                                :label="__('Transfers')"
+                                icon="o-link"
+                                wire:click="openReconcile({{ $payment->id }})"
+                                class="btn-sm btn-ghost" />
+                        @endcan
                     @endif
                 </div>
             </div>
@@ -377,6 +385,13 @@
                         :label="__('Refund')"
                         icon="o-arrow-uturn-left"
                         wire:click="openRefundRequest({{ $payment->id }})"
+                        class="btn-xs btn-ghost" />
+                @endcan
+                @can('payments.reconcile')
+                    <x-button
+                        :label="__('Transfers')"
+                        icon="o-link"
+                        wire:click="openReconcile({{ $payment->id }})"
                         class="btn-xs btn-ghost" />
                 @endcan
             </div>
@@ -567,7 +582,7 @@
                 <h3 class="mb-2 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Already received') }}</h3>
                 <div class="space-y-1.5">
                     @foreach ($currentPayment->credits as $credit)
-                        <div class="flex items-center gap-3 rounded-lg border border-success/20 bg-success/5 p-2.5 text-sm"
+                        <div class="flex flex-wrap items-center gap-3 rounded-lg border border-success/20 bg-success/5 p-2.5 text-sm"
                             wire:key="credit-{{ $credit->id }}">
                             <x-icon name="o-check-circle" class="h-4 w-4 shrink-0 text-success" />
                             <span class="flex-1 min-w-0 truncate">
@@ -581,18 +596,23 @@
                             <span class="shrink-0 font-bold tabular-nums text-success">
                                 {{ number_format($credit->amount, 2, ',', ' ') }} €
                             </span>
+                            <x-admin.treasury.withdraw-credit :credit="$credit" :preview="$this->withdrawalPreview($credit)" />
                         </div>
                     @endforeach
                 </div>
             </div>
         @endif
 
+        {{-- Une créance soldée s'ouvre ici pour relire, ou retirer, ses virements :
+             il n'y a rien à lui rapprocher tant qu'aucun n'est retiré. --}}
+        @if ($currentPayment === null || $currentPayment->balance() > 0)
         <x-admin.treasury.candidate-list
             :candidates="$pendingTransactions"
             :selected="$selectedTransactionId"
             property="selectedTransactionId"
             :heading="__('Unreconciled bank transactions')"
             :empty-message="__('No unreconciled transactions. Import a bank statement first.')" />
+        @endif
 
         @if ($reconcileExcess > 0)
             {{-- Le virement dépasse le solde : ce qui en est fait se décide ici,

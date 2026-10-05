@@ -490,6 +490,15 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     }
 
     /**
+     * Le pendant de {@see markAsPaid()}, quand l'argent qui la soldait a été
+     * retiré. `confirmed_at` ne bouge pas : il n'est jamais réécrit.
+     */
+    public function unpay(): void
+    {
+        $this->getCurrentState()->unpay($this);
+    }
+
+    /**
      * Une cotisation est un historique financier : le membre doit rester
      * résolvable même après un soft delete de son compte.
      */

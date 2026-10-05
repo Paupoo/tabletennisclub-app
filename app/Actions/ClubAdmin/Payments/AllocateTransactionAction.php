@@ -78,6 +78,34 @@ final class AllocateTransactionAction
     }
 
     /**
+     * Ce que {@see withdraw()} changerait, pour l'annoncer avant de le faire.
+     *
+     * Lu par la confirmation des deux écrans : les mêmes règles que le retrait,
+     * sans rien écrire.
+     *
+     * @return array{reopens_payment: bool, written_off: float}
+     */
+    public function previewWithdrawal(PaymentCredit $credit): array
+    {
+        $credit->loadMissing(['payment', 'transaction']);
+
+        $payment = $credit->payment;
+        $transaction = $credit->transaction;
+
+        $remaining = (int) $payment->credits()->whereKeyNot($credit->id)->sum('amount');
+        $uncovered = $remaining < (int) round((float) $payment->amount_due * 100);
+
+        $closed = $payment->payment_method === 'refund' ? 'refunded' : 'paid';
+
+        return [
+            'reopens_payment' => $uncovered && $payment->status === $closed,
+            'written_off' => $transaction instanceof Transaction && $transaction->settled_at !== null
+                ? round(abs($transaction->residue()), 2)
+                : 0.0,
+        ];
+    }
+
+    /**
      * Solde une ligne que ses crédits couvrent déjà, sans rien encaisser.
      *
      * Le montant dû peut baisser sous l'argent reçu — une remise, un
@@ -91,6 +119,48 @@ final class AllocateTransactionAction
         DB::transaction(function () use ($payment): void {
             $this->refreshPaymentMirror($payment);
             $this->settlePayable($payment);
+        });
+    }
+
+    /**
+     * Retire un rapprochement : le virement n'a jamais payé cette créance.
+     *
+     * Le pendant exact d'une affectation. La ligne de crédit disparaît et chaque
+     * miroir redescend là où il serait sans elle : le paiement, la chose payée,
+     * et la ligne de relevé, qui redevient à traiter.
+     *
+     * Seul l'argent recule. Une affiliation confirmée par ce virement le reste,
+     * et sa date aussi : la confirmation se gère ailleurs.
+     *
+     * La ligne n'est pas gardée en « retirée » : trop de sommes la lisent en SQL
+     * brut pour qu'aucune n'oublie de l'exclure. L'historique du paiement dit
+     * ce qui a été retiré.
+     *
+     * @throws \DomainException
+     */
+    public function withdraw(PaymentCredit $credit): void
+    {
+        DB::transaction(function () use ($credit): void {
+            $credit->loadMissing(['payment', 'transaction']);
+
+            $transaction = $credit->transaction;
+            $payment = $credit->payment;
+
+            if (! $transaction instanceof Transaction) {
+                throw new \DomainException(__('Only a bank transfer can be removed from a payment.'));
+            }
+
+            $this->assertNoRefundCommitted($payment);
+
+            $credit->delete();
+
+            $this->reopenPaymentMirror($payment);
+            $this->unsettlePayable($payment);
+
+            $this->refreshTransactionMirror($transaction);
+            $this->reopenWrittenOffResidue($transaction);
+
+            $this->auditWithdrawal($payment, $transaction, $credit);
         });
     }
 
@@ -123,6 +193,29 @@ final class AllocateTransactionAction
         if ($already + $requested > $capacity) {
             throw new \DomainException(__('This allocation exceeds the transaction: only :amount € remain to allocate.', [
                 'amount' => number_format(($capacity - $already) / 100, 2, ',', ' '),
+            ]));
+        }
+    }
+
+    /**
+     * Retirer l'argent d'une créance dont une partie est déjà promise au
+     * membre ferait rendre ce que le club n'a, d'après l'écran, jamais reçu.
+     * Annuler le remboursement reste un geste du trésorier : il peut être déjà
+     * parti de la banque.
+     *
+     * @throws \DomainException
+     */
+    private function assertNoRefundCommitted(Payment $payment): void
+    {
+        if ($payment->payment_method === 'refund') {
+            return;
+        }
+
+        $committed = $payment->refundsCommitted();
+
+        if ($committed > 0) {
+            throw new \DomainException(__('A refund of :amount € is committed on this payment: cancel it first.', [
+                'amount' => number_format($committed, 2, ',', ' '),
             ]));
         }
     }
@@ -165,6 +258,29 @@ final class AllocateTransactionAction
     }
 
     /**
+     * La ligne de crédit n'est pas auditée, et elle vient de disparaître : sans
+     * cette entrée, plus rien ne dirait quel virement avait été placé ici.
+     * Écrite sur le paiement, dans la forme que l'écran d'audit sait lire.
+     */
+    private function auditWithdrawal(Payment $payment, Transaction $transaction, PaymentCredit $credit): void
+    {
+        activity()
+            ->performedOn($payment)
+            ->event('reconciliation_removed')
+            ->withChanges([
+                'old' => [
+                    'transaction' => $transaction->id,
+                    'transaction_date' => $transaction->date->format('d/m/Y'),
+                    'counterparty' => $transaction->counterparty_name,
+                    'amount' => number_format((float) $credit->amount, 2, ',', ' ') . ' €',
+                    'placed_on' => $credit->created_at?->format('d/m/Y'),
+                ],
+                'attributes' => ['transaction' => null],
+            ])
+            ->log('reconciliation_removed');
+    }
+
+    /**
      * Le miroir de la ligne, et son statut quand le solde est atteint.
      *
      * `sum()` rend des centimes bruts, le mutateur attend des euros.
@@ -204,6 +320,54 @@ final class AllocateTransactionAction
         // `update()` de passage ne puisse pas le contredire.
         $transaction->forceFill([
             'allocated_amount' => round($sign * $allocated, 2),
+        ])->save();
+    }
+
+    /**
+     * Le miroir de la ligne après un retrait, et son statut s'il ne tient plus.
+     *
+     * L'inverse de {@see settledStatusFor()}, avec la même règle en centimes :
+     * une créance qui n'est plus couverte redevient `pending`, un remboursement
+     * qui n'est plus sorti redevient `to_refund`. Gardé à part de
+     * {@see refreshPaymentMirror()} : un encaissement ne fait jamais reculer un
+     * statut.
+     */
+    private function reopenPaymentMirror(Payment $payment): void
+    {
+        $credited = (int) $payment->credits()->sum('amount');
+
+        $attributes = ['amount_paid' => round($credited / 100, 2)];
+
+        if ($credited < (int) round((float) $payment->amount_due * 100)) {
+            $reopened = match (true) {
+                $payment->payment_method === 'refund' && $payment->status === 'refunded' => 'to_refund',
+                $payment->payment_method !== 'refund' && $payment->status === 'paid' => 'pending',
+                default => null,
+            };
+
+            if ($reopened !== null) {
+                $attributes['status'] = $reopened;
+            }
+        }
+
+        $payment->update($attributes);
+    }
+
+    /**
+     * Un reliquat abandonné l'était au vu de ce qui était placé sur la ligne.
+     * Le placement retiré, la décision ne tient plus : la ligne entière
+     * redevient à traiter.
+     */
+    private function reopenWrittenOffResidue(Transaction $transaction): void
+    {
+        if ($transaction->settled_at === null) {
+            return;
+        }
+
+        $transaction->forceFill([
+            'settled_at' => null,
+            'settled_reason' => null,
+            'settled_by_id' => null,
         ])->save();
     }
 
@@ -315,5 +479,35 @@ final class AllocateTransactionAction
         }
 
         $subscription->markAsPaid();
+    }
+
+    /**
+     * Ce que le retrait défait pour la chose payée.
+     *
+     * Une note de frais n'a rien d'écrit sur elle : « payée » se lit sur son
+     * remboursement, qui vient de redevenir `to_refund`. Le membre n'est pas
+     * prévenu ; le mail « payée » repartira au bon rapprochement.
+     */
+    private function unsettlePayable(Payment $payment): void
+    {
+        if ($payment->payment_method === 'refund') {
+            return;
+        }
+
+        $payable = $payment->payable;
+
+        if ($payable instanceof Subscription) {
+            $payable->forceFill(['amount_paid' => $payable->totalPaid()])->save();
+
+            if ($payable->getStatus() === 'paid' && ! $payable->isFullyPaid()) {
+                $payable->unpay();
+            }
+
+            return;
+        }
+
+        if ($payable instanceof TournamentRegistration && $payment->status !== 'paid') {
+            $payable->update(['has_paid' => false]);
+        }
     }
 }

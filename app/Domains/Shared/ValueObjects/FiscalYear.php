@@ -58,6 +58,17 @@ final readonly class FiscalYear
     }
 
     /**
+     * « 2026 » for a calendar year, « 2627 » for one that straddles two — the
+     * label squeezed into a document number.
+     */
+    public function code(): string
+    {
+        return $this->start->month === 1
+            ? (string) $this->start->year
+            : sprintf('%02d%02d', $this->start->year % 100, ($this->start->year + 1) % 100);
+    }
+
+    /**
      * The last day of the year, at the start of that day.
      */
     public function end(): CarbonImmutable

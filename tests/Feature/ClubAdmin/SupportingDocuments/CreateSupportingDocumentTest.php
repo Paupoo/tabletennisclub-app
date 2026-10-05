@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\SupportingDocuments\Actions\CreateSupportingDocument;
+use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\IncomeCategory;
 use App\Domains\Shared\Enums\SupportingDocumentState;
@@ -40,6 +42,15 @@ it('files an invoice with its scan kept private, waiting to be paid', function (
 
     Storage::disk('local')->assertExists($document->files->first()->path);
 });
+
+it('numbers a document after the financial year it falls in, both halves of a straddling one', function (string $date): void {
+    Club::factory()->ownClub()->create(['fiscal_year_start_month' => 7]);
+    Club::forgetOwnClub();
+
+    $document = SupportingDocument::factory()->create(['date' => $date]);
+
+    expect($document->reference())->toBe(sprintf('P-2627-%04d', $document->id));
+})->with(['2026-07-01', '2027-03-10', '2027-06-30']);
 
 it('files a subsidy letter as an income', function (): void {
     $document = (new CreateSupportingDocument)(

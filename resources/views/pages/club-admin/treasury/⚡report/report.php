@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Finance\Models\FinancialExport;
 use App\Domains\ClubAdmin\Finance\Services\FinancialPosition;
 use App\Domains\ClubAdmin\Finance\Services\FinancialReport;
 use App\Domains\ClubAdmin\Finance\Services\FinancialReportFigures;
+use App\Domains\ClubAdmin\Finance\Services\FiscalYearsOnRecord;
 use App\Domains\ClubAdmin\Finance\Services\YearPieces;
 use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\ExpenseReportDisplayStatus;
@@ -18,10 +19,8 @@ use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\ValueObjects\FiscalYear;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
-use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -154,9 +153,7 @@ new class extends Component
     {
         return $this->view([
             'breadcrumbs' => $this->getBreadcrumbs(),
-            'yearOptions' => collect(range(FiscalYear::current()->startYear(), $this->firstYear()))
-                ->map(fn (int $start): array => ['id' => $start, 'name' => FiscalYear::startingIn($start)->label()])
-                ->all(),
+            'yearOptions' => FiscalYearsOnRecord::options(),
             ...FinancialReportFigures::of($this->report, $this->previousReport, $this->position),
         ]);
     }
@@ -222,19 +219,6 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Financial report'));
-    }
-
-    /**
-     * The oldest year worth offering: the first one any money moved in.
-     */
-    private function firstYear(): int
-    {
-        $oldest = collect([
-            DB::table('transactions')->min('date'),
-            DB::table('cash_register_entries')->min('created_at'),
-        ])->filter()->min();
-
-        return min(FiscalYear::current()->startYear(), $oldest === null ? PHP_INT_MAX : FiscalYear::for(CarbonImmutable::parse($oldest))->startYear());
     }
 
     private function queueExport(string $format, int $fiscalYear, ?string $poste, FinancialExportScope $scope, bool $includeReport): void

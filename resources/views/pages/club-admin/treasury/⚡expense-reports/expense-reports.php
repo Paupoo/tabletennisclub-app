@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\ExpenseReports\Actions\AcceptExpenseReport;
 use App\Domains\ClubAdmin\ExpenseReports\Actions\CancelExpenseReportAcceptance;
 use App\Domains\ClubAdmin\ExpenseReports\Actions\RejectExpenseReport;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
+use App\Domains\ClubAdmin\Finance\Services\FiscalYearsOnRecord;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\ExpenseReportDisplayStatus;
@@ -301,9 +302,7 @@ new class extends Component
             'breadcrumbs' => $this->getBreadcrumbs(),
             'filterChips' => $this->getFilterChips(),
             'headers' => $this->headers(),
-            'yearOptions' => collect(range(FiscalYear::current()->startYear(), 2024))
-                ->map(fn (int $year): array => ['id' => $year, 'name' => FiscalYear::startingIn($year)->label()])
-                ->all(),
+            'yearOptions' => FiscalYearsOnRecord::options(),
         ];
     }
 

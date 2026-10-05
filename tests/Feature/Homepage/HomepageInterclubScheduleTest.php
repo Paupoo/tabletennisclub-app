@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Models\AppSetting;
 use App\Domains\Trainings\Models\TrainingPack;
 use Livewire\Livewire;
@@ -140,7 +142,8 @@ describe('admin club-info', function (): void {
 
 describe('save des settings interclub', function (): void {
     it('met à jour AppSetting après save()', function (): void {
-        Livewire::test('pages::club-admin.club-info')
+        Livewire::actingAs(User::factory()->withRole(Role::SUPERVISION)->create())
+            ->test('pages::club-admin.club-info')
             ->set('interclubEnabled', false)
             ->set('interclubDay', 'Dimanche')
             ->set('interclubTimeStart', '14:00')

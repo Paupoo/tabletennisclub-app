@@ -109,9 +109,9 @@
 
     <li><x-menu-separator /></li>
 
-    @canany(['club.update', 'seasons.view', 'facilities.view'])
+    @canany(['club.view', 'seasons.view', 'facilities.view'])
     <x-menu-sub icon="o-building-office" :title="__('Club Settings')">
-        @can('club.update')
+        @can('club.view')
         <x-menu-item icon="o-identification" link="{{ route('admin.club-info') }}" :title="__('Informations')" />
         @endcan
         @can('seasons.view')

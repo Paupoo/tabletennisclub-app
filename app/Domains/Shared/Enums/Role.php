@@ -233,6 +233,7 @@ enum Role: string
                 Permission::AttestationsView,
                 Permission::AttestationsIssue,
                 Permission::AttestationsConfigure,
+                Permission::ClubView,
                 Permission::ClubUpdate,
             ],
 
@@ -258,6 +259,9 @@ enum Role: string
                 Permission::FacilitiesView,
                 Permission::BarStatsView,
                 Permission::FinancialReportView,
+                // The club record itself: identity, bank account, financial
+                // year (decided 2026-10-05).
+                Permission::ClubView,
                 // Writing to the club is a committee duty, not a délégation
                 // (decided 2026-09-27).
                 Permission::CommunicationsSend,
@@ -416,6 +420,7 @@ enum Role: string
                 Permission::AuditLogView,
                 Permission::QueueView,
                 Permission::QueueManage,
+                Permission::ClubView,
                 Permission::ClubUpdate,
             ],
         };

@@ -20,7 +20,7 @@ Trois familles cohabitent, et une seule décide :
 
 Accès sans restriction à toute l'application.
 
-Détient les 76 permissions. Accordées explicitement plutôt que
+Détient les 77 permissions. Accordées explicitement plutôt que
 par un court-circuit `Gate::before`, car certaines policies encodent des règles qui
 doivent survivre à un administrateur — il ne peut toujours pas supprimer son propre
 compte.
@@ -45,6 +45,7 @@ Accès de base au back-office : consulter les données du club sans les gérer.
 - `facilities.view`
 - `bar.stats.view`
 - `financial_report.view`
+- `club.view`
 - `communications.send`
 
 ---
@@ -79,6 +80,7 @@ Délivrer les attestations mutuelle, et détenir le cachet du club et la signatu
 - `attestations.view`
 - `attestations.issue`
 - `attestations.configure`
+- `club.view`
 - `club.update`
 
 ### Barman — `barman`
@@ -203,6 +205,7 @@ Consulter le journal d'audit, surveiller la file d'attente, modifier les réglag
 - `audit_log.view`
 - `queue.view`
 - `queue.manage`
+- `club.view`
 - `club.update`
 
 ### Tournois — `tournois`

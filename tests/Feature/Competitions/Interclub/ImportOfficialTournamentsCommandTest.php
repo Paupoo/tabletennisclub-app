@@ -8,6 +8,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
 use App\Domains\Competitions\Interclub\Models\OfficialTournamentMatch;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Services\OfficialTournamentImporter;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
@@ -85,7 +86,7 @@ it('loads, for history, exactly the seasons the interclub match sheets reach', f
         ]);
     }
 
-    $this->artisan('interclubs:import-tournaments', ['--history' => true])
+    $this->artisan('interclubs:import-tournaments', ['--history' => true, '--ansi' => true])
         ->expectsOutputToContain('2025-2026')
         ->expectsOutputToContain('2024-2025')
         ->doesntExpectOutputToContain('2023-2024')
@@ -96,7 +97,31 @@ it('loads, for history, exactly the seasons the interclub match sheets reach', f
         ->and(OfficialTournamentMatch::where('season_id', $this->season->id)->count())->toBe(0);
 
     // Each season costs more than the whole quota: never two calls back to back.
-    Sleep::assertSlept(fn ($duration): bool => $duration->totalMinutes >= 5, times: 1);
+    // Counted down one second at a time, the whole wait, once.
+    Sleep::assertSlept(
+        fn ($duration): bool => $duration->totalSeconds === 1.0,
+        times: OfficialTournamentImporter::QUOTA_WAIT_MINUTES * 60,
+    );
+});
+
+it('counts down the wait between two seasons instead of going silent', function (): void {
+    tournamentHistorySeasons();
+
+    $this->artisan('interclubs:import-tournaments', ['--history' => true, '--ansi' => true])
+        ->expectsOutputToContain('2002-2003 in 8:00')
+        ->expectsOutputToContain('2002-2003 in 0:01')
+        ->assertSuccessful();
+});
+
+it('says once how long it waits when the output is a log, not a terminal', function (): void {
+    tournamentHistorySeasons();
+
+    $this->artisan('interclubs:import-tournaments', ['--history' => true])
+        ->expectsOutputToContain('Waiting 8 minutes for the TabT quota to drain before 2002-2003.')
+        ->doesntExpectOutputToContain('2002-2003 in 7:59')
+        ->assertSuccessful();
+
+    Sleep::assertSlept(fn ($duration): bool => $duration->totalMinutes === 8.0, times: 1);
 });
 
 it('runs every night at 04:30, clear of the other two federation imports', function (): void {
@@ -106,3 +131,25 @@ it('runs every night at 04:30, clear of the other two federation imports', funct
     expect($event)->not->toBeNull()
         ->and($event->expression)->toBe('30 4 * * *');
 });
+
+/**
+ * 2001-2002 and 2002-2003, each with an interclub sheet so history picks them.
+ *
+ * Dated to match their names, and years before any factory season: history
+ * runs oldest first, so the wait is announced for 2002-2003.
+ */
+function tournamentHistorySeasons(): void
+{
+    foreach ([2001, 2002] as $year) {
+        InterclubIndividualMatch::factory()->create([
+            'interclub_id' => Interclub::factory()->create([
+                'season_id' => Season::factory()->create([
+                    'end_at' => ($year + 1) . '-06-30',
+                    'is_active' => false,
+                    'name' => $year . '-' . ($year + 1),
+                    'start_at' => $year . '-09-01',
+                ])->id,
+            ])->id,
+        ]);
+    }
+}

@@ -947,6 +947,14 @@
                                 wire:model.live="familyBasket.{{ $userId }}.trainings"
                                 :options="$this->trainingOptions()"
                                 compact allow-all />
+
+                            {{-- Seulement quand elle change le prix : sur un pack
+                                 pas encore commencé, tout le monde paie plein tarif. --}}
+                            @if (array_intersect($config['trainings'] ?? [], $this->startedPackIds) !== [])
+                                <x-checkbox wire:model.live="familyBasket.{{ $userId }}.whole_pack"
+                                    :label="__('Here since the start of the pack')"
+                                    :hint="__('Bills the whole pack, not just the months left.')" />
+                            @endif
                         </div>
 
                         {{-- ── Engagement du membre ─────────────────────────────

@@ -282,3 +282,45 @@ it('sends no invitation when the member is moved to a cheaper pack', function ()
 
     Mail::assertNothingQueued();
 })->group('training', 'money');
+
+/*
+ * Pack de dix mois dont quatre sont entamés : au pro rata, 135 € deviennent
+ * 94,50 €. Le membre encodé en retard était pourtant là depuis le début.
+ */
+it('claims the whole pack from a member the committee says was there from the start', function (bool $wholePack, float $complement): void {
+    $member = activeMember($this->season);
+    packInvitationSettledAffiliation($member, $this->season);
+    $pack = makeTrainingPack($this->season, [
+        'price' => 135,
+        'allow_discount' => false,
+        'pack_start_date' => today()->subMonths(3)->startOfMonth()->toDateString(),
+        'pack_end_date' => today()->addMonths(6)->endOfMonth()->toDateString(),
+    ]);
+
+    Livewire::actingAs($this->manager)
+        ->test(PACK_INVITATION_COMPONENT)
+        ->set('selectedPackId', $pack->id)
+        ->set('addMemberUserId', $member->id)
+        ->set('addMemberWholePack', $wholePack)
+        ->call('addMemberToPack')
+        ->assertHasNoErrors();
+
+    expect((float) Payment::where('status', 'pending')->sole()->amount_due)->toBe($complement);
+})->with([
+    'joining today' => [false, 94.5],
+    'there from the start' => [true, 135.0],
+])->group('training', 'money');
+
+it('offers the whole-pack choice only on a pack already under way', function (): void {
+    $upcoming = makeTrainingPack($this->season, ['pack_start_date' => today()->addWeek()->toDateString()]);
+    $started = makeTrainingPack($this->season, ['pack_start_date' => today()->subMonth()->toDateString()]);
+
+    Livewire::actingAs($this->manager)
+        ->test(PACK_INVITATION_COMPONENT)
+        ->set('selectedPackId', $upcoming->id)
+        ->call('openAddMember')
+        ->assertDontSeeHtml('wire:model.live="addMemberWholePack"')
+        ->set('selectedPackId', $started->id)
+        ->call('openAddMember')
+        ->assertSeeHtml('wire:model.live="addMemberWholePack"');
+})->group('training', 'enrollment');

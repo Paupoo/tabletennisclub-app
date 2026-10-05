@@ -5457,6 +5457,8 @@
     "Remove from the pack": "Retirer du pack",
     "Add the member": "Ajouter le membre",
     "Enrolled since": "Inscrit depuis le",
+    "Here since the start of the pack": "Présent depuis le début du pack",
+    "Bills the whole pack, not just the months left.": "Facture le pack entier, pas seulement les mois restants.",
     "Leave empty to start today. Set an earlier date to bill the months already attended.": "Laissez vide pour partir d'aujourd'hui. Indiquez une date antérieure pour facturer les mois déjà suivis.",
     "The spot is validated straight away — no request to approve. The member is notified and their balance is updated.": "La place est validée d'emblée — aucune demande à approuver. Le membre est prévenu et son solde est mis à jour.",
     "This pack is full. Adding someone takes it over its cap.": "Ce pack est complet. Y ajouter quelqu'un le fait dépasser son plafond.",

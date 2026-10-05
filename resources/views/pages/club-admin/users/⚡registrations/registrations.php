@@ -203,6 +203,9 @@ new class extends Component
             'name' => $user->first_name . ' ' . $user->last_name,
             'licence_type' => 'recreative',
             'trainings' => [],
+            // Présent depuis le début d'un pack déjà entamé, encodé en retard :
+            // plein tarif au lieu du pro rata.
+            'whole_pack' => false,
             'can_drive' => false,
             'seats_available' => null,
             'wants_to_be_captain' => false,
@@ -515,8 +518,10 @@ new class extends Component
                 + ($tiedTogether ? count($alreadyQuoted) : 0)
                 + 1;
 
-            $alone = $calculate->quoteFor($isCompetitive, $billablePacks, 1);
-            $withFamily = $calculate->quoteFor($isCompetitive, $billablePacks, $familyMembersCount);
+            $wholePack = (bool) ($config['whole_pack'] ?? false);
+
+            $alone = $calculate->quoteFor($isCompetitive, $billablePacks, 1, $wholePack);
+            $withFamily = $calculate->quoteFor($isCompetitive, $billablePacks, $familyMembersCount, $wholePack);
 
             $credit = $relatives->sum(
                 fn (Subscription $subscription): float => $familyDiscount->shortfall($subscription, $familyMembersCount)
@@ -1541,7 +1546,13 @@ new class extends Component
                         $packs = TrainingPack::with('room')->whereIn('id', $config['trainings'])->get();
 
                         foreach ($packs as $pack) {
-                            if ((new EnrollInTrainingPackAction)($subscription, $pack) === 'pending') {
+                            $status = (new EnrollInTrainingPackAction)(
+                                $subscription,
+                                $pack,
+                                wholePack: (bool) ($config['whole_pack'] ?? false),
+                            );
+
+                            if ($status === 'pending') {
                                 $claimedPackIds[] = $pack->id;
                             }
                         }
@@ -1722,6 +1733,27 @@ new class extends Component
         return CharterSignature::query()
             ->where('season_id', $this->selectedSeasonId)
             ->pluck('user_id')
+            ->all();
+    }
+
+    /**
+     * Packs de la saison déjà entamés : les seuls où « présent depuis le
+     * début » change le prix. Avant leur début, tout le monde paie plein tarif.
+     *
+     * @return list<int>
+     */
+    #[Computed]
+    public function startedPackIds(): array
+    {
+        $season = Season::current();
+
+        if (! $season) {
+            return [];
+        }
+
+        return TrainingPack::where('season_id', $season->id)
+            ->whereDate('pack_start_date', '<', Carbon::today())
+            ->pluck('id')
             ->all();
     }
 

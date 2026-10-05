@@ -74,6 +74,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $last_name
  * @property string $sex
  * @property string|null $phone_number
+ * @property string|null $duty_blurb
  * @property string|null $iban
  * @property \Illuminate\Support\Carbon|null $birthdate
  * @property \Illuminate\Support\Carbon|null $renewal_reminded_at
@@ -264,6 +265,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'gdpr_erasure_requested_at',
         'notification_preferences',
         'contact_visibility',
+        'duty_blurb',
         'federation_licence_type',
         'federation_synced_at',
         'member_import_id',
@@ -1655,6 +1657,19 @@ class User extends Authenticatable implements MustVerifyEmail
     public function sharesContact(string $field): bool
     {
         return (bool) ($this->contact_visibility[$field] ?? false);
+    }
+
+    /**
+     * Whether a committee member or duty holder shows a contact field on the
+     * « Who does what » page. Not the directory's opt-in: whoever takes on a
+     * duty wants to be found, so the email shows unless withdrawn, while a
+     * phone number stays a choice to make.
+     *
+     * @param  'phone'|'email'  $field
+     */
+    public function sharesDutyContact(string $field): bool
+    {
+        return (bool) ($this->contact_visibility['duty_' . $field] ?? $field === 'email');
     }
 
     public function subscriptions(): HasMany

@@ -121,6 +121,7 @@ Route::prefix('admin/my-space/')
         Route::livewire('{user}/reglement', 'pages::club-admin.users.user-space.reglement')->name('admin.user.reglement');
         Route::livewire('{user}/charte', 'pages::club-admin.users.user-space.charter')->name('admin.user.charter');
         Route::livewire('{user}/directory', 'pages::club-admin.users.user-space.directory')->name('admin.user.directory');
+        Route::livewire('{user}/who-does-what', 'pages::club-admin.users.user-space.who-does-what')->name('admin.user.who-does-what');
         Route::livewire('{user}/payments', 'pages::club-admin.users.user-space.payments')->name('admin.user.payments');
         Route::livewire('{user}/expense-reports', 'pages::club-admin.users.user-space.expense-reports')
             ->name('admin.user.expense-reports')

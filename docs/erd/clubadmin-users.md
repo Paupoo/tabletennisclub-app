@@ -42,6 +42,7 @@ erDiagram
         string last_name
         string sex
         string phone_number "nullable"
+        string duty_blurb "nullable"
         string iban "nullable"
         datetime birthdate "nullable"
         datetime renewal_reminded_at "nullable"

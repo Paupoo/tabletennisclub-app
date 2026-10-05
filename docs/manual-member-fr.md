@@ -71,6 +71,10 @@ Accès via **Mon espace → Paramètres**.
 
 Choisissez entre **Clair**, **Sombre** ou **Automatique** (suit le thème de votre appareil). Le changement s'applique immédiatement et est sauvegardé dans votre profil.
 
+### Sur la page « Qui fait quoi »
+
+Réservé aux membres du comité et aux titulaires d'une délégation que la page affiche. Votre adresse e-mail y figure sauf si vous la retirez ; votre téléphone seulement si vous l'activez. Vous pouvez aussi laisser un mot aux membres (280 caractères), par exemple quand et où vous trouver.
+
 ---
 
 ## 4. Mes équipes
@@ -219,7 +223,7 @@ Vous ne pouvez pas actuellement gérer les préférences de notification par typ
 ## 11. Aide & Contact
 
 En cas de problème :
-- Contactez directement le secrétariat du club
+- Ouvrez **Qui fait quoi** dans le menu : le comité avec le titre de chacun, puis à qui vous adresser pour les interclubs, les entraînements, les tournois, l'affiliation, les paiements, le bar, les salles et les clés, les attestations, les amendes et le site web. La page suit les délégations : rien n'y est saisi à la main, et un domaine que personne ne couvre n'apparaît pas.
 - Utilisez le **formulaire de contact** sur le site web public du club
 - Demandez au comité lors du prochain entraînement
 

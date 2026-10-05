@@ -76,15 +76,24 @@
     badge-classes="badge-error"
     />
 
-    {{-- Mirrors the gate in the directory component: affiliated members, plus
-         the committee members who do not play. --}}
+    <li data-menu-group="separator-people"><x-menu-separator /></li>
+
+    {{-- Mirrors the gate in the directory and « Who does what » components:
+         affiliated members, plus the committee members who do not play. --}}
     @if($user->is_active || auth()->user()->can('users.view'))
     <x-menu-item
         icon="o-users"
         link="{{ route('admin.user.directory', auth()->user()) }}"
         :title="__('Member directory')"
     />
+    <x-menu-item
+        icon="o-lifebuoy"
+        link="{{ route('admin.user.who-does-what', auth()->user()) }}"
+        :title="__('Who does what')"
+    />
     @endif
+
+    <li data-menu-group="separator-reference"><x-menu-separator /></li>
 
     <x-menu-item
         icon="o-book-open"

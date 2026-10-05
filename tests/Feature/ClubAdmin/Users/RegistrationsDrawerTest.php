@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Subscriptions\ApproveTrainingPacksAction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -942,4 +943,80 @@ it('asks no money from a member whose affiliation had to stay pending', function
     Mail::assertNothingSent();
 
     expect(Subscription::where('user_id', $member->id)->sole()->status)->toBe('pending');
+});
+
+/*
+ * Un membre encodé en retard : il vient depuis le début de la saison, mais
+ * personne ne l'avait inscrit. Le pack `started()` court sur dix mois et en
+ * a déjà entamé quatre : au pro rata, 90 € deviennent 63 €.
+ */
+it('quotes a pack already under way pro rata unless the member was there from the start', function (bool $wholePack, float $packAmount): void {
+    $pack = TrainingPack::factory()->started()->create(['season_id' => $this->season->id, 'price' => 90]);
+    $member = User::factory()->create();
+
+    $quote = Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [$member->id => [...basketLine($member, 'recreative', [$pack->id]), 'whole_pack' => $wholePack]])
+        ->instance()
+        ->basketQuote;
+
+    expect(array_column($quote['members'][$member->id]['lines'], 'amount'))->toBe([60.0, $packAmount]);
+})->with([
+    'joining today' => [false, 63.0],
+    'there from the start' => [true, 90.0],
+]);
+
+it('bills the whole pack to a member the desk says was there from the start', function (): void {
+    Notification::fake();
+
+    $pack = TrainingPack::factory()->started()->create(['season_id' => $this->season->id, 'price' => 90]);
+    $member = User::factory()->create(['licence' => '123456', 'ranking' => 'C4']);
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [$member->id => [...basketLine($member, 'recreative', [$pack->id]), 'whole_pack' => true]])
+        ->call('saveFamilyRegistration');
+
+    $subscription = Subscription::where('user_id', $member->id)->sole();
+    $pivot = $subscription->trainingPacks()->where('training_pack_id', $pack->id)->sole()->pivot;
+
+    expect($pivot->status)->toBe('enrolled')
+        ->and($pivot->starts_on)->toBe($pack->pack_start_date->toDateString())
+        ->and((float) $subscription->amount_due)->toBe(150.0)
+        ->and((float) $subscription->payments()->sole()->amount_due)->toBe(150.0);
+});
+
+it('keeps the whole pack through an approval that comes weeks later', function (): void {
+    Notification::fake();
+
+    $pack = TrainingPack::factory()->started()->create(['season_id' => $this->season->id, 'price' => 90]);
+    // Sans licence, l'affiliation reste en attente : le pack sera validé plus tard.
+    $member = User::factory()->create(['licence' => null, 'ranking' => 'C4']);
+
+    Livewire::test('pages::club-admin.users.registrations')
+        ->set('familyBasket', [$member->id => [...basketLine($member, 'recreative', [$pack->id]), 'whole_pack' => true]])
+        ->call('saveFamilyRegistration');
+
+    $subscription = Subscription::where('user_id', $member->id)->sole();
+
+    // La validation pose la date du jour sur une ligne sans date : la décision
+    // du guichet ne doit pas s'y perdre.
+    $this->travel(5)->weeks();
+
+    (new ApproveTrainingPacksAction)($subscription, [$pack->id]);
+
+    expect((float) $subscription->fresh()->amount_due)->toBe(150.0);
+});
+
+it('offers the whole-pack choice only once one of the chosen packs has started', function (): void {
+    $upcoming = TrainingPack::factory()->create(['season_id' => $this->season->id, 'name' => 'Pack à venir']);
+    $started = TrainingPack::factory()->started()->create(['season_id' => $this->season->id, 'name' => 'Pack commencé']);
+    $member = User::factory()->create();
+
+    $component = Livewire::test('pages::club-admin.users.registrations')
+        ->set('memberDrawer', true)
+        ->set('familyBasket', [$member->id => basketLine($member, 'recreative', [$upcoming->id])]);
+
+    $component->assertDontSeeHtml('wire:model.live="familyBasket.' . $member->id . '.whole_pack"');
+
+    $component->set('familyBasket.' . $member->id . '.trainings', [$upcoming->id, $started->id])
+        ->assertSeeHtml('wire:model.live="familyBasket.' . $member->id . '.whole_pack"');
 });

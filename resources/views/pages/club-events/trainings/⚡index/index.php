@@ -25,6 +25,7 @@ use App\Domains\Trainings\Notifications\TrainingPackScheduleChangedNotification;
 use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
 use App\Domains\Trainings\Services\TrainingAttendanceReport;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
+use App\Domains\Trainings\Services\TrainingPackProrata;
 use App\Domains\Trainings\Services\TrainingWaitlistService;
 use App\Livewire\Concerns\GrantsInlineDiscount;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -53,6 +54,9 @@ new class extends Component
     public string $addMemberStartsOn = '';
 
     public int $addMemberUserId = 0;
+
+    /** Présent depuis le début du pack, encodé en retard : plein tarif. */
+    public bool $addMemberWholePack = false;
 
     // ── Cancellation modal ────────────────────────────────────────────────────
     public bool $cancelModal = false;
@@ -235,6 +239,20 @@ new class extends Component
     }
 
     /**
+     * Le pack ouvert a-t-il déjà commencé ?
+     *
+     * Avant son début, tout ajout se facture plein tarif : « présent depuis le
+     * début » ne changerait rien et n'est pas proposé.
+     */
+    #[Computed]
+    public function addMemberPackStarted(): bool
+    {
+        $pack = $this->selectedPack;
+
+        return $pack !== null && $pack->pack_start_date->lt(Carbon::today());
+    }
+
+    /**
      * Inscrit un membre dans le pack ouvert, sur décision du comité.
      *
      * Court-circuite volontairement le verrou et le plafond : c'est le pendant
@@ -267,7 +285,9 @@ new class extends Component
             $complement = (new AddMemberToTrainingPackAction)(
                 $subscription,
                 $pack,
-                $this->addMemberStartsOn ?: null,
+                $this->addMemberWholePack && $this->addMemberPackStarted
+                    ? (new TrainingPackProrata)->wholePackStart($pack)
+                    : ($this->addMemberStartsOn ?: null),
                 $subscription->has_other_family_members ? 2 : 1,
             );
 
@@ -292,6 +312,7 @@ new class extends Component
         $this->addMemberModal = false;
         $this->addMemberUserId = 0;
         $this->addMemberStartsOn = '';
+        $this->addMemberWholePack = false;
 
         unset($this->packs, $this->selectedPack, $this->addMemberOptions, $this->addMemberOverCapacity, $this->attendanceMatrix, $this->packRoster, $this->packSummary, $this->packAttendance);
 
@@ -863,6 +884,7 @@ new class extends Component
 
         $this->addMemberUserId = 0;
         $this->addMemberStartsOn = '';
+        $this->addMemberWholePack = false;
         $this->addMemberModal = true;
 
         unset($this->addMemberOptions, $this->addMemberOverCapacity);
@@ -1073,6 +1095,7 @@ new class extends Component
         }
 
         $attendance = $this->packAttendance;
+        $prorata = new TrainingPackProrata;
 
         $rows = $pack->subscriptions()
             ->withPivot([
@@ -1087,7 +1110,7 @@ new class extends Component
             ->affiliated()
             ->with('user')
             ->get()
-            ->map(function (Subscription $subscription) use ($attendance): array {
+            ->map(function (Subscription $subscription) use ($attendance, $pack, $prorata): array {
                 $user = $subscription->user;
                 $pivot = $subscription->pivot;
 
@@ -1098,7 +1121,9 @@ new class extends Component
                     'status' => $pivot->status,
                     'position' => $pivot->waitlist_position,
                     'deadline' => $pivot->confirmation_deadline,
-                    'startsOn' => $pivot->starts_on,
+                    // Datée du début du pack ou sans date, c'est la même
+                    // inscription : « depuis le début » dans les deux cas.
+                    'startsOn' => $prorata->coversWholePack($pack, $pivot->starts_on) ? null : $pivot->starts_on,
                     'endsOn' => $pivot->ends_on,
                     'overrideAmount' => $pivot->override_amount !== null ? (int) $pivot->override_amount / 100 : null,
                     'overrideReason' => $pivot->override_reason,

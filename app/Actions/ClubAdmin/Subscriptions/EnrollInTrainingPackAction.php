@@ -23,7 +23,12 @@ class EnrollInTrainingPackAction
 
     public function __construct(private readonly TrainingPackProrata $prorata = new TrainingPackProrata) {}
 
-    public function __invoke(Subscription $subscription, TrainingPack $pack, int $familyMembersCount = 1): string
+    /**
+     * `$wholePack` n'est donné que par le guichet : le membre est là depuis le
+     * début mais n'a été encodé qu'aujourd'hui. Le libre-service ne le passe
+     * jamais — un membre ne choisit pas son propre prix.
+     */
+    public function __invoke(Subscription $subscription, TrainingPack $pack, int $familyMembersCount = 1, bool $wholePack = false): string
     {
         if ($subscription->status === 'cancelled') {
             throw new \DomainException(__('Cannot enroll with a cancelled subscription.'));
@@ -60,7 +65,9 @@ class EnrollInTrainingPackAction
                 // Le pro rata part d'ici : tant que le pack n'a pas commencé la
                 // date reste nulle (ligne « tout le pack », prix plein), et dès
                 // qu'il a démarré l'arrivée est datée.
-                'starts_on' => $this->prorata->enrolmentStart($pack),
+                'starts_on' => $wholePack
+                    ? $this->prorata->wholePackStart($pack)
+                    : $this->prorata->enrolmentStart($pack),
             ]);
 
             // Notify only for mid-season adds (Flux B) — Flux A is covered by SubscriptionCreatedNotification

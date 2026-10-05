@@ -128,6 +128,9 @@ final readonly class CalculatePriceAction
      * facture. Un pack sans ligne de pivot est une ligne encore à créer : elle
      * vaudra ce que l'inscription y posera {@see self::line()}.
      *
+     * `$wholePack` annonce ce que posera le guichet pour un membre présent
+     * depuis le début : le plein tarif, même sur un pack déjà entamé.
+     *
      * @param  Collection<int, TrainingPack>  $billablePacks
      * @return array{
      *   subscription_price: float,
@@ -138,7 +141,7 @@ final readonly class CalculatePriceAction
      *   total: float,
      * }
      */
-    public function quoteFor(bool $isCompetitive, Collection $billablePacks, int $familyMembersCount = 1): array
+    public function quoteFor(bool $isCompetitive, Collection $billablePacks, int $familyMembersCount = 1, bool $wholePack = false): array
     {
         $subscriptionPrice = $isCompetitive
             ? self::COMPETITIVE_PRICE
@@ -154,7 +157,7 @@ final readonly class CalculatePriceAction
         $trainingTotal = 0.0;
 
         foreach ($billablePacks as $pack) {
-            $line = $this->line($pack, $applyDiscount);
+            $line = $this->line($pack, $applyDiscount, $wholePack);
 
             $lines[$pack->id] = $line;
             $trainingTotal += $line['amount'];
@@ -179,13 +182,17 @@ final readonly class CalculatePriceAction
     /**
      * @return array{name: string, status: string, amount: float, overridden: bool, ratio: float}
      */
-    private function line(TrainingPack $pack, bool $applyDiscount): array
+    private function line(TrainingPack $pack, bool $applyDiscount, bool $wholePack = false): array
     {
         $pivot = $pack->pivot;
 
         // Sans pivot, la ligne reste à créer : elle démarrera là où
         // EnrollInTrainingPackAction la posera, et rien ne l'a encore forcée.
-        $startsOn = $pivot !== null ? $pivot->starts_on : $this->prorata->enrolmentStart($pack);
+        $startsOn = match (true) {
+            $pivot !== null => $pivot->starts_on,
+            $wholePack => $this->prorata->wholePackStart($pack),
+            default => $this->prorata->enrolmentStart($pack),
+        };
         $ratio = $this->prorata->ratio($pack, $startsOn, $pivot?->ends_on);
 
         // Un montant forcé court-circuite tout : c'est le dernier mot du

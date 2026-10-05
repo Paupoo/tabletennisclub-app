@@ -191,3 +191,27 @@ it('renders the sheet with its roster and its facts', function (): void {
         ->assertSee(__('Coach'))
         ->assertSee(__('Schedule'));
 })->group('training', 'pack');
+
+it('reads an enrolment dated from the first day of the pack as there from the start', function (): void {
+    $pack = sheetPack([
+        'pack_start_date' => today()->subMonths(3)->startOfMonth()->toDateString(),
+        'pack_end_date' => today()->addMonths(6)->endOfMonth()->toDateString(),
+    ]);
+
+    enrol($pack, 'enrolled', ['starts_on' => $pack->pack_start_date->toDateString()], ['last_name' => 'Encode']);
+    enrol($pack, 'enrolled', ['starts_on' => null], ['last_name' => 'Inscrit']);
+    enrol($pack, 'enrolled', ['starts_on' => today()->toDateString()], ['last_name' => 'Arrive']);
+
+    $roster = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.trainings.index')
+        ->call('openPack', $pack->id)
+        ->get('packRoster');
+
+    // Encodé en retard avec la date du début ou inscrit à temps : même prix,
+    // donc même lecture. Seul celui qui arrive aujourd'hui garde sa date.
+    expect(array_column($roster['enrolled'], 'startsOn', 'name'))->toMatchArray([
+        'Arrive ' . User::where('last_name', 'Arrive')->value('first_name') => today()->toDateString(),
+        'Encode ' . User::where('last_name', 'Encode')->value('first_name') => null,
+        'Inscrit ' . User::where('last_name', 'Inscrit')->value('first_name') => null,
+    ]);
+})->group('training', 'pack');

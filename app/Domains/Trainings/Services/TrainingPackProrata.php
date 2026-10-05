@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Trainings\Services;
 
+use App\Actions\ClubAdmin\Subscriptions\ApproveTrainingPacksAction;
 use App\Domains\Trainings\Models\TrainingPack;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -31,6 +32,19 @@ class TrainingPackProrata
     public function billableAmount(TrainingPack $pack, float $netPrice, CarbonInterface|string|null $startsOn, CarbonInterface|string|null $endsOn): float
     {
         return round($netPrice * $this->ratio($pack, $startsOn, $endsOn), 2);
+    }
+
+    /**
+     * Le membre est-il compté depuis le premier jour du pack ?
+     *
+     * Une ligne sans date et une ligne datée du début du pack (ou d'avant) se
+     * facturent pareil : elles doivent se lire pareil.
+     */
+    public function coversWholePack(TrainingPack $pack, CarbonInterface|string|null $startsOn): bool
+    {
+        $from = $this->toDate($startsOn);
+
+        return $from === null || $from->lte($this->packStart($pack));
     }
 
     /**
@@ -91,6 +105,19 @@ class TrainingPackProrata
         }
 
         return min($this->monthSpan($effectiveStart, $effectiveEnd), $total) / $total;
+    }
+
+    /**
+     * Date d'entrée d'un membre présent depuis le début, encodé en retard.
+     *
+     * Datée plutôt que nulle : une ligne sans date est aussi une ligne dont la
+     * date reste à poser, et la validation d'une demande la remplirait avec le
+     * jour où elle a lieu ({@see ApproveTrainingPacksAction}). Le début du pack
+     * vaut le plein tarif et ne laisse rien à remplir.
+     */
+    public function wholePackStart(TrainingPack $pack): string
+    {
+        return $this->packStart($pack)->toDateString();
     }
 
     /**

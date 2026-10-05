@@ -1110,11 +1110,21 @@
         <x-choices-offline class="mt-4" :label="__('Member')" wire:model="addMemberUserId"
             :options="$this->addMemberOptions" option-label="name" single searchable />
 
-        <x-input class="mt-3" type="date" :label="__('Enrolled since')" wire:model="addMemberStartsOn" />
+        {{-- Seulement sur un pack entamé : avant son début, tout le monde paie
+             plein tarif et la case ne changerait rien. --}}
+        @if ($this->addMemberPackStarted)
+            <x-checkbox class="mt-3" wire:model.live="addMemberWholePack"
+                :label="__('Here since the start of the pack')"
+                :hint="__('Bills the whole pack, not just the months left.')" />
+        @endif
 
-        <p class="mt-1 text-xs text-base-content/50">
-            {{ __('Leave empty to start today. Set an earlier date to bill the months already attended.') }}
-        </p>
+        @unless ($addMemberWholePack && $this->addMemberPackStarted)
+            <x-input class="mt-3" type="date" :label="__('Enrolled since')" wire:model="addMemberStartsOn" />
+
+            <p class="mt-1 text-xs text-base-content/50">
+                {{ __('Leave empty to start today. Set an earlier date to bill the months already attended.') }}
+            </p>
+        @endunless
 
         <div class="mt-4">
             <x-admin.shared.inline-discount :mode="$inlineDiscountMode" />

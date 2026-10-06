@@ -130,7 +130,7 @@ new class extends Component
     protected function breadcrumbChain(): Breadcrumb
     {
         // Pas de lien vers le comptoir : le comité n'y a pas accès.
-        return Breadcrumb::make()->home()->current(__('Bar sales'));
+        return Breadcrumb::make()->home()->current(__('Stock outflows'));
     }
 
     /**

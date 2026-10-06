@@ -21,6 +21,7 @@ class AnonymizeUserAction
             'last_name' => 'User',
             'email' => "deleted-{$user->id}@anonymous.local",
             'phone_number' => null,
+            'duty_blurb' => null,
             'guardian_phone_number' => null,
             'street' => null,
             'city_code' => null,

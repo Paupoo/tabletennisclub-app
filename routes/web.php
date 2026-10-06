@@ -104,6 +104,9 @@ Route::prefix('admin/my-space/')
     ->group(function (): void {
         // Onboarding wizard — always self (no {user} binding), exempt from profile.complete.
         Route::livewire('onboarding', 'pages::club-admin.users.user-space.onboarding')->name('admin.user.onboarding');
+        // The yearly survey — always the signed-in seat (no {user}): one link per
+        // family in the invitation, the « answering for » switch does the rest.
+        Route::livewire('survey', 'pages::club-admin.users.user-space.survey')->name('admin.user.survey');
         Route::livewire('{user}/profile', 'pages::club-admin.users.user-space.profile')->name('admin.user.profile');
         Route::livewire('{user}/settings', 'pages::club-admin.users.user-space.settings')->name('admin.user.settings');
         Route::livewire('{user}/teams', 'pages::club-admin.users.user-space.user-teams')->name('admin.user.teams');
@@ -121,6 +124,8 @@ Route::prefix('admin/my-space/')
         Route::livewire('{user}/reglement', 'pages::club-admin.users.user-space.reglement')->name('admin.user.reglement');
         Route::livewire('{user}/charte', 'pages::club-admin.users.user-space.charter')->name('admin.user.charter');
         Route::livewire('{user}/directory', 'pages::club-admin.users.user-space.directory')->name('admin.user.directory');
+        Route::livewire('{user}/who-does-what', 'pages::club-admin.users.user-space.who-does-what')->name('admin.user.who-does-what');
+        Route::livewire('{user}/feedback', 'pages::club-admin.users.user-space.feedback')->name('admin.user.feedback');
         Route::livewire('{user}/payments', 'pages::club-admin.users.user-space.payments')->name('admin.user.payments');
         Route::livewire('{user}/expense-reports', 'pages::club-admin.users.user-space.expense-reports')
             ->name('admin.user.expense-reports')
@@ -204,6 +209,29 @@ Route::prefix('admin/club-admin/users/')
         // Legacy redirect — kept for backward compatibility
         Route::get('payments', fn () => redirect()->route('admin.treasury.payments'))->name('admin.users.payments');
     });
+/*
+ * The members' feedback — the whole committee reads it, the suggestions
+ * délégation sorts it (guarded inside the components).
+ */
+Route::prefix('admin/club-admin/feedback/')
+    ->middleware(['auth', 'verified', 'can:feedback.view'])
+    ->group(function (): void {
+        Route::livewire('/', 'pages::club-admin.feedback.index')->name('admin.feedback.index');
+        Route::livewire('lists', 'pages::club-admin.feedback.lists')
+            ->middleware('can:feedback.manage')
+            ->name('admin.feedback.lists');
+        Route::middleware('can:feedback.manage')->group(function (): void {
+            Route::livewire('campaigns', 'pages::club-admin.feedback.campaigns')->name('admin.feedback.campaigns');
+            Route::livewire('campaigns/new', 'pages::club-admin.feedback.campaign')->name('admin.feedback.campaigns.create');
+            Route::livewire('campaigns/{campaign}', 'pages::club-admin.feedback.campaign')
+                ->whereNumber('campaign')
+                ->name('admin.feedback.campaigns.edit');
+            Route::livewire('campaigns/{campaign}/preview', 'pages::club-admin.users.user-space.survey')
+                ->whereNumber('campaign')
+                ->name('admin.feedback.campaigns.preview');
+        });
+    });
+
 // Season planning board — visible to the whole committee, mutations reserved to managers (decision #18).
 /*
  * Club-wide communications — the committee. Taking every member's address out

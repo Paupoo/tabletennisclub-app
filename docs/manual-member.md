@@ -71,6 +71,10 @@ Access via **My space → Settings**.
 
 Choose between **Light**, **Dark**, or **Auto** (follows your device theme). The change applies immediately and is saved to your profile.
 
+### On the « Who does what » page
+
+Shown only to committee members and to the holders of a duty the page lists. Your email address is shown there unless you switch it off; your phone number only once you switch it on. You may also leave a short word for the members (280 characters), for example when and where to find you.
+
 ---
 
 ## 4. My Teams
@@ -219,7 +223,8 @@ You cannot currently manage notification preferences per-type. To stop receiving
 ## 11. Help & Contact
 
 If you have a problem:
-- Contact your club secretary directly
+- Open **Who does what** in the menu: the committee, with each statutory title, then who to turn to for interclubs, training, tournaments, affiliation, payments, the bar, rooms and keys, attestations, fines and the website. The page follows the délégations: nothing is typed in by hand, and a duty nobody holds is not shown.
+- Open **Your feedback** to write to the committee, signed or anonymous, answer the yearly survey while it is open, and offer a hand if you wish (help article *Donner mon avis au club*).
 - Use the **Contact form** on the club website (public page)
 - Ask the committee at the next training session
 

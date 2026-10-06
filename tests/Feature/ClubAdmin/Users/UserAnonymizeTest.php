@@ -69,3 +69,15 @@ test('bulk paid and bulk unpaid methods no longer exist', function (): void {
     expect(method_exists($component->instance(), 'bulkPaid'))->toBeFalse()
         ->and(method_exists($component->instance(), 'bulkUnpaid'))->toBeFalse();
 });
+
+test('anonymize erases the word a member left on the « Who does what » page', function (): void {
+    $user = User::factory()->create(['duty_blurb' => 'Appelez-moi le soir.']);
+
+    Livewire::actingAs($this->admin)
+        ->test('pages::club-admin.users.index')
+        ->call('openAnonymizeModal', $user->id)
+        ->set('anonymizeConfirmText', 'ANONYMIZE')
+        ->call('confirmAnonymize');
+
+    expect($user->fresh()->duty_blurb)->toBeNull();
+});

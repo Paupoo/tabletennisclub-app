@@ -26,6 +26,7 @@ use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
 use App\Domains\Trainings\Services\TrainingAttendanceReport;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
 use App\Domains\Trainings\Services\TrainingPackProrata;
+use App\Domains\Trainings\Services\TrainingRosterExport;
 use App\Domains\Trainings\Services\TrainingWaitlistService;
 use App\Livewire\Concerns\GrantsInlineDiscount;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -35,11 +36,13 @@ use App\Support\LocaleSort;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Mary\Traits\Toast;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 new class extends Component
 {
@@ -712,6 +715,43 @@ new class extends Component
         ];
     }
 
+    /**
+     * Everybody tied to a pack of the season shown, on one sheet. The file
+     * carries contact details, so it asks for what the members list asks
+     * for, not only for the trainings — and saying who took it is the price
+     * of letting it leave the application.
+     */
+    public function exportRoster(string $format, TrainingRosterExport $exporter): ?StreamedResponse
+    {
+        abort_unless($this->mayExportRoster, 403);
+
+        $season = $this->viewSeason;
+
+        if (! $season instanceof Season) {
+            return null;
+        }
+
+        $payload = $exporter->export($season, $format);
+
+        activity()
+            ->causedBy(Auth::user())
+            ->event('training_roster_exported')
+            ->withProperties([
+                'season_id' => $season->id,
+                'season' => $season->name,
+                'format' => $format,
+            ])
+            ->log('training_roster_exported');
+
+        return response()->streamDownload(
+            function () use ($payload): void {
+                echo $payload['contents'];
+            },
+            $payload['filename'],
+            ['Content-Type' => $payload['mime']],
+        );
+    }
+
     /** @return array<int, array{key: string, label: string}> */
     #[Computed]
     public function filterChips(): array
@@ -757,6 +797,12 @@ new class extends Component
     public function levels(): Collection
     {
         return TrainingLevel::ordered()->get();
+    }
+
+    #[Computed]
+    public function mayExportRoster(): bool
+    {
+        return Gate::allows(Permission::TrainingsView->value) && Gate::allows(Permission::UsersView->value);
     }
 
     /**

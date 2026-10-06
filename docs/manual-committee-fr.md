@@ -300,7 +300,7 @@ Allez dans **Événements club → Entraînements**.
 
 ### Packs d'entraînement
 
-Les packs d'entraînement représentent des séances récurrentes (jour, niveau, type). Créez et gérez les packs depuis l'index des entraînements.
+Les packs d'entraînement représentent des séances récurrentes (jour, niveau, type). Créez et gérez les packs depuis l'index des entraînements. **Exporter les inscrits** sort un tableur de tous les membres liés à un pack de la saison (inscrits, demandes, file d'attente), avec leurs coordonnées ; chaque export est tracé dans l'audit.
 
 ### Approuver les demandes d'entraînement
 
@@ -432,7 +432,7 @@ Allez dans **Trésorerie → Caisse**. Gérez les commandes du bar, la feuille d
 
 ### Inventaires du bar
 
-Le stock du bar ne se corrige plus dans **Bar → Produits**, il s'y lit seulement : on fait un **inventaire** (**Bar → Inventaires**). Le magasinier compte ce qui est sur l'étagère et dit, pour chaque écart, ce qui s'est passé (bu ou mangé sans passer en caisse, cassé, périmé, je ne sais pas ; reçu sans passer par les courses pour un surplus). La validation aligne le stock et envoie un récapitulatif au **trésorier** (la fonction au comité), aux **magasiniers** et à celui qui a validé ; sans trésorier désigné, l'adresse du club en reçoit une copie. Un inventaire validé ne change plus. Le **comité** consulte les inventaires sans pouvoir y toucher. **Bar → Ventes** montre les pertes de la période ; ce qui est parti chez quelqu'un compte dans les moyennes des courses, pas la casse ni le périmé. Article d'aide : *Faire l'inventaire du bar*.
+Le stock du bar ne se corrige plus dans **Bar → Produits**, il s'y lit seulement : on fait un **inventaire** (**Bar → Inventaires**). Le magasinier compte ce qui est sur l'étagère et dit, pour chaque écart, ce qui s'est passé (bu ou mangé sans passer en caisse, cassé, périmé, je ne sais pas ; reçu sans passer par les courses pour un surplus). La validation aligne le stock et envoie un récapitulatif au **trésorier** (la fonction au comité), aux **magasiniers** et à celui qui a validé ; sans trésorier désigné, l'adresse du club en reçoit une copie. Un inventaire validé ne change plus. Le **comité** consulte les inventaires sans pouvoir y toucher. **Bar → Sorties de stock** montre les pertes de la période ; ce qui est parti chez quelqu'un compte dans les moyennes des courses, pas la casse ni le périmé. Article d'aide : *Faire l'inventaire du bar*.
 
 ---
 
@@ -550,3 +550,11 @@ L'écran répond à « à qui dois-je écrire, sans oublier personne et sans éc
 Rédigez le message tel qu'il sera reçu (barre d'outils pour titres, gras, listes, liens) ; **Insérer** une invitation (tournoi, pack, réunion) ajoute un bloc avec un lien « S'inscrire ». Ce lien mène à une page « Pour qui ? » : un parent y choisit son enfant et arrive sur ses inscriptions. **M'envoyer un test** vous l'envoie à vous seul.
 
 L'envoi part au nom du club, les réponses arrivent à l'adresse choisie (la vôtre par défaut). Chaque adresse reçoit son propre message, au rythme de 15 par minute. La page de la communication suit l'avancement, liste les échecs et permet de les relancer ; **Réécrire** repart du même texte et des mêmes filtres. Les adresses sont effacées après deux saisons, le message reste.
+
+---
+
+## 16. Avis et suggestions
+
+Les membres écrivent au comité depuis **Votre avis**, signé ou anonyme. Tout le comité lit tout dans **Administration des membres → Avis et suggestions** ; seule la délégation **Suggestions** fait avancer un avis (**Lu**, **Retenu**, **Noté**), garde une note interne, masque un avis injurieux (avec sa raison, toujours relisible) et donne suite aux **propositions d'aide**.
+
+Un avis anonyme n'est rattaché à personne, pas même en base. Le membre ne voit que *Lu par le comité le…* sur ses avis signés. Chaque nouvel avis et chaque proposition d'aide part par mail aux titulaires de la délégation, ou à tout le comité si personne ne la tient. Les thèmes et les tâches proposés se règlent dans **Thèmes et tâches d'aide**. Une fois par an, la délégation programme l'**enquête annuelle** (**Enquêtes annuelles**) : note de 1 à 5, commentaire par thème, question de l'année. Invitation, relance unique et récapitulatif au comité partent seuls ; les résultats se lisent dans l'onglet **Résultats d'enquête**. Le détail est dans l'article d'aide *Lire les avis des membres*.

@@ -76,15 +76,30 @@
     badge-classes="badge-error"
     />
 
-    {{-- Mirrors the gate in the directory component: affiliated members, plus
-         the committee members who do not play. --}}
+    <li data-menu-group="separator-people"><x-menu-separator /></li>
+
+    {{-- Mirrors the gate in the directory and « Who does what » components:
+         affiliated members, plus the committee members who do not play. --}}
     @if($user->is_active || auth()->user()->can('users.view'))
     <x-menu-item
         icon="o-users"
         link="{{ route('admin.user.directory', auth()->user()) }}"
         :title="__('Member directory')"
     />
+    <x-menu-item
+        icon="o-lifebuoy"
+        link="{{ route('admin.user.who-does-what', auth()->user()) }}"
+        :title="__('Who does what')"
+    />
     @endif
+
+    <x-menu-item
+        icon="o-chat-bubble-left-ellipsis"
+        link="{{ route('admin.user.feedback', auth()->user()) }}"
+        :title="__('Your feedback')"
+    />
+
+    <li data-menu-group="separator-reference"><x-menu-separator /></li>
 
     <x-menu-item
         icon="o-book-open"
@@ -126,33 +141,43 @@
     </x-menu-sub>
     @endcanany
 
-    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'trainings.view', 'communications.send'])
+    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'communications.send', 'feedback.view'])
+    @php
+        // Three groups — the people, the season, the exchange with the members —
+        // and a separator only between two groups this reader actually sees.
+        $seesPeople = auth()->user()->can('users.view');
+        $seesSeason = auth()->user()->can('subscriptions.view')
+            || (\App\Domains\Shared\Enums\Feature::Attestations->enabled() && auth()->user()->can('attestations.view'));
+        $seesExchange = auth()->user()->canAny(['communications.send', 'feedback.view']);
+    @endphp
     <x-menu-sub icon="o-user-group" :title="__('Members Admin')">
-        @can('users.view')
+        @if ($seesPeople)
             <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
-        @endcan
+            <x-menu-item icon="o-key" link="{{ route('admin.users.delegations') }}" :title="__('Delegations')" />
+        @endif
+
+        @if ($seesPeople && $seesSeason)
+            <li data-menu-group="separator-members-season"><x-menu-separator /></li>
+        @endif
         @can('subscriptions.view')
             <x-menu-item icon="o-list-bullet" link="{{ route('admin.users.registrations') }}" :title="__('Affiliations')" />
+            <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
         @endcan
         @feature('attestations')
         @can('attestations.view')
             <x-menu-item icon="o-document-check" link="{{ route('admin.attestations.index') }}" :title="__('Mutual attestations')" />
         @endcan
         @endfeature
-        @can('users.view')
-            <x-menu-item icon="o-key" link="{{ route('admin.users.delegations') }}" :title="__('Delegations')" />
-        @endcan
-        @can('subscriptions.view')
-            <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
-        @endcan
+
+        @if (($seesPeople || $seesSeason) && $seesExchange)
+            <li data-menu-group="separator-members-exchange"><x-menu-separator /></li>
+        @endif
         @can('communications.send')
             <x-menu-item icon="o-envelope" link="{{ route('admin.communications.index') }}" :title="__('Communications')" />
         @endcan
-        @feature('training_planning')
-        @can('trainings.view')
-        <x-menu-item icon="o-view-columns" link="{{ route('admin.planning.board') }}" :title="__('Planning board')" />
+        @can('feedback.view')
+            <x-menu-item icon="o-chat-bubble-left-ellipsis" link="{{ route('admin.feedback.index') }}" :title="__('Feedback and suggestions')" />
         @endcan
-        @endfeature
     </x-menu-sub>
     @endcanany
 
@@ -249,7 +274,14 @@
         Les sous-écrans gardent allumée la liste d'où l'on vient : encaisser ou
         modifier une commande, c'est encore être dans la file d'encaissement.
     --}}
+    @php
+        // The counter, then the stock: a separator only between two groups this
+        // reader actually sees.
+        $seesCounter = auth()->user()->canAny(['bar.access', 'bar.cash_sheet.send']);
+        $seesStock = auth()->user()->canAny(['bar.products.manage', 'bar.categories.manage', 'bar.restocking.shop', 'bar.stats.view']);
+    @endphp
     <x-menu-sub icon="o-shopping-bag" :title="__('Bar')">
+        {{-- At the counter, in the order of an evening. --}}
         @can('bar.access')
         <x-menu-item
             icon="o-shopping-bag"
@@ -267,22 +299,28 @@
             :active="request()->routeIs('bar.payment.*', 'bar.orders.modify')" />
         <x-menu-item icon="o-clock" link="{{ route('bar.orders.history') }}" :title="__('History')" />
         @endcan
+        @can('bar.cash_sheet.send')
+        <x-menu-item icon="o-document-chart-bar" link="{{ route('bar.cashSheet.index') }}" :title="__('Cash sheet')" />
+        @endcan
+
+        {{-- The stock, in the order of its life: the catalogue, what comes in,
+             what is counted, what went out. --}}
+        @if ($seesCounter && $seesStock)
+            <li data-menu-group="separator-bar-stock"><x-menu-separator /></li>
+        @endif
         @can('bar.products.manage')
         <x-menu-item icon="o-cube" link="{{ route('bar.products.index') }}" :title="__('Products')" />
         @endcan
         @can('bar.categories.manage')
         <x-menu-item icon="o-tag" link="{{ route('bar.categories.index') }}" :title="__('Categories')" />
         @endcan
-        @can('bar.cash_sheet.send')
-        <x-menu-item icon="o-document-chart-bar" link="{{ route('bar.cashSheet.index') }}" :title="__('Cash sheet')" />
-        @endcan
         @can('bar.restocking.shop')
         <x-menu-item icon="o-shopping-cart" link="{{ route('bar.restocking.index') }}" :title="__('Shopping')" />
         @endcan
         @can('bar.stats.view')
-        <x-menu-item icon="o-chart-bar" link="{{ route('bar.stats.index') }}" :title="__('Sales')" />
         <x-menu-item icon="o-clipboard-document-check" link="{{ route('bar.inventories.index') }}" :title="__('Inventories')"
             :active="request()->routeIs('bar.inventories.*')" />
+        <x-menu-item icon="o-chart-bar" link="{{ route('bar.stats.index') }}" :title="__('Stock outflows')" />
         @endcan
         {{--
             De quoi installer la salle avant le service : l'écran à caster derrière
@@ -315,6 +353,11 @@
         @can('trainings.view')
         <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')" />
         @endcan
+        @feature('training_planning')
+        @can('trainings.view')
+        <x-menu-item icon="o-view-columns" link="{{ route('admin.planning.board') }}" :title="__('Planning board')" />
+        @endcan
+        @endfeature
         @can('access-coach-area')
         <x-menu-item icon="o-calendar-days" link="{{ route('coach.trainings') }}" :title="__('My sessions')" />
         @endcan

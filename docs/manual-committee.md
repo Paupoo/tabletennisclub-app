@@ -299,7 +299,7 @@ Go to **Club events → Trainings**.
 
 ### Training packs
 
-Training packs represent recurring training sessions (day, level, type). Create and manage packs from the trainings index.
+Training packs represent recurring training sessions (day, level, type). Create and manage packs from the trainings index. **Export the enrolled** produces a spreadsheet of every member tied to a pack of the season (enrolled, requests, waiting list), with their contact details; each export is recorded in the audit log.
 
 ### Approving training requests
 
@@ -431,7 +431,7 @@ Go to **Treasury → Cash register**. Manage bar orders, cash sheet, and stock m
 
 ### Bar inventories
 
-The bar stock is no longer corrected in **Bar → Products**, it is only read there: you take an **inventory** (**Bar → Inventories**). The store keeper counts what is on the shelf and says, for each gap, what happened (drunk or eaten without the till, broken, expired, I don't know; received outside the shopping for a surplus). Validating aligns the stock and sends a summary to the **treasurer** (the committee function), the **store keepers** and whoever validated; with no treasurer appointed, the club address gets a copy. A validated inventory never changes. The **committee** reads the inventories without touching them. **Bar → Sales** shows the losses of the period; what went to someone counts in the shopping averages, broken and expired goods do not. Help article: *Faire l'inventaire du bar*.
+The bar stock is no longer corrected in **Bar → Products**, it is only read there: you take an **inventory** (**Bar → Inventories**). The store keeper counts what is on the shelf and says, for each gap, what happened (drunk or eaten without the till, broken, expired, I don't know; received outside the shopping for a surplus). Validating aligns the stock and sends a summary to the **treasurer** (the committee function), the **store keepers** and whoever validated; with no treasurer appointed, the club address gets a copy. A validated inventory never changes. The **committee** reads the inventories without touching them. **Bar → Stock outflows** shows the losses of the period; what went to someone counts in the shopping averages, broken and expired goods do not. Help article: *Faire l'inventaire du bar*.
 
 ---
 
@@ -549,3 +549,11 @@ The screen answers "who must I write to, without forgetting anyone and without w
 Write the message as it will look (toolbar for headings, bold, lists, links); **Insert** an invitation (tournament, pack, meeting) to add a block with a "Register" link. That link leads to a "For whom?" page: a parent picks their child and lands on their registrations. **Send me a test** sends it to you alone.
 
 The message is sent from the club; replies go to the chosen address (yours by default). Each address gets its own message, 15 per minute. The communication's page follows the progress, lists the failures and retries them; **Write it again** starts from the same text and filters. Addresses are deleted after two seasons; the message is kept.
+
+---
+
+## 16. Feedback and Suggestions
+
+Members write to the committee from **Your feedback**, signed or anonymous. The whole committee reads everything in **Members Admin → Feedback and suggestions**; only the **Suggestions** délégation moves a feedback on (**Read**, **Retained**, **Noted**), keeps an internal note, hides an insulting feedback (with its reason, still readable) and follows up on the **offers of help**.
+
+An anonymous feedback is tied to nobody, not even in the database. The member only sees *Read by the committee on…* on their signed feedback. Each new feedback and each offer of help is mailed to the holders of the délégation, or to the whole committee while nobody holds it. The themes and tasks offered are set in **Themes and help tasks**. Once a year, the délégation schedules the **yearly survey** (**Yearly surveys**): a rating from 1 to 5, a comment per theme, the question of the year. The invitation, the one reminder and the summary to the committee leave on their own; the results read in the **Survey results** tab. The detail is in the help article *Lire les avis des membres*.

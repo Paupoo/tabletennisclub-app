@@ -61,6 +61,36 @@
         </div>
     </x-admin.shared.form-section>
 
+    @if ($listedOnWhoDoesWhat)
+        <!-- Section « Who does what » (committee members and duty holders) -->
+        <x-admin.shared.form-section :separator="true" :subtitle="__('Members find you there with their questions')" :title="__('On the « Who does what » page')">
+            <div class="col-span-6 md:col-span-4">
+                <div class="space-y-5">
+                    <x-toggle class="toggle-primary"
+                        :label="__('Show my email address')"
+                        wire:model.live="dutyShareEmail" />
+
+                    <x-toggle class="toggle-primary"
+                        :label="__('Show my phone number')"
+                        wire:model.live="dutySharePhone" />
+
+                    <x-form wire:submit="saveDutyBlurb">
+                        <x-textarea
+                            :label="__('A word for the members')"
+                            :hint="__('Optional, 280 characters at most. For example: when and where to find you.')"
+                            maxlength="280"
+                            rows="2"
+                            wire:model="dutyBlurb" />
+
+                        <x-slot:actions>
+                            <x-button class="btn-primary" :label="__('Save')" spinner="saveDutyBlurb" type="submit" />
+                        </x-slot:actions>
+                    </x-form>
+                </div>
+            </div>
+        </x-admin.shared.form-section>
+    @endif
+
     <!-- Section Security (password) -->
     <x-admin.shared.form-section :separator="false" :subtitle="__('Secure your account')" :title="__('Security')">
         <div class="max-w-sm">

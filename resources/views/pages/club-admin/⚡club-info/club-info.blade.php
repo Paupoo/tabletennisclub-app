@@ -108,7 +108,7 @@
 
                 <div class="text-info flex items-center gap-2 text-xs italic">
                     <x-icon class="h-4 w-4" name="o-information-circle" />
-                    {{ __('Roles defined here will be visible on the "Contact" page.') }}
+                    {{ __('Members find the committee on the « Who does what » page.') }}
                 </div>
             </div>
         </x-admin.shared.form-section>

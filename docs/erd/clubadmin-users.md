@@ -42,6 +42,7 @@ erDiagram
         string last_name
         string sex
         string phone_number "nullable"
+        string duty_blurb "nullable"
         string iban "nullable"
         datetime birthdate "nullable"
         datetime renewal_reminded_at "nullable"
@@ -79,6 +80,7 @@ erDiagram
     User ||--o| MemberDeparture : "departureThisSeason"
     User }o--o{ FamilyGroup : "familyGroups"
     User ||--o| Guardian : "guardianRecord"
+    User }o--o{ FeedbackCampaign : "feedbackCampaigns"
     User }o--o{ Guardian : "guardians"
     User ||--o{ CashRegister : "heldCashRegisters"
     User }o--o{ Interclub : "interclubs"

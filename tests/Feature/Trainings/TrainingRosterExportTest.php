@@ -115,3 +115,23 @@ it('keeps the file from a trainings delegate who cannot read the members', funct
         ->call('exportRoster', 'xlsx')
         ->assertForbidden();
 });
+
+it('still calls a minor no guardian is linked to, on the number noted on their file', function (): void {
+    $pack = makeTrainingPack($this->season);
+    $child = activeMember($this->season, ['email' => null, 'phone_number' => null, 'guardian_phone_number' => '0499 88 77 66', 'birthdate' => now()->subYears(9)]);
+    rosterExportTie($child, $pack, 'enrolled');
+
+    $row = app(TrainingRosterExport::class)->rows($this->season)[0];
+
+    expect($row['phone'])->toBe('0499 88 77 66')
+        ->and($row['emails'])->toBe('');
+});
+
+it('produces the file when a minor has no guardian linked', function (): void {
+    $pack = makeTrainingPack($this->season);
+    rosterExportTie(activeMember($this->season, ['email' => null, 'birthdate' => now()->subYears(9)]), $pack, 'enrolled');
+
+    $file = app(TrainingRosterExport::class)->export($this->season, 'xlsx');
+
+    expect($file['contents'])->not->toBe('');
+});

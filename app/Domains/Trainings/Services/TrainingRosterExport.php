@@ -135,7 +135,11 @@ final readonly class TrainingRosterExport
             return (string) $member->phone_number;
         }
 
+        // toBase() first: with no guardian linked, map() leaves an empty
+        // Eloquent collection, and unique() then asks each phone number for a
+        // model key.
         $phones = $member->guardians
+            ->toBase()
             ->map(fn (Guardian $guardian): string => $guardian->phone)
             ->push($member->guardian_phone_number, $member->phone_number)
             ->filter(fn (?string $phone): bool => filled($phone))

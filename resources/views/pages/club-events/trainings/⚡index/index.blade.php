@@ -596,6 +596,12 @@
                                                     <x-badge value="{{ __('Withdrawn') }}"
                                                         class="badge-warning badge-soft badge-xs" icon="o-eye-slash" />
                                                 @endunless
+                                                {{-- Closed is the exception worth spotting while scanning the list;
+                                                     a withdrawn pack already says more with its own badge. --}}
+                                                @if ($pack->is_active && ! $pack->enrollments_open)
+                                                    <x-badge value="{{ __('Closed to enrolments') }}"
+                                                        class="badge-neutral badge-soft badge-xs" icon="o-lock-closed" />
+                                                @endif
                                                 <x-badge value="{{ number_format($pack->price, 0) }}€"
                                                     class="badge-primary badge-soft" />
                                                 @if ($pack->eventPost?->status->value === 'PUBLISHED')

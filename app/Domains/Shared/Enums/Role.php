@@ -38,6 +38,7 @@ enum Role: string
     case CONTACTS = 'contacts';
     case EXPENSE_REPORTS = 'notes-de-frais';
     case FACILITIES = 'installations';
+    case FEEDBACK = 'suggestions';
     case FINES = 'amendes';
     case INTERCLUBS = 'interclubs';
     case MEETINGS = 'reunions';
@@ -142,6 +143,7 @@ enum Role: string
             self::BARMAN => __('Serve drinks and snacks, close orders and take over others.'),
             self::STORE_KEEPER => __('Manage the stock, the products and the categories.'),
             self::FACILITIES => __('Manage rooms, tables and entrusted equipment.'),
+            self::FEEDBACK => __('Sort the members\' feedback, run the yearly survey and follow up on the offers of help.'),
             self::SEASONS => __('Open, close and provision the seasons.'),
             self::SUPERVISION => __('Read the audit log, monitor the queue, edit club settings.'),
         };
@@ -190,6 +192,7 @@ enum Role: string
             self::BARMAN => __('Barman'),
             self::STORE_KEEPER => __('Store keeper'),
             self::FACILITIES => __('Facilities'),
+            self::FEEDBACK => __('Suggestions'),
             self::SEASONS => __('Seasons'),
             self::SUPERVISION => __('Technical supervision'),
         };
@@ -262,6 +265,9 @@ enum Role: string
                 // The club record itself: identity, bank account, financial
                 // year (decided 2026-10-05).
                 Permission::ClubView,
+                // Every word the members write to the committee (decided
+                // 2026-10-06): the box is shared, nobody may bury a criticism.
+                Permission::FeedbackView,
                 // Writing to the club is a committee duty, not a délégation
                 // (decided 2026-09-27).
                 Permission::CommunicationsSend,
@@ -409,6 +415,11 @@ enum Role: string
                 Permission::RoomsManage,
                 Permission::TablesManage,
                 Permission::EquipmentHolderUpdate,
+            ],
+
+            self::FEEDBACK => [
+                Permission::FeedbackView,
+                Permission::FeedbackManage,
             ],
 
             self::SEASONS => [

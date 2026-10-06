@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubAdmin\Users\Notifications\GdprErasureRequestedNotification;
+use App\Domains\ClubAdmin\Users\Services\WhoDoesWhat;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -19,6 +20,15 @@ use Mary\Traits\Toast;
 new #[Title('My settings')] class extends Component
 {
     use HasBreadcrumbs, Toast;
+
+    // ── The « Who does what » page (committee members and duty holders only)
+    public string $dutyBlurb = '';
+
+    public bool $dutyShareEmail = true;
+
+    public bool $dutySharePhone = false;
+
+    public bool $listedOnWhoDoesWhat = false;
 
     public bool $notifyAvailabilityRequests = true;
 
@@ -50,6 +60,10 @@ new #[Title('My settings')] class extends Component
         $this->sharePhone = $user->sharesContact('phone');
         $this->shareEmail = $user->sharesContact('email');
         $this->shareAddress = $user->sharesContact('address');
+        $this->listedOnWhoDoesWhat = app(WhoDoesWhat::class)->lists($user);
+        $this->dutyShareEmail = $user->sharesDutyContact('email');
+        $this->dutySharePhone = $user->sharesDutyContact('phone');
+        $this->dutyBlurb = $user->duty_blurb ?? '';
     }
 
     /**
@@ -95,6 +109,17 @@ new #[Title('My settings')] class extends Component
         ];
     }
 
+    public function saveDutyBlurb(): void
+    {
+        abort_unless(Auth::user()->is($this->user), 403);
+
+        $this->validate(['dutyBlurb' => ['nullable', 'string', 'max:280']]);
+
+        $this->user->update(['duty_blurb' => filled($this->dutyBlurb) ? trim($this->dutyBlurb) : null]);
+
+        $this->success(__('Your word for the members is saved.'), position: 'toast-bottom toast-end');
+    }
+
     /**
      * Notification toggles save themselves as soon as they are flipped —
      * no extra submit button for a one-click preference.
@@ -117,9 +142,26 @@ new #[Title('My settings')] class extends Component
             return;
         }
 
+        // Both families of toggles live in the same column: each writes its own
+        // keys over what is stored, so flipping one never resets the other.
+        if (str_starts_with($property, 'dutyShare')) {
+            $this->user->update([
+                'contact_visibility' => [
+                    ...$this->user->contact_visibility ?? [],
+                    'duty_email' => $this->dutyShareEmail,
+                    'duty_phone' => $this->dutySharePhone,
+                ],
+            ]);
+
+            $this->success(__('Privacy preferences saved.'), position: 'toast-bottom toast-end');
+
+            return;
+        }
+
         if (str_starts_with($property, 'share')) {
             $this->user->update([
                 'contact_visibility' => [
+                    ...$this->user->contact_visibility ?? [],
                     'phone' => $this->sharePhone,
                     'email' => $this->shareEmail,
                     'address' => $this->shareAddress,

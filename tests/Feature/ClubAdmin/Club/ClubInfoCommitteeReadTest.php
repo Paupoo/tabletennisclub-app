@@ -60,3 +60,10 @@ it('leaves the form open to whoever updates the club', function (): void {
 
     expect(Club::own()->fresh()->name)->toBe('Renamed');
 });
+
+it('says where the members see the committee, and no longer promises the contact page', function (): void {
+    Livewire::actingAs(User::factory()->isCommitteeMember()->create())
+        ->test('pages::club-admin.club-info')
+        ->assertSee('Les membres retrouvent le comité sur la page « Qui fait quoi ».')
+        ->assertDontSee('visibles sur la page');
+});

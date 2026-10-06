@@ -200,3 +200,11 @@ Schedule::command('bar:restocking-digest')
     ->weeklyOn(6, '10:00')
     ->withoutOverlapping()
     ->when(Feature::Bar->enabled(...));
+
+// Enquête annuelle des membres : invitation le jour de l'ouverture, une seule
+// relance à mi-parcours, récapitulatif au comité le lendemain de la clôture.
+// Chaque envoi est tamponné sur la campagne : la commande ne renvoie jamais
+// deux fois.
+Schedule::command('feedback:send-campaign-mailings')
+    ->dailyAt('09:00')
+    ->withoutOverlapping();

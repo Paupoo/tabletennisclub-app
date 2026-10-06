@@ -8,6 +8,7 @@ namespace App\Domains\ClubAdmin\Users\Models;
 
 use App\Domains\ClubAdmin\Club\Models\KeyRing;
 use App\Domains\ClubAdmin\Contact\Models\Contact;
+use App\Domains\ClubAdmin\Feedback\Models\FeedbackCampaign;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubPosts\Models\NewsPost;
@@ -74,6 +75,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $last_name
  * @property string $sex
  * @property string|null $phone_number
+ * @property string|null $duty_blurb
  * @property string|null $iban
  * @property \Illuminate\Support\Carbon|null $birthdate
  * @property \Illuminate\Support\Carbon|null $renewal_reminded_at
@@ -264,6 +266,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'gdpr_erasure_requested_at',
         'notification_preferences',
         'contact_visibility',
+        'duty_blurb',
         'federation_licence_type',
         'federation_synced_at',
         'member_import_id',
@@ -520,6 +523,20 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * @return BelongsToMany<Guardian, $this>
+     */
+    /**
+     * The yearly surveys this member answered — the bare fact, without the
+     * answer, which may be anonymous.
+     *
+     * @return BelongsToMany<FeedbackCampaign, $this>
+     */
+    public function feedbackCampaigns(): BelongsToMany
+    {
+        return $this->belongsToMany(FeedbackCampaign::class, 'feedback_campaign_participants');
+    }
+
+    /**
      * The stored force-list position for a given league category: the women's
      * or veterans' sub-list, or the general list for MEN / unknown categories.
      */
@@ -640,9 +657,6 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(Guardian::class, 'user_id');
     }
 
-    /**
-     * @return BelongsToMany<Guardian, $this>
-     */
     public function guardians(): BelongsToMany
     {
         return $this->belongsToMany(Guardian::class, 'guardian_user');
@@ -848,6 +862,15 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return $this->guardianRecord()->whereHas('users')->exists();
+    }
+
+    /**
+     * A managed account — no address, no login of its own (decision #56): a
+     * guardian acts for it.
+     */
+    public function isManagedAccount(): bool
+    {
+        return $this->email === null;
     }
 
     public function isMinor(): bool
@@ -1655,6 +1678,19 @@ class User extends Authenticatable implements MustVerifyEmail
     public function sharesContact(string $field): bool
     {
         return (bool) ($this->contact_visibility[$field] ?? false);
+    }
+
+    /**
+     * Whether a committee member or duty holder shows a contact field on the
+     * « Who does what » page. Not the directory's opt-in: whoever takes on a
+     * duty wants to be found, so the email shows unless withdrawn, while a
+     * phone number stays a choice to make.
+     *
+     * @param  'phone'|'email'  $field
+     */
+    public function sharesDutyContact(string $field): bool
+    {
+        return (bool) ($this->contact_visibility['duty_' . $field] ?? $field === 'email');
     }
 
     public function subscriptions(): HasMany

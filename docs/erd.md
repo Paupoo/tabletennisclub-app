@@ -32,6 +32,12 @@ erDiagram
     ExpenseReport
     ExpenseReportFile
 
+    %% ClubAdmin/Feedback
+    FeedbackEntry
+    FeedbackTheme
+    HelpOffer
+    HelpTask
+
     %% ClubAdmin/Finance
     FinancialExport
 
@@ -136,6 +142,9 @@ erDiagram
     ExpenseReport ||--o{ Payment : "payments"
     ExpenseReport ||--o| Payment : "refund"
     ExpenseReport ||--o| BarRestocking : "restocking"
+    FeedbackTheme ||--o{ FeedbackEntry : "entries"
+    HelpOffer }o--o{ HelpTask : "tasks"
+    HelpTask }o--o{ HelpOffer : "offers"
     Fine ||--o| Payment : "payment"
     BankAccount ||--o{ Transaction : "transactions"
     BankImport ||--o{ Transaction : "transactions"

@@ -93,6 +93,12 @@
     />
     @endif
 
+    <x-menu-item
+        icon="o-chat-bubble-left-ellipsis"
+        link="{{ route('admin.user.feedback', auth()->user()) }}"
+        :title="__('Your feedback')"
+    />
+
     <li data-menu-group="separator-reference"><x-menu-separator /></li>
 
     <x-menu-item
@@ -135,7 +141,7 @@
     </x-menu-sub>
     @endcanany
 
-    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'trainings.view', 'communications.send'])
+    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'trainings.view', 'communications.send', 'feedback.view'])
     <x-menu-sub icon="o-user-group" :title="__('Members Admin')">
         @can('users.view')
             <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
@@ -156,6 +162,9 @@
         @endcan
         @can('communications.send')
             <x-menu-item icon="o-envelope" link="{{ route('admin.communications.index') }}" :title="__('Communications')" />
+        @endcan
+        @can('feedback.view')
+            <x-menu-item icon="o-chat-bubble-left-ellipsis" link="{{ route('admin.feedback.index') }}" :title="__('Feedback and suggestions')" />
         @endcan
         @feature('training_planning')
         @can('trainings.view')

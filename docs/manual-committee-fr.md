@@ -550,3 +550,11 @@ L'écran répond à « à qui dois-je écrire, sans oublier personne et sans éc
 Rédigez le message tel qu'il sera reçu (barre d'outils pour titres, gras, listes, liens) ; **Insérer** une invitation (tournoi, pack, réunion) ajoute un bloc avec un lien « S'inscrire ». Ce lien mène à une page « Pour qui ? » : un parent y choisit son enfant et arrive sur ses inscriptions. **M'envoyer un test** vous l'envoie à vous seul.
 
 L'envoi part au nom du club, les réponses arrivent à l'adresse choisie (la vôtre par défaut). Chaque adresse reçoit son propre message, au rythme de 15 par minute. La page de la communication suit l'avancement, liste les échecs et permet de les relancer ; **Réécrire** repart du même texte et des mêmes filtres. Les adresses sont effacées après deux saisons, le message reste.
+
+---
+
+## 16. Avis et suggestions
+
+Les membres écrivent au comité depuis **Votre avis**, signé ou anonyme. Tout le comité lit tout dans **Administration des membres → Avis et suggestions** ; seule la délégation **Suggestions** fait avancer un avis (**Lu**, **Retenu**, **Noté**), garde une note interne, masque un avis injurieux (avec sa raison, toujours relisible) et donne suite aux **propositions d'aide**.
+
+Un avis anonyme n'est rattaché à personne, pas même en base. Le membre ne voit que *Lu par le comité le…* sur ses avis signés. Chaque nouvel avis et chaque proposition d'aide part par mail aux titulaires de la délégation, ou à tout le comité si personne ne la tient. Les thèmes et les tâches proposés se règlent dans **Thèmes et tâches d'aide**. Le détail est dans l'article d'aide *Lire les avis des membres*.

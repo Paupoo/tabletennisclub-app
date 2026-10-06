@@ -24,6 +24,7 @@ it('orders the general menu in three groups', function (): void {
         'separator-people',
         __('Member directory'),
         __('Who does what'),
+        __('Your feedback'),
         'separator-reference',
         __('Rules & regulations'),
         __('Club charter'),
@@ -42,4 +43,25 @@ it('keeps « Who does what » from a member who is not affiliated', function ():
     $html = (string) $this->blade('<x-admin.navigation :user="$user" />', ['user' => $newcomer]);
 
     expect($html)->not->toContain(e(__('Who does what')));
+});
+
+it('offers « Your feedback » to every signed-in member, affiliated or not', function (): void {
+    $newcomer = User::factory()->create();
+    $this->actingAs($newcomer);
+
+    $html = (string) $this->blade('<x-admin.navigation :user="$user" />', ['user' => $newcomer]);
+
+    expect($html)->toContain(route('admin.user.feedback', $newcomer));
+});
+
+it('leads the committee to the feedback, and keeps a member out', function (): void {
+    $seat = User::factory()->isCommitteeMember()->create();
+    $this->actingAs($seat);
+    $html = (string) $this->blade('<x-admin.navigation :user="$user" />', ['user' => $seat]);
+    expect($html)->toContain(route('admin.feedback.index'));
+
+    $member = User::factory()->create();
+    $this->actingAs($member);
+    $html = (string) $this->blade('<x-admin.navigation :user="$user" />', ['user' => $member]);
+    expect($html)->not->toContain(route('admin.feedback.index'));
 });

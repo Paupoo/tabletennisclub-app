@@ -224,6 +224,7 @@ You cannot currently manage notification preferences per-type. To stop receiving
 
 If you have a problem:
 - Open **Who does what** in the menu: the committee, with each statutory title, then who to turn to for interclubs, training, tournaments, affiliation, payments, the bar, rooms and keys, attestations, fines and the website. The page follows the délégations: nothing is typed in by hand, and a duty nobody holds is not shown.
+- Open **Your feedback** to write to the committee, signed or anonymous, and offer a hand if you wish (help article *Donner mon avis au club*).
 - Use the **Contact form** on the club website (public page)
 - Ask the committee at the next training session
 

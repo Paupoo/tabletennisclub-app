@@ -18,6 +18,7 @@ enum ClubDuty: string
     case Attestations = 'attestations';
     case Bar = 'bar';
     case Facilities = 'facilities';
+    case Feedback = 'feedback';
     case Fines = 'fines';
     case Interclubs = 'interclubs';
     case Payments = 'payments';
@@ -38,6 +39,7 @@ enum ClubDuty: string
             self::Attestations => 'o-document-check',
             self::Fines => 'o-scale',
             self::Website => 'o-globe-alt',
+            self::Feedback => 'o-chat-bubble-left-ellipsis',
         };
     }
 
@@ -54,6 +56,7 @@ enum ClubDuty: string
             self::Attestations => __('Mutual attestations'),
             self::Fines => __('Fines'),
             self::Website => __('Website and communication'),
+            self::Feedback => __('Your feedback and suggestions'),
         };
     }
 
@@ -75,6 +78,7 @@ enum ClubDuty: string
             self::Attestations => [Role::ATTESTATIONS],
             self::Fines => [Role::FINES],
             self::Website => [Role::WEBSITE],
+            self::Feedback => [Role::FEEDBACK],
         };
     }
 }

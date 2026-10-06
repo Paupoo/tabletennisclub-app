@@ -122,6 +122,7 @@ Route::prefix('admin/my-space/')
         Route::livewire('{user}/charte', 'pages::club-admin.users.user-space.charter')->name('admin.user.charter');
         Route::livewire('{user}/directory', 'pages::club-admin.users.user-space.directory')->name('admin.user.directory');
         Route::livewire('{user}/who-does-what', 'pages::club-admin.users.user-space.who-does-what')->name('admin.user.who-does-what');
+        Route::livewire('{user}/feedback', 'pages::club-admin.users.user-space.feedback')->name('admin.user.feedback');
         Route::livewire('{user}/payments', 'pages::club-admin.users.user-space.payments')->name('admin.user.payments');
         Route::livewire('{user}/expense-reports', 'pages::club-admin.users.user-space.expense-reports')
             ->name('admin.user.expense-reports')
@@ -205,6 +206,19 @@ Route::prefix('admin/club-admin/users/')
         // Legacy redirect — kept for backward compatibility
         Route::get('payments', fn () => redirect()->route('admin.treasury.payments'))->name('admin.users.payments');
     });
+/*
+ * The members' feedback — the whole committee reads it, the suggestions
+ * délégation sorts it (guarded inside the components).
+ */
+Route::prefix('admin/club-admin/feedback/')
+    ->middleware(['auth', 'verified', 'can:feedback.view'])
+    ->group(function (): void {
+        Route::livewire('/', 'pages::club-admin.feedback.index')->name('admin.feedback.index');
+        Route::livewire('lists', 'pages::club-admin.feedback.lists')
+            ->middleware('can:feedback.manage')
+            ->name('admin.feedback.lists');
+    });
+
 // Season planning board — visible to the whole committee, mutations reserved to managers (decision #18).
 /*
  * Club-wide communications — the committee. Taking every member's address out

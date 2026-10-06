@@ -852,6 +852,15 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->guardianRecord()->whereHas('users')->exists();
     }
 
+    /**
+     * A managed account — no address, no login of its own (decision #56): a
+     * guardian acts for it.
+     */
+    public function isManagedAccount(): bool
+    {
+        return $this->email === null;
+    }
+
     public function isMinor(): bool
     {
         return $this->birthdate !== null && Carbon::parse($this->birthdate)->age < 18;

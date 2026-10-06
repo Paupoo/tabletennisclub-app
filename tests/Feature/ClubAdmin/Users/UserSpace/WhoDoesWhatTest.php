@@ -125,3 +125,13 @@ it('quotes the word a committee member left for the members', function (): void 
         ->test(WHO_DOES_WHAT_COMPONENT, ['user' => $viewer])
         ->assertSee('Arrêtez-moi le vendredi au bar.');
 });
+
+it('names who sorts the feedback of the members', function (): void {
+    $viewer = activeMember($this->season);
+    $delegate = User::factory()->create(['first_name' => 'Nadia', 'last_name' => 'Benali']);
+    $delegate->assignRole(Role::FEEDBACK->value);
+
+    Livewire::actingAs($viewer)
+        ->test(WHO_DOES_WHAT_COMPONENT, ['user' => $viewer])
+        ->assertSeeInOrder(['Vos avis et suggestions', 'Nadia Benali']);
+});

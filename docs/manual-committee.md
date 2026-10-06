@@ -549,3 +549,11 @@ The screen answers "who must I write to, without forgetting anyone and without w
 Write the message as it will look (toolbar for headings, bold, lists, links); **Insert** an invitation (tournament, pack, meeting) to add a block with a "Register" link. That link leads to a "For whom?" page: a parent picks their child and lands on their registrations. **Send me a test** sends it to you alone.
 
 The message is sent from the club; replies go to the chosen address (yours by default). Each address gets its own message, 15 per minute. The communication's page follows the progress, lists the failures and retries them; **Write it again** starts from the same text and filters. Addresses are deleted after two seasons; the message is kept.
+
+---
+
+## 16. Feedback and Suggestions
+
+Members write to the committee from **Your feedback**, signed or anonymous. The whole committee reads everything in **Members Admin → Feedback and suggestions**; only the **Suggestions** délégation moves a feedback on (**Read**, **Retained**, **Noted**), keeps an internal note, hides an insulting feedback (with its reason, still readable) and follows up on the **offers of help**.
+
+An anonymous feedback is tied to nobody, not even in the database. The member only sees *Read by the committee on…* on their signed feedback. Each new feedback and each offer of help is mailed to the holders of the délégation, or to the whole committee while nobody holds it. The themes and tasks offered are set in **Themes and help tasks**. The detail is in the help article *Lire les avis des membres*.

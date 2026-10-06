@@ -84,6 +84,9 @@ describe('the committee reads the club', function (): void {
                 'financial_report.view',
                 // The club record (decided 2026-10-05).
                 'club.view',
+                // The members' feedback: the whole committee reads every word
+                // of it (decided 2026-10-06).
+                'feedback.view',
                 // Not a reading right: the one duty the whole committee shares
                 // (decided 2026-09-27).
                 'communications.send',
@@ -246,5 +249,25 @@ describe('the access delegation', function (): void {
             ->can(Permission::AccessManage->value)->toBeTrue()
             ->can(Permission::UsersUpdate->value)->toBeFalse()
             ->can(Permission::UsersCreate->value)->toBeFalse();
+    });
+});
+
+describe('the suggestions délégation', function (): void {
+    /*
+     * Decided on 2026-10-06: the whole committee reads the feedback, and one
+     * délégation sorts it, hides what insults someone, runs the campaigns and
+     * follows up on the offers of help.
+     */
+    it('reads and manages the feedback, and nothing else', function (): void {
+        expect(Role::FEEDBACK->permissions())
+            ->toEqualCanonicalizing([Permission::FeedbackView, Permission::FeedbackManage]);
+    });
+
+    it('lets the committee read the feedback without managing it', function (): void {
+        $seat = User::factory()->isCommitteeMember()->create();
+
+        expect($seat)
+            ->can(Permission::FeedbackView->value)->toBeTrue()
+            ->can(Permission::FeedbackManage->value)->toBeFalse();
     });
 });

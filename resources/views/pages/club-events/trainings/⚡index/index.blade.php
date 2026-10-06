@@ -29,6 +29,15 @@
                 <div class="hidden items-center gap-2 lg:flex">
                     <x-admin.shared.filters-button :count="count($filterChips)" />
                 </div>
+                @if ($this->mayExportRoster && $viewSeason)
+                    <x-dropdown :id="'roster-export'" right>
+                        <x-slot:trigger>
+                            <x-button class="btn-ghost btn-sm" icon="o-arrow-down-tray" :label="__('Export the enrolled')" />
+                        </x-slot:trigger>
+                        <x-menu-item :title="__('Excel (.xlsx)')" wire:click="exportRoster('xlsx')" />
+                        <x-menu-item :title="__('CSV')" wire:click="exportRoster('csv')" />
+                    </x-dropdown>
+                @endif
                 @if ($this->mayManage)
                     <x-button class="btn-ghost btn-sm" icon="o-swatch" :label="__('Levels')"
                         wire:click="$set('levelDrawer', true)" />

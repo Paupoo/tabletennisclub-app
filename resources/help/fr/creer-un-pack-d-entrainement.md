@@ -78,6 +78,12 @@ Ce que la fermeture fait, et **surtout ce qu'elle ne fait pas** :
 
 Côté membre, le pack **reste affiché**, avec *Pack fermé aux inscriptions* à la place du bouton. Le faire disparaître ferait croire à une suppression.
 
+Dans la liste des packs, un pack fermé porte le badge **Inscriptions closes**.
+
+## Exporter tous les inscrits
+
+**Exporter les inscrits** (en haut de la liste) sort un tableur de la saison affichée : une ligne par membre et par pack, pour les inscrits, les demandes à valider, la file d'attente et les places offertes. On y trouve le créneau, le coach, la position en file, l'âge, le classement, l'e-mail et le téléphone (ceux des tuteurs pour un mineur), l'affiliation payée ou non et le taux de présence. Réservé au comité ; chaque export est inscrit dans le journal d'audit.
+
 ## Ajouter un membre à la main
 
 Ouvrez **Séances** sur le pack, puis **Ajouter un membre**.

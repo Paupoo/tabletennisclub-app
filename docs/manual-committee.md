@@ -299,7 +299,7 @@ Go to **Club events → Trainings**.
 
 ### Training packs
 
-Training packs represent recurring training sessions (day, level, type). Create and manage packs from the trainings index.
+Training packs represent recurring training sessions (day, level, type). Create and manage packs from the trainings index. **Export the enrolled** produces a spreadsheet of every member tied to a pack of the season (enrolled, requests, waiting list), with their contact details; each export is recorded in the audit log.
 
 ### Approving training requests
 

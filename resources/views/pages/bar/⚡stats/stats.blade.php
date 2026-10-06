@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header progress-indicator separator :title="__('Bar sales')"
+    <x-header progress-indicator separator :title="__('Stock outflows')"
         :subtitle="__('What sells, what sleeps: a guide for the next purchases.')" />
 
     {{--

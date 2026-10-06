@@ -54,7 +54,7 @@ Les corrections faites avant l'inventaire, depuis l'ancien champ Stock, apparais
 
 ## Les pertes dans les ventes
 
-**Bar → Ventes** affiche une colonne **Pertes** : ce que les inventaires validés sur la période ont constaté. Touchez le nombre pour voir le détail.
+**Bar → Sorties de stock** affiche une colonne **Pertes** : ce que les inventaires validés sur la période ont constaté. Touchez le nombre pour voir le détail.
 
 Ce qui a été bu sans passer en caisse, ou dont on ne sait pas ce qu'il est devenu, compte dans les moyennes qui calculent les courses : c'est parti chez quelqu'un, il faudra le racheter. La casse et le périmé ne comptent pas : on ne rachète pas plus de ce qui périme.
 

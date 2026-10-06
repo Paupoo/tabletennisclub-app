@@ -274,7 +274,14 @@
         Les sous-écrans gardent allumée la liste d'où l'on vient : encaisser ou
         modifier une commande, c'est encore être dans la file d'encaissement.
     --}}
+    @php
+        // The counter, then the stock: a separator only between two groups this
+        // reader actually sees.
+        $seesCounter = auth()->user()->canAny(['bar.access', 'bar.cash_sheet.send']);
+        $seesStock = auth()->user()->canAny(['bar.products.manage', 'bar.categories.manage', 'bar.restocking.shop', 'bar.stats.view']);
+    @endphp
     <x-menu-sub icon="o-shopping-bag" :title="__('Bar')">
+        {{-- At the counter, in the order of an evening. --}}
         @can('bar.access')
         <x-menu-item
             icon="o-shopping-bag"
@@ -292,22 +299,28 @@
             :active="request()->routeIs('bar.payment.*', 'bar.orders.modify')" />
         <x-menu-item icon="o-clock" link="{{ route('bar.orders.history') }}" :title="__('History')" />
         @endcan
+        @can('bar.cash_sheet.send')
+        <x-menu-item icon="o-document-chart-bar" link="{{ route('bar.cashSheet.index') }}" :title="__('Cash sheet')" />
+        @endcan
+
+        {{-- The stock, in the order of its life: the catalogue, what comes in,
+             what is counted, what went out. --}}
+        @if ($seesCounter && $seesStock)
+            <li data-menu-group="separator-bar-stock"><x-menu-separator /></li>
+        @endif
         @can('bar.products.manage')
         <x-menu-item icon="o-cube" link="{{ route('bar.products.index') }}" :title="__('Products')" />
         @endcan
         @can('bar.categories.manage')
         <x-menu-item icon="o-tag" link="{{ route('bar.categories.index') }}" :title="__('Categories')" />
         @endcan
-        @can('bar.cash_sheet.send')
-        <x-menu-item icon="o-document-chart-bar" link="{{ route('bar.cashSheet.index') }}" :title="__('Cash sheet')" />
-        @endcan
         @can('bar.restocking.shop')
         <x-menu-item icon="o-shopping-cart" link="{{ route('bar.restocking.index') }}" :title="__('Shopping')" />
         @endcan
         @can('bar.stats.view')
-        <x-menu-item icon="o-chart-bar" link="{{ route('bar.stats.index') }}" :title="__('Sales')" />
         <x-menu-item icon="o-clipboard-document-check" link="{{ route('bar.inventories.index') }}" :title="__('Inventories')"
             :active="request()->routeIs('bar.inventories.*')" />
+        <x-menu-item icon="o-chart-bar" link="{{ route('bar.stats.index') }}" :title="__('Stock outflows')" />
         @endcan
         {{--
             De quoi installer la salle avant le service : l'écran à caster derrière

@@ -141,36 +141,43 @@
     </x-menu-sub>
     @endcanany
 
-    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'trainings.view', 'communications.send', 'feedback.view'])
+    @canany(['users.view', 'subscriptions.view', 'users.update', 'access.manage', 'communications.send', 'feedback.view'])
+    @php
+        // Three groups — the people, the season, the exchange with the members —
+        // and a separator only between two groups this reader actually sees.
+        $seesPeople = auth()->user()->can('users.view');
+        $seesSeason = auth()->user()->can('subscriptions.view')
+            || (\App\Domains\Shared\Enums\Feature::Attestations->enabled() && auth()->user()->can('attestations.view'));
+        $seesExchange = auth()->user()->canAny(['communications.send', 'feedback.view']);
+    @endphp
     <x-menu-sub icon="o-user-group" :title="__('Members Admin')">
-        @can('users.view')
+        @if ($seesPeople)
             <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
-        @endcan
+            <x-menu-item icon="o-key" link="{{ route('admin.users.delegations') }}" :title="__('Delegations')" />
+        @endif
+
+        @if ($seesPeople && $seesSeason)
+            <li data-menu-group="separator-members-season"><x-menu-separator /></li>
+        @endif
         @can('subscriptions.view')
             <x-menu-item icon="o-list-bullet" link="{{ route('admin.users.registrations') }}" :title="__('Affiliations')" />
+            <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
         @endcan
         @feature('attestations')
         @can('attestations.view')
             <x-menu-item icon="o-document-check" link="{{ route('admin.attestations.index') }}" :title="__('Mutual attestations')" />
         @endcan
         @endfeature
-        @can('users.view')
-            <x-menu-item icon="o-key" link="{{ route('admin.users.delegations') }}" :title="__('Delegations')" />
-        @endcan
-        @can('subscriptions.view')
-            <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
-        @endcan
+
+        @if (($seesPeople || $seesSeason) && $seesExchange)
+            <li data-menu-group="separator-members-exchange"><x-menu-separator /></li>
+        @endif
         @can('communications.send')
             <x-menu-item icon="o-envelope" link="{{ route('admin.communications.index') }}" :title="__('Communications')" />
         @endcan
         @can('feedback.view')
             <x-menu-item icon="o-chat-bubble-left-ellipsis" link="{{ route('admin.feedback.index') }}" :title="__('Feedback and suggestions')" />
         @endcan
-        @feature('training_planning')
-        @can('trainings.view')
-        <x-menu-item icon="o-view-columns" link="{{ route('admin.planning.board') }}" :title="__('Planning board')" />
-        @endcan
-        @endfeature
     </x-menu-sub>
     @endcanany
 
@@ -333,6 +340,11 @@
         @can('trainings.view')
         <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')" />
         @endcan
+        @feature('training_planning')
+        @can('trainings.view')
+        <x-menu-item icon="o-view-columns" link="{{ route('admin.planning.board') }}" :title="__('Planning board')" />
+        @endcan
+        @endfeature
         @can('access-coach-area')
         <x-menu-item icon="o-calendar-days" link="{{ route('coach.trainings') }}" :title="__('My sessions')" />
         @endcan

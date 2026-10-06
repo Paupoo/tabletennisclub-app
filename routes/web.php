@@ -104,6 +104,9 @@ Route::prefix('admin/my-space/')
     ->group(function (): void {
         // Onboarding wizard — always self (no {user} binding), exempt from profile.complete.
         Route::livewire('onboarding', 'pages::club-admin.users.user-space.onboarding')->name('admin.user.onboarding');
+        // The yearly survey — always the signed-in seat (no {user}): one link per
+        // family in the invitation, the « answering for » switch does the rest.
+        Route::livewire('survey', 'pages::club-admin.users.user-space.survey')->name('admin.user.survey');
         Route::livewire('{user}/profile', 'pages::club-admin.users.user-space.profile')->name('admin.user.profile');
         Route::livewire('{user}/settings', 'pages::club-admin.users.user-space.settings')->name('admin.user.settings');
         Route::livewire('{user}/teams', 'pages::club-admin.users.user-space.user-teams')->name('admin.user.teams');
@@ -217,6 +220,16 @@ Route::prefix('admin/club-admin/feedback/')
         Route::livewire('lists', 'pages::club-admin.feedback.lists')
             ->middleware('can:feedback.manage')
             ->name('admin.feedback.lists');
+        Route::middleware('can:feedback.manage')->group(function (): void {
+            Route::livewire('campaigns', 'pages::club-admin.feedback.campaigns')->name('admin.feedback.campaigns');
+            Route::livewire('campaigns/new', 'pages::club-admin.feedback.campaign')->name('admin.feedback.campaigns.create');
+            Route::livewire('campaigns/{campaign}', 'pages::club-admin.feedback.campaign')
+                ->whereNumber('campaign')
+                ->name('admin.feedback.campaigns.edit');
+            Route::livewire('campaigns/{campaign}/preview', 'pages::club-admin.users.user-space.survey')
+                ->whereNumber('campaign')
+                ->name('admin.feedback.campaigns.preview');
+        });
     });
 
 // Season planning board — visible to the whole committee, mutations reserved to managers (decision #18).

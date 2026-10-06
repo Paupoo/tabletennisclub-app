@@ -33,6 +33,8 @@ erDiagram
     ExpenseReportFile
 
     %% ClubAdmin/Feedback
+    FeedbackCampaign
+    FeedbackCampaignResponse
     FeedbackEntry
     FeedbackTheme
     HelpOffer
@@ -142,6 +144,9 @@ erDiagram
     ExpenseReport ||--o{ Payment : "payments"
     ExpenseReport ||--o| Payment : "refund"
     ExpenseReport ||--o| BarRestocking : "restocking"
+    FeedbackCampaign }o--o{ User : "participants"
+    FeedbackCampaign ||--o{ FeedbackCampaignResponse : "responses"
+    FeedbackCampaignResponse ||--o{ FeedbackEntry : "comments"
     FeedbackTheme ||--o{ FeedbackEntry : "entries"
     HelpOffer }o--o{ HelpTask : "tasks"
     HelpTask }o--o{ HelpOffer : "offers"
@@ -176,6 +181,7 @@ erDiagram
     User ||--o| MemberDeparture : "departureThisSeason"
     User }o--o{ FamilyGroup : "familyGroups"
     User ||--o| Guardian : "guardianRecord"
+    User }o--o{ FeedbackCampaign : "feedbackCampaigns"
     User }o--o{ Guardian : "guardians"
     User ||--o{ CashRegister : "heldCashRegisters"
     User }o--o{ Interclub : "interclubs"

@@ -8,6 +8,7 @@ namespace App\Domains\ClubAdmin\Users\Models;
 
 use App\Domains\ClubAdmin\Club\Models\KeyRing;
 use App\Domains\ClubAdmin\Contact\Models\Contact;
+use App\Domains\ClubAdmin\Feedback\Models\FeedbackCampaign;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubPosts\Models\NewsPost;
@@ -522,6 +523,20 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * @return BelongsToMany<Guardian, $this>
+     */
+    /**
+     * The yearly surveys this member answered — the bare fact, without the
+     * answer, which may be anonymous.
+     *
+     * @return BelongsToMany<FeedbackCampaign, $this>
+     */
+    public function feedbackCampaigns(): BelongsToMany
+    {
+        return $this->belongsToMany(FeedbackCampaign::class, 'feedback_campaign_participants');
+    }
+
+    /**
      * The stored force-list position for a given league category: the women's
      * or veterans' sub-list, or the general list for MEN / unknown categories.
      */
@@ -642,9 +657,6 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(Guardian::class, 'user_id');
     }
 
-    /**
-     * @return BelongsToMany<Guardian, $this>
-     */
     public function guardians(): BelongsToMany
     {
         return $this->belongsToMany(Guardian::class, 'guardian_user');

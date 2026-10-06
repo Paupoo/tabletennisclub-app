@@ -8,6 +8,7 @@
         @if ($this->canManage)
             <x-slot:actions>
                 <x-button class="btn-outline btn-sm" icon="o-list-bullet" :label="__('Themes and help tasks')" :link="route('admin.feedback.lists')" />
+                <x-button class="btn-primary btn-sm" icon="o-megaphone" :label="__('Yearly surveys')" :link="route('admin.feedback.campaigns')" />
             </x-slot:actions>
         @endif
     </x-header>
@@ -22,6 +23,10 @@
             class="-mb-px min-h-11 cursor-pointer border-b-2 px-4 text-sm {{ $tab === 'help' ? 'border-primary font-semibold text-primary' : 'border-transparent text-base-content/70' }}">
             {{ __('Offers of help') }}
             <x-badge :value="trans_choice(':count to contact|:count to contact', $this->openOffersCount)" class="badge-sm ms-1 {{ $tab === 'help' ? 'badge-primary badge-soft' : 'badge-ghost' }}" />
+        </button>
+        <button type="button" role="tab" wire:click="$set('tab', 'results')" aria-selected="{{ $tab === 'results' ? 'true' : 'false' }}"
+            class="-mb-px min-h-11 cursor-pointer border-b-2 px-4 text-sm {{ $tab === 'results' ? 'border-primary font-semibold text-primary' : 'border-transparent text-base-content/70' }}">
+            {{ __('Survey results') }}
         </button>
     </div>
 
@@ -43,6 +48,11 @@
                         <div class="flex flex-wrap items-center gap-2 text-sm text-base-content/70">
                             <x-badge :value="$entry->theme->name" class="badge-ghost badge-sm" />
                             <span class="font-semibold text-base-content">{{ $entry->author?->full_name ?? __('Anonymous') }}</span>
+                            @if ($entry->response)
+                                <span>· {{ $entry->response->campaign->title }} · {{ $entry->response->rating }}/5</span>
+                            @else
+                                <span>· {{ __('box') }}</span>
+                            @endif
                             <span>· {{ $entry->created_at?->translatedFormat('j F Y') }}</span>
                             <x-badge :value="$entry->hidden_at ? __('Hidden') : $entry->status->label()"
                                 class="badge-sm ms-auto {{ $entry->hidden_at ? 'badge-ghost' : ($entry->status === \App\Domains\Shared\Enums\FeedbackStatus::New ? 'badge-info badge-soft' : 'badge-soft') }}" />
@@ -99,6 +109,8 @@
             </div>
             <div class="mt-4">{{ $this->entries->links() }}</div>
         @endif
+    @elseif ($tab === 'results')
+        @include('pages::club-admin.feedback.⚡index._results', ['results' => $this->results])
     @else
         @if ($this->offers->isEmpty())
             <x-admin.shared.list-empty-state icon="o-heart" :heading="__('No offer of help yet')" :filtered="false" />

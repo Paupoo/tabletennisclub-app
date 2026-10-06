@@ -224,7 +224,7 @@ Vous ne pouvez pas actuellement gérer les préférences de notification par typ
 
 En cas de problème :
 - Ouvrez **Qui fait quoi** dans le menu : le comité avec le titre de chacun, puis à qui vous adresser pour les interclubs, les entraînements, les tournois, l'affiliation, les paiements, le bar, les salles et les clés, les attestations, les amendes et le site web. La page suit les délégations : rien n'y est saisi à la main, et un domaine que personne ne couvre n'apparaît pas.
-- Ouvrez **Votre avis** pour écrire au comité, signé ou anonyme, et proposer un coup de main si vous le souhaitez (article d'aide *Donner mon avis au club*).
+- Ouvrez **Votre avis** pour écrire au comité, signé ou anonyme, répondre à l'enquête annuelle quand elle est ouverte, et proposer un coup de main si vous le souhaitez (article d'aide *Donner mon avis au club*).
 - Utilisez le **formulaire de contact** sur le site web public du club
 - Demandez au comité lors du prochain entraînement
 

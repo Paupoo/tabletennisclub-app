@@ -112,6 +112,14 @@ it('never sends a member to a page the committee alone can open', function (): v
         // every holder is leaving — carry
         // interclubs.view — MemberDepartureFixturesTest.
         'MemberLeftTeamNotification.php',
+        // FeedbackReaders sends both to the suggestions délégation, or to the
+        // committee while nobody holds it: both carry feedback.view, the
+        // permission the feedback screen asks for — FeedbackNotificationsTest.
+        'NewFeedbackNotification.php',
+        'HelpOfferedNotification.php',
+        // SendCampaignMailingsCommand sends it to the committee only, every seat
+        // of which holds feedback.view — FeedbackCampaignMailingsTest.
+        'CampaignSummaryNotification.php',
     ];
 
     $files = (new Finder)

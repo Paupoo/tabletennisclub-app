@@ -2,9 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Feedback\Models\FeedbackCampaign;
+use App\Domains\ClubAdmin\Feedback\Models\FeedbackCampaignResponse;
 use App\Domains\ClubAdmin\Feedback\Models\FeedbackEntry;
 use App\Domains\ClubAdmin\Feedback\Models\FeedbackTheme;
 use App\Domains\ClubAdmin\Feedback\Models\HelpOffer;
+use App\Domains\ClubAdmin\Feedback\Services\CampaignResults;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\FeedbackStatus;
 use App\Domains\Shared\Enums\HelpOfferStatus;
 use App\Domains\Shared\Enums\Permission;
@@ -12,6 +16,8 @@ use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
@@ -23,6 +29,9 @@ use Mary\Traits\Toast;
 new class extends Component
 {
     use HasBreadcrumbs, Toast, WithPagination;
+
+    #[Url(as: 'campaign')]
+    public ?int $campaignId = null;
 
     /** @var array<int, string> */
     public array $hideReasons = [];
@@ -43,6 +52,22 @@ new class extends Component
     public ?int $themeFilter = null;
 
     /**
+     * The surveys that ran, newest first, for the results picker.
+     *
+     * @return Collection<int, FeedbackCampaign>
+     */
+    #[Computed]
+    public function campaigns(): Collection
+    {
+        return FeedbackCampaign::query()
+            ->scheduled()
+            ->whereDate('opens_on', '<=', today())
+            ->orderByDesc('opens_on')
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
      * Whether the visitor sorts the feedback, rather than only reads it.
      */
     #[Computed]
@@ -58,7 +83,7 @@ new class extends Component
     public function entries(): LengthAwarePaginator
     {
         return FeedbackEntry::query()
-            ->with(['author', 'theme', 'hiddenBy'])
+            ->with(['author', 'theme', 'hiddenBy', 'response.campaign'])
             ->when($this->statusFilter !== '', fn (Builder $query) => $query->where('status', $this->statusFilter))
             ->when($this->themeFilter, fn (Builder $query) => $query->where('feedback_theme_id', $this->themeFilter))
             ->latest()
@@ -89,7 +114,7 @@ new class extends Component
 
     public function mount(): void
     {
-        if (! in_array($this->tab, ['feedback', 'help'], true)) {
+        if (! in_array($this->tab, ['feedback', 'help', 'results'], true)) {
             $this->tab = 'feedback';
         }
     }
@@ -119,6 +144,40 @@ new class extends Component
     public function openOffersCount(): int
     {
         return HelpOffer::open()->count();
+    }
+
+    /**
+     * The figures of the survey picked — the latest one by default.
+     *
+     * @return array{campaign: FeedbackCampaign, responses: int, participants: int, members: int, average: float|null, distribution: array<int, int>, themes: SupportCollection<int, array{theme: string, count: int}>, trend: list<array{title: string, average: float|null}>, yearAnswers: Collection<int, FeedbackCampaignResponse>}|null
+     */
+    #[Computed]
+    public function results(): ?array
+    {
+        $campaign = $this->campaigns->firstWhere('id', $this->campaignId) ?? $this->campaigns->first();
+
+        if (! $campaign instanceof FeedbackCampaign) {
+            return null;
+        }
+
+        $results = app(CampaignResults::class);
+
+        return [
+            'campaign' => $campaign,
+            'responses' => $results->responses($campaign),
+            'participants' => $campaign->participants()->count(),
+            'members' => User::active()->count(),
+            'average' => $results->average($campaign),
+            'distribution' => $results->distribution($campaign),
+            'themes' => $results->commentsByTheme($campaign),
+            'trend' => $results->trend(),
+            'yearAnswers' => FeedbackCampaignResponse::query()
+                ->whereBelongsTo($campaign, 'campaign')
+                ->whereNotNull('year_answer')
+                ->with('author')
+                ->orderBy('id')
+                ->get(),
+        ];
     }
 
     /**

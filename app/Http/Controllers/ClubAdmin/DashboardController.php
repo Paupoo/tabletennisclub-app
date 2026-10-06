@@ -6,6 +6,7 @@ namespace App\Http\Controllers\ClubAdmin;
 
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
+use App\Domains\ClubAdmin\Feedback\Services\SurveyPrompts;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -283,6 +284,15 @@ class DashboardController extends Controller
                     'label' => $failedJobs === 1 ? '1 tâche en échec dans la file d\'attente' : "{$failedJobs} tâches en échec dans la file d'attente",
                     'route' => route('admin.queue.index'),
                 ];
+            }
+        }
+
+        // The yearly survey: the member's own answer still to give, and — for
+        // the délégation — a season ending without any survey planned.
+        $surveyPrompts = new SurveyPrompts;
+        foreach ([$surveyPrompts->forMember($user), $surveyPrompts->forDelegation($user)] as $surveyAlert) {
+            if ($surveyAlert !== null) {
+                $alerts[] = $surveyAlert;
             }
         }
 

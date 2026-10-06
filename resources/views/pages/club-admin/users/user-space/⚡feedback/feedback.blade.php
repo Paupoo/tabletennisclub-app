@@ -6,6 +6,17 @@
     <x-header progress-indicator separator :title="__('Your feedback')"
         :subtitle="__('An idea, a remark, something that does not work? Write to us whenever you like. The committee reads every message and weighs it in its decisions.')" />
 
+    @if ($this->openCampaign)
+        <a href="{{ route('admin.user.survey') }}"
+            class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
+            <span class="flex flex-col">
+                <span class="font-semibold">{{ __('The yearly survey is open until :date', ['date' => $this->openCampaign->closes_on->translatedFormat('j F')]) }}</span>
+                <span class="text-sm">{{ __('Rather than writing here, answer it: your opinion counts in the review of the season.') }}</span>
+            </span>
+            <span class="btn btn-secondary btn-sm">{{ __('Answer the survey') }}</span>
+        </a>
+    @endif
+
     <div class="flex flex-col gap-6 lg:flex-row lg:items-start">
         <section class="min-w-0 flex-1 rounded-xl border border-base-300 bg-base-100 p-5">
             <h2 class="mb-4 text-lg font-semibold">{{ __('Write to the committee') }}</h2>
@@ -46,40 +57,7 @@
                     </p>
                 </fieldset>
 
-                @if ($this->asksForHelp)
-                    <fieldset class="rounded-lg border border-base-300 p-4">
-                        <legend class="px-1 text-sm font-semibold">{{ __('Fancy giving a hand?') }}</legend>
-                        <p class="text-sm text-base-content/70">
-                            {{ __('Optional and without commitment. If you tick something, a committee member gets back to you. This part always carries your name, even when your feedback stays anonymous.') }}
-                        </p>
-
-                        <div class="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                            @foreach ($rhythms as $rhythm)
-                                <label wire:key="rhythm-{{ $rhythm->value }}" class="flex items-center gap-2">
-                                    <input type="radio" class="radio radio-primary radio-sm" name="helpRhythm" value="{{ $rhythm->value }}" wire:model="helpRhythm" />
-                                    {{ $rhythm->label() }}
-                                </label>
-                            @endforeach
-                        </div>
-
-                        <div class="mt-3 grid gap-2 sm:grid-cols-2">
-                            @foreach ($this->helpTasks as $task)
-                                <label wire:key="task-{{ $task->id }}"
-                                    class="flex items-start gap-2 rounded-md border px-3 py-2 text-sm {{ $task->is_permanent ? 'border-primary/30 bg-primary/5 font-semibold' : 'border-base-300' }}">
-                                    <input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5" value="{{ $task->id }}" wire:model="helpTaskIds" />
-                                    {{ $task->name }}
-                                </label>
-                            @endforeach
-                        </div>
-
-                        <x-textarea class="mt-3" :label="__('Something else, or a word on what you would like to do')" rows="2" wire:model="helpMessage" />
-                    </fieldset>
-                @elseif ($this->openOffer)
-                    <div class="flex gap-3 rounded-lg border border-success/30 bg-success/10 p-4 text-sm">
-                        <x-icon name="o-heart" class="size-5 shrink-0 text-success" />
-                        <span>{{ __('You offered your help on :date. Thank you! A committee member gets back to you.', ['date' => $this->openOffer->created_at?->translatedFormat('j F Y')]) }}</span>
-                    </div>
-                @endif
+                <x-admin.feedback.help-offer-fields :asks="$this->asksForHelp" :open-offer="$this->openOffer" :tasks="$this->helpTasks" />
 
                 <x-slot:actions>
                     <x-button class="btn-primary" :label="__('Send')" spinner="send" type="submit" />

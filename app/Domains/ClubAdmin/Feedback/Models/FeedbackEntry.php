@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int|null $user_id null when the member stayed anonymous
  * @property int $feedback_theme_id
+ * @property int|null $feedback_campaign_response_id a comment left in a survey answer
  * @property string $body
  * @property FeedbackStatus $status
  * @property Carbon|null $read_at
@@ -33,6 +34,7 @@ use Illuminate\Support\Carbon;
  * @property-read User|null $author
  * @property-read FeedbackTheme $theme
  * @property-read User|null $hiddenBy
+ * @property-read FeedbackCampaignResponse|null $response
  *
  * @method static FeedbackEntryFactory factory($count = null, $state = [])
  */
@@ -54,6 +56,7 @@ class FeedbackEntry extends Model
     protected $fillable = [
         'user_id',
         'feedback_theme_id',
+        'feedback_campaign_response_id',
         'body',
         'status',
         'read_at',
@@ -82,6 +85,14 @@ class FeedbackEntry extends Model
     public function isAnonymous(): bool
     {
         return $this->user_id === null;
+    }
+
+    /**
+     * @return BelongsTo<FeedbackCampaignResponse, $this>
+     */
+    public function response(): BelongsTo
+    {
+        return $this->belongsTo(FeedbackCampaignResponse::class, 'feedback_campaign_response_id');
     }
 
     /**

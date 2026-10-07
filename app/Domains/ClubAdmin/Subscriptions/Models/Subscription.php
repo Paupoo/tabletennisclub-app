@@ -380,6 +380,25 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     }
 
     /**
+     * Ce qui attend la décision du secrétariat : une affiliation pas encore
+     * validée, avec ou sans pack, ou une affiliation tenue qui demande un pack.
+     *
+     * Le filtre « En attente » de l'écran Affiliations et la tâche du tableau
+     * de bord lisent cette seule règle : le chiffre de l'un est la liste de
+     * l'autre.
+     */
+    public function scopeAwaitingDecision(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $sub): Builder => $sub
+            ->where('status', 'pending')
+            ->orWhere(fn (Builder $withPacks): Builder => $withPacks
+                ->whereIn('status', ['confirmed', 'paid'])
+                ->whereHas('trainingPacks', fn (Builder $pack): Builder => $pack->where('subscription_training_pack.status', 'pending'))
+            )
+        );
+    }
+
+    /**
      * Scope pour récupérer les inscriptions dont le membre se porte volontaire comme capitaine d'équipe.
      */
     public function scopeCaptainVolunteers(Builder $query): Builder

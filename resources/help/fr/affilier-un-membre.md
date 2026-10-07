@@ -30,6 +30,8 @@ Le cas typique : le membre n'a pas Internet, ou n'y arrive pas seul.
 
 Tant que vous n'avez pas approuvé, le paiement n'existe pas et le membre n'a rien à régler.
 
+Ce qui attend votre décision ne se perd pas : une inscription **en attente**, ou un pack demandé par un membre déjà affilié, apparaît sur le tableau de bord (**« X affiliations en attente »**) et en compteur sur **Admin membres → Affiliations**. Le lien ouvre la liste déjà filtrée sur **En attente**. Une fois l'inscription approuvée, elle passe dans **« X cotisations impayées »** jusqu'à son paiement.
+
 ## Plusieurs personnes en une fois
 
 Ajoutez-les toutes au panneau avant d'enregistrer. Chacune reçoit sa propre inscription, avec son propre type de licence et ses propres packs. C'est pratique pour une famille — mais rien n'oblige les personnes à être apparentées.

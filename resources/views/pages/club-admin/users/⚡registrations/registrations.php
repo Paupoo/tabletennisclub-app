@@ -52,6 +52,7 @@ use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
@@ -162,6 +163,8 @@ new class extends Component
      */
     public array $sortBy = ['column' => 'status', 'direction' => 'asc'];
 
+    /** Bound to the URL so that the dashboard task opens on the list it counts. */
+    #[Url(as: 'status')]
     public string $statusFilter = '';
 
     public bool $trainingRequestModal = false;
@@ -1180,13 +1183,7 @@ new class extends Component
             ->unless($this->statusFilter === 'cancelled',
                 fn ($q) => $q->where('status', '!=', 'cancelled'))
             ->when($this->statusFilter, fn ($q) => $this->statusFilter === 'pending'
-                ? $q->where(fn ($sub) => $sub
-                    ->where('status', 'pending')
-                    ->orWhere(fn ($withPacks) => $withPacks
-                        ->whereIn('status', ['confirmed', 'paid'])
-                        ->whereHas('trainingPacks', fn ($tp) => $tp->where('subscription_training_pack.status', 'pending'))
-                    )
-                )
+                ? $q->awaitingDecision()
                 : $q->where('status', $this->statusFilter)
             )
             // « eric godart » ne ramenait rien : un seul terme était comparé au

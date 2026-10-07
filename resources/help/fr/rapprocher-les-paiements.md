@@ -44,6 +44,8 @@ Sur un paiement en attente, ouvrez le rapprochement : vous choisissez vous-mêm
 
 Une transaction déjà rapprochée à un paiement ne sera plus proposée ailleurs — pas de risque de la compter deux fois.
 
+Le compteur de **Trésorerie → Transactions bancaires**, repris sur le tableau de bord (**« X transactions bancaires à rapprocher »**), dit combien de lignes de l'extrait n'ont pas encore trouvé leur paiement, en tout ou en partie. Les paiements encore attendus n'y sont pas : ils attendent le membre, pas vous.
+
 ## Corriger un mauvais rapprochement
 
 Vous avez placé le mauvais virement sur un paiement ? Retirez-le, puis rapprochez le bon.

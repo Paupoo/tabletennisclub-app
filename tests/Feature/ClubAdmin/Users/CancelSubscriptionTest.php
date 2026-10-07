@@ -383,7 +383,7 @@ describe('Registrations page — cancel flow', function (): void {
             ->and($subscription->payments()->where('status', 'to_refund')->exists())->toBeFalse();
     });
 
-    test('confirmRefund on an enrolled pack creates a to_refund payment in the treasury workflow', function (): void {
+    test('removing an enrolled pack after payment creates a to_refund payment in the treasury workflow', function (): void {
         Notification::fake();
 
         $treasurer = User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create(['committee_role' => CommitteeRolesEnum::TREASURER->value]);
@@ -407,8 +407,13 @@ describe('Registrations page — cancel flow', function (): void {
         ]);
 
         Livewire::test(CANCEL_REGISTRATIONS_COMPONENT)
-            ->call('openRefundModal', $subscription->id, $pack->id)
-            ->call('confirmRefund');
+            ->call('openPackExit', $subscription->id, $pack->id)
+            ->assertDispatched('open-training-pack-exit', subscriptionId: $subscription->id, packId: $pack->id);
+
+        Livewire::test('admin.shared.training-pack-exit')
+            ->call('open', $subscription->id, $pack->id)
+            ->set('mode', 'departure')
+            ->call('confirm');
 
         $refund = $subscription->payments()->where('status', 'to_refund')->first();
 

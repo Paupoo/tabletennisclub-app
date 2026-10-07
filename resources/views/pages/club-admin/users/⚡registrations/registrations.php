@@ -11,9 +11,7 @@ use App\Actions\ClubAdmin\Subscriptions\ChangeSubscriptionFormulaAction;
 use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\GrantSubscriptionDiscountAction;
-use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\ReconcileTrainingPackAction;
-use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Actions\User\CreateUserAction;
 use App\Data\User\CreateUserData;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
@@ -53,6 +51,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
@@ -134,12 +133,6 @@ new class extends Component
     public ?string $reconcileStartsOn = null;
 
     public ?int $reconcileSubscriptionId = null;
-
-    public bool $refundModal = false;
-
-    public ?int $refundPackId = null;
-
-    public ?int $refundSubscriptionId = null;
 
     public string $rejectionMessage = '';
 
@@ -788,71 +781,6 @@ new class extends Component
         $this->success(__('Discount granted.'));
     }
 
-    public function confirmRefund(): void
-    {
-        Gate::authorize(Permission::SubscriptionsManage->value);
-
-        $subscription = Subscription::with(['user', 'season', 'trainingPacks', 'payments'])->find($this->refundSubscriptionId);
-        if (! $subscription) {
-            return;
-        }
-
-        $pack = TrainingPack::find($this->refundPackId);
-        if (! $pack) {
-            return;
-        }
-
-        $pivot = $subscription->trainingPacks()->where('training_pack_id', $pack->id)->first();
-        if (! $pivot || $pivot->pivot->status !== 'enrolled') {
-            $this->error(__('This pack is not enrolled and cannot be refunded this way.'));
-
-            return;
-        }
-
-        // Detach + price recalculation + waitlist promotion for the freed spot.
-        // The refundable amount is the resulting overpayment, not the pack price:
-        // losing a pack can also lose the multi-pack discount on the ones kept.
-        $refundable = (new LeaveTrainingPackAction)($subscription, $pack, $subscription->has_other_family_members ? 2 : 1, notifyUser: false);
-
-        $this->refundModal = false;
-        $this->refundSubscriptionId = null;
-        $this->refundPackId = null;
-
-        $userName = $subscription->user->first_name . ' ' . $subscription->user->last_name;
-
-        if ($refundable <= 0.0) {
-            $this->success(__(':user removed from :pack. Nothing to refund — their balance is settled.', [
-                'user' => $userName,
-                'pack' => $pack->name,
-            ]));
-
-            return;
-        }
-
-        // Refund enters the treasury workflow (to_refund) and notifies the treasurer & secretary
-        (new RequestSubscriptionRefundAction)($subscription, $refundable, __(':member has been removed from :pack after having paid.', [
-            'member' => $userName,
-            'pack' => $pack->name,
-        ]));
-
-        $userIban = $subscription->user->iban;
-
-        if ($userIban) {
-            $this->success(__(':user removed from :pack. Refund of :amount€ to be issued to :iban.', [
-                'user' => $userName,
-                'pack' => $pack->name,
-                'amount' => number_format($refundable, 2),
-                'iban' => $userIban,
-            ]));
-        } else {
-            $this->warning(__(':user removed from :pack. Refund of :amount€ required — no IBAN on file, please handle manually.', [
-                'user' => $userName,
-                'pack' => $pack->name,
-                'amount' => number_format($refundable, 2),
-            ]));
-        }
-    }
-
     /**
      * Encode un membre sans quitter le drawer et le pose dans le panier.
      *
@@ -1064,6 +992,19 @@ new class extends Component
         $this->discountModal = true;
     }
 
+    /**
+     * Sort un membre d'un pack : départ daté, ou annulation pour erreur.
+     *
+     * La modale est partagée avec la liste des participants du pack. Une ligne
+     * déjà partie ne s'y ouvre que pour l'erreur d'encodage.
+     */
+    public function openPackExit(int $subscriptionId, int $packId): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $this->dispatch('open-training-pack-exit', subscriptionId: $subscriptionId, packId: $packId);
+    }
+
     public function openReconcileModal(int $subscriptionId, int $packId): void
     {
         Gate::authorize(Permission::SubscriptionsManage->value);
@@ -1086,15 +1027,6 @@ new class extends Component
             : null;
         $this->reconcileOverrideReason = (string) ($pivot->override_reason ?? '');
         $this->reconcileModal = true;
-    }
-
-    public function openRefundModal(int $subscriptionId, int $packId): void
-    {
-        Gate::authorize(Permission::SubscriptionsManage->value);
-
-        $this->refundSubscriptionId = $subscriptionId;
-        $this->refundPackId = $packId;
-        $this->refundModal = true;
     }
 
     /**
@@ -1186,6 +1118,13 @@ new class extends Component
             'amount' => round($netPrice * $ratio, 2),
             'prorata_available' => $pack->pack_start_date !== null && $pack->pack_end_date !== null,
         ];
+    }
+
+    /** La modale partagée a changé une ligne : le détail et ses montants aussi. */
+    #[On('training-pack-exited')]
+    public function refreshAfterPackExit(): void
+    {
+        unset($this->reviewPackLines);
     }
 
     /**
@@ -1635,6 +1574,8 @@ new class extends Component
             return;
         }
 
+        $refundsBefore = $subscription->payments()->where('status', 'to_refund')->count();
+
         try {
             (new ReconcileTrainingPackAction)(
                 $subscription,
@@ -1660,6 +1601,10 @@ new class extends Component
         $this->success(__('Training pack adjusted. New total: :amount €', [
             'amount' => number_format((float) $subscription->fresh()->amount_due, 2),
         ]));
+
+        if ($subscription->payments()->where('status', 'to_refund')->count() > $refundsBefore) {
+            $this->warning(__('Part of what was paid is no longer due: a refund has been opened for the treasury.'));
+        }
     }
 
     #[Computed]

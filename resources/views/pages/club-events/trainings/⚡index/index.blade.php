@@ -1166,20 +1166,10 @@
     </x-confirm-modal>
 
     {{-- ── Take an enrolled member out of the pack ──────────────────────────── --}}
-    <x-app-modal :title="__('Remove :member from this pack?', ['member' => $leaveMemberName])"
-        wire:model="leaveMemberModal" separator :open="$leaveMemberModal">
-        <p class="text-sm text-base-content/70">
-            {{ __('The months already attended stay billed. Only what drops out of the amount due is offered back — and never more than the member actually paid.') }}
-        </p>
-        <p class="mt-2 text-sm text-base-content/70">
-            {{ __('A refund, if there is one, enters the treasury workflow. The spot goes back to the waiting list.') }}
-        </p>
-
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$set('leaveMemberModal', false)" />
-            <x-button :label="__('Remove from the pack')" class="btn-error" wire:click="confirmLeaveMember" spinner />
-        </x-slot:actions>
-    </x-app-modal>
+    {{-- Départ daté ou erreur d'encodage : la modale est partagée avec l'écran Affiliations. --}}
+    @can('subscriptions.manage')
+        <livewire:admin.shared.training-pack-exit />
+    @endcan
 
     {{-- ── Move an enrolled member to another pack ──────────────────────────── --}}
     <x-app-modal :title="__('Move :member to another pack', ['member' => $moveMemberName])"

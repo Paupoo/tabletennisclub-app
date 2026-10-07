@@ -48,7 +48,6 @@ it('keeps the roster read-only for a delegation that cannot touch an affiliation
     ['confirmRemoveFromRoster', []],
     ['openLeaveMember', [1]],
     ['openMoveMember', [1]],
-    ['confirmLeaveMember', []],
     ['confirmMoveMember', []],
 ])->group('training', 'enrollment');
 
@@ -102,13 +101,21 @@ it('takes a confirmed spot out once the removal is confirmed', function (): void
     $subscription = Subscription::where('user_id', $member->id)->where('season_id', $this->season->id)->firstOrFail();
     (new AddMemberToTrainingPackAction)($subscription, $pack);
 
+    // L'écran passe la main à la modale partagée, qui demande départ ou erreur.
     Livewire::actingAs($this->manager)
         ->test(TRAINING_ROSTER_COMPONENT)
         ->call('openPack', $pack->id)
         ->call('openLeaveMember', $member->id)
-        ->assertSet('leaveMemberModal', true)
-        ->call('confirmLeaveMember')
-        ->assertSet('leaveMemberModal', false);
+        ->assertDispatched('open-training-pack-exit', subscriptionId: $subscription->id, packId: $pack->id);
+
+    Livewire::actingAs($this->manager)
+        ->test('admin.shared.training-pack-exit')
+        ->call('open', $subscription->id, $pack->id)
+        ->assertSet('modal', true)
+        ->set('mode', 'departure')
+        ->call('confirm')
+        ->assertSet('modal', false)
+        ->assertDispatched('training-pack-exited');
 
     expect($subscription->trainingPacks()->where('training_pack_id', $pack->id)->first()->pivot->status)
         ->toBe('left');

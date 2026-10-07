@@ -339,10 +339,10 @@
                                                 class="btn-ghost btn-xs"
                                                 wire:click="openReconcileModal({{ $currentRequest->id }}, {{ $pack->id }})"
                                                 spinner :aria-label="__('Adjust period or amount')" />
-                                            <x-button icon="o-arrow-uturn-left" :tooltip="__('Remove & refund')"
+                                            <x-button icon="o-arrow-uturn-left" :tooltip="__('Remove from the pack')"
                                                 class="btn-ghost btn-xs text-error"
-                                                wire:click="openRefundModal({{ $currentRequest->id }}, {{ $pack->id }})"
-                                                spinner :aria-label="__('Remove & refund')" />
+                                                wire:click="openPackExit({{ $currentRequest->id }}, {{ $pack->id }})"
+                                                spinner :aria-label="__('Remove from the pack')" />
                                         @endcan
                                     @endif
                                 </div>
@@ -368,6 +368,12 @@
                                             class="btn-ghost btn-xs"
                                             wire:click="openReconcileModal({{ $currentRequest->id }}, {{ $pack->id }})"
                                             spinner :aria-label="__('Adjust period or amount')" />
+                                        {{-- Un départ déjà encodé qui était en fait une erreur : seule
+                                             l'annulation efface les mois qu'il facture encore. --}}
+                                        <x-button icon="o-x-mark" :tooltip="__('Cancel: encoding error')"
+                                            class="btn-ghost btn-xs text-error"
+                                            wire:click="openPackExit({{ $currentRequest->id }}, {{ $pack->id }})"
+                                            spinner :aria-label="__('Cancel: encoding error')" />
                                     @endcan
                                 </div>
                             @endforeach
@@ -1269,45 +1275,9 @@
         </x-slot:filters>
     </x-admin.shared.filter-drawer>
 
-    {{-- ── Modal remboursement ───────────────────────────────────────── --}}
-    @php
-        // La liste est paginée : la ligne visée peut vivre sur une autre page.
-        $refundSub  = $this->registrationRow($refundSubscriptionId);
-        $refundPack = $refundPackId ? $refundSub?->enrolled_packs->firstWhere('id', $refundPackId) : null;
-    @endphp
+    {{-- ── Sortie d'un pack : départ daté ou erreur d'encodage (modale partagée) ── --}}
     @can('subscriptions.manage')
-    <x-app-modal wire:model="refundModal" :title="__('Remove & Refund')" separator class="backdrop-blur-sm" :open="$refundModal">
-        @if ($refundPack)
-            <div class="space-y-4">
-                <p class="text-sm">
-                    {{ __('You are about to remove :member from :pack and generate a refund of :amount€.', [
-                        'member' => $refundSub?->name ?? '',
-                        'pack'   => $refundPack->name,
-                        'amount' => number_format((float) $refundPack->price, 2),
-                    ]) }}
-                </p>
-                @php
-                    $subModel = $refundSubscriptionId ? App\Domains\ClubAdmin\Subscriptions\Models\Subscription::with('user')->find($refundSubscriptionId) : null;
-                    $userIban = $subModel?->user?->iban;
-                @endphp
-                @if ($userIban)
-                    <div class="flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 p-3 text-sm">
-                        <x-icon name="o-building-library" class="h-4 w-4 shrink-0 text-success" />
-                        <span>{{ __('Refund IBAN:') }} <span class="font-mono font-bold">{{ $userIban }}</span></span>
-                    </div>
-                @else
-                    <div class="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 p-3 text-sm">
-                        <x-icon name="o-exclamation-triangle" class="h-4 w-4 shrink-0 text-warning-content" />
-                        <span>{{ __('No IBAN on file — you will need to handle the refund manually.') }}</span>
-                    </div>
-                @endif
-            </div>
-        @endif
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" @click="$wire.refundModal = false" class="btn-ghost" />
-            <x-button :label="__('Confirm refund')" icon="o-arrow-uturn-left" class="btn-error" wire:click="confirmRefund" spinner />
-        </x-slot:actions>
-    </x-app-modal>
+        <livewire:admin.shared.training-pack-exit />
     @endcan
 
     {{-- ── Modal de réconciliation d'une ligne d'entraînement ─────────── --}}

@@ -40,6 +40,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Mary\Traits\Toast;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -123,12 +124,6 @@ new class extends Component
     public string $formType = '';
 
     // ── Actions sur le roster ─────────────────────────────────────────────────
-    public bool $leaveMemberModal = false;
-
-    public string $leaveMemberName = '';
-
-    public int $leaveMemberUserId = 0;
-
     /** Show packs withdrawn from the offer, so they can be found and put back. */
     // ── Gestion des niveaux ───────────────────────────────────────────────────
     public bool $levelDrawer = false;
@@ -432,80 +427,6 @@ new class extends Component
     // TrainingsManage qui ouvre l'écran : sortir quelqu'un d'un pack touche à
     // l'argent d'une affiliation, et c'est la même serrure que l'écran
     // Affiliations, d'où ce parcours est copié.
-
-    /**
-     * Retire une place validée et ouvre le remboursement qu'elle libère.
-     *
-     * Le montant remboursable n'est pas le prix du pack : quitter un pack peut
-     * faire perdre la remise multi-packs, donc renchérir ceux qu'on garde.
-     * {@see LeaveTrainingPackAction} calcule la vraie baisse du dû, plafonnée à
-     * ce qui est effectivement rentré.
-     */
-    public function confirmLeaveMember(): void
-    {
-        Gate::authorize(Permission::SubscriptionsManage->value);
-
-        $pack = $this->selectedPack;
-        $subscription = $this->rosterSubscription($this->leaveMemberUserId);
-
-        if (! $pack || ! $subscription) {
-            return;
-        }
-
-        $pivot = $subscription->trainingPacks()->where('training_pack_id', $pack->id)->first();
-
-        if ($pivot?->pivot->status !== 'enrolled') {
-            $this->error(__('This pack is not enrolled and cannot be refunded this way.'));
-
-            return;
-        }
-
-        $refundable = (new LeaveTrainingPackAction)(
-            $subscription,
-            $pack,
-            $subscription->has_other_family_members ? 2 : 1,
-            notifyUser: false,
-        );
-
-        $userName = $subscription->user->first_name . ' ' . $subscription->user->last_name;
-
-        $this->leaveMemberModal = false;
-        $this->leaveMemberUserId = 0;
-        $this->forgetRoster();
-
-        if ($refundable <= 0.0) {
-            $this->success(__(':user removed from :pack. Nothing to refund — their balance is settled.', [
-                'user' => $userName,
-                'pack' => $pack->name,
-            ]));
-
-            return;
-        }
-
-        (new RequestSubscriptionRefundAction)($subscription, $refundable, __(':member has been removed from :pack after having paid.', [
-            'member' => $userName,
-            'pack' => $pack->name,
-        ]));
-
-        $iban = $subscription->user->iban;
-
-        if ($iban) {
-            $this->success(__(':user removed from :pack. Refund of :amount€ to be issued to :iban.', [
-                'user' => $userName,
-                'pack' => $pack->name,
-                'amount' => number_format($refundable, 2),
-                'iban' => $iban,
-            ]));
-
-            return;
-        }
-
-        $this->warning(__(':user removed from :pack. Refund of :amount€ required — no IBAN on file, please handle manually.', [
-            'user' => $userName,
-            'pack' => $pack->name,
-            'amount' => number_format($refundable, 2),
-        ]));
-    }
 
     /** Déplace une place validée vers un autre pack de la même saison. */
     public function confirmMoveMember(): void
@@ -1000,16 +921,23 @@ new class extends Component
         $this->step = '1';
     }
 
-    /** Ouvre la confirmation de sortie d'une place validée. */
+    /**
+     * Ouvre la sortie d'une place validée : départ daté ou erreur d'encodage.
+     *
+     * La modale est partagée avec l'écran Affiliations, d'où le passage par un
+     * événement plutôt que par un état de cet écran.
+     */
     public function openLeaveMember(int $userId): void
     {
         Gate::authorize(Permission::SubscriptionsManage->value);
 
-        $this->leaveMemberUserId = $userId;
-        // Le nom est relu ici, jamais passé dans le wire:click : une apostrophe
-        // dans « D'Hondt » clôturerait la chaîne de l'attribut.
-        $this->leaveMemberName = (string) $this->rosterSubscription($userId)?->user->full_name;
-        $this->leaveMemberModal = true;
+        $subscription = $this->rosterSubscription($userId);
+
+        if (! $subscription || ! $this->selectedPack) {
+            return;
+        }
+
+        $this->dispatch('open-training-pack-exit', subscriptionId: $subscription->id, packId: $this->selectedPack->id);
     }
 
     /** Ouvre le choix du pack de destination. */
@@ -1371,6 +1299,13 @@ new class extends Component
             'session' => $session->start->translatedFormat('D d/m'),
             'coach' => $coach->first_name . ' ' . $coach->last_name,
         ]), icon: 'o-arrow-path');
+    }
+
+    /** La modale partagée a sorti quelqu'un : la liste n'est plus la même. */
+    #[On('training-pack-exited')]
+    public function refreshAfterExit(): void
+    {
+        $this->forgetRoster();
     }
 
     public function refreshPacks(): void

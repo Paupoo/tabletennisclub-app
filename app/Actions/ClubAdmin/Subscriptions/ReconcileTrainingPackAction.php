@@ -18,6 +18,11 @@ use Illuminate\Support\Facades\DB;
  * ne sait toujours pas décrire le cas, forcer le montant. Le montant forcé
  * exige un motif : une ligne dont le prix ne s'explique ni par le barème ni
  * par une phrase n'est pas défendable devant un membre.
+ *
+ * Une baisse se répercute sur la facture, comme un départ : la demande encore
+ * ouverte est réduite, et ce qui est déjà rentré au-delà du nouveau dû part en
+ * remboursement. Sans ça, forcer une ligne à 0 € baissait le dû et laissait le
+ * membre recevoir la demande de paiement d'avant.
  */
 class ReconcileTrainingPackAction
 {
@@ -74,6 +79,20 @@ class ReconcileTrainingPackAction
         (new CalculatePriceAction)($subscription, $familyMembersCount);
         $subscription->refresh();
 
+        $overpaid = (float) $subscription->amount_due < $before
+            ? (new ReduceOutstandingInvoiceAction)($subscription)
+            : 0.0;
+
+        // netAmountPaid() : jamais un euro qui n'est pas rentré, jamais deux
+        // fois le même — même plafond qu'un départ.
+        $refundable = round(min($overpaid, $subscription->netAmountPaid()), 2);
+
+        if ($refundable > 0) {
+            (new RequestSubscriptionRefundAction)($subscription, $refundable, __('The :pack line has been adjusted downwards.', [
+                'pack' => $pack->name,
+            ]));
+        }
+
         activity()
             ->performedOn($subscription)
             ->causedBy(Auth::user())
@@ -87,6 +106,7 @@ class ReconcileTrainingPackAction
                 'override_reason' => $overrideAmount !== null ? $overrideReason : null,
                 'amount_due_before' => $before,
                 'amount_due_after' => (float) $subscription->amount_due,
+                'refundable' => $refundable,
             ])
             ->log('training_pack_reconciled');
 

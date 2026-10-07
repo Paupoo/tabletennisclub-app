@@ -33,7 +33,16 @@ Prenez le temps du message libre quand le refus peut surprendre. Un refus sans e
 
 ## Retirer un membre d'un entraînement, et le rembourser
 
-Depuis la fiche du membre, bouton de retrait sur le pack concerné. **Ce que le club rembourse n'est pas le prix du pack**, et c'est le point qui prête le plus à confusion.
+Depuis la fiche du membre (bouton de retrait sur le pack concerné) ou depuis la liste des participants du pack. La fenêtre vous demande d'abord **pourquoi** il sort, et rien n'est coché d'avance :
+
+- **Il a arrêté de venir** → c'est un départ. Choisissez sa **date de départ** : aujourd'hui par défaut, mais vous pouvez la reculer pour un départ encodé en retard. Pas avant son entrée dans le pack, ni avant la dernière séance où le coach l'a pointé, et jamais dans le futur. Les mois entamés jusqu'à cette date restent facturés.
+- **Il n'aurait jamais dû être inscrit (erreur d'encodage)** → l'inscription est effacée comme si elle n'avait jamais existé : rien n'est facturé pour ce pack, la demande de paiement est réduite ou annulée, et ce qu'il avait déjà payé pour ce pack lui est rendu en entier. Le membre est prévenu par e-mail. Ce choix est **grisé dès que le coach l'a pointé présent ou excusé** à une séance : il est venu, c'est un départ.
+
+Dans les deux cas, les **absences** que la validation des séances lui a attribuées alors qu'il n'était plus (ou jamais) attendu sont effacées, et un aperçu vous montre le montant facturé, le nouveau total et le remboursement avant que vous confirmiez.
+
+Un pack déjà marqué **Parti** sur la fiche peut encore être annulé pour erreur d'encodage (bouton ✕) : c'est ainsi qu'on rattrape une erreur qu'on avait d'abord retirée comme un départ, et qui gardait des mois facturés.
+
+**Ce que le club rembourse n'est pas le prix du pack**, et c'est le point qui prête le plus à confusion.
 
 L'application calcule **le trop-perçu** : ce que le membre a réellement versé, moins ce qu'il doit encore après le retrait.
 

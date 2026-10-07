@@ -7,6 +7,7 @@ namespace App\Actions\ClubAdmin\Subscriptions;
 use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use Illuminate\Support\Collection;
 
 /**
  * Ramène ce qu'on réclame encore sur ce que le membre doit.
@@ -33,28 +34,8 @@ class ReduceOutstandingInvoiceAction
     {
         $subscription->load('payments');
 
-        // Une ligne de remboursement n'est pas une créance, une ligne annulée
-        // n'en est plus une.
-        $claims = $subscription->payments->filter(
-            fn (Payment $payment): bool => $payment->payment_method !== 'refund'
-                && $payment->status !== 'cancelled'
-        );
-
-        // Un remboursement déjà dans le circuit a soldé sa part de la facture,
-        // même s'il n'a pas encore quitté la banque. L'ignorer ferait compter
-        // deux fois les mêmes euros au départ suivant — même raisonnement que
-        // {@see Subscription::netAmountPaid()}, sur les montants dus cette fois.
-        $issued = round((float) $subscription->payments
-            ->filter(fn (Payment $payment): bool => $payment->payment_method === 'refund'
-                && in_array($payment->status, Payment::REFUND_COMMITTED_STATUSES, true))
-            ->sum(fn (Payment $payment): float => (float) $payment->amount_due), 2);
-
-        $excess = round(
-            $claims->sum(fn (Payment $payment): float => (float) $payment->amount_due)
-                - $issued
-                - (float) $subscription->amount_due,
-            2
-        );
+        $claims = $this->claims($subscription);
+        $excess = $this->excess($subscription, (float) $subscription->amount_due);
 
         if ($excess <= 0.0) {
             return 0.0;
@@ -98,5 +79,72 @@ class ReduceOutstandingInvoiceAction
         $subscription->load('payments');
 
         return max(0.0, $excess);
+    }
+
+    /**
+     * Ce que l'action ferait si le dû tombait à `$amountDue`, sans rien écrire.
+     *
+     * Sert aux aperçus : annoncer « demande réduite de X €, Y € à rembourser »
+     * avant de valider. Les deux chiffres sortent du même raisonnement que
+     * l'action, pour qu'un aperçu ne puisse pas promettre autre chose qu'elle.
+     *
+     * @return array{reduced: float, overpaid: float}
+     */
+    public function project(Subscription $subscription, float $amountDue): array
+    {
+        $subscription->loadMissing('payments');
+
+        $excess = $this->excess($subscription, $amountDue);
+
+        if ($excess <= 0.0) {
+            return ['reduced' => 0.0, 'overpaid' => 0.0];
+        }
+
+        $reducible = round((float) $this->claims($subscription)
+            ->where('status', 'pending')
+            ->sum(fn (Payment $payment): float => max(0.0, (float) $payment->amount_due - (float) $payment->amount_paid)), 2);
+
+        $reduced = min($excess, $reducible);
+
+        return ['reduced' => round($reduced, 2), 'overpaid' => round($excess - $reduced, 2)];
+    }
+
+    /**
+     * Les lignes qui réclament encore quelque chose.
+     *
+     * Une ligne de remboursement n'est pas une créance, une ligne annulée
+     * n'en est plus une.
+     *
+     * @return Collection<int, Payment>
+     */
+    private function claims(Subscription $subscription): Collection
+    {
+        return $subscription->payments->filter(
+            fn (Payment $payment): bool => $payment->payment_method !== 'refund'
+                && $payment->status !== 'cancelled'
+        );
+    }
+
+    /**
+     * Ce qui est réclamé au-delà de `$amountDue`.
+     *
+     * Un remboursement déjà dans le circuit a soldé sa part de la facture,
+     * même s'il n'a pas encore quitté la banque. L'ignorer ferait compter
+     * deux fois les mêmes euros au départ suivant — même raisonnement que
+     * {@see Subscription::netAmountPaid()}, sur les montants dus cette fois.
+     */
+    private function excess(Subscription $subscription, float $amountDue): float
+    {
+        $issued = round((float) $subscription->payments
+            ->filter(fn (Payment $payment): bool => $payment->payment_method === 'refund'
+                && in_array($payment->status, Payment::REFUND_COMMITTED_STATUSES, true))
+            ->sum(fn (Payment $payment): float => (float) $payment->amount_due), 2);
+
+        return round(
+            $this->claims($subscription)->sum(fn (Payment $payment): float => (float) $payment->amount_due)
+                - $issued
+                - $amountDue,
+            2
+        );
     }
 }

@@ -102,6 +102,18 @@ describe('the "minors without a responsible adult" filter', function (): void {
         expect(minorsListLastNames($component))->toBe(['Mineur-Non-Affilie', 'Mineur-Seul']);
     });
 
+    /*
+     * The federation listing gave a number for the family before anybody was
+     * named for the child. It is all the office has to call them and record the
+     * guardian, so the row shows it.
+     */
+    it('shows the family number the club holds for a minor nobody answers for', function (): void {
+        User::where('last_name', 'Mineur-Seul')->first()->update(['guardian_phone_number' => '0475 11 12 22']);
+
+        Livewire::test(MINORS_LIST)->set('minorsWithoutGuardian', true)
+            ->assertSeeText(__('Family: :phone', ['phone' => '0475 11 12 22']));
+    });
+
     it('applies within the default view like any other filter', function (): void {
         $component = Livewire::test(MINORS_LIST)->set('minorsWithoutGuardian', true);
 

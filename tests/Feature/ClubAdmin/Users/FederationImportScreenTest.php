@@ -468,7 +468,8 @@ describe('the children listed under an adult address', function (): void {
         $guardian = $child->guardians()->first();
 
         expect($child->email)->toBeNull()
-            ->and($child->guardian_phone_number)->toBe('0470445566')
+            ->and($child->guardian_phone_number)->toBeNull()
+            ->and($guardian?->phone)->toBe('0470445566')
             ->and($guardian?->user_id)->toBeNull()
             ->and($guardian?->first_name)->toBe('Olivier')
             ->and($guardian?->last_name)->toBe('Cartiaux')

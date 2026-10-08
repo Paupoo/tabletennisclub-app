@@ -102,7 +102,13 @@ describe('importing the federation listing', function (): void {
             ->and($import->failed_rows)->toBe([['line' => 9, 'reason' => 'Missing licence number.']]);
     });
 
-    it('records a minor phone number as the one to reach their guardian on', function (): void {
+    /*
+     * The federation lists one number per affiliate, and for a child it is
+     * whoever answers for them. It belongs on that person's sheet; with nobody
+     * named, there is no sheet to hold it, and the child shows up among the
+     * minors without a guardian, where the office records one.
+     */
+    it('never records a minor phone number as their own', function (): void {
         Mail::fake();
         $secretary = User::factory()->create();
 
@@ -116,7 +122,29 @@ describe('importing the federation listing', function (): void {
         $child = User::query()->where('licence', '166036')->first();
 
         expect($child->phone_number)->toBeNull()
-            ->and($child->guardian_phone_number)->toBe('0475111222');
+            ->and($child->guardian_phone_number)->toBeNull();
+    });
+
+    it('puts a minor phone number on the sheet of the guardian named for them', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+
+        ImportFederationMembersAction::handle([
+            new ImportLine(
+                row: federationRow(['lineNumber' => 2, 'licence' => '166037', 'email' => 'parent@example.com', 'phone' => '0475333444', 'birthdate' => CarbonImmutable::parse('2014-04-25')]),
+                action: ImportLineAction::CREATE,
+                keepsEmail: false,
+                externalGuardian: true,
+                guardianFirstName: 'Olivier',
+                guardianLastName: 'Gilbert',
+                guardianEmail: 'parent@example.com',
+            ),
+        ], $secretary);
+
+        $child = User::query()->where('licence', '166037')->first();
+
+        expect($child->guardians()->first()->phone)->toBe('0475333444')
+            ->and($child->guardian_phone_number)->toBeNull();
     });
 
     it('does not record a line the reviewer chose to skip', function (): void {

@@ -77,7 +77,11 @@ class ImportFederationMembersAction
 
         self::fillIfMissing($member, 'email', self::loginAddress($line, $member));
         self::fillIfMissing($member, 'birthdate', $row->birthdate);
-        self::fillIfMissing($member, $minor ? 'guardian_phone_number' : 'phone_number', $row->phone);
+        // A child's number is whoever answers for them: it goes on their
+        // guardian's sheet, see outsideGuardian().
+        if (! $minor) {
+            self::fillIfMissing($member, 'phone_number', $row->phone);
+        }
 
         return $member;
     }
@@ -200,8 +204,8 @@ class ImportFederationMembersAction
             // The federation lists one number per affiliate, and for a child it is
             // whoever answers for them. Recording it as the member's own would have
             // the club ring a ten-year-old about an unpaid affiliation.
+            // It goes on their guardian's sheet instead, see outsideGuardian().
             'phone_number' => $minor ? null : $row->phone,
-            'guardian_phone_number' => $minor ? $row->phone : null,
             'street' => $row->street,
             'city_code' => $row->cityCode,
             'city_name' => $row->cityName,
@@ -235,7 +239,7 @@ class ImportFederationMembersAction
             [
                 'first_name' => $adult->first_name,
                 'last_name' => $adult->last_name,
-                'phone' => $adult->phone_number ?? $adult->guardian_phone_number ?? '',
+                'phone' => $adult->phone_number ?? '',
                 'email' => $adult->email,
             ],
         );
@@ -368,7 +372,10 @@ class ImportFederationMembersAction
             return null;
         }
 
-        return Guardian::firstOrCreate(
+        // The listing's number for a child is the one to reach their guardian on.
+        $phone = $line->guardianPhone ?? $line->row->phone;
+
+        $guardian = Guardian::firstOrCreate(
             [
                 'user_id' => null,
                 'email' => $line->guardianEmail,
@@ -376,9 +383,15 @@ class ImportFederationMembersAction
             [
                 'first_name' => $line->guardianFirstName,
                 'last_name' => $line->guardianLastName,
-                'phone' => $line->guardianPhone ?? '',
+                'phone' => $phone ?? '',
             ],
         );
+
+        if (blank($guardian->phone) && filled($phone)) {
+            $guardian->update(['phone' => $phone]);
+        }
+
+        return $guardian;
     }
 
     /**

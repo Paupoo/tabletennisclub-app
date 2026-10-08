@@ -9,7 +9,9 @@ use App\Domains\ClubAdmin\Payment\Services\TransactionMatch;
 use App\Domains\ClubAdmin\Payment\Support\PaymentCovers;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionDiscount;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\Shared\Traits\HasAuditLog;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
@@ -211,6 +213,23 @@ class Payment extends Model
     }
 
     /**
+     * Le membre que vise cette ligne, lu sur sa ligne payable déjà chargée.
+     *
+     * Une ligne de stage ne porte pas de `user_id` : elle nomme son membre par
+     * l'affiliation. Même règle que {@see scopeForMembers()}, lue en PHP.
+     */
+    public function memberId(): ?int
+    {
+        $payable = $this->payable;
+
+        $memberId = $payable instanceof SubscriptionTrainingPack
+            ? $payable->subscription?->user_id
+            : $payable?->getAttribute('user_id');
+
+        return $memberId === null ? null : (int) $memberId;
+    }
+
+    /**
      * Ce que le club détient en trop sur cette ligne, en euros.
      *
      * Le pendant de {@see balance()} : ce que les crédits dépassent du montant
@@ -290,6 +309,29 @@ class Payment extends Model
     public function refundTransaction(): BelongsTo
     {
         return $this->belongsTo(Transaction::class, 'refund_transaction_id');
+    }
+
+    /**
+     * Les lignes de ces membres, parmi les types payables demandés.
+     *
+     * Une ligne de stage ne porte pas de `user_id` : elle nomme son membre par
+     * l'affiliation. Une requête qui l'oublie lève une erreur sous MySQL et
+     * rend zéro ligne, sans un mot, sous SQLite — c'est ainsi que « Mes
+     * paiements » est parti en erreur pour tout le monde avec une suite verte.
+     * Les types restent à la charge de l'appelant : chaque écran a sa liste.
+     *
+     * @param  Builder<self>  $query
+     * @param  int|array<int, int|null>|Arrayable<int, int|null>  $memberIds
+     * @param  list<class-string<Model>>  $payableTypes
+     * @return Builder<self>
+     */
+    public function scopeForMembers(Builder $query, int|array|Arrayable $memberIds, array $payableTypes): Builder
+    {
+        $memberIds = is_int($memberIds) ? [$memberIds] : $memberIds;
+
+        return $query->whereHasMorph('payable', $payableTypes, fn (Builder $payable, string $type): Builder => $type === SubscriptionTrainingPack::class
+            ? $payable->whereHas('subscription', fn (Builder $subscription): Builder => $subscription->whereIn('user_id', $memberIds))
+            : $payable->whereIn('user_id', $memberIds));
     }
 
     /**

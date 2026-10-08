@@ -6,10 +6,12 @@ use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Trainings\Models\TrainingPack;
 use Livewire\Livewire;
 
 const PAYMENTS_HUB_COMPONENT = 'pages::club-admin.users.user-space.payments';
@@ -29,6 +31,29 @@ function subscriptionPayment(User $user, Season $season, string $status = 'pendi
         'amount_due' => $amount,
         'amount_paid' => $status === 'paid' ? $amount : 0,
         'status' => $status,
+    ]);
+}
+
+/**
+ * A payment on a stage line, which holds no `user_id`: it names its member
+ * through the affiliation. A query that forgets it reads nothing on SQLite
+ * instead of failing, so only the member's own stage line, with its amount
+ * checked, can catch it.
+ */
+function hubCampPayment(User $user, Season $season, float $amount = 80): Payment
+{
+    $line = SubscriptionTrainingPack::create([
+        'subscription_id' => Subscription::factory()->for($user)->create(['season_id' => $season->id])->id,
+        'training_pack_id' => TrainingPack::factory()->camp()->create(['season_id' => $season->id])->id,
+        'status' => 'enrolled',
+        'invoiced_separately' => true,
+    ]);
+
+    return $line->payments()->create([
+        'reference' => '001/2026/' . fake()->unique()->numberBetween(10000, 99999),
+        'amount_due' => $amount,
+        'amount_paid' => 0,
+        'status' => 'pending',
     ]);
 }
 
@@ -115,6 +140,18 @@ it('refuses to open a payment outside the members scope', function (): void {
         ->assertForbidden();
 });
 
+it('opens the QR modal for the members own stage payment', function (): void {
+    Club::factory()->ownClub()->create();
+    $user = User::factory()->create();
+    $payment = hubCampPayment($user, $this->season);
+
+    Livewire::actingAs($user)
+        ->test(PAYMENTS_HUB_COMPONENT, ['user' => $user])
+        ->assertSee('80,00')
+        ->call('openPaymentModal', $payment->id)
+        ->assertSet('paymentModal', true);
+});
+
 it('is self-only', function (): void {
     $user = User::factory()->create();
     $other = User::factory()->create();
@@ -150,4 +187,23 @@ it('tells the member what the club is holding for them', function (): void {
         ->test(PAYMENTS_HUB_COMPONENT, ['user' => $user])
         ->assertOk()
         ->assertSee(__('The club is holding :amount € for you.', ['amount' => '100,00']));
+})->group('payments', 'overpaid');
+
+it('counts what the club holds on a stage line', function (): void {
+    $user = User::factory()->create();
+    $payment = hubCampPayment($user, $this->season, 50);
+
+    $transaction = Transaction::create([
+        'date' => now()->toDateString(),
+        'description' => 'VIREMENT EN VOTRE FAVEUR',
+        'amount' => 80.0,
+        'counterparty_name' => $user->full_name,
+    ]);
+
+    (new AllocateTransactionAction)($transaction, [$payment->id => 80.0]);
+
+    Livewire::actingAs($user)
+        ->test(PAYMENTS_HUB_COMPONENT, ['user' => $user])
+        ->assertOk()
+        ->assertSee(__('The club is holding :amount € for you.', ['amount' => '30,00']));
 })->group('payments', 'overpaid');

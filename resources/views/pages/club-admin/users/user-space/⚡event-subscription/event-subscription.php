@@ -323,12 +323,7 @@ new class extends Component
     {
         return Payment::where('status', 'pending')
             ->where(fn ($q) => $q->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
-            ->whereHasMorph('payable', [TournamentRegistration::class, MeetingUser::class, SubscriptionTrainingPack::class],
-                // A stage line holds no `user_id`: the member is read through the affiliation.
-                fn (Builder $q, string $type) => $type === SubscriptionTrainingPack::class
-                    ? $q->whereHas('subscription', fn (Builder $sub) => $sub->where('user_id', $this->user->id))
-                    : $q->where('user_id', $this->user->id)
-            )
+            ->forMembers($this->user->id, [TournamentRegistration::class, MeetingUser::class, SubscriptionTrainingPack::class])
             ->with(['payable' => fn (MorphTo $morphTo) => $morphTo->morphWith([
                 TournamentRegistration::class => ['tournament'],
                 MeetingUser::class => ['meeting'],

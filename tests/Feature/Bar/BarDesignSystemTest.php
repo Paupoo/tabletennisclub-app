@@ -303,11 +303,10 @@ it('keeps the bar out of the main menu for someone without access', function ():
         ->assertDontSee(route('bar.cashSheet.index'), escape: false);
 });
 
-it('badges the menu entry with the number of items in the cart', function (): void {
-    // La pastille se lit depuis n'importe quel écran : c'est elle qui signale
-    // qu'un panier est resté ouvert.
-    // On compare les deux rendus plutôt que de chercher « badge-primary », que
-    // huit autres composants emploient : seule la différence prouve la pastille.
+it('no longer badges the menu entry with the items in the cart', function (): void {
+    // Le menu n'est rendu qu'au chargement : pendant qu'on remplit le panier, la
+    // pastille ne bougeait pas, et la commande validée l'effaçait. Le compteur du
+    // Bar dit désormais les ardoises à encaisser (MenuCountersTest).
     $without = $this->actingAs($this->manager)
         ->get(route('dashboard'))->assertOk()->getContent();
 
@@ -315,8 +314,8 @@ it('badges the menu entry with the number of items in the cart', function (): vo
         ->withSession(['cart' => [$this->inStock->id => 3]])
         ->get(route('dashboard'))->assertOk()->getContent();
 
-    expect(substr_count((string) $with, 'badge-primary'))
-        ->toBeGreaterThan(substr_count((string) $without, 'badge-primary'));
+    expect(substr_count((string) $with, 'class="badge badge-sm'))
+        ->toBe(substr_count((string) $without, 'class="badge badge-sm'));
 });
 
 it('floats the cart pill only once the cart holds something', function (): void {

@@ -77,12 +77,6 @@ new class extends Component
     }
 
     /**
-     * Payments for this member and the users they guard, newest first.
-     * Scoped strictly to {@see User::payableUserIds()} — never widened by filters.
-     *
-     * @return LengthAwarePaginator<int, Payment>
-     */
-    /**
      * Ce que le club détient en trop pour ce membre et ceux dont il répond.
      *
      * Par transparence : c'est une somme qui lui revient, et la lui cacher
@@ -95,7 +89,7 @@ new class extends Component
         $ids = $this->user->payableUserIds();
 
         return Payment::query()
-            ->whereHasMorph('payable', self::PAYABLE_TYPES, fn ($q) => $q->whereIn('user_id', $ids))
+            ->forMembers($ids, self::PAYABLE_TYPES)
             ->where(fn ($q) => $q->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
             ->whereColumn('amount_paid', '>', 'amount_due')
             ->withOverpayment()
@@ -115,13 +109,8 @@ new class extends Component
         $payment = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith([SubscriptionTrainingPack::class => ['subscription']])])
             ->findOrFail($paymentId);
 
-        // A stage line names its member through the affiliation.
-        $memberId = $payment->payable instanceof SubscriptionTrainingPack
-            ? $payment->payable->subscription?->user_id
-            : $payment->payable?->user_id;
-
         // Never generate a QR for a payment outside this member's scope.
-        abort_unless(in_array($memberId, $this->user->payableUserIds(), true), 403);
+        abort_unless(in_array($payment->memberId(), $this->user->payableUserIds(), true), 403);
 
         $this->selectedPaymentId = $paymentId;
         $this->paymentQr = (new GeneratePaymentQR)($payment);
@@ -152,6 +141,12 @@ new class extends Component
         return LocaleSort::by($payable, fn (User $user): string => $user->full_name);
     }
 
+    /**
+     * Payments for this member and the users they guard, newest first.
+     * Scoped strictly to {@see User::payableUserIds()} — never widened by filters.
+     *
+     * @return LengthAwarePaginator<int, Payment>
+     */
     #[Computed]
     public function payments(): LengthAwarePaginator
     {
@@ -164,14 +159,10 @@ new class extends Component
                 MeetingUser::class => ['user', 'meeting'],
                 SubscriptionTrainingPack::class => ['user', 'trainingPack'],
             ]), 'discounts'])
-            ->whereHasMorph('payable', self::PAYABLE_TYPES, fn ($q, string $type) => $this->forMembers($q, $type, $ids))
+            ->forMembers($ids, self::PAYABLE_TYPES)
             ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
             ->when($this->typeFilter, fn ($q) => $q->where('payable_type', $this->typeFilter))
-            ->when($this->personFilter, fn ($q) => $q->whereHasMorph(
-                'payable',
-                self::PAYABLE_TYPES,
-                fn ($q2, string $type) => $this->forMembers($q2, $type, [$this->personFilter])
-            ))
+            ->when($this->personFilter, fn ($q) => $q->forMembers($this->personFilter, self::PAYABLE_TYPES))
             ->orderByDesc('created_at')
             ->paginate(20);
     }
@@ -220,18 +211,5 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('My payments'));
-    }
-
-    /**
-     * Restricts a payable to these members. A stage line holds no `user_id`:
-     * it names its member through the affiliation.
-     *
-     * @param  list<int|null>  $ids
-     */
-    private function forMembers($query, string $type, array $ids)
-    {
-        return $type === SubscriptionTrainingPack::class
-            ? $query->whereHas('subscription', fn ($sub) => $sub->whereIn('user_id', $ids))
-            : $query->whereIn('user_id', $ids);
     }
 };

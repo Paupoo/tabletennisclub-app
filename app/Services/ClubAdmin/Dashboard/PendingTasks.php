@@ -363,11 +363,7 @@ class PendingTasks
     private function myPayments(User $user): ?PendingTask
     {
         $count = Payment::where('status', 'pending')
-            ->whereHasMorph('payable', [Subscription::class, TournamentRegistration::class, MeetingUser::class, SubscriptionTrainingPack::class],
-                // A stage line names its member through the affiliation.
-                fn ($query, string $type) => $type === SubscriptionTrainingPack::class
-                    ? $query->whereHas('subscription', fn ($sub) => $sub->whereIn('user_id', $user->payableUserIds()))
-                    : $query->whereIn('user_id', $user->payableUserIds()))
+            ->forMembers($user->payableUserIds(), [Subscription::class, TournamentRegistration::class, MeetingUser::class, SubscriptionTrainingPack::class])
             ->count();
 
         return $this->task('my_payments', $count,

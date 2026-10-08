@@ -68,7 +68,7 @@ final readonly class CalculatePriceAction
 
         $total = 0.0;
 
-        foreach ($subscription->trainingPacks()->wherePivotIn('status', ['enrolled', 'left'])->get() as $pack) {
+        foreach ($subscription->trainingPacks()->wherePivotIn('status', ['enrolled', 'left'])->wherePivot('invoiced_separately', false)->get() as $pack) {
             $pivot = $pack->pivot;
 
             if ($pivot->override_amount !== null) {
@@ -113,8 +113,11 @@ final readonly class CalculatePriceAction
     public function quote(Subscription $subscription, int $familyMembersCount = 1): array
     {
         /** @var Collection<int, TrainingPack> $billablePacks */
+        // A stage line is invoiced on its own and never enters the affiliation:
+        // neither its price, nor the multi-pack discount it would trigger.
         $billablePacks = $subscription->trainingPacks()
             ->wherePivotIn('status', ['enrolled', 'left'])
+            ->wherePivot('invoiced_separately', false)
             ->get();
 
         return $this->quoteFor((bool) $subscription->is_competitive, $billablePacks, $familyMembersCount);

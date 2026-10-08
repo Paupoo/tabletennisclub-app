@@ -25,7 +25,7 @@ class TrainingWaitlistJoinedNotification extends Notification
         return [
             'title' => __('Joined the waiting list'),
             'body' => __('See the training details'),
-            'url' => $this->memberTrainingsUrl($notifiable),
+            'url' => $this->memberPackUrl($notifiable, $this->pack),
             'category' => 'training',
             'icon' => 'o-academic-cap',
         ];

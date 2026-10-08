@@ -32,7 +32,7 @@ class TrainingPackDiscontinuedNotification extends Notification
         return [
             'title' => __('Training discontinued'),
             'body' => __(':pack will no longer run', ['pack' => $this->pack->name]),
-            'url' => $this->memberTrainingsUrl($notifiable),
+            'url' => $this->memberPackUrl($notifiable, $this->pack),
             'category' => 'training',
             'icon' => 'o-x-circle',
         ];
@@ -56,7 +56,7 @@ class TrainingPackDiscontinuedNotification extends Notification
         }
 
         return $mail
-            ->action(__('See my trainings'), $this->memberTrainingsUrl($notifiable))
+            ->action(__('See my trainings'), $this->memberPackUrl($notifiable, $this->pack))
             ->salutation(__('The club team'));
     }
 

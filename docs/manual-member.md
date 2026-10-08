@@ -116,6 +116,10 @@ Click **Pay** next to a pending payment. A payment modal opens with:
 
 Make the bank transfer manually. The treasurer reconciles payments and marks yours as paid.
 
+### Training camps
+
+Camps organised by the club (holidays, weekends) are listed here, not in the membership fee. Click **Enrol** (or **Request a spot** when the committee approves enrolments). A camp is **invoiced separately**: you receive its own payment request, and it is not part of the amount on your health-insurance attestation. You need an affiliation for the camp's season.
+
 ### RSVP for meetings
 
 If you are invited to a club meeting, your invitation appears here. Click **RSVP** to confirm your attendance. You may also indicate whether you want to reserve a meal (if applicable). The committee sees your response automatically.

@@ -7,6 +7,7 @@ namespace App\Actions\ClubAdmin\Subscriptions;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingPackEnrolmentCancelledNotification;
+use App\Domains\Trainings\Services\TrainingCampBilling;
 use App\Domains\Trainings\Services\TrainingPackExit;
 use App\Domains\Trainings\Services\TrainingWaitlistService;
 use Illuminate\Support\Facades\Auth;
@@ -40,6 +41,14 @@ class CancelTrainingPackEnrolmentAction
      */
     public function __invoke(Subscription $subscription, TrainingPack $pack, int $familyMembersCount = 1): float
     {
+        // A stage line carries its own invoice and opens its own refund: the
+        // caller has nothing left to hand to the treasury.
+        if ((new TrainingCampBilling)->isInvoicedSeparately($subscription, $pack)) {
+            (new CancelTrainingCampEnrolmentAction)($subscription, $pack);
+
+            return 0.0;
+        }
+
         $pivot = DB::table('subscription_training_pack')
             ->where('subscription_id', $subscription->id)
             ->where('training_pack_id', $pack->id)

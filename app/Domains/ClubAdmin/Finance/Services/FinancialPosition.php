@@ -10,6 +10,7 @@ use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Registration;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
@@ -18,6 +19,8 @@ use App\Domains\Shared\ValueObjects\FiscalYear;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
  * Where the club stands: what it is owed, what it owes, how many of its
@@ -38,7 +41,7 @@ final class FinancialPosition
      *
      * @var list<class-string>
      */
-    private const array MEMBER_PAYABLES = [Subscription::class, TournamentRegistration::class, MeetingUser::class, Registration::class];
+    private const array MEMBER_PAYABLES = [Subscription::class, TournamentRegistration::class, MeetingUser::class, Registration::class, SubscriptionTrainingPack::class];
 
     /**
      * The active members — affiliation confirmed or paid this season — who
@@ -52,10 +55,17 @@ final class FinancialPosition
         $active = User::query()->active()->pluck('users.id');
 
         $owing = $this->pendingClaims()
-            ->whereHasMorph('payable', self::MEMBER_PAYABLES, fn (Builder $payable): Builder => $payable->whereIn('user_id', $active))
-            ->with('payable')
+            // A stage line names its member through the affiliation.
+            ->whereHasMorph('payable', self::MEMBER_PAYABLES, fn (Builder $payable, string $type): Builder => $type === SubscriptionTrainingPack::class
+                ? $payable->whereHas('subscription', fn (Builder $sub): Builder => $sub->whereIn('user_id', $active))
+                : $payable->whereIn('user_id', $active))
+            ->with(['payable' => fn (Relation $relation): mixed => $relation instanceof MorphTo
+                ? $relation->morphWith([SubscriptionTrainingPack::class => ['subscription']])
+                : $relation])
             ->get()
-            ->map(fn (Payment $payment): mixed => $payment->payable?->getAttribute('user_id'))
+            ->map(fn (Payment $payment): mixed => $payment->payable instanceof SubscriptionTrainingPack
+                ? $payment->payable->subscription?->user_id
+                : $payment->payable?->getAttribute('user_id'))
             ->filter()
             ->unique();
 

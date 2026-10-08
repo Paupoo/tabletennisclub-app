@@ -30,6 +30,10 @@ class EnrollInTrainingPackAction
      */
     public function __invoke(Subscription $subscription, TrainingPack $pack, int $familyMembersCount = 1, bool $wholePack = false): string
     {
+        if ($pack->is_camp) {
+            return (new EnrollInTrainingCampAction)($subscription, $pack);
+        }
+
         if ($subscription->status === 'cancelled') {
             throw new \DomainException(__('Cannot enroll with a cancelled subscription.'));
         }

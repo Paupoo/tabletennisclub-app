@@ -6,11 +6,13 @@ namespace App\Actions\ClubAdmin\Payments;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Mail\PaymentInvitationEmail;
 use Illuminate\Support\Facades\Mail;
 
 /**
- * Réclame une ligne de paiement d'affiliation à ceux qui la règlent.
+ * Réclame une ligne de paiement d'affiliation, ou de stage, à ceux qui la règlent.
  *
  * Un mailable ne passe pas par `routeNotificationForMail()` : sans
  * `contactEmails()`, l'invitation partirait vers `email`, null pour un compte
@@ -31,15 +33,13 @@ class InviteToPayAction
             return [];
         }
 
-        $payment->loadMissing('payable.user.guardians', 'payable.season');
+        $member = $this->member($payment);
 
-        $subscription = $payment->payable;
-
-        if (! $subscription instanceof Subscription) {
+        if (! $member instanceof User) {
             return [];
         }
 
-        $recipients = $subscription->user->contactEmails();
+        $recipients = $member->contactEmails();
 
         foreach ($recipients as $recipient) {
             Mail::to($recipient)->send(new PaymentInvitationEmail($payment));
@@ -50,5 +50,24 @@ class InviteToPayAction
         }
 
         return $recipients;
+    }
+
+    /**
+     * Who pays: the affiliated member, for an affiliation or for a stage line
+     * that hangs on one.
+     */
+    private function member(Payment $payment): ?User
+    {
+        $payable = $payment->payable;
+
+        if ($payable instanceof Subscription) {
+            return $payable->loadMissing('user.guardians', 'season')->user;
+        }
+
+        if ($payable instanceof SubscriptionTrainingPack) {
+            return $payable->loadMissing('subscription.user.guardians', 'trainingPack')->subscription?->user;
+        }
+
+        return null;
     }
 }

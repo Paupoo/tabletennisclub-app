@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
@@ -34,6 +35,7 @@ new class extends Component
         Subscription::class,
         TournamentRegistration::class,
         MeetingUser::class,
+        SubscriptionTrainingPack::class,
     ];
 
     public bool $paymentModal = false;
@@ -110,13 +112,16 @@ new class extends Component
 
     public function openPaymentModal(int $paymentId): void
     {
-        $payment = Payment::with('payable')->findOrFail($paymentId);
+        $payment = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith([SubscriptionTrainingPack::class => ['subscription']])])
+            ->findOrFail($paymentId);
+
+        // A stage line names its member through the affiliation.
+        $memberId = $payment->payable instanceof SubscriptionTrainingPack
+            ? $payment->payable->subscription?->user_id
+            : $payment->payable?->user_id;
 
         // Never generate a QR for a payment outside this member's scope.
-        abort_unless(
-            in_array($payment->payable?->user_id, $this->user->payableUserIds(), true),
-            403
-        );
+        abort_unless(in_array($memberId, $this->user->payableUserIds(), true), 403);
 
         $this->selectedPaymentId = $paymentId;
         $this->paymentQr = (new GeneratePaymentQR)($payment);
@@ -157,14 +162,15 @@ new class extends Component
                 Subscription::class => ['user', 'season'],
                 TournamentRegistration::class => ['user', 'tournament'],
                 MeetingUser::class => ['user', 'meeting'],
+                SubscriptionTrainingPack::class => ['user', 'trainingPack'],
             ]), 'discounts'])
-            ->whereHasMorph('payable', self::PAYABLE_TYPES, fn ($q) => $q->whereIn('user_id', $ids))
+            ->whereHasMorph('payable', self::PAYABLE_TYPES, fn ($q, string $type) => $this->forMembers($q, $type, $ids))
             ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
             ->when($this->typeFilter, fn ($q) => $q->where('payable_type', $this->typeFilter))
             ->when($this->personFilter, fn ($q) => $q->whereHasMorph(
                 'payable',
                 self::PAYABLE_TYPES,
-                fn ($q2) => $q2->where('user_id', $this->personFilter)
+                fn ($q2, string $type) => $this->forMembers($q2, $type, [$this->personFilter])
             ))
             ->orderByDesc('created_at')
             ->paginate(20);
@@ -190,6 +196,7 @@ new class extends Component
             Subscription::class => __('Subscription'),
             TournamentRegistration::class => __('Tournament'),
             MeetingUser::class => __('Meeting'),
+            SubscriptionTrainingPack::class => __('Training camp'),
         ];
     }
 
@@ -213,5 +220,18 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('My payments'));
+    }
+
+    /**
+     * Restricts a payable to these members. A stage line holds no `user_id`:
+     * it names its member through the affiliation.
+     *
+     * @param  list<int|null>  $ids
+     */
+    private function forMembers($query, string $type, array $ids)
+    {
+        return $type === SubscriptionTrainingPack::class
+            ? $query->whereHas('subscription', fn ($sub) => $sub->whereIn('user_id', $ids))
+            : $query->whereIn('user_id', $ids);
     }
 };

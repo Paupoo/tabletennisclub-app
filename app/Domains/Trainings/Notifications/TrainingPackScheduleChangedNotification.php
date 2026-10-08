@@ -31,7 +31,7 @@ class TrainingPackScheduleChangedNotification extends Notification
         return [
             'title' => __('Training schedule changed'),
             'body' => __(':pack has a new schedule', ['pack' => $this->pack->name]),
-            'url' => $this->memberTrainingsUrl($notifiable),
+            'url' => $this->memberPackUrl($notifiable, $this->pack),
             'category' => 'training',
             'icon' => 'o-calendar-days',
         ];
@@ -54,7 +54,7 @@ class TrainingPackScheduleChangedNotification extends Notification
 
         return $mail
             ->line(__('Please check the calendar for the exact dates of the sessions to come.'))
-            ->action(__('See my trainings'), $this->memberTrainingsUrl($notifiable))
+            ->action(__('See my trainings'), $this->memberPackUrl($notifiable, $this->pack))
             ->salutation(__('The club team'));
     }
 

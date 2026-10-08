@@ -166,6 +166,8 @@ erDiagram
     Subscription ||--o{ SubscriptionDiscount : "discounts"
     Subscription ||--o{ Payment : "payments"
     Subscription }o--o{ TrainingPack : "trainingPacks"
+    SubscriptionTrainingPack ||--o{ Payment : "payments"
+    SubscriptionTrainingPack ||--o| User : "user"
     SupportingDocument }o--o{ CashRegisterEntry : "cashRegisterEntries"
     SupportingDocument ||--o{ SupportingDocumentFile : "files"
     SupportingDocument }o--o{ Transaction : "transactions"

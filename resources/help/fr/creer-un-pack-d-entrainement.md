@@ -1,6 +1,6 @@
 ---
 title: Créer et gérer un pack d'entraînement
-summary: L'assistant en trois étapes, les séances générées automatiquement, ouvrir ou fermer les inscriptions, ajouter un membre à la main, lire les présences et gérer les niveaux.
+summary: L'assistant en trois étapes, les séances générées automatiquement, ouvrir ou fermer les inscriptions, ajouter un membre à la main, les stages facturés à part, lire les présences et gérer les niveaux.
 audience: committee
 order: 16
 ---
@@ -23,7 +23,7 @@ La liste des **niveaux** se gère depuis le bouton **Niveaux** en haut de l'écr
 
 Choisissez **un jour qui se répète chaque semaine**, ou **plusieurs jours** si le pack tourne deux fois par semaine.
 
-Par défaut le pack couvre toute la saison. Les champs **De / À** permettent de le restreindre — un stage de six semaines, par exemple.
+Par défaut le pack couvre toute la saison. Les champs **De / À** permettent de le restreindre — un cycle de six semaines, par exemple. Pour un stage ponctuel, voir plus bas : c'est une case à cocher, pas seulement des dates.
 
 L'application affiche alors **la liste des dates générées**. Relisez-la : c'est le moment de **décocher les dates à exclure** (congés scolaires, week-end de tournoi). Une date décochée ne produira pas de séance.
 
@@ -97,6 +97,20 @@ Deux points qui comptent :
 **Le plafond peut être franchi**, avec un avertissement. C'est délibéré : vous l'interdire vous pousserait à gonfler `max_participants`, ce qui casserait durablement la liste d'attente du pack.
 
 Il faut une **affiliation en cours** pour la saison du pack. Sans elle, il n'y a pas de facture à laquelle rattacher l'entraînement : affiliez d'abord.
+
+## Un stage, facturé à part
+
+Un stage — une semaine de vacances, un week-end — se crée comme un pack, avec la case **Stage (hors cotisation)** cochée à l'étape 1. Il garde tout ce qui fait un pack : séances générées, coach, inscrits, présences, liste d'attente. Ce qui change, c'est l'argent :
+
+- **il est facturé à part.** Chaque inscription porte sa propre demande de paiement, avec sa communication structurée. Elle ne touche jamais l'affiliation : un stage impayé ne bloque pas l'attestation mutuelle, et un stage payé n'en gonfle pas le montant ;
+- **pas de prorata, pas de remise automatique.** Le prix est celui du stage. Pour quelqu'un qui ne vient qu'un jour, fixez **son prix**, avec un motif : à l'ajout, ou plus tard via **Prix** sur sa ligne. Une demande non payée est ajustée ; ce qui a déjà été payé au-delà part en remboursement ;
+- **la saison** proposée est celle qui contient la date de début du stage. Seuls les affiliés de cette saison peuvent s'inscrire.
+
+La case **Inscription sur validation** (sous la case Stage) transforme l'inscription en demande : réservé aux jeunes, aux adultes… Les demandes s'acceptent ou se refusent **sur la fiche du stage**, ligne par ligne ou avec **Tout accepter**, et elles s'ajoutent au compteur de tâches du menu Entraînements. Sans la case, les membres s'inscrivent directement depuis **Mes inscriptions**.
+
+Retirer un membre suit les deux sorties habituelles : **il a arrêté de venir** — le stage reste dû en entier ; **erreur d'encodage** — la demande de paiement est annulée et ce qui a été payé est remboursé. **Arrêter** un stage rembourse tout le monde en entier.
+
+> La case **Stage** se fige dès le premier inscrit. La basculer changerait d'un coup ce que doivent les inscrits. Si elle a été mal cochée, recréez le pack.
 
 ## Lire les présences
 

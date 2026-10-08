@@ -310,6 +310,10 @@ Lorsqu'un membre demande à s'inscrire à un pack d'entraînement, une notificat
 
 Si un pack d'entraînement est complet, les membres rejoignent la liste d'attente. Lorsqu'une place se libère (annulation), le premier membre en attente reçoit automatiquement une offre de place par email.
 
+### Stages
+
+Un stage est un pack coché **Stage (hors cotisation)** à l'étape 1 de l'assistant. Il fonctionne comme un pack (inscrits, présences, coach, liste d'attente) mais il est **facturé à part** : son paiement ne touche jamais l'affiliation, et il n'entre ni dans le total de la cotisation ni dans l'attestation mutuelle. Pas de prorata, pas de remise automatique ; un prix propre à un membre (un seul jour, la moitié du stage) se fixe avec un motif, à l'ajout ou via **Prix** dans la liste des inscrits. Les membres s'inscrivent depuis **Mes inscriptions** ; avec **Inscription sur validation**, leurs demandes s'acceptent ou se refusent sur la fiche du stage. Arrêter un stage rembourse en entier ce qui a été payé. La case se fige dès le premier inscrit.
+
 ### Tableau de planification (board)
 
 Allez dans **Planification → Tableau de planification**. C'est un **outil d'aide à la décision** pour composer les groupes d'entraînement de la saison et **visualiser les tensions** (effectif vs capacité) — sans toucher aux inscriptions réelles.

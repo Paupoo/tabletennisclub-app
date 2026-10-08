@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Subscriptions\CancelTrainingCampEnrolmentAction;
 use App\Actions\ClubAdmin\Subscriptions\CancelTrainingPackEnrolmentAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Services\TrainingCampBilling;
 use App\Domains\Trainings\Services\TrainingPackExit;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
@@ -65,16 +67,20 @@ new class extends Component
         $member = $subscription->user->first_name . ' ' . $subscription->user->last_name;
 
         try {
-            $refundable = $this->mode === 'error'
-                ? (new CancelTrainingPackEnrolmentAction)($subscription, $pack, $familyMembersCount)
-                : (new LeaveTrainingPackAction)($subscription, $pack, $familyMembersCount, notifyUser: false, endsOn: $this->endsOn !== '' ? $this->endsOn : null);
+            $refundable = match (true) {
+                // A stage opens its own refund, on its own line: nothing is left
+                // for this screen to hand to the treasury.
+                $this->mode === 'error' && $this->isCamp => (new CancelTrainingCampEnrolmentAction)($subscription, $pack),
+                $this->mode === 'error' => (new CancelTrainingPackEnrolmentAction)($subscription, $pack, $familyMembersCount),
+                default => (new LeaveTrainingPackAction)($subscription, $pack, $familyMembersCount, notifyUser: false, endsOn: $this->endsOn !== '' ? $this->endsOn : null),
+            };
         } catch (DomainException $e) {
             $this->error($e->getMessage());
 
             return;
         }
 
-        if ($refundable > 0) {
+        if ($refundable > 0 && ! $this->isCamp) {
             (new RequestSubscriptionRefundAction)($subscription, $refundable, $this->mode === 'error'
                 ? __(':member was enrolled in :pack by mistake.', ['member' => $member, 'pack' => $pack->name])
                 : __(':member has been removed from :pack after having paid.', ['member' => $member, 'pack' => $pack->name]));
@@ -110,6 +116,17 @@ new class extends Component
         return Carbon::instance((new TrainingPackExit)->earliestDeparture($this->subscription, $this->pack));
     }
 
+    /** A stage line: invoiced on its own, owed in full, no prorata. */
+    #[Computed]
+    public function isCamp(): bool
+    {
+        if (! $this->subscription || ! $this->pack) {
+            return false;
+        }
+
+        return (new TrainingCampBilling)->isInvoicedSeparately($this->subscription, $this->pack);
+    }
+
     #[Computed]
     public function markedSessions(): int
     {
@@ -127,7 +144,7 @@ new class extends Component
 
         $this->subscriptionId = $subscriptionId;
         $this->packId = $packId;
-        unset($this->subscription, $this->pack, $this->earliestDeparture, $this->markedSessions, $this->preview);
+        unset($this->subscription, $this->pack, $this->earliestDeparture, $this->markedSessions, $this->preview, $this->isCamp);
 
         $status = $this->subscription?->trainingPacks->firstWhere('id', $packId)?->pivot->status;
 
@@ -177,6 +194,10 @@ new class extends Component
             }
         }
 
+        if ($this->isCamp) {
+            return $this->campPreview();
+        }
+
         return (new TrainingPackExit)->preview(
             $this->subscription,
             $this->pack,
@@ -189,6 +210,34 @@ new class extends Component
     public function subscription(): ?Subscription
     {
         return Subscription::with(['user', 'season', 'trainingPacks', 'payments'])->find($this->subscriptionId);
+    }
+
+    /**
+     * A stage's exit, read on its own invoice: a departure changes nothing, an
+     * error lowers the unpaid request and refunds what came in.
+     *
+     * @return array{line_amount: float, amount_due: float|null, reduced: float, refund: float, absences: int}
+     */
+    private function campPreview(): array
+    {
+        $billing = new TrainingCampBilling;
+        $line = $billing->line($this->subscription, $this->pack);
+        $lineAmount = $line?->getAmountDue() ?? 0.0;
+
+        if ($this->mode === 'departure') {
+            return ['line_amount' => $lineAmount, 'amount_due' => null, 'reduced' => 0.0, 'refund' => 0.0,
+                'absences' => (new TrainingPackExit)->absencesCount($this->subscription, $this->pack, $this->endsOn)];
+        }
+
+        $projection = $line ? $billing->project($line, 0.0) : ['reduced' => 0.0, 'refund' => 0.0];
+
+        return [
+            'line_amount' => 0.0,
+            'amount_due' => null,
+            'reduced' => $projection['reduced'],
+            'refund' => $projection['refund'],
+            'absences' => (new TrainingPackExit)->absencesCount($this->subscription, $this->pack),
+        ];
     }
 };
 ?>
@@ -211,7 +260,7 @@ new class extends Component
                         <input type="radio" class="radio radio-primary radio-sm mt-0.5" value="departure" wire:model.live="mode" />
                         <span class="flex-1 space-y-2">
                             <span class="block font-semibold">{{ __('They stopped coming') }}</span>
-                            <span class="block text-sm text-base-content/70">{{ __('The months attended stay billed, up to the departure date.') }}</span>
+                            <span class="block text-sm text-base-content/70">{{ $this->isCamp ? __('The training camp stays billed in full.') : __('The months attended stay billed, up to the departure date.') }}</span>
                             @if ($mode === 'departure')
                                 <x-input :label="__('Departure date')" type="date" wire:model.live="endsOn"
                                     :min="$this->earliestDeparture?->toDateString()" :max="today()->toDateString()"
@@ -248,10 +297,12 @@ new class extends Component
                             <span>{{ __('Billed for this pack') }}</span>
                             <span class="font-semibold">{{ number_format($preview['line_amount'], 2) }} €</span>
                         </p>
-                        <p class="flex justify-between gap-3">
-                            <span>{{ __('New season total') }}</span>
-                            <span class="font-semibold">{{ number_format($preview['amount_due'], 2) }} €</span>
-                        </p>
+                        @if ($preview['amount_due'] !== null)
+                            <p class="flex justify-between gap-3">
+                                <span>{{ __('New season total') }}</span>
+                                <span class="font-semibold">{{ number_format($preview['amount_due'], 2) }} €</span>
+                            </p>
+                        @endif
                         @if ($preview['reduced'] > 0)
                             <p class="flex justify-between gap-3">
                                 <span>{{ __('Payment request lowered by') }}</span>

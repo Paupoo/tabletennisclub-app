@@ -11,6 +11,7 @@ use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
@@ -945,6 +946,7 @@ new class extends Component
                 ['id' => Subscription::class,           'name' => __('Subscription')],
                 ['id' => TournamentRegistration::class, 'name' => __('Tournament')],
                 ['id' => MeetingUser::class,            'name' => __('Meeting')],
+                ['id' => SubscriptionTrainingPack::class, 'name' => __('Training camp')],
                 ['id' => BarOrder::class,               'name' => __('Bar')],
                 ['id' => ExpenseReport::class,          'name' => __('Expense report')],
             ]), 'name')->all(),
@@ -1204,6 +1206,9 @@ new class extends Component
                 )
                 ->orWhereHasMorph('payable', [MeetingUser::class], fn ($mu) => $mu
                     ->whereHas('meeting', fn ($m) => $m->where('title', 'like', "%{$name}%"))
+                )
+                ->orWhereHasMorph('payable', [SubscriptionTrainingPack::class], fn ($line) => $line
+                    ->whereHas('trainingPack', fn ($p) => $p->where('name', 'like', "%{$name}%"))
                 );
         });
     }
@@ -1245,8 +1250,11 @@ new class extends Component
             ->when($this->dateTo, fn (Builder $q): Builder => $q->whereDate('created_at', '<=', $this->dateTo))
             ->when($this->userId, fn (Builder $q): Builder => $q->whereHasMorph(
                 'payable',
-                [Subscription::class, TournamentRegistration::class, MeetingUser::class, ExpenseReport::class],
-                fn ($q) => $q->where('user_id', $this->userId)
+                [Subscription::class, TournamentRegistration::class, MeetingUser::class, ExpenseReport::class, SubscriptionTrainingPack::class],
+                // A stage line names its member through the affiliation.
+                fn ($q, string $type) => $type === SubscriptionTrainingPack::class
+                    ? $q->whereHas('subscription', fn ($sub) => $sub->where('user_id', $this->userId))
+                    : $q->where('user_id', $this->userId)
             ))
             ->when($this->eventType, fn (Builder $q): Builder => $q->where('payable_type', $this->eventType))
             ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName));
@@ -1283,6 +1291,7 @@ new class extends Component
             TournamentRegistration::class => __('Tournament'),
             MeetingUser::class => __('Meeting'),
             ExpenseReport::class => __('Expense report'),
+            SubscriptionTrainingPack::class => __('Training camp'),
             default => $type,
         };
     }
@@ -1339,6 +1348,7 @@ new class extends Component
             MeetingUser::class => ['user', 'meeting'],
             Subscription::class => ['user', 'season'],
             ExpenseReport::class => ['user'],
+            SubscriptionTrainingPack::class => ['user', 'trainingPack'],
         ];
     }
 
@@ -1374,6 +1384,7 @@ new class extends Component
             MeetingUser::class => ['user.guardians', 'meeting'],
             Subscription::class => ['user.guardians', 'season'],
             ExpenseReport::class => ['user.guardians'],
+            SubscriptionTrainingPack::class => ['user.guardians', 'trainingPack'],
         ];
     }
 

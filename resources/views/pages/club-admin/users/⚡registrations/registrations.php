@@ -52,6 +52,7 @@ use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
@@ -162,6 +163,8 @@ new class extends Component
      */
     public array $sortBy = ['column' => 'status', 'direction' => 'asc'];
 
+    /** Bound to the URL so that the dashboard task opens on the list it counts. */
+    #[Url(as: 'status')]
     public string $statusFilter = '';
 
     public bool $trainingRequestModal = false;
@@ -326,7 +329,7 @@ new class extends Component
         }
 
         $allPendingIds = $subscription->trainingPacks
-            ->filter(fn ($p): bool => $p->pivot->status === 'pending')
+            ->filter(fn ($p): bool => $p->pivot->status === 'pending' && ! $p->pivot->invoiced_separately)
             ->pluck('id')
             ->toArray();
 
@@ -1180,13 +1183,7 @@ new class extends Component
             ->unless($this->statusFilter === 'cancelled',
                 fn ($q) => $q->where('status', '!=', 'cancelled'))
             ->when($this->statusFilter, fn ($q) => $this->statusFilter === 'pending'
-                ? $q->where(fn ($sub) => $sub
-                    ->where('status', 'pending')
-                    ->orWhere(fn ($withPacks) => $withPacks
-                        ->whereIn('status', ['confirmed', 'paid'])
-                        ->whereHas('trainingPacks', fn ($tp) => $tp->where('subscription_training_pack.status', 'pending'))
-                    )
-                )
+                ? $q->awaitingDecision()
                 : $q->where('status', $this->statusFilter)
             )
             // « eric godart » ne ramenait rien : un seul terme était comparé au
@@ -1239,7 +1236,7 @@ new class extends Component
             return;
         }
 
-        $pendingPacks = $subscription->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'pending');
+        $pendingPacks = $subscription->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'pending' && ! $p->pivot->invoiced_separately);
 
         foreach ($pendingPacks as $pack) {
             $subscription->user->notify(new TrainingPackRejectedNotification(
@@ -1250,7 +1247,8 @@ new class extends Component
             ));
         }
 
-        $subscription->trainingPacks()->wherePivot('status', 'pending')->detach();
+        // A stage request is decided on the stage, never swept away from here.
+        $subscription->trainingPacks()->wherePivot('status', 'pending')->wherePivot('invoiced_separately', false)->detach();
 
         // Une demande refusée rend sa place — `pending` en occupait une. Sans
         // cet appel le pack restait affiché complet, la file figée derrière.
@@ -1337,7 +1335,7 @@ new class extends Component
         $subscription = Subscription::with(['user', 'trainingPacks'])->find($id);
         $this->approvedPackIds = $subscription
             ?->trainingPacks
-            ->filter(fn ($p): bool => $p->pivot->status === 'pending')
+            ->filter(fn ($p): bool => $p->pivot->status === 'pending' && ! $p->pivot->invoiced_separately)
             ->pluck('id')
             ->toArray() ?? [];
 
@@ -1384,7 +1382,7 @@ new class extends Component
         $subscription = Subscription::with(['trainingPacks'])->find($subscriptionId);
         $this->approvedPackIds = $subscription
             ?->trainingPacks
-            ->filter(fn ($p): bool => $p->pivot->status === 'pending')
+            ->filter(fn ($p): bool => $p->pivot->status === 'pending' && ! $p->pivot->invoiced_separately)
             ->pluck('id')
             ->toArray() ?? [];
     }
@@ -1696,7 +1694,7 @@ new class extends Component
             return [];
         }
 
-        return TrainingPack::where('season_id', $season->id)
+        return TrainingPack::seasonal()->where('season_id', $season->id)
             ->whereDate('pack_start_date', '<', Carbon::today())
             ->pluck('id')
             ->all();
@@ -1741,7 +1739,7 @@ new class extends Component
             return [];
         }
 
-        return TrainingPack::where('season_id', $season->id)
+        return TrainingPack::seasonal()->where('season_id', $season->id)
             ->get()
             ->map(fn ($pack): array => ['id' => $pack->id, 'name' => $pack->name])
             ->toArray();
@@ -1859,8 +1857,9 @@ new class extends Component
     {
         return Subscription::whereIn('status', ['confirmed', 'paid'])
             ->when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId))
-            ->whereHas('trainingPacks', fn ($q) => $q->where('subscription_training_pack.status', 'pending'))
-            ->with(['user', 'trainingPacks' => fn ($q) => $q->wherePivot('status', 'pending')])
+            // A stage request is decided on the stage: it is no training request here.
+            ->whereHas('trainingPacks', fn ($q) => $q->where('subscription_training_pack.status', 'pending')->where('subscription_training_pack.invoiced_separately', false))
+            ->with(['user', 'trainingPacks' => fn ($q) => $q->wherePivot('status', 'pending')->wherePivot('invoiced_separately', false)])
             ->when($this->search, fn ($q) => $q->whereHas('user', fn ($u) => $u
                 ->where('first_name', 'like', "%{$this->search}%")
                 ->orWhere('last_name', 'like', "%{$this->search}%")
@@ -2038,12 +2037,15 @@ new class extends Component
     private function toRow(Subscription $sub): object
     {
         return (function (Subscription $sub) {
-            $enrolledPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'enrolled');
-            $pendingPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'pending');
-            $cancelledPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'cancelled');
+            // Les stages sont facturés à part et se gèrent sur le stage : ce
+            // détail est celui de la cotisation.
+            $seasonalPacks = $sub->trainingPacks->reject(fn ($p): bool => (bool) $p->pivot->invoiced_separately);
+            $enrolledPacks = $seasonalPacks->filter(fn ($p): bool => $p->pivot->status === 'enrolled');
+            $pendingPacks = $seasonalPacks->filter(fn ($p): bool => $p->pivot->status === 'pending');
+            $cancelledPacks = $seasonalPacks->filter(fn ($p): bool => $p->pivot->status === 'cancelled');
             // Packs quittés : encore facturés au pro rata des mois suivis,
             // donc toujours visibles dans le détail de la cotisation.
-            $leftPacks = $sub->trainingPacks->filter(fn ($p): bool => $p->pivot->status === 'left');
+            $leftPacks = $seasonalPacks->filter(fn ($p): bool => $p->pivot->status === 'left');
 
             // A voided affiliation drags its trainings down with it, so any
             // pack still flagged pending/enrolled reads as cancelled here —

@@ -26,7 +26,7 @@ class TrainingWaitlistSpotOfferedNotification extends Notification
         return [
             'title' => __('A training spot is available'),
             'body' => __('See the training details'),
-            'url' => $this->memberTrainingsUrl($notifiable),
+            'url' => $this->memberPackUrl($notifiable, $this->pack),
             'category' => 'training',
             'icon' => 'o-academic-cap',
         ];
@@ -41,7 +41,7 @@ class TrainingWaitlistSpotOfferedNotification extends Notification
             ->line(__('You have until **:deadline** to confirm your spot. After that, it will be offered to the next person on the waiting list.', [
                 'deadline' => $this->deadline->format('d/m/Y H:i'),
             ]))
-            ->action(__('Confirm my spot'), $this->memberTrainingsUrl($notifiable))
+            ->action(__('Confirm my spot'), $this->memberPackUrl($notifiable, $this->pack))
             ->salutation(__('The club team'));
     }
 

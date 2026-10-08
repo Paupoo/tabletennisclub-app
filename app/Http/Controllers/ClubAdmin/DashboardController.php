@@ -4,24 +4,18 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubAdmin;
 
-use App\Domains\ClubAdmin\Contact\Models\Contact;
-use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
 use App\Domains\ClubAdmin\Feedback\Services\SurveyPrompts;
-use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
-use App\Domains\Shared\Enums\ExpenseReportDisplayStatus;
-use App\Domains\Shared\Enums\ExpenseReportStatus;
 use App\Domains\Shared\Enums\Feature;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Role;
-use App\Domains\Trainings\Models\Training;
 use App\Http\Controllers\Controller;
 use App\Services\ClubAdmin\Dashboard\AgendaBlockBuilder;
+use App\Services\ClubAdmin\Dashboard\PendingTasks;
 use App\Support\AccountProxy;
 use App\Support\QueueHealth;
 use Illuminate\Contracts\View\View;
@@ -30,7 +24,10 @@ use Illuminate\Support\Facades\Gate;
 
 class DashboardController extends Controller
 {
-    public function __construct(private readonly AgendaBlockBuilder $agendaBlocks) {}
+    public function __construct(
+        private readonly AgendaBlockBuilder $agendaBlocks,
+        private readonly PendingTasks $pendingTasks,
+    ) {}
 
     public function index(): View
     {
@@ -69,7 +66,7 @@ class DashboardController extends Controller
             CommitteeRolesEnum::ADMINISTRATOR,
         ]);
 
-        $alerts = $this->buildAlerts($user, $isAdmin, $showSecretary, $showTreasurer, $showCaptain, $isCaptain);
+        $alerts = $this->buildAlerts($user);
         $coachTiles = $showCoach ? $this->buildCoachTiles($user) : [];
         $memberTiles = $this->buildMemberTiles($user);
         // The proxy tiles are rendered by the act-for component, which holds the
@@ -92,24 +89,21 @@ class DashboardController extends Controller
     }
 
     /**
+     * The pills over the dashboard: what waits for this reader to act — the
+     * same tasks the menu counts, see {@see PendingTasks} — framed by the
+     * signals that are not a task of theirs.
+     *
      * @return array<int, array{type: string, icon: string, label: string, route: string}>
      */
-    private function buildAlerts(User $user, bool $isAdmin, bool $showSecretary, bool $showTreasurer, bool $showCaptain, bool $isCaptain = false): array
+    private function buildAlerts(User $user): array
     {
         $alerts = [];
         $currentSeason = Season::current();
+        $tasks = $this->pendingTasks->for($user);
 
-        // Personal alert: own pending payments (all users)
-        $myPendingPayments = Payment::where('status', 'pending')
-            ->whereHasMorph('payable', [Subscription::class], fn ($q) => $q->where('user_id', $user->id))
-            ->count();
-        if ($myPendingPayments > 0) {
-            $alerts[] = [
-                'type' => 'warning',
-                'icon' => 'o-banknotes',
-                'label' => $myPendingPayments === 1 ? '1 paiement ouvert à votre nom' : "{$myPendingPayments} paiements ouverts à votre nom",
-                'route' => route('admin.user.registration-management', $user),
-            ];
+        if (isset($tasks['my_payments'])) {
+            $alerts[] = $tasks['my_payments']->toAlert();
+            unset($tasks['my_payments']);
         }
 
         // No personal "incomplete profile" alert here: the profile.complete
@@ -120,7 +114,7 @@ class DashboardController extends Controller
         if ($currentSeason) {
             $isAffiliated = $user->subscriptions()
                 ->where('season_id', $currentSeason->id)
-                ->whereIn('status', ['pending', 'confirmed', 'paid'])
+                ->whereIn('status', Subscription::AFFILIATED_STATUSES)
                 ->exists();
 
             if (! $isAffiliated) {
@@ -133,158 +127,19 @@ class DashboardController extends Controller
             }
         }
 
-        if ($showSecretary || $isAdmin) {
-            $unpaidCount = User::active()->unpaid()->count();
-            if ($unpaidCount > 0) {
-                $alerts[] = [
-                    'type' => 'warning',
-                    'icon' => 'o-exclamation-triangle',
-                    'label' => $unpaidCount === 1 ? '1 cotisation impayée' : "{$unpaidCount} cotisations impayées",
-                    'route' => route('admin.users.index'),
-                ];
-            }
-
-            $incompleteProfiles = User::active()->withIncompleteProfile()->count();
-            if ($incompleteProfiles > 0) {
-                $alerts[] = [
-                    'type' => 'info',
-                    'icon' => 'o-user-circle',
-                    'label' => $incompleteProfiles === 1 ? '1 profil membre incomplet' : "{$incompleteProfiles} profils membres incomplets",
-                    'route' => route('admin.users.index'),
-                ];
-            }
-
-            if ($currentSeason) {
-                $nonAffiliatedCount = User::active()
-                    ->whereDoesntHave('subscriptions', fn ($q) => $q
-                        ->where('season_id', $currentSeason->id)
-                        ->whereIn('status', ['pending', 'confirmed', 'paid'])
-                    )
-                    ->count();
-                if ($nonAffiliatedCount > 0) {
-                    $alerts[] = [
-                        'type' => 'info',
-                        'icon' => 'o-user-minus',
-                        'label' => $nonAffiliatedCount === 1 ? '1 membre actif non affilié' : "{$nonAffiliatedCount} membres actifs non affiliés",
-                        'route' => route('admin.users.index'),
-                    ];
-                }
-            }
-
-            $newContacts = Contact::byStatus('new')->count();
-            if ($newContacts > 0) {
-                $alerts[] = [
-                    'type' => 'info',
-                    'icon' => 'o-envelope',
-                    'label' => $newContacts === 1 ? '1 nouveau message' : "{$newContacts} nouveaux messages",
-                    'route' => route('admin.website.contacts.index'),
-                ];
-            }
+        // Queue health: a dead worker silently blocks every outgoing email,
+        // surface it prominently — and first among the work to do.
+        if ($user->can(Permission::QueueView->value) && QueueHealth::isStalled()) {
+            $alerts[] = [
+                'type' => 'error',
+                'icon' => 'o-queue-list',
+                'label' => "File d'attente bloquée — aucun email ne part, worker probablement arrêté",
+                'route' => route('admin.queue.index'),
+            ];
         }
 
-        if ($showTreasurer || $isAdmin) {
-            $pendingPayments = Payment::where('status', 'pending')->count();
-            if ($pendingPayments > 0) {
-                $alerts[] = [
-                    'type' => 'warning',
-                    'icon' => 'o-banknotes',
-                    'label' => $pendingPayments === 1 ? '1 paiement en attente' : "{$pendingPayments} paiements en attente",
-                    'route' => route('admin.treasury.payments'),
-                ];
-            }
-        }
-
-        // Keyed on the right to decide, never on reading the treasury: the
-        // committee reads every report and decides on none.
-        if (Feature::ExpenseReports->enabled() && $user->can(Permission::ExpenseReportsProcess->value)) {
-            $toDecide = ExpenseReport::where('status', ExpenseReportStatus::Submitted)
-                ->where('user_id', '!=', $user->id)
-                ->count();
-            if ($toDecide > 0) {
-                $alerts[] = [
-                    'type' => 'warning',
-                    'icon' => 'o-receipt-percent',
-                    'label' => $toDecide === 1 ? '1 note de frais à traiter' : "{$toDecide} notes de frais à traiter",
-                    'route' => route('admin.treasury.expense-reports'),
-                ];
-            }
-        }
-
-        // Whoever's download archives: a decider, or whoever wires refunds.
-        if (Feature::ExpenseReports->enabled() && Gate::allows('archive', ExpenseReport::class)) {
-            $toArchive = ExpenseReport::query()
-                ->whereDisplayStatus(ExpenseReportDisplayStatus::Paid)
-                ->whereNull('archived_at')
-                ->count();
-            if ($toArchive > 0) {
-                $alerts[] = [
-                    'type' => 'info',
-                    'icon' => 'o-archive-box',
-                    'label' => $toArchive === 1 ? '1 note de frais payée à archiver' : "{$toArchive} notes de frais payées à archiver",
-                    // Archiving is downloading a year's ZIP from the report.
-                    'route' => route('admin.treasury.report', ['tab' => 'pieces']),
-                ];
-            }
-        }
-
-        if ($showCaptain || $isAdmin) {
-            $pendingSelections = Interclub::where('start_date_time', '>', now())
-                ->whereDoesntHave('users')
-                ->count();
-            if ($pendingSelections > 0) {
-                $alerts[] = [
-                    'type' => 'error',
-                    'icon' => 'o-clipboard-document-check',
-                    'label' => $pendingSelections === 1 ? '1 sélection manquante' : "{$pendingSelections} sélections manquantes",
-                    'route' => route('admin.interclubs.captain-selection'),
-                ];
-            }
-        }
-
-        // Personal alert: lineups the captain saved but never sent. Enregistrer
-        // ne prévient personne, et c'est l'envoi qui termine la tâche.
-        if ($isCaptain) {
-            $toSend = Interclub::query()
-                ->with('users')
-                ->where('start_date_time', '>', now())
-                ->where(fn ($q) => $q
-                    ->whereHas('visitedTeam', fn ($t) => $t->where('captain_id', $user->id))
-                    ->orWhereHas('visitingTeam', fn ($t) => $t->where('captain_id', $user->id)))
-                ->get()
-                ->filter(fn (Interclub $ic): bool => $ic->awaitsSending())
-                ->count();
-
-            if ($toSend > 0) {
-                $alerts[] = [
-                    'type' => 'warning',
-                    'icon' => 'o-paper-airplane',
-                    'label' => $toSend === 1 ? '1 compo à envoyer à votre équipe' : "{$toSend} compos à envoyer à votre équipe",
-                    'route' => route('admin.interclubs.captain-selection'),
-                ];
-            }
-        }
-
-        // Queue health (admins + committee): a dead worker silently blocks
-        // every outgoing email, surface it prominently.
-        if ($user->can(Permission::QueueView->value)) {
-            if (QueueHealth::isStalled()) {
-                $alerts[] = [
-                    'type' => 'error',
-                    'icon' => 'o-queue-list',
-                    'label' => "File d'attente bloquée — aucun email ne part, worker probablement arrêté",
-                    'route' => route('admin.queue.index'),
-                ];
-            }
-
-            $failedJobs = QueueHealth::failedCount();
-            if ($failedJobs > 0) {
-                $alerts[] = [
-                    'type' => 'warning',
-                    'icon' => 'o-queue-list',
-                    'label' => $failedJobs === 1 ? '1 tâche en échec dans la file d\'attente' : "{$failedJobs} tâches en échec dans la file d'attente",
-                    'route' => route('admin.queue.index'),
-                ];
-            }
+        foreach ($tasks as $task) {
+            $alerts[] = $task->toAlert();
         }
 
         // The yearly survey: the member's own answer still to give, and — for
@@ -300,9 +155,6 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return array<int, array{icon: string, label: string, sub: string, href: string}>
-     */
-    /**
      * Le monde admin d'un entraîneur tient en un écran : `coach.trainings`.
      *
      * On ne le garnit pas de portes fermées — la seconde tuile n'apparaît qu'à
@@ -312,13 +164,8 @@ class DashboardController extends Controller
      */
     private function buildCoachTiles(User $user): array
     {
-        // La même requête que `sessionsToRecord` de l'écran coach : ce qui est
-        // passé, encore « scheduled », et que personne n'a pointé.
-        $toRecord = Training::where('trainer_id', $user->id)
-            ->where('start', '<', now())
-            ->where('status', 'scheduled')
-            ->whereNull('attendance_taken_at')
-            ->count();
+        // Le même compte que la pastille et le menu : voir PendingTasks.
+        $toRecord = $this->pendingTasks->for($user)['sessions_to_record']->count ?? 0;
 
         $tiles = [
             [

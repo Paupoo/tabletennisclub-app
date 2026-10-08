@@ -309,6 +309,10 @@ When a member requests enrollment in a training pack, a notification appears. Go
 
 If a training pack is full, members join the waitlist. When a spot opens (cancellation), the first waitlisted member is automatically offered the spot via email.
 
+### Training camps
+
+A training camp is a pack ticked **Training camp (outside the membership fee)** at step 1 of the wizard. It behaves like a pack (enrolments, attendance, coach, waiting list) but is **invoiced separately**: its payment never touches the affiliation, and it counts neither in the membership total nor in the health-insurance attestation. No prorata, no automatic discount; a member's own price (a single day, half the camp) is set with a reason, when adding them or through **Price** in the roster. Members enrol from **My registrations**; with **Enrolment on approval**, their requests are accepted or refused on the camp's sheet. Stopping a camp refunds in full what was paid. The box locks once the first member is enrolled.
+
 ### Planning board
 
 Go to **Planning → Planning board**. It is a **decision-support tool** to compose the season's training groups and **visualise tension** (headcount vs capacity) — without touching real enrolments.

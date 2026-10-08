@@ -1,4 +1,11 @@
-@php $unreadNotificationsCount = auth()->user()->unreadNotifications()->count(); @endphp
+@php
+    $unreadNotificationsCount = auth()->user()->unreadNotifications()->count();
+    // Every counter below is a task of this reader's, counted once with the
+    // dashboard's pills: see PendingTasks. One colour for all of them —
+    // « something is waiting for you » — held by MenuCountersTest.
+    $pendingTasks = app(\App\Services\ClubAdmin\Dashboard\PendingTasks::class);
+    $badge = fn (string ...$keys): ?string => $pendingTasks->badge(auth()->user(), ...$keys);
+@endphp
 
 <x-menu activate-by-route class="mt-10">
     <x-menu-sub icon="o-user" title="{{ $user->first_name }}" open>
@@ -41,7 +48,8 @@
         @endfeature
 
         <li data-menu-group="separator-money"><x-menu-separator /></li>
-        <x-menu-item icon="o-credit-card" link="{{ route('admin.user.payments', $user) }}" :title="__('My payments')" />
+        <x-menu-item icon="o-credit-card" link="{{ route('admin.user.payments', $user) }}" :title="__('My payments')"
+            :badge="$badge('my_payments')" badge-classes="badge-warning" />
         @feature('expense_reports')
         @can('create', \App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport::class)
             <x-menu-item icon="o-receipt-percent" link="{{ route('admin.user.expense-reports', $user) }}" :title="__('My expense reports')" />
@@ -73,7 +81,7 @@
     link="{{ route('notifications.index') }}"
     :title="__('Notifications')"
     :badge="$unreadNotificationsCount > 0 ? (string) $unreadNotificationsCount : null"
-    badge-classes="badge-error"
+    badge-classes="badge-warning"
     />
 
     <li data-menu-group="separator-people"><x-menu-separator /></li>
@@ -150,7 +158,8 @@
             || (\App\Domains\Shared\Enums\Feature::Attestations->enabled() && auth()->user()->can('attestations.view'));
         $seesExchange = auth()->user()->canAny(['communications.send', 'feedback.view']);
     @endphp
-    <x-menu-sub icon="o-user-group" :title="__('Members Admin')">
+    <x-menu-sub icon="o-user-group">
+        <x-slot:title><x-admin.menu-sub-title :title="__('Members Admin')" :badge="$badge('affiliations', 'feedback')" /></x-slot:title>
         @if ($seesPeople)
             <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
             <x-menu-item icon="o-key" link="{{ route('admin.users.delegations') }}" :title="__('Delegations')" />
@@ -160,7 +169,8 @@
             <li data-menu-group="separator-members-season"><x-menu-separator /></li>
         @endif
         @can('subscriptions.view')
-            <x-menu-item icon="o-list-bullet" link="{{ route('admin.users.registrations') }}" :title="__('Affiliations')" />
+            <x-menu-item icon="o-list-bullet" link="{{ route('admin.users.registrations') }}" :title="__('Affiliations')"
+                :badge="$badge('affiliations')" badge-classes="badge-warning" />
             <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
         @endcan
         @feature('attestations')
@@ -176,14 +186,16 @@
             <x-menu-item icon="o-envelope" link="{{ route('admin.communications.index') }}" :title="__('Communications')" />
         @endcan
         @can('feedback.view')
-            <x-menu-item icon="o-chat-bubble-left-ellipsis" link="{{ route('admin.feedback.index') }}" :title="__('Feedback and suggestions')" />
+            <x-menu-item icon="o-chat-bubble-left-ellipsis" link="{{ route('admin.feedback.index') }}" :title="__('Feedback and suggestions')"
+                :badge="$badge('feedback')" badge-classes="badge-warning" />
         @endcan
     </x-menu-sub>
     @endcanany
 
     @feature('treasury', 'cash_register')
     @canany(['financial_report.view', 'payments.view', 'fines.view', 'transactions.view', 'cash_register.view'])
-    <x-menu-sub icon="o-banknotes" :title="__('Treasury')">
+    <x-menu-sub icon="o-banknotes">
+        <x-slot:title><x-admin.menu-sub-title :title="__('Treasury')" :badge="$badge('expense_reports_to_archive', 'transactions', 'expense_reports')" /></x-slot:title>
         {{-- Three groups, following the money from the whole to the detail:
              the report; the money that moves (bank, till) and what justifies
              it; what is owed — by the members, to the members, and the fines
@@ -202,14 +214,17 @@
         @endphp
 
         @if ($seesReport)
-            <x-menu-item icon="o-presentation-chart-bar" link="{{ route('admin.treasury.report') }}" :title="__('Financial report')" />
+            {{-- Archiving the paid expense reports is downloading a year's ZIP from the report. --}}
+            <x-menu-item icon="o-presentation-chart-bar" link="{{ route('admin.treasury.report') }}" :title="__('Financial report')"
+                :badge="$badge('expense_reports_to_archive')" badge-classes="badge-warning" />
         @endif
 
         @if ($seesReport && $seesAccounts)
             <li data-menu-group="separator-treasury-accounts"><x-menu-separator /></li>
         @endif
         @if ($seesTransactions)
-            <x-menu-item icon="o-building-library" link="{{ route('admin.treasury.transactions') }}" :title="__('Bank Transactions')" />
+            <x-menu-item icon="o-building-library" link="{{ route('admin.treasury.transactions') }}" :title="__('Bank Transactions')"
+                :badge="$badge('transactions')" badge-classes="badge-warning" />
         @endif
         @if ($seesCash)
             <x-menu-item icon="o-currency-euro" link="{{ route('admin.treasury.cash') }}" :title="__('Cash Register')" />
@@ -225,13 +240,8 @@
             <x-menu-item icon="o-credit-card" link="{{ route('admin.treasury.payments') }}" :title="__('Payments')" />
         @endif
         @if ($seesExpenseReports)
-            @php
-                $expenseReportsToDecide = auth()->user()->can('expense_reports.process')
-                    ? \App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport::where('status', 'submitted')->where('user_id', '!=', auth()->id())->count()
-                    : 0;
-            @endphp
             <x-menu-item icon="o-receipt-percent" link="{{ route('admin.treasury.expense-reports') }}" :title="__('Expense reports')"
-                :badge="$expenseReportsToDecide > 0 ? (string) $expenseReportsToDecide : null" badge-classes="badge-warning" />
+                :badge="$badge('expense_reports')" badge-classes="badge-warning" />
         @endif
         @if ($seesFines)
             <x-menu-item icon="o-scale" link="{{ route('admin.treasury.fines') }}" :title="__('Fines')" />
@@ -256,13 +266,6 @@
     {{-- Le sous-menu s'ouvre aussi à qui ne lit que les ventes (le comité) : il n'y
          voit alors que « Ventes », les entrées du comptoir restant sous bar.access. --}}
     @canany(['bar.access', 'bar.stats.view'])
-    @php
-        // Panier de session : un simple array_sum, aucune requête. Le cast en
-        // array est une assurance, pas une coquetterie — ce menu est rendu sur
-        // toutes les pages du back-office, et une session malformée y ferait
-        // un 500 global au lieu d'une page du Bar en erreur.
-        $barCartCount = array_sum(array_map(intval(...), (array) session('cart', [])));
-    @endphp
     {{--
         `exact` sur les entrées dont le chemin en préfixe une autre : maryUI allume
         une entrée dès que l'URL courante COMMENCE par son lien, et les chemins du
@@ -280,21 +283,22 @@
         $seesCounter = auth()->user()->canAny(['bar.access', 'bar.cash_sheet.send']);
         $seesStock = auth()->user()->canAny(['bar.products.manage', 'bar.categories.manage', 'bar.restocking.shop', 'bar.stats.view']);
     @endphp
-    <x-menu-sub icon="o-shopping-bag" :title="__('Bar')">
+    <x-menu-sub icon="o-shopping-bag">
+        <x-slot:title><x-admin.menu-sub-title :title="__('Bar')" :badge="$badge('bar_tabs', 'bar_shopping')" /></x-slot:title>
         {{-- At the counter, in the order of an evening. --}}
         @can('bar.access')
         <x-menu-item
             icon="o-shopping-bag"
             link="{{ route('bar.index') }}"
             :title="__('New order')"
-            :badge="$barCartCount > 0 ? (string) $barCartCount : null"
-            badge-classes="badge-primary"
             exact
             :active="request()->routeIs('bar.cart.show')" />
         <x-menu-item
             icon="o-banknotes"
             link="{{ route('bar.orders.index') }}"
             :title="__('To cash in')"
+            :badge="$badge('bar_tabs')"
+            badge-classes="badge-warning"
             exact
             :active="request()->routeIs('bar.payment.*', 'bar.orders.modify')" />
         <x-menu-item icon="o-clock" link="{{ route('bar.orders.history') }}" :title="__('History')" />
@@ -315,7 +319,8 @@
         <x-menu-item icon="o-tag" link="{{ route('bar.categories.index') }}" :title="__('Categories')" />
         @endcan
         @can('bar.restocking.shop')
-        <x-menu-item icon="o-shopping-cart" link="{{ route('bar.restocking.index') }}" :title="__('Shopping')" />
+        <x-menu-item icon="o-shopping-cart" link="{{ route('bar.restocking.index') }}" :title="__('Shopping')"
+            :badge="$badge('bar_shopping')" badge-classes="badge-warning" />
         @endcan
         @can('bar.stats.view')
         <x-menu-item icon="o-clipboard-document-check" link="{{ route('bar.inventories.index') }}" :title="__('Inventories')"
@@ -349,7 +354,8 @@
          l'espace coach au même titre que la délégation, sinon un entraîneur a
          l'accès sans avoir le lien pour y aller. --}}
     @canany(['trainings.view', 'access-coach-area'])
-    <x-menu-sub icon="o-academic-cap" :title="__('Trainings')">
+    <x-menu-sub icon="o-academic-cap">
+        <x-slot:title><x-admin.menu-sub-title :title="__('Trainings')" :badge="$badge('sessions_to_record')" /></x-slot:title>
         @can('trainings.view')
         <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')" />
         @endcan
@@ -359,7 +365,8 @@
         @endcan
         @endfeature
         @can('access-coach-area')
-        <x-menu-item icon="o-calendar-days" link="{{ route('coach.trainings') }}" :title="__('My sessions')" />
+        <x-menu-item icon="o-calendar-days" link="{{ route('coach.trainings') }}" :title="__('My sessions')"
+            :badge="$badge('sessions_to_record')" badge-classes="badge-warning" />
         @endcan
     </x-menu-sub>
     @endcanany
@@ -371,9 +378,11 @@
          ask the same question, or a captain reaches their own screens by URL
          only. The season configuration below stays permission-gated. --}}
     @if (Gate::any(['access-selections', 'access-results']) || $user->can('interclubs.view'))
-    <x-menu-sub icon="o-calendar-days" link="#" :title="__('Interclubs')">
+    <x-menu-sub icon="o-calendar-days" link="#">
+        <x-slot:title><x-admin.menu-sub-title :title="__('Interclubs')" :badge="$badge('lineups_to_send')" /></x-slot:title>
         @can('access-selections')
-        <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" :title="__('Selections')" />
+        <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" :title="__('Selections')"
+            :badge="$badge('lineups_to_send')" badge-classes="badge-warning" />
         @endcan
         @can('access-results')
         <x-menu-item icon="o-squares-2x2" link="{{ route('admin.interclubs.results') }}" :title="__('Results')" />
@@ -398,15 +407,18 @@
 
     @feature('meetings', 'tournaments')
     @canany(['meetings.view', 'tournaments.view'])
-    <x-menu-sub icon="o-star" :title="__('Events')">
+    <x-menu-sub icon="o-star">
+        <x-slot:title><x-admin.menu-sub-title :title="__('Events')" :badge="$badge('meetings_to_close', 'tournaments_to_close')" /></x-slot:title>
         @feature('meetings')
         @can('meetings.view')
-        <x-menu-item icon="o-calendar-days" link="{{ route('admin.meetings.index') }}" :title="__('Meetings')" />
+        <x-menu-item icon="o-calendar-days" link="{{ route('admin.meetings.index') }}" :title="__('Meetings')"
+            :badge="$badge('meetings_to_close')" badge-classes="badge-warning" />
         @endcan
         @endfeature
         @feature('tournaments')
         @can('tournaments.view')
-        <x-menu-item icon="o-trophy" link="{{ route('admin.tournaments.index') }}" :title="__('Tournaments')" />
+        <x-menu-item icon="o-trophy" link="{{ route('admin.tournaments.index') }}" :title="__('Tournaments')"
+            :badge="$badge('tournaments_to_close')" badge-classes="badge-warning" />
         @endcan
         @endfeature
     </x-menu-sub>
@@ -415,15 +427,18 @@
 
     @feature('website', 'contacts')
     @canany(['news_posts.view', 'contacts.view', 'contacts.manage', 'spams.manage', 'event_posts.manage'])
-    <x-menu-sub icon="o-globe-alt" :title="__('Website')">
+    <x-menu-sub icon="o-globe-alt">
+        <x-slot:title><x-admin.menu-sub-title :title="__('Website')" :badge="$badge('draft_articles', 'contacts')" /></x-slot:title>
         @feature('website')
         @can('news_posts.view')
-        <x-menu-item icon="o-newspaper" link="{{ route('admin.website.articles.index') }}" :title="__('Articles')" />
+        <x-menu-item icon="o-newspaper" link="{{ route('admin.website.articles.index') }}" :title="__('Articles')"
+            :badge="$badge('draft_articles')" badge-classes="badge-warning" />
         @endcan
         @endfeature
         @feature('contacts')
         @can('contacts.view')
-        <x-menu-item icon="o-envelope-open" link="{{ route('admin.website.contacts.index') }}" :title="__('Contacts')" />
+        <x-menu-item icon="o-envelope-open" link="{{ route('admin.website.contacts.index') }}" :title="__('Contacts')"
+            :badge="$badge('contacts')" badge-classes="badge-warning" />
         @endcan
         @can('contacts.manage')
             <x-menu-item icon="o-document-text" link="{{ route('admin.website.contacts.email-templates') }}" :title="__('Email templates')" />
@@ -460,6 +475,8 @@
         icon="o-queue-list"
         link="{{ route('admin.queue.index') }}"
         :title="__('Job queue')"
+        :badge="$badge('failed_jobs')"
+        badge-classes="badge-warning"
     />
     @endcan
     @endfeature

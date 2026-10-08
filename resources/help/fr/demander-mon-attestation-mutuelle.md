@@ -16,7 +16,7 @@ Deux conditions, et seulement deux :
 - votre **affiliation de la saison est validée** par le comité ;
 - elle est **payée en totalité**, cotisation et entraînements compris.
 
-Une amende, une inscription à un tournoi ou un repas de réunion impayés ne bloquent rien : ce sont d'autres créances.
+Une amende, une inscription à un tournoi, un stage ou un repas de réunion impayés ne bloquent rien : ce sont d'autres créances.
 
 Si l'une des deux conditions manque, l'écran vous dit laquelle. Payer le solde depuis **Mon espace → Cotisations** débloque la demande.
 
@@ -29,7 +29,7 @@ Si l'une des deux conditions manque, l'écran vous dit laquelle. Payer le solde 
 ## Ce que le club atteste
 
 - **La période** court du jour où le comité a validé votre affiliation jusqu'à la fin de la saison. Ce n'est pas le 1er septembre si vous vous êtes inscrit en janvier — le club atteste ce qui est vrai.
-- **Le montant** est ce que vous avez réellement versé : cotisation + entraînements, remise famille déduite. C'est le seul chiffre que le club peut prouver face à un extrait bancaire.
+- **Le montant** est ce que vous avez réellement versé : cotisation + entraînements, remise famille déduite. C'est le seul chiffre que le club peut prouver face à un extrait bancaire. Les **stages** n'en font pas partie : ils sont facturés à part et restent optionnels.
 
 Comme les mutualités plafonnent leur intervention bien en dessous du prix d'une affiliation, ce montant dépasse de toute façon le plafond.
 

@@ -44,6 +44,7 @@ erDiagram
         int subscription_id FK
         int training_pack_id FK
         string status
+        bool|int invoiced_separately
         int waitlist_position "nullable"
         string confirmation_deadline "nullable"
         string starts_on "nullable"
@@ -56,4 +57,6 @@ erDiagram
     Subscription ||--o{ SubscriptionDiscount : "discounts"
     Subscription ||--o{ Payment : "payments"
     Subscription }o--o{ TrainingPack : "trainingPacks"
+    SubscriptionTrainingPack ||--o{ Payment : "payments"
+    SubscriptionTrainingPack ||--o| User : "user"
 ```

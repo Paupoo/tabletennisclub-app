@@ -47,6 +47,8 @@ erDiagram
         bool allow_discount
         bool is_open_enrollment
         bool enrollments_open
+        bool is_camp
+        bool requires_approval
     }
     TrainingPlan {
         int id PK

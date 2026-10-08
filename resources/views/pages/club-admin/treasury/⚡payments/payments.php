@@ -1248,13 +1248,9 @@ new class extends Component
             ->when($this->paymentMethod, fn (Builder $q): Builder => $q->where('payment_method', $this->paymentMethod))
             ->when($this->dateFrom, fn (Builder $q): Builder => $q->whereDate('created_at', '>=', $this->dateFrom))
             ->when($this->dateTo, fn (Builder $q): Builder => $q->whereDate('created_at', '<=', $this->dateTo))
-            ->when($this->userId, fn (Builder $q): Builder => $q->whereHasMorph(
-                'payable',
+            ->when($this->userId, fn (Builder $q): Builder => $q->forMembers(
+                $this->userId,
                 [Subscription::class, TournamentRegistration::class, MeetingUser::class, ExpenseReport::class, SubscriptionTrainingPack::class],
-                // A stage line names its member through the affiliation.
-                fn ($q, string $type) => $type === SubscriptionTrainingPack::class
-                    ? $q->whereHas('subscription', fn ($sub) => $sub->where('user_id', $this->userId))
-                    : $q->where('user_id', $this->userId)
             ))
             ->when($this->eventType, fn (Builder $q): Builder => $q->where('payable_type', $this->eventType))
             ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName));

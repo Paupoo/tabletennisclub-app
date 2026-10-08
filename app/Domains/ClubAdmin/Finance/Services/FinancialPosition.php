@@ -55,17 +55,12 @@ final class FinancialPosition
         $active = User::query()->active()->pluck('users.id');
 
         $owing = $this->pendingClaims()
-            // A stage line names its member through the affiliation.
-            ->whereHasMorph('payable', self::MEMBER_PAYABLES, fn (Builder $payable, string $type): Builder => $type === SubscriptionTrainingPack::class
-                ? $payable->whereHas('subscription', fn (Builder $sub): Builder => $sub->whereIn('user_id', $active))
-                : $payable->whereIn('user_id', $active))
+            ->forMembers($active, self::MEMBER_PAYABLES)
             ->with(['payable' => fn (Relation $relation): mixed => $relation instanceof MorphTo
                 ? $relation->morphWith([SubscriptionTrainingPack::class => ['subscription']])
                 : $relation])
             ->get()
-            ->map(fn (Payment $payment): mixed => $payment->payable instanceof SubscriptionTrainingPack
-                ? $payment->payable->subscription?->user_id
-                : $payment->payable?->getAttribute('user_id'))
+            ->map(fn (Payment $payment): ?int => $payment->memberId())
             ->filter()
             ->unique();
 

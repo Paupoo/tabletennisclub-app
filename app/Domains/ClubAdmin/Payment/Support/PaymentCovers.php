@@ -30,7 +30,7 @@ final class PaymentCovers
      */
     public static function affiliation(Subscription $subscription): array
     {
-        $packs = $subscription->trainingPacks()->wherePivot('status', 'enrolled')->orderBy('training_packs.id')->get();
+        $packs = $subscription->trainingPacks()->wherePivot('status', 'enrolled')->wherePivot('invoiced_separately', false)->orderBy('training_packs.id')->get();
 
         return ['affiliation' => true, 'reason' => null, 'training_packs' => self::describe($packs)];
     }

@@ -26,7 +26,7 @@ class TrainingPackCancelledNotification extends Notification
         return [
             'title' => __('Training pack cancelled'),
             'body' => __('Your enrolment request has been cancelled'),
-            'url' => $this->memberTrainingsUrl($notifiable),
+            'url' => $this->memberPackUrl($notifiable, $this->pack),
             'category' => 'training',
             'icon' => 'o-academic-cap',
         ];

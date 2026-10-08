@@ -6,6 +6,7 @@ namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Services\TrainingCampBilling;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -40,6 +41,13 @@ class ReconcileTrainingPackAction
         ?string $overrideReason = null,
         int $familyMembersCount = 1,
     ): Subscription {
+        // A stage has no prorata and its own invoice: only the price moves.
+        if ((new TrainingCampBilling)->isInvoicedSeparately($subscription, $pack)) {
+            (new AdjustTrainingCampLineAction)($subscription, $pack, $overrideAmount, $overrideReason);
+
+            return $subscription;
+        }
+
         $pivot = DB::table('subscription_training_pack')
             ->where('subscription_id', $subscription->id)
             ->where('training_pack_id', $pack->id)

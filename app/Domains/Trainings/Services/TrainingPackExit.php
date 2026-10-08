@@ -102,7 +102,7 @@ class TrainingPackExit
      */
     public function preview(Subscription $subscription, TrainingPack $pack, ?string $endsOn, int $familyMembersCount = 1): array
     {
-        $packs = $subscription->trainingPacks()->wherePivotIn('status', ['enrolled', 'left'])->get();
+        $packs = $subscription->trainingPacks()->wherePivotIn('status', ['enrolled', 'left'])->wherePivot('invoiced_separately', false)->get();
 
         if ($endsOn === null) {
             $packs = $packs->reject(fn (TrainingPack $held): bool => $held->id === $pack->id)->values();

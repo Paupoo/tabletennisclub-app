@@ -46,6 +46,13 @@ class AddMemberToTrainingPackAction
         ?string $startsOn = null,
         int $familyMembersCount = 1,
     ): ?Payment {
+        // A stage is billed on its own line, outside the affiliation.
+        if ($pack->is_camp) {
+            (new EnrollInTrainingCampAction)($subscription, $pack, byClub: true);
+
+            return null;
+        }
+
         // Aligné sur Subscription::scopeAffiliated() : une affiliation annulée
         // ou remboursée n'a plus de facture ouverte à laquelle rattacher le pack.
         if (! in_array($subscription->status, self::BILLABLE_STATUSES, true)) {

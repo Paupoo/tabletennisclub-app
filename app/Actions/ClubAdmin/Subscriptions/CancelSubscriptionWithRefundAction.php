@@ -7,6 +7,7 @@ namespace App\Actions\ClubAdmin\Subscriptions;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Subscriptions\Notifications\SubscriptionCancelledNotification;
+use App\Domains\Trainings\Services\TrainingCampBilling;
 
 class CancelSubscriptionWithRefundAction
 {
@@ -37,8 +38,12 @@ class CancelSubscriptionWithRefundAction
             ]));
         }
 
+        // Stages settle their own invoice: refunded when not attended, kept
+        // owed when the coach already marked the member.
+        app(TrainingCampBilling::class)->releaseWithAffiliation($subscription);
+
         $familyMembersCount = $subscription->has_other_family_members ? 2 : 1;
-        foreach ($subscription->trainingPacks()->get() as $pack) {
+        foreach ($subscription->trainingPacks()->wherePivot('invoiced_separately', false)->get() as $pack) {
             (new LeaveTrainingPackAction)($subscription, $pack, $familyMembersCount, notifyUser: false);
         }
 

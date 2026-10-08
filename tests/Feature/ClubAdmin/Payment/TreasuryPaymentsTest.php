@@ -244,6 +244,42 @@ describe('reconcile modal — match verdict', function (): void {
     });
 });
 
+describe('reconcile modal — guardian holding an account', function (): void {
+    it('recognises the IBAN the guardian keeps in their own profile', function (): void {
+        $admin = User::factory()->create();
+        $member = User::factory()->create(['first_name' => 'Quentin', 'last_name' => 'Vandevelde', 'iban' => null]);
+        $parent = User::factory()->create(['first_name' => 'Michel', 'last_name' => 'Michotte', 'iban' => 'BE71 0961 2345 6769']);
+        $member->guardians()->attach(Guardian::factory()->create([
+            'user_id' => $parent->id,
+            'first_name' => 'Michel',
+            'last_name' => 'Michotte',
+            'iban' => 'BE71 0961 2345 6769',
+        ])->id);
+        $parent->update(['iban' => 'BE68 5390 0754 7034']);
+
+        $subscription = Subscription::factory()->create(['user_id' => $member->id]);
+        $payment = $subscription->payments()->create([
+            'reference' => 'RCN/2026/00002',
+            'amount_due' => 150,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        Transaction::create([
+            'date' => now(),
+            'amount' => 150,
+            'counterparty_name' => 'M MICHOTTE',
+            'counterparty_bank_account' => 'BE68539007547034',
+            'free_reference' => 'affiliation 2025-2026',
+            'description' => 'VIREMENT EUROPEEN',
+        ]);
+
+        mountTreasury($admin)
+            ->call('openReconcile', $payment->id)
+            ->assertSee(__(':name (guardian) IBAN', ['name' => 'Michel Michotte']));
+    });
+});
+
 // ── search stays inside the active tab ────────────────────────────────────────
 
 describe('cancelling an open refund', function (): void {

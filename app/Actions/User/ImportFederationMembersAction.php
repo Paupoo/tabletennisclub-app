@@ -78,8 +78,9 @@ class ImportFederationMembersAction
         self::fillIfMissing($member, 'email', self::loginAddress($line, $member));
         self::fillIfMissing($member, 'birthdate', $row->birthdate);
         // A child's number is whoever answers for them: it goes on their
-        // guardian's sheet, see outsideGuardian().
-        if (! $minor) {
+        // guardian's sheet, see outsideGuardian() — unless the reviewer said it
+        // is the child's own.
+        if (! $minor || $line->phoneOwner === 'member') {
             self::fillIfMissing($member, 'phone_number', $row->phone);
         }
 
@@ -204,8 +205,9 @@ class ImportFederationMembersAction
             // The federation lists one number per affiliate, and for a child it is
             // whoever answers for them. Recording it as the member's own would have
             // the club ring a ten-year-old about an unpaid affiliation.
-            // It goes on their guardian's sheet instead, see outsideGuardian().
-            'phone_number' => $minor ? null : $row->phone,
+            // It goes on their guardian's sheet instead, see outsideGuardian(),
+            // unless the reviewer said it is the child's own.
+            'phone_number' => $minor && $line->phoneOwner !== 'member' ? null : $row->phone,
             'street' => $row->street,
             'city_code' => $row->cityCode,
             'city_name' => $row->cityName,
@@ -245,6 +247,25 @@ class ImportFederationMembersAction
         );
     }
 
+    /**
+     * The parent the reviewer names as holding a child's number, when nobody on
+     * the listing answers for the child. They carry no address: the listing's is
+     * not theirs, or the reviewer would have said so. A sheet already on file for
+     * the same person is caught afterwards, as a duplicate the office merges.
+     */
+    private static function guardianOfTheNumber(ImportLine $line): ?Guardian
+    {
+        if (blank($line->guardianFirstName) || blank($line->guardianLastName) || blank($line->row->phone)) {
+            return null;
+        }
+
+        return Guardian::create([
+            'first_name' => $line->guardianFirstName,
+            'last_name' => $line->guardianLastName,
+            'phone' => $line->row->phone,
+        ]);
+    }
+
     private static function isMinor(FederationRow $row): bool
     {
         return $row->birthdate !== null && $row->birthdate->age < 18;
@@ -268,9 +289,12 @@ class ImportFederationMembersAction
             return;
         }
 
-        $guardian = $line->externalGuardian
-            ? self::outsideGuardian($line, $member)
-            : self::memberGuardian($line, $byLine);
+        $guardian = match (true) {
+            $line->externalGuardian => self::outsideGuardian($line, $member),
+            $line->guardianLineNumber !== null => self::memberGuardian($line, $byLine),
+            $line->phoneOwner === 'guardian' => self::guardianOfTheNumber($line),
+            default => null,
+        };
 
         if ($guardian === null) {
             return;

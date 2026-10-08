@@ -125,6 +125,69 @@ describe('importing the federation listing', function (): void {
             ->and($child->guardian_phone_number)->toBeNull();
     });
 
+    /*
+     * A child listed with a number and nobody to answer for them: the reviewer
+     * says whose number it is. A parent is recorded with it; a teenager keeps
+     * it as their own.
+     */
+    it('records the parent the reviewer names for a minor number', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+
+        ImportFederationMembersAction::handle([
+            new ImportLine(
+                row: federationRow(['birthdate' => CarbonImmutable::parse('2014-04-25'), 'email' => null, 'phone' => '0475333444']),
+                action: ImportLineAction::CREATE,
+                phoneOwner: 'guardian',
+                guardianFirstName: 'Olivier',
+                guardianLastName: 'Gilbert',
+            ),
+        ], $secretary);
+
+        $child = User::query()->where('licence', '166036')->first();
+        $guardian = $child->guardians()->first();
+
+        expect($child->phone_number)->toBeNull()
+            ->and($guardian?->full_name)->toBe('Olivier Gilbert')
+            ->and($guardian?->phone)->toBe('0475333444')
+            ->and($guardian?->email)->toBeNull();
+    });
+
+    it('gives a minor the number the reviewer says is their own', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+
+        ImportFederationMembersAction::handle([
+            new ImportLine(
+                row: federationRow(['birthdate' => now()->subYears(16)->toImmutable(), 'phone' => '0475333444']),
+                action: ImportLineAction::CREATE,
+                phoneOwner: 'member',
+            ),
+        ], $secretary);
+
+        $child = User::query()->where('licence', '166036')->first();
+
+        expect($child->phone_number)->toBe('0475333444')
+            ->and($child->guardians()->exists())->toBeFalse();
+    });
+
+    it('gives a minor already on the roster the number the reviewer says is their own', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+        $child = User::factory()->create(['licence' => '166036', 'phone_number' => null, 'birthdate' => now()->subYears(16)]);
+
+        ImportFederationMembersAction::handle([
+            new ImportLine(
+                row: federationRow(['birthdate' => now()->subYears(16)->toImmutable(), 'phone' => '0475333444']),
+                action: ImportLineAction::UPDATE,
+                existingUserId: $child->id,
+                phoneOwner: 'member',
+            ),
+        ], $secretary);
+
+        expect($child->fresh()->phone_number)->toBe('0475333444');
+    });
+
     it('puts a minor phone number on the sheet of the guardian named for them', function (): void {
         Mail::fake();
         $secretary = User::factory()->create();

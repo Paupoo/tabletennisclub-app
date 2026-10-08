@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\MemberImport;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Ranking;
@@ -662,9 +663,11 @@ describe('the affiliates the listing has nothing new to say about', function ():
     it('stops asking about a child who holds a login of their own', function (): void {
         $line = '166042;CARTIAUX PAUL;2014-02-08;NC;NC;N;N;PO;LR;2025-09-01;paul.cartiaux@example.com;;0470445566;RUE DU TEST;42;1348;LOUVAIN-LA-NEUVE';
 
+        // The number is the last question about him: answered once, it is settled too.
         Livewire::test(IMPORT_COMPONENT)
             ->set('importFile', importListing([$line]))
             ->call('parse')
+            ->set('rows.2.phoneOwner', 'member')
             ->call('import')
             ->assertSet('step', 3);
 
@@ -677,6 +680,21 @@ describe('the affiliates the listing has nothing new to say about', function ():
             ->call('parse')
             ->assertSet('rows.2.unchanged', true)
             ->assertSet('rows.2.needsReview', false);
+    });
+
+    it('asks again whose the number is, as long as nobody answered', function (): void {
+        $line = '166042;CARTIAUX PAUL;2014-02-08;NC;NC;N;N;PO;LR;2025-09-01;paul.cartiaux@example.com;;0470445566;RUE DU TEST;42;1348;LOUVAIN-LA-NEUVE';
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->call('import');
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->assertSet('rows.2.asksPhoneOwner', true)
+            ->assertSet('rows.2.needsReview', true);
     });
 
     /*
@@ -1050,5 +1068,66 @@ describe('the addresses the export shifted', function (): void {
         $stored = User::query()->where('licence', '166036')->first()->city_code;
 
         expect($stored === null || mb_strlen($stored) <= 10)->toBeTrue();
+    });
+});
+
+/*
+ * A child listed with a number and nobody to answer for them: the number belongs
+ * to somebody, and only the reviewer knows who. Unanswered, the line waits among
+ * those to review — but the import does not.
+ */
+describe('a minor number nobody answers for', function (): void {
+
+    $line = '166050;MARTIN EMMA;2012-05-10;NC;NC;N;N;CA;LR;2025-09-01;;;0470112233;RUE DU TEST;7;1348;LOUVAIN-LA-NEUVE';
+
+    it('asks whose number it is', function () use ($line): void {
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->assertSet('rows.2.asksPhoneOwner', true)
+            ->assertSet('rows.2.needsReview', true)
+            ->assertSee(__('Whose is this number?'));
+    });
+
+    it('asks nothing of a minor the club already reaches through a guardian', function (): void {
+        $emma = User::factory()->create(['licence' => '166051', 'email' => null, 'phone_number' => null, 'birthdate' => '2012-05-10', 'first_name' => 'Emma', 'last_name' => 'Martin']);
+        $emma->guardians()->attach(Guardian::factory()->create());
+
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([
+                '166051;MARTIN EMMA;2012-05-10;NC;NC;N;N;CA;LR;2025-09-01;;;0470112233;RUE DU TEST;7;1348;LOUVAIN-LA-NEUVE',
+            ]))
+            ->call('parse')
+            ->assertSet('rows.2.asksPhoneOwner', false);
+    });
+
+    it('records the parent the reviewer names with the number', function () use ($line): void {
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->set('rows.2.phoneOwner', 'guardian')
+            ->set('rows.2.guardianFirstName', 'Julie')
+            ->set('rows.2.guardianLastName', 'Martin')
+            ->call('import')
+            ->assertSet('step', 3);
+
+        $guardian = User::query()->where('licence', '166050')->first()->guardians()->first();
+
+        expect($guardian?->full_name)->toBe('Julie Martin')
+            ->and($guardian?->phone)->toBe('0470112233');
+    });
+
+    it('imports the line unanswered, keeping no number', function () use ($line): void {
+        Livewire::test(IMPORT_COMPONENT)
+            ->set('importFile', importListing([$line]))
+            ->call('parse')
+            ->call('import')
+            ->assertSet('step', 3);
+
+        $emma = User::query()->where('licence', '166050')->first();
+
+        expect($emma)->not->toBeNull()
+            ->and($emma->phone_number)->toBeNull()
+            ->and($emma->guardians()->exists())->toBeFalse();
     });
 });

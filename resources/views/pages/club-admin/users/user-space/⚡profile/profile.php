@@ -26,6 +26,7 @@ use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -153,6 +154,13 @@ new class extends Component
         $this->city_name = $user->city_name;
         $this->iban = $user->iban;
         $this->currentPhoto = $user->photo;
+    }
+
+    /** A guardian sheet was corrected from this profile: read it again on the next render. */
+    #[On('guardian-updated')]
+    public function refreshGuardians(): void
+    {
+        $this->user->unsetRelation('guardians');
     }
 
     public function render(): View

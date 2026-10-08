@@ -137,6 +137,32 @@
             </div>
             </x-card>
 
+            @if ($user->guardians->isNotEmpty())
+                <x-card class="shadow-sm" :title="__('Responsible adults')">
+                    <ul class="space-y-2">
+                        @foreach ($user->guardians as $guardian)
+                            <li wire:key="guardian-{{ $guardian->id }}" class="flex items-center gap-3 rounded-lg border border-base-300 p-3">
+                                <x-icon name="o-user" class="h-5 w-5 shrink-0 text-primary" />
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-semibold">{{ $guardian->full_name }}</p>
+                                    <p class="truncate text-xs text-base-content/70">
+                                        {{ $guardian->phone }}{{ $guardian->email ? ' · ' . $guardian->email : '' }}
+                                    </p>
+                                </div>
+                                @can('update', $guardian)
+                                    <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil-square"
+                                        :tooltip="__('Edit')" :aria-label="__('Edit :name', ['name' => $guardian->full_name])"
+                                        @click="$dispatch('edit-guardian', { guardianId: {{ $guardian->id }} })" />
+                                @endcan
+                            </li>
+                        @endforeach
+                    </ul>
+                    @if (\App\Support\AccountProxy::isActing())
+                        <p class="mt-3 text-xs text-base-content/70">{{ __('To correct these details, please contact the club secretariat.') }}</p>
+                    @endif
+                </x-card>
+            @endif
+
         </div>
 
         {{-- ════════════════════════════════
@@ -398,4 +424,5 @@
     </x-confirm-modal>
 
 
+    <livewire:admin.users.guardian-editor />
 </div>

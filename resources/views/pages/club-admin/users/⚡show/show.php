@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
@@ -186,6 +187,13 @@ new class extends Component
     public function previousSeason(): ?Season
     {
         return Season::current()?->previous();
+    }
+
+    /** A guardian sheet was corrected from this file: the next render reads it again. */
+    #[On('guardian-updated')]
+    public function refreshGuardians(): void
+    {
+        $this->user->unsetRelation('guardians');
     }
 
     public function render(): View

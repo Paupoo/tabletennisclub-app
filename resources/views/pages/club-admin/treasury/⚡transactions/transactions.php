@@ -15,6 +15,7 @@ use App\Domains\ClubAdmin\Payment\Models\PaymentCredit;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\SupportingDocuments\Actions\LinkSupportingDocument;
 use App\Domains\ClubAdmin\SupportingDocuments\Actions\UnlinkSupportingDocument;
 use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
@@ -140,6 +141,7 @@ new class extends Component
             Subscription::class => ['user.guardians', 'season'],
             TournamentRegistration::class => ['user.guardians', 'tournament'],
             MeetingUser::class => ['user.guardians', 'meeting'],
+            SubscriptionTrainingPack::class => ['user.guardians', 'trainingPack'],
         ])])
             ->where('status', (float) $transaction->amount < 0 ? 'to_refund' : 'pending')
             ->get()
@@ -679,6 +681,7 @@ new class extends Component
                 Subscription::class => ['user', 'season'],
                 TournamentRegistration::class => ['user', 'tournament'],
                 MeetingUser::class => ['user', 'meeting'],
+                SubscriptionTrainingPack::class => ['user', 'trainingPack'],
             ])])
             ->orderBy('id')
             ->get();

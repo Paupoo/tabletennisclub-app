@@ -582,7 +582,7 @@ new class extends Component
                         ->values()
                         ->toArray(),
                     'enrolled_packs' => $sub->trainingPacks
-                        ->filter(fn ($p): bool => in_array($p->pivot->status, ['enrolled', 'pending'], true))
+                        ->filter(fn ($p): bool => in_array($p->pivot->status, ['enrolled', 'pending'], true) && ! $p->pivot->invoiced_separately)
                         ->map(fn ($p): array => [
                             'name' => $p->name,
                             'status' => $p->pivot->status,
@@ -613,7 +613,9 @@ new class extends Component
         // Available training packs for current season with per-user enrollment
         $availablePacks = [];
         if ($season) {
+            // Les stages sont des offres à part : « Mes inscriptions », pas la saison.
             $availablePacks = TrainingPack::with(['trainer', 'room', 'level'])
+                ->seasonal()
                 ->where('season_id', $season->id)
                 ->where('is_active', true)
                 ->get()

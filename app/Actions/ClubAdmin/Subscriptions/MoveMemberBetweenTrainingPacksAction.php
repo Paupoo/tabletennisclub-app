@@ -69,6 +69,12 @@ class MoveMemberBetweenTrainingPacksAction
             throw new DomainException(__('This member has no active membership for the season.'));
         }
 
+        // A stage is billed on its own line: moving into or out of one would
+        // carry money across two invoices that know nothing of each other.
+        if ($from->is_camp || $to->is_camp) {
+            throw new DomainException(__('A member cannot be moved into or out of a training camp: remove them, then enrol them.'));
+        }
+
         $origin = DB::table('subscription_training_pack')
             ->where('subscription_id', $subscription->id)
             ->where('training_pack_id', $from->id)

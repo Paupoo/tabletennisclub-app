@@ -116,6 +116,10 @@ Cliquez sur **Payer** à côté d'un paiement en attente. Un modal de paiement s
 
 Effectuez le virement bancaire manuellement. Le trésorier rapproche les paiements et marque le vôtre comme payé.
 
+### Stages
+
+Les stages organisés par le club (vacances, week-ends) se trouvent ici, pas dans la cotisation. Cliquez sur **S'inscrire** (ou **Demander une place** si le comité valide les inscriptions). Un stage est **facturé à part** : vous recevez sa propre demande de paiement, et il n'entre pas dans le montant de votre attestation mutuelle. Il faut être affilié pour la saison du stage.
+
 ### RSVP pour les réunions
 
 Si vous êtes invité à une réunion du club, votre invitation apparaît ici. Cliquez sur **RSVP** pour confirmer votre présence. Vous pouvez également indiquer si vous souhaitez réserver un repas (le cas échéant). Le comité voit votre réponse automatiquement.

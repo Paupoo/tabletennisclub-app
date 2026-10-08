@@ -22,6 +22,9 @@ class ApproveTrainingPacksAction
         $pendingRows = DB::table('subscription_training_pack')
             ->where('subscription_id', $subscription->id)
             ->where('status', 'pending')
+            // A stage request is decided on the stage: approving the affiliation
+            // must neither accept nor drop it.
+            ->where('invoiced_separately', false)
             ->get();
 
         $packs = TrainingPack::whereIn('id', $pendingRows->pluck('training_pack_id'))->get()->keyBy('id');

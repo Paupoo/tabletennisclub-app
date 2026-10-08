@@ -31,7 +31,7 @@ class TrainingWaitlistOfferExpiredNotification extends Notification
         return [
             'title' => __('Training spot expired'),
             'body' => __('The spot offered to you for :pack was not confirmed in time', ['pack' => $this->pack->name]),
-            'url' => $this->memberTrainingsUrl($notifiable),
+            'url' => $this->memberPackUrl($notifiable, $this->pack),
             'category' => 'training',
             'icon' => 'o-clock',
         ];
@@ -44,7 +44,7 @@ class TrainingWaitlistOfferExpiredNotification extends Notification
             ->greeting(__('Hello :name!', ['name' => $notifiable->first_name]))
             ->line(__('The spot we offered you for **:pack** was not confirmed in time, so it has been passed on to the next person on the waiting list.', ['pack' => $this->pack->name]))
             ->line(__('You are no longer on the waiting list for this training. If you are still interested, you can ask to join it again.'))
-            ->action(__('See the trainings'), $this->memberTrainingsUrl($notifiable))
+            ->action(__('See the trainings'), $this->memberPackUrl($notifiable, $this->pack))
             ->salutation(__('The club team'));
     }
 

@@ -39,7 +39,7 @@ class TrainingPackEnrolmentCancelledNotification extends Notification
         return [
             'title' => __('Training enrolment cancelled'),
             'body' => __('Your enrolment in :pack was recorded by mistake and has been cancelled.', ['pack' => $this->pack->name]),
-            'url' => $this->memberTrainingsUrl($notifiable),
+            'url' => $this->memberPackUrl($notifiable, $this->pack),
             'category' => 'training',
             'icon' => 'o-academic-cap',
         ];

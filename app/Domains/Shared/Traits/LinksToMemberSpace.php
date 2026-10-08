@@ -7,6 +7,7 @@ namespace App\Domains\Shared\Traits;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Trainings\Models\TrainingPack;
 
 /**
  * The two my-space destinations a member notification is allowed to point at.
@@ -48,6 +49,18 @@ trait LinksToMemberSpace
     protected function memberEventsUrl(object $notifiable): string
     {
         return route('admin.user.event-subscription', $this->mySpaceOwnerFor($notifiable));
+    }
+
+    /**
+     * Where a member finds a pack: a stage is one of the club's offers, read in
+     * the registrations page next to tournaments; a season pack lives with the
+     * affiliation.
+     */
+    protected function memberPackUrl(object $notifiable, TrainingPack $pack): string
+    {
+        return $pack->is_camp
+            ? $this->memberEventsUrl($notifiable)
+            : $this->memberTrainingsUrl($notifiable);
     }
 
     /**

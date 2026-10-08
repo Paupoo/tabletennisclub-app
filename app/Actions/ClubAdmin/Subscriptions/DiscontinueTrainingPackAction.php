@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\Shared\Enums\TrainingCancellationType;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingPackDiscontinuedNotification;
+use App\Domains\Trainings\Services\TrainingCampBilling;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -50,13 +52,37 @@ class DiscontinueTrainingPackAction
         // date la sortie du jour et laisse {@see CalculatePriceAction} facturer
         // les mois déjà suivis. Le club arrête le pack, il ne rembourse que ce
         // qui ne sera pas dispensé.
-        $committedSubscriptionIds = DB::table('subscription_training_pack')
-            ->where('training_pack_id', $pack->id)
-            ->whereIn('status', ['enrolled', 'pending'])
-            ->pluck('subscription_id');
-
         $totalRefunded = 0.0;
         $memberCount = 0;
+
+        // Stage lines carry their own invoice. The club calls the stage off, so
+        // nobody owes anything: every line is cancelled — kept, for the money
+        // history it carries — and what came in is refunded in full, a request
+        // per member in the usual treasury workflow.
+        $campLines = SubscriptionTrainingPack::query()
+            ->with('subscription.user', 'subscription.season', 'trainingPack')
+            ->where('training_pack_id', $pack->id)
+            ->where('invoiced_separately', true)
+            ->whereIn('status', ['enrolled', 'pending', 'left'])
+            ->get();
+
+        $billing = new TrainingCampBilling;
+
+        foreach ($campLines as $line) {
+            $line->forceFill(['status' => 'cancelled'])->save();
+
+            $refundable = $billing->sync($line, __(':pack has been stopped by the club.', ['pack' => $pack->name]))['refunded'];
+            $totalRefunded += $refundable;
+
+            $line->subscription->user->notify(new TrainingPackDiscontinuedNotification($pack, $reason, $refundable));
+            $memberCount++;
+        }
+
+        $committedSubscriptionIds = DB::table('subscription_training_pack')
+            ->where('training_pack_id', $pack->id)
+            ->where('invoiced_separately', false)
+            ->whereIn('status', ['enrolled', 'pending'])
+            ->pluck('subscription_id');
 
         foreach (Subscription::with('user')->whereIn('id', $committedSubscriptionIds)->get() as $subscription) {
             $refundable = (new LeaveTrainingPackAction)(

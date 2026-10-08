@@ -53,7 +53,7 @@
             <div class="divide-y divide-warning/20 border-t border-warning/20">
                 @foreach ($this->pendingPayments as $payment)
                     @php
-                        $eventName = $payment->payable?->tournament?->name ?? $payment->payable?->meeting?->title;
+                        $eventName = $payment->label()['name'] ?? null;
                     @endphp
                     <div class="flex flex-wrap items-center gap-2 px-4 py-2.5">
                         <div class="min-w-0 flex-1">
@@ -268,6 +268,80 @@
                 </x-card>
             @endif
 
+            {{-- Section : Stages ─────────────────────────────────────────────
+                 Une offre du club parmi d'autres, facturée à part : elle se lit
+                 ici, à côté des tournois, et jamais dans la cotisation. --}}
+            @if (($eventType === '' || $eventType === 'camp') && ! $onlyPayable && $this->trainingCamps !== [])
+                <x-card icon="o-sun" separator :title="__('Training camps')">
+                    <div class="space-y-2">
+                        @foreach ($this->trainingCamps as $row)
+                            @php
+                                $camp = $row['pack'];
+                            @endphp
+                            <div class="flex flex-wrap items-center gap-3 rounded-lg border border-base-300 px-3 py-2"
+                                wire:key="camp-{{ $camp->id }}">
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-medium">{{ $camp->name }}</p>
+                                    <p class="text-xs text-base-content/60">
+                                        {{ __('From :from to :to', ['from' => $camp->pack_start_date->translatedFormat('d M'), 'to' => $camp->pack_end_date->translatedFormat('d M Y')]) }}
+                                        · {{ number_format((float) $camp->price, 2, ',', ' ') }} €
+                                        · {{ __('invoiced separately') }}
+                                    </p>
+                                    @if (filled($camp->description))
+                                        <p class="mt-1 text-xs text-base-content/60">{{ $camp->description }}</p>
+                                    @endif
+                                </div>
+
+                                <div class="flex shrink-0 flex-wrap items-center gap-2">
+                                    @switch($row['status'])
+                                        @case('enrolled')
+                                            <x-badge class="badge-success badge-soft badge-sm" :value="__('Enrolled')" />
+                                            @if ($row['balance'] > 0)
+                                                <x-badge class="badge-warning badge-soft badge-sm"
+                                                    :value="__('to pay: :amount €', ['amount' => number_format($row['balance'], 2, ',', ' ')])" />
+                                            @endif
+                                            @break
+                                        @case('left')
+                                            <x-badge class="badge-neutral badge-soft badge-sm" :value="__('Left')" />
+                                            @break
+                                        @case('pending')
+                                            <x-badge class="badge-warning badge-soft badge-sm" :value="__('Request sent')" />
+                                            <x-button class="btn-ghost btn-xs" :label="__('Withdraw')"
+                                                wire:click="withdrawFromCamp({{ $camp->id }})" spinner />
+                                            @break
+                                        @case('waiting')
+                                            <x-badge class="badge-info badge-soft badge-sm"
+                                                :value="__('Waiting list #:position', ['position' => $row['position']])" />
+                                            <x-button class="btn-ghost btn-xs" :label="__('Withdraw')"
+                                                wire:click="withdrawFromCamp({{ $camp->id }})" spinner />
+                                            @break
+                                        @case('offered')
+                                            <x-button class="btn-primary btn-sm" icon="o-check" :label="__('Confirm my spot')"
+                                                wire:click="confirmCampOffer({{ $camp->id }})" spinner />
+                                            @if ($row['deadline'])
+                                                <span class="text-xs text-base-content/60">
+                                                    {{ __('before :date', ['date' => \Carbon\Carbon::parse($row['deadline'])->translatedFormat('d/m H:i')]) }}
+                                                </span>
+                                            @endif
+                                            @break
+                                        @default
+                                            @if ($row['open'])
+                                                <x-button class="btn-primary btn-sm" icon="o-plus"
+                                                    :label="$row['full']
+                                                        ? __('Join the waiting list')
+                                                        : ($camp->requires_approval ? __('Request a spot') : __('Enrol'))"
+                                                    wire:click="enrolInCamp({{ $camp->id }})" spinner />
+                                            @else
+                                                <x-badge class="badge-neutral badge-soft badge-sm" :value="__('Enrolments closed')" />
+                                            @endif
+                                    @endswitch
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </x-card>
+            @endif
+
             {{-- Section : Mes entraînements ────────────────────────────────── --}}
             @if (($eventType === '' || $eventType === 'training') && $this->upcomingTrainingSessions->isNotEmpty())
                 <x-card icon="o-academic-cap" separator :title="__('My upcoming sessions')">
@@ -345,9 +419,9 @@
     @if ($paymentQr && $selectedPaymentId)
         @php
             $payment = \App\Domains\ClubAdmin\Payment\Models\Payment::find($selectedPaymentId);
-            $isMeeting = $payment?->payable instanceof \App\Domains\Meetings\Models\MeetingUser;
-            $eventName = $isMeeting ? $payment?->payable?->meeting?->title : $payment?->payable?->tournament?->name;
-            $eventType = $isMeeting ? __('Meeting') : __('Tournament');
+            $label = $payment?->label();
+            $eventName = $label['name'] ?? null;
+            $eventType = $label['type'] ?? '';
         @endphp
         <div class="flex flex-col items-center gap-5">
             @if ($eventName)

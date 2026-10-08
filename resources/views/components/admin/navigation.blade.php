@@ -355,9 +355,10 @@
          l'accès sans avoir le lien pour y aller. --}}
     @canany(['trainings.view', 'access-coach-area'])
     <x-menu-sub icon="o-academic-cap">
-        <x-slot:title><x-admin.menu-sub-title :title="__('Trainings')" :badge="$badge('sessions_to_record')" /></x-slot:title>
+        <x-slot:title><x-admin.menu-sub-title :title="__('Trainings')" :badge="$badge('sessions_to_record', 'camp_requests')" /></x-slot:title>
         @can('trainings.view')
-        <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')" />
+        <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')"
+            :badge="$badge('camp_requests')" badge-classes="badge-warning" />
         @endcan
         @feature('training_planning')
         @can('trainings.view')

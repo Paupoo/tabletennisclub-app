@@ -17,6 +17,7 @@ use App\Domains\Shared\States\Payments\RefundedState;
 use App\Domains\Shared\States\Payments\ValidatedState;
 use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Services\TrainingCampBilling;
 use App\Observers\SubscriptionObserver;
 use Database\Factories\Domains\ClubAdmin\Subscriptions\Models\SubscriptionFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -167,6 +168,14 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
 
         static::deleting(function (self $subscription): void {
             $subscription->payments()->delete();
+
+            // The enrolment lines go with the affiliation (foreign key cascade),
+            // and a stage line carries payments of its own that would be left
+            // pointing at nothing.
+            SubscriptionTrainingPack::query()
+                ->where('subscription_id', $subscription->id)
+                ->where('invoiced_separately', true)
+                ->each(fn (SubscriptionTrainingPack $line) => $line->payments()->delete());
         });
     }
 
@@ -187,6 +196,10 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     public function cancel(): void
     {
         $this->getCurrentState()->cancel($this);
+
+        // Stages first: their money is not on this affiliation, and each line
+        // settles its own invoice before the blanket status change below.
+        app(TrainingCampBilling::class)->releaseWithAffiliation($this);
 
         // A cancelled affiliation voids its training-pack enrolments too: without
         // this they stay stuck on "pending" and the registration history keeps
@@ -393,7 +406,10 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
             ->where('status', 'pending')
             ->orWhere(fn (Builder $withPacks): Builder => $withPacks
                 ->whereIn('status', ['confirmed', 'paid'])
-                ->whereHas('trainingPacks', fn (Builder $pack): Builder => $pack->where('subscription_training_pack.status', 'pending'))
+                // A stage request is decided on the stage itself, never here.
+                ->whereHas('trainingPacks', fn (Builder $pack): Builder => $pack
+                    ->where('subscription_training_pack.status', 'pending')
+                    ->where('subscription_training_pack.invoiced_separately', false))
             )
         );
     }
@@ -493,6 +509,7 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
             ->using(SubscriptionTrainingPack::class)
             ->withPivot([
                 'status',
+                'invoiced_separately',
                 'waitlist_position',
                 'confirmation_deadline',
                 'starts_on',

@@ -21,6 +21,19 @@ class TrainingPackFactory extends Factory
     protected $model = TrainingPack::class;
 
     /**
+     * Un stage : une semaine, facturé à part, hors cotisation.
+     */
+    public function camp(): self
+    {
+        return $this->state(fn (): array => [
+            'is_camp' => true,
+            'allow_discount' => false,
+            'pack_start_date' => CarbonImmutable::today()->addMonth()->startOfMonth()->toDateString(),
+            'pack_end_date' => CarbonImmutable::today()->addMonth()->startOfMonth()->addDays(4)->toDateString(),
+        ]);
+    }
+
+    /**
      * A pack always covers a period — it is the pro rata's denominator.
      *
      * The default is a pack that has not started yet, which is the nominal case

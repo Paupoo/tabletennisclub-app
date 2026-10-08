@@ -52,6 +52,8 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
  * @property bool $allow_discount
  * @property bool $is_open_enrollment
  * @property bool $enrollments_open
+ * @property bool $is_camp a stage: optional, invoiced on its own, outside the affiliation
+ * @property bool $requires_approval
  * @property-read EventPost|null $eventPost
  * @property-read Room $room
  * @property-read Season $season
@@ -116,6 +118,8 @@ class TrainingPack extends Model
         'is_active' => 'boolean',
         'is_open_enrollment' => 'boolean',
         'enrollments_open' => 'boolean',
+        'is_camp' => 'boolean',
+        'requires_approval' => 'boolean',
     ];
 
     protected $fillable = [
@@ -139,6 +143,8 @@ class TrainingPack extends Model
         'is_active',
         'is_open_enrollment',
         'enrollments_open',
+        'is_camp',
+        'requires_approval',
     ];
 
     /**
@@ -288,6 +294,18 @@ class TrainingPack extends Model
         return $max === 0 || $this->committedCount() < $max;
     }
 
+    /**
+     * Un stage dont un membre a déjà été inscrit ne change plus de nature.
+     *
+     * Basculer la case changerait d'un coup ce que doivent les inscrits, ferait
+     * apparaître ou disparaître des remises et rendrait faux un montant déjà
+     * certifié sur une attestation. Une erreur se corrige en recréant le pack.
+     */
+    public function hasEverHadEnrolments(): bool
+    {
+        return $this->subscriptions()->exists();
+    }
+
     public function level(): BelongsTo
     {
         return $this->belongsTo(TrainingLevel::class, 'training_level_id');
@@ -306,15 +324,6 @@ class TrainingPack extends Model
         return $this->belongsTo(Room::class);
     }
 
-    /**
-     * Human-readable schedule for display, e.g. "Mardi · 20h30 – 22h00" or
-     * "Du lundi au vendredi · 9h00 – 16h00 · du 05/07 au 16/07".
-     *
-     * Adapts to the pack recurrence: single weekly day, multiple days
-     * (contiguous ranges are collapsed), optional time range derived from
-     * start_time + duration_minutes, and optional custom date bounds.
-     * Returns null when the pack has no day nor time information.
-     */
     public function scheduleLabel(): ?string
     {
         $days = $this->days_of_week
@@ -351,6 +360,38 @@ class TrainingPack extends Model
         }
 
         return implode(' · ', $parts);
+    }
+
+    /**
+     * Human-readable schedule for display, e.g. "Mardi · 20h30 – 22h00" or
+     * "Du lundi au vendredi · 9h00 – 16h00 · du 05/07 au 16/07".
+     *
+     * Adapts to the pack recurrence: single weekly day, multiple days
+     * (contiguous ranges are collapsed), optional time range derived from
+     * start_time + duration_minutes, and optional custom date bounds.
+     * Returns null when the pack has no day nor time information.
+     */
+    /**
+     * Les stages : optionnels, hors cotisation.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeCamps(Builder $query): Builder
+    {
+        return $query->where('training_packs.is_camp', true);
+    }
+
+    /**
+     * Les packs de saison, ceux que l'affiliation facture et que l'attestation
+     * certifie.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeSeasonal(Builder $query): Builder
+    {
+        return $query->where('training_packs.is_camp', false);
     }
 
     public function season(): BelongsTo

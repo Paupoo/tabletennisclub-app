@@ -497,6 +497,20 @@ new class extends Component
     }
 
     /**
+     * Whether the listed number of a child has nobody to belong to: no guardian
+     * on the roster or on the listing, and no number of the child's own. Only
+     * the reviewer knows whose it is — a parent's, or a teenager's own.
+     */
+    private function asksAboutPhone(MemberMatch $match, ?SharedAddressDecision $decision, bool $minor, bool $hasGuardian): bool
+    {
+        return $minor
+            && filled($match->row->phone)
+            && ! $hasGuardian
+            && $decision === null
+            && blank($match->existing?->phone_number);
+    }
+
+    /**
      * Who the address might belong to, read off the address itself.
      *
      * `firstname.lastname@…` is the common shape and gives both names; anything
@@ -661,20 +675,6 @@ new class extends Component
     {
         return $hasGuardian
             || ($match->outcome === MemberMatchOutcome::MATCHED && filled($match->existing?->email));
-    }
-
-    /**
-     * Whether the listed number of a child has nobody to belong to: no guardian
-     * on the roster or on the listing, and no number of the child's own. Only
-     * the reviewer knows whose it is — a parent's, or a teenager's own.
-     */
-    private function asksAboutPhone(MemberMatch $match, ?SharedAddressDecision $decision, bool $minor, bool $hasGuardian): bool
-    {
-        return $minor
-            && filled($match->row->phone)
-            && ! $hasGuardian
-            && $decision === null
-            && blank($match->existing?->phone_number);
     }
 
     /**

@@ -14,6 +14,7 @@ use App\Domains\ClubAdmin\Feedback\Models\HelpOffer;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Competitions\Interclub\Models\Interclub;
@@ -35,6 +36,7 @@ use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\Training;
 use App\Support\QueueHealth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 /**
@@ -131,6 +133,7 @@ class PendingTasks
         foreach ([
             $this->myPayments($user),
             $this->affiliationsAwaitingDecision($user),
+            $this->campRequestsAwaitingDecision($user),
             $this->unpaidAffiliations($user),
             $this->incompleteProfiles($user),
             $this->membersNotAffiliated($user),
@@ -155,6 +158,30 @@ class PendingTasks
         }
 
         return $tasks;
+    }
+
+    /**
+     * Requests on a stage that sorts them: decided on the stage itself, by the
+     * same right that validates a season pack. One stage waiting opens it.
+     */
+    private function campRequestsAwaitingDecision(User $user): ?PendingTask
+    {
+        if (! Feature::Trainings->enabled() || ! $user->can(Permission::SubscriptionsManage->value)) {
+            return null;
+        }
+
+        $requests = DB::table('subscription_training_pack')
+            ->join('subscriptions', 'subscriptions.id', '=', 'subscription_training_pack.subscription_id')
+            ->where('subscription_training_pack.status', 'pending')
+            ->where('subscription_training_pack.invoiced_separately', true)
+            ->whereNotIn('subscriptions.status', ['cancelled', 'refunded']);
+
+        $count = (clone $requests)->count();
+        $camps = (clone $requests)->distinct()->pluck('subscription_training_pack.training_pack_id');
+
+        return $this->task('camp_requests', $count,
+            '1 demande de stage à décider', ':count demandes de stage à décider',
+            'o-sun', route('admin.trainings.index', $camps->count() === 1 ? ['pack' => $camps->first()] : []));
     }
 
     private function draftArticles(User $user): ?PendingTask
@@ -336,8 +363,11 @@ class PendingTasks
     private function myPayments(User $user): ?PendingTask
     {
         $count = Payment::where('status', 'pending')
-            ->whereHasMorph('payable', [Subscription::class, TournamentRegistration::class, MeetingUser::class],
-                fn ($query) => $query->whereIn('user_id', $user->payableUserIds()))
+            ->whereHasMorph('payable', [Subscription::class, TournamentRegistration::class, MeetingUser::class, SubscriptionTrainingPack::class],
+                // A stage line names its member through the affiliation.
+                fn ($query, string $type) => $type === SubscriptionTrainingPack::class
+                    ? $query->whereHas('subscription', fn ($sub) => $sub->whereIn('user_id', $user->payableUserIds()))
+                    : $query->whereIn('user_id', $user->payableUserIds()))
             ->count();
 
         return $this->task('my_payments', $count,

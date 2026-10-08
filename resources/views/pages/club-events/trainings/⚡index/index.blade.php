@@ -101,6 +101,12 @@
                 @unless ($selectedPack?->is_active)
                     <x-badge :value="__('Withdrawn')" class="badge-warning badge-soft" icon="o-eye-slash" />
                 @endunless
+                @if ($selectedPack?->is_camp)
+                    <x-badge :value="__('Training camp')" class="badge-primary badge-soft" icon="o-sun" />
+                    @if ($selectedPack->requires_approval)
+                        <x-badge :value="__('Enrolment on approval')" class="badge-neutral badge-soft" icon="o-shield-check" />
+                    @endif
+                @endif
                 <x-badge :value="$selectedPack?->enrollments_open ? __('Enrolments open') : __('Enrolments closed')"
                     class="{{ $selectedPack?->enrollments_open ? 'badge-success' : 'badge-neutral' }} badge-soft"
                     :icon="$selectedPack?->enrollments_open ? 'o-lock-open' : 'o-lock-closed'" />
@@ -129,9 +135,11 @@
                     <dt class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Price') }}</dt>
                     <dd class="mt-0.5 text-sm tabular-nums">
                         {{ number_format((float) $selectedPack?->price, 2, ',', ' ') }} €
-                        @unless ($selectedPack?->allow_discount)
+                        @if ($selectedPack?->is_camp)
+                            <span class="text-xs text-subtle">· {{ __('invoiced separately') }}</span>
+                        @elseif (! $selectedPack?->allow_discount)
                             <span class="text-xs text-subtle">· {{ __('no family discount') }}</span>
-                        @endunless
+                        @endif
                     </dd>
                 </div>
             </dl>
@@ -212,6 +220,12 @@
                                     {{ $group['label'] }}
                                 </p>
                                 <x-badge :value="count($roster[$group['key']])" :class="$group['badge']" />
+                                @if ($group['key'] === 'pending' && $selectedPack?->is_camp && count($roster['pending']) > 1)
+                                    @can('subscriptions.manage')
+                                        <x-button class="btn-ghost btn-xs ml-auto" icon="o-check"
+                                            :label="__('Accept all')" wire:click="acceptAllCampRequests" spinner />
+                                    @endcan
+                                @endif
                             </div>
 
                             @if (empty($roster[$group['key']]))
@@ -286,6 +300,14 @@
                                                             <x-badge class="badge-warning badge-soft badge-xs ml-1"
                                                                 :value="__('membership pending')" />
                                                         @endif
+                                                        @if ($group['key'] === 'enrolled' && $row['isCampLine'])
+                                                            @if ($row['campBalance'] > 0)
+                                                                <x-badge class="badge-warning badge-soft badge-xs ml-1"
+                                                                    :value="__('to pay: :amount €', ['amount' => number_format($row['campBalance'], 2, ',', ' ')])" />
+                                                            @else
+                                                                <x-badge class="badge-success badge-soft badge-xs ml-1" :value="__('paid')" />
+                                                            @endif
+                                                        @endif
                                                         @if ($row['overrideAmount'] !== null)
                                                             <x-badge class="badge-ghost badge-xs ml-1"
                                                                 :value="__('price set by hand: :amount €', ['amount' => number_format($row['overrideAmount'], 2, ',', ' ')])"
@@ -328,9 +350,10 @@
                                                                 {{-- Déplacer reste dans la ligne, désinscrire passe
                                                                      dans le menu : c'est le geste qui peut rendre de
                                                                      l'argent, il ne doit pas se déclencher au frôlement. --}}
-                                                                <x-admin.shared.row-menu :label="__('Move')"
-                                                                    icon="o-arrows-right-left"
-                                                                    wire-click="openMoveMember({{ $row['id'] }})">
+                                                                <x-admin.shared.row-menu
+                                                                    :label="$row['isCampLine'] ? __('Price') : __('Move')"
+                                                                    :icon="$row['isCampLine'] ? 'o-currency-euro' : 'o-arrows-right-left'"
+                                                                    :wire-click="$row['isCampLine'] ? 'openCampPrice(' . $row['id'] . ')' : 'openMoveMember(' . $row['id'] . ')'">
                                                                     <li>
                                                                         <button type="button"
                                                                             class="w-full justify-start gap-2 text-start text-error"
@@ -346,14 +369,17 @@
                                                                 {{-- Ni date de sortie, ni euro, ni trace : la ligne est
                                                                      détachée. Mais une place dans la file ne se retrouve
                                                                      pas — on la reprend à la fin —, d'où la confirmation. --}}
-                                                                <x-admin.shared.row-menu>
+                                                                <x-admin.shared.row-menu
+                                                                    :label="$group['key'] === 'pending' && $row['isCampLine'] ? __('Accept') : null"
+                                                                    :icon="$group['key'] === 'pending' && $row['isCampLine'] ? 'o-check' : null"
+                                                                    :wire-click="$group['key'] === 'pending' && $row['isCampLine'] ? 'acceptCampRequest(' . $row['id'] . ')' : null">
                                                                     <li>
                                                                         <button type="button"
                                                                             class="w-full justify-start gap-2 text-start text-error"
                                                                             wire:click="openRemoveFromRoster({{ $row['id'] }})">
                                                                             <x-icon name="o-x-mark" class="h-4 w-4" />
                                                                             {{ $group['key'] === 'pending'
-                                                                                ? __('Dismiss the request')
+                                                                                ? ($row['isCampLine'] ? __('Refuse the request') : __('Dismiss the request'))
                                                                                 : __('Remove from the waiting list') }}
                                                                         </button>
                                                                     </li>
@@ -601,6 +627,10 @@
                                                 </p>
                                             </div>
                                             <div class="flex shrink-0 flex-col items-end gap-1">
+                                                @if ($pack->is_camp)
+                                                    <x-badge value="{{ __('Training camp') }}"
+                                                        class="badge-primary badge-soft badge-xs" icon="o-sun" />
+                                                @endif
                                                 @unless ($pack->is_active)
                                                     <x-badge value="{{ __('Withdrawn') }}"
                                                         class="badge-warning badge-soft badge-xs" icon="o-eye-slash" />
@@ -784,6 +814,22 @@
 
                 <x-textarea :label="__('Description')" :placeholder="__('Optional…')"
                     wire:model="formDescription" rows="3" />
+
+                {{-- Un stage se facture à part, hors cotisation. La case se fige
+                     dès le premier inscrit : la basculer changerait d'un coup ce
+                     que doivent les inscrits. --}}
+                <div class="rounded-xl border border-base-300 p-3">
+                    <x-toggle :label="__('Training camp (outside the membership fee)')" wire:model.live="formIsCamp"
+                        :disabled="$this->campNatureLocked"
+                        :hint="$this->campNatureLocked
+                            ? __('Members are already enrolled: this can no longer change. Create a new pack if needed.')
+                            : __('Optional and invoiced separately: it never enters the affiliation, nor the attestation for the health insurance.')" />
+
+                    @if ($formIsCamp)
+                        <x-toggle class="mt-3" :label="__('Enrolment on approval')" wire:model="formRequiresApproval"
+                            :hint="__('Members send a request the committee accepts or refuses, e.g. a camp for young players only.')" />
+                    @endif
+                </div>
             </div>
         @endif
 
@@ -941,13 +987,18 @@
                 <x-input :label="__('Pack price (€)')" type="number" min="0" step="0.50"
                     wire:model.live="formPrice" />
 
-                <x-toggle
-                    :label="__('Allow family/multi-pack discount')"
-                    wire:model.live="formAllowDiscount"
-                    :hint="__('When enabled, a 10€ discount applies per pack for members taking multiple packs or families.')" />
+                @if ($formIsCamp)
+                    <x-alert class="alert-info" icon="o-information-circle"
+                        :title="__('The training camp is invoiced on its own, without automatic discount. A member\'s own price can be set when enrolling them.')" />
+                @else
+                    <x-toggle
+                        :label="__('Allow family/multi-pack discount')"
+                        wire:model.live="formAllowDiscount"
+                        :hint="__('When enabled, a 10€ discount applies per pack for members taking multiple packs or families.')" />
 
-                <x-alert class="alert-info" icon="o-information-circle"
-                    :title="__('The pack price is added to the subscription price.')" />
+                    <x-alert class="alert-info" icon="o-information-circle"
+                        :title="__('The pack price is added to the subscription price.')" />
+                @endif
 
                 {{-- Summary --}}
                 <div class="rounded-xl border border-base-300 bg-base-100 p-4 text-sm">
@@ -987,7 +1038,7 @@
                         <div class="flex justify-between">
                             <span>{{ __('Discount') }}</span>
                             <span class="font-medium text-base-content">
-                                {{ $formAllowDiscount ? __('Enabled (−10€)') : __('Disabled') }}
+                                {{ $formAllowDiscount && ! $formIsCamp ? __('Enabled (−10€)') : __('Disabled') }}
                             </span>
                         </div>
                     </div>
@@ -1125,6 +1176,16 @@
         <x-choices-offline class="mt-4" :label="__('Member')" wire:model="addMemberUserId"
             :options="$this->addMemberOptions" option-label="name" single searchable />
 
+        @if ($selectedPack?->is_camp)
+            {{-- Un stage n'a ni pro rata ni remise : une présence partielle est un
+                 prix fixé pour ce membre, avec son motif. --}}
+            <x-input class="mt-3" type="number" min="0" step="0.50" wire:model="addMemberPrice"
+                :label="__('Price for this member (€)')"
+                :placeholder="number_format((float) $selectedPack->price, 2, '.', '')"
+                :hint="__('Leave empty for the training camp price.')" />
+            <x-input class="mt-3" wire:model="addMemberPriceReason" :label="__('Reason')"
+                :placeholder="__('E.g. one day only')" />
+        @else
         {{-- Seulement sur un pack entamé : avant son début, tout le monde paie
              plein tarif et la case ne changerait rien. --}}
         @if ($this->addMemberPackStarted)
@@ -1144,6 +1205,7 @@
         <div class="mt-4">
             <x-admin.shared.inline-discount :mode="$inlineDiscountMode" />
         </div>
+        @endif
 
         <x-slot:actions>
             <x-button :label="__('Cancel')" wire:click="$set('addMemberModal', false)" />
@@ -1154,7 +1216,7 @@
     {{-- ── Dismiss a request, or leave the waiting list ─────────────────────── --}}
     <x-confirm-modal model="removeFromRosterModal"
         :title="$removeFromRosterStatus === 'pending'
-            ? __('Dismiss this request?')
+            ? ($selectedPack?->is_camp ? __('Refuse this request?') : __('Dismiss this request?'))
             : __('Take this member off the waiting list?')"
         :confirmLabel="__('Remove')" confirmAction="confirmRemoveFromRoster" :open="$removeFromRosterModal">
         <p>{{ $removeFromRosterName }}</p>
@@ -1164,6 +1226,23 @@
                 : __('The queue is renumbered behind them. Coming back means starting at the end of it.') }}
         </p>
     </x-confirm-modal>
+
+    {{-- ── A member's own price on a training camp ──────────────────────────── --}}
+    <x-app-modal :title="__('Price for this member')" wire:model="campPriceModal" separator :open="$campPriceModal">
+        <p class="text-sm text-base-content/70">
+            {{ __('The training camp invoice follows: an unpaid request is adjusted, money already paid beyond the new price is refunded.') }}
+        </p>
+        <x-input class="mt-3" type="number" min="0" step="0.50" wire:model="campPriceAmount"
+            :label="__('Price for this member (€)')"
+            :placeholder="number_format((float) $selectedPack?->price, 2, '.', '')"
+            :hint="__('Leave empty for the training camp price.')" />
+        <x-input class="mt-3" wire:model="campPriceReason" :label="__('Reason')"
+            :placeholder="__('E.g. one day only')" />
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('campPriceModal', false)" />
+            <x-button :label="__('Save')" class="btn-primary" wire:click="saveCampPrice" spinner />
+        </x-slot:actions>
+    </x-app-modal>
 
     {{-- ── Take an enrolled member out of the pack ──────────────────────────── --}}
     {{-- Départ daté ou erreur d'encodage : la modale est partagée avec l'écran Affiliations. --}}

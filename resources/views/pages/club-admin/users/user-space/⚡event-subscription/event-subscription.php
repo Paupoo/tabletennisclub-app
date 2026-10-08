@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
+use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingCampAction;
+use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Actions\Meetings\RespondToMeetingRsvp;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -19,13 +23,16 @@ use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\Training;
+use App\Domains\Trainings\Models\TrainingPack;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -125,6 +132,23 @@ new class extends Component
         $this->reset(['eventType', 'onlyPayable']);
     }
 
+    /**
+     * @return array<string, string>
+     */
+    /**
+     * Prend la place offerte par la liste d'attente d'un stage.
+     */
+    public function confirmCampOffer(int $packId): void
+    {
+        $this->runCampAction($packId, function (Subscription $subscription, TrainingPack $camp): void {
+            $status = (new EnrollInTrainingCampAction)->confirmOffer($subscription, $camp);
+
+            $this->success($status === 'pending'
+                ? __('Spot held. The committee will confirm your request.')
+                : __('Spot confirmed!'));
+        });
+    }
+
     public function confirmCancel(): void
     {
         if ($this->cancelConfirmId) {
@@ -147,14 +171,33 @@ new class extends Component
     }
 
     /**
-     * @return array<string, string>
+     * S'inscrit à un stage : directement, en demande quand le comité trie les
+     * inscriptions, ou en liste d'attente quand c'est complet.
      */
+    public function enrolInCamp(int $packId): void
+    {
+        $this->runCampAction($packId, function (Subscription $subscription, TrainingPack $camp): void {
+            if ($camp->trainer_id === $this->user->id) {
+                throw new DomainException(__('You cannot enroll in a training pack you coach.'));
+            }
+
+            $status = (new EnrollInTrainingCampAction)($subscription, $camp);
+
+            match ($status) {
+                'enrolled' => $this->success(__('You are enrolled. The payment request is on its way.')),
+                'pending' => $this->success(__('Request sent. The committee will get back to you.')),
+                default => $this->info(__('The training camp is full: you are on the waiting list.')),
+            };
+        });
+    }
+
     public function eventTypeOptions(): array
     {
         return [
             'tournament' => __('Tournaments'),
             'meeting' => __('Meetings'),
             'training' => __('Trainings'),
+            'camp' => __('Training camps'),
         ];
     }
 
@@ -279,12 +322,17 @@ new class extends Component
     public function pendingPayments(): Collection
     {
         return Payment::where('status', 'pending')
-            ->whereHasMorph('payable', [TournamentRegistration::class, MeetingUser::class],
-                fn ($q) => $q->where('user_id', $this->user->id)
+            ->where(fn ($q) => $q->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
+            ->whereHasMorph('payable', [TournamentRegistration::class, MeetingUser::class, SubscriptionTrainingPack::class],
+                // A stage line holds no `user_id`: the member is read through the affiliation.
+                fn (Builder $q, string $type) => $type === SubscriptionTrainingPack::class
+                    ? $q->whereHas('subscription', fn (Builder $sub) => $sub->where('user_id', $this->user->id))
+                    : $q->where('user_id', $this->user->id)
             )
             ->with(['payable' => fn (MorphTo $morphTo) => $morphTo->morphWith([
                 TournamentRegistration::class => ['tournament'],
                 MeetingUser::class => ['meeting'],
+                SubscriptionTrainingPack::class => ['trainingPack', 'subscription.user'],
             ])])
             ->get();
     }
@@ -364,6 +412,58 @@ new class extends Component
         $this->success(__('Your participation has been updated.'), icon: 'o-calendar-days');
     }
 
+    /**
+     * Les stages du club qu'un membre affilié peut suivre, et sa place sur chacun.
+     *
+     * Un stage n'est proposé qu'aux affiliés de sa saison : l'assurance de la
+     * fédération couvre une saison, pas l'autre.
+     *
+     * @return list<array{pack: TrainingPack, status: string|null, position: int|null, deadline: string|null, balance: float, open: bool, full: bool}>
+     */
+    #[Computed]
+    public function trainingCamps(): array
+    {
+        $subscriptions = $this->user->subscriptions()
+            ->whereNotIn('status', ['cancelled', 'refunded'])
+            ->get()
+            ->keyBy('season_id');
+
+        if ($subscriptions->isEmpty()) {
+            return [];
+        }
+
+        $lines = SubscriptionTrainingPack::query()
+            ->whereIn('subscription_id', $subscriptions->pluck('id'))
+            ->where('invoiced_separately', true)
+            ->with(['payments' => fn ($q) => $q->where('status', 'pending')->where(fn ($m) => $m->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))])
+            ->get()
+            ->keyBy('training_pack_id');
+
+        return TrainingPack::query()
+            ->camps()
+            ->with(['room', 'season'])
+            ->whereIn('season_id', $subscriptions->keys())
+            ->whereDate('pack_end_date', '>=', today())
+            ->where(fn (Builder $q) => $q->where('is_active', true)->orWhereIn('id', $lines->keys()))
+            ->orderBy('pack_start_date')
+            ->orderBy('training_packs.id')
+            ->get()
+            ->map(function (TrainingPack $camp) use ($lines): array {
+                $line = $lines->get($camp->id);
+
+                return [
+                    'pack' => $camp,
+                    'status' => $line?->status,
+                    'position' => $line?->waitlist_position,
+                    'deadline' => $line?->confirmation_deadline,
+                    'balance' => round((float) ($line?->payments->sum(fn (Payment $claim): float => $claim->balance()) ?? 0.0), 2),
+                    'open' => $camp->is_active && $camp->enrollments_open,
+                    'full' => ! $camp->hasAvailableSpot(),
+                ];
+            })
+            ->all();
+    }
+
     #[Computed]
     public function upcomingMeetings(): Collection
     {
@@ -428,7 +528,7 @@ new class extends Component
             // Les packs quittés restent attachés pour la facturation au pro
             // rata ; ils ne donnent plus accès aux séances.
             ->flatMap(fn ($sub) => $sub->trainingPacks
-                ->reject(fn ($pack): bool => $pack->pivot->status === 'left')
+                ->reject(fn ($pack): bool => in_array($pack->pivot->status, ['left', 'cancelled'], true))
                 ->pluck('id'));
 
         if ($packIds->isEmpty()) {
@@ -451,6 +551,28 @@ new class extends Component
         ];
     }
 
+    /**
+     * Retire une demande ou une place en liste d'attente. Une place validée ne
+     * se quitte pas d'ici : le stage reste dû, c'est le club qui l'ajuste.
+     */
+    public function withdrawFromCamp(int $packId): void
+    {
+        $this->runCampAction($packId, function (Subscription $subscription, TrainingPack $camp): void {
+            $status = DB::table('subscription_training_pack')
+                ->where('subscription_id', $subscription->id)
+                ->where('training_pack_id', $camp->id)
+                ->value('status');
+
+            if (! in_array($status, ['pending', 'waiting', 'offered'], true)) {
+                return;
+            }
+
+            (new LeaveTrainingPackAction)($subscription, $camp, notifyUser: false);
+
+            $this->success(__('Your request has been withdrawn.'));
+        });
+    }
+
     protected function breadcrumbChain(): Breadcrumb
     {
         return Breadcrumb::make()
@@ -469,5 +591,40 @@ new class extends Component
             ->where('scheduled_at', '>=', now())
             ->orderBy('scheduled_at')
             ->get();
+    }
+
+    /**
+     * The member's affiliation for the stage's season, then the gesture; a
+     * refusal from the domain becomes a toast.
+     *
+     * @param  callable(Subscription, TrainingPack): void  $action
+     */
+    private function runCampAction(int $packId, callable $action): void
+    {
+        $camp = TrainingPack::query()->camps()->find($packId);
+
+        $subscription = $camp
+            ? Subscription::query()
+                ->where('user_id', $this->user->id)
+                ->where('season_id', $camp->season_id)
+                ->whereNotIn('status', ['cancelled', 'refunded'])
+                ->first()
+            : null;
+
+        if (! $camp || ! $subscription) {
+            $this->error(__('This training camp is open to the club members of its season only.'));
+
+            return;
+        }
+
+        try {
+            $action($subscription, $camp);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        unset($this->trainingCamps, $this->pendingPayments, $this->upcomingTrainingSessions);
     }
 };

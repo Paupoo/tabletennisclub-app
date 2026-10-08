@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\InviteToPayAction;
 use App\Actions\ClubAdmin\Subscriptions\AddMemberToTrainingPackAction;
+use App\Actions\ClubAdmin\Subscriptions\AdjustTrainingCampLineAction;
+use App\Actions\ClubAdmin\Subscriptions\DecideTrainingCampRequestAction;
 use App\Actions\ClubAdmin\Subscriptions\DiscontinueTrainingPackAction;
+use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingCampAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\MoveMemberBetweenTrainingPacksAction;
 use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Permission;
@@ -24,6 +28,7 @@ use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingPackScheduleChangedNotification;
 use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
 use App\Domains\Trainings\Services\TrainingAttendanceReport;
+use App\Domains\Trainings\Services\TrainingCampBilling;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
 use App\Domains\Trainings\Services\TrainingPackProrata;
 use App\Domains\Trainings\Services\TrainingRosterExport;
@@ -55,12 +60,26 @@ new class extends Component
     // ── Ajout manuel d'un membre par le comité ────────────────────────────────
     public bool $addMemberModal = false;
 
+    /** Le prix d'un stage pour ce membre, en euros ; vide = le prix du stage. */
+    public string $addMemberPrice = '';
+
+    public string $addMemberPriceReason = '';
+
     public string $addMemberStartsOn = '';
 
     public int $addMemberUserId = 0;
 
     /** Présent depuis le début du pack, encodé en retard : plein tarif. */
     public bool $addMemberWholePack = false;
+
+    public string $campPriceAmount = '';
+
+    // ── Prix d'un membre sur un stage ─────────────────────────────────────────
+    public bool $campPriceModal = false;
+
+    public string $campPriceReason = '';
+
+    public int $campPriceUserId = 0;
 
     // ── Cancellation modal ────────────────────────────────────────────────────
     public bool $cancelModal = false;
@@ -90,6 +109,9 @@ new class extends Component
     /** @var array<int, string> */
     public array $formExcludedDates = [];
 
+    /** Un stage : optionnel, facturé à part, hors cotisation. */
+    public bool $formIsCamp = false;
+
     public bool $formIsOpenEnrollment = false;
 
     public int $formLevel = 0;
@@ -108,6 +130,9 @@ new class extends Component
 
     // Step 2 — Planning
     public string $formRecurrenceType = 'weekly'; // 'weekly' | 'specific_days'
+
+    /** Les demandes d'inscription au stage passent par le comité. */
+    public bool $formRequiresApproval = false;
 
     public int $formRoomId = 0;
 
@@ -178,7 +203,58 @@ new class extends Component
     // ── Wizard state ──────────────────────────────────────────────────────────
     public bool $wizardOpen = false;
 
+    /** Accepte en une fois toutes les demandes en attente du stage ouvert. */
+    public function acceptAllCampRequests(): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $pack = $this->selectedPack;
+
+        if (! $pack?->is_camp) {
+            return;
+        }
+
+        $lines = SubscriptionTrainingPack::query()
+            ->with('subscription.user', 'trainingPack')
+            ->where('training_pack_id', $pack->id)
+            ->where('status', 'pending')
+            ->where('invoiced_separately', true)
+            ->get();
+
+        $decide = new DecideTrainingCampRequestAction;
+        $lines->each(fn (SubscriptionTrainingPack $line) => $decide->approve($line));
+
+        $this->forgetRoster();
+        $this->success(trans_choice('{1}One request accepted.|[2,*]:count requests accepted.', $lines->count(), ['count' => $lines->count()]));
+    }
+
     // ── Computed ──────────────────────────────────────────────────────────────
+
+    /**
+     * Accepte une demande d'inscription à un stage : la place est validée et
+     * la facture du stage part aussitôt.
+     */
+    public function acceptCampRequest(int $userId): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $line = $this->campLineFor($userId);
+
+        if ($line === null) {
+            return;
+        }
+
+        try {
+            (new DecideTrainingCampRequestAction)->approve($line);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->forgetRoster();
+        $this->success(__('Request of :member accepted.', ['member' => $line->subscription->user->full_name]));
+    }
 
     #[Computed]
     public function activeSeason(): ?Season
@@ -277,6 +353,12 @@ new class extends Component
             return;
         }
 
+        if ($pack->is_camp) {
+            $this->addMemberToCamp($pack, $subscription);
+
+            return;
+        }
+
         $previousAmountDue = (float) $subscription->amount_due;
 
         try {
@@ -346,6 +428,15 @@ new class extends Component
     public function backToList(): void
     {
         $this->selectedPackId = null;
+    }
+
+    /**
+     * La nature du pack ne bouge plus dès qu'un membre y a été inscrit.
+     */
+    #[Computed]
+    public function campNatureLocked(): bool
+    {
+        return (bool) $this->editedPack?->hasEverHadEnrolments();
     }
 
     /**
@@ -527,6 +618,19 @@ new class extends Component
             return;
         }
 
+        $campLine = (new TrainingCampBilling)->line($subscription, $pack);
+
+        if ($pivot->pivot->status === 'pending' && $campLine?->invoiced_separately) {
+            (new DecideTrainingCampRequestAction)->reject($campLine);
+
+            $this->removeFromRosterModal = false;
+            $this->removeFromRosterUserId = 0;
+            $this->forgetRoster();
+            $this->success(__('Request of :member refused.', ['member' => $subscription->user->full_name]));
+
+            return;
+        }
+
         (new LeaveTrainingPackAction)(
             $subscription,
             $pack,
@@ -621,6 +725,12 @@ new class extends Component
                 ->where('start', '>=', Carbon::now())
                 ->count(),
         ];
+    }
+
+    #[Computed]
+    public function editedPack(): ?TrainingPack
+    {
+        return $this->packId ? TrainingPack::find($this->packId) : null;
     }
 
     public function editLevel(int $levelId): void
@@ -739,6 +849,14 @@ new class extends Component
     public function mount(): void
     {
         $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
+
+        // The task counter links straight to the stage whose requests wait.
+        $packId = (int) request()->query('pack', 0);
+
+        if ($packId > 0 && ($pack = TrainingPack::find($packId))) {
+            $this->viewSeasonId = $pack->season_id;
+            $this->openPack($pack->id);
+        }
     }
 
     /**
@@ -852,9 +970,27 @@ new class extends Component
         $this->addMemberUserId = 0;
         $this->addMemberStartsOn = '';
         $this->addMemberWholePack = false;
+        $this->addMemberPrice = '';
+        $this->addMemberPriceReason = '';
         $this->addMemberModal = true;
 
         unset($this->addMemberOptions, $this->addMemberOverCapacity);
+    }
+
+    public function openCampPrice(int $userId): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $line = $this->campLineFor($userId);
+
+        if ($line === null) {
+            return;
+        }
+
+        $this->campPriceUserId = $userId;
+        $this->campPriceAmount = $line->override_amount !== null ? number_format(((int) $line->override_amount) / 100, 2, '.', '') : '';
+        $this->campPriceReason = (string) $line->override_reason;
+        $this->campPriceModal = true;
     }
 
     // ── Cancellation ──────────────────────────────────────────────────────────
@@ -913,6 +1049,8 @@ new class extends Component
         $this->formExcludedDates = $pack->excluded_dates ?? [];
         $this->formPrice = (float) $pack->price;
         $this->formAllowDiscount = $pack->allow_discount;
+        $this->formIsCamp = $pack->is_camp;
+        $this->formRequiresApproval = $pack->requires_approval;
         $this->formMaxParticipants = (string) ($pack->max_participants ?? '');
         $this->formIsOpenEnrollment = $pack->is_open_enrollment;
         $this->formEnrollmentsOpen = $pack->enrollments_open;
@@ -1071,8 +1209,23 @@ new class extends Component
         $attendance = $this->packAttendance;
         $prorata = new TrainingPackProrata;
 
+        // What each stage line still asks, read in one query: a stage is paid on
+        // its own line, and the committee needs to see who has settled.
+        $campBalances = $pack->is_camp
+            ? Payment::query()
+                ->where('payable_type', SubscriptionTrainingPack::class)
+                ->whereIn('payable_id', DB::table('subscription_training_pack')->where('training_pack_id', $pack->id)->select('id'))
+                ->where('status', 'pending')
+                ->where(fn ($q) => $q->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
+                ->get()
+                ->groupBy('payable_id')
+                ->map(fn ($claims): float => round((float) $claims->sum(fn (Payment $claim): float => $claim->balance()), 2))
+            : collect();
+
         $rows = $pack->subscriptions()
             ->withPivot([
+                'id',
+                'invoiced_separately',
                 'status',
                 'waitlist_position',
                 'confirmation_deadline',
@@ -1084,7 +1237,7 @@ new class extends Component
             ->affiliated()
             ->with('user')
             ->get()
-            ->map(function (Subscription $subscription) use ($attendance, $pack, $prorata): array {
+            ->map(function (Subscription $subscription) use ($attendance, $pack, $prorata, $campBalances): array {
                 $user = $subscription->user;
                 $pivot = $subscription->pivot;
 
@@ -1102,6 +1255,8 @@ new class extends Component
                     'overrideAmount' => $pivot->override_amount !== null ? (int) $pivot->override_amount / 100 : null,
                     'overrideReason' => $pivot->override_reason,
                     'unpaid' => $subscription->status === 'pending',
+                    'isCampLine' => (bool) $pivot->invoiced_separately,
+                    'campBalance' => (bool) $pivot->invoiced_separately ? (float) ($campBalances[$pivot->id] ?? 0.0) : null,
                     'rate' => $attendance['counted'] === 0
                         ? null
                         : (int) round((($attendance['present'][$user->id] ?? 0) / $attendance['counted']) * 100),
@@ -1444,6 +1599,19 @@ new class extends Component
             'allow_discount' => $this->formAllowDiscount,
         ];
 
+        // Once a member is on it, a pack keeps its nature: switching it would
+        // change at once what every enrolled member owes.
+        $isCamp = $this->campNatureLocked ? (bool) $this->editedPack?->is_camp : $this->formIsCamp;
+
+        $data['is_camp'] = $isCamp;
+        $data['requires_approval'] = $isCamp && $this->formRequiresApproval;
+
+        // A stage never takes nor triggers the automatic discounts: a member's
+        // own price is forced on their line, with its reason.
+        if ($isCamp) {
+            $data['allow_discount'] = false;
+        }
+
         // `is_active` n'appartient pas au formulaire : il est piloté par
         // « Retirer de l'offre » / « Remettre dans l'offre ». L'écrire ici
         // remettait en ligne, à chaque enregistrement, un pack qu'on venait de
@@ -1480,6 +1648,38 @@ new class extends Component
         unset($this->packs);
         $this->wizardOpen = false;
         $this->resetWizardFields();
+    }
+
+    /**
+     * Fixe le prix d'un membre sur le stage : la facture du stage suit, et ce
+     * qui est déjà payé au-delà part en remboursement.
+     */
+    public function saveCampPrice(): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $line = $this->campLineFor($this->campPriceUserId);
+
+        if ($line === null) {
+            return;
+        }
+
+        $amount = trim($this->campPriceAmount) === '' ? null : (float) str_replace(',', '.', $this->campPriceAmount);
+
+        try {
+            $refunded = (new AdjustTrainingCampLineAction)($line->subscription, $line->trainingPack, $amount, $this->campPriceReason);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->campPriceModal = false;
+        $this->forgetRoster();
+
+        $refunded > 0
+            ? $this->warning(__('Price updated. :amount € to refund, sent to the treasury.', ['amount' => number_format($refunded, 2, ',', ' ')]))
+            : $this->success(__('Price updated.'));
     }
 
     /**
@@ -1661,6 +1861,26 @@ new class extends Component
             ->toArray();
     }
 
+    /**
+     * Un stage se range dans la saison qui contient sa date de début : c'est
+     * l'affiliation de cette saison qui couvrira le membre sur la table.
+     */
+    public function updatedFormPackStartDate(string $value): void
+    {
+        if (! $this->formIsCamp || $this->packId || $value === '') {
+            return;
+        }
+
+        $season = Season::query()
+            ->whereDate('start_at', '<=', $value)
+            ->whereDate('end_at', '>=', $value)
+            ->first();
+
+        if ($season) {
+            $this->formSeasonId = $season->id;
+        }
+    }
+
     // ── Session drill-down ────────────────────────────────────────────────────
 
     public function updatedShowAllSessions(): void
@@ -1724,6 +1944,53 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Trainings'));
+    }
+
+    /**
+     * Inscrit un membre à un stage depuis l'écran : directement, au-delà du
+     * plafond s'il le faut, au prix du stage ou à un prix fixé avec son motif.
+     */
+    private function addMemberToCamp(TrainingPack $pack, Subscription $subscription): void
+    {
+        $price = trim($this->addMemberPrice) === '' ? null : (float) str_replace(',', '.', $this->addMemberPrice);
+
+        try {
+            (new EnrollInTrainingCampAction)($subscription, $pack, byClub: true, overrideAmount: $price, overrideReason: $this->addMemberPriceReason);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->warnWhenUnreachable($subscription->user);
+
+        $this->addMemberModal = false;
+        $this->addMemberUserId = 0;
+        $this->addMemberPrice = '';
+        $this->addMemberPriceReason = '';
+
+        unset($this->packs, $this->selectedPack, $this->addMemberOptions, $this->addMemberOverCapacity, $this->attendanceMatrix, $this->packSummary, $this->packAttendance);
+        $this->forgetRoster();
+
+        $this->success(__(':member added to :pack.', [
+            'member' => $subscription->user->first_name . ' ' . $subscription->user->last_name,
+            'pack' => $pack->name,
+        ]), icon: 'o-user-plus');
+    }
+
+    /** La ligne de stage de ce membre, sur le stage consulté. */
+    private function campLineFor(int $userId): ?SubscriptionTrainingPack
+    {
+        $pack = $this->selectedPack;
+        $subscription = $this->rosterSubscription($userId);
+
+        if (! $pack?->is_camp || ! $subscription) {
+            return null;
+        }
+
+        $line = (new TrainingCampBilling)->line($subscription, $pack);
+
+        return $line?->invoiced_separately ? $line : null;
     }
 
     /** Le roster et tout ce qui en dérive, à relire après une écriture. */
@@ -1816,6 +2083,8 @@ new class extends Component
         $this->formExcludedDates = [];
         $this->formPrice = 90;
         $this->formAllowDiscount = true;
+        $this->formIsCamp = false;
+        $this->formRequiresApproval = false;
         $this->formMaxParticipants = '';
         $this->formIsOpenEnrollment = false;
         $this->formEnrollmentsOpen = true;

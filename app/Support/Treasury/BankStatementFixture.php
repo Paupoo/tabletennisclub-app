@@ -7,6 +7,7 @@ namespace App\Support\Treasury;
 use App\Contracts\DescribesPayment;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
@@ -160,6 +161,7 @@ final class BankStatementFixture
                     Subscription::class => ['user'],
                     TournamentRegistration::class => ['user'],
                     MeetingUser::class => ['user'],
+                    SubscriptionTrainingPack::class => ['user'],
                 ])
                 : $q])
             ->orderBy('id')
@@ -559,6 +561,7 @@ final class BankStatementFixture
                     Subscription::class => ['user'],
                     TournamentRegistration::class => ['user'],
                     MeetingUser::class => ['user'],
+                    SubscriptionTrainingPack::class => ['user'],
                 ])
                 : $q])
             ->orderBy('id')
@@ -589,6 +592,7 @@ final class BankStatementFixture
                     Subscription::class => ['user'],
                     TournamentRegistration::class => ['user'],
                     MeetingUser::class => ['user'],
+                    SubscriptionTrainingPack::class => ['user'],
                 ])
                 : $q])
             ->orderBy('id')

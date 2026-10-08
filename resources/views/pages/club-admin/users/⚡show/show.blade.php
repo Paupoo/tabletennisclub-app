@@ -99,14 +99,15 @@
                     @else
                         <ul class="space-y-2">
                             @foreach ($guardians as $guardian)
-                                <li class="flex items-center gap-3 rounded-lg border border-base-300 p-3">
+                                <li wire:key="guardian-{{ $guardian->id }}" class="flex items-center gap-3 rounded-lg border border-base-300 p-3">
                                     <x-icon name="o-user" class="h-5 w-5 shrink-0 text-primary" />
-                                    <div class="min-w-0">
+                                    <div class="min-w-0 flex-1">
                                         <p class="truncate text-sm font-semibold">{{ $guardian->first_name }} {{ $guardian->last_name }}</p>
                                         <p class="truncate text-xs text-base-content/70">
                                             {{ $guardian->phone }}{{ $guardian->email ? ' · ' . $guardian->email : '' }}
                                         </p>
                                     </div>
+                                    <x-admin.users.guardian-edit-action :guardian="$guardian" />
                                 </li>
                             @endforeach
                         </ul>
@@ -273,4 +274,6 @@
             <p>{{ __('Use it for a departure recorded by mistake. Team places, captaincies and places in upcoming interclub matches are not given back.') }}</p>
         </x-confirm-modal>
     @endcan
+
+    <livewire:admin.users.guardian-editor />
 </div>

@@ -33,11 +33,13 @@ use Illuminate\Validation\Rules\Password;
  */
 class GuardianInvitationController extends Controller
 {
-    public function showForm(Guardian $guardian): View|RedirectResponse
+    public function showForm(Request $request, Guardian $guardian): View|RedirectResponse
     {
         if ($guardian->hasAccount()) {
             return $this->redirectAlreadyLinked();
         }
+
+        $this->ensureAddressUnchanged($request, $guardian);
 
         return view('clubAdmin.users.auth.guardian-invitation', [
             'guardian' => $guardian,
@@ -50,6 +52,8 @@ class GuardianInvitationController extends Controller
         if ($guardian->hasAccount()) {
             return $this->redirectAlreadyLinked();
         }
+
+        $this->ensureAddressUnchanged($request, $guardian);
 
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
@@ -101,6 +105,29 @@ class GuardianInvitationController extends Controller
 
         return redirect()->route('dashboard')
             ->with('success', __('Welcome! Choose from the menu the account you wish to manage.'));
+    }
+
+    /**
+     * The account takes the address on file as a verified login, on the strength
+     * of the link having been delivered there. A link mailed before the address
+     * was corrected proves nothing about the new one.
+     */
+    private function ensureAddressUnchanged(Request $request, Guardian $guardian): void
+    {
+        // A link mailed before links named their address carries no fingerprint.
+        // It still counts while the sheet is waiting on it: correcting the address
+        // clears `last_invited_at`, which is what voids it.
+        if (! $request->has('address')) {
+            abort_if($guardian->last_invited_at === null, 403, __('This invitation link is no longer valid. Please ask the club for a new one.'));
+
+            return;
+        }
+
+        abort_unless(
+            hash_equals($guardian->addressFingerprint(), (string) $request->query('address')),
+            403,
+            __('This invitation link is no longer valid. Please ask the club for a new one.'),
+        );
     }
 
     private function redirectAlreadyLinked(): RedirectResponse

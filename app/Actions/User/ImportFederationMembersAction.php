@@ -77,7 +77,12 @@ class ImportFederationMembersAction
 
         self::fillIfMissing($member, 'email', self::loginAddress($line, $member));
         self::fillIfMissing($member, 'birthdate', $row->birthdate);
-        self::fillIfMissing($member, $minor ? 'guardian_phone_number' : 'phone_number', $row->phone);
+        // A child's number is whoever answers for them: it goes on their
+        // guardian's sheet, see outsideGuardian() — unless the reviewer said it
+        // is the child's own.
+        if (! $minor || $line->phoneOwner === 'member') {
+            self::fillIfMissing($member, 'phone_number', $row->phone);
+        }
 
         return $member;
     }
@@ -200,8 +205,9 @@ class ImportFederationMembersAction
             // The federation lists one number per affiliate, and for a child it is
             // whoever answers for them. Recording it as the member's own would have
             // the club ring a ten-year-old about an unpaid affiliation.
-            'phone_number' => $minor ? null : $row->phone,
-            'guardian_phone_number' => $minor ? $row->phone : null,
+            // It goes on their guardian's sheet instead, see outsideGuardian(),
+            // unless the reviewer said it is the child's own.
+            'phone_number' => $minor && $line->phoneOwner !== 'member' ? null : $row->phone,
             'street' => $row->street,
             'city_code' => $row->cityCode,
             'city_name' => $row->cityName,
@@ -235,10 +241,29 @@ class ImportFederationMembersAction
             [
                 'first_name' => $adult->first_name,
                 'last_name' => $adult->last_name,
-                'phone' => $adult->phone_number ?? $adult->guardian_phone_number ?? '',
+                'phone' => $adult->phone_number ?? '',
                 'email' => $adult->email,
             ],
         );
+    }
+
+    /**
+     * The parent the reviewer names as holding a child's number, when nobody on
+     * the listing answers for the child. They carry no address: the listing's is
+     * not theirs, or the reviewer would have said so. A sheet already on file for
+     * the same person is caught afterwards, as a duplicate the office merges.
+     */
+    private static function guardianOfTheNumber(ImportLine $line): ?Guardian
+    {
+        if (blank($line->guardianFirstName) || blank($line->guardianLastName) || blank($line->row->phone)) {
+            return null;
+        }
+
+        return Guardian::create([
+            'first_name' => $line->guardianFirstName,
+            'last_name' => $line->guardianLastName,
+            'phone' => $line->row->phone,
+        ]);
     }
 
     private static function isMinor(FederationRow $row): bool
@@ -264,9 +289,12 @@ class ImportFederationMembersAction
             return;
         }
 
-        $guardian = $line->externalGuardian
-            ? self::outsideGuardian($line, $member)
-            : self::memberGuardian($line, $byLine);
+        $guardian = match (true) {
+            $line->externalGuardian => self::outsideGuardian($line, $member),
+            $line->guardianLineNumber !== null => self::memberGuardian($line, $byLine),
+            $line->phoneOwner === 'guardian' => self::guardianOfTheNumber($line),
+            default => null,
+        };
 
         if ($guardian === null) {
             return;
@@ -368,7 +396,10 @@ class ImportFederationMembersAction
             return null;
         }
 
-        return Guardian::firstOrCreate(
+        // The listing's number for a child is the one to reach their guardian on.
+        $phone = $line->guardianPhone ?? $line->row->phone;
+
+        $guardian = Guardian::firstOrCreate(
             [
                 'user_id' => null,
                 'email' => $line->guardianEmail,
@@ -376,9 +407,15 @@ class ImportFederationMembersAction
             [
                 'first_name' => $line->guardianFirstName,
                 'last_name' => $line->guardianLastName,
-                'phone' => $line->guardianPhone ?? '',
+                'phone' => $phone ?? '',
             ],
         );
+
+        if (blank($guardian->phone) && filled($phone)) {
+            $guardian->update(['phone' => $phone]);
+        }
+
+        return $guardian;
     }
 
     /**

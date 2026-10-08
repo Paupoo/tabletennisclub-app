@@ -31,6 +31,22 @@ use Illuminate\Support\Facades\URL;
 class SendGuardianInvitationAction
 {
     /**
+     * The signed link that turns this guardian sheet into an account.
+     *
+     * The link carries a fingerprint of the address it is mailed to: the account
+     * it creates takes that address as a verified login, so a link must stop
+     * working the moment the address on file is corrected.
+     */
+    public static function acceptanceUrl(Guardian $guardian): string
+    {
+        return URL::temporarySignedRoute(
+            'guardian-invitation.accept',
+            now()->addDays(User::INVITATION_LINK_VALIDITY_DAYS),
+            ['guardian' => $guardian->id, 'address' => $guardian->addressFingerprint()]
+        );
+    }
+
+    /**
      * @return bool Whether an invitation was actually queued.
      */
     public static function handle(Guardian $guardian): bool
@@ -51,13 +67,7 @@ class SendGuardianInvitationAction
             return self::inviteExistingAccount($guardian->refresh());
         }
 
-        $link = URL::temporarySignedRoute(
-            'guardian-invitation.accept',
-            now()->addDays(User::INVITATION_LINK_VALIDITY_DAYS),
-            ['guardian' => $guardian->id]
-        );
-
-        Mail::to($guardian->email)->queue(new InviteGuardianMail($guardian, $link));
+        Mail::to($guardian->email)->queue(new InviteGuardianMail($guardian, self::acceptanceUrl($guardian)));
 
         $guardian->update(['last_invited_at' => now()]);
 

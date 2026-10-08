@@ -39,7 +39,10 @@ Accès via **Mon espace → Mon profil** dans la navigation.
 | Identité | Prénom, nom, genre, date de naissance, photo |
 | Contact | Email, téléphone, adresse, ville |
 | Financier | IBAN (pour les remboursements) |
-| Tuteur | Téléphone du contact d'urgence (pour les mineurs) |
+
+### Vos adultes responsables
+
+Si un adulte responsable est rattaché à votre fiche, la carte **Adultes responsables** de votre profil l'affiche. Le crayon corrige ses coordonnées : prénom, nom, téléphone, email, IBAN. La correction vaut aussi pour vos frères et sœurs qu'il couvre. Un adulte qui a son propre compte corrige ses coordonnées lui-même, dans son profil.
 
 ### Mettre à jour votre profil
 

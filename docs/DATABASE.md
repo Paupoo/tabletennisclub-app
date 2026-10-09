@@ -129,6 +129,18 @@ erDiagram
 - `max_participants`, `is_active`
 - `pack_start_date`, `pack_end_date`, `excluded_dates`
 - `allow_discount`, `is_open_enrollment`
+- `is_camp`, `requires_approval`, `external_price` (euros), `externals_open_on`
+
+#### `external_registrations`
+- `id`, `registrable_type`, `registrable_id` (polymorphe : TrainingPack aujourd'hui)
+- `status` (enrolled/left/cancelled)
+- `first_name`, `last_name`, `is_minor`, `email`, `phone`
+- `guardian_first_name`, `guardian_last_name`, `guardian_phone`
+- `override_amount` (centimes), `override_reason`, `created_by`
+- `anonymized_at` — identité effacée 6 mois après l'événement ; porte ses `payments`
+
+#### `external_registration_training`
+- `external_registration_id`, `training_id`, `status` (present/excused/absent)
 
 #### `trainings`
 - `id`, `level`, `type`, `start`, `end`, `room_id`, `trainer_id`, `season_id`

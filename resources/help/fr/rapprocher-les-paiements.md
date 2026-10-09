@@ -63,6 +63,14 @@ Le rapprochement ne concerne que l'argent que le site attend : cotisations, ent
 
 Une ligne est soit rapprochée d'un paiement du site, soit justifiée par une pièce, jamais les deux.
 
+## Les paiements des non-membres
+
+Un stage peut accueillir des non-membres. Leurs paiements apparaissent dans la liste comme les autres, rangés avec les **stages**, sous le nom du participant ; la recherche les retrouve par ce nom. Le rapprochement automatique lit leur communication structurée ; à la main, l'application reconnaît aussi le nom de l'adulte qui paie pour un enfant.
+
+Une relance part à l'adresse encodée avec l'inscription. Un remboursement n'a pas d'IBAN : demandez-le à cette adresse et saisissez-le sur le remboursement.
+
+Six mois après le stage, l'identité d'un non-membre est effacée. Si de l'argent est encore en suspens, l'effacement attend : la tâche **« participants externes à anonymiser, argent en suspens »** vous le signale. Soldez ou remboursez, et l'effacement se fait la nuit suivante.
+
 ## Relancer les impayés
 
 Depuis la liste, sélectionnez les paiements concernés et envoyez le rappel groupé.

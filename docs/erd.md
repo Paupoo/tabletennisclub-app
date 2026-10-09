@@ -32,6 +32,9 @@ erDiagram
     ExpenseReport
     ExpenseReportFile
 
+    %% ClubAdmin/ExternalParticipants
+    ExternalRegistration
+
     %% ClubAdmin/Feedback
     FeedbackCampaign
     FeedbackCampaignResponse
@@ -144,6 +147,8 @@ erDiagram
     ExpenseReport ||--o{ Payment : "payments"
     ExpenseReport ||--o| Payment : "refund"
     ExpenseReport ||--o| BarRestocking : "restocking"
+    ExternalRegistration ||--o{ Payment : "payments"
+    ExternalRegistration }o--o{ Training : "trainings"
     FeedbackCampaign }o--o{ User : "participants"
     FeedbackCampaign ||--o{ FeedbackCampaignResponse : "responses"
     FeedbackCampaignResponse ||--o{ FeedbackEntry : "comments"
@@ -182,8 +187,8 @@ erDiagram
     User ||--o{ MemberDeparture : "departures"
     User ||--o| MemberDeparture : "departureThisSeason"
     User }o--o{ FamilyGroup : "familyGroups"
-    User ||--o| Guardian : "guardianRecord"
     User }o--o{ FeedbackCampaign : "feedbackCampaigns"
+    User ||--o| Guardian : "guardianRecord"
     User }o--o{ Guardian : "guardians"
     User ||--o{ CashRegister : "heldCashRegisters"
     User }o--o{ Interclub : "interclubs"
@@ -244,6 +249,7 @@ erDiagram
     TrainingLevel ||--o{ TrainingPack : "packs"
     TrainingLevel ||--o{ Training : "sessions"
     TrainingPack ||--o| EventPost : "eventPost"
+    TrainingPack ||--o{ ExternalRegistration : "externalRegistrations"
     TrainingPack }o--o{ Subscription : "subscriptions"
     TrainingPack ||--o{ Training : "trainings"
     TrainingPlan ||--o{ TrainingPlanAssignment : "assignments"

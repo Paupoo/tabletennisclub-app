@@ -313,6 +313,10 @@ If a training pack is full, members join the waitlist. When a spot opens (cancel
 
 A training camp is a pack ticked **Training camp (outside the membership fee)** at step 1 of the wizard. It behaves like a pack (enrolments, attendance, coach, waiting list) but is **invoiced separately**: its payment never touches the affiliation, and it counts neither in the membership total nor in the health-insurance attestation. No prorata, no automatic discount; a member's own price (a single day, half the camp) is set with a reason, when adding them or through **Price** in the roster. Members enrol from **My registrations**; with **Enrolment on approval**, their requests are accepted or refused on the camp's sheet. Stopping a camp refunds in full what was paid. The box locks once the first member is enrolled.
 
+### Non-members on a training camp
+
+A camp can take people who are neither members nor account holders. At the **Price** step of the wizard, **Open to non-members from** is the opt-in (empty: members only; until that day members have priority, then places are shared, first come first served) and **Price for non-members** defaults to the members' price. Both can be changed later, even once people are enrolled. Only the club enrols them, from the **Non-members** section of the camp's sheet: first and last name, email, optional mobile; for a minor, the responsible adult's name, mobile and email. One email confirms the place and asks to pay. A full camp is full: non-members have no waiting list. Withdrawal, encoding error, forced price and stopping the camp follow the members' rules. Coaches call the roll for them on the coach screen, and they appear in the attendance grid and the roster export. Six months after the camp ended, their identity is erased (money still open postpones it, and shows in the treasurer's tasks); prices, payments and attendance stay.
+
 ### Planning board
 
 Go to **Planning → Planning board**. It is a **decision-support tool** to compose the season's training groups and **visualise tension** (headcount vs capacity) — without touching real enrolments.

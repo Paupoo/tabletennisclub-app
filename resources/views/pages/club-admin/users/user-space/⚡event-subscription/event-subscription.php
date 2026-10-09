@@ -11,7 +11,6 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
-use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
@@ -19,21 +18,17 @@ use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
-use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
-use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Mary\Traits\Toast;
@@ -72,27 +67,6 @@ new class extends Component
     public ?int $selectedPaymentId = null;
 
     public User $user;
-
-    /**
-     * The general assemblies' minutes this member may read: sent to all, and
-     * opened by MeetingPolicy::readMinutes() — a mail gets lost, the minutes
-     * should not.
-     *
-     * @return Illuminate\Support\Collection<int, Meeting>
-     */
-    #[Computed]
-    public function assemblyMinutes(): Illuminate\Support\Collection
-    {
-        return Meeting::query()
-            ->with('minutes')
-            ->where('type', MeetingTypeEnum::GENERAL_ASSEMBLY)
-            ->whereHas('minutes', fn ($minutes) => $minutes->where('is_published', true)->whereNotNull('sent_to_all_at'))
-            ->orderByDesc('scheduled_at')
-            ->orderByDesc('meetings.id')
-            ->get()
-            ->filter(fn (Meeting $meeting): bool => Gate::allows('readMinutes', $meeting))
-            ->values();
-    }
 
     #[Computed]
     public function availablePartners(): array
@@ -196,7 +170,6 @@ new class extends Component
         return [
             'tournament' => __('Tournaments'),
             'meeting' => __('Meetings'),
-            'training' => __('Trainings'),
             'camp' => __('Training camps'),
         ];
     }
@@ -413,7 +386,7 @@ new class extends Component
      * Un stage n'est proposé qu'aux affiliés de sa saison : l'assurance de la
      * fédération couvre une saison, pas l'autre.
      *
-     * @return list<array{pack: TrainingPack, status: string|null, position: int|null, deadline: string|null, balance: float, open: bool, full: bool}>
+     * @return list<array{pack: TrainingPack, status: string|null, position: int|null, deadline: string|null, balance: float, open: bool, full: bool, spots: int|null}>
      */
     #[Computed]
     public function trainingCamps(): array
@@ -436,7 +409,7 @@ new class extends Component
 
         return TrainingPack::query()
             ->camps()
-            ->with(['room', 'season'])
+            ->with(['room', 'season', 'level', 'trainer'])
             ->whereIn('season_id', $subscriptions->keys())
             ->whereDate('pack_end_date', '>=', today())
             ->where(fn (Builder $q) => $q->where('is_active', true)->orWhereIn('id', $lines->keys()))
@@ -454,6 +427,11 @@ new class extends Component
                     'balance' => round((float) ($line?->payments->sum(fn (Payment $claim): float => $claim->balance()) ?? 0.0), 2),
                     'open' => $camp->is_active && $camp->enrollments_open,
                     'full' => ! $camp->hasAvailableSpot(),
+                    // Counted like `full`, so the card never reads « 1 spot
+                    // left » next to « Full »; null when the stage has no cap.
+                    'spots' => $camp->effectiveMaxParticipants() > 0
+                        ? max(0, $camp->effectiveMaxParticipants() - $camp->committedCount())
+                        : null,
                 ];
             })
             ->all();
@@ -498,45 +476,6 @@ new class extends Component
                     return $pivot?->payment_id && ! $pivot->has_paid;
                 })
                 ->values());
-    }
-
-    /** @return Collection<int, Training> */
-    #[Computed]
-    public function upcomingTrainingSessions(): Collection
-    {
-        // Training sessions never carry a standalone payment.
-        if ($this->onlyPayable) {
-            return new Collection;
-        }
-
-        $season = Season::where('is_active', true)->first();
-        if (! $season) {
-            return new Collection;
-        }
-
-        // Get training pack IDs the user is subscribed to via their active subscription
-        $packIds = $this->user->subscriptions()
-            ->where('season_id', $season->id)
-            ->whereNotIn('status', ['cancelled'])
-            ->with('trainingPacks')
-            ->get()
-            // Les packs quittés restent attachés pour la facturation au pro
-            // rata ; ils ne donnent plus accès aux séances.
-            ->flatMap(fn ($sub) => $sub->trainingPacks
-                ->reject(fn ($pack): bool => in_array($pack->pivot->status, ['left', 'cancelled'], true))
-                ->pluck('id'));
-
-        if ($packIds->isEmpty()) {
-            return new Collection;
-        }
-
-        return Training::with(['trainingPack.level', 'room'])
-            ->whereIn('training_pack_id', $packIds)
-            ->where('status', 'scheduled')
-            ->where('start', '>=', Carbon::now())
-            ->orderBy('start')
-            ->limit(5)
-            ->get();
     }
 
     public function with(): array
@@ -620,6 +559,6 @@ new class extends Component
             return;
         }
 
-        unset($this->trainingCamps, $this->pendingPayments, $this->upcomingTrainingSessions);
+        unset($this->trainingCamps, $this->pendingPayments);
     }
 };

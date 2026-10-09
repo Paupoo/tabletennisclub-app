@@ -85,25 +85,15 @@ it('reads the pack levels in the whole-club calendar without a lazy load', funct
     expect($levels)->toContain('Confirmé')->toContain('Débutant');
 })->group('training', 'calendar');
 
-it('reads the pack levels on the member event page without a lazy load', function (): void {
+it('reads the stage levels on the member event page without a lazy load', function (): void {
+    // The page no longer lists training sessions: the level it reads is the
+    // one on each stage card.
     $member = User::factory()->create();
-    $subscription = Subscription::factory()->for($member)->create([
+    Subscription::factory()->for($member)->create([
         'season_id' => $this->season->id,
         'status' => 'confirmed',
     ]);
-    $subscription->trainingPacks()->attach([
-        $this->packA->id => ['status' => 'enrolled'],
-        $this->packB->id => ['status' => 'enrolled'],
-    ]);
-
-    Training::where('training_pack_id', $this->packA->id)->update([
-        'start' => now()->addDays(3)->setTime(18, 0),
-        'end' => now()->addDays(3)->setTime(19, 30),
-    ]);
-    Training::where('training_pack_id', $this->packB->id)->update([
-        'start' => now()->addDays(4)->setTime(18, 0),
-        'end' => now()->addDays(4)->setTime(19, 30),
-    ]);
+    TrainingPack::whereKey([$this->packA->id, $this->packB->id])->update(['is_camp' => true, 'allow_discount' => false]);
 
     Livewire::actingAs($member)
         ->test('pages::club-admin.users.user-space.event-subscription', ['user' => $member])

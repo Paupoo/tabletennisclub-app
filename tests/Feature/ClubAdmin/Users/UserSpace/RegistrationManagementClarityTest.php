@@ -153,3 +153,19 @@ it('shows the chosen licence on a submitted registration', function (string $sta
     'confirmed competition' => ['confirmed', true, 'Competition licence'],
     'confirmed recreational' => ['confirmed', false, 'Recreational licence'],
 ]);
+
+it('writes the pack price the Belgian way', function (): void {
+    $season = makeOpenSeason();
+    TrainingPack::factory()->create([
+        'season_id' => $season->id,
+        'name' => 'Débutants',
+        'price' => 90,
+        'is_active' => true,
+    ]);
+    $user = User::factory()->create();
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.registration-management', ['user' => $user])
+        ->assertSee('90,00 €')
+        ->assertDontSee('90.00 €');
+});

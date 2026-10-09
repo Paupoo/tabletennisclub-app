@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Payments;
 
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
@@ -13,6 +14,9 @@ use Illuminate\Support\Facades\Mail;
 
 /**
  * Réclame une ligne de paiement d'affiliation, ou de stage, à ceux qui la règlent.
+ *
+ * Un participant externe n'a pas de compte : on lui écrit à l'adresse encodée
+ * avec son inscription — celle de l'adulte responsable pour un enfant.
  *
  * Un mailable ne passe pas par `routeNotificationForMail()` : sans
  * `contactEmails()`, l'invitation partirait vers `email`, null pour un compte
@@ -33,13 +37,7 @@ class InviteToPayAction
             return [];
         }
 
-        $member = $this->member($payment);
-
-        if (! $member instanceof User) {
-            return [];
-        }
-
-        $recipients = $member->contactEmails();
+        $recipients = $this->recipients($payment);
 
         foreach ($recipients as $recipient) {
             Mail::to($recipient)->send(new PaymentInvitationEmail($payment));
@@ -69,5 +67,19 @@ class InviteToPayAction
         }
 
         return null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function recipients(Payment $payment): array
+    {
+        $payable = $payment->payable;
+
+        if ($payable instanceof ExternalRegistration) {
+            return $payable->isAnonymized() || $payable->email === null ? [] : [$payable->email];
+        }
+
+        return $this->member($payment)?->contactEmails() ?? [];
     }
 }

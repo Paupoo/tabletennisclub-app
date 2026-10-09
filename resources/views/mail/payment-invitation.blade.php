@@ -1,7 +1,8 @@
 <x-mail::message>
 # Invitation au paiement
 
-Bonjour **{{ $payment->payable->user->first_name ?? '' }}**,
+{{-- Un participant externe n'a pas de compte : il est salué par le nom encodé avec son inscription. --}}
+Bonjour **{{ $payment->payable instanceof \App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration ? $payment->payable->greetingName() : ($payment->payable->user->first_name ?? '') }}**,
 
 @php $label = $payment->label() ?? ['type' => '', 'name' => '']; @endphp
 Vous avez un paiement en attente pour **{{ $label['type'] }}** : **{{ $label['name'] }}**.

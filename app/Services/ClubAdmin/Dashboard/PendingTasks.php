@@ -9,6 +9,7 @@ use App\Domains\Bar\Models\BarOrder;
 use App\Domains\Bar\Services\RestockingList;
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
+use App\Domains\ClubAdmin\ExternalParticipants\Services\ExternalParticipantErasure;
 use App\Domains\ClubAdmin\Feedback\Models\FeedbackEntry;
 use App\Domains\ClubAdmin\Feedback\Models\HelpOffer;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
@@ -140,6 +141,7 @@ class PendingTasks
             $this->newContacts($user),
             $this->feedbackToHandle($user),
             $this->transactionsToReconcile($user),
+            $this->externalErasuresHeldBack($user),
             $this->expenseReportsToDecide($user),
             $this->expenseReportsToArchive($user),
             $this->barTabsToCashIn($user),
@@ -232,6 +234,25 @@ class PendingTasks
         return $this->task('expense_reports', $count,
             '1 note de frais à traiter', ':count notes de frais à traiter',
             'o-receipt-percent', route('admin.treasury.expense-reports'));
+    }
+
+    /**
+     * The lines the bank screen lists as not, or not fully, reconciled. An
+     * open payment is not one: it waits for the member, not for the treasurer.
+     */
+    /**
+     * Non-members whose data should be gone, kept because money is still open:
+     * settling it — or writing it off — is what lets the erasure through.
+     */
+    private function externalErasuresHeldBack(User $user): ?PendingTask
+    {
+        if (! Feature::Treasury->enabled() || ! $user->can(Permission::PaymentsReconcile->value)) {
+            return null;
+        }
+
+        return $this->task('external_erasures', app(ExternalParticipantErasure::class)->heldBack()->count(),
+            '1 participant externe à anonymiser, argent en suspens', ':count participants externes à anonymiser, argent en suspens',
+            'o-eye-slash', route('admin.treasury.payments'));
     }
 
     private function failedJobs(User $user): ?PendingTask
@@ -441,10 +462,6 @@ class PendingTasks
             'o-trophy', route('admin.tournaments.index'));
     }
 
-    /**
-     * The lines the bank screen lists as not, or not fully, reconciled. An
-     * open payment is not one: it waits for the member, not for the treasurer.
-     */
     private function transactionsToReconcile(User $user): ?PendingTask
     {
         if (! Feature::Treasury->enabled() || ! $user->can(Permission::PaymentsReconcile->value)) {

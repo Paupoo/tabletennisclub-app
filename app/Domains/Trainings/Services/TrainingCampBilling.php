@@ -9,13 +9,14 @@ use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Actions\ClubAdmin\Payments\InviteToPayAction;
 use App\Actions\ClubAdmin\Payments\OpenRefundAction;
 use App\Actions\ClubAdmin\Subscriptions\ReduceOutstandingInvoiceAction;
+use App\Contracts\CampEnrolment;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Permission;
-use App\Domains\Subscriptions\Notifications\SubscriptionRefundRequestedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Keeps a stage's invoice in step with what the line costs.
  *
- * A stage line carries its own payments ({@see SubscriptionTrainingPack}). One
+ * A stage line carries its own payments ({@see SubscriptionTrainingPack}), and
+ * so does a non-member's registration ({@see CampEnrolment}). One
  * rule answers every change — enrolment, forced amount, encoding error, the
  * club calling the stage off, the affiliation cancelled: what the line is
  * still claiming must equal what it costs.
@@ -38,9 +40,6 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class TrainingCampBilling
 {
-    /** Statuses whose line is owed in full: a stage has no prorata. */
-    private const array BILLABLE_STATUSES = ['enrolled', 'left'];
-
     public function __construct(private TrainingPackExit $exit = new TrainingPackExit) {}
 
     /**
@@ -82,7 +81,7 @@ final readonly class TrainingCampBilling
     /**
      * What is still claimed on the line, refunds already committed deducted.
      */
-    public function outstandingClaim(SubscriptionTrainingPack $line): float
+    public function outstandingClaim(CampEnrolment&Model $line): float
     {
         $payments = $line->payments()->get();
 
@@ -98,7 +97,7 @@ final readonly class TrainingCampBilling
      *
      * @return array{reduced: float, refund: float}
      */
-    public function project(SubscriptionTrainingPack $line, float $target): array
+    public function project(CampEnrolment&Model $line, float $target): array
     {
         $payments = $line->payments()->get();
         $claims = $this->claims($payments);
@@ -170,11 +169,9 @@ final readonly class TrainingCampBilling
      * @param  string  $refundReason  The line the treasurer reads in the refund mail.
      * @return array{issued: Payment|null, refunded: float}
      */
-    public function sync(SubscriptionTrainingPack $line, string $refundReason = ''): array
+    public function sync(CampEnrolment&Model $line, string $refundReason = ''): array
     {
-        $line->loadMissing('trainingPack', 'subscription.user');
-
-        $target = in_array($line->status, self::BILLABLE_STATUSES, true) ? $line->getAmountDue() : 0.0;
+        $target = $line->isOwed() ? $line->getAmountDue() : 0.0;
 
         $payments = $line->payments()->get();
         $claims = $this->claims($payments);
@@ -196,7 +193,7 @@ final readonly class TrainingCampBilling
     /**
      * @param  Collection<int, Payment>  $claims
      */
-    private function claimLess(SubscriptionTrainingPack $line, Collection $claims, float $excess, float $committed, string $refundReason): float
+    private function claimLess(CampEnrolment&Model $line, Collection $claims, float $excess, float $committed, string $refundReason): float
     {
         foreach ($claims->where('status', 'pending')->sortByDesc('id') as $payment) {
             if ($excess <= 0.0) {
@@ -230,13 +227,11 @@ final readonly class TrainingCampBilling
             return 0.0;
         }
 
-        $subscription = $line->subscription;
-
-        $payment = (new OpenRefundAction)->forPayable($line, $refund, $subscription->user?->iban);
+        $payment = (new OpenRefundAction)->forPayable($line, $refund, $line->refundIban());
 
         User::permission(Permission::PaymentsRefund->value)
             ->get()
-            ->each->notify(new SubscriptionRefundRequestedNotification($payment, $subscription, $refundReason));
+            ->each->notify($line->refundRequestedNotification($payment, $refundReason));
 
         return $refund;
     }
@@ -244,7 +239,7 @@ final readonly class TrainingCampBilling
     /**
      * @param  Collection<int, Payment>  $claims
      */
-    private function claimMore(SubscriptionTrainingPack $line, Collection $claims, float $delta): ?Payment
+    private function claimMore(CampEnrolment&Model $line, Collection $claims, float $delta): ?Payment
     {
         // An unpaid request grows rather than doubling up: the member reads one
         // structured communication, not two for the same stage.

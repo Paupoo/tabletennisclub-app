@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -420,6 +421,18 @@ describe('capacity ignores terminated subscriptions', function (): void {
 
         expect($this->pack->committedCount())->toBe(1);
         expect($this->pack->enrolledCount())->toBe(1);
+    });
+
+    it('counts the non-members holding a place on a camp', function (): void {
+        $member = Subscription::factory()->create([
+            'season_id' => $this->season->id,
+            'status' => 'confirmed',
+        ]);
+        $member->trainingPacks()->attach($this->pack->id, ['status' => 'enrolled']);
+        ExternalRegistration::factory()->count(2)->for($this->pack, 'registrable')->create();
+        ExternalRegistration::factory()->for($this->pack, 'registrable')->create(['status' => 'cancelled']);
+
+        expect($this->pack->enrolledCount())->toBe(3);
     });
 
     it('excludes cancelled members from the waitlist count', function (): void {

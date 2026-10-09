@@ -212,7 +212,8 @@ class TrainingPack extends Model
         return $this->subscriptions()
             ->affiliated()
             ->wherePivot('status', 'enrolled')
-            ->count();
+            ->count()
+            + $this->externalRegistrations()->whereIn('status', ExternalRegistration::SEATED_STATUSES)->count();
     }
 
     public function eventPost(): MorphOne

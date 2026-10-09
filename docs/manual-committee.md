@@ -95,6 +95,10 @@ When creating or editing a **minor** (under 18), the **Guardian/Dependents** sec
 
 One guardian can cover multiple siblings. A guardian who is also a club member can be searched from the existing member list.
 
+**Correcting a guardian:** on the member file or in the edit form, the pencil on the guardian's card opens a drawer (first name, last name, phone, email, IBAN). The record covers every child it answers for, and the drawer names them. A guardian with an account of their own has no pencil: their details are those of their account, and they correct them in their profile. Correcting the email voids the invitation already sent: send it again. The member can also correct their guardians from My profile, but not a parent acting for them by proxy.
+
+**Guardian on file twice:** two records sharing an email or a phone number, or a record carrying a member's email, show on the dashboard ("X responsible adults on file twice"). **Merge the two records**, in the drawer, links the record to the member or folds the two records into one.
+
 **Who receives a minor's emails?** Every guardian with an address, plus the minor if they have one. Each address gets **its own message**: two separated parents never see each other's address. An adult without an address is reached the same way, through their guardians.
 
 **Note:** A minor cannot complete affiliation without a guardian linked. The system warns on save if missing, and blocks affiliation until added.

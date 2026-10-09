@@ -86,6 +86,8 @@ Les lignes sont rangées en quatre sections :
 - **Rien à signaler** : membres connus que l'import mettra à jour (un nouveau classement, typiquement).
 - **Déjà à jour** : repliée ; rien ne sera écrit.
 
+**Le numéro d'un mineur sans tuteur.** Quand un mineur a un numéro dans le listing, aucun tuteur et pas de numéro à lui, la carte demande **À qui est ce numéro ?** : à un parent (renseignez son prénom et son nom, une fiche tuteur est créée avec ce numéro), ou au membre lui-même. Sans réponse, la ligne reste dans « Demande votre attention », l'import se fait quand même et le numéro n'est pas conservé ; la question reviendra au prochain import.
+
 Un membre que le club connaît déjà n'est plus interrogé sur ce qui a été tranché la première fois : la découpe d'un nom long (une mise à jour n'écrit jamais les noms), une adresse décalée quand le club en a une (il garde la sienne), ou l'adresse d'un mineur qui a déjà un tuteur ou son propre accès.
 
 Voyez le [Manuel membre du comité](manual-committee-fr.md) pour le détail de l'écran de revue.

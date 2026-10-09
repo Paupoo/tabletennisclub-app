@@ -95,6 +95,10 @@ Lors de la création ou de la modification d'un **mineur** (moins de 18 ans), la
 
 Un tuteur peut couvrir plusieurs frères et sœurs. Un tuteur qui est également membre du club peut être recherché dans la liste des membres existants.
 
+**Corriger un tuteur :** sur la fiche du membre ou dans son formulaire, le crayon de la carte du tuteur ouvre un tiroir (prénom, nom, téléphone, email, IBAN). La fiche vaut pour tous les enfants qu'il couvre, et le tiroir les nomme. Un tuteur qui a son propre compte n'a pas de crayon : ses coordonnées sont celles de son compte, il les corrige dans son profil. Corriger l'email annule l'invitation déjà envoyée : renvoyez-la. Le membre peut aussi corriger ses tuteurs depuis Mon profil, mais pas un parent qui agit pour lui par procuration.
+
+**Tuteur encodé deux fois :** deux fiches au même email ou au même téléphone, ou une fiche à l'email d'un membre, apparaissent au tableau de bord (« X adultes responsables encodés deux fois »). Le bouton **Fusionner les deux fiches**, dans le tiroir, rattache la fiche au membre ou réunit les deux fiches en une.
+
 **Qui reçoit les emails d'un mineur ?** Tous ses tuteurs qui ont une adresse, plus le mineur lui-même s'il en a une. Chaque adresse reçoit **son propre message** : deux parents séparés ne voient jamais l'adresse l'un de l'autre. Un adulte sans adresse est joint de la même façon, via ses tuteurs.
 
 **Important :** Un mineur ne peut pas finaliser son affiliation sans tuteur rattaché. Le système avertit à l'enregistrement si aucun tuteur n'est renseigné, et bloque l'affiliation jusqu'à ce qu'il soit ajouté.

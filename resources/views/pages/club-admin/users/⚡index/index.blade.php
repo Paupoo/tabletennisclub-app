@@ -125,6 +125,10 @@
                     <div class="min-w-0 flex-1">
                         <div class="font-medium">{{ $user->first_name }} {{ $user->last_name }}</div>
                         <div class="truncate text-xs text-muted">{{ $user->email }}</div>
+                        @if ($user->guardian_phone_number)
+                            {{-- The family number of a minor nobody is named for yet: all the office has to call them. --}}
+                            <div class="truncate text-xs text-muted">{{ __('Family: :phone', ['phone' => $user->guardian_phone_number]) }}</div>
+                        @endif
                         <div class="mt-1 flex flex-wrap items-center gap-1.5">
                             <x-admin.users.membership-status-badge :user="$user"
                                 :last-season="$this->previousSeasonName" size="badge-xs" />
@@ -258,6 +262,9 @@
                         </div>
                         @if ($user->email)
                             <div class="max-w-32 truncate text-xs text-muted xl:max-w-56" title="{{ $user->email }}">{{ $user->email }}</div>
+                        @endif
+                        @if ($user->guardian_phone_number)
+                            <div class="max-w-32 truncate text-xs text-muted xl:max-w-56">{{ __('Family: :phone', ['phone' => $user->guardian_phone_number]) }}</div>
                         @endif
                     @endscope
                     @scope('cell_affiliation', $user)

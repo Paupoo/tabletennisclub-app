@@ -42,5 +42,13 @@ readonly class ImportLine
         public ?string $guardianLastName = null,
         public ?string $guardianEmail = null,
         public ?string $guardianPhone = null,
+        /**
+         * Whose the listed number is, for a minor nobody answers for:
+         * `guardian` records the parent named above with it, `member` keeps it
+         * as the child's own. Null leaves it unrecorded.
+         *
+         * @var 'guardian'|'member'|null
+         */
+        public ?string $phoneOwner = null,
     ) {}
 }

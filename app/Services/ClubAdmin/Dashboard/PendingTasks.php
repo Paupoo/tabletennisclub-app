@@ -17,6 +17,7 @@ use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\ClubAdmin\Users\Services\GuardianDuplicates;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -137,6 +138,7 @@ class PendingTasks
             $this->campRequestsAwaitingDecision($user),
             $this->unpaidAffiliations($user),
             $this->incompleteProfiles($user),
+            $this->guardianDuplicates($user),
             $this->membersNotAffiliated($user),
             $this->newContacts($user),
             $this->feedbackToHandle($user),
@@ -281,6 +283,25 @@ class PendingTasks
         return $this->task('feedback', $count,
             "1 avis ou offre d'aide à traiter", ":count avis et offres d'aide à traiter",
             'o-chat-bubble-left-ellipsis', route('admin.feedback.index'), 'info');
+    }
+
+    /**
+     * Responsible adults on file twice, often found by a member correcting a
+     * number from their profile. Merging is done from the file of a member the
+     * duplicate answers for, so the task opens the first one.
+     */
+    private function guardianDuplicates(User $user): ?PendingTask
+    {
+        if (! $user->can(Permission::UsersUpdate->value)) {
+            return null;
+        }
+
+        $duplicates = (new GuardianDuplicates)->toMerge();
+        $ward = $duplicates->flatMap->users->first();
+
+        return $this->task('guardian_duplicates', $duplicates->count(),
+            '1 adulte responsable encodé deux fois', ':count adultes responsables encodés deux fois',
+            'o-users', $ward instanceof User ? route('admin.users.show', $ward) : route('admin.users.index'), 'info');
     }
 
     private function incompleteProfiles(User $user): ?PendingTask

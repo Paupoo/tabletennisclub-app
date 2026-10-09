@@ -107,6 +107,27 @@
                     {{ __('Reached through the adult listed under the same address.') }}
                 </p>
             @endif
+
+            @if (($row['asksPhoneOwner'] ?? false) && ! $row['guardianAddress'])
+                <div class="mt-3">
+                    <x-radio wire:model.live="rows.{{ $line }}.phoneOwner"
+                        :label="__('Whose is this number?') . ' ' . $row['phone']"
+                        :options="[
+                            ['id' => 'guardian', 'name' => __('A parent')],
+                            ['id' => 'member', 'name' => __('The member themself')],
+                        ]"
+                        :hint="__('Left unanswered, the number is not kept.')" />
+
+                    @if (($row['phoneOwner'] ?? null) === 'guardian')
+                        <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:max-w-lg">
+                            <x-input wire:model="rows.{{ $line }}.guardianFirstName" class="input-sm"
+                                :label="__('Guardian first name')" />
+                            <x-input wire:model="rows.{{ $line }}.guardianLastName" class="input-sm"
+                                :label="__('Guardian last name')" />
+                        </div>
+                    @endif
+                </div>
+            @endif
         </div>
     @endif
 </div>

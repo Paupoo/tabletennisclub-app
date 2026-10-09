@@ -97,6 +97,7 @@
                                         {{ $guardian->phone }}{{ $guardian->email ? ' · ' . $guardian->email : '' }}
                                     </div>
                                 </div>
+                                <x-admin.users.guardian-edit-action :guardian="$guardian" />
                                 <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-x-mark"
                                     :tooltip="__('Unlink')" wire:click="detachGuardian({{ $guardian->id }})" :aria-label="__('Unlink')" />
                             </div>
@@ -699,4 +700,6 @@
                 :disabled="strtoupper($anonymizeConfirmText) !== 'ANONYMIZE'" />
         </x-slot:actions>
     </x-app-modal>
+
+    <livewire:admin.users.guardian-editor />
 </div>

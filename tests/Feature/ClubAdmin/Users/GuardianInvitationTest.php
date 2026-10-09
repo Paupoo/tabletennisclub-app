@@ -15,7 +15,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\URL;
 use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
@@ -208,11 +207,7 @@ describe('accepting a guardian invitation', function (): void {
     /** The signed link the club mails out. */
     function acceptanceLink(Guardian $guardian): string
     {
-        return URL::temporarySignedRoute(
-            'guardian-invitation.accept',
-            now()->addDays(User::INVITATION_LINK_VALIDITY_DAYS),
-            ['guardian' => $guardian->id]
-        );
+        return SendGuardianInvitationAction::acceptanceUrl($guardian);
     }
 
     it('refuses a link nobody signed', function (): void {
@@ -289,6 +284,69 @@ describe('accepting a guardian invitation', function (): void {
         $guardian = guardianOf(ward(), ['email' => 'parent@example.com', 'user_id' => User::factory()->create()->id]);
 
         get(acceptanceLink($guardian))->assertRedirect(route('login'));
+    });
+
+    /*
+     * The link proves the address it was mailed to, and the account it creates
+     * takes the address on file as a verified login. Once the address has been
+     * corrected, whoever holds the old link must not be able to claim the new one.
+     */
+    it('refuses a link mailed before the address was corrected', function (): void {
+        $guardian = guardianOf(ward(), ['email' => 'old@example.com']);
+        $link = acceptanceLink($guardian);
+
+        $guardian->update(['email' => 'new@example.com']);
+
+        get($link)->assertForbidden();
+    });
+
+    it('creates no account from a link mailed before the address was corrected', function (): void {
+        $guardian = guardianOf(ward(), ['email' => 'old@example.com']);
+        $link = acceptanceLink($guardian);
+
+        $guardian->update(['email' => 'new@example.com']);
+
+        post($link, [
+            'first_name' => 'Cristina',
+            'last_name' => 'Decreton',
+            'gender' => 'WOMEN',
+            'password' => 'Sup3r-Secret!',
+            'password_confirmation' => 'Sup3r-Secret!',
+        ])->assertForbidden();
+
+        expect(User::where('email', 'new@example.com')->exists())->toBeFalse();
+    });
+
+    /*
+     * Links mailed before the fingerprint existed carry none. Until they expire,
+     * one still counts while the sheet says it is waiting on it: a corrected
+     * address clears that, see the test above.
+     */
+    it('honours a link mailed before links named their address', function (): void {
+        $guardian = guardianOf(ward(), ['email' => 'parent@example.com', 'last_invited_at' => now()->subDay()]);
+        $link = URL::temporarySignedRoute('guardian-invitation.accept', now()->addDays(User::INVITATION_LINK_VALIDITY_DAYS), ['guardian' => $guardian->id]);
+
+        get($link)->assertOk();
+    });
+
+    it('refuses such a link once the address was corrected', function (): void {
+        $guardian = guardianOf(ward(), ['email' => 'old@example.com', 'last_invited_at' => now()->subDay()]);
+        $link = URL::temporarySignedRoute('guardian-invitation.accept', now()->addDays(User::INVITATION_LINK_VALIDITY_DAYS), ['guardian' => $guardian->id]);
+
+        $guardian->update(['email' => 'new@example.com']);
+
+        get($link)->assertForbidden();
+    });
+
+    it('puts the guardian back among those to invite once their address is corrected', function (): void {
+        Mail::fake();
+        $ward = ward();
+        $guardian = guardianOf($ward, ['email' => 'old@example.com']);
+        SendGuardianInvitationAction::handle($guardian);
+
+        $guardian->refresh()->update(['email' => 'new@example.com']);
+
+        expect($ward->fresh()->load('guardians.member')->guardianshipStatus())->toBe('guardian_to_invite');
     });
 
     it('lets the parent pick when they answer for several members', function (): void {

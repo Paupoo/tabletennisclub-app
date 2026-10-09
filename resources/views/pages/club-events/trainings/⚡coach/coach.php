@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\TrainingCancellationType;
@@ -34,6 +35,9 @@ new class extends Component
     public string $cancelNote = '';
 
     public string $cancelType = 'FREE';
+
+    /** @var array<int, string> status keyed by external registration id */
+    public array $externalAttendanceStatus = [];
 
     // ── Session drill-down ────────────────────────────────────────────────────
     public ?int $selectedSessionId = null;
@@ -148,6 +152,27 @@ new class extends Component
             ->get();
     }
 
+    /**
+     * The non-members of the session's stage, called like the members.
+     *
+     * @return Collection<int, ExternalRegistration>
+     */
+    #[Computed]
+    public function externalParticipants(): Collection
+    {
+        $pack = $this->selectedSession?->trainingPack;
+
+        if (! $pack) {
+            return new Collection;
+        }
+
+        return $pack->externalRegistrations()
+            ->whereIn('status', ExternalRegistration::SEATED_STATUSES)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
+    }
+
     // ── Cancellation ──────────────────────────────────────────────────────────
 
     public function openCancel(): void
@@ -215,6 +240,28 @@ new class extends Component
         $this->attendanceStatus[$userId] = $status;
 
         app(TrainingAttendanceService::class)->record($session, User::findOrFail($userId), $status);
+    }
+
+    public function setExternalAttendance(int $registrationId, string $status): void
+    {
+        if (! $this->selectedSessionId || ! in_array($status, ['present', 'excused', 'absent'], true)) {
+            return;
+        }
+
+        $session = Training::with('trainingPack')->findOrFail($this->selectedSessionId);
+
+        Gate::authorize('recordAttendance', $session);
+
+        // Only a non-member of this session's stage: an id from elsewhere is ignored.
+        $registration = $session->trainingPack?->externalRegistrations()->find($registrationId);
+
+        if (! $registration instanceof ExternalRegistration) {
+            return;
+        }
+
+        $this->externalAttendanceStatus[$registration->id] = $status;
+
+        app(TrainingAttendanceService::class)->recordExternal($session, $registration, $status);
     }
 
     /**
@@ -285,7 +332,9 @@ new class extends Component
             $this->attendanceStatus[$trainee->id] = $trainee->pivot->status;
         }
 
-        unset($this->selectedSession, $this->enrolledMembers, $this->walkIns, $this->attendeeOptions);
+        $this->externalAttendanceStatus = app(TrainingAttendanceService::class)->externalStatuses($session);
+
+        unset($this->selectedSession, $this->enrolledMembers, $this->walkIns, $this->attendeeOptions, $this->externalParticipants);
     }
 
     /**
@@ -315,6 +364,7 @@ new class extends Component
             'upcomingSessions' => $this->upcomingSessions,
             'selectedSession' => $this->selectedSession,
             'enrolledMembers' => $this->enrolledMembers,
+            'externalParticipants' => $this->externalParticipants,
             'walkIns' => $this->walkIns,
             'attendeeOptions' => $this->attendeeOptions,
             'breadcrumbs' => $this->getBreadcrumbs(),

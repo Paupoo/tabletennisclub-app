@@ -167,6 +167,56 @@
                     @endforelse
                 </x-card>
 
+                {{-- Non-members of the stage: called like the members, reached through the number they gave. --}}
+                @if ($externalParticipants->isNotEmpty())
+                    <x-card class="mt-4" :title="__('Non-members')">
+                        @foreach ($externalParticipants as $participant)
+                            @php
+                                $currentStatus = $externalAttendanceStatus[$participant->id] ?? 'enrolled';
+                                $callable = $participant->is_minor ? $participant->guardian_phone : $participant->phone;
+                            @endphp
+                            <div class="border-b border-base-300 py-4 last:border-0" wire:key="external-{{ $participant->id }}">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div>
+                                        <p class="font-medium">
+                                            {{ $participant->first_name }} {{ $participant->last_name }}
+                                            <x-badge class="badge-accent badge-soft badge-xs ml-1" :value="__('non-member')" />
+                                        </p>
+                                        <div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-base-content/60">
+                                            @if ($participant->is_minor)
+                                                <span class="text-warning-content">
+                                                    {{ __('Responsible adult') }}&nbsp;:
+                                                    {{ $participant->guardian_first_name }} {{ $participant->guardian_last_name }}
+                                                    @if ($callable)
+                                                        · {{ $callable }}
+                                                    @endif
+                                                </span>
+                                            @elseif ($callable)
+                                                <span>{{ $callable }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    <div class="flex shrink-0 gap-1">
+                                        <x-button
+                                            @class(['btn-xs', 'btn-success' => $currentStatus === 'present', 'btn-ghost' => $currentStatus !== 'present'])
+                                            icon="o-check" :tooltip="__('Present')"
+                                            wire:click="setExternalAttendance({{ $participant->id }}, 'present')" />
+                                        <x-button
+                                            @class(['btn-xs', 'btn-warning' => $currentStatus === 'excused', 'btn-ghost' => $currentStatus !== 'excused'])
+                                            icon="o-clock" :tooltip="__('Excused')"
+                                            wire:click="setExternalAttendance({{ $participant->id }}, 'excused')" />
+                                        <x-button
+                                            @class(['btn-xs', 'btn-error' => $currentStatus === 'absent', 'btn-ghost' => $currentStatus !== 'absent'])
+                                            icon="o-x-mark" :tooltip="__('Absent')"
+                                            wire:click="setExternalAttendance({{ $participant->id }}, 'absent')" />
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </x-card>
+                @endif
+
                 {{-- Came without being enrolled --}}
                 <x-card class="mt-4" :title="__('Came without being enrolled')">
                     <p class="mb-3 text-xs text-base-content/50">

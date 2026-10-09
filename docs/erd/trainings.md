@@ -49,6 +49,8 @@ erDiagram
         bool enrollments_open
         bool is_camp
         bool requires_approval
+        int external_price "nullable"
+        datetime externals_open_on "nullable"
     }
     TrainingPlan {
         int id PK
@@ -79,6 +81,7 @@ erDiagram
     TrainingLevel ||--o{ TrainingPack : "packs"
     TrainingLevel ||--o{ Training : "sessions"
     TrainingPack ||--o| EventPost : "eventPost"
+    TrainingPack ||--o{ ExternalRegistration : "externalRegistrations"
     TrainingPack }o--o{ Subscription : "subscriptions"
     TrainingPack ||--o{ Training : "trainings"
     TrainingPlan ||--o{ TrainingPlanAssignment : "assignments"

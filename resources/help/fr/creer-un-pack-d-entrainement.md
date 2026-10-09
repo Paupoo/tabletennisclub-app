@@ -1,6 +1,6 @@
 ---
 title: Créer et gérer un pack d'entraînement
-summary: L'assistant en trois étapes, les séances générées automatiquement, ouvrir ou fermer les inscriptions, ajouter un membre à la main, les stages facturés à part, lire les présences et gérer les niveaux.
+summary: L'assistant en trois étapes, les séances générées automatiquement, ouvrir ou fermer les inscriptions, ajouter un membre à la main, les stages facturés à part et ouverts aux non-membres, lire les présences et gérer les niveaux.
 audience: committee
 order: 16
 ---
@@ -111,6 +111,31 @@ La case **Inscription sur validation** (sous la case Stage) transforme l'inscrip
 Retirer un membre suit les deux sorties habituelles : **il a arrêté de venir** — le stage reste dû en entier ; **erreur d'encodage** — la demande de paiement est annulée et ce qui a été payé est remboursé. **Arrêter** un stage rembourse tout le monde en entier.
 
 > La case **Stage** se fige dès le premier inscrit. La basculer changerait d'un coup ce que doivent les inscrits. Si elle a été mal cochée, recréez le pack.
+
+## Ouvrir un stage aux non-membres
+
+Un stage peut accueillir des personnes qui ne sont pas membres du club et n'ont pas de compte : un enfant d'une école voisine, un adulte qui veut découvrir le ping. C'est un choix par stage, à faire dans l'assistant, à l'étape **Prix** :
+
+- **Ouvert aux non-membres à partir du** : vide, le stage reste réservé aux membres. Rempli, les membres ont la priorité jusqu'à cette date ; à partir de ce jour, les places sont communes, premier arrivé premier servi ;
+- **Prix pour les non-membres** : vide, ils paient le même prix que les membres.
+
+Ces deux champs se modifient à tout moment, même avec des inscrits : **Modifier**, puis **Suivant** jusqu'à l'étape **Prix**.
+
+### Inscrire un non-membre
+
+Sur la fiche du stage, onglet **Membres**, la section **Non-membres** propose **Ajouter un non-membre**. Avant la date d'ouverture, elle affiche la date à la place du bouton ; un stage complet affiche **Stage complet**. Il n'y a pas de liste d'attente pour les non-membres : sans compte, ils ne pourraient pas confirmer une place offerte.
+
+On encode le strict nécessaire : prénom, nom, e-mail, GSM facultatif. Pour un **mineur**, cochez la case : l'e-mail est alors celui de l'adulte responsable, et son nom et son GSM sont obligatoires — c'est le numéro que le coach appelle.
+
+Un seul e-mail part, à l'adresse encodée : il confirme l'inscription et demande le paiement (montant, IBAN, communication structurée, QR). Décochez **Envoyer maintenant** si la personne paie en liquide sur place. Un prix particulier se force à l'ajout, avec un motif.
+
+### Corriger, rembourser, retirer
+
+Le menu de la ligne propose **Modifier** (une adresse mal tapée), **Prix**, **Renvoyer la confirmation** tant qu'il reste quelque chose à payer, et **Retirer du stage**. Comme pour un membre : **le participant se désiste**, le prix reste dû ; **erreur d'encodage**, la demande de paiement est annulée et ce qui a été payé part en remboursement. Le club ne connaît pas leur numéro de compte : le trésorier le demande à l'adresse encodée.
+
+### Ce que le club garde, et combien de temps
+
+Un non-membre n'apparaît dans aucune liste de membres, aucune communication, aucun compteur. **Six mois après la fin du stage**, son nom, son e-mail, son GSM et ceux de l'adulte responsable sont effacés ; la ligne devient « Participant externe n° … ». Le prix, les paiements et les présences restent, pour les comptes. Tant que de l'argent est en suspens (impayé, remboursement à faire), l'effacement attend et le trésorier le voit dans ses tâches.
 
 ## Lire les présences
 

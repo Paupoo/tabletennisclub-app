@@ -44,6 +44,10 @@ En bas de la liste, **Venus sans être inscrits** vous laisse ajouter n'importe 
 
 Cela **note sa présence, rien d'autre** : personne n'est inscrit au pack, rien n'est facturé, aucun e-mail ne part. Vous rendez visible ce que vous avez vu ; le comité décide de la suite.
 
+### Les non-membres d'un stage
+
+Un stage ouvert aux non-membres les liste dans une carte **Non-membres**, sous les inscrits, avec les mêmes trois boutons. Pour un enfant, vous voyez l'**adulte responsable** et son numéro. Ils se pointent et se valident exactement comme les membres : non touchés, ils sont notés absents.
+
 ## Le taux de présence
 
 En face de chaque membre, l'application affiche **son taux de présence sur ce pack** : le nombre de séances où il a été noté *présent*, rapporté aux séances **dont le pointage a été validé**.

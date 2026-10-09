@@ -66,6 +66,10 @@ it('never sends a member to a page the committee alone can open', function (): v
         // the treasurer's, taken on the member's own file.
         'RefundRequestedNotification.php',
         'SubscriptionRefundRequestedNotification.php',
+        // TrainingCampBilling sends it to User::permission('payments.refund') as
+        // well; both roles holding it also hold payments.view, which the
+        // treasury payments screen asks for. A non-member is never notified.
+        'ExternalRefundRequestedNotification.php',
         // SendTeamCreatedNotification sends it to User::role('administrator').
         'TeamCreatedNotification.php',
         // RemindCaptainsCommand sends it to the captain of the team only, and

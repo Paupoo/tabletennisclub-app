@@ -79,6 +79,14 @@ Schedule::command('attestations:purge')
     ->withoutOverlapping();
 
 /*
+ * A non-member's identity is kept six months after their event, then erased.
+ * One with money still open waits, and shows in the treasurer's tasks.
+ */
+Schedule::command('external-participants:anonymize')
+    ->dailyAt('03:40')
+    ->withoutOverlapping();
+
+/*
  * Notes de frais. Le digest part le dimanche soir, pour que la semaine du
  * trésorier commence avec la liste de ce qui attend. La purge, elle, tourne
  * même quand le domaine est coupé : éteindre la fonction ne doit pas prolonger

@@ -396,6 +396,11 @@
                         </div>
                     @endforeach
                 </div>
+
+                {{-- Les non-membres d'un stage, à part : ils n'ont ni affiliation ni liste d'attente. --}}
+                @if ($selectedPack?->is_camp)
+                    <livewire:admin.trainings.camp-externals :pack-id="$selectedPack->id" :key="'camp-externals-' . $selectedPack->id" />
+                @endif
             </x-tab>
 
             {{-- ── Sessions ─────────────────────────────────────────────────── --}}
@@ -490,12 +495,27 @@
                             </thead>
 
                             <tbody>
-                                @foreach (array_merge($matrix['members'], $matrix['walkIns']) as $index => $row)
-                                    @php $isWalkIn = $index >= count($matrix['members']); @endphp
-                                    <tr @class(['border-t-2 border-warning/40' => $isWalkIn && $index === count($matrix['members'])])>
+                                {{-- Membres, puis non-membres du stage (attendus eux aussi), puis
+                                     les présents non inscrits, chaque groupe séparé d'un trait. --}}
+                                @php
+                                    $rows = [
+                                        ...array_map(fn (array $row): array => $row + ['kind' => 'member'], $matrix['members']),
+                                        ...array_map(fn (array $row): array => $row + ['kind' => 'external'], $matrix['externals'] ?? []),
+                                        ...array_map(fn (array $row): array => $row + ['kind' => 'walkIn'], $matrix['walkIns']),
+                                    ];
+                                @endphp
+                                @foreach ($rows as $index => $row)
+                                    @php $startsGroup = $index > 0 && $rows[$index - 1]['kind'] !== $row['kind']; @endphp
+                                    <tr @class([
+                                        'border-t-2 border-accent/40' => $startsGroup && $row['kind'] === 'external',
+                                        'border-t-2 border-warning/40' => $startsGroup && $row['kind'] === 'walkIn',
+                                    ])>
                                         <td class="sticky left-0 z-10 whitespace-nowrap bg-base-100">
                                             {{ $row['name'] }}
-                                            @if ($isWalkIn)
+                                            @if ($row['kind'] === 'external')
+                                                <x-badge class="badge-accent badge-soft badge-xs ml-1"
+                                                    :value="__('non-member')" />
+                                            @elseif ($row['kind'] === 'walkIn')
                                                 <x-badge class="badge-warning badge-soft badge-xs ml-1"
                                                     :value="__('not enrolled')" />
                                             @endif
@@ -990,6 +1010,17 @@
                 @if ($formIsCamp)
                     <x-alert class="alert-info" icon="o-information-circle"
                         :title="__('The training camp is invoiced on its own, without automatic discount. A member\'s own price can be set when enrolling them.')" />
+
+                    {{-- Ouvrir aux externes est un choix par stage : la date est l'opt-in,
+                         et les membres gardent la priorité jusque-là. --}}
+                    <div class="rounded-xl border border-base-300 p-3 space-y-3">
+                        <p class="text-sm font-medium">{{ __('Non-members') }}</p>
+                        <x-datetime :label="__('Open to non-members from')" wire:model="formExternalsOpenOn"
+                            :hint="__('Empty: members only. Until that day, members have priority.')" />
+                        <x-input :label="__('Price for non-members (€)')" type="number" min="0" step="1"
+                            wire:model="formExternalPrice" :placeholder="number_format((float) $formPrice, 0)"
+                            :hint="__('Empty: the same price as members.')" />
+                    </div>
                 @else
                     <x-toggle
                         :label="__('Allow family/multi-pack discount')"

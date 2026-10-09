@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Trainings\Services;
 
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
@@ -24,6 +25,26 @@ class TrainingAttendanceReport
     private const int DEFAULT_SESSIONS = 12;
 
     /**
+     * Taux de présence d'un participant externe, comme {@see memberRate()}.
+     */
+    public function externalRate(TrainingPack $pack, int $registrationId): ?int
+    {
+        $counted = $this->countedSessions($pack)->pluck('id');
+
+        if ($counted->isEmpty()) {
+            return null;
+        }
+
+        $present = DB::table('external_registration_training')
+            ->where('external_registration_id', $registrationId)
+            ->whereIn('training_id', $counted)
+            ->where('status', 'present')
+            ->count();
+
+        return (int) round(($present / $counted->count()) * 100);
+    }
+
+    /**
      * La grille membres × séances d'un pack.
      *
      * Une seule lecture répond aux deux questions du comité : une colonne
@@ -33,7 +54,8 @@ class TrainingAttendanceReport
      * @return array{
      *     sessions: list<array{id: int, date: string, cancelled: bool, counted: bool}>,
      *     members: list<array{id: int, name: string, cells: array<int, string|null>}>,
-     *     walkIns: list<array{id: int, name: string, cells: array<int, string|null>}>
+     *     walkIns: list<array{id: int, name: string, cells: array<int, string|null>}>,
+     *     externals: list<array{id: int, name: string, cells: array<int, string|null>, rate: int|null}>
      * }
      */
     public function matrix(TrainingPack $pack, int $limit = self::DEFAULT_SESSIONS): array
@@ -52,6 +74,17 @@ class TrainingAttendanceReport
 
         $memberIds = $members->pluck('id');
 
+        // Les externes du stage sont attendus comme les membres : ils ont leur
+        // ligne et pèsent dans le taux de la séance.
+        $externals = $pack->externalRegistrations()
+            ->whereIn('status', ExternalRegistration::SEATED_STATUSES)
+            ->get()
+            ->sortBy(fn (ExternalRegistration $registration): string => mb_strtolower($registration->last_name . ' ' . $registration->first_name))
+            ->values();
+
+        $externalStatuses = $this->externalStatusesFor($sessions->pluck('id'));
+        $externalIds = $externals->pluck('id')->flip()->all();
+
         return [
             'sessions' => $sessions->map(fn (Training $session): array => [
                 'id' => $session->id,
@@ -60,11 +93,23 @@ class TrainingAttendanceReport
                 'counted' => $session->attendance_taken_at !== null,
                 'rate' => $session->attendance_taken_at === null || $session->isCancelled()
                     ? null
-                    : $this->rateOf(array_intersect_key(
-                        $statuses[$session->id] ?? [],
-                        $memberIds->flip()->all(),
-                    )),
+                    : $this->rateOf([
+                        ...array_values(array_intersect_key($statuses[$session->id] ?? [], $memberIds->flip()->all())),
+                        ...array_values(array_intersect_key($externalStatuses[$session->id] ?? [], $externalIds)),
+                    ]),
             ])->all(),
+            'externals' => $externals->map(function (ExternalRegistration $registration) use ($sessions, $externalStatuses): array {
+                $cells = $sessions->mapWithKeys(fn (Training $session): array => [
+                    $session->id => $this->cellFor($session, $externalStatuses, $registration->id),
+                ])->all();
+
+                return [
+                    'id' => $registration->id,
+                    'name' => $registration->isAnonymized() ? $registration->displayName() : $registration->last_name . ' ' . $registration->first_name,
+                    'cells' => $cells,
+                    'rate' => $this->rateOf(array_filter($cells, fn (?string $c): bool => $c !== null)),
+                ];
+            })->all(),
             'walkIns' => $this->walkInRows($sessions, $statuses, $memberIds),
             'members' => $members->map(function ($member) use ($sessions, $statuses): array {
                 $cells = $sessions->mapWithKeys(fn (Training $session): array => [
@@ -135,6 +180,27 @@ class TrainingAttendanceReport
             ->where('training_pack_id', $pack->id)
             ->where('status', 'scheduled')
             ->whereNotNull('attendance_taken_at');
+    }
+
+    /**
+     * Statuts pointés des participants externes, par séance puis par inscription.
+     *
+     * @param  Collection<int, int>  $sessionIds
+     * @return array<int, array<int, string>>
+     */
+    private function externalStatusesFor($sessionIds): array
+    {
+        if ($sessionIds->isEmpty()) {
+            return [];
+        }
+
+        $indexed = [];
+
+        foreach (DB::table('external_registration_training')->whereIn('training_id', $sessionIds)->get() as $row) {
+            $indexed[$row->training_id][$row->external_registration_id] = $row->status;
+        }
+
+        return $indexed;
     }
 
     /**

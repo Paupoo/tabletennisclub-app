@@ -8,12 +8,14 @@ use App\Actions\ClubAdmin\Payments\LinkCashDepositAction;
 use App\Actions\ClubAdmin\Payments\OpenRefundAction;
 use App\Actions\ClubAdmin\Payments\SettleTransactionResidueAction;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Finance\Services\FinancialReport;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\SupportingDocuments\Actions\LinkSupportingDocument;
 use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -22,6 +24,7 @@ use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\IncomeCategory;
 use App\Domains\Shared\ValueObjects\FiscalYear;
+use App\Domains\Trainings\Models\TrainingPack;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
 
@@ -149,6 +152,25 @@ it('files an expense report refund as an expense of the report category', functi
     frAllocate(frLine(-45.5, '2026-03-20'), $refund, 45.5);
 
     expect(FinancialReport::for(FiscalYear::startingIn(2026))->expensesByCategory())->toBe(['travel' => 45.5]);
+});
+
+it('files the stage money of a member under trainings, apart from the affiliation', function (): void {
+    $affiliation = Subscription::factory()->create();
+    $camp = TrainingPack::factory()->camp()->create(['season_id' => $affiliation->season_id]);
+    $affiliation->trainingPacks()->attach($camp->id, ['status' => 'enrolled', 'invoiced_separately' => true]);
+    $line = SubscriptionTrainingPack::query()->sole();
+    $claim = $line->payments()->create(['reference' => (new GeneratePaymentReference)(), 'amount_due' => 60, 'amount_paid' => 0, 'status' => 'pending']);
+    frAllocate(frLine(60.0, '2026-07-02'), $claim, 60.0);
+
+    expect(FinancialReport::for(FiscalYear::startingIn(2026))->incomeByCategory())->toBe(['trainings' => 60.0]);
+});
+
+it('files the stage money of a non-member under trainings', function (): void {
+    $registration = ExternalRegistration::factory()->create();
+    $claim = $registration->payments()->create(['reference' => (new GeneratePaymentReference)(), 'amount_due' => 80, 'amount_paid' => 0, 'status' => 'pending']);
+    frAllocate(frLine(80.0, '2026-07-02'), $claim, 80.0);
+
+    expect(FinancialReport::for(FiscalYear::startingIn(2026))->incomeByCategory())->toBe(['trainings' => 80.0]);
 });
 
 it('files the cash of a tournament as event income, on the day it was recorded', function (): void {

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
@@ -169,4 +170,40 @@ it('ranks candidates and works out amount uniqueness on its own', function (): v
         ->and($ranked->first()->match->strength)->toBe(MatchStrength::TO_VERIFY)
         ->and($ranked->last()->match->strength)->toBe(MatchStrength::NONE)
         ->and($ranked->last()->match->reasons)->toBe([]);
+});
+
+it('recognises the adult who pays for a non-member child', function (): void {
+    $registration = ExternalRegistration::factory()->minor()->create([
+        'first_name' => 'Léa',
+        'last_name' => 'Dupont',
+        'guardian_first_name' => 'Sophie',
+        'guardian_last_name' => 'Martin',
+    ]);
+    $payment = $registration->payments()->create([
+        'reference' => '011/0926/00406',
+        'amount_due' => 80,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    $transaction = Transaction::create([
+        'date' => now(),
+        'amount' => 80,
+        'counterparty_name' => 'MME SOPHIE MARTIN',
+        'free_reference' => 'stage Léa Dupont',
+        'description' => 'VIREMENT EUROPEEN',
+    ]);
+
+    $match = (new TransactionMatcher)->score($payment, $transaction, amountIsUnique: false);
+
+    expect($match->strength)->toBe(MatchStrength::STRONG);
+});
+
+it('names nobody once a non-member was erased', function (): void {
+    $registration = ExternalRegistration::factory()->create(['first_name' => null, 'last_name' => null, 'anonymized_at' => now()]);
+    $payment = $registration->payments()->create(['reference' => '011/0926/00407', 'amount_due' => 80, 'amount_paid' => 0, 'status' => 'pending']);
+
+    $transaction = Transaction::create(['date' => now(), 'amount' => 80, 'counterparty_name' => 'X', 'free_reference' => '', 'description' => '']);
+
+    expect((new TransactionMatcher)->score($payment, $transaction, amountIsUnique: false)->strength)->toBe(MatchStrength::NONE);
 });

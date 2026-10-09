@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Payment\Services;
 
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\MeetingUser;
@@ -135,6 +137,25 @@ final class TransactionMatcher
     }
 
     /**
+     * A non-member read as a member would be: their name, and for a child the
+     * adult who answers for them as a guardian. Never saved — the club keeps
+     * no account for them, and no account number either.
+     */
+    private function externalPayer(ExternalRegistration $registration): ?User
+    {
+        if ($registration->isAnonymized()) {
+            return null;
+        }
+
+        $guardians = $registration->is_minor
+            ? collect([new Guardian(['first_name' => $registration->guardian_first_name, 'last_name' => $registration->guardian_last_name])])
+            : collect();
+
+        return new User(['first_name' => $registration->first_name, 'last_name' => $registration->last_name])
+            ->setRelation('guardians', $guardians);
+    }
+
+    /**
      * Prénom *et* nom présents dans un même texte.
      *
      * @param  list<string>  $haystacks
@@ -182,6 +203,7 @@ final class TransactionMatcher
             $payable instanceof Subscription,
             $payable instanceof TournamentRegistration,
             $payable instanceof MeetingUser => $payable->user,
+            $payable instanceof ExternalRegistration => $this->externalPayer($payable),
             default => null,
         };
     }

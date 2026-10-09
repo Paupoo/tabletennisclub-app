@@ -6,6 +6,7 @@ namespace App\Domains\ClubAdmin\Finance\Services;
 
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
@@ -14,6 +15,7 @@ use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\BuildAttestationData;
 use App\Domains\ClubAdmin\Subscriptions\Models\Registration;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
@@ -437,6 +439,9 @@ final class FinancialReport
             $payable instanceof Subscription => $this->fileSubscription($payable, $moneyCents, $month),
             $payable instanceof ExpenseReport => $this->fileUnder($payable->category, $moneyCents, $month),
             $payable instanceof BarOrder => $this->fileUnder(IncomeCategory::Bar, $moneyCents, $month),
+            // A stage, a member's or a non-member's, is training money billed apart.
+            $payable instanceof SubscriptionTrainingPack,
+            $payable instanceof ExternalRegistration => $this->fileUnder(IncomeCategory::Trainings, $moneyCents, $month),
             $payable instanceof TournamentRegistration,
             $payable instanceof Tournament,
             $payable instanceof MeetingUser,

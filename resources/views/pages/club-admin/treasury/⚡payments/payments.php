@@ -7,6 +7,7 @@ use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Contracts\DescribesPayment;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Payment\Services\TransactionMatcher;
@@ -18,6 +19,7 @@ use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Support\IbanNormalizer;
+use App\Domains\Trainings\Models\TrainingPack;
 use App\Jobs\SendPaymentReminderJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
@@ -615,7 +617,7 @@ new class extends Component
         // les quatre requêtes par ligne d'affiliation qu'il coûtait.
         $rows = $this->matchingQuery()
             ->withOverpayment()
-            ->with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
+            ->with(['payable' => fn (MorphTo $m) => $m->morphWith($this->listedPayableEagerLoads())])
             ->get()
             ->map(function (Payment $p) {
                 $label = $p->label();
@@ -686,7 +688,7 @@ new class extends Component
     {
         Gate::authorize(Permission::PaymentsReconcile->value);
 
-        $pendingPayments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
+        $pendingPayments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->listedPayableEagerLoads())])
             ->where('status', 'pending')
             ->get();
 
@@ -838,7 +840,7 @@ new class extends Component
     {
         Gate::authorize(Permission::PaymentsRefund->value);
 
-        $toRefundPayments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
+        $toRefundPayments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->listedPayableEagerLoads())])
             ->where('status', 'to_refund')
             ->get();
 
@@ -954,7 +956,7 @@ new class extends Component
             'reconcileExcess' => $this->reconcileExcess(),
             'currentPayment' => $this->reconcilePaymentId
                 ? Payment::with([
-                    'payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads()),
+                    'payable' => fn (MorphTo $m) => $m->morphWith($this->listedPayableEagerLoads()),
                     // L'historique des affectations : un trésorier ne retient
                     // pas ses rapprochements, et un solde dont on ne peut pas
                     // remonter l'origine ne se vérifie pas.
@@ -964,7 +966,7 @@ new class extends Component
             'refundInstructions' => $this->refundInstructionsModal ? $this->refundInstructions() : null,
             'refundTransactions' => $this->refundModal ? $this->refundTransactions : collect(),
             'currentRefundPayment' => $this->refundPaymentId
-                ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])->find($this->refundPaymentId)
+                ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->listedPayableEagerLoads())])->find($this->refundPaymentId)
                 : null,
             'breadcrumbs' => $this->getBreadcrumbs(),
         ]);
@@ -1006,9 +1008,9 @@ new class extends Component
     {
         Gate::authorize(Permission::PaymentsRemind->value);
 
-        $payment = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])->find($paymentId);
+        $payment = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->listedPayableEagerLoads())])->find($paymentId);
 
-        if (! $payment?->payable?->user) {
+        if (! $payment?->payable?->user && ! $payment?->payable instanceof ExternalRegistration) {
             $this->error(__('Could not find user for this payment.'));
 
             return;
@@ -1027,15 +1029,29 @@ new class extends Component
         // whoever answers for the member, one message each, as every other
         // payment mail does. Handing the user to Mail::to() read a null email and
         // queued a message the worker could only fail on.
-        $member = $payment->payable->user;
-        $recipients = $member->contactEmails();
+        $payable = $payment->payable;
 
-        if ($recipients === []) {
-            $this->error(__(':name has no address of their own, and no guardian the club can write to.', [
-                'name' => $member->first_name,
-            ]));
+        if ($payable instanceof ExternalRegistration) {
+            // Un externe n'a ni compte ni tuteur : l'adresse encodée avec son
+            // inscription, tant qu'elle n'a pas été effacée.
+            $recipients = $payable->isAnonymized() || $payable->email === null ? [] : [$payable->email];
 
-            return;
+            if ($recipients === []) {
+                $this->error(__('This registration has been anonymised.'));
+
+                return;
+            }
+        } else {
+            $member = $payable->user;
+            $recipients = $member->contactEmails();
+
+            if ($recipients === []) {
+                $this->error(__(':name has no address of their own, and no guardian the club can write to.', [
+                    'name' => $member->first_name,
+                ]));
+
+                return;
+            }
         }
 
         foreach ($recipients as $recipient) {
@@ -1209,6 +1225,9 @@ new class extends Component
                 )
                 ->orWhereHasMorph('payable', [SubscriptionTrainingPack::class], fn ($line) => $line
                     ->whereHas('trainingPack', fn ($p) => $p->where('name', 'like', "%{$name}%"))
+                )
+                ->orWhereHasMorph('payable', [ExternalRegistration::class], fn ($registration) => $registration
+                    ->whereHasMorph('registrable', [TrainingPack::class], fn ($p) => $p->where('name', 'like', "%{$name}%"))
                 );
         });
     }
@@ -1243,6 +1262,13 @@ new class extends Component
                             ->where('first_name', 'like', "%{$this->search}%")
                             ->orWhere('last_name', 'like', "%{$this->search}%")
                         )
+                    )
+                    // Un participant externe n'a pas de membre : son nom est sur l'inscription.
+                    ->orWhereHasMorph('payable', [ExternalRegistration::class], fn ($q) => $q
+                        ->where(fn ($name) => $name
+                            ->where('first_name', 'like', "%{$this->search}%")
+                            ->orWhere('last_name', 'like', "%{$this->search}%")
+                        )
                     );
             }))
             ->when($this->paymentMethod, fn (Builder $q): Builder => $q->where('payment_method', $this->paymentMethod))
@@ -1252,7 +1278,7 @@ new class extends Component
                 $this->userId,
                 [Subscription::class, TournamentRegistration::class, MeetingUser::class, ExpenseReport::class, SubscriptionTrainingPack::class],
             ))
-            ->when($this->eventType, fn (Builder $q): Builder => $q->where('payable_type', $this->eventType))
+            ->when($this->eventType, fn (Builder $q): Builder => $q->whereIn('payable_type', $this->payableTypesOfKind($this->eventType)))
             ->when($this->eventName, fn (Builder $q): Builder => $this->applyEventNameFilter($q, $this->eventName));
     }
 
@@ -1287,7 +1313,7 @@ new class extends Component
             TournamentRegistration::class => __('Tournament'),
             MeetingUser::class => __('Meeting'),
             ExpenseReport::class => __('Expense report'),
-            SubscriptionTrainingPack::class => __('Training camp'),
+            SubscriptionTrainingPack::class, ExternalRegistration::class => __('Training camp'),
             default => $type,
         };
     }
@@ -1312,6 +1338,17 @@ new class extends Component
         }
 
         return max(0.0, round(abs($transaction->residue()) - $payment->balance(), 2));
+    }
+
+    /**
+     * Les payables affichés, membres ou non : ceux qui désignent un membre,
+     * plus les inscriptions des participants externes, qui n'en ont pas.
+     *
+     * @return array<class-string, array<int, string>>
+     */
+    private function listedPayableEagerLoads(): array
+    {
+        return [...$this->payableEagerLoads(), ExternalRegistration::class => ['registrable']];
     }
 
     private function normalizeIban(string $iban): string
@@ -1349,6 +1386,19 @@ new class extends Component
     }
 
     /**
+     * Un stage se range sous une seule sorte, qu'il soit payé par un membre ou
+     * par un externe : le trésorier cherche « les stages », pas qui les paie.
+     *
+     * @return list<string>
+     */
+    private function payableTypesOfKind(string $kind): array
+    {
+        return $kind === SubscriptionTrainingPack::class
+            ? [SubscriptionTrainingPack::class, ExternalRegistration::class]
+            : [$kind];
+    }
+
+    /**
      * @return array<class-string, array<int, string>>
      */
     /**
@@ -1381,6 +1431,7 @@ new class extends Component
             Subscription::class => ['user.guardians', 'season'],
             ExpenseReport::class => ['user.guardians'],
             SubscriptionTrainingPack::class => ['user.guardians', 'trainingPack'],
+            ExternalRegistration::class => ['registrable'],
         ];
     }
 
@@ -1433,7 +1484,7 @@ new class extends Component
      */
     private function refundInstructions(): ?array
     {
-        $payment = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
+        $payment = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->listedPayableEagerLoads())])
             ->find($this->refundInstructionsPaymentId);
 
         if ($payment === null) {

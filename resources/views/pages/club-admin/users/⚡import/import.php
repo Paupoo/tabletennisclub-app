@@ -497,6 +497,20 @@ new class extends Component
     }
 
     /**
+     * Whether the listed number of a child has nobody to belong to: no guardian
+     * on the roster or on the listing, and no number of the child's own. Only
+     * the reviewer knows whose it is — a parent's, or a teenager's own.
+     */
+    private function asksAboutPhone(MemberMatch $match, ?SharedAddressDecision $decision, bool $minor, bool $hasGuardian): bool
+    {
+        return $minor
+            && filled($match->row->phone)
+            && ! $hasGuardian
+            && $decision === null
+            && blank($match->existing?->phone_number);
+    }
+
+    /**
      * Who the address might belong to, read off the address itself.
      *
      * `firstname.lastname@…` is the common shape and gives both names; anything
@@ -576,6 +590,10 @@ new class extends Component
             guardianLastName: $row['guardianLastName'],
             guardianEmail: $row['email'],
             guardianPhone: $row['phone'],
+            // The address answers it already when it is a guardian's.
+            phoneOwner: $row['guardianAddress'] || ! in_array($row['phoneOwner'] ?? null, ['guardian', 'member'], true)
+                ? null
+                : $row['phoneOwner'],
         );
     }
 
@@ -616,6 +634,10 @@ new class extends Component
         }
 
         if ($minor && ! $this->minorIsSettled($match, $hasGuardian)) {
+            return false;
+        }
+
+        if ($this->asksAboutPhone($match, $decision, $minor, $hasGuardian)) {
             return false;
         }
 
@@ -714,6 +736,7 @@ new class extends Component
                 || $this->asksAboutName($match)
                 || $this->asksAboutAddress($match)
                 || ($minor && ! $this->minorIsSettled($match, $hasGuardian))
+                || $this->asksAboutPhone($match, $decision, $minor, $hasGuardian)
             ),
             'unchanged' => $unchanged,
             'outcome' => $match->outcome->value,
@@ -735,6 +758,8 @@ new class extends Component
             'guardianLineNumber' => $decision?->guardianLineNumber,
             'guardianFirstName' => $guardianName['firstName'],
             'guardianLastName' => $guardianName['lastName'],
+            'asksPhoneOwner' => $this->asksAboutPhone($match, $decision, $minor, $hasGuardian),
+            'phoneOwner' => null,
         ];
     }
 

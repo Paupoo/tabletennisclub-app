@@ -39,7 +39,10 @@ Access via **My space → My profile** in the navigation.
 | Identity | First name, last name, gender, date of birth, photo |
 | Contact | Email, phone number, address, city |
 | Financial | IBAN (for refunds) |
-| Guardian | Emergency contact phone (for minors) |
+
+### Your responsible adults
+
+If a responsible adult is linked to your file, the **Responsible adults** card on your profile shows them. The pencil corrects their details: first name, last name, phone, email, IBAN. The correction also applies to your brothers and sisters they cover. An adult with an account of their own corrects their details themselves, in their profile.
 
 ### Updating your profile
 

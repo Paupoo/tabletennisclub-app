@@ -126,7 +126,12 @@ describe('a stage is invoiced on its own line', function (): void {
 
     it('refuses an affiliation of another season', function (): void {
         $season = makeActiveSeason();
-        $other = Season::factory()->create();
+        // Dated by hand: the factory draws a year at random, and two draws in
+        // eleven overlap the active season, which Season refuses.
+        $other = Season::factory()->create([
+            'start_at' => now()->subYear()->startOfYear(),
+            'end_at' => now()->subYear()->endOfYear(),
+        ]);
         $subscription = Subscription::factory()->create(['season_id' => $other->id]);
         $camp = TrainingPack::factory()->camp()->create(['season_id' => $season->id]);
 

@@ -215,3 +215,32 @@ it('counts the open payments of the member and of the accounts they pay for', fu
 
     expect(pendingTaskCount($parent, 'my_payments'))->toBe(2);
 });
+
+describe('guardians on file twice', function (): void {
+    it('counts two sheets sharing an address, and one whose address is a member', function (): void {
+        User::factory()->create()->guardians()->attach(Guardian::factory()->create(['email' => 'Mother@example.com']));
+        User::factory()->create()->guardians()->attach(Guardian::factory()->create(['email' => 'mother@example.com ']));
+        User::factory()->create(['email' => 'father@example.com']);
+        User::factory()->create()->guardians()->attach(Guardian::factory()->create(['email' => 'father@example.com']));
+
+        expect(pendingTaskCount(User::factory()->withRole(Role::MEMBERS)->create(), 'guardian_duplicates'))->toBe(2)
+            ->and(pendingTaskCount(User::factory()->withRole(Role::COMMITTEE)->create(), 'guardian_duplicates'))->toBe(0);
+    });
+
+    it('counts two sheets sharing a phone number however it was typed', function (): void {
+        User::factory()->create()->guardians()->attach(Guardian::factory()->create(['email' => null, 'phone' => '+32 475 12 34 56']));
+        User::factory()->create()->guardians()->attach(Guardian::factory()->create(['email' => null, 'phone' => '0475123456']));
+
+        expect(pendingTaskCount(User::factory()->withRole(Role::MEMBERS)->create(), 'guardian_duplicates'))->toBe(1);
+    });
+
+    it('opens the file of a member the extra copy answers for', function (): void {
+        User::factory()->create()->guardians()->attach(Guardian::factory()->create(['email' => 'mother@example.com']));
+        $ward = User::factory()->create();
+        $ward->guardians()->attach(Guardian::factory()->create(['email' => 'mother@example.com']));
+
+        $task = (new PendingTasks)->for(User::factory()->withRole(Role::MEMBERS)->create())['guardian_duplicates'];
+
+        expect($task->route)->toBe(route('admin.users.show', $ward));
+    });
+});

@@ -86,6 +86,21 @@ it('also notifies the guardians of a minor', function (): void {
     Notification::assertSentOnDemand(FineIssuedNotification::class);
 });
 
+it('writes to the address a guardian holding an account keeps in their profile', function (): void {
+    Notification::fake();
+    $parent = User::factory()->create(['email' => 'old@example.com']);
+    $minor = User::factory()->create(['birthdate' => now()->subYears(12)]);
+    $minor->guardians()->attach(Guardian::factory()->create(['user_id' => $parent->id, 'email' => 'old@example.com']));
+    $parent->update(['email' => 'new@example.com']);
+
+    fineIssuedTo($minor);
+
+    Notification::assertSentOnDemand(
+        FineIssuedNotification::class,
+        fn ($notification, array $channels, object $notifiable): bool => $notifiable->routes['mail'] === 'new@example.com',
+    );
+});
+
 it('tells the member to pay the committee, not the club, before the deadline', function (): void {
     Notification::fake();
     $member = User::factory()->create(['first_name' => 'Jeremy', 'last_name' => 'Denil']);

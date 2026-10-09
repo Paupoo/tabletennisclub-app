@@ -86,6 +86,8 @@ The lines come in four sections:
 - **Nothing to report** — known members the import will update (a new ranking, typically).
 - **Already up to date** — folded; nothing will be written.
 
+**A minor's number with no guardian.** When a minor has a number on the listing, no guardian and no number of their own, the card asks **Whose is this number?**: a parent's (fill in their first and last name, and a guardian record is created with the number), or the member's own. Left unanswered, the line stays under "Needs your attention", the import goes ahead and the number is not kept; the question comes back at the next import.
+
 A member the club already holds is never asked again what was settled the first time: how to split a long name (an update never writes names), a shifted address when the club holds one (the club keeps its own), or whose address a minor's is once they have a guardian or a login of their own.
 
 See the [Committee Manual](manual-committee.md) for the review screen in detail.

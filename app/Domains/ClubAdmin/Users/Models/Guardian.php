@@ -8,6 +8,7 @@ use App\Domains\Shared\Casts\IbanCast;
 use App\Domains\Shared\Support\IbanNormalizer;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\ClubAdmin\Users\Models\GuardianFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -34,6 +35,23 @@ class Guardian extends Model
         'iban',
         'last_invited_at',
     ];
+
+    /**
+     * A guardian holding an account reads their details from it, so the member
+     * is always at hand wherever a guardian is.
+     *
+     * @var list<string>
+     */
+    protected $with = ['member'];
+
+    /**
+     * A short fingerprint of the address on file, carried by the invitation link
+     * so that the link dies with the address it was mailed to.
+     */
+    public function addressFingerprint(): string
+    {
+        return mb_substr(hash_hmac('sha256', mb_strtolower(trim((string) $this->email)), (string) config('app.key')), 0, 16);
+    }
 
     public function getFullNameAttribute(): string
     {
@@ -108,5 +126,64 @@ class Guardian extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'guardian_user');
+    }
+
+    /**
+     * A corrected address voids the link already mailed, so the guardian goes
+     * back among those the office has to invite.
+     */
+    protected static function booted(): void
+    {
+        static::updating(function (Guardian $guardian): void {
+            if ($guardian->isDirty('email') && ! $guardian->isDirty('last_invited_at')) {
+                $guardian->last_invited_at = null;
+            }
+        });
+    }
+
+    /**
+     * The details of a guardian who holds an account live on that account: the
+     * sheet only links them to their wards. A guardian with no account is the
+     * sheet itself.
+     *
+     * @return Attribute<?string, never>
+     */
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value): ?string => $this->member instanceof User ? $this->member->email : $value,
+        );
+    }
+
+    /** @return Attribute<string, never> */
+    protected function firstName(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value): string => $this->member instanceof User ? $this->member->first_name : (string) $value,
+        );
+    }
+
+    /** @return Attribute<?string, never> */
+    protected function iban(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value): ?string => $this->member instanceof User ? $this->member->iban : IbanNormalizer::normalize($value),
+        );
+    }
+
+    /** @return Attribute<string, never> */
+    protected function lastName(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value): string => $this->member instanceof User ? $this->member->last_name : (string) $value,
+        );
+    }
+
+    /** @return Attribute<?string, never> */
+    protected function phone(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value): ?string => $this->member instanceof User ? $this->member->phone_number : $value,
+        );
     }
 }

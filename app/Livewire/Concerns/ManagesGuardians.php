@@ -11,6 +11,7 @@ use App\Domains\Shared\Rules\ValidPhone;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 
 trait ManagesGuardians
 {
@@ -230,6 +231,13 @@ trait ManagesGuardians
             ->orderBy('last_name')
             ->limit(8)
             ->get();
+    }
+
+    /** A sheet was corrected in the guardian editor: show what it now says. */
+    #[On('guardian-updated')]
+    public function refreshLinkedGuardians(): void
+    {
+        unset($this->linkedGuardians);
     }
 
     /**

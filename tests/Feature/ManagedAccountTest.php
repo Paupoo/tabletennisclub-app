@@ -40,6 +40,21 @@ describe('reaching a member', function (): void {
         expect($member->fresh()->contactEmail())->toBe('reachable@example.com');
     });
 
+    /*
+     * A guardian who holds an account of their own keeps their details there:
+     * the guardian sheet is only the link, so a parent who changes address in
+     * their profile is reached at the new one.
+     */
+    it('follows the address a guardian holding an account keeps in their profile', function (): void {
+        $parent = User::factory()->create(['email' => 'old@example.com']);
+        $member = User::factory()->create(['email' => null]);
+        $member->guardians()->attach(Guardian::factory()->create(['user_id' => $parent->id, 'email' => 'old@example.com']));
+
+        $parent->update(['email' => 'new@example.com']);
+
+        expect($member->fresh()->contactEmail())->toBe('new@example.com');
+    });
+
     it('reports nobody to write to when neither the member nor a guardian has an address', function (): void {
         $member = User::factory()->create(['email' => null]);
 

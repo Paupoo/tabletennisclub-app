@@ -246,7 +246,7 @@ it('keeps the logo and the stored images of the PDF, and never lets it fetch a r
         ->not->toContain('.env"');
 });
 
-it('lists in the member\'s space the general assembly minutes sent to all, and nothing else', function (): void {
+it('lists on their own page the general assembly minutes sent to all, and nothing else', function (): void {
     $season = makeActiveSeason();
     $member = activeMember($season);
     $sent = Meeting::factory()->generalAssembly()->completed()->create(['title' => 'AG envoyée à tous']);
@@ -257,12 +257,32 @@ it('lists in the member\'s space the general assembly minutes sent to all, and n
     publishedMinutes($committee, ['sent_to_all_at' => now()]);
 
     $this->actingAs($member)
-        ->get(route('admin.user.event-subscription', $member))
+        ->get(route('admin.user.assembly-minutes', $member))
         ->assertOk()
         ->assertSee('AG envoyée à tous')
         ->assertSee(route('meetings.minutes.pdf', $sent), false)
         ->assertDontSee('AG en relecture')
         ->assertDontSee('Comité confidentiel');
+});
+
+it('says so when no general assembly minutes were sent yet', function (): void {
+    $member = activeMember(makeActiveSeason());
+
+    $this->actingAs($member)
+        ->get(route('admin.user.assembly-minutes', $member))
+        ->assertOk()
+        ->assertSee(__('No minutes published yet.'));
+});
+
+it('keeps the minutes out of « My registrations », which is about signing up', function (): void {
+    $member = activeMember(makeActiveSeason());
+    $sent = Meeting::factory()->generalAssembly()->completed()->create(['title' => 'AG envoyée à tous']);
+    publishedMinutes($sent, ['sent_to_all_at' => now()]);
+
+    $this->actingAs($member)
+        ->get(route('admin.user.event-subscription', $member))
+        ->assertOk()
+        ->assertDontSee(route('meetings.minutes.pdf', $sent), false);
 });
 
 it('ties each decision to its point, and tells the agenda as what was said on each point', function (): void {

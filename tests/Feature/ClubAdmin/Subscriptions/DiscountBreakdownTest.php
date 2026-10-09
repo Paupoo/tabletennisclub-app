@@ -164,7 +164,7 @@ it('shows the normal price and the reason on the members season screen', functio
 
     Livewire::actingAs($member)
         ->test('pages::club-admin.users.user-space.registration-management', ['user' => $member])
-        ->assertSee('100.00')
+        ->assertSee('100,00')
         ->assertSee(__('Normal price'))
         ->assertSee('Remerciement buvette')
         ->call('openPaymentModal', $member->id, $subscription->payments()->first()->id)

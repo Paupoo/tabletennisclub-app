@@ -121,7 +121,7 @@ Effectuez le virement bancaire manuellement. Le trésorier rapproche les paiemen
 
 ### Stages
 
-Les stages organisés par le club (vacances, week-ends) se trouvent ici, pas dans la cotisation. Cliquez sur **S'inscrire** (ou **Demander une place** si le comité valide les inscriptions). Un stage est **facturé à part** : vous recevez sa propre demande de paiement, et il n'entre pas dans le montant de votre attestation mutuelle. Il faut être affilié pour la saison du stage.
+Les stages organisés par le club (vacances, week-ends) se trouvent ici, pas dans la cotisation. Chaque carte se lit comme celle d'un pack d'entraînement : horaire et dates, salle, niveau, entraîneur, prix et places restantes. Cliquez sur **S'inscrire** (ou **Demander une place** si le comité valide les inscriptions). Un stage est **facturé à part** : vous recevez sa propre demande de paiement, et il n'entre pas dans le montant de votre attestation mutuelle. Il faut être affilié pour la saison du stage.
 
 ### RSVP pour les réunions
 
@@ -129,7 +129,7 @@ Si vous êtes invité à une réunion du club, votre invitation apparaît ici. C
 
 ### Procès-verbaux des assemblées générales
 
-Une fois envoyés par le comité, les PV des assemblées générales sont listés sur cette page : **Lire** les ouvre, **PDF** les télécharge. Vous les recevez aussi par mail, PDF joint.
+Les PV ont leur propre page, **PV des assemblées** dans le menu, à côté du règlement et de la charte du club. Une fois envoyés par le comité, les PV des assemblées générales y sont listés : **Lire** les ouvre, **PDF** les télécharge. Vous les recevez aussi par mail, PDF joint.
 
 ---
 

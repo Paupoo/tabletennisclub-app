@@ -152,7 +152,7 @@
                                                         <x-icon name="o-credit-card" class="w-4 h-4 text-info opacity-60 shrink-0" />
                                                         <div class="flex-1 min-w-0">
                                                             <div class="font-mono text-xs opacity-60">{{ $payment['reference'] }}</div>
-                                                            <div class="font-bold text-base text-info">{{ number_format($payment['amount_due'], 2) }} €</div>
+                                                            <div class="font-bold text-base text-info">{{ number_format($payment['amount_due'], 2, ',', ' ') }} €</div>
                                                             <x-payments.discount-breakdown class="mt-1 max-w-xs"
                                                                 :amount-before-discounts="$payment['amount_before_discounts'] ?? 0"
                                                                 :discounts="$payment['discounts'] ?? []" />
@@ -213,7 +213,7 @@
                                                         <x-icon name="o-credit-card" class="w-4 h-4 text-warning-content opacity-60 shrink-0" />
                                                         <div class="flex-1 min-w-0">
                                                             <div class="font-mono text-xs opacity-60">{{ $payment['reference'] }}</div>
-                                                            <div class="font-bold text-base text-warning-content">{{ number_format($payment['amount_due'], 2) }} €</div>
+                                                            <div class="font-bold text-base text-warning-content">{{ number_format($payment['amount_due'], 2, ',', ' ') }} €</div>
                                                             <x-payments.discount-breakdown class="mt-1 max-w-xs"
                                                                 :amount-before-discounts="$payment['amount_before_discounts'] ?? 0"
                                                                 :discounts="$payment['discounts'] ?? []" />
@@ -399,7 +399,7 @@
                                                             @endif
                                                         </div>
                                                         <div class="mt-1 flex items-center gap-2">
-                                                            <span class="text-xs font-semibold">{{ number_format($pack['price'], 2) }} €</span>
+                                                            <span class="text-xs font-semibold">{{ number_format($pack['price'], 2, ',', ' ') }} €</span>
                                                             @if(!empty($pack['description']))
                                                                 <button type="button" @click="descOpen = !descOpen" class="text-xs text-primary underline">
                                                                     <span x-text="descOpen ? '{{ __('Hide') }}' : '{{ __('Info') }}'"></span>
@@ -539,7 +539,7 @@
                                             <div class="text-xs font-bold uppercase tracking-wide opacity-60 mb-3">{{ __('Price estimate') }}</div>
                                             <div class="flex justify-between text-sm">
                                                 <span class="opacity-70">{{ $formula === 'competitive' ? __('Competition licence') : __('Recreational licence') }}</span>
-                                                <span class="font-semibold">{{ number_format($formulaPrice, 2) }} €</span>
+                                                <span class="font-semibold">{{ number_format($formulaPrice, 2, ',', ' ') }} €</span>
                                             </div>
                                             @foreach($packsData as $packItem)
                                                 @php
@@ -551,9 +551,9 @@
                                                     <span class="opacity-70">{{ $packItem['name'] }}</span>
                                                     <span class="font-semibold">
                                                         @if($packDiscount > 0)
-                                                            <span class="line-through text-muted mr-1">{{ number_format($packPrice, 2) }}</span>
+                                                            <span class="line-through text-muted mr-1">{{ number_format($packPrice, 2, ',', ' ') }}</span>
                                                         @endif
-                                                        {{ number_format($packFinal, 2) }} €
+                                                        {{ number_format($packFinal, 2, ',', ' ') }} €
                                                     </span>
                                                 </div>
                                             @endforeach
@@ -562,7 +562,7 @@
                                             @endif
                                             <div class="flex justify-between text-base font-bold pt-2 border-t border-base-300">
                                                 <span>{{ __('Total') }}</span>
-                                                <span class="text-primary">{{ number_format($estimatedTotal, 2) }} €</span>
+                                                <span class="text-primary">{{ number_format($estimatedTotal, 2, ',', ' ') }} €</span>
                                             </div>
                                             <div class="text-xs text-muted italic">{{ __('Indicative — the club may adjust training prices upon validation.') }}</div>
                                         </div>

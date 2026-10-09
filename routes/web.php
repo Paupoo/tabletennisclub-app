@@ -123,6 +123,7 @@ Route::prefix('admin/my-space/')
         Route::livewire('{user}/registration-management', 'pages::club-admin.users.user-space.registration-management')->name('admin.user.registration-management');
         Route::livewire('{user}/reglement', 'pages::club-admin.users.user-space.reglement')->name('admin.user.reglement');
         Route::livewire('{user}/charte', 'pages::club-admin.users.user-space.charter')->name('admin.user.charter');
+        Route::livewire('{user}/assembly-minutes', 'pages::club-admin.users.user-space.assembly-minutes')->name('admin.user.assembly-minutes');
         Route::livewire('{user}/directory', 'pages::club-admin.users.user-space.directory')->name('admin.user.directory');
         Route::livewire('{user}/who-does-what', 'pages::club-admin.users.user-space.who-does-what')->name('admin.user.who-does-what');
         Route::livewire('{user}/feedback', 'pages::club-admin.users.user-space.feedback')->name('admin.user.feedback');

@@ -121,6 +121,12 @@
         :title="__('Club charter')"
     />
 
+    <x-menu-item
+        icon="o-document-text"
+        link="{{ route('admin.user.assembly-minutes', auth()->user()) }}"
+        :title="__('Assembly minutes')"
+    />
+
     @feature('help_centre')
     <x-menu-item
         icon="o-question-mark-circle"

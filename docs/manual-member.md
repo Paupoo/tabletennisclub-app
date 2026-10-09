@@ -121,7 +121,7 @@ Make the bank transfer manually. The treasurer reconciles payments and marks you
 
 ### Training camps
 
-Camps organised by the club (holidays, weekends) are listed here, not in the membership fee. Click **Enrol** (or **Request a spot** when the committee approves enrolments). A camp is **invoiced separately**: you receive its own payment request, and it is not part of the amount on your health-insurance attestation. You need an affiliation for the camp's season.
+Camps organised by the club (holidays, weekends) are listed here, not in the membership fee. Each card reads like a training pack: schedule and dates, room, level, coach, price and the spots left. Click **Enrol** (or **Request a spot** when the committee approves enrolments). A camp is **invoiced separately**: you receive its own payment request, and it is not part of the amount on your health-insurance attestation. You need an affiliation for the camp's season.
 
 ### RSVP for meetings
 
@@ -129,7 +129,7 @@ If you are invited to a club meeting, your invitation appears here. Click **RSVP
 
 ### General assembly minutes
 
-Once the committee has sent them, the minutes of the general assemblies are listed on this page: **Read** opens them, **PDF** downloads them. You also receive them by mail, with the PDF attached.
+The minutes have their own page, **Assembly minutes** in the menu, next to the rules and the club charter. Once the committee has sent them, the minutes of the general assemblies are listed there: **Read** opens them, **PDF** downloads them. You also receive them by mail, with the PDF attached.
 
 ---
 

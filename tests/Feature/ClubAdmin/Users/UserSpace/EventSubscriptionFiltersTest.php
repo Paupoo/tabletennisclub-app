@@ -20,13 +20,47 @@ it('filters sections by event type from the drawer', function (): void {
     Tournament::factory()->create([
         'status' => TournamentStatusEnum::PUBLISHED,
         'start_date' => now()->addDays(10),
+        'name' => 'Tournoi de la Toussaint',
     ]);
 
     Livewire::actingAs($user)
         ->test(EVENT_SUB_COMPONENT, ['user' => $user])
-        ->assertSee(__('Upcoming Tournaments'))
+        ->assertSee('Tournoi de la Toussaint')
         ->set('eventType', 'meeting')
-        ->assertDontSee(__('Upcoming Tournaments'));
+        ->assertDontSee('Tournoi de la Toussaint');
+});
+
+it('offers no training filter: sessions live in the calendar, packs in « My season »', function (): void {
+    makeActiveSeason();
+    $user = User::factory()->create();
+
+    $component = Livewire::actingAs($user)->test(EVENT_SUB_COMPONENT, ['user' => $user]);
+
+    expect(array_keys($component->instance()->eventTypeOptions()))->toBe(['tournament', 'meeting', 'camp']);
+});
+
+it('names each section after its filter, without « upcoming »', function (): void {
+    makeActiveSeason();
+    $user = User::factory()->create();
+    $admin = User::factory()->isAdmin()->create();
+    Tournament::factory()->create([
+        'status' => TournamentStatusEnum::PUBLISHED,
+        'start_date' => now()->addDays(10),
+    ]);
+    $meeting = Meeting::factory()->confirmed()->create([
+        'created_by' => $admin->id,
+        'scheduled_at' => now()->addWeek(),
+        'ends_at' => now()->addWeek()->addHours(2),
+    ]);
+    $meeting->users()->attach($user->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value]);
+
+    Livewire::actingAs($user)
+        ->test(EVENT_SUB_COMPONENT, ['user' => $user])
+        ->assertSee(__('Tournaments, meetings and training camps of the club'))
+        ->assertDontSee('Tournois à venir')
+        ->assertDontSee('Prochaines réunions')
+        ->assertDontSee('Mes prochaines séances')
+        ->assertDontSee(__('General assembly minutes'));
 });
 
 it('exposes active filters as removable chips', function (): void {

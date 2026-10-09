@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -134,4 +135,24 @@ it('produces the file when a minor has no guardian linked', function (): void {
     $file = app(TrainingRosterExport::class)->export($this->season, 'xlsx');
 
     expect($file['contents'])->not->toBe('');
+});
+
+it('lists the non-members of a stage after its members, with the number to call', function (): void {
+    $camp = makeTrainingPack($this->season, ['name' => 'Stage', 'is_camp' => true]);
+    rosterExportTie(activeMember($this->season, ['last_name' => 'Membre']), $camp, 'enrolled');
+    ExternalRegistration::factory()->minor()->create([
+        'registrable_id' => $camp->id,
+        'last_name' => 'Externe',
+        'first_name' => 'Léa',
+        'email' => 'parent@example.com',
+        'guardian_phone' => '0470 12 34 56',
+    ]);
+    ExternalRegistration::factory()->create(['registrable_id' => $camp->id, 'last_name' => 'Parti', 'status' => 'left']);
+
+    $rows = app(TrainingRosterExport::class)->rows($this->season);
+
+    expect(array_map(fn (array $row): string => $row['last_name'], $rows))->toBe(['Membre', 'Externe'])
+        ->and($rows[1]['emails'])->toBe('parent@example.com')
+        ->and($rows[1]['phone'])->toBe('0470 12 34 56')
+        ->and($rows[1]['status_label'])->toContain(__('non-member'));
 });

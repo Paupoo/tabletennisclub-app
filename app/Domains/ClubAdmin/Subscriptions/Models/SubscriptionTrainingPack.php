@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Subscriptions\Models;
 
+use App\Contracts\CampEnrolment;
 use App\Contracts\DescribesPayment;
 use App\Contracts\PayableInterface;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Subscriptions\Notifications\SubscriptionRefundRequestedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Notifications\Notification;
 
 /**
  * The `subscription_training_pack` row: one member's enrolment in one pack.
@@ -56,7 +59,7 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * @property-read TrainingPack $trainingPack
  * @property-read User|null $user
  */
-class SubscriptionTrainingPack extends Pivot implements DescribesPayment, PayableInterface
+class SubscriptionTrainingPack extends Pivot implements CampEnrolment, DescribesPayment, PayableInterface
 {
     /** Payments point at this row by its id: it must be read back after an insert. */
     public $incrementing = true;
@@ -74,7 +77,7 @@ class SubscriptionTrainingPack extends Pivot implements DescribesPayment, Payabl
             return round(((int) $this->override_amount) / 100, 2);
         }
 
-        return (float) $this->trainingPack->price;
+        return (float) $this->loadMissing('trainingPack')->trainingPack->price;
     }
 
     public function getPayerName(): string
@@ -93,12 +96,28 @@ class SubscriptionTrainingPack extends Pivot implements DescribesPayment, Payabl
         ];
     }
 
+    /** A stage line is owed in full once enrolled, or left after it started: no prorata. */
+    public function isOwed(): bool
+    {
+        return in_array($this->status, ['enrolled', 'left'], true);
+    }
+
     /**
      * @return MorphMany<Payment, $this>
      */
     public function payments(): MorphMany
     {
         return $this->morphMany(Payment::class, 'payable');
+    }
+
+    public function refundIban(): ?string
+    {
+        return $this->loadMissing('subscription.user')->subscription->user?->iban;
+    }
+
+    public function refundRequestedNotification(Payment $refund, string $reason): Notification
+    {
+        return new SubscriptionRefundRequestedNotification($refund, $this->loadMissing('subscription.user', 'subscription.season')->subscription, $reason);
     }
 
     /**

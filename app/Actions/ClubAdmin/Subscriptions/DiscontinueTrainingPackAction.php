@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Subscriptions;
 
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
+use App\Domains\ClubAdmin\ExternalParticipants\Notifications\ExternalCampCancelledNotification;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\Shared\Enums\TrainingCancellationType;
@@ -13,6 +15,7 @@ use App\Domains\Trainings\Notifications\TrainingPackDiscontinuedNotification;
 use App\Domains\Trainings\Services\TrainingCampBilling;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * Stops a pack the club can no longer run: the coach quits, the room is lost.
@@ -75,6 +78,27 @@ class DiscontinueTrainingPackAction
             $totalRefunded += $refundable;
 
             $line->subscription->user->notify(new TrainingPackDiscontinuedNotification($pack, $reason, $refundable));
+            $memberCount++;
+        }
+
+        // Non-members follow the same rule, reached at the address encoded
+        // with their registration: they have no account to notify.
+        $externals = $pack->externalRegistrations()
+            ->with('registrable')
+            ->whereIn('status', ExternalRegistration::OWED_STATUSES)
+            ->get();
+
+        foreach ($externals as $registration) {
+            $registration->update(['status' => 'cancelled']);
+
+            $refundable = $billing->sync($registration, __(':pack has been stopped by the club.', ['pack' => $pack->name]))['refunded'];
+            $totalRefunded += $refundable;
+
+            if (! $registration->isAnonymized() && $registration->email !== null) {
+                Notification::route('mail', $registration->email)
+                    ->notify(new ExternalCampCancelledNotification($registration, $reason, $refundable));
+            }
+
             $memberCount++;
         }
 

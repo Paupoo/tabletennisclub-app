@@ -109,6 +109,12 @@ new class extends Component
     /** @var array<int, string> */
     public array $formExcludedDates = [];
 
+    /** Euros, empty for the member price. A stage only. */
+    public string $formExternalPrice = '';
+
+    /** Y-m-d, empty for members only. A stage only. */
+    public string $formExternalsOpenOn = '';
+
     /** Un stage : optionnel, facturé à part, hors cotisation. */
     public bool $formIsCamp = false;
 
@@ -408,7 +414,7 @@ new class extends Component
      * Douze séances par défaut : un trimestre tient à l'écran, une saison
      * entière demanderait un scroll horizontal que personne ne lit.
      *
-     * @return array{sessions: list<array<string, mixed>>, members: list<array<string, mixed>>, walkIns: list<array<string, mixed>>}
+     * @return array{sessions: list<array<string, mixed>>, members: list<array<string, mixed>>, walkIns: list<array<string, mixed>>, externals: list<array<string, mixed>>}
      */
     #[Computed]
     public function attendanceMatrix(): array
@@ -416,7 +422,7 @@ new class extends Component
         $pack = $this->selectedPack;
 
         if (! $pack) {
-            return ['sessions' => [], 'members' => [], 'walkIns' => []];
+            return ['sessions' => [], 'members' => [], 'walkIns' => [], 'externals' => []];
         }
 
         return app(TrainingAttendanceReport::class)->matrix(
@@ -1051,6 +1057,8 @@ new class extends Component
         $this->formAllowDiscount = $pack->allow_discount;
         $this->formIsCamp = $pack->is_camp;
         $this->formRequiresApproval = $pack->requires_approval;
+        $this->formExternalPrice = $pack->external_price !== null ? (string) $pack->external_price : '';
+        $this->formExternalsOpenOn = $pack->externals_open_on?->toDateString() ?? '';
         $this->formMaxParticipants = (string) ($pack->max_participants ?? '');
         $this->formIsOpenEnrollment = $pack->is_open_enrollment;
         $this->formEnrollmentsOpen = $pack->enrollments_open;
@@ -1458,6 +1466,7 @@ new class extends Component
 
     /** La modale partagée a sorti quelqu'un : la liste n'est plus la même. */
     #[On('training-pack-exited')]
+    #[On('external-registrations-changed')]
     public function refreshAfterExit(): void
     {
         $this->forgetRoster();
@@ -1535,6 +1544,8 @@ new class extends Component
             // not declare it cannot be billed for the months actually held.
             'formPackStartDate' => 'required|date',
             'formPackEndDate' => 'required|date|after_or_equal:formPackStartDate',
+            'formExternalPrice' => 'nullable|integer|min:0',
+            'formExternalsOpenOn' => 'nullable|date',
         ];
 
         if ($this->formType !== '' && $this->formType !== TrainingType::FREE->value) {
@@ -1605,6 +1616,11 @@ new class extends Component
 
         $data['is_camp'] = $isCamp;
         $data['requires_approval'] = $isCamp && $this->formRequiresApproval;
+
+        // Only a stage takes non-members: the date is the opt-in, members keep
+        // the priority until then.
+        $data['external_price'] = $isCamp && $this->formExternalPrice !== '' ? (int) $this->formExternalPrice : null;
+        $data['externals_open_on'] = $isCamp && $this->formExternalsOpenOn !== '' ? $this->formExternalsOpenOn : null;
 
         // A stage never takes nor triggers the automatic discounts: a member's
         // own price is forced on their line, with its reason.
@@ -2085,6 +2101,8 @@ new class extends Component
         $this->formAllowDiscount = true;
         $this->formIsCamp = false;
         $this->formRequiresApproval = false;
+        $this->formExternalPrice = '';
+        $this->formExternalsOpenOn = '';
         $this->formMaxParticipants = '';
         $this->formIsOpenEnrollment = false;
         $this->formEnrollmentsOpen = true;

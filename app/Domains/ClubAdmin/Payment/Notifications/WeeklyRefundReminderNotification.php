@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Payment\Notifications;
 
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\Shared\Support\IbanNormalizer;
 use Illuminate\Bus\Queueable;
@@ -38,15 +39,19 @@ class WeeklyRefundReminderNotification extends Notification
             ->line(__('The following :count payment(s) are awaiting refund:', ['count' => $this->payments->count()]));
 
         foreach ($this->payments as $payment) {
-            $user = $payment->payable?->user;
-            $tournament = $payment->payable?->tournament;
+            $payable = $payment->payable;
+            $user = $payable instanceof ExternalRegistration ? null : $payable?->user;
+            $tournament = $payable instanceof ExternalRegistration ? null : $payable?->tournament;
 
-            if (! $user) {
+            // A non-member has no member record: the name comes from the registration.
+            $name = $user?->full_name ?? ($payable instanceof ExternalRegistration ? $payable->displayName() : null);
+
+            if ($name === null) {
                 continue;
             }
 
             $amount = number_format((float) $payment->amount_due, 2);
-            $line = "• **{$user->full_name}** — {$amount} €";
+            $line = "• **{$name}** — {$amount} €";
 
             if ($tournament) {
                 $line .= " ({$tournament->name})";
@@ -58,7 +63,7 @@ class WeeklyRefundReminderNotification extends Notification
             // celui de sa fiche.
             if ($payment->refund_iban) {
                 $line .= ' — IBAN: ' . IbanNormalizer::format($payment->refund_iban);
-            } elseif ($user->iban) {
+            } elseif ($user?->iban) {
                 $line .= " — IBAN: {$user->iban_formatted}";
             } else {
                 $line .= ' — ' . __('no IBAN on file');

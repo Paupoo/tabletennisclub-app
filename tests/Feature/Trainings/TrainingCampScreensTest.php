@@ -153,6 +153,29 @@ describe('the member screens', function (): void {
             ->assertSee(__('to pay: :amount €', ['amount' => '80,00']));
     });
 
+    it('describes the stage like a training pack, without the billing jargon', function (): void {
+        $coach = User::factory()->create(['first_name' => 'Amaury', 'last_name' => 'Ketele']);
+        $camp = campScreensCamp([
+            'name' => 'Stage de Pâques',
+            'price' => 135,
+            'trainer_id' => $coach->id,
+            'days_of_week' => [1, 2, 3, 4, 5],
+            'start_time' => '09:00:00',
+            'duration_minutes' => 420,
+        ]);
+        $member = activeMember($this->season);
+
+        Livewire::actingAs($member)
+            ->test('pages::club-admin.users.user-space.event-subscription', ['user' => $member])
+            ->assertSee($camp->scheduleLabel())
+            ->assertSee($camp->room->name)
+            ->assertSee($camp->level->label)
+            ->assertSee('Amaury Ketele')
+            ->assertSee('135,00 €')
+            ->assertSee(trans_choice(':n spot left|:n spots left', 10, ['n' => 10]))
+            ->assertDontSee(__('invoiced separately'));
+    });
+
     it('does not offer the stage in « My season »', function (): void {
         campScreensCamp(['name' => 'Stage de Pâques']);
         makeTrainingPack($this->season, ['name' => 'Mardi Élite']);

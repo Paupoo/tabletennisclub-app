@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\Trainings\Services;
 
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
@@ -95,6 +97,14 @@ final readonly class TrainingRosterExport
             ->get()
             ->keyBy('id');
 
+        $externalsByPack = ExternalRegistration::query()
+            ->where('registrable_type', TrainingPack::class)
+            ->whereIn('registrable_id', $packs->modelKeys())
+            ->whereIn('status', ExternalRegistration::SEATED_STATUSES)
+            ->with('payments')
+            ->get()
+            ->groupBy('registrable_id');
+
         foreach ($packs as $pack) {
             $ordered = $ties
                 ->where('training_pack_id', $pack->id)
@@ -108,9 +118,47 @@ final readonly class TrainingRosterExport
             foreach ($ordered as $tie) {
                 $rows[] = $this->row($pack, $tie, $subscriptions[$tie->subscription_id]);
             }
+
+            // A stage's non-members come after its members: no queue, no
+            // affiliation, the number they gave to call.
+            $externals = ($externalsByPack[$pack->id] ?? collect())
+                ->sortBy(fn (ExternalRegistration $registration): string => mb_strtolower($registration->last_name . ' ' . $registration->first_name));
+
+            foreach ($externals as $registration) {
+                $rows[] = $this->externalRow($pack, $registration);
+            }
         }
 
         return $rows;
+    }
+
+    /**
+     * @return array{pack: string, level: string, slot: string, coach: string, status: string, status_label: string, position: int|null, last_name: string, first_name: string, age: int|null, ranking: string, emails: string, phone: string, since: string, paid: bool, attendance: int|null}
+     */
+    private function externalRow(TrainingPack $pack, ExternalRegistration $registration): array
+    {
+        $owed = $registration->payments
+            ->filter(fn (Payment $payment): bool => $payment->status === 'pending' && $payment->payment_method !== 'refund')
+            ->sum(fn (Payment $payment): float => $payment->balance());
+
+        return [
+            'pack' => $pack->name,
+            'level' => $pack->level?->label ?? '',
+            'slot' => $this->slot($pack),
+            'coach' => $pack->trainer?->full_name ?? '',
+            'status' => $registration->status,
+            'status_label' => $this->statusLabel($registration->status) . ' (' . __('non-member') . ')',
+            'position' => null,
+            'last_name' => (string) $registration->last_name,
+            'first_name' => (string) $registration->first_name,
+            'age' => null,
+            'ranking' => '',
+            'emails' => (string) $registration->email,
+            'phone' => (string) ($registration->is_minor ? $registration->guardian_phone : $registration->phone),
+            'since' => $pack->pack_start_date?->format('d/m/Y') ?? '',
+            'paid' => $owed <= 0.0,
+            'attendance' => $this->attendance->externalRate($pack, $registration->id),
+        ];
     }
 
     /**

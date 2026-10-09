@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header progress-indicator separator :subtitle="__('Tournaments, dinners, and club meetings')"
+    <x-header progress-indicator separator :subtitle="__('Tournaments, meetings and training camps of the club')"
         :title="__('Events and Activities')">
         <x-slot:actions>
             <x-admin.shared.mobile-header-actions :filter-count="count($this->getFilterChips())"
@@ -77,7 +77,7 @@
 
             {{-- Section : À venir --}}
             @if ($eventType === '' || $eventType === 'tournament')
-            <x-card icon="o-calendar-days" separator :title="__('Upcoming Tournaments')">
+            <x-card icon="o-calendar-days" separator :title="__('Tournaments')">
 
                 @forelse ($this->upcomingTournaments as $tournament)
                     @php
@@ -206,7 +206,7 @@
 
             {{-- Section : Mes réunions ──────────────────────────────────── --}}
             @if (($eventType === '' || $eventType === 'meeting') && $this->upcomingMeetings->isNotEmpty())
-                <x-card icon="o-calendar-days" separator :title="__('Upcoming Meetings')">
+                <x-card icon="o-calendar-days" separator :title="__('Meetings')">
                     @forelse ($this->upcomingMeetings as $meeting)
                         <x-admin.shared.compact-event-preview
                             :location="$meeting->format === \App\Domains\Shared\Enums\MeetingFormatEnum::PHYSICAL ? $meeting->location : null"
@@ -246,28 +246,6 @@
                 </x-card>
             @endif
 
-            {{-- Section : PV des assemblées générales ─────────────────────── --}}
-            @if (($eventType === '' || $eventType === 'meeting') && $this->assemblyMinutes->isNotEmpty())
-                <x-card icon="o-document-text" separator :title="__('General assembly minutes')">
-                    <ul class="divide-y divide-base-300">
-                        @foreach ($this->assemblyMinutes as $assembly)
-                            <li class="flex flex-wrap items-center justify-between gap-2 py-2.5" wire:key="assembly-minutes-{{ $assembly->id }}">
-                                <div class="min-w-0">
-                                    <p class="text-sm font-semibold">{{ $assembly->title }}</p>
-                                    <p class="text-xs text-muted">{{ $assembly->scheduled_at?->translatedFormat('j F Y') }}</p>
-                                </div>
-                                <div class="flex gap-1">
-                                    <x-button icon="o-eye" :label="__('Read')" class="btn-ghost btn-xs"
-                                        :link="route('meetings.minutes.read', $assembly)" />
-                                    <x-button icon="o-arrow-down-tray" label="PDF" class="btn-ghost btn-xs"
-                                        :link="route('meetings.minutes.pdf', $assembly)" no-wire-navigate external />
-                                </div>
-                            </li>
-                        @endforeach
-                    </ul>
-                </x-card>
-            @endif
-
             {{-- Section : Stages ─────────────────────────────────────────────
                  Une offre du club parmi d'autres, facturée à part : elle se lit
                  ici, à côté des tournois, et jamais dans la cotisation. --}}
@@ -278,17 +256,56 @@
                             @php
                                 $camp = $row['pack'];
                             @endphp
-                            <div class="flex flex-wrap items-center gap-3 rounded-lg border border-base-300 px-3 py-2"
-                                wire:key="camp-{{ $camp->id }}">
+                            {{-- Lue comme la carte d'un pack sur « Ma saison » : le
+                                 membre compare un stage à un entraînement, pas à
+                                 une facture. --}}
+                            <div x-data="{ descOpen: false }" @class([
+                                'flex flex-wrap items-center gap-4 rounded-xl border bg-base-100 p-4',
+                                'border-primary/40' => $row['status'] === 'enrolled',
+                                'border-base-300' => $row['status'] !== 'enrolled',
+                            ]) wire:key="camp-{{ $camp->id }}">
                                 <div class="min-w-0 flex-1">
-                                    <p class="text-sm font-medium">{{ $camp->name }}</p>
-                                    <p class="text-xs text-base-content/60">
-                                        {{ __('From :from to :to', ['from' => $camp->pack_start_date->translatedFormat('d M'), 'to' => $camp->pack_end_date->translatedFormat('d M Y')]) }}
-                                        · {{ number_format((float) $camp->price, 2, ',', ' ') }} €
-                                        · {{ __('invoiced separately') }}
-                                    </p>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <div class="h-2 w-2 shrink-0 rounded-full bg-{{ $camp->level?->color ?? 'primary' }}"></div>
+                                        <span class="text-sm font-bold">{{ $camp->name }}</span>
+                                        @if ($row['status'] === null)
+                                            @if ($row['full'])
+                                                <x-admin.shared.status-badge status="full" />
+                                            @elseif ($row['spots'] !== null)
+                                                <span class="text-xs opacity-60">{{ trans_choice(':n spot left|:n spots left', $row['spots'], ['n' => $row['spots']]) }}</span>
+                                            @endif
+                                        @endif
+                                    </div>
+                                    <div class="mt-1.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+                                        @if (filled($schedule = $camp->scheduleLabel()))
+                                            <span class="text-muted">{{ __('Schedule') }}</span>
+                                            <span class="font-medium">{{ $schedule }}</span>
+                                        @endif
+                                        @if ($camp->room)
+                                            <span class="text-muted">{{ __('Room') }}</span>
+                                            <span class="font-medium">{{ $camp->room->name }}</span>
+                                        @endif
+                                        @if ($camp->level)
+                                            <span class="text-muted">{{ __('Level') }}</span>
+                                            <span class="font-medium">{{ __($camp->level->label) }}</span>
+                                        @endif
+                                        @if ($camp->trainer)
+                                            <span class="text-muted">{{ __('Trainer') }}</span>
+                                            <span class="font-medium">{{ $camp->trainer->first_name }} {{ $camp->trainer->last_name }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="mt-1 flex items-center gap-2">
+                                        <span class="text-xs font-semibold">{{ number_format((float) $camp->price, 2, ',', ' ') }} €</span>
+                                        @if (filled($camp->description))
+                                            <button type="button" @click="descOpen = !descOpen" class="cursor-pointer text-xs text-primary underline">
+                                                <span x-text="descOpen ? '{{ __('Hide') }}' : '{{ __('Info') }}'"></span>
+                                            </button>
+                                        @endif
+                                    </div>
                                     @if (filled($camp->description))
-                                        <p class="mt-1 text-xs text-base-content/60">{{ $camp->description }}</p>
+                                        <div x-show="descOpen" x-collapse class="mt-1 text-xs leading-relaxed opacity-60">
+                                            {{ $camp->description }}
+                                        </div>
                                     @endif
                                 </div>
 
@@ -336,37 +353,6 @@
                                             @endif
                                     @endswitch
                                 </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </x-card>
-            @endif
-
-            {{-- Section : Mes entraînements ────────────────────────────────── --}}
-            @if (($eventType === '' || $eventType === 'training') && $this->upcomingTrainingSessions->isNotEmpty())
-                <x-card icon="o-academic-cap" separator :title="__('My upcoming sessions')">
-                    <div class="space-y-2">
-                        @foreach ($this->upcomingTrainingSessions as $session)
-                            <div class="flex items-center justify-between rounded-lg border border-base-300 px-3 py-2">
-                                <div class="flex items-center gap-3">
-                                    <div class="text-center">
-                                        <div class="text-xs font-bold uppercase text-base-content/50">
-                                            {{ $session->start->translatedFormat('M') }}
-                                        </div>
-                                        <div class="text-lg font-bold leading-none">
-                                            {{ $session->start->format('d') }}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-medium">{{ $session->trainingPack?->name }}</p>
-                                        <p class="text-xs text-base-content/60">
-                                            {{ $session->start->format('H:i') }} – {{ $session->end->format('H:i') }}
-                                            · {{ $session->room?->name }}
-                                        </p>
-                                    </div>
-                                </div>
-                                <x-badge value="{{ $session->trainingPack?->level?->label }}"
-                                    class="badge-primary badge-soft badge-sm" />
                             </div>
                         @endforeach
                     </div>

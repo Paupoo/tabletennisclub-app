@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Trainings\Models;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -25,6 +26,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 /**
@@ -54,6 +56,8 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
  * @property bool $enrollments_open
  * @property bool $is_camp a stage: optional, invoiced on its own, outside the affiliation
  * @property bool $requires_approval
+ * @property int|null $external_price in euros, the stage's price for a non-member; `price` when null
+ * @property \Illuminate\Support\Carbon|null $externals_open_on non-members may be enrolled from that day; members only when null
  * @property-read EventPost|null $eventPost
  * @property-read Room $room
  * @property-read Season $season
@@ -120,6 +124,8 @@ class TrainingPack extends Model
         'enrollments_open' => 'boolean',
         'is_camp' => 'boolean',
         'requires_approval' => 'boolean',
+        'external_price' => 'integer',
+        'externals_open_on' => 'date',
     ];
 
     protected $fillable = [
@@ -145,6 +151,8 @@ class TrainingPack extends Model
         'enrollments_open',
         'is_camp',
         'requires_approval',
+        'external_price',
+        'externals_open_on',
     ];
 
     /**
@@ -181,12 +189,17 @@ class TrainingPack extends Model
      * d'offrir à quelqu'un de la file, et {@see TrainingWaitlistService} en
      * offrirait autant de fois qu'il reste de gens à appeler.
      */
+    /**
+     * The places taken: members enrolled, awaiting a decision or offered a
+     * spot, and the non-members the club put on a stage — one gauge for all.
+     */
     public function committedCount(): int
     {
         return $this->subscriptions()
             ->affiliated()
             ->wherePivotIn('status', ['enrolled', 'pending', 'offered'])
-            ->count();
+            ->count()
+            + $this->externalRegistrations()->whereIn('status', ExternalRegistration::SEATED_STATUSES)->count();
     }
 
     public function effectiveMaxParticipants(): int
@@ -205,6 +218,16 @@ class TrainingPack extends Model
     public function eventPost(): MorphOne
     {
         return $this->morphOne(EventPost::class, 'eventable');
+    }
+
+    /**
+     * Non-members the club put on this stage.
+     *
+     * @return MorphMany<ExternalRegistration, $this>
+     */
+    public function externalRegistrations(): MorphMany
+    {
+        return $this->morphMany(ExternalRegistration::class, 'registrable');
     }
 
     /**
@@ -300,10 +323,11 @@ class TrainingPack extends Model
      * Basculer la case changerait d'un coup ce que doivent les inscrits, ferait
      * apparaître ou disparaître des remises et rendrait faux un montant déjà
      * certifié sur une attestation. Une erreur se corrige en recréant le pack.
+     * Un externe compte autant qu'un membre : sa facture vit sur le stage.
      */
     public function hasEverHadEnrolments(): bool
     {
-        return $this->subscriptions()->exists();
+        return $this->subscriptions()->exists() || $this->externalRegistrations()->exists();
     }
 
     public function level(): BelongsTo

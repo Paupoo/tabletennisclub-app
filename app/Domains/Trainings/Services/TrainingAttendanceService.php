@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domains\Trainings\Services;
 
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Trainings\Models\Training;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Écriture du pointage d'une séance.
@@ -17,6 +19,20 @@ use App\Domains\Trainings\Models\Training;
  */
 class TrainingAttendanceService
 {
+    /**
+     * Le statut pointé de chaque participant externe à une séance, par inscription.
+     *
+     * @return array<int, string>
+     */
+    public function externalStatuses(Training $session): array
+    {
+        return DB::table('external_registration_training')
+            ->where('training_id', $session->id)
+            ->orderBy('external_registration_id')
+            ->pluck('status', 'external_registration_id')
+            ->all();
+    }
+
     /**
      * Note le passage d'un membre à une séance.
      *
@@ -32,6 +48,24 @@ class TrainingAttendanceService
         }
 
         $session->trainees()->attach($member->id, ['status' => $status]);
+    }
+
+    /**
+     * Note le passage d'un participant externe, comme celui d'un membre.
+     */
+    public function recordExternal(Training $session, ExternalRegistration $registration, string $status): void
+    {
+        DB::table('external_registration_training')->upsert(
+            [[
+                'external_registration_id' => $registration->id,
+                'training_id' => $session->id,
+                'status' => $status,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]],
+            ['external_registration_id', 'training_id'],
+            ['status', 'updated_at'],
+        );
     }
 
     /**
@@ -57,6 +91,19 @@ class TrainingAttendanceService
 
         foreach ($untouched as $memberId) {
             $session->trainees()->attach($memberId, ['status' => 'absent']);
+        }
+
+        // Les externes du stage suivent la même règle : pas pointé, absent.
+        $pack = $session->trainingPack;
+
+        if ($pack !== null) {
+            $seenExternals = array_keys($this->externalStatuses($session));
+
+            $pack->externalRegistrations()
+                ->whereIn('status', ExternalRegistration::SEATED_STATUSES)
+                ->whereNotIn('id', $seenExternals)
+                ->get()
+                ->each(fn (ExternalRegistration $registration) => $this->recordExternal($session, $registration, 'absent'));
         }
 
         $session->update([

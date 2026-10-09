@@ -28,6 +28,7 @@ it('orders the general menu in three groups', function (): void {
         'separator-reference',
         __('Rules & regulations'),
         __('Club charter'),
+        __('Assembly minutes'),
     ])->map(fn (string $needle): int|false => str_starts_with($needle, 'separator-')
         ? strpos($menu, "data-menu-group=\"{$needle}\"")
         : strpos($menu, e($needle)));

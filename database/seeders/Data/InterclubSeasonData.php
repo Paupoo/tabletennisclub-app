@@ -26,7 +26,7 @@ class InterclubSeasonData
 
     public const SEASON_NAME = '2025-2026';
 
-    public const SEASON_START = '2025-09-01 00:00:00';
+    public const SEASON_START = '2025-07-01 00:00:00';
 
     /**
      * @return array<int, array{category: LeagueCategory, team: string, division: string, position: string, matches: array<int, array<string, mixed>>}>

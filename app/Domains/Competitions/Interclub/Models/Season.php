@@ -69,6 +69,9 @@ class Season extends Model
     use HasAuditLog;
     use HasFactory;
 
+    /** A season created by default runs from July 1st to June 30th. */
+    public const int DEFAULT_START_MONTH = 7;
+
     protected $casts = [
         'name' => 'string',
         'start_at' => 'datetime',
@@ -92,6 +95,30 @@ class Season extends Model
             now()->addHours(1),
             fn () => static::active()->first()
         );
+    }
+
+    /**
+     * The dates a season starting in `$startYear` gets by default: July 1st to
+     * June 30th of the following year.
+     *
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    public static function defaultDates(int $startYear): array
+    {
+        return [
+            Carbon::create($startYear, self::DEFAULT_START_MONTH, 1)->startOfDay(),
+            Carbon::create($startYear + 1, self::DEFAULT_START_MONTH, 1)->subDay()->endOfDay(),
+        ];
+    }
+
+    /**
+     * The year the default season holding `$day` starts in.
+     */
+    public static function defaultStartYearOf(\DateTimeInterface $day): int
+    {
+        $day = Carbon::instance($day);
+
+        return $day->month >= self::DEFAULT_START_MONTH ? $day->year : $day->year - 1;
     }
 
     public function activate(): void

@@ -261,3 +261,37 @@ describe('season:provision command', function (): void {
         expect(Season::count())->toBe($countBefore);
     });
 });
+
+// ── Default dates: a season runs from July 1st to June 30th ───────────────────
+
+describe('a season runs from July to June', function (): void {
+    it('provisions the coming seasons from July 1st to June 30th', function (): void {
+        Season::factory()->create(['name' => '2030-2031', 'start_at' => '2030-07-01', 'end_at' => '2031-06-30', 'is_active' => true]);
+
+        $this->artisan('season:provision')->assertSuccessful();
+
+        $next = Season::where('name', '2031-2032')->firstOrFail();
+
+        expect($next->start_at->toDateString())->toBe('2031-07-01')
+            ->and($next->end_at->toDateString())->toBe('2032-06-30');
+    });
+
+    it('counts July as the start of the current season when nothing exists yet', function (): void {
+        $this->travelTo('2026-07-15 10:00');
+
+        $this->artisan('season:provision')->assertSuccessful();
+
+        expect(Season::orderBy('start_at')->pluck('name')->all())->toBe(['2026-2027', '2027-2028', '2028-2029'])
+            ->and(Season::orderBy('start_at')->first()->start_at->toDateString())->toBe('2026-07-01');
+    });
+
+    it('proposes July 1st to June 30th for a new season', function (): void {
+        Season::factory()->create(['name' => '2030-2031', 'start_at' => '2030-07-01', 'end_at' => '2031-06-30']);
+
+        Livewire::actingAs(makeAdmin())
+            ->test('pages::club-admin.seasons.index')
+            ->call('openCreate')
+            ->assertSet('createStartAt', '2031-07-01')
+            ->assertSet('createEndAt', '2032-06-30');
+    });
+});

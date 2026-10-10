@@ -28,7 +28,7 @@ Un administrateur détient tout. Un membre du comité sans délégation ne voit 
 
 ## 1. Créer la saison
 
-**En principe, vous n'avez rien à faire.** Chaque **1er juillet à 6 h**, l'application crée automatiquement les deux saisons à venir (du 1er septembre au 30 juin). Vérifiez simplement qu'elles existent.
+**En principe, vous n'avez rien à faire.** Chaque **1er juillet à 6 h**, l'application crée automatiquement les deux saisons à venir (du 1er juillet au 30 juin). Vérifiez simplement qu'elles existent.
 
 Allez dans **Paramètres du club → Saisons**. La liste montre les saisons existantes, l'active étant marquée comme telle.
 

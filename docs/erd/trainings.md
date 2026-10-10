@@ -77,11 +77,13 @@ erDiagram
         int position
     }
 
+    Training }o--o{ User : "sparrings"
     Training }o--o{ User : "trainees"
     TrainingLevel ||--o{ TrainingPack : "packs"
     TrainingLevel ||--o{ Training : "sessions"
     TrainingPack ||--o| EventPost : "eventPost"
     TrainingPack ||--o{ ExternalRegistration : "externalRegistrations"
+    TrainingPack }o--o{ User : "sparrings"
     TrainingPack }o--o{ Subscription : "subscriptions"
     TrainingPack ||--o{ Training : "trainings"
     TrainingPlan ||--o{ TrainingPlanAssignment : "assignments"

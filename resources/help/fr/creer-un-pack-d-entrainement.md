@@ -43,7 +43,7 @@ Le prix par membre, en euros, décimales comprises. Et la case **remise autoris�
 
 C'est là qu'il faut être attentif : **tous les changements ne se valent pas**.
 
-**Changer le nom, la description, le prix, la remise, le coach** → enregistré directement. Le changement de coach est répercuté sur toutes les séances. Personne n'est prévenu, et c'est voulu : rien n'a bougé pour les membres.
+**Changer le nom, la description, le prix, la remise, le coach** → enregistré directement. Un nouveau coach reprend **les séances à venir** qui suivaient l'ancien : les séances passées gardent celui qui les a données, et une séance confiée à un remplaçant le garde. Personne n'est prévenu, et c'est voulu : rien n'a bougé pour les membres.
 
 **Changer le jour, l'heure, la durée, la salle, les dates ou les exclusions** → l'application vous arrête et vous demande confirmation, en annonçant **combien de séances vont être supprimées et recréées**.
 
@@ -54,6 +54,25 @@ Ce que la reconstruction touche, et ce qu'elle épargne :
 - **Les séances déjà annulées ne bougent pas non plus.** Une annulation a été annoncée par e-mail avec son motif : la ressusciter contredirait ce que les membres ont lu.
 
 La fenêtre propose aussi de **prévenir par e-mail les membres inscrits**. Elle est **cochée par défaut** — oublier de prévenir coûte plus cher qu'un e-mail de trop. Décochez-la pour la correction faite trente secondes après la faute de frappe.
+
+## Confier une séance à un remplaçant
+
+Sur la liste **Séances** du pack, chaque séance affiche son coach et, s'il y en a, ses sparrings. **Confier** la passe à quelqu'un d'autre pour **cette date seulement** : choisissez n'importe quel membre. Il est prévenu par e-mail, devient le coach de la séance — il la pointe et voit les coordonnées des inscrits — et le pack garde son coach pour toutes les autres. Le coach peut aussi confier lui-même sa séance à un collègue de l'encadrement, depuis son espace ; chaque remplacement est inscrit dans le journal d'audit.
+
+C'est le coach de la séance qui compte comme l'ayant donnée : corrigez-la si un collègue a pris la salle sans que personne ne le saisisse.
+
+## Les sparrings
+
+Un **sparring** joue avec les élèves aux côtés du coach ; il ne le remplace pas. Sur la fiche du pack, **Ajouter un sparring** l'attitre au pack : il est attendu à **toutes les séances à venir**, jamais aux passées. **Sparrings** sur une séance ajuste cette date-là : ajouter un renfort ponctuel, ou retirer un attitré absent ce jour-là. Un attitré retiré d'une date ne revient pas sur cette date si vous modifiez le pack ensuite ; le retirer du pack l'enlève des séances à venir, sauf de celles où vous l'aviez ajouté à la main.
+
+- N'importe quel membre peut être sparring, mineurs compris. Aucun rôle à attribuer : c'est ce rattachement qui fait de lui un sparring.
+- Il est prévenu par e-mail quand on l'attitre ou le retire, quand on l'ajoute ou le retire d'une date, et quand une de ses séances est annulée. Il voit ses séances dans son calendrier.
+- Il **ne pointe rien** et n'a accès ni à l'espace coach ni aux coordonnées des inscrits. C'est le coach qui confirme sa présence, et un sparring non confirmé est noté absent à la validation.
+- Un pack **Libre** n'a pas de sparrings : sans coach, personne ne les pointerait.
+
+## L'encadrement : qui a fait quoi
+
+**Entraînements → Encadrement** donne, pour la saison ou pour un mois, une ligne par personne : les **séances données** comme coach (comptées une fois pointées), les **présences en sparring** confirmées par le coach, et ce qui reste **à pointer** — tant que ce chiffre n'est pas à zéro, les autres ne sont pas définitifs. Un clic sur un nom détaille ses séances une à une ; **Exporter** sort le décompte en tableur. Les montants viendront plus tard : cet écran n'en affiche aucun. Réservé au comité ; un coach ne voit pas les chiffres de ses collègues.
 
 ## Annuler une séance isolée
 

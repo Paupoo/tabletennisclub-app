@@ -321,6 +321,14 @@ A training camp is a pack ticked **Training camp (outside the membership fee)** 
 
 A camp can take people who are neither members nor account holders. At the **Price** step of the wizard, **Open to non-members from** is the opt-in (empty: members only; until that day members have priority, then places are shared, first come first served) and **Price for non-members** defaults to the members' price. Both can be changed later, even once people are enrolled. Only the club enrols them, from the **Non-members** section of the camp's sheet: first and last name, email, optional mobile; for a minor, the responsible adult's name, mobile and email. One email confirms the place and asks to pay. A full camp is full: non-members have no waiting list. Withdrawal, encoding error, forced price and stopping the camp follow the members' rules. Coaches call the roll for them on the coach screen, and they appear in the attendance grid and the roster export. Six months after the camp ended, their identity is erased (money still open postpones it, and shows in the treasurer's tasks); prices, payments and attendance stay.
 
+### Stand-ins, sparrings and the coaching staff
+
+On a pack's **Sessions** list, **Hand over** gives one session to any member for that date only: they are told by email, record attendance and reach the enrolled members, and the pack keeps its coach. A coach can hand their own session to a colleague of the season's coaching staff from the coach area; every hand-over is logged. Changing a pack's coach moves only the coming sessions still on the former coach, never the past nor a stand-in.
+
+**Add a sparring** on the pack sheet names a regular sparring, expected at every coming session; **Sparrings** on a session adds a one-off helper or takes a regular off that date. Any member can be a sparring, minors included, with no role to grant. Sparrings are emailed when they join or leave a pack or a date and when their session is cancelled, and see their sessions in their calendar; they record nothing and see no contact details. The coach confirms each one present or absent, untouched means absent. Free practice takes no sparrings.
+
+**Trainings → Coaching staff** shows, for the season or a month, one line per person: sessions coached (counted once attendance is recorded), sparring presences confirmed by the coach, and what is still to record, with a per-session detail and an export. No amounts yet. Committee only.
+
 ### Planning board
 
 Go to **Planning → Planning board**. It is a **decision-support tool** to compose the season's training groups and **visualise tension** (headcount vs capacity) — without touching real enrolments.

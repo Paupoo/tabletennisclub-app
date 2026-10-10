@@ -158,10 +158,10 @@ class TrainingStaffing
      */
     public function notifyCancellation(Training $session, User $actor): void
     {
-        $staff = $session->sparrings()->get();
+        $staff = $session->sparrings()->with('guardians')->get();
 
         if ($session->trainer_id && $session->trainer_id !== $actor->id) {
-            $staff->push($session->trainer);
+            $staff->push(User::with('guardians')->find($session->trainer_id));
         }
 
         $staff->filter()

@@ -135,6 +135,7 @@ new class extends Component
         // Notify enrolled members
         if ($training->trainingPack) {
             $training->trainingPack->trainees()
+                ->with('guardians')
                 ->where('emails_notifications', true)
                 ->get()
                 ->each->notify(new TrainingSessionCancelledNotification($training, $type, $this->cancelNote ?: null));

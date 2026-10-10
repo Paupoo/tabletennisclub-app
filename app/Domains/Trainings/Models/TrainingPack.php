@@ -425,6 +425,8 @@ class TrainingPack extends Model
 
     /**
      * Les sparrings attitrés au pack : recopiés sur chaque séance à venir.
+     *
+     * @return BelongsToMany<User, $this>
      */
     public function sparrings(): BelongsToMany
     {

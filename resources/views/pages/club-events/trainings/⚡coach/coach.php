@@ -47,11 +47,11 @@ new class extends Component
 
     public ?int $handOverSessionId = null;
 
-    /** @var array<int, string> sparring attendance keyed by user_id */
-    public array $sparringAttendance = [];
-
     // ── Session drill-down ────────────────────────────────────────────────────
     public ?int $selectedSessionId = null;
+
+    /** @var array<int, string> sparring attendance keyed by user_id */
+    public array $sparringAttendance = [];
 
     // ── Computed ──────────────────────────────────────────────────────────────
 
@@ -148,44 +148,6 @@ new class extends Component
         $this->warning(__('Session cancelled. Members have been notified.'), icon: 'o-x-circle');
     }
 
-    /**
-     * Enrolled members for the selected session's pack, with their stats.
-     *
-     * @return Collection<int, User>
-     */
-    #[Computed]
-    public function enrolledMembers(): Collection
-    {
-        if (! $this->selectedSession?->trainingPack) {
-            return new Collection;
-        }
-
-        return $this->selectedSession->trainingPack->trainees()
-            ->with(['guardians', 'teams.league'])
-            ->get();
-    }
-
-    /**
-     * The non-members of the session's stage, called like the members.
-     *
-     * @return Collection<int, ExternalRegistration>
-     */
-    #[Computed]
-    public function externalParticipants(): Collection
-    {
-        $pack = $this->selectedSession?->trainingPack;
-
-        if (! $pack) {
-            return new Collection;
-        }
-
-        return $pack->externalRegistrations()
-            ->whereIn('status', ExternalRegistration::SEATED_STATUSES)
-            ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->get();
-    }
-
     // ── Hand-over ─────────────────────────────────────────────────────────────
 
     /**
@@ -230,6 +192,44 @@ new class extends Component
     }
 
     /**
+     * Enrolled members for the selected session's pack, with their stats.
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function enrolledMembers(): Collection
+    {
+        if (! $this->selectedSession?->trainingPack) {
+            return new Collection;
+        }
+
+        return $this->selectedSession->trainingPack->trainees()
+            ->with(['guardians', 'teams.league'])
+            ->get();
+    }
+
+    /**
+     * The non-members of the session's stage, called like the members.
+     *
+     * @return Collection<int, ExternalRegistration>
+     */
+    #[Computed]
+    public function externalParticipants(): Collection
+    {
+        $pack = $this->selectedSession?->trainingPack;
+
+        if (! $pack) {
+            return new Collection;
+        }
+
+        return $pack->externalRegistrations()
+            ->whereIn('status', ExternalRegistration::SEATED_STATUSES)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
+    }
+
+    /**
      * Les collègues à qui confier la séance : l'encadrement de sa saison,
      * moins soi-même.
      *
@@ -254,6 +254,15 @@ new class extends Component
             ->all();
     }
 
+    // ── Cancellation ──────────────────────────────────────────────────────────
+
+    public function openCancel(): void
+    {
+        $this->cancelType = 'FREE';
+        $this->cancelNote = '';
+        $this->cancelModal = true;
+    }
+
     public function openHandOver(int $trainingId): void
     {
         Gate::authorize('handOver', Training::findOrFail($trainingId));
@@ -263,15 +272,6 @@ new class extends Component
         $this->handOverModal = true;
 
         unset($this->handOverOptions);
-    }
-
-    // ── Cancellation ──────────────────────────────────────────────────────────
-
-    public function openCancel(): void
-    {
-        $this->cancelType = 'FREE';
-        $this->cancelNote = '';
-        $this->cancelModal = true;
     }
 
     /**
@@ -334,6 +334,28 @@ new class extends Component
         app(TrainingAttendanceService::class)->record($session, User::findOrFail($userId), $status);
     }
 
+    public function setExternalAttendance(int $registrationId, string $status): void
+    {
+        if (! $this->selectedSessionId || ! in_array($status, ['present', 'excused', 'absent'], true)) {
+            return;
+        }
+
+        $session = Training::with('trainingPack')->findOrFail($this->selectedSessionId);
+
+        Gate::authorize('recordAttendance', $session);
+
+        // Only a non-member of this session's stage: an id from elsewhere is ignored.
+        $registration = $session->trainingPack?->externalRegistrations()->find($registrationId);
+
+        if (! $registration instanceof ExternalRegistration) {
+            return;
+        }
+
+        $this->externalAttendanceStatus[$registration->id] = $status;
+
+        app(TrainingAttendanceService::class)->recordExternal($session, $registration, $status);
+    }
+
     public function setSparringAttendance(int $userId, string $status): void
     {
         if (! $this->selectedSessionId || ! in_array($status, ['present', 'absent'], true)) {
@@ -364,28 +386,6 @@ new class extends Component
     public function sparrings(): Collection
     {
         return $this->selectedSession?->sparrings()->orderBy('last_name')->orderBy('first_name')->get() ?? new Collection;
-    }
-
-    public function setExternalAttendance(int $registrationId, string $status): void
-    {
-        if (! $this->selectedSessionId || ! in_array($status, ['present', 'excused', 'absent'], true)) {
-            return;
-        }
-
-        $session = Training::with('trainingPack')->findOrFail($this->selectedSessionId);
-
-        Gate::authorize('recordAttendance', $session);
-
-        // Only a non-member of this session's stage: an id from elsewhere is ignored.
-        $registration = $session->trainingPack?->externalRegistrations()->find($registrationId);
-
-        if (! $registration instanceof ExternalRegistration) {
-            return;
-        }
-
-        $this->externalAttendanceStatus[$registration->id] = $status;
-
-        app(TrainingAttendanceService::class)->recordExternal($session, $registration, $status);
     }
 
     /**

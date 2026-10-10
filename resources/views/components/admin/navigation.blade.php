@@ -366,6 +366,9 @@
         <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')"
             :badge="$badge('camp_requests')" badge-classes="badge-warning" />
         @endcan
+        @can('view-training-staff')
+        <x-menu-item icon="o-user-group" link="{{ route('admin.trainings.staff') }}" :title="__('Coaching staff')" />
+        @endcan
         @feature('training_planning')
         @can('trainings.view')
         <x-menu-item icon="o-view-columns" link="{{ route('admin.planning.board') }}" :title="__('Planning board')" />

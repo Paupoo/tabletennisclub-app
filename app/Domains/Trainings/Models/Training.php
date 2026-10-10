@@ -149,6 +149,8 @@ class Training extends Model
     /**
      * Les sparrings attendus à cette séance, un attitré retiré pour la date
      * mis à part. Le pivot porte le pointage du coach.
+     *
+     * @return BelongsToMany<User, $this>
      */
     public function sparrings(): BelongsToMany
     {

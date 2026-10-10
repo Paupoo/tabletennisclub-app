@@ -131,6 +131,14 @@ class AuthServiceProvider extends ServiceProvider
          * so someone who no longer coaches lands on an empty list rather than
          * on someone else's sessions.
          */
+        /*
+         * Who coached and sparred what prepares what people get paid: the
+         * committee reads it, a coach — who also holds `trainings.view` —
+         * does not see their colleagues' counts. Same pair as the roster export.
+         */
+        Gate::define('view-training-staff', fn (User $user): bool => $user->can(Permission::TrainingsView->value)
+            && $user->can(Permission::UsersView->value));
+
         Gate::define('access-coach-area', fn (User $user): bool => $user->can(Permission::CoachAreaAccess->value)
             || $user->coachOf()->exists()
             || $user->coachOfSession()->exists());

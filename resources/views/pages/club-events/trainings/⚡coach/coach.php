@@ -47,6 +47,9 @@ new class extends Component
 
     public ?int $handOverSessionId = null;
 
+    /** @var array<int, string> sparring attendance keyed by user_id */
+    public array $sparringAttendance = [];
+
     // ── Session drill-down ────────────────────────────────────────────────────
     public ?int $selectedSessionId = null;
 
@@ -136,6 +139,8 @@ new class extends Component
                 ->get()
                 ->each->notify(new TrainingSessionCancelledNotification($training, $type, $this->cancelNote ?: null));
         }
+
+        app(TrainingStaffing::class)->notifyCancellation($training, auth()->user());
 
         $this->cancelModal = false;
         $this->selectedSessionId = null;
@@ -329,6 +334,38 @@ new class extends Component
         app(TrainingAttendanceService::class)->record($session, User::findOrFail($userId), $status);
     }
 
+    public function setSparringAttendance(int $userId, string $status): void
+    {
+        if (! $this->selectedSessionId || ! in_array($status, ['present', 'absent'], true)) {
+            return;
+        }
+
+        $session = Training::findOrFail($this->selectedSessionId);
+
+        Gate::authorize('recordAttendance', $session);
+
+        $sparring = $session->sparrings()->find($userId);
+
+        if (! $sparring instanceof User) {
+            return;
+        }
+
+        $this->sparringAttendance[$sparring->id] = $status;
+
+        app(TrainingAttendanceService::class)->recordSparring($session, $sparring, $status);
+    }
+
+    /**
+     * Les sparrings attendus à la séance, à confirmer comme les élèves.
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function sparrings(): Collection
+    {
+        return $this->selectedSession?->sparrings()->orderBy('last_name')->orderBy('first_name')->get() ?? new Collection;
+    }
+
     public function setExternalAttendance(int $registrationId, string $status): void
     {
         if (! $this->selectedSessionId || ! in_array($status, ['present', 'excused', 'absent'], true)) {
@@ -421,7 +458,12 @@ new class extends Component
 
         $this->externalAttendanceStatus = app(TrainingAttendanceService::class)->externalStatuses($session);
 
-        unset($this->selectedSession, $this->enrolledMembers, $this->walkIns, $this->attendeeOptions, $this->externalParticipants);
+        $this->sparringAttendance = $session->sparrings()
+            ->whereNotNull('training_sparrings.attendance')
+            ->pluck('training_sparrings.attendance', 'users.id')
+            ->all();
+
+        unset($this->selectedSession, $this->enrolledMembers, $this->walkIns, $this->attendeeOptions, $this->externalParticipants, $this->sparrings);
     }
 
     /**
@@ -452,6 +494,7 @@ new class extends Component
             'selectedSession' => $this->selectedSession,
             'enrolledMembers' => $this->enrolledMembers,
             'externalParticipants' => $this->externalParticipants,
+            'sparrings' => $this->sparrings,
             'walkIns' => $this->walkIns,
             'attendeeOptions' => $this->attendeeOptions,
             'breadcrumbs' => $this->getBreadcrumbs(),

@@ -144,6 +144,32 @@
                 </div>
             </dl>
 
+            {{-- Sparrings: free practice has no coach to confirm them, so none there. --}}
+            @if ($selectedPack && $selectedPack->type !== \App\Domains\Shared\Enums\TrainingType::FREE)
+                <div class="mt-4 border-t border-base-300 pt-3">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Sparrings') }}</span>
+                        @forelse ($selectedPack->sparrings as $sparring)
+                            <span class="badge badge-soft badge-neutral gap-1" wire:key="pack-sparring-{{ $sparring->id }}">
+                                {{ $sparring->full_name }}
+                                @if ($this->mayManage)
+                                    <button type="button" class="cursor-pointer" wire:click="detachPackSparring({{ $sparring->id }})"
+                                        aria-label="{{ __('Remove') }}">
+                                        <x-icon name="o-x-mark" class="size-3" />
+                                    </button>
+                                @endif
+                            </span>
+                        @empty
+                            <span class="text-sm text-subtle">{{ __('None') }}</span>
+                        @endforelse
+                        @if ($this->mayManage)
+                            <x-button class="btn-ghost btn-xs" icon="o-plus" :label="__('Add a sparring')"
+                                wire:click="openPackSparring" />
+                        @endif
+                    </div>
+                </div>
+            @endif
+
             @if (filled($selectedPack?->description))
                 <p class="mt-4 border-t border-base-300 pt-3 text-sm text-base-content/70">
                     <span class="whitespace-pre-line">{{ $selectedPack->description }}</span>
@@ -434,6 +460,9 @@
                                         @if ($session->trainer)
                                             · {{ $session->trainer->full_name }}
                                         @endif
+                                        @if ($session->sparrings->isNotEmpty())
+                                            · {{ __('Sparrings') }}&nbsp;: {{ $session->sparrings->pluck('full_name')->implode(', ') }}
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -448,6 +477,10 @@
                                     @if ($this->mayManage)
                                         <x-button class="btn-ghost btn-sm" icon="o-arrow-path"
                                             :label="__('Hand over')" wire:click="openHandOver({{ $session->id }})" />
+                                        @if ($selectedPack?->type !== \App\Domains\Shared\Enums\TrainingType::FREE)
+                                            <x-button class="btn-ghost btn-sm" icon="o-user-group"
+                                                :label="__('Sparrings')" wire:click="openSessionSparrings({{ $session->id }})" />
+                                        @endif
                                         <x-button class="btn-ghost btn-sm text-error" icon="o-x-circle"
                                             :label="__('Cancel')" wire:click="openCancel({{ $session->id }})" />
                                     @endif
@@ -1102,13 +1135,50 @@
     {{-- ================================================================
          CANCELLATION MODAL
     ================================================================ --}}
+    <x-app-modal :title="__('Add a sparring')" wire:model="packSparringModal" separator :open="$packSparringModal">
+        <p class="text-sm text-base-content/70">
+            {{ __('A regular sparring is expected at every coming session of the pack. The coach confirms their presence when taking attendance.') }}
+        </p>
+
+        <x-choices-offline class="mt-4" :label="__('Sparring')" wire:model="packSparringUserId"
+            :options="$this->anyMemberOptions" option-label="name" single searchable />
+
+        <x-slot:actions>
+            <x-button :label="__('Abandon')" wire:click="$set('packSparringModal', false)" />
+            <x-button :label="__('Add')" class="btn-primary" wire:click="attachPackSparring" spinner />
+        </x-slot:actions>
+    </x-app-modal>
+
+    <x-app-modal :title="__('Sparrings of this session')" wire:model="sessionSparringsModal" separator :open="$sessionSparringsModal">
+        <div class="space-y-2">
+            @forelse ($this->sessionSparrings as $sparring)
+                <div class="flex items-center justify-between rounded-lg border border-base-300 px-3 py-2"
+                    wire:key="session-sparring-{{ $sparring->id }}">
+                    <span>{{ $sparring->full_name }}</span>
+                    <x-button class="btn-ghost btn-xs text-error" icon="o-x-mark" :label="__('Remove')"
+                        wire:click="removeSessionSparring({{ $sparring->id }})" />
+                </div>
+            @empty
+                <p class="text-sm text-subtle">{{ __('No sparring expected at this session.') }}</p>
+            @endforelse
+        </div>
+
+        <x-choices-offline class="mt-4" :label="__('Add a sparring')" wire:model="sessionSparringUserId"
+            :options="$this->anyMemberOptions" option-label="name" single searchable />
+
+        <x-slot:actions>
+            <x-button :label="__('Close')" wire:click="$set('sessionSparringsModal', false)" />
+            <x-button :label="__('Add')" class="btn-primary" wire:click="addSessionSparring" spinner />
+        </x-slot:actions>
+    </x-app-modal>
+
     <x-app-modal :title="__('Hand this session over')" wire:model="handOverModal" separator :open="$handOverModal">
         <p class="text-sm text-base-content/70">
             {{ __('This person coaches this session only: they record attendance and reach the enrolled members. The pack keeps its coach.') }}
         </p>
 
         <x-choices-offline class="mt-4" :label="__('Coach for this session')" wire:model="handOverCoachId"
-            :options="$this->handOverOptions" option-label="name" single searchable />
+            :options="$this->anyMemberOptions" option-label="name" single searchable />
 
         <x-slot:actions>
             <x-button :label="__('Abandon')" wire:click="$set('handOverModal', false)" />

@@ -87,6 +87,16 @@ new class extends Component
 
     public int $handOverCoachId = 0;
 
+    public bool $packSparringModal = false;
+
+    public int $packSparringUserId = 0;
+
+    public ?int $sessionSparringsId = null;
+
+    public bool $sessionSparringsModal = false;
+
+    public int $sessionSparringUserId = 0;
+
     public bool $handOverModal = false;
 
     public ?int $handOverSessionId = null;
@@ -486,6 +496,8 @@ new class extends Component
                 ->get()
                 ->each->notify(new TrainingSessionCancelledNotification($training, $type, $this->cancelNote ?: null));
         }
+
+        app(TrainingStaffing::class)->notifyCancellation($training, auth()->user());
 
         unset($this->sessions, $this->packSummary, $this->attendanceMatrix);
         $this->cancelModal = false;
@@ -1034,13 +1046,14 @@ new class extends Component
     }
 
     /**
-     * Tout membre peut recevoir une séance quand c'est le comité qui la
-     * confie : c'est ce geste qui fait entrer quelqu'un dans l'encadrement.
+     * Tout membre peut recevoir une séance ou devenir sparring quand c'est le
+     * comité qui le décide : c'est ce geste qui fait entrer quelqu'un dans
+     * l'encadrement.
      *
      * @return array<int, array{id: int, name: string}>
      */
     #[Computed]
-    public function handOverOptions(): array
+    public function anyMemberOptions(): array
     {
         return User::query()
             ->orderBy('last_name')
@@ -1058,6 +1071,115 @@ new class extends Component
         $this->handOverSessionId = $trainingId;
         $this->handOverCoachId = 0;
         $this->handOverModal = true;
+    }
+
+    // ── Sparrings ─────────────────────────────────────────────────────────────
+
+    public function addSessionSparring(): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        if (! $this->sessionSparringsId || ! $this->sessionSparringUserId) {
+            return;
+        }
+
+        app(TrainingStaffing::class)->addToSession(
+            Training::findOrFail($this->sessionSparringsId),
+            User::findOrFail($this->sessionSparringUserId),
+            Auth::user(),
+        );
+
+        $this->sessionSparringUserId = 0;
+
+        unset($this->sessions, $this->sessionSparrings);
+    }
+
+    public function attachPackSparring(): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        $pack = $this->selectedPack;
+
+        if (! $pack || ! $this->packSparringUserId) {
+            return;
+        }
+
+        try {
+            app(TrainingStaffing::class)->attachToPack($pack, User::findOrFail($this->packSparringUserId), Auth::user());
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->packSparringModal = false;
+        $this->packSparringUserId = 0;
+
+        unset($this->selectedPack, $this->sessions);
+    }
+
+    public function detachPackSparring(int $userId): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        $pack = $this->selectedPack;
+
+        if (! $pack) {
+            return;
+        }
+
+        app(TrainingStaffing::class)->detachFromPack($pack, User::findOrFail($userId), Auth::user());
+
+        unset($this->selectedPack, $this->sessions);
+    }
+
+    public function openPackSparring(): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        $this->packSparringUserId = 0;
+        $this->packSparringModal = true;
+    }
+
+    public function openSessionSparrings(int $trainingId): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        $this->sessionSparringsId = $trainingId;
+        $this->sessionSparringUserId = 0;
+        $this->sessionSparringsModal = true;
+
+        unset($this->sessionSparrings);
+    }
+
+    public function removeSessionSparring(int $userId): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        if (! $this->sessionSparringsId) {
+            return;
+        }
+
+        app(TrainingStaffing::class)->removeFromSession(
+            Training::findOrFail($this->sessionSparringsId),
+            User::findOrFail($userId),
+            Auth::user(),
+        );
+
+        unset($this->sessions, $this->sessionSparrings);
+    }
+
+    /**
+     * Les sparrings attendus à la séance ouverte dans la modale.
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function sessionSparrings(): Collection
+    {
+        $session = $this->sessionSparringsId ? Training::find($this->sessionSparringsId) : null;
+
+        return $session?->sparrings()->orderBy('last_name')->orderBy('first_name')->get() ?? new Collection;
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -1847,7 +1969,7 @@ new class extends Component
         // `season` et `eventPost` sont lus par l'en-tête et les pastilles de la
         // fiche : sans eager loading, strict mode lève une LazyLoadingViolation.
         return $this->selectedPackId
-            ? TrainingPack::with(['room', 'trainer', 'level', 'season', 'eventPost'])->find($this->selectedPackId)
+            ? TrainingPack::with(['room', 'trainer', 'level', 'season', 'eventPost', 'sparrings'])->find($this->selectedPackId)
             : null;
     }
 
@@ -1856,7 +1978,7 @@ new class extends Component
     public function sessions(): Collection
     {
         return $this->selectedPackId
-            ? Training::with(['room', 'trainer'])
+            ? Training::with(['room', 'trainer', 'sparrings'])
                 ->where('training_pack_id', $this->selectedPackId)
                 ->orderBy('start')
                 ->get()

@@ -423,6 +423,14 @@ class TrainingPack extends Model
         return $this->belongsTo(Season::class);
     }
 
+    /**
+     * Les sparrings attitrés au pack : recopiés sur chaque séance à venir.
+     */
+    public function sparrings(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'training_pack_sparrings')->withTimestamps();
+    }
+
     public function subscriptions(): BelongsToMany
     {
         return $this->belongsToMany(Subscription::class);

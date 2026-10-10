@@ -67,6 +67,29 @@
 
             {{-- Right — member list --}}
             <div class="lg:col-span-2">
+                {{-- Sparrings: confirmed by the coach, present or absent — this count is what pays them. --}}
+                @if ($sparrings->isNotEmpty())
+                    <x-card class="mb-4" :title="__('Sparrings')">
+                        @foreach ($sparrings as $sparring)
+                            @php $sparringStatus = $sparringAttendance[$sparring->id] ?? null; @endphp
+                            <div class="flex items-center justify-between gap-4 border-b border-base-300 py-3 last:border-0"
+                                wire:key="sparring-{{ $sparring->id }}">
+                                <p class="font-medium">{{ $sparring->full_name }}</p>
+                                <div class="flex shrink-0 gap-1">
+                                    <x-button
+                                        @class(['btn-xs', 'btn-success' => $sparringStatus === 'present', 'btn-ghost' => $sparringStatus !== 'present'])
+                                        icon="o-check" :tooltip="__('Present')"
+                                        wire:click="setSparringAttendance({{ $sparring->id }}, 'present')" />
+                                    <x-button
+                                        @class(['btn-xs', 'btn-error' => $sparringStatus === 'absent', 'btn-ghost' => $sparringStatus !== 'absent'])
+                                        icon="o-x-mark" :tooltip="__('Absent')"
+                                        wire:click="setSparringAttendance({{ $sparring->id }}, 'absent')" />
+                                </div>
+                            </div>
+                        @endforeach
+                    </x-card>
+                @endif
+
                 <x-card :title="__('Members')">
                     @forelse ($enrolledMembers as $member)
                         @php

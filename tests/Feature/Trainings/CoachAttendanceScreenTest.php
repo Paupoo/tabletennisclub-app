@@ -291,7 +291,9 @@ describe('a coach hands their session over', function (): void {
         $packHolder = User::factory()->create(['first_name' => 'Yves', 'last_name' => 'Lambert']);
         $stranger = User::factory()->create(['first_name' => 'Tom', 'last_name' => 'Inconnu']);
         $session = Training::factory()->for($coach, 'trainer')->create(['start' => now()->addDays(2), 'end' => now()->addDays(2)->addHour()]);
-        TrainingPack::factory()->create(['season_id' => $session->season_id, 'trainer_id' => $packHolder->id]);
+        $packOfTheSeason = TrainingPack::factory()->create(['season_id' => $session->season_id, 'trainer_id' => $packHolder->id]);
+        $regularSparring = User::factory()->create(['first_name' => 'Zoé', 'last_name' => 'Marchal']);
+        $packOfTheSeason->sparrings()->attach($regularSparring->id);
 
         // Une erreur dans un sélecteur ne doit pas suffire à confier les
         // téléphones d'un groupe d'enfants à un membre quelconque.
@@ -302,6 +304,7 @@ describe('a coach hands their session over', function (): void {
 
         expect($names)->toContain('Colin Nadia')
             ->toContain('Lambert Yves')
+            ->toContain('Marchal Zoé')
             ->not->toContain('Inconnu Tom');
     })->group('training', 'attendance', 'security');
 
@@ -330,4 +333,55 @@ describe('a coach hands their session over', function (): void {
             ->call('openHandOver', $session->id)
             ->assertForbidden();
     })->group('training', 'attendance', 'security');
+});
+
+describe('the coach confirms the sparrings', function (): void {
+    it('marks who came to help, and writes the others absent when closing the count', function (): void {
+        $coach = User::factory()->isCoach()->create();
+        $session = Training::factory()->past()->for($coach, 'trainer')->create();
+        $came = User::factory()->create(['first_name' => 'Jean', 'last_name' => 'Sparre']);
+        $missing = User::factory()->create(['first_name' => 'Léon', 'last_name' => 'Absent']);
+        $session->sparrings()->attach([$came->id => ['source' => 'pack'], $missing->id => ['source' => 'session']]);
+
+        // Ce pointage ouvrira un paiement : il doit être confirmé par le
+        // coach, jamais déduit. Un sparring que personne n'a coché n'est pas venu.
+        Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('viewSession', $session->id)
+            ->assertSee('Jean Sparre')
+            ->assertSee('Léon Absent')
+            ->call('setSparringAttendance', $came->id, 'present')
+            ->call('validateAttendance');
+
+        expect($session->sparrings()->pluck('training_sparrings.attendance', 'users.id')->all())
+            ->toBe([$came->id => 'present', $missing->id => 'absent']);
+    })->group('training', 'attendance', 'sparring');
+
+    it('only knows present or absent for a sparring', function (): void {
+        $coach = User::factory()->isCoach()->create();
+        $session = Training::factory()->past()->for($coach, 'trainer')->create();
+        $sparring = User::factory()->create();
+        $session->sparrings()->attach($sparring->id, ['source' => 'pack']);
+
+        Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('viewSession', $session->id)
+            ->call('setSparringAttendance', $sparring->id, 'excused');
+
+        expect($session->sparrings()->first()->pivot->attendance)->toBeNull();
+    })->group('training', 'attendance', 'sparring');
+
+    it('refuses to mark the sparring of a colleague session', function (): void {
+        $owner = User::factory()->isCoach()->create();
+        $intruder = User::factory()->isCoach()->create();
+        $session = Training::factory()->past()->for($owner, 'trainer')->create();
+        $sparring = User::factory()->create();
+        $session->sparrings()->attach($sparring->id, ['source' => 'pack']);
+
+        Livewire::actingAs($intruder)
+            ->test('pages::club-events.trainings.coach')
+            ->set('selectedSessionId', $session->id)
+            ->call('setSparringAttendance', $sparring->id, 'present')
+            ->assertForbidden();
+    })->group('training', 'attendance', 'sparring', 'security');
 });

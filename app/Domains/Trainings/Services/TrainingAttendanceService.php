@@ -69,9 +69,26 @@ class TrainingAttendanceService
     }
 
     /**
+     * Note la venue d'un sparring attendu à la séance : présent ou absent,
+     * rien d'autre — c'est ce pointage qui dira qui a aidé, et qui payer.
+     */
+    public function recordSparring(Training $session, User $sparring, string $status): void
+    {
+        if (! in_array($status, ['present', 'absent'], true)) {
+            return;
+        }
+
+        DB::table('training_sparrings')
+            ->where('training_id', $session->id)
+            ->where('user_id', $sparring->id)
+            ->whereNull('removed_at')
+            ->update(['attendance' => $status, 'updated_at' => now()]);
+    }
+
+    /**
      * Clôt le pointage d'une séance.
      *
-     * Les inscrits que le coach n'a pas touchés sont écrits `absent` pour de
+     * Les inscrits et les sparrings que le coach n'a pas touchés sont écrits `absent` pour de
      * bon : c'est ce qui permet à une case vide de vouloir dire « non pointé »
      * et rien d'autre. La signature est réécrite à chaque passage, si bien
      * qu'une correction tardive de la délégation laisse sa trace sans qu'il
@@ -105,6 +122,14 @@ class TrainingAttendanceService
                 ->get()
                 ->each(fn (ExternalRegistration $registration) => $this->recordExternal($session, $registration, 'absent'));
         }
+
+        // Un sparring que le coach n'a pas confirmé n'est pas venu : sa présence
+        // ouvre un paiement, elle ne se déduit pas.
+        DB::table('training_sparrings')
+            ->where('training_id', $session->id)
+            ->whereNull('removed_at')
+            ->whereNull('attendance')
+            ->update(['attendance' => 'absent', 'updated_at' => now()]);
 
         $session->update([
             'attendance_taken_at' => now(),

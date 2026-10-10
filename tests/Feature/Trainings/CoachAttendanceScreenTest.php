@@ -208,3 +208,57 @@ describe('reaching a child through their guardian', function (): void {
             ->assertSee('0498776655');
     })->group('training', 'attendance');
 });
+
+describe('reaching a trainee from the side of the table', function (): void {
+    it('lets the coach call or write to an adult trainee in one tap', function (): void {
+        $coach = User::factory()->isCoach()->create();
+        $pack = TrainingPack::factory()->create(['max_participants' => 5, 'price' => 90]);
+        $session = Training::factory()->past()->for($pack, 'trainingPack')->for($coach, 'trainer')->create();
+
+        $adult = Subscription::factory()
+            ->for($pack->season, 'season')
+            ->for(User::factory()->state([
+                'birthdate' => now()->subYears(35),
+                'phone_number' => '0471223344',
+                'email' => 'marc.dupont@example.test',
+                'street' => 'Rue des Fusains 12',
+            ]), 'user')
+            ->create();
+        $adult->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+
+        // Le coach est dans la salle, téléphone en main : un numéro en texte
+        // brut se recopie, un lien se touche. L'adresse ne lui sert à rien.
+        Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('viewSession', $session->id)
+            ->assertOk()
+            ->assertSeeHtml('href="tel:0471223344"')
+            ->assertSeeHtml('href="mailto:marc.dupont@example.test"')
+            ->assertDontSee('Rue des Fusains');
+    })->group('training', 'attendance');
+
+    it('reaches a child through the guardian email and phone', function (): void {
+        $coach = User::factory()->isCoach()->create();
+        $pack = TrainingPack::factory()->create(['max_participants' => 5, 'price' => 90]);
+        $session = Training::factory()->past()->for($pack, 'trainingPack')->for($coach, 'trainer')->create();
+
+        $child = Subscription::factory()
+            ->for($pack->season, 'season')
+            ->for(User::factory()->state(['birthdate' => now()->subYears(11)]), 'user')
+            ->create();
+        $child->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+
+        $guardian = Guardian::factory()->create([
+            'phone' => '0475112233',
+            'email' => 'isabelle.parent@example.test',
+        ]);
+        $child->user->guardians()->attach($guardian->id);
+
+        Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('viewSession', $session->id)
+            ->assertOk()
+            ->assertSeeHtml('href="tel:0475112233"')
+            ->assertSeeHtml('href="mailto:isabelle.parent@example.test"');
+    })->group('training', 'attendance');
+});

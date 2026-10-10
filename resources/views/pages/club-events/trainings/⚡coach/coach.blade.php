@@ -77,6 +77,7 @@
                             // membre — la majorité des mineurs n'a aucun Guardian lié.
                             $guardianName = $guardian ? trim($guardian->first_name . ' ' . $guardian->last_name) : null;
                             $guardianPhone = $guardian?->phone ?: $member->guardian_phone_number;
+                            $guardianEmail = $guardian?->email;
                             $currentStatus = $attendanceStatus[$member->id] ?? 'enrolled';
                             $presenceRate = $this->presenceRate($member->id);
                             $interclubDivisions = $member->teams->map(fn ($t) => $t->league?->name ?? null)->filter()->unique()->implode(', ');
@@ -110,10 +111,14 @@
                                             @endif
 
                                             @if ($member->phone_number)
-                                                <span>{{ $member->phone_number }}</span>
+                                                <a class="hover:text-primary" href="tel:{{ $member->phone_number }}">{{ $member->phone_number }}</a>
                                             @endif
 
-                                            @if ($guardianName || $guardianPhone)
+                                            @if ($member->email)
+                                                <a class="hover:text-primary" href="mailto:{{ $member->email }}">{{ $member->email }}</a>
+                                            @endif
+
+                                            @if ($guardianName || $guardianPhone || $guardianEmail)
                                                 {{-- Les colonnes sont first_name / last_name / phone :
                                                      l'écran lisait deux attributs qui n'existent pas
                                                      sur Guardian et n'affichait donc rien. --}}
@@ -123,7 +128,12 @@
                                                     @if ($guardianName && $guardianPhone)
                                                         ·
                                                     @endif
-                                                    {{ $guardianPhone }}
+                                                    @if ($guardianPhone)
+                                                        <a class="hover:text-primary" href="tel:{{ $guardianPhone }}">{{ $guardianPhone }}</a>
+                                                    @endif
+                                                    @if ($guardianEmail)
+                                                        · <a class="hover:text-primary" href="mailto:{{ $guardianEmail }}">{{ $guardianEmail }}</a>
+                                                    @endif
                                                 </span>
                                             @endif
                                         </div>
@@ -188,11 +198,15 @@
                                                     {{ __('Responsible adult') }}&nbsp;:
                                                     {{ $participant->guardian_first_name }} {{ $participant->guardian_last_name }}
                                                     @if ($callable)
-                                                        · {{ $callable }}
+                                                        · <a class="hover:text-primary" href="tel:{{ $callable }}">{{ $callable }}</a>
                                                     @endif
                                                 </span>
                                             @elseif ($callable)
-                                                <span>{{ $callable }}</span>
+                                                <a class="hover:text-primary" href="tel:{{ $callable }}">{{ $callable }}</a>
+                                            @endif
+
+                                            @if ($participant->email)
+                                                <a class="hover:text-primary" href="mailto:{{ $participant->email }}">{{ $participant->email }}</a>
                                             @endif
                                         </div>
                                     </div>

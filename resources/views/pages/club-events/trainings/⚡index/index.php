@@ -32,6 +32,7 @@ use App\Domains\Trainings\Services\TrainingCampBilling;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
 use App\Domains\Trainings\Services\TrainingPackProrata;
 use App\Domains\Trainings\Services\TrainingRosterExport;
+use App\Domains\Trainings\Services\TrainingStaffing;
 use App\Domains\Trainings\Services\TrainingWaitlistService;
 use App\Livewire\Concerns\GrantsInlineDiscount;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -83,6 +84,12 @@ new class extends Component
 
     // ── Cancellation modal ────────────────────────────────────────────────────
     public bool $cancelModal = false;
+
+    public int $handOverCoachId = 0;
+
+    public bool $handOverModal = false;
+
+    public ?int $handOverSessionId = null;
 
     public string $cancelNote = '';
 
@@ -1011,6 +1018,48 @@ new class extends Component
         $this->cancelModal = true;
     }
 
+    // ── Hand-over ─────────────────────────────────────────────────────────────
+
+    public function confirmHandOver(): void
+    {
+        if (! $this->handOverSessionId || ! $this->handOverCoachId) {
+            return;
+        }
+
+        $this->reassignSessionCoach($this->handOverSessionId, $this->handOverCoachId);
+
+        $this->handOverModal = false;
+        $this->handOverSessionId = null;
+        $this->handOverCoachId = 0;
+    }
+
+    /**
+     * Tout membre peut recevoir une séance quand c'est le comité qui la
+     * confie : c'est ce geste qui fait entrer quelqu'un dans l'encadrement.
+     *
+     * @return array<int, array{id: int, name: string}>
+     */
+    #[Computed]
+    public function handOverOptions(): array
+    {
+        return User::query()
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->orderBy('users.id')
+            ->get(['id', 'first_name', 'last_name'])
+            ->map(fn (User $user): array => ['id' => $user->id, 'name' => $user->last_name . ' ' . $user->first_name])
+            ->all();
+    }
+
+    public function openHandOver(int $trainingId): void
+    {
+        Gate::authorize(Permission::TrainingsManage->value);
+
+        $this->handOverSessionId = $trainingId;
+        $this->handOverCoachId = 0;
+        $this->handOverModal = true;
+    }
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     public function openCreate(): void
@@ -1454,7 +1503,7 @@ new class extends Component
         $session = Training::findOrFail($trainingId);
         $coach = User::findOrFail($userId);
 
-        $session->update(['trainer_id' => $coach->id]);
+        app(TrainingStaffing::class)->handOverSession($session, $coach, Auth::user());
 
         unset($this->sessions);
 
@@ -1632,6 +1681,8 @@ new class extends Component
         // « Retirer de l'offre » / « Remettre dans l'offre ». L'écrire ici
         // remettait en ligne, à chaque enregistrement, un pack qu'on venait de
         // retirer — y compris pour une simple correction de prix.
+        $formerTrainerId = $this->packId ? TrainingPack::findOrFail($this->packId)->trainer_id : null;
+
         $pack = $this->packId
             ? tap(TrainingPack::findOrFail($this->packId))->update($data)
             : TrainingPack::create($data + ['is_active' => true]);
@@ -1651,8 +1702,7 @@ new class extends Component
                 icon: 'o-calendar',
             );
         } else {
-            // Propagate trainer change to all linked sessions
-            $pack->trainings()->update(['trainer_id' => $pack->trainer_id]);
+            app(TrainingStaffing::class)->followPackCoach($pack, $formerTrainerId);
 
             if ($this->regenerationConfirmed) {
                 $this->rebuildFutureSessions($pack, $season);
@@ -1806,7 +1856,7 @@ new class extends Component
     public function sessions(): Collection
     {
         return $this->selectedPackId
-            ? Training::with(['room'])
+            ? Training::with(['room', 'trainer'])
                 ->where('training_pack_id', $this->selectedPackId)
                 ->orderBy('start')
                 ->get()

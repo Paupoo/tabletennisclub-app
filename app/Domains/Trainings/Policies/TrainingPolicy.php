@@ -35,6 +35,15 @@ class TrainingPolicy
     }
 
     /**
+     * Qui peut confier cette séance à quelqu'un d'autre : son coach, qui sait
+     * le premier qu'il sera absent, et la délégation, qui corrige après coup.
+     */
+    public function handOver(User $user, Training $training): bool
+    {
+        return $this->recordAttendance($user, $training);
+    }
+
+    /**
      * Qui peut pointer, corriger ou annuler *cette* séance.
      *
      * `coach_area.access` n'ouvre que l'écran : il ne dit rien de la séance

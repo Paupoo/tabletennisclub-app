@@ -13,6 +13,8 @@
             <x-slot:actions>
                 <x-button class="btn-ghost" icon="o-arrow-left" :label="__('Back')"
                     wire:click="backToList" />
+                <x-button class="btn-ghost" icon="o-arrow-path" :label="__('Hand over')"
+                    wire:click="openHandOver({{ $selectedSession->id }})" />
                 <x-button class="btn-error btn-soft" icon="o-x-circle" :label="__('Cancel session')"
                     wire:click="openCancel" />
                 @if (! $selectedSession->attendance_taken_at)
@@ -335,6 +337,20 @@
     {{-- ================================================================
          CANCELLATION MODAL
     ================================================================ --}}
+    <x-app-modal :title="__('Hand this session over')" wire:model="handOverModal" separator :open="$handOverModal">
+        <p class="text-sm text-base-content/70">
+            {{ __('Your colleague coaches this session in your place: they record attendance and reach the enrolled members. You keep the other sessions.') }}
+        </p>
+
+        <x-choices-offline class="mt-4" :label="__('Coach for this session')" wire:model="handOverCoachId"
+            :options="$this->handOverOptions" option-label="name" single searchable />
+
+        <x-slot:actions>
+            <x-button :label="__('Abandon')" wire:click="$set('handOverModal', false)" />
+            <x-button :label="__('Hand over')" class="btn-primary" wire:click="confirmHandOver" spinner />
+        </x-slot:actions>
+    </x-app-modal>
+
     <x-app-modal :title="__('Cancel this session')" wire:model="cancelModal" separator :open="$cancelModal">
         <div class="space-y-4">
             <div class="grid grid-cols-2 gap-3">

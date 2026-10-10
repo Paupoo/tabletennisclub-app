@@ -429,7 +429,12 @@
                                         {{ $session->start->format('H:i') }}
                                         – {{ $session->end->format('H:i') }}
                                     </div>
-                                    <div class="text-xs text-base-content/60">{{ $session->room?->name }}</div>
+                                    <div class="text-xs text-base-content/60">
+                                        {{ $session->room?->name }}
+                                        @if ($session->trainer)
+                                            · {{ $session->trainer->full_name }}
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
 
@@ -441,6 +446,8 @@
                                 @else
                                     <x-badge value="{{ __('Scheduled') }}" class="badge-success badge-soft" />
                                     @if ($this->mayManage)
+                                        <x-button class="btn-ghost btn-sm" icon="o-arrow-path"
+                                            :label="__('Hand over')" wire:click="openHandOver({{ $session->id }})" />
                                         <x-button class="btn-ghost btn-sm text-error" icon="o-x-circle"
                                             :label="__('Cancel')" wire:click="openCancel({{ $session->id }})" />
                                     @endif
@@ -1095,6 +1102,20 @@
     {{-- ================================================================
          CANCELLATION MODAL
     ================================================================ --}}
+    <x-app-modal :title="__('Hand this session over')" wire:model="handOverModal" separator :open="$handOverModal">
+        <p class="text-sm text-base-content/70">
+            {{ __('This person coaches this session only: they record attendance and reach the enrolled members. The pack keeps its coach.') }}
+        </p>
+
+        <x-choices-offline class="mt-4" :label="__('Coach for this session')" wire:model="handOverCoachId"
+            :options="$this->handOverOptions" option-label="name" single searchable />
+
+        <x-slot:actions>
+            <x-button :label="__('Abandon')" wire:click="$set('handOverModal', false)" />
+            <x-button :label="__('Hand over')" class="btn-primary" wire:click="confirmHandOver" spinner />
+        </x-slot:actions>
+    </x-app-modal>
+
     <x-app-modal :title="__('Cancel this session')" wire:model="cancelModal" separator :open="$cancelModal">
         <div class="space-y-4">
             <div class="grid grid-cols-2 gap-3">

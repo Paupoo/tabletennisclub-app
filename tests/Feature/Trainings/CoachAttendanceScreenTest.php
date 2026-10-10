@@ -7,6 +7,8 @@ use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Notifications\TrainingSessionHandedOverNotification;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
 describe('coach screen', function (): void {
@@ -261,4 +263,71 @@ describe('reaching a trainee from the side of the table', function (): void {
             ->assertSeeHtml('href="tel:0475112233"')
             ->assertSeeHtml('href="mailto:isabelle.parent@example.test"');
     })->group('training', 'attendance');
+});
+
+describe('a coach hands their session over', function (): void {
+    it('hands a coming session to a colleague, who is told', function (): void {
+        Notification::fake();
+        $coach = User::factory()->isCoach()->create();
+        $colleague = User::factory()->isCoach()->create();
+        $session = Training::factory()->for($coach, 'trainer')->create(['start' => now()->addDays(2), 'end' => now()->addDays(2)->addHour()]);
+
+        // Malade le mardi à 17 h : le titulaire est le premier à le savoir, il
+        // ne peut pas attendre que le comité passe par là.
+        Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('openHandOver', $session->id)
+            ->set('handOverCoachId', $colleague->id)
+            ->call('confirmHandOver')
+            ->assertHasNoErrors();
+
+        expect($session->fresh()->trainer_id)->toBe($colleague->id);
+        Notification::assertSentTo($colleague, TrainingSessionHandedOverNotification::class);
+    })->group('training', 'attendance');
+
+    it('only offers the people who already coach this season', function (): void {
+        $coach = User::factory()->isCoach()->create();
+        $colleague = User::factory()->isCoach()->create(['first_name' => 'Nadia', 'last_name' => 'Colin']);
+        $packHolder = User::factory()->create(['first_name' => 'Yves', 'last_name' => 'Lambert']);
+        $stranger = User::factory()->create(['first_name' => 'Tom', 'last_name' => 'Inconnu']);
+        $session = Training::factory()->for($coach, 'trainer')->create(['start' => now()->addDays(2), 'end' => now()->addDays(2)->addHour()]);
+        TrainingPack::factory()->create(['season_id' => $session->season_id, 'trainer_id' => $packHolder->id]);
+
+        // Une erreur dans un sélecteur ne doit pas suffire à confier les
+        // téléphones d'un groupe d'enfants à un membre quelconque.
+        $names = collect(Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('openHandOver', $session->id)
+            ->get('handOverOptions'))->pluck('name');
+
+        expect($names)->toContain('Colin Nadia')
+            ->toContain('Lambert Yves')
+            ->not->toContain('Inconnu Tom');
+    })->group('training', 'attendance', 'security');
+
+    it('refuses to hand a session to someone outside the coaching staff', function (): void {
+        $coach = User::factory()->isCoach()->create();
+        $stranger = User::factory()->create();
+        $session = Training::factory()->for($coach, 'trainer')->create(['start' => now()->addDays(2), 'end' => now()->addDays(2)->addHour()]);
+
+        Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('openHandOver', $session->id)
+            ->set('handOverCoachId', $stranger->id)
+            ->call('confirmHandOver')
+            ->assertHasErrors('handOverCoachId');
+
+        expect($session->fresh()->trainer_id)->toBe($coach->id);
+    })->group('training', 'attendance', 'security');
+
+    it('refuses to hand over a colleague session', function (): void {
+        $owner = User::factory()->isCoach()->create();
+        $intruder = User::factory()->isCoach()->create();
+        $session = Training::factory()->for($owner, 'trainer')->create(['start' => now()->addDays(2), 'end' => now()->addDays(2)->addHour()]);
+
+        Livewire::actingAs($intruder)
+            ->test('pages::club-events.trainings.coach')
+            ->call('openHandOver', $session->id)
+            ->assertForbidden();
+    })->group('training', 'attendance', 'security');
 });

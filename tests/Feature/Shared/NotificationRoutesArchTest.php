@@ -124,6 +124,11 @@ it('never sends a member to a page the committee alone can open', function (): v
         // SendCampaignMailingsCommand sends it to the committee only, every seat
         // of which holds feedback.view — FeedbackCampaignMailingsTest.
         'CampaignSummaryNotification.php',
+        // TrainingStaffing::handOverSession() sends it to the session's new
+        // coach once trainer_id is theirs, and `access-coach-area` admits
+        // whoever coaches a session — TrainingPackWizardTest opens the link
+        // as a plain member who was just handed one.
+        'TrainingSessionHandedOverNotification.php',
     ];
 
     $files = (new Finder)

@@ -170,6 +170,9 @@ describe('training pack wizard', function (): void {
             ->assertSet('handOverModal', false);
 
         expect($session->fresh()->trainer_id)->toBe($member->id);
+
+        // Le mail l'envoie vers l'espace coach : il doit pouvoir l'ouvrir.
+        $this->actingAs($member)->get(route('coach.trainings'))->assertOk();
     })->group('training', 'attendance');
 
     it('hands the coming sessions to a new coach without rewriting the past or a stand-in', function (): void {

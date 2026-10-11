@@ -23,6 +23,14 @@ use Illuminate\Support\Collection;
 class WeeklySelections
 {
     /**
+     * The competition week (1, 2, 3…) the fixture belongs to, counted as the
+     * other interclub screens count their « journées ».
+     *
+     * @var array<int, array<int, int>> season id => week_number => match day
+     */
+    private array $matchDayMaps = [];
+
+    /**
      * The fixtures of the window, grouped by day (`Y-m-d`), each day in the
      * order of the clock, then category, then team letter.
      *
@@ -43,7 +51,7 @@ class WeeklySelections
                 fn (Interclub $a, Interclub $b): int => $this->categoryRank($a) <=> $this->categoryRank($b),
                 fn (Interclub $a, Interclub $b): int => strnatcasecmp((string) $a->ourTeam()?->name, (string) $b->ourTeam()?->name),
             ])
-            ->map(fn (Interclub $interclub): WeeklyFixture => $this->tile($interclub))
+            ->map(fn (Interclub $interclub): WeeklyFixture => $this->tile($interclub, $this->matchDay($interclub)))
             ->groupBy(fn (WeeklyFixture $fixture): string => $fixture->startsAt->format('Y-m-d'))
             ->map(fn (Collection $day): Collection => $day->values());
     }
@@ -53,7 +61,18 @@ class WeeklySelections
         return LeagueCategory::fromName($interclub->league?->category)?->sortOrder() ?? 99;
     }
 
-    private function tile(Interclub $interclub): WeeklyFixture
+    private function matchDay(Interclub $interclub): ?int
+    {
+        if ($interclub->week_number === null) {
+            return null;
+        }
+
+        $this->matchDayMaps[$interclub->season_id] ??= Interclub::matchDayMap($interclub->season_id);
+
+        return $this->matchDayMaps[$interclub->season_id][$interclub->week_number] ?? null;
+    }
+
+    private function tile(Interclub $interclub, ?int $matchDay): WeeklyFixture
     {
         $category = LeagueCategory::fromName($interclub->league?->category);
 
@@ -84,6 +103,7 @@ class WeeklySelections
             isPublished: $published->isNotEmpty(),
             shortHandedWith: $interclub->isShortHanded() ? $interclub->total_players - 1 : null,
             players: $players->all(),
+            matchDay: $matchDay,
         );
     }
 }

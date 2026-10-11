@@ -175,3 +175,18 @@ it('reads the fixtures again when the job runs', function (): void {
             && $notification->days->flatten()->count() === 1,
     );
 });
+
+it('names the competition week the fixtures belong to', function (): void {
+    weeklyMailFixture($this->team, $this->opponent, -10)->update(['week_number' => 40]);
+    weeklyMailFixture($this->opponent, $this->team, -3)->update(['week_number' => 41]);
+    weeklyMailFixture($this->team, $this->opponent, 2)->update(['week_number' => 42]);
+
+    $from = now();
+    $to = now()->addDays(7);
+    $period = __('from :from to :to', ['from' => $from->translatedFormat('j F'), 'to' => $to->translatedFormat('j F')]);
+    $days = app(WeeklySelections::class)->between($from, $to);
+
+    $html = (string) new WeeklySelectionsNotification($days, [], $from, $to)->toMail(new User)->render();
+
+    expect($html)->toContain(e(__('Here are the selections for the matches of competition week :weeks, :period.', ['weeks' => 3, 'period' => $period])));
+});

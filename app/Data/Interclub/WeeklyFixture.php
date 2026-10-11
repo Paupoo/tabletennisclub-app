@@ -30,6 +30,7 @@ readonly class WeeklyFixture
         public bool $isPublished,
         public ?int $shortHandedWith,
         public array $players,
+        public ?int $matchDay = null,
     ) {}
 
     /**

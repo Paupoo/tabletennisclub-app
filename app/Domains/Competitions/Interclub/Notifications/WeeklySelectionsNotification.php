@@ -41,7 +41,7 @@ class WeeklySelectionsNotification extends Notification
             ->markdown('mail.interclub.weekly-selections', [
                 'days' => $this->days,
                 'memberIds' => $this->memberIds,
-                'period' => $period,
+                'intro' => $this->intro($period),
                 'url' => route('admin.user.weekly-selections'),
             ]);
     }
@@ -50,5 +50,28 @@ class WeeklySelectionsNotification extends Notification
     public function via(object $notifiable): array
     {
         return ['mail'];
+    }
+
+    /**
+     * The opening line names the competition week — or weeks, when a match on
+     * the Monday after opens the next one.
+     */
+    private function intro(string $period): string
+    {
+        $weeks = $this->days->flatten()
+            ->map(fn (WeeklyFixture $fixture): ?int => $fixture->matchDay)
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+
+        return match ($weeks->count()) {
+            0 => __('Here are the selections for the matches :period.', ['period' => $period]),
+            1 => __('Here are the selections for the matches of competition week :weeks, :period.', ['weeks' => $weeks->first(), 'period' => $period]),
+            default => __('Here are the selections for the matches of competition weeks :weeks, :period.', [
+                'weeks' => $weeks->slice(0, -1)->join(', ') . ' ' . __('and') . ' ' . $weeks->last(),
+                'period' => $period,
+            ]),
+        };
     }
 }

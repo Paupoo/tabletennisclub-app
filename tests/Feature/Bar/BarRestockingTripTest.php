@@ -75,6 +75,15 @@ it('stays closed to a barman', function (): void {
         ->assertForbidden();
 });
 
+it('rechecks shopping permission on subsequent Livewire actions', function (): void {
+    $component = Livewire::actingAs($this->shopper)->test('pages::bar.restocking');
+    $this->shopper->syncRoles([]);
+
+    $component->call('start')->assertForbidden();
+
+    expect(BarRestocking::inProgress())->toBeNull();
+});
+
 it('freezes the list in the name of whoever goes shopping', function (): void {
     Livewire::actingAs($this->shopper)
         ->test('pages::bar.restocking')

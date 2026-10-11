@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Bar;
 
 use App\Actions\Bar\RecordBarOrderPayment;
 use App\Domains\Bar\Models\BarOrder;
-use App\Domains\Bar\Models\BarOrderItem;
+use App\Domains\Bar\Services\BarCartService;
 use App\Domains\Bar\Services\StockService;
 use App\Domains\Shared\Enums\Permission;
 use App\Http\Controllers\Controller;
@@ -185,7 +185,7 @@ class BarOrderController extends Controller
      * - remember which order is being edited
      * - redirect back to the main menu page
      */
-    public function modify(BarOrder $order): RedirectResponse
+    public function modify(BarOrder $order, BarCartService $cartService): RedirectResponse
     {
         // `bar.orders.takeover` : un bar tourne en équipe, et celui qui encaisse n'est
         // presque jamais celui qui a servi. La permission existait, elle est accordée
@@ -199,15 +199,7 @@ class BarOrderController extends Controller
             return back()->with('error', 'Commande déjà payée.');
         }
 
-        $order->load('items');
-
-        $cart = $order->items
-            ->mapWithKeys(fn (BarOrderItem $item): array => [$item->product_id => (int) $item->quantity])
-            ->toArray();
-
-        session()->put('cart', $cart);
-        session()->put('editing_order_id', $order->id);
-        session()->put('bar_tab_name', $order->name);
+        $cartService->loadOrderIntoSessionCart($order);
 
         return redirect()->route('bar.index')
             ->with('success', 'Commande chargée dans le panier pour modification.');

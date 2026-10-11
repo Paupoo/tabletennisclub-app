@@ -326,6 +326,8 @@ class BarDemoSeeder extends Seeder
             }
         }
 
+        $shoppers['xavier']?->assignRole(Role::BARMAN->value);
+
         return $shoppers;
     }
 

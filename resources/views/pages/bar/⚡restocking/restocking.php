@@ -116,6 +116,11 @@ new class extends Component
         $this->extras[$productId] ??= 1;
     }
 
+    public function boot(): void
+    {
+        abort_unless(Gate::allows('bar.restocking.shop'), 403);
+    }
+
     public function close(RestockingTrips $restockingTrips): void
     {
         $trip = $this->myTrip();

@@ -124,12 +124,6 @@ new class extends Component
         return $chips;
     }
 
-    public function mount(): void
-    {
-        $this->viewSeasonId = Season::where('is_active', true)->value('id')
-            ?? Season::orderByDesc('start_at')->value('id');
-    }
-
     /**
      * Les mois de la saison affichée, du plus récent au plus ancien.
      *
@@ -152,6 +146,12 @@ new class extends Component
         }
 
         return $options;
+    }
+
+    public function mount(): void
+    {
+        $this->viewSeasonId = Season::where('is_active', true)->value('id')
+            ?? Season::orderByDesc('start_at')->value('id');
     }
 
     /**

@@ -51,10 +51,23 @@ Sur la fiche d'un membre, ou dans son formulaire de modification, chaque adulte 
 
 ### Un adulte encodé deux fois
 
-Quand deux fiches portent le même e-mail ou le même téléphone, ou qu'une fiche porte l'e-mail d'un membre, le tableau de bord affiche **« X adultes responsables encodés deux fois »**. Le lien ouvre la fiche d'un enfant concerné : la carte de l'adulte y porte le badge **Encodé deux fois**. Dans le tiroir, **Fusionner les deux fiches** :
+Quand deux fiches portent le même e-mail ou le même téléphone, ou qu'une fiche porte l'e-mail d'un membre, le tableau de bord affiche **« X adultes responsables encodés deux fois »**. Le lien ouvre la liste des **adultes responsables**, réduite aux fiches concernées : chacune porte le badge **Encodé deux fois** et nomme l'autre fiche. Ouvrez la fiche d'un enfant rattaché : la carte de l'adulte y porte le même badge. Dans le tiroir, **Fusionner les deux fiches** :
 
 - rattache la fiche au membre qui porte cette adresse, s'il y en a un ;
 - sinon, réunit les deux fiches en une seule, qui répond pour tous les enfants des deux.
+
+Une fiche marquée **Aucun enfant** ne répond plus pour personne : aucune fiche d'enfant n'y mène. Retrouvez-la dans la liste des adultes responsables, ci-dessous : **Modifier** y ouvre le même tiroir, fusion comprise.
+
+### Tous les adultes responsables
+
+Depuis la liste des membres, **Actions supplémentaires → Adultes responsables** affiche chaque fiche : depuis quand elle est encodée, les enfants qu'elle couvre, où en est son compte (actif, invitation envoyée, à inviter, ni compte ni e-mail) et si l'adulte est membre du club cette saison. La recherche trouve un adulte par son nom, son e-mail ou son téléphone, ou par le nom d'un de ses enfants. Un enfant archivé est nommé, avec le badge **Archivé**.
+
+Si vous gérez les fiches des membres, la liste permet aussi d'agir :
+
+- **Créer** un adulte : choisissez au moins un enfant dont il est responsable. S'il est déjà encodé avec le même e-mail ou téléphone, le tiroir propose de rattacher les enfants à sa fiche plutôt que d'en créer une deuxième.
+- **Modifier** une fiche : coordonnées, enfants rattachés ou détachés, et fusion d'une fiche encodée deux fois. Un mineur ne peut pas perdre son dernier adulte responsable.
+- **Supprimer** une fiche : refusé tant qu'elle couvre un enfant encore au club ; détachez-le d'abord dans **Modifier**.
+- En sélectionnant plusieurs fiches : **Inviter** (seules les fiches « à inviter » reçoivent le lien) ou **Supprimer** (les fiches dont dépend un enfant sont conservées et nommées).
 
 ## Ensuite, il reste une étape
 

@@ -103,11 +103,11 @@ it('writes to the players of our teams, their captains and the committee', funct
 it('writes once to an address that answers for several seats', function (): void {
     weeklyMailFixture($this->team, $this->opponent, 2);
 
-    $both = User::factory()->isCommitteeMember()->create(['email' => 'both@example.test']);
+    $both = User::factory()->isCommitteeMember()->create(['email' => 'both@example.test', 'first_name' => 'Julien']);
     $this->team->users()->attach($both);
     $this->team->update(['captain_id' => $both->id]);
 
-    $parent = Guardian::factory()->create(['email' => 'parent@example.test']);
+    $parent = Guardian::factory()->create(['email' => 'parent@example.test', 'first_name' => 'Sophie']);
     foreach (range(1, 2) as $ignored) {
         $child = User::factory()->create(['email' => null]);
         $child->guardians()->attach($parent);
@@ -117,8 +117,11 @@ it('writes once to an address that answers for several seats', function (): void
     $this->artisan('interclubs:send-weekly-selections')->assertSuccessful();
 
     expect(weeklyMailAddresses())->toBe(['both@example.test', 'parent@example.test']);
+    Queue::assertPushed(SendWeeklySelectionsJob::class, fn (SendWeeklySelectionsJob $job): bool => $job->address === 'both@example.test'
+        && $job->names === ['Julien']);
     Queue::assertPushed(SendWeeklySelectionsJob::class, fn (SendWeeklySelectionsJob $job): bool => $job->address === 'parent@example.test'
-        && count($job->memberIds) === 2);
+        && count($job->memberIds) === 2
+        && $job->names === ['Sophie']);
 });
 
 it('sends nothing in a week without a fixture', function (): void {
@@ -148,11 +151,12 @@ it('mails the tiles by day, sets apart the reader\'s own, and links the page', f
     $from = now();
     $to = now()->addDays(7);
     $days = app(WeeklySelections::class)->between($from, $to);
-    $mail = new WeeklySelectionsNotification($days, [$reader->id], $from, $to)->toMail(new User);
+    $mail = new WeeklySelectionsNotification($days, [$reader->id], $from, $to, ['Thomas'])->toMail(new User);
     $html = (string) $mail->render();
 
     expect($mail->subject)->toBe(__('Weekly selections') . ' · ' . __('from :from to :to', ['from' => $from->translatedFormat('j F'), 'to' => $to->translatedFormat('j F')]))
-        ->and($html)->toContain('Thomas Lefèvre')
+        ->and($html)->toContain(e(__('Hello :name,', ['name' => 'Thomas'])))
+        ->toContain('Thomas Lefèvre')
         ->toContain('CTT Tourinnes A')
         ->toContain(e(__('Lineup not sent yet')))
         ->not->toContain('Loïc Dumont')
@@ -167,7 +171,7 @@ it('reads the fixtures again when the job runs', function (): void {
     weeklyMailFixture($this->team, $this->opponent, 2);
     $player = User::factory()->create(['email' => 'player@example.test']);
 
-    new SendWeeklySelectionsJob('player@example.test', [$player->id], now()->toIso8601String(), now()->addDays(7)->toIso8601String())->handle();
+    new SendWeeklySelectionsJob('player@example.test', [$player->id], now()->toIso8601String(), now()->addDays(7)->toIso8601String(), [$player->first_name])->handle();
 
     Notification::assertSentOnDemand(
         WeeklySelectionsNotification::class,

@@ -1,7 +1,7 @@
 <x-mail::message>
 # {{ __('Weekly selections') }}
 
-{{ __('Hello,') }}
+{{ $greeting }}
 
 {{ $intro }}
 

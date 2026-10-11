@@ -24,12 +24,14 @@ class WeeklySelectionsNotification extends Notification
     /**
      * @param  Collection<string, Collection<int, WeeklyFixture>>  $days
      * @param  array<int, int>  $memberIds  the members this address speaks for
+     * @param  array<int, string>  $names  first names of whoever reads this address
      */
     public function __construct(
         public readonly Collection $days,
         public readonly array $memberIds,
         public readonly CarbonInterface $from,
         public readonly CarbonInterface $to,
+        public readonly array $names = [],
     ) {}
 
     public function toMail(object $notifiable): MailMessage
@@ -41,6 +43,7 @@ class WeeklySelectionsNotification extends Notification
             ->markdown('mail.interclub.weekly-selections', [
                 'days' => $this->days,
                 'memberIds' => $this->memberIds,
+                'greeting' => $this->greeting(),
                 'intro' => $this->intro($period),
                 'url' => route('admin.user.weekly-selections'),
             ]);
@@ -50,6 +53,15 @@ class WeeklySelectionsNotification extends Notification
     public function via(object $notifiable): array
     {
         return ['mail'];
+    }
+
+    private function greeting(): string
+    {
+        return match (count($this->names)) {
+            0 => __('Hello,'),
+            1 => __('Hello :name,', ['name' => $this->names[0]]),
+            default => __('Hello :names,', ['names' => implode(', ', array_slice($this->names, 0, -1)) . ' ' . __('and') . ' ' . end($this->names)]),
+        };
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Interclub;
 
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
@@ -43,8 +44,8 @@ class SendWeeklySelectionsCommand extends Command
 
         $recipients = $this->recipients();
 
-        foreach ($recipients as $address => $memberIds) {
-            SendWeeklySelectionsJob::dispatch($address, $memberIds, $from->toIso8601String(), $to->toIso8601String());
+        foreach ($recipients as $address => $recipient) {
+            SendWeeklySelectionsJob::dispatch($address, $recipient['members'], $from->toIso8601String(), $to->toIso8601String(), $recipient['names']);
         }
 
         $this->info('Weekly selections queued for ' . count($recipients) . ' address(es).');
@@ -52,10 +53,23 @@ class SendWeeklySelectionsCommand extends Command
         return self::SUCCESS;
     }
 
+    private function readerName(User $member, string $address): ?string
+    {
+        if (mb_strtolower(trim((string) $member->email)) === $address) {
+            return $member->first_name;
+        }
+
+        return $member->guardians
+            ->first(fn (Guardian $guardian): bool => mb_strtolower(trim((string) $guardian->email)) === $address)
+            ?->first_name;
+    }
+
     /**
-     * Each address once, with the members it speaks for.
+     * Each address once, with the members it speaks for and the first names of
+     * whoever reads it: the member's own, or the guardian's when the address is
+     * a parent's.
      *
-     * @return array<string, array<int, int>>
+     * @return array<string, array{members: array<int, int>, names: array<int, string>}>
      */
     private function recipients(): array
     {
@@ -76,12 +90,16 @@ class SendWeeklySelectionsCommand extends Command
 
         foreach ($members as $member) {
             foreach ($member->contactEmails() as $address) {
-                $recipients[$address][] = $member->id;
+                $recipients[$address]['members'][] = $member->id;
+                $recipients[$address]['names'][] = $this->readerName($member, $address);
             }
         }
 
         ksort($recipients);
 
-        return $recipients;
+        return array_map(fn (array $recipient): array => [
+            'members' => $recipient['members'],
+            'names' => array_values(array_unique(array_filter($recipient['names']))),
+        ], $recipients);
     }
 }

@@ -28,12 +28,14 @@ class SendWeeklySelectionsJob implements ShouldQueue
 
     /**
      * @param  array<int, int>  $memberIds  the members this address speaks for
+     * @param  array<int, string>  $names  first names of whoever reads this address
      */
     public function __construct(
         public string $address,
         public array $memberIds,
         public string $from,
         public string $to,
+        public array $names = [],
     ) {}
 
     public function handle(): void
@@ -47,7 +49,7 @@ class SendWeeklySelectionsJob implements ShouldQueue
         }
 
         Notification::route('mail', $this->address)
-            ->notify(new WeeklySelectionsNotification($days, $this->memberIds, $from, $to));
+            ->notify(new WeeklySelectionsNotification($days, $this->memberIds, $from, $to, $this->names));
     }
 
     /**

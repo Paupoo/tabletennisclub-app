@@ -180,6 +180,11 @@ Route::prefix('admin/club-admin/users/')
         Route::livewire('list', 'pages::club-admin.users.index')
             ->middleware('can:users.view')
             ->name('admin.users.index');
+        // Every responsible adult on file, read-only: the committee reads what a
+        // child's file already shows, gathered in one list.
+        Route::livewire('guardians', 'pages::club-admin.users.guardians')
+            ->middleware('can:users.view')
+            ->name('admin.users.guardians');
         Route::livewire('create', 'pages::club-admin.users.form')
             ->middleware('can:users.create')
             ->name('admin.users.create');

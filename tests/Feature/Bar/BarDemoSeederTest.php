@@ -114,8 +114,9 @@ it('puts Coca Zero alone in automatic mode, and lets the sandwich cover a single
         ->and(barDemoProduct('Sandwich')->restocking_weeks)->toBe(1);
 });
 
-it('makes Xavier and the first account store keepers', function (): void {
+it('gives Xavier both bar roles and makes the first account a store keeper', function (): void {
     expect($this->xavier->fresh()->hasRole(Role::STORE_KEEPER->value))->toBeTrue()
+        ->and($this->xavier->fresh()->hasRole(Role::BARMAN->value))->toBeTrue()
         ->and($this->firstUser->fresh()->hasRole(Role::STORE_KEEPER->value))->toBeTrue();
 });
 

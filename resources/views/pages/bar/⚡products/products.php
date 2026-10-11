@@ -55,6 +55,11 @@ new class extends Component
 {
     use HasBreadcrumbs, Toast;
 
+    public function boot(): void
+    {
+        abort_unless(Gate::allows('bar.products.manage'), 403);
+    }
+
     public ?int $categoryId = null;
 
     /** Réglages du bar : nombre de semaines de ventes couvertes par le max. */

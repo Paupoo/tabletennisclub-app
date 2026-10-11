@@ -130,8 +130,10 @@ new class extends Component
             : (int) now()->format('Y');
 
         $this->createName = $nextStartYear . '-' . ($nextStartYear + 1);
-        $this->createStartAt = Carbon::create($nextStartYear, 9, 1)->toDateString();
-        $this->createEndAt = Carbon::create($nextStartYear + 1, 6, 30)->toDateString();
+        [$startAt, $endAt] = Season::defaultDates($nextStartYear);
+
+        $this->createStartAt = $startAt->toDateString();
+        $this->createEndAt = $endAt->toDateString();
         $this->createModal = true;
     }
 

@@ -28,7 +28,7 @@ An administrator holds everything. A committee member without a delegation sees 
 
 ## 1. Create the season
 
-**In principle there is nothing to do.** Every **1 July at 06:00**, the application creates the next two seasons automatically (1 September to 30 June). Just check they exist.
+**In principle there is nothing to do.** Every **1 July at 06:00**, the application creates the next two seasons automatically (1 July to 30 June). Just check they exist.
 
 Go to **Club Settings → Seasons**. The list shows existing seasons, with the active one marked.
 

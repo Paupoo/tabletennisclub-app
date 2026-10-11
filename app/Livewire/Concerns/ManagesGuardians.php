@@ -6,6 +6,7 @@ namespace App\Livewire\Concerns;
 
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\ClubAdmin\Users\Services\GuardianDuplicates;
 use App\Domains\Shared\Rules\ValidIban;
 use App\Domains\Shared\Rules\ValidPhone;
 use Illuminate\Support\Collection;
@@ -299,56 +300,10 @@ trait ManagesGuardians
         return $this->user ?? null;
     }
 
-    /**
-     * An existing guardian sharing the email or the phone number just entered.
-     *
-     * Phone numbers are stored as typed, so the comparison runs on the
-     * normalized value in PHP: `+32 475 12 34 56` and `0475123456` are the
-     * same person. The table holds one row per guardian of the club, so the
-     * scan stays cheap.
-     *
-     * The address is also looked up among the members, because a parent typed
-     * by hand is often somebody the club already has on file: `users.email` is
-     * unique, so creating a second identity for them would only surface later,
-     * as a failure on the invitation link the club sent them. Recognising the
-     * person here returns the guardian sheet keyed to their account — the same
-     * one {@see self::attachMemberAsGuardian()} would have made.
-     */
+    /** An existing guardian sharing the email or the phone number just entered. */
     private function findDuplicateGuardian(string $phone, ?string $email): ?Guardian
     {
-        if (filled($email)) {
-            $byEmail = Guardian::whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])->first();
-
-            if ($byEmail instanceof Guardian) {
-                return $byEmail;
-            }
-
-            $member = User::whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])->first();
-
-            if ($member instanceof User) {
-                return Guardian::firstOrCreate(
-                    ['user_id' => $member->id],
-                    [
-                        'first_name' => $member->first_name,
-                        'last_name' => $member->last_name,
-                        'phone' => $member->phone_number,
-                        'email' => $member->email,
-                        'iban' => $member->iban,
-                    ],
-                );
-            }
-        }
-
-        $normalizedPhone = ValidPhone::normalize($phone);
-
-        if ($normalizedPhone === null) {
-            return null;
-        }
-
-        return Guardian::query()
-            ->whereNotNull('phone')
-            ->get()
-            ->first(fn (Guardian $guardian): bool => ValidPhone::normalize($guardian->phone) === $normalizedPhone);
+        return (new GuardianDuplicates)->existingFor($phone, $email);
     }
 
     /** Clear the inline creation form and every cache derived from it. */

@@ -19,22 +19,23 @@
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
-                @canany(['setOrUpdateForceList', 'create'], \App\Domains\ClubAdmin\Users\Models\User::class)
-                    <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
-                        @can('users.import')
-                            <x-menu-item icon="o-arrow-up-tray" :title="__('Import the federation listing')"
-                                link="{{ route('admin.users.import') }}" />
-                        @endcan
-                        @can('setOrUpdateForceList', \App\Domains\ClubAdmin\Users\Models\User::class)
-                            <x-menu-item icon="o-arrow-path" :title="__('Recalculate force list')"
-                                wire:click="recalculateForceList" spinner="recalculateForceList" />
-                        @endcan
-                        @can('create', \App\Domains\ClubAdmin\Users\Models\User::class)
-                            <x-menu-item icon="o-envelope" :title="__('Quick invite')"
-                                wire:click="$set('quickInviteDrawer', true)" />
-                        @endcan
-                    </x-dropdown>
-                @endcanany
+                {{-- Never empty: whoever reads this list may read its responsible adults. --}}
+                <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
+                    <x-menu-item icon="o-users" :title="__('Responsible adults')"
+                        link="{{ route('admin.users.guardians') }}" />
+                    @can('users.import')
+                        <x-menu-item icon="o-arrow-up-tray" :title="__('Import the federation listing')"
+                            link="{{ route('admin.users.import') }}" />
+                    @endcan
+                    @can('setOrUpdateForceList', \App\Domains\ClubAdmin\Users\Models\User::class)
+                        <x-menu-item icon="o-arrow-path" :title="__('Recalculate force list')"
+                            wire:click="recalculateForceList" spinner="recalculateForceList" />
+                    @endcan
+                    @can('create', \App\Domains\ClubAdmin\Users\Models\User::class)
+                        <x-menu-item icon="o-envelope" :title="__('Quick invite')"
+                            wire:click="$set('quickInviteDrawer', true)" />
+                    @endcan
+                </x-dropdown>
                 @can('create', \App\Domains\ClubAdmin\Users\Models\User::class)
                     <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Create')"
                         link="{{ route('admin.users.create') }}" />
@@ -667,6 +668,11 @@
                 :description="__('Seed the roster from the federation affiliate listing')"
                 @click="mobileActionsOpen = false; window.location.href = '{{ route('admin.users.import') }}'" />
         @endcan
+        <x-admin.shared.mobile-action-item
+            icon="o-users" color="base"
+            :label="__('Responsible adults')"
+            :description="__('Every adult on file for a child, and where each one stands')"
+            @click="mobileActionsOpen = false; window.location.href = '{{ route('admin.users.guardians') }}'" />
         @can('setOrUpdateForceList', \App\Domains\ClubAdmin\Users\Models\User::class)
             <x-admin.shared.mobile-action-item
                 icon="o-arrow-path" color="base"

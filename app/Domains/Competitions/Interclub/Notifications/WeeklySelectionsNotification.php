@@ -60,7 +60,7 @@ class WeeklySelectionsNotification extends Notification
         return match (count($this->names)) {
             0 => __('Hello,'),
             1 => __('Hello :name,', ['name' => $this->names[0]]),
-            default => __('Hello :names,', ['names' => implode(', ', array_slice($this->names, 0, -1)) . ' ' . __('and') . ' ' . $this->names[array_key_last($this->names)]]),
+            default => __('Hello :names,', ['names' => implode(', ', array_slice($this->names, 0, -1)) . ' ' . __('and') . ' ' . array_last($this->names)]),
         };
     }
 

@@ -38,6 +38,7 @@ parameters:
                 - app/Domains/Competitions/Interclub/Services/InterclubDayAvailabilityService.php
                 - app/Domains/Competitions/Interclub/Services/InterclubPreparationService.php
                 - app/Domains/Competitions/Interclub/Services/InterclubPoolService.php
+                - app/Domains/Competitions/Interclub/Services/WeeklySelections.php
                 - app/Domains/Competitions/Interclub/Services/InterclubLineupLegalityService.php
                 - app/Domains/Shared/Traits/HasAvailability.php
 

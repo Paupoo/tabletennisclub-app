@@ -189,6 +189,12 @@ En mode **Tout le club**, chaque tuile de match du calendrier s'ouvre aussi, mê
 
 La page du match rassemble tout ce qu'il faut recopier le jour J : le **n° de match** de la fédération, la catégorie, la division et la série, la semaine, et les deux clubs avec leur **matricule**. La composition y est triée dans l'ordre de la feuille — indice de force, puis nom et prénom — avec le classement et la licence de chaque joueur, et la mention **WO** pour un joueur inscrit mais absent.
 
+### Sélections de la semaine
+
+**Sélections de la semaine**, dans le menu sous l'annuaire, montre les rencontres du club des sept prochains jours, une tuile par rencontre, groupées par jour : l'heure, à domicile ou la commune, l'équipe, l'adversaire et les joueurs. Les joueurs n'apparaissent qu'une fois la composition envoyée ; avant, la tuile indique « Compo pas encore envoyée ». Les tuiles où vous jouez sont encadrées en bleu, et chaque tuile ouvre la page du match.
+
+Chaque jeudi à midi, s'il y a au moins une rencontre dans les sept jours, les joueurs des équipes du club, les capitaines et le comité reçoivent ce récapitulatif par e-mail — un seul par adresse. Il n'est pas renvoyé si une composition change ensuite : la page, elle, est toujours à jour.
+
 ### Disponibilités
 
 Avant chaque journée d'interclubs, le capitaine peut demander vos disponibilités. Répondez **Disponible / Indisponible** directement depuis la notification email ou depuis la section interclubs.

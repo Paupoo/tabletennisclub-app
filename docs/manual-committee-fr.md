@@ -500,6 +500,7 @@ En tant que membre du comité, les emails suivants sont envoyés automatiquement
 | Demande de disponibilités interclubs | Membres concernés |
 | Sélection interclubs confirmée | Membre sélectionné |
 | Diffusion de composition interclubs | Tous les membres sélectionnés |
+| Sélections de la semaine (jeudi 12 h, s'il y a au moins une rencontre dans les 7 jours) | Joueurs des équipes du club, capitaines et comité — un seul e-mail par adresse |
 | Pack d'entraînement approuvé | Membre |
 | Pack d'entraînement refusé | Membre |
 | Séance d'entraînement annulée | Membres inscrits |

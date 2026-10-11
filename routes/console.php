@@ -194,6 +194,15 @@ Schedule::command('interclubs:remind-captains')
     ->withoutOverlapping()
     ->when(Feature::Interclubs->enabled(...));
 
+// « Sélections de la semaine » (grilling du 2026-10-11) : le jeudi à midi, quand
+// la plupart des compos du week-end sont parties et qu'il reste le temps de
+// prévenir un capitaine. Les sept jours qui suivent, les rencontres du jeudi
+// soir comprises.
+Schedule::command('interclubs:send-weekly-selections')
+    ->weeklyOn(4, '12:00')
+    ->withoutOverlapping()
+    ->when(Feature::Interclubs->enabled(...));
+
 // Réassort automatique (décidé le 2026-09-27) : le vendredi à 6 h 05, une fois la
 // soirée du jeudi close — une journée d'exploitation finit à 6 h —, et avant le
 // digest du samedi qui dit ce qui a bougé.

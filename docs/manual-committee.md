@@ -499,6 +499,7 @@ As a committee member, the following emails are sent automatically — you do no
 | Interclub availability request | Selected members |
 | Interclub selection confirmed | Selected member |
 | Interclub lineup broadcast | All selected members |
+| Weekly selections (Thursday 12:00, when at least one fixture falls in the next 7 days) | Players of the club's teams, captains and the committee — one email per address |
 | Training pack approved | Member |
 | Training pack rejected | Member |
 | Training session cancelled | Enrolled members |

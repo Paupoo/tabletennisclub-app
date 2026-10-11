@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" />
     </x-slot:breadcrumbs>
 
-    <x-header separator :title="__('Weekly selections')"
+    <x-header progress-indicator separator :title="__('Weekly selections')"
         :subtitle="__('From :from to :to', ['from' => now()->translatedFormat('l j F'), 'to' => $until->translatedFormat('l j F')])" />
 
     @if ($this->days->isEmpty())

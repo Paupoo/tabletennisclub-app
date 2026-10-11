@@ -8,6 +8,7 @@ use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Models\BarRestockingAdjustment;
 use App\Domains\Bar\Services\BarRestockingSettings;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Role;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Carbon;
@@ -138,7 +139,10 @@ it('recalculates on demand from the restocking settings, as Friday would', funct
 });
 
 it('leaves the on-demand recalculation to whoever manages the stock', function (): void {
-    Livewire::actingAs(User::factory()->withRole(Role::BARMAN)->create())
+    $barman = User::factory()->withRole(Role::BARMAN)->create();
+    $barman->givePermissionTo(Permission::BarProductsManage->value);
+
+    Livewire::actingAs($barman)
         ->test('pages::bar.products')
         ->call('recalculateRestocking')
         ->assertForbidden();

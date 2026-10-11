@@ -94,6 +94,13 @@
         link="{{ route('admin.user.directory', auth()->user()) }}"
         :title="__('Member directory')"
     />
+    @feature('interclubs')
+    <x-menu-item
+        icon="o-user-group"
+        link="{{ route('admin.user.weekly-selections') }}"
+        :title="__('Weekly selections')"
+    />
+    @endfeature
     <x-menu-item
         icon="o-lifebuoy"
         link="{{ route('admin.user.who-does-what', auth()->user()) }}"

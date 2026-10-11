@@ -77,7 +77,8 @@ class BarCartService
 
         $order = DB::transaction(function () use ($cart, $userId, $tabName): BarOrder {
             $orderId = session()->get('editing_order_id');
-            $order = $this->loadOrCreateDraftOrder($orderId, $userId, $tabName);
+            $expectedItems = session()->get('editing_order_items');
+            $order = $this->loadOrCreateDraftOrder($orderId, $userId, $tabName, $expectedItems);
 
             $products = BarProduct::query()
                 ->whereIn('id', array_keys($cart))
@@ -136,6 +137,7 @@ class BarCartService
     {
         session()->forget('cart');
         session()->forget('editing_order_id');
+        session()->forget('editing_order_items');
         session()->forget('bar_tab_name');
         session()->forget('bar_walk_in');
     }
@@ -175,6 +177,19 @@ class BarCartService
         ];
     }
 
+    public function loadOrderIntoSessionCart(BarOrder $order): void
+    {
+        $order->loadMissing('items');
+        $items = $this->itemQuantities($order);
+
+        session()->put([
+            'bar_tab_name' => $order->name,
+            'editing_order_id' => $order->id,
+            'editing_order_items' => $items,
+            'cart' => $items,
+        ]);
+    }
+
     /**
      * Choisir l'ardoise sur laquelle on va servir.
      *
@@ -203,6 +218,7 @@ class BarCartService
 
         if (! $existing instanceof BarOrder) {
             session()->forget('editing_order_id');
+            session()->forget('editing_order_items');
             session()->forget('bar_walk_in');
             session()->put('bar_tab_name', trim($name));
             session()->put('cart', []);
@@ -210,14 +226,8 @@ class BarCartService
             return ['status' => 'success', 'message' => sprintf('Ardoise « %s » ouverte.', trim($name)), 'joined' => false];
         }
 
-        $existing->load('items');
-
         session()->forget('bar_walk_in');
-        session()->put('bar_tab_name', $existing->name);
-        session()->put('editing_order_id', $existing->id);
-        session()->put('cart', $existing->items
-            ->mapWithKeys(fn (BarOrderItem $item): array => [$item->product_id => (int) $item->quantity])
-            ->toArray());
+        $this->loadOrderIntoSessionCart($existing);
 
         return [
             'status' => 'success',
@@ -236,6 +246,7 @@ class BarCartService
     public function openWalkIn(): void
     {
         session()->forget('editing_order_id');
+        session()->forget('editing_order_items');
         session()->forget('bar_tab_name');
         session()->put('bar_walk_in', true);
         session()->put('cart', []);
@@ -266,7 +277,18 @@ class BarCartService
             ->toArray();
     }
 
-    private function loadOrCreateDraftOrder($orderId, int $userId, ?string $tabName = null): BarOrder
+    /**
+     * @return array<int, int>
+     */
+    private function itemQuantities(BarOrder $order): array
+    {
+        return $order->items
+            ->mapWithKeys(fn (BarOrderItem $item): array => [(int) $item->product_id => (int) $item->quantity])
+            ->sortKeys()
+            ->all();
+    }
+
+    private function loadOrCreateDraftOrder($orderId, int $userId, ?string $tabName = null, mixed $expectedItems = null): BarOrder
     {
         if (! $orderId) {
             return BarOrder::query()->create([
@@ -302,6 +324,18 @@ class BarCartService
 
         if ((bool) $order->is_paid) {
             throw new \RuntimeException('Impossible de modifier une commande déjà payée.');
+        }
+
+        $currentItems = $this->itemQuantities($order);
+        $expectedItems = is_array($expectedItems)
+            ? collect($expectedItems)
+                ->mapWithKeys(fn ($quantity, $productId): array => [(int) $productId => (int) $quantity])
+                ->sortKeys()
+                ->all()
+            : null;
+
+        if ($expectedItems === null || $currentItems !== $expectedItems) {
+            throw new \RuntimeException('Cette ardoise a changé depuis son ouverture. Rouvrez-la pour charger les dernières consommations.');
         }
 
         foreach ($order->items as $item) {

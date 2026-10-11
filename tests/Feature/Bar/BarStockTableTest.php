@@ -135,6 +135,15 @@ it('takes a product off the menu without touching its stock', function (): void 
         ->and($this->jupiler->fresh()->stock)->toBe(24);
 });
 
+it('rechecks product management permission on subsequent Livewire actions', function (): void {
+    $component = Livewire::actingAs($this->manager)->test('pages::bar.products');
+    $this->manager->syncRoles([]);
+
+    $component->call('updateAvailability', $this->jupiler->id, false)->assertForbidden();
+
+    expect((int) $this->jupiler->fresh()->is_available)->toBe(1);
+});
+
 it('orders by urgency, most critical first', function (): void {
     // Coca est à 2 pour un seuil de 3 ; Jupiler à 24 pour le même seuil.
     $groups = Livewire::actingAs($this->manager)

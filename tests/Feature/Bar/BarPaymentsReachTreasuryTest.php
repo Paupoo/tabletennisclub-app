@@ -125,6 +125,41 @@ it('sends a QR payment to the treasurer, waiting to be reconciled', function ():
         ->and($payment->reference)->toMatch('#^\d{3}/\d{4}/\d{5}$#');
 });
 
+it('settles an order only once and keeps a single treasury payment', function (): void {
+    $order = barOrderToSettle($this->barman, 750);
+
+    $this->actingAs($this->barman)
+        ->post(route('bar.payment.pay', $order), ['method' => 'qr'])
+        ->assertRedirect();
+
+    $payment = $order->payment()->sole();
+
+    $this->actingAs($this->barman)
+        ->post(route('bar.payment.pay', $order), ['method' => 'cash'])
+        ->assertSessionHas('error', 'Commande déjà payée.');
+
+    expect($order->fresh()->is_paid)->toBe(1)
+        ->and($order->fresh()->payment_method)->toBe('qr')
+        ->and(Payment::where('payable_type', BarOrder::class)->where('payable_id', $order->id)->count())->toBe(1)
+        ->and($payment->fresh()->amount_due)->toBe(7.5);
+});
+
+it('rolls back settlement when recording the treasury payment fails', function (): void {
+    $order = barOrderToSettle($this->barman, 750);
+    $recordPayment = Mockery::mock(RecordBarOrderPayment::class);
+    $recordPayment->shouldReceive('__invoke')->once()->andThrow(new RuntimeException('Payment reservation failed.'));
+    $this->app->instance(RecordBarOrderPayment::class, $recordPayment);
+    $this->withoutExceptionHandling();
+
+    expect(fn () => $this->actingAs($this->barman)
+        ->post(route('bar.payment.pay', $order), ['method' => 'qr']))
+        ->toThrow(RuntimeException::class, 'Payment reservation failed.');
+
+    expect($order->fresh()->is_paid)->toBe(0)
+        ->and($order->fresh()->payment_method)->toBeNull()
+        ->and(Payment::where('payable_type', BarOrder::class)->where('payable_id', $order->id)->exists())->toBeFalse();
+});
+
 it('leaves cash and offered rounds out of the bank list', function (string $method): void {
     $order = barOrderToSettle($this->barman);
     $reason = 'Tournoi du club';

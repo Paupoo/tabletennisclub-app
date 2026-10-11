@@ -156,6 +156,11 @@ new class extends Component
         $this->success(__('Suggestion applied.'));
     }
 
+    public function boot(): void
+    {
+        abort_unless(Gate::allows('bar.products.manage'), 403);
+    }
+
     public function delete(): void
     {
         $this->deleteModal = false;

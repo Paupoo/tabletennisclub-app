@@ -189,6 +189,12 @@ In **All club events** mode, every match tile of the calendar opens too, even fo
 
 The match page gathers everything to copy on the day: the federation's **match number**, the category, the division and series, the week, and both clubs with their **club licence**. The lineup is sorted in match-sheet order — force index, then last and first name — with each player's ranking and licence, and **WO** for a player written in but absent.
 
+### Weekly selections
+
+**Weekly selections**, in the menu under the directory, shows the club's fixtures of the next seven days, one tile per fixture, grouped by day: the time, at home or the town, the team, the opponent and the players. Players appear only once the lineup is sent; until then the tile reads « Lineup not sent yet ». The tiles you play in have a blue border, and each tile opens the match page.
+
+Every Thursday at noon, when at least one fixture falls in the next seven days, the players of the club's teams, the captains and the committee receive this summary by email — one per address. It is not resent when a lineup changes afterwards: the page is always up to date.
+
 ### Availability
 
 Before each interclub round, the captain may request your availability. Respond **Available / Unavailable** directly from the email notification or from the interclub section.

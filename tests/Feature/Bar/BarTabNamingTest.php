@@ -6,6 +6,7 @@ use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Models\BarStockMovement;
+use App\Domains\Bar\Services\BarCartService;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
@@ -126,6 +127,42 @@ it('joins the open tab instead of opening a second one of the same name', functi
         ->and((int) $order->items()->sum('quantity'))->toBe(7);
 });
 
+it('rejects a stale tab cart without overwriting newer servings', function (): void {
+    serveOnTab($this->barman, 'Alpa A', $this->product->id, 2);
+    $order = BarOrder::query()->sole();
+    $cartService = app(BarCartService::class);
+
+    $cartService->openTab('Alpa A');
+    $staleSession = collect(session()->all())->only([
+        'bar_tab_name',
+        'cart',
+        'editing_order_id',
+        'editing_order_items',
+    ])->all();
+
+    $cartService->addProductToSessionCart($this->product->id);
+    $cartService->checkoutFromSessionCart('validate');
+
+    expect((int) $order->fresh()->items()->sum('quantity'))->toBe(3);
+
+    $staleCart = $staleSession['cart'];
+    $staleCart[$this->product->id]++;
+    session()->put([...$staleSession, 'cart' => $staleCart]);
+
+    expect(fn () => $cartService->checkoutFromSessionCart('validate'))
+        ->toThrow(RuntimeException::class, 'Cette ardoise a changé depuis son ouverture.');
+
+    expect((int) $order->fresh()->items()->sum('quantity'))->toBe(3)
+        ->and($this->product->fresh()->stock)->toBe(47);
+
+    $cartService->openTab('Alpa A');
+    $cartService->addProductToSessionCart($this->product->id);
+    $cartService->checkoutFromSessionCart('validate');
+
+    expect((int) $order->fresh()->items()->sum('quantity'))->toBe(4)
+        ->and($this->product->fresh()->stock)->toBe(46);
+});
+
 it('recognises a tab through case, accents and stray spaces', function (string $typed): void {
     // Deux barmen ne tapent jamais pareil. Une comparaison stricte laisserait passer
     // précisément les doublons qu'on cherche à empêcher.
@@ -215,6 +252,13 @@ it('lets a colleague cash in and add to a tab they did not open', function (): v
         ->get(route('bar.orders.modify', $order))
         ->assertRedirect(route('bar.index'))
         ->assertSessionHas('success');
+
+    Livewire::actingAs($this->colleague)
+        ->test('pages::bar.cart')
+        ->call('add', $this->product->id)
+        ->call('validateOrder', 'validate');
+
+    expect((int) $order->fresh()->items()->sum('quantity'))->toBe(3);
 });
 
 it('keeps deletion with the person who opened the tab', function (): void {

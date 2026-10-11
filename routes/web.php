@@ -107,6 +107,12 @@ Route::prefix('admin/my-space/')
         // The yearly survey — always the signed-in seat (no {user}): one link per
         // family in the invitation, the « answering for » switch does the rest.
         Route::livewire('survey', 'pages::club-admin.users.user-space.survey')->name('admin.user.survey');
+        // « Sélections de la semaine » (2026-10-11) : always the signed-in seat, so the
+        // Thursday mail links one address for everybody. Readable by whoever reads
+        // the directory.
+        Route::livewire('weekly-selections', 'pages::club-admin.users.user-space.weekly-selections')
+            ->middleware('feature:interclubs')
+            ->name('admin.user.weekly-selections');
         Route::livewire('{user}/profile', 'pages::club-admin.users.user-space.profile')->name('admin.user.profile');
         Route::livewire('{user}/settings', 'pages::club-admin.users.user-space.settings')->name('admin.user.settings');
         Route::livewire('{user}/teams', 'pages::club-admin.users.user-space.user-teams')->name('admin.user.teams');
@@ -174,6 +180,11 @@ Route::prefix('admin/club-admin/users/')
         Route::livewire('list', 'pages::club-admin.users.index')
             ->middleware('can:users.view')
             ->name('admin.users.index');
+        // Every responsible adult on file, read-only: the committee reads what a
+        // child's file already shows, gathered in one list.
+        Route::livewire('guardians', 'pages::club-admin.users.guardians')
+            ->middleware('can:users.view')
+            ->name('admin.users.guardians');
         Route::livewire('create', 'pages::club-admin.users.form')
             ->middleware('can:users.create')
             ->name('admin.users.create');

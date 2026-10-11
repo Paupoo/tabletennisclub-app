@@ -70,7 +70,7 @@ class InterclubProdSeeder extends Seeder
         $this->season = Season::updateOrCreate(
             ['name' => '2026-2027'],
             [
-                'start_at' => '2026-09-01 00:00:00',
+                'start_at' => '2026-07-01 00:00:00',
                 'end_at' => '2027-06-30 00:00:00',
                 'is_active' => true,
             ]

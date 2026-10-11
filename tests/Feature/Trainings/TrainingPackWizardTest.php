@@ -10,8 +10,11 @@ use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingLevel;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Notifications\TrainingSessionHandedOverNotification;
 use App\Domains\Trainings\Services\TrainingAttendanceService;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
+use Spatie\Activitylog\Models\Activity;
 
 /**
  * Un pack complet et valide au regard des règles de save().
@@ -125,6 +128,7 @@ describe('training pack wizard', function (): void {
             'trainer_id' => $pack->trainer_id,
         ]);
         $standIn = User::factory()->isCoach()->create();
+        Notification::fake();
 
         // Le titulaire est malade, un collègue prend la séance. Sans ce geste
         // la séance reste non pointée pour toujours : le remplaçant n'y a pas
@@ -136,7 +140,79 @@ describe('training pack wizard', function (): void {
 
         expect($session->fresh()->trainer_id)->toBe($standIn->id)
             ->and($standIn->can('recordAttendance', $session->fresh()))->toBeTrue();
+
+        // Le remplacement fixe qui sera payé pour la séance : le remplaçant
+        // l'apprend, et le comité retrouve qui l'a saisi.
+        Notification::assertSentTo($standIn, TrainingSessionHandedOverNotification::class);
+        expect(Activity::query()->where('event', 'training_session_handed_over')->latest('id')->first())
+            ->causer_id->toBe($this->admin->id)
+            ->subject_id->toBe($session->id);
     })->group('training', 'attendance');
+
+    it('hands a session over from the pack sessions to any member', function (): void {
+        $pack = editablePack();
+        $session = Training::factory()->for($pack, 'trainingPack')->create([
+            'start' => now()->addWeek(), 'end' => now()->addWeek()->addHour(), 'trainer_id' => $pack->trainer_id,
+        ]);
+        $member = User::factory()->create(['first_name' => 'Hugo', 'last_name' => 'Renard']);
+        Notification::fake();
+
+        // Le comité fait entrer quelqu'un dans l'encadrement : n'importe quel
+        // membre lui est proposé, pas seulement les coachs.
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('openPack', $pack->id)
+            ->call('openHandOver', $session->id)
+            ->assertSet('handOverModal', true)
+            ->assertSee('Renard Hugo')
+            ->set('handOverCoachId', $member->id)
+            ->call('confirmHandOver')
+            ->assertSet('handOverModal', false);
+
+        expect($session->fresh()->trainer_id)->toBe($member->id);
+
+        // Le mail l'envoie vers l'espace coach : il doit pouvoir l'ouvrir.
+        $this->actingAs($member)->get(route('coach.trainings'))->assertOk();
+    })->group('training', 'attendance');
+
+    it('hands the coming sessions to a new coach without rewriting the past or a stand-in', function (): void {
+        $former = User::factory()->isCoach()->create();
+        $successor = User::factory()->isCoach()->create();
+        $standIn = User::factory()->isCoach()->create();
+        $pack = editablePack(['trainer_id' => $former->id]);
+
+        $given = Training::factory()->past()->for($pack, 'trainingPack')->create(['trainer_id' => $former->id]);
+        $coming = Training::factory()->for($pack, 'trainingPack')->create(['start' => now()->addWeek(), 'end' => now()->addWeek()->addHour(), 'trainer_id' => $former->id]);
+        $handedOver = Training::factory()->for($pack, 'trainingPack')->create(['start' => now()->addWeeks(2), 'end' => now()->addWeeks(2)->addHour(), 'trainer_id' => $standIn->id]);
+
+        // Enregistrer le pack réécrivait le coach de *toutes* ses séances :
+        // septembre passait au coach arrivé en janvier, et un remplacement
+        // saisi la veille disparaissait au premier changement de prix.
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('openEdit', $pack->id)
+            ->set('formTrainerId', $successor->id)
+            ->call('save');
+
+        expect($given->fresh()->trainer_id)->toBe($former->id)
+            ->and($coming->fresh()->trainer_id)->toBe($successor->id)
+            ->and($handedOver->fresh()->trainer_id)->toBe($standIn->id);
+    })->group('training', 'pack');
+
+    it('keeps a stand-in when the pack is saved for another reason', function (): void {
+        $holder = User::factory()->isCoach()->create();
+        $standIn = User::factory()->isCoach()->create();
+        $pack = editablePack(['trainer_id' => $holder->id]);
+        $handedOver = Training::factory()->for($pack, 'trainingPack')->create(['start' => now()->addWeek(), 'end' => now()->addWeek()->addHour(), 'trainer_id' => $standIn->id]);
+
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('openEdit', $pack->id)
+            ->set('formPrice', 120)
+            ->call('save');
+
+        expect($handedOver->fresh()->trainer_id)->toBe($standIn->id);
+    })->group('training', 'pack');
 
 });
 

@@ -11,7 +11,6 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Services\AfttFixtureMatcher;
 use App\Domains\Competitions\Interclub\Services\AfttResultsImporter;
 use App\Domains\Competitions\Interclub\Services\TabtClient;
-use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Throwable;
 
@@ -91,7 +90,7 @@ class ImportAfttHistoryCommand extends Command
      * The club's own season row, created if this is the first time we look that
      * far back.
      *
-     * September to June, inactive, closed to affiliations: a season that ended
+     * July to June, inactive, closed to affiliations: a season that ended
      * years ago must never be mistaken for one members can sign up to.
      */
     private function ensureSeason(string $name, bool $dryRun): ?Season
@@ -118,10 +117,12 @@ class ImportAfttHistoryCommand extends Command
 
         $this->line(sprintf('  Season %s does not exist yet — creating it.', $name));
 
+        [$startAt, $endAt] = Season::defaultDates((int) $startYear);
+
         return Season::create([
             'name' => $name,
-            'start_at' => CarbonImmutable::create((int) $startYear, 9, 1),
-            'end_at' => CarbonImmutable::create((int) $startYear + 1, 6, 30),
+            'start_at' => $startAt,
+            'end_at' => $endAt,
             'is_active' => false,
             'affiliations_open' => false,
         ]);

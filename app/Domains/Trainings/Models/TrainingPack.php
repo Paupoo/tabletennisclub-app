@@ -212,7 +212,8 @@ class TrainingPack extends Model
         return $this->subscriptions()
             ->affiliated()
             ->wherePivot('status', 'enrolled')
-            ->count();
+            ->count()
+            + $this->externalRegistrations()->whereIn('status', ExternalRegistration::SEATED_STATUSES)->count();
     }
 
     public function eventPost(): MorphOne
@@ -421,6 +422,16 @@ class TrainingPack extends Model
     public function season(): BelongsTo
     {
         return $this->belongsTo(Season::class);
+    }
+
+    /**
+     * Les sparrings attitrés au pack : recopiés sur chaque séance à venir.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function sparrings(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'training_pack_sparrings')->withTimestamps();
     }
 
     public function subscriptions(): BelongsToMany

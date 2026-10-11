@@ -18,6 +18,7 @@ use App\Domains\Trainings\Models\Training;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Aggregates every upcoming club activity relevant to a member (tournaments,
@@ -409,6 +410,16 @@ class UserCalendarService
                 ->where('start', '>=', $from)
                 ->when($to, fn ($q) => $q->where('start', '<=', $to))
                 ->pluck('id')
+        );
+
+        $sessionIds = $sessionIds->merge(
+            DB::table('training_sparrings')
+                ->join('trainings', 'trainings.id', '=', 'training_sparrings.training_id')
+                ->where('training_sparrings.user_id', $user->id)
+                ->whereNull('training_sparrings.removed_at')
+                ->where('trainings.start', '>=', $from)
+                ->when($to, fn ($q) => $q->where('trainings.start', '<=', $to))
+                ->pluck('trainings.id')
         );
 
         $sessionIds = $sessionIds->merge(

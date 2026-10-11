@@ -159,3 +159,19 @@ it('marks setup as complete on step 7', function (): void {
 
     expect(AppSetting::get('setup_completed'))->toBe('1');
 });
+
+it('proposes the season running from July 1st to June 30th', function (): void {
+    AppSetting::where('key', 'setup_completed')->delete();
+
+    $this->travelTo('2026-10-11 10:00');
+    Livewire::test('pages::setup.wizard')
+        ->assertSet('seasonName', '2026-2027')
+        ->assertSet('seasonStartAt', '2026-07-01')
+        ->assertSet('seasonEndAt', '2027-06-30');
+
+    $this->travelTo('2027-03-11 10:00');
+    Livewire::test('pages::setup.wizard')
+        ->assertSet('seasonName', '2026-2027')
+        ->assertSet('seasonStartAt', '2026-07-01')
+        ->assertSet('seasonEndAt', '2027-06-30');
+});

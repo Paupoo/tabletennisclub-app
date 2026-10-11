@@ -410,6 +410,9 @@ Route::prefix('admin/club-events/interclubs/')
     ->middleware(['auth', 'verified', 'can:trainings.view', 'feature:trainings'])
     ->group(function (): void {
         Route::livewire('trainings', 'pages::club-events.trainings.index')->name('admin.trainings.index');
+        Route::livewire('trainings/staff', 'pages::club-events.trainings.staff')
+            ->middleware('can:view-training-staff')
+            ->name('admin.trainings.staff');
     });
 
 // Coach's personal sessions — coaches (and admins for oversight).

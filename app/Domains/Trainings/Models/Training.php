@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @property int $id
@@ -36,6 +37,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $attendance_taken_at
  * @property int|null $attendance_taken_by
  * @property-read Room $room
+ * @property-read Collection<int, User> $sparrings
  * @property-read Season|null $season
  * @property-read Collection<int, User> $trainees
  * @property-read int|null $trainees_count
@@ -144,6 +146,20 @@ class Training extends Model
         return $this->belongsTo(Season::class);
     }
 
+    /**
+     * Les sparrings attendus à cette séance, un attitré retiré pour la date
+     * mis à part. Le pivot porte le pointage du coach.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function sparrings(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'training_sparrings')
+            ->withPivot(['source', 'attendance', 'removed_at'])
+            ->wherePivotNull('removed_at')
+            ->withTimestamps();
+    }
+
     public function trainees(): BelongsToMany
     {
         return $this->belongsToMany(User::class)->withPivot('status')->withTimestamps();
@@ -157,5 +173,31 @@ class Training extends Model
     public function trainingPack(): BelongsTo
     {
         return $this->belongsTo(TrainingPack::class);
+    }
+
+    /**
+     * Une séance créée pour un pack reçoit ses sparrings attitrés, comme
+     * elle reçoit son coach.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (Training $training): void {
+            if (! $training->training_pack_id) {
+                return;
+            }
+
+            $rows = DB::table('training_pack_sparrings')
+                ->where('training_pack_id', $training->training_pack_id)
+                ->pluck('user_id')
+                ->map(fn (int $userId): array => [
+                    'training_id' => $training->id,
+                    'user_id' => $userId,
+                    'source' => 'pack',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+            DB::table('training_sparrings')->insert($rows->all());
+        });
     }
 }

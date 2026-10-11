@@ -13,6 +13,8 @@
             <x-slot:actions>
                 <x-button class="btn-ghost" icon="o-arrow-left" :label="__('Back')"
                     wire:click="backToList" />
+                <x-button class="btn-ghost" icon="o-arrow-path" :label="__('Hand over')"
+                    wire:click="openHandOver({{ $selectedSession->id }})" />
                 <x-button class="btn-error btn-soft" icon="o-x-circle" :label="__('Cancel session')"
                     wire:click="openCancel" />
                 @if (! $selectedSession->attendance_taken_at)
@@ -65,6 +67,29 @@
 
             {{-- Right — member list --}}
             <div class="lg:col-span-2">
+                {{-- Sparrings: confirmed by the coach, present or absent — this count is what pays them. --}}
+                @if ($sparrings->isNotEmpty())
+                    <x-card class="mb-4" :title="__('Sparrings')">
+                        @foreach ($sparrings as $sparring)
+                            @php $sparringStatus = $sparringAttendance[$sparring->id] ?? null; @endphp
+                            <div class="flex items-center justify-between gap-4 border-b border-base-300 py-3 last:border-0"
+                                wire:key="sparring-{{ $sparring->id }}">
+                                <p class="font-medium">{{ $sparring->full_name }}</p>
+                                <div class="flex shrink-0 gap-1">
+                                    <x-button
+                                        @class(['btn-xs', 'btn-success' => $sparringStatus === 'present', 'btn-ghost' => $sparringStatus !== 'present'])
+                                        icon="o-check" :tooltip="__('Present')"
+                                        wire:click="setSparringAttendance({{ $sparring->id }}, 'present')" />
+                                    <x-button
+                                        @class(['btn-xs', 'btn-error' => $sparringStatus === 'absent', 'btn-ghost' => $sparringStatus !== 'absent'])
+                                        icon="o-x-mark" :tooltip="__('Absent')"
+                                        wire:click="setSparringAttendance({{ $sparring->id }}, 'absent')" />
+                                </div>
+                            </div>
+                        @endforeach
+                    </x-card>
+                @endif
+
                 <x-card :title="__('Members')">
                     @forelse ($enrolledMembers as $member)
                         @php
@@ -77,6 +102,7 @@
                             // membre — la majorité des mineurs n'a aucun Guardian lié.
                             $guardianName = $guardian ? trim($guardian->first_name . ' ' . $guardian->last_name) : null;
                             $guardianPhone = $guardian?->phone ?: $member->guardian_phone_number;
+                            $guardianEmail = $guardian?->email;
                             $currentStatus = $attendanceStatus[$member->id] ?? 'enrolled';
                             $presenceRate = $this->presenceRate($member->id);
                             $interclubDivisions = $member->teams->map(fn ($t) => $t->league?->name ?? null)->filter()->unique()->implode(', ');
@@ -110,10 +136,14 @@
                                             @endif
 
                                             @if ($member->phone_number)
-                                                <span>{{ $member->phone_number }}</span>
+                                                <a class="hover:text-primary" href="tel:{{ $member->phone_number }}">{{ $member->phone_number }}</a>
                                             @endif
 
-                                            @if ($guardianName || $guardianPhone)
+                                            @if ($member->email)
+                                                <a class="hover:text-primary" href="mailto:{{ $member->email }}">{{ $member->email }}</a>
+                                            @endif
+
+                                            @if ($guardianName || $guardianPhone || $guardianEmail)
                                                 {{-- Les colonnes sont first_name / last_name / phone :
                                                      l'écran lisait deux attributs qui n'existent pas
                                                      sur Guardian et n'affichait donc rien. --}}
@@ -123,7 +153,12 @@
                                                     @if ($guardianName && $guardianPhone)
                                                         ·
                                                     @endif
-                                                    {{ $guardianPhone }}
+                                                    @if ($guardianPhone)
+                                                        <a class="hover:text-primary" href="tel:{{ $guardianPhone }}">{{ $guardianPhone }}</a>
+                                                    @endif
+                                                    @if ($guardianEmail)
+                                                        · <a class="hover:text-primary" href="mailto:{{ $guardianEmail }}">{{ $guardianEmail }}</a>
+                                                    @endif
                                                 </span>
                                             @endif
                                         </div>
@@ -188,11 +223,15 @@
                                                     {{ __('Responsible adult') }}&nbsp;:
                                                     {{ $participant->guardian_first_name }} {{ $participant->guardian_last_name }}
                                                     @if ($callable)
-                                                        · {{ $callable }}
+                                                        · <a class="hover:text-primary" href="tel:{{ $callable }}">{{ $callable }}</a>
                                                     @endif
                                                 </span>
                                             @elseif ($callable)
-                                                <span>{{ $callable }}</span>
+                                                <a class="hover:text-primary" href="tel:{{ $callable }}">{{ $callable }}</a>
+                                            @endif
+
+                                            @if ($participant->email)
+                                                <a class="hover:text-primary" href="mailto:{{ $participant->email }}">{{ $participant->email }}</a>
                                             @endif
                                         </div>
                                     </div>
@@ -321,6 +360,20 @@
     {{-- ================================================================
          CANCELLATION MODAL
     ================================================================ --}}
+    <x-app-modal :title="__('Hand this session over')" wire:model="handOverModal" separator :open="$handOverModal">
+        <p class="text-sm text-base-content/70">
+            {{ __('Your colleague coaches this session in your place: they record attendance and reach the enrolled members. You keep the other sessions.') }}
+        </p>
+
+        <x-choices-offline class="mt-4" :label="__('Coach for this session')" wire:model="handOverCoachId"
+            :options="$this->handOverOptions" option-label="name" single searchable />
+
+        <x-slot:actions>
+            <x-button :label="__('Abandon')" wire:click="$set('handOverModal', false)" />
+            <x-button :label="__('Hand over')" class="btn-primary" wire:click="confirmHandOver" spinner />
+        </x-slot:actions>
+    </x-app-modal>
+
     <x-app-modal :title="__('Cancel this session')" wire:model="cancelModal" separator :open="$cancelModal">
         <div class="space-y-4">
             <div class="grid grid-cols-2 gap-3">

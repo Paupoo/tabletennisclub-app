@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Console\Commands\Season;
 
 use App\Domains\Competitions\Interclub\Models\Season;
-use Carbon\Carbon;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -38,11 +37,13 @@ class ProvisionNextSeasonCommand extends Command
                 continue;
             }
 
+            [$startAt, $endAt] = Season::defaultDates($nextStartYear);
+
             try {
                 Season::create([
                     'name' => $name,
-                    'start_at' => Carbon::create($nextStartYear, 9, 1)->startOfDay(),
-                    'end_at' => Carbon::create($nextStartYear + 1, 6, 30)->endOfDay(),
+                    'start_at' => $startAt,
+                    'end_at' => $endAt,
                     'is_active' => false,
                     'affiliations_open' => false,
                 ]);
@@ -62,8 +63,6 @@ class ProvisionNextSeasonCommand extends Command
 
     private function currentSeasonStartYear(): int
     {
-        $now = now();
-
-        return $now->month >= 9 ? (int) $now->year : (int) $now->year - 1;
+        return Season::defaultStartYearOf(now());
     }
 }

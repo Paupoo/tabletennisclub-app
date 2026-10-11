@@ -150,6 +150,14 @@ erDiagram
 #### `training_user`
 - `training_id`, `user_id`, `status` (registered/attended/absent)
 
+#### `training_pack_sparrings`
+- `training_pack_id`, `user_id` — sparrings attitrés, recopiés sur les séances à venir
+
+#### `training_sparrings`
+- `training_id`, `user_id`, `source` (pack/session)
+- `removed_at` — attitré retiré pour cette date ; le pack ne le remet pas
+- `attendance` (present/absent) — pointé par le coach, base des paiements
+
 ---
 
 ### MEETINGS

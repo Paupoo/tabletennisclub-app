@@ -26,7 +26,7 @@ class SeasonFactory extends Factory
 
         return [
             'name' => $year . '-' . ($year + 1),
-            'start_at' => Carbon::parse('first day of September ' . $year),
+            'start_at' => Carbon::parse('first day of July ' . $year),
             'end_at' => Carbon::parse('last day of June ' . $year + 1),
             'is_active' => false,
         ];

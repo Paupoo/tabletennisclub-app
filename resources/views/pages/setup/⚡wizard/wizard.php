@@ -369,18 +369,12 @@ new class extends Component
             }
         }
 
-        $year = now()->year;
-        $month = now()->month;
+        $startYear = Season::defaultStartYearOf(now());
+        [$startAt, $endAt] = Season::defaultDates($startYear);
 
-        if ($month >= 8) {
-            $this->seasonName = "{$year}-" . ($year + 1);
-            $this->seasonStartAt = "{$year}-08-01";
-            $this->seasonEndAt = ($year + 1) . '-07-31';
-        } else {
-            $this->seasonName = ($year - 1) . "-{$year}";
-            $this->seasonStartAt = ($year - 1) . '-09-01';
-            $this->seasonEndAt = "{$year}-06-30";
-        }
+        $this->seasonName = $startYear . '-' . ($startYear + 1);
+        $this->seasonStartAt = $startAt->toDateString();
+        $this->seasonEndAt = $endAt->toDateString();
     }
 
     public function openTableForm(int $roomIndex): void

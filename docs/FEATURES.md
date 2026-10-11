@@ -342,7 +342,7 @@ La section affiche les `TrainingPack` actifs selon une **chaîne de priorité** 
 
 ### Comment mettre à jour les horaires de la saison suivante ?
 
-1. Créer la nouvelle saison (Admin → Seasons) avec `start_at` = 1er septembre
+1. Créer la nouvelle saison (Admin → Seasons) avec `start_at` = 1er juillet (proposé par défaut)
 2. Créer les `TrainingPack` pour cette saison (même si `is_active = false` sur la saison)
 3. Le site affiche automatiquement ces horaires avec le bandeau "Dès le 1er septembre"
 

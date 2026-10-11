@@ -10,6 +10,7 @@ use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
 use App\Domains\Trainings\Services\TrainingAttendanceReport;
 use App\Domains\Trainings\Services\TrainingAttendanceService;
+use App\Domains\Trainings\Services\TrainingStaffing;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
@@ -39,8 +40,18 @@ new class extends Component
     /** @var array<int, string> status keyed by external registration id */
     public array $externalAttendanceStatus = [];
 
+    // ── Hand-over modal ───────────────────────────────────────────────────────
+    public int $handOverCoachId = 0;
+
+    public bool $handOverModal = false;
+
+    public ?int $handOverSessionId = null;
+
     // ── Session drill-down ────────────────────────────────────────────────────
     public ?int $selectedSessionId = null;
+
+    /** @var array<int, string> sparring attendance keyed by user_id */
+    public array $sparringAttendance = [];
 
     // ── Computed ──────────────────────────────────────────────────────────────
 
@@ -124,15 +135,61 @@ new class extends Component
         // Notify enrolled members
         if ($training->trainingPack) {
             $training->trainingPack->trainees()
+                ->with('guardians')
                 ->where('emails_notifications', true)
                 ->get()
                 ->each->notify(new TrainingSessionCancelledNotification($training, $type, $this->cancelNote ?: null));
         }
 
+        app(TrainingStaffing::class)->notifyCancellation($training, auth()->user());
+
         $this->cancelModal = false;
         $this->selectedSessionId = null;
         unset($this->upcomingSessions, $this->sessionsToRecord, $this->selectedSession);
         $this->warning(__('Session cancelled. Members have been notified.'), icon: 'o-x-circle');
+    }
+
+    // ── Hand-over ─────────────────────────────────────────────────────────────
+
+    /**
+     * Confie la séance à un collègue de l'encadrement de la saison.
+     *
+     * Le choix est vérifié ici et pas seulement dans la liste : le remplaçant
+     * reçoit les coordonnées des inscrits.
+     */
+    public function confirmHandOver(): void
+    {
+        if (! $this->handOverSessionId) {
+            return;
+        }
+
+        $session = Training::findOrFail($this->handOverSessionId);
+
+        Gate::authorize('handOver', $session);
+
+        $isStaff = collect($this->handOverOptions)->contains('id', $this->handOverCoachId);
+
+        if (! $isStaff) {
+            $this->addError('handOverCoachId', __('Choose someone from the coaching staff of the season.'));
+
+            return;
+        }
+
+        $coach = User::findOrFail($this->handOverCoachId);
+
+        app(TrainingStaffing::class)->handOverSession($session, $coach, auth()->user());
+
+        $this->handOverModal = false;
+        $this->handOverSessionId = null;
+        $this->handOverCoachId = 0;
+        $this->selectedSessionId = null;
+
+        unset($this->upcomingSessions, $this->sessionsToRecord, $this->selectedSession);
+
+        $this->success(__(':session handed over to :coach.', [
+            'session' => $session->start->translatedFormat('D d/m'),
+            'coach' => $coach->first_name . ' ' . $coach->last_name,
+        ]), icon: 'o-arrow-path');
     }
 
     /**
@@ -173,6 +230,31 @@ new class extends Component
             ->get();
     }
 
+    /**
+     * Les collègues à qui confier la séance : l'encadrement de sa saison,
+     * moins soi-même.
+     *
+     * @return array<int, array{id: int, name: string}>
+     */
+    #[Computed]
+    public function handOverOptions(): array
+    {
+        $session = $this->handOverSessionId ? Training::find($this->handOverSessionId) : null;
+
+        if (! $session) {
+            return [];
+        }
+
+        return app(TrainingStaffing::class)->coachingStaff($session->season_id)
+            ->whereKeyNot($session->trainer_id)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->orderBy('users.id')
+            ->get(['users.id', 'first_name', 'last_name'])
+            ->map(fn (User $user): array => ['id' => $user->id, 'name' => $user->last_name . ' ' . $user->first_name])
+            ->all();
+    }
+
     // ── Cancellation ──────────────────────────────────────────────────────────
 
     public function openCancel(): void
@@ -180,6 +262,17 @@ new class extends Component
         $this->cancelType = 'FREE';
         $this->cancelNote = '';
         $this->cancelModal = true;
+    }
+
+    public function openHandOver(int $trainingId): void
+    {
+        Gate::authorize('handOver', Training::findOrFail($trainingId));
+
+        $this->handOverSessionId = $trainingId;
+        $this->handOverCoachId = 0;
+        $this->handOverModal = true;
+
+        unset($this->handOverOptions);
     }
 
     /**
@@ -264,6 +357,38 @@ new class extends Component
         app(TrainingAttendanceService::class)->recordExternal($session, $registration, $status);
     }
 
+    public function setSparringAttendance(int $userId, string $status): void
+    {
+        if (! $this->selectedSessionId || ! in_array($status, ['present', 'absent'], true)) {
+            return;
+        }
+
+        $session = Training::findOrFail($this->selectedSessionId);
+
+        Gate::authorize('recordAttendance', $session);
+
+        $sparring = $session->sparrings()->find($userId);
+
+        if (! $sparring instanceof User) {
+            return;
+        }
+
+        $this->sparringAttendance[$sparring->id] = $status;
+
+        app(TrainingAttendanceService::class)->recordSparring($session, $sparring, $status);
+    }
+
+    /**
+     * Les sparrings attendus à la séance, à confirmer comme les élèves.
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function sparrings(): Collection
+    {
+        return $this->selectedSession?->sparrings()->orderBy('last_name')->orderBy('first_name')->get() ?? new Collection;
+    }
+
     /**
      * Les séances à venir. Le pointage y est possible mais rarement utile :
      * elles sont là pour que le coach voie son planning.
@@ -334,7 +459,12 @@ new class extends Component
 
         $this->externalAttendanceStatus = app(TrainingAttendanceService::class)->externalStatuses($session);
 
-        unset($this->selectedSession, $this->enrolledMembers, $this->walkIns, $this->attendeeOptions, $this->externalParticipants);
+        $this->sparringAttendance = $session->sparrings()
+            ->whereNotNull('training_sparrings.attendance')
+            ->pluck('training_sparrings.attendance', 'users.id')
+            ->all();
+
+        unset($this->selectedSession, $this->enrolledMembers, $this->walkIns, $this->attendeeOptions, $this->externalParticipants, $this->sparrings);
     }
 
     /**
@@ -365,6 +495,7 @@ new class extends Component
             'selectedSession' => $this->selectedSession,
             'enrolledMembers' => $this->enrolledMembers,
             'externalParticipants' => $this->externalParticipants,
+            'sparrings' => $this->sparrings,
             'walkIns' => $this->walkIns,
             'attendeeOptions' => $this->attendeeOptions,
             'breadcrumbs' => $this->getBreadcrumbs(),

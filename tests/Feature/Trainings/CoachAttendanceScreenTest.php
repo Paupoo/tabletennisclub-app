@@ -7,6 +7,8 @@ use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Notifications\TrainingSessionHandedOverNotification;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
 describe('coach screen', function (): void {
@@ -207,4 +209,179 @@ describe('reaching a child through their guardian', function (): void {
             ->assertOk()
             ->assertSee('0498776655');
     })->group('training', 'attendance');
+});
+
+describe('reaching a trainee from the side of the table', function (): void {
+    it('lets the coach call or write to an adult trainee in one tap', function (): void {
+        $coach = User::factory()->isCoach()->create();
+        $pack = TrainingPack::factory()->create(['max_participants' => 5, 'price' => 90]);
+        $session = Training::factory()->past()->for($pack, 'trainingPack')->for($coach, 'trainer')->create();
+
+        $adult = Subscription::factory()
+            ->for($pack->season, 'season')
+            ->for(User::factory()->state([
+                'birthdate' => now()->subYears(35),
+                'phone_number' => '0471223344',
+                'email' => 'marc.dupont@example.test',
+                'street' => 'Rue des Fusains 12',
+            ]), 'user')
+            ->create();
+        $adult->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+
+        // Le coach est dans la salle, téléphone en main : un numéro en texte
+        // brut se recopie, un lien se touche. L'adresse ne lui sert à rien.
+        Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('viewSession', $session->id)
+            ->assertOk()
+            ->assertSeeHtml('href="tel:0471223344"')
+            ->assertSeeHtml('href="mailto:marc.dupont@example.test"')
+            ->assertDontSee('Rue des Fusains');
+    })->group('training', 'attendance');
+
+    it('reaches a child through the guardian email and phone', function (): void {
+        $coach = User::factory()->isCoach()->create();
+        $pack = TrainingPack::factory()->create(['max_participants' => 5, 'price' => 90]);
+        $session = Training::factory()->past()->for($pack, 'trainingPack')->for($coach, 'trainer')->create();
+
+        $child = Subscription::factory()
+            ->for($pack->season, 'season')
+            ->for(User::factory()->state(['birthdate' => now()->subYears(11)]), 'user')
+            ->create();
+        $child->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+
+        $guardian = Guardian::factory()->create([
+            'phone' => '0475112233',
+            'email' => 'isabelle.parent@example.test',
+        ]);
+        $child->user->guardians()->attach($guardian->id);
+
+        Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('viewSession', $session->id)
+            ->assertOk()
+            ->assertSeeHtml('href="tel:0475112233"')
+            ->assertSeeHtml('href="mailto:isabelle.parent@example.test"');
+    })->group('training', 'attendance');
+});
+
+describe('a coach hands their session over', function (): void {
+    it('hands a coming session to a colleague, who is told', function (): void {
+        Notification::fake();
+        $coach = User::factory()->isCoach()->create();
+        $colleague = User::factory()->isCoach()->create();
+        $session = Training::factory()->for($coach, 'trainer')->create(['start' => now()->addDays(2), 'end' => now()->addDays(2)->addHour()]);
+
+        // Malade le mardi à 17 h : le titulaire est le premier à le savoir, il
+        // ne peut pas attendre que le comité passe par là.
+        Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('openHandOver', $session->id)
+            ->set('handOverCoachId', $colleague->id)
+            ->call('confirmHandOver')
+            ->assertHasNoErrors();
+
+        expect($session->fresh()->trainer_id)->toBe($colleague->id);
+        Notification::assertSentTo($colleague, TrainingSessionHandedOverNotification::class);
+    })->group('training', 'attendance');
+
+    it('only offers the people who already coach this season', function (): void {
+        $coach = User::factory()->isCoach()->create();
+        $colleague = User::factory()->isCoach()->create(['first_name' => 'Nadia', 'last_name' => 'Colin']);
+        $packHolder = User::factory()->create(['first_name' => 'Yves', 'last_name' => 'Lambert']);
+        $stranger = User::factory()->create(['first_name' => 'Tom', 'last_name' => 'Inconnu']);
+        $session = Training::factory()->for($coach, 'trainer')->create(['start' => now()->addDays(2), 'end' => now()->addDays(2)->addHour()]);
+        $packOfTheSeason = TrainingPack::factory()->create(['season_id' => $session->season_id, 'trainer_id' => $packHolder->id]);
+        $regularSparring = User::factory()->create(['first_name' => 'Zoé', 'last_name' => 'Marchal']);
+        $packOfTheSeason->sparrings()->attach($regularSparring->id);
+
+        // Une erreur dans un sélecteur ne doit pas suffire à confier les
+        // téléphones d'un groupe d'enfants à un membre quelconque.
+        $names = collect(Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('openHandOver', $session->id)
+            ->get('handOverOptions'))->pluck('name');
+
+        expect($names)->toContain('Colin Nadia')
+            ->toContain('Lambert Yves')
+            ->toContain('Marchal Zoé')
+            ->not->toContain('Inconnu Tom');
+    })->group('training', 'attendance', 'security');
+
+    it('refuses to hand a session to someone outside the coaching staff', function (): void {
+        $coach = User::factory()->isCoach()->create();
+        $stranger = User::factory()->create();
+        $session = Training::factory()->for($coach, 'trainer')->create(['start' => now()->addDays(2), 'end' => now()->addDays(2)->addHour()]);
+
+        Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('openHandOver', $session->id)
+            ->set('handOverCoachId', $stranger->id)
+            ->call('confirmHandOver')
+            ->assertHasErrors('handOverCoachId');
+
+        expect($session->fresh()->trainer_id)->toBe($coach->id);
+    })->group('training', 'attendance', 'security');
+
+    it('refuses to hand over a colleague session', function (): void {
+        $owner = User::factory()->isCoach()->create();
+        $intruder = User::factory()->isCoach()->create();
+        $session = Training::factory()->for($owner, 'trainer')->create(['start' => now()->addDays(2), 'end' => now()->addDays(2)->addHour()]);
+
+        Livewire::actingAs($intruder)
+            ->test('pages::club-events.trainings.coach')
+            ->call('openHandOver', $session->id)
+            ->assertForbidden();
+    })->group('training', 'attendance', 'security');
+});
+
+describe('the coach confirms the sparrings', function (): void {
+    it('marks who came to help, and writes the others absent when closing the count', function (): void {
+        $coach = User::factory()->isCoach()->create();
+        $session = Training::factory()->past()->for($coach, 'trainer')->create();
+        $came = User::factory()->create(['first_name' => 'Jean', 'last_name' => 'Sparre']);
+        $missing = User::factory()->create(['first_name' => 'Léon', 'last_name' => 'Absent']);
+        $session->sparrings()->attach([$came->id => ['source' => 'pack'], $missing->id => ['source' => 'session']]);
+
+        // Ce pointage ouvrira un paiement : il doit être confirmé par le
+        // coach, jamais déduit. Un sparring que personne n'a coché n'est pas venu.
+        Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('viewSession', $session->id)
+            ->assertSee('Jean Sparre')
+            ->assertSee('Léon Absent')
+            ->call('setSparringAttendance', $came->id, 'present')
+            ->call('validateAttendance');
+
+        expect($session->sparrings()->pluck('training_sparrings.attendance', 'users.id')->all())
+            ->toBe([$came->id => 'present', $missing->id => 'absent']);
+    })->group('training', 'attendance', 'sparring');
+
+    it('only knows present or absent for a sparring', function (): void {
+        $coach = User::factory()->isCoach()->create();
+        $session = Training::factory()->past()->for($coach, 'trainer')->create();
+        $sparring = User::factory()->create();
+        $session->sparrings()->attach($sparring->id, ['source' => 'pack']);
+
+        Livewire::actingAs($coach)
+            ->test('pages::club-events.trainings.coach')
+            ->call('viewSession', $session->id)
+            ->call('setSparringAttendance', $sparring->id, 'excused');
+
+        expect($session->sparrings()->first()->pivot->attendance)->toBeNull();
+    })->group('training', 'attendance', 'sparring');
+
+    it('refuses to mark the sparring of a colleague session', function (): void {
+        $owner = User::factory()->isCoach()->create();
+        $intruder = User::factory()->isCoach()->create();
+        $session = Training::factory()->past()->for($owner, 'trainer')->create();
+        $sparring = User::factory()->create();
+        $session->sparrings()->attach($sparring->id, ['source' => 'pack']);
+
+        Livewire::actingAs($intruder)
+            ->test('pages::club-events.trainings.coach')
+            ->set('selectedSessionId', $session->id)
+            ->call('setSparringAttendance', $sparring->id, 'present')
+            ->assertForbidden();
+    })->group('training', 'attendance', 'sparring', 'security');
 });

@@ -1,6 +1,6 @@
 ---
 title: Animer mes séances (coach)
-summary: Retrouver mes séances, pointer les présences et valider l'appel, rattraper une séance oubliée, annuler une séance quand je ne peux pas venir.
+summary: Retrouver mes séances, pointer les présences et les sparrings, joindre un inscrit, me faire remplacer, rattraper une séance oubliée, annuler une séance quand je ne peux pas venir.
 audience: coach
 order: 18
 ---
@@ -14,7 +14,7 @@ L'écran s'ouvre sur **ce qui reste à pointer**, avant le planning des séances
 - **Une séance annulée n'y figure pas** : personne n'y était attendu, il n'y a rien à pointer.
 - **Une séance déjà pointée disparaît** de ce bandeau. C'est ainsi qu'on sait ce qui reste à faire.
 
-Si un entraînement dont vous vous occupez ne s'affiche pas, c'est qu'**un autre coach est enregistré sur cette séance**. Vous ne voyez que les vôtres, et l'application refuse d'ouvrir la séance d'un collègue même par un lien direct. C'est une question de fiche : demandez au comité de vous confier la séance — il peut le faire **séance par séance**, sans toucher au coach du pack. C'est exactement le geste pour un remplacement de dernière minute.
+Si un entraînement dont vous vous occupez ne s'affiche pas, c'est qu'**un autre coach est enregistré sur cette séance**. Vous ne voyez que les vôtres, et l'application refuse d'ouvrir la séance d'un collègue même par un lien direct. C'est une question de fiche : le coach de la séance peut vous la confier lui-même (voir [Me faire remplacer](#me-faire-remplacer)), et le comité peut le faire **séance par séance**, sans toucher au coach du pack.
 
 ## Faire l'appel
 
@@ -38,6 +38,14 @@ C'est cette distinction qui fait toute la valeur du reste : une séance validée
 
 > Vous pouvez valider une séance des semaines après. Mieux vaut un pointage tardif qu'un trou définitif — l'application ne verrouille rien. Le comité peut aussi corriger un pointage après vous ; c'est tracé.
 
+### Les sparrings
+
+Si des **sparrings** sont attendus à la séance, ils apparaissent dans une carte à part, **au-dessus des inscrits**, avec deux boutons seulement : **Présent** et **Absent**.
+
+- **Confirmez chaque sparring venu.** C'est votre pointage qui dit qui a aidé, et qui sera payé.
+- **Un sparring que vous n'avez pas touché est noté absent** quand vous validez le pointage. Rien ne se déduit : une aide qui n'est pas confirmée ne compte pas.
+- **Vous n'ajoutez pas de sparring vous-même.** Si quelqu'un est venu aider sans être prévu, prévenez le comité : il l'ajoute à la séance, même après coup, et vous corrigez ensuite le pointage.
+
 ### Quelqu'un est venu sans être inscrit
 
 En bas de la liste, **Venus sans être inscrits** vous laisse ajouter n'importe quel membre du club à la séance. Il apparaît alors avec l'étiquette *non inscrit*.
@@ -60,7 +68,23 @@ Trois choses à savoir pour ne pas mal le lire :
 
 Tant qu'aucune séance n'a été validée, le taux affiche **—** et non 0 %. La différence est voulue : « on n'en sait rien » n'est pas « il ne vient jamais ».
 
-Vous voyez aussi les **tuteurs** d'un membre mineur et ses **équipes** — de quoi joindre quelqu'un après la séance sans passer par le secrétariat.
+Vous voyez aussi les **tuteurs** d'un membre mineur et ses **équipes**.
+
+## Joindre un inscrit
+
+Pour chaque inscrit, l'appel affiche son **téléphone** et son **e-mail** ; pour un enfant ou un compte géré, ceux de son **tuteur**. Touchez le numéro pour appeler, l'adresse pour écrire. Les non-membres d'un stage ont les mêmes liens.
+
+Ces coordonnées vous sont montrées parce que vous **encadrez la séance** — pour prévenir un parent, ou l'appeler si un enfant se blesse —, même quand le membre ne les partage pas dans l'annuaire. Vous ne les voyez que pour **vos** séances.
+
+## Me faire remplacer
+
+Vous ne pourrez pas venir, mais un collègue prend la séance ? Ouvrez la séance et cliquez sur **Confier** :
+
+- choisissez le collègue dans la liste : elle propose **l'encadrement de la saison** — les coachs et les sparrings attitrés —, pas tout le club, puisque le remplaçant reçoit les coordonnées des inscrits ;
+- votre collègue est **prévenu** par e-mail et devient le coach de **cette séance seulement** : c'est lui qui la pointe ;
+- la séance **quitte votre espace** ; vous gardez toutes les autres.
+
+Pas de demande à accepter : mettez-vous d'accord avec votre collègue, l'application enregistre le résultat. Le comité voit qui a confié quoi, et peut corriger. Pour quelqu'un qui n'est pas encore dans l'encadrement, passez par le comité.
 
 ## Annuler une séance
 
@@ -72,6 +96,8 @@ Depuis la séance ouverte, bouton d'annulation. **Choisissez bien le type** : le
 Le **motif** que vous saisissez part tel quel dans l'e-mail. Écrivez-le pour un parent qui le lira sur son téléphone à 18 h.
 
 > Les membres sont prévenus **immédiatement**. Une annulation ne se reprend pas depuis cet écran : la séance passe annulée, sort de vos séances à pointer et ne compte plus dans aucun taux. Si vous vous êtes trompé, appelez le comité — et sachez que le mail est déjà parti.
+
+Les **sparrings** attendus à la séance sont prévenus aussi : sans ce message, ils se déplaceraient pour rien.
 
 Seuls les membres **ayant accepté les e-mails** sont notifiés. Pour les autres, le club reste le canal — un message dans le groupe ne coûte rien.
 

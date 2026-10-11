@@ -216,6 +216,8 @@ describe('the coach calls the roll', function (): void {
             ->call('viewSession', $session->id)
             ->assertSee('Léa Dupont')
             ->assertSee('0470 12 34 56')
+            ->assertSeeHtml('href="tel:0470 12 34 56"')
+            ->assertSeeHtml('href="mailto:parent@example.com"')
             ->call('setExternalAttendance', $registration->id, 'present')
             ->call('validateAttendance');
 

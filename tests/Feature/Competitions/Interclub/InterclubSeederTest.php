@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
@@ -115,4 +116,30 @@ it('reuses its demo players on a second run', function (): void {
     $this->seed(InterclubSeeder::class);
 
     expect(User::count())->toBe($usersAfterFirstRun);
+});
+
+/*
+ * « Sélections de la semaine » se teste sur une base semée : chaque équipe du
+ * club joue dans les sept jours, avec une compo complète déjà envoyée.
+ */
+it('gives every team a fixture of the coming week with a full lineup sent', function (): void {
+    $teams = collect(['MEN', 'VETERANS', 'WOMEN'])->flatMap(fn (string $category) => ($this->ourTeams)($category));
+
+    expect($teams)->not->toBeEmpty();
+
+    $teams->each(function (Team $team): void {
+        $fixture = Interclub::query()
+            ->where(fn ($query) => $query->where('visited_team_id', $team->id)->orWhere('visiting_team_id', $team->id))
+            ->whereBetween('start_date_time', [now(), now()->addDays(7)])
+            ->whereDoesntHave('visitedTeam.club', fn ($query) => $query->where('name', 'like', 'TT Demo%'))
+            ->whereDoesntHave('visitingTeam.club', fn ($query) => $query->where('name', 'like', 'TT Demo%'))
+            ->first();
+
+        expect($fixture)->not->toBeNull("{$team->name} has no fixture this week");
+
+        $sent = $fixture->users()->wherePivotNotNull('selection_confirmed_at')->get();
+
+        expect($sent)->toHaveCount($fixture->total_players, "{$team->name}'s lineup is not complete")
+            ->and($sent->pluck('id')->diff($team->users->pluck('id')))->toBeEmpty();
+    });
 });

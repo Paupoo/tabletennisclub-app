@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Domains\Competitions\Interclub\Models\Season;
-use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -13,12 +12,9 @@ class SeasonSeeder extends Seeder
 {
     public function run(): void
     {
-        $currentYear = (int) now()->format('Y');
-
-        // Seasons are September–June. Determine which academic year is "current":
-        // If we are past September of this year, current season started this year.
-        // Otherwise the current season started last year.
-        $seasonStartYear = now()->month >= 9 ? $currentYear : $currentYear - 1;
+        // Seasons run from July to June: from July on, the current season
+        // started this year, before July it started last year.
+        $seasonStartYear = Season::defaultStartYearOf(now());
 
         DB::transaction(function () use ($seasonStartYear): void {
             for ($offset = 0; $offset <= 1; $offset++) {
@@ -29,10 +25,12 @@ class SeasonSeeder extends Seeder
                     continue;
                 }
 
+                [$startAt, $endAt] = Season::defaultDates($startYear);
+
                 Season::create([
                     'name' => $name,
-                    'start_at' => Carbon::create($startYear, 9, 1)->startOfDay(),
-                    'end_at' => Carbon::create($startYear + 1, 6, 30)->endOfDay(),
+                    'start_at' => $startAt,
+                    'end_at' => $endAt,
                     'is_active' => false,
                     'affiliations_open' => false,
                 ]);

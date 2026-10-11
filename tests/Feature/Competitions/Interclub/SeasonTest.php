@@ -259,10 +259,10 @@ describe('Season Model', function (): void {
         expect($names)->toHaveCount(3);
     });
 
-    test('factory respects september to june pattern', function (): void {
+    test('factory respects july to june pattern', function (): void {
         $season = Season::factory()->create();
 
-        expect($season->start_at->month)->toBe(9) // Septembre
+        expect($season->start_at->month)->toBe(7) // Juillet
             ->and($season->end_at->month)->toBe(6); // Juin
     });
 

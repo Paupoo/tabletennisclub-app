@@ -112,7 +112,7 @@
 
     {{-- ── Auto-provision info ─────────────────────────────────────────────── --}}
     <x-admin.shared.info-alert class="mt-6">
-        {{ __('Every year on July 1st, the application automatically provisions the next two upcoming seasons (September → June). Use "Auto-provision" to trigger this manually, or "New season" to create a custom one.') }}
+        {{ __('Every year on July 1st, the application automatically provisions the next two upcoming seasons (July → June). Use "Auto-provision" to trigger this manually, or "New season" to create a custom one.') }}
     </x-admin.shared.info-alert>
 
     {{-- ================================================================
@@ -121,7 +121,7 @@
     <x-app-modal :title="__('Auto-provision seasons')" wire:model="provisionModal" separator :open="$provisionModal">
         <div class="space-y-3 text-sm text-base-content/70">
             <p>{{ __('This will create the next two seasons after the current active season, if they do not already exist.') }}</p>
-            <p>{{ __('Each season runs from September 1st to June 30th. Already-existing seasons and overlapping date ranges are automatically skipped.') }}</p>
+            <p>{{ __('Each season runs from July 1st to June 30th. Already-existing seasons and overlapping date ranges are automatically skipped.') }}</p>
         </div>
 
         <x-slot:actions>

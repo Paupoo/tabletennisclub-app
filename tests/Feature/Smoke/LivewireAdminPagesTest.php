@@ -31,14 +31,14 @@ describe('Users admin index page', function (): void {
 
     it('can search users by name', function (): void {
         User::factory()->create(['first_name' => 'Alice', 'last_name' => 'Martin']);
-        User::factory()->create(['first_name' => 'Bob', 'last_name' => 'Dupont']);
+        User::factory()->create(['first_name' => 'Bob', 'last_name' => 'Zwanzeur']);
 
         Livewire::actingAs($this->admin)
             ->withQueryParams(['allMembers' => true])
             ->test('pages::club-admin.users.index')
             ->set('search', 'Alice')
             ->assertSee('Alice')
-            ->assertDontSee('Bob');
+            ->assertDontSee('Zwanzeur');
     });
 });
 

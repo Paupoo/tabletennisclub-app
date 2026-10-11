@@ -72,7 +72,7 @@ Un **sparring** joue avec les élèves aux côtés du coach ; il ne le remplace 
 
 ## L'encadrement : qui a fait quoi
 
-**Entraînements → Encadrement** donne, pour la saison ou pour un mois, une ligne par personne : les **séances données** comme coach (comptées une fois pointées), les **présences en sparring** confirmées par le coach, et ce qui reste **à pointer** — tant que ce chiffre n'est pas à zéro, les autres ne sont pas définitifs. Un clic sur un nom détaille ses séances une à une ; **Exporter** sort le décompte en tableur. Les montants viendront plus tard : cet écran n'en affiche aucun. Réservé au comité ; un coach ne voit pas les chiffres de ses collègues.
+**Entraînements → Encadrement** donne, pour la saison choisie en haut de page, une ligne par personne : les **séances données** comme coach (comptées une fois pointées), les **présences en sparring** confirmées par le coach, ce qui reste **à pointer** — tant que ce chiffre n'est pas à zéro, les autres ne sont pas définitifs — et ce qui est **à venir**, montré à part et jamais compté. **Filtres** restreint le décompte à un mois ou à un pack. Un clic sur un nom ouvre ses séances une à une, sur la même période. **Exporter** sort en tableur exactement ce qui est affiché, sans les séances à venir : filtrez sur un mois, exportez, payez. Les montants viendront plus tard : cet écran n'en affiche aucun. Réservé au comité ; un coach ne voit pas les chiffres de ses collègues.
 
 ## Annuler une séance isolée
 

@@ -327,7 +327,7 @@ On a pack's **Sessions** list, **Hand over** gives one session to any member for
 
 **Add a sparring** on the pack sheet names a regular sparring, expected at every coming session; **Sparrings** on a session adds a one-off helper or takes a regular off that date. Any member can be a sparring, minors included, with no role to grant. Sparrings are emailed when they join or leave a pack or a date and when their session is cancelled, and see their sessions in their calendar; they record nothing and see no contact details. The coach confirms each one present or absent, untouched means absent. Free practice takes no sparrings.
 
-**Trainings → Coaching staff** shows, for the season or a month, one line per person: sessions coached (counted once attendance is recorded), sparring presences confirmed by the coach, and what is still to record, with a per-session detail and an export. No amounts yet. Committee only.
+**Trainings → Coaching staff** shows, for the season picked above the list, one line per person: sessions coached (counted once attendance is recorded), sparring presences confirmed by the coach, what is still to record, and what is still to come (shown apart, never counted). **Filters** narrow it to a month or a pack; a name opens its sessions over the same period; the export follows the filters and leaves out what is to come. No amounts yet. Committee only.
 
 ### Planning board
 

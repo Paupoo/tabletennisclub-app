@@ -27,9 +27,9 @@ class TrainingStaffReport
      *
      * @return list<array{date: string, pack: string, role: string, status: string}>
      */
-    public function detail(User $user, CarbonInterface $from, CarbonInterface $to): array
+    public function detail(User $user, CarbonInterface $from, CarbonInterface $to, ?int $packId = null): array
     {
-        return $this->lines($from, $to)
+        return $this->lines($from, $to, $packId)
             ->where('user_id', $user->id)
             ->map(fn (\stdClass $line): array => [
                 'date' => Carbon::parse($line->start)->toDateString(),
@@ -42,11 +42,13 @@ class TrainingStaffReport
     }
 
     /**
-     * Le décompte de la période, une ligne par personne, en CSV ou XLSX.
+     * Le décompte de la période, une ligne par personne, en CSV ou XLSX. Ce
+     * qui est prévu n'y figure pas : le fichier sert à payer. `$scope` nomme
+     * ce qu'il couvre (saison, mois, pack) et titre le fichier.
      *
      * @return array{filename: string, contents: string, mime: string}
      */
-    public function export(CarbonInterface $from, CarbonInterface $to, string $format): array
+    public function export(CarbonInterface $from, CarbonInterface $to, string $format, ?int $packId = null, ?string $scope = null): array
     {
         $writers = ['csv' => 'Csv', 'xlsx' => 'Xlsx'];
         $format = strtolower(trim($format));
@@ -60,7 +62,7 @@ class TrainingStaffReport
         $sheet->setTitle(__('Coaching staff'));
         $sheet->fromArray([__('Name'), __('Sessions coached'), __('Sparring presences'), __('Still to record')]);
 
-        foreach ($this->rows($from, $to) as $line => $row) {
+        foreach ($this->rows($from, $to, $packId) as $line => $row) {
             $sheet->fromArray([$row['name'], $row['coached'], $row['sparred'], $row['pending']], null, 'A' . ($line + 2));
         }
 
@@ -71,7 +73,7 @@ class TrainingStaffReport
         $spreadsheet->disconnectWorksheets();
 
         return [
-            'filename' => str(__('Coaching staff') . ' ' . $from->toDateString() . ' ' . $to->toDateString())->slug() . ".{$format}",
+            'filename' => str(__('Coaching staff') . ' ' . ($scope ?? $from->toDateString() . ' ' . $to->toDateString()))->slug() . ".{$format}",
             'contents' => $contents,
             'mime' => $format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ];
@@ -80,11 +82,11 @@ class TrainingStaffReport
     /**
      * Une ligne par personne qui a encadré sur la période, par nom.
      *
-     * @return list<array{user_id: int, name: string, coached: int, sparred: int, pending: int}>
+     * @return list<array{user_id: int, name: string, coached: int, sparred: int, pending: int, upcoming: int}>
      */
-    public function rows(CarbonInterface $from, CarbonInterface $to): array
+    public function rows(CarbonInterface $from, CarbonInterface $to, ?int $packId = null): array
     {
-        $lines = $this->lines($from, $to)->groupBy('user_id');
+        $lines = $this->lines($from, $to, $packId)->groupBy('user_id');
 
         return User::query()
             ->whereIn('id', $lines->keys())
@@ -101,6 +103,7 @@ class TrainingStaffReport
                     'coached' => $own->where('role', 'coach')->where('status', 'counted')->count(),
                     'sparred' => $own->where('role', 'sparring')->where('status', 'present')->count(),
                     'pending' => $own->where('status', 'to_record')->count(),
+                    'upcoming' => $own->where('status', 'planned')->count(),
                 ];
             })
             ->all();
@@ -108,40 +111,39 @@ class TrainingStaffReport
 
     /**
      * Les séances données comme coach et les présences attendues comme
-     * sparring, sur des séances maintenues et déjà commencées.
+     * sparring, sur des séances maintenues.
      *
      * Chaque ligne porte `user_id`, `start`, `pack`, `role` (`coach` | `sparring`)
-     * et `status` (`counted` | `present` | `absent` | `to_record`).
+     * et `status` (`counted` | `present` | `absent` | `to_record` | `planned`).
      *
      * @return Collection<int, \stdClass>
      */
-    private function lines(CarbonInterface $from, CarbonInterface $to): Collection
+    private function lines(CarbonInterface $from, CarbonInterface $to, ?int $packId): Collection
     {
+        $now = Carbon::now()->toDateTimeString();
+
         $base = fn () => DB::table('trainings')
             ->leftJoin('training_packs', 'training_packs.id', '=', 'trainings.training_pack_id')
             ->where('trainings.status', 'scheduled')
             ->where('trainings.start', '>=', $from->copy()->startOfDay())
             ->where('trainings.start', '<=', $to->copy()->endOfDay())
-            ->where(fn ($query) => $query
-                ->where('trainings.start', '<', Carbon::now())
-                ->orWhereNotNull('trainings.attendance_taken_at'));
+            ->when($packId, fn ($query) => $query->where('trainings.training_pack_id', $packId));
 
+        // Ce qui n'a pas commencé et n'est pas pointé est prévu : visible, jamais compté.
         $coached = $base()
             ->whereNotNull('trainings.trainer_id')
-            ->get([
-                'trainings.id', 'trainings.trainer_id as user_id', 'trainings.start', 'training_packs.name as pack',
-                DB::raw("'coach' as role"),
-                DB::raw("CASE WHEN trainings.attendance_taken_at IS NULL THEN 'to_record' ELSE 'counted' END as status"),
-            ]);
+            ->select(['trainings.id', 'trainings.trainer_id as user_id', 'trainings.start', 'training_packs.name as pack'])
+            ->selectRaw("'coach' as role")
+            ->selectRaw("CASE WHEN trainings.attendance_taken_at IS NOT NULL THEN 'counted' WHEN trainings.start < ? THEN 'to_record' ELSE 'planned' END as status", [$now])
+            ->get();
 
         $sparred = $base()
             ->join('training_sparrings', 'training_sparrings.training_id', '=', 'trainings.id')
             ->whereNull('training_sparrings.removed_at')
-            ->get([
-                'trainings.id', 'training_sparrings.user_id', 'trainings.start', 'training_packs.name as pack',
-                DB::raw("'sparring' as role"),
-                DB::raw("COALESCE(training_sparrings.attendance, 'to_record') as status"),
-            ]);
+            ->select(['trainings.id', 'training_sparrings.user_id', 'trainings.start', 'training_packs.name as pack'])
+            ->selectRaw("'sparring' as role")
+            ->selectRaw("CASE WHEN training_sparrings.attendance IS NOT NULL THEN training_sparrings.attendance WHEN trainings.start < ? THEN 'to_record' ELSE 'planned' END as status", [$now])
+            ->get();
 
         return $coached->concat($sparred)
             ->sortBy([['start', 'asc'], ['id', 'asc']])

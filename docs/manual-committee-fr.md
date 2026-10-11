@@ -328,7 +328,7 @@ Sur la liste **Séances** d'un pack, **Confier** donne une séance à n'importe 
 
 **Ajouter un sparring** sur la fiche du pack attitre un sparring, attendu à chaque séance à venir ; **Sparrings** sur une séance ajoute un renfort ponctuel ou retire un attitré de cette date. Tout membre peut être sparring, mineurs compris, sans rôle à attribuer. Les sparrings sont prévenus par e-mail quand ils rejoignent ou quittent un pack ou une date et quand leur séance est annulée, et voient leurs séances dans leur calendrier ; ils ne pointent rien et ne voient aucune coordonnée. Le coach confirme chacun présent ou absent, non touché = absent. L'entraînement libre n'a pas de sparrings.
 
-**Entraînements → Encadrement** donne, pour la saison ou un mois, une ligne par personne : séances données (comptées une fois pointées), présences en sparring confirmées par le coach, et ce qui reste à pointer, avec un détail par séance et un export. Pas encore de montants. Réservé au comité.
+**Entraînements → Encadrement** donne, pour la saison choisie au-dessus de la liste, une ligne par personne : séances données (comptées une fois pointées), présences en sparring confirmées par le coach, ce qui reste à pointer, et ce qui est à venir (montré à part, jamais compté). **Filtres** restreint à un mois ou à un pack ; un nom ouvre ses séances sur la même période ; l'export suit les filtres et laisse de côté ce qui est à venir. Pas encore de montants. Réservé au comité.
 
 ### Tableau de planification (board)
 

@@ -363,8 +363,9 @@
     <x-menu-sub icon="o-academic-cap">
         <x-slot:title><x-admin.menu-sub-title :title="__('Trainings')" :badge="$badge('sessions_to_record', 'camp_requests')" /></x-slot:title>
         @can('trainings.view')
+        {{-- `exact`: the coaching staff lives under …/trainings/staff, and Mary lights any link the URL starts with. --}}
         <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')"
-            :badge="$badge('camp_requests')" badge-classes="badge-warning" />
+            :badge="$badge('camp_requests')" badge-classes="badge-warning" exact />
         @endcan
         @can('view-training-staff')
         <x-menu-item icon="o-user-group" link="{{ route('admin.trainings.staff') }}" :title="__('Coaching staff')" />

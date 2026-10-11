@@ -44,11 +44,6 @@ new class extends Component
 {
     use HasBreadcrumbs, Toast, WithFileUploads;
 
-    public function boot(): void
-    {
-        abort_unless(Gate::allows('bar.restocking.shop'), 403);
-    }
-
     /** Le plafond de justificatifs d'une note de frais, comme sur l'écran du membre. */
     private const int MAX_TICKET_FILES = 5;
 
@@ -119,6 +114,11 @@ new class extends Component
         }
 
         $this->extras[$productId] ??= 1;
+    }
+
+    public function boot(): void
+    {
+        abort_unless(Gate::allows('bar.restocking.shop'), 403);
     }
 
     public function close(RestockingTrips $restockingTrips): void

@@ -7,6 +7,7 @@ namespace App\Actions\Bar;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Fait entrer une commande du bar dans la liste à rapprocher du trésorier.
@@ -41,21 +42,25 @@ class RecordBarOrderPayment
      */
     public function __invoke(BarOrder $order): ?Payment
     {
-        if ($order->payment_method !== self::BANKED_METHOD) {
-            $this->release($order);
+        return DB::transaction(function () use ($order): ?Payment {
+            $order = BarOrder::query()->lockForUpdate()->findOrFail($order->id);
 
-            return null;
-        }
+            if ($order->payment_method !== self::BANKED_METHOD) {
+                $this->release($order);
 
-        // Idempotent : un double clic sur « Payer », comme une reprise rejouée,
-        // ne doit pas donner deux lignes à rapprocher pour un seul virement.
-        if ($order->payment()->exists()) {
-            return null;
-        }
+                return null;
+            }
 
-        // D'ordinaire le QR affiché a déjà réservé la ligne ; ici, une commande
-        // réglée par QR sans que l'écran l'ait montré (une reprise, un rattrapage).
-        return $this->reserve($order);
+            // Idempotent : un double clic sur « Payer », comme une reprise rejouée,
+            // ne doit pas donner deux lignes à rapprocher pour un seul virement.
+            if ($order->payment()->exists()) {
+                return null;
+            }
+
+            // D'ordinaire le QR affiché a déjà réservé la ligne ; ici, une commande
+            // réglée par QR sans que l'écran l'ait montré (une reprise, un rattrapage).
+            return $this->createPayment($order);
+        });
     }
 
     /**
@@ -82,22 +87,35 @@ class RecordBarOrderPayment
      * scanné puis payé sans que le barman valide doit quand même trouver sa ligne
      * chez le trésorier. Rouvrir le QR rend la même ligne, au montant du moment.
      */
-    public function reserve(BarOrder $order): Payment
+    public function reserve(BarOrder $order): ?Payment
     {
-        $payment = $order->payment()->first();
+        return DB::transaction(function () use ($order): ?Payment {
+            $order = BarOrder::query()->lockForUpdate()->findOrFail($order->id);
 
-        if ($payment === null) {
-            return $order->payment()->create([
-                'reference' => (new GeneratePaymentReference)(),
-                'amount_due' => $order->total_price / 100,
-                'amount_paid' => 0,
-                'status' => 'pending',
-                'payment_method' => self::TREASURY_METHOD,
-            ]);
-        }
+            if ($order->is_paid) {
+                return null;
+            }
 
-        $payment->update(['amount_due' => $order->total_price / 100]);
+            $payment = $order->payment()->first();
 
-        return $payment;
+            if ($payment === null) {
+                return $this->createPayment($order);
+            }
+
+            $payment->update(['amount_due' => $order->total_price / 100]);
+
+            return $payment;
+        });
+    }
+
+    private function createPayment(BarOrder $order): Payment
+    {
+        return $order->payment()->create([
+            'reference' => (new GeneratePaymentReference)(),
+            'amount_due' => $order->total_price / 100,
+            'amount_paid' => 0,
+            'status' => 'pending',
+            'payment_method' => self::TREASURY_METHOD,
+        ]);
     }
 }

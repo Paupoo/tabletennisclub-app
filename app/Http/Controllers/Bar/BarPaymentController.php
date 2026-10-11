@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection as SupportCollection;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class BarPaymentController extends Controller
@@ -28,6 +29,10 @@ class BarPaymentController extends Controller
             'reason' => 'nullable|string|max:255',
             'manual_reason' => 'nullable|string|max:255',
         ]);
+
+        if ($order->is_paid) {
+            return back()->with('error', 'Commande déjà payée.');
+        }
 
         $selectedReason = trim((string) ($validated['reason'] ?? ''));
         $manualReason = trim((string) ($validated['manual_reason'] ?? ''));
@@ -73,24 +78,33 @@ class BarPaymentController extends Controller
             }
         }
 
-        if ($order->is_paid) {
+        $settled = DB::transaction(function () use ($order, $validated, $offeredReason, $recordPayment): bool {
+            $order = BarOrder::query()->lockForUpdate()->findOrFail($order->id);
+
+            if ($order->is_paid) {
+                return false;
+            }
+
+            $order->update([
+                'is_paid' => 1,
+                'paid_at' => now(),
+                'payment_method' => $validated['method'],
+                'reason' => $validated['method'] === 'offered' ? $offeredReason : null,
+                // L'ardoise est réglée : son nom se libère pour la prochaine tournée, sans
+                // que l'historique le perde — `name` reste, seule la clé d'unicité part.
+                'open_name_key' => null,
+            ]);
+
+            // Le QR, sa réservation ou la libération d'une réservation concurrente
+            // font partie de la même transaction que le règlement.
+            $recordPayment($order);
+
+            return true;
+        });
+
+        if (! $settled) {
             return back()->with('error', 'Commande déjà payée.');
         }
-
-        $order->update([
-            'is_paid' => 1,
-            'paid_at' => now(),
-            'payment_method' => $validated['method'],
-            'reason' => $validated['method'] === 'offered' ? $offeredReason : null,
-            // L'ardoise est réglée : son nom se libère pour la prochaine tournée, sans
-            // que l'historique le perde — `name` reste, seule la clé d'unicité part.
-            'open_name_key' => null,
-        ]);
-
-        // Le QR a une contrepartie sur le compte du club : la commande entre dans
-        // la liste à rapprocher du trésorier, en attente jusqu'à ce que le
-        // virement apparaisse sur le relevé. Le cash et l'offert n'y vont pas.
-        $recordPayment($order);
 
         return redirect()
             ->route('bar.orders.index')
@@ -131,6 +145,13 @@ class BarPaymentController extends Controller
             // sous ce nom-là, et la boucle l'écrasait.
             $ownClub = Club::ourClub()->first();
             $payment = $recordPayment->reserve($order);
+
+            if ($payment === null) {
+                return redirect()
+                    ->route('bar.orders.index')
+                    ->with('error', 'Commande déjà payée.');
+            }
+
             $qrCode = $generatePaymentQR($payment);
         }
 

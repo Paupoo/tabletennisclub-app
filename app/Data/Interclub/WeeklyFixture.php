@@ -17,7 +17,7 @@ use Carbon\CarbonInterface;
 readonly class WeeklyFixture
 {
     /**
-     * @param  array<int, array{id: int, name: string, is_walkover: bool}>  $players
+     * @param  array<int, array{id: int, last_name: string, first_name: string, ranking: string|null, force_list: int|null, is_walkover: bool}>  $players
      */
     public function __construct(
         public int $id,

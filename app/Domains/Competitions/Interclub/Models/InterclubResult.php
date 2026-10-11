@@ -69,6 +69,23 @@ class InterclubResult extends Model
         return $this->belongsTo(Interclub::class);
     }
 
+    /**
+     * The score written our way round.
+     *
+     * `score` is stored home-first, which reads backwards to a player who was
+     * away: their 4-12 defeat is filed as 12-4.
+     */
+    public function scoreFromOurSide(bool $isHome): ?string
+    {
+        if ($this->score === null || ! str_contains($this->score, '-')) {
+            return $this->score;
+        }
+
+        [$home, $away] = array_map(intval(...), explode('-', $this->score, 2));
+
+        return $isHome ? "{$home}-{$away}" : "{$away}-{$home}";
+    }
+
     public function season(): BelongsTo
     {
         return $this->belongsTo(Season::class);

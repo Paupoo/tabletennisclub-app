@@ -42,11 +42,16 @@
         @else
             <ul class="space-y-1">
                 @foreach ($fixture->players as $player)
-                    <li @class(['font-bold' => $player['id'] === $viewerId])>
-                        {{ $player['name'] }}
-                        @if ($player['is_walkover'])
-                            <span class="badge badge-warning badge-xs font-bold">WO</span>
-                        @endif
+                    <li @class(['flex items-baseline gap-2', 'bg-primary/5 -mx-1 rounded px-1' => $player['id'] === $viewerId]) data-weekly-player="{{ $player['id'] }}">
+                        <span @class(['w-7 shrink-0 font-mono tabular-nums', 'text-base-content/40' => $player['force_list'] === null, 'text-base-content/70' => $player['force_list'] !== null])>{{ $player['force_list'] === null ? '—' : '#' . $player['force_list'] }}</span>
+                        <span class="min-w-0 flex-1">
+                            <span class="font-bold">{{ $player['last_name'] }}</span>
+                            <span @class(['font-bold' => $player['id'] === $viewerId])>{{ $player['first_name'] }}</span>
+                            @if ($player['is_walkover'])
+                                <span class="badge badge-warning badge-xs font-bold">WO</span>
+                            @endif
+                        </span>
+                        <span class="text-base-content/60 shrink-0 font-mono text-xs">{{ $player['ranking'] }}</span>
                     </li>
                 @endforeach
             </ul>

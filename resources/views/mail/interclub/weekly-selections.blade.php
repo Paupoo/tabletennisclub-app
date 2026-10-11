@@ -22,7 +22,7 @@
 <span style="color: #94a3b8; font-style: italic;">{{ __('Lineup not sent yet') }}</span>
 @else
 @foreach ($fixture->players as $player)
-<span style="display: block; {{ in_array($player['id'], $memberIds, true) ? 'font-weight: 700;' : '' }}">{{ $player['name'] }}@if ($player['is_walkover']) <span style="font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background-color: #fbbf24; color: #78350f;">WO</span>@endif</span>
+<span style="display: block; padding: 1px 0; {{ in_array($player['id'], $memberIds, true) ? 'background-color: #eff6ff;' : '' }}"><span style="float: right; margin-left: 6px; font-family: monospace; font-size: 12px; color: #64748b;">{{ $player['ranking'] }}</span><span style="display: inline-block; width: 30px; font-family: monospace; font-size: 12px; color: {{ $player['force_list'] === null ? '#94a3b8' : '#475569' }};">{{ $player['force_list'] === null ? '—' : '#' . $player['force_list'] }}</span><strong>{{ $player['last_name'] }}</strong> {{ $player['first_name'] }}@if ($player['is_walkover']) <span style="font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background-color: #fbbf24; color: #78350f;">WO</span>@endif</span>
 @endforeach
 @if ($fixture->shortHandedWith !== null)
 <span style="display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background-color: #fff1f2; color: #be123c;">{{ __('Plays with :n', ['n' => $fixture->shortHandedWith]) }}</span>

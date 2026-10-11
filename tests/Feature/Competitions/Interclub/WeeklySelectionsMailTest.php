@@ -144,7 +144,7 @@ it('is scheduled on Thursday at noon', function (): void {
 it('mails the tiles by day, sets apart the reader\'s own, and links the page', function (): void {
     $sent = weeklyMailFixture($this->team, $this->opponent, 1);
     $pending = weeklyMailFixture($this->opponent, $this->team, 3);
-    $reader = User::factory()->create(['first_name' => 'Thomas', 'last_name' => 'Lefèvre']);
+    $reader = User::factory()->create(['first_name' => 'Thomas', 'last_name' => 'Lefèvre', 'force_list' => 3, 'ranking' => 'C2']);
     $sent->users()->attach($reader->id, ['is_selected' => true, 'selection_confirmed_at' => now()]);
     $pending->users()->attach(User::factory()->create(['first_name' => 'Loïc', 'last_name' => 'Dumont'])->id, ['is_selected' => true]);
 
@@ -156,10 +156,10 @@ it('mails the tiles by day, sets apart the reader\'s own, and links the page', f
 
     expect($mail->subject)->toBe(__('Weekly selections') . ' · ' . __('from :from to :to', ['from' => $from->translatedFormat('j F'), 'to' => $to->translatedFormat('j F')]))
         ->and($html)->toContain(e(__('Hello :name,', ['name' => 'Thomas'])))
-        ->toContain('Thomas Lefèvre')
+        ->toMatch('/>C2<\/span><span[^>]*>#3<\/span><strong[^>]*>Lefèvre<\/strong> Thomas/u')
+        ->not->toContain('Loïc')
         ->toContain('CTT Tourinnes A')
         ->toContain(e(__('Lineup not sent yet')))
-        ->not->toContain('Loïc Dumont')
         ->toContain('data-mine="' . $sent->id . '"')
         ->not->toContain('data-mine="' . $pending->id . '"')
         ->toContain(route('admin.interclubs.my-match', $sent->id))

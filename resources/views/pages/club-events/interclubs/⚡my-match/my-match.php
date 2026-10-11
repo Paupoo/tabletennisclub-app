@@ -7,10 +7,8 @@ namespace Resources\views\Pages\ClubEvents\Interclubs\MyMatch;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
-use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubAvailability;
-use App\Domains\Shared\Enums\InterclubResultEnum;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
@@ -164,8 +162,8 @@ new class extends Component
             'sheet' => $isPast ? $this->matchSheet($interclub) : collect(),
             'tally' => $isPast ? $this->winTally($interclub) : collect(),
             'result' => $result,
-            'resultLabel' => $this->resultLabel($result),
-            'score' => $this->scoreFromOurSide($result, $isHome),
+            'resultLabel' => $result?->result?->label(),
+            'score' => $result?->scoreFromOurSide($isHome),
             // The pivot declares no casts, so every timestamp on it arrives as a
             // string; the view formats this one.
             'selectedAt' => $registration?->selection_confirmed_at
@@ -277,37 +275,6 @@ new class extends Component
             ->users()
             ->where('users.id', Auth::id())
             ->first()?->registration;
-    }
-
-    private function resultLabel(?InterclubResult $result): ?string
-    {
-        return match ($result?->result) {
-            InterclubResultEnum::WIN => __('Win'),
-            InterclubResultEnum::LOSS => __('Loss'),
-            InterclubResultEnum::DRAW => __('Draw'),
-            InterclubResultEnum::FORFEIT_WIN => __('Win by forfeit'),
-            InterclubResultEnum::FORFEIT_LOSS => __('Loss by forfeit'),
-            InterclubResultEnum::WITHDRAWAL => __('Our general forfeit'),
-            InterclubResultEnum::WITHDRAWAL_OPPONENT => __('Opponent general forfeit'),
-            default => null,
-        };
-    }
-
-    /**
-     * The score written our way round.
-     *
-     * `interclub_results.score` is stored home-first, which reads backwards to a
-     * player who was away: their 4-12 defeat is filed as 12-4.
-     */
-    private function scoreFromOurSide(?InterclubResult $result, bool $isHome): ?string
-    {
-        if ($result?->score === null || ! str_contains($result->score, '-')) {
-            return $result?->score;
-        }
-
-        [$home, $away] = array_map(intval(...), explode('-', $result->score, 2));
-
-        return $isHome ? "{$home}-{$away}" : "{$away}-{$home}";
     }
 
     /**

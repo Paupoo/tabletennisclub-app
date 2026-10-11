@@ -8,7 +8,7 @@
 ])
 @php
     $sortedPlayers = collect($players)->sortBy(
-        fn ($player) => sprintf('%04d|%s|%s', $player->forceListFor($category) ?? 9999, $player->last_name, $player->first_name)
+        fn ($player) => $player->forceListSortKey($category)
     );
     $hasForceList = $sortedPlayers->contains(fn ($player) => $player->forceListFor($category) !== null);
 @endphp

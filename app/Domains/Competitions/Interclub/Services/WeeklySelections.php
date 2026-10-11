@@ -85,7 +85,7 @@ class WeeklySelections
             ->filter(fn (User $user): bool => $user->registration->selection_confirmed_at !== null);
 
         $players = $interclub->forfeit !== null ? collect() : $published
-            ->sortBy(fn (User $user): string => sprintf('%d|%04d|%s|%s', (int) $user->registration->is_walkover, $user->forceListFor($category) ?? 9999, $user->last_name, $user->first_name))
+            ->sortBy(fn (User $user): string => (int) $user->registration->is_walkover . '|' . $user->forceListSortKey($category))
             ->map(fn (User $user): array => [
                 'id' => $user->id,
                 'last_name' => $user->last_name,

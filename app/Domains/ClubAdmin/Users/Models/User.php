@@ -549,6 +549,16 @@ class User extends Authenticatable implements MustVerifyEmail
         };
     }
 
+    /**
+     * Where the member stands in a list of players of the given category:
+     * force list first — none after every listed player — then surname, then
+     * first name. Sort ascending on it.
+     */
+    public function forceListSortKey(LeagueCategory|string|null $category): string
+    {
+        return sprintf('%04d|%s|%s', $this->forceListFor($category) ?? 9999, mb_strtolower((string) $this->last_name), mb_strtolower((string) $this->first_name));
+    }
+
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";

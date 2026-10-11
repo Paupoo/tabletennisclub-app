@@ -194,3 +194,12 @@ it('names the competition week the fixtures belong to', function (): void {
 
     expect($html)->toContain(e(__('Here are the selections for the matches of competition week :weeks, :period.', ['weeks' => 3, 'period' => $period])));
 });
+
+it('greets every reader of a shared mailbox', function (): void {
+    weeklyMailFixture($this->team, $this->opponent, 2);
+    $days = app(WeeklySelections::class)->between(now(), now()->addDays(7));
+
+    $html = (string) new WeeklySelectionsNotification($days, [], now(), now()->addDays(7), ['Sophie', 'Marc'])->toMail(new User)->render();
+
+    expect($html)->toContain(e(__('Hello :names,', ['names' => 'Sophie ' . __('and') . ' Marc'])));
+});

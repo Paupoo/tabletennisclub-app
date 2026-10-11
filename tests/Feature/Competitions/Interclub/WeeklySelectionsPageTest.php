@@ -81,9 +81,33 @@ it('names the players of a lineup sent, and never those of a draft', function ()
     $this->actingAs($this->member)
         ->get(route('admin.user.weekly-selections'))
         ->assertOk()
-        ->assertSee('Julien Hermans')
-        ->assertDontSee('Loïc Dumont')
+        ->assertSee('Hermans')
+        ->assertDontSee('Dumont')
         ->assertSee(__('Lineup not sent yet'));
+});
+
+it('lists the players by force list, then surname, then first name, the walkover last', function (): void {
+    $ours = weeklyTeam($this->ownClub, $this->menLeague, 'A');
+    $fixture = weeklyFixture($ours, weeklyTeam(Club::factory()->create(['name' => 'CTT Tourinnes']), $this->menLeague, 'A'), now()->addDays(1));
+    $sent = ['is_selected' => true, 'selection_confirmed_at' => now()];
+
+    $fixture->users()->attach(User::factory()->create(['first_name' => 'Zoé', 'last_name' => 'Walkover', 'force_list' => 1, 'ranking' => 'B6'])->id, [...$sent, 'is_walkover' => true]);
+    $fixture->users()->attach(User::factory()->create(['first_name' => 'Yann', 'last_name' => 'Nolist', 'force_list' => null, 'ranking' => 'NA'])->id, $sent);
+    $fixture->users()->attach(User::factory()->create(['first_name' => 'Bruno', 'last_name' => 'Martin', 'force_list' => 4, 'ranking' => 'C2'])->id, $sent);
+    $fixture->users()->attach(User::factory()->create(['first_name' => 'Alice', 'last_name' => 'Martin', 'force_list' => 4, 'ranking' => 'C2'])->id, $sent);
+    $fixture->users()->attach(User::factory()->create(['first_name' => 'Jean', 'last_name' => 'Dupont', 'force_list' => 4, 'ranking' => 'C2'])->id, $sent);
+    $fixture->users()->attach(User::factory()->create(['first_name' => 'Luc', 'last_name' => 'Zeller', 'force_list' => 2, 'ranking' => 'C0'])->id, $sent);
+
+    $html = $this->actingAs($this->member)
+        ->get(route('admin.user.weekly-selections'))
+        ->assertOk()
+        ->assertSeeInOrder(['Zeller', 'Dupont', 'Martin</span>', 'Alice', 'Martin</span>', 'Bruno', 'Nolist', 'Walkover'], false)
+        ->getContent();
+
+    expect($html)->toMatch('/#2<\/span>\s*<span class="min-w-0 flex-1">\s*<span class="font-bold">Zeller<\/span>/')
+        ->toMatch('/Zeller<\/span>.*?C0<\/span>/s')
+        ->toMatch('/—<\/span>\s*<span class="min-w-0 flex-1">\s*<span class="font-bold">Nolist<\/span>/')
+        ->not->toMatch('/Nolist.*?>NA<\/span>/s');
 });
 
 it('marks a forfeit and names nobody', function (): void {

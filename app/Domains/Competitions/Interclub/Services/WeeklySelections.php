@@ -8,6 +8,7 @@ use App\Data\Interclub\WeeklyFixture;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\Ranking;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
@@ -87,7 +88,10 @@ class WeeklySelections
             ->sortBy(fn (User $user): string => sprintf('%d|%04d|%s|%s', (int) $user->registration->is_walkover, $user->forceListFor($category) ?? 9999, $user->last_name, $user->first_name))
             ->map(fn (User $user): array => [
                 'id' => $user->id,
-                'name' => $user->full_name,
+                'last_name' => $user->last_name,
+                'first_name' => $user->first_name,
+                'ranking' => $user->ranking === Ranking::NA ? null : $user->ranking?->getLabel(),
+                'force_list' => $user->forceListFor($category),
                 'is_walkover' => (bool) $user->registration->is_walkover,
             ])
             ->values();

@@ -424,6 +424,10 @@ Route::prefix('admin/club-events/interclubs/')
         Route::livewire('trainings/staff', 'pages::club-events.trainings.staff')
             ->middleware('can:view-training-staff')
             ->name('admin.trainings.staff');
+        // The wizard authorises itself: `trainings.manage`, checked on mount.
+        Route::livewire('trainings/create', 'pages::club-events.trainings.form')->name('admin.trainings.create');
+        Route::livewire('trainings/{pack}/edit', 'pages::club-events.trainings.form')->name('admin.trainings.edit');
+        Route::livewire('trainings/{pack}', 'pages::club-events.trainings.show')->name('admin.trainings.show');
     });
 
 // Coach's personal sessions — coaches (and admins for oversight).

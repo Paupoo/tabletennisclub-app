@@ -46,8 +46,7 @@ it('queues one notice per member instead of mailing them while the committee wai
     $members = collect([traineeOfQueuedPack($pack), traineeOfQueuedPack($pack)]);
 
     Livewire::actingAs($this->admin)
-        ->test('pages::club-events.trainings.index')
-        ->call('openPack', $pack->id)
+        ->test('pages::club-events.trainings.pack-sessions', ['packId' => $pack->id])
         ->call('openCancel', $session->id)
         ->call('confirmCancel')
         ->assertHasNoErrors();
@@ -85,8 +84,7 @@ it('queues the notices when the slot of a pack moves', function (): void {
     $member->update(['emails_notifications' => true]);
 
     Livewire::actingAs($this->admin)
-        ->test('pages::club-events.trainings.index')
-        ->call('openEdit', $pack->id)
+        ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
         ->set('formDayOfWeek', 4)
         ->call('save')
         ->call('confirmRegeneration');

@@ -48,8 +48,7 @@ describe('the committee screen', function (): void {
         (new EnrollInTrainingCampAction)(campScreensSubscription(activeMember($this->season)), $camp, byClub: true);
 
         Livewire::actingAs($this->manager)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $camp->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $camp->id])
             ->assertSet('formIsCamp', true)
             ->set('formIsCamp', false)
             ->call('save');
@@ -63,8 +62,7 @@ describe('the committee screen', function (): void {
         (new EnrollInTrainingCampAction)(campScreensSubscription($member), $camp);
 
         Livewire::actingAs($this->manager)
-            ->test('pages::club-events.trainings.index')
-            ->call('openPack', $camp->id)
+            ->test('pages::club-events.trainings.pack-roster', ['packId' => $camp->id])
             ->assertSee(__('Accept'))
             ->call('acceptCampRequest', $member->id);
 
@@ -78,9 +76,8 @@ describe('the committee screen', function (): void {
         $camp = campScreensCamp();
         $member = activeMember($this->season);
 
-        $screen = Livewire::actingAs($this->manager)
-            ->test('pages::club-events.trainings.index')
-            ->call('openPack', $camp->id)
+        Livewire::actingAs($this->manager)
+            ->test('pages::club-events.trainings.show', ['pack' => $camp->id])
             ->call('openAddMember')
             ->set('addMemberUserId', $member->id)
             ->set('addMemberPrice', '20')
@@ -91,7 +88,9 @@ describe('the committee screen', function (): void {
         $line = SubscriptionTrainingPack::where('training_pack_id', $camp->id)->firstOrFail();
         expect((float) $line->payments()->first()->amount_due)->toBe(20.0);
 
-        $screen->call('openCampPrice', $member->id)
+        Livewire::actingAs($this->manager)
+            ->test('pages::club-events.trainings.pack-roster', ['packId' => $camp->id])
+            ->call('openCampPrice', $member->id)
             ->assertSet('campPriceAmount', '20.00')
             ->set('campPriceAmount', '35')
             ->set('campPriceReason', 'Deux jours')
@@ -109,7 +108,7 @@ describe('the committee screen', function (): void {
         $task = app(PendingTasks::class)->for($this->manager)['camp_requests'] ?? null;
 
         expect($task?->count)->toBe(1)
-            ->and($task?->route)->toContain('pack=' . $camp->id);
+            ->and($task?->route)->toBe(route('admin.trainings.show', $camp));
     });
     it('refunds a paid stage once, on its own line, when it was an encoding error', function (): void {
         $camp = campScreensCamp();

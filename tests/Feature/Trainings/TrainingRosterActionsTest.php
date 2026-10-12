@@ -9,7 +9,7 @@ use App\Domains\Shared\Enums\Role;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
-const TRAINING_ROSTER_COMPONENT = 'pages::club-events.trainings.index';
+const TRAINING_ROSTER_COMPONENT = 'pages::club-events.trainings.pack-roster';
 
 /*
  * La liste des participants nommait quatre groupes et ne laissait agir sur
@@ -39,8 +39,7 @@ it('keeps the roster read-only for a delegation that cannot touch an affiliation
     $pack = makeTrainingPack($this->season);
 
     Livewire::actingAs($this->coach)
-        ->test(TRAINING_ROSTER_COMPONENT)
-        ->call('openPack', $pack->id)
+        ->test(TRAINING_ROSTER_COMPONENT, ['packId' => $pack->id])
         ->call($method, ...$args)
         ->assertForbidden();
 })->with([
@@ -60,8 +59,7 @@ it('dismisses a request without touching a euro', function (): void {
     $subscription->trainingPacks()->attach($pack->id, ['status' => 'pending']);
 
     Livewire::actingAs($this->manager)
-        ->test(TRAINING_ROSTER_COMPONENT)
-        ->call('openPack', $pack->id)
+        ->test(TRAINING_ROSTER_COMPONENT, ['packId' => $pack->id])
         ->call('openRemoveFromRoster', $member->id)
         ->assertSet('removeFromRosterModal', true)
         ->call('confirmRemoveFromRoster')
@@ -80,8 +78,7 @@ it('refuses to drop a confirmed spot through the queue path', function (): void 
     (new AddMemberToTrainingPackAction)($subscription, $pack);
 
     Livewire::actingAs($this->manager)
-        ->test(TRAINING_ROSTER_COMPONENT)
-        ->call('openPack', $pack->id)
+        ->test(TRAINING_ROSTER_COMPONENT, ['packId' => $pack->id])
         ->call('openRemoveFromRoster', $member->id)
         // La confirmation ne s'ouvre même pas : ce chemin ne traite pas les
         // places validées.
@@ -103,8 +100,7 @@ it('takes a confirmed spot out once the removal is confirmed', function (): void
 
     // L'écran passe la main à la modale partagée, qui demande départ ou erreur.
     Livewire::actingAs($this->manager)
-        ->test(TRAINING_ROSTER_COMPONENT)
-        ->call('openPack', $pack->id)
+        ->test(TRAINING_ROSTER_COMPONENT, ['packId' => $pack->id])
         ->call('openLeaveMember', $member->id)
         ->assertDispatched('open-training-pack-exit', subscriptionId: $subscription->id, packId: $pack->id);
 
@@ -131,8 +127,7 @@ it('moves a confirmed spot to the pack that was picked', function (): void {
     (new AddMemberToTrainingPackAction)($subscription, $from);
 
     Livewire::actingAs($this->manager)
-        ->test(TRAINING_ROSTER_COMPONENT)
-        ->call('openPack', $from->id)
+        ->test(TRAINING_ROSTER_COMPONENT, ['packId' => $from->id])
         ->call('openMoveMember', $member->id)
         ->assertSet('moveMemberModal', true)
         ->set('moveTargetPackId', $to->id)
@@ -160,8 +155,7 @@ it('builds the destination list without going back for each pack', function (): 
     (new AddMemberToTrainingPackAction)($subscription, $from);
 
     $component = Livewire::actingAs($this->manager)
-        ->test(TRAINING_ROSTER_COMPONENT)
-        ->call('openPack', $from->id)
+        ->test(TRAINING_ROSTER_COMPONENT, ['packId' => $from->id])
         ->call('openMoveMember', $member->id);
 
     expect($component->instance()->moveTargetOptions())->toHaveCount(2);
@@ -181,8 +175,7 @@ it('never offers the pack the member is standing in as a destination', function 
     (new AddMemberToTrainingPackAction)($subscription, $held);
 
     $component = Livewire::actingAs($this->manager)
-        ->test(TRAINING_ROSTER_COMPONENT)
-        ->call('openPack', $from->id)
+        ->test(TRAINING_ROSTER_COMPONENT, ['packId' => $from->id])
         ->call('openMoveMember', $member->id);
 
     $offered = array_column($component->instance()->moveTargetOptions(), 'packName');

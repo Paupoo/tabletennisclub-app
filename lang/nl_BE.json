@@ -6359,6 +6359,7 @@
     "price set by hand: :amount €": "prijs handmatig ingesteld: :amount €",
     "Since the start": "Sinds het begin",
     "No attendance recorded yet.": "Nog geen aanwezigheid geregistreerd.",
+    "No session held yet.": "Nog geen training gehouden.",
     "{1}:count request to approve|[2,*]:count requests to approve": "{1}:count aanvraag goed te keuren|[2,*]:count aanvragen goed te keuren",
     "My match": "Mijn wedstrijd",
     "Please tell us if you are available": "Geef uw beschikbaarheid door",

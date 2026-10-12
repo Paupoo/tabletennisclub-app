@@ -43,8 +43,7 @@ describe('telling families and staff for real', function (): void {
         enrolTwoChildrenReachedThroughGuardians($pack);
 
         Livewire::actingAs($this->admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formDayOfWeek', 4)
             ->call('save')
             ->call('confirmRegeneration')
@@ -59,8 +58,7 @@ describe('telling families and staff for real', function (): void {
         enrolTwoChildrenReachedThroughGuardians($pack);
 
         Livewire::actingAs($this->admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openPack', $pack->id)
+            ->test('pages::club-events.trainings.pack-sessions', ['packId' => $pack->id])
             ->call('openCancel', $session->id)
             ->call('confirmCancel')
             ->assertHasNoErrors();

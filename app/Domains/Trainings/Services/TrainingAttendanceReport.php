@@ -220,18 +220,22 @@ class TrainingAttendanceReport
     /**
      * Taux d'une ligne sur toutes les séances pointées du pack.
      *
-     * Ne compte que les séances où la personne a un statut : un membre inscrit
-     * en cours de saison n'est pas absent des séances d'avant son arrivée.
+     * Même définition que {@see memberRate()} et que l'onglet Membres : le
+     * dénominateur est le nombre de séances pointées, le même pour tous. Un
+     * même membre ne doit pas avoir deux taux selon l'écran qui l'affiche.
      *
      * @param  Collection<int, int>  $countedIds
      * @param  array<int, array<int, string>>  $statuses
      */
     private function packRateOf($countedIds, array $statuses, int $rowId): ?int
     {
-        return $this->rateOf($countedIds
-            ->map(fn (int $sessionId): ?string => $statuses[$sessionId][$rowId] ?? null)
-            ->filter()
-            ->all());
+        if ($countedIds->isEmpty()) {
+            return null;
+        }
+
+        $present = $countedIds->filter(fn (int $sessionId): bool => ($statuses[$sessionId][$rowId] ?? null) === 'present')->count();
+
+        return (int) round(($present / $countedIds->count()) * 100);
     }
 
     /**

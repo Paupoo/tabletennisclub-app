@@ -20,8 +20,7 @@ describe('editing a pack schedule', function (): void {
         $before = $pack->trainings()->count();
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formDayOfWeek', 4)
             ->call('save')
             ->assertSet('regenerateModal', true);
@@ -40,8 +39,7 @@ describe('editing a pack schedule', function (): void {
         $pack->generateSessions($season);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formDayOfWeek', 4)
             ->call('save')
             ->call('confirmRegeneration');
@@ -69,8 +67,7 @@ describe('editing a pack schedule', function (): void {
         $past->trainees()->attach($member->id, ['status' => 'present']);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formDayOfWeek', 4)
             ->call('save')
             ->call('confirmRegeneration');
@@ -91,8 +88,7 @@ describe('editing a pack schedule', function (): void {
         $cancelled->cancel(TrainingCancellationType::CLOSED, 'Salle fermée');
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formStartTime', '20:00')
             ->call('save')
             ->call('confirmRegeneration');
@@ -112,8 +108,7 @@ describe('editing a pack schedule', function (): void {
         $sessionIds = $pack->trainings()->pluck('id')->sort()->values()->all();
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formName', 'Nouveau nom')
             ->call('save')
             ->assertSet('regenerateModal', false);
@@ -137,8 +132,7 @@ describe('editing a pack schedule', function (): void {
         $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formDayOfWeek', 4)
             ->call('save')
             ->call('confirmRegeneration');
@@ -159,8 +153,7 @@ describe('editing a pack schedule', function (): void {
         $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formDayOfWeek', 4)
             ->call('save')
             ->set('notifyMembersOfChange', false)

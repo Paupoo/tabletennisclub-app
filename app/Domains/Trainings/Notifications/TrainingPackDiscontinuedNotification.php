@@ -7,6 +7,7 @@ namespace App\Domains\Trainings\Notifications;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -16,7 +17,7 @@ use Illuminate\Notifications\Notification;
  * Distinct from {@see TrainingPackCancelledNotification}, which concerns one
  * member leaving a pack that carries on without them.
  */
-class TrainingPackDiscontinuedNotification extends Notification
+class TrainingPackDiscontinuedNotification extends Notification implements ShouldQueue
 {
     use LinksToMemberSpace, Queueable;
 

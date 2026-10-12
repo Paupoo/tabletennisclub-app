@@ -8,6 +8,7 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\TrainingCancellationType;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
+use App\Jobs\SendTrainingNoticeJob;
 use App\Domains\Trainings\Services\TrainingAttendanceReport;
 use App\Domains\Trainings\Services\TrainingAttendanceService;
 use App\Domains\Trainings\Services\TrainingStaffing;
@@ -132,13 +133,11 @@ new class extends Component
 
         $training->cancel($type, $this->cancelNote ?: null);
 
-        // Notify enrolled members
         if ($training->trainingPack) {
-            $training->trainingPack->trainees()
-                ->with('guardians')
-                ->where('emails_notifications', true)
-                ->get()
-                ->each->notify(new TrainingSessionCancelledNotification($training, $type, $this->cancelNote ?: null));
+            SendTrainingNoticeJob::toEach(
+                $training->trainingPack->trainees()->where('emails_notifications', true)->get(),
+                new TrainingSessionCancelledNotification($training, $type, $this->cancelNote ?: null),
+            );
         }
 
         app(TrainingStaffing::class)->notifyCancellation($training, auth()->user());

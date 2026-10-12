@@ -6,6 +6,7 @@ namespace tests\Architecture;
 
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Container\ContextualAttribute;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Mail\Mailable;
@@ -186,3 +187,13 @@ arch()
     ->toImplement(ContextualAttribute::class)
     ->toHaveAttribute('Attribute')
     ->toHaveMethod('resolve');
+
+/*
+ * Aucun mail d'entraînement ne part pendant la requête : annuler une séance
+ * faisait attendre le comité une demi-minute, le temps d'un envoi SMTP par
+ * inscrit. Les envois à plusieurs passent par SendTrainingNoticeJob.
+ */
+arch()
+    ->expect('App\Domains\Trainings\Notifications')
+    ->classes()
+    ->toImplement(ShouldQueue::class);

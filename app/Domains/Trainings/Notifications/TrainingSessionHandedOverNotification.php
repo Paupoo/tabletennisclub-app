@@ -6,6 +6,7 @@ namespace App\Domains\Trainings\Notifications;
 
 use App\Domains\Trainings\Models\Training;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -13,7 +14,7 @@ use Illuminate\Notifications\Notification;
  * Prévient celui à qui l'on confie une séance : il en devient le coach, avec
  * le pointage et les coordonnées des inscrits.
  */
-class TrainingSessionHandedOverNotification extends Notification
+class TrainingSessionHandedOverNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 

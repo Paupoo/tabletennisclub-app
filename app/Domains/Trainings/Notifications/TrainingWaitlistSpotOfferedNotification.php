@@ -8,10 +8,11 @@ use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Domains\Trainings\Models\TrainingPack;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TrainingWaitlistSpotOfferedNotification extends Notification
+class TrainingWaitlistSpotOfferedNotification extends Notification implements ShouldQueue
 {
     use LinksToMemberSpace, Queueable;
 

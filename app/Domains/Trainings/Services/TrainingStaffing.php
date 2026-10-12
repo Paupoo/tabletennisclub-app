@@ -13,6 +13,7 @@ use App\Domains\Trainings\Notifications\TrainingSessionCancelledForStaffNotifica
 use App\Domains\Trainings\Notifications\TrainingSessionHandedOverNotification;
 use App\Domains\Trainings\Notifications\TrainingSparringAssignedNotification;
 use App\Domains\Trainings\Notifications\TrainingSparringReleasedNotification;
+use App\Jobs\SendTrainingNoticeJob;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -164,10 +165,10 @@ class TrainingStaffing
             $staff->push(User::with('guardians')->find($session->trainer_id));
         }
 
-        $staff->filter()
-            ->unique('id')
-            ->reject(fn (User $user): bool => $user->id === $actor->id)
-            ->each->notify(new TrainingSessionCancelledForStaffNotification($session));
+        SendTrainingNoticeJob::toEach(
+            $staff->filter()->unique('id')->reject(fn (User $user): bool => $user->id === $actor->id),
+            new TrainingSessionCancelledForStaffNotification($session),
+        );
     }
 
     /**

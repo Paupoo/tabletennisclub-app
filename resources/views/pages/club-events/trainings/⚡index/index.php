@@ -27,6 +27,7 @@ use App\Domains\Trainings\Models\TrainingLevel;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingPackScheduleChangedNotification;
 use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
+use App\Jobs\SendTrainingNoticeJob;
 use App\Domains\Trainings\Services\TrainingAttendanceReport;
 use App\Domains\Trainings\Services\TrainingCampBilling;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
@@ -553,13 +554,11 @@ new class extends Component
 
         $training->cancel($type, $this->cancelNote ?: null);
 
-        // Notify enrolled members
         if ($training->trainingPack) {
-            $training->trainingPack->trainees()
-                ->with('guardians')
-                ->where('emails_notifications', true)
-                ->get()
-                ->each->notify(new TrainingSessionCancelledNotification($training, $type, $this->cancelNote ?: null));
+            SendTrainingNoticeJob::toEach(
+                $training->trainingPack->trainees()->where('emails_notifications', true)->get(),
+                new TrainingSessionCancelledNotification($training, $type, $this->cancelNote ?: null),
+            );
         }
 
         app(TrainingStaffing::class)->notifyCancellation($training, auth()->user());
@@ -2236,8 +2235,8 @@ new class extends Component
         $notified = 0;
 
         if ($this->notifyMembersOfChange) {
-            $recipients = $pack->trainees()->with('guardians')->where('emails_notifications', true)->get();
-            $recipients->each->notify(new TrainingPackScheduleChangedNotification($pack));
+            $recipients = $pack->trainees()->where('emails_notifications', true)->get();
+            SendTrainingNoticeJob::toEach($recipients, new TrainingPackScheduleChangedNotification($pack));
             $notified = $recipients->count();
         }
 

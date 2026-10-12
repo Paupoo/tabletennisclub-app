@@ -51,6 +51,14 @@ class TrainingAttendanceReport
      * creuse dit que la séance du 12/11 n'a réuni que quatre personnes sur
      * dix-huit, une ligne creuse dit que ce membre paie et ne vient pas.
      *
+     * La fenêtre s'arrête à aujourd'hui : prendre les dernières séances du
+     * calendrier montrait, sur un pack qui court jusqu'en juin, une grille de
+     * séances à venir, donc vide. `$includeUpcoming` rend la saison entière.
+     *
+     * Le taux d'une ligne porte sur toutes les séances pointées du pack, pas
+     * sur la seule fenêtre : c'est le chiffre de l'onglet Membres et de la vue
+     * coach, et il ne doit pas changer selon ce que l'écran déroule.
+     *
      * @return array{
      *     sessions: list<array{id: int, date: string, cancelled: bool, counted: bool}>,
      *     members: list<array{id: int, name: string, cells: array<int, string|null>}>,
@@ -58,10 +66,11 @@ class TrainingAttendanceReport
      *     externals: list<array{id: int, name: string, cells: array<int, string|null>, rate: int|null}>
      * }
      */
-    public function matrix(TrainingPack $pack, int $limit = self::DEFAULT_SESSIONS): array
+    public function matrix(TrainingPack $pack, int $limit = self::DEFAULT_SESSIONS, bool $includeUpcoming = false): array
     {
         $sessions = Training::query()
             ->where('training_pack_id', $pack->id)
+            ->when(! $includeUpcoming, fn (Builder $q) => $q->where('start', '<=', now()))
             ->orderByDesc('start')
             ->limit($limit)
             ->get()
@@ -70,7 +79,10 @@ class TrainingAttendanceReport
 
         $members = $pack->trainees()->orderBy('last_name')->orderBy('first_name')->get();
 
-        $statuses = $this->statusesFor($sessions->pluck('id'));
+        $countedIds = $this->countedSessions($pack)->pluck('id');
+        $sessionIds = $sessions->pluck('id')->merge($countedIds)->unique()->values();
+
+        $statuses = $this->statusesFor($sessionIds);
 
         $memberIds = $members->pluck('id');
 
@@ -82,7 +94,7 @@ class TrainingAttendanceReport
             ->sortBy(fn (ExternalRegistration $registration): string => mb_strtolower($registration->last_name . ' ' . $registration->first_name))
             ->values();
 
-        $externalStatuses = $this->externalStatusesFor($sessions->pluck('id'));
+        $externalStatuses = $this->externalStatusesFor($sessionIds);
         $externalIds = $externals->pluck('id')->flip()->all();
 
         return [
@@ -98,7 +110,7 @@ class TrainingAttendanceReport
                         ...array_values(array_intersect_key($externalStatuses[$session->id] ?? [], $externalIds)),
                     ]),
             ])->all(),
-            'externals' => $externals->map(function (ExternalRegistration $registration) use ($sessions, $externalStatuses): array {
+            'externals' => $externals->map(function (ExternalRegistration $registration) use ($sessions, $externalStatuses, $countedIds): array {
                 $cells = $sessions->mapWithKeys(fn (Training $session): array => [
                     $session->id => $this->cellFor($session, $externalStatuses, $registration->id),
                 ])->all();
@@ -107,11 +119,13 @@ class TrainingAttendanceReport
                     'id' => $registration->id,
                     'name' => $registration->isAnonymized() ? $registration->displayName() : $registration->last_name . ' ' . $registration->first_name,
                     'cells' => $cells,
-                    'rate' => $this->rateOf(array_filter($cells, fn (?string $c): bool => $c !== null)),
+                    'rate' => $this->packRateOf($countedIds, $externalStatuses, $registration->id),
                 ];
             })->all(),
-            'walkIns' => $this->walkInRows($sessions, $statuses, $memberIds),
-            'members' => $members->map(function ($member) use ($sessions, $statuses): array {
+            // Seuls les présents de la fenêtre : un non-inscrit venu en septembre
+            // ferait sinon une ligne vide sous une grille d'avril.
+            'walkIns' => $this->walkInRows($sessions, array_intersect_key($statuses, $sessions->pluck('id')->flip()->all()), $memberIds),
+            'members' => $members->map(function ($member) use ($sessions, $statuses, $countedIds): array {
                 $cells = $sessions->mapWithKeys(fn (Training $session): array => [
                     $session->id => $this->cellFor($session, $statuses, $member->id),
                 ])->all();
@@ -120,7 +134,7 @@ class TrainingAttendanceReport
                     'id' => $member->id,
                     'name' => $member->last_name . ' ' . $member->first_name,
                     'cells' => $cells,
-                    'rate' => $this->rateOf(array_filter($cells, fn (?string $c): bool => $c !== null)),
+                    'rate' => $this->packRateOf($countedIds, $statuses, $member->id),
                 ];
             })->all(),
         ];
@@ -201,6 +215,23 @@ class TrainingAttendanceReport
         }
 
         return $indexed;
+    }
+
+    /**
+     * Taux d'une ligne sur toutes les séances pointées du pack.
+     *
+     * Ne compte que les séances où la personne a un statut : un membre inscrit
+     * en cours de saison n'est pas absent des séances d'avant son arrivée.
+     *
+     * @param  Collection<int, int>  $countedIds
+     * @param  array<int, array<int, string>>  $statuses
+     */
+    private function packRateOf($countedIds, array $statuses, int $rowId): ?int
+    {
+        return $this->rateOf($countedIds
+            ->map(fn (int $sessionId): ?string => $statuses[$sessionId][$rowId] ?? null)
+            ->filter()
+            ->all());
     }
 
     /**

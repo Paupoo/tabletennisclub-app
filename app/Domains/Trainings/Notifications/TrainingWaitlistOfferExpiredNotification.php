@@ -7,6 +7,7 @@ namespace App\Domains\Trainings\Notifications;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -17,7 +18,7 @@ use Illuminate\Notifications\Notification;
  * The member is removed from the pack entirely, so nothing on their own pages
  * would otherwise show that the offer ever existed.
  */
-class TrainingWaitlistOfferExpiredNotification extends Notification
+class TrainingWaitlistOfferExpiredNotification extends Notification implements ShouldQueue
 {
     use LinksToMemberSpace, Queueable;
 

@@ -35,6 +35,15 @@ new class extends Component
         return app(WeeklySelections::class)->between(now(), now()->addDays(self::WINDOW_DAYS));
     }
 
+    /**
+     * @return Collection<int, string>
+     */
+    #[Computed]
+    public function byes(): Collection
+    {
+        return app(WeeklySelections::class)->byesBetween(now(), now()->addDays(self::WINDOW_DAYS));
+    }
+
     public function mount(): void
     {
         /** @var User $viewer */

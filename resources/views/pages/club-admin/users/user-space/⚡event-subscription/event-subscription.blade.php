@@ -179,9 +179,10 @@
                                     wire:click="register({{ $tournament->id }})"
                                 />
                             @else
-                                @if ($tournament->price > 0)
+                                @php $myPrice = $tournament->priceFor($this->user); @endphp
+                                @if ($myPrice > 0)
                                     <span class="text-xs font-medium text-base-content/60">
-                                        {{ number_format((float) $tournament->price, 2, ',', ' ') }} €
+                                        {{ number_format($myPrice, 2, ',', ' ') }} €
                                     </span>
                                 @endif
                                 <x-button

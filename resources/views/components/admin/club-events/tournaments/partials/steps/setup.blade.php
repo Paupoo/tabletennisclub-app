@@ -96,6 +96,17 @@
                         :readonly="$this->isContractLocked"
                         :hint="$this->isContractLocked ? __('Locked — tournament validated') : null" />
 
+                    {{-- Reduced price by age — locked with the price --}}
+                    <div class="grid grid-cols-2 gap-3">
+                        <x-input :label="__('Reduced fee')" suffix="€" type="number" min="0" step="0.5"
+                            wire:model="reducedPrice"
+                            :readonly="$this->isContractLocked" />
+                        <x-input :label="__('Under the age of')" type="number" min="1" max="99"
+                            wire:model="reducedPriceUnderAge"
+                            :readonly="$this->isContractLocked"
+                            :hint="__('Age on the tournament day.')" />
+                    </div>
+
                     <div class="col-span-2">
                         <x-toggle :label="__('Open registrations')" icon="o-eye"
                             :hint="__('If chosen, this tournament will be open for external registration on our website.')"

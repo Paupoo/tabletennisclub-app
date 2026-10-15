@@ -124,6 +124,11 @@ new class extends Component
 
     public array $qrPaymentDetails = [];
 
+    /** Vide = pas de tarif réduit. Une chaîne, pour qu'un champ vidé reste vide. */
+    public string $reducedPrice = '';
+
+    public string $reducedPriceUnderAge = '';
+
     public string $registration_deadline = '';
 
     public array $selectedMembers = [];
@@ -864,6 +869,8 @@ new class extends Component
             $this->maxUsersManual = $tournament->max_users > 0
                 && $tournament->max_users !== $tournament->nb_pools * $tournament->pool_size;
             $this->price = (float) ($tournament->price ?? 0);
+            $this->reducedPrice = $tournament->reduced_price_under_age === null ? '' : (string) $tournament->reduced_price;
+            $this->reducedPriceUnderAge = (string) ($tournament->reduced_price_under_age ?? '');
             $this->selectedObjective = $tournament->objective?->value ?? '';
             $this->selectedRooms = $tournament->rooms->pluck('id')->toArray();
             $this->nb_tables = (int) $tournament->rooms->sum('total_playable_tables') ?: 8;
@@ -1341,6 +1348,8 @@ new class extends Component
             'doublesRegistrationMode' => 'nullable|in:club,self',
             'maxUsers' => 'required|integer|min:0',
             'price' => 'required|numeric|min:0',
+            'reducedPrice' => 'nullable|required_with:reducedPriceUnderAge|numeric|min:0|lt:price',
+            'reducedPriceUnderAge' => 'nullable|required_with:reducedPrice|integer|min:1|max:99',
             'description' => 'nullable|string|max:2000',
         ]);
 
@@ -1396,6 +1405,8 @@ new class extends Component
                 'objective' => $this->selectedObjective ?: null,
                 'max_users' => $this->maxUsers,
                 'price' => $this->price,
+                'reduced_price' => $this->reducedPrice === '' ? null : (float) $this->reducedPrice,
+                'reduced_price_under_age' => $this->reducedPriceUnderAge === '' ? null : (int) $this->reducedPriceUnderAge,
                 'registration_deadline' => $this->registration_deadline ?: null,
             ]
         );
@@ -1756,7 +1767,7 @@ new class extends Component
             'event_date' => $tournament->start_date->toDateString(),
             'start_time' => $startTime?->format('H:i:s') ?? '00:00:00',
             'end_time' => $endTime?->format('H:i:s'),
-            'price' => (string) $tournament->price,
+            'price' => $tournament->eventPostPrice(),
             'max_participants' => $tournament->max_users ?: null,
         ];
     }

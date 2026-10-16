@@ -7,10 +7,12 @@ namespace App\Domains\Meetings\Services;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingActionItem;
+use App\Domains\Meetings\Models\MeetingActionReview;
 use App\Domains\Meetings\Models\MeetingAgendaItem;
 use App\Domains\Meetings\Models\MeetingDecision;
 use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Domains\Meetings\Models\MeetingUser;
+use App\Domains\Shared\Enums\MeetingActionReviewOutcomeEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use Illuminate\Support\Carbon;
@@ -35,7 +37,7 @@ use Illuminate\Support\Collection;
 final readonly class MinutesReport
 {
     /** Overdue first, done last. */
-    private const array URGENCY = ['overdue' => 0, 'todo' => 1, 'done' => 2];
+    private const array URGENCY = ['overdue' => 0, 'todo' => 1, 'done' => 2, 'abandoned' => 3];
 
     /**
      * @param  Collection<int, MeetingDecision>  $decisions  numbered D1… in this order
@@ -46,6 +48,8 @@ final readonly class MinutesReport
      * @param  Collection<int, User>  $excused
      * @param  Collection<int, User>  $absent  empty for a general assembly, see $absentCount
      * @param  Collection<int, User>  $guests  those who came, outside the audience
+     * @param  Collection<int, MeetingActionReview>  $followUp  what a committee said of earlier actions
+     * @param  int  $notReviewedCount  earlier actions the committee never reached
      */
     private function __construct(
         public Meeting $meeting,
@@ -62,6 +66,8 @@ final readonly class MinutesReport
         public bool $attendanceRecorded,
         public Carbon $asOf,
         public Collection $guests,
+        public Collection $followUp,
+        public int $notReviewedCount,
     ) {}
 
     /**
@@ -101,6 +107,7 @@ final readonly class MinutesReport
                     item: $item,
                     status: match (true) {
                         $item->is_completed => 'done',
+                        $item->abandoned_at !== null => 'abandoned',
                         $days !== null && $days < 0 => 'overdue',
                         default => 'todo',
                     },
@@ -116,6 +123,17 @@ final readonly class MinutesReport
 
         $isAssembly = $meeting->type === MeetingTypeEnum::GENERAL_ASSEMBLY;
 
+        // Frozen at publication; until then — the preview — the reviews so far,
+        // and whatever the meeting has not reached yet.
+        $reviews = MeetingActionReview::query()
+            ->where('meeting_id', $meeting->id)
+            ->with(['actionItem.meeting', 'actionItem.assignedTo', 'assignedTo'])
+            ->get()
+            ->sortBy('actionItem.id')
+            ->values();
+        $notReviewed = $reviews->filter(fn (MeetingActionReview $review): bool => $review->outcome === MeetingActionReviewOutcomeEnum::NOT_REVIEWED);
+        $notReviewedCount = $notReviewed->count() + ($minutes->is_published ? 0 : ActionFollowUp::unreviewed($meeting)->count());
+
         return new self(
             meeting: $meeting,
             minutes: $minutes,
@@ -130,6 +148,8 @@ final readonly class MinutesReport
             absentCount: $absent->count(),
             attendanceRecorded: $attendanceRecorded,
             asOf: now(),
+            followUp: $reviews->diff($notReviewed)->values(),
+            notReviewedCount: $notReviewedCount,
             guests: $attendanceRecorded
                 ? $pick($guestsByStatus, MeetingUserStatusEnum::ATTENDED)
                 : $pick($guestsByStatus, MeetingUserStatusEnum::CONFIRMED, MeetingUserStatusEnum::ATTENDED),

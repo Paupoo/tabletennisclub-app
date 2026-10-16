@@ -67,6 +67,8 @@ new class extends Component
 
         $action = MeetingActionItem::query()->where('meeting_id', $meeting->id)->findOrFail($actionId);
         Gate::authorize('completeAction', [$meeting, $action->assigned_to_id]);
+        // Abandoned by the committee: only the committee's follow-up reopens it.
+        abort_if($action->abandoned_at !== null, 403);
 
         $action->update(['is_completed' => ! $action->is_completed]);
         unset($this->report);

@@ -25,6 +25,7 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Models\MeetingActionItem;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Shared\Enums\ExpenseReportDisplayStatus;
 use App\Domains\Shared\Enums\ExpenseReportStatus;
@@ -134,6 +135,7 @@ class PendingTasks
 
         foreach ([
             $this->myPayments($user),
+            $this->myMeetingActions($user),
             $this->affiliationsAwaitingDecision($user),
             $this->campRequestsAwaitingDecision($user),
             $this->unpaidAffiliations($user),
@@ -400,6 +402,18 @@ class PendingTasks
      * The member's own bills, and those of the accounts they pay for: the
      * same list « My payments » opens on.
      */
+    /** Handed to the reader at a meeting, neither done nor abandoned. */
+    private function myMeetingActions(User $user): ?PendingTask
+    {
+        if (! Feature::Meetings->enabled() || ! $user->can(Permission::MeetingsView->value)) {
+            return null;
+        }
+
+        return $this->task('my_actions', MeetingActionItem::query()->open()->where('assigned_to_id', $user->id)->count(),
+            '1 action de réunion à votre nom', ':count actions de réunion à votre nom',
+            'o-clipboard-document-check', route('admin.meetings.my-actions'));
+    }
+
     private function myPayments(User $user): ?PendingTask
     {
         $count = Payment::where('status', 'pending')

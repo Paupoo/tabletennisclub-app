@@ -297,6 +297,10 @@ The mail is short — the decisions, the reader's own actions, a **Read the minu
 
 Create follow-up action items from the meeting, assigned to specific members with due dates.
 
+Every committee meeting opens its minutes on a **Follow-up of actions** block: the actions still open from earlier meetings — committees and general assemblies alike — with their owner, due date, original meeting and the owner's progress note. One tap each: **Done**, **In progress**, **Postpone** (new due date), **Hand over** (new owner) or **Abandon** (a one-line reason, required). An action ticked done by its owner since the last meeting shows "Ticked done by its owner", to be confirmed. Publishing freezes the block in the minutes (page and PDF): what was said of each action stays as it was that evening; those never reached are only counted, and come back at the next committee. The committee convocation lists the open actions and tells each owner how many are theirs.
+
+**Events → My actions** gathers the reader's own actions from every meeting: they note where each stands (the next committee reads it) and tick it done. Open actions count among their tasks on the dashboard and in the menu. Postponing, handing over and abandoning stay with whoever runs the meetings.
+
 ### Postponing or cancelling
 
 Click **Postpone** or **Cancel meeting** from the meeting detail page. All invited members receive a notification.

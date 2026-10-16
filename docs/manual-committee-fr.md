@@ -298,6 +298,10 @@ Le mail est court — les décisions, les actions du destinataire, un bouton **L
 
 Créez des points d'action de suivi depuis la réunion, assignés à des membres spécifiques avec des dates d'échéance.
 
+Chaque comité ouvre son PV sur un bloc **Suivi des actions** : les actions encore ouvertes des réunions précédentes — comités et assemblées générales —, avec leur responsable, leur échéance, la réunion d'origine et la note d'avancement du responsable. Un tap par action : **Faite**, **En cours**, **Reporter** (nouvelle échéance), **Confier** (nouveau responsable) ou **Abandonner** (une ligne de motif, obligatoire). Une action cochée faite par son responsable depuis la dernière réunion apparaît « Cochée faite par son responsable », à confirmer. La publication fige le bloc dans le PV (page et PDF) : ce qui a été dit de chaque action reste tel quel ; celles qu'on n'a pas atteintes sont seulement comptées, et reviennent au comité suivant. La convocation d'un comité liste les actions ouvertes et dit à chaque responsable combien sont à lui.
+
+**Événements → Mes actions** rassemble les actions du lecteur, de toutes les réunions : il y note où il en est (le comité suivant le lit) et coche ce qui est fait. Les actions ouvertes comptent parmi ses tâches, au tableau de bord et dans le menu. Reporter, confier et abandonner restent l'affaire de celui qui gère les réunions.
+
 ### Reporter ou annuler
 
 Cliquez sur **Reporter** ou **Annuler la réunion** depuis la page de détail. Tous les membres invités reçoivent une notification.

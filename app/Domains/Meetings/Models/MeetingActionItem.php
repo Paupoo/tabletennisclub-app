@@ -8,9 +8,11 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\Meetings\Models\MeetingActionItemFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -22,6 +24,11 @@ use Illuminate\Support\Carbon;
  * @property int|null $assigned_to_id
  * @property Carbon|null $due_date
  * @property bool $is_completed
+ * @property Carbon|null $completed_at when it was ticked done; null on those done before it was recorded
+ * @property Carbon|null $abandoned_at dropped by the committee
+ * @property string|null $abandon_reason
+ * @property string|null $progress_note where it stands, in the owner's words
+ * @property Carbon|null $progress_noted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User|null $assignedTo
@@ -52,6 +59,9 @@ class MeetingActionItem extends Model
     protected $casts = [
         'due_date' => 'date',
         'is_completed' => 'boolean',
+        'completed_at' => 'datetime',
+        'abandoned_at' => 'datetime',
+        'progress_noted_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -62,6 +72,11 @@ class MeetingActionItem extends Model
         'assigned_to_id',
         'due_date',
         'is_completed',
+        'completed_at',
+        'abandoned_at',
+        'abandon_reason',
+        'progress_note',
+        'progress_noted_at',
     ];
 
     /** @return BelongsTo<MeetingAgendaItem, $this> */
@@ -75,8 +90,43 @@ class MeetingActionItem extends Model
         return $this->belongsTo(User::class, 'assigned_to_id');
     }
 
+    public function isOpen(): bool
+    {
+        return ! $this->is_completed && $this->abandoned_at === null;
+    }
+
     public function meeting(): BelongsTo
     {
         return $this->belongsTo(Meeting::class);
+    }
+
+    /** @return HasMany<MeetingActionReview, $this> what each committee said of it */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(MeetingActionReview::class, 'action_item_id');
+    }
+
+    /**
+     * Neither done nor abandoned.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeOpen(Builder $query): void
+    {
+        $query->where('is_completed', false)->whereNull('abandoned_at');
+    }
+
+    /**
+     * Whoever ticks it — the owner on the reading page, the note taker, the
+     * committee — the moment is recorded, so the next committee sees it once.
+     */
+    #[\Override]
+    protected static function booted(): void
+    {
+        static::saving(function (self $action): void {
+            if ($action->isDirty('is_completed')) {
+                $action->completed_at = $action->is_completed ? now() : null;
+            }
+        });
     }
 }

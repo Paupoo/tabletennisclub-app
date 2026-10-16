@@ -33,6 +33,21 @@ erDiagram
         int assigned_to_id FK "nullable"
         datetime due_date "nullable"
         bool is_completed
+        datetime completed_at "nullable"
+        datetime abandoned_at "nullable"
+        string abandon_reason "nullable"
+        string progress_note "nullable"
+        datetime progress_noted_at "nullable"
+    }
+    MeetingActionReview {
+        int id PK
+        int meeting_id FK
+        int action_item_id FK
+        MeetingActionReviewOutcomeEnum outcome
+        datetime due_date "nullable"
+        int assigned_to_id FK "nullable"
+        string reason "nullable"
+        string progress_note "nullable"
     }
     MeetingAgendaItem {
         int id PK
@@ -94,6 +109,7 @@ erDiagram
     Meeting ||--o| EventPost : "eventPost"
     Meeting ||--o| MeetingMinutes : "minutes"
     Meeting }o--o{ User : "users"
+    MeetingActionItem ||--o{ MeetingActionReview : "reviews"
     MeetingAgendaItem ||--o{ MeetingActionItem : "actionItems"
     MeetingAgendaItem ||--o{ MeetingDecision : "decisions"
     MeetingDateProposal ||--o{ MeetingDateVote : "votes"

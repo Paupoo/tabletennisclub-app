@@ -182,6 +182,12 @@
                 </details>
             @endif
 
+            {{-- ── Follow-up of earlier actions (committees) ──────── --}}
+            @if ($this->followUp->isNotEmpty())
+                <x-admin.club-events.meetings.minutes-follow-up :items="$this->followUp"
+                    :assignees="$this->usersForAssignment" :read-only="$readOnly" />
+            @endif
+
             {{-- ── Announcements ─────────────────────────────────── --}}
             <section id="announcements" data-minutes-block="announcements" class="scroll-mt-20 rounded-xl border border-base-300 bg-base-100 p-4">
                 <h2 class="mb-3 flex items-center gap-2 font-bold">

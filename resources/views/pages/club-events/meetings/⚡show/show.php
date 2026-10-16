@@ -21,6 +21,7 @@ use App\Jobs\SendMeetingInvitationJob;
 use App\Jobs\SendMeetingInvitationsJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
@@ -58,12 +59,12 @@ new class extends Component
     // Card being edited in place: 'title' | 'details' | 'agenda' | 'meal' | 'quorum' | null
     public ?string $editing = null;
 
-    public string $mealDescriptionDraft = '';
-
     // Guests: somebody outside the audience, asked for one point or the whole meeting
     public string $guestPointId = '';
 
     public string $guestSearch = '';
+
+    public string $mealDescriptionDraft = '';
 
     public bool $mealHasDraft = false;
 
@@ -276,6 +277,13 @@ new class extends Component
             ->get();
     }
 
+    /** True once at least one invitation left the building. */
+    #[Computed]
+    public function invitationsSent(): bool
+    {
+        return $this->meeting->users->contains(fn (User $u): bool => $u->registration->invitation_sent_at !== null);
+    }
+
     /**
      * Ask somebody outside the audience to come, for one point or for all of it.
      * Once the convocations left, theirs leaves at once; before, it waits for them.
@@ -308,13 +316,6 @@ new class extends Component
             ? __(':name is invited — the invitation is on its way', ['name' => $guest->full_name])
             : __(':name is invited — the invitation leaves with the others', ['name' => $guest->full_name]));
         unset($this->meeting, $this->invitationsSent, $this->guestCandidates);
-    }
-
-    /** True once at least one invitation left the building. */
-    #[Computed]
-    public function invitationsSent(): bool
-    {
-        return $this->meeting->users->contains(fn (User $u): bool => $u->registration->invitation_sent_at !== null);
     }
 
     public function markAbsent(int $userId): void
@@ -541,17 +542,6 @@ new class extends Component
         unset($this->meeting);
     }
 
-    /** Take a guest off the list before the meeting — a wrong pick, or no longer needed. */
-    public function removeGuest(int $userId): void
-    {
-        abort_unless($this->canManage, 403);
-        abort_if($this->meeting->scheduled_at?->isPast() ?? false, 403);
-
-        $this->meeting->users()->wherePivot('is_guest', true)->detach($userId);
-
-        unset($this->meeting, $this->guestCandidates);
-    }
-
     /** Resend the invitation to invitees who never responded, at most once every 48 hours. */
     public function remindPendingInvitees(): void
     {
@@ -583,6 +573,17 @@ new class extends Component
     public function removeAgendaDraftItem(int $i): void
     {
         array_splice($this->agendaDraft, $i, 1);
+    }
+
+    /** Take a guest off the list before the meeting — a wrong pick, or no longer needed. */
+    public function removeGuest(int $userId): void
+    {
+        abort_unless($this->canManage, 403);
+        abort_if($this->meeting->scheduled_at?->isPast() ?? false, 403);
+
+        $this->meeting->users()->wherePivot('is_guest', true)->detach($userId);
+
+        unset($this->meeting, $this->guestCandidates);
     }
 
     public function removeProposal(int $proposalId): void
@@ -901,8 +902,8 @@ new class extends Component
             ->current(__('Meeting Details'));
     }
 
-    /** @return Illuminate\Database\Eloquent\Builder<User> */
-    private function guestCandidatesQuery(): Illuminate\Database\Eloquent\Builder
+    /** @return Builder<User> */
+    private function guestCandidatesQuery(): Builder
     {
         $meeting = $this->meeting;
 

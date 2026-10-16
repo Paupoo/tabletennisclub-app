@@ -8,7 +8,7 @@
         $meeting = $report->meeting;
         $minutes = $report->minutes;
         $myActions = $report->myActions();
-        $canToggle = fn (\App\Domains\Meetings\Services\MinutesAction $action): bool => $this->canManage || $action->mine;
+        $canToggle = fn (\App\Domains\Meetings\Services\MinutesAction $action): bool => $action->status !== 'abandoned' && ($this->canManage || $action->mine);
         $proseClasses = 'prose prose-sm max-w-none text-base-content [&>:first-child]:mt-0 [&>:last-child]:mb-0';
     @endphp
 
@@ -143,6 +143,32 @@
                 </div>
             @endif
         </x-card>
+
+        {{-- ── Follow-up of earlier actions, as the committee left it ──── --}}
+        @if ($report->followUp->isNotEmpty() || $report->notReviewedCount > 0)
+            <x-card :title="__('Follow-up of actions')" :subtitle="__('Where the earlier actions stood that evening.')" data-minutes-section="follow-up" class="shadow-sm">
+                <ul class="divide-y divide-base-300">
+                    @foreach ($report->followUp as $review)
+                        <li class="flex flex-wrap items-start justify-between gap-2 py-2.5">
+                            <div class="min-w-0">
+                                <p class="font-medium">{{ $review->actionItem->title }}</p>
+                                <p class="text-xs text-muted">
+                                    {{ $review->actionItem->assignedTo?->full_name ?? __('Nobody') }}
+                                    · {{ __(':type of :date', ['type' => $review->actionItem->meeting->type->getLabel(), 'date' => $review->actionItem->meeting->scheduled_at?->format('d/m/Y')]) }}
+                                </p>
+                                @if (filled($review->progress_note))
+                                    <p class="mt-1 text-sm italic text-base-content/80">« {{ $review->progress_note }} »</p>
+                                @endif
+                            </div>
+                            <span class="badge badge-sm {{ $review->outcome->getBadgeClass() }}">{{ $review->describe() }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+                @if ($report->notReviewedCount > 0)
+                    <p class="mt-2 text-sm text-muted">{{ trans_choice('{1}1 action not reviewed|[2,*]:count actions not reviewed', $report->notReviewedCount, ['count' => $report->notReviewedCount]) }}</p>
+                @endif
+            </x-card>
+        @endif
 
         {{-- ── Announcements ───────────────────────────────────────────── --}}
         @if ($report->announcements !== [])

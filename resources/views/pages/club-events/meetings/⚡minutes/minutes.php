@@ -9,6 +9,8 @@ use App\Domains\Meetings\Models\MeetingAgendaItem;
 use App\Domains\Meetings\Models\MeetingDecision;
 use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Domains\Meetings\Models\MeetingUser;
+use App\Domains\Meetings\Services\ActionFollowUp;
+use App\Domains\Shared\Enums\MeetingActionReviewOutcomeEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\Permission;
@@ -16,6 +18,7 @@ use App\Domains\Shared\Enums\Role;
 use App\Jobs\SendMeetingMinutesJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -55,6 +58,15 @@ new class extends Component
 
     /** @var array<int, string> agenda item id => markdown */
     public array $discussions = [];
+
+    /** @var array<int, string> action id => the new due date, when postponing */
+    public array $followUpDue = [];
+
+    /** @var array<int, string> action id => the new owner, when handing over */
+    public array $followUpOwner = [];
+
+    /** @var array<int, string> action id => why it is abandoned */
+    public array $followUpReason = [];
 
     #[Locked]
     public int $meetingId;
@@ -250,6 +262,17 @@ new class extends Component
     }
 
     /** Whether the current user holds the note-taking lock. */
+    /**
+     * The earlier actions this committee follows up — empty for an assembly.
+     *
+     * @return Illuminate\Database\Eloquent\Collection<int, MeetingActionItem>
+     */
+    #[Computed]
+    public function followUp(): Illuminate\Database\Eloquent\Collection
+    {
+        return ActionFollowUp::itemsFor($this->meeting);
+    }
+
     #[Computed]
     public function holdsLock(): bool
     {
@@ -332,6 +355,7 @@ new class extends Component
             'published_at' => now(),
             'published_by' => auth()->id(),
         ]);
+        ActionFollowUp::freeze($this->meeting);
 
         unset($this->meeting);
         $this->toast(type: 'success', title: __('Minutes published'));
@@ -383,6 +407,50 @@ new class extends Component
         return $this->view();
     }
 
+    /**
+     * Poll target for read-only viewers: pull the note taker's latest writes.
+     * With a free or held pen there is nobody else writing, and a render would
+     * only disturb the fields being typed in.
+     */
+    /** Say where an earlier action stands; postponing, handing over and abandoning need their one detail. */
+    public function reviewAction(int $actionId, string $outcome): void
+    {
+        abort_unless($this->canManage, 403);
+        $outcome = MeetingActionReviewOutcomeEnum::tryFrom($outcome);
+        abort_if($outcome === null || $outcome === MeetingActionReviewOutcomeEnum::NOT_REVIEWED, 422);
+
+        $action = $this->followUp->firstWhere('id', $actionId);
+        abort_if($action === null, 404);
+
+        $rules = match ($outcome) {
+            MeetingActionReviewOutcomeEnum::POSTPONED => ["followUpDue.{$actionId}" => ['required', 'date']],
+            MeetingActionReviewOutcomeEnum::REASSIGNED => ["followUpOwner.{$actionId}" => ['required', 'integer', 'in:' . collect($this->usersForAssignment)->pluck('id')->implode(',')]],
+            MeetingActionReviewOutcomeEnum::ABANDONED => ["followUpReason.{$actionId}" => ['required', 'string', 'max:255']],
+            default => [],
+        };
+
+        if ($rules !== []) {
+            $this->validate($rules, attributes: [
+                "followUpDue.{$actionId}" => __('new due date'),
+                "followUpOwner.{$actionId}" => __('new owner'),
+                "followUpReason.{$actionId}" => __('reason'),
+            ]);
+        }
+
+        if (! $this->claimPen()) {
+            return;
+        }
+
+        ActionFollowUp::review($this->meeting, $action, $outcome, [
+            'due_date' => filled($this->followUpDue[$actionId] ?? null) ? Carbon::parse($this->followUpDue[$actionId]) : null,
+            'assigned_to_id' => filled($this->followUpOwner[$actionId] ?? null) ? (int) $this->followUpOwner[$actionId] : null,
+            'reason' => trim($this->followUpReason[$actionId] ?? '') ?: null,
+        ]);
+
+        unset($this->followUpDue[$actionId], $this->followUpOwner[$actionId], $this->followUpReason[$actionId], $this->followUp);
+        $this->saved();
+    }
+
     public function sendMinutes(bool $toAll = false): void
     {
         abort_unless($this->canManage, 403);
@@ -431,11 +499,6 @@ new class extends Component
         $this->updated("actions.{$actionId}.due_date");
     }
 
-    /**
-     * Poll target for read-only viewers: pull the note taker's latest writes.
-     * With a free or held pen there is nobody else writing, and a render would
-     * only disturb the fields being typed in.
-     */
     public function syncDraft(): void
     {
         if (! $this->readOnly) {

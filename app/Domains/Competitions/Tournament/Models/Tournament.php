@@ -39,6 +39,8 @@ use Illuminate\Support\Carbon;
  * @property int $total_users
  * @property int $max_users
  * @property mixed $price
+ * @property float $reduced_price
+ * @property int|null $reduced_price_under_age
  * @property TournamentStatusEnum $status
  * @property bool $has_handicap_points
  * @property int $duration_minutes
@@ -86,7 +88,6 @@ use Illuminate\Support\Carbon;
  * @property TournamentObjectiveEnum|null $objective
  * @property bool $deuce_enabled
  * @property string|null $doubles_registration_mode
- * @property mixed $0
  * @property-read EventPost|null $eventPost
  * @property-read NewsPost|null $newsPost
  * @property-read Collection<int, TournamentPair> $pairs
@@ -125,6 +126,8 @@ class Tournament extends Model
         'end_date' => 'datetime:Y-m-d\TH:i',
         'registration_deadline' => 'datetime',
         'price' => MoneyCast::class,
+        'reduced_price' => MoneyCast::class,
+        'reduced_price_under_age' => 'integer',
         'total_users' => 'integer',
         'max_users' => 'integer',
         'status' => TournamentStatusEnum::class,
@@ -146,6 +149,8 @@ class Tournament extends Model
         'start_time',
         'end_date',
         'price',
+        'reduced_price',
+        'reduced_price_under_age',
         'total_users',
         'max_users',
         'status',
@@ -175,6 +180,26 @@ class Tournament extends Model
     public function eventPost(): MorphOne
     {
         return $this->morphOne(EventPost::class, 'eventable');
+    }
+
+    /**
+     * The price as the tournament article carries it to the public website.
+     *
+     * A plain amount stays a number, which the agenda formats itself. With a
+     * reduced price it becomes the sentence a family reads, since a bare
+     * amount would announce the full price only.
+     */
+    public function eventPostPrice(): string
+    {
+        if ($this->reduced_price_under_age === null) {
+            return (string) $this->price;
+        }
+
+        return __(':price € (:reduced € for players under :age)', [
+            'price' => number_format($this->price, 2, ',', ' '),
+            'reduced' => number_format($this->reduced_price, 2, ',', ' '),
+            'age' => $this->reduced_price_under_age,
+        ]);
     }
 
     /**
@@ -232,6 +257,23 @@ class Tournament extends Model
     public function pools(): HasMany
     {
         return $this->hasMany(Pool::class);
+    }
+
+    /**
+     * What this player pays to enter.
+     *
+     * The age is the one the player has on the tournament day, so the price a
+     * family sees does not depend on when they register.
+     */
+    public function priceFor(User $user): float
+    {
+        if ($this->reduced_price_under_age === null || $user->birthdate === null) {
+            return $this->price;
+        }
+
+        $ageOnTournamentDay = Carbon::parse($user->birthdate)->diffInYears($this->start_date);
+
+        return $ageOnTournamentDay < $this->reduced_price_under_age ? $this->reduced_price : $this->price;
     }
 
     /**

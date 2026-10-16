@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Tournament\Notifications;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
 use Illuminate\Bus\Queueable;
@@ -70,7 +71,8 @@ class TournamentRegistrationConfirmedNotification extends Notification
             ->line(__('**Handicap points:** :handicap', ['handicap' => $handicap]));
 
         if ($tournament->isPaid()) {
-            $mail->line(__('**Entry fee:** :price €', ['price' => number_format((float) $tournament->price, 2)]));
+            $fee = $notifiable instanceof User ? $tournament->priceFor($notifiable) : $tournament->price;
+            $mail->line(__('**Entry fee:** :price €', ['price' => number_format($fee, 2)]));
             $mail->line(__('Payment instructions have been sent separately.'));
         }
 

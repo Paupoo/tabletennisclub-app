@@ -278,11 +278,15 @@ View attendance responses in real time on the meeting detail page. Responses: At
 
 ### Meeting agenda
 
-Add agenda items to the meeting. Agenda is visible to all invited members.
+Add agenda items to the meeting. Agenda is visible to all invited members — guests excepted.
+
+### Guests
+
+The **Guests** card invites somebody outside the meeting — the coach for the training point, say. Anybody with an account can be found, affiliated or not; pick the point they come for, or the whole meeting. A guest is told the date, the place and their point only: never the rest of the agenda nor the meeting's description, in the mail, the answer page or the calendar file. Their convocation leaves at once if the others already left, with them otherwise. Guests never count towards the quorum, are listed apart in the minutes, and never receive a committee's minutes.
 
 ### Minutes
 
-Write the minutes from the meeting page (**Write the minutes**), live during the meeting: one block per agenda point — what was said, the decisions (type, then Enter; numbered D1, D2… across the minutes) and the actions (type, then Enter; then who and when) — plus a block for what came up outside the agenda. Attendance is checked in at the top: every confirmed member at once, then corrections name by name, and a member who came without being on the list is added by search. **Mark discussed** closes a point and opens the next. Everything is saved as you go; **Preview** shows the minutes and their PDF before you **Publish** them once the meeting is over. A change made after sending shows as "Corrected on …".
+Write the minutes from the meeting page (**Write the minutes**), live during the meeting: one block per agenda point — what was said, the decisions (type, then Enter; numbered D1, D2… across the minutes) and the actions (type, then Enter; then who and when) — plus a block for what came up outside the agenda. Attendance is checked in at the top: every confirmed member at once, then corrections name by name, and somebody who came without being on the list is added by search — affiliated or not; whoever the meeting does not convene by right is noted as a guest. **Mark discussed** closes a point and opens the next. Everything is saved as you go; **Preview** shows the minutes and their PDF before you **Publish** them once the meeting is over. A change made after sending shows as "Corrected on …".
 
 - **Send to committee** mails them to the committee — the usual first step, to read them over.
 - **Send to all members** exists for a **general assembly only**: a committee meeting's minutes never leave the committee, since they can name a member in debt or a conflict. Sending to all is also what opens a general assembly's minutes to every active member.
@@ -505,7 +509,7 @@ As a committee member, the following emails are sent automatically — you do no
 | Training pack approved | Member |
 | Training pack rejected | Member |
 | Training session cancelled | Enrolled members |
-| Meeting invitation | Invited members |
+| Meeting invitation | Invited members, and guests |
 | Meeting RSVP confirmation | Member |
 | Meeting minutes | The committee; every active member for a general assembly sent to all |
 | Meeting cancelled/postponed | All invited members |

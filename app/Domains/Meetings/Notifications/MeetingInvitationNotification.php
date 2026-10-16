@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Meetings\Notifications;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
@@ -63,7 +64,16 @@ class MeetingInvitationNotification extends Notification implements ShouldQueue
             ]));
         }
 
-        if ($meeting->agendaItems->isNotEmpty()) {
+        $isGuest = $notifiable instanceof User && $meeting->isGuest($notifiable);
+
+        if ($isGuest) {
+            // A guest learns what they come for, never the rest of the agenda.
+            $point = $meeting->agendaFor($notifiable)->first();
+            $mail->line('---');
+            $mail->line($point === null
+                ? __('You are invited as a guest.')
+                : __('You are invited as a guest, for the point: **:point**', ['point' => $point->title]));
+        } elseif ($meeting->agendaItems->isNotEmpty()) {
             $mail->line('---');
             $mail->line('**' . __('Agenda') . '**');
             foreach ($meeting->agendaItems as $i => $item) {
@@ -79,7 +89,7 @@ class MeetingInvitationNotification extends Notification implements ShouldQueue
             }
         }
 
-        if ($meeting->quorum) {
+        if ($meeting->quorum && ! $isGuest) {
             $mail->line('---');
             $mail->line(__('**Quorum required:** :n members must confirm their attendance.', ['n' => $meeting->quorum]));
         }

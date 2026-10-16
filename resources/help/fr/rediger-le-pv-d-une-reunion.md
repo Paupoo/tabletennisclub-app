@@ -23,7 +23,7 @@ Si quelqu'un écrit déjà, vous **lisez en direct** : ses notes arrivent chez v
 
 La page suit l'ordre du jour : **un bloc par point**, avec sa discussion, ses décisions et ses actions. Ce qui sort de l'ordre du jour va dans le bloc **Hors ordre du jour**. Le sommaire, à gauche (ou en haut sur un téléphone), montre où en est la réunion.
 
-- **Présences, en début de réunion.** « Tous les confirmés sont présents » les pointe en un clic ; touchez ensuite un nom pour corriger : présent, puis absent, puis retour à sa réponse. Un membre venu sans être sur la liste s'ajoute par la recherche. Le quorum d'une AG se met à jour au fil des arrivées.
+- **Présences, en début de réunion.** « Tous les confirmés sont présents » les pointe en un clic ; touchez ensuite un nom pour corriger : présent, puis absent, puis retour à sa réponse. Une personne venue sans être sur la liste s'ajoute par la recherche, qu'elle soit affiliée ou non ; si la réunion ne la convoque pas d'office (l'entraîneur à un comité), elle est notée **invitée** : le PV la liste à part, et elle ne compte pas dans le quorum. Le quorum d'une AG se met à jour au fil des arrivées.
 - **Une décision : tapez-la, puis Entrée.** Elle est numérotée (D1, D2…) sur tout le PV ; ✎ l'ouvre pour la mettre en forme ou la corriger.
 - **Une action : tapez-la, puis Entrée.** Choisissez ensuite le responsable et l'échéance (l'éclair propose « dans 1 semaine », « dans 2 semaines », « fin du mois ») ; ≡ ajoute des détails.
 - **« Marquer abordé »** clôt le point et ouvre le suivant. Un point se rouvre d'un clic.

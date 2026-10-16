@@ -79,6 +79,8 @@ erDiagram
         int meeting_id FK
         int user_id FK
         MeetingUserStatusEnum status
+        bool is_guest
+        int guest_agenda_item_id FK "nullable"
         datetime invitation_sent_at "nullable"
         datetime response_at "nullable"
         bool meal_reserved "nullable"

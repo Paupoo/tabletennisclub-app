@@ -231,6 +231,7 @@
                 @endif
                 @foreach ([
                     ['label' => $report->attendanceRecorded ? __('People present') : __('People confirmed'), 'people' => $report->present],
+                    ['label' => __('Guests'), 'people' => $report->guests],
                     ['label' => __('People excused'), 'people' => $report->excused],
                     ['label' => __('People absent'), 'people' => $report->absent],
                 ] as $group)

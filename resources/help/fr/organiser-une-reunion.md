@@ -32,6 +32,12 @@ L'application refuse la convocation tant que le dossier n'est pas complet, et el
 
 Ce n'est pas de la paperasse : une convocation sans ordre du jour ni lieu ne sert à personne. Complétez, puis envoyez.
 
+### Inviter quelqu'un d'extérieur
+
+Pour faire venir une personne hors du comité — l'entraîneur pour le point sur les entraînements, par exemple —, cherchez-la dans la carte **Invités** de la réunion. Toute personne qui a un compte peut être invitée, affiliée ou non. Choisissez d'abord le point pour lequel vous l'invitez, ou laissez « Pour toute la réunion ».
+
+Un invité ne reçoit **que la date, le lieu et le point pour lequel il vient** : jamais le reste de l'ordre du jour, ni la description de la réunion. Si les convocations sont déjà parties, la sienne part tout de suite ; sinon, elle partira avec les autres. Il ne compte pas dans le quorum, et le PV ne lui est pas envoyé.
+
 Les invitations partent **en tâche de fond** — l'envoi n'est pas instantané, c'est normal. Si rien n'arrive du tout, regardez le tableau de bord : une alerte **« File d'attente bloquée »** signifie qu'aucun e-mail ne sort de l'application.
 
 ## Après la réunion

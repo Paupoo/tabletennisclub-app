@@ -129,7 +129,11 @@ new class extends Component
 
     // ── Attendance ────────────────────────────────────────────────────
 
-    /** A member who came without answering the invitation, or without being invited. */
+    /**
+     * Somebody who came without answering the invitation, or without being
+     * invited. Anybody with an account may be noted: whoever the meeting does
+     * not convene by right — the coach at a committee meeting — comes as a guest.
+     */
     public function addWalkIn(int $userId): void
     {
         abort_unless($this->canManage, 403);
@@ -138,23 +142,31 @@ new class extends Component
             return;
         }
 
-        $member = User::active()->whereKey($userId)->firstOrFail();
+        $person = User::query()->whereKey($userId)->firstOrFail();
+        $isGuest = ! $this->meeting->audience()->whereKey($person->id)->exists();
 
         $this->meeting->users()->syncWithoutDetaching([
-            $member->id => ['status' => MeetingUserStatusEnum::ATTENDED->value, 'response_at' => now()],
+            $person->id => ['status' => MeetingUserStatusEnum::ATTENDED->value, 'response_at' => now(), 'is_guest' => $isGuest],
         ]);
 
         $this->walkInSearch = '';
         $this->saved();
     }
 
-    /** @return array{present: int, excused: int, absent: int, pending: int} */
+    /**
+     * The members' attendance, which the quorum reads; guests who came are
+     * counted on their own.
+     *
+     * @return array{present: int, excused: int, absent: int, pending: int, guests: int}
+     */
     #[Computed]
     public function attendanceCounts(): array
     {
-        $statuses = $this->meeting->users->map(fn (User $user): MeetingUserStatusEnum => $this->statusOf($user));
+        [$guests, $members] = $this->meeting->users->partition(fn (User $user): bool => $this->registrationOf($user)->is_guest);
+        $statuses = $members->map(fn (User $user): MeetingUserStatusEnum => $this->statusOf($user));
 
         return [
+            'guests' => $guests->filter(fn (User $user): bool => $this->statusOf($user) === MeetingUserStatusEnum::ATTENDED)->count(),
             'present' => $statuses->filter(fn ($status): bool => $status === MeetingUserStatusEnum::ATTENDED)->count(),
             'excused' => $statuses->filter(fn ($status): bool => $status === MeetingUserStatusEnum::DECLINED)->count(),
             'absent' => $statuses->filter(fn ($status): bool => $status === MeetingUserStatusEnum::ABSENT)->count(),
@@ -534,7 +546,8 @@ new class extends Component
     }
 
     /**
-     * Active members not on the list yet, matching the walk-in search.
+     * Accounts not on the list yet, matching the walk-in search — affiliated
+     * or not, since a coach or a volunteer may hold no affiliation this season.
      *
      * @return Collection<int, User>
      */
@@ -547,11 +560,9 @@ new class extends Component
             return collect();
         }
 
-        return User::active()
+        return User::query()
             ->whereNotIn('users.id', $this->meeting->users->modelKeys())
-            ->where(fn ($query) => $query
-                ->where('first_name', 'like', "%{$search}%")
-                ->orWhere('last_name', 'like', "%{$search}%"))
+            ->searchName($search)
             ->orderBy('last_name')
             ->orderBy('users.id')
             ->limit(8)

@@ -103,7 +103,7 @@
                             <x-icon name="o-user-group" class="h-5 w-5 text-muted" /> {{ __('Attendance list') }}
                         </span>
                         <span class="flex items-center gap-2 text-sm text-muted">
-                            {{ __(':present present · :excused excused · :absent absent', ['present' => $counts['present'], 'excused' => $counts['excused'], 'absent' => $counts['absent']]) }}@if ($counts['pending'] > 0) · {{ trans_choice('{1}1 to check in|[2,*]:count to check in', $counts['pending'], ['count' => $counts['pending']]) }}@endif
+                            {{ __(':present present · :excused excused · :absent absent', ['present' => $counts['present'], 'excused' => $counts['excused'], 'absent' => $counts['absent']]) }}@if ($counts['guests'] > 0) · {{ trans_choice('{1}1 guest|[2,*]:count guests', $counts['guests'], ['count' => $counts['guests']]) }}@endif @if ($counts['pending'] > 0) · {{ trans_choice('{1}1 to check in|[2,*]:count to check in', $counts['pending'], ['count' => $counts['pending']]) }}@endif
                             @if ($meeting->quorum !== null)
                                 <span @class(['badge badge-soft badge-sm', 'badge-success' => $counts['present'] >= $meeting->quorum, 'badge-warning' => $counts['present'] < $meeting->quorum])>
                                     {{ __('Quorum :present/:quorum', ['present' => $counts['present'], 'quorum' => $meeting->quorum]) }}
@@ -147,6 +147,9 @@
                                             default => 'o-question-mark-circle',
                                         }" @class(['h-4 w-4', 'text-success' => $status === \App\Domains\Shared\Enums\MeetingUserStatusEnum::ATTENDED]) />
                                         {{ $attendee->full_name }}
+                                        @if ($attendee->registration->is_guest)
+                                            <span class="badge badge-ghost badge-xs">{{ __('Guest') }}</span>
+                                        @endif
                                         <span class="sr-only">— {{ $status->getLabel() }}</span>
                                     </button>
                                 </li>
@@ -155,11 +158,11 @@
 
                         @unless ($readOnly)
                             <div class="border-t border-base-300 pt-3">
-                                <p class="mb-1.5 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Came without being on the list') }}</p>
+                                <p class="mb-1.5 text-xs font-bold uppercase tracking-widest text-muted">{{ __('Add a guest, or someone who came without being on the list') }}</p>
                                 <label class="input input-sm w-full sm:w-72">
                                     <x-icon name="o-user-plus" class="h-4 w-4 text-muted" />
-                                    <input type="search" wire:model.live.debounce.300ms="walkInSearch" placeholder="{{ __('Search an active member') }}"
-                                        aria-label="{{ __('Search an active member') }}" class="grow">
+                                    <input type="search" wire:model.live.debounce.300ms="walkInSearch" placeholder="{{ __('Search by name') }}"
+                                        aria-label="{{ __('Add a guest') }}" class="grow">
                                 </label>
                                 @if ($this->walkInCandidates->isNotEmpty())
                                     <ul class="mt-2 flex flex-wrap gap-1.5">

@@ -28,6 +28,9 @@ use Illuminate\Support\Collection;
  * so the absent are only counted — who was there is recorded, who stayed home
  * is nobody else's business. When nobody recorded attendance, the confirmed
  * replies stand in, and the report says so.
+ *
+ * Guests stand apart: those who came are listed on their own, those who did
+ * not are nobody's absence, and none of them counts towards the quorum.
  */
 final readonly class MinutesReport
 {
@@ -42,6 +45,7 @@ final readonly class MinutesReport
      * @param  Collection<int, User>  $present
      * @param  Collection<int, User>  $excused
      * @param  Collection<int, User>  $absent  empty for a general assembly, see $absentCount
+     * @param  Collection<int, User>  $guests  those who came, outside the audience
      */
     private function __construct(
         public Meeting $meeting,
@@ -57,6 +61,7 @@ final readonly class MinutesReport
         public int $absentCount,
         public bool $attendanceRecorded,
         public Carbon $asOf,
+        public Collection $guests,
     ) {}
 
     /**
@@ -70,13 +75,17 @@ final readonly class MinutesReport
         abort_if($minutes === null, 404);
 
         $today = now()->startOfDay();
-        $byStatus = $meeting->users->groupBy(fn (User $user): string => self::registrationOf($user)->status->value);
-        $of = fn (MeetingUserStatusEnum ...$statuses): Collection => collect($statuses)
-            ->flatMap(fn (MeetingUserStatusEnum $status): Collection => $byStatus->get($status->value, collect()))
+        [$guestUsers, $memberUsers] = $meeting->users->partition(fn (User $user): bool => self::registrationOf($user)->is_guest);
+        $grouped = fn (Collection $users): Collection => $users->groupBy(fn (User $user): string => self::registrationOf($user)->status->value);
+        $byStatus = $grouped($memberUsers);
+        $guestsByStatus = $grouped($guestUsers);
+        $pick = fn (Collection $groups, MeetingUserStatusEnum ...$statuses): Collection => collect($statuses)
+            ->flatMap(fn (MeetingUserStatusEnum $status): Collection => $groups->get($status->value, collect()))
             ->sortBy(fn (User $user): string => $user->last_name . ' ' . $user->first_name)
             ->values();
+        $of = fn (MeetingUserStatusEnum ...$statuses): Collection => $pick($byStatus, ...$statuses);
 
-        $attendanceRecorded = $of(MeetingUserStatusEnum::ATTENDED, MeetingUserStatusEnum::ABSENT)->isNotEmpty();
+        $attendanceRecorded = $pick($meeting->users->groupBy(fn (User $user): string => self::registrationOf($user)->status->value), MeetingUserStatusEnum::ATTENDED, MeetingUserStatusEnum::ABSENT)->isNotEmpty();
         $present = $attendanceRecorded
             ? $of(MeetingUserStatusEnum::ATTENDED)
             : $of(MeetingUserStatusEnum::CONFIRMED, MeetingUserStatusEnum::ATTENDED);
@@ -121,6 +130,9 @@ final readonly class MinutesReport
             absentCount: $absent->count(),
             attendanceRecorded: $attendanceRecorded,
             asOf: now(),
+            guests: $attendanceRecorded
+                ? $pick($guestsByStatus, MeetingUserStatusEnum::ATTENDED)
+                : $pick($guestsByStatus, MeetingUserStatusEnum::CONFIRMED, MeetingUserStatusEnum::ATTENDED),
         );
     }
 

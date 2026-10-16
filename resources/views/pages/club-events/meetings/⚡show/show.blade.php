@@ -378,7 +378,12 @@
                                         </div>
                                     @endif
                                     <div class="min-w-0">
-                                        <p class="truncate text-sm font-medium">{{ $user->full_name }}</p>
+                                        <p class="truncate text-sm font-medium">
+                                            {{ $user->full_name }}
+                                            @if ($reg->is_guest)
+                                                <span class="badge badge-ghost badge-xs">{{ __('Guest') }}</span>
+                                            @endif
+                                        </p>
                                         <div class="flex flex-wrap items-center gap-x-2 text-xs text-base-content/40">
                                             @if ($reg->response_at)
                                                 <span>{{ $reg->response_at->translatedFormat('d M · H\hi') }}</span>
@@ -422,6 +427,70 @@
                             </div>
                         @endforeach
                     </div>
+                </x-card>
+            @endif
+
+            {{-- ── Guests ─────────────────────────────────────────────── --}}
+            @php
+                $guests = $meeting->users->filter(fn ($u) => $u->registration->is_guest)->sortBy('last_name');
+                $canInviteGuests = $this->canManage && ! in_array($meeting->status->value, ['cancelled', 'completed'], true);
+            @endphp
+            @if ($canInviteGuests || $guests->isNotEmpty())
+                <x-card :title="__('Guests')" :subtitle="__('Someone outside the meeting, asked to come for one point or for all of it.')">
+
+                    @if ($guests->isNotEmpty())
+                        <ul class="mb-4 space-y-2">
+                            @foreach ($guests as $guest)
+                                @php $guestPoint = $meeting->agendaItems->firstWhere('id', $guest->registration->guest_agenda_item_id); @endphp
+                                <li class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-base-300 px-4 py-3"
+                                    wire:key="guest-{{ $guest->id }}">
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-medium">{{ $guest->full_name }}</p>
+                                        <p class="text-xs text-muted">{{ $guestPoint ? __('For: :point', ['point' => $guestPoint->title]) : __('For the whole meeting') }}</p>
+                                    </div>
+                                    @if ($canInviteGuests && ! $isPast)
+                                        <x-button icon="o-x-mark" class="btn-ghost btn-xs btn-circle"
+                                            :tooltip="__('Remove')" :aria-label="__('Remove :name', ['name' => $guest->full_name])"
+                                            wire:click="removeGuest({{ $guest->id }})" />
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+
+                    @if ($canInviteGuests)
+                        <div class="space-y-3">
+                            <div class="flex flex-col gap-2 sm:flex-row">
+                                <label class="input input-sm w-full sm:w-72">
+                                    <x-icon name="o-user-plus" class="h-4 w-4 text-muted" />
+                                    <input type="search" wire:model.live.debounce.300ms="guestSearch" placeholder="{{ __('Invite someone') }}"
+                                        aria-label="{{ __('Invite someone') }}" class="grow">
+                                </label>
+                                @if ($meeting->agendaItems->isNotEmpty())
+                                    <select wire:model="guestPointId" class="select select-sm w-full sm:w-72" aria-label="{{ __('For which point?') }}">
+                                        <option value="">{{ __('For the whole meeting') }}</option>
+                                        @foreach ($meeting->agendaItems as $item)
+                                            <option value="{{ $item->id }}">{{ __('For: :point', ['point' => $item->title]) }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
+                            </div>
+                            @if ($this->guestCandidates->isNotEmpty())
+                                <ul class="flex flex-wrap gap-1.5">
+                                    @foreach ($this->guestCandidates as $candidate)
+                                        <li wire:key="guest-candidate-{{ $candidate->id }}">
+                                            <button type="button" wire:click="inviteGuest({{ $candidate->id }})"
+                                                class="inline-flex cursor-pointer items-center gap-1 rounded-full border border-dashed border-primary/50 px-3 py-1 text-sm text-primary">
+                                                <x-icon name="o-plus" class="h-3.5 w-3.5" /> {{ $candidate->full_name }}
+                                            </button>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @elseif (mb_strlen(trim($guestSearch)) >= 2)
+                                <p class="text-sm text-muted">{{ __('Nobody to invite under this name.') }}</p>
+                            @endif
+                        </div>
+                    @endif
                 </x-card>
             @endif
 

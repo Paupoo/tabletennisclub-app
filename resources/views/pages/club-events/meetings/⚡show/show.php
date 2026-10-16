@@ -17,6 +17,7 @@ use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Role;
+use App\Jobs\SendMeetingInvitationJob;
 use App\Jobs\SendMeetingInvitationsJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
@@ -58,6 +59,11 @@ new class extends Component
     public ?string $editing = null;
 
     public string $mealDescriptionDraft = '';
+
+    // Guests: somebody outside the audience, asked for one point or the whole meeting
+    public string $guestPointId = '';
+
+    public string $guestSearch = '';
 
     public bool $mealHasDraft = false;
 
@@ -247,6 +253,61 @@ new class extends Component
         $this->titleDraft = $this->meeting->title;
         $this->typeDraft = $this->meeting->type->value;
         $this->showTitleModal = true;
+    }
+
+    /**
+     * Accounts matching the guest search that the meeting does not convene by
+     * right — an unaffiliated coach included, which the walk-in search misses.
+     *
+     * @return Illuminate\Database\Eloquent\Collection<int, User>
+     */
+    #[Computed]
+    public function guestCandidates(): Illuminate\Database\Eloquent\Collection
+    {
+        if (mb_strlen(trim($this->guestSearch)) < 2) {
+            return new Illuminate\Database\Eloquent\Collection;
+        }
+
+        return $this->guestCandidatesQuery()
+            ->searchName($this->guestSearch)
+            ->orderBy('last_name')
+            ->orderBy('users.id')
+            ->limit(8)
+            ->get();
+    }
+
+    /**
+     * Ask somebody outside the audience to come, for one point or for all of it.
+     * Once the convocations left, theirs leaves at once; before, it waits for them.
+     */
+    public function inviteGuest(int $userId): void
+    {
+        abort_unless($this->canManage, 403);
+        $meeting = $this->meeting;
+        abort_if(in_array($meeting->status, [MeetingStatusEnum::CANCELLED, MeetingStatusEnum::COMPLETED], true), 403);
+
+        $guest = $this->guestCandidatesQuery()->whereKey($userId)->firstOrFail();
+        $pointId = filled($this->guestPointId)
+            ? $meeting->agendaItems->firstWhere('id', (int) $this->guestPointId)?->id
+            : null;
+        $sendNow = $this->invitationsSent;
+
+        $meeting->users()->attach($guest->id, [
+            'status' => MeetingUserStatusEnum::INVITED->value,
+            'is_guest' => true,
+            'guest_agenda_item_id' => $pointId,
+            'invitation_sent_at' => $sendNow ? now() : null,
+        ]);
+
+        if ($sendNow) {
+            SendMeetingInvitationJob::dispatch($meeting->id, $guest->id);
+        }
+
+        $this->reset('guestSearch', 'guestPointId');
+        $this->toast(type: 'success', title: $sendNow
+            ? __(':name is invited — the invitation is on its way', ['name' => $guest->full_name])
+            : __(':name is invited — the invitation leaves with the others', ['name' => $guest->full_name]));
+        unset($this->meeting, $this->invitationsSent, $this->guestCandidates);
     }
 
     /** True once at least one invitation left the building. */
@@ -478,6 +539,17 @@ new class extends Component
         $this->showPostponeModal = false;
         $this->toast(type: 'info', title: __('Meeting postponed'));
         unset($this->meeting);
+    }
+
+    /** Take a guest off the list before the meeting — a wrong pick, or no longer needed. */
+    public function removeGuest(int $userId): void
+    {
+        abort_unless($this->canManage, 403);
+        abort_if($this->meeting->scheduled_at?->isPast() ?? false, 403);
+
+        $this->meeting->users()->wherePivot('is_guest', true)->detach($userId);
+
+        unset($this->meeting, $this->guestCandidates);
     }
 
     /** Resend the invitation to invitees who never responded, at most once every 48 hours. */
@@ -827,6 +899,16 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Meeting Details'));
+    }
+
+    /** @return Illuminate\Database\Eloquent\Builder<User> */
+    private function guestCandidatesQuery(): Illuminate\Database\Eloquent\Builder
+    {
+        $meeting = $this->meeting;
+
+        return User::query()
+            ->whereNotIn('users.id', $meeting->users->modelKeys())
+            ->whereNotIn('users.id', $meeting->audience()->select('users.id'));
     }
 
     // ── Cancel / postpone ─────────────────────────────────────────────

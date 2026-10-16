@@ -305,7 +305,7 @@ Go to **Club events → Trainings**.
 
 ### Training packs
 
-Training packs represent recurring training sessions (day, level, type). Create and manage packs from the trainings index. **Export the enrolled** produces a spreadsheet of every member tied to a pack of the season (enrolled, requests, waiting list), with their contact details; each export is recorded in the audit log.
+Training packs represent recurring training sessions (day, level, type). Create and manage packs from the trainings index; **Details** opens a pack's own page with three tabs (**Members**, **Sessions**, **Attendance**), and **New pack** / **Edit** open the wizard as a page. Training emails (a cancelled session, a new schedule, a stopped pack) are queued and leave within minutes. The attendance grid opens on the last twelve sessions already held; a member's rate covers every recorded session of the pack. **Export the enrolled** produces a spreadsheet of every member tied to a pack of the season (enrolled, requests, waiting list), with their contact details; each export is recorded in the audit log.
 
 ### Approving training requests
 

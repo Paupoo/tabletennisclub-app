@@ -150,6 +150,48 @@ describe('the attendance matrix', function (): void {
         expect($matrix['sessions'][0]['rate'])->toBeNull();
     })->group('training', 'attendance');
 
+    it('opens on the latest sessions already held, not on the end of the season', function (): void {
+        $pack = TrainingPack::factory()->create(['max_participants' => 5, 'price' => 90]);
+
+        $held = collect([21, 14, 7])->map(fn (int $daysAgo): Training => Training::factory()
+            ->past($daysAgo)->for($pack, 'trainingPack')->create());
+
+        foreach ([7, 14] as $daysAhead) {
+            $start = now()->addDays($daysAhead)->setTime(18, 0);
+            Training::factory()->for($pack, 'trainingPack')->create(['start' => $start, 'end' => $start->copy()->addMinutes(90)]);
+        }
+
+        $report = app(TrainingAttendanceReport::class);
+
+        // Les deux plus récentes déjà tenues, dans l'ordre du calendrier : un
+        // pack qui court jusqu'en juin montrait ses séances de juin, vides.
+        expect(collect($report->matrix($pack, 2)['sessions'])->pluck('id')->all())
+            ->toBe([$held[1]->id, $held[2]->id])
+            // « Toute la saison » ajoute ce qui reste à venir.
+            ->and($report->matrix($pack, PHP_INT_MAX, includeUpcoming: true)['sessions'])->toHaveCount(5);
+    })->group('training', 'attendance');
+
+    it('rates a member on the whole pack, whatever the window shows', function (): void {
+        $pack = TrainingPack::factory()->create(['max_participants' => 5, 'price' => 90]);
+        $coach = User::factory()->create();
+        $member = enrolledMemberOf($pack);
+
+        $service = app(TrainingAttendanceService::class);
+
+        foreach ([21 => 'present', 14 => 'present', 7 => 'absent'] as $daysAgo => $status) {
+            $session = Training::factory()->past($daysAgo)->for($pack, 'trainingPack')->create();
+            $service->record($session, $member, $status);
+            $service->validate($session, $coach);
+        }
+
+        // La fenêtre ne montre que la dernière séance (une absence) ; le taux,
+        // lui, reste celui de l'onglet Membres et de la vue coach : 2 sur 3.
+        $matrix = app(TrainingAttendanceReport::class)->matrix($pack, 1);
+
+        expect($matrix['sessions'])->toHaveCount(1)
+            ->and($matrix['members'][0]['rate'])->toBe(67);
+    })->group('training', 'attendance');
+
     it('lists whoever turned up without being enrolled, below the grid', function (): void {
         $pack = TrainingPack::factory()->create(['max_participants' => 5, 'price' => 90]);
         $coach = User::factory()->create();

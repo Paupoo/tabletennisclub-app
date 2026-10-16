@@ -8,10 +8,11 @@ use App\Domains\Shared\Enums\TrainingCancellationType;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Domains\Trainings\Models\Training;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TrainingSessionCancelledNotification extends Notification
+class TrainingSessionCancelledNotification extends Notification implements ShouldQueue
 {
     use LinksToMemberSpace, Queueable;
 

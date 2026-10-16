@@ -34,10 +34,10 @@ it('opens the destination list inside the modal, not through its top edge', func
 
     // 1280×800 : un portable ordinaire, le format où la modale est le plus à
     // l'étroit tout en restant au-dessus du point de bascule `lg`.
-    $page = visit(route('admin.trainings.index'))->resize(1280, 800);
+    $page = visit(route('admin.trainings.show', $from))->resize(1280, 800);
 
     $page->assertNoJavaScriptErrors()
-        ->click('[wire\\:click="openPack(' . $from->id . ')"]')->wait(1)
+        ->wait(1)
         ->click('[data-row-menu-trigger]')->wait(1)
         ->click('[data-row-menu-primary]')->wait(1)
         ->click('.modal-open label.select')->wait(1);

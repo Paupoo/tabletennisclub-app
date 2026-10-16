@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
-const TRAININGS_INDEX = 'pages::club-events.trainings.index';
+const TRAININGS_INDEX = 'pages::club-events.trainings.form';
 
 /**
  * Fill in everything the pack wizard needs except the period under test.
@@ -19,7 +19,6 @@ function fillPackWizard(User $admin, int $seasonId, int $roomId): Testable
 {
     return Livewire::actingAs($admin)
         ->test(TRAININGS_INDEX)
-        ->call('openCreate')
         ->set('formSeasonId', $seasonId)
         ->set('formName', 'Mardi — Perfectionnement')
         ->set('formLevel', trainingLevelId('Confirmé'))
@@ -39,7 +38,6 @@ describe('a pack always declares the period it covers', function (): void {
 
         Livewire::actingAs($admin)
             ->test(TRAININGS_INDEX)
-            ->call('openCreate')
             ->assertSet('formPackStartDate', $season->start_at->toDateString())
             ->assertSet('formPackEndDate', $season->end_at->toDateString());
     })->group('training', 'pack-period');

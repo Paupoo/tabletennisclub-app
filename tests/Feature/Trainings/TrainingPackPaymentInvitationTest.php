@@ -30,7 +30,7 @@ use Livewire\Livewire;
  * paiement, qui lit le solde de la ligne créée — une fois la remise posée.
  */
 
-const PACK_INVITATION_COMPONENT = 'pages::club-events.trainings.index';
+const PACK_INVITATION_COMPONENT = 'pages::club-events.trainings.show';
 
 beforeEach(function (): void {
     Notification::fake();
@@ -96,8 +96,7 @@ it('tells the member they were enrolled without quoting the season total', funct
     $pack = makeTrainingPack($this->season, ['name' => 'Stage Toussaint', 'price' => 135, 'allow_discount' => false]);
 
     Livewire::actingAs($this->manager)
-        ->test(PACK_INVITATION_COMPONENT)
-        ->set('selectedPackId', $pack->id)
+        ->test(PACK_INVITATION_COMPONENT, ['pack' => $pack->id])
         ->set('addMemberUserId', $member->id)
         ->call('addMemberToPack')
         ->assertHasNoErrors();
@@ -117,8 +116,7 @@ it('invites the member to pay the complement only', function (): void {
     $pack = makeTrainingPack($this->season, ['name' => 'Stage Toussaint', 'price' => 135, 'allow_discount' => false]);
 
     Livewire::actingAs($this->manager)
-        ->test(PACK_INVITATION_COMPONENT)
-        ->set('selectedPackId', $pack->id)
+        ->test(PACK_INVITATION_COMPONENT, ['pack' => $pack->id])
         ->set('addMemberUserId', $member->id)
         ->call('addMemberToPack')
         ->assertHasNoErrors();
@@ -142,8 +140,7 @@ it('asks for the complement once the discount has been taken off', function (): 
     $pack = makeTrainingPack($this->season, ['price' => 135, 'allow_discount' => false]);
 
     Livewire::actingAs($this->manager)
-        ->test(PACK_INVITATION_COMPONENT)
-        ->set('selectedPackId', $pack->id)
+        ->test(PACK_INVITATION_COMPONENT, ['pack' => $pack->id])
         ->set('addMemberUserId', $member->id)
         ->set('inlineDiscountMode', 'amount')
         ->set('inlineDiscountValue', 35.0)
@@ -162,8 +159,7 @@ it('sends no invitation when the discount covers the whole complement', function
     $pack = makeTrainingPack($this->season, ['price' => 135, 'allow_discount' => false]);
 
     Livewire::actingAs($this->manager)
-        ->test(PACK_INVITATION_COMPONENT)
-        ->set('selectedPackId', $pack->id)
+        ->test(PACK_INVITATION_COMPONENT, ['pack' => $pack->id])
         ->set('addMemberUserId', $member->id)
         ->set('inlineDiscountMode', 'percent')
         ->set('inlineDiscountValue', 100.0)
@@ -179,8 +175,7 @@ it('sends no invitation when nothing had been invoiced yet', function (): void {
     $pack = makeTrainingPack($this->season, ['price' => 135]);
 
     Livewire::actingAs($this->manager)
-        ->test(PACK_INVITATION_COMPONENT)
-        ->set('selectedPackId', $pack->id)
+        ->test(PACK_INVITATION_COMPONENT, ['pack' => $pack->id])
         ->set('addMemberUserId', $member->id)
         ->call('addMemberToPack')
         ->assertHasNoErrors();
@@ -198,8 +193,7 @@ it('invites every guardian of a minor, one message each', function (): void {
     $pack = makeTrainingPack($this->season, ['price' => 135, 'allow_discount' => false]);
 
     Livewire::actingAs($this->manager)
-        ->test(PACK_INVITATION_COMPONENT)
-        ->set('selectedPackId', $pack->id)
+        ->test(PACK_INVITATION_COMPONENT, ['pack' => $pack->id])
         ->set('addMemberUserId', $member->id)
         ->call('addMemberToPack');
 
@@ -219,8 +213,7 @@ it('warns the committee when the member has no address to write to', function ()
     $pack = makeTrainingPack($this->season, ['price' => 135, 'allow_discount' => false]);
 
     $component = Livewire::actingAs($this->manager)
-        ->test(PACK_INVITATION_COMPONENT)
-        ->set('selectedPackId', $pack->id)
+        ->test(PACK_INVITATION_COMPONENT, ['pack' => $pack->id])
         ->set('addMemberUserId', $member->id)
         ->call('addMemberToPack');
 
@@ -242,8 +235,7 @@ it('invites the member to pay the difference when moved to a dearer pack', funct
     Mail::fake();
 
     Livewire::actingAs($this->manager)
-        ->test(PACK_INVITATION_COMPONENT)
-        ->call('openPack', $from->id)
+        ->test('pages::club-events.trainings.pack-roster', ['packId' => $from->id])
         ->call('openMoveMember', $member->id)
         ->set('moveTargetPackId', $to->id)
         ->call('confirmMoveMember')
@@ -274,8 +266,7 @@ it('sends no invitation when the member is moved to a cheaper pack', function ()
     Mail::fake();
 
     Livewire::actingAs($this->manager)
-        ->test(PACK_INVITATION_COMPONENT)
-        ->call('openPack', $from->id)
+        ->test('pages::club-events.trainings.pack-roster', ['packId' => $from->id])
         ->call('openMoveMember', $member->id)
         ->set('moveTargetPackId', $to->id)
         ->call('confirmMoveMember');
@@ -298,8 +289,7 @@ it('claims the whole pack from a member the committee says was there from the st
     ]);
 
     Livewire::actingAs($this->manager)
-        ->test(PACK_INVITATION_COMPONENT)
-        ->set('selectedPackId', $pack->id)
+        ->test(PACK_INVITATION_COMPONENT, ['pack' => $pack->id])
         ->set('addMemberUserId', $member->id)
         ->set('addMemberWholePack', $wholePack)
         ->call('addMemberToPack')
@@ -316,11 +306,12 @@ it('offers the whole-pack choice only on a pack already under way', function ():
     $started = makeTrainingPack($this->season, ['pack_start_date' => today()->subMonth()->toDateString()]);
 
     Livewire::actingAs($this->manager)
-        ->test(PACK_INVITATION_COMPONENT)
-        ->set('selectedPackId', $upcoming->id)
+        ->test(PACK_INVITATION_COMPONENT, ['pack' => $upcoming->id])
         ->call('openAddMember')
-        ->assertDontSeeHtml('wire:model.live="addMemberWholePack"')
-        ->set('selectedPackId', $started->id)
+        ->assertDontSeeHtml('wire:model.live="addMemberWholePack"');
+
+    Livewire::actingAs($this->manager)
+        ->test(PACK_INVITATION_COMPONENT, ['pack' => $started->id])
         ->call('openAddMember')
         ->assertSeeHtml('wire:model.live="addMemberWholePack"');
 })->group('training', 'enrollment');

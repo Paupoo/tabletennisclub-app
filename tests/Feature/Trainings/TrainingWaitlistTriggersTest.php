@@ -74,8 +74,7 @@ describe('waiting list triggers', function (): void {
         // Le plafond passe de 1 à 4 : trois places s'ouvrent d'un coup, donc
         // trois personnes doivent être appelées — pas une, et pas zéro.
         Livewire::actingAs($this->admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formMaxParticipants', '4')
             ->call('save');
 

@@ -7,6 +7,7 @@ namespace App\Domains\Trainings\Notifications;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -14,7 +15,7 @@ use Illuminate\Notifications\Notification;
  * Prévient un sparring qu'on l'attend : à toutes les séances d'un pack, ou à
  * une seule date.
  */
-class TrainingSparringAssignedNotification extends Notification
+class TrainingSparringAssignedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 

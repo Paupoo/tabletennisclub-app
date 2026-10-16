@@ -6387,6 +6387,7 @@
     "price set by hand: :amount €": "prix fixé à la main : :amount €",
     "Since the start": "Depuis le début",
     "No attendance recorded yet.": "Aucun pointage enregistré.",
+    "No session held yet.": "Aucune séance tenue pour l'instant.",
     "{1}:count request to approve|[2,*]:count requests to approve": "{1}:count demande à valider|[2,*]:count demandes à valider",
     "My match": "Mon match",
     "Please tell us if you are available": "Indiquez votre disponibilité",

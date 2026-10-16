@@ -185,7 +185,7 @@ class PendingTasks
 
         return $this->task('camp_requests', $count,
             '1 demande de stage à décider', ':count demandes de stage à décider',
-            'o-sun', route('admin.trainings.index', $camps->count() === 1 ? ['pack' => $camps->first()] : []));
+            'o-sun', $camps->count() === 1 ? route('admin.trainings.show', ['pack' => $camps->first()]) : route('admin.trainings.index'));
     }
 
     private function draftArticles(User $user): ?PendingTask

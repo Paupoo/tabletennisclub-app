@@ -7,6 +7,7 @@ namespace App\Domains\Trainings\Notifications;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -17,7 +18,7 @@ use Illuminate\Notifications\Notification;
  * price changes nothing for the member, and mailing them about it is how a
  * club teaches its members to ignore its mail.
  */
-class TrainingPackScheduleChangedNotification extends Notification
+class TrainingPackScheduleChangedNotification extends Notification implements ShouldQueue
 {
     use LinksToMemberSpace, Queueable;
 

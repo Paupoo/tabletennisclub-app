@@ -453,7 +453,20 @@ new class extends Component
     #[Computed]
     public function upcomingTournaments(): Collection
     {
-        return Tournament::registrationsOpen()
+        // Après la clôture des inscriptions, l'inscrit garde son tournoi sous
+        // les yeux : il y vérifie son inscription, son partenaire de double,
+        // et peut encore se désister.
+        return Tournament::query()
+            ->where(fn ($query) => $query
+                ->where('status', TournamentStatusEnum::PUBLISHED)
+                ->orWhere(fn ($closed) => $closed
+                    ->whereIn('status', [TournamentStatusEnum::LOCKED, TournamentStatusEnum::SETUP])
+                    ->whereHas('users', fn ($users) => $users
+                        ->where('tournament_user.user_id', $this->user->id)
+                        ->whereIn('tournament_user.registration_status', ['registered', 'confirmed'])
+                    )
+                )
+            )
             ->where('start_date', '>=', now())
             ->withCount([
                 'users AS active_registrations_count' => fn ($q) => $q->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered']),

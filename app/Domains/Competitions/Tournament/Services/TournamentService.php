@@ -68,6 +68,8 @@ class TournamentService
             ->where('user_id', $user->id)
             ->update(['registration_status' => 'cancelled', 'waitlist_position' => null]);
 
+        app(TournamentPairingService::class)->release($tournament, $user);
+
         $user->notify(new TournamentRegistrationCancelledNotification($tournament));
 
         $this->countRegisteredUsers($tournament);
@@ -432,6 +434,7 @@ class TournamentService
      */
     public function unregisterAllUsers(Tournament $tournament): int
     {
+        $tournament->pairs()->delete();
         $count = $tournament->users()->detach();
         $tournament->update(['total_users' => 0]);
 

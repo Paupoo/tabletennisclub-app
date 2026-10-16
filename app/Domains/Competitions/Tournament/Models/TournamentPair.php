@@ -62,11 +62,25 @@ class TournamentPair extends Model
         return "{$p1}/{$p2}";
     }
 
+    /**
+     * The other player of the pair.
+     */
+    public function partnerOf(User $player): User
+    {
+        return $this->player1_id === $player->id ? $this->player2 : $this->player1;
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function player1(): BelongsTo
     {
         return $this->belongsTo(User::class, 'player1_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function player2(): BelongsTo
     {
         return $this->belongsTo(User::class, 'player2_id');

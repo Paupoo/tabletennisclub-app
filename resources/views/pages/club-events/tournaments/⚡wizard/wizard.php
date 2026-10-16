@@ -17,6 +17,7 @@ use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistRemovedNotification;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
+use App\Domains\Competitions\Tournament\Services\TournamentPairingService;
 use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Domains\Competitions\Tournament\Services\TournamentSimulator;
@@ -612,6 +613,19 @@ new class extends Component
 
                 return;
             }
+
+            // Un joueur resté sur le banc serait écarté des poules sans bruit,
+            // alors qu'il est inscrit — et souvent déjà payé.
+            $benchCount = app(TournamentPairingService::class)->bench($tournament)->count();
+            if ($benchCount > 0) {
+                $this->error(trans_choice(
+                    '1 player has no partner: pair them or cancel their registration.|:count players have no partner: pair them or cancel their registration.',
+                    $benchCount,
+                    ['count' => $benchCount],
+                ));
+
+                return;
+            }
         } elseif ($tournament->users()->count() === 0) {
             $this->error(__('No registered players.'));
 
@@ -915,6 +929,21 @@ new class extends Component
         }
     }
 
+    /**
+     * Drop a player on another one, or on the bench (`$targetId` null).
+     */
+    public function movePlayer(int $playerId, ?int $targetId = null): void
+    {
+        $player = $this->entrant($playerId);
+        $target = $targetId === null ? null : $this->entrant($targetId);
+
+        if (! $player instanceof User || ($targetId !== null && ! $target instanceof User)) {
+            return;
+        }
+
+        $this->changePairs(fn (TournamentPairingService $pairing, Tournament $tournament) => $pairing->move($tournament, $player, $target, Auth::user()));
+    }
+
     // ── Computed: effective table count
 
     #[Computed]
@@ -980,6 +1009,17 @@ new class extends Component
         } else {
             $this->showCloseRegistrationsModal = true;
         }
+    }
+
+    /**
+     * @return array{pairs: list<array{id: int, players: list<array{id: int, name: string, ranking: string, age: int|null}>}>, bench: list<array{id: int, name: string, ranking: string, age: int|null}>}
+     */
+    #[Computed]
+    public function pairBoard(): array
+    {
+        return $this->currentTournament instanceof Tournament
+            ? app(TournamentPairingService::class)->board($this->currentTournament)
+            : ['pairs' => [], 'bench' => []];
     }
 
     #[Computed]
@@ -1182,6 +1222,23 @@ new class extends Component
         $this->success($user->full_name . ' ' . __('has been moved to the registered list.'));
     }
 
+    public function proposePairs(): void
+    {
+        $this->changePairs(fn (TournamentPairingService $pairing, Tournament $tournament) => $pairing->propose($tournament, Auth::user()));
+    }
+
+    public function publishPairs(): void
+    {
+        if (! $this->currentTournament instanceof Tournament) {
+            return;
+        }
+
+        app(TournamentPairingService::class)->publish($this->currentTournament);
+
+        unset($this->currentTournament);
+        $this->success(__('Pairs published: each player is told who they play with.'), icon: 'o-paper-airplane');
+    }
+
     #[Computed]
     public function registerableMembersOptions(): array
     {
@@ -1327,6 +1384,11 @@ new class extends Component
     {
         $this->maxUsersManual = false;
         $this->suggestMaxUsers();
+    }
+
+    public function resetPairs(): void
+    {
+        $this->changePairs(fn (TournamentPairingService $pairing, Tournament $tournament) => $pairing->resetAll($tournament));
     }
 
     // ── Save (create or update)
@@ -1770,6 +1832,38 @@ new class extends Component
             'price' => $tournament->eventPostPrice(),
             'max_participants' => $tournament->max_users ?: null,
         ];
+    }
+
+    /**
+     * Run a change on the pairs, refused once the pools are drawn.
+     *
+     * @param  Closure(TournamentPairingService, Tournament): void  $change
+     */
+    private function changePairs(Closure $change): void
+    {
+        if (! $this->currentTournament instanceof Tournament) {
+            return;
+        }
+
+        try {
+            $change(app(TournamentPairingService::class), $this->currentTournament);
+        } catch (LogicException) {
+            $this->error(__('The pools are drawn: pairs can no longer change.'));
+
+            return;
+        }
+
+        unset($this->pairBoard);
+    }
+
+    /**
+     * A player registered to this tournament, or null for anyone else.
+     */
+    private function entrant(int $userId): ?User
+    {
+        return $this->currentTournament?->users()
+            ->wherePivotIn('registration_status', ['registered', 'confirmed'])
+            ->find($userId);
     }
 
     private function markPoolsStaleIfGenerated(): void

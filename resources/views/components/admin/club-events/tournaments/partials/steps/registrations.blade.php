@@ -265,55 +265,109 @@
 
 </div>
 
-{{-- ── Pair composition (doubles only, club mode) ─────────────────── --}}
-@if ($this->currentTournament?->match_type === 'double' && $this->currentTournament?->doubles_registration_mode === 'club')
-    <x-card :title="__('Pair composition')" shadow class="mt-6">
-        <x-slot:menu>
-            @if (! $this->isLaunched)
-                <span class="text-xs text-base-content/50">{{ count($this->pairs) }} {{ __('pairs') }} &mdash; {{ count($this->unpaired) }} {{ __('unpaired') }}</span>
+{{-- ── Pair board (doubles, pairs composed by the club) ─────────────── --}}
+@if ($this->currentTournament?->hasPairsComposedByClub())
+    @php
+        $board = $this->pairBoard;
+        $locked = $this->poolsGenerated;
+        $benchCount = count($board['bench']);
+    @endphp
+    <div data-pair-board
+        x-data="{
+            dragging: null,
+            over: null,
+            selected: null,
+            pick(id) {
+                if (this.selected === null) { this.selected = id; return; }
+                if (this.selected !== id) { $wire.movePlayer(this.selected, id); }
+                this.selected = null;
+            },
+            drop(target) {
+                if (this.dragging !== null && this.dragging !== target) { $wire.movePlayer(this.dragging, target); }
+                this.dragging = null;
+                this.over = null;
+            },
+        }">
+        <x-card :title="__('Pair composition')" shadow class="mt-6">
+            <x-slot:menu>
+                <span class="text-xs text-base-content/70">
+                    {{ trans_choice(':count pair|:count pairs', count($board['pairs']), ['count' => count($board['pairs'])]) }}
+                    &mdash;
+                    {{ trans_choice(':count on the bench|:count on the bench', $benchCount, ['count' => $benchCount]) }}
+                </span>
+            </x-slot:menu>
+
+            @unless ($locked)
+                <div class="mb-4 flex flex-wrap items-center gap-2">
+                    <x-button :label="__('Propose pairs')" icon="o-sparkles" class="btn-primary btn-sm"
+                        wire:click="proposePairs" spinner="proposePairs" :disabled="$benchCount < 2" />
+                    <x-button :label="__('Send everyone back to the bench')" icon="o-arrow-uturn-left" class="btn-ghost btn-sm"
+                        wire:click="resetPairs" spinner="resetPairs"
+                        wire:confirm="{{ __('Break every pair and send everyone back to the bench?') }}"
+                        :disabled="$board['pairs'] === []" />
+                    @if ($this->currentTournament->pairs_published_at === null)
+                        <x-button :label="__('Publish the pairs')" icon="o-paper-airplane" class="btn-outline btn-sm"
+                            wire:click="publishPairs" spinner="publishPairs"
+                            wire:confirm="{{ __('Each paired player will receive an email naming their partner. After that, any change is emailed to the players it concerns. Publish?') }}"
+                            :disabled="$board['pairs'] === []" />
+                    @else
+                        <x-badge icon="o-check" class="badge-success badge-soft"
+                            :value="__('Published on :date', ['date' => $this->currentTournament->pairs_published_at->format('d/m H:i')])" />
+                    @endif
+                    <p class="text-xs text-base-content/70 sm:ml-auto">
+                        {{ __('Drag a player onto another to swap them, or tap one then the other.') }}
+                    </p>
+                </div>
+            @endunless
+
+            @if ($benchCount % 2 === 1 && ! $locked)
+                <x-alert icon="o-exclamation-triangle" class="alert-warning alert-soft mb-4"
+                    :title="__('One player is missing for the last pair.')"
+                    :description="__('Register one more player, or cancel a registration, before drawing the pools.')" />
             @endif
-        </x-slot:menu>
 
-        {{-- Existing pairs --}}
-        @if (! empty($this->pairs))
-            <div class="space-y-1 mb-4">
-                @foreach ($this->pairs as $pair)
-                    <div wire:key="pair-{{ $pair['id'] }}" class="flex items-center justify-between p-2 rounded-lg bg-base-200/50 text-sm">
-                        <div class="flex items-center gap-2">
-                            <x-icon name="o-user-group" class="w-4 h-4 text-primary shrink-0" />
-                            <span class="font-medium">{{ $pair['p1_name'] }}</span>
-                            <span class="text-base-content/40">&amp;</span>
-                            <span class="font-medium">{{ $pair['p2_name'] }}</span>
+            <div class="grid gap-4 lg:grid-cols-[1fr_20rem]">
+                {{-- Pairs --}}
+                <div class="grid content-start gap-2 sm:grid-cols-2">
+                    @forelse ($board['pairs'] as $pair)
+                        <div wire:key="pair-{{ $pair['id'] }}" class="space-y-1 rounded-xl border border-base-300 bg-base-200/50 p-2">
+                            @foreach ($pair['players'] as $player)
+                                @include('admin.club-events.tournaments.partials.shared.pair-board-player', ['player' => $player, 'locked' => $locked])
+                            @endforeach
                         </div>
-                        @if (! $this->isLaunched)
-                            <x-button icon="o-x-mark" class="btn-ghost btn-xs text-error"
-                                :tooltip="__('Delete pair')"
-                                wire:click="deletePair({{ $pair['id'] }})" :aria-label="__('Delete pair')" />
-                        @endif
-                    </div>
-                @endforeach
-            </div>
-        @endif
+                    @empty
+                        <p class="text-sm text-base-content/70 sm:col-span-2">{{ __('No pairs yet.') }}</p>
+                    @endforelse
+                </div>
 
-        {{-- Create pair form --}}
-        @if (! $this->isLaunched && ! empty($this->unpaired))
-            <div class="flex items-end gap-3 mt-2">
-                <x-select :label="__('Player 1')" wire:model.live="pairPlayer1Id"
-                    :options="$this->unpaired" :placeholder="__('Select…')" class="flex-1" />
-                <x-select :label="__('Player 2')" wire:model.live="pairPlayer2Id"
-                    :options="$this->unpaired" :placeholder="__('Select…')" class="flex-1" />
-                <x-button :label="__('Create pair')" icon="o-user-group" class="btn-primary btn-sm mb-0.5"
-                    wire:click="createPair" spinner="createPair"
-                    :disabled="! $pairPlayer1Id || ! $pairPlayer2Id" />
+                {{-- Bench --}}
+                <div
+                    @unless ($locked)
+                        @dragover.prevent="over = 'bench'"
+                        @dragleave="over === 'bench' && (over = null)"
+                        @drop.prevent="drop(null)"
+                        :class="over === 'bench' ? 'border-primary ring-2 ring-primary/30' : 'border-base-300'"
+                    @endunless
+                    class="space-y-1 rounded-xl border border-dashed p-2">
+                    <div class="flex items-center justify-between px-1 pb-1">
+                        <p class="text-sm font-semibold">{{ __('Bench') }}</p>
+                        @unless ($locked)
+                            <x-button x-show="selected !== null" x-cloak :label="__('Send to the bench')" class="btn-ghost btn-xs"
+                                @click="$wire.movePlayer(selected, null); selected = null" />
+                        @endunless
+                    </div>
+                    @forelse ($board['bench'] as $player)
+                        @include('admin.club-events.tournaments.partials.shared.pair-board-player', ['player' => $player, 'locked' => $locked])
+                    @empty
+                        <p class="px-1 text-sm text-success flex items-center gap-1.5">
+                            <x-icon name="o-check-circle" class="w-4 h-4" /> {{ __('All registered players are paired.') }}
+                        </p>
+                    @endforelse
+                </div>
             </div>
-        @elseif (! $this->isLaunched && empty($this->unpaired) && empty($this->pairs))
-            <p class="text-sm text-base-content/50">{{ __('No registered players yet.') }}</p>
-        @elseif (! $this->isLaunched && empty($this->unpaired))
-            <p class="text-sm text-success/80 flex items-center gap-1.5">
-                <x-icon name="o-check-circle" class="w-4 h-4" /> {{ __('All registered players are paired.') }}
-            </p>
-        @endif
-    </x-card>
+        </x-card>
+        <div data-pair-board-end></div>
+    </div>
 @endif
 
 {{-- Manual register modal --}}

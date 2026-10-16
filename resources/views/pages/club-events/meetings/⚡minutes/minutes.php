@@ -314,7 +314,7 @@ new class extends Component
         return Meeting::with([
             'users',
             'minutes',
-            'agendaItems',
+            'agendaItems.carriedFrom.meeting',
             'decisions',
             'actionItems.assignedTo',
             'minutesEditor',

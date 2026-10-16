@@ -194,6 +194,9 @@
                             <div class="min-w-0 flex-1">
                                 <div class="flex flex-wrap items-center gap-2">
                                     <p class="font-semibold text-base-content">{{ $item->title }}</p>
+                                    @if ($item->carried_from_id)
+                                        <span class="text-xs text-muted">{{ $item->postponedFromLabel() }}</span>
+                                    @endif
                                     @if ($item->discussed_at)
                                         <span class="badge badge-soft badge-success badge-sm">
                                             <x-icon name="o-check" class="h-3 w-3" /> {{ __('Discussed') }}

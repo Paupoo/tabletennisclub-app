@@ -238,6 +238,9 @@
                             </span>
                             <span class="min-w-0">
                                 <span class="line-clamp-2 block font-bold">{{ $item->title }}</span>
+                                @if ($item->carried_from_id)
+                                    <span class="block text-xs text-muted">{{ $item->postponedFromLabel() }}</span>
+                                @endif
                                 <span class="block text-xs text-muted">
                                     @if ($item->discussed_at)
                                         {{ __('Discussed') }}

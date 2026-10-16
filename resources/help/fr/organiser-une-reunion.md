@@ -22,6 +22,10 @@ Fixez la date retenue. La réunion passe en **confirmée** — c'est ce qui déb
 
 À partir de là, vous pouvez déjà **préparer le PV** : voyez [Rédiger le PV d'une réunion](rediger-le-pv-d-une-reunion).
 
+### Les points non abordés la dernière fois
+
+Si la dernière réunion du même type (comité pour un comité, AG pour une AG) n'a pas eu le temps d'aborder certains points, la carte **Ordre du jour** les propose dans un encadré **À reprendre**, déjà cochés. **Confirmez** : les points cochés rejoignent l'ordre du jour, avec la mention « Reporté du comité du … » (aussi dans le PV) ; ceux que vous décochez ne reviendront plus. Un point repris et à nouveau non abordé vous sera reproposé la fois suivante.
+
 ## 3. Convoquer
 
 L'application refuse la convocation tant que le dossier n'est pas complet, et elle vous dit ce qui manque :

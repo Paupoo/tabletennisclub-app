@@ -57,6 +57,8 @@ erDiagram
         string description "nullable"
         string discussion "nullable"
         datetime discussed_at "nullable"
+        int carried_from_id FK "nullable"
+        datetime carry_over_dismissed_at "nullable"
     }
     MeetingDateProposal {
         int id PK
@@ -111,6 +113,7 @@ erDiagram
     Meeting }o--o{ User : "users"
     MeetingActionItem ||--o{ MeetingActionReview : "reviews"
     MeetingAgendaItem ||--o{ MeetingActionItem : "actionItems"
+    MeetingAgendaItem ||--o{ self : "carriedInto"
     MeetingAgendaItem ||--o{ MeetingDecision : "decisions"
     MeetingDateProposal ||--o{ MeetingDateVote : "votes"
     MeetingUser ||--o| Payment : "payment"

@@ -200,6 +200,30 @@
                         </x-slot:menu>
                     @endif
 
+                    @if ($this->carryOverCandidates->isNotEmpty() && $editing !== 'agenda')
+                        @php $carrySource = $this->carryOverCandidates->first()->meeting; @endphp
+                        <div class="mb-4 rounded-xl border border-warning/40 bg-warning/5 p-4">
+                            <p class="font-semibold">{{ __('To take up again') }}</p>
+                            <p class="mb-2 text-sm text-muted">
+                                {{ __('Not reached at the meeting of :date. Untick what is no longer relevant: it will not come back.', ['date' => $carrySource->scheduled_at?->format('d/m/Y')]) }}
+                            </p>
+                            <ul class="space-y-1">
+                                @foreach ($this->carryOverCandidates as $candidate)
+                                    <li wire:key="carry-over-{{ $candidate->id }}">
+                                        <label class="flex cursor-pointer items-center gap-2 text-sm">
+                                            <input type="checkbox" class="checkbox checkbox-sm" value="{{ $candidate->id }}" wire:model="carryOver">
+                                            {{ $candidate->title }}
+                                        </label>
+                                    </li>
+                                @endforeach
+                            </ul>
+                            <div class="mt-3 flex justify-end">
+                                <x-button :label="__('Confirm')" icon="o-check" class="btn-primary btn-sm"
+                                    wire:click="carryOverPoints" spinner="carryOverPoints" />
+                            </div>
+                        </div>
+                    @endif
+
                     @if ($editing === 'agenda')
                         <div class="space-y-3">
                             @foreach ($agendaDraft as $i => $item)
@@ -244,6 +268,9 @@
                                         bg-base-200 text-xs font-bold text-base-content/60">{{ $i + 1 }}</span>
                                     <div>
                                         <p class="text-sm font-medium">{{ $item->title }}</p>
+                                        @if ($item->carried_from_id)
+                                            <p class="text-xs text-muted">{{ $item->postponedFromLabel() }}</p>
+                                        @endif
                                         @if ($item->description)
                                             <div class="prose prose-sm mt-0.5 max-w-none text-xs text-base-content/60 [&>:first-child]:mt-0 [&>:last-child]:mb-0">{!! \App\Support\Markdown::safe($item->description) !!}</div>
                                         @endif

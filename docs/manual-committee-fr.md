@@ -281,6 +281,8 @@ Consultez les réponses de présence en temps réel sur la page de détail de la
 
 Ajoutez des points à l'ordre du jour de la réunion. L'ordre du jour est visible pour tous les membres invités — les invités extérieurs exceptés.
 
+Les points que la dernière réunion du même type (comité pour un comité, AG pour une AG) n'a pas abordés sont proposés dans un encadré **À reprendre**, cochés. **Confirmer** ajoute les points cochés à l'ordre du jour, avec la mention « Reporté du comité du … », là et dans le PV ; un point décoché ne revient plus. Un point repris et à nouveau non abordé est reproposé.
+
 ### Invités
 
 La carte **Invités** fait venir une personne hors de la réunion — l'entraîneur pour le point sur les entraînements, par exemple. Toute personne qui a un compte peut être trouvée, affiliée ou non ; choisissez le point pour lequel elle vient, ou toute la réunion. Un invité n'apprend que la date, le lieu et son point : jamais le reste de l'ordre du jour ni la description de la réunion, ni dans l'e-mail, ni sur la page de réponse, ni dans le fichier calendrier. Sa convocation part tout de suite si les autres sont déjà parties, avec elles sinon. Les invités ne comptent jamais dans le quorum, sont listés à part dans le PV et ne reçoivent jamais le PV d'un comité.

@@ -5,12 +5,14 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Models\MeetingAgendaItem;
 use App\Domains\Meetings\Models\MeetingDateProposal;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Meetings\Notifications\MeetingCancelledNotification;
 use App\Domains\Meetings\Notifications\MeetingDatePollNotification;
 use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
 use App\Domains\Meetings\Notifications\MeetingPostponedNotification;
+use App\Domains\Meetings\Services\AgendaCarryOver;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
@@ -41,6 +43,9 @@ new class extends Component
 
     // Cancel / postpone
     public string $cancellationNote = '';
+
+    /** @var list<int> the points not reached last time, ticked to be taken up again */
+    public array $carryOver = [];
 
     public string $detailsDescription = '';
 
@@ -165,6 +170,35 @@ new class extends Component
         $user = auth()->user();
 
         return $user instanceof User && $user->can(Permission::MeetingsManage->value);
+    }
+
+    /**
+     * The points the last meeting of this kind did not reach, offered to the
+     * people who prepare this one.
+     *
+     * @return Illuminate\Database\Eloquent\Collection<int, MeetingAgendaItem>
+     */
+    #[Computed]
+    public function carryOverCandidates(): Illuminate\Database\Eloquent\Collection
+    {
+        return $this->canManage
+            ? AgendaCarryOver::candidatesFor($this->meeting)
+            : new Illuminate\Database\Eloquent\Collection;
+    }
+
+    /** Take up the ticked points; the others never come back. */
+    public function carryOverPoints(): void
+    {
+        abort_unless($this->canManage, 403);
+
+        $kept = array_values(array_map(intval(...), $this->carryOver));
+        AgendaCarryOver::apply($this->meeting, $kept);
+
+        $this->carryOver = [];
+        $this->toast(type: 'success', title: $kept === []
+            ? __('Nothing taken up again')
+            : trans_choice('{1}1 point added to the agenda|[2,*]:count points added to the agenda', count($kept), ['count' => count($kept)]));
+        unset($this->meeting, $this->carryOverCandidates);
     }
 
     #[Computed]
@@ -370,7 +404,7 @@ new class extends Component
     public function meeting(): Meeting
     {
         return Meeting::with([
-            'agendaItems',
+            'agendaItems.carriedFrom.meeting',
             'dateProposals.votes.user',
             'eventPost',
             'users',
@@ -384,6 +418,8 @@ new class extends Component
     public function mount(Meeting $meeting): void
     {
         $this->meetingId = $meeting->id;
+        // Ticked by default: taking a point up again is the usual answer.
+        $this->carryOver = $this->carryOverCandidates->modelKeys();
     }
 
     /**

@@ -75,7 +75,7 @@ final readonly class MinutesReport
      */
     public static function for(Meeting $meeting, ?User $reader = null): self
     {
-        $meeting->loadMissing(['minutes.publisher', 'agendaItems', 'decisions.agendaItem', 'actionItems.assignedTo', 'actionItems.agendaItem', 'users']);
+        $meeting->loadMissing(['minutes.publisher', 'agendaItems.carriedFrom.meeting', 'decisions.agendaItem', 'actionItems.assignedTo', 'actionItems.agendaItem', 'users']);
 
         $minutes = $meeting->minutes;
         abort_if($minutes === null, 404);

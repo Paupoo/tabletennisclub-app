@@ -280,6 +280,8 @@ View attendance responses in real time on the meeting detail page. Responses: At
 
 Add agenda items to the meeting. Agenda is visible to all invited members — guests excepted.
 
+The points the last meeting of the same kind (committee for a committee, assembly for an assembly) did not reach are offered in a **To take up again** box, ticked. **Confirm** adds the ticked ones to the agenda, marked "Postponed from the committee of …" there and in the minutes; an unticked point never comes back. A point taken up and missed again is offered once more.
+
 ### Guests
 
 The **Guests** card invites somebody outside the meeting — the coach for the training point, say. Anybody with an account can be found, affiliated or not; pick the point they come for, or the whole meeting. A guest is told the date, the place and their point only: never the rest of the agenda nor the meeting's description, in the mail, the answer page or the calendar file. Their convocation leaves at once if the others already left, with them otherwise. Guests never count towards the quorum, are listed apart in the minutes, and never receive a committee's minutes.

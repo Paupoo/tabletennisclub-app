@@ -216,6 +216,9 @@
                 <td class="num">{{ $i + 1 }}.</td>
                 <td>
                     <div class="title">{{ $item->title }}</div>
+                    @if ($item->carried_from_id)
+                        <div class="muted" style="font-size: 8pt;">{{ $item->postponedFromLabel() }}</div>
+                    @endif
                     @if (filled($item->discussion))
                         <div class="content">{!! \App\Support\Markdown::safe($item->discussion) !!}</div>
                     @elseif (filled($item->description))

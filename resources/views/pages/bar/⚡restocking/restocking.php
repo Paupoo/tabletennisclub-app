@@ -50,7 +50,7 @@ new class extends Component
     public bool $abandonModal = false;
 
     /**
-     * Conditionnements achetés, par ligne de la liste figée.
+     * Unités achetées, par ligne de la liste figée.
      *
      * @var array<int, int|string>
      */
@@ -62,7 +62,7 @@ new class extends Component
     public ?int $extraProductId = null;
 
     /**
-     * Conditionnements achetés hors liste, par produit.
+     * Unités achetées hors liste, par produit.
      *
      * @var array<int, int|string>
      */
@@ -109,11 +109,13 @@ new class extends Component
         $productId = $this->extraProductId;
         $this->extraProductId = null;
 
-        if ($trip->lines->contains('product_id', $productId) || ! BarProduct::query()->whereKey($productId)->exists()) {
+        $product = BarProduct::query()->find($productId);
+
+        if ($trip->lines->contains('product_id', $productId) || $product === null) {
             return;
         }
 
-        $this->extras[$productId] ??= 1;
+        $this->extras[$productId] ??= max(1, $product->pack_size);
     }
 
     public function boot(): void
@@ -193,7 +195,7 @@ new class extends Component
         }
 
         $this->bought = $trip->lines
-            ->mapWithKeys(fn (BarRestockingLine $line): array => [$line->id => $line->in_cart ? $line->proposed_packs : 0])
+            ->mapWithKeys(fn (BarRestockingLine $line): array => [$line->id => $line->in_cart ? $line->proposed_packs * $line->pack_size : 0])
             ->all();
         $this->extras = [];
         $this->refundIban = (string) IbanNormalizer::format(auth()->user()->iban);

@@ -61,8 +61,8 @@ class RestockingTrips
      * de frais de celui qui rentre, pré-remplie par ce qui vient d'entrer en stock —
      * si elle échoue, rien n'est écrit, et la tournée reste ouverte.
      *
-     * @param  array<int|string, int|string|null>  $boughtByLine  conditionnements achetés, par ligne de la liste
-     * @param  array<int|string, int|string|null>  $extrasByProduct  conditionnements achetés hors liste, par produit
+     * @param  array<int|string, int|string|null>  $boughtByLine  unités achetées, par ligne de la liste
+     * @param  array<int|string, int|string|null>  $extrasByProduct  unités achetées hors liste, par produit
      * @param  array{amount: float, iban: string, files: array<int, UploadedFile>}|null  $claim  le ticket, quand `$paidBy` vaut `me`
      *
      * @throws \DomainException quand la tournée n'est plus en cours, ou n'est pas à celui qui rentre
@@ -83,20 +83,20 @@ class RestockingTrips
             $reason = "Shopping trip #{$trip->id}";
 
             foreach ($trip->lines as $line) {
-                $packs = max(0, (int) ($boughtByLine[$line->id] ?? 0));
-                $line->update(['bought_packs' => $packs]);
+                $units = max(0, (int) ($boughtByLine[$line->id] ?? 0));
+                $line->update(['bought_units' => $units]);
 
-                if ($packs > 0) {
-                    $this->stockService->addIncomingStock($line->product_id, $packs * $line->pack_size, $reason, $shopper->id, $shopper->id, $trip->id);
+                if ($units > 0) {
+                    $this->stockService->addIncomingStock($line->product_id, $units, $reason, $shopper->id, $shopper->id, $trip->id);
                 }
             }
 
             $onTheList = $trip->lines->pluck('product_id')->all();
 
-            foreach ($extrasByProduct as $productId => $packs) {
-                $packs = max(0, (int) $packs);
+            foreach ($extrasByProduct as $productId => $units) {
+                $units = max(0, (int) $units);
 
-                if ($packs === 0 || in_array((int) $productId, $onTheList, true)) {
+                if ($units === 0 || in_array((int) $productId, $onTheList, true)) {
                     continue;
                 }
 
@@ -109,10 +109,10 @@ class RestockingTrips
                     'pack_size' => $product->pack_size,
                     'pack_label' => $product->pack_label,
                     'proposed_packs' => 0,
-                    'bought_packs' => $packs,
+                    'bought_units' => $units,
                 ]);
 
-                $this->stockService->addIncomingStock($product->id, $packs * $product->pack_size, $reason, $shopper->id, $shopper->id, $trip->id);
+                $this->stockService->addIncomingStock($product->id, $units, $reason, $shopper->id, $shopper->id, $trip->id);
             }
 
             $trip->update(['status' => BarRestocking::STATUS_CLOSED, 'closed_at' => now(), 'paid_by' => $paidBy]);
@@ -193,8 +193,8 @@ class RestockingTrips
      */
     private function describe(BarRestocking $trip): string
     {
-        $items = $trip->lines()->with('product')->where('bought_packs', '>', 0)->get()
-            ->map(fn (BarRestockingLine $line): string => RestockingList::packsLabel((int) $line->bought_packs, $line->pack_size, $line->pack_label) . ' ' . $line->product->name)
+        $items = $trip->lines()->with('product')->where('bought_units', '>', 0)->get()
+            ->map(fn (BarRestockingLine $line): string => RestockingList::boughtLabel((int) $line->bought_units, $line->pack_size, $line->pack_label) . ' ' . $line->product->name)
             ->join(', ');
 
         return Str::limit(__('Bar shopping of :date: :items', ['date' => today()->format('d/m/Y'), 'items' => $items]), 255);

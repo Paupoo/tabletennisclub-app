@@ -133,3 +133,27 @@ it('shows the treasurer what the trip brought into stock, next to the report', f
         ->assertSee('Jupiler')
         ->assertSee('2 × casier');
 });
+
+it('tells a count that is not whole packs in units, in the report and next to it', function (): void {
+    // Le magasin n'avait plus de casier de 24 : vingt bouteilles à la pièce.
+    $closing = restockingExpenseClosing($this->shopper);
+    $line = BarRestocking::inProgress()->lines->first();
+
+    $closing->set("bought.{$line->id}", 20)
+        ->set('paidBy', 'me')
+        ->set('ticketAmount', '26,40')
+        ->set('ticketFiles', [UploadedFile::fake()->image('ticket.jpg')])
+        ->call('close')
+        ->assertHasNoErrors();
+
+    $report = ExpenseReport::query()->sole();
+
+    expect($report->description)->toContain(__(':units units', ['units' => 20]) . ' Jupiler')
+        ->not->toContain('×');
+
+    Livewire::actingAs(User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create())
+        ->test('pages::club-admin.treasury.expense-reports')
+        ->call('show', $report->id)
+        ->assertSee(__(':units units', ['units' => 20]))
+        ->assertDontSee('× casier');
+});

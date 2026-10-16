@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Tournament\Notifications;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
@@ -69,7 +70,8 @@ class TournamentInvitationNotification extends Notification implements ShouldQue
             ->line(__('**Handicap points:** :handicap', ['handicap' => $handicap]));
 
         if ($t->isPaid()) {
-            $mail->line(__('**Entry fee:** :price €', ['price' => number_format((float) $t->price, 2)]));
+            $fee = $notifiable instanceof User ? $t->priceFor($notifiable) : $t->price;
+            $mail->line(__('**Entry fee:** :price €', ['price' => number_format($fee, 2)]));
             $mail->line(__('Payment details will be provided upon registration.'));
         }
 

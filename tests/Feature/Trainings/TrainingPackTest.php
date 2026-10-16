@@ -215,8 +215,7 @@ describe('trainer update', function (): void {
             ->toBe($coachA->id);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formTrainerId', $coachB->id)
             ->call('save');
 
@@ -245,8 +244,7 @@ describe('trainerOptions', function (): void {
         ]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openCreate')
+            ->test('pages::club-events.trainings.form')
             ->assertSee('Zelda Coachowski')
             ->assertDontSee('Nestor Nocoach');
     });
@@ -294,8 +292,7 @@ describe('capacity', function (): void {
         $coach = User::factory()->isCoach()->create();
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openCreate')
+            ->test('pages::club-events.trainings.form')
             ->set('formSeasonId', $season->id)
             ->set('formName', 'Jeunes mardi')
             ->set('formLevel', trainingLevelId('Jeunes'))
@@ -316,8 +313,7 @@ describe('capacity', function (): void {
         $coach = User::factory()->isCoach()->create();
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openCreate')
+            ->test('pages::club-events.trainings.form')
             ->set('formSeasonId', $season->id)
             ->set('formName', 'Sans plafond explicite')
             ->set('formLevel', trainingLevelId('Jeunes'))
@@ -340,8 +336,7 @@ describe('capacity', function (): void {
         $coach = User::factory()->isCoach()->create();
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openCreate')
+            ->test('pages::club-events.trainings.form')
             ->set('formSeasonId', $season->id)
             ->set('formName', 'Dirige sans limite')
             ->set('formLevel', trainingLevelId('Jeunes'))
@@ -364,8 +359,7 @@ describe('capacity', function (): void {
         $room = Room::factory()->create(['capacity_for_trainings' => 4]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openCreate')
+            ->test('pages::club-events.trainings.form')
             ->set('formSeasonId', $season->id)
             ->set('formName', 'Libre du vendredi')
             ->set('formLevel', trainingLevelId('Tous niveaux'))

@@ -306,7 +306,7 @@ Allez dans **Événements club → Entraînements**.
 
 ### Packs d'entraînement
 
-Les packs d'entraînement représentent des séances récurrentes (jour, niveau, type). Créez et gérez les packs depuis l'index des entraînements. **Exporter les inscrits** sort un tableur de tous les membres liés à un pack de la saison (inscrits, demandes, file d'attente), avec leurs coordonnées ; chaque export est tracé dans l'audit.
+Les packs d'entraînement représentent des séances récurrentes (jour, niveau, type). Créez et gérez les packs depuis l'index des entraînements ; **Détails** ouvre la page d'un pack avec trois onglets (**Membres**, **Séances**, **Présence**), et **Nouveau pack** / **Modifier** ouvrent l'assistant en page. Les e-mails d'entraînement (séance annulée, nouvel horaire, pack arrêté) partent en file d'attente, dans les minutes qui suivent. La grille de présence s'ouvre sur les douze dernières séances déjà tenues ; le taux d'un membre porte sur toutes les séances pointées du pack. **Exporter les inscrits** sort un tableur de tous les membres liés à un pack de la saison (inscrits, demandes, file d'attente), avec leurs coordonnées ; chaque export est tracé dans l'audit.
 
 ### Approuver les demandes d'entraînement
 

@@ -16,6 +16,8 @@ use Illuminate\Support\Collection;
  * address. The same tiles as the page; those of the members this address
  * speaks for carry the club border. A snapshot, never resent: the page is the
  * live version, and the targeted lineup mails tell whoever a change concerns.
+ *
+ * The teams on a bye follow the days (2026-10-15), so that none seems missing.
  */
 class WeeklySelectionsNotification extends Notification
 {
@@ -25,6 +27,7 @@ class WeeklySelectionsNotification extends Notification
      * @param  Collection<string, Collection<int, WeeklyFixture>>  $days
      * @param  array<int, int>  $memberIds  the members this address speaks for
      * @param  array<int, string>  $names  first names of whoever reads this address
+     * @param  array<int, string>  $byes  the teams on a bye, by name
      */
     public function __construct(
         public readonly Collection $days,
@@ -32,6 +35,7 @@ class WeeklySelectionsNotification extends Notification
         public readonly CarbonInterface $from,
         public readonly CarbonInterface $to,
         public readonly array $names = [],
+        public readonly array $byes = [],
     ) {}
 
     public function toMail(object $notifiable): MailMessage
@@ -42,6 +46,7 @@ class WeeklySelectionsNotification extends Notification
             ->subject(__('Weekly selections') . ' · ' . $period)
             ->markdown('mail.interclub.weekly-selections', [
                 'days' => $this->days,
+                'byes' => $this->byes,
                 'memberIds' => $this->memberIds,
                 'greeting' => $this->greeting(),
                 'intro' => $this->intro($period),

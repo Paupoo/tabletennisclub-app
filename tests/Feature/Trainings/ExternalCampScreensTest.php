@@ -45,8 +45,7 @@ describe('opening a stage to non-members', function (): void {
         $camp = externalScreensCamp(['externals_open_on' => null]);
 
         Livewire::actingAs($this->manager)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $camp->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $camp->id])
             ->assertSet('formExternalsOpenOn', '')
             ->set('formExternalPrice', '95')
             ->set('formExternalsOpenOn', '2026-12-01')
@@ -66,8 +65,7 @@ describe('opening a stage to non-members', function (): void {
             ->assertDontSee(__('Add a non-member'));
 
         Livewire::actingAs($this->manager)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $camp->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $camp->id])
             ->set('formExternalsOpenOn', today()->toDateString())
             ->call('save')
             ->assertHasNoErrors();
@@ -84,8 +82,7 @@ describe('opening a stage to non-members', function (): void {
         $pack = makeTrainingPack($this->season);
 
         Livewire::actingAs($this->manager)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formExternalPrice', '95')
             ->set('formExternalsOpenOn', '2026-12-01')
             ->call('save');
@@ -245,8 +242,7 @@ describe('the stage sheet', function (): void {
         (new EnrollExternalInCampAction)($camp, new ExternalIdentity('Marc', 'Dupont', 'marc@example.com'));
 
         Livewire::actingAs($this->manager)
-            ->test('pages::club-events.trainings.index')
-            ->call('openPack', $camp->id)
+            ->test('pages::club-events.trainings.show', ['pack' => $camp->id])
             ->assertSeeLivewire('admin.trainings.camp-externals')
             ->assertSee(__('non-member'));
     });

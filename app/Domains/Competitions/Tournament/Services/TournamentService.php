@@ -68,6 +68,8 @@ class TournamentService
             ->where('user_id', $user->id)
             ->update(['registration_status' => 'cancelled', 'waitlist_position' => null]);
 
+        app(TournamentPairingService::class)->release($tournament, $user);
+
         $user->notify(new TournamentRegistrationCancelledNotification($tournament));
 
         $this->countRegisteredUsers($tournament);
@@ -103,7 +105,7 @@ class TournamentService
 
         $payment = $registration->payment()->create([
             'reference' => (new GeneratePaymentReference)(),
-            'amount_due' => $tournament->price,
+            'amount_due' => $tournament->priceFor($registration->user),
             'amount_paid' => 0,
             'status' => 'pending',
         ]);
@@ -243,11 +245,11 @@ class TournamentService
         // `amount_paid` n'est plus écrit ici : c'est le miroir des lignes de
         // crédit, et l'action est seule à le poser. Le statut et `has_paid`
         // suivent de là.
-        (new AllocateTransactionAction)->credit($payment, (float) $tournament->price, 'cash');
+        (new AllocateTransactionAction)->credit($payment, (float) $payment->amount_due, 'cash');
 
         CashRegisterEntry::create([
             'cash_register_id' => $register->id,
-            'amount' => (int) ($tournament->price * 100),
+            'amount' => (int) round($payment->amount_due * 100),
             'reason' => 'tournament_payment',
             'payable_type' => Tournament::class,
             'payable_id' => $tournament->id,
@@ -338,7 +340,7 @@ class TournamentService
 
                 $payment = $registration->payment()->create([
                     'reference' => (new GeneratePaymentReference)(),
-                    'amount_due' => $tournament->price,
+                    'amount_due' => $tournament->priceFor($user),
                     'amount_paid' => 0,
                     'status' => 'pending',
                 ]);
@@ -432,6 +434,7 @@ class TournamentService
      */
     public function unregisterAllUsers(Tournament $tournament): int
     {
+        $tournament->pairs()->delete();
         $count = $tournament->users()->detach();
         $tournament->update(['total_users' => 0]);
 

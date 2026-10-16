@@ -207,12 +207,6 @@ parameters:
 			path: app/Domains/Competitions/Tournament/Models/Pool.php
 
 		-
-			message: '#^PHPDoc tag @property has invalid value \(mixed \$0\)\: Unexpected token "\$0", expected variable at offset 2523 on line 58$#'
-			identifier: phpDoc.parseError
-			count: 1
-			path: app/Domains/Competitions/Tournament/Models/Tournament.php
-
-		-
 			message: '#^Property App\\Domains\\Competitions\\Tournament\\Models\\Tournament\:\:\$casts \(array\<string, string\>\) does not accept default value of type array\<int\|string, string\>\.$#'
 			identifier: property.defaultValue
 			count: 1

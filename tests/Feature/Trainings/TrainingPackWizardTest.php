@@ -43,8 +43,7 @@ describe('training pack wizard', function (): void {
         // Le wizard écrivait `is_active => true` en dur : changer le prix d'un
         // pack retiré le remettait en ligne sur le site public, sans rien dire.
         Livewire::actingAs($this->admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formPrice', 120)
             ->call('save');
 
@@ -55,8 +54,7 @@ describe('training pack wizard', function (): void {
         $reference = editablePack();
 
         Livewire::actingAs($this->admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openCreate')
+            ->test('pages::club-events.trainings.form')
             ->set('formSeasonId', $reference->season_id)
             ->set('formName', 'Jeudi Élite')
             ->set('formLevel', $reference->level->value)
@@ -78,8 +76,7 @@ describe('training pack wizard', function (): void {
         $pack = editablePack();
 
         Livewire::actingAs($this->admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formEnrollmentsOpen', false)
             ->call('save');
 
@@ -113,8 +110,7 @@ describe('training pack wizard', function (): void {
         // Le plafond se franchit en connaissance de cause. L'interdire pousserait
         // le comité à gonfler max_participants, ce qui casserait la file pour de bon.
         Livewire::actingAs($this->admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openPack', $pack->id)
+            ->test('pages::club-events.trainings.show', ['pack' => $pack->id])
             ->set('addMemberUserId', $latecomer->user_id)
             ->call('addMemberToPack');
 
@@ -134,8 +130,7 @@ describe('training pack wizard', function (): void {
         // la séance reste non pointée pour toujours : le remplaçant n'y a pas
         // accès et le titulaire n'y était pas.
         Livewire::actingAs($this->admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openPack', $pack->id)
+            ->test('pages::club-events.trainings.pack-sessions', ['packId' => $pack->id])
             ->call('reassignSessionCoach', $session->id, $standIn->id);
 
         expect($session->fresh()->trainer_id)->toBe($standIn->id)
@@ -160,8 +155,7 @@ describe('training pack wizard', function (): void {
         // Le comité fait entrer quelqu'un dans l'encadrement : n'importe quel
         // membre lui est proposé, pas seulement les coachs.
         Livewire::actingAs($this->admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openPack', $pack->id)
+            ->test('pages::club-events.trainings.pack-sessions', ['packId' => $pack->id])
             ->call('openHandOver', $session->id)
             ->assertSet('handOverModal', true)
             ->assertSee('Renard Hugo')
@@ -189,8 +183,7 @@ describe('training pack wizard', function (): void {
         // septembre passait au coach arrivé en janvier, et un remplacement
         // saisi la veille disparaissait au premier changement de prix.
         Livewire::actingAs($this->admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formTrainerId', $successor->id)
             ->call('save');
 
@@ -206,8 +199,7 @@ describe('training pack wizard', function (): void {
         $handedOver = Training::factory()->for($pack, 'trainingPack')->create(['start' => now()->addWeek(), 'end' => now()->addWeek()->addHour(), 'trainer_id' => $standIn->id]);
 
         Livewire::actingAs($this->admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formPrice', 120)
             ->call('save');
 
@@ -230,8 +222,7 @@ describe('the attendance matrix on the pack screen', function (): void {
         }
 
         $component = Livewire::actingAs($this->admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openPack', $pack->id);
+            ->test('pages::club-events.trainings.pack-attendance', ['packId' => $pack->id]);
 
         expect($component->get('attendanceMatrix')['sessions'])->toHaveCount(12);
 
@@ -255,8 +246,7 @@ describe('the attendance matrix on the pack screen', function (): void {
         // La grille n'est vraiment vérifiée qu'au rendu : une erreur Blade ne
         // se voit pas sur les données du composant.
         Livewire::actingAs($this->admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openPack', $pack->id)
+            ->test('pages::club-events.trainings.pack-attendance', ['packId' => $pack->id])
             ->assertOk()
             ->assertSee($member->user->last_name)
             ->assertSee('100%');

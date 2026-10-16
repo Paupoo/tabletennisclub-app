@@ -42,14 +42,13 @@ it('opens the roster row actions without the table clipping them', function (): 
 
     $this->actingAs($admin);
 
-    $page = visit(route('admin.trainings.index'))->resize(1440, 900);
+    $page = visit(route('admin.trainings.show', $pack))->resize(1440, 900);
 
     $page->assertNoJavaScriptErrors()
-        ->click('[wire\\:click="openPack(' . $pack->id . ')"]')
         ->assertSee('Dubois Camille')
-        // Une vraie attente, pas une assertion : la fiche vient d'être rendue par
-        // Livewire, et Alpine n'a pas encore repris la main sur le déclencheur —
-        // un clic immédiat ne bascule rien et le panneau reste `display: none`.
+        // Une vraie attente, pas une assertion : Alpine n'a pas forcément repris
+        // la main sur le déclencheur au premier rendu — un clic immédiat ne
+        // bascule rien et le panneau reste `display: none`.
         ->wait(1)
         ->click('[data-row-menu-trigger]')
         ->wait(1);

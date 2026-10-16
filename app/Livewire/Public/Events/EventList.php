@@ -81,9 +81,11 @@ class EventList extends Component
                 'date' => $event->formatted_date,
                 'time' => $event->formatted_time,
                 'location' => $event->location,
-                'price' => $event->price && (float) $event->price > 0
-                    ? number_format((float) $event->price, 2, ',', ' ') . ' €'
-                    : __('Gratuit'),
+                'price' => match (true) {
+                    ! is_numeric($event->price) && filled($event->price) => $event->price,
+                    (float) $event->price > 0 => number_format((float) $event->price, 2, ',', ' ') . ' €',
+                    default => __('Gratuit'),
+                },
                 'icon' => $event->icon,
                 'is_past' => $event->is_past,
                 'is_registered' => in_array($event->id, $userRegisteredIds, true),

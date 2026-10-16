@@ -13,6 +13,7 @@ use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingPackDiscontinuedNotification;
 use App\Domains\Trainings\Services\TrainingCampBilling;
+use App\Jobs\SendTrainingNoticeJob;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -45,7 +46,7 @@ class DiscontinueTrainingPackAction
             ->delete();
 
         foreach (Subscription::with('user')->whereIn('id', $waitingSubscriptionIds)->get() as $subscription) {
-            $subscription->user->notify(new TrainingPackDiscontinuedNotification($pack, $reason));
+            SendTrainingNoticeJob::dispatch($subscription->user, new TrainingPackDiscontinuedNotification($pack, $reason));
         }
 
         // Enrolled and pending members: unenroll, work out what they are owed,
@@ -77,7 +78,7 @@ class DiscontinueTrainingPackAction
             $refundable = $billing->sync($line, __(':pack has been stopped by the club.', ['pack' => $pack->name]))['refunded'];
             $totalRefunded += $refundable;
 
-            $line->subscription->user->notify(new TrainingPackDiscontinuedNotification($pack, $reason, $refundable));
+            SendTrainingNoticeJob::dispatch($line->subscription->user, new TrainingPackDiscontinuedNotification($pack, $reason, $refundable));
             $memberCount++;
         }
 
@@ -95,8 +96,10 @@ class DiscontinueTrainingPackAction
             $totalRefunded += $refundable;
 
             if (! $registration->isAnonymized() && $registration->email !== null) {
-                Notification::route('mail', $registration->email)
-                    ->notify(new ExternalCampCancelledNotification($registration, $reason, $refundable));
+                SendTrainingNoticeJob::dispatch(
+                    Notification::route('mail', $registration->email),
+                    new ExternalCampCancelledNotification($registration, $reason, $refundable),
+                );
             }
 
             $memberCount++;
@@ -124,7 +127,7 @@ class DiscontinueTrainingPackAction
                 $totalRefunded += $refundable;
             }
 
-            $subscription->user->notify(new TrainingPackDiscontinuedNotification($pack, $reason, $refundable));
+            SendTrainingNoticeJob::dispatch($subscription->user, new TrainingPackDiscontinuedNotification($pack, $reason, $refundable));
             $memberCount++;
         }
 

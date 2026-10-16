@@ -124,16 +124,50 @@ it('marks a forfeit and names nobody', function (): void {
         ->assertDontSee('Benoît Leroy');
 });
 
-it('leaves a bye out', function (): void {
-    $ours = weeklyTeam($this->ownClub, $this->menLeague, 'F');
-    $bye = weeklyFixture($ours, weeklyTeam(Club::factory()->create(['name' => 'Exempt Club']), $this->menLeague, 'Z'), now()->addDays(2));
-    $bye->update(['is_bye' => true]);
+/*
+| Les byes (grilling du 2026-10-15) : un membre s'étonnait de deux équipes
+| manquantes. Leur date n'est qu'une déduction de l'import, donc ni jour ni
+| heure : un bloc à part, après les jours, le nom de l'équipe seul.
+*/
+function weeklyBye(Team $ours, CarbonInterface $at): Interclub
+{
+    return Interclub::factory()->create([
+        'season_id' => $ours->season_id,
+        'league_id' => $ours->league_id,
+        'visited_team_id' => $ours->id,
+        'visiting_team_id' => null,
+        'total_players' => 4,
+        'is_bye' => true,
+        'forfeit' => null,
+        'start_date_time' => $at,
+    ]);
+}
+
+it('lists the teams on a bye apart, without a day, and only within the week', function (): void {
+    weeklyBye(weeklyTeam($this->ownClub, $this->menLeague, 'F'), now()->addDays(2));
+    weeklyBye(weeklyTeam($this->ownClub, $this->menLeague, 'G'), now()->addDays(9));
 
     $this->actingAs($this->member)
         ->get(route('admin.user.weekly-selections'))
         ->assertOk()
-        ->assertDontSee('Exempt Club Z')
-        ->assertSee(__('No interclub match in the next seven days'));
+        ->assertSee(__('No interclub match in the next seven days'))
+        ->assertSeeInOrder([__('Resting this week (bye)'), 'Hommes F'])
+        ->assertDontSee('Hommes G')
+        ->assertDontSee(ucfirst(now()->addDays(2)->translatedFormat('l j F')));
+});
+
+it('puts the teams on a bye after the days, by category then by letter', function (): void {
+    $veterans = League::factory()->create(['season_id' => $this->season->id, 'category' => 'VETERANS']);
+    weeklyFixture(weeklyTeam($this->ownClub, $this->menLeague, 'A'), weeklyTeam(Club::factory()->create(['name' => 'CTT Tourinnes']), $this->menLeague, 'A'), now()->addDays(3));
+    weeklyBye(weeklyTeam($this->ownClub, $veterans, 'C'), now()->addDay());
+    weeklyBye(weeklyTeam($this->ownClub, $this->menLeague, 'E'), now()->addDays(2));
+    weeklyBye(weeklyTeam($this->ownClub, $this->menLeague, 'B'), now()->addDays(4));
+
+    $this->actingAs($this->member)
+        ->get(route('admin.user.weekly-selections'))
+        ->assertOk()
+        ->assertDontSee(__('No interclub match in the next seven days'))
+        ->assertSeeInOrder(['CTT Tourinnes A', __('Resting this week (bye)'), 'Hommes B', 'Hommes E', 'Vétérans C']);
 });
 
 it('sets apart the tiles the reader plays in, and links each to its match page', function (): void {

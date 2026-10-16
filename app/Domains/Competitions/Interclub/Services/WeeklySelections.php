@@ -20,6 +20,10 @@ use Illuminate\Support\Collection;
  * Décidé le 2026-10-11 : seule une compo envoyée (`selection_confirmed_at`)
  * nomme des joueurs ; un forfait reste visible, sans joueurs ; un bye n'est pas
  * une rencontre.
+ *
+ * Décidé le 2026-10-15 : un bye n'est pas une tuile, mais une équipe absente
+ * des tuiles étonne. Les byes de la fenêtre sont donc nommés à part, sans jour
+ * ni heure : leur date n'est qu'une déduction de l'import.
  */
 class WeeklySelections
 {
@@ -57,6 +61,31 @@ class WeeklySelections
             ->map(fn (Collection $day): Collection => $day->values());
     }
 
+    /**
+     * The teams on a bye within the window, by category then letter.
+     *
+     * The window reads the date the import inferred from the rest of the
+     * division, so a bye shows the week its round is played, and only then.
+     *
+     * @return Collection<int, string>
+     */
+    public function byesBetween(CarbonInterface $from, CarbonInterface $to): Collection
+    {
+        return Interclub::query()
+            ->with(['league', 'visitedTeam.club', 'visitingTeam.club'])
+            ->where('is_bye', true)
+            ->where('start_date_time', '>=', $from)
+            ->where('start_date_time', '<', $to)
+            ->orderBy('interclubs.id')
+            ->get()
+            ->sortBy([
+                fn (Interclub $a, Interclub $b): int => $this->categoryRank($a) <=> $this->categoryRank($b),
+                fn (Interclub $a, Interclub $b): int => strnatcasecmp((string) $a->ourTeam()?->name, (string) $b->ourTeam()?->name),
+            ])
+            ->map(fn (Interclub $interclub): string => $this->teamName($interclub))
+            ->values();
+    }
+
     private function categoryRank(Interclub $interclub): int
     {
         return LeagueCategory::fromName($interclub->league?->category)?->sortOrder() ?? 99;
@@ -73,11 +102,17 @@ class WeeklySelections
         return $this->matchDayMaps[$interclub->season_id][$interclub->week_number] ?? null;
     }
 
+    private function teamName(Interclub $interclub): string
+    {
+        $category = LeagueCategory::fromName($interclub->league?->category);
+
+        return trim(($category?->label() ?? '') . ' ' . ($interclub->ourTeam()?->name ?? ''));
+    }
+
     private function tile(Interclub $interclub, ?int $matchDay): WeeklyFixture
     {
         $category = LeagueCategory::fromName($interclub->league?->category);
 
-        $ours = $interclub->ourTeam();
         $opponent = $interclub->opponentTeam();
         $isHome = $interclub->isHome();
 
@@ -99,7 +134,7 @@ class WeeklySelections
         return new WeeklyFixture(
             id: $interclub->id,
             startsAt: $interclub->start_date_time,
-            teamName: trim(($category?->label() ?? '') . ' ' . ($ours?->name ?? '')),
+            teamName: $this->teamName($interclub),
             opponentName: $opponent?->fullName() ?? '—',
             isHome: $isHome,
             town: $isHome ? null : ($interclub->room?->city_name ?? $opponent?->club?->city_name),

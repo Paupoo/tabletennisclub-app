@@ -13,10 +13,10 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
-use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistRemovedNotification;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
+use App\Domains\Competitions\Tournament\Services\TournamentPairingService;
 use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Domains\Competitions\Tournament\Services\TournamentSimulator;
@@ -100,10 +100,6 @@ new class extends Component
     public int $nb_tables = 8;
 
     // ── Doubles pair composition
-    public int $pairPlayer1Id = 0;
-
-    public int $pairPlayer2Id = 0;
-
     public ?int $paymentActionUserId = null;
 
     public int $pool_size = 4;
@@ -123,6 +119,11 @@ new class extends Component
     public string $qrCodeData = '';
 
     public array $qrPaymentDetails = [];
+
+    /** Vide = pas de tarif réduit. Une chaîne, pour qu'un champ vidé reste vide. */
+    public string $reducedPrice = '';
+
+    public string $reducedPriceUnderAge = '';
 
     public string $registration_deadline = '';
 
@@ -508,66 +509,12 @@ new class extends Component
 
     // ── Pair management (doubles)
 
-    public function createPair(): void
-    {
-        if (! $this->tournamentId || ! $this->pairPlayer1Id || ! $this->pairPlayer2Id) {
-            $this->error(__('Select two different players.'));
-
-            return;
-        }
-
-        if ($this->pairPlayer1Id === $this->pairPlayer2Id) {
-            $this->error(__('A player cannot be paired with themselves.'));
-
-            return;
-        }
-
-        $existing = TournamentPair::where('tournament_id', $this->tournamentId)
-            ->where(fn ($q) => $q
-                ->whereIn('player1_id', [$this->pairPlayer1Id, $this->pairPlayer2Id])
-                ->orWhereIn('player2_id', [$this->pairPlayer1Id, $this->pairPlayer2Id])
-            )
-            ->exists();
-
-        if ($existing) {
-            $this->error(__('One of these players is already in a pair.'));
-
-            return;
-        }
-
-        TournamentPair::create([
-            'tournament_id' => $this->tournamentId,
-            'player1_id' => $this->pairPlayer1Id,
-            'player2_id' => $this->pairPlayer2Id,
-            'registered_by' => Auth::id() ?? 0,
-        ]);
-
-        unset($this->pairs);
-        $this->pairPlayer1Id = 0;
-        $this->pairPlayer2Id = 0;
-        $this->success(__('Pair created.'), icon: 'o-user-group');
-    }
-
     // ── Computed: current tournament model
 
     #[Computed]
     public function currentTournament(): ?Tournament
     {
         return $this->tournamentId ? Tournament::find($this->tournamentId) : null;
-    }
-
-    public function deletePair(int $pairId): void
-    {
-        if (! $this->tournamentId) {
-            return;
-        }
-
-        TournamentPair::where('id', $pairId)
-            ->where('tournament_id', $this->tournamentId)
-            ->delete();
-
-        unset($this->pairs);
-        $this->warning(__('Pair deleted.'));
     }
 
     public function generateMatches(): void
@@ -604,6 +551,19 @@ new class extends Component
         if ($tournament->match_type === 'double') {
             if ($tournament->pairs()->count() === 0) {
                 $this->error(__('No pairs composed. Please compose pairs before generating pools.'));
+
+                return;
+            }
+
+            // Un joueur resté sur le banc serait écarté des poules sans bruit,
+            // alors qu'il est inscrit — et souvent déjà payé.
+            $benchCount = app(TournamentPairingService::class)->bench($tournament)->count();
+            if ($benchCount > 0) {
+                $this->error(trans_choice(
+                    '1 player has no partner: pair them or cancel their registration.|:count players have no partner: pair them or cancel their registration.',
+                    $benchCount,
+                    ['count' => $benchCount],
+                ));
 
                 return;
             }
@@ -864,6 +824,8 @@ new class extends Component
             $this->maxUsersManual = $tournament->max_users > 0
                 && $tournament->max_users !== $tournament->nb_pools * $tournament->pool_size;
             $this->price = (float) ($tournament->price ?? 0);
+            $this->reducedPrice = $tournament->reduced_price_under_age === null ? '' : (string) $tournament->reduced_price;
+            $this->reducedPriceUnderAge = (string) ($tournament->reduced_price_under_age ?? '');
             $this->selectedObjective = $tournament->objective?->value ?? '';
             $this->selectedRooms = $tournament->rooms->pluck('id')->toArray();
             $this->nb_tables = (int) $tournament->rooms->sum('total_playable_tables') ?: 8;
@@ -906,6 +868,21 @@ new class extends Component
                 ]));
             }
         }
+    }
+
+    /**
+     * Drop a player on another one, or on the bench (`$targetId` null).
+     */
+    public function movePlayer(int $playerId, ?int $targetId = null): void
+    {
+        $player = $this->entrant($playerId);
+        $target = $targetId === null ? null : $this->entrant($targetId);
+
+        if (! $player instanceof User || ($targetId !== null && ! $target instanceof User)) {
+            return;
+        }
+
+        $this->changePairs(fn (TournamentPairingService $pairing, Tournament $tournament) => $pairing->move($tournament, $player, $target, Auth::user()));
     }
 
     // ── Computed: effective table count
@@ -975,25 +952,15 @@ new class extends Component
         }
     }
 
+    /**
+     * @return array{pairs: list<array{id: int, players: list<array{id: int, name: string, ranking: string, age: int|null}>}>, bench: list<array{id: int, name: string, ranking: string, age: int|null}>}
+     */
     #[Computed]
-    public function pairs(): array
+    public function pairBoard(): array
     {
-        if (! $this->tournamentId) {
-            return [];
-        }
-
-        return TournamentPair::where('tournament_id', $this->tournamentId)
-            ->with(['player1', 'player2'])
-            ->get()
-            ->map(fn (TournamentPair $p): array => [
-                'id' => $p->id,
-                'name' => $p->displayName(),
-                'p1_id' => $p->player1_id,
-                'p1_name' => $p->player1?->full_name ?? '?',
-                'p2_id' => $p->player2_id,
-                'p2_name' => $p->player2?->full_name ?? '?',
-            ])
-            ->toArray();
+        return $this->currentTournament instanceof Tournament
+            ? app(TournamentPairingService::class)->board($this->currentTournament)
+            : ['pairs' => [], 'bench' => []];
     }
 
     /**
@@ -1175,6 +1142,23 @@ new class extends Component
         $this->success($user->full_name . ' ' . __('has been moved to the registered list.'));
     }
 
+    public function proposePairs(): void
+    {
+        $this->changePairs(fn (TournamentPairingService $pairing, Tournament $tournament) => $pairing->propose($tournament, Auth::user()));
+    }
+
+    public function publishPairs(): void
+    {
+        if (! $this->currentTournament instanceof Tournament) {
+            return;
+        }
+
+        app(TournamentPairingService::class)->publish($this->currentTournament);
+
+        unset($this->currentTournament);
+        $this->success(__('Pairs published: each player is told who they play with.'), icon: 'o-paper-airplane');
+    }
+
     #[Computed]
     public function registerableMembersOptions(): array
     {
@@ -1322,6 +1306,11 @@ new class extends Component
         $this->suggestMaxUsers();
     }
 
+    public function resetPairs(): void
+    {
+        $this->changePairs(fn (TournamentPairingService $pairing, Tournament $tournament) => $pairing->resetAll($tournament));
+    }
+
     // ── Save (create or update)
 
     public function save(): void
@@ -1341,6 +1330,8 @@ new class extends Component
             'doublesRegistrationMode' => 'nullable|in:club,self',
             'maxUsers' => 'required|integer|min:0',
             'price' => 'required|numeric|min:0',
+            'reducedPrice' => 'nullable|required_with:reducedPriceUnderAge|numeric|min:0|lt:price',
+            'reducedPriceUnderAge' => 'nullable|required_with:reducedPrice|integer|min:1|max:99',
             'description' => 'nullable|string|max:2000',
         ]);
 
@@ -1396,6 +1387,8 @@ new class extends Component
                 'objective' => $this->selectedObjective ?: null,
                 'max_users' => $this->maxUsers,
                 'price' => $this->price,
+                'reduced_price' => $this->reducedPrice === '' ? null : (float) $this->reducedPrice,
+                'reduced_price_under_age' => $this->reducedPriceUnderAge === '' ? null : (int) $this->reducedPriceUnderAge,
                 'registration_deadline' => $this->registration_deadline ?: null,
             ]
         );
@@ -1598,28 +1591,6 @@ new class extends Component
         }
     }
 
-    #[Computed]
-    public function unpaired(): array
-    {
-        if (! $this->tournamentId) {
-            return [];
-        }
-
-        $pairedIds = TournamentPair::where('tournament_id', $this->tournamentId)
-            ->get()
-            ->flatMap(fn ($p): array => [$p->player1_id, $p->player2_id])
-            ->unique()
-            ->toArray();
-
-        return Tournament::findOrFail($this->tournamentId)
-            ->users()
-            ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered'])
-            ->whereNotIn('users.id', $pairedIds)
-            ->get()
-            ->map(fn (User $u): array => ['id' => $u->id, 'name' => $u->full_name])
-            ->toArray();
-    }
-
     public function updatedMatchType(): void
     {
         $this->markPoolsStaleIfGenerated();
@@ -1756,9 +1727,42 @@ new class extends Component
             'event_date' => $tournament->start_date->toDateString(),
             'start_time' => $startTime?->format('H:i:s') ?? '00:00:00',
             'end_time' => $endTime?->format('H:i:s'),
-            'price' => (string) $tournament->price,
+            'price' => $tournament->eventPostPrice(),
             'max_participants' => $tournament->max_users ?: null,
         ];
+    }
+
+    /**
+     * Run a change on the pairs, refused once the pools are drawn.
+     *
+     * @param  Closure(TournamentPairingService, Tournament): void  $change
+     */
+    private function changePairs(Closure $change): void
+    {
+        if (! $this->currentTournament instanceof Tournament) {
+            return;
+        }
+
+        try {
+            $change(app(TournamentPairingService::class), $this->currentTournament);
+        } catch (LogicException) {
+            $this->error(__('The tournament is launched: pairs can no longer change.'));
+
+            return;
+        }
+
+        unset($this->pairBoard);
+        $this->markPoolsStaleIfGenerated();
+    }
+
+    /**
+     * A player registered to this tournament, or null for anyone else.
+     */
+    private function entrant(int $userId): ?User
+    {
+        return $this->currentTournament?->users()
+            ->wherePivotIn('registration_status', ['registered', 'confirmed'])
+            ->find($userId);
     }
 
     private function markPoolsStaleIfGenerated(): void

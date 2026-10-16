@@ -269,7 +269,7 @@
 @if ($this->currentTournament?->hasPairsComposedByClub())
     @php
         $board = $this->pairBoard;
-        $locked = $this->poolsGenerated;
+        $locked = $this->isLaunched;
         $benchCount = count($board['bench']);
     @endphp
     <div data-pair-board
@@ -297,7 +297,11 @@
                 </span>
             </x-slot:menu>
 
-            @unless ($locked)
+            @if ($locked)
+                <p class="mb-4 flex items-center gap-1.5 text-sm text-base-content/70">
+                    <x-icon name="o-lock-closed" class="h-4 w-4" /> {{ __('The tournament is launched: pairs can no longer change.') }}
+                </p>
+            @else
                 <div class="mb-4 flex flex-wrap items-center gap-2">
                     <x-button :label="__('Propose pairs')" icon="o-sparkles" class="btn-primary btn-sm"
                         wire:click="proposePairs" spinner="proposePairs" :disabled="$benchCount < 2" />
@@ -318,7 +322,7 @@
                         {{ __('Drag a player onto another to swap them, or tap one then the other.') }}
                     </p>
                 </div>
-            @endunless
+            @endif
 
             @if ($benchCount % 2 === 1 && ! $locked)
                 <x-alert icon="o-exclamation-triangle" class="alert-warning alert-soft mb-4"

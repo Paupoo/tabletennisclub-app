@@ -236,13 +236,13 @@ describe('starting over', function (): void {
     });
 });
 
-describe('once the pools are drawn', function (): void {
+describe('once the tournament is launched', function (): void {
     it('refuses to touch the pairs', function (Closure $change): void {
         $tournament = pairingTournament();
         [$anna] = pairingPair($tournament, 'Anna', 'Ben');
         pairingEntrant($tournament, ['first_name' => 'Eva']);
         pairingEntrant($tournament, ['first_name' => 'Finn']);
-        Pool::factory()->for($tournament)->create(['name' => 'A']);
+        $tournament->update(['status' => TournamentStatusEnum::PENDING]);
 
         expect(fn () => $change(app(TournamentPairingService::class), $tournament, $anna))
             ->toThrow(LogicException::class);
@@ -330,14 +330,27 @@ describe('the pair board in the wizard', function (): void {
         expect(pairingNames($tournament))->toBe([]);
     });
 
-    it('keeps the pairs as they are once the pools are drawn', function (): void {
+    it('keeps the pairs as they are once the tournament is launched, and says why', function (): void {
         $tournament = pairingTournament();
         [$anna] = pairingPair($tournament, 'Anna', 'Ben');
-        Pool::factory()->for($tournament)->create(['name' => 'A']);
+        $tournament->update(['status' => TournamentStatusEnum::PENDING]);
 
-        pairingWizard($tournament)->call('movePlayer', $anna->id, null);
+        $wizard = pairingWizard($tournament)->call('movePlayer', $anna->id, null);
 
-        expect(pairingNames($tournament))->toBe([['Anna', 'Ben']]);
+        expect(pairingNames($tournament))->toBe([['Anna', 'Ben']])
+            ->and(pairingBoardHtml($wizard))->toContain('Tournoi lancé');
+    });
+
+    it('lets the committee rework the pairs after the pools are drawn, and asks to redraw them', function (): void {
+        $tournament = pairingTournament();
+        [$anna] = pairingPair($tournament, 'Anna', 'Ben');
+        pairingPair($tournament, 'Carl', 'Dora');
+        $wizard = pairingWizard($tournament)->call('generatePools');
+        $dora = User::where('first_name', 'Dora')->first();
+
+        $wizard->call('movePlayer', $anna->id, $dora->id)->assertSet('poolsStale', true);
+
+        expect(pairingNames($tournament))->toBe([['Anna', 'Carl'], ['Ben', 'Dora']]);
     });
 
     it('proposes pairs for the bench, then starts over', function (): void {

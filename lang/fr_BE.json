@@ -3597,7 +3597,7 @@
     "Pair": "Pair",
     "Pair composition": "Composition des paires",
     "1 player has no partner: pair them or cancel their registration.|:count players have no partner: pair them or cancel their registration.": "1 joueur n’a pas de partenaire : appariez-le ou retirez son inscription.|:count joueurs n’ont pas de partenaire : appariez-les ou retirez leur inscription.",
-    "The pools are drawn: pairs can no longer change.": "Les poules sont tirées : les paires ne peuvent plus changer.",
+    "The tournament is launched: pairs can no longer change.": "Tournoi lancé : les paires ne peuvent plus changer.",
     ":age years old": ":age ans",
     ":count pair|:count pairs": ":count paire|:count paires",
     ":count on the bench|:count on the bench": ":count sur le banc|:count sur le banc",

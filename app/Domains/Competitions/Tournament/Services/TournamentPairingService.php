@@ -159,13 +159,15 @@ class TournamentPairingService
     }
 
     /**
-     * The pools are drawn from the pairs: once they exist, a pair is a seat in a
-     * pool and its matches, no longer a draft.
+     * Once the tournament is launched, the pairs are on the tables.
+     *
+     * Drawn pools do not freeze them: the committee may still rework a pair,
+     * then redraw the pools — which needs an empty bench.
      */
     private function ensureStillOpen(Tournament $tournament): void
     {
-        if ($tournament->pools()->exists()) {
-            throw new LogicException('The pools are drawn: pairs can no longer change.');
+        if ($tournament->state()->hasBeenLaunched()) {
+            throw new LogicException('The tournament is launched: pairs can no longer change.');
         }
     }
 

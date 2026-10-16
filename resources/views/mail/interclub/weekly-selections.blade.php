@@ -34,6 +34,13 @@
 </div>
 @endforeach
 
+@if ($byes !== [])
+<p style="margin: 28px 0 10px 0; padding-bottom: 6px; border-bottom: 2px solid #e2e8f0; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #1e40af;">{{ __('Resting this week (bye)') }}</p>
+@foreach ($byes as $team)
+<p style="margin: 0 0 4px 0; font-size: 14px; font-weight: 700; color: #0f172a;">{{ $team }}</p>
+@endforeach
+@endif
+
 <x-mail::button :url="$url">
 {{ __('See on the website') }}
 </x-mail::button>

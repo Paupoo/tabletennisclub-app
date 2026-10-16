@@ -203,3 +203,52 @@ it('greets every reader of a shared mailbox', function (): void {
 
     expect($html)->toContain(e(__('Hello :names,', ['names' => 'Sophie ' . __('and') . ' Marc'])));
 });
+
+/*
+| Les byes (grilling du 2026-10-15) : nommés à part, après les jours, sans
+| jour ni heure — mais jamais à eux seuls une raison d'écrire.
+*/
+function weeklyMailBye(Team $ours, int $days): Interclub
+{
+    return Interclub::factory()->create([
+        'season_id' => $ours->season_id,
+        'league_id' => $ours->league_id,
+        'visited_team_id' => $ours->id,
+        'visiting_team_id' => null,
+        'total_players' => 4,
+        'is_bye' => true,
+        'forfeit' => null,
+        'start_date_time' => now()->addDays($days),
+    ]);
+}
+
+it('names the teams on a bye after the days, before the button', function (): void {
+    weeklyMailFixture($this->team, $this->opponent, 2);
+    weeklyMailBye(Team::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'club_id' => $this->ownClub->id,
+        'name' => 'E',
+    ]), 3);
+
+    Notification::fake();
+    $player = User::factory()->create(['email' => 'player@example.test']);
+    new SendWeeklySelectionsJob('player@example.test', [$player->id], now()->toIso8601String(), now()->addDays(7)->toIso8601String())->handle();
+
+    Notification::assertSentOnDemand(WeeklySelectionsNotification::class, function (WeeklySelectionsNotification $notification): bool {
+        $html = (string) $notification->toMail(new User)->render();
+
+        expect($html)->toMatch('/CTT Tourinnes A.*' . preg_quote(e(__('Resting this week (bye)')), '/') . '.*Hommes E.*' . preg_quote(e(__('See on the website')), '/') . '/s');
+
+        return true;
+    });
+});
+
+it('sends nothing in a week with only teams on a bye', function (): void {
+    $this->team->users()->attach(User::factory()->create());
+    weeklyMailBye($this->team, 2);
+
+    $this->artisan('interclubs:send-weekly-selections')->assertSuccessful();
+
+    Queue::assertNothingPushed();
+});

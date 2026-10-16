@@ -42,14 +42,15 @@ class SendWeeklySelectionsJob implements ShouldQueue
     {
         $from = Carbon::parse($this->from);
         $to = Carbon::parse($this->to);
-        $days = app(WeeklySelections::class)->between($from, $to);
+        $selections = app(WeeklySelections::class);
+        $days = $selections->between($from, $to);
 
         if ($days->isEmpty()) {
             return;
         }
 
         Notification::route('mail', $this->address)
-            ->notify(new WeeklySelectionsNotification($days, $this->memberIds, $from, $to, $this->names));
+            ->notify(new WeeklySelectionsNotification($days, $this->memberIds, $from, $to, $this->names, $selections->byesBetween($from, $to)->all()));
     }
 
     /**

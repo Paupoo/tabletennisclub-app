@@ -27,6 +27,15 @@ new class extends Component
     public const int WINDOW_DAYS = 7;
 
     /**
+     * @return Collection<int, string>
+     */
+    #[Computed]
+    public function byes(): Collection
+    {
+        return app(WeeklySelections::class)->byesBetween(now(), now()->addDays(self::WINDOW_DAYS));
+    }
+
+    /**
      * @return Collection<string, Collection<int, WeeklyFixture>>
      */
     #[Computed]

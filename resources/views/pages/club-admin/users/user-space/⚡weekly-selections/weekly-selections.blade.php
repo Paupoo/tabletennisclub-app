@@ -24,4 +24,15 @@
             @endforeach
         </div>
     @endif
+
+    @if ($this->byes->isNotEmpty())
+        <section class="mt-8 space-y-3">
+            <h2 class="text-primary text-xs font-bold uppercase tracking-widest">{{ __('Resting this week (bye)') }}</h2>
+            <ul class="space-y-1">
+                @foreach ($this->byes as $team)
+                    <li class="font-semibold">{{ $team }}</li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
 </div>

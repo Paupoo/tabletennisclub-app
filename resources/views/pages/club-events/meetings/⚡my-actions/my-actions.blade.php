@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header :title="__('My actions')" :subtitle="__('What the meetings handed you. The next committee asks where each one stands.')" separator />
+    <x-header :title="__('My actions')" :subtitle="__('What the meetings handed you. The next committee asks where each one stands.')" separator progress-indicator />
 
     @php
         $origin = fn ($action) => __(':type of :date', ['type' => $action->meeting->type->getLabel(), 'date' => $action->meeting->scheduled_at?->format('d/m/Y')]);

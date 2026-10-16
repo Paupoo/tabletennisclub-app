@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header :title="__('Register of minutes')" :subtitle="__('What the meetings decided, who carries what, and everything written in the minutes.')" separator />
+    <x-header :title="__('Register of minutes')" :subtitle="__('What the meetings decided, who carries what, and everything written in the minutes.')" separator progress-indicator />
 
     @php
         $origin = fn ($meeting) => __(':type of :date', ['type' => $meeting->type->getLabel(), 'date' => $meeting->scheduled_at?->format('d/m/Y')]);

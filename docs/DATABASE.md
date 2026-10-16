@@ -173,6 +173,7 @@ erDiagram
 #### `meeting_user`
 - `meeting_id`, `user_id`, `status` (invited/declined/accepted)
 - `invitation_sent_at`, `response_at`
+- `is_guest`, `guest_agenda_item_id` — invité hors de l'audience (entraîneur…), pour un point ou toute la réunion ; ni quorum ni PV
 
 #### `meeting_date_proposals`
 - `meeting_id`, `proposed_at`, `is_selected`
@@ -182,9 +183,16 @@ erDiagram
 
 #### `meeting_agenda_items`
 - `meeting_id`, `sort_order`, `title`, `description`
+- `carried_from_id` — point non abordé repris d'une réunion précédente ; `carry_over_dismissed_at` — décoché à la préparation, ne revient plus
 
 #### `meeting_action_items`
 - `meeting_id`, `title`, `description`, `assigned_to_id`, `due_date`, `is_completed`
+- `completed_at` (null pour les actions faites avant son ajout), `abandoned_at`, `abandon_reason`
+- `progress_note`, `progress_noted_at` — où en est l'action, écrit par son responsable
+
+#### `meeting_action_reviews`
+- `meeting_id` (le comité qui fait le suivi), `action_item_id`, `outcome` (done/in_progress/postponed/reassigned/abandoned/not_reviewed)
+- `due_date`, `assigned_to_id`, `reason`, `progress_note` — figés à la séance ; une ligne par action et par comité
 
 #### `meeting_minutes`
 - `meeting_id`, `announcements`, `decisions`, `notes`

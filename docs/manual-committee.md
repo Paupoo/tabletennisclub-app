@@ -303,6 +303,8 @@ Every committee meeting opens its minutes on a **Follow-up of actions** block: t
 
 **Events → My actions** gathers the reader's own actions from every meeting: they note where each stands (the next committee reads it) and tick it done. Open actions count among their tasks on the dashboard and in the menu. Postponing, handing over and abandoning stay with whoever runs the meetings.
 
+**Events → Register of minutes** is the committee's memory, in three tabs: **Decisions** (one line each, grouped by meeting, the last 12 months by default — 6 months, the season or everything on demand — committees, assemblies or both), **Action items** (every action of every meeting, by owner and by state) and **Search** (a word looked up in everything the minutes hold: discussions, decisions, actions, outside the agenda, announcements, with the meeting, the place and an excerpt). Unpublished minutes show to meeting managers only, marked "Draft".
+
 ### Postponing or cancelling
 
 Click **Postpone** or **Cancel meeting** from the meeting detail page. All invited members receive a notification.

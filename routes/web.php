@@ -447,6 +447,7 @@ Route::prefix('admin/club-events/meetings')
             ->name('admin.meetings.create');
         // Before {meeting}: the owner's own actions, from every meeting.
         Route::livewire('/my-actions', 'pages::club-events.meetings.my-actions')->name('admin.meetings.my-actions');
+        Route::livewire('/register', 'pages::club-events.meetings.register')->name('admin.meetings.register');
         Route::livewire('/{meeting}', 'pages::club-events.meetings.show')->name('admin.meetings.show');
         Route::livewire('/{meeting}/minutes', 'pages::club-events.meetings.minutes')->name('admin.meetings.minutes');
     });

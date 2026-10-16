@@ -304,6 +304,8 @@ Chaque comité ouvre son PV sur un bloc **Suivi des actions** : les actions enco
 
 **Événements → Mes actions** rassemble les actions du lecteur, de toutes les réunions : il y note où il en est (le comité suivant le lit) et coche ce qui est fait. Les actions ouvertes comptent parmi ses tâches, au tableau de bord et dans le menu. Reporter, confier et abandonner restent l'affaire de celui qui gère les réunions.
 
+**Événements → Registre des PV** est la mémoire du comité, en trois onglets : **Décisions** (une ligne chacune, regroupées par réunion, les 12 derniers mois par défaut — 6 mois, la saison ou tout sur demande —, comités, AG ou les deux), **Actions** (toutes les actions de toutes les réunions, par responsable et par état) et **Recherche** (un mot cherché dans tout ce que contiennent les PV : discussions, décisions, actions, hors ordre du jour, annonces, avec la réunion, l'endroit et un extrait). Un PV non publié n'apparaît qu'à ceux qui gèrent les réunions, marqué « Brouillon ».
+
 ### Reporter ou annuler
 
 Cliquez sur **Reporter** ou **Annuler la réunion** depuis la page de détail. Tous les membres invités reçoivent une notification.

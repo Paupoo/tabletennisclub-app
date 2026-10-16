@@ -433,6 +433,7 @@
             :badge="$badge('meetings_to_close')" badge-classes="badge-warning" />
         <x-menu-item icon="o-clipboard-document-check" link="{{ route('admin.meetings.my-actions') }}" :title="__('My actions')"
             :badge="$badge('my_actions')" badge-classes="badge-warning" />
+        <x-menu-item icon="o-book-open" link="{{ route('admin.meetings.register') }}" :title="__('Register of minutes')" />
         @endcan
         @endfeature
         @feature('tournaments')

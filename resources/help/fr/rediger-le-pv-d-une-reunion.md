@@ -52,3 +52,13 @@ Tout le comité et les administrateurs. Les réunions ne sont pas visibles des m
 - **Envoyer à tous les membres** : seulement pour une **assemblée générale**. C'est cet envoi qui ouvre le PV aux membres actifs ; ils le retrouvent ensuite dans le menu, sous **PV des assemblées**.
 
 Le mail donne les décisions, les actions de chacun, un bouton **Lire le PV** et le PV en PDF. Sur la page de lecture, le responsable d'une action la coche « faite ». Il retrouve aussi toutes ses actions, de toutes les réunions, dans **Événements → Mes actions** : il y note où il en est — le comité suivant lit cette note — et coche ce qui est fait. Reporter, confier ou abandonner reste l'affaire du comité.
+
+## Retrouver ce qui a été décidé
+
+**Événements → Registre des PV** est la mémoire du comité, en trois onglets :
+
+- **Décisions** : une ligne par décision, regroupées par réunion, sur les 12 derniers mois par défaut (6 mois, la saison ou depuis le début au choix), comités et AG ou l'un des deux ;
+- **Actions** : toutes les actions de toutes les réunions, par responsable et par état (à faire, faite, abandonnée) ;
+- **Recherche** : un mot cherché dans tout ce qui est écrit — discussions, décisions, actions, hors ordre du jour, annonces —, avec la réunion, l'endroit et un extrait ; un clic ouvre le PV.
+
+Un PV non publié n'y apparaît que pour ceux qui gèrent les réunions, marqué « Brouillon ».

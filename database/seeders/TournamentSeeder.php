@@ -272,6 +272,7 @@ class TournamentSeeder extends Seeder
         $t = $this->makeTournament([
             'name' => '[SETUP] Double — paires composées',
             'match_type' => 'double',
+            'doubles_registration_mode' => 'club',
             'nb_pools' => 2,
             'max_users' => 16,
             'price' => 10,

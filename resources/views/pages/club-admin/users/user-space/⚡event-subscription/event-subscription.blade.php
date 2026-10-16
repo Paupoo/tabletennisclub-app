@@ -106,6 +106,19 @@
                             @if ($isActive)
                                 <x-admin.shared.status-badge status="registered" />
 
+                                @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::PUBLISHED)
+                                    <span class="text-xs text-base-content/70">{{ __('Registrations closed') }}</span>
+                                @endif
+
+                                {{-- Doubles composed by the club: the partner, once published --}}
+                                @if ($tournament->hasPairsComposedByClub() && $tournament->pairs_published_at !== null)
+                                    @php $myPair = $tournament->pairs->first(); @endphp
+                                    @if ($myPair)
+                                        <x-badge class="badge-info badge-sm" icon="o-user-group"
+                                            value="{{ __('With :partner', ['partner' => $myPair->partnerOf($this->user)->full_name]) }}" />
+                                    @endif
+                                @endif
+
                                 {{-- Doubles self-pair --}}
                                 @if ($tournament->match_type === 'double' && $tournament->doubles_registration_mode === 'self')
                                     @php $myPair = $tournament->pairs->first(); @endphp

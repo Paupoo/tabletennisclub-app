@@ -88,6 +88,7 @@ use Illuminate\Support\Carbon;
  * @property TournamentObjectiveEnum|null $objective
  * @property bool $deuce_enabled
  * @property string|null $doubles_registration_mode
+ * @property Carbon|null $pairs_published_at
  * @property-read EventPost|null $eventPost
  * @property-read NewsPost|null $newsPost
  * @property-read Collection<int, TournamentPair> $pairs
@@ -125,6 +126,7 @@ class Tournament extends Model
         'start_date' => 'datetime:Y-m-d\TH:i',
         'end_date' => 'datetime:Y-m-d\TH:i',
         'registration_deadline' => 'datetime',
+        'pairs_published_at' => 'datetime',
         'price' => MoneyCast::class,
         'reduced_price' => MoneyCast::class,
         'reduced_price_under_age' => 'integer',
@@ -164,6 +166,7 @@ class Tournament extends Model
         'logistics_buffer_minutes',
         'match_type',
         'doubles_registration_mode',
+        'pairs_published_at',
         'objective',
         'news_post_id',
         'registration_deadline',
@@ -216,6 +219,17 @@ class Tournament extends Model
     }
 
     /**
+     * Doubles whose pairs the committee composes.
+     *
+     * A doubles tournament saved before the mode existed has none: the
+     * committee composing is the default the wizard has always shown.
+     */
+    public function hasPairsComposedByClub(): bool
+    {
+        return $this->match_type === 'double' && $this->doubles_registration_mode !== 'self';
+    }
+
+    /**
      * Is the tournament announced on the public website?
      *
      * The other axis. It lives on the article, not on the status: a tournament
@@ -249,6 +263,9 @@ class Tournament extends Model
             ->max('tournament_user.waitlist_position') ?? 0) + 1;
     }
 
+    /**
+     * @return HasMany<TournamentPair, $this>
+     */
     public function pairs(): HasMany
     {
         return $this->hasMany(TournamentPair::class);

@@ -17,6 +17,7 @@ use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\AttestationFieldVa
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\BuildAttestationData;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\AttestationKind;
 use App\Domains\Shared\Enums\AttestationRefusal;
 use App\Domains\Shared\Enums\Mutuality;
 use App\Exceptions\AttestationNotAllowed;
@@ -64,6 +65,7 @@ final readonly class IssueAttestation
             $alreadyHeld = MutualAttestation::query()
                 ->where('user_id', $member->id)
                 ->where('season_id', $season->id)
+                ->where('kind', AttestationKind::Affiliation->value)
                 ->live()
                 ->lockForUpdate()
                 ->exists();
@@ -76,7 +78,7 @@ final readonly class IssueAttestation
             $data = $this->builder->for($affiliation);
             $settings = AttestationSetting::current();
 
-            $reference = $this->nextReference($season);
+            $reference = MutualAttestation::nextReference($season, AttestationKind::Affiliation);
             $token = strtolower((string) Str::ulid());
             $url = route('attestations.verify', ['token' => $token]);
 
@@ -89,6 +91,7 @@ final readonly class IssueAttestation
                 'user_id' => $member->id,
                 'subscription_id' => $affiliation->id,
                 'season_id' => $season->id,
+                'kind' => AttestationKind::Affiliation->value,
                 'mutuality' => $mutuality->value,
                 'reference' => $reference,
                 'token' => $token,
@@ -102,22 +105,6 @@ final readonly class IssueAttestation
                 'issued_at' => now(),
             ]);
         });
-    }
-
-    /**
-     * ATT-2627-00042: the season, then a per-season counter.
-     *
-     * Readable out loud over the phone, which is how a mutual insurer's desk
-     * will quote it back to the office.
-     */
-    private function nextReference(Season $season): string
-    {
-        $short = preg_replace('/\D/', '', (string) $season->name);
-        $short = mb_substr((string) $short, 2, 2) . mb_substr((string) $short, 6, 2);
-
-        $taken = MutualAttestation::where('season_id', $season->id)->count();
-
-        return sprintf('ATT-%s-%05d', $short === '' ? 'XXXX' : $short, $taken + 1);
     }
 
     private function renderFor(

@@ -9,6 +9,7 @@ use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\AnchorResolver;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\PdfNormaliser;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\PdfTextExtractor;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Templates\AnchorMaps;
+use App\Domains\Shared\Enums\AttestationKind;
 use App\Domains\Shared\Enums\Mutuality;
 use Illuminate\Support\Facades\Storage;
 
@@ -34,22 +35,26 @@ final readonly class InstallAttestationTemplate
         string $sourcePath,
         string $originalName,
         ?int $uploadedByUserId = null,
+        AttestationKind $kind = AttestationKind::Affiliation,
     ): AttestationTemplate {
-        $relative = 'attestation-templates/' . $mutuality->value . '.pdf';
+        // The affiliation forms keep the place they always had; a camp form
+        // goes beside them, in a folder of its own.
+        $folder = $kind === AttestationKind::Affiliation ? 'attestation-templates' : 'attestation-templates/' . $kind->value;
+        $relative = $folder . '/' . $mutuality->value . '.pdf';
         $disk = Storage::disk('local');
-        $disk->makeDirectory('attestation-templates');
+        $disk->makeDirectory($folder);
 
         $this->normaliser->toPdf14($sourcePath, $disk->path($relative));
 
         $layout = $this->extractor->extract($disk->path($relative));
 
         return AttestationTemplate::updateOrCreate(
-            ['mutuality' => $mutuality->value],
+            ['mutuality' => $mutuality->value, 'kind' => $kind->value],
             [
                 'path' => $relative,
                 'original_name' => $originalName,
                 'page_count' => $layout->pageCount(),
-                'unresolved_fields' => $this->resolver->unresolved($layout, AnchorMaps::for($mutuality)),
+                'unresolved_fields' => $this->resolver->unresolved($layout, AnchorMaps::for($mutuality, $kind)),
                 'uploaded_by_user_id' => $uploadedByUserId,
             ],
         );

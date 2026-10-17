@@ -57,7 +57,7 @@
         @endfeature
         {{-- Follows an affiliation validated and paid: it sits with the money. --}}
         @feature('attestations')
-        <x-menu-item icon="o-document-check" link="{{ route('admin.user.attestation', $user) }}" :title="__('Mutual attestation')" />
+        <x-menu-item icon="o-document-check" link="{{ route('admin.user.attestation', $user) }}" :title="__('Mutual attestations')" />
         @endfeature
 
         <li data-menu-group="separator-settings"><x-menu-separator /></li>

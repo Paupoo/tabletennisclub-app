@@ -29,7 +29,7 @@ it('orders the member space menu in four groups', function (): void {
         'separator-money',
         __('My payments'),
         __('My expense reports'),
-        __('Mutual attestation'),
+        __('Mutual attestations'),
         'separator-settings',
         __('Settings'),
     ])->map(fn (string $needle): int|false => str_starts_with($needle, 'separator-')

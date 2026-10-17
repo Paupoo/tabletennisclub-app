@@ -1354,7 +1354,7 @@ new class extends Component
             return [
                 'id' => $u->id,
                 'name' => $u->full_name,
-                'sort_name' => Str::lower(Str::ascii($u->last_name . ' ' . $u->first_name)),
+                'sort_name' => Str::lower(Str::ascii($u->first_name . ' ' . $u->last_name)),
                 'search' => Str::lower(Str::ascii($u->first_name . ' ' . $u->last_name)),
                 'ranking' => $u->ranking->getLabel(),
                 'status' => $status,
@@ -1378,7 +1378,8 @@ new class extends Component
 
     /**
      * The registered players as the list shows them: the tab chosen, the name
-     * searched, sorted by surname unless a column says otherwise.
+     * searched, sorted by first name then last name unless a column says
+     * otherwise.
      */
     #[Computed]
     public function registrations(): Collection

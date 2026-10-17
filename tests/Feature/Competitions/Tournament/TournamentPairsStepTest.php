@@ -130,14 +130,14 @@ describe('who is told when a pair changes', function (): void {
 });
 
 describe('the list of registrations', function (): void {
-    it('is sorted by name', function (): void {
+    it('is sorted by first name, then by last name', function (): void {
         $tournament = pairsStepTournament(['match_type' => 'single', 'doubles_registration_mode' => null]);
-        foreach (['Zoé' => 'Zorro', 'Anne' => 'Albert', 'Marc' => 'Martin'] as $first => $last) {
+        foreach ([['Zoé', 'Albert'], ['Anne', 'Zorro'], ['Anne', 'Martin'], ['Émile', 'Dubois']] as [$first, $last]) {
             $tournament->users()->attach(User::factory()->create(['first_name' => $first, 'last_name' => $last])->id, ['registration_status' => 'registered']);
         }
 
         expect(pairsStepWizard($tournament, '5')->get('registrations')->pluck('name')->all())
-            ->toBe(['Anne Albert', 'Marc Martin', 'Zoé Zorro']);
+            ->toBe(['Anne Martin', 'Anne Zorro', 'Émile Dubois', 'Zoé Albert']);
     });
 
     it('finds a player by name', function (): void {

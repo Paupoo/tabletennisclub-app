@@ -296,21 +296,6 @@ new class extends Component
         $this->paymentModal = true;
     }
 
-    /**
-     * Who to contact once a member can no longer withdraw alone: the holders
-     * of the Tournaments délégation, as the « Who does what » page lists them.
-     *
-     * @return Collection<int, User>
-     */
-    #[Computed]
-    public function tournamentOrganisers(): Collection
-    {
-        return User::role(Role::TOURNAMENTS->value)
-            ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->get();
-    }
-
     #[Computed]
     public function ourClub(): Club
     {
@@ -404,6 +389,21 @@ new class extends Component
         $this->meetingRsvpModal = false;
         unset($this->upcomingMeetings, $this->meetingRegistrations, $this->pendingPayments);
         $this->success(__('Your participation has been updated.'), icon: 'o-calendar-days');
+    }
+
+    /**
+     * Who to contact once a member can no longer withdraw alone: the holders
+     * of the Tournaments délégation, as the « Who does what » page lists them.
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function tournamentOrganisers(): Collection
+    {
+        return User::role(Role::TOURNAMENTS->value)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
     }
 
     /**

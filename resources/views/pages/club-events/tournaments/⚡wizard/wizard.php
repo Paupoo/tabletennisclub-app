@@ -48,12 +48,12 @@ new class extends Component
     use HasBreadcrumbs;
     use HasEventPostForm, KeepsNumericPropertiesTyped, Toast, WithFileUploads;
 
+    /** Places in the bracket: 4, 8 or 16. */
+    public int $bracketSize = 8;
+
     public bool $bulkCancelModal = false;
 
     public bool $bulkDrawer = false;
-
-    /** Places in the bracket: 4, 8 or 16. */
-    public int $bracketSize = 8;
 
     /** Le relèvement du plafond a été confirmé : `save()` ne redemande pas. */
     public bool $capacityConfirmed = false;
@@ -70,14 +70,14 @@ new class extends Component
 
     public bool $inviteIncludeArticle = false;
 
+    public string $inviteMessage = '';
+
     /**
      * The tables put up for the day, ticked at the launch.
      *
      * @var list<int>
      */
     public array $launchTableIds = [];
-
-    public string $inviteMessage = '';
 
     public int $logistics_buffer = 3;
 
@@ -700,6 +700,27 @@ new class extends Component
     }
 
     /**
+     * The tables of the chosen rooms, for the checklist of the launch.
+     *
+     * @return list<array{id: int, name: string, out_of_service: bool}>
+     */
+    #[Computed]
+    public function launchableTables(): array
+    {
+        return Table::with('room')
+            ->whereIn('room_id', $this->selectedRooms)
+            ->orderBy('room_id')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Table $table): array => [
+                'id' => $table->id,
+                'name' => ($table->room?->name ?? '—') . ' · ' . __('Table') . ' ' . $table->name,
+                'out_of_service' => $table->state === TableStateEnum::OUT_OF_SERVICE,
+            ])
+            ->all();
+    }
+
+    /**
      * The roll call: a registered player is not here.
      *
      * `$excused` says whether they had warned, which decides what becomes of
@@ -983,46 +1004,6 @@ new class extends Component
     }
 
     /**
-     * The tables of the chosen rooms, for the checklist of the launch.
-     *
-     * @return list<array{id: int, name: string, out_of_service: bool}>
-     */
-    #[Computed]
-    public function launchableTables(): array
-    {
-        return Table::with('room')
-            ->whereIn('room_id', $this->selectedRooms)
-            ->orderBy('room_id')
-            ->orderBy('name')
-            ->get()
-            ->map(fn (Table $table): array => [
-                'id' => $table->id,
-                'name' => ($table->room?->name ?? '—') . ' · ' . __('Table') . ' ' . $table->name,
-                'out_of_service' => $table->state === TableStateEnum::OUT_OF_SERVICE,
-            ])
-            ->all();
-    }
-
-    /**
-     * The pool sizes on offer, counted in pairs for doubles.
-     *
-     * @return list<array{id: int, name: string}>
-     */
-    #[Computed]
-    public function poolSizeOptions(): array
-    {
-        return array_map(
-            fn (int $size): array => [
-                'id' => $size,
-                'name' => $this->matchType === 'double'
-                    ? trans_choice('{1} :count pair|[2,*] :count pairs', $size, ['count' => $size])
-                    : trans_choice('{1} :count player|[2,*] :count players', $size, ['count' => $size]),
-            ],
-            [3, 4, 5, 6],
-        );
-    }
-
-    /**
      * @return array{pairs: list<array{id: int, players: list<array{id: int, name: string, ranking: string, age: int|null}>}>, bench: list<array{id: int, name: string, ranking: string, age: int|null}>}
      */
     #[Computed]
@@ -1146,6 +1127,25 @@ new class extends Component
     {
         return $this->tournamentId !== null
             && (bool) Tournament::find($this->tournamentId)?->pools()->exists();
+    }
+
+    /**
+     * The pool sizes on offer, counted in pairs for doubles.
+     *
+     * @return list<array{id: int, name: string}>
+     */
+    #[Computed]
+    public function poolSizeOptions(): array
+    {
+        return array_map(
+            fn (int $size): array => [
+                'id' => $size,
+                'name' => $this->matchType === 'double'
+                    ? trans_choice('{1} :count pair|[2,*] :count pairs', $size, ['count' => $size])
+                    : trans_choice('{1} :count player|[2,*] :count players', $size, ['count' => $size]),
+            ],
+            [3, 4, 5, 6],
+        );
     }
 
     public function processLaunch(): mixed
@@ -1864,11 +1864,57 @@ new class extends Component
             ->find($userId);
     }
 
+    /**
+     * The smallest bracket the pools can fill: every direct qualifier in, and
+     * no more repêchés than there are pools.
+     */
+    private function fittingBracketSize(): int
+    {
+        $direct = $this->nb_poules * $this->nb_qualifies;
+
+        foreach ([4, 8, 16] as $size) {
+            if ($size >= $direct && $size <= $direct + $this->nb_poules) {
+                return $size;
+            }
+        }
+
+        foreach ([4, 8, 16] as $size) {
+            if ($size >= $direct) {
+                return $size;
+            }
+        }
+
+        return 16;
+    }
+
     private function markPoolsStaleIfGenerated(): void
     {
         if ($this->poolsGenerated || $this->matchesGenerated) {
             $this->poolsStale = true;
         }
+    }
+
+    /**
+     * The playable tables of the rooms chosen for the tournament.
+     *
+     * @return list<int>
+     */
+    private function playableTableIds(): array
+    {
+        return Table::whereIn('room_id', $this->selectedRooms)
+            ->whereNot('state', TableStateEnum::OUT_OF_SERVICE)
+            ->orderBy('room_id')
+            ->orderBy('name')
+            ->pluck('id')
+            ->all();
+    }
+
+    /**
+     * How many registered players make one entrant of a pool: a pair holds two.
+     */
+    private function playersPerEntrant(): int
+    {
+        return $this->matchType === 'double' ? 2 : 1;
     }
 
     private function resetPostAction(): void
@@ -1896,51 +1942,5 @@ new class extends Component
         }
 
         $this->maxUsers = $this->nb_poules * $this->pool_size * $this->playersPerEntrant();
-    }
-
-    /**
-     * The playable tables of the rooms chosen for the tournament.
-     *
-     * @return list<int>
-     */
-    private function playableTableIds(): array
-    {
-        return Table::whereIn('room_id', $this->selectedRooms)
-            ->whereNot('state', TableStateEnum::OUT_OF_SERVICE)
-            ->orderBy('room_id')
-            ->orderBy('name')
-            ->pluck('id')
-            ->all();
-    }
-
-    /**
-     * The smallest bracket the pools can fill: every direct qualifier in, and
-     * no more repêchés than there are pools.
-     */
-    private function fittingBracketSize(): int
-    {
-        $direct = $this->nb_poules * $this->nb_qualifies;
-
-        foreach ([4, 8, 16] as $size) {
-            if ($size >= $direct && $size <= $direct + $this->nb_poules) {
-                return $size;
-            }
-        }
-
-        foreach ([4, 8, 16] as $size) {
-            if ($size >= $direct) {
-                return $size;
-            }
-        }
-
-        return 16;
-    }
-
-    /**
-     * How many registered players make one entrant of a pool: a pair holds two.
-     */
-    private function playersPerEntrant(): int
-    {
-        return $this->matchType === 'double' ? 2 : 1;
     }
 };

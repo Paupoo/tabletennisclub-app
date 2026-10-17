@@ -21,6 +21,7 @@ use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Domains\Competitions\Tournament\Services\TournamentSimulator;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
+use App\Domains\Shared\Enums\TableStateEnum;
 use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\States\Tournament\TournamentStateMachine;
@@ -68,6 +69,13 @@ new class extends Component
     public bool $hasHandicapPoints = true;
 
     public bool $inviteIncludeArticle = false;
+
+    /**
+     * The tables put up for the day, ticked at the launch.
+     *
+     * @var list<int>
+     */
+    public array $launchTableIds = [];
 
     public string $inviteMessage = '';
 
@@ -850,6 +858,7 @@ new class extends Component
             $this->selectedObjective = $tournament->objective?->value ?? '';
             $this->selectedRooms = $tournament->rooms->pluck('id')->toArray();
             $this->nb_tables = (int) $tournament->rooms->sum('total_playable_tables') ?: 8;
+            $this->launchTableIds = $this->playableTableIds();
 
             /*
              * Le statut ne choisit l'étape que si l'URL n'en porte pas une : l'icône
@@ -971,6 +980,27 @@ new class extends Component
         } else {
             $this->showCloseRegistrationsModal = true;
         }
+    }
+
+    /**
+     * The tables of the chosen rooms, for the checklist of the launch.
+     *
+     * @return list<array{id: int, name: string, out_of_service: bool}>
+     */
+    #[Computed]
+    public function launchableTables(): array
+    {
+        return Table::with('room')
+            ->whereIn('room_id', $this->selectedRooms)
+            ->orderBy('room_id')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Table $table): array => [
+                'id' => $table->id,
+                'name' => ($table->room?->name ?? '—') . ' · ' . __('Table') . ' ' . $table->name,
+                'out_of_service' => $table->state === TableStateEnum::OUT_OF_SERVICE,
+            ])
+            ->all();
     }
 
     /**
@@ -1138,11 +1168,20 @@ new class extends Component
             return null;
         }
 
-        new TournamentStateMachine($tournament)->start();
-
-        // Populate table_tournament pivot from the tournament's linked rooms
-        $tableIds = Table::whereHas('room', fn ($q) => $q->whereIn('rooms.id', $tournament->rooms()->pluck('rooms.id')))
+        // Les tables du jour sont celles cochées : la salle en compte souvent
+        // plus qu'on n'en monte, et une table hors service n'a rien à y faire.
+        $tableIds = Table::whereIn('id', $this->launchTableIds)
+            ->whereNot('state', TableStateEnum::OUT_OF_SERVICE)
             ->pluck('id');
+
+        if ($tableIds->isEmpty()) {
+            $this->showLaunchModal = false;
+            $this->error(__('Tick at least one table for the day.'));
+
+            return null;
+        }
+
+        new TournamentStateMachine($tournament)->start();
 
         $tournament->tables()->sync(
             $tableIds->mapWithKeys(fn ($id): array => [$id => ['is_table_free' => true]])->all()
@@ -1679,6 +1718,8 @@ new class extends Component
 
     public function updatedSelectedRooms(): void
     {
+        $this->launchTableIds = $this->playableTableIds();
+
         if ($this->selectedRooms !== []) {
             $total = Room::whereIn('id', $this->selectedRooms)->sum('total_playable_tables');
 
@@ -1855,6 +1896,21 @@ new class extends Component
         }
 
         $this->maxUsers = $this->nb_poules * $this->pool_size * $this->playersPerEntrant();
+    }
+
+    /**
+     * The playable tables of the rooms chosen for the tournament.
+     *
+     * @return list<int>
+     */
+    private function playableTableIds(): array
+    {
+        return Table::whereIn('room_id', $this->selectedRooms)
+            ->whereNot('state', TableStateEnum::OUT_OF_SERVICE)
+            ->orderBy('room_id')
+            ->orderBy('name')
+            ->pluck('id')
+            ->all();
     }
 
     /**

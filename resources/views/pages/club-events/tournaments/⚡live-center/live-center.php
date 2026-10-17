@@ -1,19 +1,25 @@
 <?php
 
 declare(strict_types=1);
+use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
+use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
+use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Competitions\Tournament\Services\TournamentFinalPhaseService;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
 use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
+use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Domains\Competitions\Tournament\Services\TournamentTableService;
 use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\TableStateEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\States\Tournament\TournamentStateMachine;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -43,7 +49,20 @@ new class extends Component
      */
     public string $activeTab = '';
 
+    /**
+     * The score drawer was opened on a match already played: a correction,
+     * with its own rules, never a second entry slipping through.
+     */
+    public bool $correcting = false;
+
     public bool $createNewsPost = false;
+
+    /** @var array{name: string, reference: string, amount_due: float}|array{} */
+    public array $qrPaymentDetails = [];
+
+    public string $qrCodeData = '';
+
+    public bool $showQrModal = false;
 
     public bool $launchDrawer = false;
 
@@ -154,11 +173,15 @@ new class extends Component
         if ($this->sendThankYou && $this->thankYouSubject !== '' && $this->thankYouBody !== '') {
             $rankings = $this->rankings;
 
+            // Les présents, à leur adresse ou à celle de leur tuteur : un
+            // enfant sans adresse n'en reçoit pas moins ses résultats.
             $this->tournament->users()
                 ->wherePivotIn('registration_status', ['registered', 'confirmed'])
+                ->with('guardians')
                 ->get()
+                ->filter(fn (User $user): bool => $user->contactEmails() !== [])
                 ->each(function (User $user) use ($rankings): void {
-                    Mail::to($user->email)->queue(new TournamentResultsMail(
+                    Mail::to($user->contactEmails())->queue(new TournamentResultsMail(
                         tournament: $this->tournament,
                         recipient: $user,
                         emailSubject: $this->thankYouSubject,
@@ -204,7 +227,7 @@ new class extends Component
             return;
         }
 
-        $podiumLines = $top3->map(fn ($e): string => $e['rank'] . '. ' . $e['user']->full_name . ' (' . $e['result'] . ')')->implode("\n");
+        $podiumLines = $top3->map(fn ($e): string => $e['rank'] . '. ' . $this->rankedName($e) . ' (' . $e['result'] . ')')->implode("\n");
 
         $this->thankYouBody = __('Dear participants,') . "\n\n"
             . __('Thank you for joining us for :name! It was a great day of table tennis.', ['name' => $this->tournament->name]) . "\n\n"
@@ -213,7 +236,7 @@ new class extends Component
 
         $this->newsPostContent = '## ' . $this->tournament->name . "\n\n"
             . '**' . __('Podium') . " :**\n\n"
-            . $top3->map(fn ($e): string => '- **' . $e['rank'] . '. ' . $e['user']->full_name . '** — ' . $e['result'])->implode("\n")
+            . $top3->map(fn ($e): string => '- **' . $e['rank'] . '. ' . $this->rankedName($e) . '** — ' . $e['result'])->implode("\n")
             . "\n\n" . __('Congratulations to all participants!');
     }
 
@@ -287,6 +310,23 @@ new class extends Component
         $this->launchDrawer = true;
     }
 
+    /**
+     * The pool matches already played, by pool, for a correction.
+     *
+     * @return Collection<int, Collection<int, TournamentMatch>>
+     */
+    #[Computed]
+    public function playedPoolMatches(): Collection
+    {
+        return TournamentMatch::where('tournament_id', $this->tournament->id)
+            ->whereNotNull('pool_id')
+            ->where('status', 'completed')
+            ->with(['player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2', 'sets'])
+            ->orderBy('match_order')
+            ->get()
+            ->groupBy('pool_id');
+    }
+
     // ── Actions: score entry
 
     public function openScoreEntry(int $matchId, ?int $tableId = null): void
@@ -312,6 +352,8 @@ new class extends Component
                 }
             }
         }
+
+        $this->correcting = $match?->isCompleted() ?? false;
 
         unset($this->selectedMatch);
         $this->scoresDirty = false;
@@ -365,7 +407,8 @@ new class extends Component
                 'side1Blocked' => $side1Blocked,
                 'side2Blocked' => $side2Blocked,
                 'refereeBlocked' => $refereeBlocked,
-                'blocked' => $side1Blocked || $side2Blocked || $refereeBlocked,
+                // A busy referee is a warning to replace them, not a lock.
+                'blocked' => $side1Blocked || $side2Blocked,
             ];
         });
     }
@@ -503,24 +546,317 @@ new class extends Component
             }
         }
 
-        $match->recordResult($setResults);
+        if ($this->correcting) {
+            if (! $this->correct($match, $setResults)) {
+                return;
+            }
+        } elseif (! app(TournamentMatchService::class)->recordFirstResult($match, $setResults)) {
+            $this->scoreDrawer = false;
+            $this->error(__('Score already entered: ask the scorers\' table for a correction.'));
 
-        app(TournamentTableService::class)->freeUsedTable($match);
-
-        if ($match->round !== null && $match->winner_id) {
-            app(TournamentFinalPhaseService::class)->completeMatch($match, $match->winner_id);
+            return;
         }
 
         $this->scoreDrawer = false;
         $this->selectedMatchId = null;
+        $this->correcting = false;
         unset($this->tables, $this->upcomingMatches, $this->pools, $this->knockoutMatches, $this->selectedMatch);
 
-        $match->loadMissing(['pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2']);
+        $match->refresh()->loadMissing(['pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2']);
         $isDoubles = $match->pair1_id !== null;
         $winnerName = $isDoubles
             ? ($match->winner_id === $match->player1_id ? $match->pair1?->displayName() : $match->pair2?->displayName())
             : ($match->winner_id === $match->player1_id ? $match->player1?->full_name : $match->player2?->full_name);
         $this->success(($winnerName ?? '—') . ' ' . __('wins!'));
+    }
+
+    /**
+     * Correct a match already played, within what the tournament allows.
+     *
+     * @param  array<int, array{player1_score: int, player2_score: int}>  $setResults
+     */
+    private function correct(TournamentMatch $match, array $setResults): bool
+    {
+        if ($match->pool_id !== null) {
+            if ($this->bracketExists) {
+                $this->error(__('The bracket is drawn: a pool score can no longer change who qualified.'));
+
+                return false;
+            }
+
+            $match->recordResult($setResults);
+            $match->update(['is_forfeit' => false]);
+
+            return true;
+        }
+
+        try {
+            app(TournamentFinalPhaseService::class)->correctMatch($match, $setResults);
+        } catch (LogicException) {
+            $this->error(__('The next match has already started: this score can no longer change.'));
+
+            return false;
+        }
+
+        return true;
+    }
+
+    // ── Actions: the way back
+
+    /**
+     * A match put on a table by mistake goes back to the queue.
+     */
+    public function cancelLaunch(int $matchId): void
+    {
+        abort_unless($this->canManageTournament, 403);
+
+        $match = TournamentMatch::where('tournament_id', $this->tournament->id)->find($matchId);
+
+        if (! $match instanceof TournamentMatch || $match->status !== 'in_progress') {
+            return;
+        }
+
+        DB::transaction(function () use ($match): void {
+            $match->sets()->delete();
+            $match->update(['status' => 'scheduled']);
+
+            DB::table('table_tournament')
+                ->where('tournament_id', $this->tournament->id)
+                ->where('tournament_match_id', $match->id)
+                ->update(['is_table_free' => true, 'tournament_match_id' => null, 'match_started_at' => null, 'match_ended_at' => null]);
+        });
+
+        $this->scoreDrawer = false;
+        unset($this->tables, $this->upcomingMatches, $this->queue, $this->busyPlayerIds);
+        $this->warning(__('Match back in the queue.'), icon: 'o-arrow-uturn-left');
+    }
+
+    /**
+     * Name another referee for a match, or none: the players count themselves.
+     */
+    public function changeReferee(int $matchId, ?int $refereeId = null): void
+    {
+        abort_unless($this->canManageTournament, 403);
+
+        $match = TournamentMatch::where('tournament_id', $this->tournament->id)->with(['pair1', 'pair2'])->find($matchId);
+
+        if (! $match instanceof TournamentMatch || $match->isCompleted()) {
+            return;
+        }
+
+        if ($refereeId !== null) {
+            $isEntrant = $this->tournament->users()
+                ->where('users.id', $refereeId)
+                ->wherePivotIn('registration_status', ['registered', 'confirmed'])
+                ->exists();
+
+            if (! $isEntrant || $match->sidePlayerIds(1)->merge($match->sidePlayerIds(2))->contains($refereeId)) {
+                $this->error(__('The referee must be a registered player who is not in the match.'));
+
+                return;
+            }
+        }
+
+        $match->update(['referee_id' => $refereeId]);
+        unset($this->upcomingMatches, $this->queue);
+        $this->success($refereeId === null ? __('No referee: the players count themselves.') : __('Referee changed.'));
+    }
+
+    /**
+     * The registered players who could referee this match right now.
+     *
+     * @return list<array{id: int, name: string}>
+     */
+    public function refereeChoices(TournamentMatch $match): array
+    {
+        $exclude = $match->sidePlayerIds(1)->merge($match->sidePlayerIds(2))->merge($this->busyPlayerIds)->all();
+
+        return $this->tournament->users()
+            ->wherePivotIn('registration_status', ['registered', 'confirmed'])
+            ->whereNotIn('users.id', $exclude)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get()
+            ->map(fn (User $player): array => ['id' => $player->id, 'name' => $player->full_name])
+            ->all();
+    }
+
+    // ── Actions: forfeits
+
+    /**
+     * One side is not at the table: the other wins the match.
+     *
+     * @param  1|2  $absentSide
+     */
+    public function forfeit(int $matchId, int $absentSide): void
+    {
+        abort_unless($this->canManageTournament, 403);
+
+        $match = TournamentMatch::where('tournament_id', $this->tournament->id)->find($matchId);
+
+        if (! $match instanceof TournamentMatch || $match->isCompleted() || $match->player1_id === null || $match->player2_id === null) {
+            return;
+        }
+
+        app(TournamentMatchService::class)->forfeit($match, $absentSide === 1 ? 1 : 2);
+        $this->advanceFromBracket($match->fresh());
+
+        $this->scoreDrawer = false;
+        unset($this->tables, $this->upcomingMatches, $this->pools, $this->knockoutMatches, $this->queue, $this->busyPlayerIds);
+        $this->warning(__('Walkover recorded.'), icon: 'o-flag');
+    }
+
+    /**
+     * A player leaves the tournament: every match their side still has to play
+     * is lost, those already played stand.
+     */
+    public function withdraw(int $userId): void
+    {
+        abort_unless($this->canManageTournament, 403);
+
+        $player = User::find($userId);
+        $registration = TournamentRegistration::where('tournament_id', $this->tournament->id)
+            ->where('user_id', $userId)
+            ->whereIn('registration_status', ['registered', 'confirmed'])
+            ->first();
+
+        if (! $player instanceof User || $registration === null) {
+            return;
+        }
+
+        $registration->update(['registration_status' => 'no_show']);
+
+        foreach (app(TournamentMatchService::class)->forfeitRemainingMatches($this->tournament, $player) as $forfeited) {
+            $this->advanceFromBracket($forfeited->fresh());
+        }
+
+        unset($this->tables, $this->upcomingMatches, $this->pools, $this->knockoutMatches, $this->rankings, $this->queue, $this->busyPlayerIds);
+        $this->warning(__(':name withdraws: their remaining matches are lost.', ['name' => $player->full_name]), icon: 'o-flag');
+    }
+
+    /**
+     * A ranked entrant as people read it: the pair in full, or the player.
+     *
+     * @param  array<string, mixed>  $entry
+     */
+    public function rankedName(array $entry): string
+    {
+        return isset($entry['pair']) && $entry['pair'] !== null
+            ? $entry['pair']->fullName()
+            : ($entry['user']?->full_name ?? '—');
+    }
+
+    private function advanceFromBracket(?TournamentMatch $match): void
+    {
+        if ($match instanceof TournamentMatch && $match->round !== null && $match->winner_id !== null) {
+            app(TournamentFinalPhaseService::class)->completeMatch($match, $match->winner_id);
+            $match->update(['is_forfeit' => true]);
+        }
+    }
+
+    // ── Actions: tables of the day
+
+    /**
+     * Open one more table: the hall upstairs when the queue grows.
+     */
+    public function addTable(int $tableId): void
+    {
+        abort_unless($this->canManageTournament, 403);
+
+        $table = Table::find($tableId);
+
+        if (! $table instanceof Table || $this->tournament->tables()->where('tables.id', $tableId)->exists()) {
+            return;
+        }
+
+        $this->tournament->tables()->attach($tableId, ['is_table_free' => true]);
+        unset($this->tables, $this->availableTables);
+        $this->success(__('Table :name added.', ['name' => $table->name]));
+    }
+
+    /**
+     * Close a table for the rest of the day. Never one a match is played on.
+     */
+    public function removeTable(int $tableId): void
+    {
+        abort_unless($this->canManageTournament, 403);
+
+        $pivot = $this->tournament->tables()->where('tables.id', $tableId)->first()?->pivot;
+
+        if ($pivot === null) {
+            return;
+        }
+
+        if (! $pivot->is_table_free) {
+            $this->error(__('A match is being played on this table.'));
+
+            return;
+        }
+
+        $this->tournament->tables()->detach($tableId);
+        unset($this->tables, $this->availableTables);
+        $this->success(__('Table removed.'));
+    }
+
+    /**
+     * Playable tables of the club not used by this tournament yet.
+     *
+     * @return list<array{id: int, name: string}>
+     */
+    #[Computed]
+    public function availableTables(): array
+    {
+        $used = $this->tournament->tables()->pluck('tables.id');
+
+        return Table::with('room')
+            ->whereNotIn('id', $used)
+            ->whereNot('state', TableStateEnum::OUT_OF_SERVICE)
+            ->orderBy('room_id')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Table $table): array => ['id' => $table->id, 'name' => ($table->room?->name ?? '—') . ' · ' . __('Table') . ' ' . $table->name])
+            ->all();
+    }
+
+    // ── Actions: payments at the desk
+
+    public function recordCashPayment(int $userId): void
+    {
+        abort_unless($this->canManageTournament, 403);
+
+        $register = CashRegister::first();
+        $player = User::find($userId);
+
+        if (! $register instanceof CashRegister || ! $player instanceof User) {
+            $this->error(__('No cash register found. Create one in Treasury first.'));
+
+            return;
+        }
+
+        app(TournamentService::class)->recordCashPayment($this->tournament, $player, $register);
+        unset($this->unpaidParticipants);
+        $this->success(__('Cash payment recorded.'), icon: 'o-currency-euro');
+    }
+
+    public function openQrPayment(int $userId): void
+    {
+        abort_unless($this->canManageTournament, 403);
+
+        $registration = TournamentRegistration::where('tournament_id', $this->tournament->id)->where('user_id', $userId)->first();
+
+        if ($registration === null) {
+            return;
+        }
+
+        $payment = app(TournamentService::class)->ensurePaymentExists($registration, $this->tournament);
+
+        $this->qrPaymentDetails = [
+            'name' => $registration->user?->full_name ?? '—',
+            'reference' => $payment->reference,
+            'amount_due' => (float) $payment->amount_due,
+        ];
+        $this->qrCodeData = (new GeneratePaymentQR)($payment);
+        $this->showQrModal = true;
     }
 
     #[Computed]

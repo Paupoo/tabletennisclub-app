@@ -280,6 +280,8 @@ describe('TableScoreEntry Livewire component', function (): void {
             'tournament_match_id' => $match->id,
             'match_started_at' => now()->subMinutes(5),
         ]);
+        // A match on a table is being played: that is what the QR page scores.
+        $match->update(['status' => 'in_progress']);
 
         scoreEntryComponent($p1, $tournament, $match, $table)
             ->set('setScores.0.p1', '11')
@@ -312,6 +314,8 @@ describe('TableScoreEntry Livewire component', function (): void {
             'tournament_match_id' => $match->id,
             'match_started_at' => now()->subMinutes(5),
         ]);
+        // A match on a table is being played: that is what the QR page scores.
+        $match->update(['status' => 'in_progress']);
 
         scoreEntryComponent($p1, $tournament, $match, $table)
             ->call('submitScore')
@@ -335,6 +339,8 @@ describe('TableScoreEntry Livewire component', function (): void {
             'tournament_match_id' => $match->id,
             'match_started_at' => now()->subMinutes(5),
         ]);
+        // A match on a table is being played: that is what the QR page scores.
+        $match->update(['status' => 'in_progress']);
 
         // Only one set entered — not enough for a winner
         scoreEntryComponent($p1, $tournament, $match, $table)
@@ -361,6 +367,8 @@ describe('TableScoreEntry Livewire component', function (): void {
             'tournament_match_id' => $match->id,
             'match_started_at' => now()->subMinutes(5),
         ]);
+        // A match on a table is being played: that is what the QR page scores.
+        $match->update(['status' => 'in_progress']);
 
         scoreEntryComponent($p1, $tournament, $match, $table)
             ->set('setScores.0.p1', '11')->set('setScores.0.p2', '5')
@@ -388,6 +396,8 @@ describe('TableScoreEntry Livewire component', function (): void {
             'tournament_match_id' => $match->id,
             'match_started_at' => now()->subMinutes(5),
         ]);
+        // A match on a table is being played: that is what the QR page scores.
+        $match->update(['status' => 'in_progress']);
 
         scoreEntryComponent($p1, $tournament, $match, $table)
             ->set('setScores.0.p1', '11')->set('setScores.0.p2', '5')
@@ -422,6 +432,8 @@ describe('TableScoreEntry Livewire component', function (): void {
             'tournament_match_id' => $match->id,
             'match_started_at' => now()->subMinutes(5),
         ]);
+        // A match on a table is being played: that is what the QR page scores.
+        $match->update(['status' => 'in_progress']);
 
         $component = scoreEntryComponent($p1, $tournament, $match, $table);
 
@@ -452,6 +464,8 @@ describe('TableScoreEntry Livewire component', function (): void {
             'tournament_match_id' => $match->id,
             'match_started_at' => now()->subMinutes(5),
         ]);
+        // A match on a table is being played: that is what the QR page scores.
+        $match->update(['status' => 'in_progress']);
 
         $component = scoreEntryComponent($p1, $tournament, $match, $table);
 
@@ -486,6 +500,8 @@ describe('TableScoreEntry Livewire component', function (): void {
             'tournament_match_id' => $match->id,
             'match_started_at' => now()->subMinutes(5),
         ]);
+        // A match on a table is being played: that is what the QR page scores.
+        $match->update(['status' => 'in_progress']);
 
         // Set 1 invalid (5-3, no one reached 11), sets 2-4 valid but incomplete match
         scoreEntryComponent($p1, $tournament, $match, $table)
@@ -514,6 +530,8 @@ describe('TableScoreEntry Livewire component', function (): void {
             'tournament_match_id' => $match->id,
             'match_started_at' => now()->subMinutes(5),
         ]);
+        // A match on a table is being played: that is what the QR page scores.
+        $match->update(['status' => 'in_progress']);
 
         // Set 1 invalid: 11-15 (diff 4, needs 2)
         scoreEntryComponent($p1, $tournament, $match, $table)
@@ -542,6 +560,8 @@ describe('TableScoreEntry Livewire component', function (): void {
             'tournament_match_id' => $match->id,
             'match_started_at' => now()->subMinutes(5),
         ]);
+        // A match on a table is being played: that is what the QR page scores.
+        $match->update(['status' => 'in_progress']);
 
         // Set 1 invalid (11-15), only 2 valid wins follow (not enough for match finish)
         scoreEntryComponent($p1, $tournament, $match, $table)
@@ -569,6 +589,8 @@ describe('TableScoreEntry Livewire component', function (): void {
             'tournament_match_id' => $match->id,
             'match_started_at' => now()->subMinutes(5),
         ]);
+        // A match on a table is being played: that is what the QR page scores.
+        $match->update(['status' => 'in_progress']);
 
         scoreEntryComponent($p1, $tournament, $match, $table)
             ->set('setScores.0.p1', '11')->set('setScores.0.p2', '5')

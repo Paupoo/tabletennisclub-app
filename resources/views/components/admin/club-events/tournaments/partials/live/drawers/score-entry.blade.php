@@ -100,6 +100,31 @@
             </div>
         @endif
 
+        {{-- Correction d'un match déjà joué, ou les issues d'un match en cours --}}
+        @if ($correcting)
+            <div class="mb-4 flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm" data-correcting>
+                <x-icon name="o-pencil-square" class="mt-0.5 h-4 w-4 shrink-0 text-warning-content" />
+                <span>{{ __('This match is already played: the score you submit replaces it, and is recorded in the history.') }}</span>
+            </div>
+        @elseif (! $match->isCompleted())
+            <div class="mb-4 space-y-2 rounded-xl border border-base-300 p-3" data-match-issues>
+                <p class="text-xs font-semibold uppercase tracking-wide text-base-content/60">{{ __('Walkover') }}</p>
+                <div class="flex flex-wrap gap-2">
+                    <x-button :label="__(':side absent', ['side' => $side1Name])" icon="o-flag" class="btn-outline btn-xs"
+                        wire:click="forfeit({{ $match->id }}, 1)"
+                        wire:confirm="{{ __(':winner wins by walkover. Continue?', ['winner' => $side2Name]) }}" />
+                    <x-button :label="__(':side absent', ['side' => $side2Name])" icon="o-flag" class="btn-outline btn-xs"
+                        wire:click="forfeit({{ $match->id }}, 2)"
+                        wire:confirm="{{ __(':winner wins by walkover. Continue?', ['winner' => $side1Name]) }}" />
+                </div>
+                @if ($match->isInProgress())
+                    <x-button :label="__('Launched by mistake: back to the queue')" icon="o-arrow-uturn-left" class="btn-ghost btn-xs"
+                        wire:click="cancelLaunch({{ $match->id }})"
+                        wire:confirm="{{ __('Put this match back in the queue and free the table?') }}" />
+                @endif
+            </div>
+        @endif
+
         {{-- Set scores (all always editable) --}}
         <div class="space-y-3">
             <div class="flex items-center gap-2 mb-4">

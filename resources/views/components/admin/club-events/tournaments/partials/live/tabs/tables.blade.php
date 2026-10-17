@@ -44,7 +44,13 @@
                                 <span class="truncate text-lg font-black leading-none">{{ $table['name'] }}</span>
 
                                 @if ($table['is_free'])
-                                    <x-badge :value="__('FREE')" class="badge-success badge-xs shrink-0 font-bold" />
+                                    <div class="flex shrink-0 items-center gap-1">
+                                        <x-badge :value="__('FREE')" class="badge-success badge-xs font-bold" />
+                                        <x-button icon="o-x-mark" class="btn-ghost btn-xs btn-square text-base-content/40"
+                                            :tooltip="__('Close this table for the day')" :aria-label="__('Close this table for the day')"
+                                            wire:click="removeTable({{ $table['id'] }})"
+                                            wire:confirm="{{ __('Close table :name for the rest of the day?', ['name' => $table['name']]) }}" />
+                                    </div>
                                 @else
                                     <x-badge value="{{ $minutesElapsed }}′"
                                         class="{{ $isOverdue ? 'badge-error' : 'badge-ghost' }} badge-xs shrink-0" />
@@ -98,5 +104,22 @@
                 </div>
             </div>
         @endforeach
+    @endif
+
+    {{-- Ouvrir une table de plus : la salle du haut quand la file s'allonge. --}}
+    @if ($this->availableTables !== [])
+        <div class="mt-2 flex flex-wrap items-end gap-2" x-data="{ pick: '' }" data-add-table>
+            <label class="form-control">
+                <span class="label-text text-xs">{{ __('Open another table') }}</span>
+                <select x-model="pick" class="select select-bordered select-sm">
+                    <option value="">{{ __('Choose a table…') }}</option>
+                    @foreach ($this->availableTables as $candidate)
+                        <option value="{{ $candidate['id'] }}">{{ $candidate['name'] }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <x-button :label="__('Add')" icon="o-plus" class="btn-outline btn-sm"
+                x-bind:disabled="pick === ''" @click="$wire.addTable(Number(pick)); pick = ''" />
+        </div>
     @endif
 </div>

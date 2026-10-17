@@ -13,6 +13,7 @@ use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Shared\Enums\Ranking;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class TournamentMatchService
@@ -641,8 +642,9 @@ class TournamentMatchService
     }
 
     /**
-     * Returns a human-readable conflict message if any player or the referee of $match
-     * is already involved in another in-progress match of the same tournament, null otherwise.
+     * Returns a human-readable conflict message if a player of $match is already
+     * involved in another in-progress match of the same tournament — playing or
+     * refereeing — null otherwise. The referee of $match never blocks it.
      * Handles both singles (player1/2_id) and doubles (all 4 pair members).
      */
     public function detectStartConflict(Tournament $tournament, TournamentMatch $match): ?string
@@ -671,17 +673,10 @@ class TournamentMatchService
         }
         $busyIds = $busyIds->filter()->unique()->values();
 
-        if ($match->pair1_id) {
-            $incomingIds = collect([
-                $match->pair1?->player1_id,
-                $match->pair1?->player2_id,
-                $match->pair2?->player1_id,
-                $match->pair2?->player2_id,
-                $match->referee_id,
-            ])->filter();
-        } else {
-            $incomingIds = collect([$match->player1_id, $match->player2_id, $match->referee_id])->filter();
-        }
+        // The incoming referee is a suggestion, not a lock: a busy one is
+        // replaced in the launch drawer, or the players count themselves.
+        $match->loadMissing(['pair1', 'pair2']);
+        $incomingIds = $match->sidePlayerIds(1)->merge($match->sidePlayerIds(2));
 
         $conflicts = $incomingIds->intersect($busyIds);
 
@@ -695,33 +690,54 @@ class TournamentMatchService
     }
 
     /**
-     * Forfeit all remaining scheduled pool matches for a player (e.g. after marking them no-show).
-     * The opponent is automatically set as winner. Returns the number of forfeited matches.
+     * One side did not play: the other wins, and the table is free again.
+     *
+     * A forfeit counts as a win in the standings, never in sets or points.
+     *
+     * @param  1|2  $absentSide
      */
-    public function forfeitPoolMatchesForPlayer(Tournament $tournament, User $user): int
+    public function forfeit(TournamentMatch $match, int $absentSide): void
     {
-        $matches = TournamentMatch::where('tournament_id', $tournament->id)
-            ->whereNotNull('pool_id')
-            ->where(function (\Illuminate\Database\Eloquent\Builder $q) use ($user): void {
-                $q->where('player1_id', $user->id)
-                    ->orWhere('player2_id', $user->id);
-            })
+        $winnerId = $absentSide === 1 ? $match->player2_id : $match->player1_id;
+
+        DB::transaction(function () use ($match, $winnerId): void {
+            $match->sets()->delete();
+            $match->update(['status' => 'completed', 'winner_id' => $winnerId, 'is_forfeit' => true]);
+
+            DB::table('table_tournament')
+                ->where('tournament_id', $match->tournament_id)
+                ->where('tournament_match_id', $match->id)
+                ->where('is_table_free', false)
+                ->update(['is_table_free' => true, 'match_ended_at' => now()]);
+        });
+    }
+
+    /**
+     * A player withdraws: every match their side still has to play is lost.
+     *
+     * The matches already played stand. In doubles the pair goes with them.
+     * A bracket match whose other side is not known yet is left for the
+     * winner of the previous round to collect.
+     *
+     * @return Collection<int, TournamentMatch> the matches forfeited
+     */
+    public function forfeitRemainingMatches(Tournament $tournament, User $user): Collection
+    {
+        $forfeited = TournamentMatch::where('tournament_id', $tournament->id)
             ->whereIn('status', ['scheduled', 'in_progress'])
-            ->get();
+            ->whereNotNull('player1_id')
+            ->whereNotNull('player2_id')
+            ->with(['pair1', 'pair2'])
+            ->get()
+            ->filter(fn (TournamentMatch $match): bool => $match->sidePlayerIds(1)->contains($user->id)
+                || $match->sidePlayerIds(2)->contains($user->id))
+            ->values();
 
-        foreach ($matches as $match) {
-            $opponentId = $match->player1_id === $user->id
-                ? $match->player2_id
-                : $match->player1_id;
-
-            $match->update([
-                'status' => 'completed',
-                'winner_id' => $opponentId,
-                'is_forfeit' => true,
-            ]);
+        foreach ($forfeited as $match) {
+            $this->forfeit($match, $match->sidePlayerIds(1)->contains($user->id) ? 1 : 2);
         }
 
-        return $matches->count();
+        return $forfeited;
     }
 
     /**
@@ -876,6 +892,48 @@ class TournamentMatchService
         }
 
         return $record;
+    }
+
+    /**
+     * Record the score of a match being played — the first entry only.
+     *
+     * The table's QR code and the live centre can both send it. Whichever
+     * arrives first is kept; the other is told the score is already in, and a
+     * correction goes through the scorers' table. The row is locked so that
+     * two sends at the same instant still make one.
+     *
+     * @param  array<int, array{player1_score: int, player2_score: int}>  $setResults
+     * @return bool whether this entry was the one kept
+     */
+    public function recordFirstResult(TournamentMatch $match, array $setResults): bool
+    {
+        $recorded = DB::transaction(function () use ($match, $setResults): bool {
+            $current = TournamentMatch::whereKey($match->id)->lockForUpdate()->first();
+
+            if (! $current instanceof TournamentMatch || $current->status !== 'in_progress') {
+                return false;
+            }
+
+            $current->recordResult($setResults);
+
+            DB::table('table_tournament')
+                ->where('tournament_id', $current->tournament_id)
+                ->where('tournament_match_id', $current->id)
+                ->where('is_table_free', false)
+                ->update(['is_table_free' => true, 'match_ended_at' => now()]);
+
+            return true;
+        });
+
+        if ($recorded) {
+            $match->refresh();
+
+            if ($match->round !== null && $match->winner_id !== null) {
+                app(TournamentFinalPhaseService::class)->completeMatch($match, $match->winner_id);
+            }
+        }
+
+        return $recorded;
     }
 
     /**

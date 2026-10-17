@@ -11,9 +11,11 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Mail\Message;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use LogicException;
 use RuntimeException;
+use stdClass;
 
 class CashSheetService
 {
@@ -31,6 +33,7 @@ class CashSheetService
             ->selectRaw("{$dateExpression} as business_date, COUNT(*) as orders_total, SUM(total_price) as sold_total_cents")
             ->whereRaw("{$dateExpression} <= ?", [now()->toDateString()])
             ->groupByRaw($dateExpression)
+            ->toBase()
             ->get()
             ->keyBy('business_date');
 
@@ -48,6 +51,7 @@ class CashSheetService
             ->selectRaw("{$paymentDateExpression} as business_date, COUNT(*) as payments_total, SUM(CASE WHEN payment_method NOT IN ('offered', 'free') THEN total_price ELSE 0 END) as received_total_cents")
             ->whereRaw("{$paymentDateExpression} <= ?", [now()->toDateString()])
             ->groupByRaw($paymentDateExpression)
+            ->toBase()
             ->get()
             ->keyBy('business_date');
 
@@ -134,6 +138,7 @@ class CashSheetService
             ->selectRaw('payment_method, COUNT(*) as transaction_count, SUM(total_price) as total_cents')
             ->groupBy('payment_method')
             ->orderBy('payment_method')
+            ->toBase()
             ->get();
 
         $paymentsTotal = (int) $paymentRows->sum('transaction_count');
@@ -147,7 +152,7 @@ class CashSheetService
             ->sum('quantity');
 
         // --- Payment method breakdown (paid orders only) ---
-        $paymentTotals = $paymentRows->mapWithKeys(fn (BarOrder $payment): array => [
+        $paymentTotals = $paymentRows->mapWithKeys(fn (stdClass $payment): array => [
             (string) ($payment->payment_method ?? '') => (int) $payment->total_cents,
         ]);
 
@@ -205,7 +210,7 @@ class CashSheetService
             ->get();
 
         $otherPaymentsCents = (int) $paymentRows
-            ->reject(fn (BarOrder $payment): bool => in_array($payment->payment_method, ['cash', 'qr', 'offered', 'free'], true))
+            ->reject(fn (stdClass $payment): bool => in_array($payment->payment_method, ['cash', 'qr', 'offered', 'free'], true))
             ->sum('total_cents');
 
         $summary = [
@@ -398,7 +403,12 @@ class CashSheetService
 
     private function businessDateExpression(string $column): string
     {
-        $driver = BarOrder::query()->getConnection()->getDriverName();
+        $connectionName = (new BarOrder)->getConnectionName() ?? DB::getDefaultConnection();
+        $driver = config("database.connections.{$connectionName}.driver");
+
+        if (! is_string($driver)) {
+            throw new LogicException("Unable to determine database driver for cashsheet activity: {$connectionName}");
+        }
 
         return match ($driver) {
             'mysql', 'mariadb' => "DATE(DATE_SUB({$column}, INTERVAL 6 HOUR))",

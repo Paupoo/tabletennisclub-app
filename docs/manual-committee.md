@@ -317,7 +317,7 @@ If a training pack is full, members join the waitlist. When a spot opens (cancel
 
 ### Training camps
 
-A training camp is a pack ticked **Training camp (outside the membership fee)** at step 1 of the wizard. It behaves like a pack (enrolments, attendance, coach, waiting list) but is **invoiced separately**: its payment never touches the affiliation, and it counts neither in the membership total nor in the health-insurance attestation. No prorata, no automatic discount; a member's own price (a single day, half the camp) is set with a reason, when adding them or through **Price** in the roster. Members enrol from **My registrations**; with **Enrolment on approval**, their requests are accepted or refused on the camp's sheet. Stopping a camp refunds in full what was paid. The box locks once the first member is enrolled.
+A training camp is a pack ticked **Training camp (outside the membership fee)** at step 1 of the wizard. It behaves like a pack (enrolments, attendance, coach, waiting list) but is **invoiced separately**: its payment never touches the affiliation, and it counts neither in the membership total nor in the affiliation's health-insurance attestation — it has its own, once over and paid. No prorata, no automatic discount; a member's own price (a single day, half the camp) is set with a reason, when adding them or through **Price** in the roster. Members enrol from **My registrations**; with **Enrolment on approval**, their requests are accepted or refused on the camp's sheet. Stopping a camp refunds in full what was paid. The box locks once the first member is enrolled.
 
 ### Non-members on a training camp
 
@@ -536,7 +536,9 @@ The **Mutual attestations** screen carries three things: how the club signs them
 
 **Forms.** Upload the form as the insurer publishes it. The application converts it, then works out where each value goes from the form's own printed labels — so a revised form usually just works. When it does not, the labels that could not be found are listed in red and that insurer **drops out of the list offered to members**. MC and Mutualité Neutre accept a club-written attestation in writing, so they stay on offer even with no form uploaded.
 
-**Revoking.** A member may ask once per season. A reason is required. The file is deleted, the record stays, and the public verification page starts reporting that the document no longer stands. The member may then ask for a new one.
+**Camp forms.** Camps have forms of their own: Partenamut (« Stages et camps ») and Solidaris (« Avantage activité jeunes »), installed by choosing *Training camp* in the **Document** field before uploading. The club's camp attestation is always on offer, with or without a form. The club certifies the days a session was held (cancelled ones left out); a day under four hours is a half day, and the Solidaris form has the useless units struck. A camp still billed inside the affiliation does not appear to members: fill those forms by hand.
+
+**Revoking.** A member may ask once per season, and once per camp. When a refund is opened on a camp that carries an attestation, the treasurer's email says so, with the reference. A reason is required. The file is deleted, the record stays, and the public verification page starts reporting that the document no longer stands. The member may then ask for a new one.
 
 **Issuing on a member's behalf.** Possible from the member's file, with the same checks — useful for a phone call or a managed account.
 

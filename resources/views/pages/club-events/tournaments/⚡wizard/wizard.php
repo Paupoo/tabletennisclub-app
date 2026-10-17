@@ -250,12 +250,13 @@ new class extends Component
     #[Computed]
     public function availableRooms(): array
     {
-        return Room::select(['id', 'name', 'total_playable_tables'])
+        return Room::select(['id', 'name'])
+            ->withCount(['tables as playable_tables_count' => fn ($query) => $query->whereNot('state', TableStateEnum::OUT_OF_SERVICE)])
             ->orderBy('name')
             ->get()
             ->map(fn ($room): array => [
                 'id' => $room->id,
-                'name' => $room->name . ' (' . $room->total_playable_tables . ' tables)',
+                'name' => $room->name . ' (' . $room->playable_tables_count . ' tables)',
             ])
             ->toArray();
     }
@@ -878,8 +879,8 @@ new class extends Component
             $this->reducedPriceUnderAge = (string) ($tournament->reduced_price_under_age ?? '');
             $this->selectedObjective = $tournament->objective?->value ?? '';
             $this->selectedRooms = $tournament->rooms->pluck('id')->toArray();
-            $this->nb_tables = (int) $tournament->rooms->sum('total_playable_tables') ?: 8;
             $this->launchTableIds = $this->playableTableIds();
+            $this->nb_tables = count($this->launchTableIds) ?: 8;
 
             /*
              * Le statut ne choisit l'étape que si l'URL n'en porte pas une : l'icône
@@ -945,9 +946,7 @@ new class extends Component
             return $this->nb_tables;
         }
 
-        $total = Room::whereIn('id', $this->selectedRooms)->sum('total_playable_tables');
-
-        return (int) ($total ?: $this->nb_tables);
+        return count($this->playableTableIds()) ?: $this->nb_tables;
     }
 
     public function openCashConfirmModal(int $userId): void
@@ -1720,12 +1719,8 @@ new class extends Component
     {
         $this->launchTableIds = $this->playableTableIds();
 
-        if ($this->selectedRooms !== []) {
-            $total = Room::whereIn('id', $this->selectedRooms)->sum('total_playable_tables');
-
-            if ($total > 0) {
-                $this->nb_tables = (int) $total;
-            }
+        if ($this->launchTableIds !== []) {
+            $this->nb_tables = count($this->launchTableIds);
         }
     }
 
@@ -1896,6 +1891,9 @@ new class extends Component
 
     /**
      * The playable tables of the rooms chosen for the tournament.
+     *
+     * Counted from the tables themselves, as the rooms screen sets them up:
+     * the room's stored counter is not kept up to date.
      *
      * @return list<int>
      */

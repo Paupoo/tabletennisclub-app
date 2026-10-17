@@ -198,7 +198,11 @@ Depuis la page du tournoi, cliquez sur **Gérer en direct**. Onglets disponibles
 - **Poules** : classements des poules
 - **Tableau** : tableau à élimination directe (après la phase de poules)
 - **Classements** : classements en temps réel
-- **Clôture** : terminer le tournoi et publier les résultats
+- **Clôture** : encaisser les impayés, terminer le tournoi et publier les résultats
+
+Le format se fixe à la création : en double, la taille d'une poule compte des **paires** et le plafond des **joueurs** (pair) ; la **taille du tableau** (4, 8 ou 16) est un réglage, complété par les meilleurs du rang suivant comparés sur des moyennes. Le jour J, l'appel se fait dans l'assistant (absence excusée ou injustifiée, inscription tardive par le comité), les poules se tirent sur place, et les tables montées se cochent au lancement. En direct, chaque erreur a son retour : annuler un lancement, corriger un score (en poule tant que le tableau n'est pas tiré, dans le tableau tant que le match suivant n'a pas commencé), déclarer un forfait ou un abandon. L'arbitre est une suggestion : on le remplace ou on joue sans. Le détail est dans l'aide « Faire tourner un tournoi le jour J ».
+
+Un impayé n'est jamais désinscrit : le membre reçoit deux rappels (trois jours avant son échéance, puis le lendemain) et peut régler sur place. Après la date limite — incluse —, il ne peut plus se désister seul et contacte la délégation Tournois.
 
 ### Inscription groupée
 

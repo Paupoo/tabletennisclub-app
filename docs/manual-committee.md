@@ -197,7 +197,11 @@ From the tournament page, click **Manage live**. Available tabs:
 - **Pools**: pool standings
 - **Bracket**: elimination bracket (after pool phase)
 - **Rankings**: live rankings
-- **Closure**: end the tournament and publish results
+- **Closure**: take the unpaid entries, end the tournament and publish results
+
+The format is set at creation: in doubles a pool size counts **pairs** and the cap counts **players** (an even number); the **bracket size** (4, 8 or 16) is a setting, completed by the best of the rank below, compared on averages. On the day, the roll call happens in the wizard (excused or unexcused absence, late entry by the committee), the pools are drawn on site, and the tables put up are ticked at the launch. Live, every mistake has a way back: cancel a launch, correct a score (in a pool until the bracket is drawn, in the bracket until the next match has started), record a walkover or a withdrawal. The referee is a suggestion: replace them, or play without one. The details are in the help article « Faire tourner un tournoi le jour J ».
+
+An unpaid entry is never dropped: the member gets two reminders (three days before their deadline, then the day after) and can pay on site. After the deadline — the day itself included — they can no longer withdraw alone and contact the Tournaments delegation.
 
 ### Bulk registration
 

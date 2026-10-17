@@ -54,14 +54,25 @@ const BAR_STEPPERS = <<<'JS_WRAP'
 JS_WRAP;
 
 const BAR_CASHSHEET_CAROUSEL = <<<'JS_WRAP'
-(() => {
+(async () => {
   const track = document.querySelector('#cashsheet-active-days');
   const card = track?.querySelector('[aria-current="date"]') ?? track?.firstElementChild;
   if (!track || !card) return JSON.stringify({seen: 0});
+  const hiddenProbe = document.createElement('div');
+  hiddenProbe.className = 'hidden';
+  document.body.append(hiddenProbe);
+  const stylesheetDeadline = Date.now() + 3000;
+  while (getComputedStyle(hiddenProbe).display !== 'none' && Date.now() < stylesheetDeadline) {
+    await new Promise(resolve => setTimeout(resolve, 25));
+  }
+  const hiddenUtilityReady = getComputedStyle(hiddenProbe).display === 'none';
+  hiddenProbe.remove();
 
   return JSON.stringify({
     seen: track.children.length,
     visible: [...track.children].filter(card => card.getClientRects().length > 0).length,
+    hiddenUtilityReady,
+    cardDisplays: [...track.children].map(card => getComputedStyle(card).display),
     selectedVisible: card.getAttribute('aria-current') === 'date' && card.getClientRects().length > 0,
     selectedDate: new URL(card.href).searchParams.get('date'),
     trackWidth: track.clientWidth,
@@ -161,7 +172,8 @@ it('keeps the selected active day in view in the mobile carousel', function (): 
     $layout = json_decode((string) $page->script(BAR_CASHSHEET_CAROUSEL), true);
 
     expect($layout['seen'])->toBeGreaterThan(1)
-        ->and($layout['visible'])->toBe(1)
+        ->and($layout['hiddenUtilityReady'])->toBeTrue('Tailwind hidden utility did not load')
+        ->and($layout['visible'])->toBe(1, json_encode($layout['cardDisplays']))
         ->and($layout['selectedVisible'])->toBeTrue()
         ->and($layout['selectedDate'])->toBe(now()->subDays(4)->toDateString())
         ->and($layout['scrollWidth'])->toBe($layout['trackWidth'])

@@ -236,6 +236,7 @@ Construire l'offre d'entraînement, les packs et la planification de la saison.
 
 Pointer les paiements, importer les extraits bancaires, gérer les remboursements, classer les pièces justificatives, présenter le rapport financier.
 
+- `bar.cash_sheet.send`
 - `payments.view`
 - `payments.reconcile`
 - `payments.refund`
@@ -276,7 +277,6 @@ est une situation légitime.
 
 Aucune délégation ne les porte : elles ne peuvent pas être confiées.
 
-- `bar.cash_sheet.send`
 - `users.anonymize`
 - `users.delete`
 

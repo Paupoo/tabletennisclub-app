@@ -164,8 +164,9 @@
                                 href="{{ route('bar.cashSheet.index', ['date' => $activityDay['date']]) }}"
                                 role="listitem"
                                 @class([
-                                    'block w-full rounded-lg border p-3 transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-primary md:w-auto',
-                                    'hidden md:block' => $activityDay['date'] !== $date,
+                                    'w-full rounded-lg border p-3 transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-primary md:block md:w-auto',
+                                    'block' => $activityDay['date'] === $date,
+                                    'hidden' => $activityDay['date'] !== $date,
                                     'border-primary bg-primary/5 ring-1 ring-primary' => $activityDay['date'] === $date,
                                     'border-base-300 bg-base-100' => $activityDay['date'] !== $date,
                                 ])

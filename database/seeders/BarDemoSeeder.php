@@ -317,7 +317,7 @@ class BarDemoSeeder extends Seeder
     {
         $shoppers = [
             'first' => User::query()->find(1) ?? User::query()->orderBy('id')->first(),
-            'xavier' => User::query()->where('email', 'xavier.coenen@test.com')->first(),
+            'xavier' => User::query()->where('email', 'xavier_coenen@hotmail.com')->first(),
         ];
 
         foreach (array_filter($shoppers) as $user) {

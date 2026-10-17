@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarOrder;
+use App\Domains\Bar\Models\BarOrderItem;
 use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Models\BarStockMovement;
 use App\Domains\Bar\Services\CashSheetService;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Models\AppSetting;
 use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 
@@ -140,6 +142,111 @@ it('keeps after-midnight sales in the same cash sheet business day', function ()
         ->and($summary['sold_total_cents'])->toBe(180);
 });
 
+it('attributes receipts to the business day the order was paid', function (): void {
+    $order = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 180,
+        'is_paid' => true,
+        'payment_method' => 'cash',
+    ]);
+    $order->forceFill([
+        'created_at' => now()->subDay()->setTime(14, 0),
+        'paid_at' => now()->setTime(14, 0),
+    ])->saveQuietly();
+
+    $previousDaySummary = app(CashSheetService::class)->build(now()->subDay()->toDateString())[0];
+    $paymentDaySummary = app(CashSheetService::class)->build(now()->toDateString())[0];
+
+    expect($previousDaySummary['sold_total_cents'])->toBe(180)
+        ->and($previousDaySummary['received_total_cents'])->toBe(0)
+        ->and($paymentDaySummary['orders_total'])->toBe(0)
+        ->and($paymentDaySummary['payments_total'])->toBe(1)
+        ->and($paymentDaySummary['received_total_cents'])->toBe(180)
+        ->and($paymentDaySummary['by_method_cents']['cash'])->toBe(180);
+});
+
+it('can email a cash sheet containing payments for orders created on an earlier day', function (): void {
+    $order = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 180,
+        'is_paid' => true,
+        'payment_method' => 'cash',
+    ]);
+    $order->forceFill([
+        'created_at' => now()->subDay()->setTime(14, 0),
+        'paid_at' => now()->setTime(14, 0),
+    ])->saveQuietly();
+
+    $this->partialMock(
+        CashSheetService::class,
+        fn ($mock) => $mock->shouldReceive('sendCsv')->once()->andReturn(true)
+    );
+
+    $this->actingAs($this->manager)
+        ->post(route('bar.cashSheet.send'), [
+            'date' => now()->toDateString(),
+            'to' => 'treasurer@example.test',
+        ])
+        ->assertRedirect(route('bar.cashSheet.index', ['date' => now()->toDateString()]))
+        ->assertSessionHas('success');
+});
+
+it('lists active business days and navigates to payments made after the sale day', function (): void {
+    $previousBusinessDate = now()->subDay()->toDateString();
+    $olderOrder = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 500,
+        'is_paid' => true,
+        'payment_method' => 'cash',
+    ]);
+    $olderOrder->forceFill([
+        'created_at' => "{$previousBusinessDate} 14:00:00",
+        'paid_at' => now()->setTime(14, 0),
+    ])->saveQuietly();
+
+    BarOrderItem::create([
+        'order_id' => $olderOrder->id,
+        'product_id' => $this->product->id,
+        'quantity' => 2,
+        'unit_price' => 250,
+        'total_price' => 500,
+    ]);
+
+    $todayOrder = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 200,
+        'is_paid' => true,
+        'payment_method' => 'qr',
+    ]);
+
+    $activity = app(CashSheetService::class)->activity(now()->toDateString());
+
+    expect($activity['days'][0])
+        ->toMatchArray([
+            'date' => now()->toDateString(),
+            'orders_total' => 1,
+            'payments_total' => 2,
+            'received_total_cents' => 700,
+        ])
+        ->and($activity['days'][1])
+        ->toMatchArray([
+            'date' => $previousBusinessDate,
+            'orders_total' => 1,
+            'items_total' => 2,
+            'payments_total' => 0,
+        ])
+        ->and($activity['previous'])->toBe($previousBusinessDate)
+        ->and($activity['next'])->toBeNull();
+
+    $this->actingAs($this->manager)
+        ->get(route('bar.cashSheet.index', ['date' => now()->toDateString()]))
+        ->assertOk()
+        ->assertSee("Journées avec de l'activité", escape: false)
+        ->assertSee('Ventes')
+        ->assertSee('Paiements')
+        ->assertSee(route('bar.cashSheet.index', ['date' => $previousBusinessDate]), escape: false);
+});
+
 it('excludes offered orders from the total received', function (): void {
     BarOrder::create([
         'created_by' => $this->manager->id,
@@ -162,11 +269,219 @@ it('excludes offered orders from the total received', function (): void {
         ->and($summary['by_method_cents']['offered'])->toBe(300);
 });
 
+it('stores and retrieves the default treasurer email', function (): void {
+    $service = app(CashSheetService::class);
+
+    $service->saveDefaultEmail('treasurer@example.test');
+
+    expect(AppSetting::get('treasurer_email'))->toBe('treasurer@example.test')
+        ->and($service->getDefaultEmail())->toBe('treasurer@example.test');
+});
+
+it('neutralizes spreadsheet formula product names in the CSV export', function (): void {
+    $order = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 720,
+        'is_paid' => true,
+        'payment_method' => 'cash',
+    ]);
+
+    foreach (['=HYPERLINK("https://example.test")', ' +SUM(1,1)', '-1+1', '@SUM(1,1)'] as $name) {
+        $product = BarProduct::create([
+            'name' => $name,
+            'sale_price' => 180,
+            'is_available' => 1,
+            'category_id' => $this->category->id,
+        ]);
+
+        BarOrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 180,
+            'total_price' => 180,
+        ]);
+    }
+
+    $csv = app(CashSheetService::class)->build(now()->toDateString())[2];
+
+    expect($csv)
+        ->toContain("'=HYPERLINK")
+        ->toContain("' +SUM")
+        ->toContain("'-1+1")
+        ->toContain("'@SUM");
+});
+
+it('exports the historical prices, payment methods and transaction details in currency units', function (): void {
+    $this->product->update([
+        'name' => "Coffee; \"du jour\"\nRéserve",
+        'sale_price' => 170,
+    ]);
+
+    $cashOrder = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 300,
+        'is_paid' => true,
+        'paid_at' => now(),
+        'payment_method' => 'cash',
+    ]);
+
+    BarOrderItem::create([
+        'order_id' => $cashOrder->id,
+        'product_id' => $this->product->id,
+        'quantity' => 2,
+        'unit_price' => 150,
+        'total_price' => 300,
+    ]);
+
+    $qrOrder = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 250,
+        'is_paid' => true,
+        'paid_at' => now(),
+        'payment_method' => 'qr',
+    ]);
+
+    BarOrderItem::create([
+        'order_id' => $qrOrder->id,
+        'product_id' => $this->product->id,
+        'quantity' => 1,
+        'unit_price' => 250,
+        'total_price' => 250,
+    ]);
+
+    $offeredOrder = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 100,
+        'is_paid' => true,
+        'paid_at' => now(),
+        'payment_method' => 'offered',
+    ]);
+
+    BarOrderItem::create([
+        'order_id' => $offeredOrder->id,
+        'product_id' => $this->product->id,
+        'quantity' => 1,
+        'unit_price' => 100,
+        'total_price' => 100,
+    ]);
+
+    $laterPaidOrder = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 200,
+        'is_paid' => true,
+        'paid_at' => now(),
+        'payment_method' => 'cash',
+    ]);
+    $laterPaidOrder->forceFill([
+        'created_at' => now()->subDay()->setTime(14, 0),
+    ])->saveQuietly();
+
+    BarOrderItem::create([
+        'order_id' => $laterPaidOrder->id,
+        'product_id' => $this->product->id,
+        'quantity' => 1,
+        'unit_price' => 200,
+        'total_price' => 200,
+    ]);
+
+    $csv = app(CashSheetService::class)->build(now()->toDateString())[2];
+    $stream = fopen('php://temp', 'r+');
+    fwrite($stream, $csv);
+    rewind($stream);
+    $csvRows = [];
+
+    while (($row = fgetcsv($stream, separator: ';', enclosure: '"', escape: '')) !== false) {
+        $csvRows[] = $row;
+    }
+
+    fclose($stream);
+
+    $productRow = collect($csvRows)->first(
+        fn (array $row): bool => ($row[0] ?? null) === "Coffee; \"du jour\"\nRéserve"
+            && ($row[2] ?? null) === '1.50'
+    );
+    $laterPaidTransaction = collect($csvRows)->first(
+        fn (array $row): bool => ($row[2] ?? null) === "Commande #{$laterPaidOrder->id}"
+    );
+    $reportValue = fn (string $label): ?string => collect($csvRows)
+        ->first(fn (array $row): bool => ($row[0] ?? null) === $label)[1] ?? null;
+    $paymentRow = fn (string $method): ?array => collect($csvRows)
+        ->first(fn (array $row): bool => ($row[0] ?? null) === $method && count($row) === 3);
+
+    expect($csv)
+        ->toContain('RÉSUMÉ FINANCIER')
+        ->and($reportValue('Date d’activité'))->toBe(now()->toDateString())
+        ->and($reportValue('Ventes totales (date de commande)'))->toBe('6.50')
+        ->and($reportValue('Encaissé en espèces (date d’encaissement)'))->toBe('5.00')
+        ->and($reportValue('Encaissé par QR (date d’encaissement)'))->toBe('2.50')
+        ->and($reportValue('Valeur des commandes offertes (non encaissée)'))->toBe('1.00')
+        ->and($productRow)->not->toBeNull()
+        ->and($productRow[1])->toBe('2')
+        ->and($productRow[2])->toBe('1.50')
+        ->and($productRow[3])->toBe('3.00')
+        ->and($laterPaidTransaction[1])->toBe('Encaissement')
+        ->and($laterPaidTransaction[0])->toBe(now()->format('Y-m-d H:i:s'))
+        ->and($laterPaidTransaction[6])->toBe('cash')
+        ->and($csv)->toContain("Commande #{$cashOrder->id}")
+        ->and($csv)->toContain($this->manager->full_name)
+        ->and($paymentRow('cash'))->toBe(['cash', '2', '5.00'])
+        ->and($paymentRow('qr'))->toBe(['qr', '1', '2.50'])
+        ->and($paymentRow('offered'))->toBe(['offered', '1', '1.00']);
+});
+
+it('uses the same generated report for the direct download and email attachment', function (): void {
+    $date = now()->toDateString();
+    $order = BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 180,
+        'is_paid' => false,
+    ]);
+    BarOrderItem::create([
+        'order_id' => $order->id,
+        'product_id' => $this->product->id,
+        'quantity' => 1,
+        'unit_price' => 180,
+        'total_price' => 180,
+    ]);
+
+    $expectedCsv = app(CashSheetService::class)->build($date)[2];
+
+    $this->actingAs($this->manager)
+        ->get(route('bar.cashSheet.download', ['date' => $date]))
+        ->assertOk()
+        ->assertContent("\xEF\xBB\xBF" . $expectedCsv);
+
+    $emailCsv = null;
+    $this->partialMock(
+        CashSheetService::class,
+        function ($mock) use (&$emailCsv): void {
+            $mock->shouldReceive('sendCsv')
+                ->once()
+                ->withArgs(function (string $to, string $subject, string $body, string $date, string $csv) use (&$emailCsv): bool {
+                    $emailCsv = $csv;
+
+                    return true;
+                })
+                ->andReturn(true);
+        }
+    );
+
+    $this->actingAs($this->manager)
+        ->post(route('bar.cashSheet.send'), [
+            'date' => $date,
+            'to' => 'treasurer@example.test',
+        ])
+        ->assertSessionHas('success');
+
+    expect($emailCsv)->toBe($expectedCsv);
+});
+
 it('says so out loud when there is nothing to send', function (): void {
     // Le garde portait sur `empty($csv)`, et buildCsv() écrit toujours sa ligne
     // d'en-tête : il ne se déclenchait donc jamais. Une journée sans vente partait
     // au trésorier sous la forme d'un CSV à zéro ligne, annoncée « Email envoyé
-    // avec succès ». Le garde compte maintenant les commandes.
+    // avec succès ». Le garde compte maintenant commandes et paiements.
     $this->actingAs($this->manager)
         ->post(route('bar.cashSheet.send'), [
             'date' => now()->subMonth()->toDateString(),

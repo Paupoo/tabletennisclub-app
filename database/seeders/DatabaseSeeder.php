@@ -154,7 +154,7 @@ class DatabaseSeeder extends Seeder
         // the players
         $players = [
             ['Olivier', 'Tilmans', Ranking::E6->name, '223344', 'olivier.tilmans@test.com', Gender::MEN->name],
-            ['Xavier', 'Coenen', Ranking::E6->name, '123123', 'xavier.coenen@test.com', Gender::MEN->name],
+            ['Xavier', 'Coenen', Ranking::E6->name, '123123', 'xavier_coenen@hotmail.com', Gender::MEN->name],
             ['Arnaud', 'Ghysens', Ranking::E2->name, '112233', 'arnaud.ghysens@test.com', Gender::MEN->name],
             ['Éric', 'Godart', Ranking::E0->name, '443211', 'eric.godart@test.com', Gender::MEN->name],
             ['Sébastien', 'Vandevyver', Ranking::E2->name, '987654', 'seba.vande@test.com', Gender::MEN->name],

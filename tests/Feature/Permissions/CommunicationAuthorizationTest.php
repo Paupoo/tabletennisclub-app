@@ -49,6 +49,38 @@ describe('the bar, previously open to every member', function (): void {
 
         $this->actingAs($barkeeper)->get(route('bar.index'))->assertOk();
     });
+
+    it('opens the cash sheet to treasury without granting access to the bar operations', function (): void {
+        $treasurer = User::factory()->withRole(Role::TREASURY)->create();
+        $barkeeper = User::factory()->withRole(Role::BARMAN)->create();
+
+        expect($treasurer->can('bar.access'))->toBeFalse()
+            ->and($treasurer->can('bar.cash_sheet.send'))->toBeTrue();
+
+        $this->actingAs($treasurer)
+            ->get(route('bar.cashSheet.index'))
+            ->assertOk();
+
+        $this->actingAs($treasurer)
+            ->get(route('bar.index'))
+            ->assertForbidden();
+
+        $this->actingAs($treasurer)
+            ->post(route('bar.cashSheet.send'), [
+                'date' => now()->toDateString(),
+                'to' => 'treasurer@example.test',
+            ])
+            ->assertSessionHas('error');
+
+        $this->actingAs($treasurer)
+            ->get(route('bar.cashSheet.download', ['date' => now()->toDateString()]))
+            ->assertRedirect(route('bar.cashSheet.index', ['date' => now()->toDateString()]))
+            ->assertSessionHas('error');
+
+        $this->actingAs($barkeeper)
+            ->get(route('bar.cashSheet.index'))
+            ->assertForbidden();
+    });
 });
 
 describe('the website admin, previously guarded by route middleware alone', function (): void {

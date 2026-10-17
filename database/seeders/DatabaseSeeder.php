@@ -425,6 +425,10 @@ class DatabaseSeeder extends Seeder
         // SPECIMEN — NE PAS UTILISER; they must never reach a production seed.
         $this->call(AttestationDemoSeeder::class);
 
+        // Quatre stages sur le compte admin, un par état de l'écran membre
+        // « Attestations mutuelle ». Relançable seul.
+        $this->call(CampAttestationDemoSeeder::class);
+
         // En dernier : la force list se calcule sur la population définitive,
         // et InterclubSeeder crée encore des compétiteurs.
         RecalculateForceListAction::handle();

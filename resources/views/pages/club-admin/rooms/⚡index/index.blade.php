@@ -5,6 +5,10 @@
 <div>
     <x-header :title="__('Rooms')" :subtitle="__('Rooms and their table stock')" separator progress-indicator>
         <x-slot:actions>
+            @can('tables.manage')
+                <x-button :label="__('Print the stickers')" icon="o-qr-code" class="btn-ghost btn-sm"
+                    link="{{ route('admin.tables.stickers') }}" external />
+            @endcan
             @can('create', \App\Domains\ClubAdmin\Club\Models\Room::class)
                 <x-button :label="__('Create')" icon="o-plus" class="btn-primary btn-sm"
                     link="{{ route('admin.rooms.create') }}" />

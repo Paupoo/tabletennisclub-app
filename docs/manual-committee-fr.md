@@ -406,6 +406,8 @@ Allez dans **Administration club → Salles**. Gérez les lieux d'entraînement/
 
 Chaque capacité affichée est **ce que la salle offre vraiment** : la place saisie, ramenée au nombre de tables jouables. Une salle de 6 places en entraînement dont 3 tables sont hors service en offre 5, et la fiche le dit. Une table « à réparer » reste jouable. Un pack d'entraînement sans plafond prend deux joueurs par table offerte ; au lancement d'un tournoi, l'assistant coche autant de tables que la capacité tournoi, les tables en bon état d'abord.
 
+**Autocollants QR.** « Imprimer les autocollants » (liste des salles, fiche d'une salle, ou « Réimprimer l'autocollant » sur une table) produit une feuille A4 de carrés de 5 cm à découper et coller sur le bord des tables. Chaque QR porte l'adresse permanente de sa table : pendant un tournoi lancé il ouvre la saisie du score de la table, sinon la fiche de la table pour la délégation Installations, et pour tout autre membre une page « Signaler un problème » qui écrit au club. Imprimez depuis le site en ligne : depuis une autre adresse, la page vous en avertit.
+
 ### Tables
 
 Allez dans **Administration club → Tables**. Gérez les tables de ping-pong individuelles :

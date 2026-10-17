@@ -5,6 +5,10 @@
 <div>
     <x-header :title="$room->name" :subtitle="$room->building_name" separator progress-indicator>
         <x-slot:actions>
+            @can('tables.manage')
+                <x-button :label="__('Print the stickers')" icon="o-qr-code" class="btn-ghost btn-sm"
+                    link="{{ route('admin.tables.stickers', ['room' => $room->id]) }}" external />
+            @endcan
             @can('update', $room)
                 <x-button :label="__('Modify')" icon="o-pencil" class="btn-ghost btn-sm"
                     link="{{ route('admin.rooms.edit', $room) }}" />

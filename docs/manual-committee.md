@@ -405,6 +405,8 @@ Go to **Club admin → Rooms**. Manage training/competition venues:
 
 Each capacity shown is **what the room really offers**: the room typed in, brought down to the tables that can be played on. A room with room for 6 in training and 3 tables out of service offers 5, and its page says so. A table that needs repair still plays. A training pack without a cap takes two players per table offered; at a tournament launch, the wizard ticks as many tables as the tournament capacity, sound tables first.
 
+**QR stickers.** "Print the stickers" (rooms list, a room's page, or "Reprint the sticker" on a table) produces an A4 sheet of 5 cm squares to cut out and stick on the edge of the tables. Each QR carries its table's permanent address: during a launched tournament it opens the table's score entry, otherwise the table's form for the Facilities delegation, and for any other member a "Report a problem" page that writes to the club. Print from the live website: from any other address, the page warns you.
+
 ### Tables
 
 Go to **Club admin → Tables**. Manage individual ping-pong tables:

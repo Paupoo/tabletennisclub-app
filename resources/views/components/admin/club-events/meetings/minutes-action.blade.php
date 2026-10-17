@@ -15,6 +15,7 @@
     $badgeClass = match ($action->status) {
         'overdue' => 'badge-error',
         'done' => 'badge-success',
+        'abandoned' => 'badge-ghost',
         default => 'badge-warning',
     };
 @endphp
@@ -35,8 +36,11 @@
         @endif
     </div>
 
-    <div @class(['min-w-0', 'opacity-70' => $action->status === 'done'])>
-        <h3 @class(['font-bold text-base-content', 'line-through' => $action->status === 'done'])>{{ $item->title }}</h3>
+    <div @class(['min-w-0', 'opacity-70' => in_array($action->status, ['done', 'abandoned'], true)])>
+        <h3 @class(['font-bold text-base-content', 'line-through' => in_array($action->status, ['done', 'abandoned'], true)])>{{ $item->title }}</h3>
+        @if ($action->status === 'abandoned' && filled($item->abandon_reason))
+            <p class="text-sm text-muted">{{ $item->abandon_reason }}</p>
+        @endif
         @if ($point)
             <p class="text-xs text-muted">{{ $point }}</p>
         @endif

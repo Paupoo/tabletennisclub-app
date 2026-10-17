@@ -279,11 +279,17 @@ Consultez les réponses de présence en temps réel sur la page de détail de la
 
 ### Ordre du jour
 
-Ajoutez des points à l'ordre du jour de la réunion. L'ordre du jour est visible pour tous les membres invités.
+Ajoutez des points à l'ordre du jour de la réunion. L'ordre du jour est visible pour tous les membres invités — les invités extérieurs exceptés.
+
+Les points que la dernière réunion du même type (comité pour un comité, AG pour une AG) n'a pas abordés sont proposés dans un encadré **À reprendre**, cochés. **Confirmer** ajoute les points cochés à l'ordre du jour, avec la mention « Reporté du comité du … », là et dans le PV ; un point décoché ne revient plus. Un point repris et à nouveau non abordé est reproposé.
+
+### Invités
+
+La carte **Invités** fait venir une personne hors de la réunion — l'entraîneur pour le point sur les entraînements, par exemple. Toute personne qui a un compte peut être trouvée, affiliée ou non ; choisissez le point pour lequel elle vient, ou toute la réunion. Un invité n'apprend que la date, le lieu et son point : jamais le reste de l'ordre du jour ni la description de la réunion, ni dans l'e-mail, ni sur la page de réponse, ni dans le fichier calendrier. Sa convocation part tout de suite si les autres sont déjà parties, avec elles sinon. Les invités ne comptent jamais dans le quorum, sont listés à part dans le PV et ne reçoivent jamais le PV d'un comité.
 
 ### Procès-verbal
 
-Rédigez le PV depuis la fiche de la réunion (**Rédiger le PV**), en direct pendant la réunion : un bloc par point de l'ordre du jour — ce qui s'est dit, les décisions (tapez, puis Entrée ; numérotées D1, D2… sur tout le PV) et les actions (tapez, puis Entrée ; puis qui et pour quand) — plus un bloc pour ce qui sort de l'ordre du jour. Les présences se pointent en haut : tous les confirmés d'un coup, puis les corrections nom par nom, et un membre venu sans être sur la liste s'ajoute par la recherche. **Marquer abordé** clôt un point et ouvre le suivant. Tout s'enregistre au fur et à mesure ; **Aperçu** montre le PV et son PDF avant de le **Publier** une fois la réunion passée. Une modification faite après l'envoi apparaît « Corrigé le … ».
+Rédigez le PV depuis la fiche de la réunion (**Rédiger le PV**), en direct pendant la réunion : un bloc par point de l'ordre du jour — ce qui s'est dit, les décisions (tapez, puis Entrée ; numérotées D1, D2… sur tout le PV) et les actions (tapez, puis Entrée ; puis qui et pour quand) — plus un bloc pour ce qui sort de l'ordre du jour. Les présences se pointent en haut : tous les confirmés d'un coup, puis les corrections nom par nom, et une personne venue sans être sur la liste s'ajoute par la recherche — affiliée ou non ; celle que la réunion ne convoque pas d'office est notée invitée. **Marquer abordé** clôt un point et ouvre le suivant. Tout s'enregistre au fur et à mesure ; **Aperçu** montre le PV et son PDF avant de le **Publier** une fois la réunion passée. Une modification faite après l'envoi apparaît « Corrigé le … ».
 
 - **Envoyer au comité** le transmet au comité — la première étape habituelle, pour le relire.
 - **Envoyer à tous les membres** n'existe que pour une **assemblée générale** : le PV d'une réunion de comité ne sort jamais du comité, puisqu'il peut nommer un membre en dette ou un conflit. C'est aussi l'envoi à tous qui ouvre le PV d'une AG à chaque membre actif.
@@ -293,6 +299,12 @@ Le mail est court — les décisions, les actions du destinataire, un bouton **L
 ### Points d'action
 
 Créez des points d'action de suivi depuis la réunion, assignés à des membres spécifiques avec des dates d'échéance.
+
+Chaque comité ouvre son PV sur un bloc **Suivi des actions** : les actions encore ouvertes des réunions précédentes — comités et assemblées générales —, avec leur responsable, leur échéance, la réunion d'origine et la note d'avancement du responsable. Un tap par action : **Faite**, **En cours**, **Reporter** (nouvelle échéance), **Confier** (nouveau responsable) ou **Abandonner** (une ligne de motif, obligatoire). Une action cochée faite par son responsable depuis la dernière réunion apparaît « Cochée faite par son responsable », à confirmer. La publication fige le bloc dans le PV (page et PDF) : ce qui a été dit de chaque action reste tel quel ; celles qu'on n'a pas atteintes sont seulement comptées, et reviennent au comité suivant. La convocation d'un comité liste les actions ouvertes et dit à chaque responsable combien sont à lui.
+
+**Événements → Mes actions** rassemble les actions du lecteur, de toutes les réunions : il y note où il en est (le comité suivant le lit) et coche ce qui est fait. Les actions ouvertes comptent parmi ses tâches, au tableau de bord et dans le menu. Reporter, confier et abandonner restent l'affaire de celui qui gère les réunions.
+
+**Événements → Registre des PV** est la mémoire du comité, en trois onglets : **Décisions** (une ligne chacune, regroupées par réunion, les 12 derniers mois par défaut — 6 mois, la saison ou tout sur demande —, comités, AG ou les deux), **Actions** (toutes les actions de toutes les réunions, par responsable et par état) et **Recherche** (un mot cherché dans tout ce que contiennent les PV : discussions, décisions, actions, hors ordre du jour, annonces, avec la réunion, l'endroit et un extrait). Un PV non publié n'apparaît qu'à ceux qui gèrent les réunions, marqué « Brouillon ».
 
 ### Reporter ou annuler
 
@@ -506,7 +518,7 @@ En tant que membre du comité, les emails suivants sont envoyés automatiquement
 | Pack d'entraînement approuvé | Membre |
 | Pack d'entraînement refusé | Membre |
 | Séance d'entraînement annulée | Membres inscrits |
-| Invitation à une réunion | Membres invités |
+| Invitation à une réunion | Membres invités, et les invités extérieurs |
 | Confirmation de RSVP réunion | Membre |
 | Procès-verbal de réunion | Le comité ; tous les membres actifs pour une AG envoyée à tous |
 | Réunion annulée/reportée | Tous les membres invités |

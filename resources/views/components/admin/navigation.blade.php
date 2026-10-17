@@ -426,11 +426,14 @@
     @feature('meetings', 'tournaments')
     @canany(['meetings.view', 'tournaments.view'])
     <x-menu-sub icon="o-star">
-        <x-slot:title><x-admin.menu-sub-title :title="__('Events')" :badge="$badge('meetings_to_close', 'tournaments_to_close')" /></x-slot:title>
+        <x-slot:title><x-admin.menu-sub-title :title="__('Events')" :badge="$badge('meetings_to_close', 'my_actions', 'tournaments_to_close')" /></x-slot:title>
         @feature('meetings')
         @can('meetings.view')
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.meetings.index') }}" :title="__('Meetings')"
             :badge="$badge('meetings_to_close')" badge-classes="badge-warning" />
+        <x-menu-item icon="o-clipboard-document-check" link="{{ route('admin.meetings.my-actions') }}" :title="__('My actions')"
+            :badge="$badge('my_actions')" badge-classes="badge-warning" />
+        <x-menu-item icon="o-book-open" link="{{ route('admin.meetings.register') }}" :title="__('Register of minutes')" />
         @endcan
         @endfeature
         @feature('tournaments')

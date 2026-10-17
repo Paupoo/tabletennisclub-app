@@ -97,7 +97,7 @@ TrainingSession:
 
 ### Tables impliquées
 - `meetings`, `meeting_user`, `meeting_date_proposals`, `meeting_date_votes`
-- `meeting_agenda_items`, `meeting_action_items`, `meeting_minutes`
+- `meeting_agenda_items`, `meeting_action_items`, `meeting_action_reviews`, `meeting_minutes`
 
 ### Features principales
 

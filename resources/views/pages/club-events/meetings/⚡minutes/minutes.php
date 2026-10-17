@@ -9,6 +9,8 @@ use App\Domains\Meetings\Models\MeetingAgendaItem;
 use App\Domains\Meetings\Models\MeetingDecision;
 use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Domains\Meetings\Models\MeetingUser;
+use App\Domains\Meetings\Services\ActionFollowUp;
+use App\Domains\Shared\Enums\MeetingActionReviewOutcomeEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\Permission;
@@ -16,6 +18,7 @@ use App\Domains\Shared\Enums\Role;
 use App\Jobs\SendMeetingMinutesJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -55,6 +58,15 @@ new class extends Component
 
     /** @var array<int, string> agenda item id => markdown */
     public array $discussions = [];
+
+    /** @var array<int, string> action id => the new due date, when postponing */
+    public array $followUpDue = [];
+
+    /** @var array<int, string> action id => the new owner, when handing over */
+    public array $followUpOwner = [];
+
+    /** @var array<int, string> action id => why it is abandoned */
+    public array $followUpReason = [];
 
     #[Locked]
     public int $meetingId;
@@ -129,7 +141,11 @@ new class extends Component
 
     // ── Attendance ────────────────────────────────────────────────────
 
-    /** A member who came without answering the invitation, or without being invited. */
+    /**
+     * Somebody who came without answering the invitation, or without being
+     * invited. Anybody with an account may be noted: whoever the meeting does
+     * not convene by right — the coach at a committee meeting — comes as a guest.
+     */
     public function addWalkIn(int $userId): void
     {
         abort_unless($this->canManage, 403);
@@ -138,23 +154,31 @@ new class extends Component
             return;
         }
 
-        $member = User::active()->whereKey($userId)->firstOrFail();
+        $person = User::query()->whereKey($userId)->firstOrFail();
+        $isGuest = ! $this->meeting->audience()->whereKey($person->id)->exists();
 
         $this->meeting->users()->syncWithoutDetaching([
-            $member->id => ['status' => MeetingUserStatusEnum::ATTENDED->value, 'response_at' => now()],
+            $person->id => ['status' => MeetingUserStatusEnum::ATTENDED->value, 'response_at' => now(), 'is_guest' => $isGuest],
         ]);
 
         $this->walkInSearch = '';
         $this->saved();
     }
 
-    /** @return array{present: int, excused: int, absent: int, pending: int} */
+    /**
+     * The members' attendance, which the quorum reads; guests who came are
+     * counted on their own.
+     *
+     * @return array{present: int, excused: int, absent: int, pending: int, guests: int}
+     */
     #[Computed]
     public function attendanceCounts(): array
     {
-        $statuses = $this->meeting->users->map(fn (User $user): MeetingUserStatusEnum => $this->statusOf($user));
+        [$guests, $members] = $this->meeting->users->partition(fn (User $user): bool => $this->registrationOf($user)->is_guest);
+        $statuses = $members->map(fn (User $user): MeetingUserStatusEnum => $this->statusOf($user));
 
         return [
+            'guests' => $guests->filter(fn (User $user): bool => $this->statusOf($user) === MeetingUserStatusEnum::ATTENDED)->count(),
             'present' => $statuses->filter(fn ($status): bool => $status === MeetingUserStatusEnum::ATTENDED)->count(),
             'excused' => $statuses->filter(fn ($status): bool => $status === MeetingUserStatusEnum::DECLINED)->count(),
             'absent' => $statuses->filter(fn ($status): bool => $status === MeetingUserStatusEnum::ABSENT)->count(),
@@ -238,6 +262,17 @@ new class extends Component
     }
 
     /** Whether the current user holds the note-taking lock. */
+    /**
+     * The earlier actions this committee follows up — empty for an assembly.
+     *
+     * @return Illuminate\Database\Eloquent\Collection<int, MeetingActionItem>
+     */
+    #[Computed]
+    public function followUp(): Illuminate\Database\Eloquent\Collection
+    {
+        return ActionFollowUp::itemsFor($this->meeting);
+    }
+
     #[Computed]
     public function holdsLock(): bool
     {
@@ -279,7 +314,7 @@ new class extends Component
         return Meeting::with([
             'users',
             'minutes',
-            'agendaItems',
+            'agendaItems.carriedFrom.meeting',
             'decisions',
             'actionItems.assignedTo',
             'minutesEditor',
@@ -320,6 +355,7 @@ new class extends Component
             'published_at' => now(),
             'published_by' => auth()->id(),
         ]);
+        ActionFollowUp::freeze($this->meeting);
 
         unset($this->meeting);
         $this->toast(type: 'success', title: __('Minutes published'));
@@ -371,6 +407,50 @@ new class extends Component
         return $this->view();
     }
 
+    /**
+     * Poll target for read-only viewers: pull the note taker's latest writes.
+     * With a free or held pen there is nobody else writing, and a render would
+     * only disturb the fields being typed in.
+     */
+    /** Say where an earlier action stands; postponing, handing over and abandoning need their one detail. */
+    public function reviewAction(int $actionId, string $outcome): void
+    {
+        abort_unless($this->canManage, 403);
+        $outcome = MeetingActionReviewOutcomeEnum::tryFrom($outcome);
+        abort_if($outcome === null || $outcome === MeetingActionReviewOutcomeEnum::NOT_REVIEWED, 422);
+
+        $action = $this->followUp->firstWhere('id', $actionId);
+        abort_if($action === null, 404);
+
+        $rules = match ($outcome) {
+            MeetingActionReviewOutcomeEnum::POSTPONED => ["followUpDue.{$actionId}" => ['required', 'date']],
+            MeetingActionReviewOutcomeEnum::REASSIGNED => ["followUpOwner.{$actionId}" => ['required', 'integer', 'in:' . collect($this->usersForAssignment)->pluck('id')->implode(',')]],
+            MeetingActionReviewOutcomeEnum::ABANDONED => ["followUpReason.{$actionId}" => ['required', 'string', 'max:255']],
+            default => [],
+        };
+
+        if ($rules !== []) {
+            $this->validate($rules, attributes: [
+                "followUpDue.{$actionId}" => __('new due date'),
+                "followUpOwner.{$actionId}" => __('new owner'),
+                "followUpReason.{$actionId}" => __('reason'),
+            ]);
+        }
+
+        if (! $this->claimPen()) {
+            return;
+        }
+
+        ActionFollowUp::review($this->meeting, $action, $outcome, [
+            'due_date' => filled($this->followUpDue[$actionId] ?? null) ? Carbon::parse($this->followUpDue[$actionId]) : null,
+            'assigned_to_id' => filled($this->followUpOwner[$actionId] ?? null) ? (int) $this->followUpOwner[$actionId] : null,
+            'reason' => trim($this->followUpReason[$actionId] ?? '') ?: null,
+        ]);
+
+        unset($this->followUpDue[$actionId], $this->followUpOwner[$actionId], $this->followUpReason[$actionId], $this->followUp);
+        $this->saved();
+    }
+
     public function sendMinutes(bool $toAll = false): void
     {
         abort_unless($this->canManage, 403);
@@ -419,11 +499,6 @@ new class extends Component
         $this->updated("actions.{$actionId}.due_date");
     }
 
-    /**
-     * Poll target for read-only viewers: pull the note taker's latest writes.
-     * With a free or held pen there is nobody else writing, and a render would
-     * only disturb the fields being typed in.
-     */
     public function syncDraft(): void
     {
         if (! $this->readOnly) {
@@ -534,7 +609,8 @@ new class extends Component
     }
 
     /**
-     * Active members not on the list yet, matching the walk-in search.
+     * Accounts not on the list yet, matching the walk-in search — affiliated
+     * or not, since a coach or a volunteer may hold no affiliation this season.
      *
      * @return Collection<int, User>
      */
@@ -547,11 +623,9 @@ new class extends Component
             return collect();
         }
 
-        return User::active()
+        return User::query()
             ->whereNotIn('users.id', $this->meeting->users->modelKeys())
-            ->where(fn ($query) => $query
-                ->where('first_name', 'like', "%{$search}%")
-                ->orWhere('last_name', 'like', "%{$search}%"))
+            ->searchName($search)
             ->orderBy('last_name')
             ->orderBy('users.id')
             ->limit(8)

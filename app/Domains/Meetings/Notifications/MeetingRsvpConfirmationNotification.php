@@ -6,6 +6,7 @@ namespace App\Domains\Meetings\Notifications;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
@@ -42,7 +43,7 @@ class MeetingRsvpConfirmationNotification extends Notification implements Should
         $meeting = $this->meeting;
         $meeting->loadMissing('agendaItems');
 
-        $ics = app(IcsGenerator::class)->forMeeting($meeting);
+        $ics = app(IcsGenerator::class)->forMeeting($meeting, for: $notifiable instanceof User ? $notifiable : null);
 
         $mail = (new MailMessage)
             ->markdown('mail.meeting-rsvp-confirmation', [

@@ -19,6 +19,8 @@ use Illuminate\Support\Carbon;
  * @property int $meeting_id
  * @property int $user_id
  * @property MeetingUserStatusEnum $status
+ * @property bool $is_guest
+ * @property int|null $guest_agenda_item_id
  * @property Carbon|null $invitation_sent_at
  * @property Carbon|null $response_at
  * @property bool|null $meal_reserved
@@ -53,6 +55,8 @@ class MeetingUser extends Pivot implements DescribesPayment
 
     protected $casts = [
         'status' => MeetingUserStatusEnum::class,
+        'is_guest' => 'boolean',
+        'guest_agenda_item_id' => 'integer',
         'invitation_sent_at' => 'datetime',
         'response_at' => 'datetime',
         'meal_reserved' => 'boolean',
@@ -70,6 +74,8 @@ class MeetingUser extends Pivot implements DescribesPayment
         'meeting_id',
         'user_id',
         'status',
+        'is_guest',
+        'guest_agenda_item_id',
         'invitation_sent_at',
         'response_at',
         'meal_reserved',

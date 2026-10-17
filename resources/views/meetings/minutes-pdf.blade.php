@@ -160,6 +160,40 @@
     </table>
 @endif
 
+{{-- ── Follow-up of earlier actions ─────────────────────────────────── --}}
+@if ($report->followUp->isNotEmpty() || $report->notReviewedCount > 0)
+    <h2>{{ __('Follow-up of actions') }}</h2>
+    @if ($report->followUp->isNotEmpty())
+        <table class="rows">
+            <thead>
+                <tr>
+                    <th>{{ __('Action') }}</th>
+                    <th style="width: 34mm;">{{ __('Assigned to') }}</th>
+                    <th style="width: 50mm;">{{ __('Follow-up') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($report->followUp as $review)
+                    <tr>
+                        <td>
+                            <div class="title">{{ $review->actionItem->title }}</div>
+                            <div class="muted" style="font-size: 8pt;">{{ __(':type of :date', ['type' => $review->actionItem->meeting->type->getLabel(), 'date' => $review->actionItem->meeting->scheduled_at?->format('d/m/Y')]) }}</div>
+                            @if (filled($review->progress_note))
+                                <div class="details">« {{ $review->progress_note }} »</div>
+                            @endif
+                        </td>
+                        <td>{{ $review->actionItem->assignedTo?->full_name ?? __('Nobody') }}</td>
+                        <td>{{ $review->describe() }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
+    @if ($report->notReviewedCount > 0)
+        <p class="muted">{{ trans_choice('{1}1 action not reviewed|[2,*]:count actions not reviewed', $report->notReviewedCount, ['count' => $report->notReviewedCount]) }}</p>
+    @endif
+@endif
+
 {{-- ── Announcements ────────────────────────────────────────────────── --}}
 @if ($report->announcements !== [])
     <h2>{{ __('Announcements') }}</h2>
@@ -182,6 +216,9 @@
                 <td class="num">{{ $i + 1 }}.</td>
                 <td>
                     <div class="title">{{ $item->title }}</div>
+                    @if ($item->carried_from_id)
+                        <div class="muted" style="font-size: 8pt;">{{ $item->postponedFromLabel() }}</div>
+                    @endif
                     @if (filled($item->discussion))
                         <div class="content">{!! \App\Support\Markdown::safe($item->discussion) !!}</div>
                     @elseif (filled($item->description))
@@ -218,6 +255,7 @@
 @endif
 @foreach ([
     ['label' => $report->attendanceRecorded ? __('People present') : __('People confirmed'), 'people' => $report->present],
+    ['label' => __('Guests'), 'people' => $report->guests],
     ['label' => __('People excused'), 'people' => $report->excused],
     ['label' => __('People absent'), 'people' => $report->absent],
 ] as $group)

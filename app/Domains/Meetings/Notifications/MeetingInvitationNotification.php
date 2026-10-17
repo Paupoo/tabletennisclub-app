@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domains\Meetings\Notifications;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Services\ActionFollowUp;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
 use Illuminate\Bus\Queueable;
@@ -63,11 +65,42 @@ class MeetingInvitationNotification extends Notification implements ShouldQueue
             ]));
         }
 
-        if ($meeting->agendaItems->isNotEmpty()) {
+        $isGuest = $notifiable instanceof User && $meeting->isGuest($notifiable);
+
+        if ($isGuest) {
+            // A guest learns what they come for, never the rest of the agenda.
+            $point = $meeting->agendaFor($notifiable)->first();
+            $mail->line('---');
+            $mail->line($point === null
+                ? __('You are invited as a guest.')
+                : __('You are invited as a guest, for the point: **:point**', ['point' => $point->title]));
+        } elseif ($meeting->agendaItems->isNotEmpty()) {
             $mail->line('---');
             $mail->line('**' . __('Agenda') . '**');
             foreach ($meeting->agendaItems as $i => $item) {
                 $mail->line(($i + 1) . '. ' . $item->title);
+            }
+        }
+
+        // A committee opens on the actions still open: each owner arrives knowing
+        // they will be asked where theirs stand.
+        $openActions = $isGuest ? collect() : ActionFollowUp::openBefore($meeting);
+
+        if ($openActions->isNotEmpty()) {
+            $mine = $notifiable instanceof User ? $openActions->where('assigned_to_id', $notifiable->id)->count() : 0;
+            $mail->line('---');
+            $mail->line('**' . __('Follow-up of actions') . '**');
+
+            if ($mine > 0) {
+                $mail->line(trans_choice('{1}You have 1 action in progress.|[2,*]You have :count actions in progress.', $mine, ['count' => $mine]));
+            }
+
+            foreach ($openActions as $action) {
+                $mail->line('- ' . collect([
+                    $action->title,
+                    $action->assignedTo?->full_name,
+                    $action->due_date ? __('due :date', ['date' => $action->due_date->format('d/m/Y')]) : null,
+                ])->filter()->implode(' — '));
             }
         }
 
@@ -79,7 +112,7 @@ class MeetingInvitationNotification extends Notification implements ShouldQueue
             }
         }
 
-        if ($meeting->quorum) {
+        if ($meeting->quorum && ! $isGuest) {
             $mail->line('---');
             $mail->line(__('**Quorum required:** :n members must confirm their attendance.', ['n' => $meeting->quorum]));
         }

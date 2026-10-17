@@ -15,7 +15,7 @@ use App\Domains\Meetings\Models\MeetingActionItem;
 final readonly class MinutesAction
 {
     /**
-     * @param  'overdue'|'todo'|'done'  $status
+     * @param  'overdue'|'todo'|'done'|'abandoned'  $status
      */
     public function __construct(
         public MeetingActionItem $item,
@@ -30,6 +30,7 @@ final readonly class MinutesAction
         return match ($this->status) {
             'overdue' => trans_choice('{1}Overdue by a day|[2,*]Overdue by :count days', abs((int) $this->days), ['count' => abs((int) $this->days)]),
             'done' => __('Done'),
+            'abandoned' => __('Abandoned'),
             default => match (true) {
                 $this->days === null => __('To do'),
                 $this->days === 0 => __('Due today'),

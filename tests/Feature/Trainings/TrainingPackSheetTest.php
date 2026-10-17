@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Trainings\Models\Training;
@@ -210,4 +211,19 @@ it('reads an enrolment dated from the first day of the pack as there from the st
         'Encode ' . User::where('last_name', 'Encode')->value('first_name') => null,
         'Inscrit ' . User::where('last_name', 'Inscrit')->value('first_name') => null,
     ]);
+})->group('training', 'pack');
+
+it('counts the external participants among the enrolled, as the spots left already do', function (): void {
+    $pack = sheetPack(['max_participants' => 10]);
+    foreach (range(1, 7) as $_) {
+        enrol($pack, 'enrolled');
+    }
+    ExternalRegistration::factory()->count(2)->create(['registrable_type' => TrainingPack::class, 'registrable_id' => $pack->id]);
+
+    $summary = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.trainings.show', ['pack' => $pack->id])
+        ->get('packSummary');
+
+    expect($summary['enrolled'])->toBe(9)
+        ->and($summary['spotsLeft'])->toBe(1);
 })->group('training', 'pack');

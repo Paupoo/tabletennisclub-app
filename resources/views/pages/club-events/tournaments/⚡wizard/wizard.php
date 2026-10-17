@@ -37,6 +37,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -47,6 +48,13 @@ new class extends Component
 {
     use HasBreadcrumbs;
     use HasEventPostForm, KeepsNumericPropertiesTyped, Toast, WithFileUploads;
+
+    /** The icons of the three absences, shared by their buttons and their badges. */
+    public const string ICON_ABSENT = 'o-user-minus';
+
+    public const string ICON_EXCUSED = 'o-hand-raised';
+
+    public const string ICON_UNEXCUSED = 'o-exclamation-triangle';
 
     /** Places in the bracket: 4, 8 or 16. */
     public int $bracketSize = 8;
@@ -134,6 +142,12 @@ new class extends Component
 
     public string $registration_deadline = '';
 
+    /** What the list of registrations searches, by first or last name. */
+    public string $registrationSearch = '';
+
+    /** The tab of the list of registrations: all, to_check, present, absent or unpaid. */
+    public string $registrationTab = 'all';
+
     public array $selectedMembers = [];
 
     public string $selectedObjective = '';
@@ -174,7 +188,7 @@ new class extends Component
 
     public bool $showRequireCloseRegistrationsModal = false;
 
-    public array $sortBy = ['column' => 'registered_at', 'direction' => 'asc'];
+    public array $sortBy = ['column' => 'name', 'direction' => 'asc'];
 
     public string $startTime = '';
 
@@ -313,7 +327,7 @@ new class extends Component
 
         app(TournamentService::class)->cancelRegistration($tournament, $user);
 
-        unset($this->registrations);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations);
         unset($this->waitlist);
 
         $this->error($user->full_name . ' ' . __('has been unregistered.'));
@@ -432,7 +446,7 @@ new class extends Component
 
         app(TournamentService::class)->recordCashPayment($tournament, $user, $register);
 
-        unset($this->registrations);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations);
         $this->reset(['showCashConfirmModal', 'paymentActionUserId']);
         $this->success(__('Cash payment recorded.'), icon: 'o-currency-euro');
     }
@@ -474,7 +488,7 @@ new class extends Component
                 $user->notify(new TournamentWaitlistRemovedNotification($tournament));
             });
 
-        unset($this->currentTournament, $this->waitlist, $this->registrations, $this->registrationsOpen, $this->canOpenRegistrations);
+        unset($this->currentTournament, $this->waitlist, $this->registrationRows, $this->registrationTabCounts, $this->registrations, $this->registrationsOpen, $this->canOpenRegistrations);
         $this->showCloseRegistrationsModal = false;
         $this->success(__('Registrations closed. Waitlisted players have been notified.'), icon: 'o-lock-closed');
     }
@@ -526,7 +540,7 @@ new class extends Component
             return;
         }
 
-        unset($this->registrations, $this->pairBoard);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations, $this->pairBoard);
         $this->success(__('Presence confirmed.'));
     }
 
@@ -744,7 +758,7 @@ new class extends Component
             return;
         }
 
-        unset($this->registrations, $this->pairBoard, $this->poolsGenerated, $this->pools);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations, $this->pairBoard, $this->poolsGenerated, $this->pools);
 
         $this->warning($excused ? __('Excused absence recorded.') : __('Unexcused absence recorded: the entry fee stays due.'), icon: 'o-no-symbol');
     }
@@ -760,7 +774,7 @@ new class extends Component
             ->where('user_id', $userId)
             ->update(['qr_confirmed' => true]);
 
-        unset($this->registrations);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations);
         $this->reset(['showQrModal', 'paymentActionUserId']);
         $this->success(__('QR payment confirmed on-site.'), icon: 'o-check-circle');
     }
@@ -804,6 +818,24 @@ new class extends Component
     {
         return $this->tournamentId !== null
             && (bool) Tournament::find($this->tournamentId)?->matches()->exists();
+    }
+
+    /**
+     * How far the tournament lets the committee go in the steps.
+     */
+    public function maxReachableStepIndex(): int
+    {
+        $keys = array_column($this->wizardSteps(), 'key');
+
+        $reachable = match (true) {
+            in_array($this->currentTournament?->status, [TournamentStatusEnum::SETUP, TournamentStatusEnum::PENDING, TournamentStatusEnum::CLOSED], true) => '6',
+            $this->currentTournament?->status === TournamentStatusEnum::PUBLISHED => in_array('pairs', $keys, true) ? 'pairs' : '5',
+            $this->currentTournament?->status === TournamentStatusEnum::LOCKED => '4',
+            $this->tournamentId !== null => '3',
+            default => '1',
+        };
+
+        return (int) array_search($reachable, $keys, true);
     }
 
     // ── Computed: members from DB
@@ -1213,7 +1245,7 @@ new class extends Component
             ]);
 
         app(TournamentService::class)->countRegisteredUsers($tournament);
-        unset($this->registrations);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations);
         unset($this->waitlist);
 
         $this->success($user->full_name . ' ' . __('has been moved to the registered list.'));
@@ -1276,7 +1308,7 @@ new class extends Component
             return;
         }
 
-        unset($this->registrations, $this->waitlist, $this->members, $this->pairBoard);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations, $this->waitlist, $this->members, $this->pairBoard);
 
         $this->memberToRegister = 0;
         $this->showRegisterModal = false;
@@ -1291,39 +1323,74 @@ new class extends Component
         return $this->currentTournament?->state()->canCreatePools() ?? false;
     }
 
-    // ── Computed: active registrations (not waiting, not cancelled)
-
+    /**
+     * Every active registration, with the tabs it belongs to.
+     *
+     * An absence excused has its fee dropped: it owes nothing, so it is not
+     * unpaid.
+     */
     #[Computed]
-    public function registrations(): Collection
+    public function registrationRows(): Collection
     {
         if (! $this->tournamentId) {
             return collect();
         }
 
-        $col = $this->sortBy['column'];
-        $dir = $this->sortBy['direction'];
-
-        $users = Tournament::findOrFail($this->tournamentId)
+        $tournament = Tournament::findOrFail($this->tournamentId);
+        $users = $tournament
             ->users()
             ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered', 'no_show'])
             ->get();
 
         $paymentIds = $users->map(fn (User $u) => $u->pivot->payment_id)->filter()->unique()->values();
         $paidPaymentIds = Payment::whereIn('id', $paymentIds)->where('status', 'paid')->pluck('id')->flip();
+        $isPaid = $tournament->isPaid();
 
-        $rows = $users->map(fn (User $u): array => [
-            'id' => $u->id,
-            'name' => $u->full_name,
-            'ranking' => $u->ranking->getLabel(),
-            'status' => $u->pivot->registration_status,
-            'has_paid' => (bool) $u->pivot->has_paid || isset($paidPaymentIds[$u->pivot->payment_id]),
-            'qr_confirmed' => (bool) $u->pivot->qr_confirmed,
-            'payment_id' => $u->pivot->payment_id,
-            'payment_deadline' => $u->pivot->payment_deadline,
-            'registered_at' => $u->pivot->created_at,
-        ]);
+        return $users->map(function (User $u) use ($paidPaymentIds, $isPaid): array {
+            $status = $u->pivot->registration_status;
+            $hasPaid = (bool) $u->pivot->has_paid || isset($paidPaymentIds[$u->pivot->payment_id]);
+            $owes = $isPaid && ! $hasPaid && ($status !== 'no_show' || $u->pivot->absence_excused !== true);
 
-        return $dir === 'asc'
+            return [
+                'id' => $u->id,
+                'name' => $u->full_name,
+                'sort_name' => Str::lower(Str::ascii($u->last_name . ' ' . $u->first_name)),
+                'search' => Str::lower(Str::ascii($u->first_name . ' ' . $u->last_name)),
+                'ranking' => $u->ranking->getLabel(),
+                'status' => $status,
+                'has_paid' => $hasPaid,
+                'qr_confirmed' => (bool) $u->pivot->qr_confirmed,
+                'payment_id' => $u->pivot->payment_id,
+                'payment_deadline' => $u->pivot->payment_deadline,
+                'registered_at' => $u->pivot->created_at,
+                'status_badge' => $this->statusBadge($status, $u->pivot->absence_excused, $hasPaid),
+                'tabs' => array_values(array_filter([
+                    in_array($status, ['registered', 'spot_offered'], true) ? 'to_check' : null,
+                    $status === 'confirmed' ? 'present' : null,
+                    $status === 'no_show' ? 'absent' : null,
+                    $owes ? 'unpaid' : null,
+                ])),
+            ];
+        });
+    }
+
+    // ── Computed: active registrations (not waiting, not cancelled)
+
+    /**
+     * The registered players as the list shows them: the tab chosen, the name
+     * searched, sorted by surname unless a column says otherwise.
+     */
+    #[Computed]
+    public function registrations(): Collection
+    {
+        $col = $this->sortBy['column'] === 'name' ? 'sort_name' : $this->sortBy['column'];
+        $search = Str::lower(Str::ascii(trim($this->registrationSearch)));
+
+        $rows = $this->registrationRows
+            ->filter(fn (array $row): bool => $this->registrationTab === 'all' || in_array($this->registrationTab, $row['tabs'], true))
+            ->filter(fn (array $row): bool => $search === '' || str_contains($row['search'], $search));
+
+        return $this->sortBy['direction'] === 'asc'
             ? $rows->sortBy($col)->values()
             : $rows->sortByDesc($col)->values();
     }
@@ -1333,6 +1400,26 @@ new class extends Component
     public function registrationsOpen(): bool
     {
         return $this->currentTournament?->state()->canRegisterUsers() ?? false;
+    }
+
+    /**
+     * How many players each tab of the list holds.
+     *
+     * @return array{all: int, to_check: int, present: int, absent: int, unpaid: int}
+     */
+    #[Computed]
+    public function registrationTabCounts(): array
+    {
+        $rows = $this->registrationRows;
+        $count = fn (string $tab): int => $rows->filter(fn (array $row): bool => in_array($tab, $row['tabs'], true))->count();
+
+        return [
+            'all' => $rows->count(),
+            'to_check' => $count('to_check'),
+            'present' => $count('present'),
+            'absent' => $count('absent'),
+            'unpaid' => $count('unpaid'),
+        ];
     }
 
     public function removeFromWaitlist(int $userId): void
@@ -1353,7 +1440,7 @@ new class extends Component
             $user->notify(new TournamentWaitlistRemovedNotification($tournament));
         }
 
-        unset($this->registrations);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations);
         unset($this->waitlist);
 
         $this->success(__('Removed from waiting list.'));
@@ -1524,7 +1611,7 @@ new class extends Component
             $this->pendingWaitlistOffers,
             $this->pendingOverCapacity,
             $this->waitlist,
-            $this->registrations,
+            $this->registrationRows, $this->registrationTabCounts, $this->registrations,
         );
 
         if ($this->step === '1') {
@@ -1793,6 +1880,34 @@ new class extends Component
         ];
     }
 
+    /**
+     * The steps of this tournament, in order.
+     *
+     * A doubles tournament has one more, for its pairs, between the
+     * registrations and the launch — pairs the players chose can be reworked
+     * on the day as well.
+     *
+     * @return list<array{key: string, label: string, icon: string}>
+     */
+    public function wizardSteps(): array
+    {
+        $steps = [
+            ['key' => '1', 'label' => __('Configuration'), 'icon' => 'o-cog-6-tooth'],
+            ['key' => '2', 'label' => __('Web event'), 'icon' => 'o-globe-alt'],
+            ['key' => '3', 'label' => __('Validation'), 'icon' => 'o-lock-closed'],
+            ['key' => '4', 'label' => __('Invitations'), 'icon' => 'o-envelope'],
+            ['key' => '5', 'label' => __('Registrations'), 'icon' => 'o-users'],
+        ];
+
+        if (($this->currentTournament?->match_type ?? $this->matchType) === 'double') {
+            $steps[] = ['key' => 'pairs', 'label' => __('Pairs'), 'icon' => 'o-user-group'];
+        }
+
+        $steps[] = ['key' => '6', 'label' => __('Launch'), 'icon' => 'o-rocket-launch'];
+
+        return $steps;
+    }
+
     // ── Render
 
     protected function breadcrumbChain(): Breadcrumb
@@ -1928,8 +2043,28 @@ new class extends Component
     {
         $this->selectedPeople = [];
         $this->bulkDrawer = false;
-        unset($this->registrations);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations);
         unset($this->waitlist);
+    }
+
+    /**
+     * How a registration reads in the list, with the icon of the button that set it.
+     *
+     * One vocabulary for both: an absence excused raises its hand, an
+     * unexcused one warns, a player who had paid is simply away.
+     *
+     * @return array{label: string, icon: string|null, class: string}
+     */
+    private function statusBadge(string $status, ?bool $absenceExcused, bool $hasPaid): array
+    {
+        return match (true) {
+            $status === 'confirmed' => ['label' => __('Present'), 'icon' => 'o-check', 'class' => 'badge-success badge-soft'],
+            $status === 'spot_offered' => ['label' => __('Spot offered'), 'icon' => null, 'class' => 'badge-info badge-soft'],
+            $status === 'no_show' && $absenceExcused === false && ! $hasPaid => ['label' => __('Unexcused absence'), 'icon' => self::ICON_UNEXCUSED, 'class' => 'badge-warning badge-soft'],
+            $status === 'no_show' && $absenceExcused === true && ! $hasPaid => ['label' => __('Excused absence'), 'icon' => self::ICON_EXCUSED, 'class' => 'badge-ghost'],
+            $status === 'no_show' => ['label' => __('Absent'), 'icon' => self::ICON_ABSENT, 'class' => 'badge-ghost'],
+            default => ['label' => __('To check in'), 'icon' => null, 'class' => 'badge-ghost'],
+        };
     }
 
     // ── Private helpers

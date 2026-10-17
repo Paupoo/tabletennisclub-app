@@ -28,7 +28,7 @@ it('asks in the app dialog before sending every pair back to the bench, and only
 
     $this->actingAs($admin);
 
-    $page = visit(route('admin.tournaments.wizard.edit', ['tournament' => $tournament, 'step' => 5]))
+    $page = visit(route('admin.tournaments.wizard.edit', ['tournament' => $tournament, 'step' => 'pairs']))
         ->assertNoJavaScriptErrors()
         ->click('Tout remettre sur le banc')
         ->wait(0.5)

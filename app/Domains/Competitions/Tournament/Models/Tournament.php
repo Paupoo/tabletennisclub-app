@@ -287,6 +287,17 @@ class Tournament extends Model
         return $this->hasMany(TournamentPair::class);
     }
 
+    /**
+     * Do the players know who they play with?
+     *
+     * Pairs the players chose themselves are known from the start; pairs the
+     * committee composes once it has published them.
+     */
+    public function pairsAreKnownToPlayers(): bool
+    {
+        return $this->doubles_registration_mode === 'self' || $this->pairs_published_at !== null;
+    }
+
     public function pools(): HasMany
     {
         return $this->hasMany(Pool::class);
@@ -429,7 +440,7 @@ class Tournament extends Model
         return $this->belongsToMany(User::class)
             ->using(TournamentRegistration::class)
             ->withPivot([
-                'id', 'has_paid', 'qr_confirmed',
+                'id', 'has_paid', 'qr_confirmed', 'absence_excused',
                 'registration_status', 'waitlist_position',
                 'confirmation_deadline', 'payment_deadline', 'payment_id',
             ])

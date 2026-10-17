@@ -21,26 +21,12 @@
 
         {{-- ── Metro-line navigation ────────────────────────────────────────── --}}
         @php
-            $currentStep = (int) $step;
-            $tournamentStatus = $this->currentTournament?->status?->value;
-
-            // Maximum reachable step based on tournament status (independent of $step position).
-            $maxReachable = match(true) {
-                in_array($tournamentStatus, ['setup', 'pending', 'closed'])   => 6,
-                in_array($tournamentStatus, ['published'])                    => 5,
-                in_array($tournamentStatus, ['locked'])                       => 4,
-                $tournamentId !== null                                        => 3,
-                default                                                       => 1,
-            };
-
-            $wizardSteps = [
-                1 => ['label' => __('Configuration'), 'icon' => 'o-cog-6-tooth'],
-                2 => ['label' => __('Web event'),      'icon' => 'o-globe-alt'],
-                3 => ['label' => __('Validation'),     'icon' => 'o-lock-closed'],
-                4 => ['label' => __('Invitations'),    'icon' => 'o-envelope'],
-                5 => ['label' => __('Registrations'),  'icon' => 'o-users'],
-                6 => ['label' => __('Launch'),         'icon' => 'o-rocket-launch'],
-            ];
+            $wizardSteps = $this->wizardSteps();
+            $stepKeys = array_column($wizardSteps, 'key');
+            $currentIndex = (int) (array_search((string) $step, $stepKeys, true) ?: 0);
+            $maxReachableIndex = $this->maxReachableStepIndex();
+            $previousKey = $stepKeys[max(0, $currentIndex - 1)];
+            $nextKey = $stepKeys[min($maxReachableIndex, $currentIndex + 1)];
         @endphp
 
         {{--
@@ -56,30 +42,30 @@
                 <div class="flex items-center gap-2.5">
                     <x-button icon="o-chevron-left" class="btn-outline btn-sm btn-square shrink-0"
                         :aria-label="__('Previous step')"
-                        :disabled="$currentStep <= 1"
-                        wire:click="$set('step', '{{ max(1, $currentStep - 1) }}')" />
+                        :disabled="$currentIndex === 0"
+                        wire:click="$set('step', '{{ $previousKey }}')" />
 
                     <div class="min-w-0 flex-1 text-center">
                         <p class="text-xs font-bold uppercase tracking-widest text-base-content/45">
-                            {{ __('Step :current of :total', ['current' => $currentStep, 'total' => count($wizardSteps)]) }}
+                            {{ __('Step :current of :total', ['current' => $currentIndex + 1, 'total' => count($wizardSteps)]) }}
                         </p>
-                        <p class="truncate text-sm font-bold">{{ $wizardSteps[$currentStep]['label'] ?? '' }}</p>
+                        <p class="truncate text-sm font-bold">{{ $wizardSteps[$currentIndex]['label'] ?? '' }}</p>
                     </div>
 
                     <x-button icon="o-chevron-right" class="btn-outline btn-sm btn-square shrink-0"
                         :aria-label="__('Next step')"
-                        :disabled="$currentStep >= $maxReachable"
-                        wire:click="$set('step', '{{ min($maxReachable, $currentStep + 1) }}')" />
+                        :disabled="$currentIndex >= $maxReachableIndex"
+                        wire:click="$set('step', '{{ $nextKey }}')" />
                 </div>
 
                 {{-- La progression, une barre par étape : atteinte, courante, à venir. --}}
                 <div class="mt-2.5 flex gap-1" role="presentation">
-                    @foreach ($wizardSteps as $num => $info)
+                    @foreach ($wizardSteps as $index => $info)
                         <div @class([
                             'h-1 flex-1 rounded-full',
-                            'bg-success'  => $num < $currentStep,
-                            'bg-primary'  => $num === $currentStep,
-                            'bg-base-300' => $num > $currentStep,
+                            'bg-success'  => $index < $currentIndex,
+                            'bg-primary'  => $index === $currentIndex,
+                            'bg-base-300' => $index > $currentIndex,
                         ])></div>
                     @endforeach
                 </div>
@@ -87,28 +73,29 @@
         </div>
 
         <div class="mb-8 hidden items-center gap-0 overflow-x-auto md:flex">
-            @foreach ($wizardSteps as $num => $info)
-                @php $reachable = $num <= $maxReachable; @endphp
+            @foreach ($wizardSteps as $index => $info)
+                @php $reachable = $index <= $maxReachableIndex; @endphp
 
                 {{-- Step button --}}
                 <button
-                    wire:click="{{ $reachable ? "\$set('step', '{$num}')" : 'null' }}"
+                    data-step="{{ $info['key'] }}"
+                    wire:click="{{ $reachable ? "\$set('step', '{$info['key']}')" : 'null' }}"
                     @class([
                         'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap',
-                        'bg-primary text-primary-content shadow'                                         => $num === $currentStep,
-                        'text-base-content/70 hover:bg-base-200 hover:text-base-content cursor-pointer' => $reachable && $num !== $currentStep,
+                        'bg-primary text-primary-content shadow'                                         => $index === $currentIndex,
+                        'text-base-content/70 hover:bg-base-200 hover:text-base-content cursor-pointer' => $reachable && $index !== $currentIndex,
                         'text-base-content/30 cursor-not-allowed'                                        => !$reachable,
                     ])
                 >
                     <x-icon name="{{ $info['icon'] }}" class="w-4 h-4 shrink-0" />
                     <span>{{ $info['label'] }}</span>
-                    @if ($reachable && $num < $currentStep)
+                    @if ($reachable && $index < $currentIndex)
                         <x-icon name="o-check-circle" class="w-3.5 h-3.5 text-success shrink-0" />
                     @endif
                 </button>
 
                 {{-- Separator --}}
-                @if ($num < 6)
+                @if (! $loop->last)
                     <x-icon name="o-chevron-right" class="w-4 h-4 text-base-content/15 shrink-0 mx-0.5" />
                 @endif
 
@@ -126,6 +113,8 @@
             @include('admin.club-events.tournaments.partials.steps.invitations')
         @elseif ($step == '5')
             @include('admin.club-events.tournaments.partials.steps.registrations')
+        @elseif ($step == 'pairs')
+            @include('admin.club-events.tournaments.partials.steps.pairs')
         @elseif ($step == '6')
             @include('admin.club-events.tournaments.partials.steps.start')
         @endif

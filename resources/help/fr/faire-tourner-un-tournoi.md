@@ -9,12 +9,12 @@ La journée commence dans l'**assistant** du tournoi (l'appel, les paires, le ti
 
 ## Le matin : l'appel
 
-Dans l'étape **Inscriptions** de l'assistant, pointez chaque joueur présent. Pour un absent :
+Dans l'étape **Inscriptions** de l'assistant, pointez chaque joueur présent. Cherchez un nom en tête de liste, et passez par les onglets **À pointer** et **Impayés** : ce sont les deux listes de l'accueil. Pour un absent :
 
 - s'il a **payé**, un seul bouton « Absent » — le trésorier verra la suite ;
 - s'il n'a **pas payé**, choisissez **absence excusée** (il avait prévenu : l'inscription est annulée) ou **absence injustifiée** (l'inscription reste due, et il reçoit un mail qui explique pourquoi, sans reproche).
 
-En double, l'absent libère son partenaire, qui retourne sur le **banc**. Recomposez une paire avec le banc. S'il reste un joueur seul, inscrivez quelqu'un de plus : le comité peut inscrire un membre **même inscriptions closes**, jusqu'au lancement, et même au-delà du plafond. Inscrit le jour même, il paie à l'accueil.
+En double, l'absent libère son partenaire, qui retourne sur le **banc**. Recomposez une paire avec le banc dans l'étape **Paires** — elle existe pour tout tournoi de double, y compris quand les joueurs ont choisi leur partenaire. Le jour du tournoi, aucun mail de paire ne part : tout le monde est dans la salle. S'il reste un joueur seul, inscrivez quelqu'un de plus : le comité peut inscrire un membre **même inscriptions closes**, jusqu'au lancement, et même au-delà du plafond. Inscrit le jour même, il paie à l'accueil.
 
 Un absent qui arrive finalement se remet présent tant que les poules ne sont pas tirées.
 

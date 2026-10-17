@@ -1,3 +1,13 @@
+{{-- Le tirage refuse un banc non vide : on le dit avant qu'il ne refuse. --}}
+@php $benchLeft = $this->currentTournament?->match_type === 'double' && ! $this->isLaunched ? count($this->pairBoard['bench']) : 0; @endphp
+@if ($benchLeft > 0)
+    <div class="mt-6 flex flex-wrap items-center gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4 text-sm" data-bench-reminder>
+        <x-icon name="o-exclamation-triangle" class="h-5 w-5 shrink-0 text-warning-content" />
+        <span class="flex-1">{{ trans_choice(':count player still has no partner: compose the pairs first.|:count players still have no partner: compose the pairs first.', $benchLeft, ['count' => $benchLeft]) }}</span>
+        <x-button :label="__('Go to the pairs')" icon="o-user-group" class="btn-outline btn-sm" wire:click="$set('step', 'pairs')" />
+    </div>
+@endif
+
 @include('components.admin.club-events.tournaments.partials.shared.start-pools', ['isLocked' => $this->isLaunched])
 
 {{-- Launch Section --}}

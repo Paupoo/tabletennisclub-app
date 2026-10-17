@@ -187,13 +187,20 @@ class TournamentPairingService
     }
 
     /**
-     * Once the pairs are published, tell each player whose partner changed.
+     * Once the players know their pairs, tell each player whose partner changed
+     * — never on the tournament day.
      *
      * @param  array<int, int>  $before
      */
     private function noticeChanges(Tournament $tournament, array $before, ?User $except = null): void
     {
-        if ($tournament->pairs_published_at === null) {
+        if (! $tournament->pairsAreKnownToPlayers()) {
+            return;
+        }
+
+        // Le jour du tournoi, tout le monde est dans la salle : une paire se
+        // refait de vive voix, pas par mail.
+        if ($tournament->start_date !== null && $tournament->start_date->copy()->startOfDay()->lte(today())) {
             return;
         }
 

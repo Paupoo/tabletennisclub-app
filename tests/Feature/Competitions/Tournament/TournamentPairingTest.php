@@ -38,7 +38,7 @@ function pairingWizard(Tournament $tournament): Testable
 {
     return Livewire::actingAs(User::factory()->isAdmin()->create())
         ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
-        ->set('step', '5');
+        ->set('step', 'pairs');
 }
 
 /**

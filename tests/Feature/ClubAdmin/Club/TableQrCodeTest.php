@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tournament\GenerateTournamentQR;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -141,4 +142,23 @@ it('goes back to the room once a table is saved', function (): void {
         ->test('pages::club-admin.tables.form', ['table' => $table])
         ->call('save')
         ->assertRedirect(route('admin.rooms.show', $table->room_id));
+});
+
+it('draws the code in the club blue of the design system', function (): void {
+    $dataUri = (new GenerateTournamentQR)('https://example.test/table/1', 200);
+    $image = imagecreatefromstring(base64_decode(substr($dataUri, strlen('data:image/png;base64,'))));
+
+    // The darkest pixel of the code is a module, and it is the club blue.
+    $darkest = null;
+    for ($x = 0; $x < imagesx($image); $x++) {
+        for ($y = 0; $y < imagesy($image); $y++) {
+            $rgb = imagecolorsforindex($image, imagecolorat($image, $x, $y));
+            $sum = $rgb['red'] + $rgb['green'] + $rgb['blue'];
+            if ($darkest === null || $sum < $darkest['sum']) {
+                $darkest = ['sum' => $sum, 'rgb' => [$rgb['red'], $rgb['green'], $rgb['blue']]];
+            }
+        }
+    }
+
+    expect($darkest['rgb'])->toBe([30, 64, 175]);
 });

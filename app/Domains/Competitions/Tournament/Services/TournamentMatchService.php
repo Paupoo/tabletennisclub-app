@@ -961,21 +961,19 @@ class TournamentMatchService
 
         return $level
             ->map(fn (array $row): array => ['row' => $row, 'mini' => $this->recordAgainst($row['key'], $between)])
-            ->sort(function (array $a, array $b) use ($tournamentId): int {
-                return [
-                    self::ratio($b['mini']['sets_won'], $b['mini']['sets_lost']),
-                    self::ratio($b['mini']['total_points'], $b['mini']['points_lost']),
-                    self::ratio($b['row']['sets_won'], $b['row']['sets_lost']),
-                    self::ratio($b['row']['total_points'], $b['row']['points_lost']),
-                    self::stableDraw($tournamentId, $a['row']['key']),
-                ] <=> [
-                    self::ratio($a['mini']['sets_won'], $a['mini']['sets_lost']),
-                    self::ratio($a['mini']['total_points'], $a['mini']['points_lost']),
-                    self::ratio($a['row']['sets_won'], $a['row']['sets_lost']),
-                    self::ratio($a['row']['total_points'], $a['row']['points_lost']),
-                    self::stableDraw($tournamentId, $b['row']['key']),
-                ];
-            })
+            ->sort(fn (array $a, array $b): int => [
+                self::ratio($b['mini']['sets_won'], $b['mini']['sets_lost']),
+                self::ratio($b['mini']['total_points'], $b['mini']['points_lost']),
+                self::ratio($b['row']['sets_won'], $b['row']['sets_lost']),
+                self::ratio($b['row']['total_points'], $b['row']['points_lost']),
+                self::stableDraw($tournamentId, $a['row']['key']),
+            ] <=> [
+                self::ratio($a['mini']['sets_won'], $a['mini']['sets_lost']),
+                self::ratio($a['mini']['total_points'], $a['mini']['points_lost']),
+                self::ratio($a['row']['sets_won'], $a['row']['sets_lost']),
+                self::ratio($a['row']['total_points'], $a['row']['points_lost']),
+                self::stableDraw($tournamentId, $b['row']['key']),
+            ])
             ->pluck('row')
             ->values();
     }

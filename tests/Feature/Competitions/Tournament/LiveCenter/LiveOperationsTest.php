@@ -420,7 +420,7 @@ describe('the results mail', function (): void {
         Mail::assertQueued(TournamentResultsMail::class, fn (TournamentResultsMail $mail): bool => $mail->hasTo('parent@example.test'));
         Mail::assertNotQueued(TournamentResultsMail::class, fn (TournamentResultsMail $mail): bool => $mail->recipient->is($absent));
 
-        $rendered = (new TournamentResultsMail($t, $child, 'Merci', 'Merci à tous', liveCentre($t)->get('rankings')))->render();
+        $rendered = new TournamentResultsMail($t, $child, 'Merci', 'Merci à tous', liveCentre($t)->get('rankings'))->render();
         expect($rendered)->toContain('Alpha Aone &amp; Aeta Atwo');
     });
 });

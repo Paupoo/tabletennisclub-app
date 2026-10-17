@@ -431,9 +431,7 @@ class TournamentFinalPhaseService
         $spotsLeft = max(0, $bracketSize - $qualifiedPlayers->count());
 
         $repechage = $candidates
-            ->sort(function (array $a, array $b) use ($tournament): int {
-                return $this->repechageKey($b, $tournament) <=> $this->repechageKey($a, $tournament);
-            })
+            ->sort(fn (array $a, array $b): int => $this->repechageKey($b, $tournament) <=> $this->repechageKey($a, $tournament))
             ->take($spotsLeft);
 
         return $qualifiedPlayers->concat($repechage)->take($bracketSize)->values();

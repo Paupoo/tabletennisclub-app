@@ -323,7 +323,7 @@ new class extends Component
             return;
         }
 
-        $podiumLines = $top3->map(fn ($e): string => $e['rank'] . '. ' . $this->rankedName($e) . ' (' . $e['result'] . ')')->implode("\n");
+        $podiumLines = $top3->map(fn (array $e): string => $e['rank'] . '. ' . $this->rankedName($e) . ' (' . $e['result'] . ')')->implode("\n");
 
         $this->thankYouBody = __('Dear participants,') . "\n\n"
             . __('Thank you for joining us for :name! It was a great day of table tennis.', ['name' => $this->tournament->name]) . "\n\n"
@@ -332,7 +332,7 @@ new class extends Component
 
         $this->newsPostContent = '## ' . $this->tournament->name . "\n\n"
             . '**' . __('Podium') . " :**\n\n"
-            . $top3->map(fn ($e): string => '- **' . $e['rank'] . '. ' . $this->rankedName($e) . '** — ' . $e['result'])->implode("\n")
+            . $top3->map(fn (array $e): string => '- **' . $e['rank'] . '. ' . $this->rankedName($e) . '** — ' . $e['result'])->implode("\n")
             . "\n\n" . __('Congratulations to all participants!');
     }
 

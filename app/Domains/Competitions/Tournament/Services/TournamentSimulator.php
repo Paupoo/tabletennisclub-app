@@ -40,12 +40,14 @@ class TournamentSimulator
         $matchesPerPool = (int) ($config->poolSize * ($config->poolSize - 1) / 2);
         $poolMatchesTotal = $matchesPerPool * $config->nbPools;
         $finalistsCount = $config->nbPools * $config->nbQualifiersPerPool;
-        $bracketMatchesTotal = max(0, $finalistsCount - 1);
+        // N − 1 matches to name a winner, plus the match for third place as
+        // soon as there are semi-finals.
+        $bracketMatchesTotal = max(0, $finalistsCount - 1) + ($finalistsCount >= 4 ? 1 : 0);
         $grandTotalMatches = $poolMatchesTotal + $bracketMatchesTotal;
         $totalPlayers = $config->nbPools * $config->poolSize;
 
         $estimatedMinutes = $config->nbTables > 0
-            ? (int) (ceil($grandTotalMatches / $config->nbTables) * $avgMatchMinutes)
+            ? ($this->poolRounds($config, $poolMatchesTotal) + $this->bracketRounds($config, $finalistsCount)) * $avgMatchMinutes
             : 0;
 
         $tableOccupancyPercent = $totalMatchCapacity > 0
@@ -107,6 +109,32 @@ class TournamentSimulator
         };
     }
 
+    /**
+     * Rounds of play the bracket takes: one round waits for the previous one,
+     * and the final and the match for third place are played side by side.
+     */
+    private function bracketRounds(TournamentConfig $config, int $finalistsCount): int
+    {
+        if ($finalistsCount < 2) {
+            return 0;
+        }
+
+        $places = 2;
+        while ($places < $finalistsCount) {
+            $places *= 2;
+        }
+
+        $rounds = 0;
+        for ($matches = intdiv($places, 2); $matches >= 2; $matches = intdiv($matches, 2)) {
+            $rounds += (int) ceil($matches / $config->nbTables);
+        }
+
+        // The final, with the match for third place beside it when there were semi-finals.
+        $rounds += (int) ceil(($places >= 4 ? 2 : 1) / $config->nbTables);
+
+        return $rounds;
+    }
+
     private function defaultConfig(int $durationMinutes, int $nbTables, float $congestion): TournamentConfig
     {
         return new TournamentConfig(
@@ -120,6 +148,20 @@ class TournamentSimulator
             matchType: 'single',
             congestionCoefficient: $congestion,
         );
+    }
+
+    /**
+     * Rounds of play the pools take on these tables.
+     *
+     * A pool cannot go faster than its round robin — a pool of four plays
+     * three rounds of two matches whatever the hall — and the hall cannot
+     * hold more matches at once than it has tables.
+     */
+    private function poolRounds(TournamentConfig $config, int $poolMatchesTotal): int
+    {
+        $roundsPerPool = $config->poolSize % 2 === 0 ? $config->poolSize - 1 : $config->poolSize;
+
+        return max($roundsPerPool, (int) ceil($poolMatchesTotal / $config->nbTables));
     }
 
     private function suggestCompetitive(int $durationMinutes, int $nbTables, float $congestion): TournamentConfig

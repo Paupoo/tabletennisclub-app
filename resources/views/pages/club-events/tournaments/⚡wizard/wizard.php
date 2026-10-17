@@ -51,6 +51,9 @@ new class extends Component
 
     public bool $bulkDrawer = false;
 
+    /** Places in the bracket: 4, 8 or 16. */
+    public int $bracketSize = 8;
+
     /** Le relèvement du plafond a été confirmé : `save()` ne redemande pas. */
     public bool $capacityConfirmed = false;
 
@@ -225,6 +228,7 @@ new class extends Component
         // La suggestion redessine les poules : sans ça le plafond restait celui
         // de la configuration précédente, sans que rien ne le signale.
         $this->suggestMaxUsers();
+        $this->bracketSize = $this->fittingBracketSize();
 
         $this->success(
             title: __('Suggestion applied!'),
@@ -836,6 +840,7 @@ new class extends Component
             $this->nb_poules = $tournament->nb_pools;
             $this->pool_size = $tournament->pool_size;
             $this->nb_qualifies = $tournament->nb_qualifiers_per_pool;
+            $this->bracketSize = $tournament->bracket_size ?? $this->fittingBracketSize();
             $this->maxUsers = $tournament->max_users;
             $this->maxUsersManual = $tournament->max_users > 0
                 && $tournament->max_users !== $tournament->nb_pools * $tournament->pool_size * $this->playersPerEntrant();
@@ -1357,6 +1362,17 @@ new class extends Component
             'nb_poules' => 'required|integer|min:1|max:64',
             'pool_size' => 'required|integer|min:2|max:10',
             'nb_qualifies' => 'required|integer|min:1',
+            'bracketSize' => ['required', 'integer', 'in:4,8,16', function (string $attribute, mixed $value, Closure $fail): void {
+                $direct = $this->nb_poules * $this->nb_qualifies;
+
+                if ((int) $value < $direct || (int) $value > $direct + $this->nb_poules) {
+                    $fail(__('A bracket of :size cannot be filled: :direct players go straight in, and at most :pools more can come from the rank below.', [
+                        'size' => $value,
+                        'direct' => $direct,
+                        'pools' => $this->nb_poules,
+                    ]));
+                }
+            }],
             'totalSets' => 'required|integer|min:1|max:5',
             'deuceEnabled' => 'boolean',
             'hasHandicapPoints' => 'boolean',
@@ -1417,6 +1433,7 @@ new class extends Component
                 'pool_size' => $this->pool_size,
                 'nb_pools' => $this->nb_poules,
                 'nb_qualifiers_per_pool' => $this->nb_qualifies,
+                'bracket_size' => $this->bracketSize,
                 'sets_to_win' => $this->totalSets,
                 'deuce_enabled' => $this->deuceEnabled,
                 'has_handicap_points' => $this->hasHandicapPoints,
@@ -1645,11 +1662,13 @@ new class extends Component
     {
         $this->markPoolsStaleIfGenerated();
         $this->suggestMaxUsers();
+        $this->bracketSize = $this->fittingBracketSize();
     }
 
     public function updatedNbQualifies(): void
     {
         $this->markPoolsStaleIfGenerated();
+        $this->bracketSize = $this->fittingBracketSize();
     }
 
     public function updatedPoolSize(): void
@@ -1836,6 +1855,29 @@ new class extends Component
         }
 
         $this->maxUsers = $this->nb_poules * $this->pool_size * $this->playersPerEntrant();
+    }
+
+    /**
+     * The smallest bracket the pools can fill: every direct qualifier in, and
+     * no more repêchés than there are pools.
+     */
+    private function fittingBracketSize(): int
+    {
+        $direct = $this->nb_poules * $this->nb_qualifies;
+
+        foreach ([4, 8, 16] as $size) {
+            if ($size >= $direct && $size <= $direct + $this->nb_poules) {
+                return $size;
+            }
+        }
+
+        foreach ([4, 8, 16] as $size) {
+            if ($size >= $direct) {
+                return $size;
+            }
+        }
+
+        return 16;
     }
 
     /**

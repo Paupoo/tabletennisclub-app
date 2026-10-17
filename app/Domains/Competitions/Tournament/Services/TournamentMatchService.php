@@ -396,6 +396,22 @@ class TournamentMatchService
     ];
 
     /**
+     * A ratio that reads 1 when nothing was conceded and 0 when nothing was won.
+     */
+    public static function ratio(int $won, int $lost): float
+    {
+        return $won + $lost === 0 ? 0.0 : $won / ($won + $lost);
+    }
+
+    /**
+     * A draw that gives the same answer every time it is asked.
+     */
+    public static function stableDraw(int $tournamentId, int $key): int
+    {
+        return crc32($tournamentId . '-' . $key);
+    }
+
+    /**
      * Assign referees to all matches in a pool using a min-count algorithm.
      * For each match (in match_order), pick the eligible player (not playing) with
      * the fewest prior referee assignments. Ties are broken randomly.
@@ -526,60 +542,58 @@ class TournamentMatchService
     }
 
     /**
-     * Calculate standings for a pool
+     * The standings of a pool, the way the championship breaks its ties.
      *
-     * @param  Pool  $pool  The pool to calculate standings for
-     * @return Collection Collection of players with their stats
+     * Wins first. Two entrants level on wins are settled by the match they
+     * played each other; three or more by the sets they won against one
+     * another, then the points, counted between them only. A forfeit counts
+     * as a win but never in sets or points. A withdrawn entrant ends last.
+     * What is still level after all that is ordered by a draw that stays the
+     * same from one reading to the next, so a polled page never shuffles.
+     *
+     * A doubles entrant is a pair, read through its first player: the matches
+     * carry that player's id on each side.
+     *
+     * @return Collection<int, array<string, mixed>>
      */
     public function calculatePoolStandings(Pool $pool): Collection
     {
         $pool->loadMissing('tournament');
-
-        if ($pool->tournament->match_type === 'double') {
-            return $this->calculateDoublesPoolStandings($pool);
-        }
-
-        $pool->loadMissing('users');
-        $players = $pool->users;
+        $isDoubles = $pool->tournament->match_type === 'double';
         $matches = TournamentMatch::where('pool_id', $pool->id)->with('sets')->get();
 
-        $noShowIds = TournamentRegistration::where('tournament_id', $pool->tournament_id)
-            ->whereIn('user_id', $players->pluck('id'))
+        $absentIds = TournamentRegistration::where('tournament_id', $pool->tournament_id)
             ->where('registration_status', 'no_show')
             ->pluck('user_id')
             ->flip();
 
-        $standings = $players->map(function (User $player) use ($matches, $noShowIds): array {
-            $playerMatches = $matches->filter(fn (TournamentMatch $match): bool => $match->player1_id === $player->id || $match->player2_id === $player->id);
-
-            $matchesWon = $playerMatches->where('winner_id', $player->id)->count();
-
-            $setsWon = 0;
-            $totalPoints = 0;
-
-            foreach ($playerMatches as $match) {
-                if ($match->isCompleted() && ! $match->is_forfeit) {
-                    $setsWon += $match->getSetsWon($player->id);
-                    $totalPoints += $match->getTotalPoints($player->id);
-                }
-            }
-
-            return [
+        if ($isDoubles) {
+            $pool->loadMissing(['pairs.player1', 'pairs.player2']);
+            $entrants = $pool->pairs->map(fn (TournamentPair $pair): array => [
+                'key' => $pair->player1_id,
+                'player' => $pair->player1,
+                'pair' => $pair,
+                'no_show' => isset($absentIds[$pair->player1_id]) || isset($absentIds[$pair->player2_id]),
+            ]);
+        } else {
+            $pool->loadMissing('users');
+            $entrants = $pool->users->map(fn (User $player): array => [
+                'key' => $player->id,
                 'player' => $player,
-                'matches_played' => $playerMatches->where('status', 'completed')->count(),
-                'matches_won' => $matchesWon,
-                'sets_won' => $setsWon,
-                'total_points' => $totalPoints,
-                'no_show' => isset($noShowIds[$player->id]),
-            ];
-        });
+                'no_show' => isset($absentIds[$player->id]),
+            ]);
+        }
 
-        // Sort standings: no-show players always last, then by wins/sets/points
-        return $standings->sortByDesc(function (array $item): int {
-            $noShowPenalty = $item['no_show'] ? -1000000 : 0;
+        /** @var Collection<int, array<string, mixed>> $rows */
+        $rows = $entrants->map(fn (array $entrant): array => $entrant + $this->recordAgainst($entrant['key'], $matches));
 
-            return $noShowPenalty + (int) sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']);
-        })->values();
+        return $this->rankByChampionshipRules($rows, $matches, $pool->tournament_id)
+            ->map(function (array $row): array {
+                unset($row['key']);
+
+                return $row;
+            })
+            ->values();
     }
 
     /**
@@ -800,40 +814,112 @@ class TournamentMatchService
         return $result;
     }
 
-    private function calculateDoublesPoolStandings(Pool $pool): Collection
+    /**
+     * The starting points of each side of a match, as its tournament rules.
+     *
+     * Zero on both sides when the tournament plays without handicap, or while a
+     * side is still unknown — a bracket match waiting for a winner.
+     *
+     * @return array{player1: int, player2: int}
+     */
+    public function handicapFor(TournamentMatch $match): array
     {
-        $pool->loadMissing(['pairs.player1', 'pairs.player2']);
-        $pairs = $pool->pairs;
-        $matches = TournamentMatch::where('pool_id', $pool->id)->with('sets')->get();
+        $match->loadMissing(['tournament', 'player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2']);
 
-        $standings = $pairs->map(function (TournamentPair $pair) use ($matches): array {
-            $proxyId = $pair->player1_id;
-            $pairMatches = $matches->filter(
-                fn (TournamentMatch $m): bool => $m->pair1_id === $pair->id || $m->pair2_id === $pair->id
-            );
+        if (! $match->tournament?->has_handicap_points || $match->player1 === null || $match->player2 === null) {
+            return ['player1' => 0, 'player2' => 0];
+        }
 
-            $matchesWon = $pairMatches->where('winner_id', $proxyId)->count();
-            $setsWon = 0;
-            $totalPoints = 0;
+        if ($match->pair1 !== null && $match->pair2 !== null) {
+            $doubles = $this->calculateDoublesHandicap($match->pair1, $match->pair2);
 
-            foreach ($pairMatches as $match) {
-                if ($match->isCompleted()) {
-                    $setsWon += $match->getSetsWon($proxyId);
-                    $totalPoints += $match->getTotalPoints($proxyId);
-                }
+            return ['player1' => $doubles['pair1_handicap'], 'player2' => $doubles['pair2_handicap']];
+        }
+
+        if (! $this->isValidRanking($match->player1->ranking->value) || ! $this->isValidRanking($match->player2->ranking->value)) {
+            return ['player1' => 0, 'player2' => 0];
+        }
+
+        return [
+            'player1' => $this->calculateHandicapPointsToReceive($match->player1, $match->player2),
+            'player2' => $this->calculateHandicapPointsToReceive($match->player2, $match->player1),
+        ];
+    }
+
+    /**
+     * Wins, sets and points of one entrant over the given matches.
+     *
+     * @param  Collection<int, TournamentMatch>  $matches
+     * @return array{matches_played: int, matches_won: int, sets_won: int, sets_lost: int, total_points: int, points_lost: int}
+     */
+    public function recordAgainst(int $key, Collection $matches): array
+    {
+        $record = ['matches_played' => 0, 'matches_won' => 0, 'sets_won' => 0, 'sets_lost' => 0, 'total_points' => 0, 'points_lost' => 0];
+
+        foreach ($matches as $match) {
+            if (! $match->isCompleted() || ! in_array($key, [$match->player1_id, $match->player2_id], true)) {
+                continue;
             }
 
-            return [
-                'player' => $pair->player1,
-                'pair' => $pair,
-                'matches_played' => $pairMatches->where('status', 'completed')->count(),
-                'matches_won' => $matchesWon,
-                'sets_won' => $setsWon,
-                'total_points' => $totalPoints,
-            ];
-        });
+            $record['matches_played']++;
+            $record['matches_won'] += $match->winner_id === $key ? 1 : 0;
 
-        return $standings->sortByDesc(fn (array $item): string => sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']))->values();
+            if ($match->is_forfeit) {
+                continue;
+            }
+
+            $opponent = $match->player1_id === $key ? $match->player2_id : $match->player1_id;
+            $record['sets_won'] += $match->getSetsWon($key);
+            $record['sets_lost'] += $opponent === null ? 0 : $match->getSetsWon($opponent);
+            $record['total_points'] += $match->getTotalPoints($key);
+            $record['points_lost'] += $opponent === null ? 0 : $match->getTotalPoints($opponent);
+        }
+
+        return $record;
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>  $level
+     * @param  Collection<int, TournamentMatch>  $matches
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function breakTie(Collection $level, Collection $matches, int $tournamentId): Collection
+    {
+        if ($level->count() === 1) {
+            return $level;
+        }
+
+        $keys = $level->pluck('key')->all();
+        $between = $matches->filter(fn (TournamentMatch $match): bool => in_array($match->player1_id, $keys, true)
+            && in_array($match->player2_id, $keys, true));
+
+        if ($level->count() === 2) {
+            $decider = $between->first(fn (TournamentMatch $match): bool => $match->isCompleted() && $match->winner_id !== null);
+
+            if ($decider !== null) {
+                return $level->sortByDesc(fn (array $row): bool => $row['key'] === $decider->winner_id)->values();
+            }
+        }
+
+        return $level
+            ->map(fn (array $row): array => ['row' => $row, 'mini' => $this->recordAgainst($row['key'], $between)])
+            ->sort(function (array $a, array $b) use ($tournamentId): int {
+                return [
+                    self::ratio($b['mini']['sets_won'], $b['mini']['sets_lost']),
+                    self::ratio($b['mini']['total_points'], $b['mini']['points_lost']),
+                    self::ratio($b['row']['sets_won'], $b['row']['sets_lost']),
+                    self::ratio($b['row']['total_points'], $b['row']['points_lost']),
+                    self::stableDraw($tournamentId, $a['row']['key']),
+                ] <=> [
+                    self::ratio($a['mini']['sets_won'], $a['mini']['sets_lost']),
+                    self::ratio($a['mini']['total_points'], $a['mini']['points_lost']),
+                    self::ratio($a['row']['sets_won'], $a['row']['sets_lost']),
+                    self::ratio($a['row']['total_points'], $a['row']['points_lost']),
+                    self::stableDraw($tournamentId, $b['row']['key']),
+                ];
+            })
+            ->pluck('row')
+            ->values();
     }
 
     /**
@@ -933,5 +1019,24 @@ class TournamentMatchService
     private function isValidRanking(string $value): bool
     {
         return Ranking::tryFrom($value) !== null;
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>  $rows
+     * @param  Collection<int, TournamentMatch>  $matches
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function rankByChampionshipRules(Collection $rows, Collection $matches, int $tournamentId): Collection
+    {
+        [$withdrawn, $playing] = $rows->partition(fn (array $row): bool => (bool) $row['no_show']);
+
+        $ranked = $playing
+            ->groupBy('matches_won')
+            ->sortKeysDesc()
+            ->flatMap(fn (Collection $level): array => $this->breakTie($level->values(), $matches, $tournamentId)->all());
+
+        $last = $withdrawn->sortByDesc('matches_won')->values();
+
+        return $ranked->concat($last)->values();
     }
 }

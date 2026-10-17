@@ -229,7 +229,16 @@ new class extends Component
             return;
         }
 
-        $totalQualifiers = $this->tournament->nb_pools * $this->tournament->nb_qualifiers_per_pool;
+        // Le tableau existe déjà : le recréer effacerait les matchs joués. Le
+        // bouton disparaît, mais une seconde régie ouverte l'affiche encore.
+        if ($this->bracketExists) {
+            $this->error(__('The bracket already exists.'));
+
+            return;
+        }
+
+        $totalQualifiers = $this->tournament->bracket_size
+            ?? $this->tournament->nb_pools * $this->tournament->nb_qualifiers_per_pool;
         $startingRound = match (true) {
             $totalQualifiers >= 9 => 'round_16',
             $totalQualifiers >= 5 => 'round_8',

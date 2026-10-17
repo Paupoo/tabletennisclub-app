@@ -47,6 +47,7 @@ use Illuminate\Support\Carbon;
  * @property int $pool_size
  * @property int $nb_pools
  * @property int $nb_qualifiers_per_pool
+ * @property int|null $bracket_size
  * @property int $sets_to_win
  * @property int $logistics_buffer_minutes
  * @property string $match_type
@@ -152,6 +153,7 @@ class Tournament extends Model
         'pool_size' => 'integer',
         'nb_pools' => 'integer',
         'nb_qualifiers_per_pool' => 'integer',
+        'bracket_size' => 'integer',
         'sets_to_win' => 'integer',
         'deuce_enabled' => 'boolean',
         'logistics_buffer_minutes' => 'integer',
@@ -174,6 +176,7 @@ class Tournament extends Model
         'pool_size',
         'nb_pools',
         'nb_qualifiers_per_pool',
+        'bracket_size',
         'sets_to_win',
         'deuce_enabled',
         'logistics_buffer_minutes',

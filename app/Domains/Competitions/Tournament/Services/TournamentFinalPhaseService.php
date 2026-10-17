@@ -194,6 +194,12 @@ class TournamentFinalPhaseService
             }
         }
 
+        // Un match qui vient de recevoir son second joueur part avec son
+        // handicap, comme en poule.
+        foreach (array_filter([$match->next_match_id, $match->round === 'semifinal' ? $match->bronze_match_id : null]) as $readyId) {
+            $this->applyHandicap(TournamentMatch::find($readyId));
+        }
+
         // Assign referee AFTER next-match players are set, so the query can
         // exclude candidates who are playing in that now-complete match slot.
         $this->assignBracketReferee($match);
@@ -208,6 +214,10 @@ class TournamentFinalPhaseService
      */
     public function configureKnockoutPhase(Tournament $tournament, string $startingRound): bool
     {
+        if ($tournament->pools->isEmpty()) {
+            throw new Exception(__('Pool found without match.'));
+        }
+
         if ($this->checkIfAllPoolsContainsMatches($tournament) === false) {
             throw new Exception(__('Pool found without match.'));
         }
@@ -224,6 +234,10 @@ class TournamentFinalPhaseService
 
         // Create bracket structure
         $result = $this->createBracket($tournament, $qualifiedPlayers, $startingRound);
+
+        foreach (TournamentMatch::where('tournament_id', $tournament->id)->fromBracket()->get() as $bracketMatch) {
+            $this->applyHandicap($bracketMatch);
+        }
 
         // Assign referees to the first-round bracket matches using pool non-qualifiers
         $this->assignInitialBracketReferees($tournament);
@@ -333,52 +347,43 @@ class TournamentFinalPhaseService
     }
 
     /**
-     * Get qualified players from pools
+     * Who goes to the bracket.
+     *
+     * The first `nb_qualifiers_per_pool` of every pool go straight in. The
+     * places left in the bracket go to the best of the rank just below — never
+     * further down — compared on averages: share of matches won, then of sets,
+     * then of points, then a draw that stays the same. Raw totals would favour
+     * whoever played in the biggest pool.
      */
     public function getQualifiedPlayers(Tournament $tournament, string $startingRound): Collection
     {
-        $totalPlayers = $this->getRoundPlayerCount($startingRound);
+        $bracketSize = $this->getRoundPlayerCount($startingRound);
         $pools = $tournament->pools;
+        $direct = max(1, $tournament->nb_qualifiers_per_pool);
         $qualifiedPlayers = collect();
-        $playersPerPool = intdiv($totalPlayers, $pools->count());
-        $remainingSpots = $totalPlayers % $pools->count();
+        $candidates = collect();
 
-        // Get top players from each pool
         foreach ($pools as $pool) {
-            $standings = $this->tournamentMatchService->calculatePoolStandings($pool);
-            for ($i = 0; $i < $playersPerPool; $i++) {
-                if (isset($standings[$i])) {
-                    $qualifiedPlayers->push($this->buildQualifiedEntry($standings[$i], $pool, $i + 1));
-                }
+            $standings = $this->tournamentMatchService->calculatePoolStandings($pool)->values();
+
+            for ($i = 0; $i < $direct && $i < $standings->count(); $i++) {
+                $qualifiedPlayers->push($this->buildQualifiedEntry($standings[$i], $pool, $i + 1));
+            }
+
+            if (isset($standings[$direct]) && ! $standings[$direct]['no_show']) {
+                $candidates->push($this->buildQualifiedEntry($standings[$direct], $pool, $direct + 1));
             }
         }
 
-        // Handle remaining spots with repêchage (best non-qualified players)
-        if ($remainingSpots > 0) {
-            $repechageCandidates = collect();
+        $spotsLeft = max(0, $bracketSize - $qualifiedPlayers->count());
 
-            foreach ($pools as $pool) {
-                $standings = $this->tournamentMatchService->calculatePoolStandings($pool);
-                $counter = count($standings);
-                for ($i = $playersPerPool; $i < $counter; $i++) {
-                    $repechageCandidates->push($this->buildQualifiedEntry($standings[$i], $pool, $i + 1));
-                }
-            }
+        $repechage = $candidates
+            ->sort(function (array $a, array $b) use ($tournament): int {
+                return $this->repechageKey($b, $tournament) <=> $this->repechageKey($a, $tournament);
+            })
+            ->take($spotsLeft);
 
-            // Sort by matches won, sets won, and points
-            $sortedCandidates = $repechageCandidates->sortByDesc(fn (array $item): string => sprintf('%06d%06d%06d',
-                $item['stats']['matches_won'],
-                $item['stats']['sets_won'],
-                $item['stats']['total_points']
-            ))->values();
-
-            // Add best remaining players to fill spots
-            for ($i = 0; $i < $remainingSpots && $i < count($sortedCandidates); $i++) {
-                $qualifiedPlayers->push($sortedCandidates[$i]);
-            }
-        }
-
-        return $qualifiedPlayers;
+        return $qualifiedPlayers->concat($repechage)->take($bracketSize)->values();
     }
 
     /**
@@ -445,7 +450,7 @@ class TournamentFinalPhaseService
         $poolGroups = $qualifiedPlayers->groupBy('pool.id');
 
         if ($poolGroups->count() < 2) {
-            return $qualifiedPlayers;
+            return $this->seedSinglePool($qualifiedPlayers->sortBy('position')->values());
         }
 
         $orderedPoolIds = $poolGroups->keys()->sort()->values();
@@ -504,6 +509,26 @@ class TournamentFinalPhaseService
         return $seededPlayers;
     }
 
+    /**
+     * Give a bracket match the starting points its two sides call for.
+     *
+     * The bracket was built at 0-0: a tournament played with handicap lost it
+     * from the quarter-finals on, without a word.
+     */
+    private function applyHandicap(?TournamentMatch $match): void
+    {
+        if (! $match instanceof TournamentMatch || $match->status === 'completed') {
+            return;
+        }
+
+        $handicap = $this->tournamentMatchService->handicapFor($match->fresh());
+
+        $match->update([
+            'player1_handicap_points' => $handicap['player1'],
+            'player2_handicap_points' => $handicap['player2'],
+        ]);
+    }
+
     /** @param  array<string, mixed>  $seededPlayer */
     private function buildMatchAssignment(int $i, array $seededPlayer): array
     {
@@ -533,6 +558,46 @@ class TournamentFinalPhaseService
         }
 
         return $entry;
+    }
+
+    /**
+     * The averages a repêchage compares, highest first; the draw last, reversed
+     * so that it sorts the same way as the rest.
+     *
+     * @param  array<string, mixed>  $entry
+     * @return list<float|int>
+     */
+    private function repechageKey(array $entry, Tournament $tournament): array
+    {
+        $stats = $entry['stats'];
+
+        return [
+            $stats['matches_played'] > 0 ? $stats['matches_won'] / $stats['matches_played'] : 0.0,
+            TournamentMatchService::ratio($stats['sets_won'], $stats['sets_lost']),
+            TournamentMatchService::ratio($stats['total_points'], $stats['points_lost']),
+            -TournamentMatchService::stableDraw($tournament->id, $entry['player']->id),
+        ];
+    }
+
+    /**
+     * One pool feeding the bracket: the usual draw, so the first meets the last
+     * and the two best can only meet in the final.
+     *
+     * Kept in ranking order, the first and the second met in the first round.
+     */
+    private function seedSinglePool(Collection $ranked): Collection
+    {
+        $slots = [1, 2];
+
+        while (count($slots) < $ranked->count()) {
+            $size = count($slots) * 2;
+            $slots = collect($slots)->flatMap(fn (int $seed): array => [$seed, $size + 1 - $seed])->all();
+        }
+
+        return collect($slots)
+            ->map(fn (int $seed): ?array => $ranked->get($seed - 1))
+            ->filter()
+            ->values();
     }
 
     private function tryAssignBracketReferee(int $tournamentId, TournamentMatch $target): void

@@ -22,8 +22,20 @@
                     <dt class="text-sm text-base-content/60">{{ __('Season') }}</dt>
                     <dd class="font-medium">{{ $attestation->season->name }}</dd>
                 </div>
+                @if ($attestation->kind === \App\Domains\Shared\Enums\AttestationKind::Camp)
+                    <div>
+                        <dt class="text-sm text-base-content/60">{{ __('Training camp') }}</dt>
+                        <dd class="font-medium">{{ $attestation->campLine?->trainingPack?->name }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm text-base-content/60">{{ __('Number of days') }}</dt>
+                        <dd class="font-medium">
+                            {{ \App\Data\Attestation\CampDays::describe((int) $attestation->full_days, (int) $attestation->half_days) }}
+                        </dd>
+                    </div>
+                @endif
                 <div>
-                    <dt class="text-sm text-base-content/60">{{ __('Period covered') }}</dt>
+                    <dt class="text-sm text-base-content/60">{{ $attestation->kind === \App\Domains\Shared\Enums\AttestationKind::Camp ? __('Period') : __('Period covered') }}</dt>
                     <dd class="font-medium">
                         {{ $attestation->period_from->format('d/m/Y') }} — {{ $attestation->period_to->format('d/m/Y') }}
                     </dd>

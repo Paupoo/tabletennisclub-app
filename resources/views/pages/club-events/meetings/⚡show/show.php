@@ -5,21 +5,25 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Models\MeetingAgendaItem;
 use App\Domains\Meetings\Models\MeetingDateProposal;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Meetings\Notifications\MeetingCancelledNotification;
 use App\Domains\Meetings\Notifications\MeetingDatePollNotification;
 use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
 use App\Domains\Meetings\Notifications\MeetingPostponedNotification;
+use App\Domains\Meetings\Services\AgendaCarryOver;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Role;
+use App\Jobs\SendMeetingInvitationJob;
 use App\Jobs\SendMeetingInvitationsJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
@@ -40,6 +44,9 @@ new class extends Component
     // Cancel / postpone
     public string $cancellationNote = '';
 
+    /** @var list<int> the points not reached last time, ticked to be taken up again */
+    public array $carryOver = [];
+
     public string $detailsDescription = '';
 
     public ?string $detailsEndsAt = null;
@@ -56,6 +63,11 @@ new class extends Component
 
     // Card being edited in place: 'title' | 'details' | 'agenda' | 'meal' | 'quorum' | null
     public ?string $editing = null;
+
+    // Guests: somebody outside the audience, asked for one point or the whole meeting
+    public string $guestPointId = '';
+
+    public string $guestSearch = '';
 
     public string $mealDescriptionDraft = '';
 
@@ -160,6 +172,35 @@ new class extends Component
         return $user instanceof User && $user->can(Permission::MeetingsManage->value);
     }
 
+    /**
+     * The points the last meeting of this kind did not reach, offered to the
+     * people who prepare this one.
+     *
+     * @return Illuminate\Database\Eloquent\Collection<int, MeetingAgendaItem>
+     */
+    #[Computed]
+    public function carryOverCandidates(): Illuminate\Database\Eloquent\Collection
+    {
+        return $this->canManage
+            ? AgendaCarryOver::candidatesFor($this->meeting)
+            : new Illuminate\Database\Eloquent\Collection;
+    }
+
+    /** Take up the ticked points; the others never come back. */
+    public function carryOverPoints(): void
+    {
+        abort_unless($this->canManage, 403);
+
+        $kept = array_values(array_map(intval(...), $this->carryOver));
+        AgendaCarryOver::apply($this->meeting, $kept);
+
+        $this->carryOver = [];
+        $this->toast(type: 'success', title: $kept === []
+            ? __('Nothing taken up again')
+            : trans_choice('{1}1 point added to the agenda|[2,*]:count points added to the agenda', count($kept), ['count' => count($kept)]));
+        unset($this->meeting, $this->carryOverCandidates);
+    }
+
     #[Computed]
     public function committeeUsers(): Illuminate\Database\Eloquent\Collection
     {
@@ -249,11 +290,66 @@ new class extends Component
         $this->showTitleModal = true;
     }
 
+    /**
+     * Accounts matching the guest search that the meeting does not convene by
+     * right — an unaffiliated coach included, which the walk-in search misses.
+     *
+     * @return Illuminate\Database\Eloquent\Collection<int, User>
+     */
+    #[Computed]
+    public function guestCandidates(): Illuminate\Database\Eloquent\Collection
+    {
+        if (mb_strlen(trim($this->guestSearch)) < 2) {
+            return new Illuminate\Database\Eloquent\Collection;
+        }
+
+        return $this->guestCandidatesQuery()
+            ->searchName($this->guestSearch)
+            ->orderBy('last_name')
+            ->orderBy('users.id')
+            ->limit(8)
+            ->get();
+    }
+
     /** True once at least one invitation left the building. */
     #[Computed]
     public function invitationsSent(): bool
     {
         return $this->meeting->users->contains(fn (User $u): bool => $u->registration->invitation_sent_at !== null);
+    }
+
+    /**
+     * Ask somebody outside the audience to come, for one point or for all of it.
+     * Once the convocations left, theirs leaves at once; before, it waits for them.
+     */
+    public function inviteGuest(int $userId): void
+    {
+        abort_unless($this->canManage, 403);
+        $meeting = $this->meeting;
+        abort_if(in_array($meeting->status, [MeetingStatusEnum::CANCELLED, MeetingStatusEnum::COMPLETED], true), 403);
+
+        $guest = $this->guestCandidatesQuery()->whereKey($userId)->firstOrFail();
+        $pointId = filled($this->guestPointId)
+            ? $meeting->agendaItems->firstWhere('id', (int) $this->guestPointId)?->id
+            : null;
+        $sendNow = $this->invitationsSent;
+
+        $meeting->users()->attach($guest->id, [
+            'status' => MeetingUserStatusEnum::INVITED->value,
+            'is_guest' => true,
+            'guest_agenda_item_id' => $pointId,
+            'invitation_sent_at' => $sendNow ? now() : null,
+        ]);
+
+        if ($sendNow) {
+            SendMeetingInvitationJob::dispatch($meeting->id, $guest->id);
+        }
+
+        $this->reset('guestSearch', 'guestPointId');
+        $this->toast(type: 'success', title: $sendNow
+            ? __(':name is invited — the invitation is on its way', ['name' => $guest->full_name])
+            : __(':name is invited — the invitation leaves with the others', ['name' => $guest->full_name]));
+        unset($this->meeting, $this->invitationsSent, $this->guestCandidates);
     }
 
     public function markAbsent(int $userId): void
@@ -308,7 +404,7 @@ new class extends Component
     public function meeting(): Meeting
     {
         return Meeting::with([
-            'agendaItems',
+            'agendaItems.carriedFrom.meeting',
             'dateProposals.votes.user',
             'eventPost',
             'users',
@@ -322,6 +418,8 @@ new class extends Component
     public function mount(Meeting $meeting): void
     {
         $this->meetingId = $meeting->id;
+        // Ticked by default: taking a point up again is the usual answer.
+        $this->carryOver = $this->carryOverCandidates->modelKeys();
     }
 
     /**
@@ -511,6 +609,17 @@ new class extends Component
     public function removeAgendaDraftItem(int $i): void
     {
         array_splice($this->agendaDraft, $i, 1);
+    }
+
+    /** Take a guest off the list before the meeting — a wrong pick, or no longer needed. */
+    public function removeGuest(int $userId): void
+    {
+        abort_unless($this->canManage, 403);
+        abort_if($this->meeting->scheduled_at?->isPast() ?? false, 403);
+
+        $this->meeting->users()->wherePivot('is_guest', true)->detach($userId);
+
+        unset($this->meeting, $this->guestCandidates);
     }
 
     public function removeProposal(int $proposalId): void
@@ -827,6 +936,16 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Meeting Details'));
+    }
+
+    /** @return Builder<User> */
+    private function guestCandidatesQuery(): Builder
+    {
+        $meeting = $this->meeting;
+
+        return User::query()
+            ->whereNotIn('users.id', $meeting->users->modelKeys())
+            ->whereNotIn('users.id', $meeting->audience()->select('users.id'));
     }
 
     // ── Cancel / postpone ─────────────────────────────────────────────

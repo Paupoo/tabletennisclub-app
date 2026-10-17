@@ -255,16 +255,39 @@ describe('Minutes page — attendance', function (): void {
         expect(attendanceOf($meeting, $walkIn))->toBe('attended');
     });
 
-    test('only an active member can be added from the walk-in search', function (): void {
-        makeActiveSeason();
+    test('an active member who came to a general assembly stays a member, anybody else comes as a guest', function (): void {
+        $season = makeActiveSeason();
         $admin = minutesAdmin();
         $meeting = Meeting::factory()->generalAssembly()->completed()->create(['created_by' => $admin->id]);
-        $former = User::factory()->create();
+        $member = activeMember($season);
+        $former = User::factory()->create(['first_name' => 'Ancien']);
 
-        expect(fn () => Livewire::actingAs($admin)->test(MINUTES_PAGE, ['meeting' => $meeting])->call('addWalkIn', $former->id))
-            ->toThrow(ModelNotFoundException::class);
+        Livewire::actingAs($admin)
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set('walkInSearch', 'Ancien')
+            ->assertSee($former->full_name)
+            ->call('addWalkIn', $former->id)
+            ->call('addWalkIn', $member->id);
 
-        expect($meeting->users()->count())->toBe(0);
+        expect(attendanceOf($meeting, $former))->toBe('attended')
+            ->and($meeting->users()->whereKey($former->id)->first()->registration->is_guest)->toBeTrue()
+            ->and($meeting->users()->whereKey($member->id)->first()->registration->is_guest)->toBeFalse();
+    });
+
+    test('an unaffiliated coach who came to a committee meeting is found and noted present as a guest', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+        $meeting->users()->attach($admin->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value]);
+        $coach = User::factory()->isCoach()->create(['first_name' => 'Amaury', 'last_name' => 'Lambert']);
+
+        Livewire::actingAs($admin)
+            ->test(MINUTES_PAGE, ['meeting' => $meeting])
+            ->set('walkInSearch', 'Amaury')
+            ->assertSee('Amaury Lambert')
+            ->call('addWalkIn', $coach->id);
+
+        expect(attendanceOf($meeting, $coach))->toBe('attended')
+            ->and($meeting->users()->whereKey($coach->id)->first()->registration->is_guest)->toBeTrue();
     });
 });
 

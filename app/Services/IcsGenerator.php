@@ -73,8 +73,14 @@ class IcsGenerator
         ]) . "\r\n";
     }
 
-    public function forMeeting(Meeting $meeting, bool $cancel = false): string
+    /**
+     * @param  User|null  $for  the reader: a guest's file carries only their point, and no description
+     */
+    public function forMeeting(Meeting $meeting, bool $cancel = false, ?User $for = null): string
     {
+        $isGuest = $for !== null && $meeting->isGuest($for);
+        $agenda = $for === null ? $meeting->agendaItems : $meeting->agendaFor($for);
+
         $start = $meeting->scheduled_at ?? now();
         $end = $meeting->ends_at ?? $start->copy()->addHours(2);
 
@@ -85,15 +91,17 @@ class IcsGenerator
 
         $description = collect([
             // Written in the markdown editor; a calendar shows no HTML.
-            $meeting->description ? Markdown::toPlainText($meeting->description) : null,
+            $meeting->description && ! $isGuest ? Markdown::toPlainText($meeting->description) : null,
             $meeting->format === MeetingFormatEnum::VIRTUAL && $meeting->meeting_link
                 ? __('Meeting link: :link', ['link' => $meeting->meeting_link])
                 : null,
-            $meeting->agendaItems->isNotEmpty()
-                ? __('Agenda:') . '\n' . $meeting->agendaItems
+            match (true) {
+                $agenda->isEmpty() => null,
+                $isGuest => __('You are invited for: :point', ['point' => $agenda->first()->title]),
+                default => __('Agenda:') . '\n' . $agenda
                     ->map(fn (MeetingAgendaItem $item, int $i): string => ($i + 1) . '. ' . $item->title)
-                    ->implode('\n')
-                : null,
+                    ->implode('\n'),
+            },
         ])->filter()->implode('\n\n');
 
         $uid = 'meeting-' . $meeting->id . '@' . parse_url(config('app.url'), PHP_URL_HOST);

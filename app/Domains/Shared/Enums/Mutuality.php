@@ -58,6 +58,16 @@ enum Mutuality: string
     }
 
     /**
+     * Those the club holds a camp form layout for.
+     *
+     * @return array<int, self>
+     */
+    public static function withCampForm(): array
+    {
+        return [self::Partenamut, self::Solidaris];
+    }
+
+    /**
      * Those the member can be handed a form for.
      *
      * @return array<int, self>
@@ -76,12 +86,35 @@ enum Mutuality: string
      * Only asserted where the form says so in as many words. Everywhere else
      * the answer is "we do not know", which reads as false: the club must not
      * send a substitute on a guess.
+     *
+     * For a camp the club's own attestation is offered once, under « another
+     * mutual insurer », and names no recipient: that is what lets a family hand
+     * it to an employer or a CPAS just as well.
      */
-    public function acceptsClubAttestation(): bool
+    public function acceptsClubAttestation(AttestationKind $kind = AttestationKind::Affiliation): bool
     {
+        if ($kind === AttestationKind::Camp) {
+            return $this === self::Other;
+        }
+
         return match ($this) {
             self::MC, self::Neutral, self::Other => true,
             default => false,
+        };
+    }
+
+    /**
+     * What the insurer pays for a camp, and for whom — told, never enforced.
+     *
+     * The statutes change without notice, and an age written into a filter
+     * would bar the one teenager who turned eighteen during the week.
+     */
+    public function campConditions(): ?string
+    {
+        return match ($this) {
+            self::Partenamut => __('Up to 18 years old inclusive · up to :day € a day, 10 days and :year € a year. Their own form and the club\'s attestation are both accepted.', ['day' => '11,50', 'year' => 115]),
+            self::Solidaris => __('Under 18 · :low to :high € a day, up to 25 days a year.', ['low' => 5, 'high' => 6]),
+            default => null,
         };
     }
 
@@ -110,9 +143,25 @@ enum Mutuality: string
         };
     }
 
-    /** Where the member is told to send the completed document. */
-    public function url(): ?string
+    /** The name a member picks it by, for the kind of document they are after. */
+    public function labelFor(AttestationKind $kind): string
     {
+        return $kind === AttestationKind::Camp && $this === self::Other
+            ? __('The club\'s attestation — another mutual insurer, an employer, a CPAS…')
+            : $this->label();
+    }
+
+    /** Where the member is told to send the completed document. */
+    public function url(AttestationKind $kind = AttestationKind::Affiliation): ?string
+    {
+        if ($kind === AttestationKind::Camp) {
+            return match ($this) {
+                self::Partenamut => 'https://www.partenamut.be/fr/remboursements-avantages/enfants/stages-camps-sejours-scolaires',
+                self::Solidaris => 'https://www.solidaris-wallonie.be',
+                default => null,
+            };
+        }
+
         return match ($this) {
             self::MC => 'https://www.mc.be/avantages/sport',
             self::MutPlus => 'https://www.mutplus.be',

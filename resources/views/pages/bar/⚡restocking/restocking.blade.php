@@ -59,7 +59,7 @@
             sans aller-retour au serveur — tout part en une fois à la validation.
         --}}
         <x-card class="mb-4" :title="__('What did you buy?')"
-            :subtitle="__('In packs. 0 = not found. The units enter the stock when you confirm.')">
+            :subtitle="__('In units. 0 = not found. − and + add or take away a whole pack. The units enter the stock when you confirm.')">
             <ul class="divide-base-300 divide-y">
                 @foreach ($trip->lines as $line)
                     @continue($line->section === 'extra')
@@ -68,10 +68,11 @@
                             <p class="truncate font-semibold">{{ $line->product->name }}</p>
                             <p class="text-subtle text-xs">
                                 {{ $line->pack_label ? __(':label of :size', ['label' => $line->pack_label, 'size' => $line->pack_size]) : __('packs of :size', ['size' => $line->pack_size]) }}
-                                · {{ __('proposed: :packs', ['packs' => $line->proposed_packs]) }}
+                                · {{ __('proposed: :packs', ['packs' => $line->proposed_packs * $line->pack_size]) }}
                             </p>
                         </div>
-                        <x-bar.pack-stepper model="bought.{{ $line->id }}" :label="$line->product->name" />
+                        <x-bar.units-stepper model="bought.{{ $line->id }}" :label="$line->product->name"
+                            :pack-size="$line->pack_size" :pack-label="$line->pack_label" />
                     </li>
                 @endforeach
 
@@ -88,7 +89,8 @@
                                 {{ $extra->pack_label ? __(':label of :size', ['label' => $extra->pack_label, 'size' => $extra->pack_size]) : __('packs of :size', ['size' => $extra->pack_size]) }}
                             </p>
                         </div>
-                        <x-bar.pack-stepper model="extras.{{ $productId }}" :label="$extra->name" />
+                        <x-bar.units-stepper model="extras.{{ $productId }}" :label="$extra->name"
+                            :pack-size="$extra->pack_size" :pack-label="$extra->pack_label" />
                         <x-button icon="o-x-mark" class="btn-ghost btn-sm btn-circle" wire:click="removeExtra({{ $productId }})"
                             :tooltip="__('Remove')" />
                     </li>

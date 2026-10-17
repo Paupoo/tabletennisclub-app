@@ -64,7 +64,16 @@
                         </div>
                     @endif
 
-                    @if ($meeting->agendaItems->isNotEmpty())
+                    @if ($registration?->is_guest)
+                        {{-- A guest learns what they come for, never the rest of the agenda. --}}
+                        <div class="border-t border-base-200 pt-2 mt-2 text-base-content/70">
+                            @if ($guestPoint = $meeting->agendaFor($user)->first())
+                                {{ __('You are invited as a guest, for the point:') }} <span class="font-semibold">{{ $guestPoint->title }}</span>
+                            @else
+                                {{ __('You are invited as a guest.') }}
+                            @endif
+                        </div>
+                    @elseif ($meeting->agendaItems->isNotEmpty())
                         <div class="border-t border-base-200 pt-2 mt-2">
                             <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-base-content/50">
                                 {{ __('Agenda') }}

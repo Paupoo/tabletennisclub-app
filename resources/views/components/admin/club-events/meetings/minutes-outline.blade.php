@@ -8,7 +8,7 @@
 
     @param \App\Domains\Meetings\Models\Meeting $meeting with agendaItems, decisions, actionItems, minutes
     @param int|null $current the point being discussed
-    @param array{present: int, excused: int, absent: int, pending: int} $counts
+    @param array{present: int, excused: int, absent: int, pending: int, guests: int} $counts
     @param string $outside the key of the "outside the agenda" block
     @param bool $readOnly another member holds the pen
     @param string|null $savedAt time of the last write

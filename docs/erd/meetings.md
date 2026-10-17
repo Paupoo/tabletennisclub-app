@@ -33,6 +33,21 @@ erDiagram
         int assigned_to_id FK "nullable"
         datetime due_date "nullable"
         bool is_completed
+        datetime completed_at "nullable"
+        datetime abandoned_at "nullable"
+        string abandon_reason "nullable"
+        string progress_note "nullable"
+        datetime progress_noted_at "nullable"
+    }
+    MeetingActionReview {
+        int id PK
+        int meeting_id FK
+        int action_item_id FK
+        MeetingActionReviewOutcomeEnum outcome
+        datetime due_date "nullable"
+        int assigned_to_id FK "nullable"
+        string reason "nullable"
+        string progress_note "nullable"
     }
     MeetingAgendaItem {
         int id PK
@@ -42,6 +57,8 @@ erDiagram
         string description "nullable"
         string discussion "nullable"
         datetime discussed_at "nullable"
+        int carried_from_id FK "nullable"
+        datetime carry_over_dismissed_at "nullable"
     }
     MeetingDateProposal {
         int id PK
@@ -79,6 +96,8 @@ erDiagram
         int meeting_id FK
         int user_id FK
         MeetingUserStatusEnum status
+        bool is_guest
+        int guest_agenda_item_id FK "nullable"
         datetime invitation_sent_at "nullable"
         datetime response_at "nullable"
         bool meal_reserved "nullable"
@@ -92,7 +111,9 @@ erDiagram
     Meeting ||--o| EventPost : "eventPost"
     Meeting ||--o| MeetingMinutes : "minutes"
     Meeting }o--o{ User : "users"
+    MeetingActionItem ||--o{ MeetingActionReview : "reviews"
     MeetingAgendaItem ||--o{ MeetingActionItem : "actionItems"
+    MeetingAgendaItem ||--o{ self : "carriedInto"
     MeetingAgendaItem ||--o{ MeetingDecision : "decisions"
     MeetingDateProposal ||--o{ MeetingDateVote : "votes"
     MeetingUser ||--o| Payment : "payment"

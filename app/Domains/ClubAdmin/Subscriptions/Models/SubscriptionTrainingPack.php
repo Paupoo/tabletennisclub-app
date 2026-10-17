@@ -8,6 +8,7 @@ use App\Contracts\CampEnrolment;
 use App\Contracts\DescribesPayment;
 use App\Contracts\PayableInterface;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\MutualAttestation;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Subscriptions\Notifications\SubscriptionRefundRequestedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
@@ -117,7 +118,12 @@ class SubscriptionTrainingPack extends Pivot implements CampEnrolment, Describes
 
     public function refundRequestedNotification(Payment $refund, string $reason): Notification
     {
-        return new SubscriptionRefundRequestedNotification($refund, $this->loadMissing('subscription.user', 'subscription.season')->subscription, $reason);
+        return new SubscriptionRefundRequestedNotification(
+            $refund,
+            $this->loadMissing('subscription.user', 'subscription.season')->subscription,
+            $reason,
+            MutualAttestation::where('subscription_training_pack_id', $this->id)->live()->latest('id')->first(),
+        );
     }
 
     /**

@@ -31,9 +31,21 @@ C'est ce qui fait qu'une révision du formulaire fonctionne en général sans ri
 
 Deux mutualités acceptent par écrit une attestation rédigée par le club : **MC** et **Mutualité Neutre**. Elles sont donc proposées même sans formulaire téléversé, comme l'option *Une autre mutualité*.
 
+## Les formulaires de stage
+
+Les stages ont leurs propres formulaires, distincts de ceux de l'affiliation. La section **Formulaires de stage** de l'onglet *Formulaires* en liste deux : **Partenamut** (« Stages et camps ») et **Solidaris** (« Avantage activité jeunes »). Pour en installer un, choisissez *Stage* dans le champ **Document** avant de téléverser le PDF.
+
+L'attestation de stage du club est **toujours proposée** aux membres, avec ou sans formulaire installé : elle ne nomme aucun destinataire, et Partenamut l'accepte explicitement. Le bouton *Spécimen : attestation de stage du club* montre à quoi elle ressemble.
+
+Le club atteste les **jours où une séance a eu lieu** (séances annulées exclues), et un jour de moins de quatre heures compte pour un demi-jour. Sur le formulaire Solidaris, les mentions inutiles parmi « nuitées/jours/demi-jour » sont biffées.
+
+Un stage encore facturé dans l'affiliation — le cas de quelques inscriptions antérieures à la facturation séparée — n'apparaît pas aux membres : remplissez ces formulaires à la main.
+
 ## Révoquer et réémettre
 
-Un membre ne peut demander qu'une attestation par saison. Quand la règle rencontre la réalité — mauvaise mutualité choisie, pack d'entraînement rejoint en janvier qui change le montant, déménagement — révoquez l'attestation depuis l'historique.
+Un membre ne peut demander qu'une attestation par saison, et une par stage. Quand la règle rencontre la réalité — mauvaise mutualité choisie, pack d'entraînement rejoint en janvier qui change le montant, déménagement — révoquez l'attestation depuis l'historique.
+
+Quand un remboursement est créé sur un stage qui porte une attestation, le mail envoyé au trésorier le signale, avec la référence : si le montant attesté n'est plus exact, c'est le moment de la révoquer.
 
 Le **motif est obligatoire** : sans lui, personne ne pourra répondre au membre qui demandera pourquoi. Le fichier est supprimé, la ligne reste, et la page publique de vérification se met à indiquer que le document n'est plus valable. Le membre peut alors en demander une nouvelle.
 
@@ -43,6 +55,6 @@ Vous pouvez lancer la génération depuis la fiche d'un membre, avec exactement 
 
 ## Vérification
 
-Chaque attestation porte une référence et un QR code renvoyant vers une page publique. Cette page confirme que le club a bien délivré le document, et — c'est là tout l'intérêt — indique s'il est **toujours valable ou révoqué**.
+Chaque attestation porte une référence (`ATT-…` pour une affiliation, `STG-…` pour un stage) et un QR code renvoyant vers une page publique. Cette page confirme que le club a bien délivré le document, et — c'est là tout l'intérêt — indique s'il est **toujours valable ou révoqué**.
 
 Les fichiers PDF sont supprimés automatiquement au bout de douze mois. L'historique, lui, est conservé : le club garde la trace de ce qu'il a certifié, et la page de vérification continue de répondre.

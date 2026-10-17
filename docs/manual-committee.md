@@ -278,11 +278,17 @@ View attendance responses in real time on the meeting detail page. Responses: At
 
 ### Meeting agenda
 
-Add agenda items to the meeting. Agenda is visible to all invited members.
+Add agenda items to the meeting. Agenda is visible to all invited members — guests excepted.
+
+The points the last meeting of the same kind (committee for a committee, assembly for an assembly) did not reach are offered in a **To take up again** box, ticked. **Confirm** adds the ticked ones to the agenda, marked "Postponed from the committee of …" there and in the minutes; an unticked point never comes back. A point taken up and missed again is offered once more.
+
+### Guests
+
+The **Guests** card invites somebody outside the meeting — the coach for the training point, say. Anybody with an account can be found, affiliated or not; pick the point they come for, or the whole meeting. A guest is told the date, the place and their point only: never the rest of the agenda nor the meeting's description, in the mail, the answer page or the calendar file. Their convocation leaves at once if the others already left, with them otherwise. Guests never count towards the quorum, are listed apart in the minutes, and never receive a committee's minutes.
 
 ### Minutes
 
-Write the minutes from the meeting page (**Write the minutes**), live during the meeting: one block per agenda point — what was said, the decisions (type, then Enter; numbered D1, D2… across the minutes) and the actions (type, then Enter; then who and when) — plus a block for what came up outside the agenda. Attendance is checked in at the top: every confirmed member at once, then corrections name by name, and a member who came without being on the list is added by search. **Mark discussed** closes a point and opens the next. Everything is saved as you go; **Preview** shows the minutes and their PDF before you **Publish** them once the meeting is over. A change made after sending shows as "Corrected on …".
+Write the minutes from the meeting page (**Write the minutes**), live during the meeting: one block per agenda point — what was said, the decisions (type, then Enter; numbered D1, D2… across the minutes) and the actions (type, then Enter; then who and when) — plus a block for what came up outside the agenda. Attendance is checked in at the top: every confirmed member at once, then corrections name by name, and somebody who came without being on the list is added by search — affiliated or not; whoever the meeting does not convene by right is noted as a guest. **Mark discussed** closes a point and opens the next. Everything is saved as you go; **Preview** shows the minutes and their PDF before you **Publish** them once the meeting is over. A change made after sending shows as "Corrected on …".
 
 - **Send to committee** mails them to the committee — the usual first step, to read them over.
 - **Send to all members** exists for a **general assembly only**: a committee meeting's minutes never leave the committee, since they can name a member in debt or a conflict. Sending to all is also what opens a general assembly's minutes to every active member.
@@ -292,6 +298,12 @@ The mail is short — the decisions, the reader's own actions, a **Read the minu
 ### Action items
 
 Create follow-up action items from the meeting, assigned to specific members with due dates.
+
+Every committee meeting opens its minutes on a **Follow-up of actions** block: the actions still open from earlier meetings — committees and general assemblies alike — with their owner, due date, original meeting and the owner's progress note. One tap each: **Done**, **In progress**, **Postpone** (new due date), **Hand over** (new owner) or **Abandon** (a one-line reason, required). An action ticked done by its owner since the last meeting shows "Ticked done by its owner", to be confirmed. Publishing freezes the block in the minutes (page and PDF): what was said of each action stays as it was that evening; those never reached are only counted, and come back at the next committee. The committee convocation lists the open actions and tells each owner how many are theirs.
+
+**Events → My actions** gathers the reader's own actions from every meeting: they note where each stands (the next committee reads it) and tick it done. Open actions count among their tasks on the dashboard and in the menu. Postponing, handing over and abandoning stay with whoever runs the meetings.
+
+**Events → Register of minutes** is the committee's memory, in three tabs: **Decisions** (one line each, grouped by meeting, the last 12 months by default — 6 months, the season or everything on demand — committees, assemblies or both), **Action items** (every action of every meeting, by owner and by state) and **Search** (a word looked up in everything the minutes hold: discussions, decisions, actions, outside the agenda, announcements, with the meeting, the place and an excerpt). Unpublished minutes show to meeting managers only, marked "Draft".
 
 ### Postponing or cancelling
 
@@ -317,7 +329,7 @@ If a training pack is full, members join the waitlist. When a spot opens (cancel
 
 ### Training camps
 
-A training camp is a pack ticked **Training camp (outside the membership fee)** at step 1 of the wizard. It behaves like a pack (enrolments, attendance, coach, waiting list) but is **invoiced separately**: its payment never touches the affiliation, and it counts neither in the membership total nor in the health-insurance attestation. No prorata, no automatic discount; a member's own price (a single day, half the camp) is set with a reason, when adding them or through **Price** in the roster. Members enrol from **My registrations**; with **Enrolment on approval**, their requests are accepted or refused on the camp's sheet. Stopping a camp refunds in full what was paid. The box locks once the first member is enrolled.
+A training camp is a pack ticked **Training camp (outside the membership fee)** at step 1 of the wizard. It behaves like a pack (enrolments, attendance, coach, waiting list) but is **invoiced separately**: its payment never touches the affiliation, and it counts neither in the membership total nor in the affiliation's health-insurance attestation — it has its own, once over and paid. No prorata, no automatic discount; a member's own price (a single day, half the camp) is set with a reason, when adding them or through **Price** in the roster. Members enrol from **My registrations**; with **Enrolment on approval**, their requests are accepted or refused on the camp's sheet. Stopping a camp refunds in full what was paid. The box locks once the first member is enrolled.
 
 ### Non-members on a training camp
 
@@ -505,7 +517,7 @@ As a committee member, the following emails are sent automatically — you do no
 | Training pack approved | Member |
 | Training pack rejected | Member |
 | Training session cancelled | Enrolled members |
-| Meeting invitation | Invited members |
+| Meeting invitation | Invited members, and guests |
 | Meeting RSVP confirmation | Member |
 | Meeting minutes | The committee; every active member for a general assembly sent to all |
 | Meeting cancelled/postponed | All invited members |
@@ -536,7 +548,9 @@ The **Mutual attestations** screen carries three things: how the club signs them
 
 **Forms.** Upload the form as the insurer publishes it. The application converts it, then works out where each value goes from the form's own printed labels — so a revised form usually just works. When it does not, the labels that could not be found are listed in red and that insurer **drops out of the list offered to members**. MC and Mutualité Neutre accept a club-written attestation in writing, so they stay on offer even with no form uploaded.
 
-**Revoking.** A member may ask once per season. A reason is required. The file is deleted, the record stays, and the public verification page starts reporting that the document no longer stands. The member may then ask for a new one.
+**Camp forms.** Camps have forms of their own: Partenamut (« Stages et camps ») and Solidaris (« Avantage activité jeunes »), installed by choosing *Training camp* in the **Document** field before uploading. The club's camp attestation is always on offer, with or without a form. The club certifies the days a session was held (cancelled ones left out); a day under four hours is a half day, and the Solidaris form has the useless units struck. A camp still billed inside the affiliation does not appear to members: fill those forms by hand.
+
+**Revoking.** A member may ask once per season, and once per camp. When a refund is opened on a camp that carries an attestation, the treasurer's email says so, with the reference. A reason is required. The file is deleted, the record stays, and the public verification page starts reporting that the document no longer stands. The member may then ask for a new one.
 
 **Issuing on a member's behalf.** Possible from the member's file, with the same checks — useful for a phone call or a managed account.
 

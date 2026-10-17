@@ -22,6 +22,10 @@ Fixez la date retenue. La réunion passe en **confirmée** — c'est ce qui déb
 
 À partir de là, vous pouvez déjà **préparer le PV** : voyez [Rédiger le PV d'une réunion](rediger-le-pv-d-une-reunion).
 
+### Les points non abordés la dernière fois
+
+Si la dernière réunion du même type (comité pour un comité, AG pour une AG) n'a pas eu le temps d'aborder certains points, la carte **Ordre du jour** les propose dans un encadré **À reprendre**, déjà cochés. **Confirmez** : les points cochés rejoignent l'ordre du jour, avec la mention « Reporté du comité du … » (aussi dans le PV) ; ceux que vous décochez ne reviendront plus. Un point repris et à nouveau non abordé vous sera reproposé la fois suivante.
+
 ## 3. Convoquer
 
 L'application refuse la convocation tant que le dossier n'est pas complet, et elle vous dit ce qui manque :
@@ -31,6 +35,12 @@ L'application refuse la convocation tant que le dossier n'est pas complet, et el
 - pour une réunion **en ligne**, le **lien de connexion**.
 
 Ce n'est pas de la paperasse : une convocation sans ordre du jour ni lieu ne sert à personne. Complétez, puis envoyez.
+
+### Inviter quelqu'un d'extérieur
+
+Pour faire venir une personne hors du comité — l'entraîneur pour le point sur les entraînements, par exemple —, cherchez-la dans la carte **Invités** de la réunion. Toute personne qui a un compte peut être invitée, affiliée ou non. Choisissez d'abord le point pour lequel vous l'invitez, ou laissez « Pour toute la réunion ».
+
+Un invité ne reçoit **que la date, le lieu et le point pour lequel il vient** : jamais le reste de l'ordre du jour, ni la description de la réunion. Si les convocations sont déjà parties, la sienne part tout de suite ; sinon, elle partira avec les autres. Il ne compte pas dans le quorum, et le PV ne lui est pas envoyé.
 
 Les invitations partent **en tâche de fond** — l'envoi n'est pas instantané, c'est normal. Si rien n'arrive du tout, regardez le tableau de bord : une alerte **« File d'attente bloquée »** signifie qu'aucun e-mail ne sort de l'application.
 

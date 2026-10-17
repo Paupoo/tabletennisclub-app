@@ -15,6 +15,7 @@ erDiagram
     AttestationTemplate {
         int id PK
         Mutuality mutuality
+        AttestationKind kind
         string path
         string original_name
         int page_count
@@ -24,7 +25,9 @@ erDiagram
         int id PK
         int user_id FK
         int subscription_id FK
+        int subscription_training_pack_id FK "nullable"
         int season_id FK
+        AttestationKind kind
         Mutuality mutuality
         string reference
         string token
@@ -32,6 +35,8 @@ erDiagram
         float amount_certified
         datetime period_from
         datetime period_to
+        int full_days "nullable"
+        int half_days "nullable"
         string signatory_name
         string discipline
         int issued_by_user_id FK "nullable"

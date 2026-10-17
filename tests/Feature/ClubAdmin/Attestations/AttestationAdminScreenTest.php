@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\MutualAttestation;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\AttestationAvailability;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Shared\Enums\AttestationKind;
 use App\Domains\Shared\Enums\Mutuality;
 use App\Domains\Shared\Enums\Role;
 use Illuminate\Http\UploadedFile;
@@ -121,6 +122,55 @@ it('installs a published form and reports that every label was found', function 
 
     expect($template->unresolved_fields)->toBe([])
         ->and($template->isUsable())->toBeTrue();
+});
+
+it('installs a camp form beside the affiliation one, without replacing it', function (): void {
+    foreach (['affiliation' => 'partenamut.pdf', 'camp' => 'camp/partenamut.pdf'] as $kind => $file) {
+        Livewire::actingAs($this->office)
+            ->test(ATTESTATION_ADMIN)
+            ->set('templateKind', $kind)
+            ->set('templateFor', Mutuality::Partenamut->value)
+            ->set('templateUpload', UploadedFile::fake()->createWithContent(
+                'partenamut.pdf',
+                (string) file_get_contents(base_path('database/seeders/Data/attestation-templates/' . $file)),
+            ))
+            ->call('uploadTemplate')
+            ->assertHasNoErrors();
+    }
+
+    $templates = AttestationTemplate::where('mutuality', Mutuality::Partenamut->value)->get();
+
+    expect($templates)->toHaveCount(2)
+        ->and($templates->firstWhere('kind', AttestationKind::Camp)->isUsable())->toBeTrue()
+        ->and($templates->firstWhere('kind', AttestationKind::Affiliation)->isUsable())->toBeTrue();
+});
+
+it('refuses a camp form for an insurer the club cannot fill one for', function (): void {
+    Livewire::actingAs($this->office)
+        ->test(ATTESTATION_ADMIN)
+        ->set('templateKind', 'camp')
+        ->set('templateFor', Mutuality::MC->value)
+        ->set('templateUpload', UploadedFile::fake()->createWithContent(
+            'mc.pdf',
+            (string) file_get_contents(base_path('database/seeders/Data/attestation-templates/mc.pdf')),
+        ))
+        ->call('uploadTemplate')
+        ->assertStatus(422);
+
+    expect(AttestationTemplate::count())->toBe(0);
+});
+
+it('tells camp attestations from affiliation ones, and filters by kind', function (): void {
+    MutualAttestation::factory()->create(['reference' => 'ATT-2627-00042']);
+    MutualAttestation::factory()->create(['reference' => 'STG-2627-00007', 'kind' => AttestationKind::Camp->value]);
+
+    Livewire::actingAs($this->office)
+        ->test(ATTESTATION_ADMIN)
+        ->assertSee('ATT-2627-00042')
+        ->assertSee('STG-2627-00007')
+        ->set('kindFilter', 'camp')
+        ->assertSee('STG-2627-00007')
+        ->assertDontSee('ATT-2627-00042');
 });
 
 it('lists what the club has certified', function (): void {

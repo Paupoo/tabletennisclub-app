@@ -16,5 +16,11 @@ final readonly class MemberIdentifiers
     public function __construct(
         public ?string $nationalRegisterNumber = null,
         public ?string $mutualMembershipNumber = null,
+        /**
+         * Whether the participant is recognised as disabled — Partenamut's camp
+         * form asks, and pays more when it is so. Health data: answered for this
+         * one document, printed as a cross, and never kept.
+         */
+        public ?bool $recognisedDisabled = null,
     ) {}
 }

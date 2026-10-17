@@ -6,6 +6,7 @@ namespace App\Domains\ClubAdmin\Subscriptions\Attestations\Templates;
 
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\Anchor;
 use App\Domains\Shared\Enums\AttestationAnchorPlacement as Place;
+use App\Domains\Shared\Enums\AttestationKind;
 use App\Domains\Shared\Enums\Mutuality;
 
 /**
@@ -27,8 +28,16 @@ final readonly class AnchorMaps
     /**
      * @return array<string, Anchor>
      */
-    public static function for(Mutuality $mutuality): array
+    public static function for(Mutuality $mutuality, AttestationKind $kind = AttestationKind::Affiliation): array
     {
+        if ($kind === AttestationKind::Camp) {
+            return match ($mutuality) {
+                Mutuality::Partenamut => self::partenamutCamp(),
+                Mutuality::Solidaris => self::solidarisCamp(),
+                default => [],
+            };
+        }
+
         return match ($mutuality) {
             Mutuality::MC => self::mc(),
             Mutuality::MutPlus => self::mutplus(),
@@ -224,6 +233,46 @@ final readonly class AnchorMaps
     }
 
     /**
+     * Partenamut, « Stages et camps » (GT0641).
+     *
+     * The client block is the affiliation form's own, at the same column. The
+     * organiser's block draws both dates, the amount and the day count as
+     * single-character cells; the centres below are measured off the printed
+     * rules. « Du » alone is far too common — it opens the statutory address
+     * printed up the margin — so the date row is found by its own run of words.
+     *
+     * @return array<string, Anchor>
+     */
+    private static function partenamutCamp(): array
+    {
+        return [
+            'member_mutual_number' => new Anchor("N° d'affiliation", column: 46.5),
+            'member_last_name' => new Anchor('Nom', occurrence: 1, column: 46.5),
+            'member_first_name' => new Anchor('Prénom', column: 46.5),
+            'member_address' => new Anchor('Adresse', column: 46.5),
+            'member_city' => new Anchor('CP et Localité', column: 46.5),
+
+            'club_name' => new Anchor('La direction de', dx: 3),
+            'member_full_name' => new Anchor('certifie que (nom et prénom)', dx: 3),
+            // The box sits left of its caption, 26,3 to 30 mm.
+            'mark_camp' => new Anchor('le stage sportif ou culturel', column: 27.1),
+            ...self::cells('period_from_day', 'Du / / au', [28.7, 33.7]),
+            ...self::cells('period_from_month', 'Du / / au', [41.7, 46.7]),
+            ...self::cells('period_from_year', 'Du / / au', [54.7, 59.7, 64.7, 69.7]),
+            ...self::cells('period_to_day', 'Du / / au', [87.8, 92.8]),
+            ...self::cells('period_to_month', 'Du / / au', [100.8, 105.8]),
+            ...self::cells('period_to_year', 'Du / / au', [113.8, 118.7, 123.7, 128.8]),
+            'disabled_yes' => new Anchor('Bénéficiaire reconnu(e) handicapé(e)', column: 77.9),
+            'disabled_no' => new Anchor('Bénéficiaire reconnu(e) handicapé(e)', column: 99.6),
+            ...self::cells('amount_euros', 'Une somme de', [45.6, 50.4, 55.2, 60.2]),
+            ...self::cells('amount_cents', 'Une somme de', [68.3, 73.3]),
+            ...self::cells('camp_days', 'Une somme de', [117.9, 122.9]),
+            'signature' => new Anchor("Signature du responsable de l'institution", placement: Place::Below, dy: -1, scale: 0.9),
+            'seal' => new Anchor("Cachet de l'institution", placement: Place::Below, dy: -1, scale: 0.8),
+        ];
+    }
+
+    /**
      * @return array<string, Anchor>
      */
     private static function solidaris(): array
@@ -278,6 +327,61 @@ final readonly class AnchorMaps
             'issued_year' => new Anchor('Date', occurrence: 1, column: 56.5),
             'seal' => new Anchor('Signature et cachet', placement: Place::Below, dy: -1, scale: 0.45),
             'signature' => new Anchor('Signature et cachet', placement: Place::Below, dx: 22, dy: 1, scale: 0.7),
+        ];
+    }
+
+    /**
+     * Solidaris Wallonie, « Avantage activité jeunes » (mars 2025).
+     *
+     * The beneficiary's block is the affiliation form's layout again. The
+     * organiser's block has no line for the member's name — « la personne
+     * ci-dessus » — and offers « nuitées/jours/demi-jour » after the count,
+     * one word to the text layer: the units that do not apply are struck at
+     * the widths measured on the page.
+     *
+     * @return array<string, Anchor>
+     */
+    private static function solidarisCamp(): array
+    {
+        $nrnCells = [];
+
+        for ($cell = 1; $cell <= 11; $cell++) {
+            $nrnCells['member_nrn_' . $cell] = new Anchor(
+                "N° d'identification du Registre National",
+                dx: 6.3 + 7.6 * ($cell - 1),
+            );
+        }
+
+        return [
+            'member_full_name' => new Anchor('Nom et Prénom', dx: 3),
+            ...$nrnCells,
+            'member_signed_day' => new Anchor('Fait le', column: 35.5),
+            'member_signed_month' => new Anchor('Fait le', column: 46),
+            'member_signed_year' => new Anchor('Fait le', column: 58),
+            'member_town' => new Anchor('Fait le', column: 29, dy: 7.9),
+
+            'signatory_name' => new Anchor('Je soussigné(e)', dx: 3),
+            'club_name' => new Anchor("représentant l'association", dx: 3),
+            'mark_camp' => new Anchor('au stage non-résidentiel/plaine', column: 26.6),
+            'period_from_day' => new Anchor('pour la période du', column: 58.5),
+            'period_from_month' => new Anchor('pour la période du', column: 71),
+            'period_from_year' => new Anchor('pour la période du', column: 85),
+            'period_to_day' => new Anchor('pour la période du', column: 106.5),
+            'period_to_month' => new Anchor('pour la période du', column: 119.5),
+            'period_to_year' => new Anchor('pour la période du', column: 133.5),
+            'camp_units' => new Anchor('soit nuitées/jours/demi-jour', column: 34.5),
+            'strike_nights' => new Anchor('soit nuitées/jours/demi-jour', column: 43.3, strike: 11.2),
+            'strike_days' => new Anchor('soit nuitées/jours/demi-jour', column: 56.5, strike: 6.7),
+            'strike_half_days' => new Anchor('soit nuitées/jours/demi-jour', column: 64.9, strike: 15.6),
+            'amount' => new Anchor("certifie sur l'honneur que la somme de", dx: 3),
+            'issued_day' => new Anchor('Date', occurrence: 1, column: 37),
+            'issued_month' => new Anchor('Date', occurrence: 1, column: 49),
+            'issued_year' => new Anchor('Date', occurrence: 1, column: 61),
+            // The caption is welded to the dotted rule before it, so it is found
+            // by its last two words. The frame under it is shallow and narrow:
+            // both marks go to its left, on the band below the date.
+            'signature' => new Anchor('et cachet', placement: Place::Below, dx: -62, dy: -4.5, scale: 0.6),
+            'seal' => new Anchor('et cachet', placement: Place::Below, dx: -30, dy: -5.5, scale: 0.45),
         ];
     }
 }

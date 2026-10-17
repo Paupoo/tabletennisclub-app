@@ -174,7 +174,7 @@ it('lets anyone abandon the trip, and the list is free again', function (): void
     expect(BarRestocking::inProgress()->shopper_id)->toBe($other->id);
 });
 
-it('enters what was really bought into the stock, linked to the trip, and closes it', function (): void {
+it('enters what was really bought into the stock, in units, linked to the trip, and closes it', function (): void {
     $chimay = restockingTripProduct('Chimay bleue', $this->jupiler->category, stock: 0, min: 0, max: 0, packSize: 24, packLabel: 'carton');
     $chimay->update(['max_stock' => null]);   // hors réassort : pris en promo
 
@@ -187,28 +187,30 @@ it('enters what was really bought into the stock, linked to the trip, and closes
         ->test('pages::bar.restocking')
         ->call('toggleInCart', $jupilerLine->id, true)
         ->call('openClosing')
-        // Coché = la quantité proposée ; non coché = « pas trouvé ».
-        ->assertSet("bought.{$jupilerLine->id}", 2)
+        // Coché = les unités proposées ; non coché = « pas trouvé ».
+        ->assertSet("bought.{$jupilerLine->id}", 48)
         ->assertSet("bought.{$cocaLine->id}", 0)
-        ->set("bought.{$cocaLine->id}", 1)
+        // Le magasin n'avait qu'un pack de 4 : on tape 4, pas un conditionnement.
+        ->set("bought.{$cocaLine->id}", 4)
         ->set('extraProductId', $chimay->id)
         ->call('addExtra')
-        ->assertSet("extras.{$chimay->id}", 1)
+        ->assertSet("extras.{$chimay->id}", 24)
+        ->set("extras.{$chimay->id}", 20)
         ->assertDontSee('<x-', false)
         ->set('paidBy', 'club')
         ->call('close')
         ->assertHasNoErrors();
 
     expect($this->jupiler->fresh()->stock)->toBe(5 + 48)
-        ->and($this->coca->fresh()->stock)->toBe(14 + 6)
-        ->and($chimay->fresh()->stock)->toBe(24);
+        ->and($this->coca->fresh()->stock)->toBe(14 + 4)
+        ->and($chimay->fresh()->stock)->toBe(20);
 
     expect($trip->fresh())
         ->status->toBe(BarRestocking::STATUS_CLOSED)
         ->closed_at->not->toBeNull();
-    expect(BarStockMovement::query()->where('restocking_id', $trip->id)->sum('quantity'))->toBe(48 + 6 + 24);
-    expect($jupilerLine->fresh()->bought_packs)->toBe(2)
-        ->and($trip->lines()->where('section', 'extra')->where('product_id', $chimay->id)->value('bought_packs'))->toBe(1);
+    expect(BarStockMovement::query()->where('restocking_id', $trip->id)->sum('quantity'))->toBe(48 + 4 + 20);
+    expect($jupilerLine->fresh()->bought_units)->toBe(48)
+        ->and($trip->lines()->where('section', 'extra')->where('product_id', $chimay->id)->value('bought_units'))->toBe(20);
 });
 
 it('lets only the one shopping close the trip', function (): void {

@@ -17,8 +17,10 @@
                         class="btn-primary btn-sm"
                         wire:click="openToggleRegistrationsModal"
                         :disabled="!$tournamentId" />
-                    @if (! $this->registrationClosed && ! ($maxUsers > 0 && $this->registrationTabCounts['all'] >= $maxUsers))
-                        <x-button
+                    {{-- Le comité inscrit jusqu'au lancement, inscriptions closes et plafond
+                         atteint compris : un joueur de plus le matin complète une paire. --}}
+                    @if (in_array($this->currentTournament?->status, [\App\Domains\Shared\Enums\TournamentStatusEnum::PUBLISHED, \App\Domains\Shared\Enums\TournamentStatusEnum::SETUP], true))
+                        <x-button data-register-member
                             :label="__('Register member')"
                             icon="o-user-plus"
                             class="btn-ghost btn-sm"
@@ -324,7 +326,7 @@
         @if ($memberToRegister && $this->currentTournament?->max_users > 0 && $this->registrationTabCounts['all'] >= $this->currentTournament->max_users)
             <x-alert
                 :title="__('Tournament is full')"
-                :description="__('This player will be added to the waiting list.')"
+                :description="__('The committee enters this player above the cap.')"
                 icon="o-exclamation-triangle"
                 class="alert-warning alert-soft" />
         @endif

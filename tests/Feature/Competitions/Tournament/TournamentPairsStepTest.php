@@ -178,3 +178,26 @@ it('names each absence for what it is, in the words of its button', function ():
     expect($badges->filter(fn (string $label): bool => $label === __('Excused absence')))->toHaveCount(1)
         ->and($badges->filter(fn (string $label): bool => $label === __('Unexcused absence')))->toHaveCount(1);
 });
+
+it('offers a late entry once registrations are closed and the cap is reached, until the launch', function (): void {
+    $tournament = pairsStepTournament(['max_users' => 2]);
+    pairsStepPair($tournament, 'Anna', 'Ben');
+
+    pairsStepWizard($tournament, '5')->assertSeeHtml('data-register-member');
+
+    $tournament->update(['status' => TournamentStatusEnum::PENDING]);
+    pairsStepWizard($tournament, '5')->assertDontSeeHtml('data-register-member');
+});
+
+it('says the late entry goes above the cap, not to the waiting list', function (): void {
+    $tournament = pairsStepTournament(['max_users' => 2]);
+    pairsStepPair($tournament, 'Anna', 'Ben');
+    $late = User::factory()->create();
+    $late->subscriptions()->create(['season_id' => makeActiveSeason()->id, 'status' => 'confirmed', 'amount_due' => 0, 'amount_paid' => 0]);
+
+    pairsStepWizard($tournament, '5')
+        ->set('showRegisterModal', true)
+        ->set('memberToRegister', $late->id)
+        ->assertSee(__('The committee enters this player above the cap.'))
+        ->assertDontSee(__('This player will be added to the waiting list.'));
+});

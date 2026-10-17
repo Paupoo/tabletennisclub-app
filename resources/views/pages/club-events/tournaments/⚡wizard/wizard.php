@@ -250,13 +250,12 @@ new class extends Component
     #[Computed]
     public function availableRooms(): array
     {
-        return Room::select(['id', 'name'])
-            ->withCount(['tables as playable_tables_count' => fn ($query) => $query->whereNot('state', TableStateEnum::OUT_OF_SERVICE)])
+        return Room::with('tables:id,room_id,state')
             ->orderBy('name')
             ->get()
-            ->map(fn ($room): array => [
+            ->map(fn (Room $room): array => [
                 'id' => $room->id,
-                'name' => $room->name . ' (' . $room->playable_tables_count . ' tables)',
+                'name' => $room->name . ' (' . $room->usableTournamentCapacity() . ' tables)',
             ])
             ->toArray();
     }
@@ -1890,20 +1889,30 @@ new class extends Component
     }
 
     /**
-     * The playable tables of the rooms chosen for the tournament.
+     * The tables ticked by default at the launch: in each chosen room, as many
+     * as it really offers a tournament — the sound ones first, then those that
+     * need repair, by number.
      *
-     * Counted from the tables themselves, as the rooms screen sets them up:
-     * the room's stored counter is not kept up to date.
+     * Counted from the tables themselves, as the rooms screen sets them up.
      *
      * @return list<int>
      */
     private function playableTableIds(): array
     {
-        return Table::whereIn('room_id', $this->selectedRooms)
-            ->whereNot('state', TableStateEnum::OUT_OF_SERVICE)
-            ->orderBy('room_id')
+        return Room::with('tables')
+            ->whereIn('id', $this->selectedRooms)
             ->orderBy('name')
-            ->pluck('id')
+            ->get()
+            ->flatMap(fn (Room $room): array => $room->tables
+                ->filter(fn (Table $table): bool => $table->state->isPlayable())
+                ->sortBy([
+                    fn (Table $a, Table $b): int => (int) ($a->state !== TableStateEnum::GOOD) <=> (int) ($b->state !== TableStateEnum::GOOD),
+                    fn (Table $a, Table $b): int => strnatcmp($a->name, $b->name),
+                ])
+                ->take($room->usableTournamentCapacity())
+                ->pluck('id')
+                ->all())
+            ->values()
             ->all();
     }
 

@@ -16,7 +16,6 @@ use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
-use App\Domains\Competitions\Tournament\Services\TournamentTableService;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
@@ -34,10 +33,6 @@ use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
-    public function __construct(
-        private TournamentTableService $tableService,
-    ) {}
-
     /**
      * Seed the application's database.
      */
@@ -345,11 +340,6 @@ class DatabaseSeeder extends Seeder
                 'state' => TableStateEnum::GOOD,
                 'room_id' => Room::inRandomOrder()->first()->id,
             ]);
-        }
-
-        $rooms = Room::all();
-        foreach ($rooms as $room) {
-            $this->tableService->updateTablesCount($room);
         }
 
         // Quatre membres sur cinq ont leur IBAN en fiche. Huit sur deux cent

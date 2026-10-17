@@ -152,7 +152,7 @@
                     <x-input :label="__('Maximum participants')" type="number" min="1" max="999"
                         wire:model.live="formMaxParticipants" :disabled="$formIsOpenEnrollment"
                         :placeholder="$this->inheritedRoomCapacity
-                            ? __('Room capacity: :count', ['count' => $this->inheritedRoomCapacity])
+                            ? __('From the room: :count players', ['count' => $this->inheritedRoomCapacity])
                             : __('Room capacity')" />
 
                     <p class="mt-1 text-xs text-base-content/50">

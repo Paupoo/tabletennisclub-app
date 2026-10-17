@@ -25,9 +25,7 @@
 
                     <div class="flex flex-wrap items-center gap-2">
                         <x-admin.shared.tables-counter :count="$room->tables_count" />
-                        <x-admin.shared.tables-capacity-counter
-                            :training_capacity="$room->capacity_for_trainings"
-                            :interclub_capacity="$room->capacity_for_interclubs" />
+                        <x-admin.shared.tables-capacity-counter :room="$room" />
                     </div>
 
                     <div class="flex items-center gap-1 text-sm text-base-content/60">

@@ -160,7 +160,7 @@ new class extends Component
     public function inheritedRoomCapacity(): ?int
     {
         return $this->formRoomId
-            ? Room::find($this->formRoomId)?->capacity_for_trainings
+            ? Room::find($this->formRoomId)?->trainingSeats()
             : null;
     }
 

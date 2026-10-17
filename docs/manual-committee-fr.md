@@ -401,8 +401,10 @@ Allez dans **Administration club → Infos club**. Mettez à jour les coordonné
 
 Allez dans **Administration club → Salles**. Gérez les lieux d'entraînement/compétition :
 - Nom, adresse, nom du bâtiment
-- Capacité pour les entraînements et les interclubs
-- Nombre total de tables par salle
+- Capacité, en tables, pour les entraînements, les matchs officiels et les tournois
+- Les tables de la salle et leur état
+
+Chaque capacité affichée est **ce que la salle offre vraiment** : la place saisie, ramenée au nombre de tables jouables. Une salle de 6 places en entraînement dont 3 tables sont hors service en offre 5, et la fiche le dit. Une table « à réparer » reste jouable. Un pack d'entraînement sans plafond prend deux joueurs par table offerte ; au lancement d'un tournoi, l'assistant coche autant de tables que la capacité tournoi, les tables en bon état d'abord.
 
 ### Tables
 

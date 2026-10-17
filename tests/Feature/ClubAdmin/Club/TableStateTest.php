@@ -22,9 +22,7 @@ it('exclut les tables hors service du comptage des tables jouables', function ()
         'state' => TableStateEnum::OUT_OF_SERVICE,
     ]);
 
-    app(TournamentTableService::class)->updateTablesCount($room->fresh());
-
-    expect($room->fresh()->total_playable_tables)->toBe(3);
+    expect($room->fresh()->playableTablesCount())->toBe(3);
 });
 
 it('compte une table à réparer comme jouable', function (): void {
@@ -34,9 +32,7 @@ it('compte une table à réparer comme jouable', function (): void {
     Table::factory()->create(['room_id' => $room->id, 'state' => TableStateEnum::GOOD]);
     Table::factory()->create(['room_id' => $room->id, 'state' => TableStateEnum::NEEDS_REPAIR]);
 
-    app(TournamentTableService::class)->updateTablesCount($room->fresh());
-
-    expect($room->fresh()->total_playable_tables)->toBe(2);
+    expect($room->fresh()->playableTablesCount())->toBe(2);
 });
 
 it('ne lie jamais une table hors service à un tournoi', function (): void {

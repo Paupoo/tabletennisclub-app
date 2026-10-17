@@ -400,8 +400,10 @@ Go to **Club admin → Club info**. Update club details: name, address, contact 
 
 Go to **Club admin → Rooms**. Manage training/competition venues:
 - Name, address, building name
-- Capacity for trainings and interclubs
-- Total tables per room
+- Capacity, in tables, for trainings, official matches and tournaments
+- The room's tables and their state
+
+Each capacity shown is **what the room really offers**: the room typed in, brought down to the tables that can be played on. A room with room for 6 in training and 3 tables out of service offers 5, and its page says so. A table that needs repair still plays. A training pack without a cap takes two players per table offered; at a tournament launch, the wizard ticks as many tables as the tournament capacity, sound tables first.
 
 ### Tables
 

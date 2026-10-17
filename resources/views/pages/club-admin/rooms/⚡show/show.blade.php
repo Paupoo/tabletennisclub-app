@@ -16,27 +16,43 @@
         </x-slot:actions>
     </x-header>
 
-    {{-- Stats --}}
-    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-3">
+    {{-- Stats : la place saisie, ramenée aux tables jouables --}}
+    @php
+        $outOfService = $tables->filter(fn ($table) => ! $table->state->isPlayable())->count();
+        $needsRepair = $tables->filter(fn ($table) => $table->state === \App\Domains\Shared\Enums\TableStateEnum::NEEDS_REPAIR)->count();
+        $capacityHint = fn (int $usable, int $capacity): string => $usable < $capacity
+            ? __(':usable of :capacity', ['usable' => $usable, 'capacity' => $capacity]) . ' — ' . trans_choice(':count table out of service|:count tables out of service', $outOfService, ['count' => $outOfService])
+            : __('tables');
+    @endphp
+    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
         <x-admin.shared.stat-card
             :label="__('Tables')"
             :value="$tables->count()"
-            :hint="$tables->filter(fn ($table) => $table->state->isPlayable())->count() . ' ' . __('playable')"
+            :hint="implode(' · ', array_filter([
+                $room->playableTablesCount() . ' ' . __('playable'),
+                $needsRepair > 0 ? trans_choice(':count needs repair|:count need repair', $needsRepair, ['count' => $needsRepair]) : null,
+                $outOfService > 0 ? trans_choice(':count table out of service|:count tables out of service', $outOfService, ['count' => $outOfService]) : null,
+            ]))"
             icon="o-squares-2x2"
             color="primary" />
 
         <x-admin.shared.stat-card
             :label="__('Training capacity')"
-            :value="$room->capacity_for_trainings"
-            :hint="__('tables')"
+            :value="$room->usableTrainingCapacity()"
+            :hint="$capacityHint($room->usableTrainingCapacity(), $room->capacity_for_trainings)"
             icon="o-academic-cap" />
 
         <x-admin.shared.stat-card
             :label="__('Matches capacity')"
-            :value="$room->capacity_for_interclubs"
-            :hint="__('tables')"
-            icon="o-trophy"
-            class="sm:col-span-2 lg:col-span-1" />
+            :value="$room->usableMatchCapacity()"
+            :hint="$capacityHint($room->usableMatchCapacity(), $room->capacity_for_interclubs)"
+            icon="o-trophy" />
+
+        <x-admin.shared.stat-card
+            :label="__('Tournament capacity')"
+            :value="$room->usableTournamentCapacity()"
+            :hint="$capacityHint($room->usableTournamentCapacity(), $room->capacity_for_tournaments)"
+            icon="o-flag" />
     </div>
 
     <div class="grid gap-6 lg:grid-cols-3">

@@ -29,7 +29,7 @@ Par défaut le pack couvre toute la saison. Les champs **De / À** permettent de
 
 L'application affiche alors **la liste des dates générées**. Relisez-la : c'est le moment de **décocher les dates à exclure** (congés scolaires, week-end de tournoi). Une date décochée ne produira pas de séance.
 
-**La capacité** est le point qu'on oublie. Laissez le champ vide et le plafond devient **la capacité d'entraînement de la salle** — le champ vous l'affiche en gris pour que vous sachiez sur quel nombre vous partez. Remplissez-le pour fixer un plafond propre au pack, plus bas que la salle.
+**La capacité** est le point qu'on oublie. Laissez le champ vide et le plafond devient **deux joueurs par table que la salle offre en entraînement** — sa capacité saisie, moins les tables hors service. Le champ vous l'affiche en gris pour que vous sachiez sur quel nombre vous partez. Remplissez-le pour fixer un plafond propre au pack, plus bas que la salle.
 
 La case **sans plafond de participants** n'apparaît que sur les packs de type **Libre**. Sur un entraînement dirigé, elle supprimerait à la fois le plafond et la liste d'attente : le coach découvrirait la surcharge le soir même. L'application la refuse donc ailleurs, même si vous forcez.
 

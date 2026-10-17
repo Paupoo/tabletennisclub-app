@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
-use App\Domains\Competitions\Tournament\Services\TournamentTableService;
 use App\Domains\Shared\Enums\TableStateEnum;
 use Illuminate\Support\Facades\Schema;
 
@@ -16,8 +15,10 @@ it('ne porte plus de colonne total_tables', function (): void {
     expect(Schema::hasColumn('rooms', 'total_tables'))->toBeFalse();
 });
 
-it('garde total_playable_tables, qui a des lecteurs', function (): void {
-    expect(Schema::hasColumn('rooms', 'total_playable_tables'))->toBeTrue();
+it('ne porte plus de compteur de tables jouables', function (): void {
+    // Rien ne le tenait à jour : l'assistant tournoi annonçait 9 tables dans
+    // une salle qui en avait 6. Les tables se comptent là où elles sont.
+    expect(Schema::hasColumn('rooms', 'total_playable_tables'))->toBeFalse();
 });
 
 it('garde total_tables sur le pivot room_tournament, qui est une autre colonne', function (): void {
@@ -35,12 +36,10 @@ it('compte les tables en direct, sans pouvoir dériver', function (): void {
     expect(Room::withCount('tables')->find($room->id)->tables_count)->toBe(4);
 });
 
-it('met encore à jour le compteur de tables jouables', function (): void {
+it('compte les tables jouables en direct', function (): void {
     $room = Room::factory()->create();
     Table::factory()->count(2)->for($room)->create(['state' => TableStateEnum::GOOD]);
     Table::factory()->for($room)->create(['state' => TableStateEnum::OUT_OF_SERVICE]);
 
-    app(TournamentTableService::class)->updateTablesCount($room);
-
-    expect($room->fresh()->total_playable_tables)->toBe(2);
+    expect($room->fresh()->playableTablesCount())->toBe(2);
 });

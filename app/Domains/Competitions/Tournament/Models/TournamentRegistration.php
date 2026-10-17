@@ -28,6 +28,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $payment_overdue_reminder_sent_at
  * @property int|null $payment_id
  * @property bool $qr_confirmed
+ * @property bool|null $absence_excused
  * @property-read Payment|null $payment
  * @property-read Tournament|null $tournament
  * @property-read User|null $user
@@ -59,6 +60,7 @@ class TournamentRegistration extends Pivot implements DescribesPayment
     protected $casts = [
         'has_paid' => 'boolean',
         'qr_confirmed' => 'boolean',
+        'absence_excused' => 'boolean',
         'confirmation_deadline' => 'datetime',
         'payment_deadline' => 'datetime',
         'payment_reminder_sent_at' => 'datetime',
@@ -77,6 +79,7 @@ class TournamentRegistration extends Pivot implements DescribesPayment
         'payment_overdue_reminder_sent_at',
         'has_paid',
         'qr_confirmed',
+        'absence_excused',
         'payment_id',
     ];
 

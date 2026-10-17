@@ -19,9 +19,11 @@ use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentReminderN
 use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentRequestNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationCancelledNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConfirmedNotification;
+use App\Domains\Competitions\Tournament\Notifications\TournamentUnexcusedAbsenceNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistSpotOpenedNotification;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Services\TrainingWaitlistService;
 use App\Jobs\SendDebtReminderNotification;
 use Illuminate\Database\Eloquent\Builder;
@@ -180,6 +182,84 @@ class TournamentService
     }
 
     /**
+     * A registered player did not turn up for the roll call.
+     *
+     * Their pair breaks and the partner goes back to the bench. The money
+     * follows what the committee knows: a player who had paid keeps the matter
+     * for the treasurer; one who had not either warned — the fee is dropped —
+     * or did not, and the fee stays due with a word explaining why.
+     *
+     * @throws \LogicException once the tournament is launched: a walkover settles it then.
+     */
+    public function markAbsent(Tournament $tournament, User $user, bool $excused): void
+    {
+        if ($tournament->state()->hasBeenLaunched()) {
+            throw new \LogicException('The tournament is launched: record a walkover instead.');
+        }
+
+        $registration = TournamentRegistration::where('tournament_id', $tournament->id)
+            ->where('user_id', $user->id)
+            ->whereIn('registration_status', ['registered', 'confirmed', 'spot_offered'])
+            ->first();
+
+        if ($registration === null) {
+            return;
+        }
+
+        $registration->update(['registration_status' => 'no_show', 'absence_excused' => $excused]);
+
+        app(TournamentPairingService::class)->release($tournament, $user);
+
+        $payment = $registration->payment;
+        $hasPaid = $registration->has_paid || $payment?->status === 'paid';
+
+        if ($tournament->isPaid() && ! $hasPaid) {
+            if ($excused) {
+                $payment?->update(['status' => 'cancelled']);
+            } else {
+                $payment = $this->ensurePaymentExists($registration->fresh(), $tournament);
+                $this->notifyAfterRegistration($user, new TournamentUnexcusedAbsenceNotification($tournament, $payment));
+            }
+        }
+
+        $this->countRegisteredUsers($tournament);
+    }
+
+    /**
+     * A player marked absent turns up after all: back on the bench.
+     *
+     * Only while the pools are not drawn — after that, their place is gone. An
+     * entry fee dropped for an excused absence is owed again.
+     *
+     * @return bool whether the player could be brought back
+     */
+    public function markPresent(Tournament $tournament, User $user): bool
+    {
+        $registration = TournamentRegistration::where('tournament_id', $tournament->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($registration === null || $tournament->state()->hasBeenLaunched()) {
+            return false;
+        }
+
+        if ($registration->registration_status === 'no_show') {
+            if ($tournament->pools()->exists()) {
+                return false;
+            }
+
+            if ($registration->payment?->status === 'cancelled') {
+                $registration->payment->update(['status' => 'pending']);
+            }
+        }
+
+        $registration->update(['registration_status' => 'confirmed', 'absence_excused' => null]);
+        $this->countRegisteredUsers($tournament);
+
+        return true;
+    }
+
+    /**
      * Promote the next waiting-list person to 'registered' and send the 48-hour confirmation email.
      * Recalculates waitlist positions for remaining members after the promotion.
      *
@@ -271,10 +351,14 @@ class TournamentService
      * Creates a Payment for paid tournaments (deadline = registration deadline, or +3 days if registered late).
      * If registered on tournament day, no payment email is sent (paid on site).
      *
+     * The committee may enter a member after registrations close, until the
+     * launch, and past the cap: completing a pair on the morning is its call,
+     * not the waiting list's.
+     *
      * @throws \LogicException when the user is already registered or on the waitlist.
      * @throws \LogicException when registrations are closed.
      */
-    public function registerUser(Tournament $tournament, User $user): void
+    public function registerUser(Tournament $tournament, User $user, bool $byCommittee = false): void
     {
         $hasActiveRegistration = $tournament->users()
             ->where('users.id', $user->id)
@@ -285,11 +369,14 @@ class TournamentService
             throw new \LogicException('This player is already registered to this tournament.');
         }
 
-        if (! $tournament->registrationsAreOpen()) {
+        $committeeMayStillEnter = $byCommittee
+            && in_array($tournament->status, [TournamentStatusEnum::PUBLISHED, TournamentStatusEnum::SETUP], true);
+
+        if (! $tournament->registrationsAreOpen() && ! $committeeMayStillEnter) {
             throw new \LogicException('Registrations are closed for this tournament.');
         }
 
-        if ($this->isFull($tournament)) {
+        if (! $byCommittee && $this->isFull($tournament)) {
             $this->addToWaitlist($tournament, $user);
 
             return;
@@ -307,6 +394,9 @@ class TournamentService
                 'payment_id' => null,
                 'confirmation_deadline' => null,
                 'payment_deadline' => null,
+                'payment_reminder_sent_at' => null,
+                'payment_overdue_reminder_sent_at' => null,
+                'absence_excused' => null,
                 'waitlist_position' => null,
             ]);
             $registration = $existingRow->fresh();

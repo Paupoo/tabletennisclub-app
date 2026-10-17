@@ -95,8 +95,21 @@
                         @if (in_array($row['status'], ['registered', 'spot_offered'], true))
                             <x-button :label="__('Confirm')" icon="o-check" class="btn-outline btn-xs text-success"
                                 wire:click="confirmPresence({{ $row['id'] }})" />
-                            <x-button :label="__('No show')" icon="o-no-symbol" class="btn-outline btn-xs"
-                                wire:click="markNoShow({{ $row['id'] }})" />
+                        @endif
+                        @if (in_array($row['status'], ['registered', 'confirmed', 'spot_offered'], true))
+                            @if ($isPaidTournament && ! $row['has_paid'])
+                                <x-button :label="__('Excused absence')" icon="o-no-symbol" class="btn-outline btn-xs"
+                                    wire:click="markAbsent({{ $row['id'] }}, true)" />
+                                <x-button :label="__('Unexcused absence')" icon="o-exclamation-triangle" class="btn-outline btn-xs text-warning-content"
+                                    wire:click="markAbsent({{ $row['id'] }}, false)"
+                                    wire:confirm="{{ __('The entry fee stays due and the player receives a mail explaining why. Continue?') }}" />
+                            @else
+                                <x-button :label="__('No show')" icon="o-no-symbol" class="btn-outline btn-xs"
+                                    wire:click="markAbsent({{ $row['id'] }}, true)" />
+                            @endif
+                        @elseif ($row['status'] === 'no_show' && ! $this->poolsGenerated)
+                            <x-button :label="__('Present after all')" icon="o-arrow-uturn-left" class="btn-outline btn-xs text-success"
+                                wire:click="confirmPresence({{ $row['id'] }})" />
                         @endif
                         @if ($isPaidTournament && ! $row['has_paid'])
                             <x-button :label="__('Cash')" icon="o-currency-euro" class="btn-outline btn-xs text-success"
@@ -127,12 +140,33 @@
                                 :tooltip="__('Confirm')"
                                 wire:click="confirmPresence({{ $row['id'] }})"
                                 wire:loading.attr="disabled" :aria-label="__('Confirm')" />
-                            <x-button
-                                icon="o-no-symbol"
-                                class="btn-ghost btn-xs text-warning-content"
-                                :tooltip="__('No show')"
-                                wire:click="markNoShow({{ $row['id'] }})" :aria-label="__('No show')" />
+                            @if (($this->currentTournament?->isPaid() ?? false) && ! $row['has_paid'])
+                                <x-button
+                                    icon="o-no-symbol"
+                                    class="btn-ghost btn-xs"
+                                    :tooltip="__('Excused absence')"
+                                    wire:click="markAbsent({{ $row['id'] }}, true)" :aria-label="__('Excused absence')" />
+                                <x-button
+                                    icon="o-exclamation-triangle"
+                                    class="btn-ghost btn-xs text-warning-content"
+                                    :tooltip="__('Unexcused absence')"
+                                    wire:click="markAbsent({{ $row['id'] }}, false)"
+                                    wire:confirm="{{ __('The entry fee stays due and the player receives a mail explaining why. Continue?') }}"
+                                    :aria-label="__('Unexcused absence')" />
+                            @else
+                                <x-button
+                                    icon="o-no-symbol"
+                                    class="btn-ghost btn-xs text-warning-content"
+                                    :tooltip="__('No show')"
+                                    wire:click="markAbsent({{ $row['id'] }}, true)" :aria-label="__('No show')" />
+                            @endif
                         </div>
+                    @elseif (! $this->isLaunched && $row['status'] === 'no_show' && ! $this->poolsGenerated)
+                        <x-button
+                            icon="o-arrow-uturn-left"
+                            class="btn-ghost btn-xs text-success"
+                            :tooltip="__('Present after all')"
+                            wire:click="confirmPresence({{ $row['id'] }})" :aria-label="__('Present after all')" />
                     @else
                         <x-badge :value="$row['status']"
                             :class="match($row['status']) {
@@ -277,13 +311,18 @@
             dragging: null,
             over: null,
             selected: null,
+            drawn: @js($this->poolsGenerated),
+            move(player, target) {
+                if (this.drawn && ! confirm(@js(__('The pools are drawn: this change erases the pools and their matches, and you will have to draw them again. Continue?')))) { return; }
+                $wire.movePlayer(player, target);
+            },
             pick(id) {
                 if (this.selected === null) { this.selected = id; return; }
-                if (this.selected !== id) { $wire.movePlayer(this.selected, id); }
+                if (this.selected !== id) { this.move(this.selected, id); }
                 this.selected = null;
             },
             drop(target) {
-                if (this.dragging !== null && this.dragging !== target) { $wire.movePlayer(this.dragging, target); }
+                if (this.dragging !== null && this.dragging !== target) { this.move(this.dragging, target); }
                 this.dragging = null;
                 this.over = null;
             },
@@ -302,12 +341,18 @@
                     <x-icon name="o-lock-closed" class="h-4 w-4" /> {{ __('The tournament is launched: pairs can no longer change.') }}
                 </p>
             @else
+                @if ($this->poolsGenerated)
+                    <p class="mb-4 flex items-start gap-1.5 text-sm text-warning-content" data-draw-warning>
+                        <x-icon name="o-exclamation-triangle" class="mt-0.5 h-4 w-4 shrink-0" />
+                        {{ __('The pools are drawn: changing a pair erases them, with their matches.') }}
+                    </p>
+                @endif
                 <div class="mb-4 flex flex-wrap items-center gap-2">
                     <x-button :label="__('Propose pairs')" icon="o-sparkles" class="btn-primary btn-sm"
                         wire:click="proposePairs" spinner="proposePairs" :disabled="$benchCount < 2" />
                     <x-button :label="__('Send everyone back to the bench')" icon="o-arrow-uturn-left" class="btn-ghost btn-sm"
                         wire:click="resetPairs" spinner="resetPairs"
-                        wire:confirm="{{ __('Break every pair and send everyone back to the bench?') }}"
+                        wire:confirm="{{ $this->poolsGenerated ? __('Break every pair, send everyone back to the bench, and erase the pools and their matches?') : __('Break every pair and send everyone back to the bench?') }}"
                         :disabled="$board['pairs'] === []" />
                     @if ($this->currentTournament->pairs_published_at === null)
                         <x-button :label="__('Publish the pairs')" icon="o-paper-airplane" class="btn-outline btn-sm"
@@ -357,7 +402,7 @@
                         <p class="text-sm font-semibold">{{ __('Bench') }}</p>
                         @unless ($locked)
                             <x-button x-show="selected !== null" x-cloak :label="__('Send to the bench')" class="btn-ghost btn-xs"
-                                @click="$wire.movePlayer(selected, null); selected = null" />
+                                @click="move(selected, null); selected = null" />
                         @endunless
                     </div>
                     @forelse ($board['bench'] as $player)

@@ -357,12 +357,21 @@ new class extends Component
             return;
         }
 
-        DB::table('tournament_user')
-            ->where('tournament_id', $this->tournamentId)
-            ->whereIn('user_id', $this->selectedPeople)
-            ->update(['registration_status' => 'no_show']);
+        $tournament = Tournament::findOrFail($this->tournamentId);
+        $service = app(TournamentService::class);
+
+        try {
+            foreach (User::whereIn('id', $this->selectedPeople)->get() as $player) {
+                $service->markAbsent($tournament, $player, excused: true);
+            }
+        } catch (LogicException) {
+            $this->error(__('The tournament is launched: record a walkover from the live centre instead.'));
+
+            return;
+        }
 
         $this->resetPostAction();
+        unset($this->pairBoard);
         $this->warning(__('No-shows recorded.'));
     }
 
@@ -494,12 +503,18 @@ new class extends Component
             return;
         }
 
-        DB::table('tournament_user')
-            ->where('tournament_id', $this->tournamentId)
-            ->where('user_id', $userId)
-            ->update(['registration_status' => 'confirmed']);
+        $isBack = app(TournamentService::class)->markPresent(
+            Tournament::findOrFail($this->tournamentId),
+            User::findOrFail($userId),
+        );
 
-        unset($this->registrations);
+        if (! $isBack) {
+            $this->error(__('The pools are drawn: this player can no longer be brought back.'));
+
+            return;
+        }
+
+        unset($this->registrations, $this->pairBoard);
         $this->success(__('Presence confirmed.'));
     }
 
@@ -563,13 +578,29 @@ new class extends Component
 
                 return;
             }
-        } elseif ($tournament->users()->count() === 0) {
+        } elseif ($tournament->users()->wherePivotIn('registration_status', ['registered', 'confirmed'])->count() === 0) {
             $this->error(__('No registered players.'));
 
             return;
         }
 
-        app(TournamentPoolService::class)->distributePlayersInPools($tournament, $this->nb_poules);
+        // Le tirage suit la configuration enregistrée : un nombre de poules
+        // saisi sans être enregistré ne doit pas tirer autre chose que ce que
+        // le tableau final attendra.
+        $entrants = $tournament->match_type === 'double'
+            ? $tournament->pairs()->count()
+            : $tournament->users()->wherePivotIn('registration_status', ['registered', 'confirmed'])->count();
+
+        if (intdiv($entrants, max(1, $tournament->nb_pools)) < 3) {
+            $this->error(__('Every pool needs at least three entrants: :count for :pools pools. Use fewer pools.', [
+                'count' => $entrants,
+                'pools' => $tournament->nb_pools,
+            ]));
+
+            return;
+        }
+
+        app(TournamentPoolService::class)->distributePlayersInPools($tournament, $tournament->nb_pools);
 
         $this->poolsStale = false;
         $this->success(__('Pools generated!'), icon: 'o-user-group');
@@ -656,32 +687,33 @@ new class extends Component
         $this->js('$wire.processLaunch()');
     }
 
-    public function markNoShow(int $userId): void
+    /**
+     * The roll call: a registered player is not here.
+     *
+     * `$excused` says whether they had warned, which decides what becomes of
+     * an unpaid entry fee.
+     */
+    public function markAbsent(int $userId, bool $excused): void
     {
         if (! $this->tournamentId) {
             return;
         }
 
-        DB::table('tournament_user')
-            ->where('tournament_id', $this->tournamentId)
-            ->where('user_id', $userId)
-            ->update(['registration_status' => 'no_show']);
+        try {
+            app(TournamentService::class)->markAbsent(
+                Tournament::findOrFail($this->tournamentId),
+                User::findOrFail($userId),
+                $excused,
+            );
+        } catch (LogicException) {
+            $this->error(__('The tournament is launched: record a walkover from the live centre instead.'));
 
-        $forfeited = 0;
-        if ($this->isLaunched) {
-            $tournament = Tournament::findOrFail($this->tournamentId);
-            $user = User::findOrFail($userId);
-            $forfeited = app(App\Services\TournamentMatchService::class)
-                ->forfeitPoolMatchesForPlayer($tournament, $user);
+            return;
         }
 
-        unset($this->registrations);
+        unset($this->registrations, $this->pairBoard, $this->poolsGenerated, $this->pools);
 
-        $msg = $forfeited > 0
-            ? __('No-show recorded. :count pool match(es) forfeited.', ['count' => $forfeited])
-            : __('No-show recorded.');
-
-        $this->warning($msg, icon: 'o-no-symbol');
+        $this->warning($excused ? __('Excused absence recorded.') : __('Unexcused absence recorded: the entry fee stays due.'), icon: 'o-no-symbol');
     }
 
     public function markQrConfirmed(int $userId): void
@@ -1195,14 +1227,14 @@ new class extends Component
         $user = User::findOrFail($this->memberToRegister);
 
         try {
-            app(TournamentService::class)->registerUser($tournament, $user);
+            app(TournamentService::class)->registerUser($tournament, $user, byCommittee: true);
         } catch (LogicException $e) {
             $this->error($e->getMessage());
 
             return;
         }
 
-        unset($this->registrations, $this->waitlist, $this->members);
+        unset($this->registrations, $this->waitlist, $this->members, $this->pairBoard);
 
         $this->memberToRegister = 0;
         $this->showRegisterModal = false;
@@ -1759,8 +1791,7 @@ new class extends Component
             return;
         }
 
-        unset($this->pairBoard);
-        $this->markPoolsStaleIfGenerated();
+        unset($this->pairBoard, $this->poolsGenerated, $this->matchesGenerated, $this->pools, $this->matchesByPool);
     }
 
     /**

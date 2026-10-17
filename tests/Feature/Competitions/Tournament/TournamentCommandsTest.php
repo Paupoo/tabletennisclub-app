@@ -104,3 +104,38 @@ describe('tournament:close-registrations — a tournament nobody joined', functi
             ->and($joined->fresh()->status)->toBe(TournamentStatusEnum::SETUP);
     });
 });
+
+// ── The deadline day is included ──────────────────────────────────────────────
+
+describe('tournament:close-registrations — the deadline day', function (): void {
+    /*
+     * "Registrations until 20/11" means the 20th is still open. The deadline is
+     * stored as a date, at midnight, and the command runs at 00:05: comparing
+     * it to now() closed the entries on the morning of the day announced.
+     */
+    it('keeps registrations open on the deadline day itself', function (): void {
+        $tournament = Tournament::factory()->create([
+            'status' => TournamentStatusEnum::PUBLISHED,
+            'registration_deadline' => '2026-11-20',
+        ]);
+        $tournament->users()->attach(User::factory()->create());
+
+        $this->travelTo('2026-11-20 00:05');
+        $this->artisan('tournament:close-registrations')->assertSuccessful();
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::PUBLISHED);
+    });
+
+    it('closes them the night after the deadline day', function (): void {
+        $tournament = Tournament::factory()->create([
+            'status' => TournamentStatusEnum::PUBLISHED,
+            'registration_deadline' => '2026-11-20',
+        ]);
+        $tournament->users()->attach(User::factory()->create());
+
+        $this->travelTo('2026-11-21 00:05');
+        $this->artisan('tournament:close-registrations')->assertSuccessful();
+
+        expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::SETUP);
+    });
+});

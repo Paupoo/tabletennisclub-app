@@ -40,8 +40,9 @@ Artisan::command('inspire', function (): void {
 | et n'apporte rien sur une machine unique.
 */
 
-// Expiration des confirmations de liste d'attente (48 h) + inscriptions
-// impayées au-delà de leur échéance + rappels de paiement.
+// Expiration des confirmations de liste d'attente (48 h) + rappels de paiement
+// (deux au plus par inscription : J-3 et lendemain de l'échéance). Un impayé
+// n'est jamais désinscrit.
 Schedule::command('tournament:process-deadlines')
     ->hourly()
     ->withoutOverlapping()

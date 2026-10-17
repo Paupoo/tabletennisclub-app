@@ -12,14 +12,14 @@ use Illuminate\Console\Command;
 use InvalidArgumentException;
 
 #[Signature('tournament:close-registrations')]
-#[Description('Transition published tournaments whose registration deadline has passed to setup status.')]
+#[Description('Transition published tournaments whose registration deadline day is over to setup status.')]
 class CloseRegistrationsByDeadlineCommand extends Command
 {
     public function handle(): int
     {
         $tournaments = Tournament::registrationsOpen()
             ->whereNotNull('registration_deadline')
-            ->where('registration_deadline', '<', now())
+            ->where('registration_deadline', '<', now()->startOfDay())
             ->get();
 
         $closed = 0;

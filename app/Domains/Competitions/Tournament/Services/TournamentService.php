@@ -15,7 +15,6 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Competitions\Tournament\Notifications\TournamentConfirmationExpiredNotification;
-use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentExpiredNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentReminderNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentRequestNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationCancelledNotification;
@@ -25,6 +24,7 @@ use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
 use App\Domains\Trainings\Services\TrainingWaitlistService;
 use App\Jobs\SendDebtReminderNotification;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -32,6 +32,33 @@ use Throwable;
 
 class TournamentService
 {
+    /**
+     * The player takes the spot the waiting list offered them.
+     *
+     * Accepting is registering: the same status whichever door they came
+     * through, and the payment request every other entrant got, at their own
+     * price.
+     *
+     * @return bool whether a spot was actually on offer
+     */
+    public function acceptOfferedSpot(Tournament $tournament, User $user): bool
+    {
+        $registration = TournamentRegistration::where('tournament_id', $tournament->id)
+            ->where('user_id', $user->id)
+            ->where('registration_status', 'spot_offered')
+            ->first();
+
+        if ($registration === null) {
+            return false;
+        }
+
+        $registration->update(['registration_status' => 'registered', 'confirmation_deadline' => null]);
+
+        $this->requestPayment($tournament, $user, $registration->fresh());
+
+        return true;
+    }
+
     /**
      * Cancel a registration and, if the user was actively registered, promote the next person on the waiting list.
      * - If payment is pending: mark it cancelled (no money moved).
@@ -137,40 +164,6 @@ class TournamentService
 
             if ($user && $tournament) {
                 $user->notify(new TournamentConfirmationExpiredNotification($tournament));
-                $this->countRegisteredUsers($tournament);
-                $this->openSpot($tournament);
-            }
-        }
-    }
-
-    /**
-     * Expire unpaid registrations whose payment deadline has passed and trigger
-     * the waitlist. The deadline is not a fixed window: it is set at registration
-     * time (see registerUser) to the registration-close date, or now + 3 days for
-     * a late sign-up, and no deadline at all for a same-day entry.
-     * Called by the hourly scheduler.
-     */
-    public function expirePaymentDeadlines(): void
-    {
-        $expired = TournamentRegistration::where('registration_status', 'registered')
-            ->where('has_paid', false)
-            ->whereNotNull('payment_deadline')
-            ->where('payment_deadline', '<', now())
-            ->get();
-
-        foreach ($expired as $registration) {
-            DB::table('tournament_user')
-                ->where('id', $registration->id)
-                ->update(['registration_status' => 'cancelled']);
-
-            $user = User::find($registration->user_id);
-            $tournament = Tournament::find($registration->tournament_id);
-
-            if ($user && $tournament) {
-                // Tell the member their spot is gone — they got payment reminders
-                // before, so silence here reads as an oversight (I5). Mirrors
-                // expireConfirmationDeadlines().
-                $user->notify(new TournamentPaymentExpiredNotification($tournament));
                 $this->countRegisteredUsers($tournament);
                 $this->openSpot($tournament);
             }
@@ -327,38 +320,7 @@ class TournamentService
         // Always send confirmation first.
         $this->notifyAfterRegistration($user, new TournamentRegistrationConfirmedNotification($tournament));
 
-        if ($tournament->isPaid()) {
-            $isOnTournamentDay = $tournament->start_date
-                && now()->startOfDay()->equalTo($tournament->start_date->copy()->startOfDay());
-
-            if (! $isOnTournamentDay) {
-                $registrationDeadline = $tournament->registration_deadline;
-                $isLateRegistration = $registrationDeadline && now()->gt($registrationDeadline);
-                $deadline = $isLateRegistration
-                    ? now()->addDays(3)->endOfDay()
-                    : ($registrationDeadline?->copy()->endOfDay() ?? now()->addDays(3)->endOfDay());
-
-                $payment = $registration->payment()->create([
-                    'reference' => (new GeneratePaymentReference)(),
-                    'amount_due' => $tournament->priceFor($user),
-                    'amount_paid' => 0,
-                    'status' => 'pending',
-                ]);
-
-                DB::table('tournament_user')
-                    ->where('id', $registration->id)
-                    ->update([
-                        'payment_id' => $payment->id,
-                        'payment_deadline' => $deadline,
-                    ]);
-
-                $this->notifyAfterRegistration($user, new TournamentPaymentRequestNotification(
-                    tournament: $tournament,
-                    payment: $payment,
-                    deadline: $deadline,
-                ));
-            }
-        }
+        $this->requestPayment($tournament, $user, $registration);
 
         $this->countRegisteredUsers($tournament);
     }
@@ -403,29 +365,55 @@ class TournamentService
     }
 
     /**
-     * Send daily payment reminders for registrations still pending payment.
-     * Called by the daily scheduler.
+     * Remind the players who have not paid yet — twice at most.
+     *
+     * Once three days before their deadline, once the day after it. An unpaid
+     * registration is never cancelled: a transfer made on time can sit
+     * unreconciled for days, and the player can always settle at the desk.
+     * Each reminder leaves a trace on the registration, so the hourly scheduler
+     * sends it once however often it runs.
+     *
+     * Called by the hourly scheduler.
      */
     public function sendPaymentReminders(): void
     {
-        $pending = TournamentRegistration::where('registration_status', 'registered')
+        $unpaid = TournamentRegistration::whereIn('registration_status', ['registered', 'confirmed'])
             ->where('has_paid', false)
             ->whereNotNull('payment_deadline')
-            ->where('payment_deadline', '>', now())
-            ->with(['tournament'])
+            ->where(fn ($query) => $query->whereNull('payment_reminder_sent_at')->orWhereNull('payment_overdue_reminder_sent_at'))
+            ->whereHas('tournament', function (Builder $query): void {
+                /** @var Builder<Tournament> $query */
+                $query->onTheCalendar()->where('start_date', '>', now()->startOfDay());
+            })
+            ->with(['tournament', 'payment', 'user'])
             ->get();
 
-        foreach ($pending as $registration) {
-            $user = User::find($registration->user_id);
-            $payment = $registration->payment;
-
-            if ($user && $payment && $registration->tournament) {
-                $user->notify(new TournamentPaymentReminderNotification(
-                    tournament: $registration->tournament,
-                    payment: $payment,
-                    deadline: $registration->payment_deadline,
-                ));
+        foreach ($unpaid as $registration) {
+            if ($registration->payment === null || $registration->payment->status !== 'pending' || $registration->user === null) {
+                continue;
             }
+
+            $deadline = $registration->payment_deadline;
+            $isOverdue = now()->gte($deadline->copy()->addDay()->startOfDay());
+            $isDue = now()->gte($deadline->copy()->subDays(3)->startOfDay());
+
+            if ($isOverdue && $registration->payment_overdue_reminder_sent_at === null) {
+                $registration->update([
+                    'payment_reminder_sent_at' => $registration->payment_reminder_sent_at ?? now(),
+                    'payment_overdue_reminder_sent_at' => now(),
+                ]);
+            } elseif (! $isOverdue && $isDue && $registration->payment_reminder_sent_at === null) {
+                $registration->update(['payment_reminder_sent_at' => now()]);
+            } else {
+                continue;
+            }
+
+            $registration->user->notify(new TournamentPaymentReminderNotification(
+                tournament: $registration->tournament,
+                payment: $registration->payment,
+                deadline: $deadline,
+                isOverdue: $isOverdue,
+            ));
         }
     }
 
@@ -548,5 +536,51 @@ class TournamentService
             ->where('payable_id', $registration->id)
             ->where('payment_method', 'refund')
             ->exists();
+    }
+
+    /**
+     * Create the payment a paid tournament asks of a new entrant, and ask for it.
+     *
+     * The deadline is the end of the registration deadline day, or three days
+     * from now for a late entry. Nobody is asked on the tournament day itself:
+     * that entrant pays at the desk.
+     */
+    private function requestPayment(Tournament $tournament, User $user, TournamentRegistration $registration): void
+    {
+        if (! $tournament->isPaid() || $registration->payment_id !== null) {
+            return;
+        }
+
+        $isOnTournamentDay = $tournament->start_date
+            && now()->startOfDay()->equalTo($tournament->start_date->copy()->startOfDay());
+
+        if ($isOnTournamentDay) {
+            return;
+        }
+
+        $registrationDeadline = $tournament->registration_deadline?->copy()->endOfDay();
+        $deadline = $registrationDeadline !== null && now()->lte($registrationDeadline)
+            ? $registrationDeadline
+            : now()->addDays(3)->endOfDay();
+
+        $payment = $registration->payment()->create([
+            'reference' => (new GeneratePaymentReference)(),
+            'amount_due' => $tournament->priceFor($user),
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        DB::table('tournament_user')
+            ->where('id', $registration->id)
+            ->update([
+                'payment_id' => $payment->id,
+                'payment_deadline' => $deadline,
+            ]);
+
+        $this->notifyAfterRegistration($user, new TournamentPaymentRequestNotification(
+            tournament: $tournament,
+            payment: $payment,
+            deadline: $deadline,
+        ));
     }
 }

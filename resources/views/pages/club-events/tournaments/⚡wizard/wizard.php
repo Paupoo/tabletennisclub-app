@@ -104,10 +104,6 @@ new class extends Component
 
     public int $pool_size = 4;
 
-    // ── Options statiques
-    /** @var array<int, array{id: int, name: string}> */
-    public array $poolSizeOptions = [];
-
     // ── Pools staleness flag
     public bool $poolsStale = false;
 
@@ -790,18 +786,6 @@ new class extends Component
     {
         $this->tournamentDate = today()->addWeek()->format('Y-m-d');
 
-        /*
-         * Les libellés étaient écrits en français dans la déclaration de propriété,
-         * là où __() n'est pas encore résolu. Ils se construisent donc ici.
-         */
-        $this->poolSizeOptions = array_map(
-            fn (int $size): array => [
-                'id' => $size,
-                'name' => trans_choice('{1} :count player|[2,*] :count players', $size, ['count' => $size]),
-            ],
-            [3, 4, 5, 6],
-        );
-
         if ($tournament !== null) {
             $this->tournamentId = $tournament->id;
             $this->name = $tournament->name;
@@ -822,7 +806,7 @@ new class extends Component
             $this->nb_qualifies = $tournament->nb_qualifiers_per_pool;
             $this->maxUsers = $tournament->max_users;
             $this->maxUsersManual = $tournament->max_users > 0
-                && $tournament->max_users !== $tournament->nb_pools * $tournament->pool_size;
+                && $tournament->max_users !== $tournament->nb_pools * $tournament->pool_size * $this->playersPerEntrant();
             $this->price = (float) ($tournament->price ?? 0);
             $this->reducedPrice = $tournament->reduced_price_under_age === null ? '' : (string) $tournament->reduced_price;
             $this->reducedPriceUnderAge = (string) ($tournament->reduced_price_under_age ?? '');
@@ -950,6 +934,25 @@ new class extends Component
         } else {
             $this->showCloseRegistrationsModal = true;
         }
+    }
+
+    /**
+     * The pool sizes on offer, counted in pairs for doubles.
+     *
+     * @return list<array{id: int, name: string}>
+     */
+    #[Computed]
+    public function poolSizeOptions(): array
+    {
+        return array_map(
+            fn (int $size): array => [
+                'id' => $size,
+                'name' => $this->matchType === 'double'
+                    ? trans_choice('{1} :count pair|[2,*] :count pairs', $size, ['count' => $size])
+                    : trans_choice('{1} :count player|[2,*] :count players', $size, ['count' => $size]),
+            ],
+            [3, 4, 5, 6],
+        );
     }
 
     /**
@@ -1328,7 +1331,11 @@ new class extends Component
             'logistics_buffer' => 'required|integer|min:0|max:30',
             'matchType' => 'required|in:single,double',
             'doublesRegistrationMode' => 'nullable|in:club,self',
-            'maxUsers' => 'required|integer|min:0',
+            'maxUsers' => ['required', 'integer', 'min:0', function (string $attribute, mixed $value, Closure $fail): void {
+                if ($this->matchType === 'double' && (int) $value % 2 !== 0) {
+                    $fail(__('In doubles the cap must be even: every player needs a partner.'));
+                }
+            }],
             'price' => 'required|numeric|min:0',
             'reducedPrice' => 'nullable|required_with:reducedPriceUnderAge|numeric|min:0|lt:price',
             'reducedPriceUnderAge' => 'nullable|required_with:reducedPrice|integer|min:1|max:99',
@@ -1594,6 +1601,7 @@ new class extends Component
     public function updatedMatchType(): void
     {
         $this->markPoolsStaleIfGenerated();
+        $this->suggestMaxUsers();
     }
 
     public function updatedMaxUsers(): void
@@ -1796,6 +1804,14 @@ new class extends Component
             return;
         }
 
-        $this->maxUsers = $this->nb_poules * $this->pool_size;
+        $this->maxUsers = $this->nb_poules * $this->pool_size * $this->playersPerEntrant();
+    }
+
+    /**
+     * How many registered players make one entrant of a pool: a pair holds two.
+     */
+    private function playersPerEntrant(): int
+    {
+        return $this->matchType === 'double' ? 2 : 1;
     }
 };

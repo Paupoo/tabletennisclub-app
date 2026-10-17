@@ -121,6 +121,19 @@ class Tournament extends Model
     /** @use HasFactory<TournamentFactory> */
     use HasFactory;
 
+    /**
+     * The database default, known before the row is read back.
+     *
+     * The wizard creates a tournament and goes on using the model it got:
+     * without this the status stayed null in memory, and the first state()
+     * call on a brand new tournament threw.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'status' => 'draft',
+    ];
+
     protected $casts = [
         'name',
         'start_date' => 'datetime:Y-m-d\TH:i',

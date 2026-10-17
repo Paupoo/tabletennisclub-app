@@ -24,6 +24,8 @@ use Illuminate\Support\Carbon;
  * @property int|null $waitlist_position
  * @property Carbon|null $confirmation_deadline
  * @property Carbon|null $payment_deadline
+ * @property Carbon|null $payment_reminder_sent_at
+ * @property Carbon|null $payment_overdue_reminder_sent_at
  * @property int|null $payment_id
  * @property bool $qr_confirmed
  * @property-read Payment|null $payment
@@ -59,6 +61,8 @@ class TournamentRegistration extends Pivot implements DescribesPayment
         'qr_confirmed' => 'boolean',
         'confirmation_deadline' => 'datetime',
         'payment_deadline' => 'datetime',
+        'payment_reminder_sent_at' => 'datetime',
+        'payment_overdue_reminder_sent_at' => 'datetime',
         'waitlist_position' => 'integer',
     ];
 
@@ -69,6 +73,8 @@ class TournamentRegistration extends Pivot implements DescribesPayment
         'waitlist_position',
         'confirmation_deadline',
         'payment_deadline',
+        'payment_reminder_sent_at',
+        'payment_overdue_reminder_sent_at',
         'has_paid',
         'qr_confirmed',
         'payment_id',

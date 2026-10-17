@@ -255,12 +255,6 @@ parameters:
 			path: app/Domains/Competitions/Tournament/Services/TournamentTableService.php
 
 		-
-			message: '#^Cannot call method isPlayable\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Domains/Competitions/Tournament/Services/TournamentTableService.php
-
-		-
 			message: '#^PHPDoc tag @return with type array is incompatible with native type void\.$#'
 			identifier: return.phpDocType
 			count: 1

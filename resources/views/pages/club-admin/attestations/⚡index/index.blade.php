@@ -140,10 +140,76 @@
                 </table>
             </div>
 
+            {{-- Camp forms ------------------------------------------------------}}
+            <h3 class="mt-8 mb-2 font-semibold">{{ __('Training camp forms') }}</h3>
+            <p class="mb-4 text-sm text-base-content/70">
+                {{ __('For a training camp, members can always get the club\'s own attestation. An insurer listed here is offered as well once its form is installed.') }}
+            </p>
+
+            <div class="mb-4">
+                <x-button class="btn-sm" icon="o-eye" :label="__('Specimen: club camp attestation')"
+                    wire:click="preview('other', 'camp')" spinner />
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('Mutual insurer') }}</th>
+                            <th>{{ __('Form held') }}</th>
+                            <th>{{ __('Unresolved labels') }}</th>
+                            <th>{{ __('Offered to members') }}</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (\App\Domains\Shared\Enums\Mutuality::withCampForm() as $mutuality)
+                            <tr wire:key="camp-template-{{ $mutuality->value }}">
+                                <td class="font-medium">{{ $mutuality->label() }}</td>
+                                <td>
+                                    @if ($campTemplates->has($mutuality->value))
+                                        {{ $campTemplates[$mutuality->value]->original_name }}
+                                        <span class="text-base-content/60">
+                                            · {{ $campTemplates[$mutuality->value]->updated_at->format('d/m/Y') }}
+                                        </span>
+                                    @else
+                                        <span class="text-base-content/60">{{ __('None') }}</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if ($campTemplates->has($mutuality->value) && ! $campTemplates[$mutuality->value]->isUsable())
+                                        <x-badge class="badge-error"
+                                            :value="implode(', ', $campTemplates[$mutuality->value]->unresolved_fields)" />
+                                    @elseif ($campTemplates->has($mutuality->value))
+                                        <x-badge class="badge-success" :value="__('All found')" />
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                                <td>
+                                    @if (in_array($mutuality, $offeredForCamps, true))
+                                        <x-icon name="o-check-circle" class="h-5 w-5 text-success" />
+                                    @else
+                                        <x-icon name="o-x-circle" class="h-5 w-5 text-base-content/40" />
+                                    @endif
+                                </td>
+                                <td class="text-right">
+                                    <x-button class="btn-ghost btn-sm" icon="o-eye"
+                                        :label="__('See the result')"
+                                        wire:click="preview('{{ $mutuality->value }}', 'camp')" spinner />
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
             <x-form class="mt-6" wire:submit="uploadTemplate">
-                <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    <x-select :label="__('Document')" wire:model.live="templateKind"
+                        :options="[['id' => 'affiliation', 'name' => __('Affiliation')], ['id' => 'camp', 'name' => __('Training camp')]]" />
                     <x-select :label="__('Mutual insurer')" wire:model="templateFor"
-                        :options="collect(\App\Domains\Shared\Enums\Mutuality::withOfficialForm())->map(fn ($m) => ['id' => $m->value, 'name' => $m->label()])->values()->all()"
+                        :options="collect($templateKind === 'camp' ? \App\Domains\Shared\Enums\Mutuality::withCampForm() : \App\Domains\Shared\Enums\Mutuality::withOfficialForm())->map(fn ($m) => ['id' => $m->value, 'name' => $m->label()])->values()->all()"
                         :placeholder="__('Choose a mutual insurer')" />
                     <x-file wire:model="templateUpload" accept="application/pdf" :label="__('The form, as the insurer publishes it')" />
                 </div>
@@ -157,6 +223,11 @@
 
         {{-- History ----------------------------------------------------------}}
         <x-tab name="history" :label="__('Issued')" icon="o-clock">
+            <div class="mb-4 max-w-xs">
+                <x-select :label="__('Document')" wire:model.live="kindFilter" :placeholder="__('All')"
+                    :options="[['id' => 'affiliation', 'name' => __('Affiliation')], ['id' => 'camp', 'name' => __('Training camp')]]" />
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="table">
                     <thead>
@@ -164,7 +235,7 @@
                             <th>{{ __('Reference') }}</th>
                             <th>{{ __('Member') }}</th>
                             <th>{{ __('Mutual insurer') }}</th>
-                            <th>{{ __('Season') }}</th>
+                            <th>{{ __('Document') }}</th>
                             <th>{{ __('Issued on') }}</th>
                             <th>{{ __('Amount paid') }}</th>
                             <th></th>
@@ -177,7 +248,13 @@
                                 <td class="font-mono">{{ $attestation->reference }}</td>
                                 <td>{{ $attestation->user->full_name }}</td>
                                 <td>{{ $attestation->mutuality->label() }}</td>
-                                <td>{{ $attestation->season->name }}</td>
+                                <td>
+                                    @if ($attestation->kind === \App\Domains\Shared\Enums\AttestationKind::Camp)
+                                        {{ $attestation->campLine?->trainingPack?->name ?? __('Training camp') }}
+                                    @else
+                                        {{ __('Affiliation :season', ['season' => $attestation->season->name]) }}
+                                    @endif
+                                </td>
                                 <td>{{ $attestation->issued_at->format('d/m/Y') }}</td>
                                 <td>{{ number_format($attestation->amount_certified, 2, ',', ' ') }} €</td>
                                 <td class="text-right">

@@ -8,6 +8,7 @@ use App\Actions\ClubAdmin\Attestations\InstallAttestationTemplate;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationSetting;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf\PdfNormaliser;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\AttestationKind;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Mutuality;
 use Illuminate\Database\Seeder;
@@ -20,9 +21,9 @@ use Illuminate\Database\Seeder;
  * UTILISER, and they must never reach a production seed path, where they would
  * become a real club seal on a real document.
  *
- * The five published forms are installed the same way the admin screen does it,
- * so a developer sees exactly what the secretary will see, unresolved labels
- * included.
+ * The published forms — five for an affiliation, two for a training camp — are
+ * installed the same way the admin screen does it, so a developer sees exactly
+ * what the secretary will see, unresolved labels included.
  */
 class AttestationDemoSeeder extends Seeder
 {
@@ -62,6 +63,15 @@ class AttestationDemoSeeder extends Seeder
                     $mutuality->label(),
                     implode(', ', $template->unresolved_fields),
                 ));
+            }
+        }
+
+        // The camp forms sit beside them, in a folder of their own.
+        foreach (Mutuality::withCampForm() as $mutuality) {
+            $source = database_path('seeders/Data/attestation-templates/camp/' . $mutuality->value . '.pdf');
+
+            if (is_file($source)) {
+                $install($mutuality, $source, basename($source), kind: AttestationKind::Camp);
             }
         }
     }

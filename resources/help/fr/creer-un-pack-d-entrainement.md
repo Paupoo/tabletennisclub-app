@@ -125,7 +125,7 @@ Il faut une **affiliation en cours** pour la saison du pack. Sans elle, il n'y a
 
 Un stage — une semaine de vacances, un week-end — se crée comme un pack, avec la case **Stage (hors cotisation)** cochée à l'étape 1. Il garde tout ce qui fait un pack : séances générées, coach, inscrits, présences, liste d'attente. Ce qui change, c'est l'argent :
 
-- **il est facturé à part.** Chaque inscription porte sa propre demande de paiement, avec sa communication structurée. Elle ne touche jamais l'affiliation : un stage impayé ne bloque pas l'attestation mutuelle, et un stage payé n'en gonfle pas le montant ;
+- **il est facturé à part.** Chaque inscription porte sa propre demande de paiement, avec sa communication structurée. Elle ne touche jamais l'affiliation : un stage impayé ne bloque pas l'attestation mutuelle de l'affiliation, et un stage payé n'en gonfle pas le montant. Le stage a sa propre attestation, une fois terminé et payé ;
 - **pas de prorata, pas de remise automatique.** Le prix est celui du stage. Pour quelqu'un qui ne vient qu'un jour, fixez **son prix**, avec un motif : à l'ajout, ou plus tard via **Prix** sur sa ligne. Une demande non payée est ajustée ; ce qui a déjà été payé au-delà part en remboursement ;
 - **la saison** proposée est celle qui contient la date de début du stage. Seuls les affiliés de cette saison peuvent s'inscrire.
 

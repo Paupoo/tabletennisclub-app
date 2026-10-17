@@ -12,6 +12,7 @@ use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\MutualAttestation;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\AttestationAvailability;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Shared\Enums\AttestationKind;
 use App\Domains\Shared\Enums\Mutuality;
 use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -43,6 +44,9 @@ new class extends Component
 
     public string $federationName = '';
 
+    /** The history's type filter: empty for every kind. */
+    public string $kindFilter = '';
+
     public ?string $revocationReason = null;
 
     public ?int $revoking = null;
@@ -60,6 +64,8 @@ new class extends Component
     public string $tab = 'settings';
 
     public string $templateFor = '';
+
+    public string $templateKind = 'affiliation';
 
     public $templateUpload;
 
@@ -88,16 +94,17 @@ new class extends Component
      * file, so there is nothing to clean up afterwards and nothing that could
      * later be mistaken for a certificate the club stands behind.
      */
-    public function preview(PreviewAttestation $preview, string $mutuality): StreamedResponse
+    public function preview(PreviewAttestation $preview, string $mutuality, string $kind = 'affiliation'): StreamedResponse
     {
         $this->authorize(Permission::AttestationsView->value);
 
         $chosen = Mutuality::from($mutuality);
-        $pdf = $preview(Auth::user(), $chosen);
+        $documentKind = AttestationKind::from($kind);
+        $pdf = $preview(Auth::user(), $chosen, $documentKind);
 
         return response()->streamDownload(
             fn (): int => print $pdf,
-            'specimen-' . $chosen->value . '.pdf',
+            'specimen-' . ($documentKind === AttestationKind::Camp ? 'stage-' : '') . $chosen->value . '.pdf',
             ['Content-Type' => 'application/pdf'],
         );
     }
@@ -146,14 +153,6 @@ new class extends Component
         $this->dispatch('toast', message: __('Settings saved.'));
     }
 
-    /**
-     * Store the seal the moment it is picked.
-     *
-     * Livewire has already carried the file to its temporary area by the time
-     * this fires; asking for a second click on a button labelled "replace"
-     * only looked like a way to pick a different file, and the upload sat in
-     * the buffer while the screen went on saying the seal was missing.
-     */
     public function updatedSealUpload(): void
     {
         $this->storeMark(StoreAttestationImage::SEAL);
@@ -164,38 +163,64 @@ new class extends Component
         $this->storeMark(StoreAttestationImage::SIGNATURE);
     }
 
+    /**
+     * Store the seal the moment it is picked.
+     *
+     * Livewire has already carried the file to its temporary area by the time
+     * this fires; asking for a second click on a button labelled "replace"
+     * only looked like a way to pick a different file, and the upload sat in
+     * the buffer while the screen went on saying the seal was missing.
+     */
+    /** An insurer picked for one kind of document may hold no form for the other. */
+    public function updatedTemplateKind(): void
+    {
+        $this->reset('templateFor');
+    }
+
     public function uploadTemplate(InstallAttestationTemplate $install): void
     {
         $this->authorize(Permission::AttestationsConfigure->value);
 
         $this->validate([
             'templateFor' => ['required', 'string'],
+            'templateKind' => ['required', 'in:affiliation,camp'],
             'templateUpload' => ['required', 'file', 'mimes:pdf', UploadLimits::documentRule()],
         ]);
 
         $mutuality = Mutuality::from($this->templateFor);
+        $kind = AttestationKind::from($this->templateKind);
+
+        // A camp form only goes where the club knows how to fill it.
+        abort_if($kind === AttestationKind::Camp && ! in_array($mutuality, Mutuality::withCampForm(), true), 422);
 
         $install(
             $mutuality,
             $this->templateUpload->getRealPath(),
             $this->templateUpload->getClientOriginalName(),
             Auth::id(),
+            $kind,
         );
 
-        $this->reset(['templateUpload', 'templateFor']);
+        $this->reset(['templateUpload', 'templateFor', 'templateKind']);
     }
 
     public function with(): array
     {
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
-            'history' => MutualAttestation::with(['user', 'season'])->latest('issued_at')->paginate(20),
-            'missing' => $this->availability()->missing(),
-            'offered' => $this->availability()->offered(),
-            'ready' => $this->availability()->isReady(),
+            'history' => MutualAttestation::with(['user', 'season', 'campLine.trainingPack'])
+                ->when($this->kindFilter !== '', fn ($query) => $query->where('kind', $this->kindFilter))
+                ->latest('issued_at')
+                ->orderByDesc('id')
+                ->paginate(20),
+            'missing' => $this->availability->missing(),
+            'offered' => $this->availability->offered(),
+            'offeredForCamps' => $this->availability->offered(AttestationKind::Camp),
+            'ready' => $this->availability->isReady(),
             'settings' => AttestationSetting::current(),
             'signatories' => User::query()->orderBy('last_name')->get(['id', 'first_name', 'last_name']),
-            'templates' => AttestationTemplate::all()->keyBy(fn (AttestationTemplate $t): string => $t->mutuality->value),
+            'templates' => AttestationTemplate::where('kind', AttestationKind::Affiliation->value)->get()->keyBy(fn (AttestationTemplate $t): string => $t->mutuality->value),
+            'campTemplates' => AttestationTemplate::where('kind', AttestationKind::Camp->value)->get()->keyBy(fn (AttestationTemplate $t): string => $t->mutuality->value),
         ];
     }
 

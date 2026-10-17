@@ -7,6 +7,7 @@ namespace App\Domains\ClubAdmin\Subscriptions\Attestations\Pdf;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationSetting;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationTemplate;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Templates\AnchorMaps;
+use App\Domains\Shared\Enums\AttestationKind;
 use App\Domains\Shared\Enums\Mutuality;
 use Mpdf\Mpdf;
 use RuntimeException;
@@ -45,13 +46,14 @@ final readonly class OfficialFormRenderer
         array $values,
         AttestationSetting $settings,
         bool $specimen = false,
+        AttestationKind $kind = AttestationKind::Affiliation,
     ): string {
         if (! is_file($templatePath)) {
             throw new RuntimeException("Missing attestation template: {$templatePath}");
         }
 
         $layout = $this->extractor->extract($templatePath);
-        $anchors = AnchorMaps::for($mutuality);
+        $anchors = AnchorMaps::for($mutuality, $kind);
         $size = $layout->pageSize();
 
         $mpdf = new Mpdf([
@@ -109,6 +111,12 @@ final readonly class OfficialFormRenderer
                 continue;
             }
 
+            if ($anchor->strike !== null) {
+                $this->strike($mpdf, $values[$field] ?? '', $point, $anchor->strike);
+
+                continue;
+            }
+
             match ($field) {
                 'seal' => $this->stamp($mpdf, $settings->seal_path, $settings->seal_width_mm * $anchor->scale, $point),
                 'signature' => $this->stamp($mpdf, $settings->signature_path, $settings->signature_width_mm * $anchor->scale, $point),
@@ -124,6 +132,22 @@ final readonly class OfficialFormRenderer
         }
 
         $mpdf->Image($path, $point->x, $point->y, $widthMm, 0);
+    }
+
+    /**
+     * A rule through the middle of the lower-case letters, when the value says so.
+     */
+    private function strike(Mpdf $mpdf, string $value, Point $point, float $length): void
+    {
+        if (trim($value) === '') {
+            return;
+        }
+
+        $y = $point->y - 1.1;
+
+        $mpdf->SetDrawColor(0, 0, 0);
+        $mpdf->SetLineWidth(0.35);
+        $mpdf->Line($point->x, $y, $point->x + $length, $y);
     }
 
     private function write(Mpdf $mpdf, string $text, Point $point): void

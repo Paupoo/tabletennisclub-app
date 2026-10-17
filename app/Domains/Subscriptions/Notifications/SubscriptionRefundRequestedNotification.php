@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Subscriptions\Notifications;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\MutualAttestation;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -18,6 +19,14 @@ class SubscriptionRefundRequestedNotification extends Notification
         public readonly Payment $payment,
         public readonly Subscription $subscription,
         public readonly string $reason = '',
+        /**
+         * A camp attestation still standing on the line being refunded.
+         *
+         * The club sealed a sum that is about to shrink, and only the office
+         * can withdraw that document: the treasurer who sends the money back
+         * is the one person placed to notice.
+         */
+        public readonly ?MutualAttestation $attestation = null,
     ) {}
 
     /** @return array<string, mixed> */
@@ -25,8 +34,10 @@ class SubscriptionRefundRequestedNotification extends Notification
     {
         return [
             'title' => __('Refund requested'),
-            'body' => __('See your pending payments'),
-            'url' => '#',
+            'body' => $this->attestation instanceof MutualAttestation
+                ? $this->attestationWarning()
+                : __('See your pending payments'),
+            'url' => $this->attestation instanceof MutualAttestation ? route('admin.attestations.index') : '#',
             'category' => 'payment',
             'icon' => 'o-credit-card',
         ];
@@ -57,6 +68,11 @@ class SubscriptionRefundRequestedNotification extends Notification
             $mail->line(__('No IBAN on file — please contact the member to obtain their bank details.'));
         }
 
+        if ($this->attestation instanceof MutualAttestation) {
+            $mail->line($this->attestationWarning())
+                ->line(__('[Open the attestations](:url)', ['url' => route('admin.attestations.index')]));
+        }
+
         return $mail
             ->action(__('View member profile'), $adminUrl)
             ->line(__('Please process this refund at your earliest convenience.'));
@@ -66,5 +82,13 @@ class SubscriptionRefundRequestedNotification extends Notification
     public function via(object $notifiable): array
     {
         return ['mail', 'database'];
+    }
+
+    private function attestationWarning(): string
+    {
+        return __('A training camp attestation was issued for this camp (:reference, :amount €). Revoke it if the amount it certifies is no longer right.', [
+            'reference' => $this->attestation->reference,
+            'amount' => number_format($this->attestation->amount_certified, 2, ',', ' '),
+        ]);
     }
 }

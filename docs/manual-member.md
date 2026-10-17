@@ -121,7 +121,7 @@ Make the bank transfer manually. The treasurer reconciles payments and marks you
 
 ### Training camps
 
-Camps organised by the club (holidays, weekends) are listed here, not in the membership fee. Each card reads like a training pack: schedule and dates, room, level, coach, price and the spots left. Click **Enrol** (or **Request a spot** when the committee approves enrolments). A camp is **invoiced separately**: you receive its own payment request, and it is not part of the amount on your health-insurance attestation. You need an affiliation for the camp's season.
+Camps organised by the club (holidays, weekends) are listed here, not in the membership fee. Each card reads like a training pack: schedule and dates, room, level, coach, price and the spots left. Click **Enrol** (or **Request a spot** when the committee approves enrolments). A camp is **invoiced separately**: you receive its own payment request, and it is not part of the amount on your affiliation's health-insurance attestation — once over and paid, it has an attestation of its own. You need an affiliation for the camp's season.
 
 ### RSVP for meetings
 
@@ -247,7 +247,7 @@ There is no in-app help chat at this time.
 
 ## 12. Mutual Insurer Attestation
 
-Your Belgian mutual insurer reimburses part of your club cotisation. **My space → Mutual attestation** produces the document, already filled in, stamped and signed by the club.
+Your Belgian mutual insurer reimburses part of your club cotisation, and often of your children's sports camps. **My space → Mutual attestations** produces the document, already filled in, stamped and signed by the club. If you took part in a camp, the screen first asks which document you want: the season's affiliation, or a camp.
 
 **Conditions.** Two, and only two: your affiliation for the season is validated by the committee, and it is paid in full (cotisation and training packs). An unpaid fine, tournament entry or meal does not block the request.
 
@@ -259,6 +259,8 @@ Your Belgian mutual insurer reimburses part of your club cotisation. **My space 
 **What the club certifies.** The period runs from the day the committee validated your affiliation to the end of the season — not from 1 September if you joined in January. The amount is what you actually paid, family discount deducted.
 
 **One per season**, but downloadable again as often as you need. If something is wrong (wrong insurer, amount changed mid-season), the office can revoke it and issue a new one.
+
+**Training camps.** Each camp of the last twelve months has its own card, and its own attestation, once the camp is over, paid in full, and your affiliation for the camp's season is in order. Partenamut and Solidaris have a camp form of their own (Partenamut asks whether the participant is recognised as disabled; the answer is not kept). The club's own camp attestation is always on offer and names no recipient: send it to another insurer, an employer or a CPAS. The club certifies the days a session was held, cancelled sessions left out; a day under four hours counts as a half day. One per camp.
 
 **For your children.** Sign in as your ward and follow the same steps; the national register number asked for is the child's.
 

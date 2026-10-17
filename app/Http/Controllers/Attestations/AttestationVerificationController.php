@@ -24,7 +24,7 @@ class AttestationVerificationController extends Controller
 {
     public function show(string $token): View
     {
-        $attestation = MutualAttestation::with(['user', 'season'])
+        $attestation = MutualAttestation::with(['user', 'season', 'campLine.trainingPack'])
             ->where('token', $token)
             ->firstOrFail();
 

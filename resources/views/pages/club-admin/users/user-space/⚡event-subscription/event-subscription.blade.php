@@ -64,7 +64,7 @@
                             class="btn-warning btn-xs"
                             icon="o-qr-code"
                             :label="__('Pay')"
-                            spinner="openPaymentModal"
+                            spinner="openPaymentModal({{ $payment->id }})"
                             wire:click="openPaymentModal({{ $payment->id }})"
                         />
                     </div>
@@ -151,7 +151,7 @@
                                         class="btn-ghost btn-xs text-error/70"
                                         icon="o-x-mark"
                                         :tooltip="__('Cancel registration')"
-                                        spinner="cancelRegistration"
+                                        spinner="openCancelConfirm({{ $tournament->id }})"
                                         wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Cancel registration')" />
                                 @else
                                     <div class="w-full text-xs text-base-content/70" data-withdraw-contact>
@@ -180,14 +180,14 @@
                                     class="btn-success btn-xs"
                                     icon="o-check"
                                     :label="__('Confirm')"
-                                    spinner="confirmTournamentSpot"
+                                    spinner="confirmTournamentSpot({{ $tournament->id }})"
                                     wire:click="confirmTournamentSpot({{ $tournament->id }})"
                                 />
                                 <x-button
                                     class="btn-ghost btn-xs text-error/70"
                                     icon="o-x-mark"
                                     :tooltip="__('Decline this spot')"
-                                    spinner="cancelRegistration"
+                                    spinner="openCancelConfirm({{ $tournament->id }})"
                                     wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Decline this spot')" />
                             @elseif ($isWaiting)
                                 <x-admin.shared.status-badge status="waiting" :detail="$reg->waitlist_position" />
@@ -195,14 +195,14 @@
                                     class="btn-ghost btn-xs text-error/70"
                                     icon="o-x-mark"
                                     :tooltip="__('Leave waitlist')"
-                                    spinner="cancelRegistration"
+                                    spinner="openCancelConfirm({{ $tournament->id }})"
                                     wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Leave waitlist')" />
                             @elseif ($isFull)
                                 <x-admin.shared.status-badge status="full" />
                                 <x-button
                                     class="btn-outline btn-sm btn-warning px-4"
                                     :label="__('Join waitlist')"
-                                    spinner="register"
+                                    spinner="register({{ $tournament->id }})"
                                     wire:click="register({{ $tournament->id }})"
                                 />
                             @else
@@ -215,7 +215,7 @@
                                 <x-button
                                     class="btn-primary btn-outline btn-sm px-6"
                                     :label="__('Register')"
-                                    spinner="register"
+                                    spinner="register({{ $tournament->id }})"
                                     wire:click="register({{ $tournament->id }})"
                                 />
                             @endif

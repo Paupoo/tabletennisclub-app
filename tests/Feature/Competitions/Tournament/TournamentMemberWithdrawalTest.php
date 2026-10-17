@@ -73,3 +73,15 @@ it('points the member to the tournament organisers once registrations are closed
         ->assertSee(__('To withdraw, contact the organisers:'))
         ->assertSee('Thierry Organisateur');
 });
+
+it('spins only the button of the tournament clicked, not every one of the list', function (): void {
+    $member = User::factory()->create();
+    $first = paymentTournament(['price' => 0, 'start_date' => now()->addWeeks(2)->toDateString()]);
+    $second = paymentTournament(['price' => 0, 'start_date' => now()->addWeeks(3)->toDateString()]);
+
+    $html = mySpace($member)->html();
+
+    expect($html)->toContain('wire:target="register(' . $first->id . ')"')
+        ->and($html)->toContain('wire:target="register(' . $second->id . ')"')
+        ->and($html)->not->toContain('wire:target="register"');
+});
